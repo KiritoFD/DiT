@@ -270,3 +270,36 @@ diff≈0.05~0.07 就平台化，生成图"有形但糊"。用户指出**本地�
 - 若目标仍是 2Cond-XL 全量训练：**必须把结构 loss 加回来**（w_canny/w_skel>0、
   use_canny/use_skel=true，并确保 dataset/canny、dataset/skeleton 数据存在），否则 2Cond
   永远卡在 0.06 的 latent-MSE floor。这是从这次复现得到的核心教训。
+
+## 2026-08-12 全量 3Cond 训练（成功版配方上规模）
+
+### 决策
+基于 3Cond overfit 复现成功，把成功版配方（DiT-3Cond-S/2 + LoRA r32 + canny/skel 结构
+loss + lr=3e-3）扩展到**全量 298,281 张**训练集。
+
+### 代码改造
+- `models.py`：给 `DiT_3Cond` 加 `use_checkpoint` 参数 + checkpoint forward 分支（对齐
+  DiT_2Cond），使 3Cond 能被 train.py 复用。
+- `train.py`：新增 `--cond-mode`（2cond/3cond）和 `--num-scripts` 参数；按模式选择
+  `DiT_2Cond_models`/`DiT_3Cond_models`、构造 model_kwargs（3cond 传 y_script）、训练
+  循环读取 y_script。修复 `_coerce`：config 里 `null`/`None`/空字符串 → Python None
+  （否则 `pretrained: null` 被转成字符串 "None" 导致 find_model 报错）。
+- 新增 `train_full_3cond.json`：DiT-3Cond-S/2、num_calligraphers=2021、num_scripts=12、
+  num_characters=7765（全量 id 最大值 + 1）、lr=3e-3、lora_r=32、use_canny/skel=true、
+  w_canny=w_skel=0.1、batch=8、epochs=2、ckpt_every=2500。
+- 新增 `eval_full_3cond.py`：加载指定 ckpt 的 LoRA 权重，取训练集前 N 张 GT，做固定
+  noise 的 pred_xstart，拼 [GT|Canny|Skel|Pred] 对比图。
+- 新增 `pull_eval.ps1`：查远程最新 ckpt → 远程跑 eval → scp 对比图拉回本地，按 step 去重。
+- 新增 automation（每 1 小时）自动跑 `pull_eval.ps1` 定期拉取评估。
+
+### 关键调参
+- 首启 batch=32 OOM（结构 loss 的 VAE decode backward 占显存大头）→ 降到 **batch=8**
+  （18.5GB/24GB，GPU 97%）。
+- Steps/Sec≈1.47，298281/8=37285 步/epoch → **~7 小时/epoch**。epochs=40 太久，
+  改为 **epochs=2**（~14 小时），ckpt_every=2500（~28 分钟/个），边训边拉评估。
+
+### 状态（启动后）
+- 训练稳定运行：GPU 97%，结构 loss 正常（Canny raw~0.19、Skel raw~0.74），
+  Diff~1.01（全量每步不同图，loss 缓慢下降是预期的）。
+- 第 1 个 ckpt 在 step 2500（~26 分钟后）。automation 每小时自动拉最新 ckpt 评估。
+

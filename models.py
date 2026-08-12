@@ -401,9 +401,11 @@ class DiT_3Cond(nn.Module):
         num_scripts=9,
         num_characters=5568,
         learn_sigma=True,
+        use_checkpoint=False,
     ):
         super().__init__()
         self.learn_sigma = learn_sigma
+        self.use_checkpoint = use_checkpoint
         self.in_channels = in_channels
         self.out_channels = in_channels * 2 if learn_sigma else in_channels
         self.patch_size = patch_size
@@ -495,10 +497,19 @@ class DiT_3Cond(nn.Module):
         c = t_emb + y_emb                        # (N, D)
 
         intermediate_feats = None
-        for i, block in enumerate(self.blocks):
-            x = block(x, c)
-            if return_intermediate_layer is not None and i == return_intermediate_layer:
-                intermediate_feats = x
+        if self.use_checkpoint:
+            for i, block in enumerate(self.blocks):
+                if return_intermediate_layer is not None and i == return_intermediate_layer:
+                    # Run this single block eagerly so its output can be captured for REPA.
+                    x = block(x, c)
+                    intermediate_feats = x
+                else:
+                    x = checkpoint(lambda *a: block(*a), x, c, use_reentrant=False)
+        else:
+            for i, block in enumerate(self.blocks):
+                x = block(x, c)
+                if return_intermediate_layer is not None and i == return_intermediate_layer:
+                    intermediate_feats = x
 
         x = self.final_layer(x, c)
         x = self.unpatchify(x)

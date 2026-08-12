@@ -18,7 +18,7 @@ import argparse
 import logging
 import json
 
-from models import DiT_2Cond_models
+from models import DiT_2Cond_models, DiT_3Cond_models
 from diffusion import create_diffusion
 from diffusers.models import AutoencoderKL
 from download import find_model
@@ -35,6 +35,10 @@ def _coerce(value, template):
         return int(value)
     if isinstance(template, float):
         return float(value)
+    if value is None:
+        return None
+    if isinstance(value, str) and value.lower() in ("none", "null", ""):
+        return None
     return str(value)
 
 
@@ -109,25 +113,45 @@ def main(args):
     assert args.image_size % 8 == 0
     latent_size = args.image_size // 8
     
-    model = DiT_2Cond_models[args.model](
-        input_size=latent_size,
-        num_calligraphers=args.num_calligraphers,
-        num_characters=args.num_characters,
-        use_checkpoint=args.use_checkpoint
-    )
+    cond_mode = args.cond_mode
+    if cond_mode == "3cond":
+        if args.model not in DiT_3Cond_models:
+            raise ValueError(f"cond_mode=3cond but model '{args.model}' is not a 3Cond model. "
+                             f"Use one of {list(DiT_3Cond_models.keys())}.")
+        model = DiT_3Cond_models[args.model](
+            input_size=latent_size,
+            num_calligraphers=args.num_calligraphers,
+            num_scripts=args.num_scripts,
+            num_characters=args.num_characters,
+            use_checkpoint=args.use_checkpoint
+        )
+        logger.info(f"Building 3-Cond model: {args.model} "
+                    f"(callig={args.num_calligraphers}, script={args.num_scripts}, char={args.num_characters})")
+    else:
+        if args.model not in DiT_2Cond_models:
+            raise ValueError(f"cond_mode=2cond but model '{args.model}' is not a 2Cond model. "
+                             f"Use one of {list(DiT_2Cond_models.keys())}.")
+        model = DiT_2Cond_models[args.model](
+            input_size=latent_size,
+            num_calligraphers=args.num_calligraphers,
+            num_characters=args.num_characters,
+            use_checkpoint=args.use_checkpoint
+        )
+        logger.info(f"Building 2-Cond model: {args.model} "
+                    f"(callig={args.num_calligraphers}, char={args.num_characters})")
 
     if args.pretrained is not None:
         ckpt_path = args.pretrained
         state_dict = find_model(ckpt_path)
         # Filter out ALL label-embedding / conditioning keys that don't match DiT_2Cond.
-        # The pretrained DiT-XL checkpoint has a single 'y_embedder'; DiT_2Cond has
-        # separate calligrapher/character embedders plus cond_fusion. Keep only the
+        # The pretrained DiT-XL checkpoint has a single 'y_embedder'; DiT_2Cond/3Cond have
+        # separate calligrapher/character(/script) embedders plus cond_fusion. Keep only the
         # transformer body (x_embedder / pos_embed / t_embedder / blocks / final_layer).
         state_dict = {k: v for k, v in state_dict.items()
                       if not k.startswith(("y_embedder", "y_callig", "y_script", "y_char", "cond_fusion"))}
         missing, unexpected = model.load_state_dict(state_dict, strict=False)
         logger.info(f"Loaded pre-trained weights from {ckpt_path}.")
-        logger.info(f"Missing keys (expected for 2-cond): {missing}")
+        logger.info(f"Missing keys (expected for 2/3-cond): {missing}")
         logger.info(f"Unexpected keys (filtered): {unexpected}")
 
     from lora import inject_lora, extract_lora_and_new_embedders, upgrade_lora_rank
@@ -142,11 +166,12 @@ def main(args):
         # Freeze everything first
         requires_grad(model, False)
 
-        # True LoRA: only the injected low-rank A/B and the newly-added 2-cond
+        # True LoRA: only the injected low-rank A/B and the newly-added condition
         # embedders + fusion are trainable. adaLN and final_layer keep their
         # pretrained weights frozen (LoRA adapts them via residual low-rank deltas).
         for name, param in model.named_parameters():
-            if 'lora_' in name or 'y_callig_embedder' in name or 'y_char_embedder' in name or 'cond_fusion' in name:
+            if ('lora_' in name or 'y_callig_embedder' in name or 'y_char_embedder' in name
+                    or 'cond_fusion' in name or 'y_script_embedder' in name):
                 param.requires_grad = True
 
         # Calculate trainable params (should be far smaller than full model now)
@@ -277,6 +302,8 @@ def main(args):
                 skel_gt = batch['skeleton'].to(device)
                 y_callig = batch['y_callig'].to(device)
                 y_char = batch['y_char'].to(device)
+                if cond_mode == "3cond":
+                    y_script = batch['y_script'].to(device)
 
                 # VAE encode stays in fp32 for numerical stability (VAE is sensitive to fp16).
                 with torch.no_grad(), torch.cuda.amp.autocast(enabled=False):
@@ -284,7 +311,10 @@ def main(args):
                     x_latent = x_latent.float()
 
                 t = torch.randint(0, diffusion.num_timesteps, (x.shape[0],), device=device)
-                model_kwargs = dict(y_callig=y_callig, y_char=y_char)
+                if cond_mode == "3cond":
+                    model_kwargs = dict(y_callig=y_callig, y_script=y_script, y_char=y_char)
+                else:
+                    model_kwargs = dict(y_callig=y_callig, y_char=y_char)
                 
                 # If REPA is enabled, request intermediate layer 8 features
                 if args.w_repa > 0:
@@ -432,7 +462,11 @@ if __name__ == "__main__":
     parser.add_argument("--data-dir", type=str, default="", help="Root dataset directory if CSV has relative paths")
     parser.add_argument("--results-dir", type=str, default="results")
     parser.add_argument("--pretrained", type=str, default=None, help="Path to pretrained DiT checkpoint")
-    parser.add_argument("--model", type=str, choices=list(DiT_2Cond_models.keys()), default="DiT-2Cond-XL/2")
+    parser.add_argument("--model", type=str, choices=list(DiT_2Cond_models.keys()) + list(DiT_3Cond_models.keys()), default="DiT-2Cond-XL/2")
+    parser.add_argument("--cond-mode", type=str, choices=["2cond", "3cond"], default="2cond",
+                        help="Conditioning mode: 2cond (callig+char) or 3cond (callig+script+char).")
+    parser.add_argument("--num-scripts", type=int, default=12,
+                        help="Number of script classes (only used in 3cond mode).")
     parser.add_argument("--use-checkpoint", type=_str_to_bool, default=True,
                         help="Enable gradient checkpointing on DiT blocks (cuts activation memory).")
     parser.add_argument("--image-size", type=int, choices=[256, 512], default=256)
