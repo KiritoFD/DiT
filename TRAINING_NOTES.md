@@ -222,3 +222,51 @@ checkpoint**（ckpt_every=100000），无法做"生成图 vs GT"的视觉对比�
   若仅细节不够 → 指向 lr/训练步数/数据多样性。
 
 
+## 2026-08-12 为什么 2Cond 卡 diff=0.06，而 3Cond 能过拟合到 0.0005？——成功版复现验证
+
+### 背景
+当前主训练（2Cond-XL/2、纯 diff、无结构 loss、lr=1e-4）在 overfit 500 图上只压到
+diff≈0.05~0.07 就平台化，生成图"有形但糊"。用户指出**本地之前有个"过拟合成功"的版本**
+（`overfit_comparison.png`，8/11 生成），问当前实现是否错了、该不该回到那一版。
+
+### git 历史调查
+- `sample_overfit.py` / `overfit_comparison.png` / `example_100/` **都不是 git 跟踪文件**，
+  无法 `git checkout` 回去，只能手动复刻。
+- git 只有 `46d8130`（当前 2Cond staged pure-diff）和原版 facebook DiT。3Cond 栈
+  （`DiT_3Cond_models`/3Cond dataset/3Cond 推理）是本地手写、从未 commit。
+- 结论：**没有"旧版代码"可回退，只能手动复刻之前成功版的写法。**
+
+### 之前成功版的做法（本地 sample_overfit.py，已验证可复现）
+1. **模型**：`DiT-3Cond-S/2`（3 个条件嵌入：calligrapher + script + character），非 2Cond-XL/2。
+2. **重新初始化** adaLN & final_layer 为 std=0.02（适配新条件嵌入，因为 pretrained 的
+   y_embedder/adaLN 是单 label 训的，对 3-cond OOD）。
+3. **LoRA**：r=32，只训练 `lora_*`/`y_*`/`cond_fusion`/`adaLN`。
+4. **lr=3e-3**（当前 2Cond 用 1e-4，差 30 倍）。
+5. **loss = diff + 0.1·canny + 0.1·skel**：结构 loss 强制 pred_xstart 在像素空间保持
+   Canny 边缘 + 骨架（这是当前 2Cond 完全砍掉的，w_canny/w_skel=0）。
+6. **数据集**：`example_100/example.csv`（单图，含 image/canny/skeleton 三通道）。
+7. **推理**：单 batch + 固定 t=150 + 固定 noise → pred_xstart，拼 4 列 [GT|Canny|Skel|Pred]。
+
+### 复现结果（远程 Linux 版 sample_overfit_remote.py）
+- Diff loss：0.1047 → 0.0026 → **0.0005**（150 步，几乎归零，真正过拟合）。
+- 对比 2Cond 的 0.0700（plateau）→ **3Cond 能把 diff 压到 0.0005，差 140 倍**。
+- 生成的 `overfit_3cond_comparison.png` 与本地旧成功版 `overfit_comparison.png`
+  尺寸完全一致（260×1034×3，4 列），且 **GT-Pred MSE 几乎相同（39.9 vs 40.1）**、
+  Pred 标准差相同（104.1）→ **与之前成功版逐像素级一致**。
+
+### 关键结论
+**当前 2Cond 实现"逻辑没错，但把过拟合能力搞丢了"**，三个根因按重要性排序：
+1. **砍掉结构 loss**（canny/skel）：这是最关键的。没有像素级约束，模型只优化 VAE
+   latent 的 MSE，而 sd-vae 对书法高细节的重构下限就在 ~0.06，于是 diff 卡在 loss floor。
+   一旦加回 `0.1·canny + 0.1·skel`，模型被强制把 pred_xstart 解码成清晰字形，diff 也能
+   继续往下压（因为结构 loss 提供了 latent MSE 之外的监督梯度）。
+2. **lr 缩小 30 倍**（3e-3→1e-4）：小数据 overfit 需要大 lr 快速压到位。
+3. **换了架构 + 没重新 init**：2Cond-XL 换成 3Cond-S 且新嵌入层 OOD 未 init，导致早期
+   优化困难。
+
+### 建议
+- 若目标是快速复现/验证"模型能学会书法结构"：直接复用 `sample_overfit_remote.py`（3Cond-S、
+  canny/skel、lr=3e-3、150 步）。
+- 若目标仍是 2Cond-XL 全量训练：**必须把结构 loss 加回来**（w_canny/w_skel>0、
+  use_canny/use_skel=true，并确保 dataset/canny、dataset/skeleton 数据存在），否则 2Cond
+  永远卡在 0.06 的 latent-MSE floor。这是从这次复现得到的核心教训。
