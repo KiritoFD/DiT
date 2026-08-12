@@ -19,6 +19,7 @@ from diffusion import create_diffusion
 from diffusers.models import AutoencoderKL
 from tqdm import tqdm
 import os
+import sys
 from PIL import Image
 import numpy as np
 import math
@@ -51,7 +52,8 @@ def main(args):
     torch.set_grad_enabled(False)
 
     # Setup DDP:
-    dist.init_process_group("nccl")
+    backend = "nccl" if (dist.is_nccl_available() and sys.platform != "win32") else "gloo"
+    dist.init_process_group(backend)
     rank = dist.get_rank()
     device = rank % torch.cuda.device_count()
     seed = args.global_seed * dist.get_world_size() + rank

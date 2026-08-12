@@ -13,6 +13,7 @@ import torch
 import torch.nn as nn
 import numpy as np
 import math
+from torch.utils.checkpoint import checkpoint
 from timm.models.vision_transformer import PatchEmbed, Attention, Mlp
 
 
@@ -252,18 +253,22 @@ class DiT(nn.Module):
         Forward pass of DiT, but also batches the unconditional forward pass for classifier-free guidance.
         """
         # https://github.com/openai/glide-text2im/blob/main/notebooks/text2im.ipynb
+        # Support single-sample batches: duplicate the sample so CFG has both halves.
+        original_bs = x.shape[0]
+        if original_bs == 1:
+            x = torch.cat([x, x], dim=0)
+            t = torch.cat([t, t], dim=0)
+            y = torch.cat([y, y], dim=0)
         half = x[: len(x) // 2]
         combined = torch.cat([half, half], dim=0)
         model_out = self.forward(combined, t, y)
-        # For exact reproducibility reasons, we apply classifier-free guidance on only
-        # three channels by default. The standard approach to cfg applies it to all channels.
-        # This can be done by uncommenting the following line and commenting-out the line following that.
-        # eps, rest = model_out[:, :self.in_channels], model_out[:, self.in_channels:]
-        eps, rest = model_out[:, :3], model_out[:, 3:]
+        # Apply classifier-free guidance on all learned channels (eps subspace).
+        eps, rest = model_out[:, :self.in_channels], model_out[:, self.in_channels:]
         cond_eps, uncond_eps = torch.split(eps, len(eps) // 2, dim=0)
         half_eps = uncond_eps + cfg_scale * (cond_eps - uncond_eps)
         eps = torch.cat([half_eps, half_eps], dim=0)
-        return torch.cat([eps, rest], dim=1)
+        out = torch.cat([eps, rest], dim=1)
+        return out[:original_bs]
 
 
 #################################################################################
@@ -368,3 +373,364 @@ DiT_models = {
     'DiT-B/2':  DiT_B_2,   'DiT-B/4':  DiT_B_4,   'DiT-B/8':  DiT_B_8,
     'DiT-S/2':  DiT_S_2,   'DiT-S/4':  DiT_S_4,   'DiT-S/8':  DiT_S_8,
 }
+
+
+#################################################################################
+#                  3-Condition Guided DiT Model (DiT_3Cond)                     #
+#################################################################################
+
+class DiT_3Cond(nn.Module):
+    """
+    Diffusion model with Transformer backbone guided by 3 conditions:
+    1. Calligrapher (y_callig)
+    2. Script Style (y_script)
+    3. Character Content (y_char)
+    Also supports intermediate feature extraction for REPA (Representation Alignment) loss.
+    """
+    def __init__(
+        self,
+        input_size=32,
+        patch_size=2,
+        in_channels=4,
+        hidden_size=384,
+        depth=12,
+        num_heads=6,
+        mlp_ratio=4.0,
+        class_dropout_prob=0.1,
+        num_calligraphers=142,
+        num_scripts=9,
+        num_characters=5568,
+        learn_sigma=True,
+    ):
+        super().__init__()
+        self.learn_sigma = learn_sigma
+        self.in_channels = in_channels
+        self.out_channels = in_channels * 2 if learn_sigma else in_channels
+        self.patch_size = patch_size
+        self.num_heads = num_heads
+
+        self.x_embedder = PatchEmbed(input_size, patch_size, in_channels, hidden_size, bias=True)
+        self.t_embedder = TimestepEmbedder(hidden_size)
+
+        # 3 Label Embedders
+        self.y_callig_embedder = LabelEmbedder(num_calligraphers, hidden_size, class_dropout_prob)
+        self.y_script_embedder = LabelEmbedder(num_scripts, hidden_size, class_dropout_prob)
+        self.y_char_embedder = LabelEmbedder(num_characters, hidden_size, class_dropout_prob)
+
+        # Conditioning Fusion Projection
+        self.cond_fusion = nn.Sequential(
+            nn.Linear(hidden_size * 3, hidden_size),
+            nn.SiLU(),
+            nn.Linear(hidden_size, hidden_size)
+        )
+
+        num_patches = self.x_embedder.num_patches
+        self.pos_embed = nn.Parameter(torch.zeros(1, num_patches, hidden_size), requires_grad=False)
+
+        self.blocks = nn.ModuleList([
+            DiTBlock(hidden_size, num_heads, mlp_ratio=mlp_ratio) for _ in range(depth)
+        ])
+        self.final_layer = FinalLayer(hidden_size, patch_size, self.out_channels)
+        self.initialize_weights()
+
+    def initialize_weights(self):
+        def _basic_init(module):
+            if isinstance(module, nn.Linear):
+                torch.nn.init.xavier_uniform_(module.weight)
+                if module.bias is not None:
+                    nn.init.constant_(module.bias, 0)
+        self.apply(_basic_init)
+
+        pos_embed = get_2d_sincos_pos_embed(self.pos_embed.shape[-1], int(self.x_embedder.num_patches ** 0.5))
+        self.pos_embed.data.copy_(torch.from_numpy(pos_embed).float().unsqueeze(0))
+
+        w = self.x_embedder.proj.weight.data
+        nn.init.xavier_uniform_(w.view([w.shape[0], -1]))
+        nn.init.constant_(self.x_embedder.proj.bias, 0)
+
+        nn.init.normal_(self.y_callig_embedder.embedding_table.weight, std=0.02)
+        nn.init.normal_(self.y_script_embedder.embedding_table.weight, std=0.02)
+        nn.init.normal_(self.y_char_embedder.embedding_table.weight, std=0.02)
+
+        nn.init.normal_(self.t_embedder.mlp[0].weight, std=0.02)
+        nn.init.normal_(self.t_embedder.mlp[2].weight, std=0.02)
+
+        for block in self.blocks:
+            nn.init.constant_(block.adaLN_modulation[-1].weight, 0)
+            nn.init.constant_(block.adaLN_modulation[-1].bias, 0)
+
+        nn.init.constant_(self.final_layer.adaLN_modulation[-1].weight, 0)
+        nn.init.constant_(self.final_layer.adaLN_modulation[-1].bias, 0)
+        nn.init.constant_(self.final_layer.linear.weight, 0)
+        nn.init.constant_(self.final_layer.linear.bias, 0)
+
+    def unpatchify(self, x):
+        c = self.out_channels
+        p = self.x_embedder.patch_size[0]
+        h = w = int(x.shape[1] ** 0.5)
+        assert h * w == x.shape[1]
+
+        x = x.reshape(shape=(x.shape[0], h, w, p, p, c))
+        x = torch.einsum('nhwpqc->nchpwq', x)
+        imgs = x.reshape(shape=(x.shape[0], c, h * p, h * p))
+        return imgs
+
+    def forward(self, x, t, y_callig, y_script, y_char, return_intermediate_layer=None):
+        """
+        Forward pass of DiT_3Cond.
+        x: (N, C, H, W) noisy latents
+        t: (N,) timesteps
+        y_callig, y_script, y_char: (N,) condition IDs
+        return_intermediate_layer: int index (e.g. 8) to return intermediate patch features for REPA
+        """
+        x = self.x_embedder(x) + self.pos_embed  # (N, T, D)
+        t_emb = self.t_embedder(t)               # (N, D)
+
+        e_callig = self.y_callig_embedder(y_callig, self.training)
+        e_script = self.y_script_embedder(y_script, self.training)
+        e_char = self.y_char_embedder(y_char, self.training)
+
+        y_concat = torch.cat([e_callig, e_script, e_char], dim=-1)
+        y_emb = self.cond_fusion(y_concat)
+        c = t_emb + y_emb                        # (N, D)
+
+        intermediate_feats = None
+        for i, block in enumerate(self.blocks):
+            x = block(x, c)
+            if return_intermediate_layer is not None and i == return_intermediate_layer:
+                intermediate_feats = x
+
+        x = self.final_layer(x, c)
+        x = self.unpatchify(x)
+
+        if return_intermediate_layer is not None:
+            return x, intermediate_feats
+        return x
+
+    def forward_with_cfg(self, x, t, y_callig, y_script, y_char, cfg_scale=4.0):
+        """
+        Forward pass with Classifier-Free Guidance (CFG).
+        """
+        # Support single-sample batches: duplicate inputs so CFG has both halves.
+        original_bs = x.shape[0]
+        if original_bs == 1:
+            x = torch.cat([x, x], dim=0)
+            t = torch.cat([t, t], dim=0)
+            y_callig = torch.cat([y_callig, y_callig], dim=0)
+            y_script = torch.cat([y_script, y_script], dim=0)
+            y_char = torch.cat([y_char, y_char], dim=0)
+
+        half = x[: len(x) // 2]
+        combined = torch.cat([half, half], dim=0)
+
+        # Half conditional, half unconditional (drop IDs)
+        uncond_callig = torch.full_like(y_callig, self.y_callig_embedder.num_classes)
+        uncond_script = torch.full_like(y_script, self.y_script_embedder.num_classes)
+        uncond_char = torch.full_like(y_char, self.y_char_embedder.num_classes)
+
+        y_callig_combined = torch.cat([y_callig[:len(half)], uncond_callig[:len(half)]], dim=0)
+        y_script_combined = torch.cat([y_script[:len(half)], uncond_script[:len(half)]], dim=0)
+        y_char_combined = torch.cat([y_char[:len(half)], uncond_char[:len(half)]], dim=0)
+
+        model_out = self.forward(combined, t, y_callig_combined, y_script_combined, y_char_combined)
+        # Apply CFG on all learned channels (eps subspace), not a hard-coded prefix.
+        eps, rest = model_out[:, :self.in_channels], model_out[:, self.in_channels:]
+        cond_eps, uncond_eps = torch.split(eps, len(eps) // 2, dim=0)
+        half_eps = uncond_eps + cfg_scale * (cond_eps - uncond_eps)
+        eps = torch.cat([half_eps, half_eps], dim=0)
+        out = torch.cat([eps, rest], dim=1)
+        return out[:original_bs]
+
+
+def DiT_3Cond_S_2(**kwargs):
+    return DiT_3Cond(depth=12, hidden_size=384, patch_size=2, num_heads=6, **kwargs)
+
+def DiT_3Cond_B_2(**kwargs):
+    return DiT_3Cond(depth=12, hidden_size=768, patch_size=2, num_heads=12, **kwargs)
+
+def DiT_3Cond_L_2(**kwargs):
+    return DiT_3Cond(depth=24, hidden_size=1024, patch_size=2, num_heads=16, **kwargs)
+
+
+DiT_3Cond_models = {
+    'DiT-3Cond-S/2': DiT_3Cond_S_2,
+    'DiT-3Cond-B/2': DiT_3Cond_B_2,
+    'DiT-3Cond-L/2': DiT_3Cond_L_2,
+}
+
+
+#################################################################################
+#                2-Condition DiT (Calligrapher + Character)                     #
+#################################################################################
+
+class DiT_2Cond(nn.Module):
+    """
+    Diffusion model with a Transformer backbone conditioned on 2 discrete labels:
+      1. Calligrapher (y_callig)  -> style / calligrapher identity
+      2. Character   (y_char)     -> the text content (treated as a discrete class)
+    Body dims are sized like DiT-XL so that DiT-XL-2-256x256.pt main weights load.
+    """
+
+    def __init__(
+        self,
+        input_size=32,
+        patch_size=2,
+        in_channels=4,
+        hidden_size=1152,
+        depth=28,
+        num_heads=16,
+        mlp_ratio=4.0,
+        class_dropout_prob=0.1,
+        num_calligraphers=1000,
+        num_characters=1000,
+        learn_sigma=True,
+        use_checkpoint=True,
+    ):
+        super().__init__()
+        self.learn_sigma = learn_sigma
+        self.use_checkpoint = use_checkpoint
+        self.in_channels = in_channels
+        self.out_channels = in_channels * 2 if learn_sigma else in_channels
+        self.patch_size = patch_size
+        self.num_heads = num_heads
+
+        self.x_embedder = PatchEmbed(input_size, patch_size, in_channels, hidden_size, bias=True)
+        self.t_embedder = TimestepEmbedder(hidden_size)
+
+        self.y_callig_embedder = LabelEmbedder(num_calligraphers, hidden_size, class_dropout_prob)
+        self.y_char_embedder = LabelEmbedder(num_characters, hidden_size, class_dropout_prob)
+
+        self.cond_fusion = nn.Sequential(
+            nn.Linear(hidden_size * 2, hidden_size),
+            nn.SiLU(),
+            nn.Linear(hidden_size, hidden_size)
+        )
+
+        num_patches = self.x_embedder.num_patches
+        self.pos_embed = nn.Parameter(torch.zeros(1, num_patches, hidden_size), requires_grad=False)
+
+        self.blocks = nn.ModuleList([
+            DiTBlock(hidden_size, num_heads, mlp_ratio=mlp_ratio) for _ in range(depth)
+        ])
+        self.final_layer = FinalLayer(hidden_size, patch_size, self.out_channels)
+        self.initialize_weights()
+
+    def initialize_weights(self):
+        def _basic_init(module):
+            if isinstance(module, nn.Linear):
+                torch.nn.init.xavier_uniform_(module.weight)
+                if module.bias is not None:
+                    nn.init.constant_(module.bias, 0)
+        self.apply(_basic_init)
+
+        pos_embed = get_2d_sincos_pos_embed(self.pos_embed.shape[-1], int(self.x_embedder.num_patches ** 0.5))
+        self.pos_embed.data.copy_(torch.from_numpy(pos_embed).float().unsqueeze(0))
+
+        w = self.x_embedder.proj.weight.data
+        nn.init.xavier_uniform_(w.view([w.shape[0], -1]))
+        nn.init.constant_(self.x_embedder.proj.bias, 0)
+
+        nn.init.normal_(self.y_callig_embedder.embedding_table.weight, std=0.02)
+        nn.init.normal_(self.y_char_embedder.embedding_table.weight, std=0.02)
+
+        nn.init.normal_(self.t_embedder.mlp[0].weight, std=0.02)
+        nn.init.normal_(self.t_embedder.mlp[2].weight, std=0.02)
+
+        for block in self.blocks:
+            nn.init.constant_(block.adaLN_modulation[-1].weight, 0)
+            nn.init.constant_(block.adaLN_modulation[-1].bias, 0)
+
+        nn.init.constant_(self.final_layer.adaLN_modulation[-1].weight, 0)
+        nn.init.constant_(self.final_layer.adaLN_modulation[-1].bias, 0)
+        nn.init.constant_(self.final_layer.linear.weight, 0)
+        nn.init.constant_(self.final_layer.linear.bias, 0)
+
+    def unpatchify(self, x):
+        c = self.out_channels
+        p = self.x_embedder.patch_size[0]
+        h = w = int(x.shape[1] ** 0.5)
+        assert h * w == x.shape[1]
+        x = x.reshape(shape=(x.shape[0], h, w, p, p, c))
+        x = torch.einsum('nhwpqc->nchpwq', x)
+        imgs = x.reshape(shape=(x.shape[0], c, h * p, h * p))
+        return imgs
+
+    def forward(self, x, t, y_callig, y_char, return_intermediate_layer=None):
+        """
+        Forward pass of DiT_2Cond.
+        x: (N, C, H, W) noisy latents
+        t: (N,) timesteps
+        y_callig, y_char: (N,) condition IDs
+        return_intermediate_layer: int block index (e.g. 8) whose patch features to return for REPA.
+                                   When set, returns (output, intermediate_feats) as a tuple.
+        """
+        x = self.x_embedder(x) + self.pos_embed  # (N, T, D)
+        t_emb = self.t_embedder(t)               # (N, D)
+        e_callig = self.y_callig_embedder(y_callig, self.training)
+        e_char = self.y_char_embedder(y_char, self.training)
+        y_concat = torch.cat([e_callig, e_char], dim=-1)
+        y_emb = self.cond_fusion(y_concat)
+        c = t_emb + y_emb                        # (N, D)
+
+        intermediate_feats = None
+        if self.use_checkpoint:
+            for i, block in enumerate(self.blocks):
+                if return_intermediate_layer is not None and i == return_intermediate_layer:
+                    # Run this single block eagerly so its output can be captured for REPA.
+                    x = block(x, c)
+                    intermediate_feats = x
+                else:
+                    x = checkpoint(lambda *a: block(*a), x, c, use_reentrant=False)
+        else:
+            for i, block in enumerate(self.blocks):
+                x = block(x, c)
+                if return_intermediate_layer is not None and i == return_intermediate_layer:
+                    intermediate_feats = x
+
+        x = self.final_layer(x, c)
+        x = self.unpatchify(x)
+        if return_intermediate_layer is not None:
+            return x, intermediate_feats
+        return x
+
+    def forward_with_cfg(self, x, t, y_callig, y_char, cfg_scale=4.0):
+        # Support single-sample batches: duplicate inputs so CFG has both halves.
+        original_bs = x.shape[0]
+        if original_bs == 1:
+            x = torch.cat([x, x], dim=0)
+            t = torch.cat([t, t], dim=0)
+            y_callig = torch.cat([y_callig, y_callig], dim=0)
+            y_char = torch.cat([y_char, y_char], dim=0)
+
+        half = x[: len(x) // 2]
+        combined = torch.cat([half, half], dim=0)
+        uncond_callig = torch.full_like(y_callig, self.y_callig_embedder.num_classes)
+        uncond_char = torch.full_like(y_char, self.y_char_embedder.num_classes)
+        y_callig_combined = torch.cat([y_callig[:len(half)], uncond_callig[:len(half)]], dim=0)
+        y_char_combined = torch.cat([y_char[:len(half)], uncond_char[:len(half)]], dim=0)
+        model_out = self.forward(combined, t, y_callig_combined, y_char_combined)
+        # Apply CFG on all learned channels (eps subspace), not a hard-coded prefix.
+        eps, rest = model_out[:, :self.in_channels], model_out[:, self.in_channels:]
+        cond_eps, uncond_eps = torch.split(eps, len(eps) // 2, dim=0)
+        half_eps = uncond_eps + cfg_scale * (cond_eps - uncond_eps)
+        eps = torch.cat([half_eps, half_eps], dim=0)
+        out = torch.cat([eps, rest], dim=1)
+        return out[:original_bs]
+
+
+def DiT_2Cond_S_2(**kwargs):
+    return DiT_2Cond(depth=12, hidden_size=384, patch_size=2, num_heads=6, **kwargs)
+
+def DiT_2Cond_B_2(**kwargs):
+    return DiT_2Cond(depth=12, hidden_size=768, patch_size=2, num_heads=12, **kwargs)
+
+def DiT_2Cond_XL_2(**kwargs):
+    return DiT_2Cond(depth=28, hidden_size=1152, patch_size=2, num_heads=16, **kwargs)
+
+
+DiT_2Cond_models = {
+    'DiT-2Cond-S/2': DiT_2Cond_S_2,
+    'DiT-2Cond-B/2': DiT_2Cond_B_2,
+    'DiT-2Cond-XL/2': DiT_2Cond_XL_2,
+}
+
