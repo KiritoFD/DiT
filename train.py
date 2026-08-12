@@ -130,10 +130,14 @@ def main(args):
         logger.info(f"Missing keys (expected for 2-cond): {missing}")
         logger.info(f"Unexpected keys (filtered): {unexpected}")
 
-    from lora import inject_lora, extract_lora_and_new_embedders
+    from lora import inject_lora, extract_lora_and_new_embedders, upgrade_lora_rank
     if getattr(args, 'use_lora', True):
-        logger.info(f"Injecting LoRA (r={getattr(args, 'lora_r', 16)}) into DiT blocks...")
-        model = inject_lora(model, r=getattr(args, 'lora_r', 16))
+        _r = getattr(args, 'lora_r', 16)
+        _alpha = getattr(args, 'lora_alpha', None)
+        if _alpha is None:
+            _alpha = _r  # default scaling = 1
+        logger.info(f"Injecting LoRA (r={_r}, alpha={_alpha}, scaling={_alpha/_r:.2f}) into DiT blocks...")
+        model = inject_lora(model, r=_r, lora_alpha=_alpha)
         
         # Freeze everything first
         requires_grad(model, False)
@@ -150,6 +154,20 @@ def main(args):
         frozen_params = sum(p.numel() for p in model.parameters() if not p.requires_grad)
         logger.info(f"LoRA Trainable Parameters: {trainable_params:,}")
         logger.info(f"Frozen Parameters: {frozen_params:,} (trainable ratio: {trainable_params/(trainable_params+frozen_params)*100:.2f}%)")
+
+        # Optional: upgrade LoRA rank from a previous run's checkpoint, preserving
+        # the learned low-rank deltas. See lora.upgrade_lora_rank for the strategy.
+        if getattr(args, 'resume_lora', None):
+            import torch as _torch
+            _sd = _torch.load(args.resume_lora, map_location="cpu")
+            _sd = _sd.get("state_dict", _sd) if isinstance(_sd, dict) else _sd
+            old_r = getattr(args, 'old_lora_r', 16)
+            model = upgrade_lora_rank(model, _r, _alpha, _sd, old_r)
+            # recompute trainable counts after rebuild
+            trainable_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
+            frozen_params = sum(p.numel() for p in model.parameters() if not p.requires_grad)
+            logger.info(f"[resume_lora] Upgraded from {args.resume_lora} (old_r={old_r}). "
+                        f"Trainable now: {trainable_params:,} ({trainable_params/(trainable_params+frozen_params)*100:.2f}%)")
 
     ema = deepcopy(model).to(device)
     requires_grad(ema, False)
@@ -428,6 +446,12 @@ if __name__ == "__main__":
     parser.add_argument("--vae-path", type=str, default="pretrained_models/sd-vae-ft-ema", help="Local path to VAE weights")
     parser.add_argument("--use-lora", type=_str_to_bool, default=True, help="Use LoRA for fine-tuning DiT blocks")
     parser.add_argument("--lora-r", type=int, default=16, help="LoRA rank")
+    parser.add_argument("--lora-alpha", type=int, default=None,
+                        help="LoRA alpha (scaling = alpha/r). Default: same as r (scaling=1).")
+    parser.add_argument("--resume-lora", type=str, default=None,
+                        help="Path to a previous LoRA checkpoint to upgrade from (rank up, preserving learned deltas).")
+    parser.add_argument("--old-lora-r", type=int, default=16,
+                        help="Rank of the LoRA checkpoint given by --resume-lora.")
     parser.add_argument("--num-workers", type=int, default=4)
     parser.add_argument("--log-every", type=int, default=50)
     parser.add_argument("--ckpt-every", type=int, default=10_000)
