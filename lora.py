@@ -65,6 +65,114 @@ def extract_lora_and_new_embedders(model):
     return trainable_dict
 
 
+def extract_full_inference(model):
+    """
+    Extracts a self-contained "inference delta" that, together with the official
+    DiT-XL-2-256x256.pt pretrained body, fully reconstructs the trained model.
+
+    Includes:
+      - lora_A / lora_B (low-rank deltas)
+      - y_callig / y_script / y_char embedders + cond_fusion (new condition head)
+      - blocks.*.adaLN_modulation and final_layer (reset_cond_head made these
+        diverge from the pretrained weights; they are frozen during training but
+        MUST be captured, otherwise the model cannot be reconstructed)
+
+    Rationale: the pretrained body (x_embedder / pos_embed / t_embedder / blocks'
+    qkv/proj/mlp original weights) is frozen and identical to the pretrained
+    checkpoint, so it can be loaded from disk and need not be stored per-ckpt.
+    """
+    state_dict = model.state_dict()
+    keys = []
+    for k in state_dict:
+        if ('lora_' in k or k.startswith('y_') or k.startswith('cond_fusion')
+                or 'adaLN' in k or 'final_layer' in k):
+            keys.append(k)
+    return {k: state_dict[k] for k in keys}
+
+
+def build_model_from_ckpt(ckpt_path, pretrained_path=None, r=32, lora_alpha=32,
+                          num_calligraphers=2021, num_scripts=12, num_characters=7765,
+                          device="cpu", use_checkpoint=False, reset_cond_head=False):
+    """
+    Single, unified entry point for loading a trained model from a checkpoint.
+
+    The checkpoint stores only a `delta` (the "changed" part: LoRA + condition head +
+    adaLN/final_layer). This function reconstructs the full model in one call by:
+      1. constructing the DiT-3Cond base model
+      2. loading the official pretrained body (frozen weights shared across all ckpts)
+      3. injecting LoRA
+      4. loading the delta
+
+    No caller-side extraction/filtering is needed — the pretrained body is NOT stored
+    per-ckpt, and the delta loads directly.
+
+    Returns the model (on `device`, in eval mode).
+    """
+    import torch as _torch
+    import os as _os
+
+    # Local import to avoid a hard circular dependency at module load time.
+    from models import DiT_3Cond_XL_2
+
+    model = DiT_3Cond_XL_2(
+        num_calligraphers=num_calligraphers,
+        num_scripts=num_scripts,
+        num_characters=num_characters,
+        use_checkpoint=use_checkpoint,
+    )
+
+    # 1) official pretrained body (frozen, shared, NOT stored per-ckpt)
+    if pretrained_path is None:
+        pretrained_path = "pretrained_models/DiT-XL-2-256x256.pt"
+    if pretrained_path and _os.path.exists(pretrained_path):
+        pre = _torch.load(pretrained_path, map_location="cpu", weights_only=False)
+        if "model" in pre:
+            pre = pre["model"]
+        pre = {k: v for k, v in pre.items()
+               if not k.startswith(("y_embedder", "y_callig", "y_script", "y_char", "cond_fusion"))}
+        model.load_state_dict(pre, strict=False)
+
+    # 2) inject LoRA (idempotent)
+    inject_lora(model, r=r, lora_alpha=lora_alpha)
+
+    # 3) load delta (the changed part)
+    ckpt = _torch.load(ckpt_path, map_location="cpu", weights_only=False)
+    delta = ckpt.get("delta", ckpt.get("model", ckpt))
+    missing, unexpected = model.load_state_dict(delta, strict=False)
+
+    # 4) optional re-init of condition head (only for fresh/legacy ckpts lacking adaLN)
+    if reset_cond_head:
+        import torch.nn as _nn
+        for _b in model.blocks:
+            _nn.init.normal_(_b.adaLN_modulation[-1].weight, std=0.02)
+            _nn.init.normal_(_b.adaLN_modulation[-1].bias, std=0.02)
+        _nn.init.normal_(model.final_layer.adaLN_modulation[-1].weight, std=0.02)
+        _nn.init.normal_(model.final_layer.adaLN_modulation[-1].bias, std=0.02)
+        _nn.init.normal_(model.final_layer.linear.weight, std=0.02)
+
+    return model.to(device).eval()
+
+
+# Backwards-compatible alias.
+def load_full_inference(model, delta, pretrained_path=None, strict=True):
+    """Legacy alias. Prefer build_model_from_ckpt for new code."""
+    import torch as _torch
+    import os as _os
+
+    if pretrained_path is None:
+        pretrained_path = "pretrained_models/DiT-XL-2-256x256.pt"
+    if pretrained_path and _os.path.exists(pretrained_path):
+        pre = _torch.load(pretrained_path, map_location="cpu", weights_only=False)
+        if "model" in pre:
+            pre = pre["model"]
+        pre = {k: v for k, v in pre.items()
+               if not k.startswith(("y_embedder", "y_callig", "y_script", "y_char", "cond_fusion"))}
+        model.load_state_dict(pre, strict=False)
+
+    inject_lora(model, r=32, lora_alpha=32)
+    return model.load_state_dict(delta, strict=strict)
+
+
 def upgrade_lora_rank(model, new_r, new_alpha, old_sd, old_r, device=None):
     """
     Upgrade an already-injected LoRA model from old_r to new_r while preserving the

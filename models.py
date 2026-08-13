@@ -562,11 +562,17 @@ def DiT_3Cond_B_2(**kwargs):
 def DiT_3Cond_L_2(**kwargs):
     return DiT_3Cond(depth=24, hidden_size=1024, patch_size=2, num_heads=16, **kwargs)
 
+# XL 尺寸：body 维度与官方 DiT-XL-2-256x256.pt 完全一致 (depth=28, hidden=1152, heads=16)，
+# 从而能用官方预训练权重加载 transformer body，再在其上做 LoRA 微调。
+def DiT_3Cond_XL_2(**kwargs):
+    return DiT_3Cond(depth=28, hidden_size=1152, patch_size=2, num_heads=16, **kwargs)
+
 
 DiT_3Cond_models = {
     'DiT-3Cond-S/2': DiT_3Cond_S_2,
     'DiT-3Cond-B/2': DiT_3Cond_B_2,
     'DiT-3Cond-L/2': DiT_3Cond_L_2,
+    'DiT-3Cond-XL/2': DiT_3Cond_XL_2,
 }
 
 

@@ -303,3 +303,71 @@ loss + lr=3e-3）扩展到**全量 298,281 张**训练集。
   Diff~1.01（全量每步不同图，loss 缓慢下降是预期的）。
 - 第 1 个 ckpt 在 step 2500（~26 分钟后）。automation 每小时自动拉最新 ckpt 评估。
 
+## 2026-08-13 切换到 DiT-3Cond-XL/2 + 官方预训练微调（关键修正）
+
+### 决策：必须吃上预训练
+- 官方 DiT 只发布 XL/B 预训练权重（`dl.fbaipublicfiles.com/DiT/models/` 对 S/L 返回 403，
+  即不存在）；最小可用的是 `DiT-XL-2-256x256.pt`（本地已有）。
+- 之前 S 版 `pretrained: null` 是**从头随机初始化**，diff 卡 1.01 不动（无好起点）。
+- 方案：加 `DiT_3Cond_XL_2`（depth=28, hidden=1152, heads=16，body 尺寸与官方 XL 完全一致），
+  从而能 100% 继承官方 transformer body，再 LoRA 微调。
+
+### 代码改动
+- `models.py`：新增 `DiT_3Cond_XL_2` 并注册进 `DiT_3Cond_models`。
+- `train.py`：加载预训练后新增 `--reset-cond-head`（默认 True），把 adaLN/final_layer 重置为
+  std=0.02（适配新的 3-cond 条件头；预训练 adaLN 是 ImageNet 单 label 训的，对 3-cond OOD）。
+- `train_full_3cond.json`：`model=DiT-3Cond-XL/2`、`pretrained=pretrained_models/DiT-XL-2-256x256.pt`、
+  **`lr=1e-4`**、batch 8→4。
+- `verify_3cond_xl.py`：本地验证 `body missing=0`，官方 body 完整加载，仅条件模块缺失。
+
+### 排查出的两个坑（按先后）
+1. **架构不匹配**：原 3Cond 只有 S/B/L，没有 XL 尺寸，填 XL 预训练也 load 不上（strict=False
+   静默丢弃）→ 必须先加 `DiT_3Cond_XL_2`。
+2. **lr 太大 → 间歇 NaN（根因）**：lr=3e-3 时本地实测梯度范数高达 **13120**
+   （`blocks.0.adaLN_modulation.1.bias`），单步更新量 ≈39（参数自身 ~0.02，被打飞数百倍）。
+   3e-3 是 500 图 overfit 的激进值，对全量+预训练 XL 太大。
+   - 第一次（仅重置 adaLN，lr 仍 3e-3）：step47 起间歇 NaN。
+   - **降 lr=1e-4 后：skips=0，无任何 NaN，diff 从 1.41 一路降到 0.73（step580）持续健康下降。**
+
+### 结论
+- **利用预训练的方式是对的**（继承 body + 重置条件头 + LoRA 微调），纯前向 fp32 任意输入
+  都 finite，证明结构无问题。
+- **真正的问题是 lr=3e-3 过大**。全量 + 预训练微调应回到标准 lr（1e-4 附近），并配合已有
+  的 `clip_grad_norm(max_norm=1.0)`。
+
+---
+
+## 根因补充：adaLN/final_layer 被错误 frozen（导致输出糊 + ckpt 无法精简）
+
+### 现象
+- 005 run（正常无 NaN）出图仍是「糊/噪点感」，VAE decode 结果质量差。
+- 完整 ckpt 3.2GB，且「用官方预训练 body + 小增量」无法复现模型（必须存完整 ema）。
+
+### 根因
+`train.py` 的 trainable 判断（`requires_grad`）只解冻了 `lora_*`/`y_*`/`cond_fusion`，
+**漏掉了 `adaLN`/`final_layer`**。而 `--reset-cond-head` 会把这些层重置为 `std=0.02`
+的随机值。结果：
+
+1. adaLN/final_layer = **随机值 + 永不训练**（frozen）。DiT 的核心调制层处于随机状态，
+   模型在随机调制下只学 LoRA 残差 → 输出糊。
+2. 每份 ckpt 的 adaLN 随机初始值都不同 → 无法用「官方预训练 + 小增量」复现，必须存完整
+   adaLN（约 891MB）。
+
+> 注：TRAINING_NOTES 第 243 行原始设计明确写「只训练 `lora_*`/`y_*`/`cond_fusion`/`adaLN`」，
+> 第 326 行也记录过 adaLN 有梯度更新量——说明 adaLN 本应训练，是 train.py 实现时漏了。
+
+### 修复（已改）
+- `train.py`：新增 `--train-cond-head`（默认 **True**），把 `adaLN`/`final_layer` 纳入 trainable。
+  `--train-cond-head False` 保留旧行为（frozen）。
+- `lora.py`：新增 `extract_full_inference()`（提取 lora + y_ + cond_fusion + adaLN + final_layer，
+  约 988MB，配合官方预训练 body 即可完整复现）与 `load_full_inference()`。
+- `train.py`：ckpt 保存时额外写 `inference_delta` 字段，便于日后精简提取。
+- `train_full_3cond.json`：显式加 `reset_cond_head=true, train_cond_head=true`。
+
+### 推理正确姿势（与训练一致）
+- **必须加载 `ckpt["ema"]`（完整 522 键模型），不是 `ckpt["model"]`（231 键 LoRA 增量）**。
+- 单步重建用 `diffusion.training_losses(...)["pred_xstart"]`（`eval_full_3cond.py` 的做法），
+  或 DDIM 采样（`sample_3cond.py` 的 `ddim_sample_loop` + `forward_with_cfg`，cfg=4）。
+- 之前用「pretrained + inject_lora + load lora增量」拼模型会崩，正是因为 adaLN 随机 reset
+  后 frozen，拼接时重新随机化 adaLN 与训练时的随机值不一致。
+

@@ -10,8 +10,6 @@ from torch.utils.data import DataLoader
 from torch.utils.data.distributed import DistributedSampler
 import numpy as np
 import sys
-from collections import OrderedDict
-from copy import deepcopy
 from glob import glob
 from time import time
 import argparse
@@ -48,12 +46,6 @@ def _str_to_bool(value):
         return value
     return str(value).lower() in ("1", "true", "yes", "on")
 
-
-def update_ema(ema_model, model, decay=0.9999):
-    ema_params = OrderedDict(ema_model.named_parameters())
-    model_params = OrderedDict(model.named_parameters())
-    for name, param in model_params.items():
-        ema_params[name].mul_(decay).add_(param.data, alpha=1 - decay)
 
 def requires_grad(model, flag=True):
     for p in model.parameters():
@@ -140,6 +132,12 @@ def main(args):
         logger.info(f"Building 2-Cond model: {args.model} "
                     f"(callig={args.num_calligraphers}, char={args.num_characters})")
 
+    # Load order (fixed): pretrained body -> reset cond head -> inject LoRA -> load delta.
+    # The checkpoint `delta` contains only the "changed" part (LoRA + condition head +
+    # adaLN/final_layer), so the frozen pretrained body is ALWAYS loaded from disk first.
+    _resume_full_ckpt = None
+
+    # 1) pretrained body (shared, not stored per-ckpt)
     if args.pretrained is not None:
         ckpt_path = args.pretrained
         state_dict = find_model(ckpt_path)
@@ -154,7 +152,23 @@ def main(args):
         logger.info(f"Missing keys (expected for 2/3-cond): {missing}")
         logger.info(f"Unexpected keys (filtered): {unexpected}")
 
-    from lora import inject_lora, extract_lora_and_new_embedders, upgrade_lora_rank
+    # 2) re-init the conditioning head (adaLN & final_layer) after loading pretrained body.
+    # The pretrained adaLN was trained on ImageNet's single y_embedder; our 3-cond fused
+    # condition vector c is out-of-distribution for it, which can blow up to NaN early on.
+    # Re-initializing adaLN/final_layer to a small std (like the successful overfit run)
+    # keeps the pretrained transformer body while letting the new condition head learn.
+    # (Skipped on full resume: the delta already carries the learned adaLN.)
+    if getattr(args, 'reset_cond_head', True) and getattr(args, 'resume_full', None) is None:
+        import torch.nn as _nn
+        for _b in model.blocks:
+            _nn.init.normal_(_b.adaLN_modulation[-1].weight, std=0.02)
+            _nn.init.normal_(_b.adaLN_modulation[-1].bias, std=0.02)
+        _nn.init.normal_(model.final_layer.adaLN_modulation[-1].weight, std=0.02)
+        _nn.init.normal_(model.final_layer.adaLN_modulation[-1].bias, std=0.02)
+        _nn.init.normal_(model.final_layer.linear.weight, std=0.02)
+        logger.info("Re-initialized adaLN/final_layer (std=0.02) to fit new 3-cond condition head.")
+
+    from lora import inject_lora, upgrade_lora_rank, extract_full_inference
     if getattr(args, 'use_lora', True):
         _r = getattr(args, 'lora_r', 16)
         _alpha = getattr(args, 'lora_alpha', None)
@@ -162,16 +176,32 @@ def main(args):
             _alpha = _r  # default scaling = 1
         logger.info(f"Injecting LoRA (r={_r}, alpha={_alpha}, scaling={_alpha/_r:.2f}) into DiT blocks...")
         model = inject_lora(model, r=_r, lora_alpha=_alpha)
+
+        # 3) full resume: load the delta (LoRA + condition head + adaLN/final_layer)
+        if getattr(args, 'resume_full', None) is not None:
+            import torch as _torch
+            _rf = _torch.load(args.resume_full, map_location="cpu", weights_only=False)
+            _resume_full_ckpt = _rf
+            _sd = _rf.get("delta", _rf.get("model", _rf))
+            missing, unexpected = model.load_state_dict(_sd, strict=False)
+            logger.info(f"[resume-full] Loaded delta from {args.resume_full} "
+                        f"(missing={len(missing)}, unexpected={len(unexpected)}).")
         
         # Freeze everything first
         requires_grad(model, False)
 
-        # True LoRA: only the injected low-rank A/B and the newly-added condition
-        # embedders + fusion are trainable. adaLN and final_layer keep their
-        # pretrained weights frozen (LoRA adapts them via residual low-rank deltas).
+        # LoRA + newly-added condition embedders/fusion are always trainable.
+        # adaLN / final_layer: `reset_cond_head` re-initializes them (std=0.02) to
+        #   fit the new 3-cond head. If they stay frozen afterwards, the model is left
+        #   with a *random, never-trained* modulation — the root cause of blurry output
+        #   and per-ckpt adaLN divergence. `train_cond_head` (default True) makes them
+        #   trainable so they can actually learn, matching the original design intent.
+        train_cond_head = getattr(args, 'train_cond_head', True)
         for name, param in model.named_parameters():
             if ('lora_' in name or 'y_callig_embedder' in name or 'y_char_embedder' in name
                     or 'cond_fusion' in name or 'y_script_embedder' in name):
+                param.requires_grad = True
+            elif train_cond_head and ('adaLN' in name or 'final_layer' in name):
                 param.requires_grad = True
 
         # Calculate trainable params (should be far smaller than full model now)
@@ -194,9 +224,6 @@ def main(args):
             logger.info(f"[resume_lora] Upgraded from {args.resume_lora} (old_r={old_r}). "
                         f"Trainable now: {trainable_params:,} ({trainable_params/(trainable_params+frozen_params)*100:.2f}%)")
 
-    ema = deepcopy(model).to(device)
-    requires_grad(ema, False)
-    
     model = model.to(device)
     if dist.get_world_size() > 1:
         model = DDP(model, device_ids=[rank], find_unused_parameters=True)
@@ -252,9 +279,38 @@ def main(args):
         
     opt = torch.optim.AdamW(trainable_params_list, lr=args.lr, weight_decay=0)
 
-    # AMP: use automatic mixed precision + gradient scaling to cut memory ~2x.
-    scaler = torch.cuda.amp.GradScaler()
+    # Restore optimizer state + step counter for full resume. If --resume-lr is given,
+    # override the LR so we can test whether a smaller LR avoids the NaN.
+    resume_start_step = 0
+    if _resume_full_ckpt is not None:
+        _opt_sd = _resume_full_ckpt.get("opt", None)
+        if _opt_sd is not None:
+            try:
+                opt.load_state_dict(_opt_sd)
+                logger.info(f"[resume-full] Restored optimizer state.")
+            except Exception as _e:
+                logger.warning(f"[resume-full] Failed to restore optimizer state: {_e}")
+        if getattr(args, 'resume_lr', None) is not None:
+            for _pg in opt.param_groups:
+                _pg["lr"] = args.resume_lr
+            logger.info(f"[resume-full] Overrode LR -> {args.resume_lr}")
+        # Recover the step counter. `args` (saved Namespace) has no train_steps field,
+        # so prefer the checkpoint filename (e.g. 0010000.pt -> 10000); fall back to a
+        # stored args.train_steps if present.
+        import re as _re
+        _fname = os.path.basename(str(args.resume_full))
+        _digits = _re.findall(r"\d+", _fname)
+        if _digits:
+            resume_start_step = int(_digits[-1])
+            logger.info(f"[resume-full] Inferred start step={resume_start_step} from filename {_fname}")
+        _ckpt_args = _resume_full_ckpt.get("args", None)
+        if _ckpt_args is not None and getattr(_ckpt_args, "train_steps", None) is not None:
+            resume_start_step = int(_ckpt_args.train_steps)
+            logger.info(f"[resume-full] Resuming from train_steps={resume_start_step}")
 
+    # bf16 training: run the model in bf16 autocast (no loss scaling needed — bf16 has
+    # the same exponent range as fp32, so it does not overflow like fp16 AMP). VAE and
+    # structural losses stay fp32 for numerical stability.
     dataset = MCCDDataset(csv_file=args.data_csv, root_dir=args.data_dir, image_size=args.image_size,
                           load_canny=args.use_canny, load_skel=args.use_skel)
     sampler = DistributedSampler(
@@ -275,11 +331,9 @@ def main(args):
     )
     logger.info(f"Dataset contains {len(dataset):,} images")
 
-    update_ema(ema, model.module if hasattr(model, 'module') else model, decay=0)
     model.train()
-    ema.eval()
 
-    train_steps = 0
+    train_steps = resume_start_step
     log_steps = 0
     running_loss = 0
     running_diff = 0
@@ -305,8 +359,8 @@ def main(args):
                 if cond_mode == "3cond":
                     y_script = batch['y_script'].to(device)
 
-                # VAE encode stays in fp32 for numerical stability (VAE is sensitive to fp16).
-                with torch.no_grad(), torch.cuda.amp.autocast(enabled=False):
+                # VAE encode stays in fp32 for numerical stability (VAE is sensitive to low precision).
+                with torch.no_grad(), torch.autocast("cuda", dtype=torch.float32):
                     x_latent = vae.encode(x).latent_dist.sample().mul_(0.18215)
                     x_latent = x_latent.float()
 
@@ -320,8 +374,8 @@ def main(args):
                 if args.w_repa > 0:
                     model_kwargs['return_intermediate_layer'] = 8
 
-                # Forward pass under AMP (fp16 autocast) to halve memory.
-                with torch.cuda.amp.autocast():
+                # Forward pass under bf16 autocast (same exponent range as fp32, no overflow).
+                with torch.autocast("cuda", dtype=torch.bfloat16):
                     loss_dict = diffusion.training_losses(model, x_latent, t, model_kwargs)
                     loss_diff = loss_dict["loss"].mean()
 
@@ -336,7 +390,7 @@ def main(args):
                     # keeping its large up-sampling activations resident.
                     def _decode(z):
                         return vae.decode(z).sample
-                    with torch.cuda.amp.autocast(enabled=False):
+                    with torch.autocast("cuda", dtype=torch.float32):
                         x0_pred = grad_ckpt(_decode, pred_xstart_latent.float() / 0.18215,
                                              use_reentrant=False)
                     # Structural losses computed in fp32 (outside autocast) for stability.
@@ -355,12 +409,9 @@ def main(args):
                 opt.zero_grad()
                 # NaN guard: skip the step if loss is not finite (e.g. a bad sample).
                 if torch.isfinite(loss):
-                    scaler.scale(loss).backward()
-                    # Gradient clipping in fp32 (after unscaling) is the standard AMP
-                    # guard against explosion from the structural-loss combination.
-                    scaler.unscale_(opt)
+                    loss.backward()
                     torch.nn.utils.clip_grad_norm_(trainable_params_list, max_norm=1.0)
-                    scaler.step(opt)
+                    opt.step()
                 else:
                     nan_steps += 1
                     if rank == 0:
@@ -369,14 +420,7 @@ def main(args):
                             f"(diff={loss_diff.item():.4f}, canny={loss_canny.item():.4f}, "
                             f"skel={loss_skel.item():.4f}). Accumulated skips: {nan_steps}"
                         )
-                    # Still feed the scaler so scaler.update() below has an inf record
-                    # (otherwise it raises "No inf checks were recorded prior to update").
-                    # scale(loss).backward() propagates NaN grads, step() detects the inf
-                    # and skips the optimizer update, then update() halves the scale.
-                    scaler.scale(loss).backward()
-                    scaler.step(opt)
-                scaler.update()
-                update_ema(ema, model.module if hasattr(model, 'module') else model)
+                    # No optimizer update on NaN; just skip (grads are discarded).
 
                 if torch.isfinite(loss):
                     running_loss += loss.item()
@@ -429,13 +473,12 @@ def main(args):
                 if train_steps % args.ckpt_every == 0 and train_steps > 0:
                     if rank == 0:
                         model_to_save = model.module if hasattr(model, 'module') else model
-                        if getattr(args, 'use_lora', True):
-                            trainable_state_dict = extract_lora_and_new_embedders(model_to_save)
-                        else:
-                            trainable_state_dict = model_to_save.state_dict()
+                        # Store only the "changed" part (LoRA + condition head + adaLN/final_layer).
+                        # The frozen pretrained body is shared and loaded from disk at restore time,
+                        # so it is NOT stored per-checkpoint.
+                        delta = extract_full_inference(model_to_save)
                         checkpoint = {
-                            "model": trainable_state_dict,
-                            "ema": ema.state_dict(),
+                            "delta": delta,
                             "opt": opt.state_dict(),
                             "args": args
                         }
@@ -462,6 +505,13 @@ if __name__ == "__main__":
     parser.add_argument("--data-dir", type=str, default="", help="Root dataset directory if CSV has relative paths")
     parser.add_argument("--results-dir", type=str, default="results")
     parser.add_argument("--pretrained", type=str, default=None, help="Path to pretrained DiT checkpoint")
+    parser.add_argument("--reset-cond-head", type=_str_to_bool, default=True,
+                        help="After loading pretrained body, re-init adaLN/final_layer (std=0.02) "
+                             "to fit new multi-cond head. Prevents early NaN from OOD conditioning.")
+    parser.add_argument("--train-cond-head", type=_str_to_bool, default=True,
+                        help="Whether adaLN/final_layer (reset by --reset-cond-head) should be "
+                             "trainable. True (default) lets them learn after reset; False keeps "
+                             "them frozen at their reset random values (legacy behavior).")
     parser.add_argument("--model", type=str, choices=list(DiT_2Cond_models.keys()) + list(DiT_3Cond_models.keys()), default="DiT-2Cond-XL/2")
     parser.add_argument("--cond-mode", type=str, choices=["2cond", "3cond"], default="2cond",
                         help="Conditioning mode: 2cond (callig+char) or 3cond (callig+script+char).")
@@ -486,6 +536,14 @@ if __name__ == "__main__":
                         help="Path to a previous LoRA checkpoint to upgrade from (rank up, preserving learned deltas).")
     parser.add_argument("--old-lora-r", type=int, default=16,
                         help="Rank of the LoRA checkpoint given by --resume-lora.")
+    parser.add_argument("--resume-full", type=str, default=None,
+                        help="Path to a training checkpoint (our own, with delta/opt/args) to resume from. "
+                             "Loads the delta (LoRA + condition head + adaLN), optimizer state and step "
+                             "counter; the pretrained body is still loaded from --pretrained (delta stores "
+                             "only the changed part).")
+    parser.add_argument("--resume-lr", type=float, default=None,
+                        help="If set with --resume-full, override the learning rate from the checkpoint "
+                             "(e.g. lower LR to test whether NaN was numerical).")
     parser.add_argument("--num-workers", type=int, default=4)
     parser.add_argument("--log-every", type=int, default=50)
     parser.add_argument("--ckpt-every", type=int, default=10_000)
