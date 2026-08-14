@@ -30,29 +30,36 @@ class LoRALinear(nn.Module):
         lora_out = self.dropout(x) @ self.lora_A @ self.lora_B
         return out + lora_out * self.scaling
 
-def inject_lora(model, r=16, lora_alpha=16, dropout=0.0):
+def inject_lora(model, r=16, lora_alpha=16, dropout=0.0, target="all"):
     """
     Injects LoRA into a DiT model blocks.
-    Replaces qkv, proj, fc1, fc2 with LoRALinear.
+    Replaces qkv, proj (attn) and fc1, fc2 (mlp) with LoRALinear.
+    target:
+      "all"  -> qkv + proj + fc1 + fc2 (default)
+      "attn" -> qkv + proj (attention only, MLP untouched)
+      "mlp"  -> fc1 + fc2 (MLP only, attention untouched)
     Idempotent: already-injected layers are left untouched.
     """
+    do_attn = target in ("all", "attn")
+    do_mlp = target in ("all", "mlp")
     n_injected = 0
     for block in model.blocks:
-        if hasattr(block, 'attn'):
+        if hasattr(block, 'attn') and do_attn:
             if hasattr(block.attn, 'qkv') and not isinstance(block.attn.qkv, LoRALinear):
                 block.attn.qkv = LoRALinear(block.attn.qkv, r, lora_alpha, dropout)
                 n_injected += 1
             if hasattr(block.attn, 'proj') and not isinstance(block.attn.proj, LoRALinear):
                 block.attn.proj = LoRALinear(block.attn.proj, r, lora_alpha, dropout)
                 n_injected += 1
-        if hasattr(block, 'mlp'):
+        if hasattr(block, 'mlp') and do_mlp:
             if hasattr(block.mlp, 'fc1') and not isinstance(block.mlp.fc1, LoRALinear):
                 block.mlp.fc1 = LoRALinear(block.mlp.fc1, r, lora_alpha, dropout)
                 n_injected += 1
             if hasattr(block.mlp, 'fc2') and not isinstance(block.mlp.fc2, LoRALinear):
                 block.mlp.fc2 = LoRALinear(block.mlp.fc2, r, lora_alpha, dropout)
                 n_injected += 1
-    print(f"[inject_lora] Injected LoRA into {n_injected} linear layers (r={r}, alpha={lora_alpha}).")
+    print(f"[inject_lora] Injected LoRA into {n_injected} linear layers "
+          f"(r={r}, alpha={lora_alpha}, target={target}).")
     return model
 
 def extract_lora_and_new_embedders(model):

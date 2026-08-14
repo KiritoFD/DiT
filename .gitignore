@@ -1,0 +1,95 @@
+# ---- 大权重 / 数据 ----
+*.pt
+*.pth
+*.onnx
+*.zip
+*.7z
+*.tar.gz
+*.tgz
+dataset/
+MCCD/
+pretrained_models/
+test_1k_cache.pt
+ckpt_s_scratch.pt
+
+# ---- 大数据 JSON（清洗管道产物）----
+final_manifest*.json
+final_img_plan.json
+final_latent_plan.json
+final_split.json
+latent_missing.json
+latent_reuse_map.json
+final_local_imgs.tar.gz
+latent_missing.tar.gz
+_remote_vae_index.json
+_remote_dedup.json
+_remote_latent*.json
+_official_4tuples.json
+_official_vocab.json
+_id_maps.json
+_calli_map.json
+
+# ---- 推理/可视化临时产物 ----
+/*.png
+ood_results/
+viz_ab_*.png
+skel_*.png
+gtskel_*.png
+gtimg_*.png
+CHAR_PLAN.json
+OOD_PLAN.json
+
+# ---- 探针/临时脚本 ----
+_diag_watchdog.sh
+_check_libs.py
+_verify_gt_labels.py
+_find_script_id.py
+_probe_dit_urls.py
+
+# ---- 归档的探针/历史脚本（本地保留，不进 git）----
+archive/
+
+# ---- 数据/产物目录（不进 git）----
+eval_imgs_10000/
+eval_pics/
+eval_pngs/
+example_100/
+final/
+latent_missing/
+remote_logs/
+results/
+results_lora/
+results_overfit/
+results_relative/
+results_test/
+scratch/
+test_1k/
+dict.txt
+dict2.txt
+ood_results/
+
+# ---- tools 运行时数据（脚本/HTML 进 git）----
+tools/train_data.json
+tools/*.png
+tools/*.log
+tools/__pycache__/
+
+# ---- 数据产物 / 废弃占位（不进 git）----
+train.csv
+test.csv
+val.csv
+dwm_monitor_log.csv
+eval_all_summary.csv
+eval_quant_result.csv
+all_logs_summary.json
+remote_labels_map.json
+remote_mccd_mapping.json
+
+# ---- 日志 / 运行时 ----
+*.log
+*.err
+__pycache__/
+*.pyc
+.vscode/
+train_data.json
+

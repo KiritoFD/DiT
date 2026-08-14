@@ -15,6 +15,7 @@ from time import time
 import argparse
 import logging
 import json
+import datetime
 
 from models import DiT_2Cond_models, DiT_3Cond_models
 from diffusion import create_diffusion
@@ -22,8 +23,11 @@ from diffusers.models import AutoencoderKL
 from download import find_model
 
 from dataset import MCCDDataset
+from latent_dataset import MCCDLatentDataset
 from losses import SobelCannyLoss, SkeletonLoss, REPALoss
 from torch.utils.checkpoint import checkpoint as grad_ckpt
+from eval_auto import prepare_eval_cache, eval_in_memory
+from lora import inject_lora, upgrade_lora_rank, extract_full_inference
 
 def _coerce(value, template):
     """Coerce a config.json value to the type of the argparse default."""
@@ -50,6 +54,20 @@ def _str_to_bool(value):
 def requires_grad(model, flag=True):
     for p in model.parameters():
         p.requires_grad = flag
+
+def _state_to_cpu(obj):
+    """Recursively move tensors in a (possibly nested) state dict to CPU.
+
+    opt.state_dict() nests dicts two levels deep (state -> param_idx -> tensors)
+    and lists (param_groups), so a flat .detach().cpu() pass is not enough.
+    """
+    if isinstance(obj, torch.Tensor):
+        return obj.detach().cpu()
+    if isinstance(obj, dict):
+        return {k: _state_to_cpu(v) for k, v in obj.items()}
+    if isinstance(obj, list):
+        return [_state_to_cpu(v) for v in obj]
+    return obj
 
 def cleanup():
     dist.destroy_process_group()
@@ -92,11 +110,13 @@ def main(args):
     
     if rank == 0:
         os.makedirs(args.results_dir, exist_ok=True)
-        experiment_index = len(glob(f"{args.results_dir}/*"))
         model_string_name = args.model.replace("/", "-")
-        experiment_dir = f"{args.results_dir}/{experiment_index:03d}-{model_string_name}"
+        # Timestamp-named experiment dir (unique per launch, never collides or overwrites).
+        _ts = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
+        experiment_dir = f"{args.results_dir}/{_ts}-{model_string_name}"
         checkpoint_dir = f"{experiment_dir}/checkpoints"
         os.makedirs(checkpoint_dir, exist_ok=True)
+        # log.txt lives inside this experiment dir (created first), never overwritten.
         logger = create_logger(experiment_dir)
         logger.info(f"Experiment directory created at {experiment_dir}")
     else:
@@ -168,14 +188,13 @@ def main(args):
         _nn.init.normal_(model.final_layer.linear.weight, std=0.02)
         logger.info("Re-initialized adaLN/final_layer (std=0.02) to fit new 3-cond condition head.")
 
-    from lora import inject_lora, upgrade_lora_rank, extract_full_inference
     if getattr(args, 'use_lora', True):
         _r = getattr(args, 'lora_r', 16)
         _alpha = getattr(args, 'lora_alpha', None)
         if _alpha is None:
             _alpha = _r  # default scaling = 1
-        logger.info(f"Injecting LoRA (r={_r}, alpha={_alpha}, scaling={_alpha/_r:.2f}) into DiT blocks...")
-        model = inject_lora(model, r=_r, lora_alpha=_alpha)
+        logger.info(f"Injecting LoRA (r={_r}, alpha={_alpha}, scaling={_alpha/_r:.2f}, target={getattr(args, 'lora_target', 'all')}) into DiT blocks...")
+        model = inject_lora(model, r=_r, lora_alpha=_alpha, target=getattr(args, 'lora_target', 'all'))
 
         # 3) full resume: load the delta (LoRA + condition head + adaLN/final_layer)
         if getattr(args, 'resume_full', None) is not None:
@@ -186,29 +205,6 @@ def main(args):
             missing, unexpected = model.load_state_dict(_sd, strict=False)
             logger.info(f"[resume-full] Loaded delta from {args.resume_full} "
                         f"(missing={len(missing)}, unexpected={len(unexpected)}).")
-        
-        # Freeze everything first
-        requires_grad(model, False)
-
-        # LoRA + newly-added condition embedders/fusion are always trainable.
-        # adaLN / final_layer: `reset_cond_head` re-initializes them (std=0.02) to
-        #   fit the new 3-cond head. If they stay frozen afterwards, the model is left
-        #   with a *random, never-trained* modulation — the root cause of blurry output
-        #   and per-ckpt adaLN divergence. `train_cond_head` (default True) makes them
-        #   trainable so they can actually learn, matching the original design intent.
-        train_cond_head = getattr(args, 'train_cond_head', True)
-        for name, param in model.named_parameters():
-            if ('lora_' in name or 'y_callig_embedder' in name or 'y_char_embedder' in name
-                    or 'cond_fusion' in name or 'y_script_embedder' in name):
-                param.requires_grad = True
-            elif train_cond_head and ('adaLN' in name or 'final_layer' in name):
-                param.requires_grad = True
-
-        # Calculate trainable params (should be far smaller than full model now)
-        trainable_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
-        frozen_params = sum(p.numel() for p in model.parameters() if not p.requires_grad)
-        logger.info(f"LoRA Trainable Parameters: {trainable_params:,}")
-        logger.info(f"Frozen Parameters: {frozen_params:,} (trainable ratio: {trainable_params/(trainable_params+frozen_params)*100:.2f}%)")
 
         # Optional: upgrade LoRA rank from a previous run's checkpoint, preserving
         # the learned low-rank deltas. See lora.upgrade_lora_rank for the strategy.
@@ -218,11 +214,30 @@ def main(args):
             _sd = _sd.get("state_dict", _sd) if isinstance(_sd, dict) else _sd
             old_r = getattr(args, 'old_lora_r', 16)
             model = upgrade_lora_rank(model, _r, _alpha, _sd, old_r)
-            # recompute trainable counts after rebuild
-            trainable_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
-            frozen_params = sum(p.numel() for p in model.parameters() if not p.requires_grad)
-            logger.info(f"[resume_lora] Upgraded from {args.resume_lora} (old_r={old_r}). "
-                        f"Trainable now: {trainable_params:,} ({trainable_params/(trainable_params+frozen_params)*100:.2f}%)")
+
+    # ---- freeze / trainable policy (independent of use_lora) -----------------
+    # Two regimes:
+    #   1) pretrained body (+ optional LoRA): freeze the pretrained transformer body,
+    #      train only the *new* condition head + adaLN/final_layer (+ lora_* if injected).
+    #      adaLN is reset to std=0.02 by `reset_cond_head`, so it MUST be trainable
+    #      (`train_cond_head=true`), otherwise the model is stuck on random modulation.
+    #   2) from-scratch (pretrained=None and use_lora=false): keep all params trainable.
+    _has_pretrained = args.pretrained is not None
+    if getattr(args, 'use_lora', True) or _has_pretrained:
+        requires_grad(model, False)
+        train_cond_head = getattr(args, 'train_cond_head', True)
+        for name, param in model.named_parameters():
+            if ('lora_' in name or 'y_callig_embedder' in name or 'y_char_embedder' in name
+                    or 'cond_fusion' in name or 'y_script_embedder' in name):
+                param.requires_grad = True
+            elif train_cond_head and ('adaLN' in name or 'final_layer' in name):
+                param.requires_grad = True
+
+    # report trainable counts
+    trainable_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
+    frozen_params = sum(p.numel() for p in model.parameters() if not p.requires_grad)
+    logger.info(f"Trainable Parameters: {trainable_params:,}")
+    logger.info(f"Frozen Parameters: {frozen_params:,} (trainable ratio: {trainable_params/(trainable_params+frozen_params)*100:.2f}%)")
 
     model = model.to(device)
     if dist.get_world_size() > 1:
@@ -256,7 +271,16 @@ def main(args):
         logger.warning("Using MockVAE (random latents) for testing purposes!")
         vae = MockVAE(device)
 
-    
+    # In-memory auto-eval: pre-encode N test samples once at startup, then reuse the
+    # cache after every checkpoint save (weights stay on GPU, no reload needed).
+    eval_cache = None
+    if getattr(args, 'auto_eval', False):
+        logger.info(f"Preparing auto-eval cache (csv={args.eval_csv}, n={args.eval_n}) ...")
+        _eval_ds = MCCDDataset(csv_file=args.eval_csv, root_dir=args.data_dir,
+                               image_size=args.image_size, load_canny=False, load_skel=False)
+        eval_cache = prepare_eval_cache(vae, _eval_ds, device, n=args.eval_n)
+        logger.info("Auto-eval cache ready.")
+
     logger.info(f"DiT Parameters: {sum(p.numel() for p in model.parameters()):,}")
 
     raw_model = model.module if hasattr(model, 'module') else model
@@ -311,8 +335,24 @@ def main(args):
     # bf16 training: run the model in bf16 autocast (no loss scaling needed — bf16 has
     # the same exponent range as fp32, so it does not overflow like fp16 AMP). VAE and
     # structural losses stay fp32 for numerical stability.
-    dataset = MCCDDataset(csv_file=args.data_csv, root_dir=args.data_dir, image_size=args.image_size,
-                          load_canny=args.use_canny, load_skel=args.use_skel)
+    use_latent = bool(getattr(args, "latent_shards_dir", None))
+    if use_latent:
+        dataset = MCCDLatentDataset(csv_file=args.data_csv,
+                                    latent_shards_dir=args.latent_shards_dir,
+                                    img_root=args.img_root,
+                                    canny_root=args.canny_root if args.use_canny else None,
+                                    image_size=args.image_size,
+                                    load_canny=args.use_canny,
+                                    load_skel=args.use_skel,
+                                    skel_root=args.skel_root if args.use_skel else None,
+                                    preload=bool(getattr(args, 'preload', False)),
+                                    load_image=args.w_repa > 0,
+                                    num_preload_workers=int(getattr(args, 'preload_workers', 16)))
+        logger.info("Using latent-cached dataset (skip on-the-fly VAE encode)."
+                    + (" preload=ON" if getattr(args, 'preload', False) else ""))
+    else:
+        dataset = MCCDDataset(csv_file=args.data_csv, root_dir=args.data_dir, image_size=args.image_size,
+                              load_canny=args.use_canny, load_skel=args.use_skel)
     sampler = DistributedSampler(
         dataset,
         num_replicas=dist.get_world_size(),
@@ -351,20 +391,27 @@ def main(args):
         
         try:
             for batch_idx, batch in enumerate(loader):
-                x = batch['image'].to(device)
-                canny_gt = batch['canny'].to(device)
-                skel_gt = batch['skeleton'].to(device)
                 y_callig = batch['y_callig'].to(device)
                 y_char = batch['y_char'].to(device)
                 if cond_mode == "3cond":
                     y_script = batch['y_script'].to(device)
 
-                # VAE encode stays in fp32 for numerical stability (VAE is sensitive to low precision).
-                with torch.no_grad(), torch.autocast("cuda", dtype=torch.float32):
-                    x_latent = vae.encode(x).latent_dist.sample().mul_(0.18215)
-                    x_latent = x_latent.float()
+                if 'latent' in batch:
+                    # Latent-cached training: latent pre-encoded (scaled by 0.18215); image kept for gt-losses.
+                    x_latent = batch['latent'].to(device)
+                    x = batch['image'].to(device)
+                    canny_gt = batch['canny'].to(device)
+                    skel_gt = batch['skeleton'].to(device) if args.use_skel else None
+                else:
+                    x = batch['image'].to(device)
+                    canny_gt = batch['canny'].to(device)
+                    skel_gt = batch['skeleton'].to(device)
+                    # VAE encode stays in fp32 for numerical stability (VAE is sensitive to low precision).
+                    with torch.no_grad(), torch.autocast("cuda", dtype=torch.float32):
+                        x_latent = vae.encode(x).latent_dist.sample().mul_(0.18215)
+                        x_latent = x_latent.float()
 
-                t = torch.randint(0, diffusion.num_timesteps, (x.shape[0],), device=device)
+                t = torch.randint(0, diffusion.num_timesteps, (x_latent.shape[0],), device=device)
                 if cond_mode == "3cond":
                     model_kwargs = dict(y_callig=y_callig, y_script=y_script, y_char=y_char)
                 else:
@@ -384,7 +431,7 @@ def main(args):
                 loss_repa = torch.tensor(0.0, device=device)
 
                 pred_xstart_latent = loss_dict.get("pred_xstart", None)
-                if pred_xstart_latent is not None and (args.use_canny or args.use_skel):
+                if x is not None and pred_xstart_latent is not None and (args.use_canny or args.use_skel):
                     # VAE decode in fp32 via gradient checkpointing to save memory:
                     # the VAE is frozen, so on backward we re-run decode instead of
                     # keeping its large up-sampling activations resident.
@@ -400,7 +447,7 @@ def main(args):
                         loss_skel = skel_loss_fn(x0_pred, skel_gt)
 
                 intermediate_feats = loss_dict.get("intermediate_feats", None)
-                if intermediate_feats is not None and repa_loss_fn is not None and args.w_repa > 0:
+                if x is not None and intermediate_feats is not None and repa_loss_fn is not None and args.w_repa > 0:
                     # original 'x' is ground truth x_0 [-1, 1]
                     loss_repa = repa_loss_fn(intermediate_feats, x)
 
@@ -463,28 +510,77 @@ def main(args):
                             f"Canny: raw {avg_c:.4f} x {wc:.2f} = {c_contrib:.4f} | "
                             f"Skel: raw {avg_s:.4f} x {ws:.2f} = {s_contrib:.4f} | "
                             f"REPA: raw {avg_r:.4f} x {wr:.2f} = {r_contrib:.4f} | "
-                            f"Steps/Sec: {steps_per_sec:.2f}"
+                            f"Steps/Sec: {steps_per_sec:.2f} | "
+                            f"Mem: {torch.cuda.memory_allocated() / 1024 ** 3:.2f}G/"
+                            f"{torch.cuda.max_memory_allocated() / 1024 ** 3:.2f}G"
                         )
                     
                     running_loss = running_diff = running_canny = running_skel = running_repa = 0
                     log_steps = 0
                     start_time = time()
 
-                if train_steps % args.ckpt_every == 0 and train_steps > 0:
+                # Checkpoint schedule: every 1000 steps up to step 5000, then every 4000.
+                if train_steps <= 5000:
+                    _save_ckpt = train_steps % 1000 == 0
+                else:
+                    _save_ckpt = (train_steps - 5000) % 4000 == 0
+
+                if _save_ckpt and train_steps > 0:
                     if rank == 0:
                         model_to_save = model.module if hasattr(model, 'module') else model
-                        # Store only the "changed" part (LoRA + condition head + adaLN/final_layer).
-                        # The frozen pretrained body is shared and loaded from disk at restore time,
-                        # so it is NOT stored per-checkpoint.
-                        delta = extract_full_inference(model_to_save)
+                        # LoRA mode: store only the "changed" part (LoRA + condition head +
+                        # adaLN/final_layer) since the frozen body loads from disk at restore time.
+                        # Full-pretrain mode (use_lora=false): store the complete state dict.
+                        if getattr(args, 'use_lora', True):
+                            delta = extract_full_inference(model_to_save)
+                        else:
+                            delta = model_to_save.state_dict()
+                        # Move tensors to CPU before serialize so torch.save never
+                        # allocates extra GPU memory (avoids save-time VRAM spikes).
+                        delta = _state_to_cpu(delta)
+                        _opt_cpu = _state_to_cpu(opt.state_dict())
                         checkpoint = {
                             "delta": delta,
-                            "opt": opt.state_dict(),
+                            "opt": _opt_cpu,
                             "args": args
                         }
                         checkpoint_path = f"{checkpoint_dir}/{train_steps:07d}.pt"
                         torch.save(checkpoint, checkpoint_path)
                         logger.info(f"Saved checkpoint to {checkpoint_path}")
+
+                        # Rotation: keep only the most recent ckpt_keep checkpoints
+                        # (and their eval dirs) to bound disk usage on long runs.
+                        ckpt_keep = int(getattr(args, 'ckpt_keep', 0))
+                        if ckpt_keep > 0:
+                            import shutil as _sh
+                            _pts = sorted(glob(f"{checkpoint_dir}/*.pt"))
+                            for _old in _pts[:-ckpt_keep]:
+                                _base = os.path.basename(_old)[:-3]
+                                os.remove(_old)
+                                _eval_dir = f"{checkpoint_dir}/eval_{_base}"
+                                if os.path.isdir(_eval_dir):
+                                    _sh.rmtree(_eval_dir, ignore_errors=True)
+                            if len(_pts) > ckpt_keep:
+                                logger.info(f"[ckpt-keep] pruned {len(_pts) - ckpt_keep} old checkpoint(s), keeping {ckpt_keep}")
+
+                        # In-memory eval on the current (still-in-GPU) weights.
+                        if eval_cache is not None:
+                            was_training = model_to_save.training
+                            model_to_save.eval()
+                            try:
+                                mse, ss = eval_in_memory(
+                                    model_to_save, vae, diffusion, device, eval_cache,
+                                    n=args.eval_n,
+                                    vis_out=f"{checkpoint_dir}/eval_{train_steps:07d}",
+                                    vis_n=5)
+                                logger.info(f"[auto-eval] step {train_steps}: MSE={mse:.5f} SSIM={ss:.4f}")
+                                with open(f"{checkpoint_dir}/eval_auto_{train_steps:07d}.json", "w") as _ef:
+                                    json.dump({"step": train_steps, "mse": mse, "ssim": ss}, _ef)
+                            except Exception as _e:
+                                logger.warning(f"[auto-eval] failed at step {train_steps}: {_e}")
+                            finally:
+                                if was_training:
+                                    model_to_save.train()
         except Exception as e:
             import traceback
             logger.error(f"Error during training loop: {e}")
@@ -532,6 +628,9 @@ if __name__ == "__main__":
     parser.add_argument("--lora-r", type=int, default=16, help="LoRA rank")
     parser.add_argument("--lora-alpha", type=int, default=None,
                         help="LoRA alpha (scaling = alpha/r). Default: same as r (scaling=1).")
+    parser.add_argument("--lora-target", type=str, choices=["all", "attn", "mlp"], default="all",
+                        help="Which linear layers to inject LoRA into: all (qkv+proj+fc1+fc2), "
+                             "attn (qkv+proj), or mlp (fc1+fc2).")
     parser.add_argument("--resume-lora", type=str, default=None,
                         help="Path to a previous LoRA checkpoint to upgrade from (rank up, preserving learned deltas).")
     parser.add_argument("--old-lora-r", type=int, default=16,
@@ -547,6 +646,20 @@ if __name__ == "__main__":
     parser.add_argument("--num-workers", type=int, default=4)
     parser.add_argument("--log-every", type=int, default=50)
     parser.add_argument("--ckpt-every", type=int, default=10_000)
+    parser.add_argument("--ckpt-keep", type=int, default=0,
+                        help="Keep only the N most recent checkpoints (0 = keep all). "
+                             "Old checkpoints and their eval_* dirs are pruned after each save.")
+    parser.add_argument("--preload", type=_str_to_bool, default=False,
+                        help="Preload latents/canny/skeleton (and GT image when REPA is on) "
+                             "into RAM at startup for zero-disk-IO training.")
+    parser.add_argument("--preload-workers", type=int, default=16,
+                        help="Parallel PNG-decode workers used by preload.")
+    parser.add_argument("--auto-eval", type=_str_to_bool, default=False,
+                        help="Run in-memory eval (MSE/SSIM on N test samples) after each checkpoint save.")
+    parser.add_argument("--eval-csv", type=str, default="test.csv",
+                        help="CSV for auto-eval (only used when --auto-eval is true).")
+    parser.add_argument("--eval-n", type=int, default=1000,
+                        help="Number of test samples for auto-eval.")
     parser.add_argument("--w-canny", type=float, default=0.05, help="Weight for canny structural loss")
     parser.add_argument("--w-skel", type=float, default=0.05, help="Weight for skeleton structural loss")
     parser.add_argument("--w-repa", type=float, default=1.0, help="Weight for Representation Alignment (REPA) Loss")
@@ -557,6 +670,15 @@ if __name__ == "__main__":
                         help="Enable Canny structural loss (requires canny maps in dataset/canny).")
     parser.add_argument("--use-skel", type=_str_to_bool, default=False,
                         help="Enable Skeleton structural loss (requires skeleton maps in dataset/skeleton).")
+    parser.add_argument("--latent-shards-dir", type=str, default=None,
+                        help="Dir of pre-built latent shards (shard_XXXXX.npz). If set, training reads "
+                             "pre-encoded VAE latents instead of on-the-fly VAE encode.")
+    parser.add_argument("--img-root", type=str, default="final_imgs_256",
+                        help="Root dir of 256x256 gt images (used with latent-cached training for gt-losses).")
+    parser.add_argument("--canny-root", type=str, default="final_canny",
+                        help="Directory of precomputed canny images (img_id.png)")
+    parser.add_argument("--skel-root", type=str, default="final_skeleton",
+                        help="Directory of precomputed skeleton images (img_id.png)")
     parser.add_argument("--config", type=str, default="config.json",
                         help="Path to JSON config file with default args (CLI overrides).")
 

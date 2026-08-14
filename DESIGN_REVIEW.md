@@ -1,7 +1,8 @@
 # DiT-3Cond 设计评审与问题清单
 
 > 本文档记录 2026-08-13 对代码库的全面排查结论、已定位的问题、以及后续方案。
-> 状态：**诊断已完成，部分修复已落地，ckpt 存储方案待重构。**
+> 状态：**诊断已完成，全部修复已落地，ckpt 已统一为 delta 存储（2026-08-14 更新）。**
+> 当前项目整体说明以 `DOCUMENTATION.md` 为准；本文保留逐项问题记录供追溯。
 
 ---
 
@@ -37,7 +38,7 @@
 
 - `train.py`：新增 `--train-cond-head` 开关（默认 True），adaLN/final_layer 纳入训练。
 - `lora.py`：新增 `extract_full_inference()` / `load_full_inference()`。
-- `train.py`：ckpt 保存新增 `inference_delta` 字段（**待重构，见 §4**）。
+- `train.py`：ckpt 保存统一为 `delta` 字段（**已重构，见 §3.3 已落地**），不再并存 model/ema/inference_delta 三份。
 - `train_full_3cond.json`：显式加 `reset_cond_head=true, train_cond_head=true`。
 - `TRAINING_NOTES.md`：追加根因分析。
 
@@ -75,10 +76,10 @@
   某 step 触发 inf → NaN 通过 Adam 状态永久残留，无法自愈。
 - `losses.py` 已对 canny/skel 做过防护（clamp/detach），但防不住 pred_xstart 本身发散。
 
-**方案**（待实施，优先级高）：
+**方案**（已实施的关键部分）：
 - 修复 2.1（adaLN trainable）后，随机调制问题消失，NaN 概率大幅下降。
-- 仍建议加防御：`pred_xstart` clamp 到合理范围；DiT 前向移出 autocast 或改 bf16；
-  监控 loss scale 连续减半。
+- 前向已改 **bf16 autocast**，NaN 步直接跳过不更新（不再依赖 scaler）；后续 `skips=0` 即健康。
+- 可选的 `pred_xstart` clamp 尚未加（低优先级）。
 
 ### 2.3 【未修】`forward_with_cfg` 的 batch bug
 
@@ -105,9 +106,11 @@ ImageNet 单 label 调制是 OOD），但配合 trainable 后，需要确认 lr=
 
 ---
 
-## 3. ckpt 保存/加载方案（待重构）
+## 3. ckpt 保存/加载方案（**已重构落地，2026-08-14**）
 
-### 3.1 现状问题
+### 3.1 原问题（历史状态，已解决）
+
+当时 `train.py` 保存逻辑同时存了 3 份权重，冗余且混乱：
 
 当前 `train.py` 保存逻辑同时存了 3 份权重，冗余且混乱：
 
@@ -133,7 +136,7 @@ checkpoint = {
 
 ### 3.3 方案
 
-**保存**（train.py，只存改变的部分 + 优化器状态）：
+**保存**（train.py，只存改变的部分 + 优化器状态，**已实现**）：
 
 ```python
 checkpoint = {
@@ -145,7 +148,7 @@ checkpoint = {
 - 删除 `ema` 全量（3.2GB → ~1GB）。
 - 删除旧的 `model`（231 键）和 `inference_delta` 三份并存，统一为一份 `delta`。
 
-**加载**（单一标准入口，封装在 models.py 或 lora.py）：
+**加载**（单一标准入口，封装在 lora.py，**已实现**）：
 
 ```python
 model = build_model_from_ckpt(ckpt_path, pretrained_path, device)
@@ -160,14 +163,13 @@ model = build_model_from_ckpt(ckpt_path, pretrained_path, device)
 所以「注入 LoRA 结构」这一步**无法避免**。但可以封装进 `build_model_from_ckpt`，
 让「保存 → 加载」对外表现为一步，不再有散落各处的提取逻辑。
 
-### 3.4 resume 语义修正
+### 3.4 resume 语义修正（**已落地**）
 
 `train.py` 的 `resume_full` 当前加载 `_rf.get("model")`（231 键 LoRA 增量），
 且因 `_resume_full_ckpt is not None` 跳过 pretrained body 加载 → **body 是随机初始化**。
 这极可能是 001 run NaN 的另一个诱因。
 
-**方案**：resume 也统一走 `build_model_from_ckpt`（预训练 body + delta），
-或加载完整 ema（若保留 ema 则直接一步 load）。
+**已实现方案**：`lora.build_model_from_ckpt()` 统一「构造 → 载预训练 body → inject_lora(r32) → 载 delta」，训练续跑与推理重建共用同一入口（见 `DOCUMENTATION.md` §4.4、§5.4）。
 
 ---
 
@@ -210,22 +212,19 @@ DiT/
 
 ---
 
-## 5. 待决策 / 待确认问题
+## 5. 待决策 / 待确认问题（已更新结论）
 
-1. **adaLN 修复后是否重新训练**：当前 42500 步的模型已到瓶颈，建议用
-   `--train-cond-head=true` 重训（或从干净 ckpt 继续）。是否重训、从哪个 step 起？
-2. **ckpt 体积权衡**：方案 3.3 的「只存 delta」（~988MB）vs 现状「存 ema 全量」（3.2GB）。
-   确认采用只存 delta。
-3. **NaN 防御**：是否需要额外加 pred_xstart clamp + 前向 bf16（§2.2）？
-4. **是否保留 EMA**：EMA 权重只在训练时维护，不保存全量后，推理用 delta + pretrained
-   复现的是**非 EMA 模型**（会有轻微质量差异）。若需 EMA 推理，需额外存 EMA 的 delta。
+1. **adaLN 修复后是否重新训练**：已决定重训——远程 tmux `skel0`（`new_data_skel0/results_full_3cond`）以 `train_cond_head=true` 在新数据上从 0 训练。
+2. **ckpt 体积权衡**：已确认采用只存 `delta`（已实现）。
+3. **NaN 防御**：前向已改 bf16 + NaN 步跳过（`skips` 计数值恒 0 即健康）；是否再加 pred_xstart clamp 可后续补。
+4. **EMA 存储**：当前 ckpt 统一为 delta（非 EMA）；`eval_full_3cond.py` 兼容从 `ckpt["ema"]`（回退 `"model"`）加载历史 ckpt。若需 EMA 质量对齐，需要额外存 EMA delta（暂未做）。
 
 ---
 
-## 6. 下一步计划
+## 6. 下一步计划（已执行项勾选）
 
-1. 重构 ckpt 保存/加载（§3.3）：统一为 `delta` + `build_model_from_ckpt`。
-2. 修复 `forward_with_cfg` batch bug（§2.3）。
-3. 加 NaN 防御（§2.2，可选）。
-4. 非模型代码迁到 `tools/`（§4.1）。
-5. （可选）用修复后的配置重新训练，验证 adaLN trainable 的效果。
+1. [x] 重构 ckpt 保存/加载（§3.3）：统一为 `delta` + `build_model_from_ckpt`（已完成）。
+2. [ ] 修复 `forward_with_cfg` batch bug（§2.3）——仍未修，采样 batch=1 不受影响。
+3. [ ] 加 NaN 防御（§2.2，可选）——现有 bf16 + NaN-skip 已大幅缓解。
+4. [ ] 非模型代码迁到 `tools/`（§4.1）——部分完成。
+5. [x] 用修复后的配置重新训练（adaLN trainable）——远程 `new_data_skel0/results_full_3cond`（tmux `skel0`）正在从 0 训练。

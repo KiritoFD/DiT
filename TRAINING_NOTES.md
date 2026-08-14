@@ -371,3 +371,24 @@ loss + lr=3e-3）扩展到**全量 298,281 张**训练集。
 - 之前用「pretrained + inject_lora + load lora增量」拼模型会崩，正是因为 adaLN 随机 reset
   后 frozen，拼接时重新随机化 adaLN 与训练时的随机值不一致。
 
+---
+
+## 2026-08-14 最新状态补充（本笔记所有章节的历史定位）
+
+1. **ckpt 已统一为 delta 格式**：不再并存 `model`/`ema`/`inference_delta` 三份。
+   新保存 = `{"delta", "opt", "args"}`；重建/续跑统一走 **`lora.build_model_from_ckpt()`**
+   （构造 → 载官方预训练 body → `inject_lora(r=32)` → 载 delta）。见 `DOCUMENTATION.md` §4.4。
+2. **训练-推理一致性**：训练用 `training_losses()`、内存评估 `eval_auto` / 离线评估
+   `eval_full_3cond` 用同一接口单步 `pred_xstart`（t=150）、采样用 DDIM 50 步 + CFG=4
+   （`forward_with_cfg`）——三者共享同一条件头（3 个 LabelEmbedder + cond_fusion + adaLN）。
+3. **NaN 防御现状**：bf16 autocast 前向 + NaN 步跳过（`log_every` 输出的 `skips=0` 即健康）。
+   历史 lr=3e-3 打飞（grad≈13120）→ 当前 `train_full_3cond*` 都用 lr=1e-4。
+4. **当前活跃训练**：远程 tmux `skel0`，配置 `train_full_3cond_skel0.json`
+   （`use_canny=true, use_skel=true, w=0.1`, LoRA r=32, 从 0 训练），结果目录
+   `new_data_skel0/results_full_3cond/`。数据集在远程重建（`train/test/val.csv` 当前 0 行）。
+5. **已知未修 bug**：`models.py` 的 `forward_with_cfg` 在 batch>1 时 `half=x[:len(x)//2]`
+   会丢弃样本（采样 batch=1 不受影响）；批量采样前必须先修。
+6. **映射差异提醒**：`labels/*.json`（书家 2243）与 `_id_maps.json`（书家 1873 含 `others`）
+   不一致；训练配置 `train_full_3cond.json` 用的 `num_calligraphers=2021` 又是早期 VOCAB。
+   训练 / 评估 / 采样必须锁定同一套映射（详见 `DOCUMENTATION.md` §3.3、§7）。
+

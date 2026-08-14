@@ -1,0 +1,6 @@
+{
+  "step": 0,
+  "mse": 0.13487,
+  "ssim": 0.4391,
+  "note": "基模(预训练 DiT-XL-2 backbone + 随机初始化 3cond head, 未加载任何训练 delta) 在 test_1k 上的起点, 作为 MSE/SSIM 曲线 step=0 基准点"
+}
