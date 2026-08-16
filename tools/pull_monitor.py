@@ -113,7 +113,7 @@ def parse():
                 "stdmid": fields.get("StdMid"), "x0lat": fields.get("X0Lat"),
                 "stepsPerSec": fields.get("stepsPerSec"),
                 "memCur": fields.get("memCur"), "memPeak": fields.get("memPeak"),
-                "mse": cur_mse, "ssim": cur_ssim, "ts": ts,
+                "mse": cur_mse, "ssim": cur_ssim, "ts": ts, "is_eval": False,
             })
             continue
         e = EVAL_RE.search(line)
@@ -124,14 +124,17 @@ def parse():
                 "step": int(e.group(1)), "total": None, "diff": None,
                 "stdmid": None, "x0lat": None, "stepsPerSec": None,
                 "memCur": None, "memPeak": None,
-                "mse": cur_mse, "ssim": cur_ssim, "ts": ts,
+                "mse": cur_mse, "ssim": cur_ssim, "ts": ts, "is_eval": True,
             })
-    # 去重保序（同 step 损失行取最后，eval 行若与损失行同 step 后者覆盖）
-    seen, out = set(), []
+    # 去重保序：同 step 优先保留真实 eval 行(is_eval)，否则保留后出现的损失行(带最新前向填充)
+    seen, out = {}, []
     for r in rows:
-        if r["step"] in seen:
+        s = r["step"]
+        if s in seen:
+            if r.get("is_eval") and not out[seen[s]].get("is_eval"):
+                out[seen[s]] = r  # eval 行覆盖同 step 的损失行
             continue
-        seen.add(r["step"])
+        seen[s] = len(out)
         out.append(r)
     out.sort(key=lambda r: r["step"])
     return out
@@ -146,64 +149,158 @@ def write(rows, source):
         json.dump(out, f, ensure_ascii=False)
 
 
-# ---- 海报：发现新 auto-eval step 时才重新拉取取样图并生成海报 ----
-_last_eval_step = {"v": -1}
+# ---- 海报：按实验隔离 + 增量追加。每个实验开始 => 归档旧海报、清空取样缓存、
+#      重新开始；之后每次出现新 auto-eval step => 只拉该 step 取样图并重新生成海报，
+#      旧 step 行保留(行 = step，时间升序向下)。----
+STATE_F = os.path.join(HERE, "poster_state.json")
+ARCHIVE_DIR = os.path.join(HERE, "poster_archive")
+LOCAL_ES = os.path.join(HERE, "remote_eval_samples")
+POSTER = os.path.join(HERE, "eval_poster.png")
 
 
-def _max_eval_step(rows):
-    return max((r["step"] for r in rows if r.get("mse") is not None), default=-1)
+def _experiment_key(remote_log):
+    """从远程 log 路径提取实验身份（run 目录名）。
+    remote_log 形如 .../5script/results/<exp>/<run_dir>/log.txt → 取 <run_dir>。"""
+    run_dir = os.path.basename(os.path.dirname(remote_log.rstrip("/")))
+    parent = os.path.basename(os.path.dirname(os.path.dirname(remote_log.rstrip("/"))))
+    return f"{parent}/{run_dir}"
 
 
-def _find_remote_eval_samples():
-    cmd = ["ssh", "-o", "ConnectTimeout=15", "-p", REMOTE_PORT,
-           f"{REMOTE_USER}@{REMOTE_HOST}"]
-    find = ("cd %s; D=$(ls -td 5script/results/%s/*/ 2>/dev/null | head -1); "
-            "echo \"${D}checkpoints/eval_samples\"" % (REMOTE_BASE, "*"))
+def _load_state():
     try:
-        r = subprocess.run(cmd + [find], capture_output=True, text=True, timeout=30)
-        return r.stdout.strip().splitlines()[0].strip() if r.stdout.strip() else ""
+        return json.load(open(STATE_F, encoding="utf-8")) if os.path.exists(STATE_F) else {}
     except Exception:
-        return ""
+        return {}
 
 
-def regen_poster_if_new_eval(rows, verbose=True):
-    """有新 eval 步才更新海报（拉 eval_samples + 生成 eval_poster.png）。"""
-    max_step = _max_eval_step(rows)
-    if max_step <= _last_eval_step["v"]:
-        return
-    es_dir = os.path.join(HERE, "remote_eval_samples")
-    os.makedirs(es_dir, exist_ok=True)
-    remote = _find_remote_eval_samples()
-    if not remote:
-        return
-    # 拉取该实验的 eval_samples（覆盖旧 run，避免混 step）
-    _rmtree(es_dir)
-    os.makedirs(es_dir, exist_ok=True)
+def _save_state(s):
     try:
-        subprocess.run(["scp", "-o", "ConnectTimeout=15", "-P", REMOTE_PORT,
-                        "-r", f"{REMOTE_USER}@{REMOTE_HOST}:{remote}/.", es_dir + "/"],
-                       capture_output=True, text=True, timeout=180)
-    except Exception as e:
-        if verbose:
-            print(f"[poster] scp 取样图失败: {e}")
-        return
-    try:
-        args = [sys.executable, os.path.join(HERE, "make_eval_poster.py"), es_dir,
-                "--gt-dir", os.path.join(HERE, "remote_gt"),
-                "--show5-csv", os.path.join(HERE, "show5_eval.csv"),
-                "-o", os.path.join(HERE, "eval_poster.png")]
-        subprocess.run(args, capture_output=True, text=True, timeout=180)
-        if verbose:
-            print(f"[poster] 已更新到 eval step {max_step}")
-    except Exception as e:
-        if verbose:
-            print(f"[poster] 海报生成失败: {e}")
-    _last_eval_step["v"] = max_step
+        json.dump(s, open(STATE_F, "w", encoding="utf-8"))
+    except Exception:
+        pass
 
 
 def _rmtree(path):
     import shutil
     shutil.rmtree(path, ignore_errors=True)
+
+
+def _new_archive_dir(exp):
+    """归档目录：poster_archive/<exp>/，静态留存该实验的海报/html/数据/取样图。"""
+    d = os.path.join(ARCHIVE_DIR, exp.replace("/", "__"))
+    os.makedirs(d, exist_ok=True)
+    return d
+
+
+def _archive_exp(exp, verbose=True):
+    """归档上一实验的产物（New 实验开始时调用，静态留存，live 文件不受影响）：
+    - html/data json：复制到 post_archive/<exp>/ 作静态快照（live 的仍在 tools/ 供服务）
+    - 旧海报 eval_poster.png：移动（新实验将覆盖该文件名）
+    - 旧 eval 取样图：复制归档
+    """
+    dest = _new_archive_dir(exp)
+    import shutil
+    for src, name in ((os.path.join(HERE, "train_dashboard.html"), "train_dashboard.html"),
+                      (os.path.join(HERE, "train_data.json"), "train_data.json")):
+        if os.path.exists(src):
+            shutil.copy(src, os.path.join(dest, name))
+    if os.path.exists(POSTER):
+        shutil.move(POSTER, os.path.join(dest, "eval_poster.png"))
+    if os.path.isdir(LOCAL_ES):
+        shutil.rmtree(os.path.join(dest, "eval_samples"), ignore_errors=True)
+        shutil.copytree(LOCAL_ES, os.path.join(dest, "eval_samples"))
+    if verbose:
+        print(f"[poster] 旧实验 {exp} 已归档到 {dest}")
+
+
+def _reset_experiment(exp, verbose=True):
+    """新实验开始：把上一实验的海报/html/数据归档静态留存，清空取样缓存重新开始。"""
+    state = _load_state()
+    old_exp = state.get("experiment")
+    if old_exp and old_exp != exp:
+        _archive_exp(old_exp, verbose)
+    _rmtree(LOCAL_ES)
+    os.makedirs(LOCAL_ES, exist_ok=True)
+    _save_state({"experiment": exp, "done_steps": []})
+    if verbose:
+        print(f"[poster] 新实验 {exp} 开始（旧实验已归档）")
+    _rmtree(LOCAL_ES)
+    os.makedirs(LOCAL_ES, exist_ok=True)
+    _save_state({"experiment": exp, "done_steps": []})
+    if verbose:
+        print(f"[poster] 新实验 {exp}: 归档旧海报, 重置取样缓存")
+
+
+def _existing_steps():
+    try:
+        return sorted(int(d.name.replace("step", "")) for d in os.listdir(LOCAL_ES)
+                      if d.startswith("step"))
+    except Exception:
+        return []
+
+
+def _pull_step_stepdir(remote_base, step, verbose=True):
+    """从远程 eval_samples/<stepNNNNNNN> 拉取该 step 的取样图到本地。"""
+    import glob as _glob
+    # 远程 eval_samples 目录在给定实验的 checkpoints/eval_samples 下
+    src_dir = "%s/checkpoints/eval_samples/step%07d" % (remote_base, step)
+    local_dir = os.path.join(LOCAL_ES, "step%07d" % step)
+    os.makedirs(local_dir, exist_ok=True)
+    try:
+        r = subprocess.run(
+            ["scp", "-o", "ConnectTimeout=15", "-P", REMOTE_PORT, "-r",
+             f"{REMOTE_USER}@{REMOTE_HOST}:{src_dir}/.", local_dir + "/"],
+            capture_output=True, text=True, timeout=180)
+        return r.returncode == 0
+    except Exception:
+        return False
+
+
+def regen_poster_if_new_eval(rows, remote_log, verbose=True):
+    """实验感知 + 增量：实验切换则 reset；新 eval step 则拉取样图并重生成海报。"""
+    if not remote_log:
+        return
+    exp = _experiment_key(remote_log)
+    state = _load_state()
+    if state.get("experiment") != exp:
+        _reset_experiment(exp, verbose)
+        state = _load_state()
+
+    # 当前已处理过的 step
+    done = set(state.get("done_steps", []))
+    # 新出现的真实 eval 步（is_eval=True，即 [auto-eval] 行；不是前向填充的损失行）
+    new_steps = sorted(r["step"] for r in rows
+                       if r.get("is_eval") and r["step"] not in done)
+    if not new_steps:
+        return  # 没有新 eval，海报不用动
+
+    remote_base = "/".join(remote_log.split("/")[:-1])  # 实验目录绝对路径（去掉 log.txt）
+    # 增量拉取本地还没有的 step（只有真拿到该 step 取样图才记 done，否则下轮重试）
+    have = set(_existing_steps())
+    really_done = set(done)
+    for s in new_steps:
+        if s not in have:
+            ok_pull = _pull_step_stepdir(remote_base, s, verbose)
+            # pull 后确认本地确实出现该 step 目录（内容非空）
+            sd = os.path.join(LOCAL_ES, "step%07d" % s)
+            if ok_pull and os.path.isdir(sd) and os.listdir(sd):
+                really_done.add(s)
+        else:
+            really_done.add(s)
+    # 重新生成（make_eval_poster 读 LOCAL_ES 全部 step => 行追加）
+    args = [sys.executable, os.path.join(HERE, "make_eval_poster.py"), LOCAL_ES,
+            "--gt-dir", os.path.join(HERE, "remote_gt"),
+            "--show5-csv", os.path.join(HERE, "show5_eval.csv"),
+            "-o", POSTER]
+    try:
+        subprocess.run(args, capture_output=True, text=True, timeout=180)
+        _save_state({"experiment": exp,
+                     "done_steps": sorted(really_done)})
+        if verbose:
+            print(f"[poster] 已更新 {exp}，含 eval steps {sorted(really_done)}")
+    except Exception as e:
+        if verbose:
+            print(f"[poster] 海报生成失败: {e}")
 
 
 def run_once(verbose=True, regen_poster=True):
@@ -216,7 +313,7 @@ def run_once(verbose=True, regen_poster=True):
     write(rows, f"remote:{REMOTE_USER}@{REMOTE_HOST}:{remote}")
     if regen_poster:
         try:
-            regen_poster_if_new_eval(rows, verbose)
+            regen_poster_if_new_eval(rows, remote, verbose)
         except Exception:
             pass
     last = rows[-1] if rows else None
