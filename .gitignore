@@ -93,3 +93,23 @@ __pycache__/
 .vscode/
 train_data.json
 
+# ---- 超大二进制 / 可再生成缓存 (>100MB 或可由脚本重建) ----
+# 1.2GB latent 探针缓存：可删可重建
+5script/structure_probe_cache/
+5script/condition_probes/
+5script/structure_probes/
+# 标准字形渲染图 + VAE latent（由 build_std_glyph_img/build_std_latent 重建）
+tools/std_glyph_img/
+tools/std_glyph_latent/
+# eval/历史取样/快照产物（可再拉取）
+tools/remote_eval_samples/
+tools/remote_eval_samples_test/
+tools/remote_eval_samples_test_steps/
+tools/remote_gt/
+tools/snapshots/
+tools/_cs3_check/
+tools/_fonttest/
+# 误入的下载器可执行文件
+*.exe
+
+

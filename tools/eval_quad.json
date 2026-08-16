@@ -1,0 +1,38 @@
+{
+  "ckpt": "5script/results/v3a/20260815-195729-v3a-2factor-glyph-canny-skel/checkpoints/0005000.pt",
+  "csv": "5script/eval_strata/clean_unseen_triple_100.csv",
+  "n": 5,
+  "time": "2026-08-15 21:10:58",
+  "rows": [
+    {
+      "calligrapher": "赵佶",
+      "script": "楷",
+      "character": "仰",
+      "image": "final_images/240699.png"
+    },
+    {
+      "calligrapher": "古文四声韵",
+      "script": "篆",
+      "character": "皇",
+      "image": "final_images/293468.png"
+    },
+    {
+      "calligrapher": "鲜于枢",
+      "script": "草",
+      "character": "字",
+      "image": "final_images/258667.png"
+    },
+    {
+      "calligrapher": "赵佶",
+      "script": "行",
+      "character": "踐",
+      "image": "final_images/313599.png"
+    },
+    {
+      "calligrapher": "赵孟𫖯",
+      "script": "隶",
+      "character": "殆",
+      "image": "final_images/282301.png"
+    }
+  ]
+}

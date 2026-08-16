@@ -1,0 +1,6 @@
+calligrapher_id,character,std_glyph_key,calligrapher,character_id,glyph_id,script_id,script,image_path
+130,鼎,kai/U+09F0E,古文四声韵,6583,6583,0,楷,final_images/224156.png
+130,商,kai/U+05546,古文四声韵,925,925,0,楷,final_images/252587.png
+0,也,li/U+04E5F,others,212,28316,4,隶,final_images/9817.png
+0,刻,li/U+0523B,others,615,28719,4,隶,final_images/29261.png
+39,昌,kai/U+0660C,于右任,2377,2377,0,楷,final_images/101161.png
