@@ -667,6 +667,14 @@ class DiT_2Cond(nn.Module):
         num_characters=1000,
         learn_sigma=True,
         use_checkpoint=True,
+        condition_fusion="legacy",
+        callig_embed_dim=None,
+        char_embed_dim=None,
+        cond_drop_all_prob=0.05,
+        cond_drop_one_prob=0.0,
+        skel_head_enabled=False,
+        use_glyph_cond=False,
+        glyph_scale_init=0.4,
     ):
         super().__init__()
         self.learn_sigma = learn_sigma
@@ -675,18 +683,66 @@ class DiT_2Cond(nn.Module):
         self.out_channels = in_channels * 2 if learn_sigma else in_channels
         self.patch_size = patch_size
         self.num_heads = num_heads
+        self.condition_fusion = condition_fusion
+        self.cond_drop_all_prob = float(cond_drop_all_prob)
+        self.cond_drop_one_prob = float(cond_drop_one_prob)
+        self.skel_head_enabled = bool(skel_head_enabled)
+        self.use_glyph_cond = bool(use_glyph_cond)
+        self.glyph_scale_init = float(glyph_scale_init)
+        if self.cond_drop_all_prob < 0 or self.cond_drop_one_prob < 0:
+            raise ValueError("condition dropout probabilities must be non-negative")
+        if self.cond_drop_all_prob + self.cond_drop_one_prob > 1:
+            raise ValueError("cond_drop_all_prob + cond_drop_one_prob must be <= 1")
 
         self.x_embedder = PatchEmbed(input_size, patch_size, in_channels, hidden_size, bias=True)
         self.t_embedder = TimestepEmbedder(hidden_size)
 
-        self.y_callig_embedder = LabelEmbedder(num_calligraphers, hidden_size, class_dropout_prob)
-        self.y_char_embedder = LabelEmbedder(num_characters, hidden_size, class_dropout_prob)
-
-        self.cond_fusion = nn.Sequential(
-            nn.Linear(hidden_size * 2, hidden_size),
-            nn.SiLU(),
-            nn.Linear(hidden_size, hidden_size)
-        )
+        if condition_fusion == "factorized_add":
+            # 二因子可组合条件（V3-A）：calligrapher（风格）× glyph（内容=script×char 合并类）。
+            # 每个因子独立低维 embedding + 独立投影后相加，未见的 (callig, glyph) 组合
+            # 由两个各自训练充分的边际 score 组合而成，而不是靠一整张联合表 memorization。
+            callig_embed_dim = callig_embed_dim or hidden_size
+            char_embed_dim = char_embed_dim or hidden_size
+            self.y_callig_embedder = LabelEmbedder(
+                num_calligraphers, callig_embed_dim, 0.0, use_cfg_embedding=True)
+            self.y_char_embedder = LabelEmbedder(
+                num_characters, char_embed_dim, 0.0, use_cfg_embedding=True)
+            self.callig_proj = nn.Sequential(nn.LayerNorm(callig_embed_dim),
+                                             nn.Linear(callig_embed_dim, hidden_size))
+            self.char_proj = nn.Sequential(nn.LayerNorm(char_embed_dim),
+                                           nn.Linear(char_embed_dim, hidden_size))
+            self.cond_fusion = None
+        elif condition_fusion == "xl_highdim":
+            # XL 高维条件：callig(384) + glyph(768) concat -> MLP -> hidden(1152)，c = t_emb + y_emb。
+            # 关键认知修正：ImageNet 预训练的 adaLN/final_layer 是"分类→调制"耦合，与书法正交，
+            # 因此 train.py 里会把它们重置从头学。这里只保留高维条件结构，条件向量由训练
+            # 目标自行建立语义。y_scale 可学习缩放初值 ~1.0，让 y_emb 初始幅度接近 t_emb，
+            # 保证 adalaN(已重置) 早期稳定，同时允许模型自由扩大/缩小条件表达。
+            d_c = max(callig_embed_dim or (hidden_size // 3), 64)
+            d_g = max(char_embed_dim or (hidden_size - d_c), 64)
+            self.y_callig_embedder = LabelEmbedder(
+                num_calligraphers, d_c, 0.0, use_cfg_embedding=True)
+            self.y_char_embedder = LabelEmbedder(
+                num_characters, d_g, 0.0, use_cfg_embedding=True)
+            self.callig_proj = None
+            self.char_proj = None
+            self.cond_fusion = nn.Sequential(
+                nn.LayerNorm(d_c + d_g),
+                nn.Linear(d_c + d_g, hidden_size),
+                nn.SiLU(),
+                nn.Linear(hidden_size, hidden_size),
+            )
+            self.y_scale = nn.Parameter(torch.tensor(0.05))  # y_emb 初始 norm~1.0，可学习放大
+            self._y_scale_enabled = True
+        else:
+            self.y_callig_embedder = LabelEmbedder(num_calligraphers, hidden_size, class_dropout_prob)
+            self.y_char_embedder = LabelEmbedder(num_characters, hidden_size, class_dropout_prob)
+            self.cond_fusion = nn.Sequential(
+                nn.Linear(hidden_size * 2, hidden_size),
+                nn.SiLU(),
+                nn.Linear(hidden_size, hidden_size)
+            )
+            self.callig_proj = self.char_proj = None
 
         num_patches = self.x_embedder.num_patches
         self.pos_embed = nn.Parameter(torch.zeros(1, num_patches, hidden_size), requires_grad=False)
@@ -695,6 +751,24 @@ class DiT_2Cond(nn.Module):
             DiTBlock(hidden_size, num_heads, mlp_ratio=mlp_ratio) for _ in range(depth)
         ])
         self.final_layer = FinalLayer(hidden_size, patch_size, self.out_channels)
+        # 骨架辅助头（训练引导用，推理不用）：从 final_layer 前的 block 特征
+        # 并行解出 1×32×32 latent 骨架预测，与 GT latent 骨架对齐。
+        self.skel_head = None
+        if self.skel_head_enabled:
+            self.skel_head = nn.Sequential(
+                nn.LayerNorm(hidden_size, elementwise_affine=False, eps=1e-6),
+                nn.Linear(hidden_size, patch_size * patch_size, bias=True),
+            )
+        # 甲2 标准字形条件的 token-add 缩放(可学习, 初始 glyph_scale_init, 让字形条件有存在感)
+        self.glyph_scale = nn.Parameter(torch.tensor(self.glyph_scale_init))
+        # 甲2 标准字形条件：独立可训练 glyph_embedder(Conv2d 4→hidden, patch 编码)
+        # 把标准字形 latent G(4,32,32) 编成与 x token 同形 token, forward 时 token-add。
+        # 独立投影而非复用 x_embedder: 保证 g 编码可学习、norm 可控, 不依赖 x_embedder
+        # 是否被冻结(XL LoRA 模式下 x_embedder 冻结, 复用会导致 g 信号被锁死)。
+        self.glyph_embedder = None
+        if self.use_glyph_cond:
+            ps_ = self.x_embedder.patch_size[0] if not isinstance(self.x_embedder.patch_size, int) else self.x_embedder.patch_size
+            self.glyph_embedder = nn.Conv2d(in_channels, hidden_size, kernel_size=ps_, stride=ps_, bias=False)
         self.initialize_weights()
 
     def initialize_weights(self):
@@ -714,6 +788,10 @@ class DiT_2Cond(nn.Module):
 
         nn.init.normal_(self.y_callig_embedder.embedding_table.weight, std=0.02)
         nn.init.normal_(self.y_char_embedder.embedding_table.weight, std=0.02)
+
+        if getattr(self, "skel_head_enabled", False) and self.skel_head is not None:
+            nn.init.zeros_(self.skel_head[-1].weight)
+            nn.init.zeros_(self.skel_head[-1].bias)
 
         nn.init.normal_(self.t_embedder.mlp[0].weight, std=0.02)
         nn.init.normal_(self.t_embedder.mlp[2].weight, std=0.02)
@@ -737,21 +815,63 @@ class DiT_2Cond(nn.Module):
         imgs = x.reshape(shape=(x.shape[0], c, h * p, h * p))
         return imgs
 
-    def forward(self, x, t, y_callig, y_char, return_intermediate_layer=None):
+    def forward(self, x, t, y_callig, y_char, return_intermediate_layer=None, g=None):
         """
         Forward pass of DiT_2Cond.
         x: (N, C, H, W) noisy latents
         t: (N,) timesteps
         y_callig, y_char: (N,) condition IDs
+        g: (N, C, H, W) 标准字形 latent(与 x 同空间), 甲2 token-add 条件; None=不使用
         return_intermediate_layer: int block index (e.g. 8) whose patch features to return for REPA.
                                    When set, returns (output, intermediate_feats) as a tuple.
         """
         x = self.x_embedder(x) + self.pos_embed  # (N, T, D)
+        if self.use_glyph_cond and self.glyph_embedder is not None and g is not None:
+            # 独立 glyph_embedder 把标准字形 latent 编成 (N, D, 16, 16) -> flat tokens (N, 256, D)
+            g_tok = self.glyph_embedder(g).flatten(2).transpose(1, 2)  # (N,256,D)
+            x = x + self.glyph_scale * g_tok
         t_emb = self.t_embedder(t)               # (N, D)
-        e_callig = self.y_callig_embedder(y_callig, self.training)
-        e_char = self.y_char_embedder(y_char, self.training)
-        y_concat = torch.cat([e_callig, e_char], dim=-1)
-        y_emb = self.cond_fusion(y_concat)
+
+        if self.condition_fusion == "factorized_add":
+            # V3-A 二因子可组合 mask（4-way）：
+            #   - drop_all           -> unconditional（CFG 基准）
+            #   - drop_one & which=0 -> glyph-only（drop callig，学 content score s_G）
+            #   - drop_one & which=1 -> callig-only（drop glyph，学 style score s_A）
+            #   - 其余               -> full（callig+glyph，学 joint score）
+            # 默认 0.10/0.30 配比 => full 60% / callig-only 15% / glyph-only 15% / uncond 10%。
+            if self.training and (self.cond_drop_all_prob > 0 or self.cond_drop_one_prob > 0):
+                r = torch.rand(y_callig.shape[0], device=y_callig.device)
+                drop_all = r < self.cond_drop_all_prob
+                drop_one = ((r >= self.cond_drop_all_prob)
+                            & (r < self.cond_drop_all_prob + self.cond_drop_one_prob))
+                which = torch.randint(0, 2, y_callig.shape, device=y_callig.device)
+                y_callig = torch.where(drop_all | (drop_one & (which == 0)),
+                                       self.y_callig_embedder.num_classes, y_callig)
+                y_char = torch.where(drop_all | (drop_one & (which == 1)),
+                                     self.y_char_embedder.num_classes, y_char)
+            e_callig = self.y_callig_embedder(y_callig, False)
+            e_char = self.y_char_embedder(y_char, False)
+            y_emb = (self.callig_proj(e_callig) + self.char_proj(e_char)) / math.sqrt(2.0)
+        elif self.condition_fusion == "xl_highdim":
+            # XL 高维条件：与 factorized_add 相同的 4-way 可控 mask（CFG 需要 uncond 维度）。
+            if self.training and (self.cond_drop_all_prob > 0 or self.cond_drop_one_prob > 0):
+                r = torch.rand(y_callig.shape[0], device=y_callig.device)
+                drop_all = r < self.cond_drop_all_prob
+                drop_one = ((r >= self.cond_drop_all_prob)
+                            & (r < self.cond_drop_all_prob + self.cond_drop_one_prob))
+                which = torch.randint(0, 2, y_callig.shape, device=y_callig.device)
+                y_callig = torch.where(drop_all | (drop_one & (which == 0)),
+                                       self.y_callig_embedder.num_classes, y_callig)
+                y_char = torch.where(drop_all | (drop_one & (which == 1)),
+                                     self.y_char_embedder.num_classes, y_char)
+            e_callig = self.y_callig_embedder(y_callig, False)
+            e_char = self.y_char_embedder(y_char, False)
+            y_emb = self.cond_fusion(torch.cat([e_callig, e_char], dim=-1)) * self.y_scale
+        else:
+            e_callig = self.y_callig_embedder(y_callig, self.training)
+            e_char = self.y_char_embedder(y_char, self.training)
+            y_concat = torch.cat([e_callig, e_char], dim=-1)
+            y_emb = self.cond_fusion(y_concat)
         c = t_emb + y_emb                        # (N, D)
 
         intermediate_feats = None
@@ -769,13 +889,30 @@ class DiT_2Cond(nn.Module):
                 if return_intermediate_layer is not None and i == return_intermediate_layer:
                     intermediate_feats = x
 
+        # 骨架头：从 final_layer 前的 block 输出特征并行解码 latent 骨架 (N,1,32,32)
+        skel_pred = None
+        if self.skel_head_enabled and self.skel_head is not None:
+            skel_n = self.skel_head(x)                       # (N, T, p*p)，单通道 patch 值
+            B_, T_, PP = skel_n.shape
+            h_ = int(T_ ** 0.5)
+            p_ = self.x_embedder.patch_size[0]
+            # 完全镜像主 head 的 unpatchify（C=1）：
+            # (B,H*W,p*p) -> (B,H,W,p,p,1) -> einsum 'nhwpqc->nchpwq' -> (B,1,H,W,p,p) -> (B,1,H*p,W*p)
+            skel5 = skel_n.reshape(B_, h_, h_, p_, p_, 1)
+            skel5 = torch.einsum('nhwpqc->nchpwq', skel5)
+            skel_pred = skel5.reshape(B_, 1, h_ * p_, h_ * p_)
+
         x = self.final_layer(x, c)
         x = self.unpatchify(x)
+        if self.skel_head_enabled and skel_pred is not None:
+            # 返回 (主输出, skel_pred)；gaussian_diffusion.training_losses 会把第二元素
+            # 当作 intermediate_feats 存入 loss_dict['intermediate_feats']
+            return x, skel_pred
         if return_intermediate_layer is not None:
             return x, intermediate_feats
         return x
 
-    def forward_with_cfg(self, x, t, y_callig, y_char, cfg_scale=4.0):
+    def forward_with_cfg(self, x, t, y_callig, y_char, cfg_scale=4.0, g=None):
         # Duplicate every sample: first copy conditional, second copy unconditional.
         original_bs = x.shape[0]
         x = torch.cat([x, x], dim=0)
@@ -786,7 +923,11 @@ class DiT_2Cond(nn.Module):
         uncond_char = torch.full_like(y_char, self.y_char_embedder.num_classes)
         y_callig_combined = torch.cat([y_callig[:original_bs], uncond_callig[original_bs:]], dim=0)
         y_char_combined = torch.cat([y_char[:original_bs], uncond_char[original_bs:]], dim=0)
-        model_out = self.forward(x, t, y_callig_combined, y_char_combined)
+        # 标准字形条件 g 始终全给(两半都用真实 g): 字形内容是正条件, CFG 只强化 callig 风格
+        g2 = torch.cat([g, g], dim=0) if g is not None else None
+        model_out = self.forward(x, t, y_callig_combined, y_char_combined, g=g2)
+        if isinstance(model_out, tuple):
+            model_out = model_out[0]  # skel_head 启用时 forward 返回 (主输出, skel_pred)，CFG 只取主输出
         # Apply CFG on all learned channels (eps subspace), not a hard-coded prefix.
         eps, rest = model_out[:, :self.in_channels], model_out[:, self.in_channels:]
         cond_eps, uncond_eps = torch.split(eps, original_bs, dim=0)
@@ -810,308 +951,5 @@ DiT_2Cond_models = {
     'DiT-2Cond-S/2': DiT_2Cond_S_2,
     'DiT-2Cond-B/2': DiT_2Cond_B_2,
     'DiT-2Cond-XL/2': DiT_2Cond_XL_2,
-}
-
-
-#################################################################################
-#              Writer x Glyph DiT with Explicit Condition Masks                 #
-#################################################################################
-
-class DiT_WriterGlyph(nn.Module):
-    """DiT conditioned on a writer and a compact glyph-content category.
-
-    ``condition_mask`` is a per-example bit mask whose values are:
-
-      * ``COND_UNCONDITIONAL`` (0): drop writer and glyph
-      * ``COND_WRITER_ONLY`` (1): keep writer, drop glyph
-      * ``COND_GLYPH_ONLY`` (2): drop writer, keep glyph
-      * ``COND_FULL`` (3): keep writer and glyph
-
-    Passing an explicit mask is deterministic even in ``train()`` mode: the
-    embedders never perform a second, hidden label dropout.  When the mask is
-    omitted, optional ``cond_drop_*`` probabilities provide a backward-friendly
-    random-mask fallback during training; their defaults disable it.
-    """
-
-    COND_UNCONDITIONAL = 0
-    COND_WRITER_ONLY = 1
-    COND_GLYPH_ONLY = 2
-    COND_FULL = 3
-
-    def __init__(
-        self,
-        input_size=32,
-        patch_size=2,
-        in_channels=4,
-        hidden_size=384,
-        depth=12,
-        num_heads=6,
-        mlp_ratio=4.0,
-        num_writers=1000,
-        num_glyphs=1000,
-        writer_embed_dim=128,
-        glyph_embed_dim=64,
-        learn_sigma=True,
-        use_checkpoint=False,
-        cond_drop_all_prob=0.0,
-        cond_drop_one_prob=0.0,
-    ):
-        super().__init__()
-        self.learn_sigma = learn_sigma
-        self.use_checkpoint = use_checkpoint
-        self.in_channels = in_channels
-        self.out_channels = in_channels * 2 if learn_sigma else in_channels
-        self.patch_size = patch_size
-        self.num_heads = num_heads
-        self.cond_drop_all_prob = float(cond_drop_all_prob)
-        self.cond_drop_one_prob = float(cond_drop_one_prob)
-        if self.cond_drop_all_prob < 0 or self.cond_drop_one_prob < 0:
-            raise ValueError("condition dropout probabilities must be non-negative")
-        if self.cond_drop_all_prob + self.cond_drop_one_prob > 1:
-            raise ValueError("cond_drop_all_prob + cond_drop_one_prob must be <= 1")
-
-        self.x_embedder = PatchEmbed(
-            input_size, patch_size, in_channels, hidden_size, bias=True)
-        self.t_embedder = TimestepEmbedder(hidden_size)
-
-        # Both tables contain one explicit null row.  Their LabelEmbedders have
-        # dropout_prob=0, so all masking is visible and controlled at this class.
-        self.y_writer_embedder = LabelEmbedder(
-            num_writers, writer_embed_dim, 0.0, use_cfg_embedding=True)
-        self.y_glyph_embedder = LabelEmbedder(
-            num_glyphs, glyph_embed_dim, 0.0, use_cfg_embedding=True)
-        self.writer_proj = nn.Sequential(
-            nn.LayerNorm(writer_embed_dim),
-            nn.Linear(writer_embed_dim, hidden_size),
-        )
-        self.glyph_proj = nn.Sequential(
-            nn.LayerNorm(glyph_embed_dim),
-            nn.Linear(glyph_embed_dim, hidden_size),
-        )
-
-        num_patches = self.x_embedder.num_patches
-        self.pos_embed = nn.Parameter(
-            torch.zeros(1, num_patches, hidden_size), requires_grad=False)
-        self.blocks = nn.ModuleList([
-            DiTBlock(hidden_size, num_heads, mlp_ratio=mlp_ratio)
-            for _ in range(depth)
-        ])
-        self.final_layer = FinalLayer(hidden_size, patch_size, self.out_channels)
-        self.initialize_weights()
-
-    def initialize_weights(self):
-        def _basic_init(module):
-            if isinstance(module, nn.Linear):
-                nn.init.xavier_uniform_(module.weight)
-                if module.bias is not None:
-                    nn.init.constant_(module.bias, 0)
-        self.apply(_basic_init)
-
-        pos_embed = get_2d_sincos_pos_embed(
-            self.pos_embed.shape[-1], int(self.x_embedder.num_patches ** 0.5))
-        self.pos_embed.data.copy_(torch.from_numpy(pos_embed).float().unsqueeze(0))
-
-        w = self.x_embedder.proj.weight.data
-        nn.init.xavier_uniform_(w.view([w.shape[0], -1]))
-        nn.init.constant_(self.x_embedder.proj.bias, 0)
-        nn.init.normal_(self.y_writer_embedder.embedding_table.weight, std=0.02)
-        nn.init.normal_(self.y_glyph_embedder.embedding_table.weight, std=0.02)
-        nn.init.normal_(self.t_embedder.mlp[0].weight, std=0.02)
-        nn.init.normal_(self.t_embedder.mlp[2].weight, std=0.02)
-
-        for block in self.blocks:
-            nn.init.constant_(block.adaLN_modulation[-1].weight, 0)
-            nn.init.constant_(block.adaLN_modulation[-1].bias, 0)
-        nn.init.constant_(self.final_layer.adaLN_modulation[-1].weight, 0)
-        nn.init.constant_(self.final_layer.adaLN_modulation[-1].bias, 0)
-        nn.init.constant_(self.final_layer.linear.weight, 0)
-        nn.init.constant_(self.final_layer.linear.bias, 0)
-
-    def _sample_condition_mask(self, batch_size, device):
-        """Sample the optional training fallback mask."""
-        mask = torch.full(
-            (batch_size,), self.COND_FULL, dtype=torch.long, device=device)
-        if (not self.training
-                or self.cond_drop_all_prob + self.cond_drop_one_prob == 0):
-            return mask
-
-        r = torch.rand(batch_size, device=device)
-        drop_all = r < self.cond_drop_all_prob
-        drop_one = ((r >= self.cond_drop_all_prob)
-                    & (r < self.cond_drop_all_prob + self.cond_drop_one_prob))
-        # For the single-factor region, retain exactly one factor with equal
-        # probability.  There is no independent second dropout.
-        keep_writer = torch.rand(batch_size, device=device) < 0.5
-        one_factor_mask = torch.where(
-            keep_writer,
-            torch.full_like(mask, self.COND_WRITER_ONLY),
-            torch.full_like(mask, self.COND_GLYPH_ONLY),
-        )
-        mask = torch.where(drop_one, one_factor_mask, mask)
-        return torch.where(
-            drop_all, torch.full_like(mask, self.COND_UNCONDITIONAL), mask)
-
-    def _normalize_condition_mask(self, condition_mask, batch_size, device):
-        if condition_mask is None:
-            return self._sample_condition_mask(batch_size, device)
-        mask = torch.as_tensor(condition_mask, device=device)
-        if mask.ndim == 0:
-            mask = mask.expand(batch_size)
-        if mask.shape != (batch_size,):
-            raise ValueError(
-                f"condition_mask must be scalar or shape ({batch_size},), "
-                f"got {tuple(mask.shape)}")
-        if mask.is_floating_point() and not torch.equal(mask, mask.round()):
-            raise ValueError("condition_mask values must be integers in [0, 3]")
-        mask = mask.to(dtype=torch.long)
-        if torch.any((mask < self.COND_UNCONDITIONAL) | (mask > self.COND_FULL)):
-            raise ValueError("condition_mask values must be integers in [0, 3]")
-        return mask
-
-    def _mask_condition_ids(self, y_writer, y_glyph, condition_mask=None):
-        """Return masked IDs and the resolved per-example mask."""
-        if y_writer.shape != y_glyph.shape or y_writer.ndim != 1:
-            raise ValueError("y_writer and y_glyph must be 1-D tensors of equal shape")
-        mask = self._normalize_condition_mask(
-            condition_mask, y_writer.shape[0], y_writer.device)
-        keep_writer = (mask & self.COND_WRITER_ONLY) != 0
-        keep_glyph = (mask & self.COND_GLYPH_ONLY) != 0
-        masked_writer = torch.where(
-            keep_writer, y_writer,
-            torch.full_like(y_writer, self.y_writer_embedder.num_classes))
-        masked_glyph = torch.where(
-            keep_glyph, y_glyph,
-            torch.full_like(y_glyph, self.y_glyph_embedder.num_classes))
-        return masked_writer, masked_glyph, mask
-
-    def unpatchify(self, x):
-        c = self.out_channels
-        p = self.x_embedder.patch_size[0]
-        h = w = int(x.shape[1] ** 0.5)
-        assert h * w == x.shape[1]
-        x = x.reshape(shape=(x.shape[0], h, w, p, p, c))
-        x = torch.einsum('nhwpqc->nchpwq', x)
-        return x.reshape(shape=(x.shape[0], c, h * p, h * p))
-
-    def forward(
-        self,
-        x,
-        t,
-        y_writer,
-        y_glyph,
-        condition_mask=None,
-        return_intermediate_layer=None,
-    ):
-        """Run the denoiser with an optional explicit per-example mask."""
-        y_writer, y_glyph, _ = self._mask_condition_ids(
-            y_writer, y_glyph, condition_mask)
-        x = self.x_embedder(x) + self.pos_embed
-        t_emb = self.t_embedder(t)
-        # train=False is intentional: masking has already been resolved above.
-        e_writer = self.y_writer_embedder(y_writer, False)
-        e_glyph = self.y_glyph_embedder(y_glyph, False)
-        y_emb = (self.writer_proj(e_writer) + self.glyph_proj(e_glyph)) / math.sqrt(2.0)
-        c = t_emb + y_emb
-
-        intermediate_feats = None
-        if self.use_checkpoint:
-            for i, block in enumerate(self.blocks):
-                if return_intermediate_layer is not None and i == return_intermediate_layer:
-                    x = block(x, c)
-                    intermediate_feats = x
-                else:
-                    x = checkpoint(lambda *a: block(*a), x, c, use_reentrant=False)
-        else:
-            for i, block in enumerate(self.blocks):
-                x = block(x, c)
-                if return_intermediate_layer is not None and i == return_intermediate_layer:
-                    intermediate_feats = x
-
-        x = self.unpatchify(self.final_layer(x, c))
-        if return_intermediate_layer is not None:
-            return x, intermediate_feats
-        return x
-
-    def forward_with_cfg(
-        self, x, t, y_writer, y_glyph, cfg_scale=4.0):
-        """Standard full-vs-unconditional CFG for an arbitrary batch size."""
-        batch_size = x.shape[0]
-        x_all = torch.cat([x, x], dim=0)
-        t_all = torch.cat([t, t], dim=0)
-        writer_all = torch.cat([y_writer, y_writer], dim=0)
-        glyph_all = torch.cat([y_glyph, y_glyph], dim=0)
-        mask = torch.cat([
-            torch.full_like(y_writer, self.COND_FULL),
-            torch.full_like(y_writer, self.COND_UNCONDITIONAL),
-        ])
-        model_out = self.forward(
-            x_all, t_all, writer_all, glyph_all, condition_mask=mask)
-        full_out, uncond_out = model_out.split(batch_size, dim=0)
-        full_eps = full_out[:, :self.in_channels]
-        uncond_eps = uncond_out[:, :self.in_channels]
-        guided_eps = uncond_eps + cfg_scale * (full_eps - uncond_eps)
-        return torch.cat([guided_eps, full_out[:, self.in_channels:]], dim=1)
-
-    def forward_with_compositional_cfg(
-        self,
-        x,
-        t,
-        y_writer,
-        y_glyph,
-        writer_scale=1.0,
-        glyph_scale=1.0,
-        interaction_scale=1.0,
-    ):
-        """Four-branch writer/glyph product-of-experts guidance.
-
-        Implements::
-
-            eps_u
-            + glyph_scale * (eps_g - eps_u)
-            + writer_scale * (eps_a - eps_u)
-            + interaction_scale * (eps_ag - eps_a - eps_g + eps_u)
-
-        Only epsilon channels are guided; learned variance channels come from
-        the fully conditioned branch, matching standard classifier-free guidance.
-        """
-        batch_size = x.shape[0]
-        x_all = torch.cat([x, x, x, x], dim=0)
-        t_all = torch.cat([t, t, t, t], dim=0)
-        writer_all = torch.cat([y_writer, y_writer, y_writer, y_writer], dim=0)
-        glyph_all = torch.cat([y_glyph, y_glyph, y_glyph, y_glyph], dim=0)
-        mask = torch.cat([
-            torch.full_like(y_writer, self.COND_UNCONDITIONAL),
-            torch.full_like(y_writer, self.COND_GLYPH_ONLY),
-            torch.full_like(y_writer, self.COND_WRITER_ONLY),
-            torch.full_like(y_writer, self.COND_FULL),
-        ])
-        model_out = self.forward(
-            x_all, t_all, writer_all, glyph_all, condition_mask=mask)
-        out_u, out_g, out_a, out_ag = model_out.split(batch_size, dim=0)
-        eps_u = out_u[:, :self.in_channels]
-        eps_g = out_g[:, :self.in_channels]
-        eps_a = out_a[:, :self.in_channels]
-        eps_ag = out_ag[:, :self.in_channels]
-        guided_eps = (
-            eps_u
-            + glyph_scale * (eps_g - eps_u)
-            + writer_scale * (eps_a - eps_u)
-            + interaction_scale * (eps_ag - eps_a - eps_g + eps_u)
-        )
-        return torch.cat([guided_eps, out_ag[:, self.in_channels:]], dim=1)
-
-
-def DiT_WriterGlyph_S_2(**kwargs):
-    return DiT_WriterGlyph(
-        depth=12, hidden_size=384, patch_size=2, num_heads=6, **kwargs)
-
-
-# Descriptive alias for code that prefers the mathematical two-factor name.
-DiT_2Factor = DiT_WriterGlyph
-
-
-DiT_WriterGlyph_models = {
-    'DiT-WriterGlyph-S/2': DiT_WriterGlyph_S_2,
-    'DiT-2Factor-S/2': DiT_WriterGlyph_S_2,
 }
 

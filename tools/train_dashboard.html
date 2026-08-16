@@ -5,6 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>DiT 训练监控 · Diff Loss</title>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script src="hammer.min.js"></script>
+<script src="chartjs-plugin-zoom.min.js"></script>
 <style>
   :root { --bg:#0f1117; --card:#1a1d27; --line:#2a2f3c; --txt:#e6e9ef; --dim:#8b93a7; --acc:#4f9cff; --warn:#ff6b6b; --ok:#3ddc97; }
   * { box-sizing:border-box; }
@@ -38,6 +40,8 @@
   <span class="meta" id="meta">未加载</span>
   <div class="controls">
     <span class="meta" id="countdown"></span>
+    <span class="meta" style="color:var(--dim);font-size:12px;">默认显示全部 step · 滚轮缩放局部 · 拖动平移 · 双击图卡重置该图</span>
+    <button class="sec" id="resetZoomBtn">↩ 重置缩放</button>
     <label class="auto"><input type="checkbox" id="autoChk" checked> 自动刷新(10s)</label>
     <button class="sec" id="refreshBtn">⟳ 立刻刷新</button>
   </div>
@@ -48,12 +52,9 @@
 
 <div class="charts" style="grid-template-columns:1fr;">
   <div class="panel">
-    <h2>最新 Eval 推理结果（前 5 张 · 左预测 / 右 GT）</h2>
-    <div style="display:flex;align-items:flex-start;gap:14px;">
-      <div style="max-width:560px;flex:1;">
-        <img id="evalImg" alt="eval 推理图（尚未生成）" style="width:100%;border-radius:8px;border:1px solid var(--line);display:block;background:#000;" />
-      </div>
-      <div class="meta" id="evalMeta" style="font-size:12px;color:var(--dim);">等待自动 eval 生成推理图…</div>
+    <h2>Eval 历史取样海报（一行=一个 ckpt 向下延伸 · 每样本 img|canny|skel · 末行 GT）</h2>
+    <div style="max-width:680px;">
+      <img id="posterImg" alt="eval 历史取样海报（尚未生成）" style="width:100%;border-radius:8px;border:1px solid var(--line);display:block;background:#000;" />
     </div>
   </div>
 </div>
@@ -87,11 +88,21 @@
     <h2>Auto-Eval：SSIM（越高越好）</h2>
     <div class="chartbox"><canvas id="ssimChart"></canvas></div>
   </div>
+  <div class="panel">
+    <h2>X0Lat：预测干净 latent vs GT latent 的 MSE（越低越好）</h2>
+    <div class="chartbox"><canvas id="x0Chart"></canvas></div>
+  </div>
 </div>
 
 <script>
 const COLORS = { diff:'#4f9cff', total:'#ffb84f', canny:'#ff6b6b', skel:'#b06bff', repa:'#3ddc97', spd:'#8b93a7' };
 let charts = {};
+let chartsBuilt = false;
+
+// 注册 zoom 插件（chartjs-plugin-zoom 需要 hammer.js 已引入）
+if(typeof ChartZoom !== 'undefined'){
+  Chart.register(ChartZoom);
+}
 
 function makeChart(id, datasets){
   const ctx = document.getElementById(id);
@@ -114,6 +125,11 @@ function makeChart(id, datasets){
               return (ts ? (ts + '  ') : '') + 'step ' + step;
             }
           }
+        },
+        zoom:{
+          pan:{ enabled:true, mode:'x' },
+          zoom:{ wheel:{ enabled:true, speed:0.08 }, pinch:{ enabled:true }, mode:'x' },
+          // 双击图表重置该图缩放；animation.duration 去掉（保持立即响应）
         }
       },
       scales:{
@@ -122,6 +138,9 @@ function makeChart(id, datasets){
       }
     }
   });
+}
+function resetZoomAll(){
+  Object.values(charts).forEach(c=>{ if(c && c.resetZoom) c.resetZoom(); });
 }
 function ds(label, color, key){
   return { label, data:[], borderColor:color, backgroundColor:color+'22',
@@ -143,22 +162,16 @@ function fill(chart, rows, useStep){
 }
 
 let lastPullText = '';
-async function loadEvalImg(){
+async function loadPoster(){
   try {
-    const res = await fetch('eval_latest.png?t=' + Date.now());
+    const res = await fetch('eval_poster.png?t=' + Date.now());
     if(!res.ok) throw new Error('HTTP '+res.status);
     const blob = await res.blob();
     const url = URL.createObjectURL(blob);
-    const img = document.getElementById('evalImg');
+    const img = document.getElementById('posterImg');
     img.src = url;
     img.onload = () => URL.revokeObjectURL(url);
-    document.getElementById('evalMeta').textContent = '左=预测 / 右=GT · 自动 eval 落盘 · 随 ckpt 更新';
-  } catch(e){
-    const img = document.getElementById('evalImg');
-    if(!img.src || img.src === window.location.href){
-      document.getElementById('evalMeta').textContent = '尚无 eval 推理图（等待首个 ckpt 保存触发 auto-eval）';
-    }
-  }
+  } catch(e){ /* 尚无海报时留空 */ }
 }
 async function load(){
   try {
@@ -170,15 +183,20 @@ async function load(){
 
     const rows = data.rows || [];
     if(rows.length){
-      makeChart('diffChart',   [ds('Diff','#4f9cff','diff')]);
-      makeChart('totalChart',  [ds('Total','#ffb84f','total')]);
-      makeChart('structChart', [ds('Canny',COLORS.canny,'canny'), ds('Skel',COLORS.skel,'skel'), ds('REPA',COLORS.repa,'repa')]);
-      makeChart('spdChart',    [ds('Steps/Sec',COLORS.spd,'stepsPerSec')]);
-      makeChart('memChart',    [ds('当前',COLORS.canny,'memCur'), ds('峰值',COLORS.skel,'memPeak')]);
-      makeChart('mseChart',    [ds('MSE','#ff6b6b','mse')]);
-      makeChart('ssimChart',   [ds('SSIM','#3ddc97','ssim')]);
+      if(!chartsBuilt){
+        makeChart('diffChart',   [ds('Diff','#4f9cff','diff')]);
+        makeChart('totalChart',  [ds('Total','#ffb84f','total')]);
+        makeChart('structChart', [ds('Canny',COLORS.canny,'canny'), ds('Skel',COLORS.skel,'skel'), ds('REPA',COLORS.repa,'repa')]);
+        makeChart('spdChart',    [ds('Steps/Sec',COLORS.spd,'stepsPerSec')]);
+        makeChart('memChart',    [ds('当前',COLORS.canny,'memCur'), ds('峰值',COLORS.skel,'memPeak')]);
+        makeChart('mseChart',    [ds('MSE','#ff6b6b','mse')]);
+        makeChart('ssimChart',   [ds('SSIM','#3ddc97','ssim')]);
+        makeChart('x0Chart',     [ds('X0Lat','#ffb84f','x0lat')]);
+        chartsBuilt = true;
+      }
       // loss / eval 类图：横轴用 step；吞吐图（spdChart）：横轴用时间
-      ['diffChart','totalChart','structChart','mseChart','ssimChart','memChart'].forEach(c=>fill(charts[c], rows, true));
+      // fill 只原位更新数据，不销毁图表 => 用户缩放/平移会在刷新后保留
+      ['diffChart','totalChart','structChart','mseChart','ssimChart','memChart','x0Chart'].forEach(c=>fill(charts[c], rows, true));
       fill(charts['spdChart'], rows, false);
 
       // 统计卡片
@@ -219,7 +237,7 @@ async function load(){
       }
       document.getElementById('statusLine').innerHTML = statusTxt || '等待数据…';
     }
-    loadEvalImg();
+    loadPoster();
   } catch(e){
     document.getElementById('meta').textContent = '加载失败: '+e.message+'（请用本地 http 服务打开，见说明）';
   }
@@ -229,6 +247,8 @@ document.getElementById('refreshBtn').addEventListener('click', () => {
   load();            // 立刻向 train_data.json 拉取并刷新曲线
   secLeft = 10;      // 重置倒计时到满格
 });
+// “↩ 重置缩放”按钮：重置所有图表到原始范围
+document.getElementById('resetZoomBtn').addEventListener('click', resetZoomAll);
 // 倒计时：前端每隔 1s 刷新显示；load 实际每 10s 拉一次
 let secLeft = 10;
 let timer = null, cdTimer = null;

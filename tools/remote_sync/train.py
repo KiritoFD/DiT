@@ -202,10 +202,22 @@ def main(args):
             input_size=latent_size,
             num_calligraphers=args.num_calligraphers,
             num_characters=args.num_characters,
-            use_checkpoint=args.use_checkpoint
+            use_checkpoint=args.use_checkpoint,
+            condition_fusion=args.condition_fusion,
+            callig_embed_dim=args.callig_embed_dim,
+            char_embed_dim=args.char_embed_dim,
+            cond_drop_all_prob=args.cond_drop_all_prob,
+            cond_drop_one_prob=args.cond_drop_one_prob,
+            skel_head_enabled=getattr(args, 'w_skel_head', 0) > 0,
+            use_glyph_cond=getattr(args, 'w_glyph_cond', 0) > 0,
+            glyph_scale_init=getattr(args, 'glyph_scale_init', 0.4),
         )
         logger.info(f"Building 2-Cond model: {args.model} "
-                    f"(callig={args.num_calligraphers}, char={args.num_characters})")
+                    f"(callig={args.num_calligraphers}, glyph/char={args.num_characters}, "
+                    f"fusion={args.condition_fusion}, dims={args.callig_embed_dim}/"
+                    f"{args.char_embed_dim}, dropout=all:{args.cond_drop_all_prob}, "
+                    f"one:{args.cond_drop_one_prob}, skel_head={getattr(args, 'w_skel_head', 0) > 0}, "
+                    f"glyph_cond={getattr(args, 'w_glyph_cond', 0) > 0}, glyph_scale_init={getattr(args, 'glyph_scale_init', 0.4)})")
 
     # Load order (fixed): pretrained body -> reset cond head -> inject LoRA -> load delta.
     # The checkpoint `delta` contains only the "changed" part (LoRA + condition head +
@@ -233,7 +245,12 @@ def main(args):
     # Re-initializing adaLN/final_layer to a small std (like the successful overfit run)
     # keeps the pretrained transformer body while letting the new condition head learn.
     # (Skipped on full resume: the delta already carries the learned adaLN.)
-    if getattr(args, 'reset_cond_head', True) and getattr(args, 'resume_full', None) is None:
+    # 条件调制层总是重置从头学（无论 legacy/factorized_add/xl_highdim）。
+    # 关键认知：ImageNet 预训练 adaLN/final_layer/y_embedder 学的是"1000类自然物分类
+    # →调制"，与书法(callig×glyph)条件完全正交。保留它= 强迫模型用 ImageNet 分类
+    # 眼光生成，导致乱码/跑偏。我们只保留通用扩散引擎（t_embedder/x_embedder/attn/mlp），
+    # 条件调制一律从头学，由训练目标(结构loss+diff)自行建立"条件→生成"耦合。
+    if getattr(args, 'resume_full', None) is None:
         import torch.nn as _nn
         for _b in model.blocks:
             _nn.init.normal_(_b.adaLN_modulation[-1].weight, std=0.02)
@@ -241,7 +258,8 @@ def main(args):
         _nn.init.normal_(model.final_layer.adaLN_modulation[-1].weight, std=0.02)
         _nn.init.normal_(model.final_layer.adaLN_modulation[-1].bias, std=0.02)
         _nn.init.normal_(model.final_layer.linear.weight, std=0.02)
-        logger.info("Re-initialized adaLN/final_layer (std=0.02) to fit new 3-cond condition head.")
+        logger.info("[cond-head] reset adaLN/final_layer to std=0.02 (retain task-agnostic "
+                    "transformer engine, drop ImageNet class-condition coupling).")
 
     if getattr(args, 'use_lora', True):
         _r = getattr(args, 'lora_r', 16)
@@ -284,7 +302,9 @@ def main(args):
         for name, param in model.named_parameters():
             if ('lora_' in name or 'y_callig_embedder' in name or 'y_char_embedder' in name
                     or 'cond_fusion' in name or 'y_script_embedder' in name
-                    or 'callig_proj' in name or 'script_proj' in name or 'char_proj' in name):
+                    or 'callig_proj' in name or 'script_proj' in name or 'char_proj' in name
+                    or 'y_scale' in name or 'skel_head' in name or 'glyph_scale' in name
+                    or 'glyph_embedder' in name):
                 param.requires_grad = True
             elif train_cond_head and ('adaLN' in name or 'final_layer' in name):
                 param.requires_grad = True
@@ -341,9 +361,10 @@ def main(args):
     if getattr(args, 'auto_eval', False):
         logger.info(f"Preparing auto-eval cache (csv={args.eval_csv}, n={args.eval_n}) ...")
         _eval_ds = MCCDDataset(csv_file=args.eval_csv, root_dir=args.data_dir,
-                               image_size=args.image_size, load_canny=False, load_skel=False)
+                               image_size=args.image_size, load_canny=False, load_skel=False,
+                               use_glyph_cond=getattr(args, 'w_glyph_cond', False))
         # 自由采样 eval：只需条件 + GT 图（不再 VAE encode latent）
-        eval_cache = prepare_gen_cache(_eval_ds, n=args.eval_n)
+        eval_cache = prepare_gen_cache(_eval_ds, n=args.eval_n, cond_mode=args.cond_mode)
         logger.info("Auto-eval cache ready (free-sampling mode).")
 
     logger.info(f"DiT Parameters: {sum(p.numel() for p in model.parameters()):,}")
@@ -425,7 +446,7 @@ def main(args):
     # structural losses stay fp32 for numerical stability.
     use_latent = bool(getattr(args, "latent_shards_dir", None))
     need_canny_map = args.use_canny or args.w_latent_canny > 0
-    need_skel_map = args.use_skel or args.w_latent_skel > 0
+    need_skel_map = args.use_skel or args.w_latent_skel > 0 or getattr(args, 'w_skel_head', 0) > 0
     if use_latent:
         dataset = MCCDLatentDataset(csv_file=args.data_csv,
                                     latent_shards_dir=args.latent_shards_dir,
@@ -438,7 +459,8 @@ def main(args):
                                     preload=bool(getattr(args, 'preload', False)),
                                     load_image=args.w_repa > 0,
                                     num_preload_workers=int(getattr(args, 'preload_workers', 16)),
-                                    structure_size=(32 if latent_structure_loss_fn is not None else 256))
+                                    structure_size=(32 if (latent_structure_loss_fn is not None or getattr(args, 'w_skel_head', 0) > 0) else 256),
+                                    use_glyph_cond=getattr(args, 'w_glyph_cond', False))
         logger.info("Using latent-cached dataset (skip on-the-fly VAE encode)."
                     + (" preload=ON" if getattr(args, 'preload', False) else ""))
     else:
@@ -503,11 +525,40 @@ def main(args):
     running_latent_canny = 0
     running_latent_skel = 0
     running_repa = 0
+    running_x0lat = 0
+    running_skel_head = 0
     nan_steps = 0
     current_ema_decay = args.ema_decay
     start_time = time()
 
     logger.info(f"Training for {args.epochs} epochs...")
+
+    # step0（初始化）采样：训练真正开始前，用刚初始化的模型跑一次自由采样，
+    # 保存到 eval_samples/step0000000，作为从头训练的 base 输出参照。
+    if eval_cache is not None and train_steps == 0 and rank == 0:
+        try:
+            logger.info("[auto-eval] sampling at step 0 (initialized weights as base output)...")
+            _base_model = ema_model if ema_model is not None else model
+            _was_train = _base_model.training
+            _base_model.eval()
+            mse0, ss0 = eval_gen_in_memory(
+                _base_model, vae, device, eval_cache,
+                n=args.eval_n,
+                steps=int(getattr(args, 'eval_steps', 50)),
+                cfg=float(getattr(args, 'eval_cfg', 4.0)),
+                seed=int(getattr(args, 'eval_seed', 0)),
+                batch=int(getattr(args, 'eval_batch', 64)),
+                vis_out=f"{checkpoint_dir}/eval_latest.png",
+                vis_n=5,
+                cond_mode=args.cond_mode,
+                save_samples_dir=f"{checkpoint_dir}/eval_samples",
+                step=0)
+            logger.info(f"[auto-eval] step 0: free-sampling MSE={mse0:.5f} SSIM={ss0:.4f}")
+            if _was_train:
+                _base_model.train()
+        except Exception as _e:
+            logger.warning(f"[auto-eval] step 0 sample failed: {_e}")
+
     for epoch in range(args.epochs):
         sampler.set_epoch(epoch)
         if rank == 0:
@@ -540,6 +591,9 @@ def main(args):
                     model_kwargs = dict(y_callig=y_callig, y_script=y_script, y_char=y_char)
                 else:
                     model_kwargs = dict(y_callig=y_callig, y_char=y_char)
+                # 标准字形条件 g(甲2 token-add): batch 由 dataset 提供, None=禁用对应项
+                if getattr(args, 'w_glyph_cond', False) and 'g' in batch and batch['g'].numel() > 0:
+                    model_kwargs['g'] = batch['g'].to(device)   # (N,4,32,32)
                 
                 # If REPA is enabled, request intermediate layer 8 features
                 if args.w_repa > 0:
@@ -555,22 +609,58 @@ def main(args):
                 loss_repa = torch.tensor(0.0, device=device)
                 loss_latent_canny = torch.tensor(0.0, device=device)
                 loss_latent_skel = torch.tensor(0.0, device=device)
+                # X0Lat：模型预测的干净 latent 与 GT latent 的 MSE（直接回答
+                # “输出和 GT latent 比”的指标；注意它随 t 混合了高噪声步，
+                # 高噪声步 x0 预测天然不准，所以数值比 eps-MSE 大是正常的）。
+                loss_x0lat = torch.tensor(0.0, device=device)
 
                 pred_xstart_latent = loss_dict.get("pred_xstart", None)
+                if pred_xstart_latent is not None:
+                    loss_x0lat = ((pred_xstart_latent - x_latent) ** 2).mean()
+
+                # 骨架辅助头监督（latent 空间，训练引导 / 推理不用）：
+                # forward 在 skel_head 启用时返回 (主输出, skel_pred)，
+                # gaussian_diffusion.training_losses 把第二元素存进 loss_dict['intermediate_feats']。
+                loss_skel_head = torch.tensor(0.0, device=device)
+                if getattr(args, 'w_skel_head', 0) > 0:
+                    skel_pred = loss_dict.get("intermediate_feats", None)
+                    if skel_pred is not None and skel_gt is not None and skel_gt.numel() > 0:
+                        # batch 可能取整后被 drop_last 截断，对齐批次
+                        _n = min(skel_pred.shape[0], skel_gt.shape[0])
+                        _skel_gt = skel_gt[:_n].float()
+                        _skel_pred = skel_pred[:_n].float()
+                        # BCE with logits（骨架头输出未 sigmoid）
+                        loss_skel_head = torch.nn.functional.binary_cross_entropy_with_logits(
+                            _skel_pred, _skel_gt).mean()
                 if x is not None and pred_xstart_latent is not None and (args.use_canny or args.use_skel):
+                    # Infra 优化：pixel 结构损失只需要在 batch 的一个随机子集上做
+                    # differentiable VAE decode（结构监督是低频辅助信号，子集采样
+                    # 是无偏估计）。默认 32 张，decode 显存从"全 batch"降为固定小量。
+                    _ss = int(getattr(args, 'struct_subset', 32))
+                    _B = pred_xstart_latent.shape[0]
+                    if _ss > 0 and _ss < _B:
+                        _idx = torch.randperm(_B, device=pred_xstart_latent.device)[:_ss]
+                        pred_xstart_sub = pred_xstart_latent[_idx]
+                        x0_pred = None
+                        canny_gt_sub = canny_gt[_idx] if args.use_canny else None
+                        skel_gt_sub = skel_gt[_idx] if args.use_skel else None
+                    else:
+                        pred_xstart_sub = pred_xstart_latent
+                        canny_gt_sub = canny_gt
+                        skel_gt_sub = skel_gt
                     # VAE decode in fp32 via gradient checkpointing to save memory:
                     # the VAE is frozen, so on backward we re-run decode instead of
                     # keeping its large up-sampling activations resident.
                     def _decode(z):
                         return vae.decode(z).sample
                     with torch.autocast("cuda", dtype=torch.float32):
-                        x0_pred = grad_ckpt(_decode, pred_xstart_latent.float() / 0.18215,
+                        x0_pred = grad_ckpt(_decode, pred_xstart_sub.float() / 0.18215,
                                              use_reentrant=False)
                     # Structural losses computed in fp32 (outside autocast) for stability.
                     if args.use_canny:
-                        loss_canny = canny_loss_fn(x0_pred, canny_gt)
+                        loss_canny = canny_loss_fn(x0_pred, canny_gt_sub)
                     if args.use_skel:
-                        loss_skel = skel_loss_fn(x0_pred, skel_gt)
+                        loss_skel = skel_loss_fn(x0_pred, skel_gt_sub)
 
                 if latent_structure_loss_fn is not None and pred_xstart_latent is not None:
                     latent_structure_losses = latent_structure_loss_fn(
@@ -590,7 +680,8 @@ def main(args):
                         + args.w_skel * loss_skel
                         + args.w_latent_canny * loss_latent_canny
                         + args.w_latent_skel * loss_latent_skel
-                        + args.w_repa * loss_repa)
+                        + args.w_repa * loss_repa
+                        + getattr(args, 'w_skel_head', 0) * loss_skel_head)
 
                 opt.zero_grad()
                 # NaN guard: skip the step if loss is not finite (e.g. a bad sample).
@@ -628,6 +719,8 @@ def main(args):
                     running_latent_canny += loss_latent_canny.item()
                     running_latent_skel += loss_latent_skel.item()
                     running_repa += loss_repa.item()
+                    running_skel_head += loss_skel_head.item()
+                    running_x0lat += loss_x0lat.item()
                     log_steps += 1
                 train_steps += 1
                 
@@ -645,6 +738,8 @@ def main(args):
                     avg_lc = torch.tensor(running_latent_canny / divisor, device=device)
                     avg_ls = torch.tensor(running_latent_skel / divisor, device=device)
                     avg_r = torch.tensor(running_repa / divisor, device=device)
+                    avg_x0 = torch.tensor(running_x0lat / divisor, device=device)
+                    avg_skel_h = torch.tensor(running_skel_head / divisor, device=device)
                     world_size = dist.get_world_size()
                     if world_size > 1:
                         dist.all_reduce(avg_l, op=dist.ReduceOp.SUM)
@@ -654,15 +749,21 @@ def main(args):
                         dist.all_reduce(avg_lc, op=dist.ReduceOp.SUM)
                         dist.all_reduce(avg_ls, op=dist.ReduceOp.SUM)
                         dist.all_reduce(avg_r, op=dist.ReduceOp.SUM)
+                        dist.all_reduce(avg_x0, op=dist.ReduceOp.SUM)
+                        dist.all_reduce(avg_skel_h, op=dist.ReduceOp.SUM)
                         avg_l, avg_d = avg_l.item()/world_size, avg_d.item()/world_size
                         avg_c, avg_s = avg_c.item()/world_size, avg_s.item()/world_size
                         avg_lc, avg_ls = avg_lc.item()/world_size, avg_ls.item()/world_size
                         avg_r = avg_r.item()/world_size
+                        avg_x0 = avg_x0.item()/world_size
+                        avg_skel_h = avg_skel_h.item()/world_size
                     else:
                         avg_l, avg_d = avg_l.item(), avg_d.item()
                         avg_c, avg_s = avg_c.item(), avg_s.item()
                         avg_lc, avg_ls = avg_lc.item(), avg_ls.item()
                         avg_r = avg_r.item()
+                        avg_x0 = avg_x0.item()
+                        avg_skel_h = avg_skel_h.item()
                     
                     if rank == 0:
                         wc, ws, wr = args.w_canny, args.w_skel, args.w_repa
@@ -679,6 +780,8 @@ def main(args):
                             f"LatC: raw {avg_lc:.4f} x {args.w_latent_canny:.3f} = {latent_c_contrib:.4f} | "
                             f"LatS: raw {avg_ls:.4f} x {args.w_latent_skel:.3f} = {latent_s_contrib:.4f} | "
                             f"REPA: raw {avg_r:.4f} x {wr:.2f} = {r_contrib:.4f} | "
+                            f"SkelH: raw {avg_skel_h:.4f} | "
+                            f"X0Lat: raw {avg_x0:.4f} | "
                             f"LR: {opt.param_groups[0]['lr']:.2e} | {ema_log}"
                             f"Steps/Sec: {steps_per_sec:.2f} | "
                             f"Mem: {torch.cuda.memory_allocated() / 1024 ** 3:.2f}G/"
@@ -686,11 +789,15 @@ def main(args):
                         )
                     
                     running_loss = running_diff = running_canny = running_skel = 0
-                    running_latent_canny = running_latent_skel = running_repa = 0
+                    running_latent_canny = running_latent_skel = running_repa = running_x0lat = running_skel_head = 0
                     log_steps = 0
                     start_time = time()
 
                 _save_ckpt = args.ckpt_every > 0 and train_steps % args.ckpt_every == 0
+                if train_steps <= 5000:
+                    _save_ckpt = args.ckpt_every > 0 and train_steps % 1000 == 0
+                elif train_steps > 5000:
+                    _save_ckpt = args.ckpt_every > 0 and (train_steps - 5000) % 5000 == 0
 
                 if _save_ckpt and train_steps > 0:
                     if rank == 0:
@@ -749,7 +856,10 @@ def main(args):
                                     seed=int(getattr(args, 'eval_seed', 0)),
                                     batch=int(getattr(args, 'eval_batch', 16)),
                                     vis_out=f"{checkpoint_dir}/eval_latest.png",
-                                    vis_n=5)
+                                    vis_n=5,
+                                    cond_mode=args.cond_mode,
+                                    save_samples_dir=f"{checkpoint_dir}/eval_samples",
+                                    step=train_steps)
                                 logger.info(f"[auto-eval] step {train_steps}: free-sampling MSE={mse:.5f} SSIM={ss:.4f}")
                                 with open(f"{checkpoint_dir}/eval_auto_{train_steps:07d}.json", "w") as _ef:
                                     json.dump({"step": train_steps, "mse": mse, "ssim": ss}, _ef)
@@ -798,8 +908,9 @@ if __name__ == "__main__":
     parser.add_argument("--cond-mode", type=str, choices=["2cond", "3cond"], default="2cond",
                         help="Conditioning mode: 2cond (callig+char) or 3cond (callig+script+char).")
     parser.add_argument("--condition-fusion", type=str,
-                        choices=["legacy", "factorized_add"], default="legacy",
-                        help="3Cond fusion: legacy joint MLP or compositional additive factors.")
+                        choices=["legacy", "factorized_add", "xl_highdim"], default="legacy",
+                        help="Cond fusion: legacy joint MLP | factorized_add (low-dim additive) | "
+                             "xl_highdim (high-dim, XL-aligned, preserves pretrained adaLN).")
     parser.add_argument("--callig-embed-dim", type=int, default=None)
     parser.add_argument("--script-embed-dim", type=int, default=None)
     parser.add_argument("--char-embed-dim", type=int, default=None)
@@ -884,6 +995,17 @@ if __name__ == "__main__":
                         help="Sampling batch for free-sampling auto-eval.")
     parser.add_argument("--w-canny", type=float, default=0.05, help="Weight for canny structural loss")
     parser.add_argument("--w-skel", type=float, default=0.05, help="Weight for skeleton structural loss")
+    parser.add_argument("--w-skel-head", type=float, default=0.0,
+                        help="Weight for latent skel_head aux supervision (train-only guide; "
+                             "inference uses pure ID conditions). 0=disabled. ")
+    parser.add_argument("--w-glyph-cond", type=_str_to_bool, default=False,
+                        help="Enable 甲2 standard-glyph token-add conditioning (use_glyph_cond).")
+    parser.add_argument("--glyph-scale-init", type=float, default=0.4,
+                        help="Initial glyph_scale (standard-glyph token-add strength).")
+    parser.add_argument("--struct-subset", type=int, default=32,
+                        help="Random per-step subset of the batch used for pixel canny/skel "
+                             "loss decode (infra optimization: bounds VAE-decode VRAM; "
+                             "0 = full batch).")
     parser.add_argument("--w-latent-canny", type=float, default=0.0,
                         help="Weight for decoder-free Canny-weighted latent gradient loss.")
     parser.add_argument("--w-latent-skel", type=float, default=0.0,
