@@ -859,7 +859,8 @@ def main(args):
                                     vis_n=5,
                                     cond_mode=args.cond_mode,
                                     save_samples_dir=f"{checkpoint_dir}/eval_samples",
-                                    step=train_steps)
+                                    step=train_steps,
+                                    glyph_init_mix=float(getattr(args, 'glyph_init_mix', 0.0)))
                                 logger.info(f"[auto-eval] step {train_steps}: free-sampling MSE={mse:.5f} SSIM={ss:.4f}")
                                 with open(f"{checkpoint_dir}/eval_auto_{train_steps:07d}.json", "w") as _ef:
                                     json.dump({"step": train_steps, "mse": mse, "ssim": ss}, _ef)
@@ -1002,6 +1003,10 @@ if __name__ == "__main__":
                         help="Enable 甲2 standard-glyph token-add conditioning (use_glyph_cond).")
     parser.add_argument("--glyph-scale-init", type=float, default=0.4,
                         help="Initial glyph_scale (standard-glyph token-add strength).")
+    parser.add_argument("--glyph-init-mix", type=float, default=0.0,
+                        help="HYBRID 初始点 alpha∈[0,1]: xT=alpha*randn+(1-alpha)*std字形latent。"
+                             "0=纯噪声(现状); (0,1)=混合; 默认 0 保持当前行为, 收敛后按需设 e.g.0.6。"
+                             "见 HYBRID_INIT_PLAN.md。")
     parser.add_argument("--struct-subset", type=int, default=32,
                         help="Random per-step subset of the batch used for pixel canny/skel "
                              "loss decode (infra optimization: bounds VAE-decode VRAM; "

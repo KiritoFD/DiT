@@ -8,7 +8,7 @@
 <script src="hammer.min.js"></script>
 <script src="chartjs-plugin-zoom.min.js"></script>
 <style>
-  :root { --bg:#0f1117; --card:#1a1d27; --line:#2a2f3c; --txt:#e6e9ef; --dim:#8b93a7; --acc:#4f9cff; --warn:#ff6b6b; --ok:#3ddc97; }
+  :root { --bg:#0f1117; --card:#1a1d27; --line:#2a2f3c; --txt:#e6e9ef; --dim:#8b93a7; --acc:#4f9cff; --warn:#ff6b6b; --ok:#3ddc97; --track:#3a4150; --selp:#4f9cff88; }
   * { box-sizing:border-box; }
   body { margin:0; background:var(--bg); color:var(--txt); font-family:-apple-system,"Segoe UI",Roboto,"PingFang SC","Microsoft YaHei",sans-serif; }
   header { padding:16px 24px; border-bottom:1px solid var(--line); display:flex; align-items:center; gap:16px; flex-wrap:wrap; }
@@ -28,7 +28,28 @@
   .panel { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:16px; }
   .panel h2 { font-size:14px; margin:0 0 12px; font-weight:600; color:var(--txt); }
   .chartbox { position:relative; height:300px; }
-  .xbar { position:absolute; left:6px; right:6px; bottom:2px; width:auto; z-index:5; accent-color:var(--acc); cursor:pointer; opacity:.9; }
+  /* 双滑块区间选择条：两个叠放 range，轨道用 CSS 变量渐变高亮选中区间 */
+  .rangebar{ position:absolute; left:0; right:0; bottom:0; height:26px; }
+  .rangebar input[type=range]{
+    -webkit-appearance:none; appearance:none; pointer-events:none;
+    position:absolute; left:6px; right:6px; top:4px; width:calc(100% - 12px);
+    height:18px; margin:0; background:none; outline:none; --a:0; --b:100;
+  }
+  .rangebar input::-webkit-slider-runnable-track{
+    height:6px; border-radius:3px; background:var(--track);
+  }
+  /* a(左) 的轨道负责画区间高亮；b(右) 的轨道透明只留 thumb */
+  .rangebar input.rb-a::-webkit-slider-runnable-track{
+    background:linear-gradient(to right,
+      var(--track) 0%, var(--track) var(--a),
+      var(--selp) var(--a), var(--selp) var(--b),
+      var(--track) var(--b), var(--track) 100%);
+  }
+  .rangebar input::-webkit-slider-thumb{
+    -webkit-appearance:none; appearance:none; pointer-events:auto;
+    width:14px; height:16px; margin-top:-5px; border-radius:3px;
+    background:var(--acc); border:2px solid #e6e9ef; cursor:ew-resize;
+  }
   .status { padding:0 24px 12px; color:var(--dim); font-size:13px; }
   .badge { display:inline-block; padding:2px 8px; border-radius:6px; font-size:12px; margin-left:8px; }
   .badge.nan { background:rgba(255,107,107,.15); color:var(--warn); }
@@ -41,7 +62,7 @@
   <span class="meta" id="meta">未加载</span>
   <div class="controls">
     <span class="meta" id="countdown"></span>
-    <span class="meta" style="color:var(--dim);font-size:12px;">仅缩放/平移 X(step) · 滚轮聚焦 X 区间 · 下拖动条左右浏览 · Y 自动贴合可见区间上下限 · ↩ 重置</span>
+    <span class="meta" style="color:var(--dim);font-size:12px;">滚轮聚焦 X 区间 · 拖双滑块左右手柄精确选区间起止 · Y 自动贴合可见区间上下限 · ↩ 重置</span>
     <button class="sec" id="resetZoomBtn">↩ 重置缩放</button>
     <label class="auto"><input type="checkbox" id="autoChk" checked> 自动刷新(10s)</label>
     <button class="sec" id="refreshBtn">⟳ 立刻刷新</button>
@@ -105,19 +126,31 @@ if(typeof ChartZoom !== 'undefined'){
   Chart.register(ChartZoom);
 }
 
-// windowIndex: 0..1 距完整区间左端的比例；此函数把滚动条 thumb 位置映射为窗口左端
-function onXBarInput(id, bar){
+// 用双滑块的值(a%,b%)重绘轨道高亮
+function paintRange(ch, a, b){
+  const rbar = ch && ch._rbar;
+  if(!rbar) return;
+  const pct = v => Math.max(0, Math.min(100, Math.round(v*100)));
+  a = pct(a); b = pct(b);
+  if(b < a) b = a;                              // 容错：保证区间非负
+  rbar.querySelector('.rb-a').style.setProperty('--a', a+'%');
+  rbar.querySelector('.rb-a').style.setProperty('--b', b+'%');
+  rbar.querySelector('.rb-a').value = a;
+  rbar.querySelector('.rb-b').value = b;
+}
+// 双滑块输入：由 a/b(0..1 完整区间比例) 精确设定 X 可见区间 [start,end]
+function onRangeInput(id){
   const ch = charts[id];
   if(!ch || !ch.data.labels.length) return;
   const n = ch.data.labels.length;
-  const x = ch.scales.x;                       // category 轴
-  let lo = x.min, hi = x.max;                  // 当前可见索引
-  const span = Math.max(1, hi - lo);           // 当前窗口跨度
-  const p = parseFloat(bar.value) / 100;       // 0..1 期望左端位置
-  const maxLeft = n - span - 1;
-  const left = Math.round(Math.min(maxLeft, p * (n - 1)));
-  ch.options.scales.x.min = left;
-  ch.options.scales.x.max = left + span;
+  const a = parseFloat(ch._rbar.querySelector('.rb-a').value);
+  const b = parseFloat(ch._rbar.querySelector('.rb-b').value);
+  if(isNaN(a)||isNaN(b)) return;
+  let lo = Math.round(Math.min(a,b)/100*(n-1));
+  let hi = Math.round(Math.max(a,b)/100*(n-1));
+  if(hi < lo) hi = lo;
+  ch.options.scales.x.min = lo;
+  ch.options.scales.x.max = hi;
   ch.update();
   syncYToVisible(ch);
 }
@@ -151,27 +184,32 @@ function afterViewChange(ch){
   syncYToVisible(ch);
 }
 function syncBarFromChart(ch){
-  const bar = ch && ch._bar;
-  if(!bar || !ch.data.labels.length) return;
+  const rbar = ch && ch._rbar;
+  if(!rbar || !ch.data.labels.length) return;
   const n = ch.data.labels.length;
   const x = ch.scales.x;
-  const lo = x.min, hi = x.max;
-  const span = Math.max(1, hi - lo);
-  const p = Math.min(1, Math.max(0, lo / (n - 1)));
-  bar.value = (p * 100).toFixed(1);
+  const lo = Math.max(0, x.min), hi = Math.min(n-1, x.max);
+  const a = lo/(n-1), b = hi/(n-1);
+  paintRange(ch, a, b);
 }
 function makeChart(id, datasets){
   const ctx = document.getElementById(id);
   const box = ctx.parentElement;               // .chartbox
-  // 首次创建：挂横向滚动条
-  let bar = box.querySelector('.xbar');
-  if(!bar){
-    bar = document.createElement('input');
-    bar.type = 'range'; bar.min = 0; bar.max = 100; bar.step = 0.1; bar.value = 0;
-    bar.className = 'xbar';
-    bar.title = '横向拖动条：左右平移查看局部区间';
-    bar.addEventListener('input', ()=>{ if(charts[id]) onXBarInput(id, bar); });
-    box.appendChild(bar);
+  // 首次创建：双滑块区间选择条（两个叠放 range，拖左右手柄精确选 X 区间）
+  let rbar = box.querySelector('.rangebar');
+  if(!rbar){
+    rbar = document.createElement('div');
+    rbar.className = 'rangebar';
+    rbar.title = '横向双滑块：拖动左/右手柄精确选择 X(step) 区间的开始与结束';
+    const mk = (c)=>{
+      const r = document.createElement('input');
+      r.type='range'; r.min=0; r.max=100; r.step=0.1; r.value=100; r.className=c;
+      r.addEventListener('input', ()=>{ if(charts[id]) onRangeInput(id); });
+      return r;
+    };
+    rbar.appendChild(mk('rb rb-a'));   // 左手柄 + 区间高亮轨道
+    rbar.appendChild(mk('rb rb-b'));   // 右手柄（轨道透明）
+    box.appendChild(rbar);
   }
   if(charts[id]) charts[id].destroy();
   const ch = new Chart(ctx, {
@@ -210,7 +248,7 @@ function makeChart(id, datasets){
       }
     }
   });
-  ch._bar = bar;
+  ch._rbar = rbar;
   charts[id] = ch;
   return ch;
 }

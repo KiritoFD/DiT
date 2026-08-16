@@ -220,13 +220,17 @@ def prepare_gen_cache(dataset, n=100, cond_mode="3cond"):
 
 def eval_gen_in_memory(model, vae, device, cache, n=100, steps=50, cfg=4.0,
                        seed=0, batch=16, vis_out=None, vis_n=5, cond_mode="3cond",
-                       save_samples_dir=None, step=None):
-    """自由采样：纯噪声 -> DDIM 去噪链（与 gradio/推理完全一致），与 GT 比 MSE/SSIM。
+                       save_samples_dir=None, step=None, glyph_init_mix=0.0):
+    """自由采样：纯噪声(或 std字形+噪声 HYBRID) -> DDIM 去噪链，与 GT 比 MSE/SSIM。
 
-    vis_out          : 每次覆盖的缩略拼图（eval_latest.png），供 dashboard。
-    save_samples_dir : 若不 None，则每次把前 vis_n 张 (pred | GT) 单独落盘到一个按
+    glyph_init_mix     : alpha∈[0,1]，采样初始点混合系数。
+                        xT = alpha*randn + (1-alpha)*s，s=标准字形 latent。
+                        alpha=1.0→纯噪声(现 V3B 行为)；0<alpha<1→HYBRID 初始点；
+                        alpha=0.0→纯标准字形初始。见 HYBRID_INIT_PLAN.md。
+    vis_out            : 每次覆盖的缩略拼图（eval_latest.png），供 dashboard。
+    save_samples_dir   : 若不 None，则每次把前 vis_n 张 (pred | GT) 单独落盘到一个按
                        step 命名的子目录，历史不覆盖（例如 .../checkpoints/eval_samples/step0005000/）。
-    step             : 当前训练步号，用于命名子目录与文件名。
+    step               : 当前训练步号，用于命名子目录与文件名。
     """
     from diffusion import create_diffusion
     ddim = create_diffusion(str(steps))
@@ -239,7 +243,17 @@ def eval_gen_in_memory(model, vae, device, cache, n=100, steps=50, cfg=4.0,
     with torch.no_grad():
         for i in range(0, n, batch):
             j = min(i + batch, n)
-            z = torch.randn(j - i, 4, 32, 32, device=device)
+            noise = torch.randn(j - i, 4, 32, 32, device=device)
+            gs = cache.get("gs")
+            # HYBRID 混合初始点：xT = alpha*noise + (1-alpha)*标准字形latent
+            if glyph_init_mix < 1.0 and gs is not None and gs[i:j].shape[0] == (j - i):
+                if glyph_init_mix <= 0.0:
+                    z = gs[i:j].to(device).clone()          # 纯标准字形初始
+                else:
+                    z = (glyph_init_mix * noise
+                         + (1.0 - glyph_init_mix) * gs[i:j].to(device))
+            else:
+                z = noise                                   # alpha=1(缺省) 纯噪声
             if cond_mode == "2cond":
                 mk = dict(
                     y_callig=torch.tensor([c[0] for c in conds[i:j]], device=device),
