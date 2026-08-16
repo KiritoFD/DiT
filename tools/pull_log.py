@@ -348,6 +348,10 @@ def prepend_baseline(rows):
 
 def write_json(rows, source):
     rows = prepend_baseline(rows)
+    # eval 指标(mse/ssim)只在 eval step 单点出现，其余 loss 行均为 None。
+    # 前向填充：把每个 eval 点的值往后传播到后续所有行，使最新一行(last)始终带当前
+    # 已算出的 MSE/SSIM，前端 renderStats/图表不再取到 null("抓不到"的根因)。
+    rows = forward_fill_eval(rows)
     out = {
         "pulledAt": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
         "source": source,
@@ -356,6 +360,27 @@ def write_json(rows, source):
     }
     with open(OUT_JSON, "w", encoding="utf-8") as f:
         json.dump(out, f, ensure_ascii=False, indent=2)
+    return out
+
+
+def forward_fill_eval(rows):
+    """把 mse/ssim 前向填充：遇到新 eval 值则更新，后续行沿用最近一次 eval 值。
+    返回新列表，不改入参。保序。"""
+    cur_mse = cur_ssim = None
+    out = []
+    for r in rows:
+        nr = dict(r)
+        if nr.get("mse") is not None:
+            cur_mse = nr["mse"]
+        if nr.get("ssim") is not None:
+            cur_ssim = nr["ssim"]
+        # 若当前行是丢失型的(eval 行 mse 非 None)则保留；否则若我们已知道某个 eval 值，
+        # 就把它也填到本行，保证每行都有"当前已知"的评估指标。
+        if cur_mse is not None and nr.get("mse") is None:
+            nr["mse"] = cur_mse
+        if cur_ssim is not None and nr.get("ssim") is None:
+            nr["ssim"] = cur_ssim
+        out.append(nr)
     return out
 
 
