@@ -146,7 +146,67 @@ def write(rows, source):
         json.dump(out, f, ensure_ascii=False)
 
 
-def run_once(verbose=True):
+# ---- 海报：发现新 auto-eval step 时才重新拉取取样图并生成海报 ----
+_last_eval_step = {"v": -1}
+
+
+def _max_eval_step(rows):
+    return max((r["step"] for r in rows if r.get("mse") is not None), default=-1)
+
+
+def _find_remote_eval_samples():
+    cmd = ["ssh", "-o", "ConnectTimeout=15", "-p", REMOTE_PORT,
+           f"{REMOTE_USER}@{REMOTE_HOST}"]
+    find = ("cd %s; D=$(ls -td 5script/results/%s/*/ 2>/dev/null | head -1); "
+            "echo \"${D}checkpoints/eval_samples\"" % (REMOTE_BASE, "*"))
+    try:
+        r = subprocess.run(cmd + [find], capture_output=True, text=True, timeout=30)
+        return r.stdout.strip().splitlines()[0].strip() if r.stdout.strip() else ""
+    except Exception:
+        return ""
+
+
+def regen_poster_if_new_eval(rows, verbose=True):
+    """有新 eval 步才更新海报（拉 eval_samples + 生成 eval_poster.png）。"""
+    max_step = _max_eval_step(rows)
+    if max_step <= _last_eval_step["v"]:
+        return
+    es_dir = os.path.join(HERE, "remote_eval_samples")
+    os.makedirs(es_dir, exist_ok=True)
+    remote = _find_remote_eval_samples()
+    if not remote:
+        return
+    # 拉取该实验的 eval_samples（覆盖旧 run，避免混 step）
+    _rmtree(es_dir)
+    os.makedirs(es_dir, exist_ok=True)
+    try:
+        subprocess.run(["scp", "-o", "ConnectTimeout=15", "-P", REMOTE_PORT,
+                        "-r", f"{REMOTE_USER}@{REMOTE_HOST}:{remote}/.", es_dir + "/"],
+                       capture_output=True, text=True, timeout=180)
+    except Exception as e:
+        if verbose:
+            print(f"[poster] scp 取样图失败: {e}")
+        return
+    try:
+        args = [sys.executable, os.path.join(HERE, "make_eval_poster.py"), es_dir,
+                "--gt-dir", os.path.join(HERE, "remote_gt"),
+                "--show5-csv", os.path.join(HERE, "show5_eval.csv"),
+                "-o", os.path.join(HERE, "eval_poster.png")]
+        subprocess.run(args, capture_output=True, text=True, timeout=180)
+        if verbose:
+            print(f"[poster] 已更新到 eval step {max_step}")
+    except Exception as e:
+        if verbose:
+            print(f"[poster] 海报生成失败: {e}")
+    _last_eval_step["v"] = max_step
+
+
+def _rmtree(path):
+    import shutil
+    shutil.rmtree(path, ignore_errors=True)
+
+
+def run_once(verbose=True, regen_poster=True):
     remote, ok = pull_log()
     if not ok:
         if verbose:
@@ -154,6 +214,11 @@ def run_once(verbose=True):
         return 0
     rows = parse()
     write(rows, f"remote:{REMOTE_USER}@{REMOTE_HOST}:{remote}")
+    if regen_poster:
+        try:
+            regen_poster_if_new_eval(rows, verbose)
+        except Exception:
+            pass
     last = rows[-1] if rows else None
     if verbose:
         tail = f"step={last['step']} diff={last['diff']} total={last['total']} stdmid={last['stdmid']}" if last else "无数据"
