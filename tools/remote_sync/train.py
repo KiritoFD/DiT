@@ -527,6 +527,7 @@ def main(args):
     running_repa = 0
     running_x0lat = 0
     running_skel_head = 0
+    running_std_mid = 0
     nan_steps = 0
     current_ema_decay = args.ema_decay
     start_time = time()
@@ -618,6 +619,25 @@ def main(args):
                 if pred_xstart_latent is not None:
                     loss_x0lat = ((pred_xstart_latent - x_latent) ** 2).mean()
 
+                # ---- MIDSTEP_STD: 中间噪声水平, 让去噪结果 x0_pred 逼近标准字形 latent g。
+                # 主损失从 GT x0 学报内容+风格; 此项在 sqrt(alpha_cumprod)∈[alo,ahi] 的中段噪声,
+                # 额外把模型预测的 clean latent 拉向标准字形 latent g, 使字形结构在去噪中段被锚定。
+                # 权重须明显小于主 loss, 避免抹掉书家风格。仅当使用 glyph 条件时生效。采样端不变。
+                loss_std_mid = torch.tensor(0.0, device=device)
+                if (getattr(args, 'w_std_mid', 0.0) > 0
+                        and pred_xstart_latent is not None
+                        and model_kwargs.get('g') is not None):
+                    _sqrt_a = torch.as_tensor(diffusion.sqrt_alphas_cumprod, device=device)
+                    _a_t = _sqrt_a[t]                       # (N,)
+                    _alo = float(getattr(args, 'std_mid_alo', 0.35))
+                    _ahi = float(getattr(args, 'std_mid_ahi', 0.75))
+                    _mid = (_a_t >= _alo) & (_a_t <= _ahi)  # (N,) bool: 中间噪声水平子集
+                    if bool(_mid.any()):
+                        _g = model_kwargs['g'].float()      # (N,4,32,32) 标准字形 latent
+                        _p = pred_xstart_latent.float()
+                        # 归一化到该子集作均值 (不按全 batch, 排除无监督噪声步)
+                        loss_std_mid = ((_p[_mid] - _g[_mid]) ** 2).mean()
+
                 # 骨架辅助头监督（latent 空间，训练引导 / 推理不用）：
                 # forward 在 skel_head 启用时返回 (主输出, skel_pred)，
                 # gaussian_diffusion.training_losses 把第二元素存进 loss_dict['intermediate_feats']。
@@ -681,7 +701,8 @@ def main(args):
                         + args.w_latent_canny * loss_latent_canny
                         + args.w_latent_skel * loss_latent_skel
                         + args.w_repa * loss_repa
-                        + getattr(args, 'w_skel_head', 0) * loss_skel_head)
+                        + getattr(args, 'w_skel_head', 0) * loss_skel_head
+                        + getattr(args, 'w_std_mid', 0.0) * loss_std_mid)
 
                 opt.zero_grad()
                 # NaN guard: skip the step if loss is not finite (e.g. a bad sample).
@@ -720,6 +741,7 @@ def main(args):
                     running_latent_skel += loss_latent_skel.item()
                     running_repa += loss_repa.item()
                     running_skel_head += loss_skel_head.item()
+                    running_std_mid += loss_std_mid.item()
                     running_x0lat += loss_x0lat.item()
                     log_steps += 1
                 train_steps += 1
@@ -740,6 +762,7 @@ def main(args):
                     avg_r = torch.tensor(running_repa / divisor, device=device)
                     avg_x0 = torch.tensor(running_x0lat / divisor, device=device)
                     avg_skel_h = torch.tensor(running_skel_head / divisor, device=device)
+                    avg_std_mid = torch.tensor(running_std_mid / divisor, device=device)
                     world_size = dist.get_world_size()
                     if world_size > 1:
                         dist.all_reduce(avg_l, op=dist.ReduceOp.SUM)
@@ -751,12 +774,14 @@ def main(args):
                         dist.all_reduce(avg_r, op=dist.ReduceOp.SUM)
                         dist.all_reduce(avg_x0, op=dist.ReduceOp.SUM)
                         dist.all_reduce(avg_skel_h, op=dist.ReduceOp.SUM)
+                        dist.all_reduce(avg_std_mid, op=dist.ReduceOp.SUM)
                         avg_l, avg_d = avg_l.item()/world_size, avg_d.item()/world_size
                         avg_c, avg_s = avg_c.item()/world_size, avg_s.item()/world_size
                         avg_lc, avg_ls = avg_lc.item()/world_size, avg_ls.item()/world_size
                         avg_r = avg_r.item()/world_size
                         avg_x0 = avg_x0.item()/world_size
                         avg_skel_h = avg_skel_h.item()/world_size
+                        avg_std_mid = avg_std_mid.item()/world_size
                     else:
                         avg_l, avg_d = avg_l.item(), avg_d.item()
                         avg_c, avg_s = avg_c.item(), avg_s.item()
@@ -764,6 +789,7 @@ def main(args):
                         avg_r = avg_r.item()
                         avg_x0 = avg_x0.item()
                         avg_skel_h = avg_skel_h.item()
+                        avg_std_mid = avg_std_mid.item()
                     
                     if rank == 0:
                         wc, ws, wr = args.w_canny, args.w_skel, args.w_repa
@@ -781,6 +807,7 @@ def main(args):
                             f"LatS: raw {avg_ls:.4f} x {args.w_latent_skel:.3f} = {latent_s_contrib:.4f} | "
                             f"REPA: raw {avg_r:.4f} x {wr:.2f} = {r_contrib:.4f} | "
                             f"SkelH: raw {avg_skel_h:.4f} | "
+                            f"StdMid: raw {avg_std_mid:.4f} | "
                             f"X0Lat: raw {avg_x0:.4f} | "
                             f"LR: {opt.param_groups[0]['lr']:.2e} | {ema_log}"
                             f"Steps/Sec: {steps_per_sec:.2f} | "
@@ -790,6 +817,7 @@ def main(args):
                     
                     running_loss = running_diff = running_canny = running_skel = 0
                     running_latent_canny = running_latent_skel = running_repa = running_x0lat = running_skel_head = 0
+                    running_std_mid = 0
                     log_steps = 0
                     start_time = time()
 
@@ -1007,6 +1035,14 @@ if __name__ == "__main__":
                         help="HYBRID 初始点 alpha∈[0,1]: xT=alpha*randn+(1-alpha)*std字形latent。"
                              "0=纯噪声(现状); (0,1)=混合; 默认 0 保持当前行为, 收敛后按需设 e.g.0.6。"
                              "见 HYBRID_INIT_PLAN.md。")
+    parser.add_argument("--w-std-mid", type=float, default=0.0,
+                        help="MIDSTEP_STD 权重: 在中间噪声水平 sqrt(alpha_cumprod)∈[alo,ahi] 时,"
+                             "额外监督 模型预测 clean latent 逼近标准字形 latent g, 让字形中段锚定。"
+                             "需 w-glyph-cond 开启。权重明显小于主 loss(如 0.1~0.5), 防抹掉风格。0=关。")
+    parser.add_argument("--std-mid-alo", type=float, default=0.35,
+                        help="中间噪声带下界(sqrt_alpha_cumprod), 默认 0.35。")
+    parser.add_argument("--std-mid-ahi", type=float, default=0.75,
+                        help="中间噪声带上界(sqrt_alpha_cumprod), 默认 0.75。")
     parser.add_argument("--struct-subset", type=int, default=32,
                         help="Random per-step subset of the batch used for pixel canny/skel "
                              "loss decode (infra optimization: bounds VAE-decode VRAM; "
