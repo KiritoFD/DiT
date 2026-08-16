@@ -23,14 +23,22 @@ REMOTE_HOST = "10.176.54.17"
 REMOTE_PORT = "36430"
 REMOTE_BASE = "/root/Workspace/xy/DiT"
 
-# 当前训练：V3C MIDSTEP · 楷隶（exp_v3c_midstep.log 正在写入）。
+# 当前训练：V3C MIDSTEP · 楷隶。权威日志是实验目录下的 log.txt（FileHandler，
+# 无缓冲、最新）；exps/ 下的 *.log 是 stdout 重定向（可能缓冲，不作为首选）。
 # 只取 mtime 最新一个日志（当前正在进行的 run），避免误合并旧 run 重复 step。
 FIND_CMD = (
+    # 1) 优先：5script/results/v3c_*/<run>/log.txt（每次运行一个，mtime 最新为准）
+    "latest=$(ls -t %(base)s/5script/results/v3c_xl_glyphcond_midstep/*/log.txt "
+    "%(base)s/5script/results/v3b_xl_glyphcond/*/log.txt 2>/dev/null | head -1); "
+    # 2) 其次：顶层 exp_*.log（仅当上面没找到时）
+    "if [ -z \"$latest\" ]; then "
     "latest=$(ls -t %(base)s/exp_v3c_midstep.log %(base)s/exp_v3b_glyphcond.log "
     "%(base)s/exp_v3c*.log %(base)s/exp_xl_skelhead_c*.log "
     "%(base)s/exp_xl_highdim_cs*.log "
     "%(base)s/exp_v3a_glyph_cs*.log %(base)s/exp_xl_lora_cs.log 2>/dev/null | head -1); "
+    "fi; "
     "if [ -n \"$latest\" ]; then echo $latest; fi; "
+    # 3) 兜底：结果目录任意 log.txt
     "ls -t %(base)s/results/v3*/log.txt %(base)s/results/v3*/**/log.txt 2>/dev/null | head -1"
 )
 
