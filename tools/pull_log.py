@@ -23,11 +23,12 @@ REMOTE_HOST = "10.176.54.17"
 REMOTE_PORT = "36430"
 REMOTE_BASE = "/root/Workspace/xy/DiT"
 
-# 当前训练：XL 甲2 标准字形条件 · 楷隶（exp_v3b_glyphcond.log 最新）。
+# 当前训练：V3C MIDSTEP · 楷隶（exp_v3c_midstep.log 正在写入）。
 # 只取 mtime 最新一个日志（当前正在进行的 run），避免误合并旧 run 重复 step。
 FIND_CMD = (
-    "latest=$(ls -t %(base)s/exp_v3b_glyphcond.log "
-    "%(base)s/exp_xl_skelhead_c*.log %(base)s/exp_xl_highdim_cs*.log "
+    "latest=$(ls -t %(base)s/exp_v3c_midstep.log %(base)s/exp_v3b_glyphcond.log "
+    "%(base)s/exp_v3c*.log %(base)s/exp_xl_skelhead_c*.log "
+    "%(base)s/exp_xl_highdim_cs*.log "
     "%(base)s/exp_v3a_glyph_cs*.log %(base)s/exp_xl_lora_cs.log 2>/dev/null | head -1); "
     "if [ -n \"$latest\" ]; then echo $latest; fi; "
     "ls -t %(base)s/results/v3*/log.txt %(base)s/results/v3*/**/log.txt 2>/dev/null | head -1"
@@ -220,11 +221,12 @@ def pull_once():
     """拉取一次远程日志并解析。返回 (rows, source_str, used_cache:bool)。
 
     每个远程日志按 basename（附内容哈希后缀以防不同实验同名）持久保存到
-    LOCAL_LOGS_DIR，因此 resume 后新日志、以及历史实验日志都不会互相覆盖。
-    解析时读取目录内全部日志按 step 去重合并，得到从 0 开始的完整曲线。
+    LOCAL_LOGS_DIR。默认只解析**本次拉取的当前日志**(filenames)，避免把
+    历史 run(v3b 等) 混进当前 v3c 曲线；离线(拉取失败)时回退到全部本地副本。
     """
     remote_logs = remote_find_log()
     used_cache = False
+    fetched = []
     os.makedirs(LOCAL_LOGS_DIR, exist_ok=True)
     if not remote_logs:
         print("  [WARN] 未找到远程日志，使用本地已有副本。")
@@ -232,6 +234,7 @@ def pull_once():
     else:
         for remote_log in remote_logs:
             base = os.path.basename(remote_log)
+            fetched.append(base)
             local_dst = os.path.join(LOCAL_LOGS_DIR, base)
             src = f"{REMOTE_USER}@{REMOTE_HOST}:{remote_log}"
             cmd = ["scp", "-o", "ConnectTimeout=10", "-P", REMOTE_PORT, src, local_dst]
@@ -244,8 +247,11 @@ def pull_once():
                 print(f"  [WARN] scp 异常 {remote_log}: {e}")
                 used_cache = True
 
-    # 解析目录内全部本地日志
-    rows = parse_local_logs()
+    # 解析：有成功拉取的当前日志 => 只解析它们(当前 run)；否则回退全部本地副本
+    if fetched and not used_cache:
+        rows = parse_local_logs(filenames=fetched)
+    else:
+        rows = parse_local_logs()
     src_list = ",".join(remote_logs) if remote_logs else ""
     source = (f"remote:{REMOTE_USER}@{REMOTE_HOST}:{REMOTE_PORT}[{src_list}]"
               if src_list and not used_cache else
@@ -253,14 +259,28 @@ def pull_once():
     return rows, source, used_cache
 
 
-def parse_local_logs():
+def parse_local_logs(filenames=None):
     """读取 LOCAL_LOGS_DIR 顶层 .log 文件与旧单文件缓存，按 step 去重合并。离线可用。
-    子目录（如 _other_exp/ 归档区）不扫描。"""
+    子目录（如 _other_exp/ 归档区）不扫描。
+    filenames: 若给定(如当前正在拉的日志 basename 列表)，只解析这些文件，
+     避免把已结束的历史 run(v3b 等) 混进当前 v3c 曲线。默认 None=解析全部。"""
     os.makedirs(LOCAL_LOGS_DIR, exist_ok=True)
-    log_files = sorted(f for f in os.listdir(LOCAL_LOGS_DIR)
-                       if os.path.isfile(os.path.join(LOCAL_LOGS_DIR, f))
-                       and (f.endswith(".log") or f == "log.txt"))
-    log_files = [os.path.join(LOCAL_LOGS_DIR, f) for f in log_files]
+    if filenames:
+        # 只解析指定日志文件(可能带子目录名，取 basename 与之匹配)
+        log_files = []
+        for f in filenames:
+            b = os.path.basename(f)
+            p = os.path.join(LOCAL_LOGS_DIR, b)
+            if os.path.isfile(p):
+                log_files.append(p)
+            elif os.path.isfile(f):
+                log_files.append(f)
+        log_files = sorted(log_files)
+    else:
+        log_files = sorted(f for f in os.listdir(LOCAL_LOGS_DIR)
+                           if os.path.isfile(os.path.join(LOCAL_LOGS_DIR, f))
+                           and (f.endswith(".log") or f == "log.txt"))
+        log_files = [os.path.join(LOCAL_LOGS_DIR, f) for f in log_files]
     # 兼容旧的单文件缓存
     if os.path.exists(LOCAL_LOG):
         log_files.append(LOCAL_LOG)
