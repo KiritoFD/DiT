@@ -296,7 +296,11 @@ function buildAllCharts() {
   if (chartsBuilt) return;
   makeChart('diffChart', [{label:'Diff', color:COLORS.diff, key:'diff'}]);
   makeChart('totalChart', [{label:'Total', color:COLORS.total, key:'total'}]);
-  makeChart('structChart', [{label:'StdMid', color:COLORS.repa, key:'stdmid'}]);
+  makeChart('structChart', [
+    {label:'Canny', color:COLORS.canny, key:'canny'},
+    {label:'Skel', color:COLORS.skel, key:'skel'},
+    {label:'REPA', color:COLORS.repa, key:'repa'}
+  ]);
   makeChart('mseChart', [{label:'MSE', color:COLORS.warn, key:'mse'}]);
   makeChart('ssimChart', [{label:'SSIM', color:COLORS.ok, key:'ssim'}]);
   makeChart('x0Chart', [{label:'X0Lat', color:COLORS.total, key:'x0lat'}]);
@@ -602,6 +606,8 @@ function renderStats(rows){
     s('Step', last.step) +
     s('Diff', nan(last.diff)?'—':last.diff.toFixed(4), nan(last.diff)?'warn':'') +
     s('Diff Δ', trend==null?'—':(trend>0?'+':'')+trend.toFixed(1)+'%', (trend!=null&&trend<0)?'ok':'') +
+    s('Canny', nan(last.canny)?'—':last.canny.toFixed(4)) +
+    s('Skel', nan(last.skel)?'—':last.skel.toFixed(4)) +
     s('MSE', nan(last.mse)?'—':last.mse.toFixed(5)) +
     s('SSIM', nan(last.ssim)?'—':last.ssim.toFixed(4), nan(last.ssim)?'':'ok') +
     s('Steps/s', nan(last.stepsPerSec)?'—':last.stepsPerSec.toFixed(1)) +

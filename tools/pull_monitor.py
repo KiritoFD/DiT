@@ -117,18 +117,21 @@ def parse():
                 if not kv:
                     continue
                 key = kv.group(1).strip()
+                val_str = kv.group(2).strip()
                 if key.startswith("Steps/Sec"):
-                    key = "stepsPerSec"; val = kv.group(2).strip()
+                    key = "stepsPerSec"; fields[key] = num(val_str.split()[0] if val_str else None)
                 elif key == "Mem":
-                    mm = re.match(r"([\d.]+)G/([\d.]+)G", kv.group(2))
+                    mm = re.match(r"([\d.]+)G/([\d.]+)G", val_str)
                     fields["memCur"] = num(mm.group(1) if mm else None)
                     fields["memPeak"] = num(mm.group(2) if mm else None)
                     continue
                 else:
-                    val = re.sub(r"^raw\s+", "", kv.group(2)).strip()
-                fields[key] = num(val)
+                    # value 形如 "raw 0.1423 x 0.50 = 0.0712" -> 取第一个数值(raw)
+                    nm = re.search(r"-?[\d.]+", val_str)
+                    fields[key] = num(nm.group(0) if nm else None)
             rows.append({
                 "step": step, "total": fields.get("Total"), "diff": fields.get("Diff"),
+                "canny": fields.get("Canny"), "skel": fields.get("Skel"),
                 "stdmid": fields.get("StdMid"), "x0lat": fields.get("X0Lat"),
                 "stepsPerSec": fields.get("stepsPerSec"),
                 "memCur": fields.get("memCur"), "memPeak": fields.get("memPeak"),
