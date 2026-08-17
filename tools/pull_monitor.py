@@ -132,6 +132,7 @@ def parse():
             rows.append({
                 "step": step, "total": fields.get("Total"), "diff": fields.get("Diff"),
                 "canny": fields.get("Canny"), "skel": fields.get("Skel"),
+                "latc": fields.get("LatC"), "lats": fields.get("LatS"),
                 "stdmid": fields.get("StdMid"), "x0lat": fields.get("X0Lat"),
                 "stepsPerSec": fields.get("stepsPerSec"),
                 "memCur": fields.get("memCur"), "memPeak": fields.get("memPeak"),

@@ -299,6 +299,8 @@ function buildAllCharts() {
   makeChart('structChart', [
     {label:'Canny', color:COLORS.canny, key:'canny'},
     {label:'Skel', color:COLORS.skel, key:'skel'},
+    {label:'LatC', color:'#3ddc97', key:'latc'},
+    {label:'LatS', color:'#f5a623', key:'lats'},
     {label:'REPA', color:COLORS.repa, key:'repa'}
   ]);
   makeChart('mseChart', [{label:'MSE', color:COLORS.warn, key:'mse'}]);
@@ -608,6 +610,8 @@ function renderStats(rows){
     s('Diff Δ', trend==null?'—':(trend>0?'+':'')+trend.toFixed(1)+'%', (trend!=null&&trend<0)?'ok':'') +
     s('Canny', nan(last.canny)?'—':last.canny.toFixed(4)) +
     s('Skel', nan(last.skel)?'—':last.skel.toFixed(4)) +
+    s('LatC', nan(last.latc)?'—':last.latc.toFixed(4)) +
+    s('LatS', nan(last.lats)?'—':last.lats.toFixed(4)) +
     s('MSE', nan(last.mse)?'—':last.mse.toFixed(5)) +
     s('SSIM', nan(last.ssim)?'—':last.ssim.toFixed(4), nan(last.ssim)?'':'ok') +
     s('Steps/s', nan(last.stepsPerSec)?'—':last.stepsPerSec.toFixed(1)) +
