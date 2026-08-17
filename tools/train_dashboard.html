@@ -60,7 +60,7 @@ button.sec{background:var(--card);border:1px solid var(--line);color:var(--txt)}
 .tab{padding:8px 16px;font-size:12px;color:var(--dim);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px}
 .tab.active{color:var(--txt);border-bottom-color:var(--acc);font-weight:600}
 .tab:hover{color:var(--txt)}
-.tab-content{display:none}
+.tab-content{display:block}
 .tab-content.active{display:block}
 </style>
 </head>
@@ -78,6 +78,9 @@ button.sec{background:var(--card);border:1px solid var(--line);color:var(--txt)}
 
 <div class="stats" id="statGrid"></div>
 <div class="status" id="statusLine"></div>
+
+<!-- 全局错误显示条（调试用） -->
+<div id="errbar" style="display:none;background:#ff4d4f;color:#fff;padding:8px 12px;font:12px monospace;white-space:pre-wrap;position:sticky;top:0;z-index:999"></div>
 
 <!-- Tab 导航 -->
 <div class="tabs">
@@ -161,6 +164,17 @@ button.sec{background:var(--card);border:1px solid var(--line);color:var(--txt)}
       <button class="zoom-btn sec" onclick="resetZoom(this)">重置</button>
     </div>
   </div>
+
+  <!-- 朴素画图框（独立实现，不缩放，照搬基础写法；用于确认 eval 指标能否正常绘制） -->
+  <div class="panel">
+    <h2>Auto-Eval MSE（朴素）</h2>
+    <div class="chart-wrap"><canvas id="mseSimple"></canvas></div>
+  </div>
+  <div class="panel">
+    <h2>Auto-Eval SSIM（朴素）</h2>
+    <div class="chart-wrap"><canvas id="ssimSimple"></canvas></div>
+  </div>
+  <pre id="dbgSimple" style="background:#11151c;color:#7fd1ff;font:11px monospace;padding:8px;white-space:pre-wrap;margin:8px 0;"></pre>
 </div>
 </div>
 
@@ -199,14 +213,19 @@ button.sec{background:var(--card);border:1px solid var(--line);color:var(--txt)}
 </div>
 
 <script>
+// 全局错误捕获（调试用，直接显示到页面顶部）
+window.onerror = function(msg, src, line, col) {
+  var e = document.getElementById('errbar');
+  if (e) { e.style.display = 'block'; e.textContent = 'JS Error: ' + msg + ' @' + line + ':' + col; }
+};
 // ============================================================
 // 配置常量
 // ============================================================
 const COLORS = {
   diff:'#4f9cff', total:'#ffb84f', canny:'#ff6b6b',
-  skel:'#b06bff', repa:'#3ddc97', spd:'#8b93a7'
+  skel:'#b06bff', repa:'#3ddc97', spd:'#8b93a7',
+  warn:'#ff6b6b', ok:'#3ddc97'
 };
-const MAX_DISPLAY_POINTS = 2000;   // 超过此数自动降采样
 const REFRESH_MS = 10000;
 
 // ============================================================
@@ -214,25 +233,11 @@ const REFRESH_MS = 10000;
 // ============================================================
 const charts = {};       // {id: Chart实例}
 const chartMeta = {};    // {id: {fullData, fullLabels, fullTs, viewStart, viewEnd}}
-let chartsBuilt = false;
+const simpleCharts = {}; // 朴素画图框（mse/ssim），独立实现
+let chartsBuilt = false; // 所有图表是否已创建
 let allRows = [];        // 原始全量数据
+let epochMeta = {epoch_now:0, hr_per_epoch:0, sec_per_epoch:0, steps_per_epoch:0, dataset_size:0, stepsPerSec:0};
 let rafPending = null;   // requestAnimationFrame 节流
-
-// ============================================================
-// 数据降采样：均匀采样到 targetCount 点
-// ============================================================
-function downsample(arr, labels, ts, target) {
-  if (arr.length <= target) return {data:arr, labels, ts};
-  const step = arr.length / target;
-  const outData = [], outLabels = [], outTs = [];
-  for (let i = 0; i < target; i++) {
-    const idx = Math.min(Math.floor(i * step), arr.length - 1);
-    outData.push(arr[idx]);
-    outLabels.push(labels[idx]);
-    outTs.push(ts[idx]);
-  }
-  return {data:outData, labels:outLabels, ts:outTs};
-}
 
 // ============================================================
 // 创建图表（无 zoom 插件依赖）
@@ -281,6 +286,45 @@ function makeChart(id, datasets) {
   // 绑定缩放条的 range 输入
   bindZoomBar(id);
   return ch;
+}
+
+// ============================================================
+// 一次性创建所有图表（始终渲染，不在隐藏 tab 内延迟创建）
+// 隐藏 tab 的 canvas 初始尺寸为 0，靠切 tab 时的 resize 兜底恢复绘制。
+// ============================================================
+function buildAllCharts() {
+  if (chartsBuilt) return;
+  makeChart('diffChart', [{label:'Diff', color:COLORS.diff, key:'diff'}]);
+  makeChart('totalChart', [{label:'Total', color:COLORS.total, key:'total'}]);
+  makeChart('structChart', [{label:'StdMid', color:COLORS.repa, key:'stdmid'}]);
+  makeChart('mseChart', [{label:'MSE', color:COLORS.warn, key:'mse'}]);
+  makeChart('ssimChart', [{label:'SSIM', color:COLORS.ok, key:'ssim'}]);
+  makeChart('x0Chart', [{label:'X0Lat', color:COLORS.total, key:'x0lat'}]);
+  makeChart('spdChart', [{label:'Steps/Sec', color:COLORS.spd, key:'stepsPerSec'}]);
+  makeChart('memChart', [
+    {label:'当前', color:COLORS.canny, key:'memCur'},
+    {label:'峰值', color:COLORS.skel, key:'memPeak'}
+  ]);
+  // 朴素画图框：独立、不缩放、照搬基础写法，专用于确认 eval 指标能否正常绘制
+  simpleCharts.mse = new Chart(document.getElementById('mseSimple'), {
+    type: 'line',
+    data: { labels: [], datasets: [{ label: 'MSE', data: [], borderColor: COLORS.warn,
+      backgroundColor: COLORS.warn + '18', borderWidth: 1.5, pointRadius: 0, tension: 0.2, spanGaps: true }] },
+    options: { responsive: true, maintainAspectRatio: false, animation: false,
+      plugins: { legend: { labels: { color: '#c4ccdb' } } },
+      scales: { x: { ticks: { color: '#8b93a7', font: { size: 10 } }, grid: { color: '#2a2f3c' } },
+                y: { ticks: { color: '#8b93a7', font: { size: 10 } }, grid: { color: '#2a2f3c' } } } }
+  });
+  simpleCharts.ssim = new Chart(document.getElementById('ssimSimple'), {
+    type: 'line',
+    data: { labels: [], datasets: [{ label: 'SSIM', data: [], borderColor: COLORS.ok,
+      backgroundColor: COLORS.ok + '18', borderWidth: 1.5, pointRadius: 0, tension: 0.2, spanGaps: true }] },
+    options: { responsive: true, maintainAspectRatio: false, animation: false,
+      plugins: { legend: { labels: { color: '#c4ccdb' } } },
+      scales: { x: { ticks: { color: '#8b93a7', font: { size: 10 } }, grid: { color: '#2a2f3c' } },
+                y: { ticks: { color: '#8b93a7', font: { size: 10 } }, grid: { color: '#2a2f3c' } } } }
+  });
+  chartsBuilt = true;
 }
 
 // ============================================================
@@ -423,51 +467,57 @@ function refreshAllCharts() {
   });
 }
 
+// 朴素画图框刷新：直接把全量 step 与 mse/ssim 塞进去，不缩放、不切片
+function refreshSimpleCharts() {
+  const dbg = document.getElementById('dbgSimple');
+  const log = [];
+  if (!allRows.length) { if (dbg) dbg.textContent = 'allRows 为空（fetch 失败？检查是否用 http 打开而非 file://）'; return; }
+  const labels = allRows.map(r => r.step);
+  const mse = allRows.map(r => (r.mse == null || isNaN(r.mse)) ? null : r.mse);
+  const ssim = allRows.map(r => (r.ssim == null || isNaN(r.ssim)) ? null : r.ssim);
+  log.push('allRows=' + allRows.length + ' labels=' + labels.length);
+  log.push('mse: defined=' + mse.filter(v=>v!==null).length + ' first=' + mse[0] + ' last=' + mse[mse.length-1]);
+  log.push('ssim: defined=' + ssim.filter(v=>v!==null).length + ' first=' + ssim[0] + ' last=' + ssim[ssim.length-1]);
+  log.push('simpleCharts.mse exists=' + !!simpleCharts.mse + ' ssim exists=' + !!simpleCharts.ssim);
+  if (simpleCharts.mse) {
+    simpleCharts.mse.data.labels = labels;
+    simpleCharts.mse.data.datasets[0].data = mse;
+    simpleCharts.mse.update('none');
+    log.push('mse chart data len=' + simpleCharts.mse.data.datasets[0].data.length);
+  }
+  if (simpleCharts.ssim) {
+    simpleCharts.ssim.data.labels = labels;
+    simpleCharts.ssim.data.datasets[0].data = ssim;
+    simpleCharts.ssim.update('none');
+    log.push('ssim chart data len=' + simpleCharts.ssim.data.datasets[0].data.length);
+  }
+  if (dbg) dbg.textContent = log.join('\n');
+}
+
 function refreshChart(id) {
   const ch = charts[id];
   const meta = chartMeta[id];
   if (!ch || !meta.keys.length) return;
 
   const n = meta.fullLabels.length;
-  const loI = Math.floor(meta.viewStart * (n - 1));
-  const hiI = Math.ceil(meta.viewEnd * (n - 1));
+  const loI = Math.max(0, Math.floor(meta.viewStart * (n - 1)));
+  const hiI = Math.min(n - 1, Math.ceil(meta.viewEnd * (n - 1)));
 
-  // 提取可见区间并降采样
-  const visibleLabels = meta.fullLabels.slice(loI, hiI + 1);
-  const visibleTs = meta.fullTs.slice(loI, hiI + 1);
-
-  ch.data.labels = visibleLabels;
+  // 直接用全量 labels；dataset 仅显示可见区间的数据（标准写法，不手动算 y 轴）
+  ch.data.labels = meta.fullLabels;
   ch.data.datasets.forEach((ds, i) => {
-    const key = meta.keys[i];
-    if (!key) return;
     const arr = meta.fullData[i];
     if (!arr) return;
     const sliced = arr.slice(loI, hiI + 1);
-    // 降采样
-    const sampled = downsample(sliced, visibleLabels, visibleTs, MAX_DISPLAY_POINTS);
-    ds.data = sampled.data;
-    ds._rawTs = sampled.ts;
+    ds.data = sliced;
+    ds._rawTs = meta.fullTs.slice(loI, hiI + 1);
   });
 
-  // Y 轴贴合可见区间
-  fitYAxis(ch);
+  // 让 Chart.js 自动计算 Y 轴（标准行为，避免手动 fit 出问题）
+  delete ch.options.scales.y.min;
+  delete ch.options.scales.y.max;
 
-  ch.update('none');  // v4: 'none' 关闭动画，不触发事件回调，避免循环
-}
-
-function fitYAxis(ch) {
-  let lo = Infinity, hi = -Infinity;
-  ch.data.datasets.forEach(ds => {
-    for (const v of ds.data) {
-      if (v == null || isNaN(v)) continue;
-      if (v < lo) lo = v;
-      if (v > hi) hi = v;
-    }
-  });
-  if (lo === Infinity) return;
-  const pad = ((hi - lo) || Math.abs(hi) || 1) * 0.08;
-  ch.options.scales.y.min = lo - pad;
-  ch.options.scales.y.max = hi + pad;
+  ch.update('none');
 }
 
 // ============================================================
@@ -494,39 +544,18 @@ async function load(){
       `${data.source||''} · ${data.pulledAt||''} · ${data.count||0} 条`;
 
     allRows = data.rows || [];
+    epochMeta = {
+      epoch_now: data.epoch_now || 0,
+      hr_per_epoch: data.hr_per_epoch || 0,
+      sec_per_epoch: data.sec_per_epoch || 0,
+      steps_per_epoch: data.steps_per_epoch || 0,
+      dataset_size: data.dataset_size || 0,
+      stepsPerSec: data.stepsPerSec || 0,
+    };
     if (!allRows.length) return;
 
-    // 首次创建图表
-    if (!chartsBuilt) {
-      makeChart('diffChart', [
-        {label:'Diff', color:COLORS.diff, key:'diff'}
-      ]);
-      makeChart('totalChart', [
-        {label:'Total', color:COLORS.total, key:'total'}
-      ]);
-      makeChart('structChart', [
-        {label:'Canny', color:COLORS.canny, key:'canny'},
-        {label:'Skel', color:COLORS.skel, key:'skel'},
-        {label:'REPA', color:COLORS.repa, key:'repa'}
-      ]);
-      makeChart('mseChart', [
-        {label:'MSE', color:COLORS.warn, key:'mse'}
-      ]);
-      makeChart('ssimChart', [
-        {label:'SSIM', color:COLORS.ok, key:'ssim'}
-      ]);
-      makeChart('x0Chart', [
-        {label:'X0Lat', color:COLORS.total, key:'x0lat'}
-      ]);
-      makeChart('spdChart', [
-        {label:'Steps/Sec', color:COLORS.spd, key:'stepsPerSec'}
-      ]);
-      makeChart('memChart', [
-        {label:'当前', color:COLORS.canny, key:'memCur'},
-        {label:'峰值', color:COLORS.skel, key:'memPeak'}
-      ]);
-      chartsBuilt = true;
-    }
+    // 一次性创建所有图表（始终渲染）
+    buildAllCharts();
 
     // 存储全量数据到 meta：fullData 按 dataset 顺序存数组
     Object.values(charts).forEach(ch => {
@@ -539,6 +568,8 @@ async function load(){
 
     // 刷新所有图表
     refreshAllCharts();
+    // 朴素画图框：直接塞全量数据，不缩放
+    refreshSimpleCharts();
 
     // 统计卡片
     renderStats(allRows);
@@ -574,6 +605,10 @@ function renderStats(rows){
     s('MSE', nan(last.mse)?'—':last.mse.toFixed(5)) +
     s('SSIM', nan(last.ssim)?'—':last.ssim.toFixed(4), nan(last.ssim)?'':'ok') +
     s('Steps/s', nan(last.stepsPerSec)?'—':last.stepsPerSec.toFixed(1)) +
+    s('已过数据遍数', epochMeta.epoch_now?epochMeta.epoch_now.toFixed(2)+' 遍':'—') +
+    s('每遍耗时', epochMeta.hr_per_epoch?(
+        epochMeta.hr_per_epoch<1 ? Math.round(epochMeta.sec_per_epoch)+'s'
+        : epochMeta.hr_per_epoch.toFixed(1)+'h') : '—') +
     s('状态', statusText, statusText==='NaN'?'warn':(statusText==='auto-eval'||statusText==='下降中'?'ok':''));
 
   // 状态行
@@ -586,21 +621,17 @@ function renderStats(rows){
 }
 
 // ============================================================
-// Tab 切换
+// Tab 导航（仅滚动定位；所有图表区块始终可见，不做 display 隐藏）
+// —— 修复：之前用 display:none 隐藏 tab 内容，导致该 tab 内 canvas 初始
+//    尺寸为 0，Chart.js 在 0 尺寸上初始化后曲线无法正确绘制（"有数据没图表"）。
+//    现所有 .tab-content 常驻 display:block，canvas 从一开始就具备正确尺寸。
 // ============================================================
 document.querySelectorAll('.tab').forEach(tab => {
   tab.addEventListener('click', () => {
     document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
-    document.querySelectorAll('.tab-content').forEach(c=>c.classList.remove('active'));
     tab.classList.add('active');
-    document.getElementById('tab-'+tab.dataset.tab).classList.add('active');
-    // 切换 tab 后重绘所有图表（确保隐藏 tab 的 Canvas 尺寸正确恢复）
-    requestAnimationFrame(() => {
-      Object.keys(charts).forEach(id => {
-        if (id && charts[id]) charts[id].resize();
-      });
-      refreshAllCharts();
-    });
+    const el = document.getElementById('tab-'+tab.dataset.tab);
+    if (el) el.scrollIntoView({behavior:'smooth', block:'start'});
   });
 });
 

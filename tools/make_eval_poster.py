@@ -148,7 +148,7 @@ def main():
                     for d in step_dirs) or 1
 
     n_cols = n_samples * 3
-    n_rows = len(step_dirs) + 2 + 1   # ckpt 行 + GT 行 + 标准字形行 + 顶部
+    n_rows = len(step_dirs) + 2   # ckpt 行 + GT 行 + 顶部
     H = GAP + n_rows * (CELL + GAP)
     canvas = Image.new("RGB", (CELL * n_cols + GAP * 2, H), (15, 17, 22))
     draw = ImageDraw.Draw(canvas)
@@ -166,50 +166,29 @@ def main():
         draw.text((4, y + CELL // 2), f"step{steps[ri]}", fill=(180, 190, 205))
         y += CELL + GAP
 
-    # GT 行：优先用远程 GT 真值（final_canny/final_skeleton），否则本地对 gt 图算
+    # GT 行：直接对本地 GT 256 图(gt_dir/{pid}.png)算 canny/skel，保证 GT 与生成样本同步更新。
     gt_y = y
     x = GAP
     show5 = _find_show5_ids(show5_csv)
-    if gt_dir and show5:
-        # GT 行用远程真值图：img + canny_gt + skel_gt
-        gt_img_dir = None
-        for d in step_dirs:
-            if os.path.exists(os.path.join(d, "gt0.png")):
-                gt_img_dir = d
-                break
-        for i in range(n_samples):
-            pid = show5[i] if i < len(show5) else None
-            gimg = _load_cell(os.path.join(gt_img_dir, f"gt{i}.png"), (50, 50, 50)) if gt_img_dir else Image.new("RGB", (CELL, CELL), (50, 50, 50))
-            gce = _load_cell(os.path.join(gt_dir, "canny", f"{pid}.png"), (50, 50, 50)) if pid else Image.new("RGB", (CELL, CELL), (50, 50, 50))
-            gsk = _load_cell(os.path.join(gt_dir, "skel", f"{pid}.png"), (50, 50, 50)) if pid else Image.new("RGB", (CELL, CELL), (50, 50, 50))
-            canvas.paste(gimg, (x, gt_y)); canvas.paste(gce, (x + CELL, gt_y)); canvas.paste(gsk, (x + 2 * CELL, gt_y))
-            x += 3 * CELL
-    else:
-        # 回退：对 gt 图用同一算法算（可能与远程有细微灰度差异，但结构一致）
-        gt_dir = step_dirs[-1]
-        for i in range(n_samples):
-            gp = os.path.join(gt_dir, f"gt{i}.png")
-            img = _load_cell(gp, (50, 50, 50))
-            canvas.paste(img, (x, gt_y)); canvas.paste(canny_edges(img), (x + CELL, gt_y)); canvas.paste(skeleton(img), (x + 2 * CELL, gt_y))
-            x += 3 * CELL
+    gt_loc = True
+    for i in range(n_samples):
+        pid = show5[i] if show5 and i < len(show5) else None
+        # 本地 GT 图：优先 gt_dir/{pid}.png（新拉取），否则当前 step 的 gt{i}.png
+        gp = os.path.join(gt_dir, f"{pid}.png") if (gt_dir and pid) else None
+        if not gp or not os.path.exists(gp):
+            gp = None
+            for d in step_dirs:
+                if os.path.exists(os.path.join(d, f"gt{i}.png")):
+                    gp = os.path.join(d, f"gt{i}.png"); break
+        img = _load_cell(gp, (50, 50, 50)) if gp else Image.new("RGB", (CELL, CELL), (50, 50, 50))
+        canvas.paste(img, (x, gt_y))
+        canvas.paste(canny_edges(img), (x + CELL, gt_y))
+        canvas.paste(skeleton(img), (x + 2 * CELL, gt_y))
+        x += 3 * CELL
     draw.text((4, gt_y + CELL // 2), "GT", fill=(120, 230, 150))
 
-    # 标准字形行（STD）：本地即时渲染对应 char 的标准字形（img | canny | skel），和 GT 对比
-    std_y = gt_y + CELL + GAP
-    metas = _find_show5_meta(show5_csv)
-    x = GAP
-    for i in range(n_samples):
-        char_ = metas[i][1] if i < len(metas) else ""
-        book_ = metas[i][2] if i < len(metas) else ""
-        simg = _render_std_font(char_, book_)  # 本地字体渲染，(256,256,3)白底黑字
-        simg = simg.resize((CELL, CELL), Image.LANCZOS) if simg else Image.new("RGB", (CELL, CELL), (60, 40, 40))
-        ce = canny_edges(simg); sk = skeleton(simg)
-        canvas.paste(simg, (x, std_y)); canvas.paste(ce, (x + CELL, std_y)); canvas.paste(sk, (x + 2 * CELL, std_y))
-        x += 3 * CELL
-    draw.text((4, std_y + CELL // 2), "STD", fill=(240, 160, 80))
-
     canvas.save(out)
-    print(f"[poster] {len(step_dirs)} ckpt x {n_samples} 样本 -> {out} (GT 用 {'远程真值' if (gt_dir and show5) else '本地计算'}, 含 STD 标准字形行)")
+    print(f"[poster] {len(step_dirs)} ckpt x {n_samples} 样本 -> {out} (GT canny/skel 本地即时计算)")
     return 0
 
 

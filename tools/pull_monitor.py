@@ -22,12 +22,18 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 LOCAL_CUR = os.path.join(HERE, "current_train.log")   # 最新的当前日志副本
 OUT_JSON = os.path.join(HERE, "train_data.json")
 
-# 找远程当前 log.txt（优先 5script/results 下实验目录，mtime 最新）
+# 当前实验的数据集规模与 batch（用于算"数据过几遍"与"一遍需几小时"）
+# 按 exp_s5_2factor_top30: train_top30=128842 样本, batch=192
+DATASET_SIZE = 128842
+BATCH_SIZE = 192
+
+# 找当前实验的结果目录（5script/results 下，mtime 最新 -> 但取该系列目录：同一 experiment 名的多次 run 要拼接）
 FIND_CMD = (
     "find %(base)s/5script/results -name log.txt 2>/dev/null "
     "| xargs ls -t 2>/dev/null | head -1; "
     "echo; ls -t %(base)s/exp_*.log %(base)s/exp_s2*.log 2>/dev/null | head -1"
 )
+# 找到最新 log.txt 后，取其"实验系列目录"（上级的上级），把该系列所有 log.txt cat 合并（支持 resume 拼接 0->N）
 LANRE = re.compile(r"\x1b\[[0-9;]*m")
 # 训练损失行：用分栏切分更稳，避免长串 .*? 贪婪问题
 ROW_RE = re.compile(r"\(step=(\d+)\)\s+(.*)")
@@ -44,35 +50,48 @@ def num(v):
         return None
 
 
-def remote_find_log():
+def remote_find_latest():
+    """找最新 log.txt 的绝对路径（用于识别实验系列目录）。"""
     cmd = ["ssh", "-o", "ConnectTimeout=10", "-p", REMOTE_PORT,
            f"{REMOTE_USER}@{REMOTE_HOST}"]
     try:
         r = subprocess.run(cmd + [FIND_CMD % {"base": REMOTE_BASE}],
                            capture_output=True, text=True, timeout=30)
         paths = [p for p in r.stdout.splitlines() if p.strip() and p.startswith("/")]
-        if paths:
-            return paths[0]
+        return paths[0] if paths else ""
     except Exception:
-        pass
-    return ""
+        return ""
 
 
 def pull_log():
-    """拉取当前日志到本地 current_train.log。返回 (last_modified_ts, ok)。"""
-    remote = remote_find_log()
-    if not remote:
+    """拉取当前实验系列的**所有** log.txt（cat 合并）到本地 current_train.log。
+    这样 resume run 能拼接前一个 run 的曲线（step 0 -> N -> 继续），parse 按 step 去重。"""
+    latest = remote_find_latest()
+    if not latest:
         return None, False
-    src = f"{REMOTE_USER}@{REMOTE_HOST}:{remote}"
+    # 实验系列目录 = log.txt 所在 run 目录的上级（含同一实验名的多个 run）
+    # latest 形如 .../results/<exp>/<run>/log.txt -> 系列目录 = .../results/<exp>
+    series_dir = "/".join(latest.split("/")[:-2])
+    cmd = ["ssh", "-o", "ConnectTimeout=15", "-p", REMOTE_PORT,
+           f"{REMOTE_USER}@{REMOTE_HOST}"]
+    merge = (f"find {series_dir} -name log.txt 2>/dev/null | sort "
+             f"| xargs cat > /tmp/_cur_train.log 2>/dev/null; "
+             f"echo {series_dir}")
     try:
-        r = subprocess.run(
-            ["scp", "-o", "ConnectTimeout=10", "-P", REMOTE_PORT, src, LOCAL_CUR],
-            capture_output=True, text=True, timeout=90)
-        if r.returncode != 0:
-            return remote, False
-        return remote, True
+        r = subprocess.run(cmd + [merge], capture_output=True, text=True, timeout=60)
+        series = r.stdout.splitlines()[0].strip() if r.stdout else ""
     except Exception:
-        return remote, False
+        return latest, False
+    src = f"{REMOTE_USER}@{REMOTE_HOST}:/tmp/_cur_train.log"
+    try:
+        rr = subprocess.run(
+            ["scp", "-o", "ConnectTimeout=15", "-P", REMOTE_PORT, src, LOCAL_CUR],
+            capture_output=True, text=True, timeout=90)
+        if rr.returncode == 0:
+            return latest, True
+    except Exception:
+        pass
+    return latest, False
 
 
 def parse():
@@ -141,9 +160,29 @@ def parse():
 
 
 def write(rows, source):
+    # 每 row 附 epoch（已过数据遍数 = step*batch/数据集大小），顶层给最新 epoch + 每遍耗时
+    steps_per_epoch = max(1, int(DATASET_SIZE // BATCH_SIZE) + (1 if DATASET_SIZE % BATCH_SIZE else 0))
+    out_rows = []
+    latest_sps = None
+    for r in rows:
+        nr = dict(r)
+        nr["epoch"] = (r["step"] * BATCH_SIZE) / DATASET_SIZE
+        if r.get("stepsPerSec"):
+            latest_sps = r["stepsPerSec"]
+        out_rows.append(nr)
+    sps = latest_sps or 4.0
+    sec_per_epoch = DATASET_SIZE / (sps * BATCH_SIZE)
+    last_step = out_rows[-1]["step"] if out_rows else 0
+    total_steps = 200000  # 当前配置 max_steps（供前端算剩余训练 ETA）
+    steps_per_epoch = steps_per_epoch
+    eta_hours = max(0, total_steps - last_step) / (sps * 3600) if sps else 0
     out = {
         "source": source, "pulledAt": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-        "count": len(rows), "rows": rows,
+        "count": len(rows), "rows": out_rows,
+        "dataset_size": DATASET_SIZE, "batch": BATCH_SIZE, "steps_per_epoch": steps_per_epoch,
+        "epoch_now": (last_step * BATCH_SIZE) / DATASET_SIZE,
+        "sec_per_epoch": sec_per_epoch, "hr_per_epoch": sec_per_epoch / 3600.0,
+        "stepsPerSec": sps, "total_steps": total_steps, "eta_hours": eta_hours,
     }
     with open(OUT_JSON, "w", encoding="utf-8") as f:
         json.dump(out, f, ensure_ascii=False)
@@ -159,11 +198,10 @@ POSTER = os.path.join(HERE, "eval_poster.png")
 
 
 def _experiment_key(remote_log):
-    """从远程 log 路径提取实验身份（run 目录名）。
-    remote_log 形如 .../5script/results/<exp>/<run_dir>/log.txt → 取 <run_dir>。"""
-    run_dir = os.path.basename(os.path.dirname(remote_log.rstrip("/")))
-    parent = os.path.basename(os.path.dirname(os.path.dirname(remote_log.rstrip("/"))))
-    return f"{parent}/{run_dir}"
+    """实验身份 = 实验系列目录名（results/<exp>），而非 run 目录。
+    resume run（同 <exp> 新 run_dir）共享同一 key → 海报跨 run 累积，不 reset。"""
+    exp = os.path.basename(os.path.dirname(os.path.dirname(remote_log.rstrip("/"))))
+    return exp
 
 
 def _load_state():
@@ -266,8 +304,8 @@ def regen_poster_if_new_eval(rows, remote_log, verbose=True):
         _reset_experiment(exp, verbose)
         state = _load_state()
 
-    # 当前已处理过的 step
-    done = set(state.get("done_steps", []))
+    # 当前已处理过的 step：state 记录 + 本地已存在取样目录（防止 state 被意外清空时重拉）
+    done = set(state.get("done_steps", [])) | set(_existing_steps())
     # 新出现的真实 eval 步（is_eval=True，即 [auto-eval] 行；不是前向填充的损失行）
     new_steps = sorted(r["step"] for r in rows
                        if r.get("is_eval") and r["step"] not in done)
@@ -290,7 +328,7 @@ def regen_poster_if_new_eval(rows, remote_log, verbose=True):
     # 重新生成（make_eval_poster 读 LOCAL_ES 全部 step => 行追加）
     args = [sys.executable, os.path.join(HERE, "make_eval_poster.py"), LOCAL_ES,
             "--gt-dir", os.path.join(HERE, "remote_gt"),
-            "--show5-csv", os.path.join(HERE, "show5_eval.csv"),
+            "--show5-csv", os.path.join(HERE, "eval5_top30.csv"),
             "-o", POSTER]
     try:
         subprocess.run(args, capture_output=True, text=True, timeout=180)
