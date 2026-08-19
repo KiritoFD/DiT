@@ -21,6 +21,7 @@ REMOTE_PORT = "36430"
 REMOTE_BASE = "/root/Workspace/xy/DiT"
 OUT_JSON = os.path.join(HERE, "train_data.json")
 LOCAL_ES = os.path.join(HERE, "remote_eval_samples")
+LOCAL_SEEN = os.path.join(HERE, "remote_seen_samples")
 POSTER = os.path.join(HERE, "eval_poster.png")
 LATEST = os.path.join(HERE, "eval_latest.png")
 ARCHIVE = os.path.join(HERE, "poster_archive")
@@ -68,18 +69,23 @@ def archive_current(exp_key):
     return moved
 
 
-def gen_poster(show5_csv):
+def gen_poster(show5_csv, seen5_csv=None):
     args = [sys.executable, os.path.join(HERE, "make_eval_poster.py"), LOCAL_ES,
             "--gt-dir", os.path.join(HERE, "remote_gt"),
-            "--show5-csv", os.path.join(HERE, show5_csv),
-            "-o", POSTER]
+            "--show5-csv", os.path.join(HERE, show5_csv)]
+    if seen5_csv and os.path.isdir(LOCAL_SEEN):
+        args += ["--seen5-dir", LOCAL_SEEN, "--seen5-csv", os.path.join(HERE, seen5_csv)]
+    args += ["-o", POSTER]
     subprocess.run(args, capture_output=True, text=True, timeout=180)
 
 
 def main():
     show5_csv = "eval5_top30.csv"
+    seen5_csv = "seen5_top30.csv"
     if "--show5" in sys.argv:
         show5_csv = sys.argv[sys.argv.index("--show5") + 1]
+    if "--seen5" in sys.argv:
+        seen5_csv = sys.argv[sys.argv.index("--seen5") + 1]
     ckpt = find_latest_ckpt_dir()
     if not ckpt:
         print("[showcase] 未找到远程实验 ckpt 目录"); return
@@ -88,15 +94,20 @@ def main():
     moved = archive_current(exp_key)
     # 2) 拉 eval_latest.png
     ok_latest = pull(f"{ckpt}/eval_latest.png", LATEST, 120)
-    # 3) 拉 eval_samples（覆盖）
+    # 3) 拉 eval_samples + seen_samples（覆盖）
     os.makedirs(LOCAL_ES, exist_ok=True)
-    r = subprocess.run(["scp", "-o", "ConnectTimeout=15", "-P", REMOTE_PORT, "-r",
-                        f"{REMOTE}:{ckpt}/eval_samples/.", LOCAL_ES + "/"],
-                       capture_output=True, text=True, timeout=300)
+    subprocess.run(["scp", "-o", "ConnectTimeout=15", "-P", REMOTE_PORT, "-r",
+                    f"{REMOTE}:{ckpt}/eval_samples/.", LOCAL_ES + "/"],
+                   capture_output=True, text=True, timeout=300)
+    os.makedirs(LOCAL_SEEN, exist_ok=True)
+    subprocess.run(["scp", "-o", "ConnectTimeout=15", "-P", REMOTE_PORT, "-r",
+                    f"{REMOTE}:{ckpt}/seen_samples/.", LOCAL_SEEN + "/"],
+                   capture_output=True, text=True, timeout=300)
     steps = [d for d in os.listdir(LOCAL_ES) if d.startswith("step")]
-    # 4) 生成海报
-    gen_poster(show5_csv)
-    print(f"[showcase] exp={exp_key} steps={len(steps)} "
+    seen_steps = [d for d in os.listdir(LOCAL_SEEN) if d.startswith("step")] if os.path.isdir(LOCAL_SEEN) else []
+    # 4) 生成海报（show5|seen5 并列）
+    gen_poster(show5_csv, seen5_csv)
+    print(f"[showcase] exp={exp_key} steps={len(steps)} seen={len(seen_steps)} "
           f"latest={'OK' if ok_latest else 'MISS'} poster=OK "
           f"archived={','.join(moved) if moved else '-'}")
 
