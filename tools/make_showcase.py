@@ -79,22 +79,31 @@ def gen_poster(show5_csv, seen5_csv=None):
     subprocess.run(args, capture_output=True, text=True, timeout=180)
 
 
-def main():
-    show5_csv = "eval5_top30.csv"
-    seen5_csv = "seen5_top30.csv"
-    if "--show5" in sys.argv:
-        show5_csv = sys.argv[sys.argv.index("--show5") + 1]
-    if "--seen5" in sys.argv:
-        seen5_csv = sys.argv[sys.argv.index("--seen5") + 1]
+STATE_F = os.path.join(HERE, "showcase_state.json")
+
+
+def _load_state():
+    try:
+        return json.load(open(STATE_F, encoding="utf-8")) if os.path.exists(STATE_F) else {}
+    except Exception:
+        return {}
+
+
+def sync_once(show5_csv="eval5_top30.csv", seen5_csv="seen5_top30.csv", verbose=True):
+    """同步一次展示图：仅在实验/run 变化时归档旧图；拉最新 eval/seen 样本 + 生成海报。"""
     ckpt = find_latest_ckpt_dir()
     if not ckpt:
-        print("[showcase] 未找到远程实验 ckpt 目录"); return
+        if verbose: print("[showcase] 未找到远程实验 ckpt 目录")
+        return
     exp_key = exp_key_from_ckpt(ckpt)
-    # 1) 归档当前展示（上一实验）
-    moved = archive_current(exp_key)
-    # 2) 拉 eval_latest.png
+    st = _load_state()
+    moved = []
+    if st.get("ckpt") != ckpt and st.get("ckpt"):
+        # 实验或 run 变了 -> 归档旧图
+        moved = archive_current(exp_key)
+    # 拉 eval_latest (最新实验当前)
     ok_latest = pull(f"{ckpt}/eval_latest.png", LATEST, 120)
-    # 3) 拉 eval_samples + seen_samples（覆盖）
+    # 拉 eval_samples + seen_samples（覆盖合并）
     os.makedirs(LOCAL_ES, exist_ok=True)
     subprocess.run(["scp", "-o", "ConnectTimeout=15", "-P", REMOTE_PORT, "-r",
                     f"{REMOTE}:{ckpt}/eval_samples/.", LOCAL_ES + "/"],
@@ -105,12 +114,39 @@ def main():
                    capture_output=True, text=True, timeout=300)
     steps = [d for d in os.listdir(LOCAL_ES) if d.startswith("step")]
     seen_steps = [d for d in os.listdir(LOCAL_SEEN) if d.startswith("step")] if os.path.isdir(LOCAL_SEEN) else []
-    # 4) 生成海报（show5|seen5 并列）
+    # 生成海报（show5|seen5 并列）
     gen_poster(show5_csv, seen5_csv)
-    print(f"[showcase] exp={exp_key} steps={len(steps)} seen={len(seen_steps)} "
-          f"latest={'OK' if ok_latest else 'MISS'} poster=OK "
-          f"archived={','.join(moved) if moved else '-'}")
+    json.dump({"ckpt": ckpt, "ts": datetime.datetime.now().isoformat()},
+              open(STATE_F, "w", encoding="utf-8"))
+    if verbose:
+        print(f"[showcase] {datetime.datetime.now():%H:%M:%S} exp={exp_key} "
+              f"steps={len(steps)} seen={len(seen_steps)} "
+              f"latest={'OK' if ok_latest else 'MISS'} poster=OK "
+              f"archived={','.join(moved) if moved else '-'}")
+
+
+def main():
+    show5_csv = "eval5_top30.csv"
+    seen5_csv = "seen5_top30.csv"
+    if "--show5" in sys.argv:
+        show5_csv = sys.argv[sys.argv.index("--show5") + 1]
+    if "--seen5" in sys.argv:
+        seen5_csv = sys.argv[sys.argv.index("--seen5") + 1]
+    interval = 120
+    if "--interval" in sys.argv:
+        try: interval = int(sys.argv[sys.argv.index("--interval") + 1])
+        except Exception: pass
+    if "--loop" in sys.argv:
+        import time
+        print(f"[showcase] loop 每 {interval}s 同步展示图")
+        while True:
+            try: sync_once(show5_csv, seen5_csv)
+            except Exception as e: print(f"[showcase] err {e}")
+            time.sleep(interval)
+    else:
+        sync_once(show5_csv, seen5_csv)
 
 
 if __name__ == "__main__":
     main()
+
