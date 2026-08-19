@@ -1,0 +1,105 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+"""make_showcase.py — 展示图统一打包脚本（本地运行）。
+
+职责：
+  1. 找远程"最新在跑实验"的 ckpt 目录（5script/results/<exp>/<run>/checkpoints，mtime 最新）
+  2. 拉 eval_latest.png（CPU eval 生成的当前 ckpt 快照）-> tools/eval_latest.png
+  3. 拉 eval_samples（历史各 ckpt 取样图）-> tools/remote_eval_samples/（覆盖旧 run）
+  4. 本地重生成 eval_poster.png（每 ckpt 一行 + GT 行，GT canny/skel 本地即时算）
+  5. 归档：把旧 eval_poster/eval_latest 按实验 run 编号归档到 poster_archive/<exp>__<run>/
+  6. dashboard 固定读 eval_latest.png + eval_poster.png；历史都入 archive
+
+用法: python make_showcase.py [--show5 eval5_top30.csv] [--archive-dir poster_archive]
+"""
+import os, sys, glob, subprocess, datetime, json, re
+import shutil
+
+HERE = os.path.dirname(os.path.abspath(__file__))
+REMOTE = "root@10.176.54.17"
+REMOTE_PORT = "36430"
+REMOTE_BASE = "/root/Workspace/xy/DiT"
+OUT_JSON = os.path.join(HERE, "train_data.json")
+LOCAL_ES = os.path.join(HERE, "remote_eval_samples")
+POSTER = os.path.join(HERE, "eval_poster.png")
+LATEST = os.path.join(HERE, "eval_latest.png")
+ARCHIVE = os.path.join(HERE, "poster_archive")
+
+
+def ssh(cmd, timeout=30):
+    r = subprocess.run(["ssh", "-o", "ConnectTimeout=15", "-p", REMOTE_PORT, REMOTE, cmd],
+                       capture_output=True, text=True, timeout=timeout)
+    return r.stdout
+
+
+def find_latest_ckpt_dir():
+    out = ssh("ls -td %s/5script/results/*/*/checkpoints 2>/dev/null | head -1" % REMOTE_BASE, 20)
+    return out.strip() if out.strip() else ""
+
+
+def exp_key_from_ckpt(ckpt_dir):
+    """ckpt_dir: .../results/<exp>/<run>/checkpoints -> exp/<run>"""
+    parts = ckpt_dir.rstrip("/").split("/")
+    return parts[-3] + "__" + parts[-2]
+
+
+def pull(remote_path, local_path, timeout=120):
+    r = subprocess.run(["scp", "-o", "ConnectTimeout=15", "-P", REMOTE_PORT,
+                        f"{REMOTE}:{remote_path}", local_path],
+                       capture_output=True, text=True, timeout=timeout)
+    return r.returncode == 0
+
+
+def archive_current(exp_key):
+    """把当前 eval_poster/eval_latest（上一实验的）归档到 archive/<exp_key>/，编号留存。"""
+    d = os.path.join(ARCHIVE, exp_key)
+    os.makedirs(d, exist_ok=True)
+    moved = []
+    ts = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
+    for src, nm in ((POSTER, "eval_poster"), (LATEST, "eval_latest")):
+        if os.path.exists(src):
+            dst = os.path.join(d, f"{nm}.{ts}.png")
+            shutil.move(src, dst)
+            moved.append(nm)
+    # 归档当前 remote_eval_samples（旧 run 取样）到该子目录
+    if os.path.isdir(LOCAL_ES) and os.listdir(LOCAL_ES):
+        shutil.rmtree(os.path.join(d, "eval_samples"), ignore_errors=True)
+        shutil.copytree(LOCAL_ES, os.path.join(d, "eval_samples"))
+    return moved
+
+
+def gen_poster(show5_csv):
+    args = [sys.executable, os.path.join(HERE, "make_eval_poster.py"), LOCAL_ES,
+            "--gt-dir", os.path.join(HERE, "remote_gt"),
+            "--show5-csv", os.path.join(HERE, show5_csv),
+            "-o", POSTER]
+    subprocess.run(args, capture_output=True, text=True, timeout=180)
+
+
+def main():
+    show5_csv = "eval5_top30.csv"
+    if "--show5" in sys.argv:
+        show5_csv = sys.argv[sys.argv.index("--show5") + 1]
+    ckpt = find_latest_ckpt_dir()
+    if not ckpt:
+        print("[showcase] 未找到远程实验 ckpt 目录"); return
+    exp_key = exp_key_from_ckpt(ckpt)
+    # 1) 归档当前展示（上一实验）
+    moved = archive_current(exp_key)
+    # 2) 拉 eval_latest.png
+    ok_latest = pull(f"{ckpt}/eval_latest.png", LATEST, 120)
+    # 3) 拉 eval_samples（覆盖）
+    os.makedirs(LOCAL_ES, exist_ok=True)
+    r = subprocess.run(["scp", "-o", "ConnectTimeout=15", "-P", REMOTE_PORT, "-r",
+                        f"{REMOTE}:{ckpt}/eval_samples/.", LOCAL_ES + "/"],
+                       capture_output=True, text=True, timeout=300)
+    steps = [d for d in os.listdir(LOCAL_ES) if d.startswith("step")]
+    # 4) 生成海报
+    gen_poster(show5_csv)
+    print(f"[showcase] exp={exp_key} steps={len(steps)} "
+          f"latest={'OK' if ok_latest else 'MISS'} poster=OK "
+          f"archived={','.join(moved) if moved else '-'}")
+
+
+if __name__ == "__main__":
+    main()

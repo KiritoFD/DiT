@@ -53,7 +53,7 @@ button.sec{background:var(--card);border:1px solid var(--line);color:var(--txt)}
 /* 海报 */
 .poster-section{padding:14px 20px 0}
 .poster-section .panel{margin-bottom:14px}
-.poster-section img{width:100%;max-width:600px;border-radius:6px;border:1px solid var(--line);display:block;background:#000}
+.poster-section img{width:100%;max-width:100%;border-radius:6px;border:1px solid var(--line);display:block;background:#000}
 
 /* Tab 切换 */
 .tabs{display:flex;gap:0;padding:14px 20px 0;border-bottom:1px solid var(--line)}
@@ -206,7 +206,11 @@ button.sec{background:var(--card);border:1px solid var(--line);color:var(--txt)}
 </div>
 <div class="poster-section">
   <div class="panel">
-    <h2>Eval 取样海报（每行 = 一个 ckpt · img|canny|skel · 末行 GT）</h2>
+    <h2>最新 Eval 快照（当前 ckpt · 每样本 img|canny|skel）</h2>
+    <img id="latestImg" alt="最新 eval 快照" style="display:block;" />
+  </div>
+  <div class="panel">
+    <h2>Eval 取样海报（每行 = 一个 ckpt · 10 样本 = show5|seen5 × img|canny|skel · 末行 GT）</h2>
     <img id="posterImg" alt="eval 海报" style="display:block;" />
   </div>
 </div>
@@ -529,16 +533,25 @@ function refreshChart(id) {
 // ============================================================
 // 数据加载
 // ============================================================
+let currentExp = '';
+async function loadImg(id, names){
+  const cands = currentExp ? names.map(n=>n.replace('.png?',`_${currentExp}.png?`).replace(/\?\w+$/,'?t='+Date.now())).concat(names.map(n=>n.replace(/\?\w+$/,'?t='+Date.now()))) : names.map(n=>n.replace(/\?\w+$/,'?t='+Date.now()));
+  for(const c of cands){
+    try {
+      const res = await fetch(c);
+      if(!res.ok) continue;
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const img = document.getElementById(id);
+      img.src = url;
+      img.onload = ()=>URL.revokeObjectURL(url);
+      return;
+    }catch(e){}
+  }
+}
 async function loadPoster(){
-  try {
-    const res = await fetch('eval_poster.png?t='+Date.now());
-    if(!res.ok) throw 0;
-    const blob = await res.blob();
-    const url = URL.createObjectURL(blob);
-    const img = document.getElementById('posterImg');
-    img.src = url;
-    img.onload = ()=>URL.revokeObjectURL(url);
-  }catch(e){}
+  await loadImg('latestImg', ['eval_latest.png?t='+Date.now()]);
+  await loadImg('posterImg', ['eval_poster.png?t='+Date.now()]);
 }
 
 async function load(){
@@ -546,8 +559,10 @@ async function load(){
     const res = await fetch('train_data.json?t='+Date.now());
     if(!res.ok) throw new Error('HTTP '+res.status);
     const data = await res.json();
+    currentExp = data.expName || '';
     document.getElementById('meta').textContent =
-      `${data.source||''} · ${data.pulledAt||''} · ${data.count||0} 条`;
+      `${data.source||''} · ${data.pulledAt||''} · ${data.count||0} 条` +
+      (currentExp ? ` · ${currentExp}` : '');
 
     allRows = data.rows || [];
     epochMeta = {

@@ -3,40 +3,69 @@
 """本地生成 eval 历史取样海报（与远程 GT 的 canny/skel 完全一致的算法）。
 
 布局（一行 = 一个 ckpt，时间升序向下延伸，永不爆掉）：
-  每行：该 step 的全部样本，每样本占 3 格 = sample | canny | skel
-  列数 = 每 step 样本数 × 3（5 样本 -> 15 格）
-  最后一行：GT（gt-img | gt-canny | gt-skel），只用一行。
+  每行：show5(5 个 unseen 样本) + seen5(5 个训练样本) = 10 样本，
+        每样本占 3 格 = sample | canny | skel  ->  每行 30 格
+  顶部一行：分组标签（SHOW5 / SEEN5，附样本序号+字形）
+  最后一行：GT（show5 用远程真值图 / seen5 用 seen_samples 里的 gt），只一行。
 
 算法（复刻远程 gen_canny_skel.py，保证与训练监督完全一致）：
   canny : 灰度 Rec.601(0.299R+0.587G+0.114B) -> Sobel 幅值 sqrt(gx^2+gy^2) > 150 -> 255
   skel  : 灰度 >127 二值化，均值>127 取反（适配白/黑底）-> Zhang-Suen 细化 -> 255
-GT 行的 canny/skel 直接用远程 final_canny/final_skeleton 真值图（不含计算）。
+GT 行的 show5 canny/skel 直接用远程 final_canny/final_skeleton 真值图（不含计算）。
+
+完整性约定（与 CPU eval 解耦，只渲染已完成 step）：
+  只渲染带 samples.json 的 step 目录（eval 最后写 samples.json = 该 step 已画完）。
+  show5 与 seen5 两侧都有 samples.json 的 step 才进海报，其余跳过。
 
 数据源（远程拉回本地）：
-  生成图 : remote_eval_samples/<exp>/.../eval_samples/stepXXXXXX/sample{i}.png
-  GT真值  : remote_gt/{id}.png   (id=240699 等，来自 final_canny/final_skeleton)
+  生成图(show5) : remote_eval_samples/<exp>/eval_samples/stepXXXXXX/sample{i}.png
+  生成图(seen5) : remote_seen_samples/<exp>/seen_samples/stepXXXXXX/sample{i}.png
+  GT真值(show5) : remote_gt/{id}.png  (id=240699 等，来自 final_canny/final_skeleton)
+  GT真值(seen5) : seen_samples/stepXXXXXX/gt{i}.png
 
 用法:
-  python make_eval_poster.py <eval_samples_local_dir> --gt-dir <remote_gt_dir> \
-      [-o eval_poster.png] [--show5-csv 5script/eval_strata/clean_unseen_triple_100.csv]
+  python make_eval_poster.py --show5-dir <dir> --seen5-dir <dir> \
+      [--gt-dir <remote_gt_dir>] [--show5-csv <csv>] [--seen5-csv <csv>] \
+      [--exp <experiment>] [-o out.png]
+
+  旧用法（仅 show5，5 列）仍兼容：
+  python make_eval_poster.py <eval_samples_local_dir> [--gt-dir <dir>] [-o out.png]
 """
 import os
 import re
 import sys
 import csv
 import glob
+import argparse
+import datetime
 import numpy as np
-from PIL import Image, ImageDraw
+from PIL import Image, ImageDraw, ImageFont
 import cv2
 from skimage.morphology import skeletonize
 
 CELL = 224
 GAP = 6
 
+BG = (15, 17, 22)
+CELL_BG = (40, 40, 40)
+GT_BG = (50, 50, 50)
+GRID = (70, 78, 90)
+
 
 def _step_key(d):
     m = re.search(r"step(\d+)", os.path.basename(d))
     return int(m.group(1)) if m else 0
+
+
+def _complete_step_dirs(base):
+    """只返回带 samples.json 的 step 目录（eval 写全样本后最后落 samples.json）。"""
+    if not base or not os.path.isdir(base):
+        return []
+    out = []
+    for d in sorted(glob.glob(os.path.join(base, "step*")), key=_step_key):
+        if os.path.exists(os.path.join(d, "samples.json")):
+            out.append(d)
+    return out
 
 
 def _gray_bt601(pil_img):
@@ -67,32 +96,29 @@ def skeleton(pil_img):
     return Image.fromarray(sk).convert("RGB")
 
 
-def _load_cell(path, default_bg=(40, 40, 40)):
-    if os.path.exists(path):
+def _load_cell(path, default_bg=CELL_BG):
+    if path and os.path.exists(path):
         return Image.open(path).convert("RGB").resize((CELL, CELL), Image.LANCZOS)
     return Image.new("RGB", (CELL, CELL), default_bg)
 
 
-def _find_show5_ids(show5_csv):
-    """固定 show5：取 eval_csv 前 5 行的图片 id（顺序固定）。"""
-    if not show5_csv or not os.path.exists(show5_csv):
-        return None
-    rows = list(csv.DictReader(open(show5_csv, encoding="utf-8")))[:5]
-    return [os.path.basename(r["image_path"])[:-4] for r in rows]
+def _paste_cells(canvas, img, x, y):
+    canvas.paste(img, (x, y))
+    canvas.paste(canny_edges(img), (x + CELL, y))
+    canvas.paste(skeleton(img), (x + 2 * CELL, y))
 
 
-def _find_show5_meta(show5_csv):
-    """返回 [(img_id, char, book_key), ...]，book_key 如 kai/li（用于定位标准字形图）。"""
-    if not show5_csv or not os.path.exists(show5_csv):
+def _find_group_meta(csv_path, n=5):
+    """返回 [(img_id, char), ...] 取 csv 前 n 行。"""
+    if not csv_path or not os.path.exists(csv_path):
         return []
-    rows = list(csv.DictReader(open(show5_csv, encoding="utf-8")))[:5]
     out = []
-    for r in rows:
-        img_id = os.path.basename(r["image_path"])[:-4]
-        char = r.get("character", "")
-        key = r.get("std_glyph_key", "")
-        book = key.split("/")[0] if "/" in key else ""
-        out.append((img_id, char, book))
+    try:
+        for r in list(csv.DictReader(open(csv_path, encoding="utf-8")))[:n]:
+            img_id = os.path.basename(r.get("image_path", ""))[:-4]
+            out.append((img_id, r.get("character", "")))
+    except Exception:
+        pass
     return out
 
 
@@ -105,7 +131,6 @@ STD_FONT = {
 
 def _render_std_font(char, book, size=256):
     """本地即时渲染标准字形图（白底黑字），无需预生成图/远程。"""
-    from PIL import ImageFont, ImageDraw
     fp = STD_FONT.get(book)
     if not fp or not os.path.exists(fp) or not char:
         return None
@@ -120,75 +145,129 @@ def _render_std_font(char, book, size=256):
 
 
 def main():
-    args = sys.argv[1:]
-    if not args:
-        print("用法: python make_eval_poster.py <eval_samples_local_dir> [--gt-dir DIRECTORY] [-o out.png]")
-        return 1
-    base = args[0]
-    out = "eval_poster.png"
-    gt_dir = None
-    show5_csv = None
-    i = 1
-    while i < len(args):
-        if args[i] == "-o" and i + 1 < len(args):
-            out = args[i + 1]; i += 2
-        elif args[i] == "--gt-dir" and i + 1 < len(args):
-            gt_dir = args[i + 1]; i += 2
-        elif args[i] == "--show5-csv" and i + 1 < len(args):
-            show5_csv = args[i + 1]; i += 2
-        else:
-            out = args[i]; i += 1
+    ap = argparse.ArgumentParser(add_help=False)
+    ap.add_argument("dirs", nargs="*")
+    ap.add_argument("--show5-dir")
+    ap.add_argument("--seen5-dir")
+    ap.add_argument("--gt-dir")
+    ap.add_argument("--show5-csv")
+    ap.add_argument("--seen5-csv")
+    ap.add_argument("--exp", default="")
+    ap.add_argument("-o", "--out", default=None)
+    ap.add_argument("-h", "--help", action="help")
+    args = ap.parse_args()
 
-    step_dirs = sorted(glob.glob(os.path.join(base, "step*")), key=_step_key)
-    if not step_dirs:
-        print(f"[poster] {base} 下没有 step 目录")
-        return 1
-    steps = [_step_key(d) for d in step_dirs]
-    n_samples = max(len([f for f in os.listdir(d) if re.match(r"sample\d+\.png$", f)])
-                    for d in step_dirs) or 1
+    show5_dir = args.show5_dir or (args.dirs[0] if args.dirs else None)
+    seen5_dir = args.seen5_dir
+    out = args.out or (f"eval_poster_{args.exp}.png" if args.exp else "eval_poster.png")
 
-    n_cols = n_samples * 3
-    n_rows = len(step_dirs) + 2   # ckpt 行 + GT 行 + 顶部
-    H = GAP + n_rows * (CELL + GAP)
-    canvas = Image.new("RGB", (CELL * n_cols + GAP * 2, H), (15, 17, 22))
+    show5_dirs = _complete_step_dirs(show5_dir)
+    seen5_dirs = _complete_step_dirs(seen5_dir)
+    if not show5_dirs and not seen5_dirs:
+        print("[poster] 两侧都没有带 samples.json 的 step 目录（eval 未产出或未完成）")
+        return 1
+
+    # 行 = 两侧都完成的 step 交集（时间升序）；单侧时只显示那一侧
+    if seen5_dirs:
+        steps = sorted(set(_step_key(d) for d in show5_dirs) &
+                       set(_step_key(d) for d in seen5_dirs))
+        by_step = lambda D: {_step_key(d): d for d in D}  # noqa: E731
+        show5_map, seen5_map = by_step(show5_dirs), by_step(seen5_dirs)
+    else:
+        steps = sorted(_step_key(d) for d in show5_dirs)
+        show5_map = {_step_key(d): d for d in show5_dirs}
+        seen5_map = {}
+    if not steps:
+        print("[poster] show5/seen5 step 无交集（可能一侧还在跑）")
+        return 1
+
+    n_show = 5
+    n_seen = 5 if seen5_dirs else 0
+    n_cols = (n_show + n_seen) * 3
+    HEADER_H = 40
+    n_rows = 1 + len(steps) + 1 + 1          # 顶部分组标签 + step 行 + GT 行 + 底部注释
+    W = CELL * n_cols + GAP * 2
+    H = GAP + HEADER_H + n_rows * (CELL + GAP)
+    canvas = Image.new("RGB", (W, H), BG)
     draw = ImageDraw.Draw(canvas)
+    try:
+        font = ImageFont.truetype(r"C:\Windows\Fonts\msyh.ttc", 17)
+        font_s = ImageFont.truetype(r"C:\Windows\Fonts\msyh.ttc", 14)
+    except Exception:
+        font = font_s = ImageFont.load_default()
 
     y = GAP
-    for ri, d in enumerate(step_dirs):
+
+    # 顶部分组标签行
+    gy = y + (HEADER_H - 20) // 2
+    show5_meta = _find_group_meta(args.show5_csv)
+    seen5_meta = _find_group_meta(args.seen5_csv)
+    if n_seen:
+        sx = GAP + 0 * 3 * CELL
+        draw.text((sx + 6, gy), f"SHOW5 (unseen)", font=font, fill=(120, 200, 255))
+        draw.text((sx + 6, gy + 18), " | ".join(
+            f"#{i+1}{('·'+(show5_meta[i][1] if i < len(show5_meta) and show5_meta[i][1] else ''))}" for i in range(5)),
+            font=font_s, fill=(150, 165, 190))
+        sx = GAP + 5 * 3 * CELL
+        draw.text((sx + 6, gy), f"SEEN5 (train)", font=font, fill=(255, 200, 120))
+        draw.text((sx + 6, gy + 18), " | ".join(
+            f"#{i+1}{('·'+(seen5_meta[i][1] if i < len(seen5_meta) and seen5_meta[i][1] else ''))}" for i in range(5)),
+            font=font_s, fill=(150, 165, 190))
+    else:
+        sx = GAP + 0 * 3 * CELL
+        draw.text((sx + 6, gy), "SHOW5 (unseen)", font=font, fill=(120, 200, 255))
+        draw.text((sx + 6, gy + 18), " | ".join(
+            f"#{i+1}{('·'+(show5_meta[i][1] if i < len(show5_meta) and show5_meta[i][1] else ''))}" for i in range(5)),
+            font=font_s, fill=(150, 165, 190))
+    if args.exp:
+        draw.text((W - 6, 4), args.exp, anchor="ra", font=font_s, fill=(90, 100, 120))
+    y += HEADER_H
+
+    # step 行
+    for step in steps:
         x = GAP
-        for i in range(n_samples):
-            sp = os.path.join(d, f"sample{i}.png")
-            img = _load_cell(sp)
-            ce = canny_edges(img)
-            sk = skeleton(img)
-            canvas.paste(img, (x, y)); canvas.paste(ce, (x + CELL, y)); canvas.paste(sk, (x + 2 * CELL, y))
+        for i in range(n_show):
+            _paste_cells(canvas, _load_cell(os.path.join(show5_map[step], f"sample{i}.png")), x, y)
             x += 3 * CELL
-        draw.text((4, y + CELL // 2), f"step{steps[ri]}", fill=(180, 190, 205))
+        if n_seen:
+            for i in range(n_seen):
+                _paste_cells(canvas, _load_cell(os.path.join(seen5_map[step], f"sample{i}.png")), x, y)
+                x += 3 * CELL
+        draw.line([(0, y), (W, y)], fill=GRID)
+        draw.line([(GAP + 5 * 3 * CELL, y), (GAP + 5 * 3 * CELL, y + CELL)], fill=GRID)
+        draw.text((4, y + CELL // 2), f"step{step}", font=font_s, fill=(180, 190, 205))
         y += CELL + GAP
 
-    # GT 行：直接对本地 GT 256 图(gt_dir/{pid}.png)算 canny/skel，保证 GT 与生成样本同步更新。
+    # GT 行：show5 用远程真值图(gt_dir/{pid}.png)，seen5 用 seen_samples 里的 gt{i}.png
     gt_y = y
     x = GAP
-    show5 = _find_show5_ids(show5_csv)
-    gt_loc = True
-    for i in range(n_samples):
-        pid = show5[i] if show5 and i < len(show5) else None
-        # 本地 GT 图：优先 gt_dir/{pid}.png（新拉取），否则当前 step 的 gt{i}.png
-        gp = os.path.join(gt_dir, f"{pid}.png") if (gt_dir and pid) else None
+    show5_ids = [i for i, _ in _find_group_meta(args.show5_csv)]
+    for i in range(n_show):
+        pid = show5_ids[i] if i < len(show5_ids) else None
+        gp = os.path.join(args.gt_dir, f"{pid}.png") if (args.gt_dir and pid) else None
         if not gp or not os.path.exists(gp):
             gp = None
-            for d in step_dirs:
+            for d in show5_dirs:
                 if os.path.exists(os.path.join(d, f"gt{i}.png")):
-                    gp = os.path.join(d, f"gt{i}.png"); break
-        img = _load_cell(gp, (50, 50, 50)) if gp else Image.new("RGB", (CELL, CELL), (50, 50, 50))
-        canvas.paste(img, (x, gt_y))
-        canvas.paste(canny_edges(img), (x + CELL, gt_y))
-        canvas.paste(skeleton(img), (x + 2 * CELL, gt_y))
+                    gp = os.path.join(d, f"gt{i}.png")
+                    break
+        _paste_cells(canvas, _load_cell(gp, GT_BG), x, gt_y)
         x += 3 * CELL
-    draw.text((4, gt_y + CELL // 2), "GT", fill=(120, 230, 150))
+    if n_seen:
+        for i in range(n_seen):
+            gp = os.path.join(seen5_map[steps[-1]], f"gt{i}.png")
+            _paste_cells(canvas, _load_cell(gp, GT_BG), x, gt_y)
+            x += 3 * CELL
+    draw.text((4, gt_y + CELL // 2), "GT", font=font, fill=(120, 230, 150))
+    y += CELL + GAP
+
+    # 底部注释
+    draw.text((6, y + 4),
+              f"{len(steps)} ckpt x {n_show + n_seen} 样本(img|canny|skel) | 生成 {datetime.datetime.now().strftime('%Y-%m-%d %H:%M')}",
+              font=font_s, fill=(90, 100, 120))
 
     canvas.save(out)
-    print(f"[poster] {len(step_dirs)} ckpt x {n_samples} 样本 -> {out} (GT canny/skel 本地即时计算)")
+    print(f"[poster] {len(steps)} ckpt x {n_show + n_seen} 样本 -> {out} (exp={args.exp or 'none'})")
     return 0
 
 
