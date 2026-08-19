@@ -38,6 +38,7 @@ import csv
 import glob
 import argparse
 import datetime
+import json
 import numpy as np
 from PIL import Image, ImageDraw, ImageFont
 import cv2
@@ -154,8 +155,21 @@ def main():
     ap.add_argument("--seen5-csv")
     ap.add_argument("--exp", default="")
     ap.add_argument("-o", "--out", default=None)
+    ap.add_argument("--eval-json-dir", default=None,
+                    help="ckpt 目录含 eval_auto_*.json；每行 step 标签下追加 MSE/SSIM")
     ap.add_argument("-h", "--help", action="help")
     args = ap.parse_args()
+
+    # 可选: 读 ckpt 目录的 eval_auto_*.json -> step → (mse, ssim)
+    ev_map = {}
+    if args.eval_json_dir and os.path.isdir(args.eval_json_dir):
+        import glob as _g
+        for f in _g.glob(os.path.join(args.eval_json_dir, "eval_auto_*.json")):
+            try:
+                d = json.load(open(f))
+                ev_map[int(d.get("step", 0))] = (d.get("mse"), d.get("ssim"))
+            except Exception:
+                pass
 
     show5_dir = args.show5_dir or (args.dirs[0] if args.dirs else None)
     seen5_dir = args.seen5_dir
@@ -235,7 +249,14 @@ def main():
                 x += 3 * CELL
         draw.line([(0, y), (W, y)], fill=GRID)
         draw.line([(GAP + 5 * 3 * CELL, y), (GAP + 5 * 3 * CELL, y + CELL)], fill=GRID)
-        draw.text((4, y + CELL // 2), f"step{step}", font=font_s, fill=(180, 190, 205))
+        # 每行左侧标签: step 号 + (可选)该 ckpt 的 eval MSE/SSIM
+        draw.text((4, y + 2), f"step {step}", font=font_s, fill=(180, 190, 205))
+        if step in ev_map:
+            _m, _s = ev_map[step]
+            _txt = f"MSE {_m:.3f}" if _m is not None else "MSE --"
+            if _s is not None:
+                _txt += f"\nSSIM {_s:.3f}"
+            draw.multiline_text((4, y + 24), _txt, font=font_s, fill=(140, 150, 170))
         y += CELL + GAP
 
     # GT 行：show5 用远程真值图(gt_dir/{pid}.png)，seen5 用 seen_samples 里的 gt{i}.png
@@ -258,7 +279,9 @@ def main():
             gp = os.path.join(seen5_map[steps[-1]], f"gt{i}.png")
             _paste_cells(canvas, _load_cell(gp, GT_BG), x, gt_y)
             x += 3 * CELL
-    draw.text((4, gt_y + CELL // 2), "GT", font=font, fill=(120, 230, 150))
+    draw.text((4, gt_y + 2), "GT", font=font, fill=(120, 230, 150))
+    if steps:
+        draw.text((4, gt_y + 28), f"(真值, step {steps[-1]})", font=font_s, fill=(120, 230, 150))
     y += CELL + GAP
 
     # 底部注释

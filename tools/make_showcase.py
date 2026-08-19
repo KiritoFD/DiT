@@ -69,12 +69,14 @@ def archive_current(exp_key):
     return moved
 
 
-def gen_poster(show5_csv, seen5_csv=None):
+def gen_poster(show5_csv, seen5_csv=None, eval_json_dir=None):
     args = [sys.executable, os.path.join(HERE, "make_eval_poster.py"), LOCAL_ES,
             "--gt-dir", os.path.join(HERE, "remote_gt"),
             "--show5-csv", os.path.join(HERE, show5_csv)]
     if seen5_csv and os.path.isdir(LOCAL_SEEN):
         args += ["--seen5-dir", LOCAL_SEEN, "--seen5-csv", os.path.join(HERE, seen5_csv)]
+    if eval_json_dir and os.path.isdir(eval_json_dir):
+        args += ["--eval-json-dir", eval_json_dir]
     args += ["-o", POSTER]
     subprocess.run(args, capture_output=True, text=True, timeout=180)
 
@@ -114,8 +116,16 @@ def sync_once(show5_csv="eval5_top30.csv", seen5_csv="seen5_top30.csv", verbose=
                    capture_output=True, text=True, timeout=300)
     steps = [d for d in os.listdir(LOCAL_ES) if d.startswith("step")]
     seen_steps = [d for d in os.listdir(LOCAL_SEEN) if d.startswith("step")] if os.path.isdir(LOCAL_SEEN) else []
-    # 生成海报（show5|seen5 并列）
-    gen_poster(show5_csv, seen5_csv)
+    # 拉 eval_auto_*.json（每行显示 step 的 MSE/SSIM）
+    EVJSON = os.path.join(HERE, "remote_eval_jsons")
+    os.makedirs(EVJSON, exist_ok=True)
+    for f in os.listdir(EVJSON):
+        if f.startswith("eval_auto_"): os.remove(os.path.join(EVJSON, f))
+    subprocess.run(["scp", "-o", "ConnectTimeout=15", "-P", REMOTE_PORT, "-r",
+                    f"{REMOTE}:{ckpt}/eval_auto_*.json", EVJSON + "/"],
+                   capture_output=True, text=True, timeout=60)
+    # 生成海报（show5|seen5 并列, 每行含 step + MSE/SSIM）
+    gen_poster(show5_csv, seen5_csv, EVJSON)
     json.dump({"ckpt": ckpt, "ts": datetime.datetime.now().isoformat()},
               open(STATE_F, "w", encoding="utf-8"))
     if verbose:
