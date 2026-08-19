@@ -345,6 +345,54 @@ def regen_poster_if_new_eval(rows, remote_log, verbose=True):
             print(f"[poster] 海报生成失败: {e}")
 
 
+def merge_cpu_eval(rows, remote_log):
+    """从远程实验 ckpt 目录拉 eval_auto_*.json（CPU eval 结果），把 mse/ssim 合并进 rows。
+    自动按 step 匹配并前向填充到后续行（使曲线连续）。失败静默。"""
+    if not remote_log:
+        return
+    ckpt_dir = "/".join(remote_log.rstrip("/").split("/")[:-1]) + "/checkpoints"
+    local_ev = os.path.join(HERE, "remote_eval_auto.json")
+    ok_pull = pull_remote([f"{ckpt_dir}/eval_auto_*.json"], local_ev)
+    if not ok_pull:
+        return
+    # 解析 eval_auto json（多个 step 值）
+    ev_map = {}
+    try:
+        content = open(local_ev, encoding="utf-8", errors="ignore").read()
+        # json 文件可能多个/拼接; 逐行提取 step/mse/ssim
+        for m in re.finditer(r'"step"\s*:\s*(\d+)\s*,\s*"mse"\s*:\s*([\d.-]+)\s*,\s*"ssim"\s*:\s*([\d.-]+)', content):
+            ev_map[int(m.group(1))] = (float(m.group(2)), float(m.group(3)))
+    except Exception:
+        return
+    if not ev_map:
+        return
+    # 按 step 设置 mse/ssim（并前向填充）
+    cur = None
+    by_step = {}
+    for r in rows:
+        by_step[r["step"]] = r
+    for step in sorted(by_step):
+        if step in ev_map:
+            cur = ev_map[step]
+        if cur:
+            by_step[step]["mse"] = cur[0]
+            by_step[step]["ssim"] = cur[1]
+
+
+def pull_remote(remote_globs, local_dst):
+    """把远程匹配 glob 的文件合并拉到一个本地文件（多文件拼接）。"""
+    cmd = ["ssh", "-o", "ConnectTimeout=15", "-P", REMOTE_PORT, f"{REMOTE_USER}@{REMOTE_HOST}"]
+    cat = "cat " + " ".join(remote_globs) + " 2>/dev/null"
+    try:
+        r = subprocess.run(cmd + [cat], capture_output=True, text=True, timeout=60)
+        if r.stdout.strip():
+            open(local_dst, "w", encoding="utf-8").write(r.stdout)
+            return True
+    except Exception:
+        pass
+    return False
+
+
 def run_once(verbose=True, regen_poster=True):
     remote, ok = pull_log()
     if not ok:
@@ -352,6 +400,8 @@ def run_once(verbose=True, regen_poster=True):
             print(f"[{datetime.datetime.now():%H:%M:%S}] 拉取失败: {remote}")
         return 0
     rows = parse()
+    # 合并 CPU eval 的 eval_auto_*.json（pixelfp32 等用 auto_eval_cpu, 不写日志 auto-eval 行）
+    merge_cpu_eval(rows, remote)
     write(rows, f"remote:{REMOTE_USER}@{REMOTE_HOST}:{remote}")
     if regen_poster:
         try:
