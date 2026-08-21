@@ -2,6 +2,7 @@ import os
 os.environ["XFORMERS_DISABLED"] = "1"
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 torch.backends.cuda.matmul.allow_tf32 = True
 torch.backends.cudnn.allow_tf32 = True
 import torch.distributed as dist
@@ -31,7 +32,6 @@ from dataset import MCCDDataset
 from latent_dataset import MCCDLatentDataset
 from losses import SobelCannyLoss, SkeletonLoss, REPALoss
 from torch.utils.checkpoint import checkpoint as grad_ckpt
-from eval_auto import prepare_gen_cache, eval_gen_in_memory
 from lora import inject_lora, upgrade_lora_rank, extract_full_inference
 from samplers import DistributedFactorBalancedSampler
 from latent_structure import LatentStructureLoss, LatentStructureProbe
@@ -141,6 +141,9 @@ def main(args):
         experiment_dir = f"{args.results_dir}/{_ts}-{_name}"
         checkpoint_dir = f"{experiment_dir}/checkpoints"
         os.makedirs(checkpoint_dir, exist_ok=True)
+        # 供 auto_eval_cpu（独立 CPU 进程）定位当前活动实验的 ckpt 目录。
+        with open(f"{args.results_dir}/_active_ckpt_dir.txt", "w", encoding="utf-8") as _m:
+            _m.write(checkpoint_dir + "\n")
         # log.txt lives inside this experiment dir (created first), never overwritten.
         logger = create_logger(experiment_dir)
         logger.info(f"Experiment directory created at {experiment_dir}")
@@ -355,29 +358,6 @@ def main(args):
         logger.warning("Using MockVAE (random latents) for testing purposes!")
         vae = MockVAE(device)
 
-    # In-memory auto-eval: pre-encode N test samples once at startup, then reuse the
-    # cache after every checkpoint save (weights stay on GPU, no reload needed).
-    eval_cache = None
-    if getattr(args, 'auto_eval', False):
-        logger.info(f"Preparing auto-eval cache (csv={args.eval_csv}, n={args.eval_n}) ...")
-        _eval_ds = MCCDDataset(csv_file=args.eval_csv, root_dir=args.data_dir,
-                               image_size=args.image_size, load_canny=False, load_skel=False,
-                               use_glyph_cond=getattr(args, 'w_glyph_cond', False))
-        # 自由采样 eval：只需条件 + GT 图（不再 VAE encode latent）
-        eval_cache = prepare_gen_cache(_eval_ds, n=args.eval_n, cond_mode=args.cond_mode)
-        logger.info("Auto-eval cache ready (free-sampling mode).")
-
-    # 展示用固定样本(show5)：与 eval100 指标集分离，保证展示图与 GT 行同一批样本。
-    # 这样海报 GT 行就不会与实际生成的样本对不上。
-    show5_csv = getattr(args, 'show5_csv', None)
-    show5_cache = None
-    if show5_csv and os.path.exists(show5_csv):
-        _s5_ds = MCCDDataset(csv_file=show5_csv, root_dir=args.data_dir,
-                             image_size=args.image_size, load_canny=False, load_skel=False,
-                             use_glyph_cond=getattr(args, 'w_glyph_cond', False))
-        show5_cache = prepare_gen_cache(_s5_ds, n=100, cond_mode=args.cond_mode)
-        logger.info(f"Show5 展示 cache ready: {show5_csv} ({len(show5_cache['conds'])} 样本)")
-
     logger.info(f"DiT Parameters: {sum(p.numel() for p in model.parameters()):,}")
 
     raw_model = model.module if hasattr(model, 'module') else model
@@ -507,6 +487,10 @@ def main(args):
     logger.info(f"Dataset contains {len(dataset):,} images")
 
     total_planned_steps = args.max_steps if args.max_steps > 0 else args.epochs * len(loader)
+    if getattr(args, 'fresh_scheduler', False) and _resume_full_ckpt is not None and args.max_steps > 0:
+        total_planned_steps = max(args.max_steps - resume_start_step, 1)
+        logger.info(f"[LR] fresh-scheduler: fine-tune horizon = {total_planned_steps} steps "
+                    f"(max_steps {args.max_steps} - resume {resume_start_step})")
     scheduler = None
     if args.lr_schedule == "cosine":
         warmup_steps = min(args.warmup_steps, max(total_planned_steps - 1, 0))
@@ -521,9 +505,13 @@ def main(args):
             return args.min_lr_ratio + (1.0 - args.min_lr_ratio) * cosine
 
         scheduler = torch.optim.lr_scheduler.LambdaLR(opt, lr_lambda=_lr_scale)
-        if _resume_full_ckpt is not None and _resume_full_ckpt.get("scheduler") is not None:
+        if (_resume_full_ckpt is not None and _resume_full_ckpt.get("scheduler") is not None
+                and not getattr(args, 'fresh_scheduler', False)):
             scheduler.load_state_dict(_resume_full_ckpt["scheduler"])
             logger.info("[LR] restored scheduler state")
+        elif getattr(args, 'fresh_scheduler', False):
+            logger.info("[LR] fresh-scheduler: starting from base lr "
+                        f"{opt.param_groups[0]['lr']:.2e} (old scheduler state ignored)")
         logger.info(f"[LR] cosine schedule: warmup={warmup_steps}, "
                     f"total={total_planned_steps}, min_ratio={args.min_lr_ratio}")
 
@@ -545,43 +533,58 @@ def main(args):
     current_ema_decay = args.ema_decay
     start_time = time()
 
-    logger.info(f"Training for {args.epochs} epochs...")
+    # ---- 早停状态 (基于 CPU eval 的 eval_auto_*.json mse/ssim) ----
+    early_stop_best = None      # 最佳 metric 值 (ssim 越大越好 / mse 越小越好)
+    early_stop_stale = 0        # 连续未改善的 eval 次数
+    early_stop_last_eval_step = -1
+    early_stop_stopped = False
+    _es_metric = getattr(args, 'early_stop_metric', 'ssim')
+    _es_better = ((lambda a, b: a > b) if _es_metric == 'ssim' else (lambda a, b: a < b))
+    _es_check_every = int(getattr(args, 'early_stop_check_every', 0))
+    if _es_check_every <= 0:
+        _es_check_every = max(int(getattr(args, 'ckpt_every', 5000)) // 2, 1000)
 
-    # step0（初始化）采样：训练真正开始前，用刚初始化的模型跑一次自由采样，
-    # 保存到 eval_samples/step0000000，作为从头训练的 base 输出参照。
-    if eval_cache is not None and train_steps == 0 and rank == 0:
+    def _early_stop_check(force=False):
+        """读 ckpt 目录最新 eval_auto json, 更新 best/stale; 达到 patience 返回 True 表示停。"""
+        nonlocal early_stop_best, early_stop_stale, early_stop_last_eval_step
+        if not getattr(args, 'early_stop', False):
+            return False
+        ev_files = sorted(glob(os.path.join(checkpoint_dir, "eval_auto_*.json")))
+        if not ev_files:
+            return False
+        last_ev = ev_files[-1]
+        ev_step = int(os.path.basename(last_ev).replace("eval_auto_", "").replace(".json", ""))
+        if ev_step <= early_stop_last_eval_step:
+            return False
+        early_stop_last_eval_step = ev_step
         try:
-            logger.info("[auto-eval] sampling at step 0 (initialized weights as base output)...")
-            _base_model = ema_model if ema_model is not None else model
-            _was_train = _base_model.training
-            _base_model.eval()
-            mse0, ss0 = eval_gen_in_memory(
-                _base_model, vae, device, eval_cache,
-                n=args.eval_n,
-                steps=int(getattr(args, 'eval_steps', 50)),
-                cfg=float(getattr(args, 'eval_cfg', 4.0)),
-                seed=int(getattr(args, 'eval_seed', 0)),
-                batch=int(getattr(args, 'eval_batch', 64)),
-                vis_out=None, vis_n=5, cond_mode=args.cond_mode,
-                save_samples_dir=None, step=None)
-            logger.info(f"[auto-eval] step 0: free-sampling MSE={mse0:.5f} SSIM={ss0:.4f}")
-            # step0 展示(show5)
-            if show5_cache is not None:
-                _n5 = len(show5_cache["conds"])
-                eval_gen_in_memory(
-                    _base_model, vae, device, show5_cache,
-                    n=_n5,
-                    steps=int(getattr(args, 'eval_steps', 50)),
-                    cfg=float(getattr(args, 'eval_cfg', 4.0)),
-                    seed=int(getattr(args, 'eval_seed', 0)),
-                    batch=min(_n5, 16),
-                    vis_out=f"{checkpoint_dir}/eval_latest.png",
-                    vis_n=_n5, cond_mode=args.cond_mode,
-                    save_samples_dir=f"{checkpoint_dir}/eval_samples", step=0)
-            if _was_train:
-                _base_model.train()
-        except Exception as _e:
-            logger.warning(f"[auto-eval] step 0 sample failed: {_e}")
+            with open(last_ev, "r", encoding="utf-8") as _f:
+                d = json.load(_f)
+            m, s = d.get("mse"), d.get("ssim")
+            if _es_metric == 'ssim':
+                val = float(s) if s is not None else None
+            else:
+                val = float(m) if m is not None else None
+        except Exception:
+            return False
+        if val is None:
+            return False
+        if early_stop_best is None or _es_better(val, early_stop_best):
+            early_stop_best = val
+            early_stop_stale = 0
+            logger.info(f"[early-stop] eval step {ev_step}: {_es_metric}={val:.4f} (new best)")
+        else:
+            early_stop_stale += 1
+            logger.info(f"[early-stop] eval step {ev_step}: {_es_metric}={val:.4f} "
+                        f"(best {early_stop_best:.4f}, stale {early_stop_stale}/"
+                        f"{args.early_stop_patience})")
+            if early_stop_stale >= int(getattr(args, 'early_stop_patience', 5)):
+                logger.info(f"[early-stop] {_es_metric} no improvement for "
+                            f"{early_stop_stale} evals; early stopping.")
+                return True
+        return False
+
+    logger.info(f"Training for {args.epochs} epochs...")
 
     for epoch in range(args.epochs):
         sampler.set_epoch(epoch)
@@ -691,14 +694,34 @@ def main(args):
                         pred_xstart_sub = pred_xstart_latent
                         canny_gt_sub = canny_gt
                         skel_gt_sub = skel_gt
-                    # VAE decode in fp32 via gradient checkpointing to save memory:
-                    # the VAE is frozen, so on backward we re-run decode instead of
-                    # keeping its large up-sampling activations resident.
+                    # VAE decode: optional bf16 autocast + optional lower-resolution decode.
+                    #  - struct_decode_bf16: bf16 has the same exponent range as fp32, so the
+                    #    SD-VAE decoder cannot overflow like fp16 AMP; the coarser mantissa only
+                    #    adds mild noise to an auxiliary structural loss. Output is cast back to
+                    #    fp32 before the losses for stability.
+                    #  - struct_decode_scale<1: feed a proportionally smaller latent into the
+                    #    fully-convolutional decoder so it emits a lower-res image (e.g. 0.5 ->
+                    #    128x128, ~4x cheaper); GT maps are resized to match.
+                    _dscale = float(getattr(args, 'struct_decode_scale', 1.0))
+                    _decode_dtype = (torch.bfloat16 if getattr(args, 'struct_decode_bf16', False)
+                                     else torch.float32)
+                    _decode_in = pred_xstart_sub.float() / 0.18215
+                    if _dscale < 1.0:
+                        _decode_in = F.interpolate(
+                            _decode_in, scale_factor=_dscale, mode="area")
+
                     def _decode(z):
                         return vae.decode(z).sample
-                    with torch.autocast("cuda", dtype=torch.float32):
-                        x0_pred = grad_ckpt(_decode, pred_xstart_sub.float() / 0.18215,
-                                             use_reentrant=False)
+                    with torch.autocast("cuda", dtype=_decode_dtype):
+                        x0_pred = grad_ckpt(_decode, _decode_in, use_reentrant=False)
+                    x0_pred = x0_pred.float()
+                    if _dscale < 1.0:
+                        if canny_gt_sub is not None:
+                            canny_gt_sub = F.interpolate(
+                                canny_gt_sub, scale_factor=_dscale, mode="nearest")
+                        if skel_gt_sub is not None:
+                            skel_gt_sub = F.interpolate(
+                                skel_gt_sub, scale_factor=_dscale, mode="nearest")
                     # Structural losses computed in fp32 (outside autocast) for stability.
                     if args.use_canny:
                         loss_canny = canny_loss_fn(x0_pred, canny_gt_sub)
@@ -718,9 +741,16 @@ def main(args):
                     # original 'x' is ground truth x_0 [-1, 1]
                     loss_repa = repa_loss_fn(intermediate_feats, x)
 
+                # Struct-loss weight ramp: linearly bring canny/skel from 0 to target over
+                # --struct-warmup-steps fine-tune steps (counted from the resume point) so a
+                # converged diff-only checkpoint adapts gradually instead of being jolted.
+                _struct_scale = 1.0
+                if int(getattr(args, 'struct_warmup_steps', 0)) > 0:
+                    _steps_ft = max(0, train_steps - resume_start_step)
+                    _struct_scale = min(1.0, _steps_ft / float(args.struct_warmup_steps))
                 loss = (loss_diff
-                        + args.w_canny * loss_canny
-                        + args.w_skel * loss_skel
+                        + args.w_canny * _struct_scale * loss_canny
+                        + args.w_skel * _struct_scale * loss_skel
                         + args.w_latent_canny * loss_latent_canny
                         + args.w_latent_skel * loss_latent_skel
                         + args.w_repa * loss_repa
@@ -815,7 +845,9 @@ def main(args):
                         avg_std_mid = avg_std_mid.item()
                     
                     if rank == 0:
-                        wc, ws, wr = args.w_canny, args.w_skel, args.w_repa
+                        wc = args.w_canny * _struct_scale
+                        ws = args.w_skel * _struct_scale
+                        wr = args.w_repa
                         c_contrib, s_contrib, r_contrib = wc * avg_c, ws * avg_s, wr * avg_r
                         latent_c_contrib = args.w_latent_canny * avg_lc
                         latent_s_contrib = args.w_latent_skel * avg_ls
@@ -876,6 +908,7 @@ def main(args):
                             checkpoint["scheduler"] = scheduler.state_dict()
                         checkpoint_path = f"{checkpoint_dir}/{train_steps:07d}.pt"
                         torch.save(checkpoint, checkpoint_path)
+                        open(checkpoint_path + ".done", "w").close()
                         logger.info(f"Saved checkpoint to {checkpoint_path}")
 
                         # Rotation: keep only the most recent ckpt_keep checkpoints
@@ -887,58 +920,26 @@ def main(args):
                             for _old in _pts[:-ckpt_keep]:
                                 _base = os.path.basename(_old)[:-3]
                                 os.remove(_old)
+                                for _suf in (".done",):
+                                    if os.path.exists(_old + _suf):
+                                        os.remove(_old + _suf)
                                 _eval_dir = f"{checkpoint_dir}/eval_{_base}"
                                 if os.path.isdir(_eval_dir):
                                     _sh.rmtree(_eval_dir, ignore_errors=True)
                             if len(_pts) > ckpt_keep:
                                 logger.info(f"[ckpt-keep] pruned {len(_pts) - ckpt_keep} old checkpoint(s), keeping {ckpt_keep}")
 
-                        # In-memory free-sampling eval: 指标用 eval100(eval_cache)，展示用 show5。
-                        if eval_cache is not None:
-                            eval_model = ema_model if ema_model is not None else model_to_save
-                            was_training = eval_model.training
-                            eval_model.eval()
-                            try:
-                                # 1) 指标：eval_cache(100) 算 MSE/SSIM，不落展示图
-                                mse, ss = eval_gen_in_memory(
-                                    eval_model, vae, device, eval_cache,
-                                    n=args.eval_n,
-                                    steps=int(getattr(args, 'eval_steps', 50)),
-                                    cfg=float(getattr(args, 'eval_cfg', 4.0)),
-                                    seed=int(getattr(args, 'eval_seed', 0)),
-                                    batch=int(getattr(args, 'eval_batch', 16)),
-                                    vis_out=None, vis_n=5,
-                                    cond_mode=args.cond_mode,
-                                    save_samples_dir=None, step=None,
-                                    glyph_init_mix=float(getattr(args, 'glyph_init_mix', 0.0)))
-                                logger.info(f"[auto-eval] step {train_steps}: free-sampling MSE={mse:.5f} SSIM={ss:.4f}")
-                                with open(f"{checkpoint_dir}/eval_auto_{train_steps:07d}.json", "w") as _ef:
-                                    json.dump({"step": train_steps, "mse": mse, "ssim": ss}, _ef)
-                                # 2) 展示：show5_cache(固定跨书体5样本) 生成 eval_latest.png + eval_samples，
-                                #    与海报 GT 行同一批样本，保证 GT 对照一致。
-                                if show5_cache is not None:
-                                    _n5 = len(show5_cache["conds"])
-                                    eval_gen_in_memory(
-                                        eval_model, vae, device, show5_cache,
-                                        n=_n5,
-                                        steps=int(getattr(args, 'eval_steps', 50)),
-                                        cfg=float(getattr(args, 'eval_cfg', 4.0)),
-                                        seed=int(getattr(args, 'eval_seed', 0)),
-                                        batch=min(_n5, 16),
-                                        vis_out=f"{checkpoint_dir}/eval_latest.png",
-                                        vis_n=_n5,
-                                        cond_mode=args.cond_mode,
-                                        save_samples_dir=f"{checkpoint_dir}/eval_samples",
-                                        step=train_steps,
-                                        glyph_init_mix=float(getattr(args, 'glyph_init_mix', 0.0)))
-                            except Exception as _e:
-                                logger.warning(f"[auto-eval] failed at step {train_steps}: {_e}")
-                            finally:
-                                if was_training:
-                                    eval_model.train()
-
                 if args.max_steps > 0 and train_steps >= args.max_steps:
                     logger.info(f"Reached max_steps={args.max_steps}; stopping cleanly.")
+                    break
+
+                if (getattr(args, 'early_stop', False)
+                        and train_steps >= int(getattr(args, 'early_stop_min_steps', 0))
+                        and args.ckpt_every > 0
+                        and train_steps % _es_check_every == 0
+                        and rank == 0
+                        and _early_stop_check()):
+                    early_stop_stopped = True
                     break
         except Exception as e:
             import traceback
@@ -947,6 +948,9 @@ def main(args):
             break
 
         if args.max_steps > 0 and train_steps >= args.max_steps:
+            break
+
+        if early_stop_stopped:
             break
         
         if dist.get_world_size() > 1:
@@ -996,6 +1000,25 @@ if __name__ == "__main__":
     parser.add_argument("--epochs", type=int, default=1400)
     parser.add_argument("--max-steps", type=int, default=0,
                         help="Optional clean stop after N optimizer steps (0 disables).")
+    parser.add_argument("--early-stop", type=_str_to_bool, default=False,
+                        help="Enable early stopping based on CPU eval (eval_auto_*.json mse/ssim).")
+    parser.add_argument("--early-stop-metric", type=str, choices=["ssim", "mse"], default="ssim",
+                        help="Metric to monitor for early stopping (ssim higher better, mse lower better).")
+    parser.add_argument("--early-stop-patience", type=int, default=5,
+                        help="Stop after this many consecutive evals without improvement.")
+    parser.add_argument("--early-stop-min-steps", type=int, default=0,
+                        help="Do not early-stop before this many total steps (train_steps).")
+    parser.add_argument("--early-stop-check-every", type=int, default=0,
+                        help="Check eval_auto json every N training steps (0 = ckpt_every//2, min 1000).")
+    parser.add_argument("--struct-warmup-steps", type=int, default=0,
+                        help="Linearly ramp w_canny/w_skel from 0 to their target over N "
+                             "fine-tune steps counted from the resume point (0 = full weight "
+                             "immediately). Lets a converged diff-only checkpoint adapt to "
+                             "structural losses gradually.")
+    parser.add_argument("--fresh-scheduler", type=_str_to_bool, default=False,
+                        help="With --resume-full: ignore the restored scheduler state and "
+                             "rebuild the LR schedule over the remaining fine-tune horizon "
+                             "(max_steps - resume step) instead of continuing the old one.")
     parser.add_argument("--lr", type=float, default=1e-4, help="Learning rate")
     parser.add_argument("--lr-schedule", choices=["constant", "cosine"], default="constant")
     parser.add_argument("--warmup-steps", type=int, default=0)
@@ -1089,6 +1112,18 @@ if __name__ == "__main__":
                         help="Random per-step subset of the batch used for pixel canny/skel "
                              "loss decode (infra optimization: bounds VAE-decode VRAM; "
                              "0 = full batch).")
+    parser.add_argument("--struct-decode-bf16", type=_str_to_bool, default=False,
+                        help="Run the differentiable VAE decode for pixel structural losses "
+                             "under bf16 autocast. bf16 shares fp32's exponent range so the "
+                             "SD-VAE decoder cannot overflow (unlike fp16); the coarser "
+                             "mantissa only adds mild noise to an auxiliary structural loss. "
+                             "Output is cast back to fp32 before the losses.")
+    parser.add_argument("--struct-decode-scale", type=float, default=1.0,
+                        help="Downscale the decoded-image resolution for pixel structural "
+                             "losses by this factor (feed a proportionally smaller latent "
+                             "into the fully-convolutional decoder, e.g. 0.5 -> 128x128, "
+                             "~4x cheaper decode). GT canny/skel maps are resized to match. "
+                             "1.0 = full 256x256 decode.")
     parser.add_argument("--w-latent-canny", type=float, default=0.0,
                         help="Weight for decoder-free Canny-weighted latent gradient loss.")
     parser.add_argument("--w-latent-skel", type=float, default=0.0,

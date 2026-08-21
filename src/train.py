@@ -487,6 +487,10 @@ def main(args):
     logger.info(f"Dataset contains {len(dataset):,} images")
 
     total_planned_steps = args.max_steps if args.max_steps > 0 else args.epochs * len(loader)
+    if getattr(args, 'fresh_scheduler', False) and _resume_full_ckpt is not None and args.max_steps > 0:
+        total_planned_steps = max(args.max_steps - resume_start_step, 1)
+        logger.info(f"[LR] fresh-scheduler: fine-tune horizon = {total_planned_steps} steps "
+                    f"(max_steps {args.max_steps} - resume {resume_start_step})")
     scheduler = None
     if args.lr_schedule == "cosine":
         warmup_steps = min(args.warmup_steps, max(total_planned_steps - 1, 0))
@@ -501,9 +505,13 @@ def main(args):
             return args.min_lr_ratio + (1.0 - args.min_lr_ratio) * cosine
 
         scheduler = torch.optim.lr_scheduler.LambdaLR(opt, lr_lambda=_lr_scale)
-        if _resume_full_ckpt is not None and _resume_full_ckpt.get("scheduler") is not None:
+        if (_resume_full_ckpt is not None and _resume_full_ckpt.get("scheduler") is not None
+                and not getattr(args, 'fresh_scheduler', False)):
             scheduler.load_state_dict(_resume_full_ckpt["scheduler"])
             logger.info("[LR] restored scheduler state")
+        elif getattr(args, 'fresh_scheduler', False):
+            logger.info("[LR] fresh-scheduler: starting from base lr "
+                        f"{opt.param_groups[0]['lr']:.2e} (old scheduler state ignored)")
         logger.info(f"[LR] cosine schedule: warmup={warmup_steps}, "
                     f"total={total_planned_steps}, min_ratio={args.min_lr_ratio}")
 
@@ -733,9 +741,16 @@ def main(args):
                     # original 'x' is ground truth x_0 [-1, 1]
                     loss_repa = repa_loss_fn(intermediate_feats, x)
 
+                # Struct-loss weight ramp: linearly bring canny/skel from 0 to target over
+                # --struct-warmup-steps fine-tune steps (counted from the resume point) so a
+                # converged diff-only checkpoint adapts gradually instead of being jolted.
+                _struct_scale = 1.0
+                if int(getattr(args, 'struct_warmup_steps', 0)) > 0:
+                    _steps_ft = max(0, train_steps - resume_start_step)
+                    _struct_scale = min(1.0, _steps_ft / float(args.struct_warmup_steps))
                 loss = (loss_diff
-                        + args.w_canny * loss_canny
-                        + args.w_skel * loss_skel
+                        + args.w_canny * _struct_scale * loss_canny
+                        + args.w_skel * _struct_scale * loss_skel
                         + args.w_latent_canny * loss_latent_canny
                         + args.w_latent_skel * loss_latent_skel
                         + args.w_repa * loss_repa
@@ -830,7 +845,9 @@ def main(args):
                         avg_std_mid = avg_std_mid.item()
                     
                     if rank == 0:
-                        wc, ws, wr = args.w_canny, args.w_skel, args.w_repa
+                        wc = args.w_canny * _struct_scale
+                        ws = args.w_skel * _struct_scale
+                        wr = args.w_repa
                         c_contrib, s_contrib, r_contrib = wc * avg_c, ws * avg_s, wr * avg_r
                         latent_c_contrib = args.w_latent_canny * avg_lc
                         latent_s_contrib = args.w_latent_skel * avg_ls
@@ -993,6 +1010,15 @@ if __name__ == "__main__":
                         help="Do not early-stop before this many total steps (train_steps).")
     parser.add_argument("--early-stop-check-every", type=int, default=0,
                         help="Check eval_auto json every N training steps (0 = ckpt_every//2, min 1000).")
+    parser.add_argument("--struct-warmup-steps", type=int, default=0,
+                        help="Linearly ramp w_canny/w_skel from 0 to their target over N "
+                             "fine-tune steps counted from the resume point (0 = full weight "
+                             "immediately). Lets a converged diff-only checkpoint adapt to "
+                             "structural losses gradually.")
+    parser.add_argument("--fresh-scheduler", type=_str_to_bool, default=False,
+                        help="With --resume-full: ignore the restored scheduler state and "
+                             "rebuild the LR schedule over the remaining fine-tune horizon "
+                             "(max_steps - resume step) instead of continuing the old one.")
     parser.add_argument("--lr", type=float, default=1e-4, help="Learning rate")
     parser.add_argument("--lr-schedule", choices=["constant", "cosine"], default="constant")
     parser.add_argument("--warmup-steps", type=int, default=0)
