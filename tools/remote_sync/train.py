@@ -30,7 +30,7 @@ from download import find_model
 
 from dataset import MCCDDataset
 from latent_dataset import MCCDLatentDataset
-from losses import SobelCannyLoss, SkeletonLoss, REPALoss
+from losses import SobelCannyLoss, SkeletonLoss, SkeletonLossV2, EdgeGradientLoss, REPALoss
 from torch.utils.checkpoint import checkpoint as grad_ckpt
 from lora import inject_lora, upgrade_lora_rank, extract_full_inference
 from samplers import DistributedFactorBalancedSampler
@@ -364,8 +364,15 @@ def main(args):
     student_hidden_size = raw_model.x_embedder.proj.weight.shape[0]
     
     # Initialize structural and REPA losses
-    canny_loss_fn = SobelCannyLoss().to(device)
-    skel_loss_fn = SkeletonLoss(lambda_bg=1.0).to(device)
+    # use_struct_loss_v2: 修复版损失 (骨架只做正向牵引 + 边缘梯度场直接匹配 GT)
+    if getattr(args, 'use_struct_loss_v2', False):
+        canny_loss_fn = EdgeGradientLoss().to(device)
+        skel_loss_fn = SkeletonLossV2().to(device)
+        logger.info("[struct] use_struct_loss_v2: EdgeGradientLoss + SkeletonLossV2 "
+                    "(骨架 recall-only, 边缘梯度场匹配)")
+    else:
+        canny_loss_fn = SobelCannyLoss().to(device)
+        skel_loss_fn = SkeletonLoss(lambda_bg=1.0).to(device)
 
     latent_structure_loss_fn = None
     if args.w_latent_canny > 0 or args.w_latent_skel > 0:
@@ -682,51 +689,76 @@ def main(args):
                     # Infra 优化：pixel 结构损失只需要在 batch 的一个随机子集上做
                     # differentiable VAE decode（结构监督是低频辅助信号，子集采样
                     # 是无偏估计）。默认 32 张，decode 显存从"全 batch"降为固定小量。
+                    # t 门控 (struct_max_t>0)：只在低噪声步 (t<=tmax) 施加结构损失。
+                    # 高噪声步的 x0 预测本来就是一团糊，逼它在此刻"成像"会让 x0
+                    # 整体漂出 VAE 流形（正是旧实验 X0Lat 30~50 的直接原因）。
                     _ss = int(getattr(args, 'struct_subset', 32))
+                    _struct_tmax = int(getattr(args, 'struct_max_t', 0))
                     _B = pred_xstart_latent.shape[0]
-                    if _ss > 0 and _ss < _B:
-                        _idx = torch.randperm(_B, device=pred_xstart_latent.device)[:_ss]
+                    _use_this_step = True
+                    if _struct_tmax > 0:
+                        _gidx = torch.nonzero(t <= _struct_tmax).view(-1)
+                        if _gidx.numel() == 0:
+                            _use_this_step = False
+                        elif _ss > 0 and _gidx.numel() > _ss:
+                            _perm = torch.randperm(_gidx.numel(), device=t.device)[:_ss]
+                            _idx = _gidx[_perm]
+                        else:
+                            _idx = _gidx
+                    else:
+                        if _ss > 0 and _ss < _B:
+                            _idx = torch.randperm(_B, device=pred_xstart_latent.device)[:_ss]
+                        else:
+                            _idx = None
+                    if _use_this_step and _idx is None:
+                        pred_xstart_sub = pred_xstart_latent
+                        canny_gt_sub = canny_gt if args.use_canny else None
+                        skel_gt_sub = skel_gt if args.use_skel else None
+                        x_sub = x
+                    elif _use_this_step:
                         pred_xstart_sub = pred_xstart_latent[_idx]
                         x0_pred = None
                         canny_gt_sub = canny_gt[_idx] if args.use_canny else None
                         skel_gt_sub = skel_gt[_idx] if args.use_skel else None
-                    else:
-                        pred_xstart_sub = pred_xstart_latent
-                        canny_gt_sub = canny_gt
-                        skel_gt_sub = skel_gt
-                    # VAE decode: optional bf16 autocast + optional lower-resolution decode.
-                    #  - struct_decode_bf16: bf16 has the same exponent range as fp32, so the
-                    #    SD-VAE decoder cannot overflow like fp16 AMP; the coarser mantissa only
-                    #    adds mild noise to an auxiliary structural loss. Output is cast back to
-                    #    fp32 before the losses for stability.
-                    #  - struct_decode_scale<1: feed a proportionally smaller latent into the
-                    #    fully-convolutional decoder so it emits a lower-res image (e.g. 0.5 ->
-                    #    128x128, ~4x cheaper); GT maps are resized to match.
-                    _dscale = float(getattr(args, 'struct_decode_scale', 1.0))
-                    _decode_dtype = (torch.bfloat16 if getattr(args, 'struct_decode_bf16', False)
-                                     else torch.float32)
-                    _decode_in = pred_xstart_sub.float() / 0.18215
-                    if _dscale < 1.0:
-                        _decode_in = F.interpolate(
-                            _decode_in, scale_factor=_dscale, mode="area")
+                        x_sub = x[_idx]
+                    if _use_this_step:
+                        # VAE decode: optional bf16 autocast + optional lower-resolution decode.
+                        #  - struct_decode_bf16: bf16 has the same exponent range as fp32, so the
+                        #    SD-VAE decoder cannot overflow like fp16 AMP; the coarser mantissa only
+                        #    adds mild noise to an auxiliary structural loss. Output is cast back to
+                        #    fp32 before the losses for stability.
+                        #  - struct_decode_scale<1: feed a proportionally smaller latent into the
+                        #    fully-convolutional decoder so it emits a lower-res image (e.g. 0.5 ->
+                        #    128x128, ~4x cheaper); GT maps are resized to match.
+                        _dscale = float(getattr(args, 'struct_decode_scale', 1.0))
+                        _decode_dtype = (torch.bfloat16 if getattr(args, 'struct_decode_bf16', False)
+                                         else torch.float32)
+                        _decode_in = pred_xstart_sub.float() / 0.18215
+                        if _dscale < 1.0:
+                            _decode_in = F.interpolate(
+                                _decode_in, scale_factor=_dscale, mode="area")
 
-                    def _decode(z):
-                        return vae.decode(z).sample
-                    with torch.autocast("cuda", dtype=_decode_dtype):
-                        x0_pred = grad_ckpt(_decode, _decode_in, use_reentrant=False)
-                    x0_pred = x0_pred.float()
-                    if _dscale < 1.0:
-                        if canny_gt_sub is not None:
-                            canny_gt_sub = F.interpolate(
-                                canny_gt_sub, scale_factor=_dscale, mode="nearest")
-                        if skel_gt_sub is not None:
-                            skel_gt_sub = F.interpolate(
-                                skel_gt_sub, scale_factor=_dscale, mode="nearest")
-                    # Structural losses computed in fp32 (outside autocast) for stability.
-                    if args.use_canny:
-                        loss_canny = canny_loss_fn(x0_pred, canny_gt_sub)
-                    if args.use_skel:
-                        loss_skel = skel_loss_fn(x0_pred, skel_gt_sub)
+                        def _decode(z):
+                            return vae.decode(z).sample
+                        with torch.autocast("cuda", dtype=_decode_dtype):
+                            x0_pred = grad_ckpt(_decode, _decode_in, use_reentrant=False)
+                        x0_pred = x0_pred.float()
+                        if _dscale < 1.0:
+                            if canny_gt_sub is not None:
+                                canny_gt_sub = F.interpolate(
+                                    canny_gt_sub, scale_factor=_dscale, mode="nearest")
+                            if skel_gt_sub is not None:
+                                skel_gt_sub = F.interpolate(
+                                    skel_gt_sub, scale_factor=_dscale, mode="nearest")
+                            x_sub = F.interpolate(x_sub, scale_factor=_dscale, mode="area")
+                        # Structural losses computed in fp32 (outside autocast) for stability.
+                        if args.use_canny:
+                            if getattr(args, 'use_struct_loss_v2', False):
+                                loss_canny = canny_loss_fn(x0_pred, x_sub)
+                            else:
+                                loss_canny = canny_loss_fn(x0_pred, canny_gt_sub)
+                        if args.use_skel:
+                            loss_skel = skel_loss_fn(x0_pred, skel_gt_sub)
 
                 if latent_structure_loss_fn is not None and pred_xstart_latent is not None:
                     latent_structure_losses = latent_structure_loss_fn(
@@ -1019,6 +1051,14 @@ if __name__ == "__main__":
                         help="With --resume-full: ignore the restored scheduler state and "
                              "rebuild the LR schedule over the remaining fine-tune horizon "
                              "(max_steps - resume step) instead of continuing the old one.")
+    parser.add_argument("--use-struct-loss-v2", type=_str_to_bool, default=False,
+                        help="Use fixed structural losses: EdgeGradientLoss (gradient-profile "
+                             "matching vs GT image, no per-image norm / no binary canny match) "
+                             "and SkeletonLossV2 (recall-only, no off-skeleton penalization).")
+    parser.add_argument("--struct-max-t", type=int, default=0,
+                        help="Only apply pixel structural losses on noise steps t<=struct-max-t "
+                             "(0 = apply at all timesteps). High-noise x0 predictions are blurry "
+                             "mush; forcing structure there drifts x0 off the VAE manifold.")
     parser.add_argument("--lr", type=float, default=1e-4, help="Learning rate")
     parser.add_argument("--lr-schedule", choices=["constant", "cosine"], default="constant")
     parser.add_argument("--warmup-steps", type=int, default=0)
