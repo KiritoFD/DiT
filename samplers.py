@@ -28,11 +28,14 @@ class DistributedFactorBalancedSampler(Sampler):
         self.num_samples = math.ceil(len(dataset) / self.num_replicas)
         self.total_size = self.num_samples * self.num_replicas
 
-        char_count = Counter(int(row["character_id"]) for row in dataset.samples)
+        def _glyph(row):
+            return int(row.get("glyph_id", row["character_id"]))
+
+        char_count = Counter(_glyph(row) for row in dataset.samples)
         callig_count = Counter(int(row["calligrapher_id"]) for row in dataset.samples)
         weights = []
         for row in dataset.samples:
-            char_freq = char_count[int(row["character_id"])]
+            char_freq = char_count[_glyph(row)]
             callig_freq = callig_count[int(row["calligrapher_id"])]
             weights.append((char_freq ** -float(char_alpha))
                            * (callig_freq ** -float(callig_alpha)))

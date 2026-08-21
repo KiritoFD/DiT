@@ -15,7 +15,7 @@ from PIL import Image
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
-from models import DiT_3Cond_models
+from models import DiT_2Cond_models, DiT_3Cond_models
 from lora import inject_lora
 from dataset import MCCDDataset
 from diffusers.models import AutoencoderKL
@@ -39,10 +39,11 @@ def main():
     ap.add_argument("--num-calligraphers", type=int, default=None)
     ap.add_argument("--num-scripts", type=int, default=None)
     ap.add_argument("--num-characters", type=int, default=None)
-    ap.add_argument("--condition-fusion", choices=["legacy", "factorized_add"], default=None)
+    ap.add_argument("--condition-fusion", choices=["legacy", "factorized_add", "xl_highdim"], default=None)
     ap.add_argument("--callig-embed-dim", type=int, default=None)
     ap.add_argument("--script-embed-dim", type=int, default=None)
     ap.add_argument("--char-embed-dim", type=int, default=None)
+    ap.add_argument("--cond-mode", choices=["2cond", "3cond"], default=None)
     ap.add_argument("--use-ema", type=_s2b, default=True,
                     help="Use checkpoint EMA weights when available.")
     ap.add_argument("--csv", default="final_eval.csv")
@@ -77,18 +78,28 @@ def main():
     callig_embed_dim = args.callig_embed_dim or saved("callig_embed_dim", None)
     script_embed_dim = args.script_embed_dim or saved("script_embed_dim", None)
     char_embed_dim = args.char_embed_dim or saved("char_embed_dim", None)
-    print(f"[eval_gen] free-sampling eval: model={model_name} fusion={condition_fusion} "
-          f"cfg={args.cfg} steps={args.steps} n={args.n} csv={args.csv}")
+    cond_mode = args.cond_mode or saved("cond_mode", "3cond")
+    print(f"[eval_gen] free-sampling eval: model={model_name} cond_mode={cond_mode} "
+          f"fusion={condition_fusion} cfg={args.cfg} steps={args.steps} n={args.n} csv={args.csv}")
 
     # ---- model（与训练/推理完全一致的加载）----
-    model = DiT_3Cond_models[model_name](
-        input_size=32, num_calligraphers=num_calligraphers,
-        num_scripts=num_scripts, num_characters=num_characters,
-        use_checkpoint=False, condition_fusion=condition_fusion,
-        callig_embed_dim=callig_embed_dim, script_embed_dim=script_embed_dim,
-        char_embed_dim=char_embed_dim,
-        cond_drop_all_prob=saved("cond_drop_all_prob", 0.05),
-        cond_drop_one_prob=saved("cond_drop_one_prob", 0.0))
+    if cond_mode == "2cond":
+        model = DiT_2Cond_models[model_name](
+            input_size=32, num_calligraphers=num_calligraphers,
+            num_characters=num_characters,
+            use_checkpoint=False, condition_fusion=condition_fusion,
+            callig_embed_dim=callig_embed_dim, char_embed_dim=char_embed_dim,
+            cond_drop_all_prob=saved("cond_drop_all_prob", 0.05),
+            cond_drop_one_prob=saved("cond_drop_one_prob", 0.0))
+    else:
+        model = DiT_3Cond_models[model_name](
+            input_size=32, num_calligraphers=num_calligraphers,
+            num_scripts=num_scripts, num_characters=num_characters,
+            use_checkpoint=False, condition_fusion=condition_fusion,
+            callig_embed_dim=callig_embed_dim, script_embed_dim=script_embed_dim,
+            char_embed_dim=char_embed_dim,
+            cond_drop_all_prob=saved("cond_drop_all_prob", 0.05),
+            cond_drop_one_prob=saved("cond_drop_one_prob", 0.0))
     if args.pretrained and args.pretrained.lower() != "none" and os.path.exists(args.pretrained):
         pre = torch.load(args.pretrained, map_location="cpu", weights_only=False)
         if "model" in pre:
@@ -155,9 +166,12 @@ def main():
             j = min(i + B, len(conds))
             z = torch.randn(j - i, 4, 32, 32, device=device)
             yc = torch.tensor([c[0] for c in conds[i:j]], device=device)
-            ys = torch.tensor([c[1] for c in conds[i:j]], device=device)
             yh = torch.tensor([c[2] for c in conds[i:j]], device=device)
-            mk = dict(y_callig=yc, y_script=ys, y_char=yh, cfg_scale=args.cfg)
+            if cond_mode == "2cond":
+                mk = dict(y_callig=yc, y_char=yh, cfg_scale=args.cfg)
+            else:
+                ys = torch.tensor([c[1] for c in conds[i:j]], device=device)
+                mk = dict(y_callig=yc, y_script=ys, y_char=yh, cfg_scale=args.cfg)
             samples = sampler.ddim_sample_loop(
                 model.forward_with_cfg, z.shape, z, clip_denoised=False,
                 model_kwargs=mk, progress=False, device=device)
@@ -171,8 +185,9 @@ def main():
                     callig_logits.argmax(1).eq(yc).sum())
                 condition_correct["callig_top5"] += int(
                     callig_logits.topk(5, dim=1).indices.eq(yc[:, None]).any(1).sum())
-                condition_correct["script_top1"] += int(
-                    script_logits.argmax(1).eq(ys).sum())
+                if cond_mode == "3cond":
+                    condition_correct["script_top1"] += int(
+                        script_logits.argmax(1).eq(ys).sum())
             dec = vae.decode(samples / 0.18215).sample  # (b,3,256,256)
             gt = gts[i:j]
             mse_sum += F.mse_loss(dec, gt).item() * (j - i)

@@ -194,26 +194,44 @@ def eval_in_memory(model, vae, diffusion, device, cache, n=1000, t=T_EVAL,
 # 用于训练中 auto-eval，替代"GT latent 单步重建"——后者只测重建、误导生成质量。
 # ---------------------------------------------------------------------------
 
-def prepare_gen_cache(dataset, n=100):
+def prepare_gen_cache(dataset, n=100, cond_mode="3cond"):
     """缓存 eval 样本的条件 + GT 图（CPU），供自由采样 eval 使用。不需要 latent。"""
     from torch.utils.data import DataLoader
     loader = DataLoader(dataset, batch_size=16, shuffle=False)
-    conds, gts = [], []
+    conds, gts, g_all = [], [], []
     for b in loader:
         if len(conds) >= n:
             break
         for i in range(b["y_callig"].shape[0]):
-            conds.append((b["y_callig"][i].item(), b["y_script"][i].item(), b["y_char"][i].item()))
+            if cond_mode == "2cond":
+                conds.append((b["y_callig"][i].item(), -1, b["y_char"][i].item()))
+            else:
+                conds.append((b["y_callig"][i].item(), b["y_script"][i].item(), b["y_char"][i].item()))
         gts.append(b["image"].cpu())
+        # 标准字形 latent g(甲2): 若 dataset 返回了 g
+        if "g" in b and b["g"].numel() > 0:
+            g_all.append(b["g"].cpu())
     if not gts:
         raise ValueError("eval dataset empty")
     gts = torch.cat(gts, dim=0)[:n]
-    return {"conds": conds[:n], "gts": gts}
+    g_ret = torch.cat(g_all, dim=0)[:n] if g_all else None
+    return {"conds": conds[:n], "gts": gts, "gs": g_ret}
 
 
 def eval_gen_in_memory(model, vae, device, cache, n=100, steps=50, cfg=4.0,
-                       seed=0, batch=16, vis_out=None, vis_n=5):
-    """自由采样：纯噪声 -> DDIM 去噪链（与 gradio/推理完全一致），与 GT 比 MSE/SSIM。"""
+                       seed=0, batch=16, vis_out=None, vis_n=5, cond_mode="3cond",
+                       save_samples_dir=None, step=None, glyph_init_mix=0.0):
+    """自由采样：纯噪声(或 std字形+噪声 HYBRID) -> DDIM 去噪链，与 GT 比 MSE/SSIM。
+
+    glyph_init_mix     : alpha∈[0,1]，采样初始点混合系数。
+                        xT = alpha*randn + (1-alpha)*s，s=标准字形 latent。
+                        alpha=1.0→纯噪声(现 V3B 行为)；0<alpha<1→HYBRID 初始点；
+                        alpha=0.0→纯标准字形初始。见 HYBRID_INIT_PLAN.md。
+    vis_out            : 每次覆盖的缩略拼图（eval_latest.png），供 dashboard。
+    save_samples_dir   : 若不 None，则每次把前 vis_n 张 (pred | GT) 单独落盘到一个按
+                       step 命名的子目录，历史不覆盖（例如 .../checkpoints/eval_samples/step0005000/）。
+    step               : 当前训练步号，用于命名子目录与文件名。
+    """
     from diffusion import create_diffusion
     ddim = create_diffusion(str(steps))
     win = _gaussian_window(11, 1.5, device)
@@ -225,13 +243,34 @@ def eval_gen_in_memory(model, vae, device, cache, n=100, steps=50, cfg=4.0,
     with torch.no_grad():
         for i in range(0, n, batch):
             j = min(i + batch, n)
-            z = torch.randn(j - i, 4, 32, 32, device=device)
-            mk = dict(
-                y_callig=torch.tensor([c[0] for c in conds[i:j]], device=device),
-                y_script=torch.tensor([c[1] for c in conds[i:j]], device=device),
-                y_char=torch.tensor([c[2] for c in conds[i:j]], device=device),
-                cfg_scale=cfg,
-            )
+            noise = torch.randn(j - i, 4, 32, 32, device=device)
+            gs = cache.get("gs")
+            # HYBRID 混合初始点：xT = alpha*noise + (1-alpha)*标准字形latent
+            if glyph_init_mix < 1.0 and gs is not None and gs[i:j].shape[0] == (j - i):
+                if glyph_init_mix <= 0.0:
+                    z = gs[i:j].to(device).clone()          # 纯标准字形初始
+                else:
+                    z = (glyph_init_mix * noise
+                         + (1.0 - glyph_init_mix) * gs[i:j].to(device))
+            else:
+                z = noise                                   # alpha=1(缺省) 纯噪声
+            if cond_mode == "2cond":
+                mk = dict(
+                    y_callig=torch.tensor([c[0] for c in conds[i:j]], device=device),
+                    y_char=torch.tensor([c[2] for c in conds[i:j]], device=device),
+                    cfg_scale=cfg,
+                )
+            else:
+                mk = dict(
+                    y_callig=torch.tensor([c[0] for c in conds[i:j]], device=device),
+                    y_script=torch.tensor([c[1] for c in conds[i:j]], device=device),
+                    y_char=torch.tensor([c[2] for c in conds[i:j]], device=device),
+                    cfg_scale=cfg,
+                )
+            # 标准字形条件 g(甲2): 与训练一致
+            gs = cache.get("gs")
+            if gs is not None and gs[i:j].shape[0] == (j - i):
+                mk["g"] = gs[i:j].to(device)
             samples = ddim.ddim_sample_loop(model.forward_with_cfg, z.shape, z,
                                             clip_denoised=False, model_kwargs=mk, device=device)
             dec = vae.decode(samples / 0.18215).sample
@@ -239,11 +278,33 @@ def eval_gen_in_memory(model, vae, device, cache, n=100, steps=50, cfg=4.0,
             mse_sum += F.mse_loss(dec, gt).item() * (j - i)
             for k in range(dec.shape[0]):
                 ssim_sum += _ssim((dec[k:k+1] + 1) / 2, (gt[k:k+1] + 1) / 2, 1.0, 11, win)
-                if vis_out and len(decoded_list) < vis_n:
+                if (vis_out or save_samples_dir) and len(decoded_list) < vis_n:
                     decoded_list.append(dec[k:k+1].detach().cpu())
                     gt_list.append(gt[k:k+1].detach().cpu())
     if vis_out and decoded_list:
         _save_eval_visuals(decoded_list, gt_list, conds, vis_out, vis_n)
+    # 历史取样图单独落盘（按 step 的子目录，不覆盖）
+    # 每张保存为独立的 pred 原图（sample{i}.png）与 GT 原图（gt{i}.png），
+    # canny/skel 由本地展示端生成。文件名用序号避免 _dump_eval_all 重名覆盖。
+    if save_samples_dir and decoded_list:
+        import os as _os
+        from PIL import Image as _Image
+        step_tag = f"step{int(step):07d}" if step is not None else "latest"
+        step_dir = _os.path.join(save_samples_dir, step_tag)
+        _os.makedirs(step_dir, exist_ok=True)
+        for _i, (_dec, _gt) in enumerate(zip(decoded_list, gt_list)):
+            _pred_img = ((_dec.clamp(-1, 1) + 1) / 2).squeeze(0).permute(1, 2, 0).float().cpu().numpy()
+            _gt_img = ((_gt.clamp(-1, 1) + 1) / 2).squeeze(0).permute(1, 2, 0).float().cpu().numpy()
+            _pred_pil = _Image.fromarray((_pred_img * 255).clip(0, 255).astype("uint8"))
+            _gt_pil = _Image.fromarray((_gt_img * 255).clip(0, 255).astype("uint8"))
+            _pred_pil.save(_os.path.join(step_dir, f"sample{_i}.png"))
+            _gt_pil.save(_os.path.join(step_dir, f"gt{_i}.png"))
+        # 元数据：该批条件
+        import json as _json
+        with open(_os.path.join(step_dir, "samples.json"), "w", encoding="utf-8") as _f:
+            _json.dump({"step": step, "cfg": cfg, "steps": steps, "seed": seed,
+                        "conds": [list(c) for c in conds[:len(decoded_list)]]},
+                       _f, ensure_ascii=False)
     del decoded_list, gt_list
     torch.cuda.empty_cache()
     return mse_sum / n, ssim_sum / n

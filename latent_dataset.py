@@ -38,11 +38,18 @@ class MCCDLatentDataset(Dataset):
     def __init__(self, csv_file, latent_shards_dir, img_root, canny_root=None,
                  image_size=256, load_canny=False, load_skel=False, skel_root=None,
                  is_train=False, preload=False, load_image=True, num_preload_workers=16,
-                 structure_size=256):
+                 structure_size=256, use_glyph_cond=False):
         self.samples = []
         with open(csv_file, 'r', encoding='utf-8') as f:
             for row in csv.DictReader(f):
                 self.samples.append(row)
+        self.use_glyph_cond = bool(use_glyph_cond)
+        if self.use_glyph_cond:
+            # 标准字形 latent 查询(懒加载, 全局单例), 训练/推理一致
+            from glyph_latent import get_glyph_lookup
+            self._glookup = get_glyph_lookup()
+        else:
+            self._glookup = None
 
         self.latent_shards_dir = latent_shards_dir
         self.img_root = img_root
@@ -209,6 +216,18 @@ class MCCDLatentDataset(Dataset):
                     skel_a = skel_a.reshape(32, 8, 32, 8).max(axis=(1, 3))
                 skel_t = (torch.from_numpy(skel_a / 255.0) > 0.5).float().unsqueeze(0)
 
+        # 标准字形 latent g(甲2): 按 (script_id, char) 查标准字形 latent; 缺失给零(保 collate 一致)
+        if self._glookup is not None:
+            script_id = int(row['script_id'])
+            char = row.get('character', '')
+            gv = self._glookup.get(script_id, char) if char else None
+            if gv is not None:
+                g_t = gv.float().contiguous()   # (4,32,32)
+            else:
+                g_t = torch.zeros(4, 32, 32)
+        else:
+            g_t = torch.zeros(0)
+
         return {
             'latent': latent,
             'image': img_t,
@@ -216,5 +235,7 @@ class MCCDLatentDataset(Dataset):
             'skeleton': skel_t,
             'y_callig': torch.tensor(int(row['calligrapher_id']), dtype=torch.long),
             'y_script': torch.tensor(int(row['script_id']), dtype=torch.long),
-            'y_char': torch.tensor(int(row['character_id']), dtype=torch.long),
+            'y_char': torch.tensor(
+                int(row.get('glyph_id', row['character_id'])), dtype=torch.long),
+            'g': g_t,
         }

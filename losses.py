@@ -24,7 +24,7 @@ def _default_dino_ckpt():
     env = os.environ.get("DINO_WEIGHTS", "")
     if env and os.path.exists(env):
         return env
-    here = os.path.dirname(os.path.abspath(__file__))
+    here = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))  # 项目根（src/ 上级）
     cand = os.path.join(here, "pretrained_models", "dinov2_vits14_pretrain.safetensors")
     if os.path.exists(cand):
         return cand
@@ -260,3 +260,66 @@ class REPALoss(nn.Module):
         loss = 1.0 - cos_sim.mean()
         
         return loss
+
+
+class SkeletonLossV2(nn.Module):
+    """修复版骨架损失: 只做"正向牵引" (recall), 绝不惩罚骨架以外的墨水。
+
+    旧版 SkeletonLoss 用 max_pool3x3 膨胀的骨架当背景掩码, 但毛笔笔画通常
+    10~30px 宽, 3px 膨胀远小于笔画宽度, 导致笔画主体被误判为"背景"并遭到
+    off_skel 惩罚 —— 模型被逼着抹掉笔画的血肉。V2 只要求"骨架上必须有墨水",
+    笔画粗细交给扩散损失决定。
+    """
+
+    def __init__(self):
+        super().__init__()
+
+    def forward(self, x_pred, skel_gt):
+        """
+        x_pred: (B, 3, H, W) predicted image in [-1, 1]
+        skel_gt: (B, 1, H, W) ground truth skeleton in [0, 1] (1 = 骨架线)
+        """
+        gray = 0.299 * x_pred[:, 0:1] + 0.587 * x_pred[:, 1:2] + 0.114 * x_pred[:, 2:3]
+        gray = (gray + 1.0) / 2.0
+        ink = 1.0 - gray  # 黑墨=1, 白底=0
+        sum_skel = skel_gt.sum(dim=[1, 2, 3]).clamp(min=1.0)
+        on_skel = (skel_gt * torch.abs(ink - 1.0)).sum(dim=[1, 2, 3]) / sum_skel
+        return on_skel.mean()
+
+
+class EdgeGradientLoss(nn.Module):
+    """修复版边缘损失: 预测图与 GT 图的 Sobel 梯度幅值场直接匹配 (L1)。
+
+    旧版 SobelCannyLoss 的毛病:
+      1) 逐图除以最大梯度 (grad/grad_max) —— 早期模糊 x0 中一点噪点就被放大成
+         "最强边缘", 梯度尺度完全失真;
+      2) 用连续梯度场去 L1 拟合 1px 二值 Canny 线 —— 逼模型消灭抗锯齿与晕染。
+    V2 不做归一化、不做二值匹配, 直接对齐两幅图的连续梯度场 (超分领域经典的
+    gradient-profile 损失), 保边缘锐度同时保留灰度过渡。
+    """
+
+    def __init__(self):
+        super().__init__()
+        sobel_x = torch.tensor([[-1., 0., 1.], [-2., 0., 2.], [-1., 0., 1.]],
+                               dtype=torch.float32).view(1, 1, 3, 3)
+        sobel_y = torch.tensor([[-1., -2., -1.], [0., 0., 0.], [1., 2., 1.]],
+                               dtype=torch.float32).view(1, 1, 3, 3)
+        self.register_buffer("sobel_x", sobel_x)
+        self.register_buffer("sobel_y", sobel_y)
+
+    def _grad(self, img):
+        gray = 0.299 * img[:, 0:1] + 0.587 * img[:, 1:2] + 0.114 * img[:, 2:3]
+        gray = (gray + 1.0) / 2.0
+        gx = F.conv2d(gray, self.sobel_x, padding=1)
+        gy = F.conv2d(gray, self.sobel_y, padding=1)
+        return torch.sqrt(gx ** 2 + gy ** 2 + 1e-6)
+
+    def forward(self, x_pred, x_gt):
+        """
+        x_pred: (B, 3, H, W) 预测图 [-1, 1]
+        x_gt:   (B, 3, H, W) 真实图 [-1, 1] (梯度场 detach, 只回传预测侧)
+        """
+        with torch.no_grad():
+            gm_gt = self._grad(x_gt).detach()
+        gm_pred = self._grad(x_pred)
+        return F.l1_loss(gm_pred, gm_gt)

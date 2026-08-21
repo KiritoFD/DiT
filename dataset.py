@@ -8,7 +8,7 @@ from PIL import Image
 
 class MCCDDataset(Dataset):
     def __init__(self, csv_file, root_dir, image_size=256, load_maps=True,
-                 load_canny=None, load_skel=None, is_train=False):
+                 load_canny=None, load_skel=None, is_train=False, use_glyph_cond=False):
         """
         csv_file: path to train.csv / val.csv
         root_dir: the root directory where 'images', 'canny', 'skeleton' are stored (e.g. 'dataset')
@@ -16,11 +16,18 @@ class MCCDDataset(Dataset):
         load_canny / load_skel: Independent switches for canny/skeleton maps.
                                  If None, both inherit from load_maps.
         is_train: If True, applies data augmentation (RandomAffine) for robust training.
+        use_glyph_cond: If True, attach standard-glyph latent g by (script_id, character).
         """
         self.root_dir = root_dir
         self.image_size = image_size
         self.load_maps = load_maps
         self.load_canny = load_maps if load_canny is None else load_canny
+        self.use_glyph_cond = bool(use_glyph_cond)
+        if self.use_glyph_cond:
+            from glyph_latent import get_glyph_lookup
+            self._glookup = get_glyph_lookup()
+        else:
+            self._glookup = None
         self.load_skel = load_maps if load_skel is None else load_skel
         self.is_train = is_train
         
@@ -100,11 +107,24 @@ class MCCDDataset(Dataset):
                 skeleton_t = F.affine(skeleton_t, angle, translate, scale, shear,
                                       interpolation=transforms.InterpolationMode.NEAREST)
         
+        # 标准字形 latent g(甲2): 按 (script_id, character) 查标准字形 latent; 缺失给零(保 collate 一致)
+        g_t = torch.zeros(4, 32, 32)
+        if self._glookup is not None:
+            script_id = int(row['script_id'])
+            char = row.get('character', '')
+            gv = self._glookup.get(script_id, char) if char else None
+            if gv is not None:
+                g_t = gv.float().contiguous()
+        else:
+            g_t = torch.zeros(0)
+
         return {
             'image': img_t,
             'canny': canny_t,
             'skeleton': skeleton_t,
             'y_callig': torch.tensor(int(row['calligrapher_id']), dtype=torch.long),
             'y_script': torch.tensor(int(row['script_id']), dtype=torch.long),
-            'y_char': torch.tensor(int(row['character_id']), dtype=torch.long)
+            'y_char': torch.tensor(
+                int(row.get('glyph_id', row['character_id'])), dtype=torch.long),
+            'g': g_t,
         }
