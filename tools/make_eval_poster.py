@@ -145,6 +145,20 @@ def _render_std_font(char, book, size=256):
         return None
 
 
+def _detect_n(step_dirs, cap=5):
+    """自动检测该侧每步的样本数（存在 sample{i}.png 的最大连续 i+1，上限 cap）。"""
+    if not step_dirs:
+        return 0
+    d = step_dirs[0]
+    n = 0
+    for i in range(cap):
+        if os.path.exists(os.path.join(d, f"sample{i}.png")):
+            n = i + 1
+        else:
+            break
+    return n
+
+
 def main():
     ap = argparse.ArgumentParser(add_help=False)
     ap.add_argument("dirs", nargs="*")
@@ -195,8 +209,8 @@ def main():
         print("[poster] show5/seen5 step 无交集（可能一侧还在跑）")
         return 1
 
-    n_show = 5
-    n_seen = 5 if seen5_dirs else 0
+    n_show = _detect_n(show5_dirs) or 5
+    n_seen = _detect_n(seen5_dirs) if seen5_dirs else 0
     n_cols = (n_show + n_seen) * 3
     HEADER_H = 40
     LABEL_H = 64   # 每个 ckpt 独立标签行：黑底白字大字，step+指标同一行
@@ -230,18 +244,18 @@ def main():
         sx = GAP + 0 * 3 * CELL
         draw.text((sx + 6, gy), f"SHOW5 (unseen)", font=font, fill=(120, 200, 255))
         draw.text((sx + 6, gy + 18), " | ".join(
-            f"#{i+1}{('·'+(show5_meta[i][1] if i < len(show5_meta) and show5_meta[i][1] else ''))}" for i in range(5)),
+            f"#{i+1}{('·'+(show5_meta[i][1] if i < len(show5_meta) and show5_meta[i][1] else ''))}" for i in range(n_show)),
             font=font_s, fill=(150, 165, 190))
-        sx = GAP + 5 * 3 * CELL
+        sx = GAP + n_show * 3 * CELL
         draw.text((sx + 6, gy), f"SEEN5 (train)", font=font, fill=(255, 200, 120))
         draw.text((sx + 6, gy + 18), " | ".join(
-            f"#{i+1}{('·'+(seen5_meta[i][1] if i < len(seen5_meta) and seen5_meta[i][1] else ''))}" for i in range(5)),
+            f"#{i+1}{('·'+(seen5_meta[i][1] if i < len(seen5_meta) and seen5_meta[i][1] else ''))}" for i in range(n_seen)),
             font=font_s, fill=(150, 165, 190))
     else:
         sx = GAP + 0 * 3 * CELL
         draw.text((sx + 6, gy), "SHOW5 (unseen)", font=font, fill=(120, 200, 255))
         draw.text((sx + 6, gy + 18), " | ".join(
-            f"#{i+1}{('·'+(show5_meta[i][1] if i < len(show5_meta) and show5_meta[i][1] else ''))}" for i in range(5)),
+            f"#{i+1}{('·'+(show5_meta[i][1] if i < len(show5_meta) and show5_meta[i][1] else ''))}" for i in range(n_show)),
             font=font_s, fill=(150, 165, 190))
     if args.exp:
         draw.text((W - 6, 4), args.exp, anchor="ra", font=font_s, fill=(90, 100, 120))
@@ -275,7 +289,7 @@ def main():
                 _paste_cells(canvas, _load_cell(os.path.join(seen5_map[step], f"sample{i}.png")), x, y)
                 x += 3 * CELL
         draw.line([(0, y), (W, y)], fill=GRID)
-        draw.line([(GAP + 5 * 3 * CELL, y), (GAP + 5 * 3 * CELL, y + CELL)], fill=GRID)
+        draw.line([(GAP + n_show * 3 * CELL, y), (GAP + n_show * 3 * CELL, y + CELL)], fill=GRID)
         y += CELL + GAP
 
     # GT 行：独立标签行(黑底白字大字) + 图片行
