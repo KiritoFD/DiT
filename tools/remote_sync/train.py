@@ -367,6 +367,17 @@ def main(args):
         eval_cache = prepare_gen_cache(_eval_ds, n=args.eval_n, cond_mode=args.cond_mode)
         logger.info("Auto-eval cache ready (free-sampling mode).")
 
+    # 展示用固定样本(show5)：与 eval100 指标集分离，保证展示图与 GT 行同一批样本。
+    # 这样海报 GT 行就不会与实际生成的样本对不上。
+    show5_csv = getattr(args, 'show5_csv', None)
+    show5_cache = None
+    if show5_csv and os.path.exists(show5_csv):
+        _s5_ds = MCCDDataset(csv_file=show5_csv, root_dir=args.data_dir,
+                             image_size=args.image_size, load_canny=False, load_skel=False,
+                             use_glyph_cond=getattr(args, 'w_glyph_cond', False))
+        show5_cache = prepare_gen_cache(_s5_ds, n=100, cond_mode=args.cond_mode)
+        logger.info(f"Show5 展示 cache ready: {show5_csv} ({len(show5_cache['conds'])} 样本)")
+
     logger.info(f"DiT Parameters: {sum(p.numel() for p in model.parameters()):,}")
 
     raw_model = model.module if hasattr(model, 'module') else model
@@ -489,7 +500,9 @@ def main(args):
         sampler=sampler,
         num_workers=args.num_workers,
         pin_memory=True,
-        drop_last=True
+        drop_last=True,
+        persistent_workers=(args.num_workers > 0),
+        prefetch_factor=4 if args.num_workers > 0 else 2,
     )
     logger.info(f"Dataset contains {len(dataset):,} images")
 
@@ -549,12 +562,22 @@ def main(args):
                 cfg=float(getattr(args, 'eval_cfg', 4.0)),
                 seed=int(getattr(args, 'eval_seed', 0)),
                 batch=int(getattr(args, 'eval_batch', 64)),
-                vis_out=f"{checkpoint_dir}/eval_latest.png",
-                vis_n=5,
-                cond_mode=args.cond_mode,
-                save_samples_dir=f"{checkpoint_dir}/eval_samples",
-                step=0)
+                vis_out=None, vis_n=5, cond_mode=args.cond_mode,
+                save_samples_dir=None, step=None)
             logger.info(f"[auto-eval] step 0: free-sampling MSE={mse0:.5f} SSIM={ss0:.4f}")
+            # step0 展示(show5)
+            if show5_cache is not None:
+                _n5 = len(show5_cache["conds"])
+                eval_gen_in_memory(
+                    _base_model, vae, device, show5_cache,
+                    n=_n5,
+                    steps=int(getattr(args, 'eval_steps', 50)),
+                    cfg=float(getattr(args, 'eval_cfg', 4.0)),
+                    seed=int(getattr(args, 'eval_seed', 0)),
+                    batch=min(_n5, 16),
+                    vis_out=f"{checkpoint_dir}/eval_latest.png",
+                    vis_n=_n5, cond_mode=args.cond_mode,
+                    save_samples_dir=f"{checkpoint_dir}/eval_samples", step=0)
             if _was_train:
                 _base_model.train()
         except Exception as _e:
@@ -811,8 +834,8 @@ def main(args):
                             f"X0Lat: raw {avg_x0:.4f} | "
                             f"LR: {opt.param_groups[0]['lr']:.2e} | {ema_log}"
                             f"Steps/Sec: {steps_per_sec:.2f} | "
-                            f"Mem: {torch.cuda.memory_allocated() / 1024 ** 3:.2f}G/"
-                            f"{torch.cuda.max_memory_allocated() / 1024 ** 3:.2f}G"
+                            f"Mem: {torch.cuda.memory_reserved() / 1024 ** 3:.2f}G/"
+                            f"{torch.cuda.max_memory_reserved() / 1024 ** 3:.2f}G"
                         )
                     
                     running_loss = running_diff = running_canny = running_skel = 0
@@ -870,12 +893,13 @@ def main(args):
                             if len(_pts) > ckpt_keep:
                                 logger.info(f"[ckpt-keep] pruned {len(_pts) - ckpt_keep} old checkpoint(s), keeping {ckpt_keep}")
 
-                        # In-memory free-sampling eval（与推理一致：纯噪声 DDIM）
+                        # In-memory free-sampling eval: 指标用 eval100(eval_cache)，展示用 show5。
                         if eval_cache is not None:
                             eval_model = ema_model if ema_model is not None else model_to_save
                             was_training = eval_model.training
                             eval_model.eval()
                             try:
+                                # 1) 指标：eval_cache(100) 算 MSE/SSIM，不落展示图
                                 mse, ss = eval_gen_in_memory(
                                     eval_model, vae, device, eval_cache,
                                     n=args.eval_n,
@@ -883,15 +907,30 @@ def main(args):
                                     cfg=float(getattr(args, 'eval_cfg', 4.0)),
                                     seed=int(getattr(args, 'eval_seed', 0)),
                                     batch=int(getattr(args, 'eval_batch', 16)),
-                                    vis_out=f"{checkpoint_dir}/eval_latest.png",
-                                    vis_n=5,
+                                    vis_out=None, vis_n=5,
                                     cond_mode=args.cond_mode,
-                                    save_samples_dir=f"{checkpoint_dir}/eval_samples",
-                                    step=train_steps,
+                                    save_samples_dir=None, step=None,
                                     glyph_init_mix=float(getattr(args, 'glyph_init_mix', 0.0)))
                                 logger.info(f"[auto-eval] step {train_steps}: free-sampling MSE={mse:.5f} SSIM={ss:.4f}")
                                 with open(f"{checkpoint_dir}/eval_auto_{train_steps:07d}.json", "w") as _ef:
                                     json.dump({"step": train_steps, "mse": mse, "ssim": ss}, _ef)
+                                # 2) 展示：show5_cache(固定跨书体5样本) 生成 eval_latest.png + eval_samples，
+                                #    与海报 GT 行同一批样本，保证 GT 对照一致。
+                                if show5_cache is not None:
+                                    _n5 = len(show5_cache["conds"])
+                                    eval_gen_in_memory(
+                                        eval_model, vae, device, show5_cache,
+                                        n=_n5,
+                                        steps=int(getattr(args, 'eval_steps', 50)),
+                                        cfg=float(getattr(args, 'eval_cfg', 4.0)),
+                                        seed=int(getattr(args, 'eval_seed', 0)),
+                                        batch=min(_n5, 16),
+                                        vis_out=f"{checkpoint_dir}/eval_latest.png",
+                                        vis_n=_n5,
+                                        cond_mode=args.cond_mode,
+                                        save_samples_dir=f"{checkpoint_dir}/eval_samples",
+                                        step=train_steps,
+                                        glyph_init_mix=float(getattr(args, 'glyph_init_mix', 0.0)))
                             except Exception as _e:
                                 logger.warning(f"[auto-eval] failed at step {train_steps}: {_e}")
                             finally:
@@ -1022,6 +1061,9 @@ if __name__ == "__main__":
                         help="Seed for free-sampling auto-eval noise.")
     parser.add_argument("--eval-batch", type=int, default=16,
                         help="Sampling batch for free-sampling auto-eval.")
+    parser.add_argument("--show5-csv", type=str, default=None,
+                        help="固定跨书体展示样本 CSV(如 eval5)。设后每次都采样这 N 个(不算指标, "
+                             "仅生成 eval_latest.png/eval_samples 展示, 与海报 GT 行同一批保证对照)。")
     parser.add_argument("--w-canny", type=float, default=0.05, help="Weight for canny structural loss")
     parser.add_argument("--w-skel", type=float, default=0.05, help="Weight for skeleton structural loss")
     parser.add_argument("--w-skel-head", type=float, default=0.0,
