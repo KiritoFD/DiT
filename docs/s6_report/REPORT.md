@@ -130,26 +130,38 @@ diffonly 笔画锐利、结构完整;struct 被彩色噪声淹没,几乎不可�
 
 ---
 
-## 8. 大测试集额外评测(本地 GPU,493 样本)
+## 8. 大测试集额外评测(本地 GPU)
 
-**方法**:从 top6 池(10866 行)重新分层抽样 **eval500**(楷 250 + 隶 250,seed=0,排除 eval100 已用 id,实际 493 张),GT 使用与训练一致的远程 `final_images/` 权威版本。两个最终 ckpt 在**完全相同的 493 个条件**上自由采样(DDIM 50 步,cfg=4.0,seed=0),本地 RTX 4070 Laptop 各约 2-3 分钟。
+**方法**:本地 RTX 4070 Laptop,两 ckpt 在完全相同的条件上自由采样(DDIM 50 步,cfg=4.0,seed=0)。构建了两个互补集合:
 
-| ckpt | eval100 (100样本) | **eval500 (493样本)** |
-|---|---|---|
-| diffonly @195000 | MSE 0.432 / SSIM 0.732 | **MSE 0.593 / SSIM 0.654** |
-| struct @125000 | MSE 0.783 / SSIM 0.404 | **MSE 0.820 / SSIM 0.394** |
+- **eval500(拟合集参考)**:从 top6 训练池分层抽样 493 张——经核查 **100% 是训练见过的(书家,字)对乃至原图**,只衡量拟合/记忆能力;
+- **eval_unseen255(真 held-out)**:从 `5script/test.csv` 筛 top6 书家、**(书家,字)对完全未在训练出现**的样本,楷 161 + 隶 94 共 **255 张**,GT 用与训练一致的远程 `final_images/` 权威版本。
 
-- 注:eval500 与 eval100 绝对值不可直接比(抽样构成不同,eval500 含更多训练池尾部字符);**同集对比**才是结论:SSIM 差 1.66 倍,与 eval100 一致。
-- 产物:`large_eval/<tag>/latest/sample{i}.png|gt{i}.png`(16 对)+ `grid.png`(16 行 生成|GT)+ `metrics.json`。
+### 8.1 三层指标总表
 
-### 同条件三方对比(同 seed 同字符)
+| 评测集 | 性质 | diffonly @195000 | struct @125000 | SSIM 差距 |
+|---|---|---|---|---|
+| eval100 | 72% 见过对 | MSE 0.432 / SSIM 0.732 | MSE 0.783 / SSIM 0.404 | 1.8× |
+| eval500 (493) | **100% 见过(拟合)** | MSE 0.593 / SSIM 0.654 | MSE 0.820 / SSIM 0.394 | 1.66× |
+| eval_unseen (255) | **100% 未见过(held-out)** | **MSE 0.856 / SSIM 0.508** | **MSE 0.944 / SSIM 0.364** | 1.4× |
 
+**关键读数**:
+1. **结论在真 held-out 上成立**:struct 的 SSIM 只有 diffonly 的 ~72%,与拟合集一致——结构损失副作用不是"记忆差异"造成的假象;
+2. **diffonly 存在明显但可控的泛化鸿沟**:SSIM 0.654(拟合)→ 0.508(unseen);struct 几乎无差距(0.394→0.364),因为它两头都差;
+3. unseen 集部分 GT 本身质量较差(勵/剮/暇等带框、噪底),两边指标都被压低,但不影响相对结论。
+
+### 8.2 同条件三方对比(同 seed 同字符)
+
+**held-out unseen(255 样本中的前 16 个)**:
+![compare_unseen](large_eval/compare_unseen.png)
+
+**拟合集 eval500(前 16 个)**:
 ![compare](large_eval/compare_diffonly_vs_struct.png)
 
 **目检结论**:
-1. diffonly 每一行都与 GT 高度一致,笔画起收锋清晰;
-2. struct **16/16 全部**出现彩噪底/笔画糊化,无一幸免——退化是系统性的,不是个例;
-3. 结构上 struct 的字形骨架大致正确(结构损失确实"起效"了),但像素保真全面崩坏,再次印证"x0 漂移出 VAE 流形"机理。
+1. diffonly 在**从未见过的字**上风格迁移良好(寢/儀/鑫/單/夢等结构正确、笔意到位),复杂生僻字(勵/逋/聪)较弱;
+2. struct 在 seen 和 unseen 上**16/16 全部**彩噪退化——系统性 x0 流形漂移,与条件是否见过无关;
+3. 结构上 struct 字形骨架大致正确(结构损失确实"起效"),坏的是像素保真。
 
 ---
 
@@ -162,8 +174,9 @@ diffonly 笔画锐利、结构完整;struct 被彩色噪声淹没,几乎不可�
 | `imgs/diffonly_{eval,seen}/step*/` | 原始样本图(35 步 × show/seen) |
 | `imgs/struct_resume_{eval,seen}/step*/` | struct 样本图(7 步) |
 | `imgs/comparison/` | 同字符直接对比图 |
-| `large_eval/compare_diffonly_vs_struct.png` | 大测试集三方对比图(16 字符) |
-| `large_eval/<tag>/grid.png`, `latest/`, `metrics.json` | 本地 GPU eval500 产物 |
+| `large_eval/compare_diffonly_vs_struct.png` | 拟合集(eval500)三方对比图 |
+| `large_eval/compare_unseen.png` | held-out(unseen255)三方对比图 |
+| `large_eval/<tag>/grid.png`, `latest/`, `metrics.json` | 本地 GPU 评测产物(4 组:2 ckpt × seen/unseen) |
 | `jsons/diffonly_tmp/`, `jsons/struct_resume_tmp/` | eval_auto_*.json 原始指标 |
 | `csv/`, `configs/` | 评测集与 resolved_config |
 

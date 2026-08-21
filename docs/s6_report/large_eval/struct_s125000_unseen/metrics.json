@@ -1,0 +1,12 @@
+{
+  "tag": "struct_s125000_unseen",
+  "ckpt": "docs\\s6_report\\ckpt_struct_0125000.pt",
+  "csv": "5script\\eval_unseen_top6.csv",
+  "n": 255,
+  "mse": 0.9440726100229749,
+  "ssim": 0.36431406989596243,
+  "steps": 50,
+  "cfg": 4.0,
+  "seed": 0,
+  "seconds": 64.4
+}
