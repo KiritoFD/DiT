@@ -1,0 +1,12 @@
+{
+  "tag": "struct_s125000",
+  "ckpt": "docs\\s6_report\\ckpt_struct_0125000.pt",
+  "csv": "5script\\eval500_top6.csv",
+  "n": 493,
+  "mse": 0.8202959345030253,
+  "ssim": 0.3944054698524965,
+  "steps": 50,
+  "cfg": 4.0,
+  "seed": 0,
+  "seconds": 121.2
+}

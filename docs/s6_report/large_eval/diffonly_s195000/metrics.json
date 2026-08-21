@@ -1,0 +1,12 @@
+{
+  "tag": "diffonly_s195000",
+  "ckpt": "docs\\s6_report\\ckpt_diffonly_0195000.pt",
+  "csv": "5script\\eval500_top6.csv",
+  "n": 493,
+  "mse": 0.5926447802395173,
+  "ssim": 0.653526108387034,
+  "steps": 50,
+  "cfg": 4.0,
+  "seed": 0,
+  "seconds": 182.3
+}
