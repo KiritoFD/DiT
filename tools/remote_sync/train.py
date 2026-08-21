@@ -455,7 +455,7 @@ def main(args):
                                     load_skel=need_skel_map,
                                     skel_root=args.skel_root if need_skel_map else None,
                                     preload=bool(getattr(args, 'preload', False)),
-                                    load_image=args.w_repa > 0,
+                                    load_image=(args.w_repa > 0 or getattr(args, 'use_struct_loss_v2', False)),
                                     num_preload_workers=int(getattr(args, 'preload_workers', 16)),
                                     structure_size=(32 if (latent_structure_loss_fn is not None or getattr(args, 'w_skel_head', 0) > 0) else 256),
                                     use_glyph_cond=getattr(args, 'w_glyph_cond', False))
