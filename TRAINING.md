@@ -8,11 +8,13 @@
 
 | 模型名 | depth | hidden | heads | 参数 |
 |---|---|---|---|---|
+| `DiT-2Cond-S/2` | 12 | 384 | 6 | 41.8M |
 | `DiT-3Cond-S/2` | 12 | 384 | 6 | 36.9M |
 | `DiT-3Cond-B/2` | 12 | 768 | 12 | ~130M |
 | `DiT-3Cond-L/2` | 24 | 1024 | 16 | ~458M |
 | `DiT-3Cond-XL/2` | 28 | 1152 | 16 | 706.9M |
 
+**2Cond**（书家+字）= 2 个 `LabelEmbedder` + `factorized_add` 融合（S6 系列使用）。
 三条件（书家/字体/字）→ 3 个 `LabelEmbedder` → `cond_fusion`（concat 3D → MLP → D）→ 每层 **adaLN-Zero** 调制。
 `forward_with_cfg` 支持 CFG 采样；`use_checkpoint` 默认 false（历史 NaN 根因）。
 

@@ -199,16 +199,26 @@ def main():
     n_seen = 5 if seen5_dirs else 0
     n_cols = (n_show + n_seen) * 3
     HEADER_H = 40
-    n_rows = 1 + len(steps) + 1 + 1          # 顶部分组标签 + step 行 + GT 行 + 底部注释
+    LABEL_H = 64   # 每个 ckpt 独立标签行：黑底白字大字，step+指标同一行
+    LABEL_FONT = 30  # 标签行文字字号
+    # 布局: 顶部分组标签(1 行) + 每个 ckpt(标签行 + 图片行) + GT(标签行 + 图片行) + 底部注释
     W = CELL * n_cols + GAP * 2
-    H = GAP + HEADER_H + n_rows * (CELL + GAP)
+    H = (GAP + HEADER_H
+         + len(steps) * (LABEL_H + CELL + GAP)
+         + (LABEL_H + CELL + GAP)            # GT 行
+         + GAP + 30)
     canvas = Image.new("RGB", (W, H), BG)
     draw = ImageDraw.Draw(canvas)
     try:
         font = ImageFont.truetype(r"C:\Windows\Fonts\msyh.ttc", 17)
         font_s = ImageFont.truetype(r"C:\Windows\Fonts\msyh.ttc", 14)
+        font_lab = ImageFont.truetype(r"C:\Windows\Fonts\msyhbd.ttc", LABEL_FONT)  # 粗体大字
     except Exception:
-        font = font_s = ImageFont.load_default()
+        try:
+            font_lab = ImageFont.truetype(r"C:\Windows\Fonts\msyh.ttc", LABEL_FONT)
+        except Exception:
+            font_lab = font_s
+            font = font_s = ImageFont.load_default()
 
     y = GAP
 
@@ -237,8 +247,25 @@ def main():
         draw.text((W - 6, 4), args.exp, anchor="ra", font=font_s, fill=(90, 100, 120))
     y += HEADER_H
 
-    # step 行
+    # step 行 = 独立标签行(空出来写字) + 图片行
+    label_bg = (28, 32, 40)
     for step in steps:
+        # 标签行: 纯黑底 + 白字大字, step 与 MSE/SSIM 写在同一行
+        draw.rectangle([0, y, W, y + LABEL_H], fill=(0, 0, 0))
+        draw.line([(0, y + LABEL_H - 1), (W, y + LABEL_H - 1)], fill=GRID)
+        _parts = [f"STEP {step}"]
+        _mval = ev_map.get(step)
+        if _mval:
+            _m, _s = _mval
+            if _m is not None:
+                _parts.append("MSE %.3f" % _m)
+            if _s is not None:
+                _parts.append("SSIM %.3f" % _s)
+        draw.text((12, y + (LABEL_H - LABEL_FONT) // 2),
+                  "    ".join(_parts), font=font_lab, fill=(255, 255, 255))
+        y += LABEL_H
+
+        # 图片行
         x = GAP
         for i in range(n_show):
             _paste_cells(canvas, _load_cell(os.path.join(show5_map[step], f"sample{i}.png")), x, y)
@@ -249,17 +276,18 @@ def main():
                 x += 3 * CELL
         draw.line([(0, y), (W, y)], fill=GRID)
         draw.line([(GAP + 5 * 3 * CELL, y), (GAP + 5 * 3 * CELL, y + CELL)], fill=GRID)
-        # 每行左侧标签: step 号 + (可选)该 ckpt 的 eval MSE/SSIM
-        draw.text((4, y + 2), f"step {step}", font=font_s, fill=(180, 190, 205))
-        if step in ev_map:
-            _m, _s = ev_map[step]
-            _txt = f"MSE {_m:.3f}" if _m is not None else "MSE --"
-            if _s is not None:
-                _txt += f"\nSSIM {_s:.3f}"
-            draw.multiline_text((4, y + 24), _txt, font=font_s, fill=(140, 150, 170))
         y += CELL + GAP
 
-    # GT 行：show5 用远程真值图(gt_dir/{pid}.png)，seen5 用 seen_samples 里的 gt{i}.png
+    # GT 行：独立标签行(黑底白字大字) + 图片行
+    draw.rectangle([0, y, W, y + LABEL_H], fill=(0, 0, 0))
+    draw.line([(0, y + LABEL_H - 1), (W, y + LABEL_H - 1)], fill=GRID)
+    _gt_txt = "GT (真值)"
+    if steps:
+        _gt_txt += f"    对映 step {steps[-1]} 的 ground truth"
+    draw.text((12, y + (LABEL_H - LABEL_FONT) // 2), _gt_txt,
+              font=font_lab, fill=(255, 255, 255))
+    y += LABEL_H
+
     gt_y = y
     x = GAP
     show5_ids = [i for i, _ in _find_group_meta(args.show5_csv)]
@@ -279,9 +307,6 @@ def main():
             gp = os.path.join(seen5_map[steps[-1]], f"gt{i}.png")
             _paste_cells(canvas, _load_cell(gp, GT_BG), x, gt_y)
             x += 3 * CELL
-    draw.text((4, gt_y + 2), "GT", font=font, fill=(120, 230, 150))
-    if steps:
-        draw.text((4, gt_y + 28), f"(真值, step {steps[-1]})", font=font_s, fill=(120, 230, 150))
     y += CELL + GAP
 
     # 底部注释

@@ -392,3 +392,59 @@ loss + lr=3e-3）扩展到**全量 298,281 张**训练集。
    不一致；训练配置 `train_full_3cond.json` 用的 `num_calligraphers=2021` 又是早期 VOCAB。
    训练 / 评估 / 采样必须锁定同一套映射（详见 `DOCUMENTATION.md` §3.3、§7）。
 
+---
+
+## 2026-08-20 S6 Top6 实验系列（2Cond-S/2 全参，无 LoRA）
+
+### 背景
+S 系列回归 2Cond（书家+字），无 LoRA、无预训练，从零全参训练。聚焦 top6 字体子集
+（5script/train_top6.csv，10,866 图，1011 书家 / 35130 字）。
+
+模型：`DiT-2Cond-S/2`（depth=12, hidden=384, heads=6, 41.8M 参数），
+cond_mode=`2cond`，fusion=`factorized_add`，callig_embed_dim=128, char_embed_dim=256。
+
+### 三个变体
+
+| 实验 | 结构 loss | batch | struct_subset | 远程目录 | 步数 | 状态 |
+|---|---|---|---|---|---|---|
+| s6_top6_diffonly | 无 (纯 diff) | 192 | 0 | `5script/results/s6_top6_diffonly` | 30k+ | 进行中 |
+| s6_top6_struct_fp32 | Canny×0.5 + Skel×1.0 (fp32) | 48 | 8 | `5script/results/s6_top6_struct_fp32` | 90k | 已完成 |
+| s6_top6_struct_fp32_full | Canny×0.5 + Skel×1.0 (fp32) | 8 | 0 | `5script/results/s6_top6_struct_fp32_full` | 17k | 已完成 |
+
+### Eval 对比（free-sampling eval100）
+
+| Step | diffonly MSE | diffonly SSIM | struct MSE | struct SSIM | struct_full MSE | struct_full SSIM |
+|---|---|---|---|---|---|---|
+| 1k | 1.7805 | 0.1708 | 2.0126 | 0.0725 | 2.0292 | 0.0700 |
+| 5k | 0.9929 | 0.4531 | 1.6301 | 0.1311 | 1.7133 | 0.1262 |
+| 10k | 0.9648 | 0.4700 | 1.6050 | 0.1380 | 1.5612 | 0.1410 |
+| 15k | 0.9074 | 0.4883 | 1.5267 | 0.1536 | 1.4542 | 0.1660 |
+| 20k | 0.8488 | 0.5078 | 1.4572 | 0.1617 | — | — |
+| 25k | 0.8028 | 0.5251 | 1.4433 | 0.1644 | — | — |
+| 90k | — | — | 0.9105 | 0.3314 | — | — |
+
+**关键发现**：纯 diff（diffonly）在相同步数下 MSE/SSIM 远优于加结构 loss 的变体。
+结构 loss 在 S/2 小模型上可能有害——强制 canny/skel 约束与 diff 主信号冲突，
+导致自由采样质量下降。这与 s5 大模型（XL）上的观察相反。
+
+### diffonly 训练进程
+- **Run1**（0→20k）：`20260819-225143-s6-top6-diffonly`，正常收敛
+- **Run2**（20k→继续）：`20260820-191536-s6-top6-diffonly-resume`，从 20k ckpt 恢复
+  - step 25k: MSE=0.8028 SSIM=0.5251（继续健康下降，无崩溃）
+
+### 本地 Dashboard
+`G:\GitHub\DiT\s6_top6_dashboard\` — 静态 HTML 可视化（数据内嵌，file:// 可直接打开）：
+- `index.html` — 三实验总览 + MSE/SSIM 对比表
+- `s6_diffonly.html` — diffonly 训练曲线 + eval 海报
+- `s6_struct.html` — struct_fp32 训练曲线 + eval 海报
+- `s6_struct_full.html` — struct_fp32_full 训练曲线 + eval 海报
+- `build_dashboard.py` — 从 logs/ 解析数据并重新生成 HTML
+- `logs/` — 训练日志 (run1/run2/struct/struct_full) + eval 日志 (4 个)
+- `eval_imgs/` — eval_latest PNG + eval_poster + eval_samples/seen_samples
+- `eval_json/` — **已废弃**（eval_auto_*.json 混合了多个实验，无法按实验区分）
+
+### 远程服务器
+- `root@10.176.54.17:36430`，项目目录 `/root/Workspace/xy/DiT`
+- 训练在 tmux `exp` 会话中运行
+- Eval 日志来源：各实验目录下的 `cpu_eval_*.log`
+
