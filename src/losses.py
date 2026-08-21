@@ -121,75 +121,69 @@ class _TeacherWrapper(nn.Module):
         return out.last_hidden_state[:, 1:]
 
 
-class SobelCannyLoss(nn.Module):
+# ============================================================================
+# 像素结构损失（修复版）
+#
+# 旧版的两个致命问题（已删除，此处仅留说明）：
+#   1) SkeletonLoss v1: 用 3x3 膨胀的 1px 骨架当 "背景掩码"，而毛笔笔画通常
+#      10~30px 宽，笔画主体被误判为背景并遭 off_skel 惩罚 -> 模型被迫抹掉笔画
+#      血肉。修复：SkeletonLoss 只做正向牵引（recall），绝不惩罚骨架以外的
+#      墨水，笔画粗细与飞白交给扩散损失决定。
+#   2) Canny 边缘损失 v1: 逐图除以最大梯度（早期模糊 x0 中噪点被放大成"最强
+#      边缘"，梯度尺度失真）；并且用连续梯度场去 L1 拟合 1px 二值 Canny 线，
+#      逼模型消灭抗锯齿与晕染。修复：EdgeGradientLoss 不做归一化、不做二值
+#      匹配，直接对齐预测图与 GT 图的连续 Sobel 梯度幅值场（超分领域经典
+#      gradient-profile 损失），保边缘锐度同时保留灰度过渡。
+# ============================================================================
+
+class EdgeGradientLoss(nn.Module):
+    """边缘损失: 预测图与 GT 图的 Sobel 梯度幅值场直接匹配 (L1)。"""
+
     def __init__(self):
         super().__init__()
-        # Sobel kernels
-        sobel_x = torch.tensor([[-1., 0., 1.], [-2., 0., 2.], [-1., 0., 1.]], dtype=torch.float32).view(1, 1, 3, 3)
-        sobel_y = torch.tensor([[-1., -2., -1.], [0., 0., 0.], [1., 2., 1.]], dtype=torch.float32).view(1, 1, 3, 3)
-        
-        self.register_buffer('sobel_x', sobel_x)
-        self.register_buffer('sobel_y', sobel_y)
-        
-    def forward(self, x_pred, canny_gt):
-        """
-        x_pred: (B, 3, H, W) predicted image in [-1, 1]
-        canny_gt: (B, 1, H, W) ground truth canny in [0, 1]
-        """
-        # Convert RGB to grayscale and map from [-1, 1] to [0, 1]
-        gray = 0.299 * x_pred[:, 0:1] + 0.587 * x_pred[:, 1:2] + 0.114 * x_pred[:, 2:3]
+        sobel_x = torch.tensor([[-1., 0., 1.], [-2., 0., 2.], [-1., 0., 1.]],
+                               dtype=torch.float32).view(1, 1, 3, 3)
+        sobel_y = torch.tensor([[-1., -2., -1.], [0., 0., 0.], [1., 2., 1.]],
+                               dtype=torch.float32).view(1, 1, 3, 3)
+        self.register_buffer("sobel_x", sobel_x)
+        self.register_buffer("sobel_y", sobel_y)
+
+    def _grad(self, img):
+        gray = 0.299 * img[:, 0:1] + 0.587 * img[:, 1:2] + 0.114 * img[:, 2:3]
         gray = (gray + 1.0) / 2.0
-        
-        # Calculate spatial gradients
-        grad_x = F.conv2d(gray, self.sobel_x, padding=1)
-        grad_y = F.conv2d(gray, self.sobel_y, padding=1)
-        
-        # Gradient magnitude
-        grad_mag = torch.sqrt(grad_x**2 + grad_y**2 + 1e-6)
-        
-        # Stable bounded normalization.
-        # IMPORTANT: per-image min-max with a tiny eps blows up gradients by ~1/eps
-        # on flat (pure-color) predictions, which is exactly what caused the NaN at
-        # step ~350 once use_canny was enabled. We detach the denominator and clamp
-        # both the scale and the output so gradients stay O(1) even on blank images.
-        grad_max = grad_mag.flatten(2).max(dim=-1).values.max(dim=-1).values  # (B,)
-        denom = grad_max.clamp(min=1e-3).view(-1, 1, 1, 1)
-        grad_norm = (grad_mag / denom.detach()).clamp(max=1.0)
-        
-        loss = F.l1_loss(grad_norm, canny_gt)
-        return loss
+        gx = F.conv2d(gray, self.sobel_x, padding=1)
+        gy = F.conv2d(gray, self.sobel_y, padding=1)
+        return torch.sqrt(gx ** 2 + gy ** 2 + 1e-6)
+
+    def forward(self, x_pred, x_gt):
+        """
+        x_pred: (B, 3, H, W) 预测图 [-1, 1]
+        x_gt:   (B, 3, H, W) 真实图 [-1, 1] (梯度场 detach, 只回传预测侧)
+        """
+        with torch.no_grad():
+            gm_gt = self._grad(x_gt).detach()
+        gm_pred = self._grad(x_pred)
+        return F.l1_loss(gm_pred, gm_gt)
+
 
 class SkeletonLoss(nn.Module):
-    def __init__(self, lambda_bg=1.0):
+    """骨架损失: 只做"正向牵引" (recall), 绝不惩罚骨架以外的墨水。"""
+
+    def __init__(self):
         super().__init__()
-        self.lambda_bg = lambda_bg
-        
+
     def forward(self, x_pred, skel_gt):
         """
         x_pred: (B, 3, H, W) predicted image in [-1, 1]
-        skel_gt: (B, 1, H, W) ground truth skeleton in [0, 1]
+        skel_gt: (B, 1, H, W) ground truth skeleton in [0, 1] (1 = 骨架线)
         """
-        # Convert to grayscale [0, 1]
         gray = 0.299 * x_pred[:, 0:1] + 0.587 * x_pred[:, 1:2] + 0.114 * x_pred[:, 2:3]
         gray = (gray + 1.0) / 2.0
-        
-        # Ink intensity: black ink = 1.0, white bg = 0.0
-        ink = 1.0 - gray
-        
-        # Expand skeleton to create background mask (dilation via max pooling)
-        skel_expand = F.max_pool2d(skel_gt, kernel_size=3, stride=1, padding=1)
-        bg_mask = 1.0 - skel_expand
-        
-        # On-skeleton penalty: ink should be 1.0 on the skeleton
+        ink = 1.0 - gray  # 黑墨=1, 白底=0
         sum_skel = skel_gt.sum(dim=[1, 2, 3]).clamp(min=1.0)
-        on_skel_loss = (skel_gt * torch.abs(ink - 1.0)).sum(dim=[1, 2, 3]) / sum_skel
-        
-        # Off-skeleton penalty: ink should be 0.0 on the background
-        sum_bg = bg_mask.sum(dim=[1, 2, 3]).clamp(min=1.0)
-        off_skel_loss = (bg_mask * ink).sum(dim=[1, 2, 3]) / sum_bg
-        
-        loss = on_skel_loss + self.lambda_bg * off_skel_loss
-        return loss.mean()
+        on_skel = (skel_gt * torch.abs(ink - 1.0)).sum(dim=[1, 2, 3]) / sum_skel
+        return on_skel.mean()
+
 
 class REPALoss(nn.Module):
     """
@@ -220,14 +214,14 @@ class REPALoss(nn.Module):
         self.teacher.eval()
 
         self.is_vits14 = (teacher_backbone == "dinov2_vits14")
-        
+
         # Projection MLP to map student dimension to teacher dimension
         self.proj = nn.Sequential(
             nn.Linear(student_dim, teacher_dim),
             nn.SiLU(),
             nn.Linear(teacher_dim, teacher_dim)
         )
-        
+
         # Normalization for input image
         self.register_buffer("mean", torch.tensor([0.485, 0.456, 0.406]).view(1, 3, 1, 1))
         self.register_buffer("std", torch.tensor([0.229, 0.224, 0.225]).view(1, 3, 1, 1))
@@ -244,82 +238,19 @@ class REPALoss(nn.Module):
             x_0_01 = (x_0 + 1.0) / 2.0
             x_norm = (x_0_01 - self.mean) / self.std
             x_224 = F.interpolate(x_norm, size=(224, 224), mode='bicubic', align_corners=False)
-            
+
             # 2. Extract teacher features (wrapper normalizes dict / BaseModelOutput
             #    to a (B, num_patches, teacher_dim) patch-token tensor)
             teacher_feats = self.teacher.forward_features(x_224).float()  # (B, 256, teacher_dim)
-            
+
         # 3. Project student features.
         # Student features may be fp16 (produced inside autocast); upcast to fp32
         # before projecting, otherwise matmul with the fp32 proj weight raises a dtype error.
         student_feats_proj = self.proj(student_feats.float())  # (B, 256, teacher_dim)
-        
+
         # 4. Compute Representation Alignment Loss (Negative Cosine Similarity)
         # We maximize cosine similarity, so we minimize 1 - cosine_similarity
         cos_sim = F.cosine_similarity(student_feats_proj, teacher_feats, dim=-1) # (B, 256)
         loss = 1.0 - cos_sim.mean()
-        
+
         return loss
-
-
-class SkeletonLossV2(nn.Module):
-    """修复版骨架损失: 只做"正向牵引" (recall), 绝不惩罚骨架以外的墨水。
-
-    旧版 SkeletonLoss 用 max_pool3x3 膨胀的骨架当背景掩码, 但毛笔笔画通常
-    10~30px 宽, 3px 膨胀远小于笔画宽度, 导致笔画主体被误判为"背景"并遭到
-    off_skel 惩罚 —— 模型被逼着抹掉笔画的血肉。V2 只要求"骨架上必须有墨水",
-    笔画粗细交给扩散损失决定。
-    """
-
-    def __init__(self):
-        super().__init__()
-
-    def forward(self, x_pred, skel_gt):
-        """
-        x_pred: (B, 3, H, W) predicted image in [-1, 1]
-        skel_gt: (B, 1, H, W) ground truth skeleton in [0, 1] (1 = 骨架线)
-        """
-        gray = 0.299 * x_pred[:, 0:1] + 0.587 * x_pred[:, 1:2] + 0.114 * x_pred[:, 2:3]
-        gray = (gray + 1.0) / 2.0
-        ink = 1.0 - gray  # 黑墨=1, 白底=0
-        sum_skel = skel_gt.sum(dim=[1, 2, 3]).clamp(min=1.0)
-        on_skel = (skel_gt * torch.abs(ink - 1.0)).sum(dim=[1, 2, 3]) / sum_skel
-        return on_skel.mean()
-
-
-class EdgeGradientLoss(nn.Module):
-    """修复版边缘损失: 预测图与 GT 图的 Sobel 梯度幅值场直接匹配 (L1)。
-
-    旧版 SobelCannyLoss 的毛病:
-      1) 逐图除以最大梯度 (grad/grad_max) —— 早期模糊 x0 中一点噪点就被放大成
-         "最强边缘", 梯度尺度完全失真;
-      2) 用连续梯度场去 L1 拟合 1px 二值 Canny 线 —— 逼模型消灭抗锯齿与晕染。
-    V2 不做归一化、不做二值匹配, 直接对齐两幅图的连续梯度场 (超分领域经典的
-    gradient-profile 损失), 保边缘锐度同时保留灰度过渡。
-    """
-
-    def __init__(self):
-        super().__init__()
-        sobel_x = torch.tensor([[-1., 0., 1.], [-2., 0., 2.], [-1., 0., 1.]],
-                               dtype=torch.float32).view(1, 1, 3, 3)
-        sobel_y = torch.tensor([[-1., -2., -1.], [0., 0., 0.], [1., 2., 1.]],
-                               dtype=torch.float32).view(1, 1, 3, 3)
-        self.register_buffer("sobel_x", sobel_x)
-        self.register_buffer("sobel_y", sobel_y)
-
-    def _grad(self, img):
-        gray = 0.299 * img[:, 0:1] + 0.587 * img[:, 1:2] + 0.114 * img[:, 2:3]
-        gray = (gray + 1.0) / 2.0
-        gx = F.conv2d(gray, self.sobel_x, padding=1)
-        gy = F.conv2d(gray, self.sobel_y, padding=1)
-        return torch.sqrt(gx ** 2 + gy ** 2 + 1e-6)
-
-    def forward(self, x_pred, x_gt):
-        """
-        x_pred: (B, 3, H, W) 预测图 [-1, 1]
-        x_gt:   (B, 3, H, W) 真实图 [-1, 1] (梯度场 detach, 只回传预测侧)
-        """
-        with torch.no_grad():
-            gm_gt = self._grad(x_gt).detach()
-        gm_pred = self._grad(x_pred)
-        return F.l1_loss(gm_pred, gm_gt)

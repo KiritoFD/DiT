@@ -30,7 +30,7 @@ from download import find_model
 
 from dataset import MCCDDataset
 from latent_dataset import MCCDLatentDataset
-from losses import SobelCannyLoss, SkeletonLoss, SkeletonLossV2, EdgeGradientLoss, REPALoss
+from losses import EdgeGradientLoss, SkeletonLoss, REPALoss
 from torch.utils.checkpoint import checkpoint as grad_ckpt
 from lora import inject_lora, upgrade_lora_rank, extract_full_inference
 from samplers import DistributedFactorBalancedSampler
@@ -363,16 +363,16 @@ def main(args):
     raw_model = model.module if hasattr(model, 'module') else model
     student_hidden_size = raw_model.x_embedder.proj.weight.shape[0]
     
-    # Initialize structural and REPA losses
-    # use_struct_loss_v2: 修复版损失 (骨架只做正向牵引 + 边缘梯度场直接匹配 GT)
-    if getattr(args, 'use_struct_loss_v2', False):
-        canny_loss_fn = EdgeGradientLoss().to(device)
-        skel_loss_fn = SkeletonLossV2().to(device)
-        logger.info("[struct] use_struct_loss_v2: EdgeGradientLoss + SkeletonLossV2 "
-                    "(骨架 recall-only, 边缘梯度场匹配)")
-    else:
-        canny_loss_fn = SobelCannyLoss().to(device)
-        skel_loss_fn = SkeletonLoss(lambda_bg=1.0).to(device)
+    # Initialize structural and REPA losses.
+    # 修复版像素结构损失（旧版 SobelCannyLoss/SkeletonLoss 已删除）：
+    #   - EdgeGradientLoss: 预测图与 GT 图的 Sobel 梯度幅值场直接 L1 匹配
+    #     （不做逐图归一化、不做二值 Canny 拟合，保留灰度过渡/抗锯齿）
+    #   - SkeletonLoss: 只做正向牵引（recall-only），骨架上必须含墨，
+    #     绝不惩罚骨架以外的墨水（笔画粗细/飞白交给扩散损失决定）
+    canny_loss_fn = EdgeGradientLoss().to(device)
+    skel_loss_fn = SkeletonLoss().to(device)
+    logger.info("[struct] EdgeGradientLoss (gradient-profile, no per-image norm) "
+                "+ SkeletonLoss (recall-only, no off-skel penalization)")
 
     latent_structure_loss_fn = None
     if args.w_latent_canny > 0 or args.w_latent_skel > 0:
@@ -455,7 +455,7 @@ def main(args):
                                     load_skel=need_skel_map,
                                     skel_root=args.skel_root if need_skel_map else None,
                                     preload=bool(getattr(args, 'preload', False)),
-                                    load_image=(args.w_repa > 0 or getattr(args, 'use_struct_loss_v2', False)),
+                                    load_image=(args.w_repa > 0 or args.use_canny),
                                     num_preload_workers=int(getattr(args, 'preload_workers', 16)),
                                     structure_size=(32 if (latent_structure_loss_fn is not None or getattr(args, 'w_skel_head', 0) > 0) else 256),
                                     use_glyph_cond=getattr(args, 'w_glyph_cond', False))
@@ -714,13 +714,13 @@ def main(args):
                         pred_xstart_sub = pred_xstart_latent
                         canny_gt_sub = canny_gt if args.use_canny else None
                         skel_gt_sub = skel_gt if args.use_skel else None
-                        x_sub = x
+                        x_sub = x if args.use_canny else None
                     elif _use_this_step:
                         pred_xstart_sub = pred_xstart_latent[_idx]
                         x0_pred = None
                         canny_gt_sub = canny_gt[_idx] if args.use_canny else None
                         skel_gt_sub = skel_gt[_idx] if args.use_skel else None
-                        x_sub = x[_idx]
+                        x_sub = x[_idx] if args.use_canny else None
                     if _use_this_step:
                         # VAE decode: optional bf16 autocast + optional lower-resolution decode.
                         #  - struct_decode_bf16: bf16 has the same exponent range as fp32, so the
@@ -750,13 +750,12 @@ def main(args):
                             if skel_gt_sub is not None:
                                 skel_gt_sub = F.interpolate(
                                     skel_gt_sub, scale_factor=_dscale, mode="nearest")
-                            x_sub = F.interpolate(x_sub, scale_factor=_dscale, mode="area")
+                            if x_sub is not None:
+                                x_sub = F.interpolate(x_sub, scale_factor=_dscale, mode="area")
                         # Structural losses computed in fp32 (outside autocast) for stability.
                         if args.use_canny:
-                            if getattr(args, 'use_struct_loss_v2', False):
-                                loss_canny = canny_loss_fn(x0_pred, x_sub)
-                            else:
-                                loss_canny = canny_loss_fn(x0_pred, canny_gt_sub)
+                            # EdgeGradientLoss: 预测图 vs GT 图的梯度幅值场 L1 匹配
+                            loss_canny = canny_loss_fn(x0_pred, x_sub)
                         if args.use_skel:
                             loss_skel = skel_loss_fn(x0_pred, skel_gt_sub)
 
@@ -1051,10 +1050,6 @@ if __name__ == "__main__":
                         help="With --resume-full: ignore the restored scheduler state and "
                              "rebuild the LR schedule over the remaining fine-tune horizon "
                              "(max_steps - resume step) instead of continuing the old one.")
-    parser.add_argument("--use-struct-loss-v2", type=_str_to_bool, default=False,
-                        help="Use fixed structural losses: EdgeGradientLoss (gradient-profile "
-                             "matching vs GT image, no per-image norm / no binary canny match) "
-                             "and SkeletonLossV2 (recall-only, no off-skeleton penalization).")
     parser.add_argument("--struct-max-t", type=int, default=0,
                         help="Only apply pixel structural losses on noise steps t<=struct-max-t "
                              "(0 = apply at all timesteps). High-noise x0 predictions are blurry "

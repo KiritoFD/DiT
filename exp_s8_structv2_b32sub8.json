@@ -47,7 +47,6 @@
   "w_latent_canny": 0.0,
   "w_latent_skel": 0.0,
   "latent_struct_max_t": 500,
-  "use_struct_loss_v2": true,
   "struct_max_t": 500,
   "struct_decode_bf16": false,
   "struct_decode_scale": 1.0,
