@@ -28,14 +28,18 @@ REMOTE_BASE = "/root/Workspace/xy/DiT"
 # 无缓冲、最新）；exps/ 下的 *.log 是 stdout 重定向（可能缓冲，不作为首选）。
 # 只取 mtime 最新一个日志（当前正在进行的 run），避免误合并旧 run 重复 step。
 FIND_CMD = (
-    # 0) 当前正在跑的实验：s5_2factor_B_latentstruct*（2026-08-17 起，含 _pixelsk_opt 等变体），第一优先
+    # 0) 当前正在跑的实验：s8_structv2_b8all*（2026-08-21 起），第一优先
+    "latest=$(ls -t %(base)s/5script/results/s8_structv2_b8all*/*/log.txt 2>/dev/null | head -1); "
+    # 1) 其次：s5_2factor_B_latentstruct*（上一轮实验），避免 s8 停了后空白
+    "if [ -z \"$latest\" ]; then "
     "latest=$(ls -t %(base)s/5script/results/s5_2factor_B_latentstruct*/*/log.txt 2>/dev/null | head -1); "
-    # 1) 其次：5script/results/v3c_*/<run>/log.txt（每次运行一个，mtime 最新为准）
+    "fi; "
+    # 2) 其次：5script/results/v3c_*/<run>/log.txt（每次运行一个，mtime 最新为准）
     "if [ -z \"$latest\" ]; then "
     "latest=$(ls -t %(base)s/5script/results/v3c_xl_glyphcond_midstep/*/log.txt "
     "%(base)s/5script/results/v3b_xl_glyphcond/*/log.txt 2>/dev/null | head -1); "
     "fi; "
-    # 2) 其次：顶层 exp_*.log（仅当上面没找到时）
+    # 3) 其次：顶层 exp_*.log（仅当上面没找到时）
     "if [ -z \"$latest\" ]; then "
     "latest=$(ls -t %(base)s/exp_v3c_midstep.log %(base)s/exp_v3b_glyphcond.log "
     "%(base)s/exp_v3c*.log %(base)s/exp_xl_skelhead_c*.log "
@@ -43,7 +47,7 @@ FIND_CMD = (
     "%(base)s/exp_v3a_glyph_cs*.log %(base)s/exp_xl_lora_cs.log 2>/dev/null | head -1); "
     "fi; "
     "if [ -n \"$latest\" ]; then echo $latest; fi; "
-    # 3) 兜底：结果目录任意 log.txt
+    # 4) 兜底：结果目录任意 log.txt
     "ls -t %(base)s/results/v3*/log.txt %(base)s/results/v3*/**/log.txt 2>/dev/null | head -1"
 )
 

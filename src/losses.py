@@ -4,6 +4,83 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+
+# ----------------------------------------------------------------------------
+# StructDecoder: latent(4,32,32) → skel/canny logit(1,256,256).
+# 训练时冻结, 接在 DiT pred_xstart_latent 后面提供结构监督梯度.
+# PixelShuffle 上采样 (零参数 reshape) 保证梯度完美透传.
+# ----------------------------------------------------------------------------
+
+class StructDecoder(nn.Module):
+    """latent(4,32,32) → logit(1,256,256).
+
+    多尺度 pixel-shuffle: 32→64→128→256, 每级 1×1 conv + PixelShuffle(2) + SiLU.
+    PixelShuffle 是纯 reshape+permute, 梯度完美透传.
+    全程可导, ~348K params (base=64, depth=6).
+    支持 gradient checkpointing: 每个 stage 作为一个 checkpoint segment,
+    用重算换显存 — 反向时只保留 stage 边界的激活, 中间重算.
+    """
+    def __init__(self, in_ch=4, base=64, depth=6, use_checkpoint=False):
+        super().__init__()
+        self.use_checkpoint = use_checkpoint
+        self.stem = nn.Sequential(nn.Conv2d(in_ch, base, 3, padding=1), nn.SiLU())
+        blocks = []
+        for _ in range(depth):
+            blocks += [nn.GroupNorm(8, base), nn.SiLU(), nn.Conv2d(base, base, 3, padding=1)]
+        self.body = nn.Sequential(*blocks)
+        self.up1 = nn.Sequential(nn.Conv2d(base, base * 4, 1), nn.PixelShuffle(2), nn.SiLU(),
+                                  nn.Conv2d(base, base, 3, padding=1), nn.SiLU())
+        self.up2 = nn.Sequential(nn.Conv2d(base, base * 4, 1), nn.PixelShuffle(2), nn.SiLU(),
+                                  nn.Conv2d(base, base, 3, padding=1), nn.SiLU())
+        self.up3 = nn.Sequential(nn.Conv2d(base, base * 4, 1), nn.PixelShuffle(2), nn.SiLU())
+        self.head = nn.Conv2d(base, 1, 1)
+
+    def _body_forward(self, x):
+        return self.body(x)
+
+    def forward(self, x):
+        f = self.stem(x)
+        if self.use_checkpoint:
+            f = torch.utils.checkpoint.checkpoint(self._body_forward, f, use_reentrant=False)
+        else:
+            f = self.body(f)
+        if self.use_checkpoint:
+            f = torch.utils.checkpoint.checkpoint(self.up1, f, use_reentrant=False)
+            f = torch.utils.checkpoint.checkpoint(self.up2, f, use_reentrant=False)
+            f = torch.utils.checkpoint.checkpoint(self.up3, f, use_reentrant=False)
+        else:
+            f = self.up1(f)
+            f = self.up2(f)
+            f = self.up3(f)
+        return self.head(f)
+
+
+class LatentStructLoss(nn.Module):
+    """冻结 StructDecoder + BCE loss: pred_xstart_latent → skel/canny logit → BCE.
+
+    梯度路径: BCE@256 → logit → PixelShuffle(零参数) → conv@32 → latent → DiT.
+    不经过 VAE, 显存开销远小于 pixel 结构损失.
+    """
+    def __init__(self, decoder_ckpt_path, decoder_type="skel", pos_weight=15.0, use_checkpoint=False):
+        super().__init__()
+        ck = torch.load(decoder_ckpt_path, map_location="cpu", weights_only=False)
+        cfg = ck.get("config", {})
+        base = int(cfg.get("base", 64))
+        depth = int(cfg.get("depth", 6))
+        self.decoder = StructDecoder(in_ch=4, base=base, depth=depth, use_checkpoint=use_checkpoint)
+        self.decoder.load_state_dict(ck["model"])
+        for p in self.decoder.parameters():
+            p.requires_grad = False
+        self.decoder.eval()
+        self.decoder_type = decoder_type
+        self.register_buffer("pos_weight", torch.tensor(pos_weight))
+
+    def forward(self, pred_xstart_latent, struct_gt):
+        """pred_xstart_latent: (B,4,32,32), struct_gt: (B,1,256,256) binary."""
+        logit = self.decoder(pred_xstart_latent)
+        return F.binary_cross_entropy_with_logits(
+            logit, struct_gt, pos_weight=self.pos_weight)
+
 # ----------------------------------------------------------------------------
 # DINOv2 teacher loading without github access.
 #

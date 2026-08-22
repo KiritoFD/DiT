@@ -1,0 +1,692 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DiT 监控 · s5_2factor_B_latentstruct_pixelsk_opt</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<style>
+:root {
+  --bg:#0f1117; --card:#1a1d27; --line:#2a2f3c; --txt:#e6e9ef; --dim:#8b93a7;
+  --acc:#4f9cff; --warn:#ff6b6b; --ok:#3ddc97; --track:#3a4150;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--txt);font-family:-apple-system,"Segoe UI",Roboto,sans-serif;font-size:13px;line-height:1.5}
+header{padding:12px 20px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+header h1{font-size:15px;font-weight:600}
+.meta{color:var(--dim);font-size:12px}
+.controls{margin-left:auto;display:flex;gap:8px;align-items:center}
+button{background:var(--acc);color:#fff;border:0;border-radius:6px;padding:6px 12px;font-size:12px;cursor:pointer}
+button.sec{background:var(--card);border:1px solid var(--line);color:var(--txt)}
+.badge{display:inline-block;padding:1px 7px;border-radius:4px;font-size:11px;margin-left:6px}
+.badge.nan{background:rgba(255,107,107,.15);color:var(--warn)}
+.badge.ok{background:rgba(61,220,151,.15);color:var(--ok)}
+
+/* 统计卡片 */
+.stats{display:flex;gap:10px;padding:14px 20px 0;flex-wrap:wrap}
+.stat{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:10px 14px;min-width:110px}
+.stat .k{color:var(--dim);font-size:11px}
+.stat .v{font-size:20px;font-weight:700;margin-top:2px}
+.v.warn{color:var(--warn)} .v.ok{color:var(--ok)}
+
+/* 图表网格 */
+.charts{padding:14px 20px 24px;display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media(max-width:900px){.charts{grid-template-columns:1fr}}
+.panel{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:14px}
+.panel h2{font-size:13px;margin:0 0 10px;font-weight:600}
+.chart-wrap{position:relative;height:260px}
+
+/* 缩放控制条：左右两个独立滑块轨道 */
+.zoom-bar{display:flex;align-items:center;gap:8px;margin-top:8px;padding-top:8px;border-top:1px solid var(--line)}
+.zbar{flex:1;display:flex;flex-direction:row;gap:8px}
+.zbar input[type=range]{flex:1;width:auto;margin:0;-webkit-appearance:none;appearance:none;
+  height:4px;background:var(--track);border-radius:2px;outline:none}
+.zbar input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:12px;height:12px;
+  border-radius:50%;cursor:pointer;border:2px solid var(--bg)}
+.zbar-lo input::-webkit-slider-thumb{background:var(--ok)}
+.zbar-hi input::-webkit-slider-thumb{background:var(--warn)}
+.zoom-btn{background:none;border:1px solid var(--line);color:var(--dim);border-radius:4px;padding:2px 8px;font-size:11px;cursor:pointer}
+.zoom-btn:hover{color:var(--txt);border-color:var(--dim)}
+
+.status{padding:0 20px 10px;color:var(--dim);font-size:12px}
+
+/* 海报 */
+.poster-section{padding:14px 20px 0}
+.poster-section .panel{margin-bottom:14px}
+.poster-section img{width:100%;max-width:100%;border-radius:6px;border:1px solid var(--line);display:block;background:#000}
+
+/* Tab 切换 */
+.tabs{display:flex;gap:0;padding:14px 20px 0;border-bottom:1px solid var(--line)}
+.tab{padding:8px 16px;font-size:12px;color:var(--dim);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px}
+.tab.active{color:var(--txt);border-bottom-color:var(--acc);font-weight:600}
+.tab:hover{color:var(--txt)}
+.tab-content{display:block}
+.tab-content.active{display:block}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>DiT-3Cond 训练监控</h1>
+  <span class="meta" id="meta">未加载</span>
+  <div class="controls">
+    <span class="meta" id="countdown"></span>
+    <label class="meta"><input type="checkbox" id="autoChk" checked> 自动刷新(10s)</label>
+    <button class="sec" id="refreshBtn">刷新</button>
+  </div>
+</header>
+
+<div class="stats" id="statGrid"></div>
+<div class="status" id="statusLine"></div>
+
+<!-- 全局错误显示条（调试用） -->
+<div id="errbar" style="display:none;background:#ff4d4f;color:#fff;padding:8px 12px;font:12px monospace;white-space:pre-wrap;position:sticky;top:0;z-index:999"></div>
+
+<!-- Tab 导航 -->
+<div class="tabs">
+  <div class="tab active" data-tab="loss">Loss 曲线</div>
+  <div class="tab" data-tab="eval">评估指标</div>
+  <div class="tab" data-tab="sys">系统 / 海报</div>
+</div>
+
+<!-- Tab: Loss -->
+<div class="tab-content active" id="tab-loss">
+<div class="charts">
+  <div class="panel">
+    <h2>Diff Loss（核心指标）</h2>
+    <div class="chart-wrap"><canvas id="diffChart"></canvas></div>
+    <div class="zoom-bar" data-for="diffChart">
+      <button class="zoom-btn" onclick="zoomOut(this)">−</button>
+      <div class="zbar zbar-lo"><input type="range" class="zlo" min="0" max="100" value="0" step="0.5"></div>
+      <div class="zbar zbar-hi"><input type="range" class="zhi" min="0" max="100" value="100" step="0.5"></div>
+      <button class="zoom-btn" onclick="zoomIn(this)">+</button>
+      <button class="zoom-btn sec" onclick="resetZoom(this)">重置</button>
+    </div>
+  </div>
+  <div class="panel">
+    <h2>Total Loss</h2>
+    <div class="chart-wrap"><canvas id="totalChart"></canvas></div>
+    <div class="zoom-bar" data-for="totalChart">
+      <button class="zoom-btn" onclick="zoomOut(this)">−</button>
+      <div class="zbar zbar-lo"><input type="range" class="zlo" min="0" max="100" value="0" step="0.5"></div>
+      <div class="zbar zbar-hi"><input type="range" class="zhi" min="0" max="100" value="100" step="0.5"></div>
+      <button class="zoom-btn" onclick="zoomIn(this)">+</button>
+      <button class="zoom-btn sec" onclick="resetZoom(this)">重置</button>
+    </div>
+  </div>
+  <div class="panel">
+    <h2>结构 Loss：Canny / Skel / REPA</h2>
+    <div class="chart-wrap"><canvas id="structChart"></canvas></div>
+    <div class="zoom-bar" data-for="structChart">
+      <button class="zoom-btn" onclick="zoomOut(this)">−</button>
+      <div class="zbar zbar-lo"><input type="range" class="zlo" min="0" max="100" value="0" step="0.5"></div>
+      <div class="zbar zbar-hi"><input type="range" class="zhi" min="0" max="100" value="100" step="0.5"></div>
+      <button class="zoom-btn" onclick="zoomIn(this)">+</button>
+      <button class="zoom-btn sec" onclick="resetZoom(this)">重置</button>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- Tab: Eval -->
+<div class="tab-content" id="tab-eval">
+<div class="charts">
+  <div class="panel">
+    <h2>Auto-Eval MSE（越低越好）</h2>
+    <div class="chart-wrap"><canvas id="mseChart"></canvas></div>
+    <div class="zoom-bar" data-for="mseChart">
+      <button class="zoom-btn" onclick="zoomOut(this)">−</button>
+      <div class="zbar zbar-lo"><input type="range" class="zlo" min="0" max="100" value="0" step="0.5"></div>
+      <div class="zbar zbar-hi"><input type="range" class="zhi" min="0" max="100" value="100" step="0.5"></div>
+      <button class="zoom-btn" onclick="zoomIn(this)">+</button>
+      <button class="zoom-btn sec" onclick="resetZoom(this)">重置</button>
+    </div>
+  </div>
+  <div class="panel">
+    <h2>Auto-Eval SSIM（越高越好）</h2>
+    <div class="chart-wrap"><canvas id="ssimChart"></canvas></div>
+    <div class="zoom-bar" data-for="ssimChart">
+      <button class="zoom-btn" onclick="zoomOut(this)">−</button>
+      <div class="zbar zbar-lo"><input type="range" class="zlo" min="0" max="100" value="0" step="0.5"></div>
+      <div class="zbar zbar-hi"><input type="range" class="zhi" min="0" max="100" value="100" step="0.5"></div>
+      <button class="zoom-btn" onclick="zoomIn(this)">+</button>
+      <button class="zoom-btn sec" onclick="resetZoom(this)">重置</button>
+    </div>
+  </div>
+  <div class="panel">
+    <h2>X0Lat MSE（预测 vs GT latent）</h2>
+    <div class="chart-wrap"><canvas id="x0Chart"></canvas></div>
+    <div class="zoom-bar" data-for="x0Chart">
+      <button class="zoom-btn" onclick="zoomOut(this)">−</button>
+      <div class="zbar zbar-lo"><input type="range" class="zlo" min="0" max="100" value="0" step="0.5"></div>
+      <div class="zbar zbar-hi"><input type="range" class="zhi" min="0" max="100" value="100" step="0.5"></div>
+      <button class="zoom-btn" onclick="zoomIn(this)">+</button>
+      <button class="zoom-btn sec" onclick="resetZoom(this)">重置</button>
+    </div>
+  </div>
+
+  <!-- 朴素画图框（独立实现，不缩放，照搬基础写法；用于确认 eval 指标能否正常绘制） -->
+  <div class="panel">
+    <h2>Auto-Eval MSE（朴素）</h2>
+    <div class="chart-wrap"><canvas id="mseSimple"></canvas></div>
+  </div>
+  <div class="panel">
+    <h2>Auto-Eval SSIM（朴素）</h2>
+    <div class="chart-wrap"><canvas id="ssimSimple"></canvas></div>
+  </div>
+  <pre id="dbgSimple" style="background:#11151c;color:#7fd1ff;font:11px monospace;padding:8px;white-space:pre-wrap;margin:8px 0;"></pre>
+</div>
+</div>
+
+<!-- Tab: System -->
+<div class="tab-content" id="tab-sys">
+<div class="charts">
+  <div class="panel">
+    <h2>吞吐 Steps/Sec</h2>
+    <div class="chart-wrap"><canvas id="spdChart"></canvas></div>
+    <div class="zoom-bar" data-for="spdChart">
+      <button class="zoom-btn" onclick="zoomOut(this)">−</button>
+      <div class="zbar zbar-lo"><input type="range" class="zlo" min="0" max="100" value="0" step="0.5"></div>
+      <div class="zbar zbar-hi"><input type="range" class="zhi" min="0" max="100" value="100" step="0.5"></div>
+      <button class="zoom-btn" onclick="zoomIn(this)">+</button>
+      <button class="zoom-btn sec" onclick="resetZoom(this)">重置</button>
+    </div>
+  </div>
+  <div class="panel">
+    <h2>显存 GB（当前 / 峰值）</h2>
+    <div class="chart-wrap"><canvas id="memChart"></canvas></div>
+    <div class="zoom-bar" data-for="memChart">
+      <button class="zoom-btn" onclick="zoomOut(this)">−</button>
+      <div class="zbar zbar-lo"><input type="range" class="zlo" min="0" max="100" value="0" step="0.5"></div>
+      <div class="zbar zbar-hi"><input type="range" class="zhi" min="0" max="100" value="100" step="0.5"></div>
+      <button class="zoom-btn" onclick="zoomIn(this)">+</button>
+      <button class="zoom-btn sec" onclick="resetZoom(this)">重置</button>
+    </div>
+  </div>
+</div>
+<div class="poster-section">
+  <div class="panel">
+    <h2>Eval 取样海报（每行 = 一个 ckpt · 10 样本 = show5|seen5 × img|canny|skel · 末行 GT）</h2>
+    <img id="posterImg" alt="eval 海报" style="display:block;" />
+  </div>
+  <div class="panel">
+    <h2>最新 Eval 快照（当前 ckpt · 每样本 img|canny|skel）</h2>
+    <img id="latestImg" alt="最新 eval 快照" style="display:block;" />
+  </div>
+</div>
+</div>
+
+<script>
+// 全局错误捕获（调试用，直接显示到页面顶部）
+window.onerror = function(msg, src, line, col) {
+  var e = document.getElementById('errbar');
+  if (e) { e.style.display = 'block'; e.textContent = 'JS Error: ' + msg + ' @' + line + ':' + col; }
+};
+// ============================================================
+// 配置常量
+// ============================================================
+const __DATA__ = {"expName": "s5_2factor_B_latentstruct_pixelsk_opt", "source": "local:G:\\GitHub\\DiT\\tools\\remote_pulled\\s5_2factor_B_latentstruct_pixelsk_opt", "pulledAt": "2026-08-21 22:56:42", "count": 318, "rows": [{"step": 0, "total": null, "diff": null, "canny": null, "skel": null, "latc": null, "lats": null, "repa": null, "skelh": null, "stdmid": null, "x0lat": null, "stepsPerSec": null, "memCur": null, "memPeak": null, "mse": 3.62918, "ssim": 0.0251, "ts": null}, {"step": 20, "total": 2.0444, "diff": 1.2294, "canny": 0.0, "skel": 0.815, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 1432.6492, "stepsPerSec": 0.78, "memCur": 19.17, "memPeak": 19.17, "mse": null, "ssim": null, "ts": null}, {"step": 40, "total": 1.9137, "diff": 1.1572, "canny": 0.0, "skel": 0.7565, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 1648.7672, "stepsPerSec": 2.65, "memCur": 19.17, "memPeak": 19.17, "mse": null, "ssim": null, "ts": null}, {"step": 60, "total": 1.8109, "diff": 1.0604, "canny": 0.0, "skel": 0.7505, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 1359.745, "stepsPerSec": 2.64, "memCur": 19.17, "memPeak": 19.17, "mse": null, "ssim": null, "ts": null}, {"step": 80, "total": 1.6701, "diff": 0.9528, "canny": 0.0, "skel": 0.7172, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 1131.2203, "stepsPerSec": 2.64, "memCur": 19.17, "memPeak": 19.17, "mse": null, "ssim": null, "ts": null}, {"step": 100, "total": 1.4701, "diff": 0.7983, "canny": 0.0, "skel": 0.6717, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 1100.0293, "stepsPerSec": 2.64, "memCur": 19.17, "memPeak": 19.17, "mse": null, "ssim": null, "ts": null}, {"step": 120, "total": 1.2993, "diff": 0.6397, "canny": 0.0, "skel": 0.6595, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 766.6412, "stepsPerSec": 2.64, "memCur": 19.17, "memPeak": 19.17, "mse": null, "ssim": null, "ts": null}, {"step": 140, "total": 1.1394, "diff": 0.4725, "canny": 0.0, "skel": 0.6668, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 487.523, "stepsPerSec": 2.64, "memCur": 19.17, "memPeak": 19.17, "mse": null, "ssim": null, "ts": null}, {"step": 160, "total": 1.078, "diff": 0.4218, "canny": 0.0, "skel": 0.6562, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 314.5273, "stepsPerSec": 2.64, "memCur": 19.17, "memPeak": 19.17, "mse": null, "ssim": null, "ts": null}, {"step": 180, "total": 1.0182, "diff": 0.3684, "canny": 0.0, "skel": 0.6498, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 282.2528, "stepsPerSec": 2.64, "memCur": 19.17, "memPeak": 19.17, "mse": null, "ssim": null, "ts": null}, {"step": 200, "total": 0.9762, "diff": 0.3502, "canny": 0.0, "skel": 0.6261, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 293.8928, "stepsPerSec": 2.64, "memCur": 19.17, "memPeak": 19.17, "mse": null, "ssim": null, "ts": null}, {"step": 220, "total": 0.9753, "diff": 0.3444, "canny": 0.0, "skel": 0.6309, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 251.8657, "stepsPerSec": 2.64, "memCur": 19.17, "memPeak": 19.17, "mse": null, "ssim": null, "ts": null}, {"step": 240, "total": 0.9881, "diff": 0.3251, "canny": 0.0, "skel": 0.6629, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 255.4403, "stepsPerSec": 2.64, "memCur": 19.17, "memPeak": 19.17, "mse": null, "ssim": null, "ts": null}, {"step": 260, "total": 0.9394, "diff": 0.3121, "canny": 0.0, "skel": 0.6274, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 229.684, "stepsPerSec": 2.59, "memCur": 19.17, "memPeak": 19.17, "mse": null, "ssim": null, "ts": null}, {"step": 280, "total": 0.9288, "diff": 0.3109, "canny": 0.0, "skel": 0.6179, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 200.9634, "stepsPerSec": 2.64, "memCur": 19.17, "memPeak": 19.17, "mse": null, "ssim": null, "ts": null}, {"step": 300, "total": 0.908, "diff": 0.3014, "canny": 0.0, "skel": 0.6066, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 181.518, "stepsPerSec": 2.65, "memCur": 19.17, "memPeak": 19.17, "mse": null, "ssim": null, "ts": null}, {"step": 320, "total": 0.9144, "diff": 0.2943, "canny": 0.0, "skel": 0.6201, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 166.3169, "stepsPerSec": 2.64, "memCur": 19.17, "memPeak": 19.17, "mse": null, "ssim": null, "ts": null}, {"step": 340, "total": 0.8853, "diff": 0.2783, "canny": 0.0, "skel": 0.6069, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 204.0167, "stepsPerSec": 2.64, "memCur": 19.17, "memPeak": 19.17, "mse": null, "ssim": null, "ts": null}, {"step": 360, "total": 0.8456, "diff": 0.2581, "canny": 0.0, "skel": 0.5875, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 160.3438, "stepsPerSec": 2.65, "memCur": 19.17, "memPeak": 19.17, "mse": null, "ssim": null, "ts": null}, {"step": 380, "total": 0.8666, "diff": 0.2716, "canny": 0.0, "skel": 0.595, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 164.805, "stepsPerSec": 2.65, "memCur": 19.17, "memPeak": 19.17, "mse": null, "ssim": null, "ts": null}, {"step": 400, "total": 0.8484, "diff": 0.2689, "canny": 0.0, "skel": 0.5795, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 129.7646, "stepsPerSec": 2.65, "memCur": 19.17, "memPeak": 19.17, "mse": null, "ssim": null, "ts": null}, {"step": 420, "total": 0.8405, "diff": 0.2493, "canny": 0.0, "skel": 0.5912, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 130.4453, "stepsPerSec": 2.64, "memCur": 19.17, "memPeak": 19.17, "mse": null, "ssim": null, "ts": null}, {"step": 440, "total": 0.8427, "diff": 0.2506, "canny": 0.0, "skel": 0.5922, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 110.3605, "stepsPerSec": 2.64, "memCur": 19.17, "memPeak": 19.17, "mse": null, "ssim": null, "ts": null}, {"step": 460, "total": 0.8274, "diff": 0.2506, "canny": 0.0, "skel": 0.5767, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 142.1287, "stepsPerSec": 2.65, "memCur": 19.17, "memPeak": 19.17, "mse": null, "ssim": null, "ts": null}, {"step": 480, "total": 0.8253, "diff": 0.2372, "canny": 0.0, "skel": 0.5881, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 138.7131, "stepsPerSec": 2.65, "memCur": 19.17, "memPeak": 19.17, "mse": null, "ssim": null, "ts": null}, {"step": 500, "total": 0.8395, "diff": 0.2494, "canny": 0.0, "skel": 0.5901, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 144.4504, "stepsPerSec": 2.65, "memCur": 19.17, "memPeak": 19.17, "mse": null, "ssim": null, "ts": null}, {"step": 520, "total": 0.8069, "diff": 0.2259, "canny": 0.0, "skel": 0.581, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 136.4193, "stepsPerSec": 2.65, "memCur": 19.17, "memPeak": 19.17, "mse": null, "ssim": null, "ts": null}, {"step": 540, "total": 0.8084, "diff": 0.2378, "canny": 0.0, "skel": 0.5706, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 105.0916, "stepsPerSec": 2.65, "memCur": 19.17, "memPeak": 19.17, "mse": null, "ssim": null, "ts": null}, {"step": 560, "total": 0.775, "diff": 0.2211, "canny": 0.0, "skel": 0.5539, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 118.0204, "stepsPerSec": 2.65, "memCur": 19.17, "memPeak": 19.17, "mse": null, "ssim": null, "ts": null}, {"step": 580, "total": 0.7664, "diff": 0.221, "canny": 0.0, "skel": 0.5454, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 122.8316, "stepsPerSec": 2.65, "memCur": 19.17, "memPeak": 19.17, "mse": null, "ssim": null, "ts": null}, {"step": 600, "total": 0.8044, "diff": 0.2277, "canny": 0.0, "skel": 0.5766, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 95.627, "stepsPerSec": 2.65, "memCur": 19.17, "memPeak": 19.17, "mse": null, "ssim": null, "ts": null}, {"step": 620, "total": 0.7898, "diff": 0.2357, "canny": 0.0, "skel": 0.5541, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 112.96, "stepsPerSec": 2.65, "memCur": 19.17, "memPeak": 19.17, "mse": null, "ssim": null, "ts": null}, {"step": 640, "total": 0.7878, "diff": 0.2263, "canny": 0.0, "skel": 0.5615, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 96.648, "stepsPerSec": 2.65, "memCur": 19.17, "memPeak": 19.17, "mse": null, "ssim": null, "ts": null}, {"step": 660, "total": 0.7604, "diff": 0.198, "canny": 0.0, "skel": 0.5623, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 101.679, "stepsPerSec": 2.65, "memCur": 19.17, "memPeak": 19.17, "mse": null, "ssim": null, "ts": null}, {"step": 680, "total": 0.7618, "diff": 0.2257, "canny": 0.0, "skel": 0.5362, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 89.4576, "stepsPerSec": 2.65, "memCur": 19.17, "memPeak": 19.17, "mse": null, "ssim": null, "ts": null}, {"step": 700, "total": 0.7698, "diff": 0.2109, "canny": 0.0, "skel": 0.5589, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 80.6404, "stepsPerSec": 2.65, "memCur": 19.17, "memPeak": 19.17, "mse": null, "ssim": null, "ts": null}, {"step": 720, "total": 0.7494, "diff": 0.2077, "canny": 0.0, "skel": 0.5417, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 96.8763, "stepsPerSec": 2.65, "memCur": 19.17, "memPeak": 19.17, "mse": null, "ssim": null, "ts": null}, {"step": 740, "total": 0.7446, "diff": 0.1985, "canny": 0.0, "skel": 0.5461, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 110.1359, "stepsPerSec": 2.65, "memCur": 19.17, "memPeak": 19.17, "mse": null, "ssim": null, "ts": null}, {"step": 760, "total": 0.7401, "diff": 0.2001, "canny": 0.0, "skel": 0.54, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 117.2319, "stepsPerSec": 2.65, "memCur": 19.17, "memPeak": 19.17, "mse": null, "ssim": null, "ts": null}, {"step": 780, "total": 0.7618, "diff": 0.2098, "canny": 0.0, "skel": 0.552, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 110.0761, "stepsPerSec": 2.65, "memCur": 19.17, "memPeak": 19.17, "mse": null, "ssim": null, "ts": null}, {"step": 800, "total": 0.7393, "diff": 0.1958, "canny": 0.0, "skel": 0.5435, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 94.9031, "stepsPerSec": 2.65, "memCur": 19.17, "memPeak": 19.17, "mse": null, "ssim": null, "ts": null}, {"step": 820, "total": 0.7342, "diff": 0.1982, "canny": 0.0, "skel": 0.536, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 95.497, "stepsPerSec": 2.64, "memCur": 19.17, "memPeak": 19.17, "mse": null, "ssim": null, "ts": null}, {"step": 840, "total": 0.7349, "diff": 0.2012, "canny": 0.0, "skel": 0.5337, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 98.8287, "stepsPerSec": 2.65, "memCur": 19.17, "memPeak": 19.17, "mse": null, "ssim": null, "ts": null}, {"step": 860, "total": 0.7306, "diff": 0.1965, "canny": 0.0, "skel": 0.5342, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 112.6038, "stepsPerSec": 2.65, "memCur": 19.17, "memPeak": 19.17, "mse": null, "ssim": null, "ts": null}, {"step": 880, "total": 0.7362, "diff": 0.2032, "canny": 0.0, "skel": 0.533, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 77.4551, "stepsPerSec": 2.65, "memCur": 19.17, "memPeak": 19.17, "mse": null, "ssim": null, "ts": null}, {"step": 900, "total": 0.7536, "diff": 0.1929, "canny": 0.0, "skel": 0.5606, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 88.6876, "stepsPerSec": 2.65, "memCur": 19.17, "memPeak": 19.17, "mse": null, "ssim": null, "ts": null}, {"step": 920, "total": 0.7186, "diff": 0.1887, "canny": 0.0, "skel": 0.5299, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 89.7106, "stepsPerSec": 2.65, "memCur": 19.17, "memPeak": 19.17, "mse": null, "ssim": null, "ts": null}, {"step": 940, "total": 0.7255, "diff": 0.2001, "canny": 0.0, "skel": 0.5254, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 96.6501, "stepsPerSec": 2.65, "memCur": 19.17, "memPeak": 19.17, "mse": null, "ssim": null, "ts": null}, {"step": 960, "total": 0.733, "diff": 0.1944, "canny": 0.0, "skel": 0.5386, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 93.5291, "stepsPerSec": 2.62, "memCur": 19.17, "memPeak": 19.17, "mse": null, "ssim": null, "ts": null}, {"step": 980, "total": 0.736, "diff": 0.2003, "canny": 0.0, "skel": 0.5357, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 96.4403, "stepsPerSec": 2.65, "memCur": 19.17, "memPeak": 19.17, "mse": null, "ssim": null, "ts": null}, {"step": 1000, "total": null, "diff": null, "canny": null, "skel": null, "latc": null, "lats": null, "repa": null, "skelh": null, "stdmid": null, "x0lat": null, "stepsPerSec": null, "memCur": null, "memPeak": null, "mse": 1.97887, "ssim": 0.0825, "ts": null}, {"step": 1020, "total": 0.7352, "diff": 0.1941, "canny": 0.0, "skel": 0.541, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 92.6669, "stepsPerSec": 0.73, "memCur": 19.1, "memPeak": 22.85, "mse": null, "ssim": null, "ts": null}, {"step": 1040, "total": 0.7086, "diff": 0.1896, "canny": 0.0, "skel": 0.519, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 103.1682, "stepsPerSec": 2.65, "memCur": 19.1, "memPeak": 22.85, "mse": null, "ssim": null, "ts": null}, {"step": 1060, "total": 0.6963, "diff": 0.1776, "canny": 0.0, "skel": 0.5187, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 96.2676, "stepsPerSec": 2.65, "memCur": 19.1, "memPeak": 22.85, "mse": null, "ssim": null, "ts": null}, {"step": 1080, "total": 0.7304, "diff": 0.1928, "canny": 0.0, "skel": 0.5376, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 78.2351, "stepsPerSec": 2.65, "memCur": 19.1, "memPeak": 22.85, "mse": null, "ssim": null, "ts": null}, {"step": 1100, "total": 0.7117, "diff": 0.1799, "canny": 0.0, "skel": 0.5318, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 92.4187, "stepsPerSec": 2.65, "memCur": 19.1, "memPeak": 22.85, "mse": null, "ssim": null, "ts": null}, {"step": 1120, "total": 0.7001, "diff": 0.1948, "canny": 0.0, "skel": 0.5053, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 104.1567, "stepsPerSec": 2.65, "memCur": 19.1, "memPeak": 22.85, "mse": null, "ssim": null, "ts": null}, {"step": 1140, "total": 0.6933, "diff": 0.1772, "canny": 0.0, "skel": 0.516, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 104.7941, "stepsPerSec": 2.65, "memCur": 19.1, "memPeak": 22.85, "mse": null, "ssim": null, "ts": null}, {"step": 1160, "total": 0.7171, "diff": 0.1894, "canny": 0.0, "skel": 0.5277, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 75.5926, "stepsPerSec": 2.65, "memCur": 19.1, "memPeak": 22.85, "mse": null, "ssim": null, "ts": null}, {"step": 1180, "total": 0.7133, "diff": 0.1745, "canny": 0.0, "skel": 0.5388, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 81.4651, "stepsPerSec": 2.65, "memCur": 19.1, "memPeak": 22.85, "mse": null, "ssim": null, "ts": null}, {"step": 1200, "total": 0.6842, "diff": 0.1812, "canny": 0.0, "skel": 0.503, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 89.3299, "stepsPerSec": 2.65, "memCur": 19.1, "memPeak": 22.85, "mse": null, "ssim": null, "ts": null}, {"step": 1220, "total": 0.6914, "diff": 0.1838, "canny": 0.0, "skel": 0.5076, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 79.9046, "stepsPerSec": 2.65, "memCur": 19.1, "memPeak": 22.85, "mse": null, "ssim": null, "ts": null}, {"step": 1240, "total": 0.6634, "diff": 0.1764, "canny": 0.0, "skel": 0.487, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 86.1553, "stepsPerSec": 2.65, "memCur": 19.1, "memPeak": 22.85, "mse": null, "ssim": null, "ts": null}, {"step": 1260, "total": 0.6834, "diff": 0.1743, "canny": 0.0, "skel": 0.5091, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 84.2414, "stepsPerSec": 2.65, "memCur": 19.1, "memPeak": 22.85, "mse": null, "ssim": null, "ts": null}, {"step": 1280, "total": 0.7026, "diff": 0.1862, "canny": 0.0, "skel": 0.5164, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 79.8621, "stepsPerSec": 2.65, "memCur": 19.1, "memPeak": 22.85, "mse": null, "ssim": null, "ts": null}, {"step": 1300, "total": 0.6812, "diff": 0.1788, "canny": 0.0, "skel": 0.5024, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 71.8754, "stepsPerSec": 2.65, "memCur": 19.1, "memPeak": 22.85, "mse": null, "ssim": null, "ts": null}, {"step": 1320, "total": 0.69, "diff": 0.1826, "canny": 0.0, "skel": 0.5074, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 78.2339, "stepsPerSec": 2.65, "memCur": 19.1, "memPeak": 22.85, "mse": null, "ssim": null, "ts": null}, {"step": 1340, "total": 0.6876, "diff": 0.1785, "canny": 0.0, "skel": 0.5091, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 95.9291, "stepsPerSec": 2.65, "memCur": 19.1, "memPeak": 22.85, "mse": null, "ssim": null, "ts": null}, {"step": 1360, "total": 0.6613, "diff": 0.1678, "canny": 0.0, "skel": 0.4934, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 81.3717, "stepsPerSec": 2.65, "memCur": 19.1, "memPeak": 22.85, "mse": null, "ssim": null, "ts": null}, {"step": 1380, "total": 0.6915, "diff": 0.1775, "canny": 0.0, "skel": 0.5139, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 82.7584, "stepsPerSec": 2.65, "memCur": 19.1, "memPeak": 22.85, "mse": null, "ssim": null, "ts": null}, {"step": 1400, "total": 0.6801, "diff": 0.1842, "canny": 0.0, "skel": 0.4958, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 74.6274, "stepsPerSec": 2.65, "memCur": 19.1, "memPeak": 22.85, "mse": null, "ssim": null, "ts": null}, {"step": 1420, "total": 0.6798, "diff": 0.1709, "canny": 0.0, "skel": 0.5089, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 79.5555, "stepsPerSec": 2.65, "memCur": 19.1, "memPeak": 22.85, "mse": null, "ssim": null, "ts": null}, {"step": 1440, "total": 0.6717, "diff": 0.1798, "canny": 0.0, "skel": 0.4918, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 69.3871, "stepsPerSec": 2.65, "memCur": 19.1, "memPeak": 22.85, "mse": null, "ssim": null, "ts": null}, {"step": 1460, "total": 0.6678, "diff": 0.1752, "canny": 0.0, "skel": 0.4926, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 84.3584, "stepsPerSec": 2.64, "memCur": 19.1, "memPeak": 22.85, "mse": null, "ssim": null, "ts": null}, {"step": 1480, "total": 0.704, "diff": 0.1727, "canny": 0.0, "skel": 0.5313, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 83.3598, "stepsPerSec": 2.64, "memCur": 19.1, "memPeak": 22.85, "mse": null, "ssim": null, "ts": null}, {"step": 1500, "total": 0.681, "diff": 0.183, "canny": 0.0, "skel": 0.498, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 87.7118, "stepsPerSec": 2.65, "memCur": 19.1, "memPeak": 22.85, "mse": null, "ssim": null, "ts": null}, {"step": 1520, "total": 0.6573, "diff": 0.1663, "canny": 0.0, "skel": 0.491, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 86.3268, "stepsPerSec": 2.65, "memCur": 19.1, "memPeak": 22.85, "mse": null, "ssim": null, "ts": null}, {"step": 1540, "total": 0.6792, "diff": 0.1783, "canny": 0.0, "skel": 0.5009, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 74.6342, "stepsPerSec": 2.65, "memCur": 19.1, "memPeak": 22.85, "mse": null, "ssim": null, "ts": null}, {"step": 1560, "total": 0.669, "diff": 0.1715, "canny": 0.0, "skel": 0.4976, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 76.5639, "stepsPerSec": 2.65, "memCur": 19.1, "memPeak": 22.85, "mse": null, "ssim": null, "ts": null}, {"step": 1580, "total": 0.6394, "diff": 0.1664, "canny": 0.0, "skel": 0.4731, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 79.6737, "stepsPerSec": 2.65, "memCur": 19.1, "memPeak": 22.85, "mse": null, "ssim": null, "ts": null}, {"step": 1600, "total": 0.6848, "diff": 0.1745, "canny": 0.0, "skel": 0.5103, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 65.6842, "stepsPerSec": 2.65, "memCur": 19.1, "memPeak": 22.85, "mse": null, "ssim": null, "ts": null}, {"step": 1620, "total": 0.6863, "diff": 0.1897, "canny": 0.0, "skel": 0.4965, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 83.1581, "stepsPerSec": 2.62, "memCur": 19.1, "memPeak": 22.85, "mse": null, "ssim": null, "ts": null}, {"step": 1640, "total": 0.6761, "diff": 0.178, "canny": 0.0, "skel": 0.4981, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 65.3951, "stepsPerSec": 2.63, "memCur": 19.1, "memPeak": 22.85, "mse": null, "ssim": null, "ts": null}, {"step": 1660, "total": 0.6537, "diff": 0.1612, "canny": 0.0, "skel": 0.4925, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 69.0018, "stepsPerSec": 2.63, "memCur": 19.1, "memPeak": 22.85, "mse": null, "ssim": null, "ts": null}, {"step": 1680, "total": 0.6661, "diff": 0.1837, "canny": 0.0, "skel": 0.4824, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 72.5298, "stepsPerSec": 2.64, "memCur": 19.1, "memPeak": 22.85, "mse": null, "ssim": null, "ts": null}, {"step": 1700, "total": 0.6859, "diff": 0.1765, "canny": 0.0, "skel": 0.5095, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 64.5772, "stepsPerSec": 2.63, "memCur": 19.1, "memPeak": 22.85, "mse": null, "ssim": null, "ts": null}, {"step": 1720, "total": 0.665, "diff": 0.1718, "canny": 0.0, "skel": 0.4932, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 76.4401, "stepsPerSec": 2.63, "memCur": 19.1, "memPeak": 22.85, "mse": null, "ssim": null, "ts": null}, {"step": 1740, "total": 0.6568, "diff": 0.1669, "canny": 0.0, "skel": 0.4899, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 85.8014, "stepsPerSec": 2.63, "memCur": 19.1, "memPeak": 22.85, "mse": null, "ssim": null, "ts": null}, {"step": 1760, "total": 0.6654, "diff": 0.157, "canny": 0.0, "skel": 0.5084, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 73.7357, "stepsPerSec": 2.63, "memCur": 19.1, "memPeak": 22.85, "mse": null, "ssim": null, "ts": null}, {"step": 1780, "total": 0.6498, "diff": 0.171, "canny": 0.0, "skel": 0.4788, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 81.186, "stepsPerSec": 2.63, "memCur": 19.1, "memPeak": 22.85, "mse": null, "ssim": null, "ts": null}, {"step": 1800, "total": 0.6894, "diff": 0.1653, "canny": 0.0, "skel": 0.5241, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 80.721, "stepsPerSec": 2.63, "memCur": 19.1, "memPeak": 22.85, "mse": null, "ssim": null, "ts": null}, {"step": 1820, "total": 0.656, "diff": 0.1705, "canny": 0.0, "skel": 0.4855, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 70.5007, "stepsPerSec": 2.63, "memCur": 19.1, "memPeak": 22.85, "mse": null, "ssim": null, "ts": null}, {"step": 1840, "total": 0.6754, "diff": 0.1673, "canny": 0.0, "skel": 0.5081, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 70.8302, "stepsPerSec": 2.63, "memCur": 19.1, "memPeak": 22.85, "mse": null, "ssim": null, "ts": null}, {"step": 1860, "total": 0.6441, "diff": 0.1656, "canny": 0.0, "skel": 0.4786, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 74.7618, "stepsPerSec": 2.63, "memCur": 19.1, "memPeak": 22.85, "mse": null, "ssim": null, "ts": null}, {"step": 1880, "total": 0.6556, "diff": 0.1759, "canny": 0.0, "skel": 0.4798, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 61.4162, "stepsPerSec": 2.63, "memCur": 19.1, "memPeak": 22.85, "mse": null, "ssim": null, "ts": null}, {"step": 1900, "total": 0.6863, "diff": 0.1685, "canny": 0.0, "skel": 0.5178, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 64.8914, "stepsPerSec": 2.63, "memCur": 19.1, "memPeak": 22.85, "mse": null, "ssim": null, "ts": null}, {"step": 1920, "total": 0.6692, "diff": 0.1659, "canny": 0.0, "skel": 0.5033, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 73.7845, "stepsPerSec": 2.63, "memCur": 19.1, "memPeak": 22.85, "mse": null, "ssim": null, "ts": null}, {"step": 1940, "total": 0.6502, "diff": 0.1713, "canny": 0.0, "skel": 0.4789, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 65.9747, "stepsPerSec": 2.63, "memCur": 19.1, "memPeak": 22.85, "mse": null, "ssim": null, "ts": null}, {"step": 1960, "total": 0.6658, "diff": 0.1684, "canny": 0.0, "skel": 0.4974, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 61.8585, "stepsPerSec": 2.63, "memCur": 19.1, "memPeak": 22.85, "mse": null, "ssim": null, "ts": null}, {"step": 1980, "total": 0.6786, "diff": 0.1692, "canny": 0.0, "skel": 0.5094, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 68.7237, "stepsPerSec": 2.62, "memCur": 19.1, "memPeak": 22.85, "mse": null, "ssim": null, "ts": null}, {"step": 2000, "total": null, "diff": null, "canny": null, "skel": null, "latc": null, "lats": null, "repa": null, "skelh": null, "stdmid": null, "x0lat": null, "stepsPerSec": null, "memCur": null, "memPeak": null, "mse": 1.85671, "ssim": 0.0971, "ts": null}, {"step": 2020, "total": 0.6727, "diff": 0.1698, "canny": 0.0, "skel": 0.5029, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 62.7417, "stepsPerSec": 0.73, "memCur": 19.16, "memPeak": 22.85, "mse": null, "ssim": null, "ts": null}, {"step": 2040, "total": 0.6242, "diff": 0.1657, "canny": 0.0, "skel": 0.4585, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 82.7193, "stepsPerSec": 2.63, "memCur": 19.16, "memPeak": 22.85, "mse": null, "ssim": null, "ts": null}, {"step": 2060, "total": 0.6471, "diff": 0.1584, "canny": 0.0, "skel": 0.4887, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 69.839, "stepsPerSec": 2.63, "memCur": 19.16, "memPeak": 22.85, "mse": null, "ssim": null, "ts": null}, {"step": 2080, "total": 0.6593, "diff": 0.173, "canny": 0.0, "skel": 0.4863, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 64.3937, "stepsPerSec": 2.65, "memCur": 19.16, "memPeak": 22.85, "mse": null, "ssim": null, "ts": null}, {"step": 2100, "total": 0.6331, "diff": 0.1558, "canny": 0.0, "skel": 0.4773, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 72.2026, "stepsPerSec": 2.65, "memCur": 19.16, "memPeak": 22.85, "mse": null, "ssim": null, "ts": null}, {"step": 2120, "total": 0.6602, "diff": 0.1734, "canny": 0.0, "skel": 0.4868, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 70.8811, "stepsPerSec": 2.65, "memCur": 19.16, "memPeak": 22.85, "mse": null, "ssim": null, "ts": null}, {"step": 2140, "total": 0.6601, "diff": 0.1617, "canny": 0.0, "skel": 0.4984, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 72.0798, "stepsPerSec": 2.64, "memCur": 19.16, "memPeak": 22.85, "mse": null, "ssim": null, "ts": null}, {"step": 2160, "total": 0.6767, "diff": 0.1735, "canny": 0.0, "skel": 0.5032, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 65.1926, "stepsPerSec": 2.64, "memCur": 19.16, "memPeak": 22.85, "mse": null, "ssim": null, "ts": null}, {"step": 2180, "total": 0.6557, "diff": 0.155, "canny": 0.0, "skel": 0.5007, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 60.7858, "stepsPerSec": 2.64, "memCur": 19.16, "memPeak": 22.85, "mse": null, "ssim": null, "ts": null}, {"step": 2200, "total": 0.6462, "diff": 0.1607, "canny": 0.0, "skel": 0.4855, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 73.8166, "stepsPerSec": 2.64, "memCur": 19.16, "memPeak": 22.85, "mse": null, "ssim": null, "ts": null}, {"step": 2220, "total": 0.6408, "diff": 0.1656, "canny": 0.0, "skel": 0.4752, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 59.1753, "stepsPerSec": 2.64, "memCur": 19.16, "memPeak": 22.85, "mse": null, "ssim": null, "ts": null}, {"step": 2240, "total": 0.6527, "diff": 0.1597, "canny": 0.0, "skel": 0.493, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 63.4097, "stepsPerSec": 2.64, "memCur": 19.16, "memPeak": 22.85, "mse": null, "ssim": null, "ts": null}, {"step": 2260, "total": 0.64, "diff": 0.1575, "canny": 0.0, "skel": 0.4825, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 64.7423, "stepsPerSec": 2.64, "memCur": 19.16, "memPeak": 22.85, "mse": null, "ssim": null, "ts": null}, {"step": 2280, "total": 0.685, "diff": 0.1685, "canny": 0.0, "skel": 0.5165, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 67.3229, "stepsPerSec": 2.61, "memCur": 19.16, "memPeak": 22.85, "mse": null, "ssim": null, "ts": null}, {"step": 2300, "total": 0.6609, "diff": 0.173, "canny": 0.0, "skel": 0.4879, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 65.5965, "stepsPerSec": 2.63, "memCur": 19.16, "memPeak": 22.85, "mse": null, "ssim": null, "ts": null}, {"step": 2320, "total": 0.6614, "diff": 0.1666, "canny": 0.0, "skel": 0.4948, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 62.0045, "stepsPerSec": 2.63, "memCur": 19.16, "memPeak": 22.85, "mse": null, "ssim": null, "ts": null}, {"step": 2340, "total": 0.6431, "diff": 0.1601, "canny": 0.0, "skel": 0.483, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 74.7035, "stepsPerSec": 2.63, "memCur": 19.16, "memPeak": 22.85, "mse": null, "ssim": null, "ts": null}, {"step": 2360, "total": 0.6331, "diff": 0.1584, "canny": 0.0, "skel": 0.4747, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 69.0921, "stepsPerSec": 2.63, "memCur": 19.16, "memPeak": 22.85, "mse": null, "ssim": null, "ts": null}, {"step": 2380, "total": 0.6652, "diff": 0.1639, "canny": 0.0, "skel": 0.5013, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 68.4166, "stepsPerSec": 2.63, "memCur": 19.16, "memPeak": 22.85, "mse": null, "ssim": null, "ts": null}, {"step": 2400, "total": 0.6567, "diff": 0.1682, "canny": 0.0, "skel": 0.4885, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 57.6589, "stepsPerSec": 2.63, "memCur": 19.16, "memPeak": 22.85, "mse": null, "ssim": null, "ts": null}, {"step": 2420, "total": 0.6207, "diff": 0.1564, "canny": 0.0, "skel": 0.4643, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 59.9224, "stepsPerSec": 2.63, "memCur": 19.16, "memPeak": 22.85, "mse": null, "ssim": null, "ts": null}, {"step": 2440, "total": 0.6573, "diff": 0.1637, "canny": 0.0, "skel": 0.4937, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 55.9808, "stepsPerSec": 2.63, "memCur": 19.16, "memPeak": 22.85, "mse": null, "ssim": null, "ts": null}, {"step": 2460, "total": 0.6361, "diff": 0.1639, "canny": 0.0, "skel": 0.4722, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 71.06, "stepsPerSec": 2.63, "memCur": 19.16, "memPeak": 22.85, "mse": null, "ssim": null, "ts": null}, {"step": 2480, "total": 0.6485, "diff": 0.1629, "canny": 0.0, "skel": 0.4856, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 64.9936, "stepsPerSec": 2.63, "memCur": 19.16, "memPeak": 22.85, "mse": null, "ssim": null, "ts": null}, {"step": 2500, "total": 0.6666, "diff": 0.1661, "canny": 0.0, "skel": 0.5005, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 63.1969, "stepsPerSec": 2.63, "memCur": 19.16, "memPeak": 22.85, "mse": null, "ssim": null, "ts": null}, {"step": 2520, "total": 0.6426, "diff": 0.1573, "canny": 0.0, "skel": 0.4852, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 78.5899, "stepsPerSec": 2.63, "memCur": 19.16, "memPeak": 22.85, "mse": null, "ssim": null, "ts": null}, {"step": 2540, "total": 0.6285, "diff": 0.163, "canny": 0.0, "skel": 0.4655, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 60.8874, "stepsPerSec": 2.63, "memCur": 19.16, "memPeak": 22.85, "mse": null, "ssim": null, "ts": null}, {"step": 2560, "total": 0.6649, "diff": 0.1605, "canny": 0.0, "skel": 0.5044, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 59.9611, "stepsPerSec": 2.63, "memCur": 19.16, "memPeak": 22.85, "mse": null, "ssim": null, "ts": null}, {"step": 2580, "total": 0.6654, "diff": 0.1553, "canny": 0.0, "skel": 0.5101, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 64.4753, "stepsPerSec": 2.63, "memCur": 19.16, "memPeak": 22.85, "mse": null, "ssim": null, "ts": null}, {"step": 2600, "total": 0.6496, "diff": 0.1674, "canny": 0.0, "skel": 0.4822, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 56.3738, "stepsPerSec": 2.62, "memCur": 19.16, "memPeak": 22.85, "mse": null, "ssim": null, "ts": null}, {"step": 2620, "total": 0.655, "diff": 0.1746, "canny": 0.0, "skel": 0.4804, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 61.4556, "stepsPerSec": 2.63, "memCur": 19.16, "memPeak": 22.85, "mse": null, "ssim": null, "ts": null}, {"step": 2640, "total": 0.6682, "diff": 0.1683, "canny": 0.0, "skel": 0.4998, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 51.8155, "stepsPerSec": 2.62, "memCur": 19.16, "memPeak": 22.85, "mse": null, "ssim": null, "ts": null}, {"step": 2660, "total": 0.63, "diff": 0.1533, "canny": 0.0, "skel": 0.4767, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 55.5643, "stepsPerSec": 2.63, "memCur": 19.16, "memPeak": 22.85, "mse": null, "ssim": null, "ts": null}, {"step": 2680, "total": 0.6433, "diff": 0.1699, "canny": 0.0, "skel": 0.4734, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 57.6009, "stepsPerSec": 2.63, "memCur": 19.16, "memPeak": 22.85, "mse": null, "ssim": null, "ts": null}, {"step": 2700, "total": 0.6346, "diff": 0.1672, "canny": 0.0, "skel": 0.4673, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 53.0148, "stepsPerSec": 2.63, "memCur": 19.16, "memPeak": 22.85, "mse": null, "ssim": null, "ts": null}, {"step": 2720, "total": 0.6692, "diff": 0.16, "canny": 0.0, "skel": 0.5092, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 52.5573, "stepsPerSec": 2.63, "memCur": 19.16, "memPeak": 22.85, "mse": null, "ssim": null, "ts": null}, {"step": 2740, "total": 0.6364, "diff": 0.1622, "canny": 0.0, "skel": 0.4741, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 68.5178, "stepsPerSec": 2.63, "memCur": 19.16, "memPeak": 22.85, "mse": null, "ssim": null, "ts": null}, {"step": 2760, "total": 0.6395, "diff": 0.1546, "canny": 0.0, "skel": 0.4849, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 71.7067, "stepsPerSec": 2.63, "memCur": 19.16, "memPeak": 22.85, "mse": null, "ssim": null, "ts": null}, {"step": 2780, "total": 0.6344, "diff": 0.1666, "canny": 0.0, "skel": 0.4678, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 68.7173, "stepsPerSec": 2.63, "memCur": 19.16, "memPeak": 22.85, "mse": null, "ssim": null, "ts": null}, {"step": 2800, "total": 0.6372, "diff": 0.1551, "canny": 0.0, "skel": 0.4821, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 63.203, "stepsPerSec": 2.63, "memCur": 19.16, "memPeak": 22.85, "mse": null, "ssim": null, "ts": null}, {"step": 2820, "total": 0.65, "diff": 0.1596, "canny": 0.0, "skel": 0.4904, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 56.7907, "stepsPerSec": 2.63, "memCur": 19.16, "memPeak": 22.85, "mse": null, "ssim": null, "ts": null}, {"step": 2840, "total": 0.6409, "diff": 0.1593, "canny": 0.0, "skel": 0.4816, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 56.3545, "stepsPerSec": 2.63, "memCur": 19.16, "memPeak": 22.85, "mse": null, "ssim": null, "ts": null}, {"step": 2860, "total": 0.644, "diff": 0.1569, "canny": 0.0, "skel": 0.4871, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 57.3601, "stepsPerSec": 2.63, "memCur": 19.16, "memPeak": 22.85, "mse": null, "ssim": null, "ts": null}, {"step": 2880, "total": 0.6324, "diff": 0.1742, "canny": 0.0, "skel": 0.4582, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 52.9736, "stepsPerSec": 2.63, "memCur": 19.16, "memPeak": 22.85, "mse": null, "ssim": null, "ts": null}, {"step": 2900, "total": 0.6389, "diff": 0.1579, "canny": 0.0, "skel": 0.481, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 58.1376, "stepsPerSec": 2.63, "memCur": 19.16, "memPeak": 22.85, "mse": null, "ssim": null, "ts": null}, {"step": 2920, "total": 0.6527, "diff": 0.1566, "canny": 0.0, "skel": 0.496, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 57.0945, "stepsPerSec": 2.63, "memCur": 19.16, "memPeak": 22.85, "mse": null, "ssim": null, "ts": null}, {"step": 2940, "total": 0.6558, "diff": 0.1636, "canny": 0.0, "skel": 0.4922, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 57.6899, "stepsPerSec": 2.63, "memCur": 19.16, "memPeak": 22.85, "mse": null, "ssim": null, "ts": null}, {"step": 2960, "total": 0.6378, "diff": 0.1597, "canny": 0.0, "skel": 0.4781, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 53.7389, "stepsPerSec": 2.56, "memCur": 19.16, "memPeak": 22.85, "mse": null, "ssim": null, "ts": null}, {"step": 2980, "total": 0.6438, "diff": 0.1693, "canny": 0.0, "skel": 0.4745, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 62.3855, "stepsPerSec": 2.64, "memCur": 19.16, "memPeak": 22.85, "mse": null, "ssim": null, "ts": null}, {"step": 3000, "total": null, "diff": null, "canny": null, "skel": null, "latc": null, "lats": null, "repa": null, "skelh": null, "stdmid": null, "x0lat": null, "stepsPerSec": null, "memCur": null, "memPeak": null, "mse": 1.86352, "ssim": 0.094, "ts": null}, {"step": 3020, "total": 0.6471, "diff": 0.162, "canny": 0.0, "skel": 0.4851, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 54.7175, "stepsPerSec": 0.74, "memCur": 19.16, "memPeak": 22.85, "mse": null, "ssim": null, "ts": null}, {"step": 3040, "total": 0.6392, "diff": 0.158, "canny": 0.0, "skel": 0.4812, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 64.0916, "stepsPerSec": 2.64, "memCur": 19.16, "memPeak": 22.85, "mse": null, "ssim": null, "ts": null}, {"step": 3060, "total": 0.6381, "diff": 0.1498, "canny": 0.0, "skel": 0.4883, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 65.165, "stepsPerSec": 2.64, "memCur": 19.16, "memPeak": 22.85, "mse": null, "ssim": null, "ts": null}, {"step": 3080, "total": 0.6585, "diff": 0.1625, "canny": 0.0, "skel": 0.4961, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 54.0613, "stepsPerSec": 2.64, "memCur": 19.16, "memPeak": 22.85, "mse": null, "ssim": null, "ts": null}, {"step": 3100, "total": 0.6382, "diff": 0.1552, "canny": 0.0, "skel": 0.483, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 70.2166, "stepsPerSec": 2.64, "memCur": 19.16, "memPeak": 22.85, "mse": null, "ssim": null, "ts": null}, {"step": 3120, "total": 0.6442, "diff": 0.1622, "canny": 0.0, "skel": 0.482, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 66.4984, "stepsPerSec": 2.64, "memCur": 19.16, "memPeak": 22.85, "mse": null, "ssim": null, "ts": null}, {"step": 3140, "total": 0.648, "diff": 0.1543, "canny": 0.0, "skel": 0.4937, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 66.3891, "stepsPerSec": 2.64, "memCur": 19.16, "memPeak": 22.85, "mse": null, "ssim": null, "ts": null}, {"step": 3160, "total": 0.6413, "diff": 0.1663, "canny": 0.0, "skel": 0.475, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 56.828, "stepsPerSec": 2.64, "memCur": 19.16, "memPeak": 22.85, "mse": null, "ssim": null, "ts": null}, {"step": 3180, "total": 0.6424, "diff": 0.1464, "canny": 0.0, "skel": 0.4959, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 55.7827, "stepsPerSec": 2.64, "memCur": 19.16, "memPeak": 22.85, "mse": null, "ssim": null, "ts": null}, {"step": 3200, "total": 0.6387, "diff": 0.1586, "canny": 0.0, "skel": 0.48, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 59.1548, "stepsPerSec": 2.64, "memCur": 19.16, "memPeak": 22.85, "mse": null, "ssim": null, "ts": null}, {"step": 3220, "total": 0.6339, "diff": 0.1615, "canny": 0.0, "skel": 0.4724, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 54.2873, "stepsPerSec": 2.64, "memCur": 19.16, "memPeak": 22.85, "mse": null, "ssim": null, "ts": null}, {"step": 3240, "total": 0.6229, "diff": 0.1545, "canny": 0.0, "skel": 0.4683, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 59.9681, "stepsPerSec": 2.65, "memCur": 19.16, "memPeak": 22.85, "mse": null, "ssim": null, "ts": null}, {"step": 3260, "total": 0.6066, "diff": 0.1534, "canny": 0.0, "skel": 0.4532, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 56.8946, "stepsPerSec": 2.65, "memCur": 19.16, "memPeak": 22.85, "mse": null, "ssim": null, "ts": null}, {"step": 3280, "total": 0.6352, "diff": 0.1597, "canny": 0.0, "skel": 0.4756, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 58.8432, "stepsPerSec": 2.65, "memCur": 19.16, "memPeak": 22.85, "mse": null, "ssim": null, "ts": null}, {"step": 3300, "total": 0.6454, "diff": 0.1644, "canny": 0.0, "skel": 0.4809, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 59.8805, "stepsPerSec": 2.64, "memCur": 19.16, "memPeak": 22.85, "mse": null, "ssim": null, "ts": null}, {"step": 3320, "total": 0.6367, "diff": 0.1578, "canny": 0.0, "skel": 0.4789, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 54.447, "stepsPerSec": 2.64, "memCur": 19.16, "memPeak": 22.85, "mse": null, "ssim": null, "ts": null}, {"step": 3340, "total": 0.6227, "diff": 0.1577, "canny": 0.0, "skel": 0.465, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 72.4438, "stepsPerSec": 2.64, "memCur": 19.16, "memPeak": 22.85, "mse": null, "ssim": null, "ts": null}, {"step": 3360, "total": 0.6344, "diff": 0.1537, "canny": 0.0, "skel": 0.4807, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 61.6169, "stepsPerSec": 2.64, "memCur": 19.16, "memPeak": 22.85, "mse": null, "ssim": null, "ts": null}, {"step": 3380, "total": 0.6251, "diff": 0.1604, "canny": 0.0, "skel": 0.4647, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 66.7646, "stepsPerSec": 2.64, "memCur": 19.16, "memPeak": 22.85, "mse": null, "ssim": null, "ts": null}, {"step": 3400, "total": 0.6124, "diff": 0.1632, "canny": 0.0, "skel": 0.4492, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 60.5469, "stepsPerSec": 2.64, "memCur": 19.16, "memPeak": 22.85, "mse": null, "ssim": null, "ts": null}, {"step": 3420, "total": 0.6321, "diff": 0.1548, "canny": 0.0, "skel": 0.4773, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 54.8301, "stepsPerSec": 2.64, "memCur": 19.16, "memPeak": 22.85, "mse": null, "ssim": null, "ts": null}, {"step": 3440, "total": 0.6263, "diff": 0.1593, "canny": 0.0, "skel": 0.4669, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 46.5777, "stepsPerSec": 2.64, "memCur": 19.16, "memPeak": 22.85, "mse": null, "ssim": null, "ts": null}, {"step": 3460, "total": 0.6374, "diff": 0.1601, "canny": 0.0, "skel": 0.4773, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 60.2528, "stepsPerSec": 2.64, "memCur": 19.16, "memPeak": 22.85, "mse": null, "ssim": null, "ts": null}, {"step": 3480, "total": 0.6348, "diff": 0.1576, "canny": 0.0, "skel": 0.4772, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 57.1113, "stepsPerSec": 2.64, "memCur": 19.16, "memPeak": 22.85, "mse": null, "ssim": null, "ts": null}, {"step": 3500, "total": 0.6394, "diff": 0.1621, "canny": 0.0, "skel": 0.4773, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 62.5641, "stepsPerSec": 2.64, "memCur": 19.16, "memPeak": 22.85, "mse": null, "ssim": null, "ts": null}, {"step": 3520, "total": 0.6301, "diff": 0.1519, "canny": 0.0, "skel": 0.4782, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 63.4291, "stepsPerSec": 2.64, "memCur": 19.16, "memPeak": 22.85, "mse": null, "ssim": null, "ts": null}, {"step": 3540, "total": 0.6137, "diff": 0.1593, "canny": 0.0, "skel": 0.4543, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 50.4815, "stepsPerSec": 2.64, "memCur": 19.16, "memPeak": 22.85, "mse": null, "ssim": null, "ts": null}, {"step": 3560, "total": 0.6181, "diff": 0.1562, "canny": 0.0, "skel": 0.4619, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 65.0463, "stepsPerSec": 2.64, "memCur": 19.16, "memPeak": 22.85, "mse": null, "ssim": null, "ts": null}, {"step": 3580, "total": 0.6329, "diff": 0.1533, "canny": 0.0, "skel": 0.4797, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 57.9362, "stepsPerSec": 2.64, "memCur": 19.16, "memPeak": 22.85, "mse": null, "ssim": null, "ts": null}, {"step": 3600, "total": 0.6144, "diff": 0.1546, "canny": 0.0, "skel": 0.4598, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 50.2927, "stepsPerSec": 2.64, "memCur": 19.16, "memPeak": 22.85, "mse": null, "ssim": null, "ts": null}, {"step": 3620, "total": 0.6366, "diff": 0.1687, "canny": 0.0, "skel": 0.4679, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 63.7058, "stepsPerSec": 2.64, "memCur": 19.16, "memPeak": 22.85, "mse": null, "ssim": null, "ts": null}, {"step": 3640, "total": 0.6307, "diff": 0.1604, "canny": 0.0, "skel": 0.4703, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 49.9351, "stepsPerSec": 2.57, "memCur": 19.16, "memPeak": 22.85, "mse": null, "ssim": null, "ts": null}, {"step": 3660, "total": 0.6113, "diff": 0.1449, "canny": 0.0, "skel": 0.4664, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 52.9376, "stepsPerSec": 2.63, "memCur": 19.16, "memPeak": 22.85, "mse": null, "ssim": null, "ts": null}, {"step": 3680, "total": 0.608, "diff": 0.1681, "canny": 0.0, "skel": 0.44, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 57.2471, "stepsPerSec": 2.64, "memCur": 19.16, "memPeak": 22.85, "mse": null, "ssim": null, "ts": null}, {"step": 3700, "total": 0.6418, "diff": 0.1578, "canny": 0.0, "skel": 0.484, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 49.95, "stepsPerSec": 2.64, "memCur": 19.16, "memPeak": 22.85, "mse": null, "ssim": null, "ts": null}, {"step": 3720, "total": 0.6283, "diff": 0.1556, "canny": 0.0, "skel": 0.4727, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 56.4805, "stepsPerSec": 2.64, "memCur": 19.16, "memPeak": 22.85, "mse": null, "ssim": null, "ts": null}, {"step": 3740, "total": 0.609, "diff": 0.1511, "canny": 0.0, "skel": 0.4579, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 58.613, "stepsPerSec": 2.64, "memCur": 19.16, "memPeak": 22.85, "mse": null, "ssim": null, "ts": null}, {"step": 3760, "total": 0.6002, "diff": 0.1476, "canny": 0.0, "skel": 0.4527, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 66.8198, "stepsPerSec": 2.65, "memCur": 19.16, "memPeak": 22.85, "mse": null, "ssim": null, "ts": null}, {"step": 3780, "total": 0.6212, "diff": 0.1591, "canny": 0.0, "skel": 0.4621, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 76.0452, "stepsPerSec": 2.65, "memCur": 19.16, "memPeak": 22.85, "mse": null, "ssim": null, "ts": null}, {"step": 3800, "total": 0.6268, "diff": 0.1486, "canny": 0.0, "skel": 0.4782, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 57.4883, "stepsPerSec": 2.65, "memCur": 19.16, "memPeak": 22.85, "mse": null, "ssim": null, "ts": null}, {"step": 3820, "total": 0.6017, "diff": 0.1529, "canny": 0.0, "skel": 0.4488, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 50.1805, "stepsPerSec": 2.65, "memCur": 19.16, "memPeak": 22.85, "mse": null, "ssim": null, "ts": null}, {"step": 3840, "total": 0.6472, "diff": 0.1581, "canny": 0.0, "skel": 0.4891, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 58.3061, "stepsPerSec": 2.65, "memCur": 19.16, "memPeak": 22.85, "mse": null, "ssim": null, "ts": null}, {"step": 3860, "total": 0.6206, "diff": 0.1484, "canny": 0.0, "skel": 0.4723, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 57.0522, "stepsPerSec": 2.65, "memCur": 19.16, "memPeak": 22.85, "mse": null, "ssim": null, "ts": null}, {"step": 3880, "total": 0.5925, "diff": 0.1617, "canny": 0.0, "skel": 0.4309, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 49.3443, "stepsPerSec": 2.65, "memCur": 19.16, "memPeak": 22.85, "mse": null, "ssim": null, "ts": null}, {"step": 3900, "total": 0.6122, "diff": 0.1513, "canny": 0.0, "skel": 0.4609, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 52.0637, "stepsPerSec": 2.65, "memCur": 19.16, "memPeak": 22.85, "mse": null, "ssim": null, "ts": null}, {"step": 3920, "total": 0.6099, "diff": 0.149, "canny": 0.0, "skel": 0.4609, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 48.7808, "stepsPerSec": 2.65, "memCur": 19.16, "memPeak": 22.85, "mse": null, "ssim": null, "ts": null}, {"step": 3940, "total": 0.6303, "diff": 0.155, "canny": 0.0, "skel": 0.4753, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 55.021, "stepsPerSec": 2.65, "memCur": 19.16, "memPeak": 22.85, "mse": null, "ssim": null, "ts": null}, {"step": 3960, "total": 0.6119, "diff": 0.1552, "canny": 0.0, "skel": 0.4567, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 47.0603, "stepsPerSec": 2.65, "memCur": 19.16, "memPeak": 22.85, "mse": null, "ssim": null, "ts": null}, {"step": 3980, "total": 0.6183, "diff": 0.1574, "canny": 0.0, "skel": 0.4609, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 56.4185, "stepsPerSec": 2.65, "memCur": 19.16, "memPeak": 22.85, "mse": null, "ssim": null, "ts": null}, {"step": 4000, "total": null, "diff": null, "canny": null, "skel": null, "latc": null, "lats": null, "repa": null, "skelh": null, "stdmid": null, "x0lat": null, "stepsPerSec": null, "memCur": null, "memPeak": null, "mse": 1.78727, "ssim": 0.1026, "ts": null}, {"step": 4020, "total": 0.6232, "diff": 0.1509, "canny": 0.0, "skel": 0.4723, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 51.7976, "stepsPerSec": 0.75, "memCur": 19.16, "memPeak": 22.85, "mse": null, "ssim": null, "ts": null}, {"step": 4040, "total": 0.5907, "diff": 0.1504, "canny": 0.0, "skel": 0.4403, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 64.4306, "stepsPerSec": 2.6, "memCur": 19.16, "memPeak": 22.85, "mse": null, "ssim": null, "ts": null}, {"step": 4060, "total": 0.5836, "diff": 0.1423, "canny": 0.0, "skel": 0.4413, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 60.559, "stepsPerSec": 2.64, "memCur": 19.16, "memPeak": 22.85, "mse": null, "ssim": null, "ts": null}, {"step": 4080, "total": 0.5999, "diff": 0.151, "canny": 0.0, "skel": 0.4489, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 50.3738, "stepsPerSec": 2.64, "memCur": 19.16, "memPeak": 22.85, "mse": null, "ssim": null, "ts": null}, {"step": 4100, "total": 0.5945, "diff": 0.1437, "canny": 0.0, "skel": 0.4507, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 63.2384, "stepsPerSec": 2.64, "memCur": 19.16, "memPeak": 22.85, "mse": null, "ssim": null, "ts": null}, {"step": 4120, "total": 0.5908, "diff": 0.1546, "canny": 0.0, "skel": 0.4363, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 58.4523, "stepsPerSec": 2.63, "memCur": 19.16, "memPeak": 22.85, "mse": null, "ssim": null, "ts": null}, {"step": 4140, "total": 0.599, "diff": 0.1406, "canny": 0.0, "skel": 0.4584, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 61.7675, "stepsPerSec": 2.64, "memCur": 19.16, "memPeak": 22.85, "mse": null, "ssim": null, "ts": null}, {"step": 4160, "total": 0.6211, "diff": 0.1531, "canny": 0.0, "skel": 0.468, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 52.9553, "stepsPerSec": 2.64, "memCur": 19.16, "memPeak": 22.85, "mse": null, "ssim": null, "ts": null}, {"step": 4180, "total": 0.5853, "diff": 0.1398, "canny": 0.0, "skel": 0.4455, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 52.5854, "stepsPerSec": 2.64, "memCur": 19.16, "memPeak": 22.85, "mse": null, "ssim": null, "ts": null}, {"step": 4200, "total": 0.5914, "diff": 0.143, "canny": 0.0, "skel": 0.4484, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 61.5458, "stepsPerSec": 2.64, "memCur": 19.16, "memPeak": 22.85, "mse": null, "ssim": null, "ts": null}, {"step": 4220, "total": 0.5826, "diff": 0.1515, "canny": 0.0, "skel": 0.4311, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 49.2493, "stepsPerSec": 2.64, "memCur": 19.16, "memPeak": 22.85, "mse": null, "ssim": null, "ts": null}, {"step": 4240, "total": 0.5792, "diff": 0.1469, "canny": 0.0, "skel": 0.4323, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 55.2323, "stepsPerSec": 2.64, "memCur": 19.16, "memPeak": 22.85, "mse": null, "ssim": null, "ts": null}, {"step": 4260, "total": 0.5891, "diff": 0.1415, "canny": 0.0, "skel": 0.4476, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 51.0594, "stepsPerSec": 2.64, "memCur": 19.16, "memPeak": 22.85, "mse": null, "ssim": null, "ts": null}, {"step": 4280, "total": 0.5835, "diff": 0.1524, "canny": 0.0, "skel": 0.4311, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 57.3937, "stepsPerSec": 2.64, "memCur": 19.16, "memPeak": 22.85, "mse": null, "ssim": null, "ts": null}, {"step": 4300, "total": 0.6087, "diff": 0.1502, "canny": 0.0, "skel": 0.4585, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 48.2564, "stepsPerSec": 2.61, "memCur": 19.16, "memPeak": 22.85, "mse": null, "ssim": null, "ts": null}, {"step": 4320, "total": 0.5844, "diff": 0.1461, "canny": 0.0, "skel": 0.4384, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 51.6858, "stepsPerSec": 2.64, "memCur": 19.16, "memPeak": 22.85, "mse": null, "ssim": null, "ts": null}, {"step": 4340, "total": 0.6097, "diff": 0.1454, "canny": 0.0, "skel": 0.4643, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 63.4873, "stepsPerSec": 2.64, "memCur": 19.16, "memPeak": 22.85, "mse": null, "ssim": null, "ts": null}, {"step": 4360, "total": 0.5832, "diff": 0.1395, "canny": 0.0, "skel": 0.4437, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 57.1585, "stepsPerSec": 2.64, "memCur": 19.16, "memPeak": 22.85, "mse": null, "ssim": null, "ts": null}, {"step": 4380, "total": 0.6159, "diff": 0.1516, "canny": 0.0, "skel": 0.4644, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 60.124, "stepsPerSec": 2.64, "memCur": 19.16, "memPeak": 22.85, "mse": null, "ssim": null, "ts": null}, {"step": 4400, "total": 0.5747, "diff": 0.1481, "canny": 0.0, "skel": 0.4267, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 49.9648, "stepsPerSec": 2.64, "memCur": 19.16, "memPeak": 22.85, "mse": null, "ssim": null, "ts": null}, {"step": 4420, "total": 0.5909, "diff": 0.1436, "canny": 0.0, "skel": 0.4474, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 56.0535, "stepsPerSec": 2.64, "memCur": 19.16, "memPeak": 22.85, "mse": null, "ssim": null, "ts": null}, {"step": 4440, "total": 0.5758, "diff": 0.1433, "canny": 0.0, "skel": 0.4324, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 46.2688, "stepsPerSec": 2.64, "memCur": 19.16, "memPeak": 22.85, "mse": null, "ssim": null, "ts": null}, {"step": 4460, "total": 0.5974, "diff": 0.1439, "canny": 0.0, "skel": 0.4536, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 58.2072, "stepsPerSec": 2.64, "memCur": 19.16, "memPeak": 22.85, "mse": null, "ssim": null, "ts": null}, {"step": 4480, "total": 0.5905, "diff": 0.1471, "canny": 0.0, "skel": 0.4434, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 57.8285, "stepsPerSec": 2.64, "memCur": 19.16, "memPeak": 22.85, "mse": null, "ssim": null, "ts": null}, {"step": 4500, "total": 0.6012, "diff": 0.1528, "canny": 0.0, "skel": 0.4484, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 62.4548, "stepsPerSec": 2.64, "memCur": 19.16, "memPeak": 22.85, "mse": null, "ssim": null, "ts": null}, {"step": 4520, "total": 0.594, "diff": 0.139, "canny": 0.0, "skel": 0.455, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 55.9281, "stepsPerSec": 2.64, "memCur": 19.16, "memPeak": 22.85, "mse": null, "ssim": null, "ts": null}, {"step": 4540, "total": 0.5938, "diff": 0.1504, "canny": 0.0, "skel": 0.4434, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 49.4959, "stepsPerSec": 2.64, "memCur": 19.16, "memPeak": 22.85, "mse": null, "ssim": null, "ts": null}, {"step": 4560, "total": 0.5911, "diff": 0.1364, "canny": 0.0, "skel": 0.4547, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 51.4448, "stepsPerSec": 2.64, "memCur": 19.16, "memPeak": 22.85, "mse": null, "ssim": null, "ts": null}, {"step": 4580, "total": 0.5625, "diff": 0.1401, "canny": 0.0, "skel": 0.4224, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 54.5496, "stepsPerSec": 2.64, "memCur": 19.16, "memPeak": 22.85, "mse": null, "ssim": null, "ts": null}, {"step": 4600, "total": 0.5901, "diff": 0.1466, "canny": 0.0, "skel": 0.4435, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 48.6531, "stepsPerSec": 2.64, "memCur": 19.16, "memPeak": 22.85, "mse": null, "ssim": null, "ts": null}, {"step": 4620, "total": 0.5932, "diff": 0.1562, "canny": 0.0, "skel": 0.437, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 55.1707, "stepsPerSec": 2.64, "memCur": 19.16, "memPeak": 22.85, "mse": null, "ssim": null, "ts": null}, {"step": 4640, "total": 0.5941, "diff": 0.1527, "canny": 0.0, "skel": 0.4414, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 48.9991, "stepsPerSec": 2.64, "memCur": 19.16, "memPeak": 22.85, "mse": null, "ssim": null, "ts": null}, {"step": 4660, "total": 0.5746, "diff": 0.1333, "canny": 0.0, "skel": 0.4413, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 48.1293, "stepsPerSec": 2.64, "memCur": 19.16, "memPeak": 22.85, "mse": null, "ssim": null, "ts": null}, {"step": 4680, "total": 0.5842, "diff": 0.1593, "canny": 0.0, "skel": 0.425, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 49.4138, "stepsPerSec": 2.64, "memCur": 19.16, "memPeak": 22.85, "mse": null, "ssim": null, "ts": null}, {"step": 4700, "total": 0.5797, "diff": 0.1462, "canny": 0.0, "skel": 0.4334, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 47.4955, "stepsPerSec": 2.64, "memCur": 19.16, "memPeak": 22.85, "mse": null, "ssim": null, "ts": null}, {"step": 4720, "total": 0.5804, "diff": 0.1462, "canny": 0.0, "skel": 0.4342, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 51.3678, "stepsPerSec": 2.64, "memCur": 19.16, "memPeak": 22.85, "mse": null, "ssim": null, "ts": null}, {"step": 4740, "total": 0.588, "diff": 0.1386, "canny": 0.0, "skel": 0.4494, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 56.1242, "stepsPerSec": 2.64, "memCur": 19.16, "memPeak": 22.85, "mse": null, "ssim": null, "ts": null}, {"step": 4760, "total": 0.5783, "diff": 0.1375, "canny": 0.0, "skel": 0.4408, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 68.2797, "stepsPerSec": 2.64, "memCur": 19.16, "memPeak": 22.85, "mse": null, "ssim": null, "ts": null}, {"step": 4780, "total": 0.5718, "diff": 0.1449, "canny": 0.0, "skel": 0.427, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 62.7483, "stepsPerSec": 2.64, "memCur": 19.16, "memPeak": 22.85, "mse": null, "ssim": null, "ts": null}, {"step": 4800, "total": 0.5825, "diff": 0.1366, "canny": 0.0, "skel": 0.446, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 54.7253, "stepsPerSec": 2.64, "memCur": 19.16, "memPeak": 22.85, "mse": null, "ssim": null, "ts": null}, {"step": 4820, "total": 0.5656, "diff": 0.1429, "canny": 0.0, "skel": 0.4227, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 49.0101, "stepsPerSec": 2.64, "memCur": 19.16, "memPeak": 22.85, "mse": null, "ssim": null, "ts": null}, {"step": 4840, "total": 0.578, "diff": 0.1402, "canny": 0.0, "skel": 0.4378, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 50.8816, "stepsPerSec": 2.64, "memCur": 19.16, "memPeak": 22.85, "mse": null, "ssim": null, "ts": null}, {"step": 4860, "total": 0.5562, "diff": 0.1351, "canny": 0.0, "skel": 0.421, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 52.713, "stepsPerSec": 2.64, "memCur": 19.16, "memPeak": 22.85, "mse": null, "ssim": null, "ts": null}, {"step": 4880, "total": 0.569, "diff": 0.1507, "canny": 0.0, "skel": 0.4182, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 47.874, "stepsPerSec": 2.64, "memCur": 19.16, "memPeak": 22.85, "mse": null, "ssim": null, "ts": null}, {"step": 4900, "total": 0.6054, "diff": 0.1426, "canny": 0.0, "skel": 0.4627, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 52.6627, "stepsPerSec": 2.64, "memCur": 19.16, "memPeak": 22.85, "mse": null, "ssim": null, "ts": null}, {"step": 4920, "total": 0.5521, "diff": 0.1388, "canny": 0.0, "skel": 0.4133, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 47.7591, "stepsPerSec": 2.64, "memCur": 19.16, "memPeak": 22.85, "mse": null, "ssim": null, "ts": null}, {"step": 4940, "total": 0.5657, "diff": 0.1439, "canny": 0.0, "skel": 0.4218, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 48.4202, "stepsPerSec": 2.64, "memCur": 19.16, "memPeak": 22.85, "mse": null, "ssim": null, "ts": null}, {"step": 4960, "total": 0.5715, "diff": 0.1429, "canny": 0.0, "skel": 0.4286, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 50.3113, "stepsPerSec": 2.64, "memCur": 19.16, "memPeak": 22.85, "mse": null, "ssim": null, "ts": null}, {"step": 4980, "total": 0.6015, "diff": 0.1436, "canny": 0.0, "skel": 0.4579, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 55.3292, "stepsPerSec": 2.62, "memCur": 19.16, "memPeak": 22.85, "mse": null, "ssim": null, "ts": null}, {"step": 5000, "total": null, "diff": null, "canny": null, "skel": null, "latc": null, "lats": null, "repa": null, "skelh": null, "stdmid": null, "x0lat": null, "stepsPerSec": null, "memCur": null, "memPeak": null, "mse": 1.76555, "ssim": 0.1164, "ts": null}, {"step": 5020, "total": 0.5838, "diff": 0.1408, "canny": 0.0, "skel": 0.443, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 48.1561, "stepsPerSec": 0.74, "memCur": 19.16, "memPeak": 22.85, "mse": null, "ssim": null, "ts": null}, {"step": 5040, "total": 0.5708, "diff": 0.1383, "canny": 0.0, "skel": 0.4325, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 57.5944, "stepsPerSec": 2.64, "memCur": 19.16, "memPeak": 22.85, "mse": null, "ssim": null, "ts": null}, {"step": 5060, "total": 0.5738, "diff": 0.1289, "canny": 0.0, "skel": 0.4448, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 56.1361, "stepsPerSec": 2.64, "memCur": 19.16, "memPeak": 22.85, "mse": null, "ssim": null, "ts": null}, {"step": 5080, "total": 0.5691, "diff": 0.1467, "canny": 0.0, "skel": 0.4224, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 46.9915, "stepsPerSec": 2.64, "memCur": 19.16, "memPeak": 22.85, "mse": null, "ssim": null, "ts": null}, {"step": 5100, "total": 0.5751, "diff": 0.1354, "canny": 0.0, "skel": 0.4397, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 63.8003, "stepsPerSec": 2.64, "memCur": 19.16, "memPeak": 22.85, "mse": null, "ssim": null, "ts": null}, {"step": 5120, "total": 0.5638, "diff": 0.1448, "canny": 0.0, "skel": 0.419, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 54.5281, "stepsPerSec": 2.64, "memCur": 19.16, "memPeak": 22.85, "mse": null, "ssim": null, "ts": null}, {"step": 5140, "total": 0.5882, "diff": 0.1337, "canny": 0.0, "skel": 0.4545, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 56.0363, "stepsPerSec": 2.64, "memCur": 19.16, "memPeak": 22.85, "mse": null, "ssim": null, "ts": null}, {"step": 5160, "total": 0.5989, "diff": 0.149, "canny": 0.0, "skel": 0.45, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 53.8813, "stepsPerSec": 2.64, "memCur": 19.16, "memPeak": 22.85, "mse": null, "ssim": null, "ts": null}, {"step": 5180, "total": 0.587, "diff": 0.1356, "canny": 0.0, "skel": 0.4514, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 53.3301, "stepsPerSec": 2.64, "memCur": 19.16, "memPeak": 22.85, "mse": null, "ssim": null, "ts": null}, {"step": 5200, "total": 0.5651, "diff": 0.1359, "canny": 0.0, "skel": 0.4292, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 57.5815, "stepsPerSec": 2.64, "memCur": 19.16, "memPeak": 22.85, "mse": null, "ssim": null, "ts": null}, {"step": 5220, "total": 0.564, "diff": 0.1434, "canny": 0.0, "skel": 0.4206, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 52.2369, "stepsPerSec": 2.64, "memCur": 19.16, "memPeak": 22.85, "mse": null, "ssim": null, "ts": null}, {"step": 5240, "total": 0.5902, "diff": 0.1408, "canny": 0.0, "skel": 0.4494, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 50.2488, "stepsPerSec": 2.64, "memCur": 19.16, "memPeak": 22.85, "mse": null, "ssim": null, "ts": null}, {"step": 5260, "total": 0.5845, "diff": 0.1336, "canny": 0.0, "skel": 0.4509, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 57.8872, "stepsPerSec": 2.65, "memCur": 19.16, "memPeak": 22.85, "mse": null, "ssim": null, "ts": null}, {"step": 5280, "total": 0.57, "diff": 0.1461, "canny": 0.0, "skel": 0.4239, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 52.3577, "stepsPerSec": 2.64, "memCur": 19.16, "memPeak": 22.85, "mse": null, "ssim": null, "ts": null}, {"step": 5300, "total": 0.5455, "diff": 0.1417, "canny": 0.0, "skel": 0.4038, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 50.8142, "stepsPerSec": 2.64, "memCur": 19.16, "memPeak": 22.85, "mse": null, "ssim": null, "ts": null}, {"step": 5320, "total": 0.5824, "diff": 0.1406, "canny": 0.0, "skel": 0.4418, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 51.9894, "stepsPerSec": 2.65, "memCur": 19.16, "memPeak": 22.85, "mse": null, "ssim": null, "ts": null}, {"step": 5340, "total": 0.5615, "diff": 0.1377, "canny": 0.0, "skel": 0.4238, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 58.6351, "stepsPerSec": 2.65, "memCur": 19.16, "memPeak": 22.85, "mse": null, "ssim": null, "ts": null}, {"step": 5360, "total": 0.5712, "diff": 0.1353, "canny": 0.0, "skel": 0.4359, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 58.7594, "stepsPerSec": 2.64, "memCur": 19.16, "memPeak": 22.85, "mse": null, "ssim": null, "ts": null}, {"step": 5380, "total": 0.5701, "diff": 0.1421, "canny": 0.0, "skel": 0.428, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 54.003, "stepsPerSec": 2.64, "memCur": 19.16, "memPeak": 22.85, "mse": null, "ssim": null, "ts": null}, {"step": 5400, "total": 0.5784, "diff": 0.1416, "canny": 0.0, "skel": 0.4367, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 52.4222, "stepsPerSec": 2.65, "memCur": 19.16, "memPeak": 22.85, "mse": null, "ssim": null, "ts": null}, {"step": 5420, "total": 0.5685, "diff": 0.1365, "canny": 0.0, "skel": 0.432, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 47.1796, "stepsPerSec": 2.65, "memCur": 19.16, "memPeak": 22.85, "mse": null, "ssim": null, "ts": null}, {"step": 5440, "total": 0.568, "diff": 0.1399, "canny": 0.0, "skel": 0.4282, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 45.3163, "stepsPerSec": 2.65, "memCur": 19.16, "memPeak": 22.85, "mse": null, "ssim": null, "ts": null}, {"step": 5460, "total": 0.571, "diff": 0.138, "canny": 0.0, "skel": 0.433, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 54.6445, "stepsPerSec": 2.65, "memCur": 19.16, "memPeak": 22.85, "mse": null, "ssim": null, "ts": null}, {"step": 5480, "total": 0.5652, "diff": 0.1389, "canny": 0.0, "skel": 0.4263, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 56.4594, "stepsPerSec": 2.65, "memCur": 19.16, "memPeak": 22.85, "mse": null, "ssim": null, "ts": null}, {"step": 5500, "total": 0.5762, "diff": 0.1468, "canny": 0.0, "skel": 0.4294, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 53.8647, "stepsPerSec": 2.65, "memCur": 19.16, "memPeak": 22.85, "mse": null, "ssim": null, "ts": null}, {"step": 5520, "total": 0.5807, "diff": 0.1322, "canny": 0.0, "skel": 0.4485, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 64.2758, "stepsPerSec": 2.65, "memCur": 19.16, "memPeak": 22.85, "mse": null, "ssim": null, "ts": null}, {"step": 5540, "total": 0.5797, "diff": 0.1411, "canny": 0.0, "skel": 0.4386, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 48.2655, "stepsPerSec": 2.65, "memCur": 19.16, "memPeak": 22.85, "mse": null, "ssim": null, "ts": null}, {"step": 5560, "total": 0.5525, "diff": 0.1315, "canny": 0.0, "skel": 0.421, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 53.7857, "stepsPerSec": 2.65, "memCur": 19.16, "memPeak": 22.85, "mse": null, "ssim": null, "ts": null}, {"step": 5580, "total": 0.533, "diff": 0.1328, "canny": 0.0, "skel": 0.4003, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 51.8523, "stepsPerSec": 2.65, "memCur": 19.16, "memPeak": 22.85, "mse": null, "ssim": null, "ts": null}, {"step": 5600, "total": 0.5689, "diff": 0.1384, "canny": 0.0, "skel": 0.4305, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 46.507, "stepsPerSec": 2.65, "memCur": 19.16, "memPeak": 22.85, "mse": null, "ssim": null, "ts": null}, {"step": 5620, "total": 0.5705, "diff": 0.1469, "canny": 0.0, "skel": 0.4236, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 50.1794, "stepsPerSec": 2.65, "memCur": 19.16, "memPeak": 22.85, "mse": null, "ssim": null, "ts": null}, {"step": 5640, "total": 0.5767, "diff": 0.1418, "canny": 0.0, "skel": 0.4349, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 40.2248, "stepsPerSec": 2.65, "memCur": 19.16, "memPeak": 22.85, "mse": null, "ssim": null, "ts": null}, {"step": 5660, "total": 0.5593, "diff": 0.1288, "canny": 0.0, "skel": 0.4305, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 49.5582, "stepsPerSec": 2.62, "memCur": 19.16, "memPeak": 22.85, "mse": null, "ssim": null, "ts": null}, {"step": 5680, "total": 0.5649, "diff": 0.149, "canny": 0.0, "skel": 0.416, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 47.7257, "stepsPerSec": 2.65, "memCur": 19.16, "memPeak": 22.85, "mse": null, "ssim": null, "ts": null}, {"step": 5700, "total": 0.5783, "diff": 0.141, "canny": 0.0, "skel": 0.4373, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 41.4933, "stepsPerSec": 2.65, "memCur": 19.16, "memPeak": 22.85, "mse": null, "ssim": null, "ts": null}, {"step": 5720, "total": 0.5746, "diff": 0.1371, "canny": 0.0, "skel": 0.4374, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 47.0806, "stepsPerSec": 2.64, "memCur": 19.16, "memPeak": 22.85, "mse": null, "ssim": null, "ts": null}, {"step": 5740, "total": 0.5456, "diff": 0.1318, "canny": 0.0, "skel": 0.4138, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 49.3933, "stepsPerSec": 2.65, "memCur": 19.16, "memPeak": 22.85, "mse": null, "ssim": null, "ts": null}, {"step": 5760, "total": 0.5522, "diff": 0.1303, "canny": 0.0, "skel": 0.4219, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 60.0138, "stepsPerSec": 2.64, "memCur": 19.16, "memPeak": 22.85, "mse": null, "ssim": null, "ts": null}, {"step": 5780, "total": 0.5741, "diff": 0.141, "canny": 0.0, "skel": 0.4331, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 61.2535, "stepsPerSec": 2.64, "memCur": 19.16, "memPeak": 22.85, "mse": null, "ssim": null, "ts": null}, {"step": 5800, "total": 0.5699, "diff": 0.136, "canny": 0.0, "skel": 0.4339, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 52.8323, "stepsPerSec": 2.64, "memCur": 19.16, "memPeak": 22.85, "mse": null, "ssim": null, "ts": null}, {"step": 5820, "total": 0.5674, "diff": 0.1343, "canny": 0.0, "skel": 0.4332, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 51.674, "stepsPerSec": 2.64, "memCur": 19.16, "memPeak": 22.85, "mse": null, "ssim": null, "ts": null}, {"step": 5840, "total": 0.569, "diff": 0.1371, "canny": 0.0, "skel": 0.432, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 52.5677, "stepsPerSec": 2.64, "memCur": 19.16, "memPeak": 22.85, "mse": null, "ssim": null, "ts": null}, {"step": 5860, "total": 0.5614, "diff": 0.1369, "canny": 0.0, "skel": 0.4245, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 56.4545, "stepsPerSec": 2.64, "memCur": 19.16, "memPeak": 22.85, "mse": null, "ssim": null, "ts": null}, {"step": 5880, "total": 0.5532, "diff": 0.1446, "canny": 0.0, "skel": 0.4086, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 44.4163, "stepsPerSec": 2.64, "memCur": 19.16, "memPeak": 22.85, "mse": null, "ssim": null, "ts": null}, {"step": 5900, "total": 0.561, "diff": 0.1381, "canny": 0.0, "skel": 0.4229, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 52.5922, "stepsPerSec": 2.65, "memCur": 19.16, "memPeak": 22.85, "mse": null, "ssim": null, "ts": null}, {"step": 5920, "total": 0.5526, "diff": 0.1308, "canny": 0.0, "skel": 0.4217, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 47.6703, "stepsPerSec": 2.65, "memCur": 19.16, "memPeak": 22.85, "mse": null, "ssim": null, "ts": null}, {"step": 5940, "total": 0.5571, "diff": 0.1391, "canny": 0.0, "skel": 0.418, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 46.9393, "stepsPerSec": 2.65, "memCur": 19.16, "memPeak": 22.85, "mse": null, "ssim": null, "ts": null}, {"step": 5960, "total": 0.5628, "diff": 0.1361, "canny": 0.0, "skel": 0.4267, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 45.6575, "stepsPerSec": 2.65, "memCur": 19.16, "memPeak": 22.85, "mse": null, "ssim": null, "ts": null}, {"step": 5980, "total": 0.5748, "diff": 0.1405, "canny": 0.0, "skel": 0.4343, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 55.3095, "stepsPerSec": 2.65, "memCur": 19.16, "memPeak": 22.85, "mse": null, "ssim": null, "ts": null}, {"step": 6000, "total": 0.5435, "diff": 0.1378, "canny": 0.0, "skel": 0.4057, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 51.006, "stepsPerSec": 2.65, "memCur": 19.16, "memPeak": 22.85, "mse": null, "ssim": null, "ts": null}, {"step": 6020, "total": 0.591, "diff": 0.1352, "canny": 0.0, "skel": 0.4558, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 50.211, "stepsPerSec": 2.65, "memCur": 19.16, "memPeak": 22.85, "mse": null, "ssim": null, "ts": null}, {"step": 6040, "total": 0.5681, "diff": 0.133, "canny": 0.0, "skel": 0.435, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 40.8668, "stepsPerSec": 2.59, "memCur": 19.16, "memPeak": 22.85, "mse": null, "ssim": null, "ts": null}, {"step": 6060, "total": 0.612, "diff": 0.1446, "canny": 0.0, "skel": 0.4674, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 49.655, "stepsPerSec": 2.64, "memCur": 19.16, "memPeak": 22.85, "mse": null, "ssim": null, "ts": null}, {"step": 6080, "total": 0.5577, "diff": 0.1341, "canny": 0.0, "skel": 0.4236, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 43.6363, "stepsPerSec": 2.64, "memCur": 19.16, "memPeak": 22.85, "mse": null, "ssim": null, "ts": null}, {"step": 6100, "total": 0.5261, "diff": 0.136, "canny": 0.0, "skel": 0.3901, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 51.4092, "stepsPerSec": 2.64, "memCur": 19.16, "memPeak": 22.85, "mse": null, "ssim": null, "ts": null}, {"step": 6120, "total": 0.5752, "diff": 0.149, "canny": 0.0, "skel": 0.4263, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 37.0892, "stepsPerSec": 2.65, "memCur": 19.16, "memPeak": 22.85, "mse": null, "ssim": null, "ts": null}, {"step": 6140, "total": 0.5628, "diff": 0.1408, "canny": 0.0, "skel": 0.422, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 47.3655, "stepsPerSec": 2.65, "memCur": 19.16, "memPeak": 22.85, "mse": null, "ssim": null, "ts": null}, {"step": 6160, "total": 0.5573, "diff": 0.1398, "canny": 0.0, "skel": 0.4175, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 43.9331, "stepsPerSec": 2.65, "memCur": 19.16, "memPeak": 22.85, "mse": null, "ssim": null, "ts": null}, {"step": 6180, "total": 0.5673, "diff": 0.1468, "canny": 0.0, "skel": 0.4205, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 49.7569, "stepsPerSec": 2.65, "memCur": 19.16, "memPeak": 22.85, "mse": null, "ssim": null, "ts": null}, {"step": 6200, "total": 0.5398, "diff": 0.1348, "canny": 0.0, "skel": 0.405, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 56.3933, "stepsPerSec": 2.65, "memCur": 19.16, "memPeak": 22.85, "mse": null, "ssim": null, "ts": null}, {"step": 6220, "total": 0.5743, "diff": 0.1464, "canny": 0.0, "skel": 0.4279, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 48.9923, "stepsPerSec": 2.65, "memCur": 19.16, "memPeak": 22.85, "mse": null, "ssim": null, "ts": null}, {"step": 6240, "total": 0.5507, "diff": 0.1371, "canny": 0.0, "skel": 0.4137, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 50.8252, "stepsPerSec": 2.65, "memCur": 19.16, "memPeak": 22.85, "mse": null, "ssim": null, "ts": null}, {"step": 6260, "total": 0.5509, "diff": 0.1374, "canny": 0.0, "skel": 0.4136, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 54.5501, "stepsPerSec": 2.65, "memCur": 19.16, "memPeak": 22.85, "mse": null, "ssim": null, "ts": null}, {"step": 6280, "total": 0.5732, "diff": 0.1424, "canny": 0.0, "skel": 0.4308, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 41.6876, "stepsPerSec": 2.65, "memCur": 19.16, "memPeak": 22.85, "mse": null, "ssim": null, "ts": null}, {"step": 6300, "total": 0.5385, "diff": 0.1312, "canny": 0.0, "skel": 0.4073, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 52.2131, "stepsPerSec": 2.65, "memCur": 19.16, "memPeak": 22.85, "mse": null, "ssim": null, "ts": null}, {"step": 6320, "total": 0.5581, "diff": 0.1362, "canny": 0.0, "skel": 0.4219, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 59.0372, "stepsPerSec": 2.65, "memCur": 19.16, "memPeak": 22.85, "mse": null, "ssim": null, "ts": null}, {"step": 6340, "total": 0.5604, "diff": 0.1406, "canny": 0.0, "skel": 0.4197, "latc": 0.0, "lats": 0.0, "repa": 0.0, "skelh": 0.0, "stdmid": 0.0, "x0lat": 42.0846, "stepsPerSec": 2.65, "memCur": 19.16, "memPeak": 22.85, "mse": null, "ssim": null, "ts": null}]};
+const COLORS = {
+  diff:'#4f9cff', total:'#ffb84f', canny:'#ff6b6b',
+  skel:'#b06bff', repa:'#3ddc97', spd:'#8b93a7',
+  warn:'#ff6b6b', ok:'#3ddc97'
+};
+const REFRESH_MS = 10000;
+
+// ============================================================
+// 全局状态
+// ============================================================
+const charts = {};       // {id: Chart实例}
+const chartMeta = {};    // {id: {fullData, fullLabels, fullTs, viewStart, viewEnd}}
+const simpleCharts = {}; // 朴素画图框（mse/ssim），独立实现
+let chartsBuilt = false; // 所有图表是否已创建
+let allRows = [];        // 原始全量数据
+let epochMeta = {epoch_now:0, hr_per_epoch:0, sec_per_epoch:0, steps_per_epoch:0, dataset_size:0, stepsPerSec:0};
+let rafPending = null;   // requestAnimationFrame 节流
+
+// ============================================================
+// 创建图表（无 zoom 插件依赖）
+// ============================================================
+function makeChart(id, datasets) {
+  const ctx = document.getElementById(id);
+  if (!ctx) return null;
+
+  if (charts[id]) charts[id].destroy();
+
+  const ch = new Chart(ctx, {
+    type:'line',
+    data:{ labels:[], datasets: datasets.map(d => ({
+      label:d.label, data:[], borderColor:d.color,
+      backgroundColor:d.color+'18', borderWidth:1.5,
+      pointRadius:0, tension:0.2, spanGaps:true, _key:d.key
+    }))},
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      animation:{duration:0},          // 关闭动画防卡顿
+      interaction:{ mode:'index', intersect:false },
+      plugins:{
+        legend:{ labels:{ color:'#8b93a7', boxWidth:12, font:{size:11} }, position:'top' },
+        tooltip:{ callbacks:{
+          title(items){
+            const it = items[0];
+            const t = it.dataset._rawTs ? it.dataset._rawTs[it.dataIndex] : '';
+            return (t ? t+'  ':'') + 'step '+it.label;
+          }
+        }}
+      },
+      scales:{
+        x:{ ticks:{ color:'#8b93a7', maxTicksLimit:10, font:{size:10} },
+             grid:{ color:'#2a2f3c' } },
+        y:{ ticks:{ color:'#8b93a7', font:{size:10} },
+             grid:{ color:'#2a2f3c' } }
+      }
+    }
+  });
+  charts[id] = ch;
+  chartMeta[id] = {
+    fullData:[], keys: datasets.map(d=>d.key),
+    fullLabels:[], fullTs:[], viewStart:0, viewEnd:1
+  };
+
+  // 绑定缩放条的 range 输入
+  bindZoomBar(id);
+  return ch;
+}
+
+// ============================================================
+// 一次性创建所有图表（始终渲染，不在隐藏 tab 内延迟创建）
+// 隐藏 tab 的 canvas 初始尺寸为 0，靠切 tab 时的 resize 兜底恢复绘制。
+// ============================================================
+function buildAllCharts() {
+  if (chartsBuilt) return;
+  makeChart('diffChart', [{label:'Diff', color:COLORS.diff, key:'diff'}]);
+  makeChart('totalChart', [{label:'Total', color:COLORS.total, key:'total'}]);
+  makeChart('structChart', [
+    {label:'Canny', color:COLORS.canny, key:'canny'},
+    {label:'Skel', color:COLORS.skel, key:'skel'},
+    {label:'LatC', color:'#3ddc97', key:'latc'},
+    {label:'LatS', color:'#f5a623', key:'lats'},
+    {label:'REPA', color:COLORS.repa, key:'repa'}
+  ]);
+  makeChart('mseChart', [{label:'MSE', color:COLORS.warn, key:'mse'}]);
+  makeChart('ssimChart', [{label:'SSIM', color:COLORS.ok, key:'ssim'}]);
+  makeChart('x0Chart', [{label:'X0Lat', color:COLORS.total, key:'x0lat'}]);
+  makeChart('spdChart', [{label:'Steps/Sec', color:COLORS.spd, key:'stepsPerSec'}]);
+  makeChart('memChart', [
+    {label:'当前', color:COLORS.canny, key:'memCur'},
+    {label:'峰值', color:COLORS.skel, key:'memPeak'}
+  ]);
+  // 朴素画图框：独立、不缩放、照搬基础写法，专用于确认 eval 指标能否正常绘制
+  simpleCharts.mse = new Chart(document.getElementById('mseSimple'), {
+    type: 'line',
+    data: { labels: [], datasets: [{ label: 'MSE', data: [], borderColor: COLORS.warn,
+      backgroundColor: COLORS.warn + '18', borderWidth: 1.5, pointRadius: 0, tension: 0.2, spanGaps: true }] },
+    options: { responsive: true, maintainAspectRatio: false, animation: false,
+      plugins: { legend: { labels: { color: '#c4ccdb' } } },
+      scales: { x: { ticks: { color: '#8b93a7', font: { size: 10 } }, grid: { color: '#2a2f3c' } },
+                y: { ticks: { color: '#8b93a7', font: { size: 10 } }, grid: { color: '#2a2f3c' } } } }
+  });
+  simpleCharts.ssim = new Chart(document.getElementById('ssimSimple'), {
+    type: 'line',
+    data: { labels: [], datasets: [{ label: 'SSIM', data: [], borderColor: COLORS.ok,
+      backgroundColor: COLORS.ok + '18', borderWidth: 1.5, pointRadius: 0, tension: 0.2, spanGaps: true }] },
+    options: { responsive: true, maintainAspectRatio: false, animation: false,
+      plugins: { legend: { labels: { color: '#c4ccdb' } } },
+      scales: { x: { ticks: { color: '#8b93a7', font: { size: 10 } }, grid: { color: '#2a2f3c' } },
+                y: { ticks: { color: '#8b93a7', font: { size: 10 } }, grid: { color: '#2a2f3c' } } } }
+  });
+  chartsBuilt = true;
+}
+
+// ============================================================
+// 缩放条绑定：range slider ↔ 图表 X 轴
+// ============================================================
+function bindZoomBar(chartId) {
+  const bar = document.querySelector(`.zoom-bar[data-for="${chartId}"]`);
+  if (!bar) return;
+  const lo = bar.querySelector('input.zlo');
+  const hi = bar.querySelector('input.zhi');
+  if (!lo || !hi) return;
+
+  // 双滑块：分别控制左右边界（0..100）
+  const MIN_GAP = 1;   // 最小可见宽度（%）
+
+  function onSlide() {
+    let a = parseFloat(lo.value);
+    let b = parseFloat(hi.value);
+    if (a > b - MIN_GAP) {
+      // 谁在动就推谁：简单处理——保持 gap
+      if (document.activeElement === lo) { b = Math.min(100, a + MIN_GAP); hi.value = b; }
+      else { a = Math.max(0, b - MIN_GAP); lo.value = a; }
+    }
+    const meta = chartMeta[chartId];
+    if (!meta) return;
+    meta.viewStart = a / 100;
+    meta.viewEnd = b / 100;
+    scheduleUpdate(chartId);
+  }
+  lo.addEventListener('input', onSlide);
+  hi.addEventListener('input', onSlide);
+
+  // 鼠标滚轮缩放（在图表区域上），以光标为中心
+  const canvas = document.getElementById(chartId);
+  if (canvas) {
+    canvas.addEventListener('wheel', (e) => {
+      e.preventDefault();
+      const delta = e.deltaY > 0 ? 0.04 : -0.04;  // 向下缩小/向上放大
+      const meta = chartMeta[chartId];
+      if (!meta || !allRows.length) return;
+      const span = meta.viewEnd - meta.viewStart;
+      const newSpan = Math.max(0.02, Math.min(1, span + delta));
+      const rect = canvas.getBoundingClientRect();
+      const mx = (e.clientX - rect.left) / rect.width;  // 0..1 相对位置
+      const center = meta.viewStart + span * mx;
+      meta.viewStart = Math.max(0, center - newSpan * mx);
+      meta.viewEnd = Math.min(1, center + newSpan * (1 - mx));
+      syncSlider(chartId);
+      scheduleUpdate(chartId);
+    }, {passive:false});
+  }
+
+  // 拖拽平移（在图表上按住拖动）
+  let dragging = false, dragStartX = 0, s0 = 0, span0 = 0;
+  if (canvas) {
+    canvas.addEventListener('mousedown', (e) => {
+      const meta = chartMeta[chartId];
+      if (!meta) return;
+      dragging = true; dragStartX = e.clientX;
+      s0 = meta.viewStart; span0 = meta.viewEnd - meta.viewStart;
+      e.preventDefault();
+    });
+    canvas.addEventListener('mousemove', (e) => {
+      if (!dragging) return;
+      const meta = chartMeta[chartId];
+      if (!meta) return;
+      const dx = (e.clientX - dragStartX) / (canvas.clientWidth || 400);
+      let ns = s0 - dx * span0;
+      let ne = ns + span0;
+      if (ns < 0) { ne -= ns; ns = 0; }
+      if (ne > 1) { ns -= (ne - 1); ne = 1; }
+      meta.viewStart = Math.max(0, ns);
+      meta.viewEnd = Math.min(1, ne);
+      syncSlider(chartId);
+      scheduleUpdate(chartId);
+    });
+    canvas.addEventListener('mouseup', () => dragging = false);
+    canvas.addEventListener('mouseleave', () => dragging = false);
+  }
+}
+
+function syncSlider(chartId) {
+  const bar = document.querySelector(`.zoom-bar[data-for="${chartId}"]`);
+  const lo = bar?.querySelector('input.zlo');
+  const hi = bar?.querySelector('input.zhi');
+  if (!lo || !hi) return;
+  const meta = chartMeta[chartId];
+  if (!meta) return;
+  lo.value = (meta.viewStart * 100).toFixed(1);
+  hi.value = (meta.viewEnd * 100).toFixed(1);
+}
+
+// 缩放按钮（以中心为锚点扩大/缩小区间）
+function zoomOut(btn) {
+  const chartId = btn.closest('.zoom-bar').dataset.for;
+  const meta = chartMeta[chartId];
+  if (!meta) return;
+  const center = (meta.viewStart + meta.viewEnd) / 2;
+  const span = Math.min(1, (meta.viewEnd - meta.viewStart) * 1.5);
+  meta.viewStart = Math.max(0, center - span/2);
+  meta.viewEnd = Math.min(1, center + span/2);
+  syncSlider(chartId);
+  scheduleUpdate(chartId);
+}
+function zoomIn(btn) {
+  const chartId = btn.closest('.zoom-bar').dataset.for;
+  const meta = chartMeta[chartId];
+  if (!meta) return;
+  const center = (meta.viewStart + meta.viewEnd) / 2;
+  const span = Math.max(0.02, (meta.viewEnd - meta.viewStart) / 1.5);
+  meta.viewStart = Math.max(0, center - span/2);
+  meta.viewEnd = Math.min(1, center + span/2);
+  syncSlider(chartId);
+  scheduleUpdate(chartId);
+}
+function resetZoom(btn) {
+  const chartId = btn.closest('.zoom-bar').dataset.for;
+  const meta = chartMeta[chartId];
+  if (!meta) return;
+  meta.viewStart = 0;
+  meta.viewEnd = 1;
+  syncSlider(chartId);
+  scheduleUpdate(chartId);
+}
+
+// ============================================================
+// 节流更新：同一帧内合并多次调用
+// ============================================================
+function scheduleUpdate(chartId) {
+  if (rafPending) return;
+  rafPending = requestAnimationFrame(() => {
+    rafPending = null;
+    refreshAllCharts();
+  });
+}
+
+function refreshAllCharts() {
+  Object.keys(charts).forEach(id => {
+    if (id) refreshChart(id);
+  });
+}
+
+// 朴素画图框刷新：直接把全量 step 与 mse/ssim 塞进去，不缩放、不切片
+function refreshSimpleCharts() {
+  const dbg = document.getElementById('dbgSimple');
+  const log = [];
+  if (!allRows.length) { if (dbg) dbg.textContent = 'allRows 为空（fetch 失败？检查是否用 http 打开而非 file://）'; return; }
+  const labels = allRows.map(r => r.step);
+  const mse = allRows.map(r => (r.mse == null || isNaN(r.mse)) ? null : r.mse);
+  const ssim = allRows.map(r => (r.ssim == null || isNaN(r.ssim)) ? null : r.ssim);
+  log.push('allRows=' + allRows.length + ' labels=' + labels.length);
+  log.push('mse: defined=' + mse.filter(v=>v!==null).length + ' first=' + mse[0] + ' last=' + mse[mse.length-1]);
+  log.push('ssim: defined=' + ssim.filter(v=>v!==null).length + ' first=' + ssim[0] + ' last=' + ssim[ssim.length-1]);
+  log.push('simpleCharts.mse exists=' + !!simpleCharts.mse + ' ssim exists=' + !!simpleCharts.ssim);
+  if (simpleCharts.mse) {
+    simpleCharts.mse.data.labels = labels;
+    simpleCharts.mse.data.datasets[0].data = mse;
+    simpleCharts.mse.update('none');
+    log.push('mse chart data len=' + simpleCharts.mse.data.datasets[0].data.length);
+  }
+  if (simpleCharts.ssim) {
+    simpleCharts.ssim.data.labels = labels;
+    simpleCharts.ssim.data.datasets[0].data = ssim;
+    simpleCharts.ssim.update('none');
+    log.push('ssim chart data len=' + simpleCharts.ssim.data.datasets[0].data.length);
+  }
+  if (dbg) dbg.textContent = log.join('\n');
+}
+
+function refreshChart(id) {
+  const ch = charts[id];
+  const meta = chartMeta[id];
+  if (!ch || !meta.keys.length) return;
+
+  const n = meta.fullLabels.length;
+  const loI = Math.max(0, Math.floor(meta.viewStart * (n - 1)));
+  const hiI = Math.min(n - 1, Math.ceil(meta.viewEnd * (n - 1)));
+
+  // 直接用全量 labels；dataset 仅显示可见区间的数据（标准写法，不手动算 y 轴）
+  ch.data.labels = meta.fullLabels;
+  ch.data.datasets.forEach((ds, i) => {
+    const arr = meta.fullData[i];
+    if (!arr) return;
+    const sliced = arr.slice(loI, hiI + 1);
+    ds.data = sliced;
+    ds._rawTs = meta.fullTs.slice(loI, hiI + 1);
+  });
+
+  // 让 Chart.js 自动计算 Y 轴（标准行为，避免手动 fit 出问题）
+  delete ch.options.scales.y.min;
+  delete ch.options.scales.y.max;
+
+  ch.update('none');
+}
+
+// ============================================================
+// 数据加载
+// ============================================================
+let currentExp = '';
+async function loadImg(id, names){
+  const cands = currentExp ? names.map(n=>n.replace('.png?',`_${currentExp}.png?`).replace(/\?\w+$/,'?t='+Date.now())).concat(names.map(n=>n.replace(/\?\w+$/,'?t='+Date.now()))) : names.map(n=>n.replace(/\?\w+$/,'?t='+Date.now()));
+  for(const c of cands){
+    try {
+      const res = await fetch(c);
+      if(!res.ok) continue;
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const img = document.getElementById(id);
+      img.src = url;
+      img.onload = ()=>URL.revokeObjectURL(url);
+      return;
+    }catch(e){}
+  }
+}
+function loadPoster(){
+  const li=document.getElementById('latestImg');
+  if(li){li.src='../remote_pulled/s5_2factor_B_latentstruct_pixelsk_opt/eval_latest.png';li.onerror=()=>{li.style.display='none';};}
+  const pi=document.getElementById('posterImg');
+  if(pi){pi.src='../remote_pulled/s5_2factor_B_latentstruct_pixelsk_opt/eval_poster.png';pi.onerror=()=>{pi.style.display='none';};}
+}
+
+async function load(){
+  try {
+    const data = __DATA__;
+    currentExp = data.expName || '';
+    document.getElementById('meta').textContent =
+      `${data.source||''} · ${data.pulledAt||''} · ${data.count||0} 条` +
+      (currentExp ? ` · ${currentExp}` : '');
+
+    allRows = data.rows || [];
+    epochMeta = {
+      epoch_now: data.epoch_now || 0,
+      hr_per_epoch: data.hr_per_epoch || 0,
+      sec_per_epoch: data.sec_per_epoch || 0,
+      steps_per_epoch: data.steps_per_epoch || 0,
+      dataset_size: data.dataset_size || 0,
+      stepsPerSec: data.stepsPerSec || 0,
+    };
+    if (!allRows.length) return;
+
+    // 一次性创建所有图表（始终渲染）
+    buildAllCharts();
+
+    // 存储全量数据到 meta：fullData 按 dataset 顺序存数组
+    Object.values(charts).forEach(ch => {
+      const id = ch.canvas.id;
+      const m = chartMeta[id];
+      m.fullLabels = allRows.map(r => r.step);
+      m.fullTs = allRows.map(r => r.ts || '');
+      m.fullData = m.keys.map(key => allRows.map(r => r[key]));
+    });
+
+    // 刷新所有图表
+    refreshAllCharts();
+    // 朴素画图框：直接塞全量数据，不缩放
+    refreshSimpleCharts();
+
+    // 统计卡片
+    renderStats(allRows);
+    loadPoster();
+
+  } catch(e){
+    document.getElementById('meta').textContent = '加载失败: '+e.message;
+  }
+}
+
+// ============================================================
+// 统计卡片
+// ============================================================
+function renderStats(rows){
+  const last = rows[rows.length-1];
+  const nan = v=>v==null||isNaN(v);
+  const s=(k,v,c)=>`<div class="stat"><div class="k">${k}</div><div class="v ${c||''}">${v}</div></div>`;
+
+  const hasEval = !nan(last.mse);
+  const finite = rows.filter(r=>!nan(r.diff));
+  const firstD = finite.length?finite[0].diff:null;
+  const trend = (firstD!=null&&!nan(last.diff))?((last.diff-firstD)/firstD*100):null;
+
+  let statusText = '正常';
+  if(hasEval) statusText = 'auto-eval';
+  else if(nan(last.diff)) statusText = 'NaN';
+  else if(!nan(last.diff)&&finite.length>5&&last.diff<finite[0].diff) statusText = '下降中';
+
+  document.getElementById('statGrid').innerHTML =
+    s('Step', last.step) +
+    s('Diff', nan(last.diff)?'—':last.diff.toFixed(4), nan(last.diff)?'warn':'') +
+    s('Diff Δ', trend==null?'—':(trend>0?'+':'')+trend.toFixed(1)+'%', (trend!=null&&trend<0)?'ok':'') +
+    s('Canny', nan(last.canny)?'—':last.canny.toFixed(4)) +
+    s('Skel', nan(last.skel)?'—':last.skel.toFixed(4)) +
+    s('LatC', nan(last.latc)?'—':last.latc.toFixed(4)) +
+    s('LatS', nan(last.lats)?'—':last.lats.toFixed(4)) +
+    s('MSE', nan(last.mse)?'—':last.mse.toFixed(5)) +
+    s('SSIM', nan(last.ssim)?'—':last.ssim.toFixed(4), nan(last.ssim)?'':'ok') +
+    s('Steps/s', nan(last.stepsPerSec)?'—':last.stepsPerSec.toFixed(1)) +
+    s('已过数据遍数', epochMeta.epoch_now?epochMeta.epoch_now.toFixed(2)+' 遍':'—') +
+    s('每遍耗时', epochMeta.hr_per_epoch?(
+        epochMeta.hr_per_epoch<1 ? Math.round(epochMeta.sec_per_epoch)+'s'
+        : epochMeta.hr_per_epoch.toFixed(1)+'h') : '—') +
+    s('状态', statusText, statusText==='NaN'?'warn':(statusText==='auto-eval'||statusText==='下降中'?'ok':''));
+
+  // 状态行
+  let st = '';
+  if(!hasEval&&!nan(last.diff))
+    st += 'Diff '+(firstD!=null?firstD.toFixed(4):'→')+' → '+last.diff.toFixed(4);
+  else if(hasEval)
+    st += 'MSE='+last.mse.toFixed(5)+' SSIM='+last.ssim.toFixed(4);
+  document.getElementById('statusLine').textContent = st || '等待数据…';
+}
+
+// ============================================================
+// Tab 导航（仅滚动定位；所有图表区块始终可见，不做 display 隐藏）
+// —— 修复：之前用 display:none 隐藏 tab 内容，导致该 tab 内 canvas 初始
+//    尺寸为 0，Chart.js 在 0 尺寸上初始化后曲线无法正确绘制（"有数据没图表"）。
+//    现所有 .tab-content 常驻 display:block，canvas 从一开始就具备正确尺寸。
+// ============================================================
+document.querySelectorAll('.tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+    tab.classList.add('active');
+    const el = document.getElementById('tab-'+tab.dataset.tab);
+    if (el) el.scrollIntoView({behavior:'smooth', block:'start'});
+  });
+});
+
+// ============================================================
+// 自动刷新 & 倒计时
+// ============================================================
+document.getElementById('refreshBtn').addEventListener('click', load);
+let secLeft = 10, timer=null, cdTimer=null;
+const autoChk=document.getElementById('autoChk');
+function tick(){
+  secLeft = secLeft<=0?10:secLeft-1;
+  const el=document.getElementById('countdown');
+  if(el) el.textContent = autoChk.checked?`下次 ${secLeft}s`:'已关闭';
+}
+function syncAuto(){
+  if(autoChk.checked){
+    if(!timer) timer=setInterval(load, REFRESH_MS);
+    if(!cdTimer){secLeft=10;cdTimer=setInterval(tick,1000);}
+  }else{
+    if(timer){clearInterval(timer);timer=null;}
+    if(cdTimer){clearInterval(cdTimer);cdTimer=null;}
+    const el=document.getElementById('countdown');
+    if(el) el.textContent='已关闭';
+  }
+}
+autoChk.addEventListener('change', syncAuto);
+
+// 启动
+load();
+</script>
+</body>
+</html>

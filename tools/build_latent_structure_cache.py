@@ -21,9 +21,15 @@ def _reduce_map(task):
     index, path, size = task
     with Image.open(path) as image:
         array = np.asarray(image.convert("L"), dtype=np.uint8) > 127
-    if array.shape != (size * 8, size * 8):
-        raise ValueError(f"expected {size * 8}x{size * 8}, got {array.shape}: {path}")
-    reduced = array.reshape(size, 8, size, 8).max(axis=(1, 3))
+    if array.shape != (256, 256):
+        raise ValueError(f"expected 256x256, got {array.shape}: {path}")
+    if size == 32:
+        # 256 -> 32 exact max pooling (保留细线正类)
+        reduced = array.reshape(32, 8, 32, 8).max(axis=(1, 3))
+    elif size == 256:
+        reduced = array  # 全分辨率, 不做降采样 (用于 256 像素级解码器)
+    else:
+        raise ValueError(f"unsupported size {size} (32 or 256)")
     return index, np.packbits(reduced.reshape(-1))
 
 
@@ -60,8 +66,8 @@ def main():
     parser.add_argument("--size", type=int, default=32)
     parser.add_argument("--workers", type=int, default=16)
     args = parser.parse_args()
-    if args.size != 32:
-        raise ValueError("current cache builder expects 256 -> 32 exact max pooling")
+    if args.size not in (32, 256):
+        raise ValueError("size must be 32 (latent-space probe) or 256 (pixel decoder)")
 
     dataset = MCCDLatentDataset(
         args.csv, args.latent_shards_dir, img_root=None, preload=True,

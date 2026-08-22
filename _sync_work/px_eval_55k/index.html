@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<title>Pixel Diffusion 55k Eval</title>
+<style>
+body { background:#0f1116; color:#e0e0e0; font-family: 'Segoe UI', sans-serif; margin:20px; }
+h1 { color:#7ab8ff; }
+h2 { color:#c9a0ff; margin-top:30px; }
+.grid { display:flex; flex-wrap:wrap; gap:10px; }
+.card { background:#1a1a2e; border:1px solid #333; border-radius:8px; padding:8px; text-align:center; }
+.card img { width:200px; height:200px; object-fit:contain; background:#000; border-radius:4px; }
+.card .label { font-size:11px; color:#888; margin-top:4px; }
+.stats { background:#1a1a2e; border:1px solid #444; border-radius:8px; padding:15px; display:inline-block; margin:10px 0; }
+.stats td { padding:4px 16px; }
+.stats .val { color:#7ab8ff; font-weight:bold; }
+.gt-row { display:flex; gap:10px; margin-bottom:20px; }
+.gt-row .card img { width:200px; height:200px; }
+.vs { display:flex; gap:4px; align-items:flex-start; flex-wrap:wrap; }
+</style>
+</head>
+<body>
+<h1>Pixel Diffusion — Step 55000 Eval</h1>
+
+<div class="stats">
+<table>
+<tr><td>Model</td><td class="val">DiT-2Cond-S/8 (pixel, 42M params)</td></tr>
+<tr><td>Step</td><td class="val">55000</td></tr>
+<tr><td>Diff Loss</td><td class="val">~0.012</td></tr>
+<tr><td>MSE (20 samples)</td><td class="val">0.3206</td></tr>
+<tr><td>SSIM (20 samples)</td><td class="val">0.0036</td></tr>
+<tr><td>Sampling</td><td class="val">DDIM 50 steps, cfg=4.0</td></tr>
+</table>
+</div>
+
+<h2>GT vs Pred (上GT 下Pred, 4组)</h2>
+<div class="card" style="width:860px">
+<img src="eval_grid.png" style="width:840px; height:168px; object-fit:contain">
+<div class="label">上排=GT | 下排=Pred | 4列×256px</div>
+</div>
+
+<h2>Pred 单独 (前8张)</h2>
+<div class="grid">
+<div class="card"><img src="pred_0.png"><div class="label">pred 0</div></div>
+<div class="card"><img src="pred_1.png"><div class="label">pred 1</div></div>
+<div class="card"><img src="pred_2.png"><div class="label">pred 2</div></div>
+<div class="card"><img src="pred_3.png"><div class="label">pred 3</div></div>
+<div class="card"><img src="pred_4.png"><div class="label">pred 4</div></div>
+<div class="card"><img src="pred_5.png"><div class="label">pred 5</div></div>
+<div class="card"><img src="pred_6.png"><div class="label">pred 6</div></div>
+<div class="card"><img src="pred_7.png"><div class="label">pred 7</div></div>
+</div>
+
+<h2>GT 单独 (前8张)</h2>
+<div class="grid">
+<div class="card"><img src="gt_0.png"><div class="label">gt 0</div></div>
+<div class="card"><img src="gt_1.png"><div class="label">gt 1</div></div>
+<div class="card"><img src="gt_2.png"><div class="label">gt 2</div></div>
+<div class="card"><img src="gt_3.png"><div class="label">gt 3</div></div>
+<div class="card"><img src="gt_4.png"><div class="label">gt 4</div></div>
+<div class="card"><img src="gt_5.png"><div class="label">gt 5</div></div>
+<div class="card"><img src="gt_6.png"><div class="label">gt 6</div></div>
+<div class="card"><img src="gt_7.png"><div class="label">gt 7</div></div>
+</div>
+
+<h2>诊断: MSE=0.32 但 SSIM=0.0036 的原因</h2>
+<div style="background:#1a1a2e; border:1px solid #444; border-radius:8px; padding:15px; max-width:700px;">
+<p><b>SSIM 极低但 MSE 也不高，最可能的原因:</b></p>
+<ul>
+<li><b>全局 SSIM 公式问题</b>: 用的简化全局 SSIM (整图当一个窗口), 书法图大部分白底 (mean~0.9, var~0.05), pred 如果颜色分布稍有偏移, SSIM 就接近 0</li>
+<li><b>pred 可能是均匀灰色或噪声</b>: MSE=0.32 在 [0,1] 域不算特别高 (随机噪声 MSE≈0.33), 但如果 pred 是均匀灰 (如全 0.5), MSE = mean((0.5-gt)^2) ≈ 0.1, SSIM 接近 0</li>
+<li><b>55k 步对 pixel diffusion 仍偏早</b>: 训练 loss 0.012 说明 eps 预测在学, 但生成链 (从纯噪声到 coherent 图) 需要更多步数才出现</li>
+<li><b>cfg=4.0 可能过高</b>: 从零训练的模型, 条件 embedding 还没学好, cfg=4.0 放大了噪声方向, 可能把输出推向灰雾</li>
+</ul>
+<p><b>关键判断</b>: 看 pred 图 —— 如果全是灰雾/噪声, 说明模型还没学会生成, 需要继续跑; 如果有字形轮廓但模糊, 说明方向对但需要更多步数。</p>
+</div>
+</body>
+</html>

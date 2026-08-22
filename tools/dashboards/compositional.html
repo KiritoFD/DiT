@@ -1,0 +1,692 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DiT 监控 · compositional</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<style>
+:root {
+  --bg:#0f1117; --card:#1a1d27; --line:#2a2f3c; --txt:#e6e9ef; --dim:#8b93a7;
+  --acc:#4f9cff; --warn:#ff6b6b; --ok:#3ddc97; --track:#3a4150;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--txt);font-family:-apple-system,"Segoe UI",Roboto,sans-serif;font-size:13px;line-height:1.5}
+header{padding:12px 20px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+header h1{font-size:15px;font-weight:600}
+.meta{color:var(--dim);font-size:12px}
+.controls{margin-left:auto;display:flex;gap:8px;align-items:center}
+button{background:var(--acc);color:#fff;border:0;border-radius:6px;padding:6px 12px;font-size:12px;cursor:pointer}
+button.sec{background:var(--card);border:1px solid var(--line);color:var(--txt)}
+.badge{display:inline-block;padding:1px 7px;border-radius:4px;font-size:11px;margin-left:6px}
+.badge.nan{background:rgba(255,107,107,.15);color:var(--warn)}
+.badge.ok{background:rgba(61,220,151,.15);color:var(--ok)}
+
+/* 统计卡片 */
+.stats{display:flex;gap:10px;padding:14px 20px 0;flex-wrap:wrap}
+.stat{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:10px 14px;min-width:110px}
+.stat .k{color:var(--dim);font-size:11px}
+.stat .v{font-size:20px;font-weight:700;margin-top:2px}
+.v.warn{color:var(--warn)} .v.ok{color:var(--ok)}
+
+/* 图表网格 */
+.charts{padding:14px 20px 24px;display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media(max-width:900px){.charts{grid-template-columns:1fr}}
+.panel{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:14px}
+.panel h2{font-size:13px;margin:0 0 10px;font-weight:600}
+.chart-wrap{position:relative;height:260px}
+
+/* 缩放控制条：左右两个独立滑块轨道 */
+.zoom-bar{display:flex;align-items:center;gap:8px;margin-top:8px;padding-top:8px;border-top:1px solid var(--line)}
+.zbar{flex:1;display:flex;flex-direction:row;gap:8px}
+.zbar input[type=range]{flex:1;width:auto;margin:0;-webkit-appearance:none;appearance:none;
+  height:4px;background:var(--track);border-radius:2px;outline:none}
+.zbar input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:12px;height:12px;
+  border-radius:50%;cursor:pointer;border:2px solid var(--bg)}
+.zbar-lo input::-webkit-slider-thumb{background:var(--ok)}
+.zbar-hi input::-webkit-slider-thumb{background:var(--warn)}
+.zoom-btn{background:none;border:1px solid var(--line);color:var(--dim);border-radius:4px;padding:2px 8px;font-size:11px;cursor:pointer}
+.zoom-btn:hover{color:var(--txt);border-color:var(--dim)}
+
+.status{padding:0 20px 10px;color:var(--dim);font-size:12px}
+
+/* 海报 */
+.poster-section{padding:14px 20px 0}
+.poster-section .panel{margin-bottom:14px}
+.poster-section img{width:100%;max-width:100%;border-radius:6px;border:1px solid var(--line);display:block;background:#000}
+
+/* Tab 切换 */
+.tabs{display:flex;gap:0;padding:14px 20px 0;border-bottom:1px solid var(--line)}
+.tab{padding:8px 16px;font-size:12px;color:var(--dim);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px}
+.tab.active{color:var(--txt);border-bottom-color:var(--acc);font-weight:600}
+.tab:hover{color:var(--txt)}
+.tab-content{display:block}
+.tab-content.active{display:block}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>DiT-3Cond 训练监控</h1>
+  <span class="meta" id="meta">未加载</span>
+  <div class="controls">
+    <span class="meta" id="countdown"></span>
+    <label class="meta"><input type="checkbox" id="autoChk" checked> 自动刷新(10s)</label>
+    <button class="sec" id="refreshBtn">刷新</button>
+  </div>
+</header>
+
+<div class="stats" id="statGrid"></div>
+<div class="status" id="statusLine"></div>
+
+<!-- 全局错误显示条（调试用） -->
+<div id="errbar" style="display:none;background:#ff4d4f;color:#fff;padding:8px 12px;font:12px monospace;white-space:pre-wrap;position:sticky;top:0;z-index:999"></div>
+
+<!-- Tab 导航 -->
+<div class="tabs">
+  <div class="tab active" data-tab="loss">Loss 曲线</div>
+  <div class="tab" data-tab="eval">评估指标</div>
+  <div class="tab" data-tab="sys">系统 / 海报</div>
+</div>
+
+<!-- Tab: Loss -->
+<div class="tab-content active" id="tab-loss">
+<div class="charts">
+  <div class="panel">
+    <h2>Diff Loss（核心指标）</h2>
+    <div class="chart-wrap"><canvas id="diffChart"></canvas></div>
+    <div class="zoom-bar" data-for="diffChart">
+      <button class="zoom-btn" onclick="zoomOut(this)">−</button>
+      <div class="zbar zbar-lo"><input type="range" class="zlo" min="0" max="100" value="0" step="0.5"></div>
+      <div class="zbar zbar-hi"><input type="range" class="zhi" min="0" max="100" value="100" step="0.5"></div>
+      <button class="zoom-btn" onclick="zoomIn(this)">+</button>
+      <button class="zoom-btn sec" onclick="resetZoom(this)">重置</button>
+    </div>
+  </div>
+  <div class="panel">
+    <h2>Total Loss</h2>
+    <div class="chart-wrap"><canvas id="totalChart"></canvas></div>
+    <div class="zoom-bar" data-for="totalChart">
+      <button class="zoom-btn" onclick="zoomOut(this)">−</button>
+      <div class="zbar zbar-lo"><input type="range" class="zlo" min="0" max="100" value="0" step="0.5"></div>
+      <div class="zbar zbar-hi"><input type="range" class="zhi" min="0" max="100" value="100" step="0.5"></div>
+      <button class="zoom-btn" onclick="zoomIn(this)">+</button>
+      <button class="zoom-btn sec" onclick="resetZoom(this)">重置</button>
+    </div>
+  </div>
+  <div class="panel">
+    <h2>结构 Loss：Canny / Skel / REPA</h2>
+    <div class="chart-wrap"><canvas id="structChart"></canvas></div>
+    <div class="zoom-bar" data-for="structChart">
+      <button class="zoom-btn" onclick="zoomOut(this)">−</button>
+      <div class="zbar zbar-lo"><input type="range" class="zlo" min="0" max="100" value="0" step="0.5"></div>
+      <div class="zbar zbar-hi"><input type="range" class="zhi" min="0" max="100" value="100" step="0.5"></div>
+      <button class="zoom-btn" onclick="zoomIn(this)">+</button>
+      <button class="zoom-btn sec" onclick="resetZoom(this)">重置</button>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- Tab: Eval -->
+<div class="tab-content" id="tab-eval">
+<div class="charts">
+  <div class="panel">
+    <h2>Auto-Eval MSE（越低越好）</h2>
+    <div class="chart-wrap"><canvas id="mseChart"></canvas></div>
+    <div class="zoom-bar" data-for="mseChart">
+      <button class="zoom-btn" onclick="zoomOut(this)">−</button>
+      <div class="zbar zbar-lo"><input type="range" class="zlo" min="0" max="100" value="0" step="0.5"></div>
+      <div class="zbar zbar-hi"><input type="range" class="zhi" min="0" max="100" value="100" step="0.5"></div>
+      <button class="zoom-btn" onclick="zoomIn(this)">+</button>
+      <button class="zoom-btn sec" onclick="resetZoom(this)">重置</button>
+    </div>
+  </div>
+  <div class="panel">
+    <h2>Auto-Eval SSIM（越高越好）</h2>
+    <div class="chart-wrap"><canvas id="ssimChart"></canvas></div>
+    <div class="zoom-bar" data-for="ssimChart">
+      <button class="zoom-btn" onclick="zoomOut(this)">−</button>
+      <div class="zbar zbar-lo"><input type="range" class="zlo" min="0" max="100" value="0" step="0.5"></div>
+      <div class="zbar zbar-hi"><input type="range" class="zhi" min="0" max="100" value="100" step="0.5"></div>
+      <button class="zoom-btn" onclick="zoomIn(this)">+</button>
+      <button class="zoom-btn sec" onclick="resetZoom(this)">重置</button>
+    </div>
+  </div>
+  <div class="panel">
+    <h2>X0Lat MSE（预测 vs GT latent）</h2>
+    <div class="chart-wrap"><canvas id="x0Chart"></canvas></div>
+    <div class="zoom-bar" data-for="x0Chart">
+      <button class="zoom-btn" onclick="zoomOut(this)">−</button>
+      <div class="zbar zbar-lo"><input type="range" class="zlo" min="0" max="100" value="0" step="0.5"></div>
+      <div class="zbar zbar-hi"><input type="range" class="zhi" min="0" max="100" value="100" step="0.5"></div>
+      <button class="zoom-btn" onclick="zoomIn(this)">+</button>
+      <button class="zoom-btn sec" onclick="resetZoom(this)">重置</button>
+    </div>
+  </div>
+
+  <!-- 朴素画图框（独立实现，不缩放，照搬基础写法；用于确认 eval 指标能否正常绘制） -->
+  <div class="panel">
+    <h2>Auto-Eval MSE（朴素）</h2>
+    <div class="chart-wrap"><canvas id="mseSimple"></canvas></div>
+  </div>
+  <div class="panel">
+    <h2>Auto-Eval SSIM（朴素）</h2>
+    <div class="chart-wrap"><canvas id="ssimSimple"></canvas></div>
+  </div>
+  <pre id="dbgSimple" style="background:#11151c;color:#7fd1ff;font:11px monospace;padding:8px;white-space:pre-wrap;margin:8px 0;"></pre>
+</div>
+</div>
+
+<!-- Tab: System -->
+<div class="tab-content" id="tab-sys">
+<div class="charts">
+  <div class="panel">
+    <h2>吞吐 Steps/Sec</h2>
+    <div class="chart-wrap"><canvas id="spdChart"></canvas></div>
+    <div class="zoom-bar" data-for="spdChart">
+      <button class="zoom-btn" onclick="zoomOut(this)">−</button>
+      <div class="zbar zbar-lo"><input type="range" class="zlo" min="0" max="100" value="0" step="0.5"></div>
+      <div class="zbar zbar-hi"><input type="range" class="zhi" min="0" max="100" value="100" step="0.5"></div>
+      <button class="zoom-btn" onclick="zoomIn(this)">+</button>
+      <button class="zoom-btn sec" onclick="resetZoom(this)">重置</button>
+    </div>
+  </div>
+  <div class="panel">
+    <h2>显存 GB（当前 / 峰值）</h2>
+    <div class="chart-wrap"><canvas id="memChart"></canvas></div>
+    <div class="zoom-bar" data-for="memChart">
+      <button class="zoom-btn" onclick="zoomOut(this)">−</button>
+      <div class="zbar zbar-lo"><input type="range" class="zlo" min="0" max="100" value="0" step="0.5"></div>
+      <div class="zbar zbar-hi"><input type="range" class="zhi" min="0" max="100" value="100" step="0.5"></div>
+      <button class="zoom-btn" onclick="zoomIn(this)">+</button>
+      <button class="zoom-btn sec" onclick="resetZoom(this)">重置</button>
+    </div>
+  </div>
+</div>
+<div class="poster-section">
+  <div class="panel">
+    <h2>Eval 取样海报（每行 = 一个 ckpt · 10 样本 = show5|seen5 × img|canny|skel · 末行 GT）</h2>
+    <img id="posterImg" alt="eval 海报" style="display:block;" />
+  </div>
+  <div class="panel">
+    <h2>最新 Eval 快照（当前 ckpt · 每样本 img|canny|skel）</h2>
+    <img id="latestImg" alt="最新 eval 快照" style="display:block;" />
+  </div>
+</div>
+</div>
+
+<script>
+// 全局错误捕获（调试用，直接显示到页面顶部）
+window.onerror = function(msg, src, line, col) {
+  var e = document.getElementById('errbar');
+  if (e) { e.style.display = 'block'; e.textContent = 'JS Error: ' + msg + ' @' + line + ':' + col; }
+};
+// ============================================================
+// 配置常量
+// ============================================================
+const __DATA__ = {"expName": "compositional", "source": "local:G:\\GitHub\\DiT\\tools\\remote_pulled\\compositional", "pulledAt": "2026-08-21 22:56:41", "count": 115, "rows": [{"step": 20, "total": 1.0134, "diff": 1.0134, "canny": 0.0, "skel": 0.0, "latc": null, "lats": null, "repa": 0.0, "skelh": null, "stdmid": null, "x0lat": null, "stepsPerSec": 2.88, "memCur": 0.98, "memPeak": 19.2, "mse": null, "ssim": null, "ts": null}, {"step": 40, "total": 1.0095, "diff": 1.0095, "canny": 0.0, "skel": 0.0, "latc": null, "lats": null, "repa": 0.0, "skelh": null, "stdmid": null, "x0lat": null, "stepsPerSec": 3.53, "memCur": 0.98, "memPeak": 19.2, "mse": null, "ssim": null, "ts": null}, {"step": 60, "total": 0.9957, "diff": 0.9957, "canny": 0.0, "skel": 0.0, "latc": null, "lats": null, "repa": 0.0, "skelh": null, "stdmid": null, "x0lat": null, "stepsPerSec": 3.53, "memCur": 0.98, "memPeak": 19.2, "mse": null, "ssim": null, "ts": null}, {"step": 80, "total": 0.9645, "diff": 0.9645, "canny": 0.0, "skel": 0.0, "latc": null, "lats": null, "repa": 0.0, "skelh": null, "stdmid": null, "x0lat": null, "stepsPerSec": 3.53, "memCur": 0.98, "memPeak": 19.2, "mse": null, "ssim": null, "ts": null}, {"step": 100, "total": 0.9011, "diff": 0.9011, "canny": 0.0, "skel": 0.0, "latc": null, "lats": null, "repa": 0.0, "skelh": null, "stdmid": null, "x0lat": null, "stepsPerSec": 3.53, "memCur": 0.98, "memPeak": 19.2, "mse": null, "ssim": null, "ts": null}, {"step": 120, "total": 0.7889, "diff": 0.7889, "canny": 0.0, "skel": 0.0, "latc": null, "lats": null, "repa": 0.0, "skelh": null, "stdmid": null, "x0lat": null, "stepsPerSec": 3.53, "memCur": 0.98, "memPeak": 19.2, "mse": null, "ssim": null, "ts": null}, {"step": 140, "total": 0.6465, "diff": 0.6465, "canny": 0.0, "skel": 0.0, "latc": null, "lats": null, "repa": 0.0, "skelh": null, "stdmid": null, "x0lat": null, "stepsPerSec": 3.53, "memCur": 0.98, "memPeak": 19.2, "mse": null, "ssim": null, "ts": null}, {"step": 160, "total": 0.4614, "diff": 0.4614, "canny": 0.0, "skel": 0.0, "latc": null, "lats": null, "repa": 0.0, "skelh": null, "stdmid": null, "x0lat": null, "stepsPerSec": 3.53, "memCur": 0.98, "memPeak": 19.2, "mse": null, "ssim": null, "ts": null}, {"step": 180, "total": 0.2666, "diff": 0.2666, "canny": 0.0, "skel": 0.0, "latc": null, "lats": null, "repa": 0.0, "skelh": null, "stdmid": null, "x0lat": null, "stepsPerSec": 3.53, "memCur": 0.98, "memPeak": 19.2, "mse": null, "ssim": null, "ts": null}, {"step": 200, "total": 0.1944, "diff": 0.1944, "canny": 0.0, "skel": 0.0, "latc": null, "lats": null, "repa": 0.0, "skelh": null, "stdmid": null, "x0lat": null, "stepsPerSec": 3.52, "memCur": 0.98, "memPeak": 19.2, "mse": null, "ssim": null, "ts": null}, {"step": 220, "total": 0.1746, "diff": 0.1746, "canny": 0.0, "skel": 0.0, "latc": null, "lats": null, "repa": 0.0, "skelh": null, "stdmid": null, "x0lat": null, "stepsPerSec": 3.53, "memCur": 0.98, "memPeak": 19.2, "mse": null, "ssim": null, "ts": null}, {"step": 240, "total": 0.1536, "diff": 0.1536, "canny": 0.0, "skel": 0.0, "latc": null, "lats": null, "repa": 0.0, "skelh": null, "stdmid": null, "x0lat": null, "stepsPerSec": 3.53, "memCur": 0.98, "memPeak": 19.2, "mse": null, "ssim": null, "ts": null}, {"step": 260, "total": 0.1519, "diff": 0.1519, "canny": 0.0, "skel": 0.0, "latc": null, "lats": null, "repa": 0.0, "skelh": null, "stdmid": null, "x0lat": null, "stepsPerSec": 3.53, "memCur": 0.98, "memPeak": 19.2, "mse": null, "ssim": null, "ts": null}, {"step": 280, "total": 0.142, "diff": 0.142, "canny": 0.0, "skel": 0.0, "latc": null, "lats": null, "repa": 0.0, "skelh": null, "stdmid": null, "x0lat": null, "stepsPerSec": 3.53, "memCur": 0.98, "memPeak": 19.2, "mse": null, "ssim": null, "ts": null}, {"step": 300, "total": 0.1404, "diff": 0.1404, "canny": 0.0, "skel": 0.0, "latc": null, "lats": null, "repa": 0.0, "skelh": null, "stdmid": null, "x0lat": null, "stepsPerSec": 3.53, "memCur": 0.98, "memPeak": 19.2, "mse": null, "ssim": null, "ts": null}, {"step": 320, "total": 0.1429, "diff": 0.1429, "canny": 0.0, "skel": 0.0, "latc": null, "lats": null, "repa": 0.0, "skelh": null, "stdmid": null, "x0lat": null, "stepsPerSec": 3.53, "memCur": 0.98, "memPeak": 19.2, "mse": null, "ssim": null, "ts": null}, {"step": 340, "total": 0.1394, "diff": 0.1394, "canny": 0.0, "skel": 0.0, "latc": null, "lats": null, "repa": 0.0, "skelh": null, "stdmid": null, "x0lat": null, "stepsPerSec": 3.52, "memCur": 0.98, "memPeak": 19.2, "mse": null, "ssim": null, "ts": null}, {"step": 360, "total": 0.1419, "diff": 0.1419, "canny": 0.0, "skel": 0.0, "latc": null, "lats": null, "repa": 0.0, "skelh": null, "stdmid": null, "x0lat": null, "stepsPerSec": 3.53, "memCur": 0.98, "memPeak": 19.2, "mse": null, "ssim": null, "ts": null}, {"step": 380, "total": 0.132, "diff": 0.132, "canny": 0.0, "skel": 0.0, "latc": null, "lats": null, "repa": 0.0, "skelh": null, "stdmid": null, "x0lat": null, "stepsPerSec": 3.53, "memCur": 0.98, "memPeak": 19.2, "mse": null, "ssim": null, "ts": null}, {"step": 400, "total": 0.1352, "diff": 0.1352, "canny": 0.0, "skel": 0.0, "latc": null, "lats": null, "repa": 0.0, "skelh": null, "stdmid": null, "x0lat": null, "stepsPerSec": 3.53, "memCur": 0.98, "memPeak": 19.2, "mse": null, "ssim": null, "ts": null}, {"step": 420, "total": 0.1327, "diff": 0.1327, "canny": 0.0, "skel": 0.0, "latc": null, "lats": null, "repa": 0.0, "skelh": null, "stdmid": null, "x0lat": null, "stepsPerSec": 3.52, "memCur": 0.98, "memPeak": 19.2, "mse": null, "ssim": null, "ts": null}, {"step": 440, "total": 0.1344, "diff": 0.1344, "canny": 0.0, "skel": 0.0, "latc": null, "lats": null, "repa": 0.0, "skelh": null, "stdmid": null, "x0lat": null, "stepsPerSec": 3.53, "memCur": 0.98, "memPeak": 19.2, "mse": null, "ssim": null, "ts": null}, {"step": 460, "total": 0.1315, "diff": 0.1315, "canny": 0.0, "skel": 0.0, "latc": null, "lats": null, "repa": 0.0, "skelh": null, "stdmid": null, "x0lat": null, "stepsPerSec": 3.53, "memCur": 0.98, "memPeak": 19.2, "mse": null, "ssim": null, "ts": null}, {"step": 480, "total": 0.1348, "diff": 0.1348, "canny": 0.0, "skel": 0.0, "latc": null, "lats": null, "repa": 0.0, "skelh": null, "stdmid": null, "x0lat": null, "stepsPerSec": 3.53, "memCur": 0.98, "memPeak": 19.2, "mse": null, "ssim": null, "ts": null}, {"step": 500, "total": 0.1282, "diff": 0.1282, "canny": 0.0, "skel": 0.0, "latc": null, "lats": null, "repa": 0.0, "skelh": null, "stdmid": null, "x0lat": null, "stepsPerSec": 3.53, "memCur": 0.98, "memPeak": 19.2, "mse": null, "ssim": null, "ts": null}, {"step": 520, "total": 0.1325, "diff": 0.1325, "canny": 0.0, "skel": 0.0, "latc": null, "lats": null, "repa": 0.0, "skelh": null, "stdmid": null, "x0lat": null, "stepsPerSec": 3.53, "memCur": 0.98, "memPeak": 19.2, "mse": null, "ssim": null, "ts": null}, {"step": 540, "total": 0.1289, "diff": 0.1289, "canny": 0.0, "skel": 0.0, "latc": null, "lats": null, "repa": 0.0, "skelh": null, "stdmid": null, "x0lat": null, "stepsPerSec": 3.53, "memCur": 0.98, "memPeak": 19.2, "mse": null, "ssim": null, "ts": null}, {"step": 560, "total": 0.1255, "diff": 0.1255, "canny": 0.0, "skel": 0.0, "latc": null, "lats": null, "repa": 0.0, "skelh": null, "stdmid": null, "x0lat": null, "stepsPerSec": 3.53, "memCur": 0.98, "memPeak": 19.2, "mse": null, "ssim": null, "ts": null}, {"step": 580, "total": 0.1248, "diff": 0.1248, "canny": 0.0, "skel": 0.0, "latc": null, "lats": null, "repa": 0.0, "skelh": null, "stdmid": null, "x0lat": null, "stepsPerSec": 3.53, "memCur": 0.98, "memPeak": 19.2, "mse": null, "ssim": null, "ts": null}, {"step": 600, "total": 0.1247, "diff": 0.1247, "canny": 0.0, "skel": 0.0, "latc": null, "lats": null, "repa": 0.0, "skelh": null, "stdmid": null, "x0lat": null, "stepsPerSec": 3.52, "memCur": 0.98, "memPeak": 19.2, "mse": null, "ssim": null, "ts": null}, {"step": 620, "total": 0.1296, "diff": 0.1296, "canny": 0.0, "skel": 0.0, "latc": null, "lats": null, "repa": 0.0, "skelh": null, "stdmid": null, "x0lat": null, "stepsPerSec": 3.52, "memCur": 0.98, "memPeak": 19.2, "mse": null, "ssim": null, "ts": null}, {"step": 640, "total": 0.1233, "diff": 0.1233, "canny": 0.0, "skel": 0.0, "latc": null, "lats": null, "repa": 0.0, "skelh": null, "stdmid": null, "x0lat": null, "stepsPerSec": 3.52, "memCur": 0.98, "memPeak": 19.2, "mse": null, "ssim": null, "ts": null}, {"step": 660, "total": 0.1242, "diff": 0.1242, "canny": 0.0, "skel": 0.0, "latc": null, "lats": null, "repa": 0.0, "skelh": null, "stdmid": null, "x0lat": null, "stepsPerSec": 3.53, "memCur": 0.98, "memPeak": 19.2, "mse": null, "ssim": null, "ts": null}, {"step": 680, "total": 0.1272, "diff": 0.1272, "canny": 0.0, "skel": 0.0, "latc": null, "lats": null, "repa": 0.0, "skelh": null, "stdmid": null, "x0lat": null, "stepsPerSec": 3.0, "memCur": 0.98, "memPeak": 19.2, "mse": null, "ssim": null, "ts": null}, {"step": 700, "total": 0.1213, "diff": 0.1213, "canny": 0.0, "skel": 0.0, "latc": null, "lats": null, "repa": 0.0, "skelh": null, "stdmid": null, "x0lat": null, "stepsPerSec": 3.52, "memCur": 0.98, "memPeak": 19.2, "mse": null, "ssim": null, "ts": null}, {"step": 720, "total": 0.1226, "diff": 0.1226, "canny": 0.0, "skel": 0.0, "latc": null, "lats": null, "repa": 0.0, "skelh": null, "stdmid": null, "x0lat": null, "stepsPerSec": 3.52, "memCur": 0.98, "memPeak": 19.2, "mse": null, "ssim": null, "ts": null}, {"step": 740, "total": 0.1251, "diff": 0.1251, "canny": 0.0, "skel": 0.0, "latc": null, "lats": null, "repa": 0.0, "skelh": null, "stdmid": null, "x0lat": null, "stepsPerSec": 3.52, "memCur": 0.98, "memPeak": 19.2, "mse": null, "ssim": null, "ts": null}, {"step": 760, "total": 0.1226, "diff": 0.1226, "canny": 0.0, "skel": 0.0, "latc": null, "lats": null, "repa": 0.0, "skelh": null, "stdmid": null, "x0lat": null, "stepsPerSec": 3.52, "memCur": 0.98, "memPeak": 19.2, "mse": null, "ssim": null, "ts": null}, {"step": 780, "total": 0.1241, "diff": 0.1241, "canny": 0.0, "skel": 0.0, "latc": null, "lats": null, "repa": 0.0, "skelh": null, "stdmid": null, "x0lat": null, "stepsPerSec": 3.52, "memCur": 0.98, "memPeak": 19.2, "mse": null, "ssim": null, "ts": null}, {"step": 800, "total": 0.1224, "diff": 0.1224, "canny": 0.0, "skel": 0.0, "latc": null, "lats": null, "repa": 0.0, "skelh": null, "stdmid": null, "x0lat": null, "stepsPerSec": 3.52, "memCur": 0.98, "memPeak": 19.2, "mse": null, "ssim": null, "ts": null}, {"step": 820, "total": 0.1287, "diff": 0.1287, "canny": 0.0, "skel": 0.0, "latc": null, "lats": null, "repa": 0.0, "skelh": null, "stdmid": null, "x0lat": null, "stepsPerSec": 3.52, "memCur": 0.98, "memPeak": 19.2, "mse": null, "ssim": null, "ts": null}, {"step": 840, "total": 0.1181, "diff": 0.1181, "canny": 0.0, "skel": 0.0, "latc": null, "lats": null, "repa": 0.0, "skelh": null, "stdmid": null, "x0lat": null, "stepsPerSec": 3.52, "memCur": 0.98, "memPeak": 19.2, "mse": null, "ssim": null, "ts": null}, {"step": 860, "total": 0.1184, "diff": 0.1184, "canny": 0.0, "skel": 0.0, "latc": null, "lats": null, "repa": 0.0, "skelh": null, "stdmid": null, "x0lat": null, "stepsPerSec": 3.52, "memCur": 0.98, "memPeak": 19.2, "mse": null, "ssim": null, "ts": null}, {"step": 880, "total": 0.1161, "diff": 0.1161, "canny": 0.0, "skel": 0.0, "latc": null, "lats": null, "repa": 0.0, "skelh": null, "stdmid": null, "x0lat": null, "stepsPerSec": 3.52, "memCur": 0.98, "memPeak": 19.2, "mse": null, "ssim": null, "ts": null}, {"step": 900, "total": 0.1188, "diff": 0.1188, "canny": 0.0, "skel": 0.0, "latc": null, "lats": null, "repa": 0.0, "skelh": null, "stdmid": null, "x0lat": null, "stepsPerSec": 3.52, "memCur": 0.98, "memPeak": 19.2, "mse": null, "ssim": null, "ts": null}, {"step": 920, "total": 0.1221, "diff": 0.1221, "canny": 0.0, "skel": 0.0, "latc": null, "lats": null, "repa": 0.0, "skelh": null, "stdmid": null, "x0lat": null, "stepsPerSec": 3.52, "memCur": 0.98, "memPeak": 19.2, "mse": null, "ssim": null, "ts": null}, {"step": 940, "total": 0.1239, "diff": 0.1239, "canny": 0.0, "skel": 0.0, "latc": null, "lats": null, "repa": 0.0, "skelh": null, "stdmid": null, "x0lat": null, "stepsPerSec": 3.53, "memCur": 0.98, "memPeak": 19.2, "mse": null, "ssim": null, "ts": null}, {"step": 960, "total": 0.1144, "diff": 0.1144, "canny": 0.0, "skel": 0.0, "latc": null, "lats": null, "repa": 0.0, "skelh": null, "stdmid": null, "x0lat": null, "stepsPerSec": 3.52, "memCur": 0.98, "memPeak": 19.2, "mse": null, "ssim": null, "ts": null}, {"step": 980, "total": 0.1197, "diff": 0.1197, "canny": 0.0, "skel": 0.0, "latc": null, "lats": null, "repa": 0.0, "skelh": null, "stdmid": null, "x0lat": null, "stepsPerSec": 3.52, "memCur": 0.98, "memPeak": 19.2, "mse": null, "ssim": null, "ts": null}, {"step": 1000, "total": 0.121, "diff": 0.121, "canny": 0.0, "skel": 0.0, "latc": null, "lats": null, "repa": 0.0, "skelh": null, "stdmid": null, "x0lat": null, "stepsPerSec": 3.52, "memCur": 0.98, "memPeak": 19.2, "mse": null, "ssim": null, "ts": null}, {"step": 1020, "total": 0.1118, "diff": 0.1118, "canny": 0.0, "skel": 0.0, "latc": null, "lats": null, "repa": 0.0, "skelh": null, "stdmid": null, "x0lat": null, "stepsPerSec": 3.51, "memCur": 0.98, "memPeak": 19.2, "mse": null, "ssim": null, "ts": null}, {"step": 1040, "total": 0.1172, "diff": 0.1172, "canny": 0.0, "skel": 0.0, "latc": null, "lats": null, "repa": 0.0, "skelh": null, "stdmid": null, "x0lat": null, "stepsPerSec": 3.51, "memCur": 0.98, "memPeak": 19.2, "mse": null, "ssim": null, "ts": null}, {"step": 1060, "total": 0.1155, "diff": 0.1155, "canny": 0.0, "skel": 0.0, "latc": null, "lats": null, "repa": 0.0, "skelh": null, "stdmid": null, "x0lat": null, "stepsPerSec": 3.52, "memCur": 0.98, "memPeak": 19.2, "mse": null, "ssim": null, "ts": null}, {"step": 1080, "total": 0.1173, "diff": 0.1173, "canny": 0.0, "skel": 0.0, "latc": null, "lats": null, "repa": 0.0, "skelh": null, "stdmid": null, "x0lat": null, "stepsPerSec": 3.52, "memCur": 0.98, "memPeak": 19.2, "mse": null, "ssim": null, "ts": null}, {"step": 1100, "total": 0.1176, "diff": 0.1176, "canny": 0.0, "skel": 0.0, "latc": null, "lats": null, "repa": 0.0, "skelh": null, "stdmid": null, "x0lat": null, "stepsPerSec": 3.52, "memCur": 0.98, "memPeak": 19.2, "mse": null, "ssim": null, "ts": null}, {"step": 1120, "total": 0.1104, "diff": 0.1104, "canny": 0.0, "skel": 0.0, "latc": null, "lats": null, "repa": 0.0, "skelh": null, "stdmid": null, "x0lat": null, "stepsPerSec": 3.52, "memCur": 0.98, "memPeak": 19.2, "mse": null, "ssim": null, "ts": null}, {"step": 1140, "total": 0.1177, "diff": 0.1177, "canny": 0.0, "skel": 0.0, "latc": null, "lats": null, "repa": 0.0, "skelh": null, "stdmid": null, "x0lat": null, "stepsPerSec": 3.52, "memCur": 0.98, "memPeak": 19.2, "mse": null, "ssim": null, "ts": null}, {"step": 1160, "total": 0.1164, "diff": 0.1164, "canny": 0.0, "skel": 0.0, "latc": null, "lats": null, "repa": 0.0, "skelh": null, "stdmid": null, "x0lat": null, "stepsPerSec": 3.52, "memCur": 0.98, "memPeak": 19.2, "mse": null, "ssim": null, "ts": null}, {"step": 1180, "total": 0.1128, "diff": 0.1128, "canny": 0.0, "skel": 0.0, "latc": null, "lats": null, "repa": 0.0, "skelh": null, "stdmid": null, "x0lat": null, "stepsPerSec": 3.52, "memCur": 0.98, "memPeak": 19.2, "mse": null, "ssim": null, "ts": null}, {"step": 1200, "total": 0.1125, "diff": 0.1125, "canny": 0.0, "skel": 0.0, "latc": null, "lats": null, "repa": 0.0, "skelh": null, "stdmid": null, "x0lat": null, "stepsPerSec": 3.52, "memCur": 0.98, "memPeak": 19.2, "mse": null, "ssim": null, "ts": null}, {"step": 1220, "total": 0.116, "diff": 0.116, "canny": 0.0, "skel": 0.0, "latc": null, "lats": null, "repa": 0.0, "skelh": null, "stdmid": null, "x0lat": null, "stepsPerSec": 3.52, "memCur": 0.98, "memPeak": 19.2, "mse": null, "ssim": null, "ts": null}, {"step": 1240, "total": 0.1138, "diff": 0.1138, "canny": 0.0, "skel": 0.0, "latc": null, "lats": null, "repa": 0.0, "skelh": null, "stdmid": null, "x0lat": null, "stepsPerSec": 3.52, "memCur": 0.98, "memPeak": 19.2, "mse": null, "ssim": null, "ts": null}, {"step": 1260, "total": 0.1126, "diff": 0.1126, "canny": 0.0, "skel": 0.0, "latc": null, "lats": null, "repa": 0.0, "skelh": null, "stdmid": null, "x0lat": null, "stepsPerSec": 3.52, "memCur": 0.98, "memPeak": 19.2, "mse": null, "ssim": null, "ts": null}, {"step": 1280, "total": 0.1104, "diff": 0.1104, "canny": 0.0, "skel": 0.0, "latc": null, "lats": null, "repa": 0.0, "skelh": null, "stdmid": null, "x0lat": null, "stepsPerSec": 3.52, "memCur": 0.98, "memPeak": 19.2, "mse": null, "ssim": null, "ts": null}, {"step": 1300, "total": 0.1088, "diff": 0.1088, "canny": 0.0, "skel": 0.0, "latc": null, "lats": null, "repa": 0.0, "skelh": null, "stdmid": null, "x0lat": null, "stepsPerSec": 3.52, "memCur": 0.98, "memPeak": 19.2, "mse": null, "ssim": null, "ts": null}, {"step": 1320, "total": 0.104, "diff": 0.104, "canny": 0.0, "skel": 0.0, "latc": null, "lats": null, "repa": 0.0, "skelh": null, "stdmid": null, "x0lat": null, "stepsPerSec": 3.53, "memCur": 0.98, "memPeak": 19.2, "mse": null, "ssim": null, "ts": null}, {"step": 1340, "total": 0.1059, "diff": 0.1059, "canny": 0.0, "skel": 0.0, "latc": null, "lats": null, "repa": 0.0, "skelh": null, "stdmid": null, "x0lat": null, "stepsPerSec": 3.08, "memCur": 0.98, "memPeak": 19.2, "mse": null, "ssim": null, "ts": null}, {"step": 1360, "total": 0.1081, "diff": 0.1081, "canny": 0.0, "skel": 0.0, "latc": null, "lats": null, "repa": 0.0, "skelh": null, "stdmid": null, "x0lat": null, "stepsPerSec": 3.52, "memCur": 0.98, "memPeak": 19.2, "mse": null, "ssim": null, "ts": null}, {"step": 1380, "total": 0.1079, "diff": 0.1079, "canny": 0.0, "skel": 0.0, "latc": null, "lats": null, "repa": 0.0, "skelh": null, "stdmid": null, "x0lat": null, "stepsPerSec": 3.52, "memCur": 0.98, "memPeak": 19.2, "mse": null, "ssim": null, "ts": null}, {"step": 1400, "total": 0.104, "diff": 0.104, "canny": 0.0, "skel": 0.0, "latc": null, "lats": null, "repa": 0.0, "skelh": null, "stdmid": null, "x0lat": null, "stepsPerSec": 3.52, "memCur": 0.98, "memPeak": 19.2, "mse": null, "ssim": null, "ts": null}, {"step": 1420, "total": 0.1093, "diff": 0.1093, "canny": 0.0, "skel": 0.0, "latc": null, "lats": null, "repa": 0.0, "skelh": null, "stdmid": null, "x0lat": null, "stepsPerSec": 3.52, "memCur": 0.98, "memPeak": 19.2, "mse": null, "ssim": null, "ts": null}, {"step": 1440, "total": 0.1042, "diff": 0.1042, "canny": 0.0, "skel": 0.0, "latc": null, "lats": null, "repa": 0.0, "skelh": null, "stdmid": null, "x0lat": null, "stepsPerSec": 3.52, "memCur": 0.98, "memPeak": 19.2, "mse": null, "ssim": null, "ts": null}, {"step": 1460, "total": 0.1115, "diff": 0.1115, "canny": 0.0, "skel": 0.0, "latc": null, "lats": null, "repa": 0.0, "skelh": null, "stdmid": null, "x0lat": null, "stepsPerSec": 3.52, "memCur": 0.98, "memPeak": 19.2, "mse": null, "ssim": null, "ts": null}, {"step": 1480, "total": 0.1073, "diff": 0.1073, "canny": 0.0, "skel": 0.0, "latc": null, "lats": null, "repa": 0.0, "skelh": null, "stdmid": null, "x0lat": null, "stepsPerSec": 3.52, "memCur": 0.98, "memPeak": 19.2, "mse": null, "ssim": null, "ts": null}, {"step": 1500, "total": 0.1061, "diff": 0.1061, "canny": 0.0, "skel": 0.0, "latc": null, "lats": null, "repa": 0.0, "skelh": null, "stdmid": null, "x0lat": null, "stepsPerSec": 3.52, "memCur": 0.98, "memPeak": 19.2, "mse": null, "ssim": null, "ts": null}, {"step": 1520, "total": 0.1058, "diff": 0.1058, "canny": 0.0, "skel": 0.0, "latc": null, "lats": null, "repa": 0.0, "skelh": null, "stdmid": null, "x0lat": null, "stepsPerSec": 3.52, "memCur": 0.98, "memPeak": 19.2, "mse": null, "ssim": null, "ts": null}, {"step": 1540, "total": 0.1062, "diff": 0.1062, "canny": 0.0, "skel": 0.0, "latc": null, "lats": null, "repa": 0.0, "skelh": null, "stdmid": null, "x0lat": null, "stepsPerSec": 3.52, "memCur": 0.98, "memPeak": 19.2, "mse": null, "ssim": null, "ts": null}, {"step": 1560, "total": 0.1085, "diff": 0.1085, "canny": 0.0, "skel": 0.0, "latc": null, "lats": null, "repa": 0.0, "skelh": null, "stdmid": null, "x0lat": null, "stepsPerSec": 3.52, "memCur": 0.98, "memPeak": 19.2, "mse": null, "ssim": null, "ts": null}, {"step": 1580, "total": 0.1024, "diff": 0.1024, "canny": 0.0, "skel": 0.0, "latc": null, "lats": null, "repa": 0.0, "skelh": null, "stdmid": null, "x0lat": null, "stepsPerSec": 3.52, "memCur": 0.98, "memPeak": 19.2, "mse": null, "ssim": null, "ts": null}, {"step": 1600, "total": 0.1034, "diff": 0.1034, "canny": 0.0, "skel": 0.0, "latc": null, "lats": null, "repa": 0.0, "skelh": null, "stdmid": null, "x0lat": null, "stepsPerSec": 3.52, "memCur": 0.98, "memPeak": 19.2, "mse": null, "ssim": null, "ts": null}, {"step": 1620, "total": 0.1032, "diff": 0.1032, "canny": 0.0, "skel": 0.0, "latc": null, "lats": null, "repa": 0.0, "skelh": null, "stdmid": null, "x0lat": null, "stepsPerSec": 3.52, "memCur": 0.98, "memPeak": 19.2, "mse": null, "ssim": null, "ts": null}, {"step": 1640, "total": 0.1079, "diff": 0.1079, "canny": 0.0, "skel": 0.0, "latc": null, "lats": null, "repa": 0.0, "skelh": null, "stdmid": null, "x0lat": null, "stepsPerSec": 3.52, "memCur": 0.98, "memPeak": 19.2, "mse": null, "ssim": null, "ts": null}, {"step": 1660, "total": 0.1032, "diff": 0.1032, "canny": 0.0, "skel": 0.0, "latc": null, "lats": null, "repa": 0.0, "skelh": null, "stdmid": null, "x0lat": null, "stepsPerSec": 3.52, "memCur": 0.98, "memPeak": 19.2, "mse": null, "ssim": null, "ts": null}, {"step": 1680, "total": 0.1023, "diff": 0.1023, "canny": 0.0, "skel": 0.0, "latc": null, "lats": null, "repa": 0.0, "skelh": null, "stdmid": null, "x0lat": null, "stepsPerSec": 3.52, "memCur": 0.98, "memPeak": 19.2, "mse": null, "ssim": null, "ts": null}, {"step": 1700, "total": 0.1054, "diff": 0.1054, "canny": 0.0, "skel": 0.0, "latc": null, "lats": null, "repa": 0.0, "skelh": null, "stdmid": null, "x0lat": null, "stepsPerSec": 3.52, "memCur": 0.98, "memPeak": 19.2, "mse": null, "ssim": null, "ts": null}, {"step": 1720, "total": 0.1009, "diff": 0.1009, "canny": 0.0, "skel": 0.0, "latc": null, "lats": null, "repa": 0.0, "skelh": null, "stdmid": null, "x0lat": null, "stepsPerSec": 3.52, "memCur": 0.98, "memPeak": 19.2, "mse": null, "ssim": null, "ts": null}, {"step": 1740, "total": 0.0988, "diff": 0.0988, "canny": 0.0, "skel": 0.0, "latc": null, "lats": null, "repa": 0.0, "skelh": null, "stdmid": null, "x0lat": null, "stepsPerSec": 3.52, "memCur": 0.98, "memPeak": 19.2, "mse": null, "ssim": null, "ts": null}, {"step": 1760, "total": 0.1001, "diff": 0.1001, "canny": 0.0, "skel": 0.0, "latc": null, "lats": null, "repa": 0.0, "skelh": null, "stdmid": null, "x0lat": null, "stepsPerSec": 3.52, "memCur": 0.98, "memPeak": 19.2, "mse": null, "ssim": null, "ts": null}, {"step": 1780, "total": 0.1044, "diff": 0.1044, "canny": 0.0, "skel": 0.0, "latc": null, "lats": null, "repa": 0.0, "skelh": null, "stdmid": null, "x0lat": null, "stepsPerSec": 3.52, "memCur": 0.98, "memPeak": 19.2, "mse": null, "ssim": null, "ts": null}, {"step": 1800, "total": 0.1061, "diff": 0.1061, "canny": 0.0, "skel": 0.0, "latc": null, "lats": null, "repa": 0.0, "skelh": null, "stdmid": null, "x0lat": null, "stepsPerSec": 3.52, "memCur": 0.98, "memPeak": 19.2, "mse": null, "ssim": null, "ts": null}, {"step": 1820, "total": 0.1038, "diff": 0.1038, "canny": 0.0, "skel": 0.0, "latc": null, "lats": null, "repa": 0.0, "skelh": null, "stdmid": null, "x0lat": null, "stepsPerSec": 3.52, "memCur": 0.98, "memPeak": 19.2, "mse": null, "ssim": null, "ts": null}, {"step": 1840, "total": 0.1042, "diff": 0.1042, "canny": 0.0, "skel": 0.0, "latc": null, "lats": null, "repa": 0.0, "skelh": null, "stdmid": null, "x0lat": null, "stepsPerSec": 3.52, "memCur": 0.98, "memPeak": 19.2, "mse": null, "ssim": null, "ts": null}, {"step": 1860, "total": 0.1034, "diff": 0.1034, "canny": 0.0, "skel": 0.0, "latc": null, "lats": null, "repa": 0.0, "skelh": null, "stdmid": null, "x0lat": null, "stepsPerSec": 3.52, "memCur": 0.98, "memPeak": 19.2, "mse": null, "ssim": null, "ts": null}, {"step": 1880, "total": 0.1015, "diff": 0.1015, "canny": 0.0, "skel": 0.0, "latc": null, "lats": null, "repa": 0.0, "skelh": null, "stdmid": null, "x0lat": null, "stepsPerSec": 3.52, "memCur": 0.98, "memPeak": 19.2, "mse": null, "ssim": null, "ts": null}, {"step": 1900, "total": 0.1005, "diff": 0.1005, "canny": 0.0, "skel": 0.0, "latc": null, "lats": null, "repa": 0.0, "skelh": null, "stdmid": null, "x0lat": null, "stepsPerSec": 3.53, "memCur": 0.98, "memPeak": 19.2, "mse": null, "ssim": null, "ts": null}, {"step": 1920, "total": 0.0987, "diff": 0.0987, "canny": 0.0, "skel": 0.0, "latc": null, "lats": null, "repa": 0.0, "skelh": null, "stdmid": null, "x0lat": null, "stepsPerSec": 3.53, "memCur": 0.98, "memPeak": 19.2, "mse": null, "ssim": null, "ts": null}, {"step": 1940, "total": 0.1048, "diff": 0.1048, "canny": 0.0, "skel": 0.0, "latc": null, "lats": null, "repa": 0.0, "skelh": null, "stdmid": null, "x0lat": null, "stepsPerSec": 3.53, "memCur": 0.98, "memPeak": 19.2, "mse": null, "ssim": null, "ts": null}, {"step": 1960, "total": 0.102, "diff": 0.102, "canny": 0.0, "skel": 0.0, "latc": null, "lats": null, "repa": 0.0, "skelh": null, "stdmid": null, "x0lat": null, "stepsPerSec": 3.53, "memCur": 0.98, "memPeak": 19.2, "mse": null, "ssim": null, "ts": null}, {"step": 1980, "total": 0.0979, "diff": 0.0979, "canny": 0.0, "skel": 0.0, "latc": null, "lats": null, "repa": 0.0, "skelh": null, "stdmid": null, "x0lat": null, "stepsPerSec": 3.53, "memCur": 0.98, "memPeak": 19.2, "mse": null, "ssim": null, "ts": null}, {"step": 2000, "total": null, "diff": null, "canny": null, "skel": null, "latc": null, "lats": null, "repa": null, "skelh": null, "stdmid": null, "x0lat": null, "stepsPerSec": null, "memCur": null, "memPeak": null, "mse": 3.2513, "ssim": 0.0302, "ts": null}, {"step": 2020, "total": 0.0995, "diff": 0.0995, "canny": 0.0, "skel": 0.0, "latc": null, "lats": null, "repa": 0.0, "skelh": null, "stdmid": null, "x0lat": null, "stepsPerSec": 1.06, "memCur": 0.98, "memPeak": 19.2, "mse": null, "ssim": null, "ts": null}, {"step": 2040, "total": 0.0989, "diff": 0.0989, "canny": 0.0, "skel": 0.0, "latc": null, "lats": null, "repa": 0.0, "skelh": null, "stdmid": null, "x0lat": null, "stepsPerSec": 3.52, "memCur": 0.98, "memPeak": 19.2, "mse": null, "ssim": null, "ts": null}, {"step": 2060, "total": 0.0991, "diff": 0.0991, "canny": 0.0, "skel": 0.0, "latc": null, "lats": null, "repa": 0.0, "skelh": null, "stdmid": null, "x0lat": null, "stepsPerSec": 3.52, "memCur": 0.98, "memPeak": 19.2, "mse": null, "ssim": null, "ts": null}, {"step": 2080, "total": 0.0977, "diff": 0.0977, "canny": 0.0, "skel": 0.0, "latc": null, "lats": null, "repa": 0.0, "skelh": null, "stdmid": null, "x0lat": null, "stepsPerSec": 3.52, "memCur": 0.98, "memPeak": 19.2, "mse": null, "ssim": null, "ts": null}, {"step": 2100, "total": 0.0965, "diff": 0.0965, "canny": 0.0, "skel": 0.0, "latc": null, "lats": null, "repa": 0.0, "skelh": null, "stdmid": null, "x0lat": null, "stepsPerSec": 3.52, "memCur": 0.98, "memPeak": 19.2, "mse": null, "ssim": null, "ts": null}, {"step": 2120, "total": 0.0986, "diff": 0.0986, "canny": 0.0, "skel": 0.0, "latc": null, "lats": null, "repa": 0.0, "skelh": null, "stdmid": null, "x0lat": null, "stepsPerSec": 3.52, "memCur": 0.98, "memPeak": 19.2, "mse": null, "ssim": null, "ts": null}, {"step": 2140, "total": 0.0934, "diff": 0.0934, "canny": 0.0, "skel": 0.0, "latc": null, "lats": null, "repa": 0.0, "skelh": null, "stdmid": null, "x0lat": null, "stepsPerSec": 3.52, "memCur": 0.98, "memPeak": 19.2, "mse": null, "ssim": null, "ts": null}, {"step": 2160, "total": 0.0985, "diff": 0.0985, "canny": 0.0, "skel": 0.0, "latc": null, "lats": null, "repa": 0.0, "skelh": null, "stdmid": null, "x0lat": null, "stepsPerSec": 3.52, "memCur": 0.98, "memPeak": 19.2, "mse": null, "ssim": null, "ts": null}, {"step": 2180, "total": 0.0963, "diff": 0.0963, "canny": 0.0, "skel": 0.0, "latc": null, "lats": null, "repa": 0.0, "skelh": null, "stdmid": null, "x0lat": null, "stepsPerSec": 3.52, "memCur": 0.98, "memPeak": 19.2, "mse": null, "ssim": null, "ts": null}, {"step": 2200, "total": 0.1005, "diff": 0.1005, "canny": 0.0, "skel": 0.0, "latc": null, "lats": null, "repa": 0.0, "skelh": null, "stdmid": null, "x0lat": null, "stepsPerSec": 3.52, "memCur": 0.98, "memPeak": 19.2, "mse": null, "ssim": null, "ts": null}, {"step": 2220, "total": 0.1011, "diff": 0.1011, "canny": 0.0, "skel": 0.0, "latc": null, "lats": null, "repa": 0.0, "skelh": null, "stdmid": null, "x0lat": null, "stepsPerSec": 3.52, "memCur": 0.98, "memPeak": 19.2, "mse": null, "ssim": null, "ts": null}, {"step": 2240, "total": 0.0937, "diff": 0.0937, "canny": 0.0, "skel": 0.0, "latc": null, "lats": null, "repa": 0.0, "skelh": null, "stdmid": null, "x0lat": null, "stepsPerSec": 3.52, "memCur": 0.98, "memPeak": 19.2, "mse": null, "ssim": null, "ts": null}, {"step": 2260, "total": 0.1015, "diff": 0.1015, "canny": 0.0, "skel": 0.0, "latc": null, "lats": null, "repa": 0.0, "skelh": null, "stdmid": null, "x0lat": null, "stepsPerSec": 3.52, "memCur": 0.98, "memPeak": 19.2, "mse": null, "ssim": null, "ts": null}, {"step": 2280, "total": 0.1024, "diff": 0.1024, "canny": 0.0, "skel": 0.0, "latc": null, "lats": null, "repa": 0.0, "skelh": null, "stdmid": null, "x0lat": null, "stepsPerSec": 3.52, "memCur": 0.98, "memPeak": 19.2, "mse": null, "ssim": null, "ts": null}, {"step": 2300, "total": 0.0986, "diff": 0.0986, "canny": 0.0, "skel": 0.0, "latc": null, "lats": null, "repa": 0.0, "skelh": null, "stdmid": null, "x0lat": null, "stepsPerSec": 3.51, "memCur": 0.98, "memPeak": 19.2, "mse": null, "ssim": null, "ts": null}]};
+const COLORS = {
+  diff:'#4f9cff', total:'#ffb84f', canny:'#ff6b6b',
+  skel:'#b06bff', repa:'#3ddc97', spd:'#8b93a7',
+  warn:'#ff6b6b', ok:'#3ddc97'
+};
+const REFRESH_MS = 10000;
+
+// ============================================================
+// 全局状态
+// ============================================================
+const charts = {};       // {id: Chart实例}
+const chartMeta = {};    // {id: {fullData, fullLabels, fullTs, viewStart, viewEnd}}
+const simpleCharts = {}; // 朴素画图框（mse/ssim），独立实现
+let chartsBuilt = false; // 所有图表是否已创建
+let allRows = [];        // 原始全量数据
+let epochMeta = {epoch_now:0, hr_per_epoch:0, sec_per_epoch:0, steps_per_epoch:0, dataset_size:0, stepsPerSec:0};
+let rafPending = null;   // requestAnimationFrame 节流
+
+// ============================================================
+// 创建图表（无 zoom 插件依赖）
+// ============================================================
+function makeChart(id, datasets) {
+  const ctx = document.getElementById(id);
+  if (!ctx) return null;
+
+  if (charts[id]) charts[id].destroy();
+
+  const ch = new Chart(ctx, {
+    type:'line',
+    data:{ labels:[], datasets: datasets.map(d => ({
+      label:d.label, data:[], borderColor:d.color,
+      backgroundColor:d.color+'18', borderWidth:1.5,
+      pointRadius:0, tension:0.2, spanGaps:true, _key:d.key
+    }))},
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      animation:{duration:0},          // 关闭动画防卡顿
+      interaction:{ mode:'index', intersect:false },
+      plugins:{
+        legend:{ labels:{ color:'#8b93a7', boxWidth:12, font:{size:11} }, position:'top' },
+        tooltip:{ callbacks:{
+          title(items){
+            const it = items[0];
+            const t = it.dataset._rawTs ? it.dataset._rawTs[it.dataIndex] : '';
+            return (t ? t+'  ':'') + 'step '+it.label;
+          }
+        }}
+      },
+      scales:{
+        x:{ ticks:{ color:'#8b93a7', maxTicksLimit:10, font:{size:10} },
+             grid:{ color:'#2a2f3c' } },
+        y:{ ticks:{ color:'#8b93a7', font:{size:10} },
+             grid:{ color:'#2a2f3c' } }
+      }
+    }
+  });
+  charts[id] = ch;
+  chartMeta[id] = {
+    fullData:[], keys: datasets.map(d=>d.key),
+    fullLabels:[], fullTs:[], viewStart:0, viewEnd:1
+  };
+
+  // 绑定缩放条的 range 输入
+  bindZoomBar(id);
+  return ch;
+}
+
+// ============================================================
+// 一次性创建所有图表（始终渲染，不在隐藏 tab 内延迟创建）
+// 隐藏 tab 的 canvas 初始尺寸为 0，靠切 tab 时的 resize 兜底恢复绘制。
+// ============================================================
+function buildAllCharts() {
+  if (chartsBuilt) return;
+  makeChart('diffChart', [{label:'Diff', color:COLORS.diff, key:'diff'}]);
+  makeChart('totalChart', [{label:'Total', color:COLORS.total, key:'total'}]);
+  makeChart('structChart', [
+    {label:'Canny', color:COLORS.canny, key:'canny'},
+    {label:'Skel', color:COLORS.skel, key:'skel'},
+    {label:'LatC', color:'#3ddc97', key:'latc'},
+    {label:'LatS', color:'#f5a623', key:'lats'},
+    {label:'REPA', color:COLORS.repa, key:'repa'}
+  ]);
+  makeChart('mseChart', [{label:'MSE', color:COLORS.warn, key:'mse'}]);
+  makeChart('ssimChart', [{label:'SSIM', color:COLORS.ok, key:'ssim'}]);
+  makeChart('x0Chart', [{label:'X0Lat', color:COLORS.total, key:'x0lat'}]);
+  makeChart('spdChart', [{label:'Steps/Sec', color:COLORS.spd, key:'stepsPerSec'}]);
+  makeChart('memChart', [
+    {label:'当前', color:COLORS.canny, key:'memCur'},
+    {label:'峰值', color:COLORS.skel, key:'memPeak'}
+  ]);
+  // 朴素画图框：独立、不缩放、照搬基础写法，专用于确认 eval 指标能否正常绘制
+  simpleCharts.mse = new Chart(document.getElementById('mseSimple'), {
+    type: 'line',
+    data: { labels: [], datasets: [{ label: 'MSE', data: [], borderColor: COLORS.warn,
+      backgroundColor: COLORS.warn + '18', borderWidth: 1.5, pointRadius: 0, tension: 0.2, spanGaps: true }] },
+    options: { responsive: true, maintainAspectRatio: false, animation: false,
+      plugins: { legend: { labels: { color: '#c4ccdb' } } },
+      scales: { x: { ticks: { color: '#8b93a7', font: { size: 10 } }, grid: { color: '#2a2f3c' } },
+                y: { ticks: { color: '#8b93a7', font: { size: 10 } }, grid: { color: '#2a2f3c' } } } }
+  });
+  simpleCharts.ssim = new Chart(document.getElementById('ssimSimple'), {
+    type: 'line',
+    data: { labels: [], datasets: [{ label: 'SSIM', data: [], borderColor: COLORS.ok,
+      backgroundColor: COLORS.ok + '18', borderWidth: 1.5, pointRadius: 0, tension: 0.2, spanGaps: true }] },
+    options: { responsive: true, maintainAspectRatio: false, animation: false,
+      plugins: { legend: { labels: { color: '#c4ccdb' } } },
+      scales: { x: { ticks: { color: '#8b93a7', font: { size: 10 } }, grid: { color: '#2a2f3c' } },
+                y: { ticks: { color: '#8b93a7', font: { size: 10 } }, grid: { color: '#2a2f3c' } } } }
+  });
+  chartsBuilt = true;
+}
+
+// ============================================================
+// 缩放条绑定：range slider ↔ 图表 X 轴
+// ============================================================
+function bindZoomBar(chartId) {
+  const bar = document.querySelector(`.zoom-bar[data-for="${chartId}"]`);
+  if (!bar) return;
+  const lo = bar.querySelector('input.zlo');
+  const hi = bar.querySelector('input.zhi');
+  if (!lo || !hi) return;
+
+  // 双滑块：分别控制左右边界（0..100）
+  const MIN_GAP = 1;   // 最小可见宽度（%）
+
+  function onSlide() {
+    let a = parseFloat(lo.value);
+    let b = parseFloat(hi.value);
+    if (a > b - MIN_GAP) {
+      // 谁在动就推谁：简单处理——保持 gap
+      if (document.activeElement === lo) { b = Math.min(100, a + MIN_GAP); hi.value = b; }
+      else { a = Math.max(0, b - MIN_GAP); lo.value = a; }
+    }
+    const meta = chartMeta[chartId];
+    if (!meta) return;
+    meta.viewStart = a / 100;
+    meta.viewEnd = b / 100;
+    scheduleUpdate(chartId);
+  }
+  lo.addEventListener('input', onSlide);
+  hi.addEventListener('input', onSlide);
+
+  // 鼠标滚轮缩放（在图表区域上），以光标为中心
+  const canvas = document.getElementById(chartId);
+  if (canvas) {
+    canvas.addEventListener('wheel', (e) => {
+      e.preventDefault();
+      const delta = e.deltaY > 0 ? 0.04 : -0.04;  // 向下缩小/向上放大
+      const meta = chartMeta[chartId];
+      if (!meta || !allRows.length) return;
+      const span = meta.viewEnd - meta.viewStart;
+      const newSpan = Math.max(0.02, Math.min(1, span + delta));
+      const rect = canvas.getBoundingClientRect();
+      const mx = (e.clientX - rect.left) / rect.width;  // 0..1 相对位置
+      const center = meta.viewStart + span * mx;
+      meta.viewStart = Math.max(0, center - newSpan * mx);
+      meta.viewEnd = Math.min(1, center + newSpan * (1 - mx));
+      syncSlider(chartId);
+      scheduleUpdate(chartId);
+    }, {passive:false});
+  }
+
+  // 拖拽平移（在图表上按住拖动）
+  let dragging = false, dragStartX = 0, s0 = 0, span0 = 0;
+  if (canvas) {
+    canvas.addEventListener('mousedown', (e) => {
+      const meta = chartMeta[chartId];
+      if (!meta) return;
+      dragging = true; dragStartX = e.clientX;
+      s0 = meta.viewStart; span0 = meta.viewEnd - meta.viewStart;
+      e.preventDefault();
+    });
+    canvas.addEventListener('mousemove', (e) => {
+      if (!dragging) return;
+      const meta = chartMeta[chartId];
+      if (!meta) return;
+      const dx = (e.clientX - dragStartX) / (canvas.clientWidth || 400);
+      let ns = s0 - dx * span0;
+      let ne = ns + span0;
+      if (ns < 0) { ne -= ns; ns = 0; }
+      if (ne > 1) { ns -= (ne - 1); ne = 1; }
+      meta.viewStart = Math.max(0, ns);
+      meta.viewEnd = Math.min(1, ne);
+      syncSlider(chartId);
+      scheduleUpdate(chartId);
+    });
+    canvas.addEventListener('mouseup', () => dragging = false);
+    canvas.addEventListener('mouseleave', () => dragging = false);
+  }
+}
+
+function syncSlider(chartId) {
+  const bar = document.querySelector(`.zoom-bar[data-for="${chartId}"]`);
+  const lo = bar?.querySelector('input.zlo');
+  const hi = bar?.querySelector('input.zhi');
+  if (!lo || !hi) return;
+  const meta = chartMeta[chartId];
+  if (!meta) return;
+  lo.value = (meta.viewStart * 100).toFixed(1);
+  hi.value = (meta.viewEnd * 100).toFixed(1);
+}
+
+// 缩放按钮（以中心为锚点扩大/缩小区间）
+function zoomOut(btn) {
+  const chartId = btn.closest('.zoom-bar').dataset.for;
+  const meta = chartMeta[chartId];
+  if (!meta) return;
+  const center = (meta.viewStart + meta.viewEnd) / 2;
+  const span = Math.min(1, (meta.viewEnd - meta.viewStart) * 1.5);
+  meta.viewStart = Math.max(0, center - span/2);
+  meta.viewEnd = Math.min(1, center + span/2);
+  syncSlider(chartId);
+  scheduleUpdate(chartId);
+}
+function zoomIn(btn) {
+  const chartId = btn.closest('.zoom-bar').dataset.for;
+  const meta = chartMeta[chartId];
+  if (!meta) return;
+  const center = (meta.viewStart + meta.viewEnd) / 2;
+  const span = Math.max(0.02, (meta.viewEnd - meta.viewStart) / 1.5);
+  meta.viewStart = Math.max(0, center - span/2);
+  meta.viewEnd = Math.min(1, center + span/2);
+  syncSlider(chartId);
+  scheduleUpdate(chartId);
+}
+function resetZoom(btn) {
+  const chartId = btn.closest('.zoom-bar').dataset.for;
+  const meta = chartMeta[chartId];
+  if (!meta) return;
+  meta.viewStart = 0;
+  meta.viewEnd = 1;
+  syncSlider(chartId);
+  scheduleUpdate(chartId);
+}
+
+// ============================================================
+// 节流更新：同一帧内合并多次调用
+// ============================================================
+function scheduleUpdate(chartId) {
+  if (rafPending) return;
+  rafPending = requestAnimationFrame(() => {
+    rafPending = null;
+    refreshAllCharts();
+  });
+}
+
+function refreshAllCharts() {
+  Object.keys(charts).forEach(id => {
+    if (id) refreshChart(id);
+  });
+}
+
+// 朴素画图框刷新：直接把全量 step 与 mse/ssim 塞进去，不缩放、不切片
+function refreshSimpleCharts() {
+  const dbg = document.getElementById('dbgSimple');
+  const log = [];
+  if (!allRows.length) { if (dbg) dbg.textContent = 'allRows 为空（fetch 失败？检查是否用 http 打开而非 file://）'; return; }
+  const labels = allRows.map(r => r.step);
+  const mse = allRows.map(r => (r.mse == null || isNaN(r.mse)) ? null : r.mse);
+  const ssim = allRows.map(r => (r.ssim == null || isNaN(r.ssim)) ? null : r.ssim);
+  log.push('allRows=' + allRows.length + ' labels=' + labels.length);
+  log.push('mse: defined=' + mse.filter(v=>v!==null).length + ' first=' + mse[0] + ' last=' + mse[mse.length-1]);
+  log.push('ssim: defined=' + ssim.filter(v=>v!==null).length + ' first=' + ssim[0] + ' last=' + ssim[ssim.length-1]);
+  log.push('simpleCharts.mse exists=' + !!simpleCharts.mse + ' ssim exists=' + !!simpleCharts.ssim);
+  if (simpleCharts.mse) {
+    simpleCharts.mse.data.labels = labels;
+    simpleCharts.mse.data.datasets[0].data = mse;
+    simpleCharts.mse.update('none');
+    log.push('mse chart data len=' + simpleCharts.mse.data.datasets[0].data.length);
+  }
+  if (simpleCharts.ssim) {
+    simpleCharts.ssim.data.labels = labels;
+    simpleCharts.ssim.data.datasets[0].data = ssim;
+    simpleCharts.ssim.update('none');
+    log.push('ssim chart data len=' + simpleCharts.ssim.data.datasets[0].data.length);
+  }
+  if (dbg) dbg.textContent = log.join('\n');
+}
+
+function refreshChart(id) {
+  const ch = charts[id];
+  const meta = chartMeta[id];
+  if (!ch || !meta.keys.length) return;
+
+  const n = meta.fullLabels.length;
+  const loI = Math.max(0, Math.floor(meta.viewStart * (n - 1)));
+  const hiI = Math.min(n - 1, Math.ceil(meta.viewEnd * (n - 1)));
+
+  // 直接用全量 labels；dataset 仅显示可见区间的数据（标准写法，不手动算 y 轴）
+  ch.data.labels = meta.fullLabels;
+  ch.data.datasets.forEach((ds, i) => {
+    const arr = meta.fullData[i];
+    if (!arr) return;
+    const sliced = arr.slice(loI, hiI + 1);
+    ds.data = sliced;
+    ds._rawTs = meta.fullTs.slice(loI, hiI + 1);
+  });
+
+  // 让 Chart.js 自动计算 Y 轴（标准行为，避免手动 fit 出问题）
+  delete ch.options.scales.y.min;
+  delete ch.options.scales.y.max;
+
+  ch.update('none');
+}
+
+// ============================================================
+// 数据加载
+// ============================================================
+let currentExp = '';
+async function loadImg(id, names){
+  const cands = currentExp ? names.map(n=>n.replace('.png?',`_${currentExp}.png?`).replace(/\?\w+$/,'?t='+Date.now())).concat(names.map(n=>n.replace(/\?\w+$/,'?t='+Date.now()))) : names.map(n=>n.replace(/\?\w+$/,'?t='+Date.now()));
+  for(const c of cands){
+    try {
+      const res = await fetch(c);
+      if(!res.ok) continue;
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const img = document.getElementById(id);
+      img.src = url;
+      img.onload = ()=>URL.revokeObjectURL(url);
+      return;
+    }catch(e){}
+  }
+}
+function loadPoster(){
+  const li=document.getElementById('latestImg');
+  if(li){li.src='../remote_pulled/compositional/eval_latest.png';li.onerror=()=>{li.style.display='none';};}
+  const pi=document.getElementById('posterImg');
+  if(pi){pi.src='../remote_pulled/compositional/eval_poster.png';pi.onerror=()=>{pi.style.display='none';};}
+}
+
+async function load(){
+  try {
+    const data = __DATA__;
+    currentExp = data.expName || '';
+    document.getElementById('meta').textContent =
+      `${data.source||''} · ${data.pulledAt||''} · ${data.count||0} 条` +
+      (currentExp ? ` · ${currentExp}` : '');
+
+    allRows = data.rows || [];
+    epochMeta = {
+      epoch_now: data.epoch_now || 0,
+      hr_per_epoch: data.hr_per_epoch || 0,
+      sec_per_epoch: data.sec_per_epoch || 0,
+      steps_per_epoch: data.steps_per_epoch || 0,
+      dataset_size: data.dataset_size || 0,
+      stepsPerSec: data.stepsPerSec || 0,
+    };
+    if (!allRows.length) return;
+
+    // 一次性创建所有图表（始终渲染）
+    buildAllCharts();
+
+    // 存储全量数据到 meta：fullData 按 dataset 顺序存数组
+    Object.values(charts).forEach(ch => {
+      const id = ch.canvas.id;
+      const m = chartMeta[id];
+      m.fullLabels = allRows.map(r => r.step);
+      m.fullTs = allRows.map(r => r.ts || '');
+      m.fullData = m.keys.map(key => allRows.map(r => r[key]));
+    });
+
+    // 刷新所有图表
+    refreshAllCharts();
+    // 朴素画图框：直接塞全量数据，不缩放
+    refreshSimpleCharts();
+
+    // 统计卡片
+    renderStats(allRows);
+    loadPoster();
+
+  } catch(e){
+    document.getElementById('meta').textContent = '加载失败: '+e.message;
+  }
+}
+
+// ============================================================
+// 统计卡片
+// ============================================================
+function renderStats(rows){
+  const last = rows[rows.length-1];
+  const nan = v=>v==null||isNaN(v);
+  const s=(k,v,c)=>`<div class="stat"><div class="k">${k}</div><div class="v ${c||''}">${v}</div></div>`;
+
+  const hasEval = !nan(last.mse);
+  const finite = rows.filter(r=>!nan(r.diff));
+  const firstD = finite.length?finite[0].diff:null;
+  const trend = (firstD!=null&&!nan(last.diff))?((last.diff-firstD)/firstD*100):null;
+
+  let statusText = '正常';
+  if(hasEval) statusText = 'auto-eval';
+  else if(nan(last.diff)) statusText = 'NaN';
+  else if(!nan(last.diff)&&finite.length>5&&last.diff<finite[0].diff) statusText = '下降中';
+
+  document.getElementById('statGrid').innerHTML =
+    s('Step', last.step) +
+    s('Diff', nan(last.diff)?'—':last.diff.toFixed(4), nan(last.diff)?'warn':'') +
+    s('Diff Δ', trend==null?'—':(trend>0?'+':'')+trend.toFixed(1)+'%', (trend!=null&&trend<0)?'ok':'') +
+    s('Canny', nan(last.canny)?'—':last.canny.toFixed(4)) +
+    s('Skel', nan(last.skel)?'—':last.skel.toFixed(4)) +
+    s('LatC', nan(last.latc)?'—':last.latc.toFixed(4)) +
+    s('LatS', nan(last.lats)?'—':last.lats.toFixed(4)) +
+    s('MSE', nan(last.mse)?'—':last.mse.toFixed(5)) +
+    s('SSIM', nan(last.ssim)?'—':last.ssim.toFixed(4), nan(last.ssim)?'':'ok') +
+    s('Steps/s', nan(last.stepsPerSec)?'—':last.stepsPerSec.toFixed(1)) +
+    s('已过数据遍数', epochMeta.epoch_now?epochMeta.epoch_now.toFixed(2)+' 遍':'—') +
+    s('每遍耗时', epochMeta.hr_per_epoch?(
+        epochMeta.hr_per_epoch<1 ? Math.round(epochMeta.sec_per_epoch)+'s'
+        : epochMeta.hr_per_epoch.toFixed(1)+'h') : '—') +
+    s('状态', statusText, statusText==='NaN'?'warn':(statusText==='auto-eval'||statusText==='下降中'?'ok':''));
+
+  // 状态行
+  let st = '';
+  if(!hasEval&&!nan(last.diff))
+    st += 'Diff '+(firstD!=null?firstD.toFixed(4):'→')+' → '+last.diff.toFixed(4);
+  else if(hasEval)
+    st += 'MSE='+last.mse.toFixed(5)+' SSIM='+last.ssim.toFixed(4);
+  document.getElementById('statusLine').textContent = st || '等待数据…';
+}
+
+// ============================================================
+// Tab 导航（仅滚动定位；所有图表区块始终可见，不做 display 隐藏）
+// —— 修复：之前用 display:none 隐藏 tab 内容，导致该 tab 内 canvas 初始
+//    尺寸为 0，Chart.js 在 0 尺寸上初始化后曲线无法正确绘制（"有数据没图表"）。
+//    现所有 .tab-content 常驻 display:block，canvas 从一开始就具备正确尺寸。
+// ============================================================
+document.querySelectorAll('.tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+    tab.classList.add('active');
+    const el = document.getElementById('tab-'+tab.dataset.tab);
+    if (el) el.scrollIntoView({behavior:'smooth', block:'start'});
+  });
+});
+
+// ============================================================
+// 自动刷新 & 倒计时
+// ============================================================
+document.getElementById('refreshBtn').addEventListener('click', load);
+let secLeft = 10, timer=null, cdTimer=null;
+const autoChk=document.getElementById('autoChk');
+function tick(){
+  secLeft = secLeft<=0?10:secLeft-1;
+  const el=document.getElementById('countdown');
+  if(el) el.textContent = autoChk.checked?`下次 ${secLeft}s`:'已关闭';
+}
+function syncAuto(){
+  if(autoChk.checked){
+    if(!timer) timer=setInterval(load, REFRESH_MS);
+    if(!cdTimer){secLeft=10;cdTimer=setInterval(tick,1000);}
+  }else{
+    if(timer){clearInterval(timer);timer=null;}
+    if(cdTimer){clearInterval(cdTimer);cdTimer=null;}
+    const el=document.getElementById('countdown');
+    if(el) el.textContent='已关闭';
+  }
+}
+autoChk.addEventListener('change', syncAuto);
+
+// 启动
+load();
+</script>
+</body>
+</html>

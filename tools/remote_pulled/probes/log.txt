@@ -1,0 +1,58 @@
+[[34m2026-08-15 21:30:15[0m] Experiment directory created at 5script/results/probes/20260815-213015-probe-v3a-batch-scale
+[[34m2026-08-15 21:30:16[0m] Building 2-Cond model: DiT-2Cond-S/2 (callig=1011, glyph/char=35130, fusion=factorized_add, dims=128/192, dropout=all:0.1, one:0.3)
+[[34m2026-08-15 21:30:16[0m] Trainable Parameters: 39,479,648
+[[34m2026-08-15 21:30:16[0m] Frozen Parameters: 98,304 (trainable ratio: 99.75%)
+[[34m2026-08-15 21:30:17[0m] [EMA] enabled with decay=0.9999
+[[34m2026-08-15 21:30:17[0m] Loading VAE from local path: pretrained_models/sd-vae-ft-ema
+[[34m2026-08-15 21:30:17[0m] DiT Parameters: 39,577,952
+[[34m2026-08-15 21:31:15[0m] Using latent-cached dataset (skip on-the-fly VAE encode). preload=ON
+[[34m2026-08-15 21:31:15[0m] Using factor-balanced sampler: {'weight_min': 0.29758899049352444, 'weight_mean': 1.0, 'weight_max': 6.533702005246278} (char_alpha=0.35, callig_alpha=0.15)
+[[34m2026-08-15 21:31:15[0m] Dataset contains 147,841 images
+[[34m2026-08-15 21:31:15[0m] [LR] cosine schedule: warmup=7, total=8, min_ratio=0.1
+[[34m2026-08-15 21:31:15[0m] Training for 1 epochs...
+[[34m2026-08-15 21:31:15[0m] Beginning epoch 0...
+[[34m2026-08-15 21:31:18[0m] Error during training loop: OutOfMemoryError: CUDA out of memory. Tried to allocate 512.00 MiB (GPU 0; 23.52 GiB total capacity; 20.77 GiB already allocated; 452.06 MiB free; 22.51 GiB reserved in total by PyTorch) If reserved memory is >> allocated memory try setting max_split_size_mb to avoid fragmentation.  See documentation for Memory Management and PYTORCH_CUDA_ALLOC_CONF
+
+At:
+  /opt/conda/lib/python3.10/site-packages/torch/nn/functional.py(2528): group_norm
+  /opt/conda/lib/python3.10/site-packages/torch/nn/modules/normalization.py(273): forward
+  /opt/conda/lib/python3.10/site-packages/torch/nn/modules/module.py(1194): _call_impl
+  /opt/conda/lib/python3.10/site-packages/diffusers/models/resnet.py(366): forward
+  /opt/conda/lib/python3.10/site-packages/torch/nn/modules/module.py(1194): _call_impl
+  /opt/conda/lib/python3.10/site-packages/diffusers/models/unets/unet_2d_blocks.py(2737): forward
+  /opt/conda/lib/python3.10/site-packages/torch/nn/modules/module.py(1194): _call_impl
+  /opt/conda/lib/python3.10/site-packages/diffusers/models/autoencoders/vae.py(338): forward
+  /opt/conda/lib/python3.10/site-packages/torch/nn/modules/module.py(1194): _call_impl
+  /opt/conda/lib/python3.10/site-packages/diffusers/models/autoencoders/autoencoder_kl.py(275): _decode
+  /opt/conda/lib/python3.10/site-packages/diffusers/models/autoencoders/autoencoder_kl.py(304): decode
+  /opt/conda/lib/python3.10/site-packages/diffusers/utils/accelerate_utils.py(46): wrapper
+  /root/Workspace/xy/DiT/train.py(595): _decode
+  /opt/conda/lib/python3.10/site-packages/torch/utils/checkpoint.py(408): unpack
+
+[[34m2026-08-15 21:31:18[0m] Traceback (most recent call last):
+  File "/root/Workspace/xy/DiT/train.py", line 628, in main
+    loss.backward()
+  File "/opt/conda/lib/python3.10/site-packages/torch/_tensor.py", line 488, in backward
+    torch.autograd.backward(
+  File "/opt/conda/lib/python3.10/site-packages/torch/autograd/__init__.py", line 197, in backward
+    Variable._execution_engine.run_backward(  # Calls into the C++ engine to run the backward pass
+RuntimeError: OutOfMemoryError: CUDA out of memory. Tried to allocate 512.00 MiB (GPU 0; 23.52 GiB total capacity; 20.77 GiB already allocated; 452.06 MiB free; 22.51 GiB reserved in total by PyTorch) If reserved memory is >> allocated memory try setting max_split_size_mb to avoid fragmentation.  See documentation for Memory Management and PYTORCH_CUDA_ALLOC_CONF
+
+At:
+  /opt/conda/lib/python3.10/site-packages/torch/nn/functional.py(2528): group_norm
+  /opt/conda/lib/python3.10/site-packages/torch/nn/modules/normalization.py(273): forward
+  /opt/conda/lib/python3.10/site-packages/torch/nn/modules/module.py(1194): _call_impl
+  /opt/conda/lib/python3.10/site-packages/diffusers/models/resnet.py(366): forward
+  /opt/conda/lib/python3.10/site-packages/torch/nn/modules/module.py(1194): _call_impl
+  /opt/conda/lib/python3.10/site-packages/diffusers/models/unets/unet_2d_blocks.py(2737): forward
+  /opt/conda/lib/python3.10/site-packages/torch/nn/modules/module.py(1194): _call_impl
+  /opt/conda/lib/python3.10/site-packages/diffusers/models/autoencoders/vae.py(338): forward
+  /opt/conda/lib/python3.10/site-packages/torch/nn/modules/module.py(1194): _call_impl
+  /opt/conda/lib/python3.10/site-packages/diffusers/models/autoencoders/autoencoder_kl.py(275): _decode
+  /opt/conda/lib/python3.10/site-packages/diffusers/models/autoencoders/autoencoder_kl.py(304): decode
+  /opt/conda/lib/python3.10/site-packages/diffusers/utils/accelerate_utils.py(46): wrapper
+  /root/Workspace/xy/DiT/train.py(595): _decode
+  /opt/conda/lib/python3.10/site-packages/torch/utils/checkpoint.py(408): unpack
+
+
+[[34m2026-08-15 21:31:18[0m] Done!

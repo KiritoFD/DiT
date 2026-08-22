@@ -1,0 +1,34 @@
+[[34m2026-08-21 21:18:23[0m] Experiment directory created at 5script/results/s8_structv2_b32sub8/20260821-211823-s8-structv2-b32sub8
+[[34m2026-08-21 21:18:23[0m] Building 2-Cond model: DiT-2Cond-S/2 (callig=1011, glyph/char=35130, fusion=factorized_add, dims=128/256, dropout=all:0.05, one:0.25, skel_head=False, glyph_cond=False, glyph_scale_init=0.4)
+[[34m2026-08-21 21:18:24[0m] [resume-full] Loaded weights from 5script/results/s6_top6_diffonly/20260820-191536-s6-top6-diffonly-resume/checkpoints/0195000.pt (missing=0, unexpected=0).
+[[34m2026-08-21 21:18:24[0m] Trainable Parameters: 41,752,737
+[[34m2026-08-21 21:18:24[0m] Frozen Parameters: 98,304 (trainable ratio: 99.77%)
+[[34m2026-08-21 21:18:25[0m] [EMA] restored EMA weights from checkpoint
+[[34m2026-08-21 21:18:25[0m] [EMA] enabled with decay=0.9999
+[[34m2026-08-21 21:18:25[0m] Loading VAE from local path: pretrained_models/sd-vae-ft-ema
+[[34m2026-08-21 21:18:25[0m] DiT Parameters: 41,851,041
+[[34m2026-08-21 21:18:25[0m] [struct] use_struct_loss_v2: EdgeGradientLoss + SkeletonLossV2 (骨架 recall-only, 边缘梯度场匹配)
+[[34m2026-08-21 21:18:25[0m] [resume-full] Restored optimizer state.
+[[34m2026-08-21 21:18:25[0m] [resume-full] Overrode LR -> 0.0001
+[[34m2026-08-21 21:18:25[0m] [resume-full] Inferred start step=195000 from filename 0195000.pt
+[[34m2026-08-21 21:18:36[0m] Using latent-cached dataset (skip on-the-fly VAE encode). preload=ON
+[[34m2026-08-21 21:18:36[0m] Using factor-balanced sampler: {'weight_min': 0.5131361180859803, 'weight_mean': 1.0, 'weight_max': 1.6416229630056935} (char_alpha=0.35, callig_alpha=0.15)
+[[34m2026-08-21 21:18:36[0m] Dataset contains 10,866 images
+[[34m2026-08-21 21:18:36[0m] [LR] fresh-scheduler: fine-tune horizon = 80000 steps (max_steps 275000 - resume 195000)
+[[34m2026-08-21 21:18:36[0m] [LR] fresh-scheduler: starting from base lr 2.00e-07 (old scheduler state ignored)
+[[34m2026-08-21 21:18:36[0m] [LR] cosine schedule: warmup=1000, total=80000, min_ratio=0.1
+[[34m2026-08-21 21:18:36[0m] Training for 100000 epochs...
+[[34m2026-08-21 21:18:36[0m] Beginning epoch 0...
+[[34m2026-08-21 21:18:39[0m] Error during training loop: Expected 3D (unbatched) or 4D (batched) input to conv2d, but got input of size: [8, 0]
+[[34m2026-08-21 21:18:39[0m] Traceback (most recent call last):
+  File "/root/Workspace/xy/DiT/src/train.py", line 757, in main
+    loss_canny = canny_loss_fn(x0_pred, x_sub)
+  File "/opt/conda/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1194, in _call_impl
+    return forward_call(*input, **kwargs)
+  File "/root/Workspace/xy/DiT/src/losses.py", line 323, in forward
+    gm_gt = self._grad(x_gt).detach()
+  File "/root/Workspace/xy/DiT/src/losses.py", line 313, in _grad
+    gx = F.conv2d(gray, self.sobel_x, padding=1)
+RuntimeError: Expected 3D (unbatched) or 4D (batched) input to conv2d, but got input of size: [8, 0]
+
+[[34m2026-08-21 21:18:39[0m] Done!
