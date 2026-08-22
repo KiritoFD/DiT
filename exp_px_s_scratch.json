@@ -51,5 +51,5 @@
   "early_stop_metric": "ssim",
   "early_stop_patience": 6,
   "early_stop_min_steps": 45000,
-  "resume_full": null
+  "resume_full": "5script/results/px_s_scratch/20260822-115020-px-s-scratch-diff/checkpoints/0045000.pt"
 }

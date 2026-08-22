@@ -400,21 +400,27 @@ def main():
             return False
         early_stop_last_eval_step = step
         d = json.load(open(last_ev, encoding="utf-8"))
-        val = float(d.get(args.early_stop_metric))
-        if val is None:
+        val_raw = d.get(args.early_stop_metric)
+        if val_raw is None:
             return False
-        better = (val > early_stop_best) if args.early_stop_metric == "ssim" else (val < early_stop_best)
-        if early_stop_best is None or better:
+        val = float(val_raw)
+        if early_stop_best is None:
             early_stop_best = val
             early_stop_stale = 0
             logger.info(f"[early-stop] eval step {step}: {args.early_stop_metric}={val:.4f} (new best)")
         else:
-            early_stop_stale += 1
-            logger.info(f"[early-stop] eval step {step}: {args.early_stop_metric}={val:.4f} "
-                        f"(best {early_stop_best:.4f}, stale {early_stop_stale}/{args.early_stop_patience})")
-            if early_stop_stale >= args.early_stop_patience:
-                logger.info("[early-stop] no improvement; early stop.")
-                return True
+            better = (val > early_stop_best) if args.early_stop_metric == "ssim" else (val < early_stop_best)
+            if better:
+                early_stop_best = val
+                early_stop_stale = 0
+                logger.info(f"[early-stop] eval step {step}: {args.early_stop_metric}={val:.4f} (new best)")
+            else:
+                early_stop_stale += 1
+                logger.info(f"[early-stop] eval step {step}: {args.early_stop_metric}={val:.4f} "
+                            f"(best {early_stop_best:.4f}, stale {early_stop_stale}/{args.early_stop_patience})")
+                if early_stop_stale >= args.early_stop_patience:
+                    logger.info("[early-stop] no improvement; early stop.")
+                    return True
         return False
 
     # 结构损失权重渐入
@@ -509,9 +515,11 @@ def main():
                     f"Skel: raw {loss_skel.item():.4f} x {args.w_skel*scl:.2f} | "
                     f"LR: {lr_now:.2e} | Steps/Sec: {sps:.2f} | Mem: {torch.cuda.memory_reserved()/1024**3:.2f}G")
 
-            # ---- 周期保存 (训练自己不 eval; 评估由独立 CPU eval 进程完成) ----
+            # ---- 周期保存 + GPU eval (训练进程自己 eval, 快) ----
             if (args.ckpt_every > 0 and train_steps % args.ckpt_every == 0):
                 _save_ckpt(model, ema_model, optimizer, scheduler, train_steps, ckpt_dir, args)
+                _run_gpu_eval(model if ema_model is None else ema_model, diffusion,
+                              args, ckpt_dir, train_steps, device)
 
             # ---- 早停 ----
             _es_every = 5000
@@ -550,6 +558,69 @@ def _save_ckpt(model, ema_model, optimizer, scheduler, step, ckpt_dir, args):
         pts = sorted(glob(os.path.join(ckpt_dir, "*.pt")))
         for p in pts[:-args.ckpt_keep]:
             os.remove(p)
+
+
+def _run_gpu_eval(model, diffusion, args, ckpt_dir, step, device):
+    """GPU 上直接像素采样 eval100, 写 eval_auto_<step>.json (MSE/SSIM vs GT)。"""
+    try:
+        import csv as _csv
+        from PIL import Image
+        samples = []
+        with open(args.eval_csv, encoding="utf-8") as f:
+            for row in _csv.DictReader(f):
+                samples.append(row)
+        samples = samples[: args.eval_n]
+
+        model.eval()
+        n = len(samples)
+        mse_sum = ssim_sum = 0.0
+        eval_batch = max(1, int(getattr(args, "eval_batch", 8)))
+        gts = []
+        for s in samples:
+            m = re.search(r"(\d+)\.png", s["image_path"])
+            img_id = int(m.group(1))
+            with Image.open(os.path.join(args.img_root, f"{img_id}.png")) as im:
+                gt = np.asarray(im.convert("RGB"), dtype=np.float32) / 255.0
+            gts.append(gt)
+        gts_arr = np.stack(gts)
+
+        torch.manual_seed(args.eval_seed)
+        with torch.no_grad():
+            for i in range(0, n, eval_batch):
+                chunk = samples[i:i + eval_batch]
+                y_callig = torch.tensor([int(s["calligrapher_id"]) for s in chunk],
+                                        dtype=torch.long, device=device)
+                y_char = torch.tensor([int(s.get("glyph_id", s["character_id"])) for s in chunk],
+                                      dtype=torch.long, device=device)
+                z = torch.randn(len(chunk), args.in_channels, args.image_size, args.image_size,
+                                device=device)
+                model_kwargs = dict(y_callig=y_callig, y_char=y_char)
+                with torch.autocast("cuda", dtype=torch.bfloat16):
+                    out = diffusion.p_sample_loop(model, z.shape, z,
+                                                  model_kwargs=model_kwargs,
+                                                  progress=False, device=device)
+                out = out.float().clamp(-1, 1)
+                px = (out.permute(0, 2, 3, 1).cpu().numpy() + 1.0) / 2.0
+                for j in range(len(chunk)):
+                    p = px[j]
+                    g = gts_arr[i + j]
+                    mse_sum += float(np.mean((p - g) ** 2))
+                    gp, gg = p.mean(), g.mean()
+                    vp, vg = p.var(), g.var()
+                    cov = np.mean((p - gp) * (g - gg))
+                    c1, c2 = 0.01 ** 2, 0.03 ** 2
+                    ssim_sum += float(((2 * gp * gg + c1) * (2 * cov + c2))
+                                      / ((gp ** 2 + gg ** 2 + c1) * (vp + vg + c2) + 1e-8))
+        model.train()
+        mse = mse_sum / n
+        ssim = ssim_sum / n
+        ev = {"step": step, "mse": round(mse, 4), "ssim": round(ssim, 4),
+              "ts": datetime.datetime.now().isoformat()}
+        with open(os.path.join(ckpt_dir, f"eval_auto_{step:07d}.json"), "w", encoding="utf-8") as f:
+            json.dump(ev, f)
+        logger.info(f"[eval-gpu] step {step}: MSE={mse:.4f} SSIM={ssim:.4f}")
+    except Exception as e:
+        logger.warning(f"[eval-gpu] step {step} failed: {e!r}")
 
 
 if __name__ == "__main__":
