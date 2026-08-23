@@ -249,11 +249,40 @@ def _existing_steps(local_dir):
 
 
 def pull_eval_samples(ckpt_dir, eval_sample_steps, verbose=True):
-    """一次 scp -r 拉取整个 eval_samples 目录。"""
+    """一次 scp -r 拉取整个 eval_samples 目录。
+    scp -r 远程目录会在本地创建一层嵌套，需要展平。"""
     if not eval_sample_steps:
         return
+    # 清理旧的嵌套目录
+    nested = os.path.join(LOCAL_ES, "eval_samples")
+    if os.path.isdir(nested):
+        import shutil
+        # 把嵌套目录里的 step 子目录移到上层
+        for d in os.listdir(nested):
+            src = os.path.join(nested, d)
+            dst = os.path.join(LOCAL_ES, d)
+            if os.path.isdir(src) and not os.path.exists(dst):
+                shutil.move(src, dst)
+        shutil.rmtree(nested, ignore_errors=True)
     remote = f"{ckpt_dir}/eval_samples/"
     _scp_dir(remote, LOCAL_ES, timeout=120)
+    # scp -r 可能在 LOCAL_ES 下再建一层 eval_samples/
+    nested = os.path.join(LOCAL_ES, "eval_samples")
+    if os.path.isdir(nested):
+        import shutil
+        for d in os.listdir(nested):
+            src = os.path.join(nested, d)
+            dst = os.path.join(LOCAL_ES, d)
+            if os.path.isdir(src) and not os.path.exists(dst):
+                shutil.move(src, dst)
+            elif os.path.isdir(src) and os.path.isdir(dst):
+                # 合并：拷贝缺失的文件
+                for f in os.listdir(src):
+                    sf = os.path.join(src, f)
+                    df = os.path.join(dst, f)
+                    if not os.path.exists(df):
+                        shutil.move(sf, df)
+        shutil.rmtree(nested, ignore_errors=True)
     if verbose:
         steps = _existing_steps(LOCAL_ES)
         print(f"[poster] eval_samples: {len(steps)} steps pulled")
@@ -261,8 +290,33 @@ def pull_eval_samples(ckpt_dir, eval_sample_steps, verbose=True):
 
 def pull_seen_samples(ckpt_dir, verbose=True):
     """一次 scp -r 拉取整个 seen_samples 目录。"""
+    # 清理旧的嵌套目录
+    nested = os.path.join(LOCAL_SEEN, "seen_samples")
+    if os.path.isdir(nested):
+        import shutil
+        for d in os.listdir(nested):
+            src = os.path.join(nested, d)
+            dst = os.path.join(LOCAL_SEEN, d)
+            if os.path.isdir(src) and not os.path.exists(dst):
+                shutil.move(src, dst)
+        shutil.rmtree(nested, ignore_errors=True)
     remote = f"{ckpt_dir}/seen_samples/"
     _scp_dir(remote, LOCAL_SEEN, timeout=120)
+    nested = os.path.join(LOCAL_SEEN, "seen_samples")
+    if os.path.isdir(nested):
+        import shutil
+        for d in os.listdir(nested):
+            src = os.path.join(nested, d)
+            dst = os.path.join(LOCAL_SEEN, d)
+            if os.path.isdir(src) and not os.path.exists(dst):
+                shutil.move(src, dst)
+            elif os.path.isdir(src) and os.path.isdir(dst):
+                for f in os.listdir(src):
+                    sf = os.path.join(src, f)
+                    df = os.path.join(dst, f)
+                    if not os.path.exists(df):
+                        shutil.move(sf, df)
+        shutil.rmtree(nested, ignore_errors=True)
     if verbose:
         steps = _existing_steps(LOCAL_SEEN)
         print(f"[poster] seen_samples: {len(steps)} steps pulled")
