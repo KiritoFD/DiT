@@ -66,9 +66,13 @@ def requires_grad(model, flag=True):
 
 
 def update_ema(ema_model, model, decay):
+    """EMA 只更新 trainable 参数 (requires_grad=True). frozen 参数直接 copy (保持一致)."""
     with torch.no_grad():
         for ep, p in zip(ema_model.parameters(), model.parameters()):
-            ep.data.mul_(decay).add_(p.data, alpha=1 - decay)
+            if p.requires_grad:
+                ep.data.mul_(decay).add_(p.data, alpha=1 - decay)
+            else:
+                ep.data.copy_(p.data)
         for eb, b in zip(ema_model.buffers(), model.buffers()):
             eb.data.copy_(b.data)
 
@@ -116,6 +120,8 @@ def parse_args():
     ap.add_argument("--use-checkpoint", type=_str_to_bool, default=False,
                     help="主模型 gradient checkpointing (省显存, 略慢)")
     ap.add_argument("--seed", type=int, default=0)
+    ap.add_argument("--resume", default="",
+                    help="resume from ckpt path (loads model+ctrl+optimizer+step)")
     args, _ = ap.parse_known_args()
     if args.config:
         cfg = json.load(open(args.config, encoding="utf-8"))
@@ -205,6 +211,47 @@ def main():
     from torch.optim.lr_scheduler import LambdaLR
     scheduler = LambdaLR(optimizer, lr_lambda)
 
+    # ---- Resume from checkpoint ----
+    resume_step = 0
+    if args.resume and os.path.exists(args.resume):
+        logger.info(f"[resume] loading {args.resume}")
+        ck = torch.load(args.resume, map_location="cpu", weights_only=False)
+        # Load main model weights
+        if ck.get("model"):
+            main_keys = {k: v for k, v in ck["model"].items() if k.startswith("main.")}
+            m_miss, m_unexp = ctrl.load_state_dict(main_keys, strict=False)
+            logger.info(f"[resume] main: {len(main_keys)} keys (missing={len(m_miss)}, unexpected={len(m_unexp)})")
+        if ck.get("ema_model"):
+            ema_main_keys = {k: v for k, v in ck["ema_model"].items() if k.startswith("main.")}
+            ctrl.load_state_dict(ema_main_keys, strict=False)
+            logger.info(f"[resume] ema_model: {len(ema_main_keys)} keys")
+        # Load ctrl_encoder weights (prefer ema)
+        ctrl_src = ck.get("ema") or ck.get("ctrl")
+        if ctrl_src:
+            ctrl_keys = {k: v for k, v in ctrl_src.items() if k.startswith("ctrl_encoder")}
+            c_miss, c_unexp = ctrl.load_state_dict(ctrl_keys, strict=False)
+            logger.info(f"[resume] ctrl_encoder: {len(ctrl_keys)} keys (missing={len(c_miss)}, unexpected={len(c_unexp)})")
+        # Load optimizer state
+        if ck.get("optimizer"):
+            try:
+                optimizer.load_state_dict(ck["optimizer"])
+                logger.info("[resume] optimizer state loaded")
+            except Exception as e:
+                logger.warning(f"[resume] optimizer load failed: {e}")
+        # Load scheduler state
+        if ck.get("scheduler"):
+            try:
+                scheduler.load_state_dict(ck["scheduler"])
+                logger.info("[resume] scheduler state loaded")
+            except Exception as e:
+                logger.warning(f"[resume] scheduler load failed: {e}")
+        resume_step = int(ck.get("train_steps", 0) or 0)
+        logger.info(f"[resume] resuming from step {resume_step}")
+        # Move ctrl back to device (load_state_dict may put tensors on cpu)
+        ctrl.to(device)
+        if ema_ctrl:
+            ema_ctrl.to(device)
+
     ts = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
     exp_dir = os.path.join(args.results_dir, f"{ts}-{args.experiment_name}")
     ckpt_dir = os.path.join(exp_dir, "checkpoints")
@@ -219,7 +266,7 @@ def main():
                         num_workers=args.num_workers, pin_memory=True, drop_last=True,
                         persistent_workers=args.num_workers > 0, prefetch_factor=4)
 
-    step = 0
+    step = resume_step
     t0 = time.time()
     log_steps = 0
     running_loss = 0.0
@@ -282,7 +329,7 @@ def main():
                 log_steps = 0
                 t0 = time.time()
 
-            if step % args.ckpt_every == 0:
+            if step % args.ckpt_every == 0 and step > 0:
                 # Save trainable weights (ctrl_encoder always; + main if from-scratch)
                 ck = {
                     "ctrl": {k: v.detach().cpu() for k, v in ctrl.state_dict().items()
@@ -292,6 +339,8 @@ def main():
                     "train_steps": step,
                     "args": vars(args),
                     "saved_at": datetime.datetime.now().isoformat(),
+                    "optimizer": optimizer.state_dict(),
+                    "scheduler": scheduler.state_dict(),
                 }
                 if not args.train_ctrl_only:
                     # from-scratch: also save full model weights

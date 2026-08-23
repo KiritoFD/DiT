@@ -171,8 +171,10 @@ def main(args):
     else:
         logger = create_logger(None)
 
-    assert args.image_size % 8 == 0
-    latent_size = args.image_size // 8
+    # Latent spatial size: default f8 (sd-vae), but supports f4 (kl-f4) via vae_downscale arg.
+    vae_downscale = getattr(args, 'vae_downscale', 8)
+    assert args.image_size % vae_downscale == 0, f"image_size {args.image_size} not divisible by vae_downscale {vae_downscale}"
+    latent_size = args.image_size // vae_downscale
     
     cond_mode = args.cond_mode
     if cond_mode == "3cond":
@@ -191,6 +193,7 @@ def main(args):
             char_embed_dim=args.char_embed_dim,
             cond_drop_all_prob=args.cond_drop_all_prob,
             cond_drop_one_prob=args.cond_drop_one_prob,
+            in_channels=getattr(args, 'latent_channels', 4),
         )
         logger.info(f"Building 3-Cond model: {args.model} "
                     f"(callig={args.num_calligraphers}, script={args.num_scripts}, char={args.num_characters}, "
@@ -214,6 +217,7 @@ def main(args):
             skel_head_enabled=getattr(args, 'w_skel_head', 0) > 0,
             use_glyph_cond=getattr(args, 'w_glyph_cond', 0) > 0,
             glyph_scale_init=getattr(args, 'glyph_scale_init', 0.4),
+            in_channels=getattr(args, 'latent_channels', 4),
         )
         logger.info(f"Building 2-Cond model: {args.model} "
                     f"(callig={args.num_calligraphers}, glyph/char={args.num_characters}, "
@@ -330,6 +334,11 @@ def main(args):
     if dist.get_world_size() > 1:
         model = DDP(model, device_ids=[rank], find_unused_parameters=True)
     diffusion = create_diffusion(timestep_respacing="")
+    _vae_ds = getattr(args, 'vae_downscale', 8)
+    _vae_lc = getattr(args, 'latent_channels', 4)
+    _vae_ic = getattr(args, 'vae_in_channels', 3)
+    _vae_oc = getattr(args, 'vae_out_channels', 3)
+    _vae_sf = getattr(args, 'vae_scaling_factor', 0.18215)
     class MockVAE(torch.nn.Module):
         def __init__(self, device):
             super().__init__()
@@ -337,13 +346,13 @@ def main(args):
         def encode(self, x):
             class Dist:
                 def sample(self):
-                    return torch.randn(x.shape[0], 4, x.shape[2]//8, x.shape[3]//8, device=x.device)
+                    return torch.randn(x.shape[0], _vae_lc, x.shape[2]//_vae_ds, x.shape[3]//_vae_ds, device=x.device)
             class Output:
                 latent_dist = Dist()
             return Output()
         def decode(self, z):
             class Output:
-                sample = torch.randn(z.shape[0], 3, z.shape[2]*8, z.shape[3]*8, device=z.device)
+                sample = torch.randn(z.shape[0], _vae_oc, z.shape[2]*_vae_ds, z.shape[3]*_vae_ds, device=z.device)
             return Output()
 
     try:
@@ -646,7 +655,7 @@ def main(args):
                     y_script = batch['y_script'].to(device)
 
                 if 'latent' in batch:
-                    # Latent-cached training: latent pre-encoded (scaled by 0.18215).
+                    # Latent-cached training: latent pre-encoded (scaled by vae_scaling_factor).
                     x_latent = batch['latent'].to(device)
                     x = batch.get('image', None)
                     x = x.to(device) if x is not None else None
@@ -658,7 +667,7 @@ def main(args):
                     skel_gt = batch['skeleton'].to(device)
                     # VAE encode stays in fp32 for numerical stability (VAE is sensitive to low precision).
                     with torch.no_grad(), torch.autocast("cuda", dtype=torch.float32):
-                        x_latent = vae.encode(x).latent_dist.sample().mul_(0.18215)
+                        x_latent = vae.encode(x).latent_dist.sample().mul_(_vae_sf)
                         x_latent = x_latent.float()
 
                 t = torch.randint(0, diffusion.num_timesteps, (x_latent.shape[0],), device=device)
@@ -792,7 +801,7 @@ def main(args):
                         _dscale = float(getattr(args, 'struct_decode_scale', 1.0))
                         _decode_dtype = (torch.bfloat16 if getattr(args, 'struct_decode_bf16', False)
                                          else torch.float32)
-                        _decode_in = pred_xstart_sub.float() / 0.18215
+                        _decode_in = pred_xstart_sub.float() / _vae_sf
                         if _dscale < 1.0:
                             _decode_in = F.interpolate(
                                 _decode_in, scale_factor=_dscale, mode="area")
@@ -1188,6 +1197,11 @@ if __name__ == "__main__":
                         help="Cap early EMA decay by update count to avoid random-init lag.")
     parser.add_argument("--vae", type=str, choices=["ema", "mse"], default="ema")
     parser.add_argument("--vae-path", type=str, default="pretrained_models/sd-vae-ft-ema", help="Local path to VAE weights")
+    parser.add_argument("--vae-downscale", type=int, default=8, help="VAE spatial downsample factor (8=f8 sd-vae, 4=f4 kl-f4)")
+    parser.add_argument("--latent-channels", type=int, default=4, help="VAE latent channel count (4=sd-vae, 3=kl-f4)")
+    parser.add_argument("--vae-in-channels", type=int, default=3, help="VAE input image channels (3=RGB, 1=grayscale)")
+    parser.add_argument("--vae-out-channels", type=int, default=3, help="VAE output image channels (3=RGB, 1=grayscale)")
+    parser.add_argument("--vae-scaling-factor", type=float, default=0.18215, help="VAE latent scaling factor")
     parser.add_argument("--use-lora", type=_str_to_bool, default=True, help="Use LoRA for fine-tuning DiT blocks")
     parser.add_argument("--lora-r", type=int, default=16, help="LoRA rank")
     parser.add_argument("--lora-alpha", type=int, default=None,

@@ -46,8 +46,10 @@ def log(msg):
 # ---------------------------------------------------------------------------
 
 def build_model(args, device="cpu"):
-    latent_size = args.image_size // 8
+    vae_downscale = getattr(args, "vae_downscale", 8)
+    latent_size = args.image_size // vae_downscale
     cond_mode = getattr(args, "cond_mode", "2cond")
+    _in_ch = getattr(args, "latent_channels", 4)
     if cond_mode == "3cond":
         from models import DiT_3Cond_models
         if args.model not in DiT_3Cond_models:
@@ -64,6 +66,7 @@ def build_model(args, device="cpu"):
             char_embed_dim=args.char_embed_dim,
             cond_drop_all_prob=args.cond_drop_all_prob,
             cond_drop_one_prob=args.cond_drop_one_prob,
+            in_channels=_in_ch,
         )
     else:
         from models import DiT_2Cond_models
@@ -82,6 +85,7 @@ def build_model(args, device="cpu"):
             skel_head_enabled=getattr(args, "w_skel_head", 0) > 0,
             use_glyph_cond=getattr(args, "w_glyph_cond", 0) > 0,
             glyph_scale_init=getattr(args, "glyph_scale_init", 0.4),
+            in_channels=_in_ch,
         )
     # 1) pretrained body（与 train.py 一致，过滤条件头键）
     if getattr(args, "pretrained", None):
@@ -127,6 +131,17 @@ def load_vae(args, device="cpu"):
         return AutoencoderKL.from_pretrained(path).to(device).eval()
     log(f"[vae] loading stabilityai/sd-vae-ft-{args.vae}")
     return AutoencoderKL.from_pretrained(f"stabilityai/sd-vae-ft-{args.vae}").to(device).eval()
+
+
+def _vae_params(args):
+    """Extract VAE latent params from ckpt args (with defaults for old ckpts)."""
+    return dict(
+        vae_downscale=getattr(args, "vae_downscale", 8),
+        latent_channels=getattr(args, "latent_channels", 4),
+        vae_in_channels=getattr(args, "vae_in_channels", 3),
+        vae_out_channels=getattr(args, "vae_out_channels", 3),
+        vae_scaling_factor=getattr(args, "vae_scaling_factor", 0.18215),
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -205,7 +220,10 @@ def _pool_worker(q_task, q_res, start, end):
                     n=end - start, steps=_SH["steps"], cfg=_SH["cfg"], seed=_SH["seed"],
                     batch=_SH["batch"], vis_out=None, vis_n=0,
                     cond_mode=_SH["cond_mode"], save_samples_dir=None, step=None,
-                    glyph_init_mix=_SH["glyph_init_mix"])
+                    glyph_init_mix=_SH["glyph_init_mix"],
+                    latent_channels=_SH["latent_channels"],
+                    latent_spatial=_SH["latent_spatial"],
+                    scaling_factor=_SH["scaling_factor"])
                 q_res.put(("ok", start, end, mse, ssim))
             except Exception as e:
                 q_res.put(("err", start, end, str(e)))
@@ -231,7 +249,10 @@ def start_pool(model, vae, cache, cfg, workers, worker_threads):
                seed=int(cfg["seed"]), batch=int(cfg["batch"]),
                cond_mode=cfg["cond_mode"],
                glyph_init_mix=float(cfg["glyph_init_mix"]),
-               worker_threads=worker_threads)
+               worker_threads=worker_threads,
+               latent_channels=int(cfg.get("latent_channels", 4)),
+               latent_spatial=int(cfg.get("latent_spatial", 32)),
+               scaling_factor=float(cfg.get("scaling_factor", 0.18215)))
     ctx = mp.get_context("fork")
     q_task, q_res = ctx.Queue(), ctx.Queue()
     procs = [ctx.Process(target=_pool_worker, args=(q_task, q_res, st, en), daemon=True)
@@ -337,6 +358,10 @@ def eval_one(model, vae, device, ckpt_dir, step, caches, cfg,
     # 父进程线程数：展示用（不影响已 fork 的常驻池）
     torch.set_num_threads(max(1, min(worker_threads, 8)))
 
+    _lc = int(cfg.get("latent_channels", 4))
+    _ls = int(cfg.get("latent_spatial", 32))
+    _sf = float(cfg.get("scaling_factor", 0.18215))
+
     # 1) 展示：show5（固定 unseen 5 样本）
     if show5_cache is not None:
         n = len(show5_cache["conds"])
@@ -347,7 +372,8 @@ def eval_one(model, vae, device, ckpt_dir, step, caches, cfg,
             vis_out=f"{ckpt_dir}/eval_latest.png", vis_n=n,
             cond_mode=cfg["cond_mode"],
             save_samples_dir=f"{ckpt_dir}/eval_samples", step=step,
-            glyph_init_mix=float(cfg["glyph_init_mix"]))
+            glyph_init_mix=float(cfg["glyph_init_mix"]),
+            latent_channels=_lc, latent_spatial=_ls, scaling_factor=_sf)
 
     # 2) 展示：seen5（训练集样本，不进入任何指标）
     if seen5_cache is not None:
@@ -359,7 +385,8 @@ def eval_one(model, vae, device, ckpt_dir, step, caches, cfg,
             vis_out=None, vis_n=n,
             cond_mode=cfg["cond_mode"],
             save_samples_dir=f"{ckpt_dir}/seen_samples", step=step,
-            glyph_init_mix=float(cfg["glyph_init_mix"]))
+            glyph_init_mix=float(cfg["glyph_init_mix"]),
+            latent_channels=_lc, latent_spatial=_ls, scaling_factor=_sf)
 
     # 3) 指标：eval100（最慢；常驻池 worker 已在前台跑完，这里汇总；失败则回退单进程）
     if eval_cache is not None:
@@ -378,7 +405,8 @@ def eval_one(model, vae, device, ckpt_dir, step, caches, cfg,
                 n=n, steps=steps, cfg=sample_cfg, seed=seed, batch=metric_batch,
                 vis_out=None, vis_n=5, cond_mode=cfg["cond_mode"],
                 save_samples_dir=None, step=None,
-                glyph_init_mix=float(cfg["glyph_init_mix"]))
+                glyph_init_mix=float(cfg["glyph_init_mix"]),
+                latent_channels=_lc, latent_spatial=_ls, scaling_factor=_sf)
         result.update(mse=mse, ssim=ssim)
         log(f"[eval] step {step}: free-sampling MSE={mse:.5f} SSIM={ssim:.4f} "
             f"({time.time()-t0:.0f}s)")
@@ -521,6 +549,9 @@ def main():
                 "glyph_init_mix": float(getattr(ckpt_args, "glyph_init_mix", 0.0)),
                 "workers": args.workers,
                 "worker_threads": args.worker_threads,
+                "latent_channels": int(getattr(ckpt_args, "latent_channels", 4)),
+                "latent_spatial": int(getattr(ckpt_args, "image_size", 256)) // int(getattr(ckpt_args, "vae_downscale", 8)),
+                "scaling_factor": float(getattr(ckpt_args, "vae_scaling_factor", 0.18215)),
             }
 
             if model is None or model_args is None or model_args != ckpt_args:

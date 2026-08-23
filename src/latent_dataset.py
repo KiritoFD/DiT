@@ -68,6 +68,12 @@ class MCCDLatentDataset(Dataset):
         shards = sorted(glob.glob(os.path.join(latent_shards_dir, "shard_*.npz")))
         if not shards:
             raise FileNotFoundError(f"No shards in {latent_shards_dir}")
+        # Auto-detect latent shape from first shard (supports f8=4ch/32x32, f4=3ch/64x64, etc.)
+        _probe = np.load(shards[0])
+        _lat = _probe["latents"]
+        self.latent_channels = int(_lat.shape[1])
+        self.latent_spatial = int(_lat.shape[2])
+        _probe.close()
         for sp in shards:
             d = np.load(sp)
             for j, iid in enumerate(d["img_ids"]):
@@ -109,7 +115,7 @@ class MCCDLatentDataset(Dataset):
         ids = [int(re.search(r"(\d+)\.png", r["image_path"]).group(1)) for r in self.samples]
 
         # --- latents: group by shard, load each shard once, scatter into RAM ---
-        self._latents = np.empty((n, 4, 32, 32), dtype=np.float32)
+        self._latents = np.empty((n, self.latent_channels, self.latent_spatial, self.latent_spatial), dtype=np.float32)
         by_shard = defaultdict(list)  # shard_path -> [(csv_idx, j)]
         for i, iid in enumerate(ids):
             sp, j = self._id_to_shard[iid]
@@ -224,7 +230,7 @@ class MCCDLatentDataset(Dataset):
             if gv is not None:
                 g_t = gv.float().contiguous()   # (4,32,32)
             else:
-                g_t = torch.zeros(4, 32, 32)
+                g_t = torch.zeros(self.latent_channels, self.latent_spatial, self.latent_spatial)
         else:
             g_t = torch.zeros(0)
 

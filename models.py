@@ -940,6 +940,9 @@ class DiT_2Cond(nn.Module):
 def DiT_2Cond_S_2(**kwargs):
     return DiT_2Cond(depth=12, hidden_size=384, patch_size=2, num_heads=6, **kwargs)
 
+def DiT_2Cond_S_4(**kwargs):
+    return DiT_2Cond(depth=12, hidden_size=384, patch_size=4, num_heads=6, **kwargs)
+
 def DiT_2Cond_B_2(**kwargs):
     return DiT_2Cond(depth=12, hidden_size=768, patch_size=2, num_heads=12, **kwargs)
 
@@ -949,6 +952,7 @@ def DiT_2Cond_XL_2(**kwargs):
 
 DiT_2Cond_models = {
     'DiT-2Cond-S/2': DiT_2Cond_S_2,
+    'DiT-2Cond-S/4': DiT_2Cond_S_4,
     'DiT-2Cond-B/2': DiT_2Cond_B_2,
     'DiT-2Cond-XL/2': DiT_2Cond_XL_2,
 }

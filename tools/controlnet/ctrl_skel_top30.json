@@ -26,10 +26,10 @@
   "num_workers": 4,
   "log_every": 50,
   "ckpt_every": 5000,
-  "ckpt_keep": 3,
+  "ckpt_keep": 10,
   "preload": true,
   "preload_workers": 16,
-  "use_ema": true,
+  "use_ema": false,
   "ema_decay": 0.9999,
   "use_checkpoint": false,
   "seed": 0
