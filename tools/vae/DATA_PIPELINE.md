@@ -114,13 +114,38 @@ shard_XXXXX.npz:
 | model | DiT-2Cond-S/4 | patch=4, hidden=384, depth=12, heads=6 |
 | vae_downscale | 4 | f4 (256→64) |
 | latent_channels | 3 | kl-f4 latent ch |
-| vae_scaling_factor | 0.102079 | 1/std (待全量验证) |
-| latent_shards_dir | final_latents_f4 | 新编码的 shards |
+| vae_scaling_factor | 0.102079 | encode 前 1/std 估计, 全量统计 std=0.98 ≈ 1 |
+| latent_shards_dir | final_latents_f4 | 26 shards, 128,842 latents |
 | vae_path | pretrained_models/kl-f4 | kl-f4 VAE |
-| global_batch_size | 64 | 待 VRAM 测试后调整 |
+| global_batch_size | 224 | 显存 19.7G/24G (4090) |
 | image_size | 256 | 输入图片尺寸 |
 | latent_size | 64 | 256/4 (DiT input_size) |
 | DiT tokens | 16×16=256 | 64/4=16, 16²=256 (与 S/2 相同) |
+| max_steps | 600000 | 配合 early_stop (patience=6, min=60k) |
+| use_ema | true | decay=0.9999, warmup 模式 |
+| use_lora | false | 从头训练全参数 |
+| pretrained | null | 无预训练权重 |
+| bf16 | autocast | 前向 bf16, 无 loss scaling |
+
+## 训练运行状态
+
+```bash
+# 训练 (GPU, tmux s7klf4)
+tmux new-session -d -s s7klf4 \
+  'python train.py --config s7_klf4_top30_diffonly.json'
+
+# auto eval (CPU, tmux evalcpu, 独立进程不阻塞 GPU)
+tmux new-session -d -s evalcpu \
+  'python auto_eval_cpu.py \
+    --results-dir 5script/results/s7_klf4_top30 \
+    --workers 8 --worker-threads 8 \
+    --seen5-csv 5script/seen5_top30.csv'
+```
+
+- 训练速度: 3.51 steps/s, 每 5000 步存 ckpt + auto eval
+- auto_eval_cpu 轮询 `_active_ckpt_dir.txt`, 发现新 `.done` ckpt 即评测
+- eval 使用 EMA 权重 (ckpt["ema"]), DDIM 50 步自由采样
+- early stop 基于 SSIM, patience=6 (连续 6 个 ckpt 无提升则停)
 
 ## 文件清单
 
