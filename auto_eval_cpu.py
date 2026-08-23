@@ -2,39 +2,67 @@
 # -*- coding: utf-8 -*-
 """auto_eval_cpu.py — 独立 CPU 评测进程（与 train.py 完全解耦）。
 
-train.py 现在只训练 + 保存 ckpt（GPU 只训练，不做 eval）。本进程在 CPU 上轮询
-当前实验的 ckpt 目录，发现新 checkpoint（*.pt 且带 .done 完成标记）即评测：
+架构 (v2 — spawn + 动态任务队列):
+  - 使用 ProcessPoolExecutor + spawn（绝不用 fork，杜绝 OpenMP/MKL 死锁）
+  - 每个 Worker 独立建 model/VAE/caches，父子进程内存完全隔离（无 CoW 错觉）
+  - eval100 拆成小 batch（默认 8），动态分发到 Worker 池，消灭长尾效应
+  - show5/seen5/eval_batch 统一为 Task，通过同一个 executor 调度
+  - 父进程是纯调度器（0% CPU），所有算力集中在 Worker 池
+  - Worker 复用：同一实验的 ckpt 只换权重，不重建模型/缓存
 
-  1) 指标: eval100（eval_csv, n=eval_n）自由采样 DDIM 算 MSE/SSIM
-            -> <ckpt_dir>/eval_auto_{step}.json
-  2) 展示: show5（固定 unseen 5 样本）-> eval_latest.png + eval_samples/stepXXXXXX/
-  3) 展示: seen5（训练集样本，不进入任何指标）-> seen_samples/stepXXXXXX/
-
-权重加载优先 EMA（use_ema 时用 ckpt['ema']），否则用 ckpt['delta']。
-模型/VAE/采样参数全部取自 ckpt 内保存的 args，确保与训练架构完全一致；
-eval 的参数（--eval-n / --steps / --cfg / --batch）可在命令行覆盖，无需改训练。
+train.py 只训练+保存 ckpt（GPU 只训练）。本进程轮询 ckpt 目录，发现新 checkpoint
+（*.pt 且带 .done 标记）即评测：
+  1) 指标: eval100 自由采样 DDIM → MSE/SSIM → eval_auto_{step}.json
+  2) 展示: show5 → eval_latest.png + eval_samples/stepXXXXXXX/
+  3) 展示: seen5 → seen_samples/stepXXXXXXX/
 
 用法:
-  python auto_eval_cpu.py --results-dir 5script/results/<exp> [--interval 30]
-                          [--seen5-csv 5script/seen5_top30.csv]
-                          [--eval-n 100] [--steps 50] [--cfg 4.0] [--batch 16]
-                          [--threads 96] [--once]
+  python auto_eval_cpu.py --results-dir 5script/results/<exp>
+                           --workers 8 --worker-threads 8
+                           [--seen5-csv 5script/seen5_top30.csv]
+                           [--show5-csv 5script/show5_top30.csv]
+                           [--eval-n 100] [--steps 50] [--cfg 4.0] [--batch 8]
+                           [--interval 30] [--once]
 """
 import argparse
 import glob
 import json
 import os
-import re
 import sys
 import time
 import datetime
+import traceback
 import multiprocessing as mp
+from concurrent.futures import ProcessPoolExecutor, as_completed
 
 import torch
 
 sys.stdout.reconfigure(encoding="utf-8")
 
 DEFAULT_SEEN5_CSV = "5script/seen5_top30.csv"
+# eval100 动态分批的默认每批样本数；None=自动按 ceil(eval_n / workers) 计算
+EVAL_BATCH_SIZE = None
+
+
+# ---------------------------------------------------------------------------
+# CPU 亲和性: 10 Worker × 6 物理核 = 60 核（留 4 核给 train.py / OS / pull_monitor）
+# ---------------------------------------------------------------------------
+
+def _build_core_affinity_table():
+    """为每个 Worker 预分配互不重叠的物理核列表。
+    双路 EPYC 7542: 64 物理核 (0-63), SMT: cpu N 与 cpu N+64 配对。
+    我们只用物理核 0-63（不用超线程 64-127），避免 FPU 抢占。
+    10 Worker × 6 核 = 60 核, 剩余 4 核 (60-63) 留给系统+训练。
+    """
+    PHYSICAL_CORES = list(range(64))  # 物理核 0-63（64-127 是它们的超线程对）
+    WORKERS = 10
+    CORES_PER_WORKER = 6
+    table = []
+    for w in range(WORKERS):
+        start = w * CORES_PER_WORKER
+        end = start + CORES_PER_WORKER
+        table.append(PHYSICAL_CORES[start:end])
+    return table
 
 
 def log(msg):
@@ -87,7 +115,6 @@ def build_model(args, device="cpu"):
             glyph_scale_init=getattr(args, "glyph_scale_init", 0.4),
             in_channels=_in_ch,
         )
-    # 1) pretrained body（与 train.py 一致，过滤条件头键）
     if getattr(args, "pretrained", None):
         from download import find_model
         state_dict = find_model(args.pretrained)
@@ -97,7 +124,6 @@ def build_model(args, device="cpu"):
         missing, unexpected = model.load_state_dict(state_dict, strict=False)
         log(f"[model] loaded pretrained body {args.pretrained} "
             f"(missing={len(missing)}, unexpected={len(unexpected)})")
-    # 2) LoRA 注入（与训练一致；本实验 use_lora=false 时跳过）
     if getattr(args, "use_lora", True):
         from lora import inject_lora
         _r = getattr(args, "lora_r", 16)
@@ -133,17 +159,6 @@ def load_vae(args, device="cpu"):
     return AutoencoderKL.from_pretrained(f"stabilityai/sd-vae-ft-{args.vae}").to(device).eval()
 
 
-def _vae_params(args):
-    """Extract VAE latent params from ckpt args (with defaults for old ckpts)."""
-    return dict(
-        vae_downscale=getattr(args, "vae_downscale", 8),
-        latent_channels=getattr(args, "latent_channels", 4),
-        vae_in_channels=getattr(args, "vae_in_channels", 3),
-        vae_out_channels=getattr(args, "vae_out_channels", 3),
-        vae_scaling_factor=getattr(args, "vae_scaling_factor", 0.18215),
-    )
-
-
 # ---------------------------------------------------------------------------
 # 数据缓存
 # ---------------------------------------------------------------------------
@@ -170,250 +185,235 @@ def build_caches(args, seen5_csv):
 
 
 # ---------------------------------------------------------------------------
-# 常驻 worker 池：eval100 数据并行（data-parallel，进程间不共享计算）。
-# 用 fork 继承父进程已加载的 model/vae/cache（写时复制，几乎不占额外内存），
-# 每 worker 只跑自己那份样本、用少量线程——单进程 64 线程的 fork/join 开销
-# 吃掉了 batch 并行收益，多进程才能真正用满这台机器的核。
-#
-# 重要坑（两次）：
-#   1) step2000 卡死 7h：fork 发生在父进程已跑过 torch 多线程(OpenMP 池已建)
-#      之后，子进程继承损坏的线程池而挂死。曾改成【每轮先 fork 再跑展示】。
-#   2) step3000 仍慢(40min vs 9min)：第二次 fork 时父进程虽 set_num_threads(1)，
-#      但已建好的 OpenMP 池缩不回去，worker 仍被拖慢。
-#
-# 根治方案：启动时【一次性 fork 常驻 worker】（此时父进程一定在单线程、无任何
-# 多线程工作之后才建池，见 main：build_model/cache 期间线程=1），之后每轮只发
-# 任务（worker 自己 torch.load 换权重 + 跑自己那份），【永不再 fork】。
-# 任一 worker 失败/超时/死亡 -> 本轮回退单进程，且整池废弃（broken），不再复用，
-# 绝不让整轮卡死。
+# Worker 进程：spawn 隔离，全局状态仅存活于子进程生命周期内
 # ---------------------------------------------------------------------------
 
-_SH = {}
-
-WORKER_TIMEOUT = 1800  # 单轮 eval100 最长秒数（100/8≈13 张 x 50 步，>15 分钟视为挂死）
+_W = {}  # Worker 全局状态（每个子进程独立）
 
 
-class EvalPool:
-    __slots__ = ("q_task", "q_res", "procs", "ranges", "broken")
+def _init_worker(ckpt_args_dict, worker_threads, seen5_csv, show5_csv_override,
+                 core_table):
+    """每个 Worker 启动时仅执行一次（spawn 后）。
+    独立建 model/VAE/caches，与父进程内存完全隔离。
+    core_table: 全局核表（picklable list of lists），用 /tmp 文件做原子计数分配 worker_id。"""
+    import ctypes, tempfile
 
-
-def _pool_worker(q_task, q_res, start, end):
-    try:
-        torch.set_num_threads(_SH["worker_threads"])
-        from eval_auto import eval_gen_in_memory
-        while True:
-            task = q_task.get()
-            if task is None:
-                break
-            ckpt_path, base, step = task
+    # ── 原子获取唯一 worker_id（文件锁方式，spawn 安全）──
+    lock_path = "/tmp/_eval_worker_id.lock"
+    counter_path = "/tmp/_eval_worker_id.counter"
+    with open(lock_path, "w") as lf:
+        import fcntl
+        fcntl.flock(lf, fcntl.LOCK_EX)
+        try:
             try:
-                ckpt = torch.load(ckpt_path, map_location="cpu", weights_only=False)
-                load_ckpt_weights(_SH["model"], ckpt, base)
-                cache = _SH["cache"]
-                sub = {
-                    "conds": cache["conds"][start:end],
-                    "gts": cache["gts"][start:end],
-                    "gs": cache.get("gs")[start:end] if cache.get("gs") is not None else None,
-                }
-                mse, ssim = eval_gen_in_memory(
-                    _SH["model"], _SH["vae"], "cpu", sub,
-                    n=end - start, steps=_SH["steps"], cfg=_SH["cfg"], seed=_SH["seed"],
-                    batch=_SH["batch"], vis_out=None, vis_n=0,
-                    cond_mode=_SH["cond_mode"], save_samples_dir=None, step=None,
-                    glyph_init_mix=_SH["glyph_init_mix"],
-                    latent_channels=_SH["latent_channels"],
-                    latent_spatial=_SH["latent_spatial"],
-                    scaling_factor=_SH["scaling_factor"])
-                q_res.put(("ok", start, end, mse, ssim))
-            except Exception as e:
-                q_res.put(("err", start, end, str(e)))
+                with open(counter_path, "r") as cf:
+                    worker_id = int(cf.read().strip())
+            except (IOError, ValueError):
+                worker_id = 0
+            with open(counter_path, "w") as cf:
+                cf.write(str(worker_id + 1))
+        finally:
+            fcntl.flock(lf, fcntl.LOCK_UN)
+
+    # ── 绑核: 用 os.sched_setaffinity 把本进程钉在指定物理核上 ──
+    cpu_affinity = []
+    if core_table and worker_id < len(core_table):
+        cpu_affinity = set(core_table[worker_id])
+    else:
+        cpu_affinity = set(range(60, 64))  # fallback: 留给系统的核
+
+    try:
+        os.sched_setaffinity(0, cpu_affinity)
+        log(f"[worker {worker_id} pid={os.getpid()}] "
+            f"pinned to cores {sorted(cpu_affinity)}")
     except Exception as e:
-        try:
-            q_res.put(("fatal", start, end, str(e)))
-        except Exception:
-            pass
+        log(f"[worker {worker_id} pid={os.getpid()}] "
+            f"affinity error: {e}")
+
+    # ── OpenMP 线程绑核: 限制在已绑核范围内 ──
+    os.environ["OMP_PROC_BIND"] = "close"
+    os.environ["OMP_PLACES"] = "cores"
+
+    torch.set_num_threads(worker_threads)
+    from argparse import Namespace
+    a = Namespace(**ckpt_args_dict)
+    if show5_csv_override:
+        a.show5_csv = show5_csv_override
+    _W["model"] = build_model(a, "cpu")
+    _W["vae"] = load_vae(a, "cpu")
+    _W["caches"] = build_caches(a, seen5_csv)
+    _W["current_ckpt"] = None
+    _W["cfg"] = {
+        "steps": int(getattr(a, "eval_steps", 50)),
+        "cfg": float(getattr(a, "eval_cfg", 4.0)),
+        "seed": int(getattr(a, "eval_seed", 0)),
+        "batch": int(getattr(a, "eval_batch", 16)),
+        "cond_mode": getattr(a, "cond_mode", "2cond"),
+        "glyph_init_mix": float(getattr(a, "glyph_init_mix", 0.0)),
+        "latent_channels": int(getattr(a, "latent_channels", 4)),
+        "latent_spatial": int(getattr(a, "image_size", 256)) // int(getattr(a, "vae_downscale", 8)),
+        "scaling_factor": float(getattr(a, "vae_scaling_factor", 0.18215)),
+    }
+    log(f"[worker {worker_id} pid={os.getpid()}] initialized "
+        f"(threads={worker_threads}, cores={len(cpu_affinity)})")
 
 
-def start_pool(model, vae, cache, cfg, workers, worker_threads):
-    """启动时一次性 fork 常驻 worker（必须在任何 torch 多线程工作之前调用）。
-    返回 EvalPool。"""
-    n = len(cache["conds"])
-    sizes = [n // workers + (1 if i < n % workers else 0) for i in range(workers)]
-    ranges, s = [], 0
-    for sz in sizes:
-        ranges.append((s, s + sz))
-        s += sz
-    global _SH
-    _SH.update(model=model, vae=vae, cache=cache,
-               steps=int(cfg["steps"]), cfg=float(cfg["cfg"]),
-               seed=int(cfg["seed"]), batch=int(cfg["batch"]),
-               cond_mode=cfg["cond_mode"],
-               glyph_init_mix=float(cfg["glyph_init_mix"]),
-               worker_threads=worker_threads,
-               latent_channels=int(cfg.get("latent_channels", 4)),
-               latent_spatial=int(cfg.get("latent_spatial", 32)),
-               scaling_factor=float(cfg.get("scaling_factor", 0.18215)))
-    ctx = mp.get_context("fork")
-    q_task, q_res = ctx.Queue(), ctx.Queue()
-    procs = [ctx.Process(target=_pool_worker, args=(q_task, q_res, st, en), daemon=True)
-             for st, en in ranges]
-    for p in procs:
-        p.start()
-    pool = EvalPool()
-    pool.q_task, pool.q_res = q_task, q_res
-    pool.procs, pool.ranges, pool.broken = procs, ranges, False
-    log(f"[eval100] spawned persistent pool: {len(procs)} workers x {worker_threads} "
-        f"threads (fork 一次, 常驻)")
-    return pool
-
-
-def pool_submit(pool, ckpt_path, base, step):
-    """给每个 worker 发一份本轮任务（各跑自己那份样本）。
-    返回是否已提交；池已 broken / 有 worker 死亡则返回 False。"""
-    if pool is None or pool.broken:
-        return False
-    if not all(p.is_alive() for p in pool.procs):
-        pool.broken = True
-        log("[eval100] pool worker(s) dead -> 弃用, 回退单进程")
-        return False
-    task = (ckpt_path, base, step)
-    for _ in pool.procs:
-        pool.q_task.put(task)
-    return True
-
-
-def pool_collect(pool, timeout=WORKER_TIMEOUT):
-    """等待本轮全部 worker 结果（带超时），汇总加权 MSE/SSIM。
-    返回 (mse, ssim, ok)；失败时置 broken 并关池，调用方回退单进程。"""
-    deadline = time.time() + timeout
-    got, errs = {}, []
-    for _ in range(len(pool.procs)):
-        remaining = deadline - time.time()
-        if remaining <= 0:
-            errs.append("timeout")
-            break
-        try:
-            parts = pool.q_res.get(timeout=remaining)
-            tag, st, en = parts[0], parts[1], parts[2]
-            if tag == "ok":
-                got[(st, en)] = (parts[3], parts[4])
-            else:
-                errs.append(str(parts[3]) if len(parts) > 3 else parts)
-        except Exception:
-            errs.append("no-result")
-    missing = [(st, en) for (st, en) in pool.ranges if (st, en) not in got]
-    if missing or errs:
-        log(f"[eval100] {len(errs)} err + {len(missing)} missing -> 回退单进程 "
-            f"({errs[:1]})")
-        pool.broken = True
-        pool_shutdown(pool)
-        return None, None, False
-    t_mse = t_ssim = t_cnt = 0.0
-    for (st, en), (mse, ssim) in got.items():
-        c = en - st
-        t_mse += mse * c
-        t_ssim += ssim * c
-        t_cnt += c
-    return t_mse / t_cnt, t_ssim / t_cnt, True
-
-
-def pool_shutdown(pool):
-    if pool is None:
-        return
-    for _ in pool.procs:
-        pool.q_task.put(None)
-    for p in pool.procs:
-        p.join(timeout=10)
-    for p in pool.procs:
-        if p.is_alive():
-            p.terminate()
-            p.join(timeout=5)
-    log("[eval100] pool shut down")
-
-
-# ---------------------------------------------------------------------------
-# 单 ckpt 评测
-# ---------------------------------------------------------------------------
-
-def eval_one(model, vae, device, ckpt_dir, step, caches, cfg,
-             pool=None, ckpt_path=None, base=None):
+def _run_task(task):
+    """执行单个任务。Worker 已有 model/VAE/caches，这里只换权重+跑推理。
+    task 是一个 dict，包含所有必要参数。"""
     from eval_auto import eval_gen_in_memory
-    eval_cache, show5_cache, seen5_cache = caches
+    ckpt_path = task["ckpt_path"]
+    ckpt_name = task["ckpt_name"]
 
-    steps = int(cfg["steps"])
-    sample_cfg = float(cfg["cfg"])
-    seed = int(cfg["seed"])
-    metric_batch = int(cfg["batch"])
-    workers = int(cfg.get("workers", 1))
-    worker_threads = int(cfg.get("worker_threads", 8))
+    # 换权重（仅当 ckpt 变化时）
+    if ckpt_name != _W["current_ckpt"]:
+        # 注意：PyTorch 1.13 不支持 mmap=True。但 OS Page Cache 天然共享：
+        # 251GB RAM + 670MB ckpt → 第一个 worker 读完后文件已驻留 page cache，
+        # 后续 15 个 worker 直接从内存读，无磁盘 I/O
+        ckpt = torch.load(ckpt_path, map_location="cpu", weights_only=False)
+        load_ckpt_weights(_W["model"], ckpt, ckpt_name)
+        _W["current_ckpt"] = ckpt_name
+        del ckpt
 
-    result = {"step": step, "mse": None, "ssim": None}
+    cfg = _W["cfg"]
+    ttype = task["type"]
+    result = {"type": ttype, "worker": os.getpid()}
 
-    # 0) 向常驻池提交本轮 eval100 任务（worker 与父进程的展示并行跑）。
-    #    池在启动时已一次性 fork，此后父进程随便用多线程，无再次 fork。
-    submitted = False
-    if pool is not None and eval_cache is not None and len(eval_cache["conds"]) >= workers:
-        submitted = pool_submit(pool, ckpt_path, base, step)
+    if ttype == "eval_batch":
+        cache = _W["caches"][0]  # eval_cache
+        s, e = task["start"], task["end"]
+        sub = {
+            "conds": cache["conds"][s:e],
+            "gts": cache["gts"][s:e],
+            "gs": cache["gs"][s:e] if cache.get("gs") is not None else None,
+        }
+        mse, ssim = eval_gen_in_memory(
+            _W["model"], _W["vae"], "cpu", sub,
+            n=e - s, steps=cfg["steps"], cfg=cfg["cfg"], seed=cfg["seed"],
+            batch=min(e - s, cfg["batch"]), vis_out=None, vis_n=0,
+            cond_mode=cfg["cond_mode"], save_samples_dir=None, step=None,
+            glyph_init_mix=cfg["glyph_init_mix"],
+            latent_channels=cfg["latent_channels"],
+            latent_spatial=cfg["latent_spatial"],
+            scaling_factor=cfg["scaling_factor"])
+        result.update(mse=mse, ssim=ssim, count=e - s, start=s, end=e)
 
-    # 父进程线程数：展示用（不影响已 fork 的常驻池）
-    torch.set_num_threads(max(1, min(worker_threads, 8)))
-
-    _lc = int(cfg.get("latent_channels", 4))
-    _ls = int(cfg.get("latent_spatial", 32))
-    _sf = float(cfg.get("scaling_factor", 0.18215))
-
-    # 1) 展示：show5（固定 unseen 5 样本）
-    if show5_cache is not None:
-        n = len(show5_cache["conds"])
-        log(f"[eval] step {step}: show5 display (n={n}) ...")
+    elif ttype == "show5":
+        cache = _W["caches"][1]  # show5_cache
+        n = len(cache["conds"])
         eval_gen_in_memory(
-            model, vae, device, show5_cache,
-            n=n, steps=steps, cfg=sample_cfg, seed=seed, batch=min(n, 16),
-            vis_out=f"{ckpt_dir}/eval_latest.png", vis_n=n,
+            _W["model"], _W["vae"], "cpu", cache,
+            n=n, steps=cfg["steps"], cfg=cfg["cfg"], seed=cfg["seed"],
+            batch=min(n, 16),
+            vis_out=task.get("vis_out"), vis_n=n,
             cond_mode=cfg["cond_mode"],
-            save_samples_dir=f"{ckpt_dir}/eval_samples", step=step,
-            glyph_init_mix=float(cfg["glyph_init_mix"]),
-            latent_channels=_lc, latent_spatial=_ls, scaling_factor=_sf)
+            save_samples_dir=task.get("save_dir"), step=task.get("step"),
+            glyph_init_mix=cfg["glyph_init_mix"],
+            latent_channels=cfg["latent_channels"],
+            latent_spatial=cfg["latent_spatial"],
+            scaling_factor=cfg["scaling_factor"])
+        result.update(status="ok")
 
-    # 2) 展示：seen5（训练集样本，不进入任何指标）
-    if seen5_cache is not None:
-        n = len(seen5_cache["conds"])
-        log(f"[eval] step {step}: seen5 display (n={n}) ...")
+    elif ttype == "seen5":
+        cache = _W["caches"][2]  # seen5_cache
+        n = len(cache["conds"])
         eval_gen_in_memory(
-            model, vae, device, seen5_cache,
-            n=n, steps=steps, cfg=sample_cfg, seed=seed, batch=min(n, 16),
+            _W["model"], _W["vae"], "cpu", cache,
+            n=n, steps=cfg["steps"], cfg=cfg["cfg"], seed=cfg["seed"],
+            batch=min(n, 16),
             vis_out=None, vis_n=n,
             cond_mode=cfg["cond_mode"],
-            save_samples_dir=f"{ckpt_dir}/seen_samples", step=step,
-            glyph_init_mix=float(cfg["glyph_init_mix"]),
-            latent_channels=_lc, latent_spatial=_ls, scaling_factor=_sf)
-
-    # 3) 指标：eval100（最慢；常驻池 worker 已在前台跑完，这里汇总；失败则回退单进程）
-    if eval_cache is not None:
-        n = len(eval_cache["conds"])
-        t0 = time.time()
-        mse = ssim = None
-        if submitted:
-            log(f"[eval] step {step}: free-sampling eval100 (n={n}, workers={workers}) ...")
-            mse, ssim, used = pool_collect(pool)
-            if not used:
-                log(f"[eval] step {step}: 并行失败，回退单进程 eval100 ...")
-        if mse is None:
-            log(f"[eval] step {step}: free-sampling eval100 (n={n}, steps={steps}, cfg={sample_cfg}) ...")
-            mse, ssim = eval_gen_in_memory(
-                model, vae, device, eval_cache,
-                n=n, steps=steps, cfg=sample_cfg, seed=seed, batch=metric_batch,
-                vis_out=None, vis_n=5, cond_mode=cfg["cond_mode"],
-                save_samples_dir=None, step=None,
-                glyph_init_mix=float(cfg["glyph_init_mix"]),
-                latent_channels=_lc, latent_spatial=_ls, scaling_factor=_sf)
-        result.update(mse=mse, ssim=ssim)
-        log(f"[eval] step {step}: free-sampling MSE={mse:.5f} SSIM={ssim:.4f} "
-            f"({time.time()-t0:.0f}s)")
-        with open(f"{ckpt_dir}/eval_auto_{step:07d}.json", "w") as _ef:
-            json.dump(result, _ef)
+            save_samples_dir=task.get("save_dir"), step=task.get("step"),
+            glyph_init_mix=cfg["glyph_init_mix"],
+            latent_channels=cfg["latent_channels"],
+            latent_spatial=cfg["latent_spatial"],
+            scaling_factor=cfg["scaling_factor"])
+        result.update(status="ok")
 
     return result
+
+
+# ---------------------------------------------------------------------------
+# 单 ckpt 评测：纯调度逻辑
+# ---------------------------------------------------------------------------
+
+def eval_one_ckpt(executor, ckpt_path, ckpt_name, step, ckpt_dir,
+                  workers, eval_n, batch_sz=None):
+    """提交一个 ckpt 的全部任务到 executor，等待结果，汇总指标。
+    batch_sz: eval100 动态分批大小。None 时按 ceil(eval_n / workers) 自动计算，
+    确保任务数 ≈ Worker 数，一波流带走（消灭长尾效应）。"""
+    t0 = time.time()
+    n_eval = eval_n
+    if batch_sz is None or batch_sz <= 0:
+        # 自动: 让 batch 数 ≈ worker 数，每个 worker 恰好分到 ~1 批
+        batch_sz = max(1, (n_eval + workers - 1) // workers)
+    eval_ranges = [(i, min(i + batch_sz, n_eval))
+                   for i in range(0, n_eval, batch_sz)]
+
+    futures = []
+
+    # 1) show5（1 个任务）
+    show5_task = {
+        "type": "show5", "ckpt_path": ckpt_path, "ckpt_name": ckpt_name,
+        "vis_out": f"{ckpt_dir}/eval_latest.png",
+        "save_dir": f"{ckpt_dir}/eval_samples", "step": step,
+    }
+    futures.append(("show5", executor.submit(_run_task, show5_task)))
+
+    # 2) seen5（1 个任务）
+    seen5_task = {
+        "type": "seen5", "ckpt_path": ckpt_path, "ckpt_name": ckpt_name,
+        "save_dir": f"{ckpt_dir}/seen_samples", "step": step,
+    }
+    futures.append(("seen5", executor.submit(_run_task, seen5_task)))
+
+    # 3) eval100（动态分批，约 13 个任务）
+    for s, e in eval_ranges:
+        task = {
+            "type": "eval_batch", "ckpt_path": ckpt_path, "ckpt_name": ckpt_name,
+            "start": s, "end": e,
+        }
+        futures.append(("eval", executor.submit(_run_task, task)))
+
+    # 收集结果（动态完成，先完成先收集）
+    total_mse = total_ssim = total_cnt = 0.0
+    show5_ok = seen5_ok = False
+    errors = []
+
+    for label, future in futures:
+        try:
+            res = future.result(timeout=1800)
+            if res["type"] == "eval_batch":
+                total_mse += res["mse"] * res["count"]
+                total_ssim += res["ssim"] * res["count"]
+                total_cnt += res["count"]
+            elif res["type"] == "show5":
+                show5_ok = True
+            elif res["type"] == "seen5":
+                seen5_ok = True
+        except Exception as e:
+            errors.append(f"{label}: {e}")
+
+    if errors:
+        log(f"[eval] step {step}: {len(errors)} errors: {errors[:3]}")
+
+    if total_cnt == 0:
+        log(f"[eval] step {step}: eval100 全部失败")
+        return None, None
+
+    mse = total_mse / total_cnt
+    ssim = total_ssim / total_cnt
+    elapsed = time.time() - t0
+    log(f"[eval] step {step}: MSE={mse:.5f} SSIM={ssim:.4f} "
+        f"({elapsed:.0f}s, show5={'ok' if show5_ok else 'FAIL'}, "
+        f"seen5={'ok' if seen5_ok else 'FAIL'})")
+
+    # 写指标 JSON
+    result = {"step": step, "mse": mse, "ssim": ssim}
+    with open(f"{ckpt_dir}/eval_auto_{step:07d}.json", "w") as f:
+        json.dump(result, f)
+
+    return mse, ssim
 
 
 # ---------------------------------------------------------------------------
@@ -443,54 +443,66 @@ def save_state(ckpt_dir, state):
         json.dump(state, f, ensure_ascii=False, indent=2)
 
 
+def _ckpt_args_to_dict(ckpt_args):
+    """把 argparse.Namespace 转成 dict（spawn pickling 友好）。"""
+    return dict(vars(ckpt_args))
+
+
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--results-dir", default=None,
-                    help="训练 results 目录（train.py 在此写 _active_ckpt_dir.txt）")
-    ap.add_argument("--ckpt-dir", default=None,
-                    help="直接指定 ckpt 目录（优先于轮询 _active_ckpt_dir.txt）")
-    ap.add_argument("--interval", type=int, default=30, help="轮询间隔秒")
-    ap.add_argument("--once", action="store_true", help="只处理当前所有新 ckpt 一次后退出")
-    ap.add_argument("--device", choices=["cpu", "cuda"], default="cpu",
-                    help="eval 设备（cuda 用于 GPU 批量评测，自动选 cuda）")
-    ap.add_argument("--threads", type=int, default=0, help="torch 线程数（0=默认全核）")
-    ap.add_argument("--workers", type=int, default=1, help="eval100 数据并行进程数（fork 继承，>1 启用）")
-    ap.add_argument("--worker-threads", type=int, default=8, help="每 worker 的线程数")
+    ap.add_argument("--results-dir", default=None)
+    ap.add_argument("--ckpt-dir", default=None)
+    ap.add_argument("--interval", type=int, default=30)
+    ap.add_argument("--once", action="store_true")
+    ap.add_argument("--workers", type=int, default=10,
+                    help="Worker 进程数（默认 10）")
+    ap.add_argument("--worker-threads", type=int, default=6,
+                    help="每 Worker 的 torch 线程数（默认 6，10×6=60 物理核）")
+    ap.add_argument("--cores-per-worker", type=int, default=6,
+                    help="每 Worker 绑定物理核数（默认 6，10×6=60，留 4 核给系统）")
+    ap.add_argument("--no-affinity", action="store_true",
+                    help="禁用 CPU 绑核（调试用）")
     ap.add_argument("--seen5-csv", default=DEFAULT_SEEN5_CSV)
-    ap.add_argument("--show5-csv", default=None, help="show5 CSV (unseen samples for poster)")
+    ap.add_argument("--show5-csv", default=None)
     ap.add_argument("--eval-n", type=int, default=None)
     ap.add_argument("--steps", type=int, default=None)
     ap.add_argument("--cfg", type=float, default=None)
-    ap.add_argument("--batch", type=int, default=None)
+    ap.add_argument("--batch", type=int, default=None,
+                    help="eval100 动态分批大小（None=自动 ceil(eval_n/workers)）")
     args = ap.parse_args()
 
     if not args.ckpt_dir and not args.results_dir:
         ap.error("must provide --results-dir or --ckpt-dir")
-    if args.device == "cuda" and not torch.cuda.is_available():
-        log("[warn] --device cuda but CUDA unavailable, fallback to cpu")
-        args.device = "cpu"
-    if args.device == "cuda":
-        log(f"using device cuda ({torch.cuda.get_device_name(0)})")
 
-    if args.workers > 1:
-        # 多进程模式：父进程必须单线程，保证 start_pool 的 fork 永远干净（覆盖 --threads）
-        torch.set_num_threads(1)
-        log("torch threads = 1 (multiprocess eval100; fork 需单线程父进程)")
-    elif args.threads > 0:
-        torch.set_num_threads(args.threads)
-        log(f"torch threads set to {torch.get_num_threads()}")
-    else:
-        log(f"torch threads = {torch.get_num_threads()}")
+    # 父进程是纯调度器，不需要任何计算线程。设 1 线程避免 OpenMP 干扰。
+    torch.set_num_threads(1)
+    log(f"[main] workers={args.workers}, worker_threads={args.worker_threads}, "
+        f"cores_per_worker={args.cores_per_worker}, "
+        f"batch={args.batch or 'auto'}, "
+        f"affinity={'OFF' if args.no_affinity else 'ON'}")
+
+    # 预分配 CPU 核心表
+    core_table = None
+    if not args.no_affinity:
+        PHYSICAL_CORES = list(range(64))  # 双路 EPYC 7542 物理核 0-63
+        n_w = args.workers
+        cpw = args.cores_per_worker
+        core_table = []
+        for w in range(n_w):
+            start = w * cpw
+            end = min(start + cpw, 64)
+            core_table.append(PHYSICAL_CORES[start:end])
+        log(f"[main] core affinity table: " +
+            " ".join(f"W{i}={core_table[i]}" for i in range(n_w)))
 
     results_dir = None
     if args.results_dir:
         results_dir = os.path.abspath(args.results_dir)
         os.makedirs(results_dir, exist_ok=True)
 
-    model = vae = caches = None
-    model_args = None
+    executor = None
     last_ckpt_dir = None
-    pool = None
+    ckpt_args_dict = None
 
     while True:
         ckpt_dir = args.ckpt_dir or read_active_ckpt_dir(results_dir)
@@ -501,104 +513,104 @@ def main():
             time.sleep(args.interval)
             continue
 
-        # 实验切换：重置模型/缓存/状态/池
+        # 实验切换：销毁旧 pool，重建
         if ckpt_dir != last_ckpt_dir:
             log(f"[watch] active ckpt dir: {ckpt_dir}")
-            if pool is not None:
-                pool_shutdown(pool)
-                pool = None
-            model = vae = caches = None
-            model_args = None
+            if executor is not None:
+                executor.shutdown(wait=False)
+                executor = None
             last_ckpt_dir = ckpt_dir
             state = load_state(ckpt_dir)
+            log(f"[watch] loaded state: {len(state)} entries")
 
         done_files = sorted(glob.glob(os.path.join(ckpt_dir, "*.pt")))
-        if not done_files:
-            log(f"[wait] no checkpoints yet in {ckpt_dir}")
+        pending = [pt for pt in done_files
+                   if os.path.basename(pt) not in state
+                   and os.path.exists(pt + ".done")]
+        if not pending:
+            # 没有待评测的 ckpt，静默等待（只打一次日志，不刷屏）
+            if not hasattr(main, '_last_scan_log') or time.time() - main._last_scan_log > 300:
+                log(f"[scan] {len(done_files)} ckpts, {len(state)} done, 0 pending — waiting for new ckpt")
+                main._last_scan_log = time.time()
             if args.once:
                 return 0
             time.sleep(args.interval)
             continue
+        log(f"[scan] {len(done_files)} ckpts total, {len(state)} done, {len(pending)} pending")
 
-        processed_any = False
-        for pt in done_files:
+        for pt in pending:
             base = os.path.basename(pt)
-            if base in state:
-                continue
-            if not os.path.exists(pt + ".done"):
-                log(f"[skip] {base}: .done marker missing (still saving)")
-                continue
+
+            log(f"[scan] loading {base} ({os.path.getsize(pt)/1e6:.0f}MB)...")
             try:
                 ckpt = torch.load(pt, map_location="cpu", weights_only=False)
             except Exception as e:
                 log(f"[warn] load {base} failed: {e}")
                 continue
+
             ckpt_args = ckpt.get("args")
             if ckpt_args is None:
                 log(f"[warn] {base}: no args in ckpt, skip")
                 state[base] = {"error": "no args"}
                 continue
+
             step = int(ckpt.get("train_steps", 0) or 0)
             log(f"[eval] === processing {base} (step {step}) ===")
 
-            cfg = {
-                "steps": args.steps if args.steps else int(getattr(ckpt_args, "eval_steps", 50)),
-                "cfg": args.cfg if args.cfg else float(getattr(ckpt_args, "eval_cfg", 4.0)),
-                "seed": int(getattr(ckpt_args, "eval_seed", 0)),
-                "batch": args.batch if args.batch else int(getattr(ckpt_args, "eval_batch", 16)),
-                "cond_mode": getattr(ckpt_args, "cond_mode", "2cond"),
-                "glyph_init_mix": float(getattr(ckpt_args, "glyph_init_mix", 0.0)),
-                "workers": args.workers,
-                "worker_threads": args.worker_threads,
-                "latent_channels": int(getattr(ckpt_args, "latent_channels", 4)),
-                "latent_spatial": int(getattr(ckpt_args, "image_size", 256)) // int(getattr(ckpt_args, "vae_downscale", 8)),
-                "scaling_factor": float(getattr(ckpt_args, "vae_scaling_factor", 0.18215)),
-            }
+            # show5_csv 覆盖
+            if args.show5_csv:
+                ckpt_args.show5_csv = args.show5_csv
 
-            if model is None or model_args is None or model_args != ckpt_args:
-                log("[model] building ...")
-                if pool is not None:
-                    pool_shutdown(pool)
-                    pool = None
-                model = build_model(ckpt_args, device=args.device)
-                model_args = ckpt_args
-                log("[model] loading weights ...")
-                load_ckpt_weights(model, ckpt, base)
-                if vae is None:
-                    vae = load_vae(ckpt_args, device=args.device)
-                # Inject show5_csv from CLI into ckpt_args (train.py stores it, but
-                # auto_eval_cpu can override via --show5-csv for poster generation).
-                if args.show5_csv:
-                    ckpt_args.show5_csv = args.show5_csv
-                caches = build_caches(ckpt_args, args.seen5_csv)
-                if vae is None:
-                    log("[vae] VAE unavailable; skipping eval")
-                    state[base] = {"error": "vae unavailable"}
-                    continue
-                # 常驻池：此刻父进程仍处单线程（main 启动时 threads=1），fork 干净，
-                # 一次性 fork，之后所有轮次复用，不再 fork。
-                if args.workers > 1 and caches[0] is not None \
-                        and len(caches[0]["conds"]) >= args.workers:
-                    pool = start_pool(model, vae, caches[0], cfg,
-                                      args.workers, args.worker_threads)
-            else:
-                # 同一实验：只换权重，不重建模型
-                load_ckpt_weights(model, ckpt, base)
+            # 首次或实验切换：建 Worker 池
+            if executor is None:
+                ckpt_args_dict = _ckpt_args_to_dict(ckpt_args)
+                log(f"[pool] creating ProcessPoolExecutor: "
+                    f"{args.workers} workers (spawn, "
+                    f"affinity={'ON' if core_table else 'OFF'}), "
+                    f"args_dict={len(ckpt_args_dict)} keys")
+                ctx = mp.get_context("spawn")
+
+                # 重置 worker_id 计数器（文件锁方式，spawn 安全）
+                try:
+                    os.remove("/tmp/_eval_worker_id.counter")
+                except OSError:
+                    pass
+
+                executor = ProcessPoolExecutor(
+                    max_workers=args.workers,
+                    mp_context=ctx,
+                    initializer=_init_worker,
+                    initargs=(ckpt_args_dict, args.worker_threads,
+                              args.seen5_csv, args.show5_csv,
+                              core_table),
+                )
+                log(f"[pool] ProcessPoolExecutor created, waiting for workers...")
+
+            # 评测
+            eval_n = int(getattr(ckpt_args, "eval_n", 100))
+            if args.eval_n:
+                eval_n = args.eval_n
 
             try:
-                res = eval_one(model, vae, args.device, ckpt_dir, step, caches, cfg,
-                               pool=pool, ckpt_path=pt, base=base)
-                state[base] = {"step": step, "ok": True,
-                               "mse": res["mse"], "ssim": res["ssim"],
-                               "ts": datetime.datetime.now().isoformat()}
+                mse, ssim = eval_one_ckpt(
+                    executor, pt, base, step, ckpt_dir,
+                    args.workers, eval_n, batch_sz=args.batch)
+                if mse is not None:
+                    state[base] = {"step": step, "ok": True,
+                                   "mse": mse, "ssim": ssim,
+                                   "ts": datetime.datetime.now().isoformat()}
+                else:
+                    state[base] = {"step": step, "error": "eval failed"}
                 save_state(ckpt_dir, state)
-                processed_any = True
             except Exception as e:
-                import traceback
                 log(f"[error] eval {base} failed: {e}")
                 traceback.print_exc()
                 state[base] = {"step": step, "error": str(e)}
                 save_state(ckpt_dir, state)
+
+            del ckpt
+            # 实时更新 state，让下一轮 scan 只看到未完成的
+            state = load_state(ckpt_dir)
 
         if args.once:
             return 0
@@ -606,4 +618,4 @@ def main():
 
 
 if __name__ == "__main__":
-    sys.exit(main())
+    main()
