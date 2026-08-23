@@ -52,18 +52,22 @@ def num(v):
 
 def remote_find_latest_log():
     """找 ctrl 训练的最新日志文件 (run_ctrl_top30.log 或 run_ctrl_skel.log)."""
-    cmd = ["ssh", "-o", "ConnectTimeout=10", "-p", REMOTE_PORT, f"{REMOTE_USER}@{REMOTE_HOST}"]
-    # 优先 run_ctrl_top30.log, 其次 run_ctrl_skel.log
+    cmd = ["ssh", "-o", "ConnectTimeout=25", "-o", "ServerAliveInterval=3",
+           "-p", REMOTE_PORT, f"{REMOTE_USER}@{REMOTE_HOST}"]
     script = (
         f"ls -t {REMOTE_BASE}/run_ctrl_top30.log "
         f"{REMOTE_BASE}/run_ctrl_skel.log 2>/dev/null | head -1"
     )
-    try:
-        r = subprocess.run(cmd + [script], capture_output=True, text=True, timeout=30)
-        paths = [p.strip() for p in r.stdout.splitlines() if p.strip().startswith("/")]
-        return paths[0] if paths else ""
-    except Exception:
-        return ""
+    for attempt in range(5):
+        try:
+            r = subprocess.run(cmd + [script], capture_output=True, text=True, timeout=30)
+            if r.returncode == 0:
+                paths = [p.strip() for p in r.stdout.splitlines() if p.strip().startswith("/")]
+                return paths[0] if paths else ""
+        except subprocess.TimeoutExpired:
+            pass
+        time.sleep(5)
+    return ""
 
 
 def pull_log():
@@ -72,13 +76,17 @@ def pull_log():
     if not latest:
         return None, False
     src = f"{REMOTE_USER}@{REMOTE_HOST}:{latest}"
-    try:
-        r = subprocess.run(
-            ["scp", "-o", "ConnectTimeout=15", "-P", REMOTE_PORT, src, LOCAL_CUR],
-            capture_output=True, text=True, timeout=60)
-        return latest, r.returncode == 0
-    except Exception:
-        return latest, False
+    for attempt in range(3):
+        try:
+            r = subprocess.run(
+                ["scp", "-o", "ConnectTimeout=20", "-P", REMOTE_PORT, src, LOCAL_CUR],
+                capture_output=True, text=True, timeout=40)
+            if r.returncode == 0:
+                return latest, True
+        except subprocess.TimeoutExpired:
+            pass
+        time.sleep(3)
+    return latest, False
 
 
 def parse():
@@ -115,8 +123,8 @@ def parse():
 
 def pull_eval_jsons():
     """拉取远程 eval_auto_*.json, 合并 mse/ssim 进 rows."""
-    cmd = ["ssh", "-o", "ConnectTimeout=10", "-p", REMOTE_PORT, f"{REMOTE_USER}@{REMOTE_HOST}"]
-    # 找所有 ctrl_skel 实验的 eval json
+    cmd = ["ssh", "-o", "ConnectTimeout=25", "-o", "ServerAliveInterval=3",
+           "-p", REMOTE_PORT, f"{REMOTE_USER}@{REMOTE_HOST}"]
     script = (
         f"for d in {REMOTE_BASE}/5script/results/ctrl_skel/*/checkpoints; do "
         f"  for f in $d/eval_auto_*.json; do "
@@ -124,31 +132,39 @@ def pull_eval_jsons():
         f"  done; "
         f"done 2>/dev/null"
     )
-    try:
-        r = subprocess.run(cmd + [script], capture_output=True, text=True, timeout=30)
-        json_paths = [p.strip() for p in r.stdout.splitlines() if p.strip()]
-    except Exception:
-        json_paths = []
+    json_paths = []
+    for attempt in range(3):
+        try:
+            r = subprocess.run(cmd + [script], capture_output=True, text=True, timeout=30)
+            if r.returncode == 0:
+                json_paths = [p.strip() for p in r.stdout.splitlines() if p.strip()]
+                break
+        except subprocess.TimeoutExpired:
+            pass
+        time.sleep(5)
 
     evals = {}
     for jp in json_paths:
-        try:
-            r = subprocess.run(
-                ["scp", "-o", "ConnectTimeout=10", "-P", REMOTE_PORT,
-                 f"{REMOTE_USER}@{REMOTE_HOST}:{jp}", "/tmp/_eval_tmp.json"],
-                capture_output=True, text=True, timeout=30)
-            if r.returncode == 0:
-                with open("/tmp/_eval_tmp.json", encoding="utf-8") as f:
-                    data = json.load(f)
-                step = data.get("step", 0)
-                evals[step] = {
-                    "mse_base": data.get("mse_base"),
-                    "ssim_base": data.get("ssim_base"),
-                    "mse_ctrl": data.get("mse_ctrl"),
-                    "ssim_ctrl": data.get("ssim_ctrl"),
-                }
-        except Exception:
-            pass
+        for attempt in range(2):
+            try:
+                r = subprocess.run(
+                    ["scp", "-o", "ConnectTimeout=15", "-P", REMOTE_PORT,
+                     f"{REMOTE_USER}@{REMOTE_HOST}:{jp}", "/tmp/_eval_tmp.json"],
+                    capture_output=True, text=True, timeout=20)
+                if r.returncode == 0:
+                    with open("/tmp/_eval_tmp.json", encoding="utf-8") as f:
+                        data = json.load(f)
+                    step = data.get("step", 0)
+                    evals[step] = {
+                        "mse_base": data.get("mse_base"),
+                        "ssim_base": data.get("ssim_base"),
+                        "mse_ctrl": data.get("mse_ctrl"),
+                        "ssim_ctrl": data.get("ssim_ctrl"),
+                    }
+                    break
+            except Exception:
+                pass
+            time.sleep(2)
     return evals
 
 
