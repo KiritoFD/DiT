@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 # ---- 大权重 / 数据 ----
 *.pt
 *.pth
@@ -6,13 +7,13 @@
 *.7z
 *.tar.gz
 *.tgz
+*.rar
+*.exe
 dataset/
 MCCD/
 pretrained_models/
-test_1k_cache.pt
-ckpt_s_scratch.pt
 
-# ---- 大数据 JSON（清洗管道产物）----
+# ---- 大数据 JSON（清洗管道产物，不入库）----
 final_manifest*.json
 final_img_plan.json
 final_latent_plan.json
@@ -28,6 +29,13 @@ _official_4tuples.json
 _official_vocab.json
 _id_maps.json
 _calli_map.json
+CHAR_PLAN.json
+OOD_PLAN.json
+all_logs_summary.json
+mccd_mapping.json
+remote_labels_map.json
+remote_mccd_mapping.json
+train_data.json
 
 # ---- 推理/可视化临时产物 ----
 /*.png
@@ -36,23 +44,23 @@ viz_ab_*.png
 skel_*.png
 gtskel_*.png
 gtimg_*.png
-CHAR_PLAN.json
-OOD_PLAN.json
 
-# ---- 探针/临时脚本 ----
+# ---- 临时探针脚本 ----
 _diag_watchdog.sh
 _check_libs.py
 _verify_gt_labels.py
 _find_script_id.py
 _probe_dit_urls.py
 
-# ---- 归档的探针/历史脚本（本地保留，不进 git）----
+# ---- 归档（本地保留，不进 git）----
 archive/
+_sync_work/
 
 # ---- 数据/产物目录（不进 git）----
 eval_imgs_10000/
 eval_pics/
 eval_pngs/
+eval_logs/
 example_100/
 final/
 latent_missing/
@@ -64,26 +72,16 @@ results_relative/
 results_test/
 scratch/
 test_1k/
-dict.txt
-dict2.txt
-ood_results/
+visuals/
+s6_top6_dashboard/
+onnx_vae/
+_exp_cache/
+new_data_eval_imgs/
 
-# ---- tools 运行时数据（脚本/HTML 进 git）----
-tools/train_data.json
-tools/*.png
-tools/*.log
-tools/__pycache__/
-
-# ---- 数据产物 / 废弃占位（不进 git）----
-train.csv
-test.csv
-val.csv
+# ---- 数据 CSV ----
 dwm_monitor_log.csv
 eval_all_summary.csv
 eval_quant_result.csv
-all_logs_summary.json
-remote_labels_map.json
-remote_mccd_mapping.json
 
 # ---- 日志 / 运行时 ----
 *.log
@@ -91,17 +89,14 @@ remote_mccd_mapping.json
 __pycache__/
 *.pyc
 .vscode/
-train_data.json
+.gradio/
 
-# ---- 超大二进制 / 可再生成缓存 (>100MB 或可由脚本重建) ----
-# 1.2GB latent 探针缓存：可删可重建
+# ---- 可再生成缓存 ----
 5script/structure_probe_cache/
 5script/condition_probes/
 5script/structure_probes/
-# 标准字形渲染图 + VAE latent（由 build_std_glyph_img/build_std_latent 重建）
 tools/std_glyph_img/
 tools/std_glyph_latent/
-# eval/历史取样/快照产物（可再拉取）
 tools/remote_eval_samples/
 tools/remote_eval_samples_test/
 tools/remote_eval_samples_test_steps/
@@ -109,24 +104,6 @@ tools/remote_gt/
 tools/snapshots/
 tools/_cs3_check/
 tools/_fonttest/
-# 误入的下载器可执行文件
-*.exe
-
-
-
-
-# ---- 数据/产物 (不入库) ----
-*.pt
-*.pth
-*.tar.gz
-*.tgz
-*.zip
-*.rar
-*.exe
-*.log
-.freebuff/
-_exp_cache/
-_sync_work/
 tools/_exp_cache/
 tools/_exp_poster_tmp/
 tools/poster_archive/
@@ -134,17 +111,15 @@ tools/remote_eval_jsons/
 tools/remote_seen_samples/
 tools/experiment_progress/
 tools/dashboards/
+
+# ---- 训练产物目录 ----
 final_images/
 final_imgs_256/
 final_canny/
 final_skeleton/
 final_skeleton_d3/
 final_latents/
-dataset/
-scratch/
-s6_top6_dashboard/
-.gradio/
-train_data.json
+
 # 保留 docs/s6_report 下的评测产物与海报
 !docs/s6_report/**/*.png
 !docs/s6_report/**/*.json
