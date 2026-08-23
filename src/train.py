@@ -684,15 +684,32 @@ def main(args):
                 loss_repa = torch.tensor(0.0, device=device)
                 loss_latent_canny = torch.tensor(0.0, device=device)
                 loss_latent_skel = torch.tensor(0.0, device=device)
-                # X0Lat：模型预测的干净 latent 与 GT latent 的 MSE（直接回答
-                # “输出和 GT latent 比”的指标；注意它随 t 混合了高噪声步，
-                # 高噪声步 x0 预测天然不准，所以数值比 eps-MSE 大是正常的）。
                 loss_x0lat = torch.tensor(0.0, device=device)
 
+                # === INFRA FIX: pred_xstart from training_losses carries the ENTIRE DiT
+                # forward graph (every block's activations are kept alive because the
+                # graph flows back through _predict_xstart_from_eps → model_output).
+                # This is THE memory leak: the 256-token × 384-dim × 12-block activation
+                # graph stays pinned until backward() runs, and struct decoders build
+                # ADDITIONAL 256×256 activations on top of it. When t<=500 (~50% of steps)
+                # the decoder runs → graph doubles; when t>500 the graph lingers but
+                # decoders don't run → the cycling 20G→22G→14G pattern.
+                #
+                # FIX: extract pred_xstart WITH the graph only when we actually need it
+                # for a differentiable struct loss (t<=max_t). For t>500 steps, detach
+                # immediately so the full graph is freed at the next zero_grad. We also
+                # break the reference in loss_dict so no stale graph survives the loop.
+                _need_x0_grad = (latent_struct_loss_fn is not None
+                                 or getattr(args, 'w_latent_skel', 0) > 0
+                                 or getattr(args, 'w_latent_canny', 0) > 0
+                                 or getattr(args, 'w_std_mid', 0.0) > 0)
                 pred_xstart_latent = loss_dict.get("pred_xstart", None)
-                # X0Lat removed from logging (it was keeping the graph alive and
-                # adds no value beyond Diff for monitoring). pred_xstart is still
-                # needed for struct losses below, but only used there when t<=max_t.
+                if pred_xstart_latent is not None and not _need_x0_grad:
+                    # No struct loss this run at all — drop the graph immediately.
+                    pred_xstart_latent = pred_xstart_latent.detach()
+                # Clear the heavy reference inside loss_dict so the dict can't keep
+                # the graph alive after we exit this step.
+                loss_dict.pop("pred_xstart", None)
 
                 # ---- MIDSTEP_STD: 中间噪声水平, 让去噪结果 x0_pred 逼近标准字形 latent g。
                 # 主损失从 GT x0 学报内容+风格; 此项在 sqrt(alpha_cumprod)∈[alo,ahi] 的中段噪声,
@@ -823,6 +840,12 @@ def main(args):
                         if latent_struct_canny_fn is not None and canny_gt is not None:
                             _ca = canny_gt[_lst_mask].float()
                             loss_latent_struct_canny = latent_struct_canny_fn(_p, _ca)
+                        # Free the 256×256 decoder intermediate tensors NOW (they're
+                        # captured in the graph of the loss tensors, but the inputs
+                        # _p/_sk/_ca and the mask are no longer needed). This lets the
+                        # allocator compact before backward instead of holding two
+                        # decoder graphs + the DiT graph simultaneously.
+                        del _p, _sk, _ca, _lst_mask
 
                 intermediate_feats = loss_dict.get("intermediate_feats", None)
                 if x is not None and intermediate_feats is not None and repa_loss_fn is not None and args.w_repa > 0:
@@ -848,6 +871,21 @@ def main(args):
                         + getattr(args, 'w_std_mid', 0.0) * loss_std_mid)
 
                 opt.zero_grad()
+                # Capture scalar values into plain Python floats BEFORE we del the
+                # tensors. This lets the autograd graph be freed immediately while the
+                # running accumulators (pure floats) survive for logging.
+                _v_loss = loss.item() if torch.isfinite(loss) else 0.0
+                _v_diff = loss_diff.item()
+                _v_canny = loss_canny.item()
+                _v_skel = loss_skel.item()
+                _v_lc = loss_latent_canny.item()
+                _v_ls = loss_latent_skel.item()
+                _v_lss = loss_latent_struct_skel.item() if isinstance(loss_latent_struct_skel, torch.Tensor) else 0.0
+                _v_lsc = loss_latent_struct_canny.item() if isinstance(loss_latent_struct_canny, torch.Tensor) else 0.0
+                _v_repa = loss_repa.item()
+                _v_skelh = loss_skel_head.item()
+                _v_stdmid = loss_std_mid.item()
+
                 # NaN guard: skip the step if loss is not finite (e.g. a bad sample).
                 if torch.isfinite(loss):
                     loss.backward()
@@ -857,9 +895,6 @@ def main(args):
                         scheduler.step()
                     if ema_model is not None:
                         if args.ema_warmup:
-                            # Early fixed 0.9999 EMA retains mostly random initialization
-                            # for thousands of steps. This update-count cap is the standard
-                            # warm-start schedule: 0.1 initially, ~0.991 at 1k, ~0.9991 at 10k.
                             current_ema_decay = min(
                                 args.ema_decay, (1.0 + train_steps) / (10.0 + train_steps))
                         else:
@@ -870,24 +905,30 @@ def main(args):
                     if rank == 0:
                         logger.warning(
                             f"Step {train_steps} skipped: non-finite loss "
-                            f"(diff={loss_diff.item():.4f}, canny={loss_canny.item():.4f}, "
-                            f"skel={loss_skel.item():.4f}). Accumulated skips: {nan_steps}"
+                            f"(diff={_v_diff:.4f}, canny={_v_canny:.4f}, "
+                            f"skel={_v_skel:.4f}). Accumulated skips: {nan_steps}"
                         )
-                    # No optimizer update on NaN; just skip (grads are discarded).
+                # === INFRA: release the autograd graph every step, finite or not.
+                # The graph built by training_losses (DiT forward + pred_xstart) and the
+                # struct decoder graphs must be freed BEFORE the next forward, otherwise
+                # peak = diff_graph + struct_graph simultaneously → the 22G cycling.
+                del loss, loss_dict, loss_diff, pred_xstart_latent
+                del loss_canny, loss_skel, loss_repa, loss_latent_canny, loss_latent_skel
+                del loss_latent_struct_skel, loss_latent_struct_canny, loss_skel_head, loss_std_mid, loss_x0lat
 
-                if torch.isfinite(loss):
-                    running_loss += loss.item()
-                    running_diff += loss_diff.item()
-                    running_canny += loss_canny.item()
-                    running_skel += loss_skel.item()
-                    running_latent_canny += loss_latent_canny.item()
-                    running_latent_skel += loss_latent_skel.item()
-                    running_latent_struct_skel += loss_latent_struct_skel.item() if isinstance(loss_latent_struct_skel, torch.Tensor) else 0
-                    running_latent_struct_canny += loss_latent_struct_canny.item() if isinstance(loss_latent_struct_canny, torch.Tensor) else 0
-                    running_repa += loss_repa.item()
-                    running_skel_head += loss_skel_head.item()
-                    running_std_mid += loss_std_mid.item()
-                    running_x0lat += 0  # X0Lat removed (was keeping graph alive)
+                if _v_loss:
+                    running_loss += _v_loss
+                    running_diff += _v_diff
+                    running_canny += _v_canny
+                    running_skel += _v_skel
+                    running_latent_canny += _v_lc
+                    running_latent_skel += _v_ls
+                    running_latent_struct_skel += _v_lss
+                    running_latent_struct_canny += _v_lsc
+                    running_repa += _v_repa
+                    running_skel_head += _v_skelh
+                    running_std_mid += _v_stdmid
+                    running_x0lat += 0
                     log_steps += 1
                 train_steps += 1
                 

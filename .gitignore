@@ -126,20 +126,24 @@ tools/_fonttest/
 *.log
 .freebuff/
 _exp_cache/
+_sync_work/
 tools/_exp_cache/
 tools/_exp_poster_tmp/
 tools/poster_archive/
 tools/remote_eval_jsons/
 tools/remote_seen_samples/
 tools/experiment_progress/
+tools/dashboards/
 final_images/
 final_imgs_256/
 final_canny/
 final_skeleton/
+final_skeleton_d3/
 final_latents/
 dataset/
 scratch/
 s6_top6_dashboard/
+.gradio/
 train_data.json
 # 保留 docs/s6_report 下的评测产物与海报
 !docs/s6_report/**/*.png
