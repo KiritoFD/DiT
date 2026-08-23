@@ -1,21 +1,37 @@
 # DiT 书法生成（MCCD）
 
-用 **DiT (Diffusion Transformer)** 做「书家 × 字体 × 汉字」条件书法字生成（256×256）。
+用 **DiT (Diffusion Transformer)** 做「书家 × 字形」条件书法字生成（256×256）。
 
 ```
-输入: (书家 calligrapher_id, 字体 script_id, 汉字 character_id)
+输入: (书家 calligrapher_id, 字形 glyph_id = script × character)
 输出: 256×256 书法字图像
 ```
 
 基于官方 DiT（[facebookresearch/DiT](https://github.com/facebookresearch/DiT)）改造成 2Cond 架构，支持：
-- **factorized_add** 条件融合（书家 128d + glyph 256d → 投影相加）
+- **factorized_add** 条件融合（书家 128d + glyph 256d → 投影相加，支持组合泛化）
+- **kl-f4 VAE**（f4 下采样, 3ch latent, 55.3M params, 重建底噪 MSE=0.0019）
 - **ControlNet** skel 结构条件（3px skeleton 注入，zero-init warm-start / from-scratch）
 - 从零预训练 / warm-start 两种训练模式
-- LoRA 容量可调 / 结构 loss（Canny+Skeleton）可选
-- 自动 CPU/GPU eval + 静态 HTML dashboard
+- bf16 autocast + EMA + 自动 CPU eval + early stop
 
-> 远程训练服务器：`root@10.176.54.17:36430`，项目目录 `/root/Workspace/xy/DiT`。  
+> 远程训练服务器：`root@10.176.54.17:36430`，项目目录 `/root/Workspace/xy/DiT`。
 > 本仓库为本地工作副本，与远程代码保持同步（`train.py`/`models.py`/`eval_auto.py` 等）。
+
+---
+
+## 📖 文档
+
+完整文档在 [`docs/`](docs/README.md)，按主题组织：
+
+| 文档 | 内容 |
+|------|------|
+| [docs/model/architecture.md](docs/model/architecture.md) | DiT 模型架构 (2Cond/3Cond, S/XL, f4/f8 VAE) |
+| [docs/training/training.md](docs/training/training.md) | 训练管线 (bf16, EMA, LR, 显存, 远程启动) |
+| [docs/data/dataset.md](docs/data/dataset.md) | MCCD 数据集, latent 编码, VAE 工具 |
+| [docs/eval/evaluation.md](docs/eval/evaluation.md) | auto_eval_cpu, 指标, 早停机制 |
+| [docs/experiments/experiment_log.md](docs/experiments/experiment_log.md) | V1→S7 实验时间线与关键决策 |
+| [docs/model/CONTROLNET.md](docs/model/CONTROLNET.md) | ControlNet 骨架条件分支 |
+| [docs/s6_report/REPORT.md](docs/s6_report/REPORT.md) | S6 diff-only vs struct 对比报告 |
 
 ---
 
@@ -24,139 +40,103 @@
 ```
 src/                          # 核心源码（训练/模型/数据/loss/评测）
 ├── train.py                  # 主训练脚本 (DiT-2Cond/3Cond, latent/pixel)
-├── models.py                 # DiT 模型定义 (2Cond/3Cond, S/XL)
-├── losses.py                 # EdgeGradientLoss, SkeletonLoss, REPALoss, LatentStructLoss
-├── latent_dataset.py         # MCCDLatentDataset (latent shards + skel/canny)
-├── latent_structure.py       # StructDecoder (latent→skel/canny)
-├── samplers.py               # DDIM 采样器
-├── eval_auto.py              # 自动评测 (单步重建 + 自由采样 MSE/SSIM)
+├── models.py                 # DiT 模型定义 (2Cond/3Cond, S/XL, S/4)
+├── losses.py                 # EdgeGradientLoss, SkeletonLoss, REPALoss
+├── latent_dataset.py         # MCCDLatentDataset (auto-detect latent shape)
+├── eval_auto.py              # 自动评测 (latent_channels/spatial/scaling 动态)
 ├── dataset.py                # MCCDDataset (pixel mode)
-├── download.py               # 模型下载
-└── lora.py                   # LoRA 注入
+├── lora.py                   # LoRA 注入
+└── ...
 
 # 根目录镜像（与 src/ 保持同步，远程用）
-train.py  models.py  losses.py  latent_dataset.py  latent_structure.py
-samplers.py  eval_auto.py  dataset.py  download.py  lora.py
-auto_eval_cpu.py  auto_eval_ctrl.py  sample.py
+train.py  models.py  losses.py  latent_dataset.py  eval_auto.py  ...
+auto_eval_cpu.py  sample.py
 
-configs/                      # 47 个实验配置 (exp_*.json, resume_*.json)
+configs/                      # 实验配置 (exp_*.json, resume_*.json)
+├── s7_klf4_top30_diffonly.json  # 当前主跑: kl-f4, DiT-S/4, batch=224, 600k steps
 
-tools/                        # 活跃工具（6 个）
-├── controlnet/               # ControlNet 分支（详见 docs/CONTROLNET.md）
-│   ├── controlnet_dit.py     # ControlNetDiT + ControlConditionEncoder
-│   ├── train_controlnet.py   # 训练（warm-start / from-scratch）
-│   ├── sample_controlnet.py  # 推理
-│   ├── test_controlnet.py    # 单元测试
-│   ├── gradio_controlnet.py  # Gradio 前端（195k 推理 + GT 对照）
-│   ├── ctrl_skel.json        # warm-start 配置 (top6)
-│   └── ctrl_skel_top30.json  # from-scratch 配置 (top30, batch=112)
-├── pull_ctrl_monitor.py      # ControlNet 训练日志拉取
-├── build_ctrl_dashboard.py   # ControlNet 静态 HTML dashboard 生成
-├── build_dashboards.py       # 通用静态 dashboard 生成
-├── pull_monitor.py           # 通用训练日志拉取
-├── build_std_latent.py        # 标准字形 latent 构建
-├── gen_skel_d3.py             # skeleton 生成
-└── train_dashboard.html      # Dashboard HTML 模板
+tools/
+├── vae/                      # VAE 转换/编码/验证/对比工具
+├── controlnet/               # ControlNet 分支
+├── dashboards/               # 静态 HTML dashboards
+└── pull_monitor.py           # 远程日志拉取
 
-diffusion/                    # 扩散过程（DDPM/DDIM）
-labels/                       # ID 映射
-5script/                      # 实验配置与数据
-docs/                         # 文档
-├── CONTROLNET.md             # ControlNet 设计文档
-├── HANDOVER_2026-08-15.md    # 交接文档
-├── s6_report/                # s6 实验报告
-└── legacy/                   # 历史文档（dataset/training/inference 等）
-
-archive/                      # 归档（gitignored，本地保留）
-├── scripts/                  # 37 旧预处理/eval/前端脚本
-├── tools/                    # 50 旧诊断/分析/训练脚本
-├── shell/                    # 40 .sh/.ps1 脚本
-└── images/                   # 28 散落 PNG
+diffusion/                    # 扩散过程 (DDPM/DDIM)
+labels/                       # ID 映射 (calligrapher/character/script)
+5script/                      # 数据 CSV + 实验配置
+docs/                         # 项目文档（见上表）
 ```
 
-## 快速开始
-
-### 训练（远程）
-
-```bash
-# 1. 同步代码到远程
-rsync -avz --exclude='.git' --exclude='__pycache__' \
-  -e "ssh -p 36430" ./ root@10.176.54.17:/root/Workspace/xy/DiT/
-
-# 2. 拉起训练（tmux detached）
-ssh -p 36430 root@10.176.54.17
-cd /root/Workspace/xy/DiT
-tmux new-session -d -s train \
-  '/opt/conda/bin/python train.py --config exp_s6_top6_diffonly.json > log.txt 2>&1'
-
-# 3. 拉起 CPU eval（后台）
-nohup /opt/conda/bin/python auto_eval_cpu.py \
-  --results-dir 5script/results/s6_top6_diffonly --interval 30 > cpu_eval.log 2>&1 &
-```
-
-### ControlNet 训练
-
-```bash
-# warm-start (冻结主模型)
-tmux new-session -d -s ctrlSkel \
-  '/opt/conda/bin/python tools/controlnet/train_controlnet.py \
-   --config tools/controlnet/ctrl_skel.json > run_ctrl_skel.log 2>&1'
-
-# from-scratch (主模型+ctrl 一起训练)
-tmux new-session -d -s ctrlTop30 \
-  '/opt/conda/bin/python tools/controlnet/train_controlnet.py \
-   --config tools/controlnet/ctrl_skel_top30.json > run_ctrl_top30.log 2>&1'
-```
-
-### 前端推理
-
-```bash
-# Gradio 前端（195k 主模型 + GT 对照）
-python tools/controlnet/gradio_controlnet.py
-# 访问 http://127.0.0.1:7861/
-```
-
-### Dashboard
-
-```bash
-# 本地拉取远程日志 + 生成静态 HTML（每 30s 循环）
-python tools/build_ctrl_dashboard.py --loop --interval 30
-# 打开 tools/dashboards/ctrl_skel.html
-```
+---
 
 ## 模型架构
 
-| 模型 | hidden | depth | heads | patch | 参数量 | 条件 |
-|------|--------|-------|-------|-------|--------|------|
-| DiT-2Cond-S/2 | 384 | 12 | 6 | 2 | 33.0M | callig + glyph |
-| DiT-2Cond-XL/2 | 1152 | 28 | 16 | 2 | 673M | callig + glyph |
+| 模型 | hidden | depth | heads | patch | params | VAE | tokens |
+|------|--------|-------|-------|-------|--------|-----|--------|
+| DiT-2Cond-S/2 | 384 | 12 | 6 | 2 | 33.0M | f8 (4ch, 32²) | 256 |
+| **DiT-2Cond-S/4** | **384** | **12** | **6** | **4** | **41.8M** | **f4 (3ch, 64²)** | **256** |
+| DiT-2Cond-B/2 | 768 | 12 | 12 | 2 | 132M | f8 | 256 |
+| DiT-2Cond-XL/2 | 1152 | 28 | 16 | 2 | 673M | f8 | 256 |
 
-- **glyph_id** = f(character, script)，同字不同体有不同 ID
-- **factorized_add**: callig_embed(128) + char_embed(256) → 投影相加
-- **ControlNet**: 冻结主模型 + trainable ctrl_encoder(33.8M), zero-init 注入
+**当前方案 S/4 + kl-f4**: 同样 256 tokens，但 latent 信息量 3× (12288 vs 4096)，VAE 底噪减半 (0.0019 vs 0.0037)。
 
-## 评测指标
+---
 
-| 指标 | 说明 |
-|------|------|
-| MSE | 生成图 vs GT 的像素 MSE（256×256） |
-| SSIM | 结构相似性（11×11 高斯窗） |
-| OCR Acc | 字符识别准确率（DINOv2 分类器） |
-| Callig Acc | 书家风格准确率 |
-| Script Acc | 字体准确率 |
+## 快速开始
+
+### 训练（远程 tmux）
+
+```bash
+# 1. 同步代码
+scp -P 36430 train.py models.py eval_auto.py latent_dataset.py \
+    root@10.176.54.17:/root/Workspace/xy/DiT/
+
+# 2. 拉起训练 (GPU)
+ssh -p 36430 root@10.176.54.17
+cd /root/Workspace/xy/DiT
+tmux new-session -d -s s7klf4 \
+  '/opt/conda/bin/python train.py --config s7_klf4_top30_diffonly.json > run_s7_klf4.log 2>&1'
+
+# 3. 拉起 CPU eval（不阻塞 GPU）
+tmux new-session -d -s evalcpu \
+  '/opt/conda/bin/python auto_eval_cpu.py \
+    --results-dir 5script/results/s7_klf4_top30 \
+    --workers 8 --worker-threads 8 \
+    --seen5-csv 5script/seen5_top30.csv > auto_eval_cpu.log 2>&1'
+```
+
+### 本地 Dashboard
+
+```bash
+python tools/pull_monitor.py --loop --interval 30
+# 打开 tools/dashboards/index.html
+```
+
+---
+
+## 当前训练状态 (s7-klf4-top30-diffonly)
+
+| 参数 | 值 |
+|------|-----|
+| 模型 | DiT-2Cond-S/4 (41.8M params, from scratch) |
+| VAE | kl-f4 (f4, 3ch, 55.3M params) |
+| 数据 | top30 calligraphers, 128,842 images |
+| batch | 224 |
+| max_steps | 600,000 (early stop: patience=6, min=60k) |
+| 精度 | bf16 autocast |
+| EMA | decay=0.9999, warmup |
+| 速度 | 3.51 steps/s |
+| 显存 | 19.74G / 24G (RTX 4090) |
+
+---
 
 ## 关键结论
 
-- **ControlNet skel 条件有效**：warm-start 模式 MSE 0.443→0.249（-44%），SSIM 0.725→0.808（+8.2%）
-- **warm-start 最佳点**：step 25000（top6 数据集），之后过拟合
-- **from-scratch top30**：进行中（128k 样本，batch=112，20.45G 显存）
-- **条件覆盖**：理论组合 1.74 亿，训练实际仅覆盖 17.7 万（0.01%）—— OOD 泛化是核心课题
-
-## 相关文档
-
-- [ControlNet 设计文档](docs/CONTROLNET.md)
-- [交接文档](docs/HANDOVER_2026-08-15.md)
-- [s6 实验报告](docs/s6_report/REPORT.md)
+- **kl-f4 VAE 优于 sd-vae**: 重建底噪 MSE 0.0019 vs 0.0037 (减半), SSIM 0.988 vs 0.966, 参数更少
+- **diff-only 优于 struct losses**: S6 报告证明 canny+skel 结构损失把 x0 推离 VAE 流形
+- **factorized_add 优于 legacy**: 支持未见 (callig, glyph) 组合的组合泛化
+- **ControlNet skel 有效**: warm-start MSE 0.443→0.249 (-44%), 但过拟合快 (25k 最佳)
+- **条件覆盖极稀疏**: 理论 1.74 亿组合，训练仅覆盖 17.7 万 (0.01%) — OOD 泛化是核心课题
 
 ---
 

@@ -220,7 +220,8 @@ def prepare_gen_cache(dataset, n=100, cond_mode="3cond"):
 
 def eval_gen_in_memory(model, vae, device, cache, n=100, steps=50, cfg=4.0,
                        seed=0, batch=16, vis_out=None, vis_n=5, cond_mode="3cond",
-                       save_samples_dir=None, step=None, glyph_init_mix=0.0):
+                       save_samples_dir=None, step=None, glyph_init_mix=0.0,
+                       latent_channels=4, latent_spatial=32, scaling_factor=0.18215):
     """自由采样：纯噪声(或 std字形+噪声 HYBRID) -> DDIM 去噪链，与 GT 比 MSE/SSIM。
 
     glyph_init_mix     : alpha∈[0,1]，采样初始点混合系数。
@@ -243,7 +244,7 @@ def eval_gen_in_memory(model, vae, device, cache, n=100, steps=50, cfg=4.0,
     with torch.no_grad():
         for i in range(0, n, batch):
             j = min(i + batch, n)
-            noise = torch.randn(j - i, 4, 32, 32, device=device)
+            noise = torch.randn(j - i, latent_channels, latent_spatial, latent_spatial, device=device)
             gs = cache.get("gs")
             # HYBRID 混合初始点：xT = alpha*noise + (1-alpha)*标准字形latent
             if glyph_init_mix < 1.0 and gs is not None and gs[i:j].shape[0] == (j - i):
@@ -273,7 +274,7 @@ def eval_gen_in_memory(model, vae, device, cache, n=100, steps=50, cfg=4.0,
                 mk["g"] = gs[i:j].to(device)
             samples = ddim.ddim_sample_loop(model.forward_with_cfg, z.shape, z,
                                             clip_denoised=False, model_kwargs=mk, device=device)
-            dec = vae.decode(samples / 0.18215).sample
+            dec = vae.decode(samples / scaling_factor).sample
             gt = gts[i:j]
             mse_sum += F.mse_loss(dec, gt).item() * (j - i)
             for k in range(dec.shape[0]):
