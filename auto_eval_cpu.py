@@ -457,6 +457,7 @@ def main():
     ap.add_argument("--workers", type=int, default=1, help="eval100 数据并行进程数（fork 继承，>1 启用）")
     ap.add_argument("--worker-threads", type=int, default=8, help="每 worker 的线程数")
     ap.add_argument("--seen5-csv", default=DEFAULT_SEEN5_CSV)
+    ap.add_argument("--show5-csv", default=None, help="show5 CSV (unseen samples for poster)")
     ap.add_argument("--eval-n", type=int, default=None)
     ap.add_argument("--steps", type=int, default=None)
     ap.add_argument("--cfg", type=float, default=None)
@@ -565,6 +566,10 @@ def main():
                 load_ckpt_weights(model, ckpt, base)
                 if vae is None:
                     vae = load_vae(ckpt_args, device=args.device)
+                # Inject show5_csv from CLI into ckpt_args (train.py stores it, but
+                # auto_eval_cpu can override via --show5-csv for poster generation).
+                if args.show5_csv:
+                    ckpt_args.show5_csv = args.show5_csv
                 caches = build_caches(ckpt_args, args.seen5_csv)
                 if vae is None:
                     log("[vae] VAE unavailable; skipping eval")

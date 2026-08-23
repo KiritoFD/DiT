@@ -1,6 +1,6 @@
-calligrapher_id,character,std_glyph_key,calligrapher,character_id,glyph_id,script_id,script,image_path
-130,鼎,kai/U+09F0E,古文四声韵,6583,6583,0,楷,final_images/224156.png
-130,商,kai/U+05546,古文四声韵,925,925,0,楷,final_images/252587.png
-0,也,li/U+04E5F,others,212,28316,4,隶,final_images/9817.png
-0,刻,li/U+0523B,others,615,28719,4,隶,final_images/29261.png
-39,昌,kai/U+0660C,于右任,2377,2377,0,楷,final_images/101161.png
+image_path,calligrapher,script,character,calligrapher_id,script_id,character_id,glyph_id
+final_images/159857.png,集篆古文韵海,篆,絭,933,1,4229,11255
+final_images/162069.png,碑刻,隶,终,642,4,4352,32456
+final_images/164694.png,颜真卿,楷,翹,956,0,4443,4443
+final_images/160982.png,索靖,草,縉,674,2,4283,18335
+final_images/163862.png,王羲之,行,羲,601,3,4415,25493

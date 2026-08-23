@@ -1,16 +1,14 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-"""精简版训练监控：拉取当前实验训练日志 → 解析 → 写 train_data.json（供 dashboard）。
-核心只做三件事，去掉旧的 eval配图/海报/show5 等繁复流程：
-  1. 找远程当前实验目录的 log.txt（mtime 最新），scp 到本地 current_train.log
-  2. 解析 (step=...) 损失行 + [auto-eval] 行 → rows（mse/ssim 前向填充）
-  3. 写 train_data.json
+"""训练监控：拉取远程日志+eval → 写 train_data.json + 生成 eval poster + 更新 dashboard。
+
+每轮只用 2 次 SSH 连接（1 ssh 收集元数据 + 1 scp 拉文件），避免 sshd 限流。
 
 用法:
   python pull_monitor.py            # 拉一次
-  python pull_monitor.py --loop     # 每 --interval 秒循环（默认 60）
+  python pull_monitor.py --loop    # 每 --interval 秒循环（默认 120）
 """
-import os, re, sys, json, time, glob
+import os, re, sys, json, time, glob, io, tarfile
 import subprocess, datetime
 
 REMOTE_USER = "root"
@@ -19,23 +17,19 @@ REMOTE_PORT = "36430"
 REMOTE_BASE = "/root/Workspace/xy/DiT"
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-LOCAL_CUR = os.path.join(HERE, "current_train.log")   # 最新的当前日志副本
+LOCAL_CUR = os.path.join(HERE, "current_train.log")
 OUT_JSON = os.path.join(HERE, "train_data.json")
+LOCAL_ES = os.path.join(HERE, "remote_eval_samples")
+LOCAL_SEEN = os.path.join(HERE, "remote_seen_samples")
+LOCAL_EVAL_JSON = os.path.join(HERE, "remote_eval_auto.json")
+POSTER = os.path.join(HERE, "eval_poster.png")
+STATE_F = os.path.join(HERE, "poster_state.json")
 
-# 当前实验的数据集规模与 batch（用于算"数据过几遍"与"一遍需几小时"）
-# 按 exp_s5_2factor_top30: train_top30=128842 样本, batch=192
 DATASET_SIZE = 128842
-BATCH_SIZE = 192
+BATCH_SIZE = 224
+TOTAL_STEPS = 600000
 
-# 找当前实验的结果目录（5script/results 下，mtime 最新 -> 但取该系列目录：同一 experiment 名的多次 run 要拼接）
-FIND_CMD = (
-    "find %(base)s/5script/results -name log.txt 2>/dev/null "
-    "| xargs ls -t 2>/dev/null | head -1; "
-    "echo; ls -t %(base)s/exp_*.log %(base)s/exp_s2*.log 2>/dev/null | head -1"
-)
-# 找到最新 log.txt 后，取其"实验系列目录"（上级的上级），把该系列所有 log.txt cat 合并（支持 resume 拼接 0->N）
 LANRE = re.compile(r"\x1b\[[0-9;]*m")
-# 训练损失行：用分栏切分更稳，避免长串 .*? 贪婪问题
 ROW_RE = re.compile(r"\(step=(\d+)\)\s+(.*)")
 EVAL_RE = re.compile(
     r"\[auto-eval\]\s+step\s+(\d+):\s*(?:free-sampling\s+)?MSE=([\d.nan]+)\s*SSIM=([\d.nan]+)"
@@ -50,66 +44,95 @@ def num(v):
         return None
 
 
-def remote_find_latest():
-    """找最新 log.txt 的绝对路径（用于识别实验系列目录）。"""
-    cmd = ["ssh", "-o", "ConnectTimeout=10", "-p", REMOTE_PORT,
-           f"{REMOTE_USER}@{REMOTE_HOST}"]
+def _ssh(remote_cmd, timeout=30):
+    """单次 SSH 调用，返回 stdout 字符串。ssh 用 -p (小写) 端口。"""
+    cmd = ["ssh", "-o", "ConnectTimeout=15", "-p", REMOTE_PORT,
+           f"{REMOTE_USER}@{REMOTE_HOST}", remote_cmd]
     try:
-        r = subprocess.run(cmd + [FIND_CMD % {"base": REMOTE_BASE}],
-                           capture_output=True, text=True, timeout=30)
-        paths = [p for p in r.stdout.splitlines() if p.strip() and p.startswith("/")]
-        return paths[0] if paths else ""
+        r = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout)
+        return r.stdout if r.returncode == 0 else ""
     except Exception:
         return ""
 
 
-def pull_log():
-    """拉取当前实验系列的**所有** log.txt（cat 合并）到本地 current_train.log。
-    这样 resume run 能拼接前一个 run 的曲线（step 0 -> N -> 继续），parse 按 step 去重。"""
-    latest = remote_find_latest()
+def _scp_dir(remote_path, local_dir, timeout=120):
+    """scp -r 一个远程目录到本地。scp 用 -P (大写) 端口。"""
+    os.makedirs(local_dir, exist_ok=True)
+    try:
+        r = subprocess.run(
+            ["scp", "-o", "ConnectTimeout=15", "-P", REMOTE_PORT, "-r",
+             f"{REMOTE_USER}@{REMOTE_HOST}:{remote_path}", local_dir + "/"],
+            capture_output=True, text=True, timeout=timeout)
+        return r.returncode == 0
+    except Exception:
+        return False
+
+
+def collect_remote():
+    """一次 SSH 调用完成所有远程信息收集：
+    1. 找最新 log.txt 路径
+    2. cat 该实验系列所有 log.txt
+    3. cat 所有 eval_auto_*.json
+    4. ls eval_samples/ 和 seen_samples/ 目录列表
+    返回 (latest_log_path, log_content, eval_json_content, ckpt_dir)"""
+    # Step 1: 找最新 log.txt
+    latest = _ssh(
+        f"find {REMOTE_BASE}/5script/results -name log.txt 2>/dev/null "
+        f"| xargs ls -t 2>/dev/null | head -1", timeout=20)
+    latest = latest.strip()
     if not latest:
-        return None, False
-    # 实验系列目录 = log.txt 所在 run 目录的上级（含同一实验名的多个 run）
-    # latest 形如 .../results/<exp>/<run>/log.txt -> 系列目录 = .../results/<exp>
-    series_dir = "/".join(latest.split("/")[:-2])
-    cmd = ["ssh", "-o", "ConnectTimeout=15", "-p", REMOTE_PORT,
-           f"{REMOTE_USER}@{REMOTE_HOST}"]
-    merge = (f"find {series_dir} -name log.txt 2>/dev/null | sort "
-             f"| xargs cat > /tmp/_cur_train.log 2>/dev/null; "
-             f"echo {series_dir}")
-    try:
-        r = subprocess.run(cmd + [merge], capture_output=True, text=True, timeout=60)
-        series = r.stdout.splitlines()[0].strip() if r.stdout else ""
-    except Exception:
-        return latest, False
-    src = f"{REMOTE_USER}@{REMOTE_HOST}:/tmp/_cur_train.log"
-    try:
-        rr = subprocess.run(
-            ["scp", "-o", "ConnectTimeout=15", "-P", REMOTE_PORT, src, LOCAL_CUR],
-            capture_output=True, text=True, timeout=90)
-        if rr.returncode == 0:
-            return latest, True
-    except Exception:
-        pass
-    return latest, False
+        return None, None, None, None
+
+    # 实验目录 = log.txt 的上级目录 (去掉 /log.txt)
+    run_dir = "/".join(latest.split("/")[:-1])
+    series_dir = "/".join(latest.split("/")[:-2])  # results/<exp>
+    ckpt_dir = f"{run_dir}/checkpoints"
+
+    # Step 2: 一次性 cat log.txt + eval_auto_*.json + ls eval_samples + ls seen_samples
+    # 用分隔符区分输出段
+    SEP = "===_DSH_SEP_==="
+    script = (
+        f"echo '{SEP}LOG'; "
+        f"find {series_dir} -name log.txt 2>/dev/null | sort | xargs cat 2>/dev/null; "
+        f"echo '{SEP}EVAL'; "
+        f"cat {ckpt_dir}/eval_auto_*.json 2>/dev/null; "
+        f"echo '{SEP}EVAL_SAMPLES'; "
+        f"ls {ckpt_dir}/eval_samples/ 2>/dev/null; "
+        f"echo '{SEP}SEEN_SAMPLES'; "
+        f"ls {ckpt_dir}/seen_samples/ 2>/dev/null; "
+        f"echo '{SEP}END'"
+    )
+    combined = _ssh(script, timeout=30)
+
+    # 解析分隔段
+    parts = combined.split(SEP)
+    log_content = ""
+    eval_json = ""
+    eval_sample_steps = []
+    seen_sample_steps = []
+    if len(parts) >= 2:
+        log_content = parts[1].strip()
+    if len(parts) >= 3:
+        eval_json = parts[2].strip()
+    if len(parts) >= 4:
+        eval_sample_steps = [l.strip() for l in parts[3].strip().splitlines() if l.strip()]
+    if len(parts) >= 5:
+        seen_sample_steps = [l.strip() for l in parts[4].strip().splitlines() if l.strip()]
+
+    return latest, log_content, eval_json, ckpt_dir, eval_sample_steps, seen_sample_steps
 
 
-def parse():
-    """解析本地 current_train.log → rows（已前向填充 mse/ssim）。"""
+def parse(log_content):
+    """解析 log.txt 内容 → rows。"""
     rows = []
     cur_mse = cur_ssim = None
-    try:
-        lines = open(LOCAL_CUR, encoding="utf-8", errors="ignore").read().splitlines()
-    except OSError:
-        return rows
-    for raw in lines:
+    for raw in log_content.splitlines():
         line = LANRE.sub("", raw)
         tm = TS_RE.search(line)
         ts = tm.group(1) if tm else None
         m = ROW_RE.search(line)
         if m:
             step = int(m.group(1))
-            # 按 '|' 分栏解析各字段（Total/Diff/StdMid/X0Lat/Steps/Sec/Mem）
             fields = {}
             for seg in m.group(2).split("|"):
                 seg = seg.strip()
@@ -119,14 +142,12 @@ def parse():
                 key = kv.group(1).strip()
                 val_str = kv.group(2).strip()
                 if key.startswith("Steps/Sec"):
-                    key = "stepsPerSec"; fields[key] = num(val_str.split()[0] if val_str else None)
+                    fields["stepsPerSec"] = num(val_str.split()[0] if val_str else None)
                 elif key == "Mem":
                     mm = re.match(r"([\d.]+)G/([\d.]+)G", val_str)
                     fields["memCur"] = num(mm.group(1) if mm else None)
                     fields["memPeak"] = num(mm.group(2) if mm else None)
-                    continue
                 else:
-                    # value 形如 "raw 0.1423 x 0.50 = 0.0712" -> 取第一个数值(raw)
                     nm = re.search(r"-?[\d.]+", val_str)
                     fields[key] = num(nm.group(0) if nm else None)
             rows.append({
@@ -141,7 +162,6 @@ def parse():
             continue
         e = EVAL_RE.search(line)
         if e:
-            # 独立 eval 行（也存）；同时更新前向填充值供后续 loss 行携带
             cur_mse = num(e.group(2)); cur_ssim = num(e.group(3))
             rows.append({
                 "step": int(e.group(1)), "total": None, "diff": None,
@@ -149,13 +169,13 @@ def parse():
                 "memCur": None, "memPeak": None,
                 "mse": cur_mse, "ssim": cur_ssim, "ts": ts, "is_eval": True,
             })
-    # 去重保序：同 step 优先保留真实 eval 行(is_eval)，否则保留后出现的损失行(带最新前向填充)
+    # 去重保序
     seen, out = {}, []
     for r in rows:
         s = r["step"]
         if s in seen:
             if r.get("is_eval") and not out[seen[s]].get("is_eval"):
-                out[seen[s]] = r  # eval 行覆盖同 step 的损失行
+                out[seen[s]] = r
             continue
         seen[s] = len(out)
         out.append(r)
@@ -163,9 +183,28 @@ def parse():
     return out
 
 
+def merge_eval_json(rows, eval_json_str):
+    """从 eval_auto_*.json 内容解析 MSE/SSIM，合并进 rows 并标记 is_eval。"""
+    if not eval_json_str:
+        return
+    ev_map = {}
+    for m in re.finditer(r'"step"\s*:\s*(\d+)\s*,\s*"mse"\s*:\s*([\d.-]+)\s*,\s*"ssim"\s*:\s*([\d.-]+)',
+                         eval_json_str):
+        ev_map[int(m.group(1))] = (float(m.group(2)), float(m.group(3)))
+    if not ev_map:
+        return
+    cur = None
+    by_step = {r["step"]: r for r in rows}
+    for step in sorted(by_step):
+        if step in ev_map:
+            cur = ev_map[step]
+            by_step[step]["is_eval"] = True
+        if cur:
+            by_step[step]["mse"] = cur[0]
+            by_step[step]["ssim"] = cur[1]
+
+
 def write(rows, source):
-    # 每 row 附 epoch（已过数据遍数 = step*batch/数据集大小），顶层给最新 epoch + 每遍耗时
-    steps_per_epoch = max(1, int(DATASET_SIZE // BATCH_SIZE) + (1 if DATASET_SIZE % BATCH_SIZE else 0))
     out_rows = []
     latest_sps = None
     for r in rows:
@@ -174,38 +213,17 @@ def write(rows, source):
         if r.get("stepsPerSec"):
             latest_sps = r["stepsPerSec"]
         out_rows.append(nr)
-    sps = latest_sps or 4.0
-    sec_per_epoch = DATASET_SIZE / (sps * BATCH_SIZE)
+    sps = latest_sps or 3.5
     last_step = out_rows[-1]["step"] if out_rows else 0
-    total_steps = 200000  # 当前配置 max_steps（供前端算剩余训练 ETA）
-    steps_per_epoch = steps_per_epoch
-    eta_hours = max(0, total_steps - last_step) / (sps * 3600) if sps else 0
+    eta_hours = max(0, TOTAL_STEPS - last_step) / (sps * 3600) if sps else 0
     out = {
         "source": source, "pulledAt": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
         "count": len(rows), "rows": out_rows,
-        "dataset_size": DATASET_SIZE, "batch": BATCH_SIZE, "steps_per_epoch": steps_per_epoch,
-        "epoch_now": (last_step * BATCH_SIZE) / DATASET_SIZE,
-        "sec_per_epoch": sec_per_epoch, "hr_per_epoch": sec_per_epoch / 3600.0,
-        "stepsPerSec": sps, "total_steps": total_steps, "eta_hours": eta_hours,
+        "dataset_size": DATASET_SIZE, "batch": BATCH_SIZE,
+        "stepsPerSec": sps, "total_steps": TOTAL_STEPS, "eta_hours": eta_hours,
     }
     with open(OUT_JSON, "w", encoding="utf-8") as f:
         json.dump(out, f, ensure_ascii=False)
-
-
-# ---- 海报：按实验隔离 + 增量追加。每个实验开始 => 归档旧海报、清空取样缓存、
-#      重新开始；之后每次出现新 auto-eval step => 只拉该 step 取样图并重新生成海报，
-#      旧 step 行保留(行 = step，时间升序向下)。----
-STATE_F = os.path.join(HERE, "poster_state.json")
-ARCHIVE_DIR = os.path.join(HERE, "poster_archive")
-LOCAL_ES = os.path.join(HERE, "remote_eval_samples")
-POSTER = os.path.join(HERE, "eval_poster.png")
-
-
-def _experiment_key(remote_log):
-    """实验身份 = 实验系列目录名（results/<exp>），而非 run 目录。
-    resume run（同 <exp> 新 run_dir）共享同一 key → 海报跨 run 累积，不 reset。"""
-    exp = os.path.basename(os.path.dirname(os.path.dirname(remote_log.rstrip("/"))))
-    return exp
 
 
 def _load_state():
@@ -222,217 +240,169 @@ def _save_state(s):
         pass
 
 
-def _rmtree(path):
-    import shutil
-    shutil.rmtree(path, ignore_errors=True)
-
-
-def _new_archive_dir(exp):
-    """归档目录：poster_archive/<exp>/，静态留存该实验的海报/html/数据/取样图。"""
-    d = os.path.join(ARCHIVE_DIR, exp.replace("/", "__"))
-    os.makedirs(d, exist_ok=True)
-    return d
-
-
-def _archive_exp(exp, verbose=True):
-    """归档上一实验的产物（New 实验开始时调用，静态留存，live 文件不受影响）：
-    - html/data json：复制到 post_archive/<exp>/ 作静态快照（live 的仍在 tools/ 供服务）
-    - 旧海报 eval_poster.png：移动（新实验将覆盖该文件名）
-    - 旧 eval 取样图：复制归档
-    """
-    dest = _new_archive_dir(exp)
-    import shutil
-    for src, name in ((os.path.join(HERE, "train_dashboard.html"), "train_dashboard.html"),
-                      (os.path.join(HERE, "train_data.json"), "train_data.json")):
-        if os.path.exists(src):
-            shutil.copy(src, os.path.join(dest, name))
-    if os.path.exists(POSTER):
-        shutil.move(POSTER, os.path.join(dest, "eval_poster.png"))
-    if os.path.isdir(LOCAL_ES):
-        shutil.rmtree(os.path.join(dest, "eval_samples"), ignore_errors=True)
-        shutil.copytree(LOCAL_ES, os.path.join(dest, "eval_samples"))
-    if verbose:
-        print(f"[poster] 旧实验 {exp} 已归档到 {dest}")
-
-
-def _reset_experiment(exp, verbose=True):
-    """新实验开始：把上一实验的海报/html/数据归档静态留存，清空取样缓存重新开始。"""
-    state = _load_state()
-    old_exp = state.get("experiment")
-    if old_exp and old_exp != exp:
-        _archive_exp(old_exp, verbose)
-    _rmtree(LOCAL_ES)
-    os.makedirs(LOCAL_ES, exist_ok=True)
-    _save_state({"experiment": exp, "done_steps": []})
-    if verbose:
-        print(f"[poster] 新实验 {exp} 开始（旧实验已归档）")
-    _rmtree(LOCAL_ES)
-    os.makedirs(LOCAL_ES, exist_ok=True)
-    _save_state({"experiment": exp, "done_steps": []})
-    if verbose:
-        print(f"[poster] 新实验 {exp}: 归档旧海报, 重置取样缓存")
-
-
-def _existing_steps():
+def _existing_steps(local_dir):
     try:
-        return sorted(int(d.name.replace("step", "")) for d in os.listdir(LOCAL_ES)
+        return sorted(int(d.replace("step", "")) for d in os.listdir(local_dir)
                       if d.startswith("step"))
     except Exception:
         return []
 
 
-def _pull_step_stepdir(remote_base, step, verbose=True):
-    """从远程 eval_samples/<stepNNNNNNN> 拉取该 step 的取样图到本地。"""
-    import glob as _glob
-    # 远程 eval_samples 目录在给定实验的 checkpoints/eval_samples 下
-    src_dir = "%s/checkpoints/eval_samples/step%07d" % (remote_base, step)
-    local_dir = os.path.join(LOCAL_ES, "step%07d" % step)
-    os.makedirs(local_dir, exist_ok=True)
-    try:
-        r = subprocess.run(
-            ["scp", "-o", "ConnectTimeout=15", "-P", REMOTE_PORT, "-r",
-             f"{REMOTE_USER}@{REMOTE_HOST}:{src_dir}/.", local_dir + "/"],
-            capture_output=True, text=True, timeout=180)
-        return r.returncode == 0
-    except Exception:
-        return False
-
-
-def regen_poster_if_new_eval(rows, remote_log, verbose=True):
-    """实验感知 + 增量：实验切换则 reset；新 eval step 则拉取样图并重生成海报。"""
-    if not remote_log:
+def pull_eval_samples(ckpt_dir, eval_sample_steps, verbose=True):
+    """一次 scp -r 拉取整个 eval_samples 目录。"""
+    if not eval_sample_steps:
         return
-    exp = _experiment_key(remote_log)
-    state = _load_state()
-    if state.get("experiment") != exp:
-        _reset_experiment(exp, verbose)
-        state = _load_state()
+    remote = f"{ckpt_dir}/eval_samples/"
+    _scp_dir(remote, LOCAL_ES, timeout=120)
+    if verbose:
+        steps = _existing_steps(LOCAL_ES)
+        print(f"[poster] eval_samples: {len(steps)} steps pulled")
 
-    # 当前已处理过的 step：state 记录 + 本地已存在取样目录（防止 state 被意外清空时重拉）
-    done = set(state.get("done_steps", [])) | set(_existing_steps())
-    # 新出现的真实 eval 步（is_eval=True，即 [auto-eval] 行；不是前向填充的损失行）
-    new_steps = sorted(r["step"] for r in rows
-                       if r.get("is_eval") and r["step"] not in done)
-    if not new_steps:
-        return  # 没有新 eval，海报不用动
 
-    remote_base = "/".join(remote_log.split("/")[:-1])  # 实验目录绝对路径（去掉 log.txt）
-    # 增量拉取本地还没有的 step（只有真拿到该 step 取样图才记 done，否则下轮重试）
-    have = set(_existing_steps())
-    really_done = set(done)
-    for s in new_steps:
-        if s not in have:
-            ok_pull = _pull_step_stepdir(remote_base, s, verbose)
-            # pull 后确认本地确实出现该 step 目录（内容非空）
-            sd = os.path.join(LOCAL_ES, "step%07d" % s)
-            if ok_pull and os.path.isdir(sd) and os.listdir(sd):
-                really_done.add(s)
-        else:
-            really_done.add(s)
-    # 重新生成（make_eval_poster 读 LOCAL_ES 全部 step => 行追加）
-    args = [sys.executable, os.path.join(HERE, "make_eval_poster.py"), LOCAL_ES,
+def pull_seen_samples(ckpt_dir, verbose=True):
+    """一次 scp -r 拉取整个 seen_samples 目录。"""
+    remote = f"{ckpt_dir}/seen_samples/"
+    _scp_dir(remote, LOCAL_SEEN, timeout=120)
+    if verbose:
+        steps = _existing_steps(LOCAL_SEEN)
+        print(f"[poster] seen_samples: {len(steps)} steps pulled")
+
+
+def regen_poster(remote_log, ckpt_dir, verbose=True):
+    """生成 eval poster（show5 + seen5 + GT 行）。"""
+    if not os.path.exists(os.path.join(HERE, "make_eval_poster.py")):
+        if verbose:
+            print("[poster] make_eval_poster.py 不存在，跳过")
+        return
+
+    show5_steps = [s for s in _existing_steps(LOCAL_ES)
+                   if os.path.exists(os.path.join(LOCAL_ES, "step%07d" % s, "samples.json"))]
+    if not show5_steps:
+        if verbose:
+            print("[poster] 无带 samples.json 的 eval step，跳过海报生成")
+        return
+
+    args = [sys.executable, os.path.join(HERE, "make_eval_poster.py"),
+            "--show5-dir", LOCAL_ES,
             "--gt-dir", os.path.join(HERE, "remote_gt"),
             "--show5-csv", os.path.join(HERE, "eval5_top30.csv"),
+            "--eval-json-dir", ckpt_dir,
             "-o", POSTER]
+    seen5_steps = [s for s in _existing_steps(LOCAL_SEEN)
+                   if os.path.exists(os.path.join(LOCAL_SEEN, "step%07d" % s, "samples.json"))]
+    if seen5_steps:
+        args.extend(["--seen5-dir", LOCAL_SEEN])
     try:
         subprocess.run(args, capture_output=True, text=True, timeout=180)
-        _save_state({"experiment": exp,
-                     "done_steps": sorted(really_done)})
         if verbose:
-            print(f"[poster] 已更新 {exp}，含 eval steps {sorted(really_done)}")
+            print(f"[poster] 海报已生成: {POSTER} (show5={len(show5_steps)} seen5={len(seen5_steps)})")
     except Exception as e:
         if verbose:
             print(f"[poster] 海报生成失败: {e}")
 
 
-def merge_cpu_eval(rows, remote_log):
-    """从远程实验 ckpt 目录拉 eval_auto_*.json（CPU eval 结果），把 mse/ssim 合并进 rows。
-    自动按 step 匹配并前向填充到后续行（使曲线连续）。失败静默。"""
-    if not remote_log:
+def build_dashboard():
+    """生成静态 HTML dashboard。"""
+    template_path = os.path.join(HERE, "train_dashboard.html")
+    if not os.path.exists(template_path) or not os.path.exists(OUT_JSON):
         return
-    ckpt_dir = "/".join(remote_log.rstrip("/").split("/")[:-1]) + "/checkpoints"
-    local_ev = os.path.join(HERE, "remote_eval_auto.json")
-    ok_pull = pull_remote([f"{ckpt_dir}/eval_auto_*.json"], local_ev)
-    if not ok_pull:
-        return
-    # 解析 eval_auto json（多个 step 值）
-    ev_map = {}
     try:
-        content = open(local_ev, encoding="utf-8", errors="ignore").read()
-        # json 文件可能多个/拼接; 逐行提取 step/mse/ssim
-        for m in re.finditer(r'"step"\s*:\s*(\d+)\s*,\s*"mse"\s*:\s*([\d.-]+)\s*,\s*"ssim"\s*:\s*([\d.-]+)', content):
-            ev_map[int(m.group(1))] = (float(m.group(2)), float(m.group(3)))
+        with open(template_path, "r", encoding="utf-8") as f:
+            t = f.read()
+        with open(OUT_JSON, "r", encoding="utf-8") as f:
+            data = json.load(f)
+        data_js = json.dumps(data, ensure_ascii=False)
+        t = t.replace("const COLORS = {", f"const __DATA__ = {data_js};\nconst COLORS = {{", 1)
+        old_fetch = (
+            "    const res = await fetch('train_data.json?t='+Date.now());\n"
+            "    if(!res.ok) throw new Error('HTTP '+res.status);\n"
+            "    const data = await res.json();"
+        )
+        t = t.replace(old_fetch, "    const data = __DATA__;", 1)
+        # Poster: use relative path
+        old_poster = (
+            "async function loadPoster(){\n"
+            "  await loadImg('latestImg', ['eval_latest.png?t='+Date.now()]);\n"
+            "  await loadImg('posterImg', ['eval_poster.png?t='+Date.now()]);\n"
+            "}"
+        )
+        new_poster = (
+            "function loadPoster(){\n"
+            "  const li=document.getElementById('latestImg'); if(li){li.src='eval_poster.png';li.onerror=()=>{li.style.display='none';};}\n"
+            "  const pi=document.getElementById('posterImg'); if(pi){pi.src='eval_poster.png';pi.onerror=()=>{pi.style.display='none';};}\n"
+            "}"
+        )
+        t = t.replace(old_poster, new_poster, 1)
+        t = t.replace("load();\nsyncAuto();", "load();", 1)
+        dash_dir = os.path.join(HERE, "dashboards")
+        os.makedirs(dash_dir, exist_ok=True)
+        out = os.path.join(dash_dir, "s7_klf4_top30.html")
+        with open(out, "w", encoding="utf-8") as f:
+            f.write(t)
+        return out
     except Exception:
-        return
-    if not ev_map:
-        return
-    # 按 step 设置 mse/ssim（并前向填充）
-    cur = None
-    by_step = {}
-    for r in rows:
-        by_step[r["step"]] = r
-    for step in sorted(by_step):
-        if step in ev_map:
-            cur = ev_map[step]
-        if cur:
-            by_step[step]["mse"] = cur[0]
-            by_step[step]["ssim"] = cur[1]
+        return None
 
 
-def pull_remote(remote_globs, local_dst):
-    """把远程匹配 glob 的文件合并拉到一个本地文件（多文件拼接）。"""
-    cmd = ["ssh", "-o", "ConnectTimeout=15", "-P", REMOTE_PORT, f"{REMOTE_USER}@{REMOTE_HOST}"]
-    cat = "cat " + " ".join(remote_globs) + " 2>/dev/null"
-    try:
-        r = subprocess.run(cmd + [cat], capture_output=True, text=True, timeout=60)
-        if r.stdout.strip():
-            open(local_dst, "w", encoding="utf-8").write(r.stdout)
-            return True
-    except Exception:
-        pass
-    return False
-
-
-def run_once(verbose=True, regen_poster=True):
-    remote, ok = pull_log()
-    if not ok:
+def run_once(verbose=True, do_poster=True):
+    """一轮：收集远程 → 解析 → 写 JSON → 可选拉取样图 + 生成海报 + dashboard。"""
+    result = collect_remote()
+    if result[0] is None:
         if verbose:
-            print(f"[{datetime.datetime.now():%H:%M:%S}] 拉取失败: {remote}")
+            print(f"[{datetime.datetime.now():%H:%M:%S}] SSH 收集失败")
         return 0
-    rows = parse()
-    # 合并 CPU eval 的 eval_auto_*.json（pixelfp32 等用 auto_eval_cpu, 不写日志 auto-eval 行）
-    merge_cpu_eval(rows, remote)
-    write(rows, f"remote:{REMOTE_USER}@{REMOTE_HOST}:{remote}")
-    if regen_poster:
-        try:
-            regen_poster_if_new_eval(rows, remote, verbose)
-        except Exception:
-            pass
+    latest, log_content, eval_json, ckpt_dir, eval_steps, seen_steps = result
+
+    # 写本地 log
+    if log_content:
+        open(LOCAL_CUR, "w", encoding="utf-8").write(log_content)
+    if eval_json:
+        open(LOCAL_EVAL_JSON, "w", encoding="utf-8").write(eval_json)
+
+    rows = parse(log_content or "")
+    merge_eval_json(rows, eval_json or "")
+    write(rows, f"remote:{REMOTE_HOST}:{latest}")
+
+    eval_rows = [r for r in rows if r.get("is_eval")]
     last = rows[-1] if rows else None
+
+    if do_poster and eval_rows:
+        # 拉取 eval_samples 和 seen_samples（各一次 scp -r）
+        pull_eval_samples(ckpt_dir, eval_steps, verbose)
+        pull_seen_samples(ckpt_dir, verbose)
+        regen_poster(latest, ckpt_dir, verbose)
+
+    # 生成 dashboard
+    dash = build_dashboard()
+
     if verbose:
-        tail = f"step={last['step']} diff={last['diff']} total={last['total']} stdmid={last['stdmid']}" if last else "无数据"
-        print(f"[{datetime.datetime.now():%H:%M:%S}] rows={len(rows)} {tail}")
+        tail = f"step={last['step']} diff={last['diff']:.4f}" if last else "无数据"
+        ev_info = f" evals={len(eval_rows)}" if eval_rows else ""
+        print(f"[{datetime.datetime.now():%H:%M:%S}] rows={len(rows)} {tail}{ev_info}")
+        if dash:
+            print(f"  dashboard → {dash}")
     return len(rows)
 
 
 def main():
-    interval = 60
+    interval = 120
     if "--interval" in sys.argv:
         try:
             interval = int(sys.argv[sys.argv.index("--interval") + 1])
         except Exception:
             pass
+    do_poster = "--no-poster" not in sys.argv
     if "--loop" in sys.argv:
-        print(f"[pull_monitor] loop 每 {interval}s")
+        print(f"[pull_monitor] loop 每 {interval}s (poster={'on' if do_poster else 'off'})")
         while True:
             t0 = time.time()
             try:
-                run_once()
+                run_once(do_poster=do_poster)
             except Exception as e:
                 print(f"[pull_monitor] error: {e}")
             time.sleep(max(1, interval - (time.time() - t0)))
     else:
-        run_once()
+        run_once(do_poster=do_poster)
 
 
 if __name__ == "__main__":
