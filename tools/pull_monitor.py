@@ -32,7 +32,8 @@ TOTAL_STEPS = 600000
 LANRE = re.compile(r"\x1b\[[0-9;]*m")
 ROW_RE = re.compile(r"\(step=(\d+)\)\s+(.*)")
 EVAL_RE = re.compile(
-    r"\[auto-eval\]\s+step\s+(\d+):\s*(?:free-sampling\s+)?MSE=([\d.nan]+)\s*SSIM=([\d.nan]+)"
+    r"\[(?:auto-eval|eval)\]\s+step\s+(\d+):\s*"
+    r"(?:free-sampling\s+)?MSE=([\d.nan]+)\s*SSIM=([\d.nan]+)"
 )
 TS_RE = re.compile(r"\[(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2})\]")
 
@@ -88,14 +89,19 @@ def collect_remote():
     series_dir = "/".join(latest.split("/")[:-2])  # results/<exp>
     ckpt_dir = f"{run_dir}/checkpoints"
 
-    # Step 2: 一次性 cat log.txt + eval_auto_*.json + ls eval_samples + ls seen_samples
-    # 用分隔符区分输出段
+    # Step 2: 一次性 cat log.txt + cat cpu_eval_state.json + cat eval_auto_*.json
+    # + ls eval_samples + ls seen_samples
+    # cpu_eval_state.json 包含 eval 时间戳，用于时间轴对齐
     SEP = "===_DSH_SEP_==="
     script = (
         f"echo '{SEP}LOG'; "
         f"find {series_dir} -name log.txt 2>/dev/null | sort | xargs cat 2>/dev/null; "
         f"echo '{SEP}EVAL'; "
         f"cat {ckpt_dir}/eval_auto_*.json 2>/dev/null; "
+        f"echo '{SEP}EVAL_STATE'; "
+        f"cat {ckpt_dir}/cpu_eval_state.json 2>/dev/null; "
+        f"echo '{SEP}EVAL_LOG'; "
+        f"grep -E 'MSE=.*SSIM=' /root/Workspace/xy/DiT/auto_eval_cpu.log 2>/dev/null | tail -50; "
         f"echo '{SEP}EVAL_SAMPLES'; "
         f"ls {ckpt_dir}/eval_samples/ 2>/dev/null; "
         f"echo '{SEP}SEEN_SAMPLES'; "
@@ -108,6 +114,8 @@ def collect_remote():
     parts = combined.split(SEP)
     log_content = ""
     eval_json = ""
+    eval_state_json = ""
+    eval_log_lines = ""
     eval_sample_steps = []
     seen_sample_steps = []
     if len(parts) >= 2:
@@ -115,17 +123,24 @@ def collect_remote():
     if len(parts) >= 3:
         eval_json = parts[2].strip()
     if len(parts) >= 4:
-        eval_sample_steps = [l.strip() for l in parts[3].strip().splitlines() if l.strip()]
+        eval_state_json = parts[3].strip()
     if len(parts) >= 5:
-        seen_sample_steps = [l.strip() for l in parts[4].strip().splitlines() if l.strip()]
+        eval_log_lines = parts[4].strip()
+    if len(parts) >= 6:
+        eval_sample_steps = [l.strip() for l in parts[5].strip().splitlines() if l.strip()]
+    if len(parts) >= 7:
+        seen_sample_steps = [l.strip() for l in parts[6].strip().splitlines() if l.strip()]
 
-    return latest, log_content, eval_json, ckpt_dir, eval_sample_steps, seen_sample_steps
+    return latest, log_content, eval_json, eval_state_json, eval_log_lines, ckpt_dir, eval_sample_steps, seen_sample_steps
 
 
 def parse(log_content):
-    """解析 log.txt 内容 → rows。"""
+    """解析 log.txt 内容 → rows。
+    训练行和 eval 行分开解析：
+    - 训练行 (step=N): 来自 train.py log.txt，包含 loss/mem 等
+    - eval 行 (MSE=.. SSIM=..): 来自 auto_eval_cpu.log，不混入训练行
+    两者在 merge_eval_json 中按 step 对齐合并。"""
     rows = []
-    cur_mse = cur_ssim = None
     for raw in log_content.splitlines():
         line = LANRE.sub("", raw)
         tm = TS_RE.search(line)
@@ -157,17 +172,17 @@ def parse(log_content):
                 "stdmid": fields.get("StdMid"), "x0lat": fields.get("X0Lat"),
                 "stepsPerSec": fields.get("stepsPerSec"),
                 "memCur": fields.get("memCur"), "memPeak": fields.get("memPeak"),
-                "mse": cur_mse, "ssim": cur_ssim, "ts": ts, "is_eval": False,
+                "mse": None, "ssim": None, "ts": ts, "is_eval": False,
             })
             continue
         e = EVAL_RE.search(line)
         if e:
-            cur_mse = num(e.group(2)); cur_ssim = num(e.group(3))
             rows.append({
                 "step": int(e.group(1)), "total": None, "diff": None,
                 "stdmid": None, "x0lat": None, "stepsPerSec": None,
                 "memCur": None, "memPeak": None,
-                "mse": cur_mse, "ssim": cur_ssim, "ts": ts, "is_eval": True,
+                "mse": num(e.group(2)), "ssim": num(e.group(3)),
+                "ts": ts, "is_eval": True,
             })
     # 去重保序
     seen, out = {}, []
@@ -184,7 +199,9 @@ def parse(log_content):
 
 
 def merge_eval_json(rows, eval_json_str):
-    """从 eval_auto_*.json 内容解析 MSE/SSIM，合并进 rows 并标记 is_eval。"""
+    """从 eval_auto_*.json 内容解析 MSE/SSIM，标记 is_eval=True 并填入值。
+    仅填入有实际 eval 结果的 step —— 不向前传播（不把上一个 eval 的值
+    赋给后续没有 eval 的训练 step），让图表上的 eval 点准确落在评测 step 上。"""
     if not eval_json_str:
         return
     ev_map = {}
@@ -193,15 +210,40 @@ def merge_eval_json(rows, eval_json_str):
         ev_map[int(m.group(1))] = (float(m.group(2)), float(m.group(3)))
     if not ev_map:
         return
-    cur = None
     by_step = {r["step"]: r for r in rows}
-    for step in sorted(by_step):
-        if step in ev_map:
-            cur = ev_map[step]
+    for step, (mse, ssim) in ev_map.items():
+        if step in by_step:
+            by_step[step]["mse"] = mse
+            by_step[step]["ssim"] = ssim
             by_step[step]["is_eval"] = True
-        if cur:
-            by_step[step]["mse"] = cur[0]
-            by_step[step]["ssim"] = cur[1]
+        else:
+            # eval step 不在 train log 中（如 step=55000），追加一行
+            rows.append({
+                "step": step, "total": None, "diff": None,
+                "canny": None, "skel": None, "latc": None, "lats": None,
+                "stdmid": None, "x0lat": None, "stepsPerSec": None,
+                "memCur": None, "memPeak": None,
+                "mse": mse, "ssim": ssim, "ts": None, "is_eval": True,
+            })
+
+
+def parse_eval_log_ts(eval_log_lines):
+    """解析 auto_eval_cpu.log 中的 MSE/SSIM 行，提取 step + 时间戳。
+    格式: [2026-08-23 21:15:56] [eval] step 5000: MSE=1.37596 SSIM=0.3481 (290s, ...)
+    返回 {step: (mse, ssim, timestamp_str)}"""
+    result = {}
+    for raw in eval_log_lines.splitlines():
+        line = LANRE.sub("", raw)
+        tm = TS_RE.search(line)
+        ts = tm.group(1) if tm else None
+        e = EVAL_RE.search(line)
+        if e:
+            step = int(e.group(1))
+            mse = num(e.group(2))
+            ssim = num(e.group(3))
+            if mse is not None and ssim is not None:
+                result[step] = (mse, ssim, ts)
+    return result
 
 
 def write(rows, source):
@@ -405,7 +447,7 @@ def run_once(verbose=True, do_poster=True):
         if verbose:
             print(f"[{datetime.datetime.now():%H:%M:%S}] SSH 收集失败")
         return 0
-    latest, log_content, eval_json, ckpt_dir, eval_steps, seen_steps = result
+    latest, log_content, eval_json, eval_state_json, eval_log_lines, ckpt_dir, eval_steps, seen_steps = result
 
     # 写本地 log
     if log_content:
@@ -415,6 +457,32 @@ def run_once(verbose=True, do_poster=True):
 
     rows = parse(log_content or "")
     merge_eval_json(rows, eval_json or "")
+
+    # 用 eval_log_lines（auto_eval_cpu.log 的 MSE/SSIM 行）补充 eval 行
+    # 这些行带真实时间戳，且可能包含 train log 里没有的 eval step
+    eval_log_ts = parse_eval_log_ts(eval_log_lines or "")
+    # 把 eval_log 中 step 不在 rows 的追加进去；在的则确保 is_eval/mse/ssim 准确
+    existing_steps = {r["step"] for r in rows}
+    for step, (mse, ssim, ts) in eval_log_ts.items():
+        if step not in existing_steps:
+            rows.append({
+                "step": step, "total": None, "diff": None,
+                "stdmid": None, "x0lat": None, "stepsPerSec": None,
+                "memCur": None, "memPeak": None,
+                "mse": mse, "ssim": ssim, "ts": ts, "is_eval": True,
+            })
+            existing_steps.add(step)
+        else:
+            for r in rows:
+                if r["step"] == step:
+                    r["is_eval"] = True
+                    r["mse"] = mse
+                    r["ssim"] = ssim
+                    if ts:
+                        r["ts"] = ts
+                    break
+    rows.sort(key=lambda r: r["step"])
+
     write(rows, f"remote:{REMOTE_HOST}:{latest}")
 
     eval_rows = [r for r in rows if r.get("is_eval")]
