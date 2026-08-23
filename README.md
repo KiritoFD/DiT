@@ -34,20 +34,14 @@ src/                          # 核心源码（训练/模型/数据/loss/评测�
 ├── download.py               # 模型下载
 └── lora.py                   # LoRA 注入
 
-# 根目录镜像（与 src/ 保持同步）
-train.py  models.py  losses.py  latent_dataset.py  ...
+# 根目录镜像（与 src/ 保持同步，远程用）
+train.py  models.py  losses.py  latent_dataset.py  latent_structure.py
+samplers.py  eval_auto.py  dataset.py  download.py  lora.py
+auto_eval_cpu.py  auto_eval_ctrl.py  sample.py
 
-# 顶层工具脚本
-auto_eval_cpu.py             # 独立 CPU 评测进程（轮询 ckpt）
-auto_eval_ctrl.py            # ControlNet 评测（base vs ctrl, GPU/CPU）
-eval_auto.py                 # 评测核心（单步重建 + 自由采样）
-eval_metrics.py              # CalligraphyEvaluator (OCR/书家/字体准确率)
-eval_models.py               # MultiTaskCalligraphyEvalNet (DINOv2 backbone)
-sample.py                    # 推理采样脚本
-gradio_app.py                # Gradio 前端（旧版）
-flask_app.py                 # Flask API（旧版）
+configs/                      # 47 个实验配置 (exp_*.json, resume_*.json)
 
-tools/                        # 实验工具与脚本
+tools/                        # 活跃工具（6 个）
 ├── controlnet/               # ControlNet 分支（详见 docs/CONTROLNET.md）
 │   ├── controlnet_dit.py     # ControlNetDiT + ControlConditionEncoder
 │   ├── train_controlnet.py   # 训练（warm-start / from-scratch）
@@ -60,12 +54,9 @@ tools/                        # 实验工具与脚本
 ├── build_ctrl_dashboard.py   # ControlNet 静态 HTML dashboard 生成
 ├── build_dashboards.py       # 通用静态 dashboard 生成
 ├── pull_monitor.py           # 通用训练日志拉取
-├── pull_log.py               # 旧版日志拉取
-├── pull_all.py               # 批量拉取实验数据
-├── sync.py                   # 定时同步 + build dashboard
-├── auto_eval_pixel.py        # Pixel-DiT 评测
-├── train_dashboard.html      # Dashboard HTML 模板
-└── ...                       # 分析/诊断/预处理脚本
+├── build_std_latent.py        # 标准字形 latent 构建
+├── gen_skel_d3.py             # skeleton 生成
+└── train_dashboard.html      # Dashboard HTML 模板
 
 diffusion/                    # 扩散过程（DDPM/DDIM）
 labels/                       # ID 映射
@@ -73,7 +64,14 @@ labels/                       # ID 映射
 docs/                         # 文档
 ├── CONTROLNET.md             # ControlNet 设计文档
 ├── HANDOVER_2026-08-15.md    # 交接文档
-└── s6_report/                # s6 实验报告
+├── s6_report/                # s6 实验报告
+└── legacy/                   # 历史文档（dataset/training/inference 等）
+
+archive/                      # 归档（gitignored，本地保留）
+├── scripts/                  # 37 旧预处理/eval/前端脚本
+├── tools/                    # 50 旧诊断/分析/训练脚本
+├── shell/                    # 40 .sh/.ps1 脚本
+└── images/                   # 28 散落 PNG
 ```
 
 ## 快速开始
