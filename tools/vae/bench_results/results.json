@@ -1,0 +1,94 @@
+{
+  "sd-vae-ft-ema": {
+    "mse_mean": 0.20637767255306244,
+    "mse_std": 0.016680133910186037,
+    "ssim_mean": 0.723443948328495,
+    "ssim_std": 0.049756862492959415,
+    "lpips_mean": null,
+    "lpips_std": null,
+    "latent_shape": [
+      4,
+      32,
+      32
+    ],
+    "latent_size": 163,
+    "latent_mean": 2.292778253555298,
+    "latent_std": 6.430637836456299,
+    "latent_min": -16.408287048339844,
+    "latent_max": 17.427244186401367,
+    "n_images": 200,
+    "params_M": 83.653863,
+    "name": "sd-vae-ft-ema",
+    "is_1ch": false,
+    "time_sec": 20.850940942764282
+  },
+  "sd-vae-ft-ema-gray": {
+    "mse_mean": 0.20633375346660615,
+    "mse_std": 0.016678120912625174,
+    "ssim_mean": 0.7234502530097962,
+    "ssim_std": 0.04975605735849219,
+    "lpips_mean": null,
+    "lpips_std": null,
+    "latent_shape": [
+      4,
+      32,
+      32
+    ],
+    "latent_size": 163,
+    "latent_mean": 2.2925751209259033,
+    "latent_std": 6.4298095703125,
+    "latent_min": -16.40241813659668,
+    "latent_max": 17.429931640625,
+    "n_images": 200,
+    "params_M": 83.649253,
+    "name": "sd-vae-ft-ema-gray",
+    "is_1ch": true,
+    "time_sec": 20.348516941070557
+  },
+  "kl-f4": {
+    "mse_mean": 0.07401870600879193,
+    "mse_std": 0.007855148843173414,
+    "ssim_mean": 0.8699225354194641,
+    "ssim_std": 0.023682633236173083,
+    "lpips_mean": null,
+    "lpips_std": null,
+    "latent_shape": [
+      3,
+      64,
+      64
+    ],
+    "latent_size": 491,
+    "latent_mean": -0.6406257748603821,
+    "latent_std": 10.424982070922852,
+    "latent_min": -24.818735122680664,
+    "latent_max": 28.443456649780273,
+    "n_images": 200,
+    "params_M": 55.312063,
+    "name": "kl-f4",
+    "is_1ch": false,
+    "time_sec": 24.41070818901062
+  },
+  "kl-f4-gray": {
+    "mse_mean": 0.07403321664780378,
+    "mse_std": 0.007855609347546942,
+    "ssim_mean": 0.8698884773254395,
+    "ssim_std": 0.023689646359771506,
+    "lpips_mean": null,
+    "lpips_std": null,
+    "latent_shape": [
+      3,
+      64,
+      64
+    ],
+    "latent_size": 491,
+    "latent_mean": -0.6413213610649109,
+    "latent_std": 10.424908638000488,
+    "latent_min": -24.827836990356445,
+    "latent_max": 28.425844192504883,
+    "n_images": 200,
+    "params_M": 55.307453,
+    "name": "kl-f4-gray",
+    "is_1ch": true,
+    "time_sec": 24.775477409362793
+  }
+}
