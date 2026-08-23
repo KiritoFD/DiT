@@ -22,7 +22,7 @@
   "warmup_steps": 1000,
   "min_lr_ratio": 0.1,
   "weight_decay": 0.02,
-  "global_batch_size": 64,
+  "global_batch_size": 224,
   "global_seed": 0,
   "use_ema": true,
   "ema_decay": 0.9999,

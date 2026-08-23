@@ -25,8 +25,11 @@ def _gaussian_window(window_size=11, sigma=1.5, device="cpu"):
 
 
 def _ssim(x, y, data_range=2.0, win=None):
+    """SSIM, handles multi-channel by computing per-channel and averaging."""
     C1 = (0.01 * data_range) ** 2
     C2 = (0.03 * data_range) ** 2
+    if x.shape[1] > 1:
+        return sum(_ssim(x[:, i:i+1], y[:, i:i+1], data_range, win) for i in range(x.shape[1])) / x.shape[1]
     mu_x = F.conv2d(x, win, padding=5)
     mu_y = F.conv2d(y, win, padding=5)
     mu_x2 = mu_x ** 2
@@ -59,7 +62,7 @@ def main():
         return
     print(f"Found {len(shards)} shards", flush=True)
 
-    # === 1. 统计全量 latent 分布 ===
+    # === 1. 统计全量 latent 分布 (分 shard 累积, 用 float64 避免溢出) ===
     print(f"\n{'='*60}")
     print("Step 1: Computing latent statistics from all shards...")
     print(f"{'='*60}")
@@ -72,10 +75,11 @@ def main():
     for sp in shards:
         d = np.load(sp)
         lat = d["latents"]  # (N, 3, 64, 64) fp16
-        all_mean_sum += float(lat.sum())
-        all_sq_sum += float((lat.astype(np.float32) ** 2).sum())
-        all_min = min(all_min, float(lat.min()))
-        all_max = max(all_max, float(lat.max()))
+        lat_f32 = lat.astype(np.float32)
+        all_mean_sum += float(lat_f32.sum(dtype=np.float64))
+        all_sq_sum += float((lat_f32 * lat_f32).sum(dtype=np.float64))
+        all_min = min(all_min, float(lat_f32.min()))
+        all_max = max(all_max, float(lat_f32.max()))
         total_count += lat.size
         d.close()
 
@@ -90,7 +94,10 @@ def main():
     print(f"  Min:    {all_min:.4f}")
     print(f"  Max:    {all_max:.4f}")
     print(f"  Recommended scaling_factor = 1/std = {recommended_scaling:.6f}")
-    print(f"  (current config uses 0.102079, diff = {abs(recommended_scaling - 0.102079)/recommended_scaling*100:.2f}%)")
+    if recommended_scaling > 0:
+        print(f"  (current config uses 0.102079, diff = {abs(recommended_scaling - 0.102079)/recommended_scaling*100:.2f}%)")
+    else:
+        print(f"  WARNING: std=0 or inf, statistics computation failed")
 
     # === 2. 随机挑 N 张做 reconstruct 底噪测试 ===
     print(f"\n{'='*60}")

@@ -42,13 +42,38 @@
 
 kl-f4 的 MSE 是 sd-vae 的 36%, SSIM 高 0.15, 参数还少 34%.
 
+## VAE 底噪 (encode→decode 重建, 100 张随机图)
+
+| VAE | latent shape | latent size | 重建 MSE | 重建 SSIM |
+|-----|-------------|-------------|----------|-----------|
+| sd-vae-ft-ema (f8) | (4, 32, 32) | 4,096 | 0.003660 | 0.9655 |
+| **kl-f4 (f4)** | (3, 64, 64) | 12,288 | **0.001910** | **0.9882** |
+
+kl-f4 底噪: MSE 0.0019, SSIM 0.988 — 接近无损重建。
+
+## DiT 训练 eval 对比 (旧 sd-vae latent)
+
+| 实验 | 数据集 | VAE | 最终 step | eval MSE | eval SSIM | 底噪 MSE | **MSE 净增值** |
+|------|--------|-----|-----------|----------|-----------|----------|--------------|
+| s6 top6 diff-only | top6 (10k) | sd-vae f8 | 195k | 0.432 | 0.732 | 0.0037 | **0.428** |
+| s5 top30 diff-only | top30 (129k) | sd-vae f8 | 70k | 0.841 | 0.520 | 0.0037 | **0.837** |
+
+> eval MSE = DiT 生成质量 + VAE 底噪。底噪占比极小 (sd-vae: <1%)。
+> 换 kl-f4 后底噪从 0.0037 降到 0.0019 (减半), eval 的 MSE 天花板更低。
+> 但注意: 换 VAE 后 latent 分布完全不同, DiT 需从头训练, eval MSE 不可直接跨 VAE 比较。
+
 ## Scaling Factor
 
-- **sd-vae-ft-ema**: scaling_factor = 0.18215 (对应 std ≈ 5.49)
-- **kl-f4** (200 张样本估计): scaling_factor ≈ 0.102079 (对应 std ≈ 9.80)
-- **kl-f4** (全量统计): 由 `verify_latents_f4.py` Step 1 从全部 128,842 张 latent 统计得出
-  - 公式: `scaling_factor = 1 / std(all_latents)`
-  - 如果与 0.102079 偏差 > 5%, 需要更新 config 并重新 encode
+全量 128,842 张 latent 统计 (verify_latents_f4.py + _verify_sdvae.py):
+
+| VAE | scaling_factor (使用) | latent mean | latent std | 1/std (理论) |
+|-----|----------------------|------------|------------|------------|
+| sd-vae-ft-ema | 0.18215 | 0.3178 | 1.1305 | 0.885 |
+| kl-f4 | 0.102079 | -0.0559 | 0.9838 | 1.016 |
+
+> 注: sd-vae 的 0.18215 并非 1/std(1.1305)=0.885，而是 SD 原始论文的经验值。
+> latent 在 encode 后乘 scaling_factor 存储, decode 时除回。
+> kl-f4 用 0.102079 是编码前估计的值, 全量统计后 std≈0.98 接近 1, 说明 scaling 基本合理。
 
 ## 编码流程
 
