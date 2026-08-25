@@ -157,3 +157,5 @@ final_latents/
 _smoke_data/
 
 glyph_classifier_ckpts/
+
+_classifier_pixel_data.npz
