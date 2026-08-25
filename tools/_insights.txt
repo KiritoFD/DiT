@@ -1,0 +1,38 @@
+"""Final insights from results.csv (unified Gaussian SSIM)."""
+import csv, sys
+sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+rows = list(csv.DictReader(open("results.csv", encoding="utf-8")))
+
+def at(series, step, key="ssim", run_sub=None):
+    for r in rows:
+        if r["series"]==series and int(r["step"])==step and (not run_sub or run_sub in r["run"]):
+            v = r.get(key)
+            if v not in (None, ""):
+                return float(v)
+    return None
+
+print("### 1. f4 vs f8 同模型同 eval 集 (S/2 vs S/4 不可直接比, 用 s6 vs s11 近似)")
+print("   注: s6=S/2 f8 top6; s11=S/4 f4 top6 dino. 尺寸不同, 差距是 f4+f8+size 混合.")
+print()
+print("### 2. DINO 增益 (s7→s8, 同 S/4 f4 top30 尺寸, 混入 clean 数据)")
+print("   @25k +0.0071, @50k +0.0092, @75k +0.0091 → DINO ≤0.01, 且混入 clean 变量")
+print("   → 结论: DINO embedding 表初始化增益很小, 不值得为它重训 base")
+print()
+print("### 3. s11 (f4 S/4 top6) vs s6 (f8 S/2 top6) 差距")
+for st in [25000, 50000, 75000, 100000, 125000]:
+    a, b = at("s6_top6_diffonly", st), at("s11_top6_p4", st)
+    if a and b:
+        print(f"   @{st}: s6={a:.4f} s11={b:.4f} gap={a-b:+.4f}")
+print()
+print("### 4. ControlNet 峰值对比 (base 都是 S6 195k)")
+print("   ctrl 3px v1 (lr=3e-4): peak 0.8079 @25k, 之后退化 → 100k 只有 0.7644")
+print("   ctrl s6_v2 (lr=1e-4):   peak 0.8112 @12.5k (进行中), 仍在上升")
+print("   → 低 lr + 短训练 (30k) 抓峰值策略有效")
+print()
+print("### 5. s10 (B/4) 表现差: best 0.4668 @65k, 远低于 s8 (S/4) 0.5257")
+print("   B 模型比 S 大 3.7x, 但 f4 top30_clean 上反而更差 → 数据量/架构不匹配")
+print()
+print("### 6. SSIM 修正影响")
+print("   s11 @145k: uniform 0.6076 → gaussian 0.6455 (+0.038)")
+print("   s10 @65k:  uniform 0.4063 → gaussian 0.4668 (+0.060)")
+print("   → 之前所有跨实验 SSIM 对比 (s6 vs s11 等) 都是混合口径, 现已统一")
