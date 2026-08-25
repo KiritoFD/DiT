@@ -112,6 +112,36 @@ tools/remote_seen_samples/
 tools/experiment_progress/
 tools/dashboards/
 
+# ---- 拉取的 eval 样本 PNG / 海报产物 ----
+tools/remote_show_samples/
+tools/remote_seen_samples/
+tools/remote_eval_samples/
+tools/s7_eval_samples/
+tools/s7_seen_samples/
+tools/evaluation/remote_*/
+tools/evaluation/s11_*/
+tools/evaluation/remote_show_samples/
+tools/5script/
+tools/*_history.json
+tools/s8_train_data.json
+tools/ev_mse6.py
+tools/logs_pull_monitor.txt
+tools/poster_s*.png
+tools/poster_s10_b4_grey_clear.png
+tools/dino_samples/
+tools/legacy/
+tools/s7_eval_poster.png
+tools/evaluation/train_data*.json
+tools/evaluation/current_train.log
+tools/evaluation/poster_*.png
+tools/evaluation/seen*.csv
+tools/evaluation/show*.csv
+tools/evaluation/remote_eval_auto.json
+tools/evaluation/dashboards/
+tools/evaluation/train_dashboard.html
+tools/seen5_top30.csv
+tools/show5_top30.csv
+
 # ---- 训练产物目录 ----
 final_images/
 final_imgs_256/

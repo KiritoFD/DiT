@@ -21,6 +21,7 @@ import sys
 import time
 import datetime
 
+import numpy as np
 import torch
 
 # 确保能 import controlnet_dit (在 tools/controlnet/) 和 src/ 模块
@@ -37,7 +38,7 @@ DEFAULT_MAIN_CKPT = "5script/results/s6_top6_diffonly/20260820-191536-s6-top6-di
 DEFAULT_EVAL_CSV = "5script/eval100_top6.csv"
 DEFAULT_VAE = "pretrained_models/sd-vae-ft-ema"
 SKEL_ROOT = "final_skeleton_d3"
-IMG_ROOT = "final_images"
+IMG_ROOT = "final_imgs_256"
 
 
 def log(msg):
@@ -142,30 +143,100 @@ def build_cache(eval_csv, n=100):
 
 
 # ---------------------------------------------------------------------------
-# SSIM (from eval_auto)
+# 指标 (批量, numpy/scipy CPU; 与 eval_metrics_daemon.py 同口径)
 # ---------------------------------------------------------------------------
-def _gaussian_window(window_size=11, sigma=1.5, device="cpu"):
-    g = torch.arange(window_size, dtype=torch.float32, device=device) - window_size // 2
-    g = torch.exp(-(g ** 2) / (2 * sigma ** 2))
-    g /= g.sum()
-    return (g.reshape(1, 1, window_size, 1) @ g.reshape(1, 1, 1, window_size))
-
-
-def _ssim(x, y, data_range=1.0, window_size=11, win=None):
-    import torch.nn.functional as F
-    if x.shape[1] == 3:
-        return sum(_ssim(x[:, i:i + 1], y[:, i:i + 1], data_range, window_size, win)
-                   for i in range(3)) / 3
-    C1 = (0.01 * data_range) ** 2
-    C2 = (0.03 * data_range) ** 2
-    mu_x = F.conv2d(x, win, padding=window_size // 2)
-    mu_y = F.conv2d(y, win, padding=window_size // 2)
+def _ssim_batch(pred, gt, win=11, data_range=1.0):
+    """SSIM for (N,3,H,W) float32 [0,1] arrays. 批量: 所有图×通道一次 uniform_filter."""
+    from scipy.ndimage import uniform_filter
+    c1 = (0.01 * data_range) ** 2
+    c2 = (0.03 * data_range) ** 2
+    n = pred.shape[0]
+    # (N,3,H,W) -> (N*3,H,W), 一次过滤所有通道
+    x = pred.reshape(-1, pred.shape[2], pred.shape[3]).astype(np.float64)
+    y = gt.reshape(-1, gt.shape[2], gt.shape[3]).astype(np.float64)
+    mu_x = uniform_filter(x, size=win)
+    mu_y = uniform_filter(y, size=win)
     mu_x2, mu_y2, mu_xy = mu_x ** 2, mu_y ** 2, mu_x * mu_y
-    sx2 = F.conv2d(x * x, win, padding=window_size // 2) - mu_x2
-    sy2 = F.conv2d(y * y, win, padding=window_size // 2) - mu_y2
-    sxy = F.conv2d(x * y, win, padding=window_size // 2) - mu_xy
-    m = ((2 * mu_xy + C1) * (2 * sxy + C2)) / ((mu_x2 + mu_y2 + C1) * (sx2 + sy2 + C2))
-    return float(m.mean().item())
+    sx2 = uniform_filter(x * x, size=win) - mu_x2
+    sy2 = uniform_filter(y * y, size=win) - mu_y2
+    sxy = uniform_filter(x * y, size=win) - mu_xy
+    m = ((2 * mu_xy + c1) * (2 * sxy + c2)) / ((mu_x2 + mu_y2 + c1) * (sx2 + sy2 + c2))
+    # 每图 3 通道平均
+    per_img = m.reshape(n, 3, -1).mean(axis=(1, 2))
+    return float(per_img.mean())
+
+
+# ---------------------------------------------------------------------------
+# LPIPS + skel_iou (与 eval_metrics_daemon.py 同口径, CPU)
+# ---------------------------------------------------------------------------
+_lpips_fn = None
+_lpips_loaded = False
+
+def _get_lpips():
+    """Lazily load LPIPS model on CPU. Returns None if unavailable."""
+    global _lpips_fn, _lpips_loaded
+    if _lpips_loaded:
+        return _lpips_fn
+    _lpips_loaded = True
+    try:
+        import lpips
+        _lpips_fn = lpips.LPIPS(net='vgg', verbose=False)
+        _lpips_fn.eval()
+        for p in _lpips_fn.parameters():
+            p.requires_grad_(False)
+        log("LPIPS model loaded (vgg, CPU)")
+    except Exception as e:
+        log(f"LPIPS unavailable ({e}), will skip lpips metric")
+        _lpips_fn = None
+    return _lpips_fn
+
+
+def _lpips_batch(pred_t, gt_t, lpips_fn):
+    """pred_t/gt_t: (N,3,H,W) [-1,1] tensors. 一次批量 forward. Returns float."""
+    if lpips_fn is None:
+        return None
+    p = pred_t.float().cpu()
+    g = gt_t.float().cpu()
+    with torch.no_grad():
+        return float(lpips_fn(p, g).mean().item())
+
+
+def _skel_iou_batch(pred_np, gt_np, thresh=0.5):
+    """pred_np/gt_np: (N,3,H,W) float32 [0,1]. 批量 Skeleton IoU (白底黑字, 笔画<thresh)."""
+    try:
+        from skimage.morphology import skeletonize
+    except ImportError:
+        from scipy.ndimage import binary_erosion, generate_binary_structure
+        def skeletonize(binary):
+            skel = np.zeros_like(binary)
+            img = binary.copy()
+            struct = generate_binary_structure(2, 2)
+            while img.any():
+                eroded = binary_erosion(img, structure=struct)
+                skel |= img & ~eroded
+                img = eroded
+            return skel
+
+    n = pred_np.shape[0]
+    g1 = pred_np.mean(axis=3)  # (N,H,W)
+    g2 = gt_np.mean(axis=3)
+    b1 = g1 < thresh
+    b2 = g2 < thresh
+    inter_sum = 0.0
+    union_sum = 0.0
+    for k in range(n):
+        if not b1[k].any() and not b2[k].any():
+            inter_sum += 1.0
+            union_sum += 1.0
+            continue
+        if not b1[k].any() or not b2[k].any():
+            union_sum += 1.0  # IoU=0, union 至少为 1 防除零 (与 daemon 口径一致)
+            continue
+        s1 = skeletonize(b1[k])
+        s2 = skeletonize(b2[k])
+        inter_sum += float((s1 & s2).sum())
+        union_sum += float((s1 | s2).sum())
+    return inter_sum / union_sum if union_sum > 0 else 1.0
 
 
 # ---------------------------------------------------------------------------
@@ -174,14 +245,16 @@ def _ssim(x, y, data_range=1.0, window_size=11, win=None):
 @torch.no_grad()
 def eval_one_step(model, vae, diffusion, device, cache, n=100, steps=50,
                   cfg=4.0, seed=0, batch=16, use_skel=False):
-    """自由采样 → VAE decode → MSE/SSIM vs GT.
+    """自由采样 → VAE decode → 批量 MSE/SSIM/LPIPS/skel_iou vs GT.
     use_skel=True 时传入 GT skel 作为 cond; False 时 cond=None.
+    Returns (mse, ssim, lpips, skel_iou); lpips=None if unavailable.
     """
-    win = _gaussian_window(11, 1.5, device)
+    lpips_fn = _get_lpips()
     conds = cache["conds"][:n]
     gts = cache["gts"][:n].to(device)
     skels = cache["skels"][:n].to(device) if "skels" in cache else None
-    mse_sum, ssim_sum, cnt = 0.0, 0.0, 0
+    decs, gts_all = [], []
+    mse_sum, cnt = 0.0, 0
     torch.manual_seed(seed)
     for i in range(0, n, batch):
         j = min(i + batch, n)
@@ -194,15 +267,23 @@ def eval_one_step(model, vae, diffusion, device, cache, n=100, steps=50,
         samples = diffusion.ddim_sample_loop(
             model.forward_with_cfg, z.shape, z,
             clip_denoised=False, model_kwargs=mk, device=device)
-        dec = vae.decode(samples / 0.18215).sample
+        dec = vae.decode(samples / 0.18215).sample   # [-1,1]
         gt = gts[i:j]
         mse_sum += torch.nn.functional.mse_loss(dec, gt).item() * (j - i)
-        for k in range(dec.shape[0]):
-            ssim_sum += _ssim((dec[k:k + 1] + 1) / 2, (gt[k:k + 1] + 1) / 2,
-                              1.0, 11, win)
+        decs.append(dec.cpu())
+        gts_all.append(gt.cpu())
         cnt += (j - i)
-    del win
-    return mse_sum / cnt, ssim_sum / cnt
+
+    dec_cat = torch.cat(decs, dim=0)        # (N,3,256,256) [-1,1]
+    gt_cat = torch.cat(gts_all, dim=0)      # (N,3,256,256) [-1,1]
+    dec01 = ((dec_cat + 1) / 2).clamp(0, 1).numpy()
+    gt01 = ((gt_cat + 1) / 2).clamp(0, 1).numpy()
+
+    mse = mse_sum / cnt
+    ssim = _ssim_batch(dec01, gt01)
+    lpips = _lpips_batch(dec_cat, gt_cat, lpips_fn)
+    skel_iou = _skel_iou_batch(dec01, gt01)
+    return mse, ssim, lpips, skel_iou
 
 
 def eval_ckpt(ctrl, vae, diffusion, device, cache, ckpt_dir, step, cfg_params):
@@ -212,31 +293,46 @@ def eval_ckpt(ctrl, vae, diffusion, device, cache, ckpt_dir, step, cfg_params):
 
     # 1) base: 无 skel (退化为主模型)
     log(f"[eval] step {step}: base (no skel) ...")
-    mse_base, ssim_base = eval_one_step(
+    mse_base, ssim_base, lpips_base, skel_base = eval_one_step(
         ctrl, vae, diffusion, device, cache, n=n,
         steps=cfg_params["steps"], cfg=cfg_params["cfg"],
         seed=cfg_params["seed"], batch=cfg_params["batch"], use_skel=False)
-    log(f"[eval] step {step}: base  MSE={mse_base:.5f} SSIM={ssim_base:.4f}")
+    log(f"[eval] step {step}: base  MSE={mse_base:.5f} SSIM={ssim_base:.4f}"
+        f" LPIPS={lpips_base:.4f}" if lpips_base is not None
+        else f"[eval] step {step}: base  MSE={mse_base:.5f} SSIM={ssim_base:.4f} LPIPS=n/a")
+    log(f"[eval] step {step}: base  SkelIoU={skel_base:.4f}")
 
     # 2) ctrl: 有 GT skel
     log(f"[eval] step {step}: ctrl (GT skel) ...")
-    mse_ctrl, ssim_ctrl = eval_one_step(
+    mse_ctrl, ssim_ctrl, lpips_ctrl, skel_ctrl = eval_one_step(
         ctrl, vae, diffusion, device, cache, n=n,
         steps=cfg_params["steps"], cfg=cfg_params["cfg"],
         seed=cfg_params["seed"], batch=cfg_params["batch"], use_skel=True)
-    log(f"[eval] step {step}: ctrl  MSE={mse_ctrl:.5f} SSIM={ssim_ctrl:.4f}")
+    log(f"[eval] step {step}: ctrl  MSE={mse_ctrl:.5f} SSIM={ssim_ctrl:.4f}"
+        f" LPIPS={lpips_ctrl:.4f}" if lpips_ctrl is not None
+        else f"[eval] step {step}: ctrl  MSE={mse_ctrl:.5f} SSIM={ssim_ctrl:.4f} LPIPS=n/a")
+    log(f"[eval] step {step}: ctrl  SkelIoU={skel_ctrl:.4f}")
 
     result = {
         "step": step,
         "mse_base": mse_base, "ssim_base": ssim_base,
+        "skel_iou_base": skel_base,
         "mse_ctrl": mse_ctrl, "ssim_ctrl": ssim_ctrl,
+        "skel_iou_ctrl": skel_ctrl,
         "delta_mse": mse_ctrl - mse_base,
         "delta_ssim": ssim_ctrl - ssim_base,
+        "delta_skel_iou": skel_ctrl - skel_base,
     }
+    if lpips_base is not None:
+        result["lpips_base"] = lpips_base
+        result["delta_lpips"] = lpips_ctrl - lpips_base
+    if lpips_ctrl is not None:
+        result["lpips_ctrl"] = lpips_ctrl
     with open(os.path.join(ckpt_dir, f"eval_auto_{step:07d}.json"), "w") as f:
         json.dump(result, f, indent=2)
     log(f"[eval] step {step}: done ({time.time()-t0:.0f}s) "
-        f"ΔMSE={result['delta_mse']:+.5f} ΔSSIM={result['delta_ssim']:+.4f}")
+        f"ΔMSE={result['delta_mse']:+.5f} ΔSSIM={result['delta_ssim']:+.4f}"
+        f" ΔSkelIoU={result['delta_skel_iou']:+.4f}")
     return result
 
 

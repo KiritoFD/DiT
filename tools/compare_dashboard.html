@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>s7 vs s8 训练对比</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<style>
+:root {
+  --bg:#0f1117; --card:#1a1d27; --line:#2a2f3c; --txt:#e6e9ef; --dim:#8b93a7;
+  --acc:#4f9cff; --warn:#ff6b6b; --ok:#3ddc97; --track:#3a4150;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--txt);font-family:-apple-system,"Segoe UI",Roboto,sans-serif;font-size:13px;line-height:1.5}
+header{padding:12px 20px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+header h1{font-size:15px;font-weight:600}
+.meta{color:var(--dim);font-size:12px}
+.controls{margin-left:auto;display:flex;gap:8px;align-items:center}
+button{background:var(--acc);color:#fff;border:0;border-radius:6px;padding:6px 12px;font-size:12px;cursor:pointer}
+button.sec{background:var(--card);border:1px solid var(--line);color:var(--txt)}
+.legend-chip{display:inline-flex;align-items:center;gap:6px;font-size:12px;color:var(--dim)}
+.legend-chip .dot{width:10px;height:10px;border-radius:50%;display:inline-block}
+.stats{display:flex;gap:10px;padding:14px 20px 0;flex-wrap:wrap}
+.stat{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:10px 14px;min-width:130px}
+.stat .k{color:var(--dim);font-size:11px}
+.stat .v{font-size:18px;font-weight:700;margin-top:2px}
+.stat .sub{color:var(--dim);font-size:10px;margin-top:1px}
+.v.warn{color:var(--warn)} .v.ok{color:var(--ok)}
+.charts{padding:14px 20px 24px;display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media(max-width:900px){.charts{grid-template-columns:1fr}}
+.panel{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:14px}
+.panel h2{font-size:13px;margin:0 0 4px;font-weight:600}
+.panel .hint{font-size:11px;color:var(--dim);margin:0 0 10px}
+.chart-wrap{position:relative;height:280px}
+.zoom-bar{display:flex;align-items:center;gap:8px;margin-top:8px;padding-top:8px;border-top:1px solid var(--line)}
+.zbar{flex:1;display:flex;flex-direction:row;gap:8px}
+.zbar input[type=range]{flex:1;width:auto;margin:0;-webkit-appearance:none;appearance:none;
+  height:4px;background:var(--track);border-radius:2px;outline:none}
+.zbar input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:12px;height:12px;
+  border-radius:50%;cursor:pointer;border:2px solid var(--bg)}
+.zbar-lo input::-webkit-slider-thumb{background:var(--ok)}
+.zbar-hi input::-webkit-slider-thumb{background:var(--warn)}
+.zoom-btn{background:none;border:1px solid var(--line);color:var(--dim);border-radius:4px;padding:2px 8px;font-size:11px;cursor:pointer}
+.zoom-btn:hover{color:var(--txt);border-color:var(--dim)}
+.status{padding:0 20px 10px;color:var(--dim);font-size:12px}
+.toggles{padding:6px 20px;display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:var(--dim)}
+.toggles label{display:inline-flex;align-items:center;gap:5px;cursor:pointer}
+.toggles input{accent-color:var(--acc)}
+</style>
+</head>
+<body>
+<header>
+  <h1>s7 vs s8 训练对比</h1>
+  <span class="legend-chip"><span class="dot" style="background:#4f9cff"></span>s7 (random char embed, 128k 数据)</span>
+  <span class="legend-chip"><span class="dot" style="background:#3ddc97"></span>s8 (DINO glyph embed, 106k clean)</span>
+  <span class="meta" id="meta">未加载</span>
+  <div class="controls">
+    <span class="meta" id="countdown"></span>
+    <label class="meta"><input type="checkbox" id="autoChk" checked> 自动刷新(15s)</label>
+    <button class="sec" id="refreshBtn">刷新</button>
+  </div>
+</header>
+<div class="stats" id="statGrid"></div>
+<div class="status" id="statusLine"></div>
+<div class="toggles">
+  <label><input type="checkbox" id="tgEval" checked> 仅显示 eval 点 (MSE/SSIM 图)</label>
+  <label><input type="checkbox" id="tgLogY"> Diff Loss Y轴对数</label>
+  <label><input type="checkbox" id="tgSameMax" checked> 对齐到 s7 最大步数</label>
+</div>
+<div class="charts">
+  <div class="panel">
+    <h2>Diff Loss 对比（训练损失）</h2>
+    <p class="hint">s7 random init 的 char_embed vs s8 DINO 注入的 char_embed，看 DINO 是否加速收敛</p>
+    <div class="chart-wrap"><canvas id="diffChart"></canvas></div>
+    <div class="zoom-bar" data-for="diffChart">
+      <button class="zoom-btn" onclick="zoomOut(this)">−</button>
+      <div class="zbar zbar-lo"><input type="range" class="zlo" min="0" max="100" value="0" step="0.5"></div>
+      <div class="zbar zbar-hi"><input type="range" class="zhi" min="0" max="100" value="100" step="0.5"></div>
+      <button class="zoom-btn" onclick="zoomIn(this)">+</button>
+      <button class="zoom-btn sec" onclick="resetZoom(this)">重置</button>
+    </div>
+  </div>
+  <div class="panel">
+    <h2>Eval MSE 对比（越低越好）</h2>
+    <p class="hint">关键对比指标：s7 在 40k 后 plateau ~0.92，看 s8 是否突破</p>
+    <div class="chart-wrap"><canvas id="mseChart"></canvas></div>
+    <div class="zoom-bar" data-for="mseChart">
+      <button class="zoom-btn" onclick="zoomOut(this)">−</button>
+      <div class="zbar zbar-lo"><input type="range" class="zlo" min="0" max="100" value="0" step="0.5"></div>
+      <div class="zbar zbar-hi"><input type="range" class="zhi" min="0" max="100" value="100" step="0.5"></div>
+      <button class="zoom-btn" onclick="zoomIn(this)">+</button>
+      <button class="zoom-btn sec" onclick="resetZoom(this)">重置</button>
+    </div>
+  </div>
+  <div class="panel">
+    <h2>Eval SSIM 对比（越高越好）</h2>
+    <p class="hint">s7 plateau ~0.50，看 s8 DINO 初始化是否提升字形结构相似度</p>
+    <div class="chart-wrap"><canvas id="ssimChart"></canvas></div>
+    <div class="zoom-bar" data-for="ssimChart">
+      <button class="zoom-btn" onclick="zoomOut(this)">−</button>
+      <div class="zbar zbar-lo"><input type="range" class="zlo" min="0" max="100" value="0" step="0.5"></div>
+      <div class="zbar zbar-hi"><input type="range" class="zhi" min="0" max="100" value="100" step="0.5"></div>
+      <button class="zoom-btn" onclick="zoomIn(this)">+</button>
+      <button class="zoom-btn sec" onclick="resetZoom(this)">重置</button>
+    </div>
+  </div>
+  <div class="panel">
+    <h2>吞吐 Steps/Sec 对比</h2>
+    <p class="hint">两者应接近（同模型同显存），s8 因 char_embed 768dim 略增显存</p>
+    <div class="chart-wrap"><canvas id="spdChart"></canvas></div>
+    <div class="zoom-bar" data-for="spdChart">
+      <button class="zoom-btn" onclick="zoomOut(this)">−</button>
+      <div class="zbar zbar-lo"><input type="range" class="zlo" min="0" max="100" value="0" step="0.5"></div>
+      <div class="zbar zbar-hi"><input type="range" class="zhi" min="0" max="100" value="100" step="0.5"></div>
+      <button class="zoom-btn" onclick="zoomIn(this)">+</button>
+      <button class="zoom-btn sec" onclick="resetZoom(this)">重置</button>
+    </div>
+  </div>
+</div>
+<script>
+// __MERGED_DATA__ 由 build_compare_dashboard.py 注入: {s7:{...}, s8:{...}}
+const MERGED = /*__MERGED_DATA__*/{};
+const COLORS = { s7:'#4f9cff', s8:'#3ddc97', warn:'#ff6b6b', ok:'#3ddc97' };
+const REFRESH_MS = 15000;
+const charts = {};
+const chartMeta = {};
+let chartsBuilt = false;
+let allData = null;  // {s7: {rows, source, pulledAt}, s8: {...}}
+let rafPending = null;
+
+function makeChart(id, datasetsDef) {
+  const ctx = document.getElementById(id);
+  if (!ctx) return null;
+  if (charts[id]) charts[id].destroy();
+  const ch = new Chart(ctx, {
+    type:'line',
+    data:{ labels:[], datasets: datasetsDef.map(d => ({
+      label:d.label, data:[], borderColor:d.color,
+      backgroundColor:d.color+'14', borderWidth:1.5,
+      pointRadius:d.point?3:0, pointHoverRadius:4, tension:0.25, spanGaps:true,
+      _key:d.key, _exp:d.exp
+    }))},
+    options:{
+      responsive:true, maintainAspectRatio:false, animation:{duration:0},
+      interaction:{mode:'index', intersect:false},
+      plugins:{
+        legend:{labels:{color:'#8b93a7',boxWidth:12,font:{size:11}},position:'top'},
+        tooltip:{callbacks:{
+          title(items){
+            const it=items[0]; return 'step '+it.label;
+          },
+          label(it){
+            return it.dataset.label+': '+it.raw;
+          }
+        }}
+      },
+      scales:{
+        x:{ticks:{color:'#8b93a7',maxTicksLimit:10,font:{size:10}},grid:{color:'#2a2f3c'}},
+        y:{ticks:{color:'#8b93a7',font:{size:10}},grid:{color:'#2a2f3c'},type:'linear'}
+      }
+    }
+  });
+  charts[id]=ch;
+  chartMeta[id]={fullLabels:[], datasets:datasetsDef, viewStart:0, viewEnd:1};
+  bindZoomBar(id);
+  return ch;
+}
+
+function buildAllCharts(){
+  if(chartsBuilt) return;
+  // diff: 两条线 (s7 train diff + s8 train diff)
+  makeChart('diffChart',[
+    {label:'s7 Diff',color:COLORS.s7,key:'diff',exp:'s7',point:false},
+    {label:'s8 Diff',color:COLORS.s8,key:'diff',exp:'s8',point:false}
+  ]);
+  // mse: 两条线 (eval points only)
+  makeChart('mseChart',[
+    {label:'s7 MSE',color:COLORS.s7,key:'mse',exp:'s7',point:true},
+    {label:'s8 MSE',color:COLORS.s8,key:'mse',exp:'s8',point:true}
+  ]);
+  makeChart('ssimChart',[
+    {label:'s7 SSIM',color:COLORS.s7,key:'ssim',exp:'s7',point:true},
+    {label:'s8 SSIM',color:COLORS.s8,key:'ssim',exp:'s8',point:true}
+  ]);
+  makeChart('spdChart',[
+    {label:'s7 Steps/s',color:COLORS.s7,key:'stepsPerSec',exp:'s7',point:false},
+    {label:'s8 Steps/s',color:COLORS.s8,key:'stepsPerSec',exp:'s8',point:false}
+  ]);
+  chartsBuilt=true;
+}
+
+// 合并 s7/s8 的所有 step 作为 x 轴
+function mergedLabels(){
+  const steps = new Set();
+  if(allData){
+    for(const exp of ['s7','s8']){
+      const rows = allData[exp] && allData[exp].rows || [];
+      rows.forEach(r=>steps.add(r.step));
+    }
+  }
+  return [...steps].sort((a,b)=>a-b);
+}
+
+function valFor(exp, step, key){
+  const rows = allData && allData[exp] && allData[exp].rows;
+  if(!rows) return null;
+  // 用 map 加速
+  if(!valFor._map){ valFor._map={}; }
+  const mk = exp+'|'+key;
+  if(!valFor._map[mk]){
+    const m={}; rows.forEach(r=>{ m[r.step]=r; }); valFor._map[mk]=m;
+  }
+  const r = valFor._map[mk][step];
+  if(!r) return null;
+  const v = r[key];
+  if(v==null||isNaN(v)) return null;
+  return v;
+}
+valFor._map = null;
+
+function refreshChart(id){
+  const ch=charts[id]; const meta=chartMeta[id]; if(!ch||!meta) return;
+  const labels = meta.fullLabels;
+  const n = labels.length;
+  const loI = Math.max(0, Math.floor(meta.viewStart*(n-1)));
+  const hiI = Math.min(n-1, Math.ceil(meta.viewEnd*(n-1)));
+  const viewLabels = labels.slice(loI, hiI+1);
+  ch.data.labels = viewLabels;
+  ch.data.datasets.forEach(ds=>{
+    const arr=[];
+    for(let i=loI;i<=hiI;i++){
+      arr.push(valFor(ds._exp, labels[i], ds._key));
+    }
+    ds.data=arr;
+  });
+  // 对数轴
+  const logY = document.getElementById('tgLogY') && document.getElementById('tgLogY').checked && id==='diffChart';
+  ch.options.scales.y.type = logY ? 'logarithmic' : 'linear';
+  ch.update('none');
+}
+
+function refreshAllCharts(){
+  // 重建 valFor cache (数据变了)
+  valFor._map=null;
+  // 重建 fullLabels
+  const labels = mergedLabels();
+  Object.values(charts).forEach(ch=>{
+    const id=ch.canvas.id; const m=chartMeta[id];
+    m.fullLabels=labels;
+  });
+  Object.keys(charts).forEach(id=>refreshChart(id));
+  renderStats();
+}
+
+function bindZoomBar(chartId){
+  const bar=document.querySelector(`.zoom-bar[data-for="${chartId}"]`);
+  if(!bar) return;
+  const lo=bar.querySelector('input.zlo'); const hi=bar.querySelector('input.zhi');
+  if(!lo||!hi) return;
+  const MIN_GAP=1;
+  function onSlide(){
+    let a=parseFloat(lo.value); let b=parseFloat(hi.value);
+    if(a>b-MIN_GAP){
+      if(document.activeElement===lo){b=Math.min(100,a+MIN_GAP);hi.value=b;}
+      else{a=Math.max(0,b-MIN_GAP);lo.value=a;}
+    }
+    const m=chartMeta[chartId]; m.viewStart=a/100; m.viewEnd=b/100;
+    scheduleUpdate(chartId);
+  }
+  lo.addEventListener('input',onSlide); hi.addEventListener('input',onSlide);
+  const canvas=document.getElementById(chartId);
+  if(canvas){
+    canvas.addEventListener('wheel',(e)=>{
+      e.preventDefault();
+      const delta=e.deltaY>0?0.04:-0.04;
+      const m=chartMeta[chartId]; if(!m) return;
+      const span=m.viewEnd-m.viewStart;
+      const newSpan=Math.max(0.02,Math.min(1,span+delta));
+      const rect=canvas.getBoundingClientRect();
+      const mx=(e.clientX-rect.left)/rect.width;
+      const center=m.viewStart+span*mx;
+      m.viewStart=Math.max(0,center-newSpan*mx);
+      m.viewEnd=Math.min(1,center+newSpan*(1-mx));
+      syncSlider(chartId); scheduleUpdate(chartId);
+    },{passive:false});
+  }
+}
+function syncSlider(chartId){
+  const bar=document.querySelector(`.zoom-bar[data-for="${chartId}"]`);
+  const lo=bar?.querySelector('input.zlo'); const hi=bar?.querySelector('input.zhi');
+  const m=chartMeta[chartId]; if(!lo||!hi||!m) return;
+  lo.value=(m.viewStart*100).toFixed(1); hi.value=(m.viewEnd*100).toFixed(1);
+}
+function zoomOut(btn){const id=btn.closest('.zoom-bar').dataset.for;const m=chartMeta[id];const c=(m.viewStart+m.viewEnd)/2;const s=Math.min(1,(m.viewEnd-m.viewStart)*1.5);m.viewStart=Math.max(0,c-s/2);m.viewEnd=Math.min(1,c+s/2);syncSlider(id);scheduleUpdate(id);}
+function zoomIn(btn){const id=btn.closest('.zoom-bar').dataset.for;const m=chartMeta[id];const c=(m.viewStart+m.viewEnd)/2;const s=Math.max(0.02,(m.viewEnd-m.viewStart)/1.5);m.viewStart=Math.max(0,c-s/2);m.viewEnd=Math.min(1,c+s/2);syncSlider(id);scheduleUpdate(id);}
+function resetZoom(btn){const id=btn.closest('.zoom-bar').dataset.for;const m=chartMeta[id];m.viewStart=0;m.viewEnd=1;syncSlider(id);scheduleUpdate(id);}
+
+function scheduleUpdate(){
+  if(rafPending) return;
+  rafPending=requestAnimationFrame(()=>{rafPending=null;refreshAllCharts();});
+}
+
+function renderStats(){
+  const grid=document.getElementById('statGrid');
+  if(!allData) return;
+  const s7rows=allData.s7&&allData.s7.rows||[];
+  const s8rows=allData.s8&&allData.s8.rows||[];
+  const s7last=s7rows[s7rows.length-1]||{};
+  const s8last=s8rows[s8rows.length-1]||{};
+  const s7evals=s7rows.filter(r=>r.is_eval);
+  const s8evals=s8rows.filter(r=>r.is_eval);
+  const s7bestS=s7evals.length?Math.max(...s7evals.map(r=>r.ssim||0)):null;
+  const s8bestS=s8evals.length?Math.max(...s8evals.map(r=>r.ssim||0)):null;
+  const s7bestM=s7evals.length?Math.min(...s7evals.map(r=>r.mse||1e9)):null;
+  const s8bestM=s8evals.length?Math.min(...s8evals.map(r=>r.mse||1e9)):null;
+  const nan=v=>v==null||isNaN(v);
+  const s=(k,v,sub,c)=>`<div class="stat"><div class="k">${k}</div><div class="v ${c||''}">${v}</div>${sub?`<div class="sub">${sub}</div>`:''}</div>`;
+  const s7d=nan(s7last.diff)?'—':s7last.diff.toFixed(4);
+  const s8d=nan(s8last.diff)?'—':s8last.diff.toFixed(4);
+  let diffCmp='';
+  if(!nan(s7last.diff)&&!nan(s8last.diff)){
+    const d=s8last.diff-s7last.diff;
+    diffCmp=d<0?`<span style="color:var(--ok)">s8 低 ${(-d).toFixed(4)}</span>`:`<span style="color:var(--warn)">s8 高 ${d.toFixed(4)}</span>`;
+  }
+  // 同步 step 比较: 取 s7 和 s8 都覆盖的最大公共 step 范围内的同 step diff
+  const commonMax=Math.min(s7last.step||0, s8last.step||0);
+  let syncDiff='';
+  if(commonMax>0){
+    let s7v=null,s8v=null;
+    for(const r of s7rows){if(r.step<=commonMax&&!nan(r.diff))s7v=r.diff;}
+    for(const r of s8rows){if(r.step<=commonMax&&!nan(r.diff))s8v=r.diff;}
+    if(s7v!=null&&s8v!=null){
+      const d=s8v-s7v;
+      syncDiff=`同step(${commonMax}) s8 ${d<0?'低':'高'} ${Math.abs(d).toFixed(4)}`;
+    }
+  }
+  grid.innerHTML=
+    s('s7 Step', s7last.step||'—', s7evals.length+' evals')+
+    s('s8 Step', s8last.step||'—', s8evals.length+' evals')+
+    s('s7 Diff', s7d, 'final @'+(s7last.step||'?'))+
+    s('s8 Diff', s8d, diffCmp||'')+
+    s('同步对比', syncDiff||'—', '同 step 范围内 diff 差')+
+    s('s7 Best SSIM', s7bestS==null?'—':s7bestS.toFixed(4), s7evals.length?('@step '+s7evals.reduce((a,b)=>b.ssim>(a?.ssim||0)?b:a).step:''))+
+    s('s8 Best SSIM', s8bestS==null?'—':s8bestS.toFixed(4), s8evals.length?('@step '+s8evals.reduce((a,b)=>b.ssim>(a?.ssim||0)?b:a).step:''))+
+    s('s7 Best MSE', s7bestM==null?'—':s7bestM.toFixed(4),'')+
+    s('s8 Best MSE', s8bestM==null?'—':s8bestM.toFixed(4),'');
+  // status
+  let st='';
+  st+=`s7: ${s7rows.length}行 step≤${s7last.step||0}`;
+  if(s7evals.length) st+=` bestSSIM=${s7bestS?.toFixed(4)}`;
+  st+=` | s8: ${s8rows.length}行 step≤${s8last.step||0}`;
+  if(s8evals.length) st+=` bestSSIM=${s8bestS?.toFixed(4)}`;
+  document.getElementById('statusLine').textContent=st;
+}
+
+async function load(){
+  try{
+    // 从同目录 train_data.json 拉 s8 最新数据；s7 来自内嵌
+    let s8 = allData && allData.s8 ? allData.s8 : (MERGED.s8||{rows:[]});
+    try{
+      const res=await fetch('train_data.json?t='+Date.now());
+      if(res.ok){ s8=await res.json(); }
+    }catch(e){}
+    allData = { s7: MERGED.s7||{rows:[]}, s8: s8 };
+    buildAllCharts();
+    const s7src = allData.s7.source||'';
+    const s8src = allData.s8.source||'';
+    document.getElementById('meta').textContent =
+      `s7: ${allData.s7.rows?.length||0}行 (到${allData.s7.rows?.slice(-1)[0]?.step||0}) · s8: ${allData.s8.rows?.length||0}行 (到${allData.s8.rows?.slice(-1)[0]?.step||0}) · 刷新 ${allData.s8.pulledAt||''}`;
+    refreshAllCharts();
+  }catch(e){
+    document.getElementById('meta').textContent='加载失败: '+e.message;
+  }
+}
+
+document.getElementById('refreshBtn').addEventListener('click',load);
+['tgLogY','tgEval','tgSameMax'].forEach(id=>{
+  document.getElementById(id).addEventListener('change',scheduleUpdate);
+});
+let secLeft=15,timer=null,cdTimer=null;
+const autoChk=document.getElementById('autoChk');
+function tick(){secLeft=secLeft<=0?15:secLeft-1;const el=document.getElementById('countdown');if(el)el.textContent=autoChk.checked?`下次 ${secLeft}s`:'已关闭';}
+function syncAuto(){if(autoChk.checked){if(!timer)timer=setInterval(load,REFRESH_MS);if(!cdTimer){secLeft=15;cdTimer=setInterval(tick,1000);}}else{if(timer){clearInterval(timer);timer=null;}if(cdTimer){clearInterval(cdTimer);cdTimer=null;}const el=document.getElementById('countdown');if(el)el.textContent='已关闭';}}
+autoChk.addEventListener('change',syncAuto);
+load();
+syncAuto();
+</script>
+</body>
+</html>

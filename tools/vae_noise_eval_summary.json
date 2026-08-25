@@ -1,0 +1,98 @@
+[
+  {
+    "name": "kl-f4_p4",
+    "vae_path": "/root/Workspace/xy/DiT/pretrained_models/kl-f4",
+    "downscale": 4,
+    "latent_channels": 3,
+    "scaling_factor": 0.102079,
+    "patch": 4,
+    "latent_shape": [
+      3,
+      64,
+      64
+    ],
+    "tokens": 256,
+    "n_images": 79,
+    "mse_mean": 0.000696361305662195,
+    "mse_std": 0.00038978669364600786,
+    "mse_median": 0.0006065441411919892,
+    "mse_max": 0.00340177770704031,
+    "ssim_mean": 0.9752795291717608,
+    "ssim_std": 0.028906517892909465,
+    "ssim_median": 0.9820512446258874,
+    "ssim_min": 0.7790676459008896,
+    "elapsed_sec": 141.9579679965973
+  },
+  {
+    "name": "kl-f4_p2",
+    "vae_path": "/root/Workspace/xy/DiT/pretrained_models/kl-f4",
+    "downscale": 4,
+    "latent_channels": 3,
+    "scaling_factor": 0.102079,
+    "patch": 2,
+    "latent_shape": [
+      3,
+      64,
+      64
+    ],
+    "tokens": 1024,
+    "n_images": 79,
+    "mse_mean": 0.0006963611839050309,
+    "mse_std": 0.0003897887222902883,
+    "mse_median": 0.0006065490888431668,
+    "mse_max": 0.0034018035512417555,
+    "ssim_mean": 0.9752803478818234,
+    "ssim_std": 0.028905286606613546,
+    "ssim_median": 0.9820517675198627,
+    "ssim_min": 0.7790699531588171,
+    "elapsed_sec": 134.70566153526306
+  },
+  {
+    "name": "sd-vae-ft-ema_p4",
+    "vae_path": "/root/Workspace/xy/DiT/pretrained_models/sd-vae-ft-ema",
+    "downscale": 8,
+    "latent_channels": 4,
+    "scaling_factor": 0.18215,
+    "patch": 4,
+    "latent_shape": [
+      4,
+      32,
+      32
+    ],
+    "tokens": 64,
+    "n_images": 79,
+    "mse_mean": 0.000844819031551162,
+    "mse_std": 0.001307569039878148,
+    "mse_median": 0.0004813743580598384,
+    "mse_max": 0.01129602175205946,
+    "ssim_mean": 0.9619892209827253,
+    "ssim_std": 0.04510848416564881,
+    "ssim_median": 0.9728742774748648,
+    "ssim_min": 0.6890622290966016,
+    "elapsed_sec": 103.82456803321838
+  },
+  {
+    "name": "sd-vae-ft-ema_p2",
+    "vae_path": "/root/Workspace/xy/DiT/pretrained_models/sd-vae-ft-ema",
+    "downscale": 8,
+    "latent_channels": 4,
+    "scaling_factor": 0.18215,
+    "patch": 2,
+    "latent_shape": [
+      4,
+      32,
+      32
+    ],
+    "tokens": 256,
+    "n_images": 79,
+    "mse_mean": 0.0008448291607893697,
+    "mse_std": 0.001307634491450543,
+    "mse_median": 0.0004813720006495714,
+    "mse_max": 0.01129669789224863,
+    "ssim_mean": 0.9619888885138201,
+    "ssim_std": 0.04510823790005513,
+    "ssim_median": 0.9728762858823274,
+    "ssim_min": 0.6890616564937693,
+    "elapsed_sec": 103.80928635597229
+  }
+]

@@ -9,7 +9,7 @@
   python pull_monitor.py --loop    # 每 --interval 秒循环（默认 120）
 """
 import os, re, sys, json, time, glob, io, tarfile
-import subprocess, datetime
+import subprocess, datetime, sys
 
 REMOTE_USER = "root"
 REMOTE_HOST = "10.176.54.17"
@@ -17,16 +17,31 @@ REMOTE_PORT = "36430"
 REMOTE_BASE = "/root/Workspace/xy/DiT"
 
 HERE = os.path.dirname(os.path.abspath(__file__))
+# 本地实验名覆盖: 用于 poster/dashboard 文件命名 (不从远程路径推断)
+# 设为 None 则自动从远程 source 路径推断
+EXP_NAME = "s10_b4_grey_clear"
+
+def _exp_tag_from_source(source_path=None):
+    """返回实验标识。优先用 EXP_NAME 覆盖, 否则从远程路径推断。"""
+    if EXP_NAME:
+        return EXP_NAME
+    if not source_path:
+        return "unknown"
+    parts = source_path.replace("\\", "/").rstrip("/").split("/")
+    if len(parts) >= 3:
+        return parts[-3]
+    return "unknown"
+
 LOCAL_CUR = os.path.join(HERE, "current_train.log")
 OUT_JSON = os.path.join(HERE, "train_data.json")
 LOCAL_ES = os.path.join(HERE, "remote_eval_samples")
 LOCAL_SEEN = os.path.join(HERE, "remote_seen_samples")
+LOCAL_SHOW = os.path.join(HERE, "remote_show_samples")
 LOCAL_EVAL_JSON = os.path.join(HERE, "remote_eval_auto.json")
-POSTER = os.path.join(HERE, "eval_poster.png")
 STATE_F = os.path.join(HERE, "poster_state.json")
 
-DATASET_SIZE = 128842
-BATCH_SIZE = 224
+DATASET_SIZE = 104751
+BATCH_SIZE = 96
 TOTAL_STEPS = 600000
 
 LANRE = re.compile(r"\x1b\[[0-9;]*m")
@@ -52,7 +67,8 @@ def _ssh(remote_cmd, timeout=30):
     try:
         r = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout)
         return r.stdout if r.returncode == 0 else ""
-    except Exception:
+    except Exception as e:
+        print(f"[ssh] error: {e}", file=sys.stderr)
         return ""
 
 
@@ -82,7 +98,7 @@ def collect_remote():
         f"| xargs ls -t 2>/dev/null | head -1", timeout=20)
     latest = latest.strip()
     if not latest:
-        return None, None, None, None
+        return None, None, None, None, "", None, [], []
 
     # 实验目录 = log.txt 的上级目录 (去掉 /log.txt)
     run_dir = "/".join(latest.split("/")[:-1])
@@ -92,25 +108,28 @@ def collect_remote():
     # Step 2: 一次性 cat log.txt + cat cpu_eval_state.json + cat eval_auto_*.json
     # + ls eval_samples + ls seen_samples
     # cpu_eval_state.json 包含 eval 时间戳，用于时间轴对齐
+    # 注意: 只读当前 run_dir 的 log，不再 cat 整个 series（避免 s7 旧 eval 污染 s8）
+    # 关键修正: EVAL_LOG 不再读全局 auto_eval_cpu.log (里面混有旧 s7 的 eval 行)，
+    # 只读 s8 自己的 ckpt_dir/cpu_eval_state.json + eval_auto_*.json (它们是 per-ckpt 的)
     SEP = "===_DSH_SEP_==="
     script = (
         f"echo '{SEP}LOG'; "
-        f"find {series_dir} -name log.txt 2>/dev/null | sort | xargs cat 2>/dev/null; "
+        f"cat {run_dir}/log.txt 2>/dev/null; "
         f"echo '{SEP}EVAL'; "
-        f"cat {ckpt_dir}/eval_auto_*.json 2>/dev/null; "
+        f"cat {series_dir}/*/checkpoints/eval_auto_*.json 2>/dev/null; "
         f"echo '{SEP}EVAL_STATE'; "
+        f"cat {ckpt_dir}/gpu_eval_state.json 2>/dev/null; "
         f"cat {ckpt_dir}/cpu_eval_state.json 2>/dev/null; "
-        f"echo '{SEP}EVAL_LOG'; "
-        f"grep -E 'MSE=.*SSIM=' /root/Workspace/xy/DiT/auto_eval_cpu.log 2>/dev/null | tail -50; "
         f"echo '{SEP}EVAL_SAMPLES'; "
         f"ls {ckpt_dir}/eval_samples/ 2>/dev/null; "
         f"echo '{SEP}SEEN_SAMPLES'; "
         f"ls {ckpt_dir}/seen_samples/ 2>/dev/null; "
         f"echo '{SEP}END'"
     )
-    combined = _ssh(script, timeout=30)
+    combined = _ssh(script, timeout=60)
 
-    # 解析分隔段
+    # 解析分隔段: 每段格式为 "LABEL\ncontent"
+    # strip 开头的 label 行 (LOG/EVAL/EVAL_STATE/EVAL_SAMPLES/SEEN_SAMPLES/END)
     parts = combined.split(SEP)
     log_content = ""
     eval_json = ""
@@ -118,18 +137,27 @@ def collect_remote():
     eval_log_lines = ""
     eval_sample_steps = []
     seen_sample_steps = []
+
+    def _strip_label(s):
+        """Remove the first line if it's a known section label."""
+        lines = s.strip().splitlines()
+        if lines and lines[0].strip() in ("LOG", "EVAL", "EVAL_STATE",
+                                          "EVAL_SAMPLES", "SEEN_SAMPLES", "END"):
+            return "\n".join(lines[1:]).strip()
+        return s.strip()
+
     if len(parts) >= 2:
-        log_content = parts[1].strip()
+        log_content = _strip_label(parts[1])
     if len(parts) >= 3:
-        eval_json = parts[2].strip()
+        eval_json = _strip_label(parts[2])
     if len(parts) >= 4:
-        eval_state_json = parts[3].strip()
+        eval_state_json = _strip_label(parts[3])
     if len(parts) >= 5:
-        eval_log_lines = parts[4].strip()
+        _es = _strip_label(parts[4])
+        eval_sample_steps = [l.strip() for l in _es.splitlines() if l.strip()]
     if len(parts) >= 6:
-        eval_sample_steps = [l.strip() for l in parts[5].strip().splitlines() if l.strip()]
-    if len(parts) >= 7:
-        seen_sample_steps = [l.strip() for l in parts[6].strip().splitlines() if l.strip()]
+        _ss = _strip_label(parts[5])
+        seen_sample_steps = [l.strip() for l in _ss.splitlines() if l.strip()]
 
     return latest, log_content, eval_json, eval_state_json, eval_log_lines, ckpt_dir, eval_sample_steps, seen_sample_steps
 
@@ -172,7 +200,8 @@ def parse(log_content):
                 "stdmid": fields.get("StdMid"), "x0lat": fields.get("X0Lat"),
                 "stepsPerSec": fields.get("stepsPerSec"),
                 "memCur": fields.get("memCur"), "memPeak": fields.get("memPeak"),
-                "mse": None, "ssim": None, "ts": ts, "is_eval": False,
+                "mse": None, "ssim": None, "skel_iou": None, "lpips": None,
+                "ts": ts, "is_eval": False,
             })
             continue
         e = EVAL_RE.search(line)
@@ -199,31 +228,56 @@ def parse(log_content):
 
 
 def merge_eval_json(rows, eval_json_str):
-    """从 eval_auto_*.json 内容解析 MSE/SSIM，标记 is_eval=True 并填入值。
-    仅填入有实际 eval 结果的 step —— 不向前传播（不把上一个 eval 的值
-    赋给后续没有 eval 的训练 step），让图表上的 eval 点准确落在评测 step 上。"""
+    """从 eval_auto_*.json 内容解析 MSE/SSIM/SkelIoU/LPIPS，标记 is_eval=True 并填入值。
+    支持任意字段顺序（json.loads 解析每个独立 JSON 对象）。"""
     if not eval_json_str:
         return
     ev_map = {}
-    for m in re.finditer(r'"step"\s*:\s*(\d+)\s*,\s*"mse"\s*:\s*([\d.-]+)\s*,\s*"ssim"\s*:\s*([\d.-]+)',
-                         eval_json_str):
-        ev_map[int(m.group(1))] = (float(m.group(2)), float(m.group(3)))
+    # 尝试逐个解析 JSON 对象（eval_auto_*.json 被拼接为多个 {} 块）
+    import json as _json
+    decoder = _json.JSONDecoder()
+    idx = 0
+    text = eval_json_str.strip()
+    while idx < len(text):
+        # 跳过空白和分隔符
+        while idx < len(text) and text[idx] in ' \t\n\r':
+            idx += 1
+        if idx >= len(text):
+            break
+        try:
+            obj, end_idx = decoder.raw_decode(text, idx)
+            idx = end_idx
+            if isinstance(obj, dict) and "step" in obj and "mse" in obj:
+                step = int(obj["step"])
+                ev_map[step] = (
+                    float(obj["mse"]),
+                    float(obj.get("ssim", 0)),
+                    float(obj["skel_iou"]) if obj.get("skel_iou") is not None else None,
+                    float(obj["lpips"]) if obj.get("lpips") is not None else None,
+                )
+        except Exception:
+            idx += 1  # skip one char and retry
     if not ev_map:
         return
     by_step = {r["step"]: r for r in rows}
-    for step, (mse, ssim) in ev_map.items():
+    for step, (mse, ssim, skel_iou, lpips) in ev_map.items():
         if step in by_step:
             by_step[step]["mse"] = mse
             by_step[step]["ssim"] = ssim
             by_step[step]["is_eval"] = True
+            if skel_iou is not None:
+                by_step[step]["skel_iou"] = skel_iou
+            if lpips is not None:
+                by_step[step]["lpips"] = lpips
         else:
-            # eval step 不在 train log 中（如 step=55000），追加一行
             rows.append({
                 "step": step, "total": None, "diff": None,
                 "canny": None, "skel": None, "latc": None, "lats": None,
                 "stdmid": None, "x0lat": None, "stepsPerSec": None,
                 "memCur": None, "memPeak": None,
-                "mse": mse, "ssim": ssim, "ts": None, "is_eval": True,
+                "mse": mse, "ssim": ssim, "skel_iou": skel_iou,
+                "lpips": lpips,
+                "ts": None, "is_eval": True,
             })
 
 
@@ -295,61 +349,44 @@ def pull_eval_samples(ckpt_dir, eval_sample_steps, verbose=True):
     scp -r 远程目录会在本地创建一层嵌套，需要展平。"""
     if not eval_sample_steps:
         return
-    # 清理旧的嵌套目录
-    nested = os.path.join(LOCAL_ES, "eval_samples")
-    if os.path.isdir(nested):
-        import shutil
-        # 把嵌套目录里的 step 子目录移到上层
-        for d in os.listdir(nested):
-            src = os.path.join(nested, d)
-            dst = os.path.join(LOCAL_ES, d)
-            if os.path.isdir(src) and not os.path.exists(dst):
-                shutil.move(src, dst)
-        shutil.rmtree(nested, ignore_errors=True)
-    remote = f"{ckpt_dir}/eval_samples/"
-    _scp_dir(remote, LOCAL_ES, timeout=120)
-    # scp -r 可能在 LOCAL_ES 下再建一层 eval_samples/
-    nested = os.path.join(LOCAL_ES, "eval_samples")
-    if os.path.isdir(nested):
-        import shutil
-        for d in os.listdir(nested):
-            src = os.path.join(nested, d)
-            dst = os.path.join(LOCAL_ES, d)
-            if os.path.isdir(src) and not os.path.exists(dst):
-                shutil.move(src, dst)
-            elif os.path.isdir(src) and os.path.isdir(dst):
-                # 合并：拷贝缺失的文件
-                for f in os.listdir(src):
-                    sf = os.path.join(src, f)
-                    df = os.path.join(dst, f)
-                    if not os.path.exists(df):
-                        shutil.move(sf, df)
-        shutil.rmtree(nested, ignore_errors=True)
-    if verbose:
-        steps = _existing_steps(LOCAL_ES)
-        print(f"[poster] eval_samples: {len(steps)} steps pulled")
+    _pull_sample_dir(ckpt_dir, "eval_samples", LOCAL_ES, verbose)
 
 
 def pull_seen_samples(ckpt_dir, verbose=True):
     """一次 scp -r 拉取整个 seen_samples 目录。"""
-    # 清理旧的嵌套目录
-    nested = os.path.join(LOCAL_SEEN, "seen_samples")
+    _pull_sample_dir(ckpt_dir, "seen_samples", LOCAL_SEEN, verbose)
+
+
+def pull_show_samples(ckpt_dir, verbose=True):
+    """一次 scp -r 拉取整个 show_samples 目录。"""
+    _pull_sample_dir(ckpt_dir, "show_samples", LOCAL_SHOW, verbose)
+
+
+def _pull_sample_dir(ckpt_dir, remote_subdir, local_dir, verbose=True):
+    """Generic scp -r puller: flattens nested directory from scp -r."""
+    nested = os.path.join(local_dir, remote_subdir)
     if os.path.isdir(nested):
         import shutil
         for d in os.listdir(nested):
             src = os.path.join(nested, d)
-            dst = os.path.join(LOCAL_SEEN, d)
+            dst = os.path.join(local_dir, d)
             if os.path.isdir(src) and not os.path.exists(dst):
                 shutil.move(src, dst)
+            elif os.path.isdir(src) and os.path.isdir(dst):
+                for f in os.listdir(src):
+                    sf = os.path.join(src, f)
+                    df = os.path.join(dst, f)
+                    if not os.path.exists(df):
+                        shutil.move(sf, df)
         shutil.rmtree(nested, ignore_errors=True)
-    remote = f"{ckpt_dir}/seen_samples/"
-    _scp_dir(remote, LOCAL_SEEN, timeout=120)
-    nested = os.path.join(LOCAL_SEEN, "seen_samples")
+    remote = f"{ckpt_dir}/{remote_subdir}/"
+    _scp_dir(remote, local_dir, timeout=120)
+    nested = os.path.join(local_dir, remote_subdir)
     if os.path.isdir(nested):
         import shutil
         for d in os.listdir(nested):
             src = os.path.join(nested, d)
-            dst = os.path.join(LOCAL_SEEN, d)
+            dst = os.path.join(local_dir, d)
             if os.path.isdir(src) and not os.path.exists(dst):
                 shutil.move(src, dst)
             elif os.path.isdir(src) and os.path.isdir(dst):
@@ -360,45 +397,69 @@ def pull_seen_samples(ckpt_dir, verbose=True):
                         shutil.move(sf, df)
         shutil.rmtree(nested, ignore_errors=True)
     if verbose:
-        steps = _existing_steps(LOCAL_SEEN)
-        print(f"[poster] seen_samples: {len(steps)} steps pulled")
+        steps = _existing_steps(local_dir)
+        print(f"[poster] {remote_subdir}: {len(steps)} steps pulled")
 
 
-def regen_poster(remote_log, ckpt_dir, verbose=True):
-    """生成 eval poster（show5 + seen5 + GT 行）。"""
+def regen_poster(remote_log, ckpt_dir, verbose=True, exp_tag=None):
+    """生成 eval poster（show5 + seen5 + GT 行）。输出文件名含实验标识。"""
     if not os.path.exists(os.path.join(HERE, "make_eval_poster.py")):
         if verbose:
             print("[poster] make_eval_poster.py 不存在，跳过")
-        return
+        return None
 
-    show5_steps = [s for s in _existing_steps(LOCAL_ES)
-                   if os.path.exists(os.path.join(LOCAL_ES, "step%07d" % s, "samples.json"))]
+    tag = exp_tag or _exp_tag_from_source(remote_log)
+    poster_out = os.path.join(HERE, f"poster_{tag}.png")
+
+    # show5 来源 = show_samples (5张/step), 不是 eval_samples (455张/step)
+    show5_steps = [s for s in _existing_steps(LOCAL_SHOW)
+                   if os.path.exists(os.path.join(LOCAL_SHOW, "step%07d" % s, "samples.json"))]
     if not show5_steps:
         if verbose:
-            print("[poster] 无带 samples.json 的 eval step，跳过海报生成")
-        return
+            print("[poster] 无带 samples.json 的 show_samples step，跳过海报生成")
+        return None
+
+    # eval_json_dir: point to the series dir so make_eval_poster.py's glob
+    # (eval_auto_*.json) finds eval JSONs across ALL run dirs (old + new).
+    series_dir = "/".join(ckpt_dir.split("/")[:-2])
+    # Also collect all eval_auto jsons from all runs into a flat temp dir
+    # so make_eval_poster.py can read them regardless of run directory.
+    import tempfile as _tf, glob as _gl, shutil as _sh
+    eval_json_tmp = _tf.mkdtemp(prefix="eval_json_")
+    for ejf in _gl.glob(os.path.join(series_dir, "*/checkpoints/eval_auto_*.json")):
+        _sh.copy2(ejf, eval_json_tmp)
 
     args = [sys.executable, os.path.join(HERE, "make_eval_poster.py"),
-            "--show5-dir", LOCAL_ES,
+            "--show5-dir", LOCAL_SHOW,
             "--gt-dir", os.path.join(HERE, "remote_gt"),
-            "--show5-csv", os.path.join(HERE, "eval5_top30.csv"),
-            "--eval-json-dir", ckpt_dir,
-            "-o", POSTER]
+            "--show5-csv", os.path.join(HERE, "show5_top30.csv"),
+            "--eval-json-dir", eval_json_tmp,
+            "--exp", tag,
+            "-o", poster_out]
     seen5_steps = [s for s in _existing_steps(LOCAL_SEEN)
                    if os.path.exists(os.path.join(LOCAL_SEEN, "step%07d" % s, "samples.json"))]
     if seen5_steps:
-        args.extend(["--seen5-dir", LOCAL_SEEN])
+        args.extend(["--seen5-dir", LOCAL_SEEN,
+                     "--seen5-csv", os.path.join(HERE, "seen5_top30.csv")])
     try:
-        subprocess.run(args, capture_output=True, text=True, timeout=180)
+        r = subprocess.run(args, capture_output=True, text=True, timeout=180)
         if verbose:
-            print(f"[poster] 海报已生成: {POSTER} (show5={len(show5_steps)} seen5={len(seen5_steps)})")
+            if r.returncode != 0:
+                print(f"[poster] make_eval_poster.py rc={r.returncode}")
+                print(f"[poster] stderr: {r.stderr[:500]}")
+            print(f"[poster] 海报已生成: {poster_out} (show5={len(show5_steps)} seen5={len(seen5_steps)})")
+        return poster_out
     except Exception as e:
         if verbose:
             print(f"[poster] 海报生成失败: {e}")
+        return None
+    finally:
+        import shutil as _sh
+        _sh.rmtree(eval_json_tmp, ignore_errors=True)
 
 
-def build_dashboard():
-    """生成静态 HTML dashboard。"""
+def build_dashboard(poster_name=None, exp_tag=None):
+    """生成静态 HTML dashboard。poster_name=实验专属 poster 文件名, exp_tag=实验标识。"""
     template_path = os.path.join(HERE, "train_dashboard.html")
     if not os.path.exists(template_path) or not os.path.exists(OUT_JSON):
         return
@@ -415,7 +476,9 @@ def build_dashboard():
             "    const data = await res.json();"
         )
         t = t.replace(old_fetch, "    const data = __DATA__;", 1)
-        # Poster: use relative path
+        # Poster: 用实验专属文件名 (如 poster_s9_b4_clean_dino.png)
+        tag = exp_tag or "unknown"
+        p_name = poster_name or f"poster_{tag}.png"
         old_poster = (
             "async function loadPoster(){\n"
             "  await loadImg('latestImg', ['eval_latest.png?t='+Date.now()]);\n"
@@ -423,19 +486,43 @@ def build_dashboard():
             "}"
         )
         new_poster = (
-            "function loadPoster(){\n"
-            "  const li=document.getElementById('latestImg'); if(li){li.src='eval_poster.png';li.onerror=()=>{li.style.display='none';};}\n"
-            "  const pi=document.getElementById('posterImg'); if(pi){pi.src='eval_poster.png';pi.onerror=()=>{pi.style.display='none';};}\n"
-            "}"
+            f"function loadPoster(){{\n"
+            f"  const li=document.getElementById('latestImg'); if(li){{li.src='{p_name}';li.onerror=()=>{{li.style.display='none';}};}}\n"
+            f"  const pi=document.getElementById('posterImg'); if(pi){{pi.src='{p_name}';pi.onerror=()=>{{pi.style.display='none';}};}}\n"
+            f"}}"
         )
         t = t.replace(old_poster, new_poster, 1)
         t = t.replace("load();\nsyncAuto();", "load();", 1)
         dash_dir = os.path.join(HERE, "dashboards")
         os.makedirs(dash_dir, exist_ok=True)
-        out = os.path.join(dash_dir, "s7_klf4_top30.html")
+        # 复制 poster 到 dashboards 目录, 让 html 相对路径能找到
+        import shutil as _sh
+        _src_poster = os.path.join(HERE, p_name)
+        if os.path.exists(_src_poster):
+            _sh.copy2(_src_poster, os.path.join(dash_dir, p_name))
+        out = os.path.join(dash_dir, f"{tag}.html")
         with open(out, "w", encoding="utf-8") as f:
             f.write(t)
         return out
+    except Exception:
+        return None
+
+
+def build_compare_dashboard():
+    """生成 s7 vs s8 对比 dashboard。s7 数据来自 s7_history.json 静态快照，
+    s8 数据来自当前 train_data.json（实时更新）。"""
+    cmp_tpl = os.path.join(HERE, "compare_dashboard.html")
+    cmp_builder = os.path.join(HERE, "build_compare_dashboard.py")
+    s7_hist = os.path.join(HERE, "s7_history.json")
+    s8_json = os.path.join(HERE, "train_data.json")
+    if not (os.path.exists(cmp_tpl) and os.path.exists(s7_hist) and os.path.exists(s8_json)):
+        return None
+    try:
+        args = [sys.executable, cmp_builder]
+        r = subprocess.run(args, capture_output=True, text=True, timeout=30, cwd=HERE)
+        if r.returncode == 0:
+            return os.path.join(HERE, "dashboards", "s7_vs_s8.html")
+        return None
     except Exception:
         return None
 
@@ -488,17 +575,26 @@ def run_once(verbose=True, do_poster=True):
     eval_rows = [r for r in rows if r.get("is_eval")]
     last = rows[-1] if rows else None
 
+    poster_path = None
     if do_poster and eval_rows:
-        # 拉取 eval_samples 和 seen_samples（各一次 scp -r）
+        # 拉取 eval_samples/show_samples/seen_samples（各一次 scp -r）
         pull_eval_samples(ckpt_dir, eval_steps, verbose)
+        pull_show_samples(ckpt_dir, verbose)
         pull_seen_samples(ckpt_dir, verbose)
-        regen_poster(latest, ckpt_dir, verbose)
+        poster_path = regen_poster(latest, ckpt_dir, verbose, exp_tag=_exp_tag_from_source(latest))
 
-    # 生成 dashboard
-    dash = build_dashboard()
+    # 生成 dashboard (实时实验独立, 不合并其他)
+    tag = _exp_tag_from_source(latest)
+    dash = build_dashboard(poster_name=os.path.basename(poster_path) if poster_path else f"poster_{tag}.png",
+                           exp_tag=tag)
 
     if verbose:
-        tail = f"step={last['step']} diff={last['diff']:.4f}" if last else "无数据"
+        if last and last.get("diff") is not None:
+            tail = f"step={last['step']} diff={last['diff']:.4f}"
+        elif last:
+            tail = f"step={last['step']} diff=?"
+        else:
+            tail = "无数据"
         ev_info = f" evals={len(eval_rows)}" if eval_rows else ""
         print(f"[{datetime.datetime.now():%H:%M:%S}] rows={len(rows)} {tail}{ev_info}")
         if dash:

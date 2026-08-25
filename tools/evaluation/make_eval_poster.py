@@ -174,14 +174,14 @@ def main():
     ap.add_argument("-h", "--help", action="help")
     args = ap.parse_args()
 
-    # 可选: 读 ckpt 目录的 eval_auto_*.json -> step → (mse, ssim)
+    # 可选: 读 ckpt 目录的 eval_auto_*.json -> step → (mse, ssim, skel_iou)
     ev_map = {}
     if args.eval_json_dir and os.path.isdir(args.eval_json_dir):
         import glob as _g
         for f in _g.glob(os.path.join(args.eval_json_dir, "eval_auto_*.json")):
             try:
                 d = json.load(open(f))
-                ev_map[int(d.get("step", 0))] = (d.get("mse"), d.get("ssim"))
+                ev_map[int(d.get("step", 0))] = (d.get("mse"), d.get("ssim"), d.get("skel_iou"))
             except Exception:
                 pass
 
@@ -270,11 +270,14 @@ def main():
         _parts = [f"STEP {step}"]
         _mval = ev_map.get(step)
         if _mval:
-            _m, _s = _mval
+            _m, _s = _mval[0], _mval[1]
+            _sk = _mval[2] if len(_mval) > 2 else None
             if _m is not None:
                 _parts.append("MSE %.3f" % _m)
             if _s is not None:
                 _parts.append("SSIM %.3f" % _s)
+            if _sk is not None:
+                _parts.append("SkelIoU %.3f" % _sk)
         draw.text((12, y + (LABEL_H - LABEL_FONT) // 2),
                   "    ".join(_parts), font=font_lab, fill=(255, 255, 255))
         y += LABEL_H

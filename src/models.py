@@ -936,6 +936,53 @@ class DiT_2Cond(nn.Module):
         out = torch.cat([eps, rest], dim=1)
         return out[:original_bs]
 
+    def forward_with_2axis_cfg(self, x, t, y_callig, y_char,
+                               cfg_callig=2.0, cfg_glyph=4.0, w_inter=0.0, g=None):
+        """
+        2-Axis Classifier-Free Guidance (style score + glyph content score + interaction score).
+        Runs 4 parallel passes batched together along batch dimension:
+          1. full     : (y_callig, y_char)        -> eps_full
+          2. callig   : (y_callig, null_char)     -> eps_callig
+          3. glyph    : (null_callig, y_char)     -> eps_glyph
+          4. uncond   : (null_callig, null_char)  -> eps_uncond
+
+        Möbius / Product-of-Experts composition:
+          eps_guided = eps_uncond
+                     + cfg_glyph  * (eps_glyph - eps_uncond)
+                     + cfg_callig * (eps_callig - eps_uncond)
+                     + w_inter    * (eps_full - eps_glyph - eps_callig + eps_uncond)
+        """
+        B = x.shape[0]
+        x4 = torch.cat([x, x, x, x], dim=0)
+        t4 = torch.cat([t, t, t, t], dim=0)
+
+        null_c = torch.full_like(y_callig, self.y_callig_embedder.num_classes)
+        null_g = torch.full_like(y_char, self.y_char_embedder.num_classes)
+
+        yc4 = torch.cat([y_callig, y_callig, null_c, null_c], dim=0)
+        yg4 = torch.cat([y_char, null_g, y_char, null_g], dim=0)
+
+        g4 = torch.cat([g, g, g, g], dim=0) if g is not None else None
+
+        model_out = self.forward(x4, t4, yc4, yg4, g=g4)
+        if isinstance(model_out, tuple):
+            model_out = model_out[0]
+
+        eps4, rest4 = model_out[:, :self.in_channels], model_out[:, self.in_channels:]
+        eps_full, eps_callig, eps_glyph, eps_uncond = torch.split(eps4, B, dim=0)
+
+        eps_guided = (
+            eps_uncond
+            + cfg_glyph * (eps_glyph - eps_uncond)
+            + cfg_callig * (eps_callig - eps_uncond)
+            + w_inter * (eps_full - eps_glyph - eps_callig + eps_uncond)
+        )
+
+        rest = rest4[:B]
+        out = torch.cat([eps_guided, rest], dim=1)
+        return out
+
+
 
 def DiT_2Cond_S_2(**kwargs):
     return DiT_2Cond(depth=12, hidden_size=384, patch_size=2, num_heads=6, **kwargs)
@@ -946,6 +993,9 @@ def DiT_2Cond_S_4(**kwargs):
 def DiT_2Cond_B_2(**kwargs):
     return DiT_2Cond(depth=12, hidden_size=768, patch_size=2, num_heads=12, **kwargs)
 
+def DiT_2Cond_B_4(**kwargs):
+    return DiT_2Cond(depth=12, hidden_size=768, patch_size=4, num_heads=12, **kwargs)
+
 def DiT_2Cond_XL_2(**kwargs):
     return DiT_2Cond(depth=28, hidden_size=1152, patch_size=2, num_heads=16, **kwargs)
 
@@ -954,6 +1004,7 @@ DiT_2Cond_models = {
     'DiT-2Cond-S/2': DiT_2Cond_S_2,
     'DiT-2Cond-S/4': DiT_2Cond_S_4,
     'DiT-2Cond-B/2': DiT_2Cond_B_2,
+    'DiT-2Cond-B/4': DiT_2Cond_B_4,
     'DiT-2Cond-XL/2': DiT_2Cond_XL_2,
 }
 

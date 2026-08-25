@@ -120,12 +120,10 @@ def prepare_eval_cache(vae, dataset, device, n=1000, t=T_EVAL, batch_size=16):
     latents = torch.cat(latents, dim=0)[:n]
     gts = torch.cat(gts, dim=0)[:n]
     conds = conds[:n]
-    # fixed noise per sample, so each checkpoint eval is deterministic.
-    # latent shape is inferred from the encoded latents (supports f8=4x32x32, f4=3x64x64).
-    _lc, _ls = latents.shape[1], latents.shape[2]
-    noise = torch.randn(len(latents), _lc, _ls, _ls)
+    # fixed noise per sample, so each checkpoint eval is deterministic
+    noise = torch.randn(len(latents), 4, 32, 32)
     return {
-        "latents": latents,                    # (n,C,H,W)
+        "latents": latents,                    # (n,4,32,32)
         "conds": conds,                          # list of (yc, ys, yh)
         "gts": gts,                            # (n,3,256,256) [-1,1]
         "noise": noise,
@@ -134,7 +132,7 @@ def prepare_eval_cache(vae, dataset, device, n=1000, t=T_EVAL, batch_size=16):
 
 
 def eval_in_memory(model, vae, diffusion, device, cache, n=1000, t=T_EVAL,
-                   vis_out=None, vis_n=5, batch_size=8, scaling_factor=0.18215):
+                   vis_out=None, vis_n=5, batch_size=8):
     """
     Evaluate the *current* model weights (already on GPU) on the cached test set.
     Returns (mse, ssim) floats. Does not modify model training state.
@@ -162,7 +160,7 @@ def eval_in_memory(model, vae, diffusion, device, cache, n=1000, t=T_EVAL,
             tt = t_tensor.expand(j - i)
             ld = diffusion.training_losses(model, x_lat, tt, mk, noise=nz)
             pred = ld["pred_xstart"]                       # (B,4,32,32)
-            decoded = vae.decode(pred / scaling_factor).sample    # (B,C,256,256) [-1,1]
+            decoded = vae.decode(pred / 0.18215).sample    # (B,3,256,256) [-1,1]
             mse_sum += F.mse_loss(decoded, gt).item() * (j - i)
             # SSIM must be per-image (batch pooling would mix images); loop is cheap here.
             d01 = (decoded + 1) / 2

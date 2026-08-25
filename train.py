@@ -36,6 +36,16 @@ from lora import inject_lora, upgrade_lora_rank, extract_full_inference
 from samplers import DistributedFactorBalancedSampler
 from latent_structure import LatentStructureLoss, LatentStructureProbe
 
+# In-process GPU eval (bf16 sampling → VAE decode → save PNGs).
+# Metrics computed by eval_metrics_daemon.py (CPU, separate process).
+try:
+    from in_process_eval import (
+        prepare_eval_cache, run_gpu_eval, prepare_small_cache, run_show5,
+    )
+    _HAS_IN_PROCESS_EVAL = True
+except ImportError:
+    _HAS_IN_PROCESS_EVAL = False
+
 def _coerce(value, template, target_type=None):
     """Coerce a config.json value to the type of the argparse default."""
     if value is None or (isinstance(value, str) and value.lower() in ("none", "null", "")):
@@ -224,6 +234,43 @@ def main(args):
                     f"{args.char_embed_dim}, dropout=all:{args.cond_drop_all_prob}, "
                     f"one:{args.cond_drop_one_prob}, skel_head={getattr(args, 'w_skel_head', 0) > 0}, "
                     f"glyph_cond={getattr(args, 'w_glyph_cond', 0) > 0}, glyph_scale_init={getattr(args, 'glyph_scale_init', 0.4)})")
+
+    # ── DINO glyph-embedding init for y_char_embedder ───────────────────────
+    # glyph_id = script_id * 7026 + character_id (每 script 7026 个字符, 见
+    # tools/remote_sync/_add_glyph_col.py). DINO vocab 是对"字*书体"(glyph) 取平均的:
+    # 同一 glyph 的所有书写样本的 CLS token 平均后 L2 归一化, 维度必须 == char_embed_dim
+    # (768), 之后 char_proj 直接 LayerNorm(768)->Linear(768,H) 投影, 不再经过中间 256 层。
+    _dino_emb_path = getattr(args, "char_dino_embeddings", None)
+    _dino_idx_path = getattr(args, "char_dino_index", None)
+    if _dino_emb_path and _dino_idx_path and os.path.isfile(_dino_emb_path) and os.path.isfile(_dino_idx_path):
+        _NUM_CH = 7026  # 与 _add_glyph_col.py 的 glyph_id 编码一致
+        _emb = np.load(_dino_emb_path)
+        with open(_dino_idx_path, "r", encoding="utf-8") as f:
+            _idx_data = json.load(f)
+        _glyphs = _idx_data.get("glyphs", _idx_data)
+        _table = model.y_char_embedder.embedding_table.weight
+        if _emb.ndim != 2 or _emb.shape[1] != _table.shape[1]:
+            logger.warning(f"[dino-init] shape mismatch: dino={_emb.shape} vs "
+                           f"char_embed_dim={_table.shape[1]} — skipping DINO init.")
+        else:
+            _loaded = 0
+            _dropped = 0
+            with torch.no_grad():
+                for _gi, (_sid, _cid) in enumerate(_glyphs):
+                    _gid = int(_sid) * _NUM_CH + int(_cid)
+                    if 0 <= _gid < _table.shape[0] and _gi < _emb.shape[0]:
+                        _table[_gid].copy_(torch.from_numpy(_emb[_gi]).float())
+                        _loaded += 1
+                    else:
+                        _dropped += 1
+            logger.info(f"[dino-init] injected {_loaded} glyph embeddings into "
+                        f"y_char_embedder ({_emb.shape[0]} in vocab, {_dropped} out-of-range), "
+                        f"table={tuple(_table.shape)}, L2-normalized DINO (glyph-averaged), "
+                        f"char_proj: LayerNorm({_table.shape[1]}) -> Linear({_table.shape[1]}, "
+                        f"{model.x_embedder.proj.out_channels}).")
+    else:
+        logger.warning(f"[dino-init] char_dino_embeddings/index not found "
+                       f"({_dino_emb_path!r}, {_dino_idx_path!r}) — y_char_embedder stays random init.")
 
     # Load order (fixed): pretrained body -> reset cond head -> inject LoRA -> load delta.
     # The checkpoint `delta` contains only the "changed" part (LoRA + condition head +
@@ -638,6 +685,35 @@ def main(args):
         return False
 
     logger.info(f"Training for {args.epochs} epochs...")
+
+    # ── In-process GPU eval setup ──────────────────────────────────────────────
+    _eval_cache = None
+    _eval_show5_cache = None
+    _eval_seen5_cache = None
+    if _HAS_IN_PROCESS_EVAL and getattr(args, 'auto_eval', False) and rank == 0:
+        _eval_csv = getattr(args, 'eval_csv', None)
+        if _eval_csv and os.path.exists(_eval_csv):
+            _eval_n = int(getattr(args, 'eval_n', 100))
+            _vae_ds = int(getattr(args, 'vae_downscale', 4))
+            _vae_lc = int(getattr(args, 'latent_channels', 4))
+            _vae_sf = float(getattr(args, 'vae_scaling_factor', 0.18215))
+            _img_root = getattr(args, 'img_root', '') or getattr(args, 'data_dir', '') or ''
+            _eval_cache = prepare_eval_cache(
+                _eval_csv, _img_root, args.image_size, _eval_n,
+                _vae_ds, _vae_lc, _vae_sf)
+            _show5_csv = getattr(args, 'show5_csv', None)
+            if _show5_csv and os.path.exists(_show5_csv):
+                _eval_show5_cache = prepare_small_cache(
+                    _show5_csv, _img_root, args.image_size, _vae_ds, _vae_lc)
+            _seen5_csv = getattr(args, 'seen5_csv', None)
+            if _seen5_csv and os.path.exists(_seen5_csv):
+                _eval_seen5_cache = prepare_small_cache(
+                    _seen5_csv, _img_root, args.image_size, _vae_ds, _vae_lc)
+            logger.info(f"[auto-eval] cache ready: eval_n={_eval_n}, "
+                        f"show5={'yes' if _eval_show5_cache else 'no'}, "
+                        f"seen5={'yes' if _eval_seen5_cache else 'no'}")
+        else:
+            logger.warning(f"[auto-eval] eval_csv not found ({_eval_csv!r}); auto-eval disabled")
 
     for epoch in range(args.epochs):
         sampler.set_epoch(epoch)
@@ -1079,6 +1155,64 @@ def main(args):
                             if len(_pts) > ckpt_keep:
                                 logger.info(f"[ckpt-keep] pruned {len(_pts) - ckpt_keep} old checkpoint(s), keeping {ckpt_keep}")
 
+                        # ── In-process GPU eval: bf16 DDIM → VAE decode → save PNGs ──
+                        # GPU-only (~40s for 455 imgs at batch=48). CPU metrics
+                        # computed by eval_metrics_daemon.py (separate process).
+                        if (_HAS_IN_PROCESS_EVAL and _eval_cache is not None
+                                and ema_model is not None):
+                            try:
+                                _eval_bs = int(getattr(args, 'eval_batch', 240))
+                                _eval_vae_bs = int(getattr(args, 'eval_vae_batch', 32))
+                                _eval_steps = int(getattr(args, 'eval_steps', 50))
+                                _eval_cfg = float(getattr(args, 'eval_cfg', 4.0))
+                                _eval_t0 = time()
+                                # Swap to EMA weights for eval
+                                _orig_sd = {k: v.clone() for k, v in model.state_dict().items()}
+                                if hasattr(model, 'module'):
+                                    model.module.load_state_dict(ema_model.state_dict(), strict=False)
+                                else:
+                                    model.load_state_dict(ema_model.state_dict(), strict=False)
+                                model.eval()
+
+                                run_gpu_eval(
+                                    model if hasattr(model, 'module') else model,
+                                    args, _eval_cache, train_steps,
+                                    checkpoint_dir, device,
+                                    dit_batch=_eval_bs,
+                                    vae_batch=_eval_vae_bs,
+                                    ddim_steps=_eval_steps,
+                                    cfg_scale=_eval_cfg)
+
+                                if _eval_show5_cache is not None:
+                                    run_show5(model if hasattr(model, 'module') else model,
+                                             args, _eval_show5_cache, train_steps,
+                                             checkpoint_dir, device,
+                                             ddim_steps=_eval_steps, cfg_scale=_eval_cfg,
+                                             tag="show5")
+                                if _eval_seen5_cache is not None:
+                                    run_show5(model if hasattr(model, 'module') else model,
+                                             args, _eval_seen5_cache, train_steps,
+                                             checkpoint_dir, device,
+                                             ddim_steps=_eval_steps, cfg_scale=_eval_cfg,
+                                             tag="seen5")
+
+                                # Restore training weights
+                                if hasattr(model, 'module'):
+                                    model.module.load_state_dict(_orig_sd, strict=False)
+                                else:
+                                    model.load_state_dict(_orig_sd, strict=False)
+                                model.train()
+                                del _orig_sd
+                                torch.cuda.empty_cache()
+                                logger.info(f"[auto-eval] step {train_steps} eval done in {time()-_eval_t0:.1f}s "
+                                            f"(GPU inference + PNG save; metrics by CPU daemon)")
+                            except Exception as _ee:
+                                logger.warning(f"[auto-eval] step {train_steps} FAILED: {_ee}")
+                                try:
+                                    model.train()
+                                except Exception:
+                                    pass
+
                 if args.max_steps > 0 and train_steps >= args.max_steps:
                     logger.info(f"Reached max_steps={args.max_steps}; stopping cleanly.")
                     break
@@ -1136,6 +1270,13 @@ if __name__ == "__main__":
     parser.add_argument("--callig-embed-dim", type=int, default=None)
     parser.add_argument("--script-embed-dim", type=int, default=None)
     parser.add_argument("--char-embed-dim", type=int, default=None)
+    parser.add_argument("--char-dino-embeddings", type=str, default=None,
+                        help="Path to glyph-level DINO embeddings npy (N, dim) used to init "
+                             "y_char_embedder rows via glyph_id = script_id*7026+character_id. "
+                             "Glyphs missing from the vocab keep their random init.")
+    parser.add_argument("--char-dino-index", type=str, default=None,
+                        help="Path to glyph index json ({\"glyphs\": [[script_id, char_id], ...]} "
+                             "aligned row-wise with char-dino-embeddings).")
     parser.add_argument("--cond-drop-all-prob", type=float, default=0.05,
                         help="Probability of dropping all factors for CFG.")
     parser.add_argument("--cond-drop-one-prob", type=float, default=0.0,
@@ -1242,10 +1383,14 @@ if __name__ == "__main__":
     parser.add_argument("--eval-seed", type=int, default=0,
                         help="Seed for free-sampling auto-eval noise.")
     parser.add_argument("--eval-batch", type=int, default=16,
-                        help="Sampling batch for free-sampling auto-eval.")
+                        help="DiT sampling batch for auto-eval (before CFG doubling).")
+    parser.add_argument("--eval-vae-batch", type=int, default=32,
+                        help="VAE decode batch for auto-eval (fp32, force_upcast=True).")
     parser.add_argument("--show5-csv", type=str, default=None,
                         help="固定跨书体展示样本 CSV(如 eval5)。设后每次都采样这 N 个(不算指标, "
                              "仅生成 eval_latest.png/eval_samples 展示, 与海报 GT 行同一批保证对照)。")
+    parser.add_argument("--seen5-csv", type=str, default=None,
+                        help="固定训练集内展示样本 CSV。")
     parser.add_argument("--w-canny", type=float, default=0.05, help="Weight for canny structural loss")
     parser.add_argument("--w-skel", type=float, default=0.05, help="Weight for skeleton structural loss")
     parser.add_argument("--w-skel-head", type=float, default=0.0,
