@@ -143,23 +143,43 @@ def build_cache(eval_csv, n=100):
 
 
 # ---------------------------------------------------------------------------
-# 指标 (批量, numpy/scipy CPU; 与 eval_metrics_daemon.py 同口径)
+# 指标 (批量, numpy/scipy CPU; Gaussian SSIM 与 eval_auto.py 同口径)
 # ---------------------------------------------------------------------------
-def _ssim_batch(pred, gt, win=11, data_range=1.0):
-    """SSIM for (N,3,H,W) float32 [0,1] arrays. 批量: 所有图×通道一次 uniform_filter."""
-    from scipy.ndimage import uniform_filter
+def _gaussian_kernel_1d(sigma=1.5, radius=5):
+    """1D Gaussian kernel (matches eval_auto.py _gaussian_window)."""
+    x = np.arange(-radius, radius + 1, dtype=np.float64)
+    g = np.exp(-(x ** 2) / (2 * sigma ** 2))
+    g /= g.sum()
+    return g
+
+
+def _ssim_batch(pred, gt, win=11, data_range=1.0, sigma=1.5):
+    """SSIM for (N,3,H,W) float32 [0,1] arrays. Gaussian window (matches eval_auto.py).
+
+    Uses separable Gaussian filtering (1D row + 1D col) for speed.
+    This is equivalent to the 2D Gaussian conv2d in eval_auto.py.
+    """
+    from scipy.ndimage import correlate1d
     c1 = (0.01 * data_range) ** 2
     c2 = (0.03 * data_range) ** 2
+    radius = win // 2
+    k1d = _gaussian_kernel_1d(sigma, radius)  # (win,)
     n = pred.shape[0]
     # (N,3,H,W) -> (N*3,H,W), 一次过滤所有通道
     x = pred.reshape(-1, pred.shape[2], pred.shape[3]).astype(np.float64)
     y = gt.reshape(-1, gt.shape[2], gt.shape[3]).astype(np.float64)
-    mu_x = uniform_filter(x, size=win)
-    mu_y = uniform_filter(y, size=win)
+
+    def _gauss_blur(img):
+        """Separable Gaussian blur: row then column."""
+        return correlate1d(correlate1d(img, k1d, axis=1, mode='reflect'),
+                           k1d, axis=2, mode='reflect')
+
+    mu_x = _gauss_blur(x)
+    mu_y = _gauss_blur(y)
     mu_x2, mu_y2, mu_xy = mu_x ** 2, mu_y ** 2, mu_x * mu_y
-    sx2 = uniform_filter(x * x, size=win) - mu_x2
-    sy2 = uniform_filter(y * y, size=win) - mu_y2
-    sxy = uniform_filter(x * y, size=win) - mu_xy
+    sx2 = _gauss_blur(x * x) - mu_x2
+    sy2 = _gauss_blur(y * y) - mu_y2
+    sxy = _gauss_blur(x * y) - mu_xy
     m = ((2 * mu_xy + c1) * (2 * sxy + c2)) / ((mu_x2 + mu_y2 + c1) * (sx2 + sy2 + c2))
     # 每图 3 通道平均
     per_img = m.reshape(n, 3, -1).mean(axis=(1, 2))

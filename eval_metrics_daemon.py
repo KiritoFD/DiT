@@ -56,20 +56,31 @@ def _mse(pred, gt):
 
 
 def _ssim(pred, gt, win=11, data_range=1.0):
-    """SSIM for (H,W,3) arrays. Uses conv2d-free numpy implementation."""
-    from scipy.ndimage import uniform_filter
+    """SSIM for (H,W,3) arrays. Gaussian window (matches eval_auto.py).
+
+    Uses separable Gaussian filtering for speed; equivalent to the 2D Gaussian
+    conv2d in eval_auto.py (_gaussian_window σ=1.5, size=11).
+    """
+    from scipy.ndimage import correlate1d
+    radius = win // 2
+    x_k = np.arange(-radius, radius + 1, dtype=np.float64)
+    k1d = np.exp(-(x_k ** 2) / (2 * 1.5 ** 2))
+    k1d /= k1d.sum()
     c1 = (0.01 * data_range) ** 2
     c2 = (0.03 * data_range) ** 2
     ssims = []
     for ch in range(pred.shape[2]):
         x = pred[:, :, ch].astype(np.float64)
         y = gt[:, :, ch].astype(np.float64)
-        mu_x = uniform_filter(x, size=win)
-        mu_y = uniform_filter(y, size=win)
+        def _g(img):
+            return correlate1d(correlate1d(img, k1d, axis=0, mode='reflect'),
+                               k1d, axis=1, mode='reflect')
+        mu_x = _g(x)
+        mu_y = _g(y)
         mu_x2, mu_y2, mu_xy = mu_x ** 2, mu_y ** 2, mu_x * mu_y
-        sx2 = uniform_filter(x * x, size=win) - mu_x2
-        sy2 = uniform_filter(y * y, size=win) - mu_y2
-        sxy = uniform_filter(x * y, size=win) - mu_xy
+        sx2 = _g(x * x) - mu_x2
+        sy2 = _g(y * y) - mu_y2
+        sxy = _g(x * y) - mu_xy
         ssim_map = ((2 * mu_xy + c1) * (2 * sxy + c2)) / \
                    ((mu_x2 + mu_y2 + c1) * (sx2 + sy2 + c2))
         ssims.append(ssim_map.mean())
