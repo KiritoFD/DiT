@@ -5,6 +5,7 @@
 
 from . import gaussian_diffusion as gd
 from .respace import SpacedDiffusion, space_timesteps
+from .flow_matching import create_flow_matching, FlowMatching
 
 
 def create_diffusion(
@@ -44,3 +45,25 @@ def create_diffusion(
         loss_type=loss_type
         # rescale_timesteps=rescale_timesteps,
     )
+
+
+def create_diffusion_or_flow(
+    timestep_respacing,
+    diffusion_type="ddpm",
+    flow_steps=None,
+    **kwargs,
+):
+    """Factory with a DDPM / Flow-Matching switch.
+
+    ``diffusion_type`` in {"ddpm", "flow", "flow_matching"}:
+        * "ddpm": standard GaussianDiffusion (epsilon prediction, DDIM sampling).
+        * "flow"/"flow_matching": linear-interpolant FlowMatching (velocity
+          prediction, Euler ODE sampling).  ``flow_steps`` overrides the Euler
+          step count when given; otherwise ``timestep_respacing`` is used.
+    """
+    diffusion_type = (diffusion_type or "ddpm").lower()
+    if diffusion_type in ("flow", "flow_matching", "fm"):
+        steps = flow_steps if flow_steps else timestep_respacing
+        return create_flow_matching(steps, **kwargs)
+    return create_diffusion(timestep_respacing, **kwargs)
+

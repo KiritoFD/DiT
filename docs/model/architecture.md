@@ -250,10 +250,31 @@ x = final_layer(x, c); x = unpatchify(x)                              # (N, out_
 
 ### 6.3 扩散过程
 
-- DDPM/DDIM 实现在 `diffusion/`（`gaussian_diffusion.py`、`respace.py`、`timestep_sampler.py`）与 `src/diffusion/`，提供 `p_sample_loop` / `ddim_sample_loop` 等采样循环。
+- **DDPM/DDIM**（默认）：实现在 `diffusion/`（`gaussian_diffusion.py`、`respace.py`、`timestep_sampler.py`）与 `src/diffusion/`，提供 `p_sample_loop` / `ddim_sample_loop` 等采样循环。
+- **Flow Matching**（可选）：`diffusion/flow_matching.py` 实现 linear-interpolant flow matching（velocity 目标 + Euler ODE 采样），与 DDPM 共用同一套模型/条件/采样接口，通过 `diffusion_type: "flow"` 一键切换（见下节 6.4）。
 - `create_diffusion`（`src/diffusion/__init__.py`）默认 `noise_schedule="linear"`、1000 步、`learn_sigma=True`、`ModelVarType.LEARNED_RANGE`。
 - 推理入口 `sample.py` 调用扩散模块的采样循环生成 latent，再经 VAE 解码为像素。
 - 结构性辅助损失（Canny / skeleton，可选）在 latent 空间施加，见 `latent_structure.py`。
+
+---
+
+### 6.4 Flow Matching 开关（`diffusion_type`）
+
+训练与 in-process eval 通过配置键 `diffusion_type` 在两种扩散公式间切换（`src/train.py`、`src/in_process_eval.py` 均走 `diffusion.create_diffusion_or_flow` 工厂）：
+
+| `diffusion_type` | 训练目标 | 采样器 | 时间语义 |
+|---|---|---|---|
+| `"ddpm"`（默认） | ε-prediction（`GaussianDiffusion.training_losses`） | DDIM | t ∈ [0, 999] 整数 |
+| `"flow"` | velocity `v = noise − x₀`（linear interpolant `x_t = (1−t)x₀ + t·noise`） | Euler ODE（`FlowMatching.ddim_sample_loop`，步数 = eval `ddim_steps`） | t ∈ [0, 1] 连续 |
+
+关键实现点：
+
+- **时间缩放**：flow 的 t∈[0,1] 在喂给模型前乘 `TIME_SCALE=1000`，复用同一套 `TimestepEmbedder` 的频段，模型骨干无需改动。
+- **2C 输出兼容**：`learn_sigma=True` 的 DiT 输出 2×in_channels。FlowMatching 在训练 loss 与采样时只取前 C 通道作为 velocity 场，σ 通道丢弃。
+- **DDPM 专属辅助自动禁用**：flow 模式下 `use_canny` / `use_skel` / `w_skel_head` / `w_std_mid` / `w_latent_skel` / `w_latent_canny` / `w_repa` 会被硬置 0（这些按 DDPM 0..999 时间表门控，flow 语义下无效），并打印 `[flow] disabled DDPM-only auxiliaries` 日志。
+- **采样步数**：flow 的 Euler 步数取 eval 配置的 `ddim_steps`（如 50）；相比 DDPM 可在更少步数下达到同等质量。
+- 工厂函数 `create_diffusion_or_flow(timestep_respacing, diffusion_type, flow_steps=None)` 在 `diffusion/__init__.py`。
+- REPA（`w_repa`）默认 **0.0（关闭）**——short-term 不使用 representation alignment；开启时从 `model.x_embedder.proj.out_features` 推导 student 维度。
 
 ---
 
@@ -262,7 +283,7 @@ x = final_layer(x, c); x = unpatchify(x)                              # (N, out_
 | 文件 | 作用 |
 |------|------|
 | `models.py` / `src/models.py` | 全部模型定义（`DiT` / `DiT_2Cond` / `DiT_3Cond` + 嵌入件 + 配置表） |
-| `diffusion/` / `src/diffusion/` | DDPM/DDIM 扩散过程（`gaussian_diffusion.py` 的 `p_sample_loop`/`ddim_sample_loop`、`respace.py`、`timestep_sampler.py`） |
+| `diffusion/` / `src/diffusion/` | 扩散过程：DDPM/DDIM（`gaussian_diffusion.py`、`respace.py`）**或** Flow Matching（`flow_matching.py`），由 `diffusion_type` 切换 |
 | `lora.py` / `src/lora.py` | LoRA 注入（可选，用于微调；`inject_lora` 替换 qkv/proj/fc1/fc2） |
 | `latent_structure.py` / `src/latent_structure.py` | 结构性损失：`LatentStructureProbe`（冻结探针）+ `LatentStructureLoss`（Canny 梯度 + skeleton BCE-Dice） |
 | `samplers.py` / `src/samplers.py` | `DistributedFactorBalancedSampler`（训练期长尾温度采样，非 DDIM 采样器） |

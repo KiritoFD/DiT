@@ -24,7 +24,7 @@ import platform
 import math
 
 from models import DiT_2Cond_models, DiT_3Cond_models
-from diffusion import create_diffusion
+from diffusion import create_diffusion_or_flow
 from diffusers.models import AutoencoderKL
 from download import find_model
 
@@ -379,7 +379,24 @@ def main(args):
         logger.info(f"[EMA] enabled with decay={args.ema_decay}")
     if dist.get_world_size() > 1:
         model = DDP(model, device_ids=[rank], find_unused_parameters=True)
-    diffusion = create_diffusion(timestep_respacing="")
+    diffusion = create_diffusion_or_flow(timestep_respacing="",
+                                         diffusion_type=getattr(args, 'diffusion_type', 'ddpm'))
+    _is_flow = getattr(diffusion, 'is_flow', False)
+    if _is_flow:
+        # Flow-Matching mode: disable DDPM-timestep-dependent auxiliaries.
+        # Flow trains on t in [0,1] with a velocity target; the structural/
+        # latent auxiliaries below gate on DDPM's 0..999 timestep schedule and
+        # would be semantically wrong. Hard-disable (with a log) so a flow run
+        # never silently mixes incompatible objectives.
+        _flow_disabled = []
+        for _attr in ('use_canny', 'use_skel', 'w_skel_head', 'w_std_mid',
+                      'w_latent_skel', 'w_latent_canny', 'w_repa'):
+            if getattr(args, _attr, 0):
+                setattr(args, _attr, 0 if not isinstance(getattr(args, _attr, 0), bool) else False)
+                _flow_disabled.append(_attr)
+        if _flow_disabled:
+            logger.info(f"[flow] disabled DDPM-only auxiliaries: {', '.join(_flow_disabled)}")
+        logger.info(f"[flow] Flow-Matching enabled (velocity target, Euler ODE sampling, t in [0,1])")
     _vae_ds = getattr(args, 'vae_downscale', 8)
     _vae_lc = getattr(args, 'latent_channels', 4)
     _vae_ic = getattr(args, 'vae_in_channels', 3)
@@ -484,6 +501,12 @@ def main(args):
     repa_loss_fn = None
     if args.w_repa > 0:
         teacher_ckpt = getattr(args, "repa_teacher_ckpt", "") or None
+        # Student hidden dim = transformer hidden_size, derived from the patch
+        # embedder projection (S/2 -> 384, B/2 -> 768, ...).
+        try:
+            student_hidden_size = int(model.x_embedder.proj.out_features)
+        except Exception:
+            student_hidden_size = 384
         logger.info(f"Initializing REPA Loss (Teacher: dinov2_vits14, ckpt={teacher_ckpt or 'auto'}, Student Dim: {student_hidden_size})")
         repa_loss_fn = REPALoss(student_dim=student_hidden_size, teacher_backbone="dinov2_vits14",
                                 teacher_ckpt=teacher_ckpt).to(device)
@@ -580,7 +603,7 @@ def main(args):
         pin_memory=True,
         drop_last=True,
         persistent_workers=(args.num_workers > 0),
-        prefetch_factor=4 if args.num_workers > 0 else 2,
+        prefetch_factor=4 if args.num_workers > 0 else None,
     )
     logger.info(f"Dataset contains {len(dataset):,} images")
 
@@ -780,7 +803,10 @@ def main(args):
                         x_latent = vae.encode(x).latent_dist.sample().mul_(_vae_sf)
                         x_latent = x_latent.float()
 
-                t = torch.randint(0, diffusion.num_timesteps, (x_latent.shape[0],), device=device)
+                if _is_flow:
+                    t = diffusion.sample_t(x_latent.shape[0], device)      # uniform [0,1)
+                else:
+                    t = torch.randint(0, diffusion.num_timesteps, (x_latent.shape[0],), device=device)
                 if cond_mode == "3cond":
                     model_kwargs = dict(y_callig=y_callig, y_script=y_script, y_char=y_char)
                 else:
@@ -1335,6 +1361,11 @@ if __name__ == "__main__":
                         help="Metric to monitor for early stopping (ssim higher better, mse lower "
                              "better). 'combo' = dual-gate: require BOTH ssim and skel_iou to be "
                              "stale >= patience before stopping (skel_iou higher better).")
+    parser.add_argument("--diffusion-type", type=str,
+                        choices=["ddpm", "flow"], default="ddpm",
+                        help="Diffusion formulation: 'ddpm' = standard GaussianDiffusion "
+                             "(epsilon prediction, DDIM sampling); 'flow' = linear-interpolant "
+                             "Flow Matching (velocity prediction, Euler ODE sampling).")
     parser.add_argument("--early-stop-patience", type=int, default=5,
                         help="Stop after this many consecutive evals without improvement.")
     parser.add_argument("--early-stop-min-steps", type=int, default=0,
@@ -1487,7 +1518,7 @@ if __name__ == "__main__":
                              "skel→canny substitution applied automatically.")
     parser.add_argument("--latent-struct-pos-weight", type=float, default=15.0,
                         help="BCE pos_weight for latent struct loss (15 for 3px skel, 8 for 3px canny).")
-    parser.add_argument("--w-repa", type=float, default=1.0, help="Weight for Representation Alignment (REPA) Loss")
+    parser.add_argument("--w-repa", type=float, default=0.0, help="Weight for Representation Alignment (REPA) Loss (0 = disabled, default)")
     parser.add_argument("--repa-teacher-ckpt", type=str, default="",
                         help="Local path to DINOv2 teacher weights (ModelScope safetensors). "
                              "Empty = auto-detect pretrained_models/dinov2_vits14_pretrain.safetensors or $DINO_WEIGHTS.")

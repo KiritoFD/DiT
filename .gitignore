@@ -1,5 +1,5 @@
-# -*- coding: utf-8 -*-
-# ---- 大权重 / 数据 ----
+﻿# -*- coding: utf-8 -*-
+# ---- 澶ф潈閲?/ 鏁版嵁 ----
 *.pt
 *.pth
 *.onnx
@@ -13,7 +13,7 @@ dataset/
 MCCD/
 pretrained_models/
 
-# ---- 大数据 JSON（清洗管道产物，不入库）----
+# ---- 澶ф暟鎹?JSON锛堟竻娲楃閬撲骇鐗╋紝涓嶅叆搴擄級----
 final_manifest*.json
 final_img_plan.json
 final_latent_plan.json
@@ -37,7 +37,7 @@ remote_labels_map.json
 remote_mccd_mapping.json
 train_data.json
 
-# ---- 推理/可视化临时产物 ----
+# ---- 鎺ㄧ悊/鍙鍖栦复鏃朵骇鐗?----
 /*.png
 ood_results/
 viz_ab_*.png
@@ -45,18 +45,18 @@ skel_*.png
 gtskel_*.png
 gtimg_*.png
 
-# ---- 临时探针脚本 ----
+# ---- 涓存椂鎺㈤拡鑴氭湰 ----
 _diag_watchdog.sh
 _check_libs.py
 _verify_gt_labels.py
 _find_script_id.py
 _probe_dit_urls.py
 
-# ---- 归档（本地保留，不进 git）----
+# ---- 褰掓。锛堟湰鍦颁繚鐣欙紝涓嶈繘 git锛?---
 archive/
 _sync_work/
 
-# ---- 数据/产物目录（不进 git）----
+# ---- 鏁版嵁/浜х墿鐩綍锛堜笉杩?git锛?---
 eval_imgs_10000/
 eval_pics/
 eval_pngs/
@@ -78,12 +78,12 @@ onnx_vae/
 _exp_cache/
 new_data_eval_imgs/
 
-# ---- 数据 CSV ----
+# ---- 鏁版嵁 CSV ----
 dwm_monitor_log.csv
 eval_all_summary.csv
 eval_quant_result.csv
 
-# ---- 日志 / 运行时 ----
+# ---- 鏃ュ織 / 杩愯鏃?----
 *.log
 *.err
 __pycache__/
@@ -91,7 +91,7 @@ __pycache__/
 .vscode/
 .gradio/
 
-# ---- 可再生成缓存 ----
+# ---- 鍙啀鐢熸垚缂撳瓨 ----
 5script/structure_probe_cache/
 5script/condition_probes/
 5script/structure_probes/
@@ -112,7 +112,7 @@ tools/remote_seen_samples/
 tools/experiment_progress/
 tools/dashboards/
 
-# ---- 拉取的 eval 样本 PNG / 海报产物 ----
+# ---- 鎷夊彇鐨?eval 鏍锋湰 PNG / 娴锋姤浜х墿 ----
 tools/remote_show_samples/
 tools/remote_seen_samples/
 tools/remote_eval_samples/
@@ -142,7 +142,7 @@ tools/evaluation/train_dashboard.html
 tools/seen5_top30.csv
 tools/show5_top30.csv
 
-# ---- 训练产物目录 ----
+# ---- 璁粌浜х墿鐩綍 ----
 final_images/
 final_imgs_256/
 final_canny/
@@ -150,6 +150,8 @@ final_skeleton/
 final_skeleton_d3/
 final_latents/
 
-# 保留 docs/s6_report 下的评测产物与海报
-!docs/s6_report/**/*.png
+# 淇濈暀 docs/s6_report 涓嬬殑璇勬祴浜х墿涓庢捣鎶?!docs/s6_report/**/*.png
 !docs/s6_report/**/*.json
+
+# ---- local smoke test artifacts ----
+_smoke_data/
