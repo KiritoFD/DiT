@@ -18,8 +18,8 @@ ROOT = os.path.join(HERE, "..")
 MCCD_CHAR = os.path.join(ROOT, "MCCD", "MCCD", "MCCD_Character", "character_dataset")
 MANIFEST = os.path.join(ROOT, "archive", "final_manifest.json")
 TRAIN_CSV = os.path.join(ROOT, "5script", "train_3top30_nobeike.csv")
-OUT = os.path.join(ROOT, "_classifier_pixel_data.npz")
-SIZE = 128
+OUT = os.path.join(ROOT, "_classifier_pixel64_data.npz")
+SIZE = 64
 
 print("Loading manifest...")
 manifest = json.load(open(MANIFEST, encoding='utf-8'))

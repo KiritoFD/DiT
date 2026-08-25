@@ -17,7 +17,7 @@ from torch.optim.lr_scheduler import CosineAnnealingLR
 
 sys.stdout.reconfigure(encoding='utf-8')
 
-PIXEL_NPZ = "_classifier_pixel_data.npz"
+PIXEL_NPZ = "_classifier_pixel64_data.npz"
 TRAIN_CSV = "5script/train_3top30_nobeike.csv"
 CKPT_DIR = "glyph_classifier_ckpts"
 LABEL_SMOOTHING = 0.1
@@ -44,17 +44,17 @@ class ConvBlock(nn.Module):
 
 
 class PixelClassifier(nn.Module):
-    """Lightweight CNN classifier on 128x128 grayscale images.
+    """Lightweight CNN classifier on 64x64 grayscale images.
 
-    Input:  (B, 1, 128, 128)
+    Input:  (B, 1, 64, 64)
     Output: logits (B, num_classes), optionally embedding (B, embed_dim)
 
     Architecture:
-        128: 1→32  → 32→64 down  (64)
-         64: 64→64+res → 64→128 down (32)
-         32: 128→128+res → 128→256 down (16)
-         16: 256→256+res → 256→512 down (8)
-          8: 512→512+res → pool → 512d embed → num_classes
+        64: 1→32  → 32→64 down  (32)
+         32: 64→64+res → 64→128 down (16)
+         16: 128→128+res → 128→256 down (8)
+          8: 256→256+res → 256→512 down (4)
+          4: 512→512+res → pool → 512d embed → num_classes
     """
     def __init__(self, num_classes=9401, in_channels=1, embed_dim=512,
                  dropout=0.3, noise_std=0.0):
@@ -62,15 +62,15 @@ class PixelClassifier(nn.Module):
         self.embed_dim = embed_dim
         self.noise_std = noise_std
         self.features = nn.Sequential(
-            ConvBlock(in_channels, 32, down=False),       # 128
-            ConvBlock(32, 64, down=True),                   # 64
-            ConvBlock(64, 64, down=False, residual=True),   # 64
-            ConvBlock(64, 128, down=True),                   # 32
-            ConvBlock(128, 128, down=False, residual=True),  # 32
-            ConvBlock(128, 256, down=True),                  # 16
-            ConvBlock(256, 256, down=False, residual=True), # 16
-            ConvBlock(256, 512, down=True),                  # 8
-            ConvBlock(512, 512, down=False, residual=True), # 8
+            ConvBlock(in_channels, 32, down=False),       # 64
+            ConvBlock(32, 64, down=True),                   # 32
+            ConvBlock(64, 64, down=False, residual=True),   # 32
+            ConvBlock(64, 128, down=True),                   # 16
+            ConvBlock(128, 128, down=False, residual=True),  # 16
+            ConvBlock(128, 256, down=True),                  # 8
+            ConvBlock(256, 256, down=False, residual=True), # 8
+            ConvBlock(256, 512, down=True),                  # 4
+            ConvBlock(512, 512, down=False, residual=True), # 4
         )
         self.pool = nn.AdaptiveAvgPool2d(1)
         self.embed_head = nn.Linear(512, embed_dim)
