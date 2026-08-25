@@ -633,19 +633,23 @@ def main(args):
     current_ema_decay = args.ema_decay
     start_time = time()
 
-    # ---- 早停状态 (基于 CPU eval 的 eval_auto_*.json mse/ssim) ----
+    # ---- 早停状态 (基于 CPU eval 的 eval_auto_*.json mse/ssim/skel_iou) ----
     early_stop_best = None      # 最佳 metric 值 (ssim 越大越好 / mse 越小越好)
     early_stop_stale = 0        # 连续未改善的 eval 次数
     early_stop_last_eval_step = -1
     early_stop_stopped = False
     _es_metric = getattr(args, 'early_stop_metric', 'ssim')
-    _es_better = ((lambda a, b: a > b) if _es_metric == 'ssim' else (lambda a, b: a < b))
+    _es_better = ((lambda a, b: a > b) if _es_metric in ('ssim', 'combo') else (lambda a, b: a < b))
+    # combo (双保险): ssim + skel_iou 各自追踪, 两者都 stale 才停
+    _es_combo_best = {'ssim': None, 'skel_iou': None}
+    _es_combo_stale = {'ssim': 0, 'skel_iou': 0}
     _es_check_every = int(getattr(args, 'early_stop_check_every', 0))
     if _es_check_every <= 0:
         _es_check_every = max(int(getattr(args, 'ckpt_every', 5000)) // 2, 1000)
 
     def _early_stop_check(force=False):
-        """读 ckpt 目录最新 eval_auto json, 更新 best/stale; 达到 patience 返回 True 表示停。"""
+        """读 ckpt 目录最新 eval_auto json, 更新 best/stale; 达到 patience 返回 True 表示停。
+        combo 模式: ssim 和 skel_iou 都要连续 stale >= patience 才停 (双保险)。"""
         nonlocal early_stop_best, early_stop_stale, early_stop_last_eval_step
         if not getattr(args, 'early_stop', False):
             return False
@@ -661,7 +665,10 @@ def main(args):
             with open(last_ev, "r", encoding="utf-8") as _f:
                 d = json.load(_f)
             m, s = d.get("mse"), d.get("ssim")
-            if _es_metric == 'ssim':
+            k = d.get("skel_iou")
+            if _es_metric == 'combo':
+                val = (float(s), float(k)) if s is not None and k is not None else None
+            elif _es_metric == 'ssim':
                 val = float(s) if s is not None else None
             else:
                 val = float(m) if m is not None else None
@@ -669,6 +676,36 @@ def main(args):
             return False
         if val is None:
             return False
+
+        if _es_metric == 'combo':
+            # 双保险: 两个指标各自的新鲜度 (更稳健: 任一刚创新高则整体 stale 清零)
+            s_v, k_v = val
+            improved = False
+            for key, v, hi_better in (('ssim', s_v, True), ('skel_iou', k_v, True)):
+                b = _es_combo_best[key]
+                if b is None or (v > b if hi_better else v < b):
+                    _es_combo_best[key] = v
+                    _es_combo_stale[key] = 0
+                    improved = True
+                else:
+                    _es_combo_stale[key] += 1
+            if improved:
+                early_stop_stale = 0
+                logger.info(f"[early-stop] eval step {ev_step}: combo ssim={s_v:.4f} "
+                            f"skel_iou={k_v:.4f} (new best ssim={_es_combo_best['ssim']:.4f}, "
+                            f"skel={_es_combo_best['skel_iou']:.4f})")
+            else:
+                early_stop_stale += 1
+                logger.info(f"[early-stop] eval step {ev_step}: combo ssim={s_v:.4f} "
+                            f"skel_iou={k_v:.4f} (best ssim={_es_combo_best['ssim']:.4f}, "
+                            f"skel={_es_combo_best['skel_iou']:.4f}, stale {early_stop_stale}/"
+                            f"{args.early_stop_patience})")
+                if early_stop_stale >= int(getattr(args, 'early_stop_patience', 5)):
+                    logger.info(f"[early-stop] combo no improvement for "
+                                f"{early_stop_stale} evals; early stopping.")
+                    return True
+            return False
+
         if early_stop_best is None or _es_better(val, early_stop_best):
             early_stop_best = val
             early_stop_stale = 0
@@ -1293,8 +1330,11 @@ if __name__ == "__main__":
                         help="Optional clean stop after N optimizer steps (0 disables).")
     parser.add_argument("--early-stop", type=_str_to_bool, default=False,
                         help="Enable early stopping based on CPU eval (eval_auto_*.json mse/ssim).")
-    parser.add_argument("--early-stop-metric", type=str, choices=["ssim", "mse"], default="ssim",
-                        help="Metric to monitor for early stopping (ssim higher better, mse lower better).")
+    parser.add_argument("--early-stop-metric", type=str,
+                        choices=["ssim", "mse", "combo"], default="ssim",
+                        help="Metric to monitor for early stopping (ssim higher better, mse lower "
+                             "better). 'combo' = dual-gate: require BOTH ssim and skel_iou to be "
+                             "stale >= patience before stopping (skel_iou higher better).")
     parser.add_argument("--early-stop-patience", type=int, default=5,
                         help="Stop after this many consecutive evals without improvement.")
     parser.add_argument("--early-stop-min-steps", type=int, default=0,
