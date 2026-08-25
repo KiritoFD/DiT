@@ -155,3 +155,5 @@ final_latents/
 
 # ---- local smoke test artifacts ----
 _smoke_data/
+
+glyph_classifier_ckpts/
