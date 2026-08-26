@@ -675,6 +675,8 @@ class DiT_2Cond(nn.Module):
         skel_head_enabled=False,
         use_glyph_cond=False,
         glyph_scale_init=0.4,
+        char_proj_mode="full",
+        freeze_char_table=False,
     ):
         super().__init__()
         self.learn_sigma = learn_sigma
@@ -689,6 +691,8 @@ class DiT_2Cond(nn.Module):
         self.skel_head_enabled = bool(skel_head_enabled)
         self.use_glyph_cond = bool(use_glyph_cond)
         self.glyph_scale_init = float(glyph_scale_init)
+        self.char_proj_mode = char_proj_mode
+        self.freeze_char_table = bool(freeze_char_table)
         if self.cond_drop_all_prob < 0 or self.cond_drop_one_prob < 0:
             raise ValueError("condition dropout probabilities must be non-negative")
         if self.cond_drop_all_prob + self.cond_drop_one_prob > 1:
@@ -709,8 +713,17 @@ class DiT_2Cond(nn.Module):
                 num_characters, char_embed_dim, 0.0, use_cfg_embedding=True)
             self.callig_proj = nn.Sequential(nn.LayerNorm(callig_embed_dim),
                                              nn.Linear(callig_embed_dim, hidden_size))
-            self.char_proj = nn.Sequential(nn.LayerNorm(char_embed_dim),
-                                           nn.Linear(char_embed_dim, hidden_size))
+            if char_proj_mode == "ln_only":
+                # DINO 384 直通：char_embed_dim == hidden_size 时，char_proj 只做
+                # LayerNorm 归一化，不再 Linear 投影（省 384*384≈147K 冗余参数）。
+                # 配合 freeze_char_table=True 时 y_char_embedder 表被 DINO 预填充并
+                # 冻结，条件向量就是 DINO 384 本身（L2 归一化 + LayerNorm 尺度稳定）。
+                assert char_embed_dim == hidden_size, \
+                    f"char_proj_mode='ln_only' requires char_embed_dim==hidden_size (got {char_embed_dim} vs {hidden_size})"
+                self.char_proj = nn.LayerNorm(char_embed_dim)
+            else:
+                self.char_proj = nn.Sequential(nn.LayerNorm(char_embed_dim),
+                                               nn.Linear(char_embed_dim, hidden_size))
             self.cond_fusion = None
         elif condition_fusion == "xl_highdim":
             # XL 高维条件：callig(384) + glyph(768) concat -> MLP -> hidden(1152)，c = t_emb + y_emb。
@@ -770,6 +783,18 @@ class DiT_2Cond(nn.Module):
             ps_ = self.x_embedder.patch_size[0] if not isinstance(self.x_embedder.patch_size, int) else self.x_embedder.patch_size
             self.glyph_embedder = nn.Conv2d(in_channels, hidden_size, kernel_size=ps_, stride=ps_, bias=False)
         self.initialize_weights()
+        if self.freeze_char_table and hasattr(self, "y_char_embedder"):
+            # 冻结 char 表：DINO 预填充后不再训练（省 35130×384≈13.5M 训练参数），
+            # 但保留最后一行的 CFG uncond 项可学习（它没有 DINO 对应物）。
+            with torch.no_grad():
+                w = self.y_char_embedder.embedding_table.weight
+                if w.shape[0] > 1:
+                    w[-1].normal_(std=0.02)
+            w.requires_grad_(False)
+            w[-1].requires_grad_(True)
+            self._char_table_frozen = True
+        else:
+            self._char_table_frozen = False
 
     def initialize_weights(self):
         def _basic_init(module):
@@ -984,6 +1009,11 @@ class DiT_2Cond(nn.Module):
 
 
 
+def DiT_2Cond_XS_2(**kwargs):
+    # 更小变体：depth=8, hidden=384, 6 头, patch=2。参数约 20M（-35% vs S/2 的 30M），
+    # 适合小数据量（3top30 仅 3.8 万图）防过拟合；transformer 层从 12→8。
+    return DiT_2Cond(depth=8, hidden_size=384, patch_size=2, num_heads=6, **kwargs)
+
 def DiT_2Cond_S_2(**kwargs):
     return DiT_2Cond(depth=12, hidden_size=384, patch_size=2, num_heads=6, **kwargs)
 
@@ -1004,6 +1034,7 @@ def DiT_2Cond_XL_2(**kwargs):
 
 
 DiT_2Cond_models = {
+    'DiT-2Cond-XS/2': DiT_2Cond_XS_2,
     'DiT-2Cond-S/2': DiT_2Cond_S_2,
     'DiT-2Cond-S/4': DiT_2Cond_S_4,
     'DiT-2Cond-S/8': DiT_2Cond_S_8,

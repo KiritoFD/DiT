@@ -227,13 +227,17 @@ def main(args):
             use_glyph_cond=getattr(args, 'w_glyph_cond', 0) > 0,
             glyph_scale_init=getattr(args, 'glyph_scale_init', 0.4),
             in_channels=getattr(args, 'latent_channels', 4),
+            char_proj_mode=getattr(args, 'char_proj_mode', 'full'),
+            freeze_char_table=getattr(args, 'freeze_char_table', False),
         )
         logger.info(f"Building 2-Cond model: {args.model} "
                     f"(callig={args.num_calligraphers}, glyph/char={args.num_characters}, "
                     f"fusion={args.condition_fusion}, dims={args.callig_embed_dim}/"
                     f"{args.char_embed_dim}, dropout=all:{args.cond_drop_all_prob}, "
                     f"one:{args.cond_drop_one_prob}, skel_head={getattr(args, 'w_skel_head', 0) > 0}, "
-                    f"glyph_cond={getattr(args, 'w_glyph_cond', 0) > 0}, glyph_scale_init={getattr(args, 'glyph_scale_init', 0.4)})")
+                    f"glyph_cond={getattr(args, 'w_glyph_cond', 0) > 0}, glyph_scale_init={getattr(args, 'glyph_scale_init', 0.4)}, "
+                    f"char_proj_mode={getattr(args, 'char_proj_mode', 'full')}, "
+                    f"freeze_char_table={getattr(args, 'freeze_char_table', False)})")
 
     # ── DINO glyph-embedding init for y_char_embedder ───────────────────────
     # glyph_id = script_id * 7026 + character_id (每 script 7026 个字符, 见
@@ -1340,6 +1344,14 @@ if __name__ == "__main__":
     parser.add_argument("--char-dino-index", type=str, default=None,
                         help="Path to glyph index json ({\"glyphs\": [[script_id, char_id], ...]} "
                              "aligned row-wise with char-dino-embeddings).")
+    parser.add_argument("--char-proj-mode", type=str, choices=["full", "ln_only"], default="full",
+                        help="char_proj: 'full'=LayerNorm+Linear (default) | "
+                             "'ln_only'=LayerNorm only, requires char_embed_dim==hidden_size "
+                             "(DINO 384 direct, drops redundant 384->384 Linear).")
+    parser.add_argument("--freeze-char-table", type=_str_to_bool, default=False,
+                        help="Freeze y_char_embedder table after DINO init (keep CFG uncond row "
+                             "trainable). Saves ~13.5M trainable params; conditions become pure "
+                             "DINO 384 vectors.")
     parser.add_argument("--cond-drop-all-prob", type=float, default=0.05,
                         help="Probability of dropping all factors for CFG.")
     parser.add_argument("--cond-drop-one-prob", type=float, default=0.0,
