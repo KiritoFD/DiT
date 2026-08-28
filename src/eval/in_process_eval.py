@@ -159,7 +159,7 @@ def run_gpu_eval(ema_model, args, cache, step, checkpoint_dir, device,
         ddim_steps  : DDIM timesteps
         cfg_scale   : classifier-free guidance scale
     """
-    from src.loss import create_diffusion_or_flow
+    from src.loss import create_diffusion_or_flow, flow_kwargs_from
     t0 = time.time()
 
     n = cache["n"]
@@ -173,6 +173,7 @@ def run_gpu_eval(ema_model, args, cache, step, checkpoint_dir, device,
     diffusion = create_diffusion_or_flow(
         str(ddim_steps),
         diffusion_type=getattr(args, 'diffusion_type', 'ddpm'),
+        **flow_kwargs_from(args),
     )
     vae = load_eval_vae(args, device)
 
@@ -273,7 +274,7 @@ def run_show5(ema_model, args, cache, step, checkpoint_dir, device,
     """Run eval on a small set and save to seen_samples/ or show_samples/."""
     if cache is None:
         return
-    from src.loss import create_diffusion_or_flow
+    from src.loss import create_diffusion_or_flow, flow_kwargs_from
     n = cache["n"]
     lc = cache["latent_channels"]
     ls = cache["latent_spatial"]
@@ -285,6 +286,7 @@ def run_show5(ema_model, args, cache, step, checkpoint_dir, device,
     diffusion = create_diffusion_or_flow(
         str(ddim_steps),
         diffusion_type=getattr(args, 'diffusion_type', 'ddpm'),
+        **flow_kwargs_from(args),
     )
     vae = load_eval_vae(args, device)
 

@@ -38,7 +38,7 @@ class MCCDLatentDataset(Dataset):
     def __init__(self, csv_file, latent_shards_dir, img_root, canny_root=None,
                  image_size=256, load_canny=False, load_skel=False, skel_root=None,
                  is_train=False, preload=False, load_image=True, num_preload_workers=16,
-                 structure_size=256, use_glyph_cond=False):
+                 structure_size=256, use_glyph_cond=False, skel_latent_shards_dir=None):
         self.samples = []
         with open(csv_file, 'r', encoding='utf-8') as f:
             for row in csv.DictReader(f):
@@ -46,10 +46,18 @@ class MCCDLatentDataset(Dataset):
         self.use_glyph_cond = bool(use_glyph_cond)
         if self.use_glyph_cond:
             # 标准字形 latent 查询(懒加载, 全局单例), 训练/推理一致
-            from src.utils import get_glyph_lookup
-            self._glookup = get_glyph_lookup()
+            # v2: 多字体字典 (std_glyph_latent_v2, 随机字体=增广); 缺 v2 回退 v1
+            try:
+                from src.utils.glyph_latent_v2 import get_glyph_lookup_v2
+                self._glookup = get_glyph_lookup_v2()
+                self._glookup_is_v2 = True
+            except Exception:
+                from src.utils import get_glyph_lookup
+                self._glookup = get_glyph_lookup()
+                self._glookup_is_v2 = False
         else:
             self._glookup = None
+            self._glookup_is_v2 = False
 
         self.latent_shards_dir = latent_shards_dir
         self.img_root = img_root
@@ -57,6 +65,7 @@ class MCCDLatentDataset(Dataset):
         self.load_canny = load_canny
         self.load_skel = load_skel
         self.skel_root = skel_root
+        self.skel_latent_shards_dir = skel_latent_shards_dir
         self.image_size = image_size
         self.load_image = load_image
         self.structure_size = int(structure_size)
@@ -80,12 +89,31 @@ class MCCDLatentDataset(Dataset):
                 self._id_to_shard[int(iid)] = (sp, j)
             d.close()
 
+        # skel 条件: 优先 VAE latent shards (ControlNet latent 条件), 否则 PNG
+        self._skel_id_to_shard = {}
+        if self.skel_latent_shards_dir:
+            _sk_shards = sorted(glob.glob(
+                os.path.join(self.skel_latent_shards_dir, "shard_*.npz")))
+            if not _sk_shards:
+                raise FileNotFoundError(
+                    f"No skel latent shards in {self.skel_latent_shards_dir}")
+            _probe2 = np.load(_sk_shards[0])
+            self.skel_latent_channels = int(_probe2["latents"].shape[1])
+            self.skel_latent_spatial = int(_probe2["latents"].shape[2])
+            _probe2.close()
+            for sp in _sk_shards:
+                d = np.load(sp)
+                for j, iid in enumerate(d["img_ids"]):
+                    self._skel_id_to_shard[int(iid)] = (sp, j)
+                d.close()
+
         self.is_train = is_train
         self.preload = preload
         self._latents = None
         self._imgs = None
         self._cannys = None
         self._skels = None
+        self._skel_latents = None
         if preload:
             self._preload_all(num_preload_workers)
 
@@ -161,10 +189,29 @@ class MCCDLatentDataset(Dataset):
                      for i in range(n)]
             _pool_fill(tasks, self._skels, "skeleton")
 
+        # --- skel latent shards (ControlNet latent 条件) ---
+        if self._skel_id_to_shard:
+            self._skel_latents = np.empty(
+                (n, self.skel_latent_channels, self.skel_latent_spatial,
+                 self.skel_latent_spatial), dtype=np.float32)
+            by_sk = defaultdict(list)
+            for i, iid in enumerate(ids):
+                sp, j = self._skel_id_to_shard[iid]
+                by_sk[sp].append((i, j))
+            for sp, items in by_sk.items():
+                d = np.load(sp)
+                lat = d["latents"]
+                for i, j in items:
+                    self._skel_latents[i] = lat[j]
+                d.close()
+            print(f"[preload] skel latents {n:,} loaded in {time.time() - t0:.1f}s "
+                  f"({self._skel_latents.nbytes / 1024 ** 3:.1f}G)")
+
         total = (self._latents.nbytes
                  + (self._imgs.nbytes if self._imgs is not None else 0)
                  + (self._cannys.nbytes if self._cannys is not None else 0)
-                 + (self._skels.nbytes if self._skels is not None else 0))
+                 + (self._skels.nbytes if self._skels is not None else 0)
+                 + (self._skel_latents.nbytes if self._skel_latents is not None else 0))
         print(f"[preload] ALL preloaded in {time.time() - t0:.1f}s, "
               f"total RAM {total / 1024 ** 3:.1f}G")
 
@@ -186,6 +233,9 @@ class MCCDLatentDataset(Dataset):
             if self.load_skel and self._skels is not None:
                 s = self._skels[idx].astype(np.float32) / 255.0
                 skel_t = (torch.from_numpy(s) > 0.5).float().unsqueeze(0)
+            skel_lat = torch.empty(0)
+            if self._skel_latents is not None:
+                skel_lat = torch.from_numpy(self._skel_latents[idx])
         else:
             m = re.search(r"(\d+)\.png", row['image_path'])
             if not m:
@@ -222,11 +272,27 @@ class MCCDLatentDataset(Dataset):
                     skel_a = skel_a.reshape(32, 8, 32, 8).max(axis=(1, 3))
                 skel_t = (torch.from_numpy(skel_a / 255.0) > 0.5).float().unsqueeze(0)
 
-        # 标准字形 latent g(甲2): 按 (script_id, char) 查标准字形 latent; 缺失给零(保 collate 一致)
+            # skel latent (ControlNet latent 条件) -> (C,32,32) float32
+            skel_lat = torch.empty(0)
+            if self._skel_id_to_shard:
+                try:
+                    sp, j = self._skel_id_to_shard[img_id]
+                except KeyError as exc:
+                    raise KeyError(f"skel latent not found for img_id={img_id}") from exc
+                with np.load(sp) as shard:
+                    skel_lat = torch.from_numpy(
+                        np.array(shard["latents"][j], copy=True)).float()
+
+        # 标准字形 latent g: 按 (script_id, char) 查标准字形 latent; 缺失给零(保 collate 一致)
+        # v2 多字体字典: 训练时随机选字体 (=增广), 推理用各 script 默认字体
         if self._glookup is not None:
             script_id = int(row['script_id'])
             char = row.get('character', '')
-            gv = self._glookup.get(script_id, char) if char else None
+            if self._glookup_is_v2:
+                gv = (self._glookup.get(script_id, char, random=self.is_train)
+                      if char else None)
+            else:
+                gv = self._glookup.get(script_id, char) if char else None
             if gv is not None:
                 g_t = gv.float().contiguous()   # (4,32,32)
             else:
@@ -239,6 +305,7 @@ class MCCDLatentDataset(Dataset):
             'image': img_t,
             'canny': canny_t,
             'skeleton': skel_t,
+            'skel_latent': skel_lat,
             'y_callig': torch.tensor(int(row['calligrapher_id']), dtype=torch.long),
             'y_script': torch.tensor(int(row['script_id']), dtype=torch.long),
             'y_char': torch.tensor(

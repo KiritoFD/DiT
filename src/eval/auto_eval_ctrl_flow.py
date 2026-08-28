@@ -268,8 +268,10 @@ def main():
     if device.type == "cuda":
         cache["gts"] = cache["gts"].to(device)
         cache["skels"] = cache["skels"].to(device)
-    from src.loss import create_diffusion_or_flow
-    diffusion = create_diffusion_or_flow(str(args.steps), diffusion_type=args.diffusion_type)
+    from src.loss import create_diffusion_or_flow, flow_kwargs_from
+    diffusion = create_diffusion_or_flow(str(args.steps),
+                                         diffusion_type=args.diffusion_type,
+                                         **flow_kwargs_from(args))
     cfg_params = {"steps": args.steps, "cfg": args.cfg,
                   "seed": args.seed, "batch": args.batch}
 
