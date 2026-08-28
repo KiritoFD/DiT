@@ -1,0 +1,12 @@
+{
+  "ckpt": "results/exp_s_scratch/20260814-170506-DiT-3Cond-S-2/checkpoints/0049000.pt",
+  "model": "DiT-3Cond-S/2",
+  "csv": "final_eval.csv",
+  "n": 50,
+  "steps": 50,
+  "cfg": 4.0,
+  "seed": 0,
+  "mse": 0.899634661078453,
+  "ssim": 0.5423400770376124,
+  "time": "2026-08-15 11:51:24"
+}

@@ -103,7 +103,7 @@ class GlyphLatentClassifier(nn.Module):
 
 
 if __name__ == "__main__":
-    from models import DiT_2Cond_models  # just to verify import path
+    from src.model import DiT_2Cond_models  # just to verify import path
     m = GlyphLatentClassifier(9401, 4)
     n = sum(p.numel() for p in m.parameters())
     print(f"params: {n/1e6:.2f}M")

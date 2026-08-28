@@ -165,17 +165,6 @@ button.sec{background:var(--card);border:1px solid var(--line);color:var(--txt)}
     </div>
   </div>
   <div class="panel">
-    <h2>Auto-Eval LPIPS（越低越好）</h2>
-    <div class="chart-wrap"><canvas id="lpipsChart"></canvas></div>
-    <div class="zoom-bar" data-for="lpipsChart">
-      <button class="zoom-btn" onclick="zoomOut(this)">−</button>
-      <div class="zbar zbar-lo"><input type="range" class="zlo" min="0" max="100" value="0" step="0.5"></div>
-      <div class="zbar zbar-hi"><input type="range" class="zhi" min="0" max="100" value="100" step="0.5"></div>
-      <button class="zoom-btn" onclick="zoomIn(this)">+</button>
-      <button class="zoom-btn sec" onclick="resetZoom(this)">重置</button>
-    </div>
-  </div>
-  <div class="panel">
     <h2>X0Lat MSE（预测 vs GT latent）</h2>
     <div class="chart-wrap"><canvas id="x0Chart"></canvas></div>
     <div class="zoom-bar" data-for="x0Chart">
@@ -250,8 +239,7 @@ window.onerror = function(msg, src, line, col) {
 const COLORS = {
   diff:'#4f9cff', total:'#ffb84f', canny:'#ff6b6b',
   skel:'#b06bff', repa:'#3ddc97', spd:'#8b93a7',
-  warn:'#ff6b6b', ok:'#3ddc97',
-  skelIoU:'#e85d75'
+  warn:'#ff6b6b', ok:'#3ddc97'
 };
 const REFRESH_MS = 10000;
 
@@ -332,8 +320,7 @@ function buildAllCharts() {
   ]);
   makeChart('mseChart', [{label:'MSE', color:COLORS.warn, key:'mse'}]);
   makeChart('ssimChart', [{label:'SSIM', color:COLORS.ok, key:'ssim'}]);
-  makeChart('skelIoUChart', [{label:'Skel-IoU', color:COLORS.skelIoU, key:'skel_iou'}]);
-  makeChart('lpipsChart', [{label:'LPIPS', color:'#ff8c42', key:'lpips'}]);
+  makeChart('skelIoUChart', [{label:'Skel-IoU', color:COLORS.skel, key:'skel_iou'}]);
   makeChart('x0Chart', [{label:'X0Lat', color:COLORS.total, key:'x0lat'}]);
   makeChart('spdChart', [{label:'Steps/Sec', color:COLORS.spd, key:'stepsPerSec'}]);
   makeChart('memChart', [
@@ -655,7 +642,6 @@ function renderStats(rows){
     s('MSE', nan(last.mse)?'—':last.mse.toFixed(5)) +
     s('SSIM', nan(last.ssim)?'—':last.ssim.toFixed(4), nan(last.ssim)?'':'ok') +
     s('Skel-IoU', nan(last.skel_iou)?'—':last.skel_iou.toFixed(4), nan(last.skel_iou)?'':'ok') +
-    s('LPIPS', nan(last.lpips)?'—':last.lpips.toFixed(4), nan(last.lpips)?'warn':'') +
     s('Steps/s', nan(last.stepsPerSec)?'—':last.stepsPerSec.toFixed(1)) +
     s('已过数据遍数', epochMeta.epoch_now?epochMeta.epoch_now.toFixed(2)+' 遍':'—') +
     s('每遍耗时', epochMeta.hr_per_epoch?(
@@ -668,7 +654,7 @@ function renderStats(rows){
   if(!hasEval&&!nan(last.diff))
     st += 'Diff '+(firstD!=null?firstD.toFixed(4):'→')+' → '+last.diff.toFixed(4);
   else if(hasEval)
-    st += 'MSE='+last.mse.toFixed(5)+' SSIM='+last.ssim.toFixed(4)+(nan(last.skel_iou)?'':' SkelIoU='+last.skel_iou.toFixed(4))+(nan(last.lpips)?'':' LPIPS='+last.lpips.toFixed(4));
+    st += 'MSE='+last.mse.toFixed(5)+' SSIM='+last.ssim.toFixed(4)+(nan(last.skel_iou)?'':' SkelIoU='+last.skel_iou.toFixed(4));
   document.getElementById('statusLine').textContent = st || '等待数据…';
 }
 

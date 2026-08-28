@@ -1,143 +1,163 @@
-# DiT 书法生成（MCCD）
+## Scalable Diffusion Models with Transformers (DiT)<br><sub>Official PyTorch Implementation</sub>
 
-用 **DiT (Diffusion Transformer)** 做「书家 × 字形」条件书法字生成（256×256）。
+### [Paper](http://arxiv.org/abs/2212.09748) | [Project Page](https://www.wpeebles.com/DiT) | Run DiT-XL/2 [![Hugging Face Spaces](https://img.shields.io/badge/%F0%9F%A4%97%20Hugging%20Face-Spaces-blue)](https://huggingface.co/spaces/wpeebles/DiT) [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](http://colab.research.google.com/github/facebookresearch/DiT/blob/main/run_DiT.ipynb) <a href="https://replicate.com/arielreplicate/scalable_diffusion_with_transformers"><img src="https://replicate.com/arielreplicate/scalable_diffusion_with_transformers/badge"></a>
 
-```
-输入: (书家 calligrapher_id, 字形 glyph_id = script × character)
-输出: 256×256 书法字图像
-```
+![DiT samples](visuals/sample_grid_0.png)
 
-基于官方 DiT（[facebookresearch/DiT](https://github.com/facebookresearch/DiT)）改造成 2Cond 架构，支持：
-- **factorized_add** 条件融合（书家 128d + glyph 256d → 投影相加，支持组合泛化）
-- **kl-f4 VAE**（f4 下采样, 3ch latent, 55.3M params, 重建底噪 MSE=0.0019）
-- **ControlNet** skel 结构条件（3px skeleton 注入，zero-init warm-start / from-scratch）
-- 从零预训练 / warm-start 两种训练模式
-- bf16 autocast + EMA + 自动 CPU eval + early stop
+This repo contains PyTorch model definitions, pre-trained weights and training/sampling code for our paper exploring 
+diffusion models with transformers (DiTs). You can find more visualizations on our [project page](https://www.wpeebles.com/DiT).
 
-> 远程训练服务器：`root@10.176.54.17:36430`，项目目录 `/root/Workspace/xy/DiT`。
-> 本仓库为本地工作副本，与远程代码保持同步（`train.py`/`models.py`/`eval_auto.py` 等）。
+> [**Scalable Diffusion Models with Transformers**](https://www.wpeebles.com/DiT)<br>
+> [William Peebles](https://www.wpeebles.com), [Saining Xie](https://www.sainingxie.com)
+> <br>UC Berkeley, New York University<br>
 
----
+We train latent diffusion models, replacing the commonly-used U-Net backbone with a transformer that operates on 
+latent patches. We analyze the scalability of our Diffusion Transformers (DiTs) through the lens of forward pass 
+complexity as measured by Gflops. We find that DiTs with higher Gflops---through increased transformer depth/width or
+increased number of input tokens---consistently have lower FID. In addition to good scalability properties, our 
+DiT-XL/2 models outperform all prior diffusion models on the class-conditional ImageNet 512×512 and 256×256 benchmarks, 
+achieving a state-of-the-art FID of 2.27 on the latter.
 
-## 📖 文档
+This repository contains:
 
-完整文档在 [`docs/`](docs/README.md)，按主题组织：
+* 🪐 A simple PyTorch [implementation](models.py) of DiT
+* ⚡️ Pre-trained class-conditional DiT models trained on ImageNet (512x512 and 256x256)
+* 💥 A self-contained [Hugging Face Space](https://huggingface.co/spaces/wpeebles/DiT) and [Colab notebook](http://colab.research.google.com/github/facebookresearch/DiT/blob/main/run_DiT.ipynb) for running pre-trained DiT-XL/2 models
+* 🛸 A DiT [training script](train.py) using PyTorch DDP
 
-| 文档 | 内容 |
-|------|------|
-| [docs/model/architecture.md](docs/model/architecture.md) | DiT 模型架构 (2Cond/3Cond, S/XL, f4/f8 VAE) |
-| [docs/training/training.md](docs/training/training.md) | 训练管线 (bf16, EMA, LR, 显存, 远程启动) |
-| [docs/data/dataset.md](docs/data/dataset.md) | MCCD 数据集, latent 编码, VAE 工具 |
-| [docs/eval/evaluation.md](docs/eval/evaluation.md) | auto_eval_cpu, 指标, 早停机制 |
-| [docs/experiments/experiment_log.md](docs/experiments/experiment_log.md) | V1→S7 实验时间线与关键决策 |
-| [docs/model/CONTROLNET.md](docs/model/CONTROLNET.md) | ControlNet 骨架条件分支 |
-| [docs/s6_report/REPORT.md](docs/s6_report/REPORT.md) | S6 diff-only vs struct 对比报告 |
+An implementation of DiT directly in Hugging Face `diffusers` can also be found [here](https://github.com/huggingface/diffusers/blob/main/docs/source/en/api/pipelines/dit.mdx).
 
----
 
-## 目录结构
+## Setup
 
-```
-src/                          # 核心源码（训练/模型/数据/loss/评测）
-├── train.py                  # 主训练脚本 (DiT-2Cond/3Cond, latent/pixel)
-├── models.py                 # DiT 模型定义 (2Cond/3Cond, S/XL, S/4)
-├── losses.py                 # EdgeGradientLoss, SkeletonLoss, REPALoss
-├── latent_dataset.py         # MCCDLatentDataset (auto-detect latent shape)
-├── eval_auto.py              # 自动评测 (latent_channels/spatial/scaling 动态)
-├── dataset.py                # MCCDDataset (pixel mode)
-├── lora.py                   # LoRA 注入
-└── ...
-
-# 根目录镜像（与 src/ 保持同步，远程用）
-train.py  models.py  losses.py  latent_dataset.py  eval_auto.py  ...
-auto_eval_cpu.py  sample.py
-
-configs/                      # 实验配置 (exp_*.json, resume_*.json)
-├── s7_klf4_top30_diffonly.json  # 当前主跑: kl-f4, DiT-S/4, batch=224, 600k steps
-
-tools/
-├── vae/                      # VAE 转换/编码/验证/对比工具
-├── controlnet/               # ControlNet 分支
-├── dashboards/               # 静态 HTML dashboards
-└── pull_monitor.py           # 远程日志拉取
-
-diffusion/                    # 扩散过程 (DDPM/DDIM)
-labels/                       # ID 映射 (calligrapher/character/script)
-5script/                      # 数据 CSV + 实验配置
-docs/                         # 项目文档（见上表）
-```
-
----
-
-## 模型架构
-
-| 模型 | hidden | depth | heads | patch | params | VAE | tokens |
-|------|--------|-------|-------|-------|--------|-----|--------|
-| DiT-2Cond-S/2 | 384 | 12 | 6 | 2 | 33.0M | f8 (4ch, 32²) | 256 |
-| **DiT-2Cond-S/4** | **384** | **12** | **6** | **4** | **41.8M** | **f4 (3ch, 64²)** | **256** |
-| DiT-2Cond-B/2 | 768 | 12 | 12 | 2 | 132M | f8 | 256 |
-| DiT-2Cond-XL/2 | 1152 | 28 | 16 | 2 | 673M | f8 | 256 |
-
-**当前方案 S/4 + kl-f4**: 同样 256 tokens，但 latent 信息量 3× (12288 vs 4096)，VAE 底噪减半 (0.0019 vs 0.0037)。
-
----
-
-## 快速开始
-
-### 训练（远程 tmux）
+First, download and set up the repo:
 
 ```bash
-# 1. 同步代码
-scp -P 36430 train.py models.py eval_auto.py latent_dataset.py \
-    root@10.176.54.17:/root/Workspace/xy/DiT/
-
-# 2. 拉起训练 (GPU)
-ssh -p 36430 root@10.176.54.17
-cd /root/Workspace/xy/DiT
-tmux new-session -d -s s7klf4 \
-  '/opt/conda/bin/python train.py --config s7_klf4_top30_diffonly.json > run_s7_klf4.log 2>&1'
-
-# 3. 拉起 CPU eval（不阻塞 GPU）
-tmux new-session -d -s evalcpu \
-  '/opt/conda/bin/python auto_eval_cpu.py \
-    --results-dir 5script/results/s7_klf4_top30 \
-    --workers 8 --worker-threads 8 \
-    --seen5-csv 5script/seen5_top30.csv > auto_eval_cpu.log 2>&1'
+git clone https://github.com/facebookresearch/DiT.git
+cd DiT
 ```
 
-### 本地 Dashboard
+We provide an [`environment.yml`](environment.yml) file that can be used to create a Conda environment. If you only want 
+to run pre-trained models locally on CPU, you can remove the `cudatoolkit` and `pytorch-cuda` requirements from the file.
 
 ```bash
-python tools/pull_monitor.py --loop --interval 30
-# 打开 tools/dashboards/index.html
+conda env create -f environment.yml
+conda activate DiT
 ```
 
----
 
-## 当前训练状态 (s7-klf4-top30-diffonly)
+## Sampling [![Hugging Face Spaces](https://img.shields.io/badge/%F0%9F%A4%97%20Hugging%20Face-Spaces-blue)](https://huggingface.co/spaces/wpeebles/DiT) [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](http://colab.research.google.com/github/facebookresearch/DiT/blob/main/run_DiT.ipynb)
+![More DiT samples](visuals/sample_grid_1.png)
 
-| 参数 | 值 |
-|------|-----|
-| 模型 | DiT-2Cond-S/4 (41.8M params, from scratch) |
-| VAE | kl-f4 (f4, 3ch, 55.3M params) |
-| 数据 | top30 calligraphers, 128,842 images |
-| batch | 224 |
-| max_steps | 600,000 (early stop: patience=6, min=60k) |
-| 精度 | bf16 autocast |
-| EMA | decay=0.9999, warmup |
-| 速度 | 3.51 steps/s |
-| 显存 | 19.74G / 24G (RTX 4090) |
+**Pre-trained DiT checkpoints.** You can sample from our pre-trained DiT models with [`sample.py`](sample.py). Weights for our pre-trained DiT model will be 
+automatically downloaded depending on the model you use. The script has various arguments to switch between the 256x256
+and 512x512 models, adjust sampling steps, change the classifier-free guidance scale, etc. For example, to sample from
+our 512x512 DiT-XL/2 model, you can use:
 
----
+```bash
+python sample.py --image-size 512 --seed 1
+```
 
-## 关键结论
+For convenience, our pre-trained DiT models can be downloaded directly here as well:
 
-- **kl-f4 VAE 优于 sd-vae**: 重建底噪 MSE 0.0019 vs 0.0037 (减半), SSIM 0.988 vs 0.966, 参数更少
-- **diff-only 优于 struct losses**: S6 报告证明 canny+skel 结构损失把 x0 推离 VAE 流形
-- **factorized_add 优于 legacy**: 支持未见 (callig, glyph) 组合的组合泛化
-- **ControlNet skel 有效**: warm-start MSE 0.443→0.249 (-44%), 但过拟合快 (25k 最佳)
-- **条件覆盖极稀疏**: 理论 1.74 亿组合，训练仅覆盖 17.7 万 (0.01%) — OOD 泛化是核心课题
+| DiT Model     | Image Resolution | FID-50K | Inception Score | Gflops | 
+|---------------|------------------|---------|-----------------|--------|
+| [XL/2](https://dl.fbaipublicfiles.com/DiT/models/DiT-XL-2-256x256.pt) | 256x256          | 2.27    | 278.24          | 119    |
+| [XL/2](https://dl.fbaipublicfiles.com/DiT/models/DiT-XL-2-512x512.pt) | 512x512          | 3.04    | 240.82          | 525    |
 
----
 
-*License: 项目改造自官方 DiT（MIT），MCCD 数据集版权归原发布方。*
+**Custom DiT checkpoints.** If you've trained a new DiT model with [`train.py`](train.py) (see [below](#training-dit)), you can add the `--ckpt`
+argument to use your own checkpoint instead. For example, to sample from the EMA weights of a custom 
+256x256 DiT-L/4 model, run:
+
+```bash
+python sample.py --model DiT-L/4 --image-size 256 --ckpt /path/to/model.pt
+```
+
+
+## Training DiT
+
+We provide a training script for DiT in [`train.py`](train.py). This script can be used to train class-conditional 
+DiT models, but it can be easily modified to support other types of conditioning. To launch DiT-XL/2 (256x256) training with `N` GPUs on 
+one node:
+
+```bash
+torchrun --nnodes=1 --nproc_per_node=N train.py --model DiT-XL/2 --data-path /path/to/imagenet/train
+```
+
+### PyTorch Training Results
+
+We've trained DiT-XL/2 and DiT-B/4 models from scratch with the PyTorch training script
+to verify that it reproduces the original JAX results up to several hundred thousand training iterations. Across our experiments, the PyTorch-trained models give 
+similar (and sometimes slightly better) results compared to the JAX-trained models up to reasonable random variation. Some data points:
+
+| DiT Model  | Train Steps | FID-50K<br> (JAX Training) | FID-50K<br> (PyTorch Training) | PyTorch Global Training Seed |
+|------------|-------------|----------------------------|--------------------------------|------------------------------|
+| XL/2       | 400K        | 19.5                       | **18.1**                       | 42                           |
+| B/4        | 400K        | **68.4**                   | 68.9                           | 42                           |
+| B/4        | 400K        | 68.4                       | **68.3**                       | 100                          |
+
+These models were trained at 256x256 resolution; we used 8x A100s to train XL/2 and 4x A100s to train B/4. Note that FID 
+here is computed with 250 DDPM sampling steps, with the `mse` VAE decoder and without guidance (`cfg-scale=1`). 
+
+**TF32 Note (important for A100 users).** When we ran the above tests, TF32 matmuls were disabled per PyTorch's defaults. 
+We've enabled them at the top of `train.py` and `sample.py` because it makes training and sampling way way way faster on 
+A100s (and should for other Ampere GPUs too), but note that the use of TF32 may lead to some differences compared to 
+the above results.
+
+### Enhancements
+Training (and sampling) could likely be sped-up significantly by:
+- [ ] using [Flash Attention](https://github.com/HazyResearch/flash-attention) in the DiT model
+- [ ] using `torch.compile` in PyTorch 2.0
+
+Basic features that would be nice to add:
+- [ ] Monitor FID and other metrics
+- [ ] Generate and save samples from the EMA model periodically
+- [ ] Resume training from a checkpoint
+- [ ] AMP/bfloat16 support
+
+**🔥 Feature Update** Check out this repository at https://github.com/chuanyangjin/fast-DiT to preview a selection of training speed acceleration and memory saving features including gradient checkpointing, mixed precision training and pre-extrated VAE features. With these advancements, we have achieved a training speed of 0.84 steps/sec for DiT-XL/2 using just a single A100 GPU.
+
+## Evaluation (FID, Inception Score, etc.)
+
+We include a [`sample_ddp.py`](sample_ddp.py) script which samples a large number of images from a DiT model in parallel. This script 
+generates a folder of samples as well as a `.npz` file which can be directly used with [ADM's TensorFlow
+evaluation suite](https://github.com/openai/guided-diffusion/tree/main/evaluations) to compute FID, Inception Score and
+other metrics. For example, to sample 50K images from our pre-trained DiT-XL/2 model over `N` GPUs, run:
+
+```bash
+torchrun --nnodes=1 --nproc_per_node=N sample_ddp.py --model DiT-XL/2 --num-fid-samples 50000
+```
+
+There are several additional options; see [`sample_ddp.py`](sample_ddp.py) for details. 
+
+
+## Differences from JAX
+
+Our models were originally trained in JAX on TPUs. The weights in this repo are ported directly from the JAX models. 
+There may be minor differences in results stemming from sampling with different floating point precisions. We re-evaluated 
+our ported PyTorch weights at FP32, and they actually perform marginally better than sampling in JAX (2.21 FID 
+versus 2.27 in the paper).
+
+
+## BibTeX
+
+```bibtex
+@article{Peebles2022DiT,
+  title={Scalable Diffusion Models with Transformers},
+  author={William Peebles and Saining Xie},
+  year={2022},
+  journal={arXiv preprint arXiv:2212.09748},
+}
+```
+
+
+## Acknowledgments
+We thank Kaiming He, Ronghang Hu, Alexander Berg, Shoubhik Debnath, Tim Brooks, Ilija Radosavovic and Tete Xiao for helpful discussions. 
+William Peebles is supported by the NSF Graduate Research Fellowship.
+
+This codebase borrows from OpenAI's diffusion repos, most notably [ADM](https://github.com/openai/guided-diffusion).
+
+
+## License
+The code and model weights are licensed under CC-BY-NC. See [`LICENSE.txt`](LICENSE.txt) for details.

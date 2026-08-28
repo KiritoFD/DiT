@@ -315,34 +315,3 @@ weights and produced an invalid early EMA evaluation (MSE 3.2513, SSIM 0.0302).
 It was stopped cleanly and its checkpoint retained as a diagnostic. The formal
 run is restarted from zero with update-count EMA warmup; this is a training
 infrastructure correction, not a result comparison.
-
-### Formal V2 / latent-structure fine-tune complete
-
-- Directory:
-  `5script/results/compositional/20260815-174722-s2-factorized-latent-canny-skel-probe-ft-from20k-v2`
-- V2 resumed V1 step 20,000 and reached its configured maximum step 24,000 on
-  2026-08-15 at 18:07:54. It exited cleanly; no process was killed for this stop.
-- Configuration remained batch 224, constant LR `1e-5`, latent Canny weight
-  0.05, latent Skeleton weight 0.005 and `max_t=500`.
-
-Fixed clean-unseen-triple free-sampling results:
-
-| step | MSE | SSIM |
-|---:|---:|---:|
-| 21,000 | 1.00425 | 0.4545 |
-| 22,000 | 1.00262 | 0.4533 |
-| 23,000 | 1.00426 | 0.4509 |
-| 24,000 | 1.00220 | 0.4503 |
-
-Compared with V1 step 20,000 (MSE 1.00497 / SSIM 0.45762), V2 improves MSE by
-only about 0.28% while SSIM decreases monotonically by about 1.6%. The result
-does not establish that latent structural supervision is never useful, but it
-does reject it as the primary remedy for this experiment: edge/skeleton
-regularization does not identify the requested character or disentangle
-calligrapher from script. V1 step 20,000 remains the preferred warm start for
-the next condition-composition experiment; V2 step 24,000 is retained as the
-structural-loss ablation.
-
-The follow-up model design, mathematical analysis, capacity budget and
-result-driven experiment tree are recorded in
-`docs/design/2026-08-15-sparse-compositional-calligraphy-dit.md`.
