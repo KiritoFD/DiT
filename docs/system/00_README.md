@@ -56,16 +56,26 @@
 | 评测体系（一个核心 + 薄壳 + daemon） | [07_eval.md](07_eval.md) |
 | 实验史、基线与当前状态 | [08_experiments.md](08_experiments.md) |
 | 远程部署、重启、监控、踩坑 | [09_ops.md](09_ops.md) |
+| 2026-08-28 问题诊断（v2 改造的动因） | [10_diagnosis_20260828.md](10_diagnosis_20260828.md) |
+| 字形泛化分析 | [11_glyph_generalization.md](11_glyph_generalization.md) |
+| DINO 条件实测（有效秩/检索/书体泄漏） | [12_dino_diagnosis_20260829.md](12_dino_diagnosis_20260829.md) |
+| **v2 架构现代化（当前主干）** | **[13_arch_v2_modernization.md](13_arch_v2_modernization.md)** |
 
-## 4. 核心事实速查（2026-08-28）
+## 4. 核心事实速查（2026-08-29，v2 主干）
 
 | 项 | 值 |
 |---|---|
-| 主模型 | DiT-2Cond-S/2，~33M 参数，输入 (4,32,32) latent（f8 VAE） |
-| 扩散 | 默认 **flow**（直线插值），模型输入 t×1000，Euler 50 步 |
-| 训练速度 | ~3.36 steps/s，batch 240，显存 ~20.88G/24G |
-| 优化器 | AdamW 2e-4，cosine + 3000 warmup，EMA 0.9999（warmup） |
-| 数据 | mid-clean：118,776 行 / 5461 字符 / 67 书家 / 25 latent shards |
-| 评测 | eval_strict_top6.csv（271 行），flow 默认 cfg=1.7，50 步 |
-| 基线 | ddpm s6@195k：MSE 0.7872 / SSIM 0.5276 / skelIoU 0.0376；flow s18@43k：0.7246 / 0.5476 / 0.0395 |
-| 当前运行 | s19 mid-clean 预训练（flow，cond_drop_which_glyph_prob=0.75） |
+| 主模型 | DiT-2Cond-S/2，**46.2M** 参数，输入 (4,32,32) latent（f8 VAE） |
+| 骨干 | **RMSNorm + SwiGLU + 2D-RoPE + QK-Norm**（见 `13_arch_v2_modernization.md`，可回退） |
+| 扩散 | 默认 **flow**（直线插值），模型输入 t×1000，**Heun 25 步**（= 50 NFE） |
+| t 采样 | **logit-normal**（SD3），`shift=1.0` 不 shift |
+| 训练速度 | ~4.1 steps/s，batch **128**，显存 ~15.8G/24G |
+| 优化器 | AdamW **1.5e-4**（sqrt 缩放自 2e-4@240），cosine + 3000 warmup，EMA 0.9999 |
+| 数据 | mid_common：23,597 行真实样本（**无增广**，见 `08_experiments.md`） |
+| 评测 | eval_strict_midclean.csv（501 行，zero-shot=0、组合未覆盖），cfg=1.7 |
+| 早停 | **ssim + lpips** 双指标，patience 5，min_delta 0.002 / 0.003 |
+| 当前运行 | **s20 mid_common 预训练**（`run_s20_midcommon.sh`） |
+
+> 关键环境约束：远程 4090 是 **torch 1.13.1**，无 `F.scaled_dot_product_attention`，
+> 也无 xformers/flash-attn（sm_89 需 flash-attn 2.x，而 2.x 要 torch≥2.0）。
+> 因此 attention 必然是 **eager**，显存占用高于 SDPA。详见 `13_arch_v2_modernization.md`。
