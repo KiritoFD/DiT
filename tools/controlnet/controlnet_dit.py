@@ -234,6 +234,10 @@ class ControlNetDiT(nn.Module):
         """
         CFG 采样: skel 始终提供 (对两半), callig/char 有/无各跑一遍.
         cond: (N,1,256,256) skel.
+        Model may be DDPM-eps or Flow-velocity: the CFG recombination below
+        is applied on the first ``in_channels`` channels in both cases (flow
+        drops its sigma channels here, mirroring main.forward_with_cfg).
+        Flow sampler must NOT clip the output (velocity is unclipped).
         """
         if cond is None:
             return self.main.forward_with_cfg(x, t, y_callig, y_char, cfg_scale=cfg_scale, **kw)
@@ -261,6 +265,7 @@ def load_main_model(model_name="DiT-2Cond-S/2", ckpt_path=None, device="cpu",
                     num_calligraphers=1011, num_characters=35130,
                     condition_fusion="factorized_add",
                     callig_embed_dim=128, char_embed_dim=256,
+                    char_proj_mode="full", freeze_char_table=False,
                     cond_drop_all_prob=0.05, cond_drop_one_prob=0.25,
                     use_checkpoint=False, learn_sigma=True):
     """加载已训练主模型 (复用 models.py 工厂)。"""
@@ -273,11 +278,15 @@ def load_main_model(model_name="DiT-2Cond-S/2", ckpt_path=None, device="cpu",
         num_calligraphers=num_calligraphers, num_characters=num_characters,
         condition_fusion=condition_fusion,
         callig_embed_dim=callig_embed_dim, char_embed_dim=char_embed_dim,
+        char_proj_mode=char_proj_mode, freeze_char_table=freeze_char_table,
         cond_drop_all_prob=cond_drop_all_prob, cond_drop_one_prob=cond_drop_one_prob,
         use_checkpoint=use_checkpoint, learn_sigma=learn_sigma)
     if ckpt_path:
         ck = torch.load(ckpt_path, map_location="cpu", weights_only=False)
-        sd = ck.get("ema") or ck.get("delta")
+        sd = ck.get("ema") or ck.get("delta") or ck
         missing, unexpected = model.load_state_dict(sd, strict=False)
-        print(f"[load] {os.path.basename(ckpt_path)} missing={len(missing)} unexpected={len(unexpected)}")
+        print(f"[load] {os.path.basename(ckpt_path)} missing={len(missing)} "
+              f"unexpected={len(unexpected)} "
+              f"(char_embed_dim={char_embed_dim}, char_proj_mode={char_proj_mode}, "
+              f"freeze_char_table={freeze_char_table})")
     return model.to(device)

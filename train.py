@@ -1173,7 +1173,7 @@ def main(args):
                 if train_steps <= 5000:
                     _save_ckpt = args.ckpt_every > 0 and train_steps % 1000 == 0
                 elif train_steps > 5000:
-                    _save_ckpt = args.ckpt_every > 0 and (train_steps - 5000) % 5000 == 0
+                    _save_ckpt = args.ckpt_every > 0 and (train_steps - 5000) % args.ckpt_every == 0
 
                 if _save_ckpt and train_steps > 0:
                     if rank == 0:

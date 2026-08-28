@@ -153,6 +153,17 @@ def compute_metrics_for_dir(sample_dir, n):
     if not mses:
         return None
 
+    def _q(arr, p):
+        a = sorted(arr)
+        if not a:
+            return None
+        k = (len(a) - 1) * p
+        f = int(np.floor(k))
+        c = int(np.ceil(k))
+        if f == c:
+            return float(a[f])
+        return float(a[f] * (c - k) + a[c] * (k - f))
+
     result = {
         "mse": float(np.mean(mses)),
         "ssim": float(np.mean(ssims)),
@@ -162,12 +173,25 @@ def compute_metrics_for_dir(sample_dir, n):
         "skel_iou_std": float(np.std(skels)),
         "ssim_min": float(np.min(ssims)),
         "skel_iou_min": float(np.min(skels)),
+        # 分位数 (25/50/75)
+        "mse_q25": _q(mses, 0.25),
+        "mse_q50": _q(mses, 0.50),
+        "mse_q75": _q(mses, 0.75),
+        "ssim_q25": _q(ssims, 0.25),
+        "ssim_q50": _q(ssims, 0.50),
+        "ssim_q75": _q(ssims, 0.75),
+        "skel_iou_q25": _q(skels, 0.25),
+        "skel_iou_q50": _q(skels, 0.50),
+        "skel_iou_q75": _q(skels, 0.75),
         "n": len(mses),
     }
     if lpipses:
         result["lpips"] = float(np.mean(lpipses))
         result["lpips_std"] = float(np.std(lpipses))
         result["lpips_min"] = float(np.min(lpipses))
+        result["lpips_q25"] = _q(lpipses, 0.25)
+        result["lpips_q50"] = _q(lpipses, 0.50)
+        result["lpips_q75"] = _q(lpipses, 0.75)
     return result
 
 

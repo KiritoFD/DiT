@@ -223,16 +223,24 @@ def main():
          + GAP + 30)
     canvas = Image.new("RGB", (W, H), BG)
     draw = ImageDraw.Draw(canvas)
-    try:
-        font = ImageFont.truetype(r"C:\Windows\Fonts\msyh.ttc", 17)
-        font_s = ImageFont.truetype(r"C:\Windows\Fonts\msyh.ttc", 14)
-        font_lab = ImageFont.truetype(r"C:\Windows\Fonts\msyhbd.ttc", LABEL_FONT)  # 粗体大字
-    except Exception:
+    font = font_s = font_lab = None
+    for _fp, _sz in [(r"C:\Windows\Fonts\msyh.ttc", 17),
+                     (r"/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", 17),
+                     (r"C:\Windows\Fonts\msyh.ttc", 14),
+                     (r"/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", 14),
+                     (r"C:\Windows\Fonts\msyhbd.ttc", LABEL_FONT),
+                     (r"/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", LABEL_FONT)]:
         try:
-            font_lab = ImageFont.truetype(r"C:\Windows\Fonts\msyh.ttc", LABEL_FONT)
+            _f = ImageFont.truetype(_fp, _sz)
+            if font is None: font = _f
+            elif font_s is None: font_s = _f
+            elif font_lab is None: font_lab = _f
         except Exception:
-            font_lab = font_s
-            font = font_s = ImageFont.load_default()
+            pass
+    if font is None:
+        font = font_s = ImageFont.load_default()
+    if font_lab is None:
+        font_lab = font
 
     y = GAP
 

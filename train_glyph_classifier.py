@@ -31,28 +31,34 @@ LABEL_SMOOTHING = 0.1
 
 
 class LatentGlyphDataset(Dataset):
-    """Load (latent, glyph_id) pairs from a single npz + csv.
+    """Load (latent, label) pairs from a single npz + csv.
 
-    glyph_ids in the CSV are sparse (range 2..35053, only 9401 unique).
-    We remap them to contiguous 0..9400 for cross_entropy.
+    Supports two modes:
+      - label_mode='glyph': classify by glyph_id (9401 classes, script+char)
+      - label_mode='char': classify by character_id (4578 classes, script-agnostic)
+
+    Labels are remapped to contiguous 0..N-1 for cross_entropy.
     """
-    def __init__(self, npz_path, csv_path, glyph_remap=None):
+    def __init__(self, npz_path, csv_path, glyph_remap=None, label_mode='glyph'):
         data = np.load(npz_path)
         self.latents = data['latents']  # (N, 4, 32, 32) float32
         self.img_ids = data['img_ids']  # (N,) int64
         id2idx = {int(iid): idx for idx, iid in enumerate(self.img_ids)}
+        self.label_mode = label_mode
 
-        # Build glyph remap if not provided
-        raw_glyphs = set()
+        label_col = 'character_id' if label_mode == 'char' else 'glyph_id'
+
+        # Build label remap if not provided
+        raw_labels = set()
         rows_raw = []
         with open(csv_path, encoding='utf-8') as f:
             for r in csv.DictReader(f):
                 iid = int(os.path.basename(r['image_path']).replace('.png', ''))
                 if iid in id2idx:
-                    raw_glyphs.add(int(r['glyph_id']))
-                    rows_raw.append((iid, int(r['glyph_id'])))
+                    raw_labels.add(int(r[label_col]))
+                    rows_raw.append((iid, int(r[label_col])))
         if glyph_remap is None:
-            self.glyph_remap = {g: i for i, g in enumerate(sorted(raw_glyphs))}
+            self.glyph_remap = {g: i for i, g in enumerate(sorted(raw_labels))}
         else:
             self.glyph_remap = glyph_remap
         self.num_classes = len(self.glyph_remap)
@@ -62,7 +68,11 @@ class LatentGlyphDataset(Dataset):
         for iid, gid in rows_raw:
             if iid in id2idx:
                 self.samples.append((id2idx[iid], self.glyph_remap[gid]))
-        print(f"  dataset: {len(self.samples)} samples, {self.num_classes} classes from {csv_path}")
+            else:
+                missing += 1
+        if missing:
+            print(f"  [warn] {missing} csv rows have no matching latent (skipped)")
+        print(f"  dataset: {len(self.samples)} samples, {self.num_classes} classes ({label_mode}) from {csv_path}")
 
     def __len__(self):
         return len(self.samples)
@@ -113,6 +123,8 @@ def main():
                     help="Fraction of train set held out for validation (eval.csv is too small & overlaps glyphs)")
     ap.add_argument("--class-balanced", action="store_true",
                     help="Use class-balanced sampling (WeightedRandomSampler)")
+    ap.add_argument("--label-mode", type=str, default="glyph", choices=["glyph", "char"],
+                    help="Classify by 'glyph' (9401 cls, script+char) or 'char' (4578 cls, char only)")
     ap.add_argument("--seed", type=int, default=42)
     ap.add_argument("--device", type=str, default="cuda")
     args = ap.parse_args()
@@ -126,10 +138,11 @@ def main():
 
     # ── Data ────────────────────────────────────────────────────────────────
     print("Loading data...")
-    full_ds = LatentGlyphDataset(LATENTS_PATH, TRAIN_CSV)
+    full_ds = LatentGlyphDataset(LATENTS_PATH, TRAIN_CSV, glyph_remap=None,
+                                 label_mode=args.label_mode)
     actual_num_classes = full_ds.num_classes
     if actual_num_classes != NUM_CLASSES:
-        print(f"  [info] actual unique glyphs = {actual_num_classes} (config default {NUM_CLASSES}), using actual")
+        print(f"  [info] actual classes = {actual_num_classes} (config default {NUM_CLASSES}), using actual")
 
     # Split: use train_3top30_nobeike for both train and val (eval100 overlaps)
     n_total = len(full_ds)

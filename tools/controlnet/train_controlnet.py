@@ -29,6 +29,9 @@ import sys
 _s = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", "src")
 if _s not in sys.path:
     sys.path.insert(0, _s)
+_r = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..")
+if _r not in sys.path:
+    sys.path.insert(0, _r)
 import copy
 import glob
 import time
@@ -44,9 +47,10 @@ import torch.nn as nn
 import numpy as np
 
 from models import DiT_2Cond_models
-from diffusion import create_diffusion
+from diffusion import create_diffusion_or_flow
 from latent_dataset import MCCDLatentDataset
 from controlnet_dit import ControlNetDiT, load_main_model
+import in_process_ctrl_eval as ictrl
 
 if sys.platform == 'win32':
     sys.stdout.reconfigure(encoding="utf-8")
@@ -97,6 +101,12 @@ def parse_args():
     ap.add_argument("--condition-fusion", default="factorized_add")
     ap.add_argument("--callig-embed-dim", type=int, default=128)
     ap.add_argument("--char-embed-dim", type=int, default=256)
+    ap.add_argument("--char-proj-mode", default="full",
+                    help="char_proj mode: 'full' or 'ln_only' (DINO 384 passthrough)")
+    ap.add_argument("--freeze-char-table", type=_str_to_bool, default=False,
+                    help="freeze y_char_embedder table (DINO init)")
+    ap.add_argument("--diffusion-type", default="ddpm", choices=["ddpm", "flow"],
+                    help="main model diffusion type: ddpm (eps/DDIM) or flow (velocity/Euler)")
     ap.add_argument("--cond-drop-all-prob", type=float, default=0.05)
     ap.add_argument("--cond-drop-one-prob", type=float, default=0.25)
     ap.add_argument("--cond-drop-struct-prob", type=float, default=0.1,
@@ -122,6 +132,17 @@ def parse_args():
     ap.add_argument("--seed", type=int, default=0)
     ap.add_argument("--resume", default="",
                     help="resume from ckpt path (loads model+ctrl+optimizer+step)")
+    # in-process GPU eval (base vs GT-skel) + CPU metrics daemon
+    ap.add_argument("--gpu-eval-csv", default="",
+                    help="eval csv for in-process GPU ctrl eval; empty = disabled")
+    ap.add_argument("--gpu-eval-every", type=int, default=2500)
+    ap.add_argument("--gpu-eval-n", type=int, default=100)
+    ap.add_argument("--gpu-eval-steps", type=int, default=50)
+    ap.add_argument("--gpu-eval-cfg", type=float, default=4.0)
+    ap.add_argument("--gpu-eval-img-root", default="final_imgs_256")
+    ap.add_argument("--gpu-eval-skel-root", default="final_skeleton_d3")
+    ap.add_argument("--gpu-eval-dit-batch", type=int, default=16)
+    ap.add_argument("--gpu-eval-vae-batch", type=int, default=16)
     args, _ = ap.parse_known_args()
     if args.config:
         cfg = json.load(open(args.config, encoding="utf-8"))
@@ -157,7 +178,9 @@ def main():
             model_name=args.model, ckpt_path=args.main_ckpt if args.main_ckpt and os.path.exists(args.main_ckpt) else None,
             device=device, num_calligraphers=args.num_calligraphers, num_characters=args.num_characters,
             condition_fusion=args.condition_fusion, callig_embed_dim=args.callig_embed_dim,
-            char_embed_dim=args.char_embed_dim, cond_drop_all_prob=args.cond_drop_all_prob,
+            char_embed_dim=args.char_embed_dim, char_proj_mode=args.char_proj_mode,
+            freeze_char_table=args.freeze_char_table,
+            cond_drop_all_prob=args.cond_drop_all_prob,
             cond_drop_one_prob=args.cond_drop_one_prob, use_checkpoint=args.use_checkpoint)
         main_model.eval()
         ctrl = ControlNetDiT(main_model, cond_in_channels=args.skel_cond_channels,
@@ -199,7 +222,8 @@ def main():
         ema_ctrl = copy.deepcopy(ctrl).eval()
         requires_grad(ema_ctrl, False)
 
-    diffusion = create_diffusion(timestep_respacing="")
+    diffusion = create_diffusion_or_flow(
+        timestep_respacing="", diffusion_type=args.diffusion_type)
 
     optimizer = torch.optim.AdamW(trainable, lr=args.lr, weight_decay=args.weight_decay)
 
@@ -231,6 +255,9 @@ def main():
             ctrl_keys = {k: v for k, v in ctrl_src.items() if k.startswith("ctrl_encoder")}
             c_miss, c_unexp = ctrl.load_state_dict(ctrl_keys, strict=False)
             logger.info(f"[resume] ctrl_encoder: {len(ctrl_keys)} keys (missing={len(c_miss)}, unexpected={len(c_unexp)})")
+            if ema_ctrl is not None:
+                e_miss, e_unexp = ema_ctrl.load_state_dict(ctrl_keys, strict=False)
+                logger.info(f"[resume] ema_ctrl_encoder: {len(ctrl_keys)} keys (missing={len(e_miss)}, unexpected={len(e_unexp)})")
         # Load optimizer state
         if ck.get("optimizer"):
             try:
@@ -251,6 +278,20 @@ def main():
         ctrl.to(device)
         if ema_ctrl:
             ema_ctrl.to(device)
+
+    # ---- In-process GPU eval setup (uses this process's GPU memory) ----
+    gpu_eval_cache = None
+    gpu_eval_vae = None
+    if args.gpu_eval_csv and os.path.exists(args.gpu_eval_csv):
+        from diffusers.models import AutoencoderKL
+        gpu_eval_vae = AutoencoderKL.from_pretrained(
+            "pretrained_models/sd-vae-ft-ema").to(device).eval()
+        latent_spatial = 32  # DiT-S/2 latent 4x32x32
+        gpu_eval_cache = ictrl.prepare_ctrl_eval_cache(
+            args.gpu_eval_csv, args.gpu_eval_img_root, args.gpu_eval_skel_root,
+            256, args.gpu_eval_n, 8, 4, 0.18215)
+        logger.info(f"[gpu-eval] cache ready: {args.gpu_eval_csv} n={args.gpu_eval_n} "
+                    f"(eval every {args.gpu_eval_every} steps)")
 
     ts = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
     exp_dir = os.path.join(args.results_dir, f"{ts}-{args.experiment_name}")
@@ -284,7 +325,11 @@ def main():
                 skel = torch.where(drop.view(-1, 1, 1, 1).expand_as(skel),
                                   torch.zeros_like(skel), skel)
 
-            t = torch.randint(0, diffusion.num_timesteps, (x_latent.shape[0],), device=device)
+            # flow: t ∈ [0,1) 连续 (sample_t); DDPM: t ∈ {0,...,T-1} 整数 (randint)
+            if getattr(diffusion, "is_flow", False):
+                t = diffusion.sample_t(x_latent.shape[0], device)
+            else:
+                t = torch.randint(0, diffusion.num_timesteps, (x_latent.shape[0],), device=device)
             model_kwargs = dict(y_callig=y_callig, y_char=y_char, cond=skel)
 
             with torch.autocast("cuda", dtype=torch.bfloat16):
@@ -353,6 +398,20 @@ def main():
                 # 写 .done 标记, 供 auto_eval_cpu 确认 ckpt 写完整
                 open(os.path.join(ckpt_dir, f"{step:07d}.pt") + ".done", "w").close()
                 logger.info(f"[save] {step}")
+
+                # In-process GPU eval (base vs GT-skel) -> pending marker for CPU daemon
+                if gpu_eval_cache is not None and step % args.gpu_eval_every == 0:
+                    _eval_model = ema_ctrl if ema_ctrl is not None else ctrl
+                    try:
+                        ictrl.run_ctrl_pair_eval(
+                            _eval_model, gpu_eval_vae, diffusion, gpu_eval_cache,
+                            device, step, ckpt_dir,
+                            ddim_steps=args.gpu_eval_steps, cfg_scale=args.gpu_eval_cfg,
+                            dit_batch=args.gpu_eval_dit_batch,
+                            vae_batch=args.gpu_eval_vae_batch)
+                    except Exception as _e:
+                        logger.warning(f"[gpu-eval] step {step} FAILED: {_e}")
+
                 if args.ckpt_keep > 0:
                     pts = sorted(glob.glob(os.path.join(ckpt_dir, "*.pt")))
                     for p in pts[:-args.ckpt_keep]:

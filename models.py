@@ -1014,6 +1014,11 @@ def DiT_2Cond_XS_2(**kwargs):
     # 适合小数据量（3top30 仅 3.8 万图）防过拟合；transformer 层从 12→8。
     return DiT_2Cond(depth=8, hidden_size=384, patch_size=2, num_heads=6, **kwargs)
 
+def DiT_2Cond_WS_2(**kwargs):
+    # 宽体变体：类别多时加宽 hidden 而非加深 depth。depth=8, hidden=768, 12 头。
+    # 参数约 70M（2.3× S/2），patch=2 保持精细位置编码，适合类别区分任务。
+    return DiT_2Cond(depth=8, hidden_size=768, patch_size=2, num_heads=12, **kwargs)
+
 def DiT_2Cond_S_2(**kwargs):
     return DiT_2Cond(depth=12, hidden_size=384, patch_size=2, num_heads=6, **kwargs)
 
@@ -1035,6 +1040,7 @@ def DiT_2Cond_XL_2(**kwargs):
 
 DiT_2Cond_models = {
     'DiT-2Cond-XS/2': DiT_2Cond_XS_2,
+    'DiT-2Cond-WS/2': DiT_2Cond_WS_2,
     'DiT-2Cond-S/2': DiT_2Cond_S_2,
     'DiT-2Cond-S/4': DiT_2Cond_S_4,
     'DiT-2Cond-S/8': DiT_2Cond_S_8,

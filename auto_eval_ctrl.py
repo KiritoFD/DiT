@@ -48,15 +48,19 @@ def log(msg):
 # ---------------------------------------------------------------------------
 # 模型构建 (ControlNet: frozen main 195k + ctrl ckpt, 或 from-scratch main+ctrl)
 # ---------------------------------------------------------------------------
-def build_main_model(device="cpu", from_scratch=False, main_ckpt=None):
-    """构建主模型. from_scratch=True 时不加载 195k (随机初始化, 等待 ckpt 覆盖)."""
+def build_main_model(device="cpu", from_scratch=False, main_ckpt=None,
+                     char_embed_dim=256, char_proj_mode="full",
+                     freeze_char_table=False):
+    """构建主模型. from_scratch=True 时不加载 pretrained (随机初始化, 等待 ckpt 覆盖)."""
     from controlnet_dit import load_main_model
     ckpt_path = None if from_scratch else (main_ckpt or DEFAULT_MAIN_CKPT)
     model = load_main_model(
         model_name="DiT-2Cond-S/2", ckpt_path=ckpt_path, device=device,
         num_calligraphers=1011, num_characters=35130,
         condition_fusion="factorized_add", callig_embed_dim=128,
-        char_embed_dim=256, cond_drop_all_prob=0.05, cond_drop_one_prob=0.25,
+        char_embed_dim=char_embed_dim, char_proj_mode=char_proj_mode,
+        freeze_char_table=freeze_char_table,
+        cond_drop_all_prob=0.05, cond_drop_one_prob=0.25,
         use_checkpoint=False)
     model.eval()
     return model
@@ -402,11 +406,20 @@ def main():
                     help="from-scratch 模式: 不加载 195k 主模型 (ckpt 自带 main 权重)")
     ap.add_argument("--main-ckpt", default=None,
                     help="warm-start 主模型 ckpt (默认 195k)")
+    ap.add_argument("--char-embed-dim", type=int, default=256,
+                    help="主模型 char_embed_dim (s18 flow=384)")
+    ap.add_argument("--char-proj-mode", default="full",
+                    help="主模型 char_proj_mode ('ln_only' for DINO 384)")
+    ap.add_argument("--freeze-char-table", action="store_true",
+                    help="冻结 y_char_embedder table (DINO init)")
+    ap.add_argument("--diffusion-type", default="ddpm", choices=["ddpm", "flow"],
+                    help="采样 diffusion 类型 (main 模型训练类型)")
     args = ap.parse_args()
 
     device = torch.device(args.device if args.device == "cuda" and torch.cuda.is_available() else "cpu")
     log(f"[init] device={device}, eval_csv={args.eval_csv}, n={args.eval_n}, "
-        f"from_scratch={args.from_scratch}")
+        f"from_scratch={args.from_scratch}, diffusion_type={args.diffusion_type}, "
+        f"char_embed_dim={args.char_embed_dim}, char_proj_mode={args.char_proj_mode}")
 
     results_dir = os.path.abspath(args.results_dir)
     os.makedirs(results_dir, exist_ok=True)
@@ -414,7 +427,10 @@ def main():
     # 加载共享组件 (只一次): 主模型 + ctrl shell + VAE + cache + diffusion
     log("[init] building main model ...")
     main_model = build_main_model(device, from_scratch=args.from_scratch,
-                                   main_ckpt=args.main_ckpt)
+                                   main_ckpt=args.main_ckpt,
+                                   char_embed_dim=args.char_embed_dim,
+                                   char_proj_mode=args.char_proj_mode,
+                                   freeze_char_table=args.freeze_char_table)
     log("[init] building ctrl shell ...")
     ctrl = build_ctrl(main_model, device, train_ctrl_only=not args.from_scratch)
     log("[init] loading VAE ...")
@@ -424,8 +440,9 @@ def main():
     if device.type == "cuda":
         cache["gts"] = cache["gts"].to(device)
         cache["skels"] = cache["skels"].to(device)
-    from diffusion import create_diffusion
-    diffusion = create_diffusion(str(args.steps))
+    from diffusion import create_diffusion_or_flow
+    diffusion = create_diffusion_or_flow(str(args.steps),
+                                         diffusion_type=args.diffusion_type)
 
     cfg_params = {"steps": args.steps, "cfg": args.cfg,
                   "seed": args.seed, "batch": args.batch}
