@@ -5,7 +5,9 @@
 
 from . import gaussian_diffusion as gd
 from .respace import SpacedDiffusion, space_timesteps
-from .flow_matching import create_flow_matching, FlowMatching
+from .flow_matching import (
+    create_flow_matching, FlowMatching, FLOW_PARAMS, FLOW_PARAM_ALIASES,
+)
 from .losses import (
     StructDecoder, LatentStructLoss, EdgeGradientLoss, SkeletonLoss, REPALoss,
 )
@@ -67,12 +69,39 @@ def create_diffusion_or_flow(
     diffusion_type = (diffusion_type or "ddpm").lower()
     if diffusion_type in ("flow", "flow_matching", "fm"):
         steps = flow_steps if flow_steps else timestep_respacing
+        # create_flow_matching 会自行过滤掉非 flow 参数，因此这里可以整包转发。
         return create_flow_matching(steps, **kwargs)
     return create_diffusion(timestep_respacing, **kwargs)
 
 
+def flow_kwargs_from(args):
+    """从 argparse Namespace（或 dict / 任意对象）里抽取 flow 相关配置。
+
+    目的：让 train.py / eval 各处构造 diffusion 时拿到**同一份** flow 配置。
+    过去 eval 侧只传 ``timestep_respacing``，导致训练用 logit-normal + Heun、
+    推理却退回默认参数这种静默不一致。
+
+    只返回显式存在且不为 None 的键，缺失项由 FlowMatching 的默认值兜底。
+    """
+    get = args.get if isinstance(args, dict) else (lambda k, d=None: getattr(args, k, d))
+    out = {}
+    for k in FLOW_PARAMS:
+        if k in ("num_steps", "sigma_min"):
+            continue  # 步数由调用方按场景决定（train vs eval），不在这里统一
+        v = get(k, None)
+        if v is not None:
+            out[k] = v
+    # 别名：CLI/config 里用 flow_sampler，避免和数据采样器 --sampler 撞 dest。
+    for alias, real in FLOW_PARAM_ALIASES.items():
+        v = get(alias, None)
+        if v is not None:
+            out[real] = v
+    return out
+
+
 __all__ = [
     "create_diffusion", "create_diffusion_or_flow", "create_flow_matching",
+    "flow_kwargs_from", "FLOW_PARAMS", "FLOW_PARAM_ALIASES",
     "SpacedDiffusion", "space_timesteps", "FlowMatching",
     "StructDecoder", "LatentStructLoss", "EdgeGradientLoss", "SkeletonLoss", "REPALoss",
 ]
