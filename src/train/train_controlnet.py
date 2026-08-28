@@ -136,7 +136,7 @@ def parse_args():
     ap.add_argument("--gpu-eval-every", type=int, default=2500)
     ap.add_argument("--gpu-eval-n", type=int, default=100)
     ap.add_argument("--gpu-eval-steps", type=int, default=50)
-    ap.add_argument("--gpu-eval-cfg", type=float, default=4.0)
+    ap.add_argument("--gpu-eval-cfg", type=float, default=1.7, help="flow ctrl 推理最佳 CFG ~1.7")
     ap.add_argument("--gpu-eval-img-root", default="final_imgs_256")
     ap.add_argument("--gpu-eval-skel-root", default="final_skeleton_d3")
     ap.add_argument("--gpu-eval-dit-batch", type=int, default=16)

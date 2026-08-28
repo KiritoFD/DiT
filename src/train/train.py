@@ -223,6 +223,7 @@ def main(args):
             char_embed_dim=args.char_embed_dim,
             cond_drop_all_prob=args.cond_drop_all_prob,
             cond_drop_one_prob=args.cond_drop_one_prob,
+            cond_drop_which_glyph_prob=getattr(args, 'cond_drop_which_glyph_prob', 0.5),
             skel_head_enabled=getattr(args, 'w_skel_head', 0) > 0,
             use_glyph_cond=getattr(args, 'w_glyph_cond', 0) > 0,
             glyph_scale_init=getattr(args, 'glyph_scale_init', 0.4),
@@ -1310,7 +1311,11 @@ def main(args):
     logger.info("Done!")
     cleanup()
 
-if __name__ == "__main__":
+def main_from_cli(argv=None):
+    """CLI entry: build the argparse parser (config-file defaults + CLI overrides),
+    parse, and run main(args). Used by `python train.py` (root launcher) and
+    `python -m src.train.train`.
+    """
     parser = argparse.ArgumentParser()
     parser.add_argument("--data-csv", type=str, default="train.csv",
                         help="Path to the training CSV (default from config.json).")
@@ -1355,6 +1360,9 @@ if __name__ == "__main__":
                         help="Probability of dropping all factors for CFG.")
     parser.add_argument("--cond-drop-one-prob", type=float, default=0.0,
                         help="Probability of dropping exactly one uniformly selected factor.")
+    parser.add_argument("--cond-drop-which-glyph-prob", type=float, default=0.5,
+                        help="drop-one 时选择 drop callig (→glyph-only, 学字符内容分) 的概率; "
+                             "书家维度样本充足, 字符维度才是难点, 建议 >0.5. 0.5=均匀.")
     parser.add_argument("--num-scripts", type=int, default=12,
                         help="Number of script classes (only used in 3cond mode).")
     parser.add_argument("--use-checkpoint", type=_str_to_bool, default=True,
@@ -1460,8 +1468,8 @@ if __name__ == "__main__":
                         help="Number of test samples for auto-eval (free-sampling).")
     parser.add_argument("--eval-steps", type=int, default=50,
                         help="DDIM steps for free-sampling auto-eval.")
-    parser.add_argument("--eval-cfg", type=float, default=4.0,
-                        help="CFG scale for free-sampling auto-eval.")
+    parser.add_argument("--eval-cfg", type=float, default=1.7,
+                        help="CFG scale for free-sampling auto-eval (flow 最佳 ~1.7).")
     parser.add_argument("--eval-seed", type=int, default=0,
                         help="Seed for free-sampling auto-eval noise.")
     parser.add_argument("--eval-batch", type=int, default=16,
@@ -1563,5 +1571,10 @@ if __name__ == "__main__":
             action.default = _coerce(config_defaults[action.dest], action.default, action.type)
             action.required = False
 
-    args = parser.parse_args()
+    args = parser.parse_args(argv)
     main(args)
+    return args
+
+
+if __name__ == "__main__":
+    main_from_cli()

@@ -4,7 +4,7 @@
 用法不变:
     python train.py --config exp_s18_s_flow.json [--diffusion-type flow]
 """
-from src.train.train import main
+from src.train.train import main_from_cli
 
 if __name__ == "__main__":
-    main()
+    main_from_cli()

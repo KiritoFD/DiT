@@ -18,6 +18,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import math
+import os
 
 
 # ---------------------------------------------------------------------------
@@ -267,6 +268,7 @@ def load_main_model(model_name="DiT-2Cond-S/2", ckpt_path=None, device="cpu",
                     callig_embed_dim=128, char_embed_dim=256,
                     char_proj_mode="full", freeze_char_table=False,
                     cond_drop_all_prob=0.05, cond_drop_one_prob=0.25,
+                    cond_drop_which_glyph_prob=0.5,
                     use_checkpoint=False, learn_sigma=True):
     """加载已训练主模型 (复用 src.model.dit 工厂)。"""
     from src.model import DiT_2Cond_models
@@ -276,6 +278,7 @@ def load_main_model(model_name="DiT-2Cond-S/2", ckpt_path=None, device="cpu",
         callig_embed_dim=callig_embed_dim, char_embed_dim=char_embed_dim,
         char_proj_mode=char_proj_mode, freeze_char_table=freeze_char_table,
         cond_drop_all_prob=cond_drop_all_prob, cond_drop_one_prob=cond_drop_one_prob,
+        cond_drop_which_glyph_prob=cond_drop_which_glyph_prob,
         use_checkpoint=use_checkpoint, learn_sigma=learn_sigma)
     if ckpt_path:
         ck = torch.load(ckpt_path, map_location="cpu", weights_only=False)

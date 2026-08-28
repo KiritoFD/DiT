@@ -672,6 +672,7 @@ class DiT_2Cond(nn.Module):
         char_embed_dim=None,
         cond_drop_all_prob=0.05,
         cond_drop_one_prob=0.0,
+        cond_drop_which_glyph_prob=0.5,
         skel_head_enabled=False,
         use_glyph_cond=False,
         glyph_scale_init=0.4,
@@ -688,6 +689,7 @@ class DiT_2Cond(nn.Module):
         self.condition_fusion = condition_fusion
         self.cond_drop_all_prob = float(cond_drop_all_prob)
         self.cond_drop_one_prob = float(cond_drop_one_prob)
+        self.cond_drop_which_glyph_prob = float(cond_drop_which_glyph_prob)
         self.skel_head_enabled = bool(skel_head_enabled)
         self.use_glyph_cond = bool(use_glyph_cond)
         self.glyph_scale_init = float(glyph_scale_init)
@@ -864,15 +866,17 @@ class DiT_2Cond(nn.Module):
             #   - drop_one & which=1 -> callig-only（drop glyph，学 style score s_A）
             #   - 其余               -> full（callig+glyph，学 joint score）
             # 默认 0.10/0.30 配比 => full 60% / callig-only 15% / glyph-only 15% / uncond 10%。
+            # 书家维度样本充足而字符维度才是难点: cond_drop_which_glyph_prob 让 drop-one
+            # 偏向 glyph-only（drop callig 保 char），把专门训练预算给 5461 个字符内容分。
             if self.training and (self.cond_drop_all_prob > 0 or self.cond_drop_one_prob > 0):
                 r = torch.rand(y_callig.shape[0], device=y_callig.device)
                 drop_all = r < self.cond_drop_all_prob
                 drop_one = ((r >= self.cond_drop_all_prob)
                             & (r < self.cond_drop_all_prob + self.cond_drop_one_prob))
-                which = torch.randint(0, 2, y_callig.shape, device=y_callig.device)
-                y_callig = torch.where(drop_all | (drop_one & (which == 0)),
+                which_glyph = torch.rand(y_callig.shape[0], device=y_callig.device) < self.cond_drop_which_glyph_prob
+                y_callig = torch.where(drop_all | (drop_one & which_glyph),
                                        self.y_callig_embedder.num_classes, y_callig)
-                y_char = torch.where(drop_all | (drop_one & (which == 1)),
+                y_char = torch.where(drop_all | (drop_one & ~which_glyph),
                                      self.y_char_embedder.num_classes, y_char)
             e_callig = self.y_callig_embedder(y_callig, False)
             e_char = self.y_char_embedder(y_char, False)
@@ -884,10 +888,10 @@ class DiT_2Cond(nn.Module):
                 drop_all = r < self.cond_drop_all_prob
                 drop_one = ((r >= self.cond_drop_all_prob)
                             & (r < self.cond_drop_all_prob + self.cond_drop_one_prob))
-                which = torch.randint(0, 2, y_callig.shape, device=y_callig.device)
-                y_callig = torch.where(drop_all | (drop_one & (which == 0)),
+                which_glyph = torch.rand(y_callig.shape[0], device=y_callig.device) < self.cond_drop_which_glyph_prob
+                y_callig = torch.where(drop_all | (drop_one & which_glyph),
                                        self.y_callig_embedder.num_classes, y_callig)
-                y_char = torch.where(drop_all | (drop_one & (which == 1)),
+                y_char = torch.where(drop_all | (drop_one & ~which_glyph),
                                      self.y_char_embedder.num_classes, y_char)
             e_callig = self.y_callig_embedder(y_callig, False)
             e_char = self.y_char_embedder(y_char, False)
