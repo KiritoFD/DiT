@@ -15,6 +15,12 @@ from .lora import (
     inject_lora, upgrade_lora_rank, extract_full_inference,
     extract_lora_and_new_embedders,
 )
+from . import modules
+from .modules import (
+    RMSNorm, SwiGLUFeedForward, Attention as ModernAttention,
+    DiTBlock as ModernDiTBlock, FinalLayer as ModernFinalLayer,
+    PatchEmbed as ModernPatchEmbed,
+)
 
 __all__ = [
     "TimestepEmbedder", "LabelEmbedder", "DiTBlock", "FinalLayer",
@@ -25,4 +31,6 @@ __all__ = [
     "ControlConditionEncoder", "ControlNetDiT", "load_main_model",
     "inject_lora", "upgrade_lora_rank", "extract_full_inference",
     "extract_lora_and_new_embedders",
+    "modules", "RMSNorm", "SwiGLUFeedForward", "ModernAttention",
+    "ModernDiTBlock", "ModernFinalLayer", "ModernPatchEmbed",
 ]

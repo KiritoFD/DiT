@@ -159,3 +159,10 @@ _smoke_data/
 glyph_classifier_ckpts/
 
 _classifier_pixel_data.npz
+
+# ---- v2 鏀归€犳湡鐨勪复鏃?浜х墿鐩綍 ----
+_zs/
+_diag/
+_ot_scratch/
+std_glyph_latent_v2/
+final_latents_mid_clean/

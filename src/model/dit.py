@@ -11,9 +11,16 @@
 
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 import numpy as np
 import math
 from torch.utils.checkpoint import checkpoint
+
+# 现代化组件（RMSNorm / SwiGLU / 2D-RoPE / QK-Norm / SDPA / PatchEmbed / DiTBlock / FinalLayer）
+# DiT_2Cond 使用；DiT / DiT_3Cond 为保持与旧 ckpt 逐位一致仍用 timm 组件。
+from . import modules as M
+
+# 旧版 timm 组件：DiT / DiT_3Cond 仍在用，保留导入以免破坏其它引用。
 from timm.models.vision_transformer import PatchEmbed, Attention, Mlp
 
 
@@ -76,6 +83,31 @@ class LabelEmbedder(nn.Module):
         self.embedding_table = nn.Embedding(num_classes + use_cfg_embedding, hidden_size)
         self.num_classes = num_classes
         self.dropout_prob = dropout_prob
+        # 冻结字符表时，CFG null token 需要"单独"保持可学习 —— 见 freeze_table()。
+        # 为 None 表示未冻结（整表可训练，最后一行本来就参与训练）。
+        self.null_embed = None
+
+    def freeze_table(self):
+        """冻结 [0, num_classes) 的字符表，但让 CFG null token 保持可学习。
+
+        ⚠ 不能写成::
+
+            w.requires_grad_(False)
+            w[-1].requires_grad_(True)     # no-op!
+
+        ``w[-1]`` 是索引产生的**非叶子**张量，对它的 ``requires_grad_(True)``
+        是静默 no-op（已实测：调用后 ``w[-1].requires_grad`` 仍为 False）。
+        旧代码正是这么写的，因此 null token 实际一直被冻结在 N(0,0.02)。
+
+        null token 在 4-way dropout 里被大量使用（cond_drop_one 25% +
+        cond_drop_all 5%），是 CFG uncond 分支的核心，理应可训练。
+        这里把它拆成独立的 ``nn.Parameter``，forward 里用 ``torch.where`` 覆盖，
+        零额外拷贝开销。
+        """
+        w = self.embedding_table.weight
+        w.requires_grad_(False)
+        self.null_embed = nn.Parameter(w[self.num_classes].detach().clone())
+        return self.null_embed
 
     def token_drop(self, labels, force_drop_ids=None):
         """
@@ -92,8 +124,13 @@ class LabelEmbedder(nn.Module):
         use_dropout = self.dropout_prob > 0
         if (train and use_dropout) or (force_drop_ids is not None):
             labels = self.token_drop(labels, force_drop_ids)
-        embeddings = self.embedding_table(labels)
-        return embeddings
+        out = self.embedding_table(labels)
+        if self.null_embed is not None:
+            # 用可学习的 null 参数覆盖最后一行（整表已冻结，否则整表都会更新）
+            null_mask = (labels == self.num_classes)
+            if null_mask.any():
+                out = torch.where(null_mask.unsqueeze(-1), self.null_embed, out)
+        return out
 
 
 #################################################################################
@@ -678,11 +715,25 @@ class DiT_2Cond(nn.Module):
         glyph_scale_init=0.4,
         char_proj_mode="full",
         freeze_char_table=False,
+        # ---- 现代化开关（v2 arch）----
+        # 默认全部开启。全部关闭时与旧实现数值等价（同 seed 可复现旧结果）。
+        norm_type="rms",        # "rms" | "layer"
+        mlp_type="swiglu",      # "swiglu" | "gelu"
+        qk_norm=True,
+        rope=True,              # 2D axial RoPE；False 时退回固定 2D sin-cos 加到 x
+        rope_theta=100.0,
+        attn_impl="sdpa",       # "sdpa" | "eager"
     ):
         super().__init__()
         self.learn_sigma = learn_sigma
         self.use_checkpoint = use_checkpoint
         self.in_channels = in_channels
+        self.norm_type = norm_type
+        self.mlp_type = mlp_type
+        self.qk_norm = bool(qk_norm)
+        self.rope = bool(rope)
+        self.rope_theta = float(rope_theta)
+        self.attn_impl = attn_impl
         self.out_channels = in_channels * 2 if learn_sigma else in_channels
         self.patch_size = patch_size
         self.num_heads = num_heads
@@ -700,7 +751,8 @@ class DiT_2Cond(nn.Module):
         if self.cond_drop_all_prob + self.cond_drop_one_prob > 1:
             raise ValueError("cond_drop_all_prob + cond_drop_one_prob must be <= 1")
 
-        self.x_embedder = PatchEmbed(input_size, patch_size, in_channels, hidden_size, bias=True)
+        # 用 modules 版（自带 RMSNorm/SwiGLU/RoPE/QK-Norm），不再依赖 timm。
+        self.x_embedder = M.PatchEmbed(input_size, patch_size, in_channels, hidden_size, bias=True)
         self.t_embedder = TimestepEmbedder(hidden_size)
 
         if condition_fusion == "factorized_add":
@@ -718,11 +770,28 @@ class DiT_2Cond(nn.Module):
             if char_proj_mode == "ln_only":
                 # DINO 384 直通：char_embed_dim == hidden_size 时，char_proj 只做
                 # LayerNorm 归一化，不再 Linear 投影（省 384*384≈147K 冗余参数）。
-                # 配合 freeze_char_table=True 时 y_char_embedder 表被 DINO 预填充并
-                # 冻结，条件向量就是 DINO 384 本身（L2 归一化 + LayerNorm 尺度稳定）。
+                #
+                # ⚠ 实测问题（见 docs/system/12_dino_diagnosis_20260829.md）：
+                # 冻结 DINO 表的**有效秩只有 34.1 / 384**（PC1 占 26.3% 能量），
+                # 83% 的最近邻落在同一书体，跨书体字符检索 top-1 仅 1.9%。
+                # 也就是说字符分支拿到的信号里"书体"远多于"字符身份"。
+                # 此时 char_proj 只有 LayerNorm 的 2×384 个参数，
+                # **没有任何可学习容量去放大/重组那 34 个有用维度**。
+                # 新配置请优先用 "mlp" 或 "full"。
                 assert char_embed_dim == hidden_size, \
                     f"char_proj_mode='ln_only' requires char_embed_dim==hidden_size (got {char_embed_dim} vs {hidden_size})"
                 self.char_proj = nn.LayerNorm(char_embed_dim)
+            elif char_proj_mode == "mlp":
+                # 推荐模式：给字符分支真正的可学习容量。
+                # LayerNorm -> Linear -> SiLU -> Linear，参数量 ~2*D*D（S/2 上 +295K）。
+                # 输入是近乎低秩的冻结 DINO 向量，一个非线性投影能把有用的那几个
+                # 方向摊到整个 hidden 维上，而不是让 adaLN 直接吃一个 3 维流形。
+                self.char_proj = nn.Sequential(
+                    nn.LayerNorm(char_embed_dim),
+                    nn.Linear(char_embed_dim, hidden_size),
+                    nn.SiLU(),
+                    nn.Linear(hidden_size, hidden_size),
+                )
             else:
                 self.char_proj = nn.Sequential(nn.LayerNorm(char_embed_dim),
                                                nn.Linear(char_embed_dim, hidden_size))
@@ -763,15 +832,33 @@ class DiT_2Cond(nn.Module):
         self.pos_embed = nn.Parameter(torch.zeros(1, num_patches, hidden_size), requires_grad=False)
 
         self.blocks = nn.ModuleList([
-            DiTBlock(hidden_size, num_heads, mlp_ratio=mlp_ratio) for _ in range(depth)
+            M.DiTBlock(hidden_size, num_heads, mlp_ratio=mlp_ratio,
+                       norm_type=norm_type, mlp_type=mlp_type, qk_norm=qk_norm,
+                       attn_impl=attn_impl)
+            for _ in range(depth)
         ])
-        self.final_layer = FinalLayer(hidden_size, patch_size, self.out_channels)
+        self.final_layer = M.FinalLayer(hidden_size, patch_size, self.out_channels,
+                                        norm_type=norm_type)
+
+        # ---- 2D axial RoPE 缓存 ----
+        # persistent=False：不写进 state_dict，避免任何 ckpt key 变化。
+        self.num_patches = num_patches
+        head_dim = hidden_size // num_heads
+        grid = int(round(num_patches ** 0.5))
+        assert grid * grid == num_patches, "RoPE 目前只支持正方形 token grid"
+        if self.rope:
+            cos, sin = M.precompute_rope_2d(grid, head_dim, theta=self.rope_theta)
+            self.register_buffer("rope_cos", cos.float(), persistent=False)
+            self.register_buffer("rope_sin", sin.float(), persistent=False)
+        else:
+            self.register_buffer("rope_cos", None, persistent=False)
+            self.register_buffer("rope_sin", None, persistent=False)
         # 骨架辅助头（训练引导用，推理不用）：从 final_layer 前的 block 特征
         # 并行解出 1×32×32 latent 骨架预测，与 GT latent 骨架对齐。
         self.skel_head = None
         if self.skel_head_enabled:
             self.skel_head = nn.Sequential(
-                nn.LayerNorm(hidden_size, elementwise_affine=False, eps=1e-6),
+                M.build_norm(norm_type, hidden_size),
                 nn.Linear(hidden_size, patch_size * patch_size, bias=True),
             )
         # 甲2 标准字形条件的 token-add 缩放(可学习, 初始 glyph_scale_init, 让字形条件有存在感)
@@ -788,12 +875,13 @@ class DiT_2Cond(nn.Module):
         if self.freeze_char_table and hasattr(self, "y_char_embedder"):
             # 冻结 char 表：DINO 预填充后不再训练（省 35130×384≈13.5M 训练参数），
             # 但保留最后一行的 CFG uncond 项可学习（它没有 DINO 对应物）。
+            # 具体做法见 LabelEmbedder.freeze_table() —— 旧的
+            # `w[-1].requires_grad_(True)` 是静默 no-op，null token 实际被冻结。
             with torch.no_grad():
                 w = self.y_char_embedder.embedding_table.weight
                 if w.shape[0] > 1:
                     w[-1].normal_(std=0.02)
-            w.requires_grad_(False)
-            w[-1].requires_grad_(True)
+            self.y_char_embedder.freeze_table()
             self._char_table_frozen = True
         else:
             self._char_table_frozen = False
@@ -852,7 +940,13 @@ class DiT_2Cond(nn.Module):
         return_intermediate_layer: int block index (e.g. 8) whose patch features to return for REPA.
                                    When set, returns (output, intermediate_feats) as a tuple.
         """
-        x = self.x_embedder(x) + self.pos_embed  # (N, T, D)
+        x = self.x_embedder(x)  # (N, T, D)
+        if self.rope:
+            # 位置信息由 RoPE 在 attention 内部注入，不再加到残差流上。
+            # 这样 token 幅度不随位置编码偏移，也天然支持不同 grid 的外推。
+            pass
+        else:
+            x = x + self.pos_embed
         if self.use_glyph_cond and self.glyph_embedder is not None and g is not None:
             # 独立 glyph_embedder 把标准字形 latent 编成 (N, D, 16, 16) -> flat tokens (N, 256, D)
             g_tok = self.glyph_embedder(g).flatten(2).transpose(1, 2)  # (N,256,D)
@@ -903,18 +997,20 @@ class DiT_2Cond(nn.Module):
             y_emb = self.cond_fusion(y_concat)
         c = t_emb + y_emb                        # (N, D)
 
+        rope = (self.rope_cos, self.rope_sin) if self.rope else None
+
         intermediate_feats = None
         if self.use_checkpoint:
             for i, block in enumerate(self.blocks):
                 if return_intermediate_layer is not None and i == return_intermediate_layer:
                     # Run this single block eagerly so its output can be captured for REPA.
-                    x = block(x, c)
+                    x = block(x, c, rope=rope)
                     intermediate_feats = x
                 else:
-                    x = checkpoint(lambda *a: block(*a), x, c, use_reentrant=False)
+                    x = checkpoint(lambda *a: block(*a, rope=rope), x, c, use_reentrant=False)
         else:
             for i, block in enumerate(self.blocks):
-                x = block(x, c)
+                x = block(x, c, rope=rope)
                 if return_intermediate_layer is not None and i == return_intermediate_layer:
                     intermediate_feats = x
 
