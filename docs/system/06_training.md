@@ -27,6 +27,8 @@ with torch.autocast("cuda", dtype=torch.bfloat16):
 # 7) 每 ckpt_every: 存 ckpt(+.done) → 轮换 ckpt_keep → in-process GPU eval
 ```
 
+**存盘节奏细节**（`train.py` line 1172-1176）：前 5000 步每 **1000** 存一次（快速出第一组可评测 ckpt）；之后按 `ckpt_every`（相对 5000 偏移）存 —— 示例：ckpt_every=2500 → 1000/2000/…/5000, 7500, 10000, …
+
 ### 1.3 EMA 与推理评测的换权重机制
 
 - `use_ema=true`（默认 0.9999 + warmup）：`ema_model = deepcopy(model).eval()`，每步 `update_ema` 更新参数与浮点 buffer。

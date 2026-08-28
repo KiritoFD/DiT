@@ -44,8 +44,18 @@ ssh 4090 "pkill -f 'train.py.*s19_midclean'"
 # 起训练（nohup，先 cd 到项目目录，日志写 /tmp）：
 ssh 4090 "cd /root/Workspace/xy/DiT && nohup /opt/conda/bin/python train.py --config s19_midclean_s_flow.json > /tmp/s19_midclean_train.log 2>&1 &"
 
+# 起 CPU 指标 daemon（主模型 eval 需要）——⚠️ results_dir 必须传绝对路径
+# （daemon 的 BASE=src/eval，相对路径会解析错、扫不到任何 ckpt 目录）：
+ssh 4090 "cd /root/Workspace/xy/DiT && nohup /opt/conda/bin/python src/eval/eval_metrics_daemon.py /root/Workspace/xy/DiT/5script/results/s19_midclean_s_flow > /tmp/eval_metrics_daemon_s19.log 2>&1 &"
+
 # 起 CPU 指标 daemon（ControlNet eval 需要）：
 ssh 4090 "cd /root/Workspace/xy/DiT && nohup /opt/conda/bin/python src/eval/eval_ctrl_metrics_daemon.py > /tmp/eval_ctrl_daemon.log 2>&1 &"
+
+# 注意：
+# - daemon 会扫描 series 下**所有** run 目录的 eval_pending_*.json，积压会串行处理
+#   （271 图 / eval ≈ 50s + LPIPS 加载一次）。
+# - 重启 daemon 用字符类防自杀：pgrep -f 'eval_metrics_daem[o]n'
+# - 训练刚重启、daemon 还没配对应 series 时，pending 会一直积压 → 记得对齐。
 ```
 
 同步单个文件 / 目录：
@@ -86,5 +96,5 @@ scp -r src 4090:/root/Workspace/xy/DiT/
 1. `tail /tmp/s19_midclean_train.log`：loss 应单调下降；异常跳变先查是否 NaN/梯度。
 2. `nvidia-smi`：显存稳定 ~20.9G，无其他进程占卡。
 3. `ls {results_dir}/*/checkpoints`：按时出 ckpt（s19 每 2500 步）。
-4. `eval_auto_*.json` 存在性与趋势（主模型 daemon 每 ckpt 出一次）。
+4. `eval_auto_*.json` 存在性与趋势：确认 `eval_metrics_daemon` 指向**当前实验的 results 目录**（绝对路径），否则 pending 积压、零指标输出（s19 曾因 daemon 还在盯旧 s18 目录而漏出 6 个指标，已修正并补启动命令）。
 5. 网络断了重连后：先 `echo alive` 确认 ssh，再继续下一步，不要盲目重启训练。

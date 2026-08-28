@@ -13,14 +13,16 @@
 | 2026-08-28 重构 | 核心代码分层 `src/{model,loss,train,eval,utils}` + 根 shim；eval/inference 统一核心；**统一时间步采样**修复 ControlNet bug 类 |
 | S19（当前） | **mid-clean 数据集 + 4-way dropout 配比（which_glyph=0.75）+ flow 预训练** |
 
-## 2. 当前运行状态（2026-08-28 14:37 重启后）
+## 2. 当前运行状态（2026-08-28 15:20 复查）
 
 - **s19 mid-clean 预训练 RUNNING**：
-  - 配置：`s19_midclean_s_flow.json` → `5script/results/s19_midclean_s_flow/`
-  - 模型 DiT-2Cond-S/2 33M，batch 240，~3.36 steps/s，显存 ~20.88G/24G
-  - loss 2.42 → 1.31 @ step 200（正常收敛）
-  - `diffusion_type=flow`、`eval_cfg=1.7`、dropout 0.05/0.25/**0.75** 全部在 resolved_config.json 确认
-  - **不要重启**；首个 ckpt 在 step 2500（含 in-process GPU eval + CPU daemon 指标）
+  - 配置：`s19_midclean_s_flow.json` → `5script/results/s19_midclean_s_flow/20260828-143711-s19-midclean-s-flow/`
+  - 模型 DiT-2Cond-S/2 33M，batch 240，~3.37 steps/s，显存 ~21.6G/24G
+  - step ~7680：Total loss 0.45（正常收敛），LR 2e-4，EMA 0.9988
+  - 存盘节奏：**前 5000 步每 1000 存，之后每 ckpt_every=2500**（相对 5000 偏移）→ ckpt 1000/2000/…/7500
+  - `diffusion_type=flow`、`eval_cfg=1.7`、dropout 0.05/0.25/**0.75** 已在 resolved_config.json 确认
+  - **不要重启**；in-process GPU eval + CPU daemon 指标链路已修通（step 1000 已出：MSE 0.9233 / SSIM 0.4121 / SkelIoU 0.0147 / LPIPS 0.5320，早期步属正常水平）
+- **eval_metrics_daemon**：已按新路径（`src/eval/eval_metrics_daemon.py` + **绝对路径** results_dir）重启，处理 s19 积压的 6 个 pending。
 - **ControlNet flow 重训（待办）**：等 s19 聚类后，以 s19 ckpt 为 `main_ckpt` 从干净起点重训（统一 `sample_t`、gpu_eval_cfg=1.7、in-process ctrl eval + step_tag daemon）。旧坏训练目录已删除。
 - **eval_ctrl_metrics_daemon**：目前未启动（无 ctrl 在跑）；ctrl 训练启动时需同时拉起。
 
