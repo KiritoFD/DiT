@@ -24,7 +24,7 @@ import platform
 import math
 
 from src.model import DiT_2Cond_models, DiT_3Cond_models
-from src.loss import create_diffusion_or_flow
+from src.loss import create_diffusion_or_flow, flow_kwargs_from
 from diffusers.models import AutoencoderKL
 from src.utils import find_model
 
@@ -213,11 +213,25 @@ def main(args):
         if args.model not in DiT_2Cond_models:
             raise ValueError(f"cond_mode=2cond but model '{args.model}' is not a 2Cond model. "
                              f"Use one of {list(DiT_2Cond_models.keys())}.")
+        # flow matching 没有方差头：learn_sigma=False 时 out_channels == in_channels。
+        # 若为 True（旧默认），final_layer 会多输出 C 个通道，而
+        # FlowMatching.training_losses 只取前 C 个 —— 后 C 个通道零初始化且
+        # **永远收不到梯度**，白白浪费参数并污染 out_channels 语义。
+        _diffusion_type = str(getattr(args, 'diffusion_type', 'ddpm')).lower()
+        _ls = getattr(args, 'learn_sigma', None)
+        _learn_sigma = bool(_ls) if _ls is not None else \
+            _diffusion_type not in ('flow', 'flow_matching', 'fm')
+        # 0/1 -> bool（argparse 用 int 以便 config JSON 里写 0/1）
+        _qk_norm = bool(getattr(args, 'qk_norm', True))
+        _rope = bool(getattr(args, 'rope', True))
+        _heun_batch = bool(getattr(args, 'heun_batch', True))
+
         model = DiT_2Cond_models[args.model](
             input_size=latent_size,
             num_calligraphers=args.num_calligraphers,
             num_characters=args.num_characters,
             use_checkpoint=args.use_checkpoint,
+            learn_sigma=_learn_sigma,
             condition_fusion=args.condition_fusion,
             callig_embed_dim=args.callig_embed_dim,
             char_embed_dim=args.char_embed_dim,
@@ -230,7 +244,20 @@ def main(args):
             in_channels=getattr(args, 'latent_channels', 4),
             char_proj_mode=getattr(args, 'char_proj_mode', 'full'),
             freeze_char_table=getattr(args, 'freeze_char_table', False),
+            # ---- 现代化骨干开关 ----
+            norm_type=getattr(args, 'norm_type', 'rms'),
+            mlp_type=getattr(args, 'mlp_type', 'swiglu'),
+            qk_norm=_qk_norm,
+            rope=_rope,
+            rope_theta=getattr(args, 'rope_theta', 100.0),
+            attn_impl=getattr(args, 'attn_impl', 'sdpa'),
         )
+        logger.info(f"Building 2-Cond model: {args.model} "
+                    f"(learn_sigma={_learn_sigma}, diffusion_type={_diffusion_type}, "
+                    f"arch={getattr(args, 'norm_type', 'rms')}/"
+                    f"{getattr(args, 'mlp_type', 'swiglu')}/"
+                    f"qknorm={_qk_norm}/rope={_rope}, "
+                    f"attn={getattr(args, 'attn_impl', 'sdpa')})")
         logger.info(f"Building 2-Cond model: {args.model} "
                     f"(callig={args.num_calligraphers}, glyph/char={args.num_characters}, "
                     f"fusion={args.condition_fusion}, dims={args.callig_embed_dim}/"
@@ -258,21 +285,80 @@ def main(args):
             logger.warning(f"[dino-init] shape mismatch: dino={_emb.shape} vs "
                            f"char_embed_dim={_table.shape[1]} — skipping DINO init.")
         else:
+            _emb = _emb.astype(np.float32)
+
+            # 未知行的填充向量必须在 centering **之前**算：centering 后每个 script
+            # 内部均值为 0，全体均值也趋近 0（实测 norm 仅 0.023），是个退化向量。
+            # 用未中心化的 DINO 均值并 L2 归一化 -> norm=1.0，与已知行同量级，
+            # 与已知行的平均余弦 +0.315（已知行两两之间平均 +0.115），
+            # 即"一个居中的典型字形"，比 N(0,0.02) 随机噪声(余弦≈0, 等同于随机字)好得多。
+            _fill_vec = _emb.mean(0)
+            _fill_vec = _fill_vec / max(float(np.linalg.norm(_fill_vec)), 1e-12)
+
+            # ---- (1) per-script centering（可选，实测有效）--------------------
+            # 冻结 DINO 表被"书体"主导：有效秩只有 34.1/384（PC1 占 26.3% 能量），
+            # 83% 的最近邻是同一书体，跨书体字符检索 top-1 仅 1.9%。
+            # 而书体信息本该由 y_callig_embedder 提供，char 分支里的书体分量
+            # 既是冗余也是噪声。减去每个书体的均值后：
+            #   有效秩 34.1 → 57.0，ret@1 1.9% → 2.6%，ret@5 4.2% → 6.8%，
+            #   书体泄漏 83.0% → 77.9%。
+            if getattr(args, 'dino_per_script_center', 0):
+                _sids = np.array([int(g[0]) for g in _glyphs])
+                for _s in np.unique(_sids):
+                    _m = _sids == _s
+                    if _m.sum() > 1:
+                        _emb[_m] -= _emb[_m].mean(0, keepdims=True)
+                _n = np.linalg.norm(_emb, axis=1, keepdims=True)
+                _emb = _emb / np.maximum(_n, 1e-12)
+                logger.info(f"[dino-init] per-script centering applied "
+                            f"({len(np.unique(_sids))} scripts) + L2 renormalized")
+
             _loaded = 0
             _dropped = 0
+            _filled_rows = []
             with torch.no_grad():
                 for _gi, (_sid, _cid) in enumerate(_glyphs):
                     _gid = int(_sid) * _NUM_CH + int(_cid)
                     if 0 <= _gid < _table.shape[0] and _gi < _emb.shape[0]:
                         _table[_gid].copy_(torch.from_numpy(_emb[_gi]).float())
                         _loaded += 1
+                        _filled_rows.append(_gid)
                     else:
                         _dropped += 1
+
+                # ---- (2) 未命中行：用 DINO 均值填充，而不是留随机噪声 ----------
+                # y_char_embedder 有 num_characters=35130 行，而 DINO 只覆盖 20468 个
+                # glyph。未命中的行停留在 nn.Embedding 默认 N(0, 0.02) 且被冻结，
+                # 对模型来说就是一个"随机字符"。
+                # 更糟：char_proj='ln_only' 时 LayerNorm 逐样本归一化，把
+                # "已知行范数=1.0" 和 "未知行范数≈0.39" 这个唯一可辨的线索也抹掉了
+                # —— 模型在数值上无法区分。用 DINO 均值填充至少给出一个
+                # "平均字形"的合理先验（eval_unseen 上有 6.6% 的 glyph 落在这里）。
+                _fill = getattr(args, 'dino_fill_unknown', 1)
+                if _fill and _filled_rows:
+                    # 注意：embedding_table 有 num_classes + 1 行，最后一行是
+                    # LabelEmbedder 的 CFG null token，**绝不能覆盖**（否则 CFG 失效）。
+                    _n_classes = model.y_char_embedder.num_classes
+                    _mean = torch.from_numpy(_fill_vec).to(_table.device, _table.dtype)
+                    _known = set(_filled_rows)
+                    _n_unknown = _n_classes - len(_known)
+                    if _n_unknown > 0:
+                        # 只填充 [0, num_classes) 区间内未被 DINO 命中的行
+                        _unknown_rows = [r for r in range(_n_classes) if r not in _known]
+                        _rows_t = torch.as_tensor(_unknown_rows, device=_table.device)
+                        _table.index_copy_(0, _rows_t,
+                                           _mean[None].expand(len(_unknown_rows), -1))
+                        logger.info(f"[dino-init] filled {_n_unknown} unknown rows "
+                                    f"(of {_n_classes} classes) with the L2-normalized DINO "
+                                    f"mean vector (norm=1.0, was: frozen N(0,0.02) noise with "
+                                    f"~0 cosine to all real glyphs); "
+                                    f"CFG null token (row {_n_classes}) untouched.")
+
             logger.info(f"[dino-init] injected {_loaded} glyph embeddings into "
                         f"y_char_embedder ({_emb.shape[0]} in vocab, {_dropped} out-of-range), "
                         f"table={tuple(_table.shape)}, L2-normalized DINO (glyph-averaged), "
-                        f"char_proj: LayerNorm({_table.shape[1]}) -> Linear({_table.shape[1]}, "
-                        f"{model.x_embedder.proj.out_channels}).")
+                        f"char_proj_mode={getattr(args, 'char_proj_mode', 'full')}, "
+                        f"freeze_char_table={getattr(args, 'freeze_char_table', False)}.")
     else:
         logger.warning(f"[dino-init] char_dino_embeddings/index not found "
                        f"({_dino_emb_path!r}, {_dino_idx_path!r}) — y_char_embedder stays random init.")
@@ -367,6 +453,18 @@ def main(args):
             elif train_cond_head and ('adaLN' in name or 'final_layer' in name):
                 param.requires_grad = True
 
+        # 上面的白名单用 `'y_char_embedder' in name` 匹配，会**顺带把已冻结的
+        # 字符表重新解冻**（embedding_table.weight 也在 y_char_embedder 名下）。
+        # 这里显式恢复冻结，只保留 LabelEmbedder.null_embed 可训练。
+        if getattr(model, '_char_table_frozen', False) and hasattr(model, 'y_char_embedder'):
+            _ye = model.y_char_embedder
+            _ye.embedding_table.weight.requires_grad_(False)
+            if _ye.null_embed is not None:
+                _ye.null_embed.requires_grad_(True)
+            logger.info("[freeze-char-table] kept y_char_embedder.embedding_table frozen "
+                        f"({_ye.embedding_table.weight.numel():,} params); "
+                        "null_embed stays trainable.")
+
     # report trainable counts
     trainable_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
     frozen_params = sum(p.numel() for p in model.parameters() if not p.requires_grad)
@@ -384,9 +482,15 @@ def main(args):
         logger.info(f"[EMA] enabled with decay={args.ema_decay}")
     if dist.get_world_size() > 1:
         model = DDP(model, device_ids=[rank], find_unused_parameters=True)
+    # flow 的 t 分布 / 求解器 / shift 由 config 指定，训练与 eval 共用同一份
+    # （通过 flow_kwargs_from 抽取），避免两侧静默不一致。
+    _flow_kw = flow_kwargs_from(args)
     diffusion = create_diffusion_or_flow(timestep_respacing="",
-                                         diffusion_type=getattr(args, 'diffusion_type', 'ddpm'))
+                                         diffusion_type=getattr(args, 'diffusion_type', 'ddpm'),
+                                         **_flow_kw)
     _is_flow = getattr(diffusion, 'is_flow', False)
+    if _is_flow:
+        logger.info(f"[flow] {diffusion.describe()}")
     if _is_flow:
         # Flow-Matching mode: disable DDPM-timestep-dependent auxiliaries.
         # Flow trains on t in [0,1] with a velocity target; the structural/
@@ -667,10 +771,31 @@ def main(args):
     early_stop_last_eval_step = -1
     early_stop_stopped = False
     _es_metric = getattr(args, 'early_stop_metric', 'ssim')
-    _es_better = ((lambda a, b: a > b) if _es_metric in ('ssim', 'combo') else (lambda a, b: a < b))
-    # combo (双保险): ssim + skel_iou 各自追踪, 两者都 stale 才停
-    _es_combo_best = {'ssim': None, 'skel_iou': None}
-    _es_combo_stale = {'ssim': 0, 'skel_iou': 0}
+    _es_better = ((lambda a, b: a > b) if _es_metric in ('ssim', 'combo', 'ssim_lpips')
+                  else (lambda a, b: a < b))
+    _es_higher_better = _es_metric in ('ssim', 'combo', 'ssim_lpips')
+    # min_delta：只有超过 best ± min_delta 才算"真改善"。
+    # 默认阈值按各指标的经验噪声量级选取（ssim/skel_iou 都是 0~1 量级，
+    # mse 的量级随数据分布变化，默认不设阈值，需要时再显式配置）。
+    _es_delta = {
+        'ssim': float(getattr(args, 'early_stop_min_delta', 0.002)),
+        'skel_iou': float(getattr(args, 'early_stop_min_delta_iou', 0.005)),
+        'lpips': float(getattr(args, 'early_stop_min_delta_lpips', 0.003)),
+        'mse': float(getattr(args, 'early_stop_min_delta_mse', 0.0)),
+    }
+    logger.info(f"[early-stop] metric={_es_metric}, patience="
+                f"{getattr(args, 'early_stop_patience', 5)}, min_delta={_es_delta}")
+    # 多指标组合（双保险）: 各自追踪 best/stale, **全部** stale 才停。
+    # 用 (key, higher_better) 描述，因此天然支持方向混合
+    #   - 'combo'      : ssim↑ + skel_iou↑   (skel_iou 已被证实不敏感，不推荐)
+    #   - 'ssim_lpips' : ssim↑ + lpips↓      (推荐：像素结构 + 感知距离互补)
+    _ES_SPECS = {
+        'combo': (('ssim', True), ('skel_iou', True)),
+        'ssim_lpips': (('ssim', True), ('lpips', False)),
+    }
+    _es_spec = _ES_SPECS.get(_es_metric)
+    _es_combo_best = {k: None for k, _ in (_es_spec or ())}
+    _es_combo_stale = {k: 0 for k, _ in (_es_spec or ())}
     _es_check_every = int(getattr(args, 'early_stop_check_every', 0))
     if _es_check_every <= 0:
         _es_check_every = max(int(getattr(args, 'ckpt_every', 5000)) // 2, 1000)
@@ -694,7 +819,12 @@ def main(args):
                 d = json.load(_f)
             m, s = d.get("mse"), d.get("ssim")
             k = d.get("skel_iou")
-            if _es_metric == 'combo':
+            lp = d.get("lpips")
+            if _es_metric == 'ssim_lpips':
+                # lpips 是"越低越好"，这里取负号统一成"越大越好"，
+                # 从而复用下面 (key, higher_better=True) 的通用比较逻辑。
+                val = (float(s), -float(lp)) if s is not None and lp is not None else None
+            elif _es_metric == 'combo':
                 val = (float(s), float(k)) if s is not None and k is not None else None
             elif _es_metric == 'ssim':
                 val = float(s) if s is not None else None
@@ -705,36 +835,48 @@ def main(args):
         if val is None:
             return False
 
-        if _es_metric == 'combo':
-            # 双保险: 两个指标各自的新鲜度 (更稳健: 任一刚创新高则整体 stale 清零)
-            s_v, k_v = val
+        if _es_spec is not None:
+            # 双保险: 每个指标各自追踪新鲜度 (任一刚创新高则整体 stale 清零)
+            # min_delta: 只有超过 best + min_delta 才算"真改善"，否则指标噪声
+            # （ssim 在 256² 二值字形上对笔画粗细/亚像素位移极敏感）会不停
+            # 重置 stale 计数器，让早停实际上由噪声驱动。
+            #
+            # 注意 val 里的 lpips 已取负号，故下面对 y_v 的显示要还原。
             improved = False
-            for key, v, hi_better in (('ssim', s_v, True), ('skel_iou', k_v, True)):
+            for (key, _hi), v in zip(_es_spec, val):
                 b = _es_combo_best[key]
-                if b is None or (v > b if hi_better else v < b):
+                dlt = _es_delta.get(key, 0.0)
+                if b is None or v > b + dlt:
                     _es_combo_best[key] = v
                     _es_combo_stale[key] = 0
                     improved = True
                 else:
                     _es_combo_stale[key] += 1
+            # 显示：把取过负号的还原成原值
+            shown = ", ".join(
+                f"{k}={(-v if k == 'lpips' else v):.4f}" for (k, _), v in zip(_es_spec, val))
+            best_shown = ", ".join(
+                f"best_{k}={(-_es_combo_best[k] if k == 'lpips' else _es_combo_best[k]):.4f}"
+                for k, _ in _es_spec)
             if improved:
                 early_stop_stale = 0
-                logger.info(f"[early-stop] eval step {ev_step}: combo ssim={s_v:.4f} "
-                            f"skel_iou={k_v:.4f} (new best ssim={_es_combo_best['ssim']:.4f}, "
-                            f"skel={_es_combo_best['skel_iou']:.4f})")
+                logger.info(f"[early-stop] eval step {ev_step}: {_es_metric} {shown} "
+                            f"-> NEW BEST ({best_shown})")
             else:
                 early_stop_stale += 1
-                logger.info(f"[early-stop] eval step {ev_step}: combo ssim={s_v:.4f} "
-                            f"skel_iou={k_v:.4f} (best ssim={_es_combo_best['ssim']:.4f}, "
-                            f"skel={_es_combo_best['skel_iou']:.4f}, stale {early_stop_stale}/"
+                logger.info(f"[early-stop] eval step {ev_step}: {_es_metric} {shown} "
+                            f"({best_shown}, stale {early_stop_stale}/"
                             f"{args.early_stop_patience})")
                 if early_stop_stale >= int(getattr(args, 'early_stop_patience', 5)):
-                    logger.info(f"[early-stop] combo no improvement for "
+                    logger.info(f"[early-stop] {_es_metric} no improvement for "
                                 f"{early_stop_stale} evals; early stopping.")
                     return True
             return False
 
-        if early_stop_best is None or _es_better(val, early_stop_best):
+        _es_d = _es_delta.get(_es_metric, 0.0)
+        if early_stop_best is None or (
+                (val > early_stop_best + _es_d) if _es_higher_better else
+                (val < early_stop_best - _es_d)):
             early_stop_best = val
             early_stop_stale = 0
             logger.info(f"[early-stop] eval step {ev_step}: {_es_metric}={val:.4f} (new best)")
@@ -1233,52 +1375,51 @@ def main(args):
                                 _eval_steps = int(getattr(args, 'eval_steps', 50))
                                 _eval_cfg = float(getattr(args, 'eval_cfg', 4.0))
                                 _eval_t0 = time()
-                                # Swap to EMA weights for eval
+                                # Swap to EMA weights for eval.
+                                # 注意：必须用 try/finally 保证任何异常路径都能把训练权重
+                                # 还回去。旧实现只在 except 里调了 model.train()，
+                                # 一旦 eval 抛异常，训练会从 EMA 权重继续跑，而 Adam 的
+                                # 一/二阶矩仍对应旧权重 —— 静默的 training corruption。
                                 _orig_sd = {k: v.clone() for k, v in model.state_dict().items()}
-                                if hasattr(model, 'module'):
-                                    model.module.load_state_dict(ema_model.state_dict(), strict=False)
-                                else:
-                                    model.load_state_dict(ema_model.state_dict(), strict=False)
-                                model.eval()
-
-                                run_gpu_eval(
-                                    model if hasattr(model, 'module') else model,
-                                    args, _eval_cache, train_steps,
-                                    checkpoint_dir, device,
-                                    dit_batch=_eval_bs,
-                                    vae_batch=_eval_vae_bs,
-                                    ddim_steps=_eval_steps,
-                                    cfg_scale=_eval_cfg)
-
-                                if _eval_show5_cache is not None:
-                                    run_show5(model if hasattr(model, 'module') else model,
-                                             args, _eval_show5_cache, train_steps,
-                                             checkpoint_dir, device,
-                                             ddim_steps=_eval_steps, cfg_scale=_eval_cfg,
-                                             tag="show5")
-                                if _eval_seen5_cache is not None:
-                                    run_show5(model if hasattr(model, 'module') else model,
-                                             args, _eval_seen5_cache, train_steps,
-                                             checkpoint_dir, device,
-                                             ddim_steps=_eval_steps, cfg_scale=_eval_cfg,
-                                             tag="seen5")
-
-                                # Restore training weights
-                                if hasattr(model, 'module'):
-                                    model.module.load_state_dict(_orig_sd, strict=False)
-                                else:
-                                    model.load_state_dict(_orig_sd, strict=False)
-                                model.train()
-                                del _orig_sd
-                                torch.cuda.empty_cache()
-                                logger.info(f"[auto-eval] step {train_steps} eval done in {time()-_eval_t0:.1f}s "
-                                            f"(GPU inference + PNG save; metrics by CPU daemon)")
-                            except Exception as _ee:
-                                logger.warning(f"[auto-eval] step {train_steps} FAILED: {_ee}")
                                 try:
+                                    _m = model.module if hasattr(model, 'module') else model
+                                    _m.load_state_dict(ema_model.state_dict(), strict=False)
+                                    model.eval()
+
+                                    run_gpu_eval(
+                                        _m, args, _eval_cache, train_steps,
+                                        checkpoint_dir, device,
+                                        dit_batch=_eval_bs,
+                                        vae_batch=_eval_vae_bs,
+                                        ddim_steps=_eval_steps,
+                                        cfg_scale=_eval_cfg)
+
+                                    if _eval_show5_cache is not None:
+                                        run_show5(_m, args, _eval_show5_cache, train_steps,
+                                                 checkpoint_dir, device,
+                                                 ddim_steps=_eval_steps, cfg_scale=_eval_cfg,
+                                                 tag="show5")
+                                    if _eval_seen5_cache is not None:
+                                        run_show5(_m, args, _eval_seen5_cache, train_steps,
+                                                 checkpoint_dir, device,
+                                                 ddim_steps=_eval_steps, cfg_scale=_eval_cfg,
+                                                 tag="seen5")
+
+                                    logger.info(
+                                        f"[auto-eval] step {train_steps} eval done in "
+                                        f"{time()-_eval_t0:.1f}s (GPU inference + PNG save; "
+                                        f"metrics by CPU daemon)")
+                                finally:
+                                    # 无论成功/失败/异常，都无条件恢复训练权重并释放备份，
+                                    # 否则 eval 失败会静默污染后续训练，且显存持续泄漏。
+                                    _m2 = model.module if hasattr(model, 'module') else model
+                                    _m2.load_state_dict(_orig_sd, strict=False)
                                     model.train()
-                                except Exception:
-                                    pass
+                                    del _orig_sd
+                                    torch.cuda.empty_cache()
+                            except Exception as _ee:
+                                logger.warning(f"[auto-eval] step {train_steps} FAILED: {_ee}",
+                                               exc_info=True)
 
                 if args.max_steps > 0 and train_steps >= args.max_steps:
                     logger.info(f"Reached max_steps={args.max_steps}; stopping cleanly.")
@@ -1348,10 +1489,22 @@ def main_from_cli(argv=None):
     parser.add_argument("--char-dino-index", type=str, default=None,
                         help="Path to glyph index json ({\"glyphs\": [[script_id, char_id], ...]} "
                              "aligned row-wise with char-dino-embeddings).")
-    parser.add_argument("--char-proj-mode", type=str, choices=["full", "ln_only"], default="full",
+    parser.add_argument("--char-proj-mode", type=str, choices=["full", "ln_only", "mlp"],
+                        default="full",
                         help="char_proj: 'full'=LayerNorm+Linear (default) | "
                              "'ln_only'=LayerNorm only, requires char_embed_dim==hidden_size "
-                             "(DINO 384 direct, drops redundant 384->384 Linear).")
+                             "(DINO 384 direct, drops redundant 384->384 Linear — 但只给字符分支 "
+                             "留下 768 个可学习参数, 实测不足以利用有效秩仅 3.1 的 DINO 向量) | "
+                             "'mlp'=LayerNorm+Linear+SiLU+Linear (推荐, 给字符分支真正的容量)。")
+    parser.add_argument("--dino-per-script-center", type=int, default=0, choices=[0, 1],
+                        help="注入前先按 script 去均值再 L2 归一化。实测: 有效秩 34.1->57.0, "
+                             "跨书体字符检索 top1 1.9%%->2.6%%, top5 4.2%%->6.8%%, "
+                             "书体泄漏 83.0%%->77.9%%。书体信息本该由 y_callig_embedder 提供。")
+    parser.add_argument("--dino-fill-unknown", type=int, default=1, choices=[0, 1],
+                        help="DINO 未覆盖的 char 行用 DINO 均值填充 (默认开)。关闭则保留 "
+                             "nn.Embedding 默认的 N(0,0.02) 冻结噪声 —— 在 char_proj='ln_only' "
+                             "下 LayerNorm 会把范数线索也抹掉, 模型无法区分已知/未知字符。"
+                             "CFG null token 永远不会被覆盖。")
     parser.add_argument("--freeze-char-table", type=_str_to_bool, default=False,
                         help="Freeze y_char_embedder table after DINO init (keep CFG uncond row "
                              "trainable). Saves ~13.5M trainable params; conditions become pure "
@@ -1384,9 +1537,64 @@ def main_from_cli(argv=None):
                         choices=["ddpm", "flow"], default="ddpm",
                         help="Diffusion formulation: 'ddpm' = standard GaussianDiffusion "
                              "(epsilon prediction, DDIM sampling); 'flow' = linear-interpolant "
-                             "Flow Matching (velocity prediction, Euler ODE sampling).")
+                             "Flow Matching (velocity prediction, ODE sampling).")
+
+    # ---- Flow Matching: t 分布 / 求解器 / schedule（flow free-lunch）----
+    parser.add_argument("--t-sampler", type=str, default="logit_normal",
+                        choices=["uniform", "logit_normal", "cosmap"],
+                        dest="t_sampler",
+                        help="Training-time t distribution. 'logit_normal' (SD3) concentrates "
+                             "gradient budget on mid-t instead of wasting it on the uninformative "
+                             "endpoints. 'uniform' = legacy behaviour.")
+    parser.add_argument("--t-mean", type=float, default=0.0, dest="t_mean",
+                        help="logit_normal mean (SD3 uses 0.0). >0 biases towards t=1 (noise).")
+    parser.add_argument("--t-std", type=float, default=1.0, dest="t_std",
+                        help="logit_normal std (SD3 uses 1.0). Smaller = more concentrated at t=0.5.")
+    # NOTE: dest 用 flow_sampler 而不是 sampler —— 后者已被数据采样器
+    # (--sampler: random|factor_balanced) 占用，同名 dest 会互相覆盖。
+    parser.add_argument("--flow-sampler", type=str, default="heun",
+                        choices=["euler", "heun"], dest="flow_sampler",
+                        help="ODE solver. 'heun' = 2nd-order RK2 (trapezoidal), 2 NFE/step. "
+                             "At equal NFE Heun@25 beats Euler@50 because truncation error drops "
+                             "from O(dt) to O(dt^2).")
+    parser.add_argument("--flow-heun-batch", type=int, default=1, dest="heun_batch",
+                        help="1 = evaluate Heun's two stages as one batched forward (much better "
+                             "GPU utilisation); 0 = two separate forwards.")
+    parser.add_argument("--flow-shift", type=float, default=1.0, dest="shift",
+                        help="Sampling-side timestep shift (SD3). 1.0 = no shift (default, correct "
+                             "for detail-dominated 32x32 glyph latents). >1 concentrates steps near "
+                             "t=1 (layout), <1 near t=0 (detail).")
+    parser.add_argument("--learn-sigma", type=int, default=None, choices=[0, 1],
+                        help="Force DiT learn_sigma on/off. Default: auto = False for flow "
+                             "(flow has no variance head; leaving it True creates C permanently "
+                             "dead zero-initialized output channels), True for ddpm.")
+
+    # ---- 骨干现代化（v2 arch）----
+    parser.add_argument("--norm-type", type=str, default="rms", choices=["rms", "layer"],
+                        dest="norm_type", help="Normalization inside DiT blocks / final layer.")
+    parser.add_argument("--mlp-type", type=str, default="swiglu", choices=["swiglu", "gelu"],
+                        dest="mlp_type",
+                        help="Feed-forward. 'swiglu' is parameter-matched to 'gelu' "
+                             "(hidden = 2/3 * 4D, rounded to multiple of 64).")
+    parser.add_argument("--qk-norm", type=int, default=1, choices=[0, 1], dest="qk_norm",
+                        help="QK-Normalization on attention q/k (stabilises logits, allows higher LR).")
+    parser.add_argument("--rope", type=int, default=1, choices=[0, 1], dest="rope",
+                        help="2D axial RoPE on q/k. 0 = legacy fixed 2D sin-cos added to the "
+                             "residual stream.")
+    parser.add_argument("--rope-theta", type=float, default=100.0, dest="rope_theta",
+                        help="RoPE base frequency (SD3/Lumina use 100 for 2D image RoPE).")
+    parser.add_argument("--attn-impl", type=str, default="sdpa", choices=["sdpa", "eager"],
+                        dest="attn_impl", help="Attention kernel. 'sdpa' = Flash/mem-efficient.")
     parser.add_argument("--early-stop-patience", type=int, default=5,
                         help="Stop after this many consecutive evals without improvement.")
+    parser.add_argument("--early-stop-min-delta", type=float, default=0.002,
+                        help="Minimum change in the monitored metric to qualify as an improvement. "
+                             "Without it, sub-noise-level jitter (+0.0001) resets the stale counter "
+                             "and early-stop is effectively driven by eval noise.")
+    parser.add_argument("--early-stop-min-delta-iou", type=float, default=0.005,
+                        help="min_delta for the skel_iou gate when --early-stop-metric=combo.")
+    parser.add_argument("--early-stop-min-delta-mse", type=float, default=0.0,
+                        help="min_delta when --early-stop-metric=mse (scale-dependent, off by default).")
     parser.add_argument("--early-stop-min-steps", type=int, default=0,
                         help="Do not early-stop before this many total steps (train_steps).")
     parser.add_argument("--early-stop-check-every", type=int, default=0,

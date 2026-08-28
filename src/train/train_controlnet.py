@@ -1,28 +1,30 @@
 # -*- coding: utf-8 -*-
 """
-train_controlnet.py — 训练 ControlNet (latent DiT + 3px skel 条件).
+train_controlnet.py — 训练 ControlNet (latent DiT + skel VAE-latent 条件).
 
 两种模式:
   A) warm-start (默认, train_ctrl_only=True): 冻结已训练主模型, 只训练 ctrl_encoder
   B) from-scratch (train_ctrl_only=False): 主模型+ctrl_encoder 一起从零训练
 
+skel 条件:
+  * 3px skel 图 → VAE encode → latent (4,32,32), 存 latent shards (与主 latent 同格式)
+  * 训练时从 shard 加载, 与主模型 x latent 同空间 (不再是 pixel 输入)
+
 流程:
   1. 构建 DiT_2Cond-S/2 + ControlNetDiT 包装
   2. warm-start: 加载已训练主模型 ckpt 并冻结; from-scratch: 可选加载 pretrained body
-  3. 数据: latent shards + 3px skel (final_skeleton_d3)
-  4. 训练: 扩散 loss (eps-MSE), cond=skel(1,256,256) 二值图
+  3. 数据: latent shards + skel latent shards
+  4. 训练: flow velocity / ddpm-eps loss, cond=skel latent (4,32,32)
   5. 零注入 → 完美 warm-start (初始 ctrl=0, 主模型行为不变)
   6. 结构条件 dropout (10%): 让模型学到无 skel 也能生成 (CFG 友好)
 
 INFRA 设计:
-  - from-scratch: 主模型也训练 → forward 建完整图 (主模型 33M + ctrl 33.8M)
   - warm-start: 主模型冻结, forward 不建训练图 → 只有 ctrl_encoder 建图
   - 每步 del 所有中间张量 + zero_grad → 无 graph 残留
   - 不加载 VAE (latent mode) → 省 ~500MB
 
 用法:
-  python -m src.train.train_controlnet --config src/train/configs/ctrl_skel_s18_flow.json
-  (旧路径 tools/controlnet/train_controlnet.py 已迁移; 配置移到 src/train/configs/)
+  python -m src.train.train_controlnet --config src/train/configs/ctrl_skel_s19_flow.json
 """
 import os
 os.environ["XFORMERS_DISABLED"] = "1"
@@ -45,7 +47,7 @@ import torch.nn as nn
 import numpy as np
 
 from src.model import DiT_2Cond_models
-from src.loss import create_diffusion_or_flow
+from src.loss import create_diffusion_or_flow, flow_kwargs_from
 from src.utils import MCCDLatentDataset
 from src.model.controlnet import ControlNetDiT, load_main_model
 from src.eval.in_process_ctrl_eval import prepare_ctrl_eval_cache, run_ctrl_pair_eval
@@ -68,15 +70,31 @@ def requires_grad(model, flag=True):
 
 
 def update_ema(ema_model, model, decay):
-    """EMA 只更新 trainable 参数 (requires_grad=True). frozen 参数直接 copy (保持一致)."""
+    """EMA 只更新 trainable 参数 (requires_grad=True). frozen 参数直接 copy (保持一致).
+
+    用 ``named_parameters()`` 做**名字**匹配，而不是 ``zip(parameters())`` 做位置匹配：
+    zip 在两侧长度不一致时会静默截断，一旦有人把 ema 换成"结构相同但重建的
+    模型"就会静默错位，且不会有任何报错。这里与 train.py 的主训练循环保持一致。
+    """
     with torch.no_grad():
-        for ep, p in zip(ema_model.parameters(), model.parameters()):
+        src = dict(model.named_parameters())
+        miss = 0
+        for name, ep in ema_model.named_parameters():
+            p = src.get(name)
+            if p is None:
+                miss += 1
+                continue
             if p.requires_grad:
                 ep.data.mul_(decay).add_(p.data, alpha=1 - decay)
             else:
                 ep.data.copy_(p.data)
-        for eb, b in zip(ema_model.buffers(), model.buffers()):
-            eb.data.copy_(b.data)
+        if miss:
+            logger.warning(f"[ema] {miss} ema params not found in model (arch mismatch?)")
+        src_b = dict(model.named_buffers())
+        for name, eb in ema_model.named_buffers():
+            b = src_b.get(name)
+            if b is not None and eb.shape == b.shape:
+                eb.data.copy_(b.data)
 
 
 def parse_args():
@@ -90,7 +108,11 @@ def parse_args():
                     help="True=warm-start(冻结主模型), False=from-scratch(主模型也训练)")
     ap.add_argument("--csv", default="5script/train_top6.csv")
     ap.add_argument("--latent-shards-dir", default="final_latents")
-    ap.add_argument("--skel-root", default="final_skeleton_d3")
+    ap.add_argument("--skel-root", default="final_skeleton_d3",
+                    help="(兼容/显示用) 3px skel PNG 根目录; 训练条件优先用 skel_latent_shards_dir")
+    ap.add_argument("--skel-latent-shards-dir", default="",
+                    help="skel VAE latent shards 目录 (ControlNet 条件, 4ch/32x32). "
+                         "为空则退回 skel-root PNG (旧行为)")
     ap.add_argument("--results-dir", default="5script/results/ctrl_skel")
     ap.add_argument("--experiment-name", default="ctrl-skel-3px")
     ap.add_argument("--model", default="DiT-2Cond-S/2")
@@ -104,12 +126,45 @@ def parse_args():
     ap.add_argument("--freeze-char-table", type=_str_to_bool, default=False,
                     help="freeze y_char_embedder table (DINO init)")
     ap.add_argument("--diffusion-type", default="ddpm", choices=["ddpm", "flow"],
-                    help="main model diffusion type: ddpm (eps/DDIM) or flow (velocity/Euler)")
+                    help="main model diffusion type: ddpm (eps/DDIM) or flow (velocity/ODE)")
+
+    # ---- Flow Matching 配置（必须与主模型训练时一致，否则训练/推理不一致）----
+    ap.add_argument("--t-sampler", default="logit_normal",
+                    choices=["uniform", "logit_normal", "cosmap"], dest="t_sampler")
+    ap.add_argument("--t-mean", type=float, default=0.0, dest="t_mean")
+    ap.add_argument("--t-std", type=float, default=1.0, dest="t_std")
+    ap.add_argument("--flow-sampler", default="heun", choices=["euler", "heun"],
+                    dest="flow_sampler")
+    ap.add_argument("--flow-heun-batch", type=int, default=1, dest="heun_batch")
+    ap.add_argument("--flow-shift", type=float, default=1.0, dest="shift")
+    ap.add_argument("--learn-sigma", type=int, default=None, choices=[0, 1],
+                    help="None=auto (flow->False, ddpm->True)")
+
+    # ---- 骨干现代化（必须与主模型训练时一致）----
+    ap.add_argument("--norm-type", default="rms", choices=["rms", "layer"], dest="norm_type")
+    ap.add_argument("--mlp-type", default="swiglu", choices=["swiglu", "gelu"], dest="mlp_type")
+    ap.add_argument("--qk-norm", type=int, default=1, choices=[0, 1], dest="qk_norm")
+    ap.add_argument("--rope", type=int, default=1, choices=[0, 1], dest="rope")
+    ap.add_argument("--rope-theta", type=float, default=100.0, dest="rope_theta")
+    ap.add_argument("--attn-impl", default="sdpa", choices=["sdpa", "eager"], dest="attn_impl")
+
+    # ---- ControlNet 结构 ----
+    ap.add_argument("--ctrl-depth", type=int, default=0,
+                    help="ctrl encoder 深度; 0=与主模型同深。设为主模型深度的一半可省一半参数")
+    ap.add_argument("--ctrl-hidden", type=int, default=0,
+                    help="ctrl encoder 宽度; 0=与主模型同宽")
+    ap.add_argument("--ctrl-num-heads", type=int, default=0,
+                    help="ctrl encoder 注意力头数; 0=与主模型一致")
+    ap.add_argument("--injection", default="modulate", choices=["modulate", "add"],
+                    help="注入方式: modulate = x*(1+s)+t (可增强也可抑制); add = x+feat (旧)")
+    ap.add_argument("--null-cond", default="gaussian", choices=["gaussian", "zeros", "learned"],
+                    help="cond dropout 时的替代条件。zeros(旧)=解码成特定灰块, 与真实骨骼"
+                         "分布差距大; gaussian 更接近无信息先验")
     ap.add_argument("--cond-drop-all-prob", type=float, default=0.05)
     ap.add_argument("--cond-drop-one-prob", type=float, default=0.25)
     ap.add_argument("--cond-drop-struct-prob", type=float, default=0.1,
-                    help="skel 随机置零概率 (训练时), 让模型学到无 skel 也能生成")
-    ap.add_argument("--skel-cond-channels", type=int, default=1)
+                    help="skel 条件随机置零概率 (训练时), 让模型学到无 skel 也能生成")
+    ap.add_argument("--skel-cond-channels", type=int, default=4)
     ap.add_argument("--epochs", type=int, default=1400)
     ap.add_argument("--max-steps", type=int, default=100000)
     ap.add_argument("--lr", type=float, default=3e-4)
@@ -139,6 +194,8 @@ def parse_args():
     ap.add_argument("--gpu-eval-cfg", type=float, default=1.7, help="flow ctrl 推理最佳 CFG ~1.7")
     ap.add_argument("--gpu-eval-img-root", default="final_imgs_256")
     ap.add_argument("--gpu-eval-skel-root", default="final_skeleton_d3")
+    ap.add_argument("--gpu-eval-skel-latent-shards-dir", default="",
+                    help="eval 用 skel VAE latent shards (与训练条件一致); 空=PNG")
     ap.add_argument("--gpu-eval-dit-batch", type=int, default=16)
     ap.add_argument("--gpu-eval-vae-batch", type=int, default=16)
     args, _ = ap.parse_known_args()
@@ -157,32 +214,52 @@ def main():
     device = torch.device("cuda")
     torch.cuda.set_device(0)
 
-    # ---- 数据: latent shards + 3px skel ----
-    logger.info("[data] loading latent + skel(3px) ...")
+    # ---- 数据: latent shards + skel latent (或 3px skel PNG) ----
+    use_skel_latent = bool(args.skel_latent_shards_dir)
+    logger.info(f"[data] loading latent + skel({'latent' if use_skel_latent else 'png'}) ...")
     ds = MCCDLatentDataset(
         csv_file=args.csv, latent_shards_dir=args.latent_shards_dir,
         img_root=None, skel_root=args.skel_root,
-        image_size=256, load_canny=False, load_skel=True,
+        skel_latent_shards_dir=args.skel_latent_shards_dir,
+        image_size=256, load_canny=False, load_skel=not use_skel_latent,
         is_train=True, preload=bool(args.preload), load_image=False,
         num_preload_workers=args.preload_workers, structure_size=256)
     n = len(ds)
-    logger.info(f"[data] {n} samples, skel from {args.skel_root}")
+    logger.info(f"[data] {n} samples, skel from "
+                f"{args.skel_latent_shards_dir or args.skel_root}")
+
+    # arch 参数：主模型与 ctrl encoder 必须用同一组，否则两侧特征分布不匹配
+    _arch = dict(
+        norm_type=args.norm_type, mlp_type=args.mlp_type,
+        qk_norm=bool(args.qk_norm), rope=bool(args.rope),
+        rope_theta=args.rope_theta, attn_impl=args.attn_impl)
+    _ls = getattr(args, 'learn_sigma', None)
+    _learn_sigma = bool(_ls) if _ls is not None else \
+        str(args.diffusion_type).lower() not in ("flow", "flow_matching", "fm")
+    _ctrl_cfg = dict(
+        ctrl_depth=(args.ctrl_depth or None), ctrl_hidden=(args.ctrl_hidden or None),
+        ctrl_num_heads=(args.ctrl_num_heads or None),
+        injection=args.injection, null_cond=args.null_cond)
+    logger.info(f"[arch] {_arch} | learn_sigma={_learn_sigma} | ctrl={_ctrl_cfg}")
 
     # ---- 模型构建 ----
     if args.train_ctrl_only:
         # warm-start: 加载已训练主模型, 冻结
+        # 注意：不再做 `os.path.exists(...) or None` 兜底 —— 路径失效必须硬失败，
+        # 否则会用随机初始化的主模型训练几十小时。
         logger.info("[model] warm-start: loading main model + freezing ...")
         main_model = load_main_model(
-            model_name=args.model, ckpt_path=args.main_ckpt if args.main_ckpt and os.path.exists(args.main_ckpt) else None,
+            model_name=args.model, ckpt_path=args.main_ckpt,
             device=device, num_calligraphers=args.num_calligraphers, num_characters=args.num_characters,
             condition_fusion=args.condition_fusion, callig_embed_dim=args.callig_embed_dim,
             char_embed_dim=args.char_embed_dim, char_proj_mode=args.char_proj_mode,
             freeze_char_table=args.freeze_char_table,
             cond_drop_all_prob=args.cond_drop_all_prob,
-            cond_drop_one_prob=args.cond_drop_one_prob, use_checkpoint=args.use_checkpoint)
+            cond_drop_one_prob=args.cond_drop_one_prob, use_checkpoint=args.use_checkpoint,
+            learn_sigma=_learn_sigma, diffusion_type=args.diffusion_type, **_arch)
         main_model.eval()
         ctrl = ControlNetDiT(main_model, cond_in_channels=args.skel_cond_channels,
-                            train_ctrl_only=True).to(device)
+                            train_ctrl_only=True, **_ctrl_cfg, **_arch).to(device)
     else:
         # from-scratch: 构建新主模型, 可选加载 pretrained body
         logger.info("[model] from-scratch: building new main model ...")
@@ -192,7 +269,7 @@ def main():
             condition_fusion=args.condition_fusion,
             callig_embed_dim=args.callig_embed_dim, char_embed_dim=args.char_embed_dim,
             cond_drop_all_prob=args.cond_drop_all_prob, cond_drop_one_prob=args.cond_drop_one_prob,
-            use_checkpoint=args.use_checkpoint, learn_sigma=True)
+            use_checkpoint=args.use_checkpoint, learn_sigma=_learn_sigma, **_arch)
         if args.pretrained and os.path.exists(args.pretrained):
             logger.info(f"[model] loading pretrained body from {args.pretrained}")
             sd = torch.load(args.pretrained, map_location="cpu", weights_only=False)
@@ -207,7 +284,7 @@ def main():
                         f"unexpected={len(unexpected)})")
         main_model.to(device)
         ctrl = ControlNetDiT(main_model, cond_in_channels=args.skel_cond_channels,
-                            train_ctrl_only=False).to(device)
+                            train_ctrl_only=False, **_ctrl_cfg, **_arch).to(device)
 
     trainable = [p for p in ctrl.parameters() if p.requires_grad]
     n_train = sum(p.numel() for p in trainable)
@@ -220,8 +297,12 @@ def main():
         ema_ctrl = copy.deepcopy(ctrl).eval()
         requires_grad(ema_ctrl, False)
 
+    # flow 的 t 分布 / 求解器配置与 train.py 共用同一份（否则训练/推理不一致）
     diffusion = create_diffusion_or_flow(
-        timestep_respacing="", diffusion_type=args.diffusion_type)
+        timestep_respacing="", diffusion_type=args.diffusion_type,
+        **flow_kwargs_from(args))
+    if getattr(diffusion, 'is_flow', False):
+        logger.info(f"[flow] {diffusion.describe()}")
 
     optimizer = torch.optim.AdamW(trainable, lr=args.lr, weight_decay=args.weight_decay)
 
@@ -287,7 +368,8 @@ def main():
         latent_spatial = 32  # DiT-S/2 latent 4x32x32
         gpu_eval_cache = prepare_ctrl_eval_cache(
             args.gpu_eval_csv, args.gpu_eval_img_root, args.gpu_eval_skel_root,
-            256, args.gpu_eval_n, 8, 4, 0.18215)
+            256, args.gpu_eval_n, 8, 4, 0.18215,
+            skel_latent_shards_dir=args.gpu_eval_skel_latent_shards_dir)
         logger.info(f"[gpu-eval] cache ready: {args.gpu_eval_csv} n={args.gpu_eval_n} "
                     f"(eval every {args.gpu_eval_every} steps)")
 
@@ -315,13 +397,19 @@ def main():
             x_latent = batch['latent'].to(device)
             y_callig = batch['y_callig'].to(device)
             y_char = batch['y_char'].to(device)
-            skel = batch['skeleton'].to(device).float()  # (N,1,256,256) 0/1
+            # skel 条件: latent 优先 (4,32,32); 否则退回 PNG (1,256,256) 旧行为
+            skel = batch['skel_latent'] if batch['skel_latent'].numel() else batch['skeleton']
+            skel = skel.to(device).float()
 
-            # skel 条件 dropout
+            # skel 条件 dropout。
+            # 注意：不再一律置零 —— 零 latent 解码后是"特定灰色块"而不是空白，
+            # 与真实骨骼分布差距很大，会让 CFG 的 uncond 分支落在分布外。
+            # 默认用 gaussian（更接近无信息先验）；--null-cond 可改回 zeros。
             if args.cond_drop_struct_prob > 0:
                 drop = torch.rand(x_latent.shape[0], device=device) < args.cond_drop_struct_prob
-                skel = torch.where(drop.view(-1, 1, 1, 1).expand_as(skel),
-                                  torch.zeros_like(skel), skel)
+                if drop.any():
+                    null = ctrl._make_null(skel)
+                    skel = torch.where(drop.view(-1, 1, 1, 1).expand_as(skel), null, skel)
 
             # 统一时间步采样: FlowMatching.sample_t -> t∈[0,1); GaussianDiffusion.sample_t -> t∈{0..T-1}。
             # 调用方绝不自己分支 (否则会重蹈 flow/randint 错配覆辙)。
@@ -349,10 +437,14 @@ def main():
             del loss, loss_dict
 
             if ema_ctrl is not None:
+                # EMA warmup：早期用更小的 decay 让 EMA 快速追上仍在快速变化的权重。
+                # 注意 base 用 args.ema_decay（旧代码硬编码 0.9999，导致
+                # --ema-decay 在 warmup 结束后才生效，与 train.py 的策略也不一致）。
+                _ema_base = min(float(args.ema_decay), 0.9999)
                 if step < 2000:
-                    ema_decay = 0.9999 * (1 - (1 - step / 2000) ** 4)
+                    ema_decay = _ema_base * (1 - (1 - step / 2000) ** 4)
                 else:
-                    ema_decay = args.ema_decay
+                    ema_decay = _ema_base
                 update_ema(ema_ctrl, ctrl, ema_decay)
 
             running_loss += _v
