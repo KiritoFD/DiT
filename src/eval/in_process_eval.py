@@ -29,13 +29,24 @@ def _log(msg):
 # ── Eval cache ───────────────────────────────────────────────────────────────
 
 def prepare_eval_cache(eval_csv, img_root, image_size, n,
-                       vae_downscale, latent_channels, scaling_factor):
+                       vae_downscale, latent_channels, scaling_factor,
+                       use_glyph_cond=False):
     """Pre-load N eval samples: GT images ([-1,1] tensors) + conditions + fixed noise.
 
     Returns dict with CPU tensors:
       gts    : (n, 3, H, W) float32 [-1,1]
       conds  : list of (callig_id, glyph_id)
       noise  : (n, C, H//ds, W//ds) float32  — fixed per-sample for reproducibility
+      g      : (n, C, ls, ls) float32 — 标准字形 latent，仅当 use_glyph_cond=True
+
+    关于 use_glyph_cond
+    -------------------
+    **训练侧喂了 g，eval 侧就也必须喂 g**，否则条件域不匹配：
+    模型在训练中学会了依赖 g，却在 eval 时拿到全零张量，指标会显著失真，
+    而且表现为「该条件无效」的假象 —— 与历史上 w_glyph_cond 因 v1 字典
+    缺失导致全零是同一个坑，只是发生在 eval 侧。
+
+    因此这里显式开了一个参数，由调用方（train.py）根据训练配置传入。
     """
     import torchvision.transforms as T
     _log(f"building eval cache from {eval_csv} (n={n})")
@@ -66,11 +77,10 @@ def prepare_eval_cache(eval_csv, img_root, image_size, n,
         conds.append((callig_id, glyph_id))
 
     latent_spatial = image_size // vae_downscale
-    g = torch.Generator().manual_seed(0)
-    noise = torch.randn(n, latent_channels, latent_spatial, latent_spatial, generator=g)
+    gen = torch.Generator().manual_seed(0)
+    noise = torch.randn(n, latent_channels, latent_spatial, latent_spatial, generator=gen)
 
-    _log(f"cache ready: {n} samples, gt={gts.shape}, latent={latent_channels}x{latent_spatial}x{latent_spatial}")
-    return {
+    out = {
         "gts": gts,
         "conds": conds,
         "noise": noise,
@@ -79,6 +89,29 @@ def prepare_eval_cache(eval_csv, img_root, image_size, n,
         "latent_spatial": latent_spatial,
         "scaling_factor": scaling_factor,
     }
+
+    # ── 标准字形 latent g（训练侧若启用，eval 必须同步启用）────────────────
+    if use_glyph_cond:
+        from src.utils import get_glyph_lookup_v2
+        glookup = get_glyph_lookup_v2()
+        g_lat = torch.zeros(n, latent_channels, latent_spatial, latent_spatial,
+                            dtype=torch.float32)
+        hit = 0
+        for i, row in enumerate(rows):
+            sid = int(row.get("script_id", 0))
+            ch = row.get("character", "")
+            gv = glookup.get(sid, ch, random=False) if ch else None
+            if gv is not None:
+                g_lat[i] = gv.float()
+                hit += 1
+        _log(f"[glyph-cond] eval 覆盖 {hit}/{n} = {hit/max(n,1)*100:.1f}%")
+        if hit == 0:
+            _log("  !! FATAL: eval 侧标准字形命中率为 0 —— g 将全为零张量，"
+                 "与训练侧条件域不匹配，指标无意义。请检查字典目录与 script_id 映射。")
+        out["g"] = g_lat
+
+    _log(f"cache ready: {n} samples, gt={gts.shape}, latent={latent_channels}x{latent_spatial}x{latent_spatial}")
+    return out
 
 
 # ── VAE loading ───────────────────────────────────────────────────────────────
@@ -169,6 +202,7 @@ def run_gpu_eval(ema_model, args, cache, step, checkpoint_dir, device,
     conds = cache["conds"]
     gts_all = cache["gts"]
     noise_all = cache["noise"]
+    g_all = cache.get("g")          # 标准字形 latent；None = 未启用 glyph cond
 
     diffusion = create_diffusion_or_flow(
         str(ddim_steps),
@@ -194,6 +228,12 @@ def run_gpu_eval(ema_model, args, cache, step, checkpoint_dir, device,
             yc = torch.tensor([c[0] for c in conds[i:j]], device=device, dtype=torch.long)
             yh = torch.tensor([c[1] for c in conds[i:j]], device=device, dtype=torch.long)
             mk = dict(y_callig=yc, y_char=yh, cfg_scale=cfg_scale)
+            if g_all is not None:
+                # g 同样要复制成 [cond, uncond] 两份：CFG 会把 batch 翻倍，
+                # 且 g 不参与 CFG 缩放（与 ControlNet 的骨架条件一致）——
+                # 即 uncond 分支也拿到真实 g，只在全局条件上做 guidance。
+                g_b = g_all[i:j].to(device)
+                mk["g"] = torch.cat([g_b, g_b], dim=0)
             with torch.autocast("cuda", dtype=torch.bfloat16):
                 samples = diffusion.ddim_sample_loop(
                     ema_model.forward_with_cfg, z.shape, z,

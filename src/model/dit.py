@@ -17,11 +17,12 @@ import math
 from torch.utils.checkpoint import checkpoint
 
 # 现代化组件（RMSNorm / SwiGLU / 2D-RoPE / QK-Norm / SDPA / PatchEmbed / DiTBlock / FinalLayer）
-# DiT_2Cond 使用；DiT / DiT_3Cond 为保持与旧 ckpt 逐位一致仍用 timm 组件。
+# DiT_2Cond 使用。
+#
+# 注：本文件曾同时存在原版 DiT（单条件）与 DiT_3Cond（三条件），二者依赖
+# timm 的 PatchEmbed/Attention/Mlp。2026-08-31 清理时一并删除 —— 它们已废弃，
+# 且删除后本文件不再依赖 timm（少一个重量级依赖）。
 from . import modules as M
-
-# 旧版 timm 组件：DiT / DiT_3Cond 仍在用，保留导入以免破坏其它引用。
-from timm.models.vision_transformer import PatchEmbed, Attention, Mlp
 
 
 def modulate(x, shift, scale):
@@ -137,181 +138,10 @@ class LabelEmbedder(nn.Module):
 #                                 Core DiT Model                                #
 #################################################################################
 
-class DiTBlock(nn.Module):
-    """
-    A DiT block with adaptive layer norm zero (adaLN-Zero) conditioning.
-    """
-    def __init__(self, hidden_size, num_heads, mlp_ratio=4.0, **block_kwargs):
-        super().__init__()
-        self.norm1 = nn.LayerNorm(hidden_size, elementwise_affine=False, eps=1e-6)
-        self.attn = Attention(hidden_size, num_heads=num_heads, qkv_bias=True, **block_kwargs)
-        self.norm2 = nn.LayerNorm(hidden_size, elementwise_affine=False, eps=1e-6)
-        mlp_hidden_dim = int(hidden_size * mlp_ratio)
-        approx_gelu = lambda: nn.GELU(approximate="tanh")
-        self.mlp = Mlp(in_features=hidden_size, hidden_features=mlp_hidden_dim, act_layer=approx_gelu, drop=0)
-        self.adaLN_modulation = nn.Sequential(
-            nn.SiLU(),
-            nn.Linear(hidden_size, 6 * hidden_size, bias=True)
-        )
-
-    def forward(self, x, c):
-        shift_msa, scale_msa, gate_msa, shift_mlp, scale_mlp, gate_mlp = self.adaLN_modulation(c).chunk(6, dim=1)
-        x = x + gate_msa.unsqueeze(1) * self.attn(modulate(self.norm1(x), shift_msa, scale_msa))
-        x = x + gate_mlp.unsqueeze(1) * self.mlp(modulate(self.norm2(x), shift_mlp, scale_mlp))
-        return x
 
 
-class FinalLayer(nn.Module):
-    """
-    The final layer of DiT.
-    """
-    def __init__(self, hidden_size, patch_size, out_channels):
-        super().__init__()
-        self.norm_final = nn.LayerNorm(hidden_size, elementwise_affine=False, eps=1e-6)
-        self.linear = nn.Linear(hidden_size, patch_size * patch_size * out_channels, bias=True)
-        self.adaLN_modulation = nn.Sequential(
-            nn.SiLU(),
-            nn.Linear(hidden_size, 2 * hidden_size, bias=True)
-        )
-
-    def forward(self, x, c):
-        shift, scale = self.adaLN_modulation(c).chunk(2, dim=1)
-        x = modulate(self.norm_final(x), shift, scale)
-        x = self.linear(x)
-        return x
 
 
-class DiT(nn.Module):
-    """
-    Diffusion model with a Transformer backbone.
-    """
-    def __init__(
-        self,
-        input_size=32,
-        patch_size=2,
-        in_channels=4,
-        hidden_size=1152,
-        depth=28,
-        num_heads=16,
-        mlp_ratio=4.0,
-        class_dropout_prob=0.1,
-        num_classes=1000,
-        learn_sigma=True,
-    ):
-        super().__init__()
-        self.learn_sigma = learn_sigma
-        self.in_channels = in_channels
-        self.out_channels = in_channels * 2 if learn_sigma else in_channels
-        self.patch_size = patch_size
-        self.num_heads = num_heads
-
-        self.x_embedder = PatchEmbed(input_size, patch_size, in_channels, hidden_size, bias=True)
-        self.t_embedder = TimestepEmbedder(hidden_size)
-        self.y_embedder = LabelEmbedder(num_classes, hidden_size, class_dropout_prob)
-        num_patches = self.x_embedder.num_patches
-        # Will use fixed sin-cos embedding:
-        self.pos_embed = nn.Parameter(torch.zeros(1, num_patches, hidden_size), requires_grad=False)
-
-        self.blocks = nn.ModuleList([
-            DiTBlock(hidden_size, num_heads, mlp_ratio=mlp_ratio) for _ in range(depth)
-        ])
-        self.final_layer = FinalLayer(hidden_size, patch_size, self.out_channels)
-        self.initialize_weights()
-
-    def initialize_weights(self):
-        # Initialize transformer layers:
-        def _basic_init(module):
-            if isinstance(module, nn.Linear):
-                torch.nn.init.xavier_uniform_(module.weight)
-                if module.bias is not None:
-                    nn.init.constant_(module.bias, 0)
-        self.apply(_basic_init)
-
-        # Initialize (and freeze) pos_embed by sin-cos embedding:
-        pos_embed = get_2d_sincos_pos_embed(self.pos_embed.shape[-1], int(self.x_embedder.num_patches ** 0.5))
-        self.pos_embed.data.copy_(torch.from_numpy(pos_embed).float().unsqueeze(0))
-
-        # Initialize patch_embed like nn.Linear (instead of nn.Conv2d):
-        w = self.x_embedder.proj.weight.data
-        nn.init.xavier_uniform_(w.view([w.shape[0], -1]))
-        nn.init.constant_(self.x_embedder.proj.bias, 0)
-
-        # Initialize label embedding table:
-        nn.init.normal_(self.y_embedder.embedding_table.weight, std=0.02)
-
-        # Initialize timestep embedding MLP:
-        nn.init.normal_(self.t_embedder.mlp[0].weight, std=0.02)
-        nn.init.normal_(self.t_embedder.mlp[2].weight, std=0.02)
-
-        # Zero-out adaLN modulation layers in DiT blocks:
-        for block in self.blocks:
-            nn.init.constant_(block.adaLN_modulation[-1].weight, 0)
-            nn.init.constant_(block.adaLN_modulation[-1].bias, 0)
-
-        # Zero-out output layers:
-        nn.init.constant_(self.final_layer.adaLN_modulation[-1].weight, 0)
-        nn.init.constant_(self.final_layer.adaLN_modulation[-1].bias, 0)
-        nn.init.constant_(self.final_layer.linear.weight, 0)
-        nn.init.constant_(self.final_layer.linear.bias, 0)
-
-    def unpatchify(self, x):
-        """
-        x: (N, T, patch_size**2 * C)
-        imgs: (N, H, W, C)
-        """
-        c = self.out_channels
-        p = self.x_embedder.patch_size[0]
-        h = w = int(x.shape[1] ** 0.5)
-        assert h * w == x.shape[1]
-
-        x = x.reshape(shape=(x.shape[0], h, w, p, p, c))
-        x = torch.einsum('nhwpqc->nchpwq', x)
-        imgs = x.reshape(shape=(x.shape[0], c, h * p, h * p))
-        return imgs
-
-    def forward(self, x, t, y):
-        """
-        Forward pass of DiT.
-        x: (N, C, H, W) tensor of spatial inputs (images or latent representations of images)
-        t: (N,) tensor of diffusion timesteps
-        y: (N,) tensor of class labels
-        """
-        x = self.x_embedder(x) + self.pos_embed  # (N, T, D), where T = H * W / patch_size ** 2
-        t = self.t_embedder(t)                   # (N, D)
-        y = self.y_embedder(y, self.training)    # (N, D)
-        c = t + y                                # (N, D)
-        for block in self.blocks:
-            x = block(x, c)                      # (N, T, D)
-        x = self.final_layer(x, c)                # (N, T, patch_size ** 2 * out_channels)
-        x = self.unpatchify(x)                   # (N, out_channels, H, W)
-        return x
-
-    def forward_with_cfg(self, x, t, y, cfg_scale):
-        """
-        Forward pass of DiT, but also batches the unconditional forward pass for classifier-free guidance.
-        """
-        # https://github.com/openai/glide-text2im/blob/main/notebooks/text2im.ipynb
-        # Duplicate every sample: first copy conditional, second copy unconditional.
-        original_bs = x.shape[0]
-        x = torch.cat([x, x], dim=0)
-        t = torch.cat([t, t], dim=0)
-        y = torch.cat([y, y], dim=0)
-        uncond_y = torch.full_like(y, self.y_embedder.num_classes)
-        y_combined = torch.cat([y[:original_bs], uncond_y[original_bs:]], dim=0)
-        model_out = self.forward(x, t, y_combined)
-        # Apply classifier-free guidance on all learned channels (eps subspace).
-        eps, rest = model_out[:, :self.in_channels], model_out[:, self.in_channels:]
-        cond_eps, uncond_eps = torch.split(eps, original_bs, dim=0)
-        half_eps = uncond_eps + cfg_scale * (cond_eps - uncond_eps)
-        eps = torch.cat([half_eps, half_eps], dim=0)
-        out = torch.cat([eps, rest], dim=1)
-        return out[:original_bs]
-
-
-#################################################################################
-#                   Sine/Cosine Positional Embedding Functions                  #
-#################################################################################
-# https://github.com/facebookresearch/mae/blob/main/util/pos_embed.py
 
 def get_2d_sincos_pos_embed(embed_dim, grid_size, cls_token=False, extra_tokens=0):
     """
@@ -367,320 +197,22 @@ def get_1d_sincos_pos_embed_from_grid(embed_dim, pos):
 #                                   DiT Configs                                  #
 #################################################################################
 
-def DiT_XL_2(**kwargs):
-    return DiT(depth=28, hidden_size=1152, patch_size=2, num_heads=16, **kwargs)
-
-def DiT_XL_4(**kwargs):
-    return DiT(depth=28, hidden_size=1152, patch_size=4, num_heads=16, **kwargs)
-
-def DiT_XL_8(**kwargs):
-    return DiT(depth=28, hidden_size=1152, patch_size=8, num_heads=16, **kwargs)
-
-def DiT_L_2(**kwargs):
-    return DiT(depth=24, hidden_size=1024, patch_size=2, num_heads=16, **kwargs)
-
-def DiT_L_4(**kwargs):
-    return DiT(depth=24, hidden_size=1024, patch_size=4, num_heads=16, **kwargs)
-
-def DiT_L_8(**kwargs):
-    return DiT(depth=24, hidden_size=1024, patch_size=8, num_heads=16, **kwargs)
-
-def DiT_B_2(**kwargs):
-    return DiT(depth=12, hidden_size=768, patch_size=2, num_heads=12, **kwargs)
-
-def DiT_B_4(**kwargs):
-    return DiT(depth=12, hidden_size=768, patch_size=4, num_heads=12, **kwargs)
-
-def DiT_B_8(**kwargs):
-    return DiT(depth=12, hidden_size=768, patch_size=8, num_heads=12, **kwargs)
-
-def DiT_S_2(**kwargs):
-    return DiT(depth=12, hidden_size=384, patch_size=2, num_heads=6, **kwargs)
-
-def DiT_S_4(**kwargs):
-    return DiT(depth=12, hidden_size=384, patch_size=4, num_heads=6, **kwargs)
-
-def DiT_S_8(**kwargs):
-    return DiT(depth=12, hidden_size=384, patch_size=8, num_heads=6, **kwargs)
 
 
-DiT_models = {
-    'DiT-XL/2': DiT_XL_2,  'DiT-XL/4': DiT_XL_4,  'DiT-XL/8': DiT_XL_8,
-    'DiT-L/2':  DiT_L_2,   'DiT-L/4':  DiT_L_4,   'DiT-L/8':  DiT_L_8,
-    'DiT-B/2':  DiT_B_2,   'DiT-B/4':  DiT_B_4,   'DiT-B/8':  DiT_B_8,
-    'DiT-S/2':  DiT_S_2,   'DiT-S/4':  DiT_S_4,   'DiT-S/8':  DiT_S_8,
-}
 
 
-#################################################################################
-#                  3-Condition Guided DiT Model (DiT_3Cond)                     #
-#################################################################################
-
-class DiT_3Cond(nn.Module):
-    """
-    Diffusion model with Transformer backbone guided by 3 conditions:
-    1. Calligrapher (y_callig)
-    2. Script Style (y_script)
-    3. Character Content (y_char)
-    Also supports intermediate feature extraction for REPA (Representation Alignment) loss.
-    """
-    def __init__(
-        self,
-        input_size=32,
-        patch_size=2,
-        in_channels=4,
-        hidden_size=384,
-        depth=12,
-        num_heads=6,
-        mlp_ratio=4.0,
-        class_dropout_prob=0.1,
-        num_calligraphers=142,
-        num_scripts=9,
-        num_characters=5568,
-        learn_sigma=True,
-        use_checkpoint=False,
-        condition_fusion="legacy",
-        callig_embed_dim=None,
-        script_embed_dim=None,
-        char_embed_dim=None,
-        cond_drop_all_prob=0.05,
-        cond_drop_one_prob=0.0,
-    ):
-        super().__init__()
-        self.learn_sigma = learn_sigma
-        self.use_checkpoint = use_checkpoint
-        self.in_channels = in_channels
-        self.out_channels = in_channels * 2 if learn_sigma else in_channels
-        self.patch_size = patch_size
-        self.num_heads = num_heads
-        self.condition_fusion = condition_fusion
-        self.cond_drop_all_prob = float(cond_drop_all_prob)
-        self.cond_drop_one_prob = float(cond_drop_one_prob)
-        if self.cond_drop_all_prob < 0 or self.cond_drop_one_prob < 0:
-            raise ValueError("condition dropout probabilities must be non-negative")
-        if self.cond_drop_all_prob + self.cond_drop_one_prob > 1:
-            raise ValueError("cond_drop_all_prob + cond_drop_one_prob must be <= 1")
-
-        self.x_embedder = PatchEmbed(input_size, patch_size, in_channels, hidden_size, bias=True)
-        self.t_embedder = TimestepEmbedder(hidden_size)
-
-        if condition_fusion == "legacy":
-            # Backward-compatible joint MLP used by existing checkpoints.
-            self.y_callig_embedder = LabelEmbedder(num_calligraphers, hidden_size, class_dropout_prob)
-            self.y_script_embedder = LabelEmbedder(num_scripts, hidden_size, class_dropout_prob)
-            self.y_char_embedder = LabelEmbedder(num_characters, hidden_size, class_dropout_prob)
-            self.cond_fusion = nn.Sequential(
-                nn.Linear(hidden_size * 3, hidden_size),
-                nn.SiLU(),
-                nn.Linear(hidden_size, hidden_size)
-            )
-            self.callig_proj = self.script_proj = self.char_proj = None
-        elif condition_fusion == "factorized_add":
-            # Compact factor tables regularize long-tail identities. Each factor is
-            # projected independently and only then added, so an unseen triple uses
-            # three transformations that were each trained on other combinations.
-            callig_embed_dim = callig_embed_dim or hidden_size
-            script_embed_dim = script_embed_dim or hidden_size
-            char_embed_dim = char_embed_dim or hidden_size
-            self.y_callig_embedder = LabelEmbedder(
-                num_calligraphers, callig_embed_dim, 0.0, use_cfg_embedding=True)
-            self.y_script_embedder = LabelEmbedder(
-                num_scripts, script_embed_dim, 0.0, use_cfg_embedding=True)
-            self.y_char_embedder = LabelEmbedder(
-                num_characters, char_embed_dim, 0.0, use_cfg_embedding=True)
-            self.callig_proj = nn.Sequential(nn.LayerNorm(callig_embed_dim),
-                                             nn.Linear(callig_embed_dim, hidden_size))
-            self.script_proj = nn.Sequential(nn.LayerNorm(script_embed_dim),
-                                             nn.Linear(script_embed_dim, hidden_size))
-            self.char_proj = nn.Sequential(nn.LayerNorm(char_embed_dim),
-                                           nn.Linear(char_embed_dim, hidden_size))
-            self.cond_fusion = None
-        else:
-            raise ValueError(f"Unknown condition_fusion={condition_fusion!r}")
-
-        num_patches = self.x_embedder.num_patches
-        self.pos_embed = nn.Parameter(torch.zeros(1, num_patches, hidden_size), requires_grad=False)
-
-        self.blocks = nn.ModuleList([
-            DiTBlock(hidden_size, num_heads, mlp_ratio=mlp_ratio) for _ in range(depth)
-        ])
-        self.final_layer = FinalLayer(hidden_size, patch_size, self.out_channels)
-        self.initialize_weights()
-
-    def initialize_weights(self):
-        def _basic_init(module):
-            if isinstance(module, nn.Linear):
-                torch.nn.init.xavier_uniform_(module.weight)
-                if module.bias is not None:
-                    nn.init.constant_(module.bias, 0)
-        self.apply(_basic_init)
-
-        pos_embed = get_2d_sincos_pos_embed(self.pos_embed.shape[-1], int(self.x_embedder.num_patches ** 0.5))
-        self.pos_embed.data.copy_(torch.from_numpy(pos_embed).float().unsqueeze(0))
-
-        w = self.x_embedder.proj.weight.data
-        nn.init.xavier_uniform_(w.view([w.shape[0], -1]))
-        nn.init.constant_(self.x_embedder.proj.bias, 0)
-
-        nn.init.normal_(self.y_callig_embedder.embedding_table.weight, std=0.02)
-        nn.init.normal_(self.y_script_embedder.embedding_table.weight, std=0.02)
-        nn.init.normal_(self.y_char_embedder.embedding_table.weight, std=0.02)
-
-        nn.init.normal_(self.t_embedder.mlp[0].weight, std=0.02)
-        nn.init.normal_(self.t_embedder.mlp[2].weight, std=0.02)
-
-        for block in self.blocks:
-            nn.init.constant_(block.adaLN_modulation[-1].weight, 0)
-            nn.init.constant_(block.adaLN_modulation[-1].bias, 0)
-
-        nn.init.constant_(self.final_layer.adaLN_modulation[-1].weight, 0)
-        nn.init.constant_(self.final_layer.adaLN_modulation[-1].bias, 0)
-        nn.init.constant_(self.final_layer.linear.weight, 0)
-        nn.init.constant_(self.final_layer.linear.bias, 0)
-
-    def unpatchify(self, x):
-        c = self.out_channels
-        p = self.x_embedder.patch_size[0]
-        h = w = int(x.shape[1] ** 0.5)
-        assert h * w == x.shape[1]
-
-        x = x.reshape(shape=(x.shape[0], h, w, p, p, c))
-        x = torch.einsum('nhwpqc->nchpwq', x)
-        imgs = x.reshape(shape=(x.shape[0], c, h * p, h * p))
-        return imgs
-
-    def forward(self, x, t, y_callig, y_script, y_char, return_intermediate_layer=None):
-        """
-        Forward pass of DiT_3Cond.
-        x: (N, C, H, W) noisy latents
-        t: (N,) timesteps
-        y_callig, y_script, y_char: (N,) condition IDs
-        return_intermediate_layer: int index (e.g. 8) to return intermediate patch features for REPA
-        """
-        x = self.x_embedder(x) + self.pos_embed  # (N, T, D)
-        t_emb = self.t_embedder(t)               # (N, D)
-
-        if self.condition_fusion == "factorized_add":
-            # Controlled masks: either all conditions are dropped for CFG, or
-            # exactly one factor is dropped for factor learning. We intentionally
-            # avoid accidental two-factor dropout and know the exact full-triple rate.
-            if self.training and (self.cond_drop_all_prob > 0 or self.cond_drop_one_prob > 0):
-                r = torch.rand(y_callig.shape[0], device=y_callig.device)
-                drop_all = r < self.cond_drop_all_prob
-                drop_one = ((r >= self.cond_drop_all_prob)
-                            & (r < self.cond_drop_all_prob + self.cond_drop_one_prob))
-                which = torch.randint(0, 3, y_callig.shape, device=y_callig.device)
-                y_callig = torch.where(drop_all | (drop_one & (which == 0)),
-                                       self.y_callig_embedder.num_classes, y_callig)
-                y_script = torch.where(drop_all | (drop_one & (which == 1)),
-                                       self.y_script_embedder.num_classes, y_script)
-                y_char = torch.where(drop_all | (drop_one & (which == 2)),
-                                     self.y_char_embedder.num_classes, y_char)
-
-            # Embedders do not perform a second hidden random dropout in this mode.
-            e_callig = self.y_callig_embedder(y_callig, False)
-            e_script = self.y_script_embedder(y_script, False)
-            e_char = self.y_char_embedder(y_char, False)
-            y_emb = (self.callig_proj(e_callig)
-                     + self.script_proj(e_script)
-                     + self.char_proj(e_char)) / math.sqrt(3.0)
-        else:
-            # Preserve legacy checkpoint behavior: 5% joint drop plus independent
-            # LabelEmbedder dropout (normally 10% per factor).
-            if self.training:
-                drop_all = torch.rand(y_callig.shape[0], device=y_callig.device) < 0.05
-                y_callig = torch.where(drop_all, self.y_callig_embedder.num_classes, y_callig)
-                y_script = torch.where(drop_all, self.y_script_embedder.num_classes, y_script)
-                y_char = torch.where(drop_all, self.y_char_embedder.num_classes, y_char)
-            e_callig = self.y_callig_embedder(y_callig, self.training)
-            e_script = self.y_script_embedder(y_script, self.training)
-            e_char = self.y_char_embedder(y_char, self.training)
-            y_emb = self.cond_fusion(torch.cat([e_callig, e_script, e_char], dim=-1))
-        c = t_emb + y_emb                        # (N, D)
-
-        intermediate_feats = None
-        if self.use_checkpoint:
-            for i, block in enumerate(self.blocks):
-                if return_intermediate_layer is not None and i == return_intermediate_layer:
-                    # Run this single block eagerly so its output can be captured for REPA.
-                    x = block(x, c)
-                    intermediate_feats = x
-                else:
-                    x = checkpoint(lambda *a: block(*a), x, c, use_reentrant=False)
-        else:
-            for i, block in enumerate(self.blocks):
-                x = block(x, c)
-                if return_intermediate_layer is not None and i == return_intermediate_layer:
-                    intermediate_feats = x
-
-        x = self.final_layer(x, c)
-        x = self.unpatchify(x)
-
-        if return_intermediate_layer is not None:
-            return x, intermediate_feats
-        return x
-
-    def forward_with_cfg(self, x, t, y_callig, y_script, y_char, cfg_scale=4.0):
-        """
-        Forward pass with Classifier-Free Guidance (CFG).
-
-        Every input sample is duplicated: the first copy runs with its real
-        condition ids, the second copy runs with unconditional ids (num_classes).
-        Works for arbitrary batch size (1 or >1).
-        """
-        original_bs = x.shape[0]
-        x = torch.cat([x, x], dim=0)                    # (2B, ...)
-        t = torch.cat([t, t], dim=0)                    # (2B,)
-        y_callig = torch.cat([y_callig, y_callig], dim=0)
-        y_script = torch.cat([y_script, y_script], dim=0)
-        y_char = torch.cat([y_char, y_char], dim=0)
-
-        # Unconditional ids for the second half (drop IDs).
-        uncond_callig = torch.full_like(y_callig, self.y_callig_embedder.num_classes)
-        uncond_script = torch.full_like(y_script, self.y_script_embedder.num_classes)
-        uncond_char = torch.full_like(y_char, self.y_char_embedder.num_classes)
-
-        # First B rows: conditional; second B rows: unconditional.
-        y_callig_combined = torch.cat([y_callig[:original_bs], uncond_callig[original_bs:]], dim=0)
-        y_script_combined = torch.cat([y_script[:original_bs], uncond_script[original_bs:]], dim=0)
-        y_char_combined = torch.cat([y_char[:original_bs], uncond_char[original_bs:]], dim=0)
-
-        model_out = self.forward(x, t, y_callig_combined, y_script_combined, y_char_combined)
-        # Apply CFG on all learned channels (eps subspace), not a hard-coded prefix.
-        eps, rest = model_out[:, :self.in_channels], model_out[:, self.in_channels:]
-        cond_eps, uncond_eps = torch.split(eps, original_bs, dim=0)
-        half_eps = uncond_eps + cfg_scale * (cond_eps - uncond_eps)
-        eps = torch.cat([half_eps, half_eps], dim=0)
-        out = torch.cat([eps, rest], dim=1)
-        return out[:original_bs]
 
 
-def DiT_3Cond_S_2(**kwargs):
-    return DiT_3Cond(depth=12, hidden_size=384, patch_size=2, num_heads=6, **kwargs)
-
-def DiT_3Cond_B_2(**kwargs):
-    return DiT_3Cond(depth=12, hidden_size=768, patch_size=2, num_heads=12, **kwargs)
-
-def DiT_3Cond_L_2(**kwargs):
-    return DiT_3Cond(depth=24, hidden_size=1024, patch_size=2, num_heads=16, **kwargs)
-
-# XL 尺寸：body 维度与官方 DiT-XL-2-256x256.pt 完全一致 (depth=28, hidden=1152, heads=16)，
-# 从而能用官方预训练权重加载 transformer body，再在其上做 LoRA 微调。
-def DiT_3Cond_XL_2(**kwargs):
-    return DiT_3Cond(depth=28, hidden_size=1152, patch_size=2, num_heads=16, **kwargs)
 
 
-DiT_3Cond_models = {
-    'DiT-3Cond-S/2': DiT_3Cond_S_2,
-    'DiT-3Cond-B/2': DiT_3Cond_B_2,
-    'DiT-3Cond-L/2': DiT_3Cond_L_2,
-    'DiT-3Cond-XL/2': DiT_3Cond_XL_2,
-}
 
 
-#################################################################################
-#                2-Condition DiT (Calligrapher + Character)                     #
-#################################################################################
+
+
+
+
+
+
 
 class DiT_2Cond(nn.Module):
     """
@@ -713,6 +245,11 @@ class DiT_2Cond(nn.Module):
         skel_head_enabled=False,
         use_glyph_cond=False,
         glyph_scale_init=0.4,
+        # 标准字形条件的逐层注入层数。0 = 关闭（只用输入层 token-add，旧行为）；
+        # >0 = 在该数量的 block 后注入（均匀分布），与 ControlNet 的
+        # ZeroAdaLNInjection 完全对齐。见下方 glyph_embedder 处的说明。
+        # 显存：每层约 +150MB（batch=192 时），12 层约 +1.8G，注意 OOM。
+        glyph_inject_layers=0,
         char_proj_mode="full",
         freeze_char_table=False,
         # ---- 现代化开关（v2 arch）----
@@ -864,13 +401,43 @@ class DiT_2Cond(nn.Module):
         # 甲2 标准字形条件的 token-add 缩放(可学习, 初始 glyph_scale_init, 让字形条件有存在感)
         self.glyph_scale = nn.Parameter(torch.tensor(self.glyph_scale_init))
         # 甲2 标准字形条件：独立可训练 glyph_embedder(Conv2d 4→hidden, patch 编码)
-        # 把标准字形 latent G(4,32,32) 编成与 x token 同形 token, forward 时 token-add。
+        # 把标准字形 latent G(4,32,32) 编成与 x token 同形 token, forward 时注入。
         # 独立投影而非复用 x_embedder: 保证 g 编码可学习、norm 可控, 不依赖 x_embedder
         # 是否被冻结(XL LoRA 模式下 x_embedder 冻结, 复用会导致 g 信号被锁死)。
         self.glyph_embedder = None
+        # 逐层注入（glyph_inject_layers>0 时启用）：见下方说明
+        self.glyph_inject_layers = int(glyph_inject_layers)
+        self.glyph_injections = None
         if self.use_glyph_cond:
             ps_ = self.x_embedder.patch_size[0] if not isinstance(self.x_embedder.patch_size, int) else self.x_embedder.patch_size
             self.glyph_embedder = nn.Conv2d(in_channels, hidden_size, kernel_size=ps_, stride=ps_, bias=False)
+            #
+            # 为什么需要逐层注入（这是本项目的关键设计修正）
+            # ---------------------------------------------------------------
+            # 原实现只在 **输入层** 做一次 token-add：
+            #     x = x + glyph_scale * g_tok
+            # 之后 x 要穿过 12 层 Transformer。每层 block 的输出都是
+            # `x + block(x)`，会把 g 的相对贡献逐层稀释 —— 等于把答案写在
+            # 第一页，然后让人翻完整本书再回答。
+            #
+            # 而 ControlNet 用的是 **逐层 zero-init adaLN 调制**（12 次），
+            # 实测 SSIM 0.80。两者条件信息量完全相同（都是 4×32×32 空间图），
+            # 差别只在注入方式。所以瓶颈不是「信息量不够」，而是「信息进不去」。
+            #
+            # 这里复用 controlnet.ZeroAdaLNInjection，与 ControlNet 对齐：
+            #   out = x * (1 + s) + t，s/t 由 zero-init Linear 产出
+            #   → init 时恒等，不破坏已有训练；且比加法注入表达力更强
+            #     （既能增强也能抑制残差流）。
+            if self.glyph_inject_layers > 0:
+                from .controlnet import ZeroAdaLNInjection
+                n_inj = min(self.glyph_inject_layers, depth)
+                # 均匀分布在 depth 层中
+                self.glyph_inject_at = sorted(
+                    set(int(round((i + 1) * depth / n_inj)) - 1 for i in range(n_inj)))
+                self.glyph_injections = nn.ModuleList([
+                    ZeroAdaLNInjection(hidden_size, mode="modulate")
+                    for _ in self.glyph_inject_at
+                ])
         self.initialize_weights()
         if self.freeze_char_table and hasattr(self, "y_char_embedder"):
             # 冻结 char 表：DINO 预填充后不再训练（省 35130×384≈13.5M 训练参数），
@@ -920,6 +487,20 @@ class DiT_2Cond(nn.Module):
         nn.init.constant_(self.final_layer.linear.weight, 0)
         nn.init.constant_(self.final_layer.linear.bias, 0)
 
+        # 标准字形的逐层注入必须**保持 zero-init**。
+        #
+        # ZeroAdaLNInjection 在构造时已把 proj 的 weight/bias 置零，但上面
+        # 的 ``self.apply(_basic_init)`` 会把**所有** nn.Linear（含这些 proj）
+        # 重新初始化成 xavier_uniform —— 于是注入不再是恒等映射，
+        # warm-start 语义被破坏：从已训练 ckpt 续跑时，新加的注入层会给
+        # 残差流注入随机扰动，等价于在训练好的模型上叠加噪声。
+        #
+        # 这里显式重新置零，恢复 ``out = x*(1+s)+t`` 中 s=t=0 的恒等起点。
+        if getattr(self, "glyph_injections", None) is not None:
+            for _inj in self.glyph_injections:
+                nn.init.zeros_(_inj.proj.weight)
+                nn.init.zeros_(_inj.proj.bias)
+
     def unpatchify(self, x):
         c = self.out_channels
         p = self.x_embedder.patch_size[0]
@@ -941,6 +522,7 @@ class DiT_2Cond(nn.Module):
                                    When set, returns (output, intermediate_feats) as a tuple.
         """
         x = self.x_embedder(x)  # (N, T, D)
+        g_tok = None            # 标准字形 token；未启用时保持 None（逐层注入会检查）
         if self.rope:
             # 位置信息由 RoPE 在 attention 内部注入，不再加到残差流上。
             # 这样 token 幅度不随位置编码偏移，也天然支持不同 grid 的外推。
@@ -1000,6 +582,11 @@ class DiT_2Cond(nn.Module):
         rope = (self.rope_cos, self.rope_sin) if self.rope else None
 
         intermediate_feats = None
+        # 逐层注入的层号 -> injection 模块索引
+        _inj = {}
+        if self.glyph_injections is not None and g_tok is not None:
+            _inj = {blk: k for k, blk in enumerate(self.glyph_inject_at)}
+
         if self.use_checkpoint:
             for i, block in enumerate(self.blocks):
                 if return_intermediate_layer is not None and i == return_intermediate_layer:
@@ -1008,11 +595,20 @@ class DiT_2Cond(nn.Module):
                     intermediate_feats = x
                 else:
                     x = checkpoint(lambda *a: block(*a, rope=rope), x, c, use_reentrant=False)
+                if i in _inj:
+                    x = self.glyph_injections[_inj[i]](x, g_tok)
         else:
             for i, block in enumerate(self.blocks):
                 x = block(x, c, rope=rope)
                 if return_intermediate_layer is not None and i == return_intermediate_layer:
                     intermediate_feats = x
+                if i in _inj:
+                    # x = x*(1+s) + t，s/t 由 g_tok 经 zero-init Linear 产出。
+                    # init 时恒等；梯度上 ∂out/∂g_tok = W = 0，因此这条路径
+                    # 初期不给 glyph_embedder 梯度 —— 但输入层的
+                    # x = x + glyph_scale * g_tok（glyph_scale=0.4 非零）
+                    # 已提供直通梯度，故 glyph_embedder 从 step 0 即可学习。
+                    x = self.glyph_injections[_inj[i]](x, g_tok)
 
         # 骨架头：从 final_layer 前的 block 输出特征并行解码 latent 骨架 (N,1,32,32)
         skel_pred = None
@@ -1134,10 +730,12 @@ def DiT_2Cond_B_2(**kwargs):
 def DiT_2Cond_B_4(**kwargs):
     return DiT_2Cond(depth=12, hidden_size=768, patch_size=4, num_heads=12, **kwargs)
 
-def DiT_2Cond_XL_2(**kwargs):
-    return DiT_2Cond(depth=28, hidden_size=1152, patch_size=2, num_heads=16, **kwargs)
 
-
+# 模型注册表。当前 pipeline 只用 **DiT-2Cond-S/2**（fame 预训练 + 1px ControlNet）。
+#
+# 2026-08-31 清理：移除了 'DiT-2Cond-XL/2'（从未在当前 pipeline 使用）。
+# 一并删除的还有原版 DiT（单条件 + timm 组件）与 DiT_3Cond（三条件），
+# 二者均已废弃；删掉后本文件不再依赖 timm。
 DiT_2Cond_models = {
     'DiT-2Cond-XS/2': DiT_2Cond_XS_2,
     'DiT-2Cond-WS/2': DiT_2Cond_WS_2,
@@ -1146,6 +744,6 @@ DiT_2Cond_models = {
     'DiT-2Cond-S/8': DiT_2Cond_S_8,
     'DiT-2Cond-B/2': DiT_2Cond_B_2,
     'DiT-2Cond-B/4': DiT_2Cond_B_4,
-    'DiT-2Cond-XL/2': DiT_2Cond_XL_2,
 }
+
 

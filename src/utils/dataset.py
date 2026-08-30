@@ -24,8 +24,11 @@ class MCCDDataset(Dataset):
         self.load_canny = load_maps if load_canny is None else load_canny
         self.use_glyph_cond = bool(use_glyph_cond)
         if self.use_glyph_cond:
-            from src.utils import get_glyph_lookup
-            self._glookup = get_glyph_lookup()
+            # 必须用 **v2**：v1 的 std_glyph_latent 目录不存在（fame 命中率 0.0%），
+            # 且缺失时下游会静默填零张量 → 条件全程无效却不报错。
+            # 与 src/utils/latent_dataset.py 保持一致。
+            from src.utils import get_glyph_lookup_v2
+            self._glookup = get_glyph_lookup_v2()
         else:
             self._glookup = None
         self.load_skel = load_maps if load_skel is None else load_skel

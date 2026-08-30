@@ -27,7 +27,6 @@ INFRA 设计:
   python -m src.train.train_controlnet --config src/train/configs/ctrl_skel_s19_flow.json
 """
 import os
-os.environ["XFORMERS_DISABLED"] = "1"
 import sys
 _r = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..")
 if _r not in sys.path:
@@ -146,7 +145,7 @@ def parse_args():
     ap.add_argument("--qk-norm", type=int, default=1, choices=[0, 1], dest="qk_norm")
     ap.add_argument("--rope", type=int, default=1, choices=[0, 1], dest="rope")
     ap.add_argument("--rope-theta", type=float, default=100.0, dest="rope_theta")
-    ap.add_argument("--attn-impl", default="sdpa", choices=["sdpa", "eager"], dest="attn_impl")
+    ap.add_argument("--attn-impl", default="sdpa", choices=["sdpa", "xformers", "eager"], dest="attn_impl")
 
     # ---- ControlNet 结构 ----
     ap.add_argument("--ctrl-depth", type=int, default=0,
@@ -164,6 +163,9 @@ def parse_args():
     ap.add_argument("--cond-drop-one-prob", type=float, default=0.25)
     ap.add_argument("--cond-drop-struct-prob", type=float, default=0.1,
                     help="skel 条件随机置零概率 (训练时), 让模型学到无 skel 也能生成")
+    ap.add_argument("--cond-drop-which-glyph-prob", type=float, default=0.5,
+                    help="与主模型训练时一致的 glyph 条件丢弃概率 (s20 base=0.75)",
+                    dest="cond_drop_which_glyph_prob")
     ap.add_argument("--skel-cond-channels", type=int, default=4)
     ap.add_argument("--epochs", type=int, default=1400)
     ap.add_argument("--max-steps", type=int, default=100000)
@@ -255,7 +257,9 @@ def main():
             char_embed_dim=args.char_embed_dim, char_proj_mode=args.char_proj_mode,
             freeze_char_table=args.freeze_char_table,
             cond_drop_all_prob=args.cond_drop_all_prob,
-            cond_drop_one_prob=args.cond_drop_one_prob, use_checkpoint=args.use_checkpoint,
+            cond_drop_one_prob=args.cond_drop_one_prob,
+            cond_drop_which_glyph_prob=args.cond_drop_which_glyph_prob,
+            use_checkpoint=args.use_checkpoint,
             learn_sigma=_learn_sigma, diffusion_type=args.diffusion_type, **_arch)
         main_model.eval()
         ctrl = ControlNetDiT(main_model, cond_in_channels=args.skel_cond_channels,
@@ -269,6 +273,7 @@ def main():
             condition_fusion=args.condition_fusion,
             callig_embed_dim=args.callig_embed_dim, char_embed_dim=args.char_embed_dim,
             cond_drop_all_prob=args.cond_drop_all_prob, cond_drop_one_prob=args.cond_drop_one_prob,
+            cond_drop_which_glyph_prob=args.cond_drop_which_glyph_prob,
             use_checkpoint=args.use_checkpoint, learn_sigma=_learn_sigma, **_arch)
         if args.pretrained and os.path.exists(args.pretrained):
             logger.info(f"[model] loading pretrained body from {args.pretrained}")
@@ -331,7 +336,8 @@ def main():
         # Load ctrl_encoder weights (prefer ema)
         ctrl_src = ck.get("ema") or ck.get("ctrl")
         if ctrl_src:
-            ctrl_keys = {k: v for k, v in ctrl_src.items() if k.startswith("ctrl_encoder")}
+            # 非 main.* 全载 (与存盘侧对称; 兼容旧 ckpt —— 旧 ckpt 本来就只有 ctrl_encoder.*)
+            ctrl_keys = {k: v for k, v in ctrl_src.items() if not k.startswith("main.")}
             c_miss, c_unexp = ctrl.load_state_dict(ctrl_keys, strict=False)
             logger.info(f"[resume] ctrl_encoder: {len(ctrl_keys)} keys (missing={len(c_miss)}, unexpected={len(c_unexp)})")
             if ema_ctrl is not None:
@@ -465,10 +471,12 @@ def main():
             if step % args.ckpt_every == 0 and step > 0:
                 # Save trainable weights (ctrl_encoder always; + main if from-scratch)
                 ck = {
+                    # 非 main.* 全存: ctrl_encoder + injections (zero-conv/modulate 注入)
+                    # 旧过滤器只存 ctrl_encoder.* 会把训练好的 injections 丢掉
                     "ctrl": {k: v.detach().cpu() for k, v in ctrl.state_dict().items()
-                             if k.startswith("ctrl_encoder")},
+                             if not k.startswith("main.")},
                     "ema": {k: v.detach().cpu() for k, v in ema_ctrl.state_dict().items()
-                            if k.startswith("ctrl_encoder")} if ema_ctrl else None,
+                            if not k.startswith("main.")} if ema_ctrl else None,
                     "train_steps": step,
                     "args": vars(args),
                     "saved_at": datetime.datetime.now().isoformat(),

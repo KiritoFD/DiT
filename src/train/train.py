@@ -23,7 +23,7 @@ import hashlib
 import platform
 import math
 
-from src.model import DiT_2Cond_models, DiT_3Cond_models
+from src.model import DiT_2Cond_models
 from src.loss import create_diffusion_or_flow, flow_kwargs_from
 from diffusers.models import AutoencoderKL
 from src.utils import find_model
@@ -32,7 +32,6 @@ from src.utils import MCCDDataset
 from src.utils import MCCDLatentDataset
 from src.loss import EdgeGradientLoss, SkeletonLoss, REPALoss, StructDecoder, LatentStructLoss
 from torch.utils.checkpoint import checkpoint as grad_ckpt
-from src.model import inject_lora, upgrade_lora_rank, extract_full_inference
 from src.utils import DistributedFactorBalancedSampler
 from src.utils import LatentStructureLoss, LatentStructureProbe
 
@@ -186,29 +185,14 @@ def main(args):
     assert args.image_size % vae_downscale == 0, f"image_size {args.image_size} not divisible by vae_downscale {vae_downscale}"
     latent_size = args.image_size // vae_downscale
     
+    # 注：历史上曾有 cond_mode=3cond（callig + script + char 三条件，模型 DiT_3Cond）。
+    # 2026-08-31 清理时删除 —— 三条件模型已废弃，当前只保留 2cond（callig + char）。
     cond_mode = args.cond_mode
     if cond_mode == "3cond":
-        if args.model not in DiT_3Cond_models:
-            raise ValueError(f"cond_mode=3cond but model '{args.model}' is not a 3Cond model. "
-                             f"Use one of {list(DiT_3Cond_models.keys())}.")
-        model = DiT_3Cond_models[args.model](
-            input_size=latent_size,
-            num_calligraphers=args.num_calligraphers,
-            num_scripts=args.num_scripts,
-            num_characters=args.num_characters,
-            use_checkpoint=args.use_checkpoint,
-            condition_fusion=args.condition_fusion,
-            callig_embed_dim=args.callig_embed_dim,
-            script_embed_dim=args.script_embed_dim,
-            char_embed_dim=args.char_embed_dim,
-            cond_drop_all_prob=args.cond_drop_all_prob,
-            cond_drop_one_prob=args.cond_drop_one_prob,
-        )
-        logger.info(f"Building 3-Cond model: {args.model} "
-                    f"(callig={args.num_calligraphers}, script={args.num_scripts}, char={args.num_characters}, "
-                    f"fusion={args.condition_fusion}, dims={args.callig_embed_dim}/"
-                    f"{args.script_embed_dim}/{args.char_embed_dim}, dropout="
-                    f"all:{args.cond_drop_all_prob}, one:{args.cond_drop_one_prob})")
+        raise ValueError(
+            "cond_mode=3cond 已废弃：DiT_3Cond 模型类于 2026-08-31 清理时删除。"
+            "当前只支持 cond_mode=2cond（书家 + 字）。若确需三条件，"
+            "需从 git 历史恢复 src/model/dit.py 中的 DiT_3Cond。")
     else:
         if args.model not in DiT_2Cond_models:
             raise ValueError(f"cond_mode=2cond but model '{args.model}' is not a 2Cond model. "
@@ -405,22 +389,15 @@ def main(args):
         logger.info("[cond-head] reset adaLN/final_layer to std=0.02 (retain task-agnostic "
                     "transformer engine, drop ImageNet class-condition coupling).")
 
-    if getattr(args, 'use_lora', True):
-        _r = getattr(args, 'lora_r', 16)
-        _alpha = getattr(args, 'lora_alpha', None)
-        if _alpha is None:
-            _alpha = _r  # default scaling = 1
-        logger.info(f"Injecting LoRA (r={_r}, alpha={_alpha}, scaling={_alpha/_r:.2f}, target={getattr(args, 'lora_target', 'all')}) into DiT blocks...")
-        model = inject_lora(model, r=_r, lora_alpha=_alpha, target=getattr(args, 'lora_target', 'all'))
-
-        # Optional: upgrade LoRA rank from a previous run's checkpoint, preserving
-        # the learned low-rank deltas. See lora.upgrade_lora_rank for the strategy.
-        if getattr(args, 'resume_lora', None):
-            import torch as _torch
-            _sd = _torch.load(args.resume_lora, map_location="cpu")
-            _sd = _sd.get("state_dict", _sd) if isinstance(_sd, dict) else _sd
-            old_r = getattr(args, 'old_lora_r', 16)
-            model = upgrade_lora_rank(model, _r, _alpha, _sd, old_r)
+    # 注：LoRA 支持（inject_lora / upgrade_lora_rank / extract_full_inference）
+    # 已于 2026-08-31 随 src/model/lora.py 一并删除 —— 当前所有配置均为
+    # use_lora=false，ControlNet 训练用的是「冻结主干 + 只训 ctrl 分支」，
+    # 不需要 LoRA。若配置里仍带 use_lora=true，这里显式报错而不是静默忽略。
+    if getattr(args, 'use_lora', False):
+        raise ValueError(
+            "use_lora=true 已不支持：src/model/lora.py 已于 2026-08-31 删除。"
+            "请改用 use_lora=false（全参数训练）或 --pretrained 冻结主干模式。"
+            "若确实需要 LoRA，需从 git 历史恢复 src/model/lora.py。")
 
     # 3) full resume works for both LoRA and full-from-scratch checkpoints.
     if getattr(args, 'resume_full', None) is not None:
@@ -432,15 +409,15 @@ def main(args):
         logger.info(f"[resume-full] Loaded weights from {args.resume_full} "
                     f"(missing={len(missing)}, unexpected={len(unexpected)}).")
 
-    # ---- freeze / trainable policy (independent of use_lora) -----------------
+    # ---- freeze / trainable policy --------------------------------------------
     # Two regimes:
-    #   1) pretrained body (+ optional LoRA): freeze the pretrained transformer body,
-    #      train only the *new* condition head + adaLN/final_layer (+ lora_* if injected).
+    #   1) pretrained body: freeze the pretrained transformer body,
+    #      train only the *new* condition head + adaLN/final_layer.
     #      adaLN is reset to std=0.02 by `reset_cond_head`, so it MUST be trainable
     #      (`train_cond_head=true`), otherwise the model is stuck on random modulation.
-    #   2) from-scratch (pretrained=None and use_lora=false): keep all params trainable.
+    #   2) from-scratch (pretrained=None): keep all params trainable.
     _has_pretrained = args.pretrained is not None
-    if getattr(args, 'use_lora', True) or _has_pretrained:
+    if _has_pretrained:
         requires_grad(model, False)
         train_cond_head = getattr(args, 'train_cond_head', True)
         for name, param in model.named_parameters():
@@ -929,9 +906,16 @@ def main(args):
             _vae_lc = int(getattr(args, 'latent_channels', 4))
             _vae_sf = float(getattr(args, 'vae_scaling_factor', 0.18215))
             _img_root = getattr(args, 'img_root', '') or getattr(args, 'data_dir', '') or ''
+            # 训练侧若启用标准字形条件，eval 必须同步喂 g，否则条件域不匹配：
+            # 模型训练时依赖 g，eval 却拿到全零 → 表现为「该条件无效」的假象。
+            _use_glyph = bool(getattr(args, 'use_glyph_cond', False))
+            if bool(getattr(args, 'w_glyph_cond', False)) and not _use_glyph:
+                _use_glyph = True       # w_glyph_cond 是同一个条件的别名
+            if _use_glyph:
+                logger.info("[glyph-cond] eval 侧同步启用标准字形条件 g")
             _eval_cache = prepare_eval_cache(
                 _eval_csv, _img_root, args.image_size, _eval_n,
-                _vae_ds, _vae_lc, _vae_sf)
+                _vae_ds, _vae_lc, _vae_sf, use_glyph_cond=_use_glyph)
             _show5_csv = getattr(args, 'show5_csv', None)
             if _show5_csv and os.path.exists(_show5_csv):
                 _eval_show5_cache = prepare_small_cache(
@@ -1344,13 +1328,9 @@ def main(args):
                 if _save_ckpt and train_steps > 0:
                     if rank == 0:
                         model_to_save = model.module if hasattr(model, 'module') else model
-                        # LoRA mode: store only the "changed" part (LoRA + condition head +
-                        # adaLN/final_layer) since the frozen body loads from disk at restore time.
-                        # Full-pretrain mode (use_lora=false): store the complete state dict.
-                        if getattr(args, 'use_lora', True):
-                            delta = extract_full_inference(model_to_save)
-                        else:
-                            delta = model_to_save.state_dict()
+                        # 始终保存完整 state_dict（LoRA 的 delta-only 保存已随
+                        # src/model/lora.py 于 2026-08-31 删除）。
+                        delta = model_to_save.state_dict()
                         # Move tensors to CPU before serialize so torch.save never
                         # allocates extra GPU memory (avoids save-time VRAM spikes).
                         delta = _state_to_cpu(delta)
@@ -1496,7 +1476,8 @@ def main_from_cli(argv=None):
                         help="Whether adaLN/final_layer (reset by --reset-cond-head) should be "
                              "trainable. True (default) lets them learn after reset; False keeps "
                              "them frozen at their reset random values (legacy behavior).")
-    parser.add_argument("--model", type=str, choices=list(DiT_2Cond_models.keys()) + list(DiT_3Cond_models.keys()), default="DiT-2Cond-XL/2")
+    # 注：DiT_3Cond_models 已随 DiT_3Cond 于 2026-08-31 删除，choices 只剩 2Cond。
+    parser.add_argument("--model", type=str, choices=list(DiT_2Cond_models.keys()), default="DiT-2Cond-S/2")
     parser.add_argument("--cond-mode", type=str, choices=["2cond", "3cond"], default="2cond",
                         help="Conditioning mode: 2cond (callig+char) or 3cond (callig+script+char).")
     parser.add_argument("--condition-fusion", type=str,

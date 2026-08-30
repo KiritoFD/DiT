@@ -79,9 +79,9 @@ def build_model(args, device="cpu"):
     cond_mode = getattr(args, "cond_mode", "2cond")
     _in_ch = getattr(args, "latent_channels", 4)
     if cond_mode == "3cond":
-        from src.model import DiT_3Cond_models
-        if args.model not in DiT_3Cond_models:
-            raise ValueError(f"cond_mode=3cond but model '{args.model}' not a 3Cond model")
+        # DiT_3Cond 已于 2026-08-31 删除（见 src/model/__init__.py 的清理说明）。
+        raise ValueError(
+            "cond_mode=3cond 已废弃：DiT_3Cond 模型类已删除，当前只支持 2cond。")
         model = DiT_3Cond_models[args.model](
             input_size=latent_size,
             num_calligraphers=args.num_calligraphers,
@@ -124,15 +124,10 @@ def build_model(args, device="cpu"):
         missing, unexpected = model.load_state_dict(state_dict, strict=False)
         log(f"[model] loaded pretrained body {args.pretrained} "
             f"(missing={len(missing)}, unexpected={len(unexpected)})")
-    if getattr(args, "use_lora", True):
-        from src.model import inject_lora
-        _r = getattr(args, "lora_r", 16)
-        _alpha = getattr(args, "lora_alpha", None)
-        if _alpha is None:
-            _alpha = _r
-        model = inject_lora(model, r=_r, lora_alpha=_alpha,
-                            target=getattr(args, "lora_target", "all"))
-        log(f"[model] injected LoRA r={_r}")
+    if getattr(args, "use_lora", False):
+        # LoRA 已于 2026-08-31 随 src/model/lora.py 删除。
+        raise ValueError(
+            "use_lora=true 已不支持：src/model/lora.py 已删除。请用 use_lora=false。")
     model = model.to(device).eval()
     return model
 

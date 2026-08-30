@@ -32,35 +32,57 @@ import torch.nn.functional as F
 
 _SDPA = getattr(F, "scaled_dot_product_attention", None)   # torch >= 2.0
 
+# xformers memory-efficient attention：torch<2.0 且无 flash-attn 时的替代
+# （注意 4090 服务器 torch=1.13.1 装的是 xformers 0.0.16，这里显式探测）
+_XOPS = None
+try:
+    import xformers.ops as _xoops  # noqa: E402
+    _XOPS = _xoops
+except Exception:  # noqa: BLE001
+    _XOPS = None
+
 _SDPA_WARNED = False
 
 
 def resolve_attn_impl(attn_impl):
     """把 attn_impl 解析成实际可用的实现。
 
-    ⚠ 这里必须**显式报警**：torch < 2.0（本项目的 4090 服务器是 1.13.1）没有
-    ``F.scaled_dot_product_attention``，也没有装 xformers / flash-attn。
-    早期版本用 ``except AttributeError: _SDPA = None`` 静默吞掉，于是
-    ``attn_impl="sdpa"`` 悄悄变成 eager —— attention 矩阵被完整物化
-    (B·H·N² 个fp32元素)，显存直接翻倍并导致 OOM。宁可吵，不要静默。
+    优先级：``sdpa``(torch>=2.0, F.scaled_dot_product_attention) >
+    ``xformers``(memory_efficient_attention, torch<2.0 时的替代) >
+    ``eager``(手写 softmax, 物化完整 attention 矩阵, 最慢最占显存)。
+    早期版本在 torch<2.0 时把 ``attn_impl="sdpa"`` 悄悄降级成 eager，
+    attention 矩阵被完整物化 (B·H·N² 个 fp32 元素) 导致显存翻倍/OOM。
+    这里宁可显式报警，也不要静默降级。
     """
     global _SDPA_WARNED
     impl = (attn_impl or "auto").lower()
     if impl == "auto":
-        impl = "sdpa" if _SDPA is not None else "eager"
+        if _SDPA is not None:
+            impl = "sdpa"
+        elif _XOPS is not None:
+            impl = "xformers"
+        else:
+            impl = "eager"
     if impl == "sdpa" and _SDPA is None:
         if not _SDPA_WARNED:
             import logging
-            logging.getLogger(__name__).warning(
-                "[modules] attn_impl='sdpa' 不可用（torch=%s 无 "
-                "F.scaled_dot_product_attention，且未安装 xformers/flash-attn），"
-                "已回退到 'eager'。eager 会物化整个 attention 矩阵，"
-                "显存占用显著更高 —— 请相应调小 batch 或启用 use_checkpoint。",
-                torch.__version__)
+            if _XOPS is not None:
+                logging.getLogger(__name__).warning(
+                    "[modules] torch=%s 无 F.scaled_dot_product_attention，"
+                    "已改用 xformers memory_efficient_attention；若出现数值/速度问题，"
+                    "可显式设置 attn_impl='eager'。", torch.__version__)
+            else:
+                logging.getLogger(__name__).warning(
+                    "[modules] attn_impl='sdpa' 不可用（torch=%s 无 "
+                    "F.scaled_dot_product_attention，且未安装 xformers/flash-attn），"
+                    "已回退到 'eager'。eager 会物化整个 attention 矩阵，"
+                    "显存占用显著更高 —— 请相应调小 batch 或启用 use_checkpoint。",
+                    torch.__version__)
             _SDPA_WARNED = True
-        impl = "eager"
-    if impl not in ("sdpa", "eager"):
-        raise ValueError(f"Unknown attn_impl={attn_impl!r} (expected 'auto'/'sdpa'/'eager')")
+        impl = "xformers" if _XOPS is not None else "eager"
+    if impl not in ("sdpa", "xformers", "eager"):
+        raise ValueError(f"Unknown attn_impl={attn_impl!r} "
+                         f"(expected 'auto'/'sdpa'/'xformers'/'eager')")
     return impl
 
 
@@ -197,6 +219,10 @@ def apply_rope(x, cos, sin):
     """
     x1, x2 = x.chunk(2, dim=-1)
     rot = torch.cat([-x2, x1], dim=-1)
+    # 让 cos/sin 跟随 x 的 dtype，避免 bf16 的 x 被 fp32 的 cos/sin 提升为 fp32，
+    # 从而使 q/k 与 v 的 dtype 不一致（xformers memory_efficient_attention 严格要求统一 dtype）。
+    cos = cos.to(x.dtype)
+    sin = sin.to(x.dtype)
     return x * cos[None, None, :, :] + rot * sin[None, None, :, :]
 
 
@@ -250,6 +276,12 @@ class Attention(nn.Module):
 
         if self.attn_impl == "sdpa":
             out = _SDPA(q, k, v, dropout_p=self.attn_drop if self.training else 0.0)
+        elif self.attn_impl == "xformers":
+            # xformers 期望 (B, N, H, Dh)，这里 q/k/v 是 (B, H, N, Dh)
+            out = _XOPS.memory_efficient_attention(
+                q.transpose(1, 2), k.transpose(1, 2), v.transpose(1, 2),
+                attn_bias=None, p=self.attn_drop if self.training else 0.0)
+            out = out.transpose(1, 2)
         else:
             attn = (q @ k.transpose(-2, -1)) * self.scale
             attn = attn.softmax(dim=-1)

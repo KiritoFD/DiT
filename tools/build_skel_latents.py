@@ -187,11 +187,17 @@ def main():
     ap.add_argument("--latent-out", default="final_skel_latents_mid_clean")
     ap.add_argument("--vae-path", default="pretrained_models/sd-vae-ft-ema")
     ap.add_argument("--workers", type=int, default=32)
+    ap.add_argument("--latent-src", default="3px", choices=["1px", "3px"],
+                    help="编码哪一套骨架进 latent。1px = 细骨架(1px PNG), "
+                         "3px = 膨胀后(默认, 与历史 ControlNet 一致)。"
+                         "PNG 阶段两套都会生成, 这里只选 latent 的输入源。")
     args = ap.parse_args()
 
     t_all = time.time()
     ids = build_pngs(args.csv, args.img_root, args.skel1_dir, args.skel3_dir, args.workers)
-    build_latents(ids, args.skel3_dir, args.latent_out, args.vae_path)
+    src_dir = args.skel1_dir if args.latent_src == "1px" else args.skel3_dir
+    print(f"[skel] latent-src = {args.latent_src} -> {src_dir}", flush=True)
+    build_latents(ids, src_dir, args.latent_out, args.vae_path)
     print(f"[skel] ALL DONE in {time.time()-t_all:.0f}s", flush=True)
 
 

@@ -187,11 +187,34 @@ class ControlNetDiT(nn.Module):
     def __init__(self, main_model, cond_in_channels=4, train_ctrl_only=True,
                  ctrl_depth=None, ctrl_hidden=None, ctrl_num_heads=None,
                  injection="modulate", null_cond="gaussian",
-                 norm_type="rms", mlp_type="swiglu", qk_norm=True,
-                 rope=True, rope_theta=100.0, attn_impl="sdpa"):
+                 norm_type=None, mlp_type=None, qk_norm=None,
+                 rope=None, rope_theta=None, attn_impl=None):
+        """
+        Args:
+            main_model: 已加载权重的主模型（DiT_2Cond）。
+            norm_type/mlp_type/qk_norm/rope/... : ctrl encoder 的架构参数。
+                **默认 None = 从 main_model 继承**。若主模型是旧架构
+                （LayerNorm + GELU，如 s15~s19 的 ckpt），不继承就会默认走
+                新版（RMSNorm + SwiGLU），ctrl_encoder 的 mlp 形状会是
+                1024 而 ckpt 里是 1536，在 load_state_dict 时报错。
+                只有当你明确想让 ctrl encoder 与主模型用不同架构时才显式传。
+        """
         super().__init__()
         self.main = main_model
         m = main_model
+
+        def _inherit(v, attr, default):
+            if v is not None:
+                return v
+            return getattr(m, attr, default)
+
+        norm_type = _inherit(norm_type, 'norm_type', 'rms')
+        mlp_type = _inherit(mlp_type, 'mlp_type', 'swiglu')
+        qk_norm = _inherit(qk_norm, 'qk_norm', True)
+        rope = _inherit(rope, 'rope', True)
+        rope_theta = _inherit(rope_theta, 'rope_theta', 100.0)
+        attn_impl = _inherit(attn_impl, 'attn_impl', 'sdpa')
+
         hd = int(getattr(m, 'hidden_size', 384))
         depth = len(m.blocks)
         heads = int(getattr(m, 'num_heads', 6))
@@ -242,6 +265,81 @@ class ControlNetDiT(nn.Module):
         if train_ctrl_only:
             for param in self.main.parameters():
                 param.requires_grad = False
+
+    # ------------------------------------------------------------------ #
+    # 旧 ckpt 兼容
+    # ------------------------------------------------------------------ #
+    @staticmethod
+    def _remap_legacy_ctrl_keys(sd):
+        """把 2026-08-28 之前的旧 ckpt key 映射到当前布局。
+
+        旧布局（controlnet_legacy.py）::
+
+            ctrl_encoder.embed.pos_embed / .proj.weight / .proj.bias
+            ctrl_encoder.out_projs.{i}.weight / .bias        # zero-conv
+            ctrl_encoder.ctrl_blocks.{i}.*
+
+        新布局::
+
+            ctrl_encoder.pos_embed                            # persistent buffer
+            ctrl_encoder.proj.weight / .bias                  # PatchEmbed
+            injections.{i}.proj.weight / .bias                # ZeroAdaLNInjection
+            ctrl_encoder.ctrl_blocks.{i}.*
+
+        不映射的后果很隐蔽：``load_state_dict(strict=False)`` 不报错，
+        但 injections 停留在 zero-init，cond 完全短路 —— 四臂评估结果
+        会完全相同，看上去像"ControlNet 无效"而不是"权重没加载"。
+        """
+        out = {}
+        for k, v in sd.items():
+            nk = k
+            if nk.startswith("ctrl_encoder.embed."):
+                nk = nk.replace("ctrl_encoder.embed.", "ctrl_encoder.", 1)
+            elif nk.startswith("ctrl_encoder.out_projs."):
+                # out_projs.{i}.{weight,bias} -> injections.{i}.proj.{weight,bias}
+                rest = nk[len("ctrl_encoder.out_projs."):]
+                idx, _, leaf = rest.partition(".")
+                nk = f"injections.{idx}.proj.{leaf}"
+            out[nk] = v
+        return out
+
+    @classmethod
+    def from_ckpt(cls, main_model, ckpt_path, device=None, strict=True, **kwargs):
+        """从 ckpt 构造。自动处理 {ema|ctrl|model} 包装与旧 key 布局。
+
+        strict=True（默认）时，若存在**未加载的 ctrl 参数**会直接抛错 ——
+        因为那意味着 injections 停在 zero-init，cond 被完全短路，
+        而 strict=False 会让这种失效静默发生。
+        """
+        ck = torch.load(ckpt_path, map_location="cpu", weights_only=False)
+        sd = ck
+        if isinstance(ck, dict):
+            for key in ("ema", "ctrl", "model", "state_dict"):
+                if key in ck and isinstance(ck[key], dict):
+                    sd = ck[key]
+                    break
+        sd = cls._remap_legacy_ctrl_keys(sd)
+        obj = cls(main_model, **kwargs)
+        if device is not None:
+            obj = obj.to(device)
+        miss, unexp = obj.load_state_dict(sd, strict=False)
+        # main.* 由主模型自己加载，不在这里管
+        ctrl_miss = [k for k in miss if not k.startswith("main.")]
+        ctrl_unexp = [k for k in unexp if not k.startswith("main.")]
+        import logging
+        log = logging.getLogger(__name__)
+        step = ck.get("train_steps") if isinstance(ck, dict) else "?"
+        log.warning(f"[ctrl-ckpt] {ckpt_path} step={step} "
+                    f"ctrl_missing={len(ctrl_miss)} ctrl_unexpected={len(ctrl_unexp)}")
+        if ctrl_unexp:
+            log.warning(f"    unexpected(前5): {ctrl_unexp[:5]}")
+        if ctrl_miss and strict:
+            raise RuntimeError(
+                f"ControlNet ckpt 有 {len(ctrl_miss)} 个 ctrl 参数未加载 "
+                f"(例: {ctrl_miss[:3]})。injections 若未加载会因 zero-init 而"
+                f"让 cond 完全短路。请检查架构参数是否与训练时一致，"
+                f"或显式传 strict=False 以忽略。")
+        return obj
 
     # ---- null condition ----
     def _make_null(self, cond):
