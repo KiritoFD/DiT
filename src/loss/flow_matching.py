@@ -158,14 +158,21 @@ class FlowMatching:
         """
         return (1.0 - t[:, None, None, None]) * x_start + t[:, None, None, None] * noise
 
-    def training_losses(self, model, x_start, t, model_kwargs=None, noise=None):
+    def training_losses(self, model, x_start, t, model_kwargs=None, noise=None,
+                        return_pred_xstart=False):
         """
         Velocity-matching loss on the linear interpolant path.
 
         x_t = (1 - t) * x_start + t * noise
         v   = noise - x_start        (target velocity: d x_t / d t)
 
-        Returns ``{"loss": [N] per-sample MSE, "intermediate_feats": ...}``.
+        Args:
+            return_pred_xstart: 若为 True，额外返回 ``pred_xstart``
+                （由预测速度反推的 x0，携带梯度）。默认 False 以避免
+                不必要的 autograd 图膨胀（见下方实现处注释）。
+
+        Returns ``{"loss": [N] per-sample MSE, "intermediate_feats": ...,
+                   "pred_xstart": ...}``.
         """
         if model_kwargs is None:
             model_kwargs = {}
@@ -208,6 +215,25 @@ class FlowMatching:
         loss = F.mse_loss(model_output, v_target.float(), reduction="none")
         loss = loss.mean(dim=list(range(1, loss.ndim)))
         terms["loss"] = loss
+
+        # ── 从预测速度反推 x0 ───────────────────────────────────────────
+        # 直线插值下 x_t = (1-t)·x0 + t·eps，v = eps - x0，故
+        #     x0 = x_t - t·v
+        # 用**预测的** v 代入即得到 x0_pred（携带梯度）。
+        #
+        # 为什么要有这个返回值：train.py 里有一批机制依赖
+        # loss_dict["pred_xstart"]，包括 **w_std_mid** —— 它把去噪中段预测的
+        # x0 拉向标准字形 latent g，是专为「让模型写出正确字形」设计的
+        # 预训练改进项。但 flow 分支此前**从不返回该键**，于是
+        # `loss_dict.get("pred_xstart", None)` 恒为 None，这些机制全部
+        # 静默失效（不报错、loss 正常下降、但从未生效）。
+        # 这是本仓库第三次出现「零/None + 宽松检查 = 静默失效」的模式。
+        #
+        # 为什么默认关闭：pred_xstart 携带整个 DiT 前向图，多个 loss 共用会
+        # 让 autograd 图暴涨（实测 20G→22G）。因此只在调用方确实需要时才
+        # 计算，默认零开销。
+        if return_pred_xstart:
+            terms["pred_xstart"] = x_t - t.reshape(-1, 1, 1, 1) * model_output
         return terms
 
     # ── sampling schedule ───────────────────────────────────────────────

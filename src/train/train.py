@@ -974,8 +974,31 @@ def main(args):
                     model_kwargs['return_intermediate_layer'] = 8
 
                 # Forward pass under bf16 autocast (same exponent range as fp32, no overflow).
+                #
+                # return_pred_xstart: flow 分支默认**不返回** pred_xstart（避免
+                # autograd 图膨胀），但下面 w_std_mid / latent_skel / latent_canny /
+                # latent_struct 都依赖它。若这里不请求，flow 模式下这些机制会
+                # 因 `loss_dict.get("pred_xstart", None)` 恒为 None 而**静默失效**
+                # —— 不报错、loss 正常下降、但从未生效。w_std_mid 正是「把去噪中
+                # 段预测的 x0 拉向标准字形 latent」的预训练改进项，失效代价很大。
+                # gaussian_diffusion 不接受该参数，故用 try/except 兼容。
+                _need_x0 = (latent_struct_loss_fn is not None
+                            or getattr(args, 'w_latent_skel', 0) > 0
+                            or getattr(args, 'w_latent_canny', 0) > 0
+                            or getattr(args, 'w_std_mid', 0.0) > 0)
                 with torch.autocast("cuda", dtype=torch.bfloat16):
-                    loss_dict = diffusion.training_losses(model, x_latent, t, model_kwargs)
+                    if _need_x0:
+                        try:
+                            loss_dict = diffusion.training_losses(
+                                model, x_latent, t, model_kwargs,
+                                return_pred_xstart=True)
+                        except TypeError:
+                            # gaussian_diffusion 不支持该参数，本身就会返回 pred_xstart
+                            loss_dict = diffusion.training_losses(
+                                model, x_latent, t, model_kwargs)
+                    else:
+                        loss_dict = diffusion.training_losses(
+                            model, x_latent, t, model_kwargs)
                     loss_diff = loss_dict["loss"].mean()
 
                 loss_canny = torch.tensor(0.0, device=device)
