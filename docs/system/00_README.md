@@ -60,21 +60,52 @@
 | 字形泛化分析 | [11_glyph_generalization.md](11_glyph_generalization.md) |
 | DINO 条件实测（有效秩/检索/书体泄漏） | [12_dino_diagnosis_20260829.md](12_dino_diagnosis_20260829.md) |
 | **v2 架构现代化（当前主干）** | **[13_arch_v2_modernization.md](13_arch_v2_modernization.md)** |
+| **字符条件探测 + s22 诊断** | **[14_glyph_condition_probe.md](14_glyph_condition_probe.md)** |
+| **代码/模型/文档问题清单** | **[15_codebase_review_20260830.md](15_codebase_review_20260830.md)** |
+| **模型架构全景（参数/条件维度实测）** | **[16_model_architecture.md](16_model_architecture.md)** |
+| **实验结果全集（640 评测点 / 47 实验）** | **[17_experiments_registry.md](17_experiments_registry.md)** |
+| **数据资产清单** | **[18_data_assets.md](18_data_assets.md)** |
+| **核心发现与方向（先读这篇）** | **[19_core_findings.md](19_core_findings.md)** |
 
-## 4. 核心事实速查（2026-08-29，v2 主干）
+> **新读者建议**：先读 [19_core_findings.md](19_core_findings.md)（一页看懂现状），
+> 再按需查 [16 架构](16_model_architecture.md) / [17 实验](17_experiments_registry.md) / [18 数据](18_data_assets.md)。
+> 这三篇的数据来自 `5script/*.csv`，由 `_scan_*.py` 自动生成，可随时重跑刷新。
+
+### 3.1 结构化数据（CSV）
+
+| CSV | 行数 | 内容 |
+|---|---:|---|
+| `5script/eval_points.csv` | 640 | 每个评测点（实验 × step × arm × 指标） |
+| `5script/experiments_enriched.csv` | 47 | 实验级指标 + 数据集难度维度 |
+| `5script/difficulty_summary.csv` | 7 | **数据难度 vs 指标**（SSIM 不可跨数据集比较） |
+| `5script/skel_ablation.csv` | 20 | **骨架消融 1px / 3px / std-skel** |
+| `5script/data_assets.csv` | 78 | 数据集 / latent / 骨架 / 字形库清点 |
+| `5script/model_components.csv` | 10 | 模型逐模块参数量 |
+| `5script/condition_dims.csv` | 4 | 条件信号维度对比 |
+
+## 4. 核心事实速查（2026-08-30，fame 主干）
 
 | 项 | 值 |
 |---|---|
-| 主模型 | DiT-2Cond-S/2，**46.2M** 参数，输入 (4,32,32) latent（f8 VAE） |
+| 主模型 | DiT-2Cond-S/2，**46.52M** 参数，输入 (4,32,32) latent（**f4 VAE**，scaling 0.18215） |
 | 骨干 | **RMSNorm + SwiGLU + 2D-RoPE + QK-Norm**（见 `13_arch_v2_modernization.md`，可回退） |
+| 参数分布 | Transformer blocks **68.57%**；`y_char_embedder` **29.0%（默认冻结）** |
+| 条件 | 书家 128 维 + 字 384 维（DINO，**有效秩仅 34**）；可选空间条件（骨架/字形 latent 4,096 维） |
 | 扩散 | 默认 **flow**（直线插值），模型输入 t×1000，**Heun 25 步**（= 50 NFE） |
 | t 采样 | **logit-normal**（SD3），`shift=1.0` 不 shift |
-| 训练速度 | ~4.1 steps/s，batch **128**，显存 ~15.8G/24G |
-| 优化器 | AdamW **1.5e-4**（sqrt 缩放自 2e-4@240），cosine + 3000 warmup，EMA 0.9999 |
-| 数据 | mid_common：23,597 行真实样本（**无增广**，见 `08_experiments.md`） |
-| 评测 | eval_strict_midclean.csv（501 行，zero-shot=0、组合未覆盖），cfg=1.7 |
+| 训练速度 | ~4.3 steps/s，batch **192**，显存 ~16.8G/24G |
+| 优化器 | AdamW，cosine + warmup，EMA 0.9999 |
+| 数据 | **fame：51,322 样本 / 44 书家 / 4,765 字 / 7 书体** |
+| 评测 | `eval_fame_strict.csv`（500 行，字与书家均 100% 见过，测组合泛化），cfg=**0.7** |
 | 早停 | **ssim + lpips** 双指标，patience 5，min_delta 0.002 / 0.003 |
-| 当前运行 | **s20 mid_common 预训练**（`run_s20_midcommon.sh`） |
+| 当前最佳 | 预训练 **s21 SSIM 0.4664**@27.5k；ControlNet(3px) **0.7889**@50k |
+| 当前运行 | **fame-ctrl-skel-1px**（1px 细骨架 ControlNet） |
+
+> ⚠️ **SSIM 不可跨数据集比较**：11 书家上可达 0.73，44 书家上只有 0.47。
+> 报告指标必须同时给出评测集书家数，见 `difficulty_summary.csv`。
+>
+> ⚠️ **ControlNet 的 0.80 是「复刻」指标**（骨架从目标图抽取），不是泛化指标。
+> 真正的泛化基准是 base 的 0.50。详见 [19_core_findings.md](19_core_findings.md)。
 
 > 关键环境约束：远程 4090 是 **torch 1.13.1**，无 `F.scaled_dot_product_attention`，
 > 也无 xformers/flash-attn（sm_89 需 flash-attn 2.x，而 2.x 要 torch≥2.0）。

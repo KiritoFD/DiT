@@ -1,0 +1,11 @@
+component,params,pct_of_total,frozen_by_default,example_shapes
+blocks (transformer),31898112,68.57,no,"blocks.0.attn.qkv.weight:(1152, 384) | blocks.0.attn.qkv.bias:(1152,) | blocks.0.attn.proj.weight:(384, 384) | blocks.0.attn.proj.bias:(384,)"
+y_char_embedder,13490688,29.0,YES (freeze_char_table=true),"y_char_embedder.null_embed:(384,) | y_char_embedder.embedding_table.weight:(35131, 384)"
+final_layer,301840,0.65,no,"final_layer.linear.weight:(16, 384) | final_layer.linear.bias:(16,) | final_layer.adaLN_modulation.1.weight:(768, 384) | final_layer.adaLN_modulation.1.bias:(768,)"
+char_proj,296448,0.64,no,"char_proj.0.weight:(384,) | char_proj.0.bias:(384,) | char_proj.1.weight:(384, 384) | char_proj.1.bias:(384,)"
+t_embedder,246528,0.53,no,"t_embedder.mlp.0.weight:(384, 256) | t_embedder.mlp.0.bias:(384,) | t_embedder.mlp.2.weight:(384, 384) | t_embedder.mlp.2.bias:(384,)"
+y_callig_embedder,129792,0.28,no,"y_callig_embedder.embedding_table.weight:(1014, 128)"
+pos_embed,98304,0.21,no,"pos_embed:(1, 256, 384)"
+callig_proj,49792,0.11,no,"callig_proj.0.weight:(128,) | callig_proj.0.bias:(128,) | callig_proj.1.weight:(384, 128) | callig_proj.1.bias:(384,)"
+x_embedder,6528,0.01,no,"x_embedder.proj.weight:(384, 4, 2, 2) | x_embedder.proj.bias:(384,)"
+glyph_scale,1,0.0,no,glyph_scale:()

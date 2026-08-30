@@ -166,3 +166,19 @@ _diag/
 _ot_scratch/
 std_glyph_latent_v2/
 final_latents_mid_clean/
+
+# ---- fame 绯诲垪鏁版嵁/浜х墿鐩綍锛堣繙绋嬬敓鎴愶紝涓嶅叆搴擄級----
+final_latents_fame/
+final_skel_latents_fame/
+final_skel_latents_fame_1px/
+final_skel_latents_train_1px/
+final_skel_latents_eval_1px/
+final_skel3_fame/
+final_skel1_fame/
+final_skel3_mid_clean/
+final_skel1/
+_gt_cache/
+_archive/
+skel_bank_std.npz
+skel_bank_train.npz
+fame_meta.json

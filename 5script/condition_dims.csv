@@ -1,0 +1,5 @@
+signal,source,raw_dim,embed_dim,spatial,note
+书家 ID embedding,y_embedder (num_calligraphers=1013),1013,128,1 (全局标量条件),全局标签，无空间信息
+字 ID (DINO glyph),"y_char_embedder (35130×384, DINO CLS)",35130,384,1 (全局标量条件),有效秩仅 34.1/384；CLS 为全局摘要，丢失空间结构
+标准字形 latent g,std_glyph_latent_v2 (VAE latent),4096,4096,4×32×32 (空间图),w_glyph_cond：编码字形本身，含完整空间结构；fame 覆盖 53.1%
+骨架 latent (ControlNet),final_skel_latents_fame,4096,4096,4×32×32 (空间图),GT 骨架→VAE latent；含完整笔画拓扑，是 0.50→0.80 的主因

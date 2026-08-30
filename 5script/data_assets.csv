@@ -1,0 +1,79 @@
+path,category,n_items,n_calligraphers,n_characters,n_scripts,size_mb,notes
+5script/eval.csv,dataset_csv,472,122,437,5,0.03,cols=image_path|calligrapher|script|character|calligrapher_id|script_id|character_id|glyph_id
+5script/eval100_3top30.csv,dataset_csv,138,71,134,3,0.01,cols=image_path|calligrapher|script|character|calligrapher_id|script_id|character_id|glyph_id
+5script/eval100_top.csv,dataset_csv,100,46,97,5,0.01,cols=image_path|calligrapher|script|character|calligrapher_id|script_id|character_id|glyph_id
+5script/eval100_top30.csv,dataset_csv,100,42,97,5,0.01,cols=image_path|calligrapher|script|character|calligrapher_id|script_id|character_id|glyph_id
+5script/eval100_top30_clean.csv,dataset_csv,79,40,78,5,0.0,cols=image_path|calligrapher|script|character|calligrapher_id|script_id|character_id|glyph_id
+5script/eval100_top6.csv,dataset_csv,100,11,99,2,0.01,cols=image_path|calligrapher|script|character|calligrapher_id|script_id|character_id|glyph_id
+5script/eval500_3top30.csv,dataset_csv,500,91,443,3,0.03,cols=image_path|calligrapher|script|character|calligrapher_id|script_id|character_id|glyph_id
+5script/eval500_3top30_common.csv,dataset_csv,310,77,272,3,0.02,cols=image_path|calligrapher|script|character|calligrapher_id|script_id|character_id|glyph_id
+5script/eval500_clean.csv,dataset_csv,455,122,421,5,0.03,cols=image_path|calligrapher|script|character|calligrapher_id|script_id|character_id|glyph_id
+5script/eval5_5script.csv,dataset_csv,5,5,5,5,0.0,cols=image_path|calligrapher|script|character|calligrapher_id|script_id|character_id|glyph_id
+5script/eval5_top.csv,dataset_csv,5,5,5,5,0.0,cols=image_path|calligrapher|script|character|calligrapher_id|script_id|character_id|glyph_id
+5script/eval5_top30.csv,dataset_csv,5,4,5,5,0.0,cols=image_path|calligrapher|script|character|calligrapher_id|script_id|character_id|glyph_id
+5script/eval_fame_strict.csv,dataset_csv,500,42,432,6,0.03,cols=image_path|calligrapher|script|character|calligrapher_id|script_id|character_id|glyph_id
+5script/eval_points.csv,dataset_csv,640,0,0,0,0.11,cols=run_dir|series|experiment|step|source|arm|ssim|mse
+5script/eval_s20_ctrl_monitor.csv,dataset_csv,1,0,0,0,0.0,cols=step|ckpt|mse_base|ssim_base|mse_ctrl|ssim_ctrl|ssim_ctrl_楷|ssim_ctrl_行
+5script/eval_strict_midclean.csv,dataset_csv,501,64,435,3,0.03,cols=image_path|calligrapher|script|character|calligrapher_id|script_id|character_id|glyph_id
+5script/eval_strict_top6.csv,dataset_csv,271,11,263,2,0.02,cols=image_path|calligrapher|script|character|calligrapher_id|script_id|character_id|glyph_id
+5script/eval_unified_20260829.csv,dataset_csv,8,0,0,0,0.0,cols=experiment|run_dir|ckpt|model|diffusion|data|n|cfg
+5script/eval_unseen_top6.csv,dataset_csv,255,11,242,2,0.01,cols=image_path|calligrapher|script|character|calligrapher_id|script_id|character_id|glyph_id
+5script/experiments.csv,dataset_csv,47,0,0,0,0.01,cols=run_dir|series|experiment|model|task|data_csv|diffusion_type|image_size
+5script/fast100.csv,dataset_csv,100,48,89,5,0.01,cols=image_path|calligrapher|script|character|calligrapher_id|script_id|character_id|glyph_id
+5script/old_experiments_summary_20260829.csv,dataset_csv,77,0,0,0,0.02,cols=root|series|run|status|desc|n_ckpts|n_keep|n_delete
+5script/seen2_top6.csv,dataset_csv,2,2,2,2,0.0,cols=image_path|calligrapher|script|character|calligrapher_id|script_id|character_id|glyph_id
+5script/seen5_top30.csv,dataset_csv,5,5,5,5,0.0,cols=image_path|calligrapher|script|character|calligrapher_id|script_id|character_id|glyph_id
+5script/show2_top6.csv,dataset_csv,2,1,2,2,0.0,cols=image_path|calligrapher|script|character|calligrapher_id|script_id|character_id|glyph_id
+5script/show5_top30.csv,dataset_csv,5,5,5,1,0.0,cols=image_path|calligrapher|script|character|calligrapher_id|script_id|character_id|glyph_id
+5script/test.csv,dataset_csv,4653,323,2591,5,0.26,cols=image_path|calligrapher|script|character|calligrapher_id|script_id|character_id|glyph_id
+5script/train.csv,dataset_csv,147841,1004,7011,5,8.21,cols=image_path|calligrapher|script|character|calligrapher_id|script_id|character_id|glyph_id
+5script/train_3top30.csv,dataset_csv,40891,68,4825,3,2.35,cols=image_path|calligrapher|script|character|calligrapher_id|script_id|character_id|glyph_id
+5script/train_3top30_common.csv,dataset_csv,23597,67,2523,3,1.36,cols=image_path|calligrapher|script|character|calligrapher_id|script_id|character_id|glyph_id
+5script/train_3top30_nobeike.csv,dataset_csv,37799,67,4578,3,2.18,cols=image_path|calligrapher|script|character|calligrapher_id|script_id|character_id|glyph_id
+5script/train_fame.csv,dataset_csv,51322,44,4765,7,2.95,cols=image_path|calligrapher|script|character|calligrapher_id|script_id|character_id|glyph_id
+5script/train_fame_3script.csv,dataset_csv,28385,41,4039,3,1.62,cols=image_path|calligrapher|script|character|calligrapher_id|script_id|character_id|glyph_id
+5script/train_full.csv,dataset_csv,329715,0,0,0,11.21,cols=image_path|calligrapher_id|script_id|glyph_id|character_id|character
+5script/train_mid_clean.csv,dataset_csv,118776,67,2523,3,7.49,cols=image_path|calligrapher|script|character|calligrapher_id|script_id|character_id|glyph_id
+5script/train_mid_common.csv,dataset_csv,23597,67,2523,3,1.36,cols=image_path|calligrapher|script|character|calligrapher_id|script_id|character_id|glyph_id
+5script/train_top.csv,dataset_csv,140000,212,6988,5,7.78,cols=image_path|calligrapher|script|character|calligrapher_id|script_id|character_id|glyph_id
+5script/train_top30.csv,dataset_csv,128842,108,6952,5,7.16,cols=image_path|calligrapher|script|character|calligrapher_id|script_id|character_id|glyph_id
+5script/train_top30_clean.csv,dataset_csv,104751,105,6697,5,5.9,cols=image_path|calligrapher|script|character|calligrapher_id|script_id|character_id|glyph_id
+5script/train_top6.csv,dataset_csv,10866,11,3154,2,0.6,cols=image_path|calligrapher|script|character|calligrapher_id|script_id|character_id|glyph_id
+dwm_monitor_log.csv,dataset_csv,25,0,0,0,0.0,cols=﻿Timestamp| DwmPID| DwmWorkingSet_MB| ActiveDisplays| PrimaryDisplayGPU| GameViewerEnabled
+eval5.csv,dataset_csv,472,122,437,5,0.02,cols=image_path|calligrapher|script|character|calligrapher_id|script_id|character_id
+eval_small.csv,dataset_csv,0,0,0,0,0.0,cols=image_path|canny_path|skeleton_path|calligrapher|script|character|calligrapher_id|script_id
+famous_calligrapher.csv,dataset_csv,41082,52,4575,7,5.3,cols=image_path|canny_path|skeleton_path|calligrapher|script|character|calligrapher_id|script_id
+fast100.csv,dataset_csv,100,59,70,11,0.01,cols=image_path|calligrapher|script|character|calligrapher_id|script_id|character_id
+fast100_5script.csv,dataset_csv,100,48,89,5,0.01,cols=image_path|calligrapher|script|character|calligrapher_id|script_id|character_id
+final_eval.csv,dataset_csv,1000,202,839,12,0.05,cols=image_path|calligrapher|script|character|calligrapher_id|script_id|character_id
+final_test.csv,dataset_csv,10000,532,4092,12,0.51,cols=image_path|calligrapher|script|character|calligrapher_id|script_id|character_id
+final_train.csv,dataset_csv,318715,1853,7765,12,16.08,cols=image_path|calligrapher|script|character|calligrapher_id|script_id|character_id
+final_train_small.csv,dataset_csv,2000,119,130,10,0.1,cols=image_path|calligrapher|script|character|calligrapher_id|script_id|character_id
+gen_curves_S_summary.csv,dataset_csv,16,0,0,0,0.0,cols=step|mse|ssim
+kailishu_eval.csv,dataset_csv,200,106,178,2,0.01,cols=calligrapher_id|character|std_glyph_key|calligrapher|character_id|glyph_id|script_id|script
+kailishu_train.csv,dataset_csv,51098,447,4933,2,3.31,cols=calligrapher_id|character|std_glyph_key|calligrapher|character_id|glyph_id|script_id|script
+overfit_500.csv,dataset_csv,500,151,455,11,0.07,cols=image_path|canny_path|skeleton_path|calligrapher|script|character|calligrapher_id|script_id
+results.csv,dataset_csv,465,0,0,0,0.21,cols=series|run|step|model|vae|latent_channels|latent_spatial|vae_scaling_factor
+test.csv,dataset_csv,37286,882,6529,12,4.91,cols=image_path|canny_path|skeleton_path|calligrapher|script|character|calligrapher_id|script_id
+test5.csv,dataset_csv,4653,323,2591,5,0.23,cols=image_path|calligrapher|script|character|calligrapher_id|script_id|character_id
+train.csv,dataset_csv,298281,1850,7765,12,39.26,cols=image_path|canny_path|skeleton_path|calligrapher|script|character|calligrapher_id|script_id
+train5.csv,dataset_csv,147841,1004,7011,5,7.37,cols=image_path|calligrapher|script|character|calligrapher_id|script_id|character_id
+val.csv,dataset_csv,37285,883,6503,12,4.91,cols=image_path|canny_path|skeleton_path|calligrapher|script|character|calligrapher_id|script_id
+final_imgs_256,image_dir,329715,,,,11898.8,latent_shape= dtype= keys=
+final_latents_fame,latent_dir,20,,,,358.7,"latent_shape=(2626, 4, 32, 32) dtype=float16 keys=latents,img_ids"
+final_latents_f4,latent_dir,26,,,,3020.7,latent_shape= dtype= keys=
+final_latents_mid_clean,latent_dir,25,,,,807.9,latent_shape= dtype= keys=
+final_latents,latent_dir,66,,,,2577.2,latent_shape= dtype= keys=
+final_skel3_fame,skel_png_dir,51822,,,,94.2,latent_shape= dtype= keys=
+final_skel1_fame,skel_png_dir,51822,,,,80.1,latent_shape= dtype= keys=
+final_skel1,skel_png_dir,24225,,,,36.5,latent_shape= dtype= keys=
+final_skel_latents_fame,skel_latent_dir,20,,,,339.3,"latent_shape=(2592, 4, 32, 32) dtype=float16 keys=latents,img_ids"
+final_skel_latents_fame_1px,skel_latent_dir,21,,,,668.7,"latent_shape=(2592, 4, 32, 32) dtype=float16 keys=latents,img_ids"
+final_skel_latents_train_1px,skel_latent_dir,1475,,,,185.3,latent_shape= dtype= keys=
+final_skel_latents_eval_1px,skel_latent_dir,32,,,,3.9,latent_shape= dtype= keys=
+src/utils/std_glyph_latent,glyph_lib,0,,,,,** 目录不存在 **
+src/utils/std_glyph_latent_v2,glyph_lib,43755,,,,347.2,kai_gb=8118; kai_st=7842; li_gb=7842; li_st=6651; preview=0; wei_st=6651; xing_st=6651
+pretrained_models/dino_embeddings/glyph_dino_embeddings_384.npy,pretrained,1,,,,30.0,"shape=(20468, 384) dtype=float32"
+pretrained_models/dino_embeddings/glyph_dino_index.json,pretrained,20468,,,,0.2,"keys=glyphs,count,source"
+pretrained_models/dinov2_vits14_pretrain.safetensors,pretrained,1,,,,84.2,dir/file
+pretrained_models/sd-vae-ft-ema,pretrained,1,,,,,VAE dir

@@ -1,0 +1,8 @@
+n_calligraphers,n_experiments,ssim_max,ssim_mean,ssim_median,ssim_min,data_char,data_n,best_series,all_series
+11,9,0.7322,0.5452,0.5674,0.3301,3154,10866,s6_top6_diffonly,s11_top6_p4; s18_s_flow_small; s6_top6_diffonly; s6_top6_struct_fp32; s7_ramp_b8all; s8_structv2_b8all; s9_skelonly
+44,2,0.467,0.4646,0.4646,0.4622,4765,51322,s21_fame_flow_v2,s21_fame_flow_v2; s22_char_embed_only
+67,5,0.5409,0.5231,0.5294,0.4888,4578,37799,s15_ws_flow,s12_3top30_dino; s15_ws_flow; s17_s_flow; s19_midclean_s_flow; s20_midcommon_s_flow_v2
+105,2,0.5257,0.4654,0.4654,0.4051,6697,104751,s8_klf4_clean_dino,s10_b4_grey_clear; s8_klf4_clean_dino
+108,7,0.5319,0.4022,0.509,0.1164,6952,128842,s5_2factor_struct_post50k,s5_2factor_B_latentstruct; s5_2factor_B_latentstruct_pixelsk_opt; s5_2factor_struct_post50k; s5_2factor_top30; s7_klf4_top30
+447,3,0.5773,0.5064,0.4888,0.453,4933,51098,s2_fromscratch_2factor,s2_fromscratch_2factor; s2_fromscratch_glyphmid; v3b_xl_glyphcond
+1004,11,0.4578,0.2612,0.1997,0.1048,7011,147841,compositional,compositional; v3a; v3a_xl_highdim; v3a_xl_skelhead

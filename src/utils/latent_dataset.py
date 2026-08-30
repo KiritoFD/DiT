@@ -46,18 +46,19 @@ class MCCDLatentDataset(Dataset):
         self.use_glyph_cond = bool(use_glyph_cond)
         if self.use_glyph_cond:
             # 标准字形 latent 查询(懒加载, 全局单例), 训练/推理一致
-            # v2: 多字体字典 (std_glyph_latent_v2, 随机字体=增广); 缺 v2 回退 v1
-            try:
-                from src.utils.glyph_latent_v2 import get_glyph_lookup_v2
-                self._glookup = get_glyph_lookup_v2()
-                self._glookup_is_v2 = True
-            except Exception:
-                from src.utils import get_glyph_lookup
-                self._glookup = get_glyph_lookup()
-                self._glookup_is_v2 = False
+            #
+            # 注意：这里必须用 **v2** 字典。历史 bug：原本接的是 v1
+            # (get_glyph_lookup -> std_glyph_latent)，而该目录在远程并不存在，
+            # 导致命中率 **0%**；又因下方缺失时返回零张量，整个 w_glyph_cond
+            # 条件是静默失效的 —— 不报错、loss 正常下降，但条件从头到尾是 0。
+            # v2 (std_glyph_latent_v2) 才是真实存在的库（楷/行/隶 6 字体）。
+            from src.utils import get_glyph_lookup_v2
+            self._glookup = get_glyph_lookup_v2()
+            self._report_glyph_coverage()
         else:
             self._glookup = None
-            self._glookup_is_v2 = False
+        self._g_hit = 0
+        self._g_miss = 0
 
         self.latent_shards_dir = latent_shards_dir
         self.img_root = img_root
@@ -215,6 +216,44 @@ class MCCDLatentDataset(Dataset):
         print(f"[preload] ALL preloaded in {time.time() - t0:.1f}s, "
               f"total RAM {total / 1024 ** 3:.1f}G")
 
+    # --------------------------------------------------- glyph cond 自检
+    def _report_glyph_coverage(self, log_every=0):
+        """启动前统计标准字形条件的覆盖率并显式打印。
+
+        存在的意义：历史 bug 中 v1 字典目录不存在、命中率 0%，但缺失被静默降级
+        成零张量，导致 w_glyph_cond 实验全程无效却毫无征兆。这里强制在启动时
+        把覆盖率打出来，并在命中率为 0 时升级为醒目告警，使这类失效无法再隐身。
+        """
+        if self._glookup is None:
+            return
+        total = hit = 0
+        per_script = {}
+        for row in self.samples:
+            sid = int(row["script_id"])
+            ch = row.get("character", "")
+            sc = row.get("script", str(sid))
+            total += 1
+            ok = bool(ch) and self._glookup.get(sid, ch) is not None
+            hit += int(ok)
+            d = per_script.setdefault(sc, [0, 0])
+            d[0] += 1
+            d[1] += int(ok)
+        rate = hit / max(total, 1)
+        lines = [f"[glyph-cond] coverage {hit}/{total} = {rate*100:.1f}%"]
+        for sc, (n, h) in sorted(per_script.items(), key=lambda x: -x[1][0]):
+            lines.append(f"    {sc:<6} {h:>6}/{n:<6} {h/max(n,1)*100:>5.1f}%")
+        if rate == 0.0:
+            lines.insert(0, "=" * 58)
+            lines.insert(1, "  !! FATAL: 标准字形条件命中率为 0% —— g 将全部为零张量，")
+            lines.insert(2, "     w_glyph_cond 条件完全无效。请检查字典目录是否存在、")
+            lines.insert(3, "     script_id 映射是否正确。")
+            lines.insert(4, "=" * 58)
+        elif rate < 0.3:
+            lines.append(f"  [warn] 覆盖率偏低 ({rate*100:.1f}%)，多数样本 g 为零，"
+                         f"条件作用有限")
+        print("\n".join(lines), flush=True)
+        return rate
+
     # -------------------------------------------------------------- getitem
     def __getitem__(self, idx):
         row = self.samples[idx]
@@ -283,20 +322,19 @@ class MCCDLatentDataset(Dataset):
                     skel_lat = torch.from_numpy(
                         np.array(shard["latents"][j], copy=True)).float()
 
-        # 标准字形 latent g: 按 (script_id, char) 查标准字形 latent; 缺失给零(保 collate 一致)
-        # v2 多字体字典: 训练时随机选字体 (=增广), 推理用各 script 默认字体
+        # 标准字形 latent g(甲2): 按 (script_id, char) 查标准字形 latent; 缺失给零(保 collate 一致)
         if self._glookup is not None:
             script_id = int(row['script_id'])
             char = row.get('character', '')
-            if self._glookup_is_v2:
-                gv = (self._glookup.get(script_id, char, random=self.is_train)
-                      if char else None)
-            else:
-                gv = self._glookup.get(script_id, char) if char else None
+            # 训练时在该书体的可用字体间随机选 = 免费增广；推理时固定默认字体保证可复现
+            gv = (self._glookup.get(script_id, char, random=self.is_train)
+                  if char else None)
             if gv is not None:
                 g_t = gv.float().contiguous()   # (4,32,32)
+                self._g_hit += 1
             else:
                 g_t = torch.zeros(self.latent_channels, self.latent_spatial, self.latent_spatial)
+                self._g_miss += 1
         else:
             g_t = torch.zeros(0)
 
