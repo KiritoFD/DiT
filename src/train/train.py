@@ -465,6 +465,30 @@ def main(args):
                         f"({_ye.embedding_table.weight.numel():,} params); "
                         "null_embed stays trainable.")
 
+    # ── 诊断开关：只训练字 embedding（冻结主干）────────────────────────────
+    # 目的：验证「base SSIM 卡在 0.50 的瓶颈是不是 char 条件」。
+    # 除 char embedding + char_proj 外全部冻结，因此指标的任何变化都可以
+    # 直接归因到字条件，而不会被「主干也顺便多训了一会儿」污染。
+    # 背景：DINO glyph 表实测判别力极弱——库内检索 top-1 84%，换成同字
+    # 不同书家的库外检索立刻掉到 4%（见 docs/system/14_glyph_condition_probe.md），
+    # 说明 CLS 特征编码的是「这张图长什么样」而非「这个字是什么字」。
+    if getattr(args, 'train_only_char_embed', False):
+        requires_grad(model, False)
+        _n = 0
+        for _name, _p in model.named_parameters():
+            if 'y_char_embedder.embedding_table' in _name or 'char_proj' in _name:
+                _p.requires_grad = True
+                _n += _p.numel()
+        # CFG null token 必须保持可训练，否则 uncond 分支失效、eval 指标失真
+        _ye = model.y_char_embedder
+        if getattr(_ye, 'null_embed', None) is not None:
+            _ye.null_embed.requires_grad_(True)
+            _n += _ye.null_embed.numel()
+        logger.info(f"[train-only-char-embed] backbone frozen; trainable={_n:,} "
+                    f"(char table + char_proj + null_embed). "
+                    f"NOTE: pair with freeze_char_table=false, else the table stays frozen "
+                    f"(_char_table_frozen={getattr(model, '_char_table_frozen', False)}).")
+
     # report trainable counts
     trainable_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
     frozen_params = sum(p.numel() for p in model.parameters() if not p.requires_grad)
@@ -1657,6 +1681,12 @@ def main_from_cli(argv=None):
     parser.add_argument("--resume-lr", type=float, default=None,
                         help="If set with --resume-full, override the learning rate from the checkpoint "
                              "(e.g. lower LR to test whether NaN was numerical).")
+    parser.add_argument("--train-only-char-embed", type=_str_to_bool, default=False,
+                        help="DIAGNOSTIC: freeze the whole backbone and train ONLY the character "
+                             "conditioning (y_char_embedder.embedding_table + char_proj + CFG null token). "
+                             "Any metric change is then directly attributable to the char condition, "
+                             "which is how we test whether the frozen DINO glyph table is the bottleneck. "
+                             "Pair with freeze_char_table=false and --resume-full from a trained ckpt.")
     parser.add_argument("--num-workers", type=int, default=4)
     parser.add_argument("--log-every", type=int, default=50)
     parser.add_argument("--ckpt-every", type=int, default=10_000)

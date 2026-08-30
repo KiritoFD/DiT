@@ -101,13 +101,19 @@ def _default_dino_ckpt():
     env = os.environ.get("DINO_WEIGHTS", "")
     if env and os.path.exists(env):
         return env
-    here = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))  # 项目根（src/ 上级）
-    cand = os.path.join(here, "pretrained_models", "dinov2_vits14_pretrain.safetensors")
-    if os.path.exists(cand):
-        return cand
-    cand = os.path.join(here, "pretrained_models", "dinov2_vits14_pretrain.pth")
-    if os.path.exists(cand):
-        return cand
+    # 从本文件向上逐层查找 pretrained_models/。
+    # 注意：本文件位于 src/loss/ 下，"向上两级" 得到的是 src/ 而不是项目根，
+    # 早期实现正是少算了一级，导致本地 ckpt 永远找不到、静默回退到
+    # torch.hub（需访问 github，在受限机器上会失败）。这里改成向上搜索，
+    # 与 src/loss/ 或 src/ 两种布局都兼容。
+    here = os.path.dirname(os.path.abspath(__file__))
+    for _ in range(5):
+        for name in ("dinov2_vits14_pretrain.safetensors",
+                     "dinov2_vits14_pretrain.pth"):
+            cand = os.path.join(here, "pretrained_models", name)
+            if os.path.exists(cand):
+                return cand
+        here = os.path.dirname(here)
     return None
 
 
