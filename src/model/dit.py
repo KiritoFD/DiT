@@ -250,6 +250,9 @@ class DiT_2Cond(nn.Module):
         # ZeroAdaLNInjection 完全对齐。见下方 glyph_embedder 处的说明。
         # 显存：每层约 +150MB（batch=192 时），12 层约 +1.8G，注意 OOM。
         glyph_inject_layers=0,
+        # 标准字形条件的训练期随机丢弃概率。0 = 不丢弃。
+        # 作用见 forward() 中的注释：防门控 + 模拟草/篆无标准字形的真实缺失。
+        glyph_drop_prob=0.0,
         char_proj_mode="full",
         freeze_char_table=False,
         # ---- 现代化开关（v2 arch）----
@@ -332,6 +335,24 @@ class DiT_2Cond(nn.Module):
             else:
                 self.char_proj = nn.Sequential(nn.LayerNorm(char_embed_dim),
                                                nn.Linear(char_embed_dim, hidden_size))
+            # ── 书家/字条件的可学习幅度平衡 ───────────────────────────────
+            #
+            # 实测（tools/probe_condition_injection.py，s21 best ckpt，64 字）：
+            #     DINO 表输出 e_char 的区分度（不同字余弦相似度） = 0.0817  <- 很好
+            #     char_proj 输出                                  = 0.1189  <- 很好
+            #     与书家相加后的 y_emb                            = 0.6252  <- 被淹没
+            # 即 **DINO 信号本身不坏，是被书家分支的幅度压过去了**：
+            #     ||callig_proj 输出|| = 12.90     ||char_proj 输出|| = 7.32
+            #     比值 1.76，相加后书家主导 -> 字符区分度从 0.12 劣化到 0.63。
+            #
+            # 边际贡献也一致（对 adaLN shift 的相对变化）：
+            #     callig 0.226   char 0.068   （字条件只有书家的 1/3）
+            #
+            # 这里给两个分支各一个可学习标量，让模型自行收敛到合适比例，
+            # 而不是把比例硬编码成 1:1（书家与字的最优权重未必相等）。
+            # 初值 1.0 保持与原实现等价，不会破坏已有 ckpt 的语义。
+            self.callig_scale = nn.Parameter(torch.tensor(1.0))
+            self.char_scale = nn.Parameter(torch.tensor(1.0))
             self.cond_fusion = None
         elif condition_fusion == "xl_highdim":
             # XL 高维条件：callig(384) + glyph(768) concat -> MLP -> hidden(1152)，c = t_emb + y_emb。
@@ -408,6 +429,8 @@ class DiT_2Cond(nn.Module):
         # 逐层注入（glyph_inject_layers>0 时启用）：见下方说明
         self.glyph_inject_layers = int(glyph_inject_layers)
         self.glyph_injections = None
+        # 训练期随机丢弃标准字形条件的概率（见 forward 中注释）
+        self.glyph_drop_prob = float(glyph_drop_prob)
         if self.use_glyph_cond:
             ps_ = self.x_embedder.patch_size[0] if not isinstance(self.x_embedder.patch_size, int) else self.x_embedder.patch_size
             self.glyph_embedder = nn.Conv2d(in_channels, hidden_size, kernel_size=ps_, stride=ps_, bias=False)
@@ -521,6 +544,25 @@ class DiT_2Cond(nn.Module):
         return_intermediate_layer: int block index (e.g. 8) whose patch features to return for REPA.
                                    When set, returns (output, intermediate_feats) as a tuple.
         """
+        # ── 标准字形条件的随机丢弃（仅训练时）────────────────────────────
+        #
+        # 为什么要 drop：
+        # 1. 防止「门控」。标准字形 latent 与 DINO CLS 都由字 ID 推出，存在冗余。
+        #    std-skel 实验已证明：冗余条件会被 ControlNet 学成恒等门控掉
+        #    （SSIM 0.494≈base，SkelIoU 0.015，12 个评测点全平）。
+        #    随机丢弃使 g 不可预测，模型无法依赖「反正能从字 ID 推出来」而忽略它。
+        # 2. 覆盖现实：fame 上 v2 字典只覆盖 53.1%，草/篆（46.9%）本来就没有
+        #    标准字形，推理时 g 只能是零。训练时模拟这种缺失，让模型学会
+        #    「g 有效时跟随，g 为零时依赖书家+字条件」。
+        # 3. 与 CFG 兼容：丢弃时该样本等价于 uncond-g 分支。
+        #
+        # 注意：以**整张样本**为单位丢弃（而非逐像素），与「某字没有标准字形」
+        # 的真实情况一致。
+        if (g is not None and self.training and self.glyph_drop_prob > 0.0):
+            N = g.shape[0]
+            keep = torch.rand(N, device=g.device) >= self.glyph_drop_prob
+            g = g * keep.view(N, 1, 1, 1).to(g.dtype)
+
         x = self.x_embedder(x)  # (N, T, D)
         g_tok = None            # 标准字形 token；未启用时保持 None（逐层注入会检查）
         if self.rope:
@@ -556,7 +598,9 @@ class DiT_2Cond(nn.Module):
                                      self.y_char_embedder.num_classes, y_char)
             e_callig = self.y_callig_embedder(y_callig, False)
             e_char = self.y_char_embedder(y_char, False)
-            y_emb = (self.callig_proj(e_callig) + self.char_proj(e_char)) / math.sqrt(2.0)
+            # 可学习幅度平衡：见 __init__ 处注释（DINO 区分度被书家分支淹没的实测）。
+            y_emb = (self.callig_scale * self.callig_proj(e_callig)
+                     + self.char_scale * self.char_proj(e_char)) / math.sqrt(2.0)
         elif self.condition_fusion == "xl_highdim":
             # XL 高维条件：与 factorized_add 相同的 4-way 可控 mask（CFG 需要 uncond 维度）。
             if self.training and (self.cond_drop_all_prob > 0 or self.cond_drop_one_prob > 0):
