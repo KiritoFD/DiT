@@ -2,13 +2,19 @@
 """gradio_fame_local.py — fame 书法生成前端 (本地 GPU, share=True 公网).
 
 逻辑:
-  * (书体, 字) 在 fame 训练集且有骨架 → 训练集骨架直出
-  * 没训过 → 提示 ZERO-SHOT, 用标准字体骨架 (楷simkai / 行STXINGKA / 隶SIMLI)
-  * 每次生成: 生成大图 + 使用骨架 + 状态徽标 + 相近 GT (同字训练样本, 按需从 4090 拉取缓存)
+  * 骨架 PS 可选 1px / 3px, 分别加载对应 ControlNet ckpt (双 ctrl 常驻)
+  * (书体, 字) 在 fame 训练集且有骨架 → 对应 PS 训练集骨架直出
+  * 没训过 → 提示 ZERO-SHOT, 1px 优先查标准字形骨架库, 否则本地渲染骨架 (楷simkai / 行STXINGKA / 隶SIMLI)
+  * 每次生成: 生成大图 + 使用骨架 + 状态徽标 + 相近 GT (本地 MCCD)
   * 会话所有生成累积在底部 gallery
 """
 import os
 os.environ["XFORMERS_DISABLED"] = "1"
+# gradio 6.x 自检用 httpx 回连 localhost, 会读取 Windows 系统代理 (127.0.0.1:7890) 导致 502.
+# 强制绕过代理访问本机.
+os.environ["NO_PROXY"] = "127.0.0.1,localhost,::1"
+os.environ["no_proxy"] = "127.0.0.1,localhost,::1"
+os.environ["GRADIO_SERVER_NAME"] = "127.0.0.1"
 import sys
 import csv
 import time
@@ -64,17 +70,22 @@ main = load_main_model(
     char_embed_dim=384, char_proj_mode="ln_only", freeze_char_table=True,
     norm_type="rms", mlp_type="swiglu", qk_norm=True, rope=True, attn_impl="eager")
 main.eval()
-ctrl = ControlNetDiT(main, cond_in_channels=4, train_ctrl_only=True).to(dev)
-ck = torch.load(
-    "5script/results/ctrl_fame_v2/20260830-094156-fame-ctrl-skel-v2/checkpoints/0050000.pt",
-    map_location="cpu", weights_only=False)
-sd = {k: v for k, v in (ck.get("ema") or ck.get("ctrl")).items()
-      if not k.startswith("main.")}
-m, u = ctrl.load_state_dict(sd, strict=False)
-ctrl.eval()
+
+CTRLS = {}
+for _ps, _ck in (("1px", "_sync_work/ckpts/ctrl_1px_0050000.pt"),   # 1px GT skel ctrl (ctrl_fame_1pix_v1)
+                 ("3px", "_sync_work/ckpts/ctrl_3px_0050000.pt")):  # 3px GT skel ctrl
+    _c = ControlNetDiT(main, cond_in_channels=4, train_ctrl_only=True).to(dev)
+    _ckd = torch.load(_ck, map_location="cpu", weights_only=False)
+    _sd = {k: v for k, v in (_ckd.get("ema") or _ckd.get("ctrl")).items()
+           if not k.startswith("main.")}
+    _m, _u = _c.load_state_dict(_sd, strict=False)
+    _c.eval()
+    CTRLS[_ps] = _c
+    print(f"[load] ctrl[{_ps}] {_ck} inj={sum(1 for k in _sd if 'injection' in k)}", flush=True)
+
 vae = load_eval_vae(dev, "pretrained_models/sd-vae-ft-ema")
 diff = build_diffusion(50, "flow")
-print(f"[load] done (inj={sum(1 for k in sd if 'injection' in k)})", flush=True)
+print("[load] done", flush=True)
 
 MCCD_MAP = {}
 try:
@@ -97,10 +108,26 @@ for r in rows:
 USED_IDS = set(CHAR_IDS.values())
 _next_cid = [7000]
 
-b1 = np.load("skel_bank_train.npz")
-_lat1 = b1["latents"]
-BANK_TRAIN = {k: _lat1[i] for i, k in enumerate(b1["keys"])}
-del _lat1
+BANK_TRAIN = {}
+for _ps, _fn in (("1px", "_sync_work/skel_bank_train_1px.npz"),   # 1px GT 骨架库 (与 1px ctrl 训练条件一致)
+                 ("3px", "skel_bank_train.npz")):                 # 3px GT 骨架库 (与 3px ctrl 训练条件一致)
+    if not os.path.isfile(_fn):
+        print(f"[WARN] 骨架库缺失: {_fn} -> {_ps} 直出不可用, 回退 ZERO-SHOT", flush=True)
+        continue
+    _b = np.load(_fn)
+    _lat = _b["latents"]
+    BANK_TRAIN[_ps] = {k: _lat[i] for i, k in enumerate(_b["keys"])}
+    del _lat, _b
+    print(f"[bank] train[{_ps}]: {len(BANK_TRAIN[_ps])} entries <- {_fn}", flush=True)
+
+BANK_STD1 = {}   # 1px 标准字形骨架库 (与 s27 训练条件同源, zero-shot 优先查表)
+_std1_fn = "_sync_work/skel_bank_std1.npz"
+if os.path.isfile(_std1_fn):
+    _b = np.load(_std1_fn)
+    _lat = _b["latents"]
+    BANK_STD1 = {k: _lat[i] for i, k in enumerate(_b["keys"])}
+    del _lat, _b
+    print(f"[bank] std1: {len(BANK_STD1)} entries", flush=True)
 
 _f_cache = {}
 def font_of(script, size):
@@ -119,14 +146,23 @@ def char_id_of(script, ch):
         CHAR_IDS[key] = _next_cid[0]
     return CHAR_IDS[key], False
 
-def std_skel(script, ch):
+def decode_sk(sk_lat):
+    """骨架 latent -> 骨架显示图 (VAE decode)."""
+    with torch.no_grad():
+        rec = vae.decode(torch.from_numpy(sk_lat.astype(np.float32))[None].to(dev) / 0.18215).sample.float().cpu()
+    return Image.fromarray((((rec[0].clamp(-1, 1) + 1) / 2).permute(1, 2, 0).numpy() * 255).astype("uint8"))
+
+def std_skel(script, ch, ps):
     img = Image.new("L", (256, 256), 255)
     d = ImageDraw.Draw(img)
     d.text((128, 128), ch, font=font_of(script, 200), fill=0, anchor="mm")
     a = np.asarray(img)
     if (a < 250).sum() < 10:
         return None, None
-    sk_u8 = np.where(dil3((lambda b: skeletonize(b))(a < 127)), 0, 255).astype("uint8")
+    sk = skeletonize(a < 127)
+    if ps == "3px":
+        sk = dil3(sk)  # 3px: 膨胀 x3, 与 3px ctrl 训练条件一致
+    sk_u8 = np.where(sk, 0, 255).astype("uint8")
     sk_img = Image.fromarray(sk_u8, "L")
     with torch.no_grad():
         x = torch.from_numpy(sk_u8.astype(np.float32) / 255. * 2 - 1)[None, None].repeat(1, 3, 1, 1).to(dev)
@@ -135,34 +171,42 @@ def std_skel(script, ch):
 
 SESSION = []
 
-def generate(ch, callig, script, steps, cfg, seed_n):
+def generate(ch, callig, script, steps, cfg, seed_n, ps):
     ch = (ch or "").strip()
     if len(ch) != 1:
-        return None, None, None, "请输入单个汉字", SESSION[:]
+        return None, None, None, None, "请输入单个汉字", SESSION[:]
     if callig not in CALLIG_ID:
-        return None, None, None, f"书家「{callig}」不在 fame 训练集", SESSION[:]
+        return None, None, None, None, f"书家「{callig}」不在 fame 训练集", SESSION[:]
+    if ps not in CTRLS:
+        return None, None, None, None, f"ctrl[{ps}] 未加载", SESSION[:]
     known_pair = (script, ch) in by_pair
     known_char = any(c == ch for (s, c) in by_pair)
-    trained = known_pair and (script + "|" + ch) in BANK_TRAIN
+    key = script + "|" + ch
+    trained = known_pair and ps in BANK_TRAIN and key in BANK_TRAIN[ps]
     callig_id = CALLIG_ID[callig]
     cid, _ = char_id_of(script, ch)
     gid = SCRIPT_ID[script] * NUM_CHARACTERS + cid
+    ctrl = CTRLS[ps]
 
     if trained:
-        sk_lat = BANK_TRAIN[script + "|" + ch]
-        badge = "训练过 · 直出（骨架=训练集骨架库）"
+        sk_lat = BANK_TRAIN[ps][key]
+        badge = f"训练过 · 直出（骨架={ps} 训练集骨架库）"
         badge_color = "#227722"
-        with torch.no_grad():
-            rec = vae.decode(torch.from_numpy(sk_lat.astype(np.float32))[None].to(dev) / 0.18215).sample.float().cpu()
-        sk_img = Image.fromarray((((rec[0].clamp(-1, 1) + 1) / 2).permute(1, 2, 0).numpy() * 255).astype("uint8"))
+        sk_img = decode_sk(sk_lat)
+    elif ps == "1px" and key in BANK_STD1:
+        sk_lat = BANK_STD1[key]
+        badge = ("ZERO-SHOT · 标准字形 1px 骨架库直查（该 (书体,字) 组合未训练）" if known_char
+                 else "ZERO-SHOT · 标准字形 1px 骨架库直查（该字未训练）")
+        badge_color = "#CC0000"
+        sk_img = decode_sk(sk_lat)
     else:
-        sk_lat, sk_img = std_skel(script, ch)
+        sk_lat, sk_img = std_skel(script, ch, ps)
         if sk_lat is None:
-            return None, None, None, f"标准字体不包含「{ch}」，无法构建骨架", SESSION[:]
+            return None, None, None, None, f"标准字体不包含「{ch}」，无法构建骨架", SESSION[:]
         if known_char:
-            badge = "ZERO-SHOT · 标准字形骨架（该 (书体,字) 组合未训练）"
+            badge = f"ZERO-SHOT · 标准字形 {ps} 骨架（该 (书体,字) 组合未训练）"
         else:
-            badge = "ZERO-SHOT · 标准字形骨架（该字未训练）"
+            badge = f"ZERO-SHOT · 标准字形 {ps} 骨架（该字未训练）"
         badge_color = "#CC0000"
 
     seed = int(seed_n) if str(seed_n).strip() else int(time.time() * 1000) % 2**31
@@ -186,20 +230,21 @@ def generate(ch, callig, script, steps, cfg, seed_n):
     gt_label = f"相近 GT（本地 MCCD：{ch}，n={len(gts)}）" if gts else "本地 MCCD 无该字样本"
     gts = [(im, cap) for im, cap in gts]
 
-    tag = "直出" if trained else "ZERO-SHOT"
+    tag = f"{ps}·" + ("直出" if trained else "ZERO-SHOT")
     SESSION.append((out_img.copy(), f"{script}·{ch}·{callig} [{tag}] ssim_n/a"))
     note = f"{badge} ｜ {gt_label}"
     return out_img, badge, (sk_img if sk_img is not None else None), gts, note, SESSION[:]
 
 with gr.Blocks(title="fame 书法生成") as demo:
-    gr.Markdown("## fame 书法生成 — s21 基模 + GT 骨架 ControlNet（最泛化 ckpt）\n"
-                "训练过的字**直出**（骨架=训练集骨架库）；没有的字先提示，用**标准字形骨架** zero-shot 生成，红色徽标特殊标出。")
+    gr.Markdown("## fame 书法生成 — s21 基模 + GT 骨架 ControlNet（**1px / 3px** 双版本可切换）\n"
+                "训练过的字**直出**（骨架=对应 PS 的训练骨架库）；没有的字用**标准字形骨架** zero-shot 生成，红色徽标特殊标出。")
     with gr.Row():
         with gr.Column():
             char_in = gr.Textbox(label="汉字（单字）", value="阜")
             callig_in = gr.Dropdown(CALLIGS, label="书家",
                                     value="褚遂良" if "褚遂良" in CALLIGS else CALLIGS[0])
             script_in = gr.Radio(["楷", "行", "隶"], label="书体", value="楷")
+            ps_in = gr.Radio(["1px", "3px"], label="骨架 PS（ckpt 版本）", value="1px")
             steps_in = gr.Slider(10, 100, value=50, step=5, label="采样步数 Euler")
             cfg_in = gr.Slider(0.1, 2.0, value=0.7, step=0.1, label="CFG（骨架条件 0.5-1.0 最佳）")
             seed_in = gr.Textbox(label="seed（留空随机）", value="")
@@ -214,9 +259,9 @@ with gr.Blocks(title="fame 书法生成") as demo:
     gr.Markdown("### 会话内所有生成结果")
     gallery = gr.Gallery(label="历史", columns=8)
 
-    btn.click(generate, [char_in, callig_in, script_in, steps_in, cfg_in, seed_in],
+    btn.click(generate, [char_in, callig_in, script_in, steps_in, cfg_in, seed_in, ps_in],
               [out_img, badge_tb, sk_img, gt_gal, note, gallery])
 
 if __name__ == "__main__":
     demo.queue(max_size=8).launch(server_name="127.0.0.1", server_port=args.port,
-                                  share=True)
+                                  share=args.share)

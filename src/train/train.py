@@ -245,6 +245,9 @@ def main(args):
             use_ids_char_embedder=getattr(args, 'use_ids_char_embedder', False),
             ids_file=getattr(args, 'ids_file', None),
             char_id_to_char=_ids_char_id_to_char,
+            # ---- 标准字形 DINO 字嵌入 (冻结查表) ----
+            use_std_dino_char_embedder=getattr(args, 'use_std_dino_char_embedder', False),
+            std_dino_table_path=getattr(args, 'std_dino_table_path', None),
             # ---- 现代化骨干开关 ----
             norm_type=getattr(args, 'norm_type', 'rms'),
             mlp_type=getattr(args, 'mlp_type', 'swiglu'),
@@ -277,12 +280,16 @@ def main(args):
     # ⚠ 当 use_ids_char_embedder=True 时跳过 DINO 初始化:
     # IDSCharEmbedder 用部件嵌入池化, 不需要 DINO 初始化。
     _use_ids = getattr(args, 'use_ids_char_embedder', False)
+    _use_std_dino = getattr(args, 'use_std_dino_char_embedder', False)
     _dino_emb_path = getattr(args, "char_dino_embeddings", None)
     _dino_idx_path = getattr(args, "char_dino_index", None)
     if _use_ids:
         logger.info(f"[ids] using IDSCharEmbedder, skipping DINO init. "
                     f"coverage={model.y_char_embedder.coverage:.2%}, "
                     f"num_components={model.y_char_embedder.num_components}")
+    elif _use_std_dino:
+        logger.info(f"[std-dino] using StdDinoCharEmbedder (frozen standard-glyph DINO table), "
+                    f"skipping DINO init. table={tuple(model.y_char_embedder.char_table.shape)}")
     elif _dino_emb_path and _dino_idx_path and os.path.isfile(_dino_emb_path) and os.path.isfile(_dino_idx_path):
         _NUM_CH = 7026  # 与 _add_glyph_col.py 的 glyph_id 编码一致
         _emb = np.load(_dino_emb_path)
@@ -1226,7 +1233,7 @@ def main(args):
                         + getattr(args, 'w_skel_head', 0) * loss_skel_head
                         + getattr(args, 'w_std_mid', 0.0) * loss_std_mid)
 
-                opt.zero_grad()
+                opt.zero_grad(set_to_none=True)  # INFRA: set_to_none 释放梯度tensor, 比 zero_() 快且省内存
                 # Capture scalar values into plain Python floats BEFORE we del the
                 # tensors. This lets the autograd graph be freed immediately while the
                 # running accumulators (pure floats) survive for logging.
@@ -1581,6 +1588,13 @@ def main_from_cli(argv=None):
     parser.add_argument("--ids-char-map-csv", type=str, default=None,
                         help="Path to csv with character_id,character columns for char_id->char mapping. "
                              "If None, assumes char_id == Unicode codepoint.")
+    # ---- 标准字形 DINO 字嵌入 (冻结查表, 零可训练参数) ----
+    parser.add_argument("--use-std-dino-char-embedder", type=_str_to_bool, default=False,
+                        help="Use standard-glyph DINO frozen lookup table as char embedder "
+                             "(0 trainable params, shape-consistency AUC>0.92). "
+                             "Requires char_embed_dim == DINO dim (768).")
+    parser.add_argument("--std-dino-table-path", type=str, default=None,
+                        help="Path to std DINO char table npy (default _sync_work/std_dino_char_table_768.npy).")
     parser.add_argument("--cond-drop-all-prob", type=float, default=0.05,
                         help="Probability of dropping all factors for CFG.")
     parser.add_argument("--cond-drop-one-prob", type=float, default=0.0,
@@ -1636,6 +1650,11 @@ def main_from_cli(argv=None):
                         help="Sampling-side timestep shift (SD3). 1.0 = no shift (default, correct "
                              "for detail-dominated 32x32 glyph latents). >1 concentrates steps near "
                              "t=1 (layout), <1 near t=0 (detail).")
+    parser.add_argument("--use-ot", type=_str_to_bool, default=False, dest="use_ot",
+                        help="Minibatch Optimal Transport (OT-CFM, Tong et al. 2024): per-batch "
+                             "Hungarian reassignment of noise/data pairs so trajectories don't cross "
+                             "and the velocity field is smoother. Cheap (O(B^3) scipy), usually "
+                             "helps convergence. No downside for training.")
     parser.add_argument("--learn-sigma", type=int, default=None, choices=[0, 1],
                         help="Force DiT learn_sigma on/off. Default: auto = False for flow "
                              "(flow has no variance head; leaving it True creates C permanently "

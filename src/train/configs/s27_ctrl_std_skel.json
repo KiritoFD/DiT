@@ -7,8 +7,8 @@
   "train_ctrl_only": true,
   "csv": "5script/train_fame.csv",
   "latent_shards_dir": "final_latents_fame",
-  "skel_root": "std_skeleton_d3",
-  "skel_latent_shards_dir": "final_skel_latents_fame_std",
+  "skel_root": "std_skel1_latents_fame",
+  "skel_latent_shards_dir": "std_skel1_latents_fame",
   "use_ids_char_embedder": true,
   "ids_file": "_sync_work/cjkvi-ids/cjkvi-ids-master/ids.txt",
   "ids_char_map_csv": "5script/train_fame.csv",
@@ -66,8 +66,8 @@
   "gpu_eval_steps": 50,
   "gpu_eval_cfg": 1.7,
   "gpu_eval_img_root": "final_imgs_256",
-  "gpu_eval_skel_root": "std_skeleton_d3",
-  "gpu_eval_skel_latent_shards_dir": "final_skel_latents_eval_v2",
+  "gpu_eval_skel_root": "std_skel1_latents_eval",
+  "gpu_eval_skel_latent_shards_dir": "std_skel1_latents_eval",
   "gpu_eval_dit_batch": 8,
   "gpu_eval_vae_batch": 16
 }

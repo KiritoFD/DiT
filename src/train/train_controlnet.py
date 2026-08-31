@@ -112,6 +112,9 @@ def parse_args():
     ap.add_argument("--skel-latent-shards-dir", default="final_skel_latents_fame_1px",
                     help="skel VAE latent shards 目录 (ControlNet 条件, 4ch/32x32). "
                          "为空则退回 skel-root PNG (旧行为). 默认 1px latent")
+    ap.add_argument("--blacklist-csv", default="",
+                    help="GT 噪点审计 blacklist (img_id,reasons), 命中的样本在训练中被过滤. "
+                         "空则不过滤")
     ap.add_argument("--results-dir", default="5script/results/ctrl_skel")
     ap.add_argument("--experiment-name", default="ctrl-skel-1px")
     ap.add_argument("--model", default="DiT-2Cond-S/2")
@@ -129,6 +132,10 @@ def parse_args():
                     help="主模型是否用 IDS 组件码本字嵌入 (s25 及以后). 加载主模型时必须与训练一致")
     ap.add_argument("--ids-file", default="",
                     help="IDS 字典文件路径 (cjkvi ids.txt)")
+    ap.add_argument("--use-std-dino-char-embedder", type=_str_to_bool, default=False,
+                    help="主模型是否用标准字形 DINO 冻结表字嵌入 (s28). 加载主模型时必须与训练一致")
+    ap.add_argument("--std-dino-table-path", default="",
+                    help="标准字形 DINO 表路径 (默认 _sync_work/std_dino_char_table_384_pca.npy)")
     ap.add_argument("--ids-char-map-csv", default="",
                     help="含 character_id,character 列的 csv, 用于 char_id->char 映射. "
                          "空则假设 char_id==Unicode codepoint")
@@ -203,7 +210,7 @@ def parse_args():
     ap.add_argument("--gpu-eval-steps", type=int, default=50)
     ap.add_argument("--gpu-eval-cfg", type=float, default=1.7, help="flow ctrl 推理最佳 CFG ~1.7")
     ap.add_argument("--gpu-eval-img-root", default="final_imgs_256")
-    ap.add_argument("--gpu-eval-skel-root", default="final_skeleton_d3")
+    ap.add_argument("--gpu-eval-skel-root", default="final_skel1_fame")
     ap.add_argument("--gpu-eval-skel-latent-shards-dir", default="",
                     help="eval 用 skel VAE latent shards (与训练条件一致); 空=PNG")
     ap.add_argument("--gpu-eval-dit-batch", type=int, default=16)
@@ -279,6 +286,8 @@ def main():
             use_ids_char_embedder=getattr(args, 'use_ids_char_embedder', False),
             ids_file=getattr(args, 'ids_file', '') or None,
             char_id_to_char=_ids_char_id_to_char,
+            use_std_dino_char_embedder=getattr(args, 'use_std_dino_char_embedder', False),
+            std_dino_table_path=getattr(args, 'std_dino_table_path', '') or None,
             cond_drop_all_prob=args.cond_drop_all_prob,
             cond_drop_one_prob=args.cond_drop_one_prob,
             cond_drop_which_glyph_prob=args.cond_drop_which_glyph_prob,

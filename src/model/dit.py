@@ -259,6 +259,10 @@ class DiT_2Cond(nn.Module):
         use_ids_char_embedder=False,  # 是否用 IDS 组件码本
         ids_file=None,                # IDS 字典文件路径
         char_id_to_char=None,         # dict char_id -> char (None 时假设 char_id=Unicode)
+        # ---- 标准字形 DINO 字嵌入 (冻结查表, 零可训练参数) ----
+        use_std_dino_char_embedder=False,  # 是否用标准字形 DINO 冻结表
+        std_dino_table_path=None,          # 标准字形 DINO 表路径 (默认 _sync_work/std_dino_char_table_768.npy)
+        chars_per_script=7026,             # 每个书体字符数 (glyph_id = script*chars_per_script + char_id)
         # ---- 现代化开关（v2 arch）----
         # 默认全部开启。全部关闭时与旧实现数值等价（同 seed 可复现旧结果）。
         norm_type="rms",        # "rms" | "layer"
@@ -307,7 +311,15 @@ class DiT_2Cond(nn.Module):
             char_embed_dim = char_embed_dim or hidden_size
             self.y_callig_embedder = LabelEmbedder(
                 num_calligraphers, callig_embed_dim, 0.0, use_cfg_embedding=True)
-            if use_ids_char_embedder:
+            if use_std_dino_char_embedder:
+                # 标准字形 DINO 冻结查表: 零可训练参数, 外形一致性 AUC>0.92
+                # (docs/system/25_dino_embed_direct.md)。char_embed_dim 应=DINO 维度(768)。
+                from .std_dino_embedder import StdDinoCharEmbedder
+                self.y_char_embedder = StdDinoCharEmbedder(
+                    num_characters, char_embed_dim, std_dino_table_path,
+                    dropout_prob=0.0, use_cfg_embedding=True,
+                    chars_per_script=chars_per_script)
+            elif use_ids_char_embedder:
                 # IDS 组件码本: 字嵌入 = 部件嵌入池化, 参数量降 95.5%, 零样本泛化
                 from .ids_embedder import IDSCharEmbedder
                 self.y_char_embedder = IDSCharEmbedder(
@@ -520,6 +532,11 @@ class DiT_2Cond(nn.Module):
                 nn.init.normal_(self.y_char_embedder.null_embed, std=0.02)
             if self.y_char_embedder.fallback_embed is not None:
                 nn.init.normal_(self.y_char_embedder.fallback_embed, std=0.02)
+        elif hasattr(self.y_char_embedder, 'char_table'):
+            # 标准字形 DINO 冻结表：不重新初始化（保持标准字形特征）。
+            # 只初始化可学习的 CFG null token。
+            if self.y_char_embedder.null_embed is not None:
+                nn.init.normal_(self.y_char_embedder.null_embed, std=0.02)
         else:
             nn.init.normal_(self.y_char_embedder.embedding_table.weight, std=0.02)
 
