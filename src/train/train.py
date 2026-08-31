@@ -210,6 +210,19 @@ def main(args):
         _rope = bool(getattr(args, 'rope', True))
         _heun_batch = bool(getattr(args, 'heun_batch', True))
 
+        # IDS 组件码本: 构建 char_id -> char 映射
+        _ids_char_id_to_char = None
+        if getattr(args, 'use_ids_char_embedder', False):
+            _ids_csv = getattr(args, 'ids_char_map_csv', None)
+            if _ids_csv and os.path.isfile(_ids_csv):
+                from src.model.ids_embedder import build_char_id_map_from_csv
+                _ids_char_id_to_char = build_char_id_map_from_csv(_ids_csv)
+                logger.info(f"[ids] loaded char_id->char map from {_ids_csv}: "
+                            f"{len(_ids_char_id_to_char)} entries")
+            else:
+                logger.warning(f"[ids] ids_char_map_csv not found ({_ids_csv!r}), "
+                               f"assuming char_id == Unicode codepoint")
+
         model = DiT_2Cond_models[args.model](
             input_size=latent_size,
             num_calligraphers=args.num_calligraphers,
@@ -228,6 +241,10 @@ def main(args):
             in_channels=getattr(args, 'latent_channels', 4),
             char_proj_mode=getattr(args, 'char_proj_mode', 'full'),
             freeze_char_table=getattr(args, 'freeze_char_table', False),
+            # ---- IDS 组件码本字嵌入 ----
+            use_ids_char_embedder=getattr(args, 'use_ids_char_embedder', False),
+            ids_file=getattr(args, 'ids_file', None),
+            char_id_to_char=_ids_char_id_to_char,
             # ---- 现代化骨干开关 ----
             norm_type=getattr(args, 'norm_type', 'rms'),
             mlp_type=getattr(args, 'mlp_type', 'swiglu'),
@@ -256,9 +273,17 @@ def main(args):
     # tools/remote_sync/_add_glyph_col.py). DINO vocab 是对"字*书体"(glyph) 取平均的:
     # 同一 glyph 的所有书写样本的 CLS token 平均后 L2 归一化, 维度必须 == char_embed_dim
     # (768), 之后 char_proj 直接 LayerNorm(768)->Linear(768,H) 投影, 不再经过中间 256 层。
+    #
+    # ⚠ 当 use_ids_char_embedder=True 时跳过 DINO 初始化:
+    # IDSCharEmbedder 用部件嵌入池化, 不需要 DINO 初始化。
+    _use_ids = getattr(args, 'use_ids_char_embedder', False)
     _dino_emb_path = getattr(args, "char_dino_embeddings", None)
     _dino_idx_path = getattr(args, "char_dino_index", None)
-    if _dino_emb_path and _dino_idx_path and os.path.isfile(_dino_emb_path) and os.path.isfile(_dino_idx_path):
+    if _use_ids:
+        logger.info(f"[ids] using IDSCharEmbedder, skipping DINO init. "
+                    f"coverage={model.y_char_embedder.coverage:.2%}, "
+                    f"num_components={model.y_char_embedder.num_components}")
+    elif _dino_emb_path and _dino_idx_path and os.path.isfile(_dino_emb_path) and os.path.isfile(_dino_idx_path):
         _NUM_CH = 7026  # 与 _add_glyph_col.py 的 glyph_id 编码一致
         _emb = np.load(_dino_emb_path)
         with open(_dino_idx_path, "r", encoding="utf-8") as f:
@@ -435,12 +460,17 @@ def main(args):
         # 这里显式恢复冻结，只保留 LabelEmbedder.null_embed 可训练。
         if getattr(model, '_char_table_frozen', False) and hasattr(model, 'y_char_embedder'):
             _ye = model.y_char_embedder
-            _ye.embedding_table.weight.requires_grad_(False)
+            # IDSCharEmbedder 用 comp_embedding 而非 embedding_table
+            if hasattr(_ye, 'comp_embedding'):
+                _ye.comp_embedding.weight.requires_grad_(False)
+                _frozen_params = _ye.comp_embedding.weight.numel()
+            else:
+                _ye.embedding_table.weight.requires_grad_(False)
+                _frozen_params = _ye.embedding_table.weight.numel()
             if _ye.null_embed is not None:
                 _ye.null_embed.requires_grad_(True)
-            logger.info("[freeze-char-table] kept y_char_embedder.embedding_table frozen "
-                        f"({_ye.embedding_table.weight.numel():,} params); "
-                        "null_embed stays trainable.")
+            logger.info("[freeze-char-table] kept y_char_embedder frozen "
+                        f"({_frozen_params:,} params); null_embed stays trainable.")
 
     # ── 诊断开关：只训练字 embedding（冻结主干）────────────────────────────
     # 目的：验证「base SSIM 卡在 0.50 的瓶颈是不是 char 条件」。
@@ -461,8 +491,12 @@ def main(args):
         if getattr(_ye, 'null_embed', None) is not None:
             _ye.null_embed.requires_grad_(True)
             _n += _ye.null_embed.numel()
+        # IDSCharEmbedder 还有 fallback_embed
+        if getattr(_ye, 'fallback_embed', None) is not None:
+            _ye.fallback_embed.requires_grad_(True)
+            _n += _ye.fallback_embed.numel()
         logger.info(f"[train-only-char-embed] backbone frozen; trainable={_n:,} "
-                    f"(char table + char_proj + null_embed). "
+                    f"(char embedder + char_proj + null/fallback). "
                     f"NOTE: pair with freeze_char_table=false, else the table stays frozen "
                     f"(_char_table_frozen={getattr(model, '_char_table_frozen', False)}).")
 
@@ -1537,6 +1571,16 @@ def main_from_cli(argv=None):
                         help="Freeze y_char_embedder table after DINO init (keep CFG uncond row "
                              "trainable). Saves ~13.5M trainable params; conditions become pure "
                              "DINO 384 vectors.")
+    # ---- IDS 组件码本字嵌入 ----
+    parser.add_argument("--use-ids-char-embedder", type=_str_to_bool, default=False,
+                        help="Use IDS component-based char embedder instead of LabelEmbedder. "
+                             "Reduces char table from 35130×384 to ~1571×384 (95.5% fewer params), "
+                             "enables zero-shot generalization to unseen chars.")
+    parser.add_argument("--ids-file", type=str, default=None,
+                        help="Path to IDS dictionary file (cjkvi ids.txt format).")
+    parser.add_argument("--ids-char-map-csv", type=str, default=None,
+                        help="Path to csv with character_id,character columns for char_id->char mapping. "
+                             "If None, assumes char_id == Unicode codepoint.")
     parser.add_argument("--cond-drop-all-prob", type=float, default=0.05,
                         help="Probability of dropping all factors for CFG.")
     parser.add_argument("--cond-drop-one-prob", type=float, default=0.0,

@@ -460,7 +460,10 @@ def load_main_model(model_name="DiT-2Cond-S/2", ckpt_path=None, device="cpu",
                     use_checkpoint=False, learn_sigma=None,
                     diffusion_type="flow",
                     norm_type="rms", mlp_type="swiglu", qk_norm=True,
-                    rope=True, rope_theta=100.0, attn_impl="sdpa"):
+                    rope=True, rope_theta=100.0, attn_impl="sdpa",
+                    # ---- IDS 组件码本字嵌入 (s25 及以后主模型) ----
+                    use_ids_char_embedder=False,
+                    ids_file=None, char_id_to_char=None):
     """加载已训练主模型（复用 src.model.dit 工厂）。
 
     ``ckpt_path`` 非空但文件不存在时**直接抛异常**。
@@ -491,6 +494,8 @@ def load_main_model(model_name="DiT-2Cond-S/2", ckpt_path=None, device="cpu",
         condition_fusion=condition_fusion,
         callig_embed_dim=callig_embed_dim, char_embed_dim=char_embed_dim,
         char_proj_mode=char_proj_mode, freeze_char_table=freeze_char_table,
+        use_ids_char_embedder=use_ids_char_embedder,
+        ids_file=ids_file, char_id_to_char=char_id_to_char,
         cond_drop_all_prob=cond_drop_all_prob, cond_drop_one_prob=cond_drop_one_prob,
         cond_drop_which_glyph_prob=cond_drop_which_glyph_prob,
         use_checkpoint=use_checkpoint, learn_sigma=learn_sigma,

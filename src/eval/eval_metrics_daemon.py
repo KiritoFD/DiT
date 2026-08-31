@@ -13,7 +13,8 @@ from PIL import Image
 
 sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 
-BASE = os.path.dirname(os.path.abspath(__file__))
+# BASE 应该是项目根目录 (src/eval/../../)
+BASE = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 
 def _log(msg):

@@ -255,6 +255,10 @@ class DiT_2Cond(nn.Module):
         glyph_drop_prob=0.0,
         char_proj_mode="full",
         freeze_char_table=False,
+        # ---- IDS 组件码本字嵌入 (替代 LabelEmbedder) ----
+        use_ids_char_embedder=False,  # 是否用 IDS 组件码本
+        ids_file=None,                # IDS 字典文件路径
+        char_id_to_char=None,         # dict char_id -> char (None 时假设 char_id=Unicode)
         # ---- 现代化开关（v2 arch）----
         # 默认全部开启。全部关闭时与旧实现数值等价（同 seed 可复现旧结果）。
         norm_type="rms",        # "rms" | "layer"
@@ -303,8 +307,15 @@ class DiT_2Cond(nn.Module):
             char_embed_dim = char_embed_dim or hidden_size
             self.y_callig_embedder = LabelEmbedder(
                 num_calligraphers, callig_embed_dim, 0.0, use_cfg_embedding=True)
-            self.y_char_embedder = LabelEmbedder(
-                num_characters, char_embed_dim, 0.0, use_cfg_embedding=True)
+            if use_ids_char_embedder:
+                # IDS 组件码本: 字嵌入 = 部件嵌入池化, 参数量降 95.5%, 零样本泛化
+                from .ids_embedder import IDSCharEmbedder
+                self.y_char_embedder = IDSCharEmbedder(
+                    num_characters, char_embed_dim, ids_file, char_id_to_char,
+                    dropout_prob=0.0, use_cfg_embedding=True)
+            else:
+                self.y_char_embedder = LabelEmbedder(
+                    num_characters, char_embed_dim, 0.0, use_cfg_embedding=True)
             self.callig_proj = nn.Sequential(nn.LayerNorm(callig_embed_dim),
                                              nn.Linear(callig_embed_dim, hidden_size))
             if char_proj_mode == "ln_only":
@@ -467,11 +478,21 @@ class DiT_2Cond(nn.Module):
             # 但保留最后一行的 CFG uncond 项可学习（它没有 DINO 对应物）。
             # 具体做法见 LabelEmbedder.freeze_table() —— 旧的
             # `w[-1].requires_grad_(True)` 是静默 no-op，null token 实际被冻结。
-            with torch.no_grad():
-                w = self.y_char_embedder.embedding_table.weight
-                if w.shape[0] > 1:
-                    w[-1].normal_(std=0.02)
-            self.y_char_embedder.freeze_table()
+            _ye = self.y_char_embedder
+            if hasattr(_ye, 'comp_embedding'):
+                # IDSCharEmbedder: 冻结部件嵌入表
+                _ye.comp_embedding.weight.requires_grad_(False)
+                if _ye.null_embed is not None:
+                    _ye.null_embed.requires_grad_(True)
+                if _ye.fallback_embed is not None:
+                    _ye.fallback_embed.requires_grad_(True)
+            else:
+                # LabelEmbedder: 冻结字符表
+                with torch.no_grad():
+                    w = _ye.embedding_table.weight
+                    if w.shape[0] > 1:
+                        w[-1].normal_(std=0.02)
+                _ye.freeze_table()
             self._char_table_frozen = True
         else:
             self._char_table_frozen = False
@@ -492,7 +513,15 @@ class DiT_2Cond(nn.Module):
         nn.init.constant_(self.x_embedder.proj.bias, 0)
 
         nn.init.normal_(self.y_callig_embedder.embedding_table.weight, std=0.02)
-        nn.init.normal_(self.y_char_embedder.embedding_table.weight, std=0.02)
+        # IDSCharEmbedder 用 comp_embedding 而非 embedding_table
+        if hasattr(self.y_char_embedder, 'comp_embedding'):
+            nn.init.normal_(self.y_char_embedder.comp_embedding.weight, std=0.02)
+            if self.y_char_embedder.null_embed is not None:
+                nn.init.normal_(self.y_char_embedder.null_embed, std=0.02)
+            if self.y_char_embedder.fallback_embed is not None:
+                nn.init.normal_(self.y_char_embedder.fallback_embed, std=0.02)
+        else:
+            nn.init.normal_(self.y_char_embedder.embedding_table.weight, std=0.02)
 
         if getattr(self, "skel_head_enabled", False) and self.skel_head is not None:
             nn.init.zeros_(self.skel_head[-1].weight)

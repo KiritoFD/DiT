@@ -107,13 +107,13 @@ def parse_args():
                     help="True=warm-start(冻结主模型), False=from-scratch(主模型也训练)")
     ap.add_argument("--csv", default="5script/train_top6.csv")
     ap.add_argument("--latent-shards-dir", default="final_latents")
-    ap.add_argument("--skel-root", default="final_skeleton_d3",
-                    help="(兼容/显示用) 3px skel PNG 根目录; 训练条件优先用 skel_latent_shards_dir")
-    ap.add_argument("--skel-latent-shards-dir", default="",
+    ap.add_argument("--skel-root", default="final_skeleton_1px",
+                    help="(兼容/显示用) 1px skel PNG 根目录; 训练条件优先用 skel_latent_shards_dir")
+    ap.add_argument("--skel-latent-shards-dir", default="final_skel_latents_fame_1px",
                     help="skel VAE latent shards 目录 (ControlNet 条件, 4ch/32x32). "
-                         "为空则退回 skel-root PNG (旧行为)")
+                         "为空则退回 skel-root PNG (旧行为). 默认 1px latent")
     ap.add_argument("--results-dir", default="5script/results/ctrl_skel")
-    ap.add_argument("--experiment-name", default="ctrl-skel-3px")
+    ap.add_argument("--experiment-name", default="ctrl-skel-1px")
     ap.add_argument("--model", default="DiT-2Cond-S/2")
     ap.add_argument("--num-calligraphers", type=int, default=1011)
     ap.add_argument("--num-characters", type=int, default=35130)
@@ -124,6 +124,14 @@ def parse_args():
                     help="char_proj mode: 'full' or 'ln_only' (DINO 384 passthrough)")
     ap.add_argument("--freeze-char-table", type=_str_to_bool, default=False,
                     help="freeze y_char_embedder table (DINO init)")
+    # ---- IDS 组件码本字嵌入 (主模型用 IDS 时必须传) ----
+    ap.add_argument("--use-ids-char-embedder", type=_str_to_bool, default=False,
+                    help="主模型是否用 IDS 组件码本字嵌入 (s25 及以后). 加载主模型时必须与训练一致")
+    ap.add_argument("--ids-file", default="",
+                    help="IDS 字典文件路径 (cjkvi ids.txt)")
+    ap.add_argument("--ids-char-map-csv", default="",
+                    help="含 character_id,character 列的 csv, 用于 char_id->char 映射. "
+                         "空则假设 char_id==Unicode codepoint")
     ap.add_argument("--diffusion-type", default="ddpm", choices=["ddpm", "flow"],
                     help="main model diffusion type: ddpm (eps/DDIM) or flow (velocity/ODE)")
 
@@ -250,12 +258,27 @@ def main():
         # 注意：不再做 `os.path.exists(...) or None` 兜底 —— 路径失效必须硬失败，
         # 否则会用随机初始化的主模型训练几十小时。
         logger.info("[model] warm-start: loading main model + freezing ...")
+        # IDS 组件码本: 构建 char_id -> char 映射 (主模型为 IDS 时)
+        _ids_char_id_to_char = None
+        if getattr(args, 'use_ids_char_embedder', False):
+            _ids_csv = getattr(args, 'ids_char_map_csv', '')
+            if _ids_csv and os.path.isfile(_ids_csv):
+                from src.model.ids_embedder import build_char_id_map_from_csv
+                _ids_char_id_to_char = build_char_id_map_from_csv(_ids_csv)
+                logger.info(f"[ids] char_id->char map from {_ids_csv}: "
+                            f"{len(_ids_char_id_to_char)} entries")
+            else:
+                logger.warning("[ids] ids_char_map_csv not found, assuming char_id==Unicode")
+
         main_model = load_main_model(
             model_name=args.model, ckpt_path=args.main_ckpt,
             device=device, num_calligraphers=args.num_calligraphers, num_characters=args.num_characters,
             condition_fusion=args.condition_fusion, callig_embed_dim=args.callig_embed_dim,
             char_embed_dim=args.char_embed_dim, char_proj_mode=args.char_proj_mode,
             freeze_char_table=args.freeze_char_table,
+            use_ids_char_embedder=getattr(args, 'use_ids_char_embedder', False),
+            ids_file=getattr(args, 'ids_file', '') or None,
+            char_id_to_char=_ids_char_id_to_char,
             cond_drop_all_prob=args.cond_drop_all_prob,
             cond_drop_one_prob=args.cond_drop_one_prob,
             cond_drop_which_glyph_prob=args.cond_drop_which_glyph_prob,
