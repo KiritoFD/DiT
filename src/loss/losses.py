@@ -274,24 +274,29 @@ class REPALoss(nn.Module):
     Aligns DiT intermediate features with DINOv2 semantic features.
     """
     def __init__(self, student_dim, teacher_dim=384, teacher_backbone="dinov2_vits14",
-                 teacher_ckpt=None):
+                 teacher_ckpt=None, teacher=None):
         super().__init__()
         # Load frozen DINOv2 teacher:
-        #   1) a local safetensors checkpoint (ModelScope export) if provided or found
-        #   2) otherwise fall back to torch.hub from github.
-        if teacher_ckpt is None:
-            teacher_ckpt = _default_dino_ckpt()
-        teacher = None
-        if teacher_ckpt and os.path.exists(teacher_ckpt):
-            try:
-                teacher = _load_local_dinov2(teacher_ckpt)
-                print(f"[REPALoss] loaded local DINOv2 teacher from {teacher_ckpt}")
-            except Exception as e:  # noqa: BLE001 - fall back below
-                print(f"[REPALoss] failed to load local teacher ({e!r}); falling back to torch.hub")
-                teacher = None
+        #   1) a reused teacher (shared across REPA layers) if provided
+        #   2) a local safetensors checkpoint (ModelScope export) if provided or found
+        #   3) otherwise fall back to torch.hub from github.
         if teacher is None:
-            teacher = torch.hub.load('facebookresearch/dinov2', teacher_backbone)
-        self.teacher = _TeacherWrapper(teacher)
+            if teacher_ckpt is None:
+                teacher_ckpt = _default_dino_ckpt()
+            teacher = None
+            if teacher_ckpt and os.path.exists(teacher_ckpt):
+                try:
+                    teacher = _load_local_dinov2(teacher_ckpt)
+                    print(f"[REPALoss] loaded local DINOv2 teacher from {teacher_ckpt}")
+                except Exception as e:  # noqa: BLE001 - fall back below
+                    print(f"[REPALoss] failed to load local teacher ({e!r}); falling back to torch.hub")
+                    teacher = None
+            if teacher is None:
+                teacher = torch.hub.load('facebookresearch/dinov2', teacher_backbone)
+        # 共享 teacher 复用: 只包一层 _TeacherWrapper (避免重复包装/重复 forward_features)
+        if not isinstance(teacher, _TeacherWrapper):
+            teacher = _TeacherWrapper(teacher)
+        self.teacher = teacher
         for param in self.teacher.parameters():
             param.requires_grad = False
         self.teacher.eval()
@@ -311,7 +316,8 @@ class REPALoss(nn.Module):
 
     def forward(self, student_feats, x_0):
         """
-        student_feats: (B, num_patches, student_dim) e.g. (B, 256, 384)
+        student_feats: (B, num_patches, student_dim) e.g. (B, 256, 384)，
+            或 list/tuple 多个这样的张量 (REPA-L2 多层对齐, 共享一次 teacher 前向)。
         x_0: (B, 3, 256, 256) original image in [-1, 1]
         """
         self.teacher.eval()
@@ -326,14 +332,15 @@ class REPALoss(nn.Module):
             #    to a (B, num_patches, teacher_dim) patch-token tensor)
             teacher_feats = self.teacher.forward_features(x_224).float()  # (B, 256, teacher_dim)
 
-        # 3. Project student features.
-        # Student features may be fp16 (produced inside autocast); upcast to fp32
-        # before projecting, otherwise matmul with the fp32 proj weight raises a dtype error.
-        student_feats_proj = self.proj(student_feats.float())  # (B, 256, teacher_dim)
+        def _one(sf):
+            # Project student features (upcast fp16 -> fp32 before matmul)
+            p = self.proj(sf.float())  # (B, 256, teacher_dim)
+            cos_sim = F.cosine_similarity(p, teacher_feats, dim=-1)  # (B, 256)
+            return 1.0 - cos_sim.mean()
 
-        # 4. Compute Representation Alignment Loss (Negative Cosine Similarity)
-        # We maximize cosine similarity, so we minimize 1 - cosine_similarity
-        cos_sim = F.cosine_similarity(student_feats_proj, teacher_feats, dim=-1) # (B, 256)
-        loss = 1.0 - cos_sim.mean()
-
-        return loss
+        if isinstance(student_feats, (list, tuple)):
+            # REPA-L2: 各层对齐后取平均
+            if len(student_feats) == 0:
+                return torch.tensor(0.0, device=teacher_feats.device)
+            return sum(_one(sf) for sf in student_feats) / len(student_feats)
+        return _one(student_feats)

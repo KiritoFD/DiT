@@ -514,6 +514,18 @@ def main(args):
     logger.info(f"Frozen Parameters: {frozen_params:,} (trainable ratio: {trainable_params/(trainable_params+frozen_params)*100:.2f}%)")
 
     model = model.to(device)
+    # torch.compile (torch>=2.0, cu121 env): 在 DDP 之前编译整个模型。
+    # 默认 mode="default"；250 steps 预热区间的首步会花数十秒编译，之后每步走
+    # inductor 缓存的 kernel。EMA 模型是 eval-only 深拷贝，不编译（省编译时间/
+    # 显存），权重同步走普通张量拷贝，与编译无关。
+    if getattr(args, "compile", False):
+        _compile_mode = getattr(args, "compile_mode", "default")
+        if float(torch.__version__[:3]) < 2.0:
+            logger.warning("[compile] torch %s 不支持 torch.compile，忽略 --compile",
+                           torch.__version__)
+        else:
+            logger.info(f"[compile] torch.compile(mode={_compile_mode}) 注入（DDP 之前）...")
+            model = torch.compile(model, mode=_compile_mode)
     ema_model = None
     if getattr(args, "use_ema", False):
         ema_model = copy.deepcopy(model).eval()
@@ -1676,6 +1688,14 @@ def main_from_cli(argv=None):
                         help="RoPE base frequency (SD3/Lumina use 100 for 2D image RoPE).")
     parser.add_argument("--attn-impl", type=str, default="sdpa", choices=["sdpa", "eager"],
                         dest="attn_impl", help="Attention kernel. 'sdpa' = Flash/mem-efficient.")
+    parser.add_argument("--compile", type=_str_to_bool, default=False,
+                        help="Wrap the whole model with torch.compile before DDP (needs torch>=2.0). "
+                             "Speeds up PyTorch 2.x inductor kernels on cu121 env; first step is slow "
+                             "(compilation), then per-step cost drops.")
+    parser.add_argument("--compile-mode", type=str, default="default",
+                        choices=["default", "reduce-overhead", "max-autotune"],
+                        help="torch.compile mode: default / reduce-overhead (CUDA-graph, faster but "
+                             "higher mem) / max-autotune (slowest first compile, best kernels).")
     parser.add_argument("--early-stop-patience", type=int, default=5,
                         help="Stop after this many consecutive evals without improvement.")
     parser.add_argument("--early-stop-min-delta", type=float, default=0.002,

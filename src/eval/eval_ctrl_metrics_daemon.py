@@ -210,15 +210,20 @@ def _find_all_ckpt_dirs(results_dir):
 
 def main(rd):
     _log(f"watching {rd} for eval_pending_ctrl_*.json markers")
+    os.makedirs(rd, exist_ok=True)
     while True:
-        for ckpt_dir in _find_all_ckpt_dirs(rd):
-            pending = sorted(glob.glob(os.path.join(ckpt_dir, "eval_pending_ctrl_*.json")))
-            for p in pending:
-                try:
-                    process_pending(p, ckpt_dir)
-                except Exception as e:
-                    _log(f"ERROR processing {p}: {e}")
-                    _log(traceback.format_exc())
+        try:
+            for ckpt_dir in _find_all_ckpt_dirs(rd):
+                pending = sorted(glob.glob(os.path.join(ckpt_dir, "eval_pending_ctrl_*.json")))
+                for p in pending:
+                    try:
+                        process_pending(p, ckpt_dir)
+                    except Exception as e:
+                        _log(f"ERROR processing {p}: {e}")
+                        _log(traceback.format_exc())
+        except Exception as e:
+            _log(f"ERROR in watch loop: {e} (will retry)")
+            _log(traceback.format_exc())
         time.sleep(20)
 
 

@@ -162,6 +162,28 @@ def parse_args():
     ap.add_argument("--rope-theta", type=float, default=100.0, dest="rope_theta")
     ap.add_argument("--attn-impl", default="sdpa", choices=["sdpa", "xformers", "eager"], dest="attn_impl")
 
+    # ---- torch.compile (torch>=2.0, cu121 env) ----
+    ap.add_argument("--compile", type=_str_to_bool, default=False,
+                    help="Wrap entire ControlNetDiT (ctrl encoder + frozen main) with "
+                         "torch.compile before optimizer setup (needs torch>=2.0).")
+    ap.add_argument("--compile-mode", default="default",
+                    choices=["default", "reduce-overhead", "max-autotune"],
+                    help="torch.compile mode.")
+
+    # ---- ctrl 早停 (基于 gpu_eval 的 ctrl.ssim, 与 base train.py 语义一致) ----
+    ap.add_argument("--early-stop", type=_str_to_bool, default=False,
+                    help="Early-stop ctrl training when gpu_eval ctrl.ssim stops improving "
+                         "for --early-stop-patience consecutive evals.")
+    ap.add_argument("--early-stop-metric", default="ssim",
+                    choices=["ssim", "mse"],
+                    help="Metric driving early stop. ssim=higher better; mse=lower better.")
+    ap.add_argument("--early-stop-patience", type=int, default=5,
+                    help="Stop after N consecutive evals without improvement.")
+    ap.add_argument("--early-stop-min-delta", type=float, default=0.002,
+                    help="Min improvement to count as NEW BEST (avoids noise-driven restart).")
+    ap.add_argument("--early-stop-min-steps", type=int, default=0,
+                    help="Do not early-stop before this many total steps.")
+
     # ---- ControlNet 结构 ----
     ap.add_argument("--ctrl-depth", type=int, default=0,
                     help="ctrl encoder 深度; 0=与主模型同深。设为主模型深度的一半可省一半参数")
@@ -328,6 +350,17 @@ def main():
     n_frozen = sum(p.numel() for p in ctrl.parameters() if not p.requires_grad)
     logger.info(f"[ctrl] trainable params: {n_train:,} | frozen: {n_frozen:,}")
 
+    # torch.compile (torch>=2.0, cu121 env): 在 EMA deepcopy 与 optimizer 之前编译
+    # 整个 ControlNetDiT（ctrl encoder + 冻结主模型）。EMA 是 eval-only 深拷贝，
+    # 不编译（省编译时间/显存），权重同步走普通张量拷贝，与编译无关。
+    if getattr(args, "compile", False):
+        if float(torch.__version__.split("+")[0][:3]) < 2.0:
+            logger.warning("[compile] torch %s 不支持 torch.compile，忽略 --compile",
+                           torch.__version__)
+        else:
+            logger.info(f"[compile] torch.compile(mode={args.compile_mode}) 注入 ...")
+            ctrl = torch.compile(ctrl, mode=args.compile_mode)
+
     # EMA on trainable params (ctrl_encoder + optionally main_model)
     ema_ctrl = None
     if args.use_ema:
@@ -429,6 +462,14 @@ def main():
     t0 = time.time()
     log_steps = 0
     running_loss = 0.0
+    # ctrl 早停状态
+    _es_best = None
+    _es_stale = 0
+    _es_delta = float(getattr(args, 'early_stop_min_delta', 0.002) or 0.002)
+    if getattr(args, 'early_stop', False):
+        logger.info(f"[early-stop] enabled: metric=ctrl.{args.early_stop_metric}, "
+                    f"patience={args.early_stop_patience}, min_delta={_es_delta}, "
+                    f"min_steps={getattr(args, 'early_stop_min_steps', 0)}")
 
     for epoch in range(args.epochs):
         for batch in loader:
@@ -539,6 +580,40 @@ def main():
                             vae_batch=args.gpu_eval_vae_batch)
                     except Exception as _e:
                         logger.warning(f"[gpu-eval] step {step} FAILED: {_e}")
+
+                # ---- ctrl 早停: 读 daemon 写的 eval_auto_ctrl_*.json (ctrl.ssim 越高越好) ----
+                if (getattr(args, 'early_stop', False) and gpu_eval_cache is not None
+                        and step >= int(getattr(args, 'early_stop_min_steps', 0))
+                        and step % args.gpu_eval_every == 0):
+                    _ev_files = sorted(glob.glob(os.path.join(ckpt_dir, "eval_auto_ctrl_*.json")))
+                    _ev_last = _ev_files[-1] if _ev_files else None
+                    if _ev_last:
+                        try:
+                            with open(_ev_last, "r", encoding="utf-8") as _f:
+                                _d = json.load(_f)
+                            _ctrl_res = _d.get("ctrl", _d)
+                            _metric = (args.early_stop_metric or "ssim").lower()
+                            _val = _ctrl_res.get(_metric)
+                            _higher = _metric == "ssim"
+                            if _val is not None:
+                                if (_es_best is None or
+                                        (_val > _es_best + _es_delta if _higher
+                                         else _val < _es_best - _es_delta)):
+                                    _es_best = _val
+                                    _es_stale = 0
+                                    logger.info(f"[early-stop] eval step {step}: ctrl.{_metric}={_val:.4f} "
+                                                f"-> NEW BEST ({_es_best:.4f})")
+                                else:
+                                    _es_stale += 1
+                                    logger.info(f"[early-stop] eval step {step}: ctrl.{_metric}={_val:.4f} "
+                                                f"(best {_es_best:.4f}, stale {_es_stale}/"
+                                                f"{args.early_stop_patience})")
+                                    if _es_stale >= int(args.early_stop_patience):
+                                        logger.info(f"[early-stop] ctrl.{_metric} no improvement for "
+                                                    f"{_es_stale} evals; stopping ({step}).")
+                                        step = args.max_steps
+                        except Exception as _ee:
+                            logger.warning(f"[early-stop] read {_ev_last} failed: {_ee}")
 
                 if args.ckpt_keep > 0:
                     pts = sorted(glob.glob(os.path.join(ckpt_dir, "*.pt")))

@@ -1,4 +1,4 @@
-﻿# -*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 # ---- 澶ф潈閲?/ 鏁版嵁 ----
 *.pt
 *.pth
@@ -66,6 +66,7 @@ final/
 latent_missing/
 remote_logs/
 results/
+!docs/results/
 results_lora/
 results_overfit/
 results_relative/

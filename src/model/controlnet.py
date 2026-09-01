@@ -383,8 +383,22 @@ class ControlNetDiT(nn.Module):
         """
         cond: (N,4,32,32) skel VAE latent or None.
         当 cond=None 时退化为主模型 forward (用于训练时条件 dropout).
+
+        return_intermediate_layer (int, 可选): 指定主模型第 i 个 block 的输出作为
+        intermediate_feats 捕获 (供 REPA)。传入时返回 ``(输出, intermediate_feats)`` tuple；
+        flow.training_losses 会把它透传到 loss_dict['intermediate_feats']。
+
+        return_intermediate_layers (list[int], 可选): 多层捕获 (REPA-L2)。传入时
+        intermediate_feats 为 tuple(list[层输出], 首层) 形状 (layers, B, T, D)；
+        flow.training_losses 也支持此 tuple (见 tuple 解包分支)。
         """
+        ret_layer = kwargs.pop("return_intermediate_layer", None)
+        ret_layers = kwargs.pop("return_intermediate_layers", None)
         if cond is None:
+            if ret_layer is not None:
+                kwargs["return_intermediate_layer"] = ret_layer
+            if ret_layers is not None:
+                kwargs["return_intermediate_layers"] = ret_layers
             return self.main(x, t, y_callig, y_char, **kwargs)
 
         m = self.main
@@ -406,15 +420,33 @@ class ControlNetDiT(nn.Module):
         # ---- 主 blocks + 注入 ----
         rope = self._main_rope
         inject = dict(zip(self.inject_layers, self.injections))
+        intermediate = None
+        inter_layers = {}
+        if ret_layers is not None:
+            ret_layers = [int(i) for i in sorted(set(ret_layers))]
         for i, block in enumerate(m.blocks):
             x = block(x, c, rope=rope)          # rope 必须透传，否则主模型丢位置信息
+            if ret_layer is not None and i == ret_layer:
+                intermediate = x                # 注入前捕获，与 base dit.py 语义一致
+            if ret_layers is not None and i in ret_layers:
+                inter_layers[i] = x             # 注入前捕获 (多层)
             if i in inject:
                 feat = self.ctrl_to_main(ctrl_feats[self.inject_layers.index(i)])
                 x = inject[i](x, feat)
 
         # ---- final ----
         x = m.final_layer(x, c)
-        return m.unpatchify(x)
+        out = m.unpatchify(x)
+        if ret_layers is not None and ret_layers == sorted(set(ret_layers)):
+            # 多层: 稳定 dict 序转 tuple list（按层号升序）
+            feats = [inter_layers[i] for i in sorted(inter_layers)]
+            if ret_layer is not None:
+                # 同时要单层: tuple (out, (feats_tuple, single))
+                return out, (tuple(feats), intermediate)
+            return out, tuple(feats)
+        if ret_layer is not None:
+            return out, intermediate
+        return out
 
     def forward_with_cfg(self, x, t, y_callig, y_char, cfg_scale=4.0, cond=None, **kw):
         """
@@ -450,6 +482,16 @@ class ControlNetDiT(nn.Module):
 # ---------------------------------------------------------------------------
 # 主模型加载
 # ---------------------------------------------------------------------------
+def _strip_compile_prefix(sd):
+    """torch.compile 会把 ckpt key 前缀成 ``_orig_mod.``（train.py 存盘时模型已被
+    compile 包装）。跨脚本加载（load_main_model / from_ckpt / train_repa / ctrl resume）
+    必须先剥掉该前缀，否则 strict=False 下全部 miss、静默得到随机权重。
+    """
+    if any(k.startswith("_orig_mod.") for k in sd):
+        return {k[len("_orig_mod."):]: v for k, v in sd.items()}
+    return sd
+
+
 def load_main_model(model_name="DiT-2Cond-S/2", ckpt_path=None, device="cpu",
                     num_calligraphers=1011, num_characters=35130,
                     condition_fusion="factorized_add",
@@ -510,7 +552,8 @@ def load_main_model(model_name="DiT-2Cond-S/2", ckpt_path=None, device="cpu",
         rope=rope, rope_theta=rope_theta, attn_impl=attn_impl)
 
     ck = torch.load(ckpt_path, map_location="cpu", weights_only=False)
-    sd = ck.get("ema") or ck.get("delta") or ck
+    sd = ck.get("ema") or ck.get("delta") or ck.get("model") or ck
+    sd = _strip_compile_prefix(sd)
     missing, unexpected = model.load_state_dict(sd, strict=False)
 
     # 把关：区分"架构演进导致的预期缺失"与"真正的加载失败"
