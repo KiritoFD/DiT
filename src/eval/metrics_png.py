@@ -110,32 +110,29 @@ def _bg_uniformity(img):
 
 
 def _ink_purity(img):
-    """墨色纯度 (Otsu 二分类类内方差): 用简单全局阈值把图分为墨/纸两类,
-    两类的各自方差加权平均越低 = 墨色越纯(无杂斑/半灰噪). 返回 [0,1] 反向 (1=最纯)."""
+    """墨色纯度 = Otsu 类间方差 / 总方差 (标准 Otsu 分离度 η ∈ [0,1])。
+
+    η = σ_b² / σ_t² 在最优阈值处; 1 = 墨/纸完美双峰(纯墨纯纸, 无杂斑/半灰),
+    0 = 完全不可分离(整图一片灰噪)。比自定义归一更稳健、有界、可解释。
+    """
     gray = img.mean(axis=2)
-    t = 0.5
-    # 简单自适应: Otsu 近似
     hist, _be = np.histogram(gray, bins=64, range=(0, 1))
     be = (_be[:-1] + _be[1:]) / 2
     total = hist.sum()
     if total == 0:
         return 1.0
-    w0 = hist.cumsum()
-    w1 = total - w0
-    mu0 = (be * hist).cumsum() / np.maximum(w0, 1)
-    mu1 = (total * (be * hist).sum() - (be * hist).cumsum()) / np.maximum(w1, 1)
-    between = w0 * w1 * (mu0 - mu1) ** 2
-    t_idx = int(np.argmax(between))
-    t = be[t_idx]
-    mask_ink = gray <= t
-    mask_paper = gray > t
-    if mask_ink.sum() <= 10 or mask_paper.sum() <= 10:
-        return 0.0
-    var_ink = gray[mask_ink].var()
-    var_paper = gray[mask_paper].var()
-    # 类内方差越小越好; 归一化到 [0,1], 1=纯墨纯纸
-    pur = 1.0 - min(1.0, (var_ink + var_paper) / 0.05)
-    return float(pur)
+    w = hist / total
+    mean_all = float((be * w).sum())
+    cw = w.cumsum()
+    cmu = (be * w).cumsum()
+    mu0 = cmu / np.maximum(cw, 1e-12)
+    mu1 = (mean_all - cmu) / np.maximum(1 - cw, 1e-12)
+    between = cw * (1 - cw) * (mu0 - mu1) ** 2  # σ_b²(k)
+    sigma_b2 = float(between.max())
+    sigma_t2 = float(((be - mean_all) ** 2 * w).sum())
+    if sigma_t2 <= 1e-12:
+        return 1.0
+    return float(np.clip(sigma_b2 / sigma_t2, 0.0, 1.0))
 
 
 def _ringing(img, gt, grad_thresh=0.25):
