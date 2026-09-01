@@ -81,6 +81,8 @@ def parse_args():
     # ---- 两个输入 ckpt ----
     ap.add_argument("--main-ckpt", default="", help="S30 base 主模型 ckpt (必填)")
     ap.add_argument("--ctrl-ckpt", default="", help="s31 skel-ctrl ckpt (必填)")
+    ap.add_argument("--resume", default="",
+                    help="从 REPA ckpt 续训 (加载 main+ctrl+ema+optimizer+scheduler+step)")
     # ---- REPA 参数 ----
     ap.add_argument("--w-repa", type=float, default=0.1,
                     help="REPA loss 权重 (0 = 纯 diff 微调, 仅用于消融)")
@@ -323,6 +325,31 @@ def main():
         return max(args.min_lr_ratio, 0.5 * (1 + math.cos(math.pi * prog)))
     scheduler = LambdaLR(optimizer, lr_lambda)
 
+    # ---- Resume: 续训加载 (main/ctrl/ema/optimizer/scheduler/step), 新开 exp 目录 ----
+    resume_step = 0
+    if args.resume and os.path.exists(args.resume):
+        logger.info(f"[resume] loading {args.resume}")
+        _ck = torch.load(args.resume, map_location="cpu", weights_only=False)
+        # 1) 模型权重 (优先 ema_model/ema, 即 EMA 参数, 续训以 EMA 为起点)
+        _w = _ck.get("ema_model") or _ck.get("ema") or _ck.get("model") or _ck.get("ctrl") or _ck
+        _miss, _unexp = model.load_state_dict(_w, strict=False)
+        logger.info(f"[resume] model loaded: missing={len([k for k in _miss if not k.startswith('main.')])}"
+                    f"(main 部分忽略), unexpected={len(_unexp)}")
+        # 2) EMA 同步
+        if ema_model is not None:
+            ema_model.load_state_dict(model.state_dict())
+        # 3) optimizer/scheduler/step (结构需与当前一致)
+        try:
+            if _ck.get("optimizer"):
+                optimizer.load_state_dict(_ck["optimizer"])
+            if _ck.get("scheduler"):
+                scheduler.load_state_dict(_ck["scheduler"])
+            resume_step = int(_ck.get("train_steps", 0) or 0)
+        except Exception as _e:
+            logger.warning(f"[resume] optimizer/scheduler 加载失败, 从 0 开始 LR 计划: {_e}")
+            resume_step = 0
+        logger.info(f"[resume] resume from step {resume_step}")
+
     # ---- in-process GPU eval (只监控, 不早停) ----
     gpu_eval_cache = None
     gpu_eval_vae = None
@@ -345,7 +372,7 @@ def main():
         _m.write(ckpt_dir)
     logger.info(f"results: {exp_dir}")
 
-    step = 0
+    step = resume_step
     t0 = time.time()
     log_steps = 0
     run_diff = run_repa = 0.0
