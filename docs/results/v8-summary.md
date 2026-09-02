@@ -6,19 +6,31 @@
 
 ---
 
-## 1. 训练进度（09-02 21:00 快照）
+## 1. 训练进度（09-03 00:00 快照）
 
 **v8a 基模（新，清洗数据 + batch432 + OT-chunks4 + compile + cu121）**：
-- step **100,540**，eval ssim **0.5061 @ 100k**（mse 1.030 / lpips 0.417），持续 NEW BEST，早停未触发
-- vs 旧 S30（0.4841 @ 130k）：**+0.022，且省 23% 步数**
-- GPU 94% / 22.1G，Steps/Sec 3.96
+- step **132,500**，**已早停**（05:05 UTC，stale 5/5 @ 132.5k）
+- 全程 best：ssim **0.5121 @ 122.5k**（=130k =132.5k 并列），lpips **0.4132 @ 132.5k**（最低）
+- vs 旧 S30（0.4841 @ 130k）：**+0.028，+5.8%，省 23% 步数**
+- A 段终 ckpt 已 copy 固化 `5script/results/v8_3stage/A_main_final.pt`（无时间戳固定路径）
+- **B 段（s31-v8 skel-ctrl）已于 09-02 23:48 自动拉起**，tmux `v8bc`，输出 `v8b/20260902-234912-v8b-s31-ctrl`，early_stop (ctrl.ssim, patience 5, min 10000) 已启用
+
+**链路说明（含一次链断裂事故）**：原 `run_v8_3stage.sh` 三段自动衔接，A 段 23:05 早停后 B 未接上，断链 43 分钟。
+- **根因 1**：runner 用 `ls -dt 5script/results/v8_3stage/v8a_*/...` 找 A ckpt，但实际目录结构是 `v8a/<timestamp>/checkpoints/`，**glob 少一层 `/*/`**，A_CKPT 为空 → B 未启动
+- **根因 2**（修复过程中二次踩坑）：本地 `sed -i "s/\r//g"` 经 Windows→ssh 传参时 `\r` 被吃成 `r`，实际执行 `s/r//g`，**删光了脚本里所有 'r'**（root→oot, export→expot），脚本 cd 失败秒退
+- **根因 3**：非交互 ssh 继承 `TERM=dumb`，tmux server 起不来挂死；`TERM=xterm` 解决
+- **修复**：重写 `_sync_work/run_v8_bc.sh`，不依赖时间戳 glob，A best 先 copy 到固定路径，B/C 全部从固定路径读写；tmux 改为 `TERM=xterm`
+- 详细规范见根目录 `remote.md`
 
 | step | v8a ssim | mse | lpips | 旧S30 ssim(同step) |
 |---|---|---|---|---|
 | 80k | 0.5015 | 1.044 | 0.420 | 0.472 |
 | 90k | 0.5037 | 1.039 | 0.419 | 0.474 |
 | 95k | 0.5045 | 1.037 | 0.418 | 0.474 |
-| **100k** | **0.5061** | 1.030 | **0.417** | 0.476 |
+| 100k | 0.5061 | 1.030 | 0.417 | 0.476 |
+| 120k | 0.5118 | 1.020 | 0.4135 | — |
+| **122.5k** | **0.5121** | 1.019 | 0.4134 | — |
+| 132.5k | 0.5121 | — | **0.4132** | — |
 
 ---
 
@@ -109,6 +121,8 @@
 
 ### 3.4 远程 vs 本地分工
 - 约定（ENV_INFRA.md §7.1）：**pwsh 转义地狱 → 本地 write .sh → scp 远程 /tmp 或 _sync_work 执行**；本地 `_ot_scratch/` 是脚本库，两端镜像
+- **远程调用规范已沉淀为根目录 `remote.md`**（ssh 信息不外泄，只写 `ssh 4090`）：三条铁律（不内联多行 / 不 sed 去 CRLF / tmux 必须 TERM=xterm）、引号转义对照表、文件传输、无时间戳固定路径策略、环境速查、训练链路约定、监控约定、常见坑速查表
+- **09-02 链断裂事故复盘**（详见 §1）：A→B 衔接 glob 少一层目录 + 二次踩坑远程 `s/\r//g` 删光脚本 r 字母 + TERM=dumb 起 tmux 失败；修复为固定路径 copy + TERM=xterm，B 段 23:48 拉起
 - **远程**：训练（tmux pipeline/nohup）、encode（/tmp/*.py）、eval daemon（base env CPU 轻量）；**本地**：写代码(git) + 可视化（grid/dashboard/gradio）+ 分析
 - 佐证：pipeline 中 `PY_BASE=/opt/conda/bin/python`（daemon）vs `PY_CU=/opt/conda/envs/cu121/bin/python`（训练）；48b1074 "pre-refactor snapshot before remote code sync"
 
@@ -179,29 +193,42 @@
 ## 6. 视觉佐证：grid 样例与评测曲线
 
 ### 6.1 全链路 grid（GT 在底部）
-所有关键实验在同样本上的生成结果对比：从 base（s21/s25/s28/s30）到 skel（s26/s31/1pix）到 REPA（s32b/s32c），每行左侧标注具体做法，GT 置于最下方作为对照。
+所有关键实验在同样本上的生成结果对比：从 base（s21/s25/s28/s30/v8a）到 skel（s26/s31/1pix）到 REPA（s32b/s32c），每行左侧标注具体做法，GT 置于最下方作为对照。
 
 ![grid_all](assets/v8_grid/grid_all.png)
 
-### 6.2 base 组对比
-只对比 base 类基模：s21（真迹DINO）、s25（IDS 部件码本）、s28（标准字形DINO+PCA）、s30（DINO char-strong），直观显示 s30/v8a 在笔画实度与背景净度上的改进。
+### 6.2 单实验样本对比：s30（DINO char-strong base） vs v8a（清洗数据基模）
+固定 4 个 eval 样本（GT 相同），横向比较 s30 与当前最佳基模 v8a 在笔画实度、背景净度与结构保真上的差异。
 
-![grid_base](assets/v8_grid/grid_base.png)
-
-### 6.3 逐行放大
-| 行 | 图 |
-|---|---|
-| id 0 | ![row0](assets/v8_grid/row_0.png) |
-| id 1 | ![row1](assets/v8_grid/row_1.png) |
-| id 10 | ![row10](assets/v8_grid/row_10.png) |
-| id 100 | ![row100](assets/v8_grid/row_100.png) |
+| 样本 | GT | s30 base | v8a base |
+|---|---|---|---|
+| id 0   | ![g0](assets/v8_grid/grid_gt_0.png)   | ![s30_0](assets/v8_grid/grid_s30_sample_0.png)   | ![v8a_0](assets/v8_grid/grid_v8a_sample_0.png) |
+| id 10  | ![g10](assets/v8_grid/grid_gt_10.png)  | ![s30_10](assets/v8_grid/grid_s30_sample_10.png)  | ![v8a_10](assets/v8_grid/grid_v8a_sample_10.png) |
+| id 100 | ![g100](assets/v8_grid/grid_gt_100.png) | ![s30_100](assets/v8_grid/grid_s30_sample_100.png) | ![v8a_100](assets/v8_grid/grid_v8a_sample_100.png) |
+| id 104 | ![g104](assets/v8_grid/grid_gt_104.png) | ![s30_104](assets/v8_grid/grid_s30_sample_104.png) | ![v8a_104](assets/v8_grid/grid_v8a_sample_104.png) |
 
 > 观察：v8a 笔画更实、背景更净、边缘利落（对应 lpips 0.417 < S30 的 0.434，tv/saltpepper 类噪点指标全面更低）。
 
-### 6.4 评测曲线
-`_ot_scratch/v8_dash/evals_summary.csv`（182 行 / 7 实验）汇总绘制。左上：v8a SSIM 持续 NEW BEST；右上：v8a LPIPS 持续走低；左下/右下：skel/ctrl 类中 s32c REPA 全链最佳（SSIM 0.82 / SkelIoU 0.45 级）。
+### 6.3 评测曲线（数据：`_ot_scratch/v8_dash/evals_summary.csv`，182 行 / 7 实验，截至 v8a 95k、s30 132k）
+按 base / ctrl 分轴作图（ctrl 类 SSIM 量级 0.7–0.82，base 类 0.4–0.51，不可同轴比较）。注意：s30 在 step 20k 有一次训练崩溃后恢复（红线骤降段为真实数据，非绘图错误）；s32c 含两个 run（0046 高 SSIM / 0932 低 SSIM），已分别绘制。
 
-![eval_curves](assets/v8_grid/eval_curves.png)
+**SSIM（↑，越高越好）**
+
+![ssim](assets/v8_grid/eval_curves_ssim.png)
+
+**LPIPS（↓，越低越好）**
+
+![lpips](assets/v8_grid/eval_curves_lpips.png)
+
+**MSE（↓，对数轴）**
+
+![mse](assets/v8_grid/eval_curves_mse.png)
+
+**SkelIoU（↑，skel / REPA 专项指标）**：s32b/s32c 通过 REPA 把骨架交并比推到 0.43+，而普通 skel 条件（s26/s31）仅 ~0.01，印证 REPA 表示对齐带来的结构保真收益。
+
+![skel](assets/v8_grid/eval_curves_skel.png)
+
+> 交互式 chartjs dashboard（可 hover 查看数值、自由开关曲线）：`_ot_scratch/v8_dash/v8_dashboard.html`（与 chart.umd.min.js 同目录）。
 
 ---
 

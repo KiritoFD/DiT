@@ -1,0 +1,1463 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>v8-summary.md</title>
+<meta http-equiv="Content-type" content="text/html;charset=UTF-8">
+
+<style>
+/*
+
+Arduino® Light Theme - Stefania Mellai <s.mellai@arduino.cc>
+
+*/
+
+.hljs {
+  display: block;
+  overflow-x: auto;
+  padding: 0.5em;
+  background: #FFFFFF;
+}
+
+.hljs,
+.hljs-subst {
+  color: #434f54;
+}
+
+.hljs-keyword,
+.hljs-attribute,
+.hljs-selector-tag,
+.hljs-doctag,
+.hljs-name {
+  color: #00979D;
+}
+
+.hljs-built_in,
+.hljs-literal,
+.hljs-bullet,
+.hljs-code,
+.hljs-addition {
+  color: #D35400;
+}
+
+.hljs-regexp,
+.hljs-symbol,
+.hljs-variable,
+.hljs-template-variable,
+.hljs-link,
+.hljs-selector-attr,
+.hljs-selector-pseudo {
+  color: #00979D;
+}
+
+.hljs-type,
+.hljs-string,
+.hljs-selector-id,
+.hljs-selector-class,
+.hljs-quote,
+.hljs-template-tag,
+.hljs-deletion {
+  color: #005C5F;
+}
+
+.hljs-title,
+.hljs-section {
+  color: #880000;
+  font-weight: bold;
+}
+
+.hljs-comment {
+  color: rgba(149,165,166,.8);
+}
+
+.hljs-meta-keyword {
+  color: #728E00;
+}
+
+.hljs-meta {
+  color: #434f54;
+}
+
+.hljs-emphasis {
+  font-style: italic;
+}
+
+.hljs-strong {
+  font-weight: bold;
+}
+
+.hljs-function {
+  color: #728E00;
+}
+
+.hljs-number {
+  color: #8A7B52;  
+}
+
+</style>
+
+<style>
+/*---------------------------------------------------------------------------------------------
+ *  Copyright (c) Microsoft Corporation. All rights reserved.
+ *  Licensed under the MIT License. See License.txt in the project root for license information.
+ *--------------------------------------------------------------------------------------------*/
+
+body {
+	font-family:   "HelveticaNeue-Light", sans-serif, "宋体","Segoe WPC", "Segoe UI", "SFUIText-Light","Droid Sans Fallback";
+	font-size: 18px;
+	padding: 0 12px;
+	line-height: 1.6;
+	word-wrap: break-word;
+	color: #333333;
+}
+
+.content-wrapper{
+	max-width: 860px;
+    margin: 0 auto;
+    padding: 0 30px;
+}
+
+#code-csp-warning {
+	position: fixed;
+	top: 0;
+	right: 0;
+	color: white;
+	margin: 16px;
+	text-align: center;
+	font-size: 12px;
+	font-family: sans-serif;
+	background-color:#444444;
+	cursor: pointer;
+	padding: 6px;
+	box-shadow: 1px 1px 1px rgba(0,0,0,.25);
+}
+
+#code-csp-warning:hover {
+	text-decoration: none;
+	background-color:#007acc;
+	box-shadow: 2px 2px 2px rgba(0,0,0,.25);
+}
+
+
+body.scrollBeyondLastLine {
+	margin-bottom: calc(100vh - 22px);
+}
+
+body.showEditorSelection .code-line {
+	position: relative;
+}
+
+body.showEditorSelection .code-active-line:before,
+body.showEditorSelection .code-line:hover:before {
+	content: "";
+	display: block;
+	position: absolute;
+	top: 0;
+	left: -12px;
+	height: 100%;
+}
+
+body.showEditorSelection li.code-active-line:before,
+body.showEditorSelection li.code-line:hover:before {
+	left: -30px;
+}
+
+.vscode-light.showEditorSelection .code-active-line:before {
+	border-left: 3px solid rgba(0, 0, 0, 0.15);
+}
+
+.vscode-light.showEditorSelection .code-line:hover:before {
+	border-left: 3px solid rgba(0, 0, 0, 0.40);
+}
+
+.vscode-dark.showEditorSelection .code-active-line:before {
+	border-left: 3px solid rgba(255, 255, 255, 0.4);
+}
+
+.vscode-dark.showEditorSelection .code-line:hover:before {
+	border-left: 3px solid rgba(255, 255, 255, 0.60);
+}
+
+.vscode-high-contrast.showEditorSelection .code-active-line:before {
+	border-left: 3px solid rgba(255, 160, 0, 0.7);
+}
+
+.vscode-high-contrast.showEditorSelection .code-line:hover:before {
+	border-left: 3px solid rgba(255, 160, 0, 1);
+}
+
+img {
+	max-width: 100%;
+	max-height: 100%;
+}
+
+a {
+	color: #4080D0;
+	text-decoration: none;
+}
+
+a:focus,
+input:focus,
+select:focus,
+textarea:focus {
+	outline: 1px solid -webkit-focus-ring-color;
+	outline-offset: -1px;
+}
+
+hr {
+	border: 0;
+	height: 2px;
+	border-bottom: 2px solid;
+}
+
+h1 {
+	padding-bottom: 0.3em;
+	line-height: 1.2;
+	border-bottom: 1px solid #eee;
+}
+
+
+h2{
+	padding-bottom: .3em;
+    font-size: 2em;
+    line-height: 1.225;
+    border-bottom: 1px solid #eee;
+}
+
+h3{
+	font-size: 1.75em;
+    line-height: 1.225;
+}
+
+h1, h2, h3 {
+	font-weight: bold;
+}
+
+h1 code,
+h2 code,
+h3 code,
+h4 code,
+h5 code,
+h6 code {
+	font-size: inherit;
+	line-height: auto;
+}
+
+a:hover {
+	color: #4080D0;
+	text-decoration: underline;
+}
+
+table {
+	border-collapse: collapse;
+}
+
+table > thead > tr > th {
+	text-align: left;
+	border-bottom: 1px solid;
+}
+
+table > thead > tr > th,
+table > thead > tr > td,
+table > tbody > tr > th,
+table > tbody > tr > td {
+	padding: 5px 10px;
+}
+
+table > tbody > tr + tr > td {
+	border-top: 1px solid;
+}
+
+blockquote {
+	margin: 0 7px 0 5px;
+	padding: 0 16px 0 10px;
+	border-left: 5px solid;
+}
+
+code {
+	font-family: Menlo, Monaco, Consolas, "Droid Sans Mono", "Courier New", monospace, "Droid Sans Fallback";
+	font-size: 14px;
+	line-height: 19px;
+}
+
+body.wordWrap pre {
+	white-space: pre-wrap;
+}
+
+.mac code {
+	font-size: 12px;
+	line-height: 18px;
+}
+
+pre:not(.hljs),
+pre.hljs code > div {
+	padding: 16px;
+	border-radius: 3px;
+	overflow: auto;
+}
+
+/** Theming */
+
+.vscode-light,
+.vscode-light pre code {
+	color: rgb(30, 30, 30);
+}
+
+.vscode-dark,
+.vscode-dark pre code {
+	color: #DDD;
+}
+
+.vscode-high-contrast,
+.vscode-high-contrast pre code {
+	color: white;
+}
+
+.vscode-light code {
+	color: #A31515;
+}
+
+.vscode-dark code {
+	color: #D7BA7D;
+}
+
+.vscode-light pre:not(.hljs),
+.vscode-light code > div {
+	background-color: rgba(220, 220, 220, 0.4);
+}
+
+.vscode-dark pre:not(.hljs),
+.vscode-dark code > div {
+	background-color: rgba(10, 10, 10, 0.4);
+}
+
+.vscode-high-contrast pre:not(.hljs),
+.vscode-high-contrast code > div {
+	background-color: rgb(0, 0, 0);
+}
+
+.vscode-high-contrast h1 {
+	border-color: rgb(0, 0, 0);
+}
+
+.vscode-light table > thead > tr > th {
+	border-color: rgba(0, 0, 0, 0.69);
+}
+
+.vscode-dark table > thead > tr > th {
+	border-color: rgba(255, 255, 255, 0.69);
+}
+
+.vscode-light h1,
+.vscode-light hr,
+.vscode-light table > tbody > tr + tr > td {
+	border-color: rgba(0, 0, 0, 0.18);
+}
+
+.vscode-dark h1,
+.vscode-dark hr,
+.vscode-dark table > tbody > tr + tr > td {
+	border-color: rgba(255, 255, 255, 0.18);
+}
+
+.vscode-light blockquote,
+.vscode-dark blockquote {
+	background: rgba(127, 127, 127, 0.1);
+	border-color: rgba(0, 122, 204, 0.5);
+}
+
+.vscode-high-contrast blockquote {
+	background: transparent;
+	border-color: #fff;
+}
+</style>
+
+<style>
+/* Obsidian syntax defaults for legacy export (PDF / HTML / DOCX) */
+
+.callout {
+	--callout-accent: #0969da;
+	margin: 12px 0;
+	border-radius: 6px;
+	border-left: 4px solid var(--callout-accent);
+	background: rgba(9, 105, 218, 0.08);
+	color: #333333;
+	overflow: hidden;
+}
+
+.callout[data-callout="note"],
+.callout[data-callout="abstract"],
+.callout[data-callout="info"],
+.callout[data-callout="todo"],
+.callout[data-subtype="note"],
+.callout[data-subtype="abstract"],
+.callout[data-subtype="info"],
+.callout[data-subtype="todo"],
+.callout[data-callout="note" i],
+.callout[data-callout="abstract" i],
+.callout[data-callout="info" i],
+.callout[data-callout="todo" i],
+.callout[data-subtype="note" i],
+.callout[data-subtype="abstract" i],
+.callout[data-subtype="info" i],
+.callout[data-subtype="todo" i] {
+	--callout-accent: #0969da;
+	border-left-color: #0969da;
+	background: rgba(9, 105, 218, 0.08);
+}
+
+.callout[data-callout="tip"],
+.callout[data-callout="hint"],
+.callout[data-subtype="tip"],
+.callout[data-subtype="hint"],
+.callout[data-callout="tip" i],
+.callout[data-callout="hint" i],
+.callout[data-subtype="tip" i],
+.callout[data-subtype="hint" i] {
+	--callout-accent: #116329;
+	border-left-color: #116329;
+	background: rgba(17, 99, 41, 0.08);
+}
+
+.callout[data-callout="important"],
+.callout[data-subtype="important"],
+.callout[data-callout="important" i],
+.callout[data-subtype="important" i] {
+	--callout-accent: #8250df;
+	border-left-color: #8250df;
+	background: rgba(130, 80, 223, 0.08);
+}
+
+.callout[data-callout="warning"],
+.callout[data-subtype="warning"],
+.callout[data-callout="warning" i],
+.callout[data-subtype="warning" i] {
+	--callout-accent: #bc4c00;
+	border-left-color: #bc4c00;
+	background: rgba(188, 76, 0, 0.08);
+}
+
+.callout[data-callout="caution"],
+.callout[data-callout="danger"],
+.callout[data-callout="error"],
+.callout[data-callout="bug"],
+.callout[data-callout="fail"],
+.callout[data-subtype="caution"],
+.callout[data-subtype="danger"],
+.callout[data-subtype="error"],
+.callout[data-subtype="bug"],
+.callout[data-subtype="fail"],
+.callout[data-callout="caution" i],
+.callout[data-callout="danger" i],
+.callout[data-callout="error" i],
+.callout[data-callout="bug" i],
+.callout[data-callout="fail" i],
+.callout[data-subtype="caution" i],
+.callout[data-subtype="danger" i],
+.callout[data-subtype="error" i],
+.callout[data-subtype="bug" i],
+.callout[data-subtype="fail" i] {
+	--callout-accent: #cf222e;
+	border-left-color: #cf222e;
+	background: rgba(207, 34, 46, 0.08);
+}
+
+.callout[data-callout="question"],
+.callout[data-callout="help"],
+.callout[data-callout="faq"],
+.callout[data-subtype="question"],
+.callout[data-subtype="help"],
+.callout[data-subtype="faq"],
+.callout[data-callout="question" i],
+.callout[data-callout="help" i],
+.callout[data-callout="faq" i],
+.callout[data-subtype="question" i],
+.callout[data-subtype="help" i],
+.callout[data-subtype="faq" i] {
+	--callout-accent: #9a6700;
+	border-left-color: #9a6700;
+	background: rgba(154, 103, 0, 0.08);
+}
+
+.callout .callout-title,
+.callout .callout-info {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	padding: 12px 14px 0;
+	margin-bottom: 10px;
+	color: var(--callout-accent);
+}
+
+.callout .callout-title-icon,
+.callout .callout-icon {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 16px;
+	height: 16px;
+	flex-shrink: 0;
+	color: var(--callout-accent);
+}
+
+.callout .callout-title-icon svg {
+	width: 16px;
+	height: 16px;
+}
+
+.callout .callout-title-inner,
+.callout .callout-info > .callout-title {
+	font-weight: 700;
+	font-size: 0.95em;
+	line-height: 1.35;
+	color: var(--callout-accent);
+}
+
+.callout .callout-content {
+	padding: 6px 14px 12px;
+	color: #333333;
+}
+
+.callout .callout-content > :first-child {
+	margin-top: 0;
+}
+
+.callout .callout-content > :last-child {
+	margin-bottom: 0;
+}
+
+.obsidian-wikilink {
+	color: #7c3aed;
+	text-decoration: underline;
+}
+
+.obsidian-wikilink-embed {
+	display: inline-block;
+	padding: 2px 8px;
+	border: 1px dashed #d0d7de;
+	border-radius: 4px;
+	color: #7c3aed;
+}
+
+.obsidian-tag {
+	color: #7c3aed;
+	background: rgba(124, 58, 237, 0.12);
+	border-radius: 4px;
+	padding: 0 4px;
+}
+
+mark {
+	background: rgba(154, 103, 0, 0.35);
+	color: inherit;
+	padding: 0 2px;
+	border-radius: 2px;
+}
+
+[data-type="yaml-front-matter"] {
+	margin: 0 0 16px;
+}
+
+.vditor-properties {
+	border: 1px solid #d0d7de;
+	border-radius: 8px;
+	background: #f6f8fa;
+	overflow: hidden;
+}
+
+.vditor-properties__heading {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	padding: 8px 12px;
+	border-bottom: 1px solid #d0d7de;
+	background: #f3f4f6;
+	font-size: 0.85rem;
+	font-weight: 600;
+	color: #6b7280;
+}
+
+.vditor-properties__heading-icon::before {
+	content: "☰";
+	opacity: 0.75;
+}
+
+.vditor-properties__table {
+	display: flex;
+	flex-direction: column;
+}
+
+.vditor-properties__row {
+	display: grid;
+	grid-template-columns: minmax(120px, 34%) 1fr;
+	gap: 8px 12px;
+	align-items: start;
+	padding: 8px 12px;
+	border-top: 1px solid rgba(208, 215, 222, 0.45);
+}
+
+.vditor-properties__row:first-child {
+	border-top: none;
+}
+
+.vditor-properties__key {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	min-width: 0;
+	color: #6b7280;
+	font-size: 0.85rem;
+}
+
+.vditor-properties__key-icon {
+	flex-shrink: 0;
+	width: 14px;
+	height: 14px;
+	opacity: 0.72;
+	text-align: center;
+}
+
+.vditor-properties__key-icon[data-icon="tag"]::before { content: "#"; }
+.vditor-properties__key-icon[data-icon="alias"]::before { content: "⛓"; }
+.vditor-properties__key-icon[data-icon="date"]::before { content: "📅"; }
+.vditor-properties__key-icon[data-icon="toggle"]::before { content: "◉"; }
+.vditor-properties__key-icon[data-icon="number"]::before { content: "#"; }
+.vditor-properties__key-icon[data-icon="list"]::before { content: "≡"; }
+.vditor-properties__key-icon[data-icon="text"]::before { content: "T"; }
+
+.vditor-properties__key-label {
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.vditor-properties__value {
+	min-width: 0;
+	font-size: 0.92rem;
+	color: #333333;
+	word-break: break-word;
+}
+
+.vditor-properties__value--tags,
+.vditor-properties__value--aliases {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 4px;
+}
+
+.vditor-properties__value--aliases {
+	gap: 6px;
+}
+
+.vditor-properties__list {
+	margin: 0;
+	padding-left: 1.1rem;
+}
+
+.vditor-properties__checkbox {
+	display: inline-block;
+	width: 14px;
+	height: 14px;
+	margin-right: 6px;
+	border: 1px solid #d0d7de;
+	border-radius: 3px;
+	vertical-align: -2px;
+	background: #ffffff;
+}
+
+.vditor-properties__checkbox[is-checked="true"] {
+	background: #7c3aed;
+	border-color: #7c3aed;
+	box-shadow: inset 0 0 0 2px #ffffff;
+}
+
+.vditor-properties__empty {
+	opacity: 0.45;
+}
+
+</style>
+
+<style>
+pre {
+	background-color: #f8f8f8;
+	border: 1px solid #cccccc;
+	border-radius: 3px;
+	overflow-x: auto;
+	white-space: pre-wrap;
+	overflow-wrap: break-word;
+}
+
+pre:not(.hljs) {
+	padding: 23px;
+	line-height: 19px;
+}
+
+blockquote {
+	background: rgba(127, 127, 127, 0.1);
+	border-color: rgba(0, 122, 204, 0.5);
+}
+
+.emoji {
+	height: 1.4em;
+}
+
+/* for inline code */
+:not(pre):not(.hljs) > code {
+	color: #C9AE75; /* Change the old color so it seems less like an error */
+	font-size: inherit;
+}
+
+/* Page Break : use <div class="page"/> to insert page break
+-------------------------------------------------------- */
+.page {
+	page-break-after: always;
+}
+
+.table-of-contents li{
+	list-style-type: initial;
+}
+
+</style>
+
+<style>
+@font-face{font-display:block;font-family:KaTeX_AMS;font-style:normal;font-weight:400;src:url("https://cdn.jsdelivr.net/npm/katex@0.16.2/dist/fonts/KaTeX_AMS-Regular.woff2") format("woff2"),url("https://cdn.jsdelivr.net/npm/katex@0.16.2/dist/fonts/KaTeX_AMS-Regular.woff") format("woff"),url("https://cdn.jsdelivr.net/npm/katex@0.16.2/dist/fonts/KaTeX_AMS-Regular.ttf") format("truetype")}@font-face{font-display:block;font-family:KaTeX_Caligraphic;font-style:normal;font-weight:700;src:url("https://cdn.jsdelivr.net/npm/katex@0.16.2/dist/fonts/KaTeX_Caligraphic-Bold.woff2") format("woff2"),url("https://cdn.jsdelivr.net/npm/katex@0.16.2/dist/fonts/KaTeX_Caligraphic-Bold.woff") format("woff"),url("https://cdn.jsdelivr.net/npm/katex@0.16.2/dist/fonts/KaTeX_Caligraphic-Bold.ttf") format("truetype")}@font-face{font-display:block;font-family:KaTeX_Caligraphic;font-style:normal;font-weight:400;src:url("https://cdn.jsdelivr.net/npm/katex@0.16.2/dist/fonts/KaTeX_Caligraphic-Regular.woff2") format("woff2"),url("https://cdn.jsdelivr.net/npm/katex@0.16.2/dist/fonts/KaTeX_Caligraphic-Regular.woff") format("woff"),url("https://cdn.jsdelivr.net/npm/katex@0.16.2/dist/fonts/KaTeX_Caligraphic-Regular.ttf") format("truetype")}@font-face{font-display:block;font-family:KaTeX_Fraktur;font-style:normal;font-weight:700;src:url("https://cdn.jsdelivr.net/npm/katex@0.16.2/dist/fonts/KaTeX_Fraktur-Bold.woff2") format("woff2"),url("https://cdn.jsdelivr.net/npm/katex@0.16.2/dist/fonts/KaTeX_Fraktur-Bold.woff") format("woff"),url("https://cdn.jsdelivr.net/npm/katex@0.16.2/dist/fonts/KaTeX_Fraktur-Bold.ttf") format("truetype")}@font-face{font-display:block;font-family:KaTeX_Fraktur;font-style:normal;font-weight:400;src:url("https://cdn.jsdelivr.net/npm/katex@0.16.2/dist/fonts/KaTeX_Fraktur-Regular.woff2") format("woff2"),url("https://cdn.jsdelivr.net/npm/katex@0.16.2/dist/fonts/KaTeX_Fraktur-Regular.woff") format("woff"),url("https://cdn.jsdelivr.net/npm/katex@0.16.2/dist/fonts/KaTeX_Fraktur-Regular.ttf") format("truetype")}@font-face{font-display:block;font-family:KaTeX_Main;font-style:normal;font-weight:700;src:url("https://cdn.jsdelivr.net/npm/katex@0.16.2/dist/fonts/KaTeX_Main-Bold.woff2") format("woff2"),url("https://cdn.jsdelivr.net/npm/katex@0.16.2/dist/fonts/KaTeX_Main-Bold.woff") format("woff"),url("https://cdn.jsdelivr.net/npm/katex@0.16.2/dist/fonts/KaTeX_Main-Bold.ttf") format("truetype")}@font-face{font-display:block;font-family:KaTeX_Main;font-style:italic;font-weight:700;src:url("https://cdn.jsdelivr.net/npm/katex@0.16.2/dist/fonts/KaTeX_Main-BoldItalic.woff2") format("woff2"),url("https://cdn.jsdelivr.net/npm/katex@0.16.2/dist/fonts/KaTeX_Main-BoldItalic.woff") format("woff"),url("https://cdn.jsdelivr.net/npm/katex@0.16.2/dist/fonts/KaTeX_Main-BoldItalic.ttf") format("truetype")}@font-face{font-display:block;font-family:KaTeX_Main;font-style:italic;font-weight:400;src:url("https://cdn.jsdelivr.net/npm/katex@0.16.2/dist/fonts/KaTeX_Main-Italic.woff2") format("woff2"),url("https://cdn.jsdelivr.net/npm/katex@0.16.2/dist/fonts/KaTeX_Main-Italic.woff") format("woff"),url("https://cdn.jsdelivr.net/npm/katex@0.16.2/dist/fonts/KaTeX_Main-Italic.ttf") format("truetype")}@font-face{font-display:block;font-family:KaTeX_Main;font-style:normal;font-weight:400;src:url("https://cdn.jsdelivr.net/npm/katex@0.16.2/dist/fonts/KaTeX_Main-Regular.woff2") format("woff2"),url("https://cdn.jsdelivr.net/npm/katex@0.16.2/dist/fonts/KaTeX_Main-Regular.woff") format("woff"),url("https://cdn.jsdelivr.net/npm/katex@0.16.2/dist/fonts/KaTeX_Main-Regular.ttf") format("truetype")}@font-face{font-display:block;font-family:KaTeX_Math;font-style:italic;font-weight:700;src:url("https://cdn.jsdelivr.net/npm/katex@0.16.2/dist/fonts/KaTeX_Math-BoldItalic.woff2") format("woff2"),url("https://cdn.jsdelivr.net/npm/katex@0.16.2/dist/fonts/KaTeX_Math-BoldItalic.woff") format("woff"),url("https://cdn.jsdelivr.net/npm/katex@0.16.2/dist/fonts/KaTeX_Math-BoldItalic.ttf") format("truetype")}@font-face{font-display:block;font-family:KaTeX_Math;font-style:italic;font-weight:400;src:url("https://cdn.jsdelivr.net/npm/katex@0.16.2/dist/fonts/KaTeX_Math-Italic.woff2") format("woff2"),url("https://cdn.jsdelivr.net/npm/katex@0.16.2/dist/fonts/KaTeX_Math-Italic.woff") format("woff"),url("https://cdn.jsdelivr.net/npm/katex@0.16.2/dist/fonts/KaTeX_Math-Italic.ttf") format("truetype")}@font-face{font-display:block;font-family:"KaTeX_SansSerif";font-style:normal;font-weight:700;src:url("https://cdn.jsdelivr.net/npm/katex@0.16.2/dist/fonts/KaTeX_SansSerif-Bold.woff2") format("woff2"),url("https://cdn.jsdelivr.net/npm/katex@0.16.2/dist/fonts/KaTeX_SansSerif-Bold.woff") format("woff"),url("https://cdn.jsdelivr.net/npm/katex@0.16.2/dist/fonts/KaTeX_SansSerif-Bold.ttf") format("truetype")}@font-face{font-display:block;font-family:"KaTeX_SansSerif";font-style:italic;font-weight:400;src:url("https://cdn.jsdelivr.net/npm/katex@0.16.2/dist/fonts/KaTeX_SansSerif-Italic.woff2") format("woff2"),url("https://cdn.jsdelivr.net/npm/katex@0.16.2/dist/fonts/KaTeX_SansSerif-Italic.woff") format("woff"),url("https://cdn.jsdelivr.net/npm/katex@0.16.2/dist/fonts/KaTeX_SansSerif-Italic.ttf") format("truetype")}@font-face{font-display:block;font-family:"KaTeX_SansSerif";font-style:normal;font-weight:400;src:url("https://cdn.jsdelivr.net/npm/katex@0.16.2/dist/fonts/KaTeX_SansSerif-Regular.woff2") format("woff2"),url("https://cdn.jsdelivr.net/npm/katex@0.16.2/dist/fonts/KaTeX_SansSerif-Regular.woff") format("woff"),url("https://cdn.jsdelivr.net/npm/katex@0.16.2/dist/fonts/KaTeX_SansSerif-Regular.ttf") format("truetype")}@font-face{font-display:block;font-family:KaTeX_Script;font-style:normal;font-weight:400;src:url("https://cdn.jsdelivr.net/npm/katex@0.16.2/dist/fonts/KaTeX_Script-Regular.woff2") format("woff2"),url("https://cdn.jsdelivr.net/npm/katex@0.16.2/dist/fonts/KaTeX_Script-Regular.woff") format("woff"),url("https://cdn.jsdelivr.net/npm/katex@0.16.2/dist/fonts/KaTeX_Script-Regular.ttf") format("truetype")}@font-face{font-display:block;font-family:KaTeX_Size1;font-style:normal;font-weight:400;src:url("https://cdn.jsdelivr.net/npm/katex@0.16.2/dist/fonts/KaTeX_Size1-Regular.woff2") format("woff2"),url("https://cdn.jsdelivr.net/npm/katex@0.16.2/dist/fonts/KaTeX_Size1-Regular.woff") format("woff"),url("https://cdn.jsdelivr.net/npm/katex@0.16.2/dist/fonts/KaTeX_Size1-Regular.ttf") format("truetype")}@font-face{font-display:block;font-family:KaTeX_Size2;font-style:normal;font-weight:400;src:url("https://cdn.jsdelivr.net/npm/katex@0.16.2/dist/fonts/KaTeX_Size2-Regular.woff2") format("woff2"),url("https://cdn.jsdelivr.net/npm/katex@0.16.2/dist/fonts/KaTeX_Size2-Regular.woff") format("woff"),url("https://cdn.jsdelivr.net/npm/katex@0.16.2/dist/fonts/KaTeX_Size2-Regular.ttf") format("truetype")}@font-face{font-display:block;font-family:KaTeX_Size3;font-style:normal;font-weight:400;src:url("https://cdn.jsdelivr.net/npm/katex@0.16.2/dist/fonts/KaTeX_Size3-Regular.woff2") format("woff2"),url("https://cdn.jsdelivr.net/npm/katex@0.16.2/dist/fonts/KaTeX_Size3-Regular.woff") format("woff"),url("https://cdn.jsdelivr.net/npm/katex@0.16.2/dist/fonts/KaTeX_Size3-Regular.ttf") format("truetype")}@font-face{font-display:block;font-family:KaTeX_Size4;font-style:normal;font-weight:400;src:url("https://cdn.jsdelivr.net/npm/katex@0.16.2/dist/fonts/KaTeX_Size4-Regular.woff2") format("woff2"),url("https://cdn.jsdelivr.net/npm/katex@0.16.2/dist/fonts/KaTeX_Size4-Regular.woff") format("woff"),url("https://cdn.jsdelivr.net/npm/katex@0.16.2/dist/fonts/KaTeX_Size4-Regular.ttf") format("truetype")}@font-face{font-display:block;font-family:KaTeX_Typewriter;font-style:normal;font-weight:400;src:url("https://cdn.jsdelivr.net/npm/katex@0.16.2/dist/fonts/KaTeX_Typewriter-Regular.woff2") format("woff2"),url("https://cdn.jsdelivr.net/npm/katex@0.16.2/dist/fonts/KaTeX_Typewriter-Regular.woff") format("woff"),url("https://cdn.jsdelivr.net/npm/katex@0.16.2/dist/fonts/KaTeX_Typewriter-Regular.ttf") format("truetype")}.katex{font:normal 1.21em KaTeX_Main,Times New Roman,serif;line-height:1.2;position:relative;text-indent:0;text-rendering:auto}.katex *{-ms-high-contrast-adjust:none!important;border-color:currentColor}.katex .katex-version:after{content:"0.16.47"}.katex .katex-mathml{border:0;-webkit-clip-path:inset(50%);clip-path:inset(50%);height:1px;overflow:hidden;padding:0;position:absolute;width:1px}.katex .katex-html>.newline{display:block}.katex .base{position:relative;white-space:nowrap;width:-webkit-min-content;width:-moz-min-content;width:min-content}.katex .base,.katex .strut{display:inline-block}.katex .textbf{font-weight:700}.katex .textit{font-style:italic}.katex .textrm{font-family:KaTeX_Main}.katex .textsf{font-family:KaTeX_SansSerif}.katex .texttt{font-family:KaTeX_Typewriter}.katex .mathnormal{font-family:KaTeX_Math;font-style:italic}.katex .mathit{font-family:KaTeX_Main;font-style:italic}.katex .mathrm{font-style:normal}.katex .mathbf{font-family:KaTeX_Main;font-weight:700}.katex .boldsymbol{font-family:KaTeX_Math;font-style:italic;font-weight:700}.katex .amsrm,.katex .mathbb,.katex .textbb{font-family:KaTeX_AMS}.katex .mathcal{font-family:KaTeX_Caligraphic}.katex .mathfrak,.katex .textfrak{font-family:KaTeX_Fraktur}.katex .mathboldfrak,.katex .textboldfrak{font-family:KaTeX_Fraktur;font-weight:700}.katex .mathtt{font-family:KaTeX_Typewriter}.katex .mathscr,.katex .textscr{font-family:KaTeX_Script}.katex .mathsf,.katex .textsf{font-family:KaTeX_SansSerif}.katex .mathboldsf,.katex .textboldsf{font-family:KaTeX_SansSerif;font-weight:700}.katex .mathitsf,.katex .mathsfit,.katex .textitsf{font-family:KaTeX_SansSerif;font-style:italic}.katex .mainrm{font-family:KaTeX_Main;font-style:normal}.katex .vlist-t{border-collapse:collapse;display:inline-table;table-layout:fixed}.katex .vlist-r{display:table-row}.katex .vlist{display:table-cell;position:relative;vertical-align:bottom}.katex .vlist>span{display:block;height:0;position:relative}.katex .vlist>span>span{display:inline-block}.katex .vlist>span>.pstrut{overflow:hidden;width:0}.katex .vlist-t2{margin-right:-2px}.katex .vlist-s{display:table-cell;font-size:1px;min-width:2px;vertical-align:bottom;width:2px}.katex .vbox{align-items:baseline;display:inline-flex;flex-direction:column}.katex .hbox{width:100%}.katex .hbox,.katex .thinbox{display:inline-flex;flex-direction:row}.katex .thinbox{max-width:0;width:0}.katex .msupsub{text-align:left}.katex .mfrac>span>span{text-align:center}.katex .mfrac .frac-line{border-bottom-style:solid;display:inline-block;width:100%}.katex .hdashline,.katex .hline,.katex .mfrac .frac-line,.katex .overline .overline-line,.katex .rule,.katex .underline .underline-line{min-height:1px}.katex .mspace{display:inline-block}.katex .smash{display:inline;line-height:0}.katex .clap,.katex .llap,.katex .rlap{position:relative;width:0}.katex .clap>.inner,.katex .llap>.inner,.katex .rlap>.inner{position:absolute}.katex .clap>.fix,.katex .llap>.fix,.katex .rlap>.fix{display:inline-block}.katex .llap>.inner{right:0}.katex .clap>.inner,.katex .rlap>.inner{left:0}.katex .clap>.inner>span{margin-left:-50%;margin-right:50%}.katex .rule{border:0 solid;display:inline-block;position:relative}.katex .hline,.katex .overline .overline-line,.katex .underline .underline-line{border-bottom-style:solid;display:inline-block;width:100%}.katex .hdashline{border-bottom-style:dashed;display:inline-block;width:100%}.katex .sqrt>.root{margin-left:.2777777778em;margin-right:-.5555555556em}.katex .fontsize-ensurer.reset-size1.size1,.katex .sizing.reset-size1.size1{font-size:1em}.katex .fontsize-ensurer.reset-size1.size2,.katex .sizing.reset-size1.size2{font-size:1.2em}.katex .fontsize-ensurer.reset-size1.size3,.katex .sizing.reset-size1.size3{font-size:1.4em}.katex .fontsize-ensurer.reset-size1.size4,.katex .sizing.reset-size1.size4{font-size:1.6em}.katex .fontsize-ensurer.reset-size1.size5,.katex .sizing.reset-size1.size5{font-size:1.8em}.katex .fontsize-ensurer.reset-size1.size6,.katex .sizing.reset-size1.size6{font-size:2em}.katex .fontsize-ensurer.reset-size1.size7,.katex .sizing.reset-size1.size7{font-size:2.4em}.katex .fontsize-ensurer.reset-size1.size8,.katex .sizing.reset-size1.size8{font-size:2.88em}.katex .fontsize-ensurer.reset-size1.size9,.katex .sizing.reset-size1.size9{font-size:3.456em}.katex .fontsize-ensurer.reset-size1.size10,.katex .sizing.reset-size1.size10{font-size:4.148em}.katex .fontsize-ensurer.reset-size1.size11,.katex .sizing.reset-size1.size11{font-size:4.976em}.katex .fontsize-ensurer.reset-size2.size1,.katex .sizing.reset-size2.size1{font-size:.8333333333em}.katex .fontsize-ensurer.reset-size2.size2,.katex .sizing.reset-size2.size2{font-size:1em}.katex .fontsize-ensurer.reset-size2.size3,.katex .sizing.reset-size2.size3{font-size:1.1666666667em}.katex .fontsize-ensurer.reset-size2.size4,.katex .sizing.reset-size2.size4{font-size:1.3333333333em}.katex .fontsize-ensurer.reset-size2.size5,.katex .sizing.reset-size2.size5{font-size:1.5em}.katex .fontsize-ensurer.reset-size2.size6,.katex .sizing.reset-size2.size6{font-size:1.6666666667em}.katex .fontsize-ensurer.reset-size2.size7,.katex .sizing.reset-size2.size7{font-size:2em}.katex .fontsize-ensurer.reset-size2.size8,.katex .sizing.reset-size2.size8{font-size:2.4em}.katex .fontsize-ensurer.reset-size2.size9,.katex .sizing.reset-size2.size9{font-size:2.88em}.katex .fontsize-ensurer.reset-size2.size10,.katex .sizing.reset-size2.size10{font-size:3.4566666667em}.katex .fontsize-ensurer.reset-size2.size11,.katex .sizing.reset-size2.size11{font-size:4.1466666667em}.katex .fontsize-ensurer.reset-size3.size1,.katex .sizing.reset-size3.size1{font-size:.7142857143em}.katex .fontsize-ensurer.reset-size3.size2,.katex .sizing.reset-size3.size2{font-size:.8571428571em}.katex .fontsize-ensurer.reset-size3.size3,.katex .sizing.reset-size3.size3{font-size:1em}.katex .fontsize-ensurer.reset-size3.size4,.katex .sizing.reset-size3.size4{font-size:1.1428571429em}.katex .fontsize-ensurer.reset-size3.size5,.katex .sizing.reset-size3.size5{font-size:1.2857142857em}.katex .fontsize-ensurer.reset-size3.size6,.katex .sizing.reset-size3.size6{font-size:1.4285714286em}.katex .fontsize-ensurer.reset-size3.size7,.katex .sizing.reset-size3.size7{font-size:1.7142857143em}.katex .fontsize-ensurer.reset-size3.size8,.katex .sizing.reset-size3.size8{font-size:2.0571428571em}.katex .fontsize-ensurer.reset-size3.size9,.katex .sizing.reset-size3.size9{font-size:2.4685714286em}.katex .fontsize-ensurer.reset-size3.size10,.katex .sizing.reset-size3.size10{font-size:2.9628571429em}.katex .fontsize-ensurer.reset-size3.size11,.katex .sizing.reset-size3.size11{font-size:3.5542857143em}.katex .fontsize-ensurer.reset-size4.size1,.katex .sizing.reset-size4.size1{font-size:.625em}.katex .fontsize-ensurer.reset-size4.size2,.katex .sizing.reset-size4.size2{font-size:.75em}.katex .fontsize-ensurer.reset-size4.size3,.katex .sizing.reset-size4.size3{font-size:.875em}.katex .fontsize-ensurer.reset-size4.size4,.katex .sizing.reset-size4.size4{font-size:1em}.katex .fontsize-ensurer.reset-size4.size5,.katex .sizing.reset-size4.size5{font-size:1.125em}.katex .fontsize-ensurer.reset-size4.size6,.katex .sizing.reset-size4.size6{font-size:1.25em}.katex .fontsize-ensurer.reset-size4.size7,.katex .sizing.reset-size4.size7{font-size:1.5em}.katex .fontsize-ensurer.reset-size4.size8,.katex .sizing.reset-size4.size8{font-size:1.8em}.katex .fontsize-ensurer.reset-size4.size9,.katex .sizing.reset-size4.size9{font-size:2.16em}.katex .fontsize-ensurer.reset-size4.size10,.katex .sizing.reset-size4.size10{font-size:2.5925em}.katex .fontsize-ensurer.reset-size4.size11,.katex .sizing.reset-size4.size11{font-size:3.11em}.katex .fontsize-ensurer.reset-size5.size1,.katex .sizing.reset-size5.size1{font-size:.5555555556em}.katex .fontsize-ensurer.reset-size5.size2,.katex .sizing.reset-size5.size2{font-size:.6666666667em}.katex .fontsize-ensurer.reset-size5.size3,.katex .sizing.reset-size5.size3{font-size:.7777777778em}.katex .fontsize-ensurer.reset-size5.size4,.katex .sizing.reset-size5.size4{font-size:.8888888889em}.katex .fontsize-ensurer.reset-size5.size5,.katex .sizing.reset-size5.size5{font-size:1em}.katex .fontsize-ensurer.reset-size5.size6,.katex .sizing.reset-size5.size6{font-size:1.1111111111em}.katex .fontsize-ensurer.reset-size5.size7,.katex .sizing.reset-size5.size7{font-size:1.3333333333em}.katex .fontsize-ensurer.reset-size5.size8,.katex .sizing.reset-size5.size8{font-size:1.6em}.katex .fontsize-ensurer.reset-size5.size9,.katex .sizing.reset-size5.size9{font-size:1.92em}.katex .fontsize-ensurer.reset-size5.size10,.katex .sizing.reset-size5.size10{font-size:2.3044444444em}.katex .fontsize-ensurer.reset-size5.size11,.katex .sizing.reset-size5.size11{font-size:2.7644444444em}.katex .fontsize-ensurer.reset-size6.size1,.katex .sizing.reset-size6.size1{font-size:.5em}.katex .fontsize-ensurer.reset-size6.size2,.katex .sizing.reset-size6.size2{font-size:.6em}.katex .fontsize-ensurer.reset-size6.size3,.katex .sizing.reset-size6.size3{font-size:.7em}.katex .fontsize-ensurer.reset-size6.size4,.katex .sizing.reset-size6.size4{font-size:.8em}.katex .fontsize-ensurer.reset-size6.size5,.katex .sizing.reset-size6.size5{font-size:.9em}.katex .fontsize-ensurer.reset-size6.size6,.katex .sizing.reset-size6.size6{font-size:1em}.katex .fontsize-ensurer.reset-size6.size7,.katex .sizing.reset-size6.size7{font-size:1.2em}.katex .fontsize-ensurer.reset-size6.size8,.katex .sizing.reset-size6.size8{font-size:1.44em}.katex .fontsize-ensurer.reset-size6.size9,.katex .sizing.reset-size6.size9{font-size:1.728em}.katex .fontsize-ensurer.reset-size6.size10,.katex .sizing.reset-size6.size10{font-size:2.074em}.katex .fontsize-ensurer.reset-size6.size11,.katex .sizing.reset-size6.size11{font-size:2.488em}.katex .fontsize-ensurer.reset-size7.size1,.katex .sizing.reset-size7.size1{font-size:.4166666667em}.katex .fontsize-ensurer.reset-size7.size2,.katex .sizing.reset-size7.size2{font-size:.5em}.katex .fontsize-ensurer.reset-size7.size3,.katex .sizing.reset-size7.size3{font-size:.5833333333em}.katex .fontsize-ensurer.reset-size7.size4,.katex .sizing.reset-size7.size4{font-size:.6666666667em}.katex .fontsize-ensurer.reset-size7.size5,.katex .sizing.reset-size7.size5{font-size:.75em}.katex .fontsize-ensurer.reset-size7.size6,.katex .sizing.reset-size7.size6{font-size:.8333333333em}.katex .fontsize-ensurer.reset-size7.size7,.katex .sizing.reset-size7.size7{font-size:1em}.katex .fontsize-ensurer.reset-size7.size8,.katex .sizing.reset-size7.size8{font-size:1.2em}.katex .fontsize-ensurer.reset-size7.size9,.katex .sizing.reset-size7.size9{font-size:1.44em}.katex .fontsize-ensurer.reset-size7.size10,.katex .sizing.reset-size7.size10{font-size:1.7283333333em}.katex .fontsize-ensurer.reset-size7.size11,.katex .sizing.reset-size7.size11{font-size:2.0733333333em}.katex .fontsize-ensurer.reset-size8.size1,.katex .sizing.reset-size8.size1{font-size:.3472222222em}.katex .fontsize-ensurer.reset-size8.size2,.katex .sizing.reset-size8.size2{font-size:.4166666667em}.katex .fontsize-ensurer.reset-size8.size3,.katex .sizing.reset-size8.size3{font-size:.4861111111em}.katex .fontsize-ensurer.reset-size8.size4,.katex .sizing.reset-size8.size4{font-size:.5555555556em}.katex .fontsize-ensurer.reset-size8.size5,.katex .sizing.reset-size8.size5{font-size:.625em}.katex .fontsize-ensurer.reset-size8.size6,.katex .sizing.reset-size8.size6{font-size:.6944444444em}.katex .fontsize-ensurer.reset-size8.size7,.katex .sizing.reset-size8.size7{font-size:.8333333333em}.katex .fontsize-ensurer.reset-size8.size8,.katex .sizing.reset-size8.size8{font-size:1em}.katex .fontsize-ensurer.reset-size8.size9,.katex .sizing.reset-size8.size9{font-size:1.2em}.katex .fontsize-ensurer.reset-size8.size10,.katex .sizing.reset-size8.size10{font-size:1.4402777778em}.katex .fontsize-ensurer.reset-size8.size11,.katex .sizing.reset-size8.size11{font-size:1.7277777778em}.katex .fontsize-ensurer.reset-size9.size1,.katex .sizing.reset-size9.size1{font-size:.2893518519em}.katex .fontsize-ensurer.reset-size9.size2,.katex .sizing.reset-size9.size2{font-size:.3472222222em}.katex .fontsize-ensurer.reset-size9.size3,.katex .sizing.reset-size9.size3{font-size:.4050925926em}.katex .fontsize-ensurer.reset-size9.size4,.katex .sizing.reset-size9.size4{font-size:.462962963em}.katex .fontsize-ensurer.reset-size9.size5,.katex .sizing.reset-size9.size5{font-size:.5208333333em}.katex .fontsize-ensurer.reset-size9.size6,.katex .sizing.reset-size9.size6{font-size:.5787037037em}.katex .fontsize-ensurer.reset-size9.size7,.katex .sizing.reset-size9.size7{font-size:.6944444444em}.katex .fontsize-ensurer.reset-size9.size8,.katex .sizing.reset-size9.size8{font-size:.8333333333em}.katex .fontsize-ensurer.reset-size9.size9,.katex .sizing.reset-size9.size9{font-size:1em}.katex .fontsize-ensurer.reset-size9.size10,.katex .sizing.reset-size9.size10{font-size:1.2002314815em}.katex .fontsize-ensurer.reset-size9.size11,.katex .sizing.reset-size9.size11{font-size:1.4398148148em}.katex .fontsize-ensurer.reset-size10.size1,.katex .sizing.reset-size10.size1{font-size:.2410800386em}.katex .fontsize-ensurer.reset-size10.size2,.katex .sizing.reset-size10.size2{font-size:.2892960463em}.katex .fontsize-ensurer.reset-size10.size3,.katex .sizing.reset-size10.size3{font-size:.337512054em}.katex .fontsize-ensurer.reset-size10.size4,.katex .sizing.reset-size10.size4{font-size:.3857280617em}.katex .fontsize-ensurer.reset-size10.size5,.katex .sizing.reset-size10.size5{font-size:.4339440694em}.katex .fontsize-ensurer.reset-size10.size6,.katex .sizing.reset-size10.size6{font-size:.4821600771em}.katex .fontsize-ensurer.reset-size10.size7,.katex .sizing.reset-size10.size7{font-size:.5785920926em}.katex .fontsize-ensurer.reset-size10.size8,.katex .sizing.reset-size10.size8{font-size:.6943105111em}.katex .fontsize-ensurer.reset-size10.size9,.katex .sizing.reset-size10.size9{font-size:.8331726133em}.katex .fontsize-ensurer.reset-size10.size10,.katex .sizing.reset-size10.size10{font-size:1em}.katex .fontsize-ensurer.reset-size10.size11,.katex .sizing.reset-size10.size11{font-size:1.1996142719em}.katex .fontsize-ensurer.reset-size11.size1,.katex .sizing.reset-size11.size1{font-size:.2009646302em}.katex .fontsize-ensurer.reset-size11.size2,.katex .sizing.reset-size11.size2{font-size:.2411575563em}.katex .fontsize-ensurer.reset-size11.size3,.katex .sizing.reset-size11.size3{font-size:.2813504823em}.katex .fontsize-ensurer.reset-size11.size4,.katex .sizing.reset-size11.size4{font-size:.3215434084em}.katex .fontsize-ensurer.reset-size11.size5,.katex .sizing.reset-size11.size5{font-size:.3617363344em}.katex .fontsize-ensurer.reset-size11.size6,.katex .sizing.reset-size11.size6{font-size:.4019292605em}.katex .fontsize-ensurer.reset-size11.size7,.katex .sizing.reset-size11.size7{font-size:.4823151125em}.katex .fontsize-ensurer.reset-size11.size8,.katex .sizing.reset-size11.size8{font-size:.578778135em}.katex .fontsize-ensurer.reset-size11.size9,.katex .sizing.reset-size11.size9{font-size:.6945337621em}.katex .fontsize-ensurer.reset-size11.size10,.katex .sizing.reset-size11.size10{font-size:.8336012862em}.katex .fontsize-ensurer.reset-size11.size11,.katex .sizing.reset-size11.size11{font-size:1em}.katex .delimsizing.size1{font-family:KaTeX_Size1}.katex .delimsizing.size2{font-family:KaTeX_Size2}.katex .delimsizing.size3{font-family:KaTeX_Size3}.katex .delimsizing.size4{font-family:KaTeX_Size4}.katex .delimsizing.mult .delim-size1>span{font-family:KaTeX_Size1}.katex .delimsizing.mult .delim-size4>span{font-family:KaTeX_Size4}.katex .nulldelimiter{display:inline-block;width:.12em}.katex .delimcenter,.katex .op-symbol{position:relative}.katex .op-symbol.small-op{font-family:KaTeX_Size1}.katex .op-symbol.large-op{font-family:KaTeX_Size2}.katex .accent>.vlist-t,.katex .op-limits>.vlist-t{text-align:center}.katex .accent .accent-body{position:relative}.katex .accent .accent-body:not(.accent-full){width:0}.katex .overlay{display:block}.katex .mtable .vertical-separator{display:inline-block;min-width:1px}.katex .mtable .arraycolsep{display:inline-block}.katex .mtable .col-align-c>.vlist-t{text-align:center}.katex .mtable .col-align-l>.vlist-t{text-align:left}.katex .mtable .col-align-r>.vlist-t{text-align:right}.katex .svg-align{text-align:left}.katex svg{fill:currentColor;stroke:currentColor;display:block;height:inherit;position:absolute;width:100%}.katex svg path{stroke:none}.katex svg{fill-rule:nonzero;fill-opacity:1;stroke-width:1;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1}.katex img{border-style:none;max-height:none;max-width:none;min-height:0;min-width:0}.katex .stretchy{display:block;overflow:hidden;position:relative;width:100%}.katex .stretchy:after,.katex .stretchy:before{content:""}.katex .hide-tail{overflow:hidden;position:relative;width:100%}.katex .halfarrow-left{left:0;overflow:hidden;position:absolute;width:50.2%}.katex .halfarrow-right{overflow:hidden;position:absolute;right:0;width:50.2%}.katex .brace-left{left:0;overflow:hidden;position:absolute;width:25.1%}.katex .brace-center{left:25%;overflow:hidden;position:absolute;width:50%}.katex .brace-right{overflow:hidden;position:absolute;right:0;width:25.1%}.katex .x-arrow-pad{padding:0 .5em}.katex .cd-arrow-pad{padding:0 .55556em 0 .27778em}.katex .mover,.katex .munder,.katex .x-arrow{text-align:center}.katex .boxpad{padding:0 .3em}.katex .fbox,.katex .fcolorbox{border:.04em solid;box-sizing:border-box}.katex .cancel-pad{padding:0 .2em}.katex .cancel-lap{margin-left:-.2em;margin-right:-.2em}.katex .sout{border-bottom-style:solid;border-bottom-width:.08em}.katex .angl{border-right:.049em solid;border-top:.049em solid;box-sizing:border-box;margin-right:.03889em}.katex .anglpad{padding:0 .03889em}.katex .eqn-num:before{content:"(" counter(katexEqnNo) ")";counter-increment:katexEqnNo}.katex .mml-eqn-num:before{content:"(" counter(mmlEqnNo) ")";counter-increment:mmlEqnNo}.katex .mtr-glue{width:50%}.katex .cd-vert-arrow{display:inline-block;position:relative}.katex .cd-label-left{display:inline-block;position:absolute;right:calc(50% + .3em);text-align:left}.katex .cd-label-right{display:inline-block;left:calc(50% + .3em);position:absolute;text-align:right}.katex-display{display:block;margin:1em 0;text-align:center}.katex-display>.katex{display:block;text-align:center;white-space:nowrap}.katex-display>.katex>.katex-html{display:block;position:relative}.katex-display>.katex>.katex-html>.tag{position:absolute;right:0}.katex-display.leqno>.katex>.katex-html>.tag{left:0;right:auto}.katex-display.fleqn>.katex{padding-left:2em;text-align:left}body{counter-reset:katexEqnNo mmlEqnNo}
+
+</style>
+<style>
+body {
+    padding-top: 25px;
+}
+</style>
+</head>
+<body>
+    <div class="content-wrapper">
+        <h1 id="dit-%E4%B9%A6%E6%B3%95%E9%A1%B9%E7%9B%AE%E5%AE%8C%E6%95%B4%E6%97%B6%E9%97%B4%E7%BA%BF%EF%BC%9A%E6%A8%A1%E5%9E%8B-%2F-infra-%2F-%E6%95%B0%E6%8D%AE%EF%BC%882026-08-10-%E2%86%92-09-02%EF%BC%89" tabindex="-1">DiT 书法项目完整时间线：模型 / infra / 数据（2026-08-10 → 09-02）</h1>
+<blockquote>
+<p>数据全部来自：远程实验结果目录、eval_auto_*.json 实测、docs/system 01-29 文档、
+_ot_scratch 脚本时间线、conda env 实况。口径说明：<strong>SSIM 跨数据集不可比</strong>（
+11 书家 0.73 ≠ 44 书家 0.47），同口径才可比。</p>
+</blockquote>
+<hr>
+<h2 id="1.-%E8%AE%AD%E7%BB%83%E8%BF%9B%E5%BA%A6%EF%BC%8809-02-21%3A00-%E5%BF%AB%E7%85%A7%EF%BC%89" tabindex="-1">1. 训练进度（09-02 21:00 快照）</h2>
+<p><strong>v8a 基模（新，清洗数据 + batch432 + OT-chunks4 + compile + cu121）</strong>：</p>
+<ul>
+<li>step <strong>100,540</strong>，eval ssim <strong>0.5061 @ 100k</strong>（mse 1.030 / lpips 0.417），持续 NEW BEST，早停未触发</li>
+<li>vs 旧 S30（0.4841 @ 130k）：<strong>+0.022，且省 23% 步数</strong></li>
+<li>GPU 94% / 22.1G，Steps/Sec 3.96</li>
+</ul>
+<table>
+<thead>
+<tr>
+<th>step</th>
+<th>v8a ssim</th>
+<th>mse</th>
+<th>lpips</th>
+<th>旧S30 ssim(同step)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>80k</td>
+<td>0.5015</td>
+<td>1.044</td>
+<td>0.420</td>
+<td>0.472</td>
+</tr>
+<tr>
+<td>90k</td>
+<td>0.5037</td>
+<td>1.039</td>
+<td>0.419</td>
+<td>0.474</td>
+</tr>
+<tr>
+<td>95k</td>
+<td>0.5045</td>
+<td>1.037</td>
+<td>0.418</td>
+<td>0.474</td>
+</tr>
+<tr>
+<td><strong>100k</strong></td>
+<td><strong>0.5061</strong></td>
+<td>1.030</td>
+<td><strong>0.417</strong></td>
+<td>0.476</td>
+</tr>
+</tbody>
+</table>
+<hr>
+<h2 id="2.-%E6%A8%A1%E5%9E%8B%E6%9E%B6%E6%9E%84-%2F-%E8%AE%AD%E7%BB%83%E9%85%8D%E7%BD%AE%E6%97%B6%E9%97%B4%E7%BA%BF" tabindex="-1">2. 模型架构 / 训练配置时间线</h2>
+<table>
+<thead>
+<tr>
+<th>时间</th>
+<th>实验</th>
+<th>改动</th>
+<th>结果</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>08-10→14</td>
+<td>V1/V2</td>
+<td>DiT-S/2 + 3因子(callig×script×char)联合MLP，全量从零</td>
+<td>❌ 3因子不组合（script与callig混淆，覆盖0.264%）</td>
+</tr>
+<tr>
+<td>时间</td>
+<td>实验/改动</td>
+<td>改动内容（模型/infra/数据）</td>
+<td>结果/有效性</td>
+</tr>
+<tr>
+<td>---</td>
+<td>---</td>
+<td>---</td>
+<td>---</td>
+</tr>
+<tr>
+<td>08-10→14</td>
+<td>V1/V2（背景）</td>
+<td>DiT-S/2 + 3因子(callig×script×char) 联合concat MLP，全量从零，无EMA/无结构损失</td>
+<td>❌ 3因子不组合（script与callig混淆 I=1.527bits，triple覆盖0.264%）</td>
+</tr>
+<tr>
+<td>08-15</td>
+<td>exp_s_5script 终止</td>
+<td>legacy 联合MLP 36.16M 停于25.7k步（best≈10-15k，20k后回归）</td>
+<td>❌ 只能记忆稀疏triple → 转因子化</td>
+</tr>
+<tr>
+<td>08-15</td>
+<td>compositional V1（=s2 因子化3cond）</td>
+<td>callig128+script32+char192 <strong>factorized_add</strong>→384；4-way CFG(75/10/15)；factor-balanced采样；EMA 0.9999+warmup；b224；全量147,841行</td>
+<td>✅ 组合泛化成立，best@20k SSIM 0.4576（1004书家口径）</td>
+</tr>
+<tr>
+<td>08-15</td>
+<td>compositional V2 latent结构损失</td>
+<td>V1-20k续训 + latent Canny 0.05/Skel 0.005（max_t=500）4k步</td>
+<td>❌ SSIM 0.4503 更差</td>
+</tr>
+<tr>
+<td>08-15</td>
+<td>v3a 二因子glyph 从零</td>
+<td>script×char→<strong>glyph_id</strong>(35,130类)；DiT-2Cond-S/2 39.58M，callig128+glyph192 factorized_add，4-way 60/15/15/10</td>
+<td>⚠️ 早期短跑（best step≤25k）；v3b_xl_glyphcond SSIM 0.4888</td>
+</tr>
+<tr>
+<td>08-16</td>
+<td>s2_fromscratch_2factor</td>
+<td>2因子从零，kailishu 单书体（447书家/4,933字）</td>
+<td>✅ SSIM 0.5773（447书家口径历史最佳）</td>
+</tr>
+<tr>
+<td>08-16</td>
+<td>V3-B/C XL + 空间glyph条件</td>
+<td>DiT-2Cond-XL/2 + 标准字形latent空间条件（Conv2d→token-add，learnable scale 0.4）</td>
+<td>✅ 空间glyph条件有效；❌ XL过杀 → 回S尺寸</td>
+</tr>
+<tr>
+<td>08-17</td>
+<td>latent vs pixel 结构探针</td>
+<td>latent canny/skel 信号≈pixel（分开度1.048 vs 1.041），字级判别力弱</td>
+<td>⚠️ latent结构仅可作辅助</td>
+</tr>
+<tr>
+<td>08-17→20</td>
+<td>S5 结构损失系列</td>
+<td>top30 128,842张 latent-cached；pixel/latent canny·skel 变体</td>
+<td>❌ pixel结构损失有害：彩色噪声，X0Lat 36–39 vs diff-only 1–2.5；diff-only@70k 0.520</td>
+</tr>
+<tr>
+<td>08-20→22</td>
+<td>S6 受控 diff-only vs struct</td>
+<td>同数据 top6 10,866张对照；eval500修复（character_id越界剔除146）</td>
+<td>✅ diff-only@195k 0.732 ≫ struct@120k 0.403 → 纯diff-only</td>
+</tr>
+<tr>
+<td>08-22</td>
+<td>S7 ramp 结构损失斜坡</td>
+<td>20k步内结构损失权重 0→斜坡</td>
+<td>❌ 无效、伪影复发 → 彻底弃结构损失</td>
+</tr>
+<tr>
+<td>08-23</td>
+<td><strong>S7 kl-f4 VAE换代</strong></td>
+<td>sd-vae(f8,83.7M)→<strong>kl-f4</strong>(f4,55.3M)：地板噪声2×低(0.0019 vs 0.0037)、latent信息3×；DiT-S/4保持256 tokens；b224 bf16 EMA</td>
+<td>✅ 采纳（s7_klf4_top30 0.5090，108书家）</td>
+</tr>
+<tr>
+<td>08-24</td>
+<td>s10 b4 灰度清洗</td>
+<td>灰度+清洗数据短跑</td>
+<td>⚠️ 0.4656@55k，未成主线</td>
+</tr>
+<tr>
+<td>08-25</td>
+<td>s12_3top30_dino</td>
+<td>3top30 + DINO字形嵌入（ddpm），latent时代开端</td>
+<td>⚠️ 0.4888@60k（67书家）</td>
+</tr>
+<tr>
+<td>08-26</td>
+<td>s13/s14 DiT-XS</td>
+<td>3top30 XS ddpm 减参尝试 + 原始数据对照</td>
+<td>❌ s12/13/14系整体放弃（减参非根因）</td>
+</tr>
+<tr>
+<td>08-25/26</td>
+<td><strong>S12/S13 根因修复</strong></td>
+<td>减参 + 去proj + <strong>DINO 384 LN-only 冻结表直通</strong> + eval500重建</td>
+<td>✅ 条件变纯语义向量（S13起验证）</td>
+</tr>
+<tr>
+<td>≈08-27</td>
+<td>s15_ws_flow 宽体flow</td>
+<td>WS/2 宽体 + flow（195k步，67书家）</td>
+<td>⚠️ 加宽仅+0.004（同口径）</td>
+</tr>
+<tr>
+<td>≈08-27</td>
+<td>s17_s_flow</td>
+<td>S/2 flow 3top30（165k步）</td>
+<td>✅ 0.5325（eval500_3top30）</td>
+</tr>
+<tr>
+<td>≈08-27/28</td>
+<td><strong>s18_s_flow_small 首个flow</strong></td>
+<td>Flow Matching 预训练（Euler 50步，cfg1.7），top6小数据</td>
+<td>✅ flow取代ddpm（更少步数超s6），0.5476</td>
+</tr>
+<tr>
+<td>08-28</td>
+<td>核心代码重构</td>
+<td>src/{model,loss,train,eval,utils} 分层 + <strong>统一时间步采样</strong>（修 flow/randint t∈{0..49}→t*1000 OOD bug）</td>
+<td>✅ infra根治ControlNet类bug</td>
+</tr>
+<tr>
+<td>08-28→29</td>
+<td>s19_midclean_s_flow</td>
+<td>mid-clean（每组合6样本增广）+ 4-way dropout which_glyph=0.75 + flow；S/2 33M b240</td>
+<td>✅ 旧架构末代 0.5222（midclean口径）</td>
+</tr>
+<tr>
+<td>08-29</td>
+<td><strong>v2 架构现代化（→s20）</strong></td>
+<td>RMSNorm/SwiGLU/2D axial RoPE/QK-Norm+SDPA/自写PatchEmbed；flow: logit-normal t + Heun二阶 + shift；修6个静默污染bug；ControlNet重写</td>
+<td>✅ s20 新基模 0.5294（cfg1.7）；SwiGLU显存翻倍→no-ckpt b128</td>
+</tr>
+<tr>
+<td>08-29</td>
+<td>DINO 条件实测</td>
+<td>CLS有效秩 34.1/384，跨书体检索top-1仅1.9–2.6%</td>
+<td>⚠️ 条件信息量不足实证</td>
+</tr>
+<tr>
+<td>08-29</td>
+<td>旧实验归档清理</td>
+<td>77 run扫描、66 run清理释放~882GB；确立口径分代</td>
+<td>✅ infra</td>
+</tr>
+<tr>
+<td>08-30</td>
+<td><strong>s21_fame_flow_v2 主力切换</strong></td>
+<td>fame 51,322张/44书家/4,765字/7书体 + 真迹DINO(ln_only)；eval_fame_strict 500（cfg0.7、25步）</td>
+<td>✅ base基准 0.4664@27.5k（44书家口径；与11书家0.73不可比）</td>
+</tr>
+<tr>
+<td>08-30</td>
+<td>s22 只训char embedding</td>
+<td>冻结主干、只训字表</td>
+<td>❌ 0.4664→0.4622（瓶颈=DINO CLS无字符身份信息）</td>
+</tr>
+<tr>
+<td>08-30</td>
+<td>骨架消融 3px/1px/std-skel</td>
+<td>base 0.4977共同基线；3px@50k 0.7889单调升；1px同期三点全优；std-skel 12点全平</td>
+<td>✅ <strong>1px&gt;3px</strong>（否定条件泄露假设）；❌ std-skel冗余被门控</td>
+</tr>
+<tr>
+<td>08-30</td>
+<td>核心发现整理（19）</td>
+<td>base↔ctrl差距=条件信息量（有效~162 vs 4,258维≈120×）；字形分类器/检索式评估不可行；字→骨架网络上界仅+0.007</td>
+<td>⚠️ 确立&quot;空间结构条件&quot;主线</td>
+</tr>
+<tr>
+<td>08-30</td>
+<td>w_glyph_cond 静默失效诊断</td>
+<td>接线到不存在的v1字典（命中0.0%）→条件全零；与ctrl injections未加载同构（zero-init静默失效）</td>
+<td>⚠️ 修复方案已定，未launch</td>
+</tr>
+<tr>
+<td>08-31</td>
+<td>预训练诊断（22）</td>
+<td>cfg&lt;1更优=条件是噪声（建议 cond_drop_all 0.05→0.12）；<strong>pred_xstart flow下恒为None 已修复</strong>；OT-CFM仅4.2ms/step</td>
+<td>✅ pred_xstart修复；⚠️ 其余待验证</td>
+</tr>
+<tr>
+<td>08-31</td>
+<td>DINO信号诊断（23）</td>
+<td>CLS只承载身份（不同字cos 0.08）不承载空间结构（同字跨书体top-1 2.0%），PCA白化无提升；实现callig/char_scale可学习幅度</td>
+<td>⚠️ 路线B重训待验证</td>
+</tr>
+<tr>
+<td>08-31</td>
+<td>零参数直通研究（25）</td>
+<td>判别性评测（形近vs随机对AUC）：标准字形kai/li CLS·patch AUC 0.92–0.96 ✅；真迹跨书体平均 AUC 0.50 ❌</td>
+<td>✅ 换特征来源即可零参数注入</td>
+</tr>
+<tr>
+<td>08-31</td>
+<td>PCA落地+infra profile（26）</td>
+<td>DINO 768→384 PCA（AUC 0.906 vs 插值0.824）；StdDinoCharEmbedder冻结查表0参数（7026×384）；profile：backward占73%、吞吐饱和~525 samples/s、xformers最优</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>08-31</td>
+<td>s28 标准字形DINO预训练</td>
+<td>std DINO+PCA+OT+清洗数据51,321</td>
+<td>❌ 终值0.4476且step3000后停滞（印刷体域差+PCA信息损失）</td>
+</tr>
+<tr>
+<td>08-31</td>
+<td><strong>1px ControlNet（ctrl_fame_1pix_v1）</strong></td>
+<td>warm-start s21@30k，b72，cfg0.7，100k步，1px GT skel latent</td>
+<td>✅ 20k步 0.7641 &gt; 同期3px 0.7288；终值0.7974（base→skel最大单点提升）</td>
+</tr>
+<tr>
+<td>09-01</td>
+<td>清洗调查+方案B（28）</td>
+<td>真污染少（反相0.24%/黑边1.69%/边界墨2.84%/噪点1.59%）；main_frac低=草书飞白正常（<strong>误判陷阱</strong>）；方案B（参考字形bbox）全量修复18,785/51,322(36.6%)、主域保留0.9897</td>
+<td>✅ 方案B采纳；❌ 方案C弃用</td>
+</tr>
+<tr>
+<td>09-01/02</td>
+<td>s29/s26/s31 skel配置</td>
+<td>GT skel 1px b96→0.5031；b192→0.5631（grid近全白）</td>
+<td>❌ 未收敛 → 改用1px ctrl配置</td>
+</tr>
+<tr>
+<td>09-02</td>
+<td>s25 IDS部件码本</td>
+<td>IDS部件码本替换char embedding</td>
+<td>❌ 0.4618 下游差，弃IDS分支</td>
+</tr>
+<tr>
+<td>09-02</td>
+<td><strong>s30 DINO char-strong</strong></td>
+<td>更强DINO char embedding + 清洗后数据重训</td>
+<td>✅ base最佳 0.4841（+0.017 vs s21）</td>
+</tr>
+<tr>
+<td>09-02</td>
+<td><strong>s32b/s32c REPA</strong></td>
+<td>1px骨架上加表示对齐（REPA）</td>
+<td>✅ 0.8177/0.8204；LPIPS 0.14、MSE 0.12、SkelIoU 0.43（全链路最佳）</td>
+</tr>
+<tr>
+<td>09-02</td>
+<td><strong>v8a 基模（当前在跑）</strong></td>
+<td>清洗数据重编码 + batch432 + OT-chunks4 + compile + cu121</td>
+<td>✅ <strong>0.5061@100k</strong>（+0.022 vs S30，省23%步数）</td>
+</tr>
+</tbody>
+</table>
+<hr>
+<h2 id="3.-infra-%2F-%E7%8E%AF%E5%A2%83%E5%88%87%E6%8D%A2%E6%97%B6%E9%97%B4%E7%BA%BF%EF%BC%88%E7%94%A8%E6%88%B7%E5%BC%BA%E8%B0%83%E9%87%8D%E7%82%B9%EF%BC%89" tabindex="-1">3. infra / 环境切换时间线（用户强调重点）</h2>
+<h3 id="3.1-%E7%8E%AF%E5%A2%83%E5%88%87%E6%8D%A2%EF%BC%88%E6%9C%80%E9%87%8D%E8%A6%81%EF%BC%89" tabindex="-1">3.1 环境切换（最重要）</h3>
+<table>
+<thead>
+<tr>
+<th>时间</th>
+<th>改动</th>
+<th>内容</th>
+<th>有效性</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>08-12 前</td>
+<td>base 基线</td>
+<td>/opt/conda (2022-12 建, <strong>py3.10.8, torch 1.13.1+cu117</strong>) 唯一训练环境</td>
+<td>基线</td>
+</tr>
+<tr>
+<td>08-31 20:59</td>
+<td>torch2 env 创建</td>
+<td>为 torch 2.6.0+cu124 建 <strong>py3.11.13</strong> env；probe_conda/cu124/cu_tags 探 glibc 2.27 兼容性</td>
+<td><strong>失败废弃</strong>（cu128 manylinux_2_28 在 glibc 2.27 装不了；<strong>torch2 无 torch</strong>）</td>
+</tr>
+<tr>
+<td>08-31 22:08</td>
+<td>restore_base.sh</td>
+<td>base 误装 torch 2.1.2 → 回滚 1.13.1+cu117；<strong>Golden Rule: base 永不升级</strong></td>
+<td>有效</td>
+</tr>
+<tr>
+<td>08-31 22:11-22:19</td>
+<td><strong>cu121 env 建立</strong></td>
+<td>rebuild_cu121.sh 重建 <strong>py3.10.18</strong>；install_cu121_torch.sh 装 <strong>torch 2.1.2+cu121</strong>；xformers 0.0.23.post1（env mtime 22:13）</td>
+<td><strong>有效</strong>（训练主环境）</td>
+</tr>
+<tr>
+<td>08-31 22:36-22:42</td>
+<td>deps+修复</td>
+<td>install_deps_cu121.sh（numpy 1.24.4+diffusers 0.27.2）；fix_hfhub(0.23.5)/fix_setuptools(&lt;81)</td>
+<td>有效</td>
+</tr>
+<tr>
+<td>08-31 22:43-23:15</td>
+<td>基准验证</td>
+<td>base 3.30sps/20.2G → cu121 3.60/19.9G → <strong>cu121+compile 8.50sps/9.7G（×2.6, -52%显存）</strong>；_bench_b384/416/448 定 batch；ENV_INFRA.md 成文</td>
+<td>有效</td>
+</tr>
+<tr>
+<td>09-02 04:06-04:08</td>
+<td>ONNX 污染修复</td>
+<td>ONNX 把 numpy 升到 2.2.6 致 torch 崩 → fix_numpy(1.24.4)/fix_env2(ml-dtypes&lt;0.5)/fix_env3(卸 onnx+建 encocpu 独立env)/fix_env4(只卸 onnx 留 ort)</td>
+<td>有效（训练 env 与 encode 隔离）</td>
+</tr>
+</tbody>
+</table>
+<h3 id="3.2-%E5%B7%A5%E5%85%B7%E9%93%BE%E6%BC%94%E8%BF%9B%EF%BC%88%E5%90%AB-commit-%E4%BD%90%E8%AF%81%EF%BC%89" tabindex="-1">3.2 工具链演进（含 commit 佐证）</h3>
+<table>
+<thead>
+<tr>
+<th>时间</th>
+<th>改动</th>
+<th>内容</th>
+<th>有效性</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>08-23</td>
+<td>VAE 换装 kl-f4</td>
+<td>5b8858a VAE tools(convert/eval/train)、94476be 基准领先、78cb2cd 全管线 encode_latents_klf4.py</td>
+<td>有效</td>
+</tr>
+<tr>
+<td>08-23→31</td>
+<td><strong>DINOv2 教师落地</strong></td>
+<td>dc512eb 起步 → s8/s9 训练(08-23/24) → 300be26 PCA 768→384(08-25) → 15c8ddb 冻结查表零参数直通(08-31)</td>
+<td>有效</td>
+</tr>
+<tr>
+<td>08-25/26</td>
+<td><strong>DDPM→Flow</strong></td>
+<td>c9e3ae4 diffusion_type 参数化；s14/s15(ws,b160) vs s16/s17(s,b240) 对比</td>
+<td>有效（flow 成默认）</td>
+</tr>
+<tr>
+<td>08-28</td>
+<td>代码分层重构</td>
+<td>4f1743a src/{model,loss,train,eval,utils} + 根 shim；4fcb879 统一 eval/inference</td>
+<td>有效</td>
+</tr>
+<tr>
+<td>08-29</td>
+<td>flow 求解器</td>
+<td>af0839d Euler→Heun + logit-normal t + shift</td>
+<td>有效</td>
+</tr>
+<tr>
+<td>08-31</td>
+<td><strong>OT 启用 + std-DINO 落地</strong></td>
+<td>15c8ddb：s28/s29 configs、use_ot=true 首次、冻结查表(7026×384 PCA, 零参数)、zero_grad set_to_none</td>
+<td>有效</td>
+</tr>
+<tr>
+<td>08-31</td>
+<td><strong>torch.compile 引入</strong></td>
+<td>train.py/ctrl 加 --compile/--compile-mode（EMA 不编译）；pipeline 23:15 以 compile 部署</td>
+<td>有效（×2.6 速、显存-52%）</td>
+</tr>
+<tr>
+<td>09-02</td>
+<td><strong>OT 分块</strong></td>
+<td>bench_ot/sinkhorn/batch_ot 测开销 → 1ef28a1 ot_chunks 分块匈牙利（384 batch 13ms→4ms）；v8a 固化 ot_chunks=4</td>
+<td>有效</td>
+</tr>
+<tr>
+<td>09-02</td>
+<td><strong>compile 缓存持久化</strong></td>
+<td>bench_cache_persist 验证；TORCHINDUCTOR_CACHE_DIR=/root/.cache/torch/inductor 固化（27M 已存在）</td>
+<td>有效</td>
+</tr>
+</tbody>
+</table>
+<h3 id="3.3-vae-encode-%E6%BC%94%E8%BF%9B%EF%BC%88cpu-%E2%86%92-onnx-%E2%86%92-gpu%EF%BC%89" tabindex="-1">3.3 VAE encode 演进（CPU → ONNX → GPU）</h3>
+<table>
+<thead>
+<tr>
+<th>时间</th>
+<th>改动</th>
+<th>内容</th>
+<th>有效性</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>09-02 03:00-03:45</td>
+<td>CPU encode 起步</td>
+<td>cpu_encode_v7.py（21050 变更图），bench 估 ETA 数小时</td>
+<td>部分（慢）</td>
+</tr>
+<tr>
+<td>09-02 03:47-04:05</td>
+<td><strong>ONNX 尝试</strong></td>
+<td>导出 vae_enc_frozen.onnx(136MB) + CPUExecutionProvider 基准</td>
+<td><strong>失败放弃</strong>（numpy 2.2.6 崩溃 + env 污染）</td>
+</tr>
+<tr>
+<td>09-02 04:59-10:51</td>
+<td>CPU 迭代</td>
+<td>cpu_encode_v8→v9（16进程×4线程，分阶段幂等断点续跑）</td>
+<td>部分</td>
+</tr>
+<tr>
+<td>09-02 11:54</td>
+<td><strong>GPU 替代 CPU</strong></td>
+<td>gpu_encode_v8.py 重编码 21050 图（img/skel3/skel1，<strong>709s</strong>）</td>
+<td><strong>有效（最终方案）</strong></td>
+</tr>
+</tbody>
+</table>
+<h3 id="3.4-%E8%BF%9C%E7%A8%8B-vs-%E6%9C%AC%E5%9C%B0%E5%88%86%E5%B7%A5" tabindex="-1">3.4 远程 vs 本地分工</h3>
+<ul>
+<li>约定（ENV_INFRA.md §7.1）：<strong>pwsh 转义地狱 → 本地 write .sh → scp 远程 /tmp 或 _sync_work 执行</strong>；本地 <code>_ot_scratch/</code> 是脚本库，两端镜像</li>
+<li><strong>远程</strong>：训练（tmux pipeline/nohup）、encode（/tmp/*.py）、eval daemon（base env CPU 轻量）；<strong>本地</strong>：写代码(git) + 可视化（grid/dashboard/gradio）+ 分析</li>
+<li>佐证：pipeline 中 <code>PY_BASE=/opt/conda/bin/python</code>（daemon）vs <code>PY_CU=/opt/conda/envs/cu121/bin/python</code>（训练）；48b1074 &quot;pre-refactor snapshot before remote code sync&quot;</li>
+</ul>
+<h3 id="3.5-config-infra-%E5%8F%82%E6%95%B0%E6%97%B6%E9%97%B4%E5%8F%98%E5%8C%96" tabindex="-1">3.5 config infra 参数时间变化</h3>
+<table>
+<thead>
+<tr>
+<th>时间</th>
+<th>实验</th>
+<th>batch</th>
+<th>compile</th>
+<th>use_ot</th>
+<th>diffusion</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>08-23/24</td>
+<td>s8/s9 (dino)</td>
+<td>224/96</td>
+<td>无</td>
+<td>无</td>
+<td>ddpm</td>
+</tr>
+<tr>
+<td>08-25</td>
+<td>s12 (DINO PCA)</td>
+<td>224</td>
+<td>无</td>
+<td>无</td>
+<td>ddpm</td>
+</tr>
+<tr>
+<td>08-26</td>
+<td>s14/s15, s16/s17</td>
+<td>160/240</td>
+<td>无</td>
+<td>无</td>
+<td>ddpm <strong>vs</strong> flow</td>
+</tr>
+<tr>
+<td>08-29/30</td>
+<td>s21/s23 (flow v2)</td>
+<td>—</td>
+<td>无</td>
+<td>无</td>
+<td>flow</td>
+</tr>
+<tr>
+<td>08-31</td>
+<td><strong>s28</strong> (std-dino)</td>
+<td>192(CLI→384)</td>
+<td><strong>CLI true</strong></td>
+<td><strong>true(首次)</strong></td>
+<td>flow+heun+logit_normal</td>
+</tr>
+<tr>
+<td>08-31</td>
+<td>s29 (ctrl)</td>
+<td>96(CLI→192)</td>
+<td>CLI true</td>
+<td>无</td>
+<td>flow</td>
+</tr>
+<tr>
+<td>09-01</td>
+<td>s30/s31/s32/s32b</td>
+<td>—</td>
+<td>CLI true</td>
+<td>true</td>
+<td>flow</td>
+</tr>
+<tr>
+<td>09-02</td>
+<td><strong>v8a/v8b/v8c</strong></td>
+<td><strong>432/192</strong></td>
+<td><strong>固化 true</strong></td>
+<td><strong>true, ot_chunks=4</strong></td>
+<td>flow</td>
+</tr>
+</tbody>
+</table>
+<hr>
+<h2 id="4.-%E6%95%B0%E6%8D%AE%E7%AE%A1%E7%BA%BF%E6%97%B6%E9%97%B4%E7%BA%BF" tabindex="-1">4. 数据管线时间线</h2>
+<table>
+<thead>
+<tr>
+<th>时间</th>
+<th>改动</th>
+<th>内容</th>
+<th>有效性</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>08-30</td>
+<td>fame 数据集切换</td>
+<td>fame 51,322张/44书家/4,765字 + eval_fame_strict 500</td>
+<td>✅ 评测口径统一（s21 基准线）</td>
+</tr>
+<tr>
+<td>08-31</td>
+<td>清洗管线 v1→v7</td>
+<td>极性归一 + 切边条 + 3px外框白化 + 删小件；人工标注39张；CPU encode 级联</td>
+<td>✅ v7 全量 0 错误</td>
+</tr>
+<tr>
+<td>09-01</td>
+<td>清洗调查+方案B</td>
+<td>真污染少（反相0.24%/黑边1.69%/边界墨2.84%/噪点1.59%）；main_frac低=草书飞白正常（<strong>误判陷阱</strong>）；方案B（参考字形bbox）全量修 18,785/51,322(36.6%)</td>
+<td>✅ 方案B采纳；❌ 方案C弃</td>
+</tr>
+<tr>
+<td>09-02</td>
+<td><strong>v7 清洗（用户）+ v8 资产集</strong></td>
+<td>51,822张检测 → <strong>21,050张(40.6%)缺陷</strong>（bars 11,287=21.8%、removed 18,506、翻转39）；*<em>GPU 重编码 → fame_clean_v8.npz + <em>_v8 shards + final_imgs_fame_v8(GT) + v8 csv</em></em></td>
+<td>✅ 消除4成坏样本，三域一致</td>
+</tr>
+<tr>
+<td>09-02</td>
+<td>eval 集</td>
+<td>同 500 id，GT 指向清洗后 v8（27 张 v7 修复）</td>
+<td>✅ 口径更干净</td>
+</tr>
+</tbody>
+</table>
+<p><strong>关键</strong>：训练实际读 <code>final_latents_fame_clean</code> shards，而旧 v7 encode 写回的是不带 <code>_clean</code> 的 <code>final_latents_fame</code>——<strong>两套内容不同（diff 6.27）</strong>，旧 encode 即使跑完也没进训练数据。v8 直接建新资产集绕开此混乱。</p>
+<hr>
+<h2 id="5.-%E6%9C%89%E6%95%88%E6%80%A7%E6%80%BB%E7%BB%93%EF%BC%88%E6%8C%89%E6%94%B6%E7%9B%8A%E6%8E%92%E5%BA%8F%EF%BC%89" tabindex="-1">5. 有效性总结（按收益排序）</h2>
+<h3 id="%E2%9C%85-%E6%9C%89%E6%95%88%EF%BC%88%E5%86%B3%E5%AE%9A%E6%80%A7%EF%BC%89" tabindex="-1">✅ 有效（决定性）</h3>
+<ol>
+<li><strong>1px GT 骨架 ControlNet（ctrl_fame_1pix_v1）</strong>：base 0.50 → 0.797（最大单点提升；LPIPS 0.44→0.16）</li>
+<li><strong>数据清洗 v7 + v8 资产集</strong>：基模 +0.022 且省步数；消除 40.6% 缺陷样本、三域一致</li>
+<li><strong>REPA（s32b/c）</strong>：0.8177/0.8204；LPIPS 0.14、MSE 0.12、SkelIoU 0.43（噪声类指标降 3-8 倍）</li>
+<li><strong>eval skel latent bug 修复</strong>：假 0.54 → 真 0.8081（所有对比口径才可信）</li>
+<li><strong>cu121 env + torch.compile</strong>：×2.6 速度、显存 -52%</li>
+<li><strong>OT 分块 + batch 432 + compile 缓存</strong>：OT 13ms→4ms、吞吐 1769 img/s、无质量损失</li>
+<li><strong>factorized_add 二因子 + 纯 diff-only + flow + kl-f4 + v2 架构</strong>：早期基石</li>
+</ol>
+<h3 id="%E2%9D%8C-%E6%97%A0%E6%95%88%2F%E6%9C%89%E5%AE%B3" tabindex="-1">❌ 无效/有害</h3>
+<ul>
+<li>3Cond 联合MLP（V1/V2）；pixel 结构损失（S5/S6/S7）；std-skel（冗余被门控）</li>
+<li>标准字形DINO+PCA（s28 域差）；IDS 部件（s25）；只训char embedding（s22）；XL 过杀</li>
+<li><strong>REPA 长训 90k（s32c）</strong>：base.ssim 崩 0.46→0.23；<strong>REPA w2.0（s32d）</strong>：直接崩 0.72</li>
+<li><strong>Sinkhorn</strong>（慢且质量-4.8%）；<strong>curegot</strong>（熵正则非LAP + py3.11不兼容）；<strong>ONNX CPU encode</strong>（无增益+env污染）；<strong>torch2/cu124</strong>（glibc 2.27 硬墙）</li>
+</ul>
+<h3 id="%E2%AD%90-%E5%85%B3%E9%94%AE%E8%BD%AC%E6%8A%98%E7%82%B9%EF%BC%88%E5%86%B3%E5%AE%9A%E6%80%A7%E6%94%B9%E5%8A%A8%EF%BC%89" tabindex="-1">⭐ 关键转折点（决定性改动）</h3>
+<ol>
+<li><strong>08-15 V3-A factorized_add 二因子</strong> — 终结3Cond联合MLP，组合泛化成立，此后一切条件设计的基座。</li>
+<li><strong>08-16 V3-B/C 空间glyph条件</strong> — 首次证明&quot;形状类空间条件&quot;有效（1px skel/标准字形线的远祖）。</li>
+<li><strong>08-20~22 S6/S7 结构损失三次证伪</strong> → 纯 diff-only 定式（结构信息直到 08-31 才以 ControlNet 形式复活）。</li>
+<li><strong>08-23 kl-f4 VAE + S/4</strong> — latent 换代（地板噪声2×低、信息3×多），pixel 时代结束。</li>
+<li><strong>08-25/26 S13 DINO 384 LN-only 冻结直通</strong> — 条件从可训投影变纯语义向量，DINO 字表确立。</li>
+<li><strong>≈08-27/28 S18 flow matching + 08-28 统一时间步采样</strong> — 训练范式换代（更稳、步数减半，修 OOD bug）。</li>
+<li><strong>08-29 v2 架构现代化 → s20</strong> — RMSNorm/SwiGLU/RoPE/QK-Norm + Heun/logit-normal，当前架构定式。</li>
+<li><strong>08-30 fame 数据集 + eval_fame_strict</strong> — 评测口径统一（44书家），s21 基准线，SSIM 跨集可比性被正视。</li>
+<li><strong>08-30 骨架消融</strong> — 1px GT 骨架 = base↔ctrl 差距根源（条件信息量 ~120×）；std-skel 冗余门控证伪。</li>
+<li><strong>08-31 25/26 标准字形 DINO 零参数直通（PCA 表）</strong> — 虽 s28 失败（域差），但确立&quot;标准字形空间条件&quot;主线，s29 后以 1px skel 落地。</li>
+<li><strong>08-31 数据清洗 v7 + 09-01 方案B</strong> — 极性归一/切边条/参考字形bbox 修复，GT 质量提升（s30 前提）。</li>
+<li><strong>08-31 ctrl_fame_1pix_v1</strong> — base→skel 最大单点提升（0.50→0.797）。</li>
+<li><strong>09-02 s30 char-strong + 清洗数据</strong> — base 新基准（0.4841）。</li>
+<li><strong>09-02 REPA（s32b/c）</strong> — 全链路最佳 0.82，噪声类指标降 3–8 倍（LPIPS 0.44→0.14、MSE 1.0→0.12、SkelIoU 0.014→0.43）。</li>
+<li><strong>08-31 cu121 env + compile + 09-02 OT 分块/缓存持久化</strong> — infra 提速 ×2.6、OT 13ms→4ms、encode CPU→GPU（709s）。</li>
+</ol>
+<hr>
+<h2 id="6.-%E8%A7%86%E8%A7%89%E4%BD%90%E8%AF%81%EF%BC%9Agrid-%E6%A0%B7%E4%BE%8B%E4%B8%8E%E8%AF%84%E6%B5%8B%E6%9B%B2%E7%BA%BF" tabindex="-1">6. 视觉佐证：grid 样例与评测曲线</h2>
+<h3 id="6.1-%E5%85%A8%E9%93%BE%E8%B7%AF-grid%EF%BC%88gt-%E5%9C%A8%E5%BA%95%E9%83%A8%EF%BC%89" tabindex="-1">6.1 全链路 grid（GT 在底部）</h3>
+<p>所有关键实验在同样本上的生成结果对比：从 base（s21/s25/s28/s30/v8a）到 skel（s26/s31/1pix）到 REPA（s32b/s32c），每行左侧标注具体做法，GT 置于最下方作为对照。</p>
+<p><img src="assets/v8_grid/grid_all.png" alt="grid_all"></p>
+<h3 id="6.2-%E5%8D%95%E5%AE%9E%E9%AA%8C%E6%A0%B7%E6%9C%AC%E5%AF%B9%E6%AF%94%EF%BC%9As30%EF%BC%88dino-char-strong-base%EF%BC%89-vs-v8a%EF%BC%88%E6%B8%85%E6%B4%97%E6%95%B0%E6%8D%AE%E5%9F%BA%E6%A8%A1%EF%BC%89" tabindex="-1">6.2 单实验样本对比：s30（DINO char-strong base） vs v8a（清洗数据基模）</h3>
+<p>固定 4 个 eval 样本（GT 相同），横向比较 s30 与当前最佳基模 v8a 在笔画实度、背景净度与结构保真上的差异。</p>
+<table>
+<thead>
+<tr>
+<th>样本</th>
+<th>GT</th>
+<th>s30 base</th>
+<th>v8a base</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>id 0</td>
+<td><img src="assets/v8_grid/grid_gt_0.png" alt="g0"></td>
+<td><img src="assets/v8_grid/grid_s30_sample_0.png" alt="s30_0"></td>
+<td><img src="assets/v8_grid/grid_v8a_sample_0.png" alt="v8a_0"></td>
+</tr>
+<tr>
+<td>id 10</td>
+<td><img src="assets/v8_grid/grid_gt_10.png" alt="g10"></td>
+<td><img src="assets/v8_grid/grid_s30_sample_10.png" alt="s30_10"></td>
+<td><img src="assets/v8_grid/grid_v8a_sample_10.png" alt="v8a_10"></td>
+</tr>
+<tr>
+<td>id 100</td>
+<td><img src="assets/v8_grid/grid_gt_100.png" alt="g100"></td>
+<td><img src="assets/v8_grid/grid_s30_sample_100.png" alt="s30_100"></td>
+<td><img src="assets/v8_grid/grid_v8a_sample_100.png" alt="v8a_100"></td>
+</tr>
+<tr>
+<td>id 104</td>
+<td><img src="assets/v8_grid/grid_gt_104.png" alt="g104"></td>
+<td><img src="assets/v8_grid/grid_s30_sample_104.png" alt="s30_104"></td>
+<td><img src="assets/v8_grid/grid_v8a_sample_104.png" alt="v8a_104"></td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p>观察：v8a 笔画更实、背景更净、边缘利落（对应 lpips 0.417 &lt; S30 的 0.434，tv/saltpepper 类噪点指标全面更低）。</p>
+</blockquote>
+<h3 id="6.3-%E8%AF%84%E6%B5%8B%E6%9B%B2%E7%BA%BF%EF%BC%88%E6%95%B0%E6%8D%AE%EF%BC%9A_ot_scratch%2Fv8_dash%2Fevals_summary.csv%EF%BC%8C182-%E8%A1%8C-%2F-7-%E5%AE%9E%E9%AA%8C%EF%BC%8C%E6%88%AA%E8%87%B3-v8a-95k%E3%80%81s30-132k%EF%BC%89" tabindex="-1">6.3 评测曲线（数据：<code>_ot_scratch/v8_dash/evals_summary.csv</code>，182 行 / 7 实验，截至 v8a 95k、s30 132k）</h3>
+<p>按 base / ctrl 分轴作图（ctrl 类 SSIM 量级 0.7–0.82，base 类 0.4–0.51，不可同轴比较）。注意：s30 在 step 20k 有一次训练崩溃后恢复（红线骤降段为真实数据，非绘图错误）；s32c 含两个 run（0046 高 SSIM / 0932 低 SSIM），已分别绘制。</p>
+<p><strong>SSIM（↑，越高越好）</strong></p>
+<p><img src="assets/v8_grid/eval_curves_ssim.png" alt="ssim"></p>
+<p><strong>LPIPS（↓，越低越好）</strong></p>
+<p><img src="assets/v8_grid/eval_curves_lpips.png" alt="lpips"></p>
+<p><strong>MSE（↓，对数轴）</strong></p>
+<p><img src="assets/v8_grid/eval_curves_mse.png" alt="mse"></p>
+<p><strong>SkelIoU（↑，skel / REPA 专项指标）</strong>：s32b/s32c 通过 REPA 把骨架交并比推到 0.43+，而普通 skel 条件（s26/s31）仅 ~0.01，印证 REPA 表示对齐带来的结构保真收益。</p>
+<p><img src="assets/v8_grid/eval_curves_skel.png" alt="skel"></p>
+<blockquote>
+<p>交互式 chartjs dashboard（可 hover 查看数值、自由开关曲线）：<code>_ot_scratch/v8_dash/v8_dashboard.html</code>（与 chart.umd.min.js 同目录）。</p>
+</blockquote>
+<hr>
+<h2 id="7.-%E4%BA%A7%E7%89%A9%E4%BD%8D%E7%BD%AE" tabindex="-1">7. 产物位置</h2>
+<ul>
+<li>eval 汇总 CSV：<code>_ot_scratch/v8_dash/evals_summary.csv</code>（182 行，7 组实验）</li>
+<li>HTML dashboard（steps×eval，chartjs 自包含）：<code>_ot_scratch/v8_dash/v8_dashboard.html</code>（与 chart.umd.min.js 同目录）</li>
+<li>grid 原图：<code>_ot_scratch/v8_dash/montages/</code></li>
+<li>训练日志：远程 <code>/tmp/v8a_s30_base.log</code></li>
+</ul>
+
+    </div>
+</body>
+</html>
