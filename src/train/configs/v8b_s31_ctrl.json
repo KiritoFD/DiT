@@ -1,14 +1,20 @@
 {
-  "_comment": "v8b: s31-v8 skel-ctrl (warm-start, train_ctrl_only)。数据全切 v8 资产 (train_fame_clean_v8.csv + final_latents_fame_v8 + final_skel_latents_fame_1px_v8)。与 s31 同口径 (cond drop 对齐 S30, 1px GT skel, cfg 0.7)。",
+  "_comment": "v8b: s31-v8 skel-ctrl (warm-start, train_ctrl_only)。关键参数全量固化: compile=true, early_stop=true (ssim, patience 5, min 10000)。数据全切 v8 资产 (train_fame_clean_v8.csv + final_latents_fame_v8 + final_skel_latents_fame_1px_v8)。REPA 早期挂载开关 w_repa_early=0 (默认关; 开时需 img_root 与 repa_teacher_ckpt)。",
   "experiment_name": "v8b-s31-ctrl",
   "results_dir": "5script/results/v8_3stage/v8b",
+
   "model": "DiT-2Cond-S/2",
   "train_ctrl_only": true,
+  "compile": true,
+  "compile_mode": "default",
+
   "csv": "5script/train_fame_clean_v8.csv",
   "latent_shards_dir": "final_latents_fame_v8",
+  "img_root": "final_imgs_fame_v8",
   "skel_root": "final_skel1_fame_v8",
   "skel_latent_shards_dir": "final_skel_latents_fame_1px_v8",
   "skel_cond_channels": 4,
+
   "num_calligraphers": 1013,
   "num_characters": 35130,
   "condition_fusion": "factorized_add",
@@ -16,10 +22,12 @@
   "char_embed_dim": 384,
   "char_proj_mode": "mlp",
   "freeze_char_table": true,
+
   "cond_drop_all_prob": 0.05,
   "cond_drop_one_prob": 0.30,
   "cond_drop_which_glyph_prob": 0.85,
   "cond_drop_struct_prob": 0.1,
+
   "diffusion_type": "flow",
   "t_sampler": "logit_normal",
   "t_mean": 0.0,
@@ -27,17 +35,20 @@
   "flow_sampler": "heun",
   "heun_batch": 1,
   "shift": 1.0,
+
   "norm_type": "rms",
   "mlp_type": "swiglu",
   "qk_norm": 1,
   "rope": 1,
   "rope_theta": 100.0,
   "attn_impl": "sdpa",
+
   "ctrl_depth": 0,
   "ctrl_hidden": 0,
   "ctrl_num_heads": 0,
   "injection": "modulate",
   "null_cond": "gaussian",
+
   "epochs": 1400,
   "max_steps": 50000,
   "lr": 0.0003,
@@ -49,12 +60,20 @@
   "log_every": 50,
   "ckpt_every": 2500,
   "ckpt_keep": 0,
+
   "use_ema": true,
   "ema_decay": 0.9999,
   "preload": true,
   "preload_workers": 16,
   "use_checkpoint": false,
   "seed": 0,
+
+  "early_stop": true,
+  "early_stop_metric": "ssim",
+  "early_stop_patience": 5,
+  "early_stop_min_delta": 0.002,
+  "early_stop_min_steps": 10000,
+
   "gpu_eval_csv": "5script/eval_fame_strict_clean_v8.csv",
   "gpu_eval_every": 2500,
   "gpu_eval_n": 100,
@@ -64,5 +83,10 @@
   "gpu_eval_skel_root": "final_skel1_fame_v8",
   "gpu_eval_skel_latent_shards_dir": "final_skel_latents_fame_1px_v8",
   "gpu_eval_dit_batch": 8,
-  "gpu_eval_vae_batch": 16
+  "gpu_eval_vae_batch": 16,
+
+  "w_repa_early": 0.0,
+  "repa_early_layer": 8,
+  "repa_early_warmup": 2000,
+  "repa_teacher_ckpt": "pretrained_models/dinov2_vits14_pretrain.safetensors"
 }

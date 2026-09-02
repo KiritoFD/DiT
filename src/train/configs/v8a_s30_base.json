@@ -1,10 +1,13 @@
 {
-  "_comment": "v8a: S30-v8 base 预训练 (新资产集 v8: train_fame_clean_v8.csv + final_latents_fame_v8 + final_imgs_fame_v8 GT)。纯 diff, 无 skel/REPA。",
+  "_comment": "v8a: S30-v8 base 预训练 (新资产集 v8)。关键参数全量固化: global_batch_size=432 (compile 下降显存实测 peak 19.75G@24G 卡安全; 大batch对OT匹配更准 + 吞吐 1769 img/s), compile=true, use_ot=true, ot_chunks=4 (分块匈牙利, 384batch 从 13ms 降至 ~4ms, 每块内精确无质量损失)。运行时 export TORCHINDUCTOR_CACHE_DIR=/root/.cache/torch/inductor 持久化 compile 缓存避免反复编译。早停挂 ssim_lpips (patience 5, min 20000)。",
   "experiment_name": "v8a-s30-base",
+
   "results_dir": "5script/results/v8_3stage/v8a",
+
   "data_csv": "5script/train_fame_clean_v8.csv",
   "latent_shards_dir": "final_latents_fame_v8",
   "img_root": "final_imgs_fame_v8",
+
   "model": "DiT-2Cond-S/2",
   "cond_mode": "2cond",
   "condition_fusion": "factorized_add",
@@ -16,16 +19,21 @@
   "char_dino_index": "pretrained_models/dino_embeddings/glyph_dino_index.json",
   "dino_per_script_center": 1,
   "dino_fill_unknown": 1,
+
   "cond_drop_all_prob": 0.05,
   "cond_drop_one_prob": 0.30,
   "cond_drop_which_glyph_prob": 0.85,
   "w_glyph_cond": false,
   "glyph_scale_init": 0.4,
+
   "image_size": 256,
   "num_calligraphers": 1013,
   "num_characters": 35130,
   "latent_channels": 4,
   "use_checkpoint": false,
+  "compile": true,
+  "compile_mode": "default",
+
   "epochs": 100000,
   "max_steps": 150000,
   "lr": 1.5e-4,
@@ -33,11 +41,12 @@
   "warmup_steps": 3000,
   "min_lr_ratio": 0.1,
   "weight_decay": 0.02,
-  "global_batch_size": 192,
+  "global_batch_size": 432,
   "global_seed": 0,
   "sampler": "factor_balanced",
   "balance_char_alpha": 0.35,
   "balance_callig_alpha": 0.15,
+
   "use_ema": true,
   "ema_decay": 0.9999,
   "ema_warmup": true,
@@ -46,12 +55,14 @@
   "use_lora": false,
   "reset_cond_head": false,
   "train_cond_head": false,
+
   "preload": true,
   "preload_workers": 48,
   "num_workers": 8,
   "log_every": 20,
   "ckpt_every": 2500,
   "ckpt_keep": 0,
+
   "auto_eval": true,
   "eval_csv": "5script/eval_fame_strict_clean_v8.csv",
   "eval_n": 500,
@@ -61,12 +72,14 @@
   "eval_batch": 50,
   "eval_vae_batch": 16,
   "show5_csv": "",
+
   "early_stop": true,
   "early_stop_metric": "ssim_lpips",
   "early_stop_patience": 5,
   "early_stop_min_delta": 0.002,
   "early_stop_min_delta_lpips": 0.003,
   "early_stop_min_steps": 20000,
+
   "diffusion_type": "flow",
   "t_sampler": "logit_normal",
   "t_mean": 0.0,
@@ -75,12 +88,15 @@
   "heun_batch": 1,
   "shift": 1.0,
   "use_ot": true,
+  "ot_chunks": 4,
+
   "norm_type": "rms",
   "mlp_type": "swiglu",
   "qk_norm": 1,
   "rope": 1,
   "rope_theta": 100.0,
   "attn_impl": "sdpa",
+
   "w_canny": 0.0,
   "w_skel": 0.0,
   "w_skel_head": 0.0,

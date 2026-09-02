@@ -106,11 +106,15 @@ class FlowMatching:
 
     def __init__(self, num_steps=50, sigma_min=1e-4, use_ot=False,
                  t_sampler="logit_normal", t_mean=0.0, t_std=1.0,
-                 shift=1.0, sampler="heun", heun_batch=True):
+                 shift=1.0, sampler="heun", heun_batch=True, ot_chunks=1):
         self.num_timesteps = int(num_steps)
         self.sigma_min = sigma_min
         self.use_ot = bool(use_ot)
         self.is_flow = True
+        # OT-CFM 分块数: 1 = 整 batch 一次全局匈牙利 (Tong et al. 原版, O(B^3));
+        # >1 时把 batch 均分成 ot_chunks 块, 每块独立做匈牙利 (O((B/k)^3) * k,
+        # 大 batch 下显著降 CPU 匈牙利开销, 质量近似全局匹配)。
+        self.ot_chunks = max(int(ot_chunks or 1), 1)
 
         self.t_sampler = str(t_sampler).lower()
         if self.t_sampler not in ("uniform", "logit_normal", "cosmap"):
@@ -182,15 +186,31 @@ class FlowMatching:
         # ── Minibatch Optimal Transport (OT-CFM, 可配置) ─────────────────
         # 对每个 batch, 用匈牙利算法在噪声/数据 pair 上做最优重排, 使轨迹
         # 不再交叉、速度场更平滑 (Tong et al., TMLR 2024).
-        # 代价: O(B^3) 匈牙利 + 一次 GPU->CPU 同步.
+        # 代价: O(B^3) 匈牙利 + 一次 GPU->CPU 同步。
+        # 优化: 支持 --ot-chunks>1 分块 (O((B/k)^3)*k); cost 用 float32 传 CPU
+        # (float64 拷贝是隐藏开销), 降精度只影响 <1e-4 量级的匹配判定。
         if self.use_ot and x_start.shape[0] > 1:
             from scipy.optimize import linear_sum_assignment
             with th.no_grad():
-                x_flat = x_start.reshape(x_start.shape[0], -1).float()
-                n_flat = noise.reshape(noise.shape[0], -1).float()
-                cost = th.cdist(x_flat, n_flat, p=2).pow(2)
-                row_ind, col_ind = linear_sum_assignment(cost.cpu().numpy())
-                noise = noise[th.from_numpy(col_ind).to(noise.device)]
+                B = x_start.shape[0]
+                k = min(self.ot_chunks, B)
+                if k > 1 and B % k == 0:
+                    _bs = B // k
+                    _perm = th.empty(B, dtype=th.long, device=x_start.device)
+                    for _c in range(k):
+                        sl = slice(_c * _bs, (_c + 1) * _bs)
+                        xf = x_start[sl].reshape(_bs, -1).float()
+                        nf = noise[sl].reshape(_bs, -1).float()
+                        cost = th.cdist(xf, nf, p=2).pow(2)
+                        _r, _cl = linear_sum_assignment(cost.float().cpu().numpy())
+                        _perm[sl] = th.from_numpy(_cl).to(x_start.device) + _c * _bs
+                    noise = noise[_perm]
+                else:
+                    x_flat = x_start.reshape(B, -1).float()
+                    n_flat = noise.reshape(B, -1).float()
+                    cost = th.cdist(x_flat, n_flat, p=2).pow(2)
+                    _r, _cl = linear_sum_assignment(cost.float().cpu().numpy())
+                    noise = noise[th.from_numpy(_cl).to(noise.device)]
 
         t = t.float()
         x_t = self._interp(x_start, noise, t)
@@ -372,7 +392,7 @@ class FlowMatching:
 #: 用于从 argparse Namespace / config dict 里安全地筛选，避免把 ddpm 专属参数
 #: （noise_schedule / learn_sigma / use_kl ...）误传进来导致 TypeError。
 FLOW_PARAMS = (
-    "num_steps", "sigma_min", "use_ot",
+    "num_steps", "sigma_min", "use_ot", "ot_chunks",
     "t_sampler", "t_mean", "t_std",
     "shift", "sampler", "heun_batch",
 )
