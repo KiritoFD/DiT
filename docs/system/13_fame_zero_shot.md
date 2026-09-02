@@ -17,10 +17,10 @@
 
 | 文件 | 内容 |
 |---|---|
-| `fame.npz` | 全量 img VAE latents（52,518×4×32×32 f16 + img_ids） |
-| `final_latents_fame/` | 20 shards（训练加载用，按 img_id 索引） |
-| `final_skel3_fame/` | 全部 3px 骨架 PNG（51,822） |
-| `final_skel_latents_fame/` | skel latents（20 shards，**GPU 编码**） |
+| ~~`fame.npz` / `final_latents_fame/`~~ | **已删除**（img latents 由 v8 数据集 `final_latents_fame_v8/` 取代） |
+| ~~`final_skel3_fame/` / `final_skel_latents_fame/`~~ | **已删除**（3px 弃用；1px 由 `final_skel1_fame_v8/` + `final_skel_latents_fame_1px_v8/` 取代） |
+| `final_imgs_fame_v8/` | fame 图像现行位置（51,822 张，v8 数据集 img_root） |
+| `skel_bank_train.npz` / `skel_bank_std.npz` | 推理骨架库（**注意**：部分条目基于清洗前图，changed ids 的骨架已重算但 bank 未同步） |
 | `final_skel_latents_fame_std/` | **标准字库骨架** latents（训练条件，20 shards） |
 | `skel_bank_train.npz` | 推理库：训练集每字一张骨架 latent（14,372 字） |
 | `skel_bank_std.npz` | 推理库：标准字库骨架 latent（eval 覆盖 238/483） |
