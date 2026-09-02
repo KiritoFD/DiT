@@ -78,26 +78,26 @@
 ### 3.1 环境切换（最重要）
 | 时间 | 改动 | 内容 | 有效性 |
 |---|---|---|---|
-| 08-12 前 | base 基线 | /opt/conda (py3.10.8, **torch 1.13.1+cu117**, xformers 0.0.16) 唯一训练环境 | 基线 |
-| 08-31 20:59 | torch2 env 创建 | 为 torch 2.6.0+cu124 建 py3.11 env；probe_conda/cu124/cu_tags 探 glibc 2.27 兼容性 | **失败废弃**（cu128 manylinux_2_28 在 glibc 2.27 装不了；torch2 无 torch） |
+| 08-12 前 | base 基线 | /opt/conda (2022-12 建, **py3.10.8, torch 1.13.1+cu117**) 唯一训练环境 | 基线 |
+| 08-31 20:59 | torch2 env 创建 | 为 torch 2.6.0+cu124 建 **py3.11.13** env；probe_conda/cu124/cu_tags 探 glibc 2.27 兼容性 | **失败废弃**（cu128 manylinux_2_28 在 glibc 2.27 装不了；**torch2 无 torch**） |
 | 08-31 22:08 | restore_base.sh | base 误装 torch 2.1.2 → 回滚 1.13.1+cu117；**Golden Rule: base 永不升级** | 有效 |
-| 08-31 22:11-22:19 | **cu121 env 建立** | rebuild_cu121.sh 重建 py3.10.18；**torch 2.1.2+cu121** + xformers 0.0.23.post1（env mtime 22:13） | **有效**（训练主环境） |
-| 08-31 22:36-22:42 | deps+修复 | install_deps_cu121.sh（numpy 1.24.4+diffusers 0.27.2）；fix_hfhub/fix_setuptools | 有效 |
-| 08-31 22:43-23:15 | 基准 | base 3.30sps/20.2G → cu121 3.60/19.9G → **cu121+compile 8.50sps/9.7G（×2.6, -52%显存）**；定 batch | 有效 |
-| 09-02 04:06-04:08 | ONNX 污染修复 | fix_numpy/fix_env2/3/4（卸 onnx 保留 onnxruntime；固定 numpy 1.24.4+ml-dtypes 0.4.1） | 有效（隔离原则） |
+| 08-31 22:11-22:19 | **cu121 env 建立** | rebuild_cu121.sh 重建 **py3.10.18**；install_cu121_torch.sh 装 **torch 2.1.2+cu121**；xformers 0.0.23.post1（env mtime 22:13） | **有效**（训练主环境） |
+| 08-31 22:36-22:42 | deps+修复 | install_deps_cu121.sh（numpy 1.24.4+diffusers 0.27.2）；fix_hfhub(0.23.5)/fix_setuptools(<81) | 有效 |
+| 08-31 22:43-23:15 | 基准验证 | base 3.30sps/20.2G → cu121 3.60/19.9G → **cu121+compile 8.50sps/9.7G（×2.6, -52%显存）**；_bench_b384/416/448 定 batch；ENV_INFRA.md 成文 | 有效 |
+| 09-02 04:06-04:08 | ONNX 污染修复 | ONNX 把 numpy 升到 2.2.6 致 torch 崩 → fix_numpy(1.24.4)/fix_env2(ml-dtypes<0.5)/fix_env3(卸 onnx+建 encocpu 独立env)/fix_env4(只卸 onnx 留 ort) | 有效（训练 env 与 encode 隔离） |
 
-### 3.2 工具链演进
+### 3.2 工具链演进（含 commit 佐证）
 | 时间 | 改动 | 内容 | 有效性 |
 |---|---|---|---|
-| 08-23 | VAE 换装 kl-f4 | 全管线 encode_latents_klf4.py | 有效 |
-| 08-23→31 | **DINOv2 教师落地** | 实验 → PCA(768→384) → 冻结查表零参数直通 | 有效 |
-| 08-25/26 | **DDPM→Flow** | diffusion_type 参数化；s14/s15 vs s16/s17 对比 | 有效（flow 成默认） |
-| 08-28 | 代码分层重构 | src/ 分层 + 统一时间步采样 | 有效 |
-| 08-29 | flow 求解器 | Euler→Heun + logit-normal t + shift | 有效 |
-| 08-31 | **OT 启用** | s28 use_ot=true 首次；zero_grad set_to_none | 有效 |
-| 08-31 | **torch.compile 引入** | --compile/--compile-mode（EMA 不编译） | 有效（×2.6 速、显存-52%） |
-| 09-02 | **OT 分块** | ot_chunks 分块匈牙利（384 batch 13ms→4ms）；v8a 固化 ot_chunks=4 | 有效 |
-| 09-02 | **compile 缓存持久化** | TORCHINDUCTOR_CACHE_DIR=/root/.cache/torch/inductor | 有效 |
+| 08-23 | VAE 换装 kl-f4 | 5b8858a VAE tools(convert/eval/train)、94476be 基准领先、78cb2cd 全管线 encode_latents_klf4.py | 有效 |
+| 08-23→31 | **DINOv2 教师落地** | dc512eb 起步 → s8/s9 训练(08-23/24) → 300be26 PCA 768→384(08-25) → 15c8ddb 冻结查表零参数直通(08-31) | 有效 |
+| 08-25/26 | **DDPM→Flow** | c9e3ae4 diffusion_type 参数化；s14/s15(ws,b160) vs s16/s17(s,b240) 对比 | 有效（flow 成默认） |
+| 08-28 | 代码分层重构 | 4f1743a src/{model,loss,train,eval,utils} + 根 shim；4fcb879 统一 eval/inference | 有效 |
+| 08-29 | flow 求解器 | af0839d Euler→Heun + logit-normal t + shift | 有效 |
+| 08-31 | **OT 启用 + std-DINO 落地** | 15c8ddb：s28/s29 configs、use_ot=true 首次、冻结查表(7026×384 PCA, 零参数)、zero_grad set_to_none | 有效 |
+| 08-31 | **torch.compile 引入** | train.py/ctrl 加 --compile/--compile-mode（EMA 不编译）；pipeline 23:15 以 compile 部署 | 有效（×2.6 速、显存-52%） |
+| 09-02 | **OT 分块** | bench_ot/sinkhorn/batch_ot 测开销 → 1ef28a1 ot_chunks 分块匈牙利（384 batch 13ms→4ms）；v8a 固化 ot_chunks=4 | 有效 |
+| 09-02 | **compile 缓存持久化** | bench_cache_persist 验证；TORCHINDUCTOR_CACHE_DIR=/root/.cache/torch/inductor 固化（27M 已存在） | 有效 |
 
 ### 3.3 VAE encode 演进（CPU → ONNX → GPU）
 | 时间 | 改动 | 内容 | 有效性 |
@@ -108,10 +108,21 @@
 | 09-02 11:54 | **GPU 替代 CPU** | gpu_encode_v8.py 重编码 21050 图（img/skel3/skel1，**709s**） | **有效（最终方案）** |
 
 ### 3.4 远程 vs 本地分工
-- 约定（ENV_INFRA.md）：**pwsh 转义地狱 → 本地 write .sh → scp 远程执行**；本地 `_ot_scratch/` 是脚本库
-- **远程**：训练（tmux pipeline）、encode、eval daemon（base env 跑 CPU daemon，cu121 跑训练）
-- **本地**：写代码(git) + 可视化（grid/dashboard/gradio）
-- 佐证：pipeline 中 `PY_BASE=/opt/conda/bin/python`（daemon）vs `PY_CU=/opt/conda/envs/cu121/bin/python`（训练）
+- 约定（ENV_INFRA.md §7.1）：**pwsh 转义地狱 → 本地 write .sh → scp 远程 /tmp 或 _sync_work 执行**；本地 `_ot_scratch/` 是脚本库，两端镜像
+- **远程**：训练（tmux pipeline/nohup）、encode（/tmp/*.py）、eval daemon（base env CPU 轻量）；**本地**：写代码(git) + 可视化（grid/dashboard/gradio）+ 分析
+- 佐证：pipeline 中 `PY_BASE=/opt/conda/bin/python`（daemon）vs `PY_CU=/opt/conda/envs/cu121/bin/python`（训练）；48b1074 "pre-refactor snapshot before remote code sync"
+
+### 3.5 config infra 参数时间变化
+| 时间 | 实验 | batch | compile | use_ot | diffusion |
+|---|---|---|---|---|---|
+| 08-23/24 | s8/s9 (dino) | 224/96 | 无 | 无 | ddpm |
+| 08-25 | s12 (DINO PCA) | 224 | 无 | 无 | ddpm |
+| 08-26 | s14/s15, s16/s17 | 160/240 | 无 | 无 | ddpm **vs** flow |
+| 08-29/30 | s21/s23 (flow v2) | — | 无 | 无 | flow |
+| 08-31 | **s28** (std-dino) | 192(CLI→384) | **CLI true** | **true(首次)** | flow+heun+logit_normal |
+| 08-31 | s29 (ctrl) | 96(CLI→192) | CLI true | 无 | flow |
+| 09-01 | s30/s31/s32/s32b | — | CLI true | true | flow |
+| 09-02 | **v8a/v8b/v8c** | **432/192** | **固化 true** | **true, ot_chunks=4** | flow |
 
 ---
 
