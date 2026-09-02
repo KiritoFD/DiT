@@ -27,32 +27,49 @@
 | 时间 | 实验 | 改动 | 结果 |
 |---|---|---|---|
 | 08-10→14 | V1/V2 | DiT-S/2 + 3因子(callig×script×char)联合MLP，全量从零 | ❌ 3因子不组合（script与callig混淆，覆盖0.264%） |
-| 08-15 | **compositional V1** | callig128+script32+char192 **factorized_add**→384；4-way CFG；factor-balanced | ✅ 组合泛化成立（1004书家口径 0.4576） |
-| 08-15 | compositional V2 | V1续训 + latent Canny/Skel 结构损失 | ❌ 0.4503 更差 |
-| 08-15 | v3a 二因子glyph | script×char→**glyph_id**(35,130类)；DiT-2Cond-S/2 | ⚠️ 短跑；v3b_xl_glyphcond 0.4888 |
-| 08-16 | **s2_fromscratch_2factor** | 2因子从零，kailishu 447书家/4,933字 | ✅ 0.5773（447书家口径最佳） |
-| 08-16 | V3-B/C XL+空间glyph条件 | XL/2 + 标准字形latent空间条件(token-add, scale 0.4) | ✅ 空间glyph条件有效；❌ XL过杀→回S |
-| 08-17→20 | S5 结构损失系列 | top30 128,842张；pixel/latent canny·skel 变体 | ❌ pixel结构损失有害（X0Lat 36-39 vs diff-only 1-2.5） |
-| 08-20→22 | S6 受控 diff vs struct | 同数据 top6 10,866张对照 | ✅ diff-only@195k 0.732 ≫ struct 0.403 |
-| 08-22 | S7 ramp | 20k步结构损失权重0→斜坡 | ❌ 无效 → **彻底弃结构损失** |
-| 08-23 | **S7 kl-f4 VAE换代** | sd-vae(f8,83.7M)→**kl-f4**(f4,55.3M)；地板噪声2×低、latent信息3×；DiT-S/4 | ✅ 采纳 |
-| 08-25/26 | **S13 DINO 384 LN-only 冻结直通** | DINO字形嵌入→callig/char表，零可训投影 | ✅ 条件变纯语义向量，S13起验证 |
-| ≈08-27 | s18_s_flow_small 首个flow | **Flow Matching 预训练**（Euler 50步, cfg1.7） | ✅ flow 取代 ddpm |
-| 08-28 | 核心代码重构 | src/{model,loss,train,eval,utils} 分层；统一时间步采样（修 flow/randint OOD bug） | ✅ infra 根治 |
-| 08-28→29 | s19_midclean_s_flow | mid-clean 增广 + flow（旧架构末代） | ✅ 0.5222（midclean口径） |
-| 08-29 | **v2 架构现代化→s20** | RMSNorm/SwiGLU/2D axial RoPE/QK-Norm+SDPA；flow: logit-normal t + Heun 二阶；修 6 个静默污染 bug | ✅ s20 新基模 0.5294 |
-| 08-30 | **s21_fame_flow_v2** | fame 51,322张/44书家 + 真迹DINO(ln_only)；eval_fame_strict 500 | ✅ base基准 0.4664（44书家口径） |
-| 08-30 | s22 只训char embedding | 冻结主干只训字表 | ❌ 0.4664→0.4622 |
-| 08-30 | 骨架消融 3px/1px/std-skel | base 0.4977 共同基线 | ✅ **1px>3px**（0.7355 vs 0.7288）；❌ std-skel 12点全平（被门控） |
-| 08-31 | 预训练诊断 | pred_xstart flow下恒为None **已修复**（w_std_mid 等此前从未生效）；cfg<1更优 | ✅ 修复 |
-| 08-31 | **标准字形DINO零参数直通** | DINO 768→384 PCA表(7026×384)；StdDinoCharEmbedder 冻结查表 | ✅ AUC 0.906（vs 插值0.824） |
-| 08-31 | s28 标准字形DINO预训练 | std DINO+PCA+OT+清洗数据 | ❌ 0.4476 step3000后停滞（域差） |
-| 08-31 | **1px ControlNet** | warm-start s21@30k, b72, cfg0.7, 1px GT skel latent | ✅ 0.7974（base→skel 最大单点提升） |
-| 09-01 | s26/s29/s31 skel配置 | GT skel 1px b96/b192 | ❌ 未收敛（0.50-0.56） |
-| 09-02 | s25 IDS部件码本 | IDS替换char embedding | ❌ 0.4618，弃 |
-| 09-02 | **s30 DINO char-strong** | 更强DINO char + 清洗后数据重训 | ✅ base最佳 0.4841（+0.017 vs s21） |
-| 09-02 | **s32b/s32c REPA** | 1px骨架上加表示对齐 | ✅ 0.8177/0.8204；LPIPS 0.14、MSE 0.12、SkelIoU 0.43 |
-| 09-02 | **v8a 基模** | 清洗数据重编码 + batch432 + OT-chunks4 + compile + cu121 | ✅ **0.5061@100k**（+0.022 vs S30） |
+| 时间 | 实验/改动 | 改动内容（模型/infra/数据） | 结果/有效性 |
+|---|---|---|---|
+| 08-10→14 | V1/V2（背景） | DiT-S/2 + 3因子(callig×script×char) 联合concat MLP，全量从零，无EMA/无结构损失 | ❌ 3因子不组合（script与callig混淆 I=1.527bits，triple覆盖0.264%） |
+| 08-15 | exp_s_5script 终止 | legacy 联合MLP 36.16M 停于25.7k步（best≈10-15k，20k后回归） | ❌ 只能记忆稀疏triple → 转因子化 |
+| 08-15 | compositional V1（=s2 因子化3cond） | callig128+script32+char192 **factorized_add**→384；4-way CFG(75/10/15)；factor-balanced采样；EMA 0.9999+warmup；b224；全量147,841行 | ✅ 组合泛化成立，best@20k SSIM 0.4576（1004书家口径） |
+| 08-15 | compositional V2 latent结构损失 | V1-20k续训 + latent Canny 0.05/Skel 0.005（max_t=500）4k步 | ❌ SSIM 0.4503 更差 |
+| 08-15 | v3a 二因子glyph 从零 | script×char→**glyph_id**(35,130类)；DiT-2Cond-S/2 39.58M，callig128+glyph192 factorized_add，4-way 60/15/15/10 | ⚠️ 早期短跑（best step≤25k）；v3b_xl_glyphcond SSIM 0.4888 |
+| 08-16 | s2_fromscratch_2factor | 2因子从零，kailishu 单书体（447书家/4,933字） | ✅ SSIM 0.5773（447书家口径历史最佳） |
+| 08-16 | V3-B/C XL + 空间glyph条件 | DiT-2Cond-XL/2 + 标准字形latent空间条件（Conv2d→token-add，learnable scale 0.4） | ✅ 空间glyph条件有效；❌ XL过杀 → 回S尺寸 |
+| 08-17 | latent vs pixel 结构探针 | latent canny/skel 信号≈pixel（分开度1.048 vs 1.041），字级判别力弱 | ⚠️ latent结构仅可作辅助 |
+| 08-17→20 | S5 结构损失系列 | top30 128,842张 latent-cached；pixel/latent canny·skel 变体 | ❌ pixel结构损失有害：彩色噪声，X0Lat 36–39 vs diff-only 1–2.5；diff-only@70k 0.520 |
+| 08-20→22 | S6 受控 diff-only vs struct | 同数据 top6 10,866张对照；eval500修复（character_id越界剔除146） | ✅ diff-only@195k 0.732 ≫ struct@120k 0.403 → 纯diff-only |
+| 08-22 | S7 ramp 结构损失斜坡 | 20k步内结构损失权重 0→斜坡 | ❌ 无效、伪影复发 → 彻底弃结构损失 |
+| 08-23 | **S7 kl-f4 VAE换代** | sd-vae(f8,83.7M)→**kl-f4**(f4,55.3M)：地板噪声2×低(0.0019 vs 0.0037)、latent信息3×；DiT-S/4保持256 tokens；b224 bf16 EMA | ✅ 采纳（s7_klf4_top30 0.5090，108书家） |
+| 08-24 | s10 b4 灰度清洗 | 灰度+清洗数据短跑 | ⚠️ 0.4656@55k，未成主线 |
+| 08-25 | s12_3top30_dino | 3top30 + DINO字形嵌入（ddpm），latent时代开端 | ⚠️ 0.4888@60k（67书家） |
+| 08-26 | s13/s14 DiT-XS | 3top30 XS ddpm 减参尝试 + 原始数据对照 | ❌ s12/13/14系整体放弃（减参非根因） |
+| 08-25/26 | **S12/S13 根因修复** | 减参 + 去proj + **DINO 384 LN-only 冻结表直通** + eval500重建 | ✅ 条件变纯语义向量（S13起验证） |
+| ≈08-27 | s15_ws_flow 宽体flow | WS/2 宽体 + flow（195k步，67书家） | ⚠️ 加宽仅+0.004（同口径） |
+| ≈08-27 | s17_s_flow | S/2 flow 3top30（165k步） | ✅ 0.5325（eval500_3top30） |
+| ≈08-27/28 | **s18_s_flow_small 首个flow** | Flow Matching 预训练（Euler 50步，cfg1.7），top6小数据 | ✅ flow取代ddpm（更少步数超s6），0.5476 |
+| 08-28 | 核心代码重构 | src/{model,loss,train,eval,utils} 分层 + **统一时间步采样**（修 flow/randint t∈{0..49}→t*1000 OOD bug） | ✅ infra根治ControlNet类bug |
+| 08-28→29 | s19_midclean_s_flow | mid-clean（每组合6样本增广）+ 4-way dropout which_glyph=0.75 + flow；S/2 33M b240 | ✅ 旧架构末代 0.5222（midclean口径） |
+| 08-29 | **v2 架构现代化（→s20）** | RMSNorm/SwiGLU/2D axial RoPE/QK-Norm+SDPA/自写PatchEmbed；flow: logit-normal t + Heun二阶 + shift；修6个静默污染bug；ControlNet重写 | ✅ s20 新基模 0.5294（cfg1.7）；SwiGLU显存翻倍→no-ckpt b128 |
+| 08-29 | DINO 条件实测 | CLS有效秩 34.1/384，跨书体检索top-1仅1.9–2.6% | ⚠️ 条件信息量不足实证 |
+| 08-29 | 旧实验归档清理 | 77 run扫描、66 run清理释放~882GB；确立口径分代 | ✅ infra |
+| 08-30 | **s21_fame_flow_v2 主力切换** | fame 51,322张/44书家/4,765字/7书体 + 真迹DINO(ln_only)；eval_fame_strict 500（cfg0.7、25步） | ✅ base基准 0.4664@27.5k（44书家口径；与11书家0.73不可比） |
+| 08-30 | s22 只训char embedding | 冻结主干、只训字表 | ❌ 0.4664→0.4622（瓶颈=DINO CLS无字符身份信息） |
+| 08-30 | 骨架消融 3px/1px/std-skel | base 0.4977共同基线；3px@50k 0.7889单调升；1px同期三点全优；std-skel 12点全平 | ✅ **1px>3px**（否定条件泄露假设）；❌ std-skel冗余被门控 |
+| 08-30 | 核心发现整理（19） | base↔ctrl差距=条件信息量（有效~162 vs 4,258维≈120×）；字形分类器/检索式评估不可行；字→骨架网络上界仅+0.007 | ⚠️ 确立"空间结构条件"主线 |
+| 08-30 | w_glyph_cond 静默失效诊断 | 接线到不存在的v1字典（命中0.0%）→条件全零；与ctrl injections未加载同构（zero-init静默失效） | ⚠️ 修复方案已定，未launch |
+| 08-31 | 预训练诊断（22） | cfg<1更优=条件是噪声（建议 cond_drop_all 0.05→0.12）；**pred_xstart flow下恒为None 已修复**；OT-CFM仅4.2ms/step | ✅ pred_xstart修复；⚠️ 其余待验证 |
+| 08-31 | DINO信号诊断（23） | CLS只承载身份（不同字cos 0.08）不承载空间结构（同字跨书体top-1 2.0%），PCA白化无提升；实现callig/char_scale可学习幅度 | ⚠️ 路线B重训待验证 |
+| 08-31 | 零参数直通研究（25） | 判别性评测（形近vs随机对AUC）：标准字形kai/li CLS·patch AUC 0.92–0.96 ✅；真迹跨书体平均 AUC 0.50 ❌ | ✅ 换特征来源即可零参数注入 |
+| 08-31 | PCA落地+infra profile（26） | DINO 768→384 PCA（AUC 0.906 vs 插值0.824）；StdDinoCharEmbedder冻结查表0参数（7026×384）；profile：backward占73%、吞吐饱和~525 samples/s、xformers最优 | ✅ |
+| 08-31 | s28 标准字形DINO预训练 | std DINO+PCA+OT+清洗数据51,321 | ❌ 终值0.4476且step3000后停滞（印刷体域差+PCA信息损失） |
+| 08-31 | **1px ControlNet（ctrl_fame_1pix_v1）** | warm-start s21@30k，b72，cfg0.7，100k步，1px GT skel latent | ✅ 20k步 0.7641 > 同期3px 0.7288；终值0.7974（base→skel最大单点提升） |
+| 09-01 | 清洗调查+方案B（28） | 真污染少（反相0.24%/黑边1.69%/边界墨2.84%/噪点1.59%）；main_frac低=草书飞白正常（**误判陷阱**）；方案B（参考字形bbox）全量修复18,785/51,322(36.6%)、主域保留0.9897 | ✅ 方案B采纳；❌ 方案C弃用 |
+| 09-01/02 | s29/s26/s31 skel配置 | GT skel 1px b96→0.5031；b192→0.5631（grid近全白） | ❌ 未收敛 → 改用1px ctrl配置 |
+| 09-02 | s25 IDS部件码本 | IDS部件码本替换char embedding | ❌ 0.4618 下游差，弃IDS分支 |
+| 09-02 | **s30 DINO char-strong** | 更强DINO char embedding + 清洗后数据重训 | ✅ base最佳 0.4841（+0.017 vs s21） |
+| 09-02 | **s32b/s32c REPA** | 1px骨架上加表示对齐（REPA） | ✅ 0.8177/0.8204；LPIPS 0.14、MSE 0.12、SkelIoU 0.43（全链路最佳） |
+| 09-02 | **v8a 基模（当前在跑）** | 清洗数据重编码 + batch432 + OT-chunks4 + compile + cu121 | ✅ **0.5061@100k**（+0.022 vs S30，省23%步数） |
 
 ---
 
@@ -128,6 +145,23 @@
 - 标准字形DINO+PCA（s28 域差）；IDS 部件（s25）；只训char embedding（s22）；XL 过杀
 - **REPA 长训 90k（s32c）**：base.ssim 崩 0.46→0.23；**REPA w2.0（s32d）**：直接崩 0.72
 - **Sinkhorn**（慢且质量-4.8%）；**curegot**（熵正则非LAP + py3.11不兼容）；**ONNX CPU encode**（无增益+env污染）；**torch2/cu124**（glibc 2.27 硬墙）
+
+### ⭐ 关键转折点（决定性改动）
+1. **08-15 V3-A factorized_add 二因子** — 终结3Cond联合MLP，组合泛化成立，此后一切条件设计的基座。
+2. **08-16 V3-B/C 空间glyph条件** — 首次证明"形状类空间条件"有效（1px skel/标准字形线的远祖）。
+3. **08-20~22 S6/S7 结构损失三次证伪** → 纯 diff-only 定式（结构信息直到 08-31 才以 ControlNet 形式复活）。
+4. **08-23 kl-f4 VAE + S/4** — latent 换代（地板噪声2×低、信息3×多），pixel 时代结束。
+5. **08-25/26 S13 DINO 384 LN-only 冻结直通** — 条件从可训投影变纯语义向量，DINO 字表确立。
+6. **≈08-27/28 S18 flow matching + 08-28 统一时间步采样** — 训练范式换代（更稳、步数减半，修 OOD bug）。
+7. **08-29 v2 架构现代化 → s20** — RMSNorm/SwiGLU/RoPE/QK-Norm + Heun/logit-normal，当前架构定式。
+8. **08-30 fame 数据集 + eval_fame_strict** — 评测口径统一（44书家），s21 基准线，SSIM 跨集可比性被正视。
+9. **08-30 骨架消融** — 1px GT 骨架 = base↔ctrl 差距根源（条件信息量 ~120×）；std-skel 冗余门控证伪。
+10. **08-31 25/26 标准字形 DINO 零参数直通（PCA 表）** — 虽 s28 失败（域差），但确立"标准字形空间条件"主线，s29 后以 1px skel 落地。
+11. **08-31 数据清洗 v7 + 09-01 方案B** — 极性归一/切边条/参考字形bbox 修复，GT 质量提升（s30 前提）。
+12. **08-31 ctrl_fame_1pix_v1** — base→skel 最大单点提升（0.50→0.797）。
+13. **09-02 s30 char-strong + 清洗数据** — base 新基准（0.4841）。
+14. **09-02 REPA（s32b/c）** — 全链路最佳 0.82，噪声类指标降 3–8 倍（LPIPS 0.44→0.14、MSE 1.0→0.12、SkelIoU 0.014→0.43）。
+15. **08-31 cu121 env + compile + 09-02 OT 分块/缓存持久化** — infra 提速 ×2.6、OT 13ms→4ms、encode CPU→GPU（709s）。
 
 ---
 
