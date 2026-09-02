@@ -176,11 +176,19 @@
 
 ---
 
-## 6. 样例 grid（基模对比：GT | S30-old@130k | v8a@95k）
+## 6. 视觉佐证：grid 样例与评测曲线
+
+### 6.1 全链路 grid（GT 在底部）
+所有关键实验在同样本上的生成结果对比：从 base（s21/s25/s28/s30）到 skel（s26/s31/1pix）到 REPA（s32b/s32c），每行左侧标注具体做法，GT 置于最下方作为对照。
 
 ![grid_all](assets/v8_grid/grid_all.png)
 
-### 逐行
+### 6.2 base 组对比
+只对比 base 类基模：s21（真迹DINO）、s25（IDS 部件码本）、s28（标准字形DINO+PCA）、s30（DINO char-strong），直观显示 s30/v8a 在笔画实度与背景净度上的改进。
+
+![grid_base](assets/v8_grid/grid_base.png)
+
+### 6.3 逐行放大
 | 行 | 图 |
 |---|---|
 | id 0 | ![row0](assets/v8_grid/row_0.png) |
@@ -189,6 +197,11 @@
 | id 100 | ![row100](assets/v8_grid/row_100.png) |
 
 > 观察：v8a 笔画更实、背景更净、边缘利落（对应 lpips 0.417 < S30 的 0.434，tv/saltpepper 类噪点指标全面更低）。
+
+### 6.4 评测曲线
+`_ot_scratch/v8_dash/evals_summary.csv`（182 行 / 7 实验）汇总绘制。左上：v8a SSIM 持续 NEW BEST；右上：v8a LPIPS 持续走低；左下/右下：skel/ctrl 类中 s32c REPA 全链最佳（SSIM 0.82 / SkelIoU 0.45 级）。
+
+![eval_curves](assets/v8_grid/eval_curves.png)
 
 ---
 
