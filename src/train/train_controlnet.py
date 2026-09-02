@@ -204,6 +204,19 @@ def parse_args():
                     help="与主模型训练时一致的 glyph 条件丢弃概率 (s20 base=0.75)",
                     dest="cond_drop_which_glyph_prob")
     ap.add_argument("--skel-cond-channels", type=int, default=4)
+    # ---- B 段早期 REPA 挂载 (可选, 默认关闭) ----
+    # REPA 对齐主模型中间特征到 DINOv2。warm-start 下主模型冻结, REPA 梯度只经
+    # ctrl 注入路径回传 (少量锚定, 不破坏主模型); from-scratch 下完全生效。
+    ap.add_argument("--w-repa-early", type=float, default=0.0,
+                    help="skel-ctrl 训练期 REPA 权重 (0=关闭; 建议 0.05~0.1 渐进)")
+    ap.add_argument("--repa-early-layer", type=int, default=8,
+                    help="早期 REPA 对齐的主模型 block 层 (默认 8)")
+    ap.add_argument("--repa-early-warmup", type=int, default=2000,
+                    help="REPA 权重线性从 0 爬到 --w-repa-early 的步数")
+    ap.add_argument("--img-root", default="final_imgs_fame_v8",
+                    help="GT 图根目录 (w_repa_early>0 时加载, REPA 教师输入)")
+    ap.add_argument("--repa-teacher-ckpt", type=str, default="",
+                    help="本地 DINOv2 safetensors 教师; 空=自动查找")
     ap.add_argument("--epochs", type=int, default=1400)
     ap.add_argument("--max-steps", type=int, default=100000)
     ap.add_argument("--lr", type=float, default=3e-4)
@@ -255,13 +268,16 @@ def main():
 
     # ---- 数据: latent shards + skel latent (或 3px skel PNG) ----
     use_skel_latent = bool(args.skel_latent_shards_dir)
-    logger.info(f"[data] loading latent + skel({'latent' if use_skel_latent else 'png'}) ...")
+    _repa_early = bool(getattr(args, 'w_repa_early', 0) or 0) > 0
+    logger.info(f"[data] loading latent + skel({'latent' if use_skel_latent else 'png'})"
+                f"{' + image(REPA)' if _repa_early else ''} ...")
     ds = MCCDLatentDataset(
         csv_file=args.csv, latent_shards_dir=args.latent_shards_dir,
-        img_root=None, skel_root=args.skel_root,
+        img_root=args.img_root if _repa_early else None,
+        skel_root=args.skel_root,
         skel_latent_shards_dir=args.skel_latent_shards_dir,
         image_size=256, load_canny=False, load_skel=not use_skel_latent,
-        is_train=True, preload=bool(args.preload), load_image=False,
+        is_train=True, preload=bool(args.preload), load_image=_repa_early,
         num_preload_workers=args.preload_workers, structure_size=256)
     n = len(ds)
     logger.info(f"[data] {n} samples, skel from "
@@ -366,6 +382,20 @@ def main():
     if args.use_ema:
         ema_ctrl = copy.deepcopy(ctrl).eval()
         requires_grad(ema_ctrl, False)
+
+    # ---- B 段早期 REPA (可选) ----
+    repa_early = None
+    if _repa_early:
+        from src.loss import REPALoss
+        student_dim = 384  # DiT-S/2 block 输出维度
+        repa_early = REPALoss(
+            student_dim=student_dim, teacher_backbone="dinov2_vits14",
+            teacher_ckpt=args.repa_teacher_ckpt or None).to(device).eval()
+        for p in repa_early.proj.parameters():
+            p.requires_grad = True
+        trainable += [p for p in repa_early.proj.parameters() if p.requires_grad]
+        logger.info(f"[repa-early] w={args.w_repa_early} layer={args.repa_early_layer} "
+                    f"warmup={args.repa_early_warmup} proj_trainable={sum(p.numel() for p in repa_early.proj.parameters()):,}")
 
     # flow 的 t 分布 / 求解器配置与 train.py 共用同一份（否则训练/推理不一致）
     diffusion = create_diffusion_or_flow(
@@ -494,10 +524,22 @@ def main():
             # 调用方绝不自己分支 (否则会重蹈 flow/randint 错配覆辙)。
             t = diffusion.sample_t(x_latent.shape[0], device)
             model_kwargs = dict(y_callig=y_callig, y_char=y_char, cond=skel)
+            if repa_early is not None:
+                model_kwargs['return_intermediate_layer'] = args.repa_early_layer
 
             with torch.autocast("cuda", dtype=torch.bfloat16):
                 loss_dict = diffusion.training_losses(ctrl, x_latent, t, model_kwargs)
                 loss = loss_dict["loss"].mean()
+                # B 段早期 REPA: 对齐主模型 block 特征到 DINOv2 (w 线性渐进)
+                loss_repa = torch.tensor(0.0, device=device)
+                if repa_early is not None:
+                    int_feats = loss_dict.get("intermediate_feats", None)
+                    img_gt = batch.get('image')
+                    if int_feats is not None and img_gt is not None and img_gt.numel() > 0:
+                        wr = args.w_repa_early * min(
+                            1.0, step / max(args.repa_early_warmup, 1))
+                        loss_repa = repa_early(int_feats, img_gt.to(device))
+                        loss = loss + wr * loss_repa
 
             if not torch.isfinite(loss):
                 logger.warning(f"[nan] step {step}; skip")
