@@ -171,7 +171,7 @@ def std_skel(script, ch, ps):
 
 SESSION = []
 
-def generate(ch, callig, script, steps, cfg, seed_n, ps):
+def generate(ch, callig, script, steps, cfg, seed_n, ps, sketch):
     ch = (ch or "").strip()
     if len(ch) != 1:
         return None, None, None, None, "请输入单个汉字", SESSION[:]
@@ -188,7 +188,26 @@ def generate(ch, callig, script, steps, cfg, seed_n, ps):
     gid = SCRIPT_ID[script] * NUM_CHARACTERS + cid
     ctrl = CTRLS[ps]
 
-    if trained:
+    # 手绘骨架优先: 用户画了就用手画的
+    sk_lat_user = None
+    if sketch is not None:
+        try:
+            sa = np.asarray(sketch.convert("L"))
+            if (sa < 200).sum() > 20:   # 有实际笔画
+                sk = skeletonize(sa < 200)
+                sk3 = np.where(dil3(sk), 0, 255).astype("uint8")
+                with torch.no_grad():
+                    x = torch.from_numpy(sk3.astype(np.float32)/255.*2-1)[None,None].repeat(1,3,1,1).to(dev)
+                    sk_lat_user = (vae.encode(x).latent_dist.mode()*0.18215)[0].half().cpu().numpy()
+        except Exception:
+            pass
+
+    if sk_lat_user is not None:
+        sk_lat = sk_lat_user
+        badge = f"手绘骨架 · ControlNet 条件（{ps}）"
+        badge_color = "#FF6600"
+        sk_img = decode_sk(sk_lat)
+    elif trained:
         sk_lat = BANK_TRAIN[ps][key]
         badge = f"训练过 · 直出（骨架={ps} 训练集骨架库）"
         badge_color = "#227722"
@@ -245,6 +264,8 @@ with gr.Blocks(title="fame 书法生成") as demo:
                                     value="褚遂良" if "褚遂良" in CALLIGS else CALLIGS[0])
             script_in = gr.Radio(["楷", "行", "隶"], label="书体", value="楷")
             ps_in = gr.Radio(["1px", "3px"], label="骨架 PS（ckpt 版本）", value="1px")
+            sketch_in = gr.Sketchpad(type="pil", label="手绘骨架（白底黑笔，优先级最高）",
+                                     height=256, brush=gr.Brush(colors=["#000000"], default_size=4))
             steps_in = gr.Slider(10, 100, value=50, step=5, label="采样步数 Euler")
             cfg_in = gr.Slider(0.1, 2.0, value=0.7, step=0.1, label="CFG（骨架条件 0.5-1.0 最佳）")
             seed_in = gr.Textbox(label="seed（留空随机）", value="")
@@ -259,7 +280,7 @@ with gr.Blocks(title="fame 书法生成") as demo:
     gr.Markdown("### 会话内所有生成结果")
     gallery = gr.Gallery(label="历史", columns=8)
 
-    btn.click(generate, [char_in, callig_in, script_in, steps_in, cfg_in, seed_in, ps_in],
+    btn.click(generate, [char_in, callig_in, script_in, steps_in, cfg_in, seed_in, ps_in, sketch_in],
               [out_img, badge_tb, sk_img, gt_gal, note, gallery])
 
 if __name__ == "__main__":
