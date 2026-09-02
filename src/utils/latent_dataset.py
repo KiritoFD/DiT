@@ -38,26 +38,11 @@ class MCCDLatentDataset(Dataset):
     def __init__(self, csv_file, latent_shards_dir, img_root, canny_root=None,
                  image_size=256, load_canny=False, load_skel=False, skel_root=None,
                  is_train=False, preload=False, load_image=True, num_preload_workers=16,
-                 structure_size=256, use_glyph_cond=False, skel_latent_shards_dir=None,
-                 blacklist_csv=None):
+                 structure_size=256, use_glyph_cond=False, skel_latent_shards_dir=None):
         self.samples = []
-        _black: set = set()
-        if blacklist_csv and os.path.isfile(blacklist_csv):
-            with open(blacklist_csv, 'r', encoding='utf-8') as f:
-                for row in csv.DictReader(f):
-                    _black.add(str(row["img_id"]))
-            print(f"[blacklist] {len(_black)} img_ids from {blacklist_csv}", flush=True)
         with open(csv_file, 'r', encoding='utf-8') as f:
-            _total = 0
             for row in csv.DictReader(f):
-                _total += 1
-                m = re.search(r"(\d+)\.png", row["image_path"])
-                if _black and m and m.group(1) in _black:
-                    continue
                 self.samples.append(row)
-        if _black:
-            print(f"[blacklist] dropped {_total - len(self.samples)}/{_total} rows "
-                  f"({(_total - len(self.samples)) / _total * 100:.2f}%)", flush=True)
         self.use_glyph_cond = bool(use_glyph_cond)
         if self.use_glyph_cond:
             # 标准字形 latent 查询(懒加载, 全局单例), 训练/推理一致

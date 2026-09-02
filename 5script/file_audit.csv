@@ -1,0 +1,601 @@
+path,type,size_mb,n_files,age_days,action,reason
+dit_s_smoke2.log,file,0.0,1,16.4,DELETE,空文件(0字节)
+exp_v3c_midstep.log,file,0.0,1,14.2,DELETE,空文件(0字节)
+gen_eval_S_old.json,file,0.0,1,15.5,DELETE,旧版备份
+test_eval_S.log,file,0.0,1,16.3,DELETE,空文件(0字节)
+train_s8_structv2_b32sub8.log,file,0.0,1,9.1,DELETE,空文件(0字节)
+src/train/train.py,file,0.109,1,0.1,KEEP,src/train 源码
+src/model/dit.py,file,0.054,1,2.0,KEEP,src/model 源码
+src/loss/gaussian_diffusion.py,file,0.034,1,2.5,KEEP,src/loss 源码
+src/train/train_controlnet.py,file,0.027,1,1.4,KEEP,src/train 源码
+src/eval/auto_eval_cpu.py,file,0.025,1,2.5,KEEP,src/eval 源码
+tools/pull_monitor.py,file,0.024,1,6.3,KEEP,tools 源码
+src/model/controlnet.py,file,0.023,1,1.4,KEEP,src/model 源码
+src/eval/auto_eval_gpu.py,file,0.021,1,2.5,KEEP,src/eval 源码
+src/eval/auto_eval_ctrl.py,file,0.02,1,2.5,KEEP,src/eval 源码
+src/eval/gpu_batch_eval.py,file,0.019,1,2.5,KEEP,src/eval 源码
+src/eval/gpu_batch_eval_v2.py,file,0.017,1,2.5,KEEP,src/eval 源码
+src/eval/inference.py,file,0.017,1,2.0,KEEP,src/eval 源码
+src/loss/flow_matching.py,file,0.017,1,2.0,KEEP,src/loss 源码
+tools/pull_s11.py,file,0.016,1,6.1,KEEP,tools 源码
+src/model/modules.py,file,0.016,1,1.4,KEEP,src/model 源码
+tools/train_struct_decoder_gpu.py,file,0.015,1,8.3,KEEP,tools 源码
+src/eval/eval_auto.py,file,0.015,1,2.5,KEEP,src/eval 源码
+src/eval/in_process_eval.py,file,0.015,1,0.1,KEEP,src/eval 源码
+src/utils/latent_dataset.py,file,0.015,1,0.1,KEEP,src/utils 源码
+src/loss/losses.py,file,0.015,1,0.3,KEEP,src/loss 源码
+src/eval/auto_eval_ctrl_flow.py,file,0.014,1,2.0,KEEP,src/eval 源码
+tools/aug6.py,file,0.013,1,2.4,KEEP,tools 源码
+tools/make_eval_poster.py,file,0.013,1,3.3,KEEP,tools 源码
+tools/build_fame_dataset.py,file,0.012,1,1.1,KEEP,tools 源码
+tools/eval_glyph_retrieval.py,file,0.012,1,0.3,KEEP,tools 源码
+tools/eval_struct_decoder.py,file,0.012,1,8.3,KEEP,tools 源码
+src/eval/gradio_controlnet.py,file,0.012,1,2.5,KEEP,src/eval 源码
+tools/augment_encode_latents.py,file,0.011,1,4.6,KEEP,tools 源码
+tools/build_results_csv.py,file,0.011,1,5.4,KEEP,tools 源码
+tools/cleanup_old_experiments.py,file,0.011,1,1.4,KEEP,tools 源码
+tools/train_struct_probe_256_v2.py,file,0.011,1,8.5,KEEP,tools 源码
+src/eval/test_controlnet.py,file,0.011,1,2.5,KEEP,src/eval 源码
+tools/auto_eval_pixel.py,file,0.01,1,8.5,KEEP,tools 源码
+tools/smoke_s20_pipelines.py,file,0.01,1,2.0,KEEP,tools 源码
+tools/vae_noise_full.py,file,0.01,1,6.5,KEEP,tools 源码
+src/model/lora.py,file,0.01,1,2.5,KEEP,src/model 源码
+tools/build_fame_skel1px.py,file,0.009,1,0.3,KEEP,tools 源码
+tools/train_struct_probe_256.py,file,0.009,1,8.5,KEEP,tools 源码
+tools/vae_noise_multiproc.py,file,0.009,1,6.5,KEEP,tools 源码
+src/eval/eval_compose.py,file,0.009,1,2.5,KEEP,src/eval 源码
+src/eval/eval_metrics_daemon.py,file,0.009,1,3.1,KEEP,src/eval 源码
+tools/aug_phase1.py,file,0.008,1,4.5,KEEP,tools 源码
+tools/build_skel_latents.py,file,0.008,1,0.3,KEEP,tools 源码
+tools/build_std_glyph_latents.py,file,0.008,1,2.0,KEEP,tools 源码
+tools/plot_all_experiments.py,file,0.008,1,1.4,KEEP,tools 源码
+src/eval/eval_controlnet_cpu.py,file,0.008,1,2.5,KEEP,src/eval 源码
+src/eval/eval_ctrl_metrics_daemon.py,file,0.008,1,2.6,KEEP,src/eval 源码
+src/eval/sample_controlnet.py,file,0.008,1,2.5,KEEP,src/eval 源码
+tools/bench_batch_s20.py,file,0.007,1,1.9,KEEP,tools 源码
+tools/build_eval500.py,file,0.007,1,4.6,KEEP,tools 源码
+tools/build_fame_fast.py,file,0.007,1,1.1,KEEP,tools 源码
+tools/dino_diagnose.py,file,0.007,1,2.0,KEEP,tools 源码
+tools/make_ctrl_posters.py,file,0.007,1,0.5,KEEP,tools 源码
+tools/make_eval_poster_eval.py,file,0.007,1,3.3,KEEP,tools 源码
+tools/plot_experiment_axes.py,file,0.007,1,1.4,KEEP,tools 源码
+tools/remote_dino_extract.py,file,0.007,1,7.1,KEEP,tools 源码
+tools/run_fame_pipeline.py,file,0.007,1,1.1,KEEP,tools 源码
+tools/train_latent_condition_probe.py,file,0.007,1,15.3,KEEP,tools 源码
+tools/vae_noise_gpu.py,file,0.007,1,6.5,KEEP,tools 源码
+tools/vae_patch_compare.py,file,0.007,1,6.7,KEEP,tools 源码
+tools/aug_phase2_merge.py,file,0.006,1,4.5,KEEP,tools 源码
+tools/build_eval_strict_midclean.py,file,0.006,1,2.0,KEEP,tools 源码
+tools/eval_s20_ctrl_monitor.py,file,0.006,1,1.2,KEEP,tools 源码
+tools/eval_unified.py,file,0.006,1,2.0,KEEP,tools 源码
+tools/expand_eval_dirty.py,file,0.006,1,6.5,KEEP,tools 源码
+tools/train_latent_structure_probe.py,file,0.006,1,15.3,KEEP,tools 源码
+tools/train_skel_decoder.py,file,0.006,1,8.4,KEEP,tools 源码
+tools/vae_noise_eval.py,file,0.006,1,6.5,KEEP,tools 源码
+src/utils/dataset.py,file,0.006,1,0.1,KEEP,src/utils 源码
+src/loss/timestep_sampler.py,file,0.006,1,18.3,KEEP,src/loss 源码
+tools/bench_mem_s20.py,file,0.005,1,2.0,KEEP,tools 源码
+tools/build_eval_strict_top6.py,file,0.005,1,3.1,KEEP,tools 源码
+tools/make_seen_poster.py,file,0.005,1,3.3,KEEP,tools 源码
+tools/watch_pretrain_launch_ctrl.py,file,0.005,1,0.6,KEEP,tools 源码
+src/loss/respace.py,file,0.005,1,18.3,KEEP,src/loss 源码
+tools/analyze_factor_sampler.py,file,0.004,1,15.3,KEEP,tools 源码
+tools/analyze_latent_structure.py,file,0.004,1,15.3,KEEP,tools 源码
+tools/analyze_results.py,file,0.004,1,5.4,KEEP,tools 源码
+tools/build_compositional_eval.py,file,0.004,1,15.4,KEEP,tools 源码
+tools/build_latent_structure_cache.py,file,0.004,1,8.5,KEEP,tools 源码
+tools/build_smoke_data.py,file,0.004,1,5.2,KEEP,tools 源码
+tools/cfg_sweep_ctrl.py,file,0.004,1,5.3,KEEP,tools 源码
+tools/eval_grad_offset.py,file,0.004,1,8.3,KEEP,tools 源码
+tools/eval_vis_s20_ctrl.py,file,0.004,1,1.4,KEEP,tools 源码
+tools/make_simple_poster.py,file,0.004,1,3.3,KEEP,tools 源码
+tools/monitor_s20.py,file,0.004,1,1.9,KEEP,tools 源码
+tools/prelaunch_check_s20.py,file,0.004,1,2.0,KEEP,tools 源码
+tools/remote_b4_memtest.py,file,0.004,1,6.7,KEEP,tools 源码
+tools/test_ddpm_regression.py,file,0.004,1,5.2,KEEP,tools 源码
+tools/test_flow_matching.py,file,0.004,1,5.2,KEEP,tools 源码
+src/eval/backfill_eval.py,file,0.004,1,2.5,KEEP,src/eval 源码
+src/eval/eval_full_3cond.py,file,0.004,1,2.5,KEEP,src/eval 源码
+src/eval/eval_models.py,file,0.004,1,18.4,KEEP,src/eval 源码
+src/eval/eval_test.py,file,0.004,1,2.5,KEEP,src/eval 源码
+src/utils/latent_structure.py,file,0.004,1,15.3,KEEP,src/utils 源码
+src/loss/__init__.py,file,0.004,1,2.0,KEEP,src/loss 源码
+tools/build_pixel_classifier_data.py,file,0.003,1,4.9,KEEP,tools 源码
+tools/stat_aug_quality.py,file,0.003,1,2.5,KEEP,tools 源码
+tools/stat_mid_clean.py,file,0.003,1,2.5,KEEP,tools 源码
+src/eval/eval_gen.py,file,0.003,1,2.5,KEEP,src/eval 源码
+src/eval/eval_metrics.py,file,0.003,1,18.4,KEEP,src/eval 源码
+src/utils/glyph_latent.py,file,0.003,1,14.4,KEEP,src/utils 源码
+src/utils/glyph_latent_v2.py,file,0.003,1,2.0,KEEP,src/utils 源码
+src/loss/diffusion_utils.py,file,0.003,1,18.3,KEEP,src/loss 源码
+tools/gen_skel_d3.py,file,0.002,1,8.4,KEEP,tools 源码
+tools/remote_dashboard.py,file,0.002,1,11.1,KEEP,tools 源码
+tools/remove_dirty.py,file,0.002,1,6.5,KEEP,tools 源码
+tools/stat_ids_skel.py,file,0.002,1,2.5,KEEP,tools 源码
+src/eval/in_process_ctrl_eval.py,file,0.002,1,2.4,KEEP,src/eval 源码
+src/utils/download.py,file,0.002,1,18.4,KEEP,src/utils 源码
+src/utils/samplers.py,file,0.002,1,15.2,KEEP,src/utils 源码
+tools/build_mid_common_csv.py,file,0.001,1,2.2,KEEP,tools 源码
+tools/check_ctrl_data.py,file,0.001,1,2.2,KEEP,tools 源码
+tools/check_steps_per_sec.py,file,0.001,1,2.3,KEEP,tools 源码
+tools/clean_eval500.py,file,0.001,1,6.4,KEEP,tools 源码
+tools/print_eval_trend.py,file,0.001,1,2.3,KEEP,tools 源码
+tools/stat_img_paths.py,file,0.001,1,2.5,KEEP,tools 源码
+src/eval/latent_condition_probe.py,file,0.001,1,15.3,KEEP,src/eval 源码
+src/model/__init__.py,file,0.001,1,2.0,KEEP,src/model 源码
+src/utils/__init__.py,file,0.001,1,0.1,KEEP,src/utils 源码
+src/eval/__init__.py,file,0.0,1,2.4,KEEP,src/eval 源码
+src/train/__init__.py,file,0.0,1,2.5,KEEP,src/train 源码
+5script/,dir,244872.83,255477,0.0,REVIEW,需人工判断
+results/,dir,40610.58,82144,7.5,REVIEW,需人工判断
+MCCD.7z,file,22644.091,1,19.4,REVIEW,需人工判断
+dataset.zip,file,13191.812,1,18.4,REVIEW,需人工判断
+new_data/,dir,3780.48,10064,16.6,REVIEW,需人工判断
+new_data_skel0/,dir,2962.41,28,16.6,REVIEW,需人工判断
+final_imgs_mid_clean/,dir,1327.13,95179,1.1,REVIEW,需人工判断
+final_canny_d3/,dir,748.92,329715,8.4,REVIEW,需人工判断
+test_eval_B_imgs/,dir,721.48,10000,16.2,REVIEW,需人工判断
+test_eval_S_imgs/,dir,720.06,10000,16.3,REVIEW,需人工判断
+test_eval_E_imgs/,dir,718.74,10000,15.8,REVIEW,需人工判断
+test_eval_C_imgs/,dir,718.3,10000,16.1,REVIEW,需人工判断
+test_eval_F_imgs/,dir,716.84,10000,15.9,REVIEW,需人工判断
+test_eval_D_imgs/,dir,715.58,10000,16.0,REVIEW,需人工判断
+fame.npz,file,358.697,1,1.1,REVIEW,需人工判断
+src/,dir,350.44,43975,2.5,REVIEW,需人工判断
+archive/,dir,206.59,318,2.0,REVIEW,需人工判断
+final_skel_latents_mid_common/,dir,164.58,369,2.2,REVIEW,需人工判断
+std_glyph_latent/,dir,125.17,7925,14.4,REVIEW,需人工判断
+std_glyph_latent.tgz,file,112.436,1,14.4,REVIEW,需人工判断
+latent_missing/,dir,98.5,12414,17.0,REVIEW,需人工判断
+skel_bank_train.npz,file,93.465,1,0.5,REVIEW,需人工判断
+final_manifest_split.json,file,90.602,1,17.0,REVIEW,需人工判断
+latent_missing.tar.gz,file,86.076,1,17.0,REVIEW,需人工判断
+final_local_imgs.tar.gz,file,74.694,1,17.0,REVIEW,需人工判断
+latent_struct_probe_cache.npz,file,63.508,1,13.1,REVIEW,需人工判断
+final_skel_latents_fame_std/,dir,61.52,20,0.4,REVIEW,需人工判断
+flip_backup/,dir,49.7,2751,1.1,REVIEW,需人工判断
+train.csv,file,39.256,1,17.6,REVIEW,需人工判断
+flip_backup_fame2/,dir,38.19,757,1.0,REVIEW,需人工判断
+final_latent_plan.json,file,26.24,1,17.0,REVIEW,需人工判断
+final_img_plan.json,file,25.901,1,17.0,REVIEW,需人工判断
+gen_curves_S/,dir,21.67,336,15.5,REVIEW,需人工判断
+final_train.csv,file,16.082,1,17.0,REVIEW,需人工判断
+docs/,dir,12.05,46,2.4,REVIEW,需人工判断
+tools/,dir,7.95,290,0.3,REVIEW,需人工判断
+std_skel/,dir,7.69,7923,14.5,REVIEW,需人工判断
+train5.csv,file,7.373,1,15.5,REVIEW,需人工判断
+std_skel.tgz,file,6.989,1,14.4,REVIEW,需人工判断
+famous_calligrapher.csv,file,5.301,1,1.1,REVIEW,需人工判断
+test.csv,file,4.908,1,17.6,REVIEW,需人工判断
+val.csv,file,4.905,1,17.6,REVIEW,需人工判断
+exp_s5-2factor-B-canny05-pixelsk.log,file,3.934,1,11.5,REVIEW,需人工判断
+final_skel_latents_eval_v2/,dir,3.53,8,1.6,REVIEW,需人工判断
+example_100.tgz,file,3.42,1,18.1,REVIEW,需人工判断
+kailishu_train.csv,file,3.314,1,14.4,REVIEW,需人工判断
+run_s6.log,file,2.438,1,10.2,REVIEW,需人工判断
+exp_s5_B_latent.log,file,2.432,1,13.1,REVIEW,需人工判断
+exp_s5-2factor-B-latentC-pixelsk-opt.log,file,2.137,1,12.5,REVIEW,需人工判断
+final_skel_latents_eval/,dir,2.12,5,2.2,REVIEW,需人工判断
+run_s7_klf4.log,file,1.668,1,7.1,REVIEW,需人工判断
+skel_bank_std.npz,file,1.471,1,0.5,REVIEW,需人工判断
+logs_s10.txt,file,1.287,1,6.1,REVIEW,需人工判断
+gen_eval_C_imgs/,dir,1.24,20,15.6,REVIEW,需人工判断
+gen_eval_S_old_imgs/,dir,1.21,20,15.5,REVIEW,需人工判断
+eval_remote_0042500.png,file,0.973,1,17.4,REVIEW,需人工判断
+exp_s5_B_pixelfp32.log,file,0.938,1,11.1,REVIEW,需人工判断
+exp_s2_2factor.log,file,0.925,1,14.1,REVIEW,需人工判断
+exp_s5_top30.log,file,0.925,1,13.9,REVIEW,需人工判断
+run_top30_diffonly.log,file,0.891,1,7.4,REVIEW,需人工判断
+dict2.txt,file,0.861,1,18.4,REVIEW,需人工判断
+viz_ab_B.png,file,0.85,1,16.1,REVIEW,需人工判断
+viz_ab_A.png,file,0.842,1,16.1,REVIEW,需人工判断
+overfit_2cond_comparison.png,file,0.794,1,18.1,REVIEW,需人工判断
+compose_test_imgs/,dir,0.78,4,15.2,REVIEW,需人工判断
+train_s7_ramp_b8all.log,file,0.75,1,9.2,REVIEW,需人工判断
+run_s9.log,file,0.696,1,8.8,REVIEW,需人工判断
+exp_v3a_glyph_cs5.log,file,0.652,1,14.7,REVIEW,需人工判断
+exp_v3b_glyphcond.log,file,0.523,1,14.3,REVIEW,需人工判断
+final_test.csv,file,0.508,1,17.0,REVIEW,需人工判断
+dataset_quality_verification.png,file,0.476,1,18.4,REVIEW,需人工判断
+logs_s11-top6-p4.txt,file,0.46,1,5.6,REVIEW,需人工判断
+logs_s11_serial.txt,file,0.46,1,5.6,REVIEW,需人工判断
+eval_2500.png,file,0.444,1,17.3,REVIEW,需人工判断
+exp_s5_top30_r.log,file,0.424,1,13.6,REVIEW,需人工判断
+exp_xl_head.log,file,0.42,1,16.2,REVIEW,需人工判断
+exp_xl_head_r32.log,file,0.42,1,16.0,REVIEW,需人工判断
+exp_xl_head_r32_attn.log,file,0.42,1,15.8,REVIEW,需人工判断
+exp_xl_head_r64.log,file,0.42,1,15.9,REVIEW,需人工判断
+exp_xl_head_r8.log,file,0.42,1,16.1,REVIEW,需人工判断
+eval_5000.png,file,0.41,1,17.3,REVIEW,需人工判断
+eval_5000_newbatch.png,file,0.41,1,17.2,REVIEW,需人工判断
+final_id_maps.json,file,0.33,1,15.6,REVIEW,需人工判断
+labels/,dir,0.33,1,15.6,REVIEW,需人工判断
+train_s8_structv2_b8all.log,file,0.327,1,9.1,REVIEW,需人工判断
+exp_xl_skelhead_c2.log,file,0.305,1,14.4,REVIEW,需人工判断
+eval_latest.png,file,0.276,1,15.6,REVIEW,需人工判断
+exp_s_5script.log,file,0.275,1,15.4,REVIEW,需人工判断
+train_factorized_v1_ema_warmup.log,file,0.244,1,15.3,REVIEW,需人工判断
+test5.csv,file,0.233,1,15.5,REVIEW,需人工判断
+exp_s2_glyphmid.log,file,0.216,1,14.2,REVIEW,需人工判断
+exp_s5_struct.log,file,0.209,1,13.4,REVIEW,需人工判断
+results.csv,file,0.207,1,5.4,REVIEW,需人工判断
+run_ctrl_skel.log,file,0.202,1,7.8,REVIEW,需人工判断
+skel_banks_meta.json,file,0.192,1,0.5,REVIEW,需人工判断
+labels_map.json,file,0.169,1,18.3,REVIEW,需人工判断
+mccd_mapping.json,file,0.169,1,17.6,REVIEW,需人工判断
+kailishu_manifest.json,file,0.165,1,14.4,REVIEW,需人工判断
+logs_s11_p4.txt,file,0.14,1,6.1,REVIEW,需人工判断
+logs_s9_dino.txt,file,0.14,1,6.5,REVIEW,需人工判断
+exp_xl_highdim_cs3.log,file,0.121,1,14.5,REVIEW,需人工判断
+exp_xl_highdim_cs2.log,file,0.117,1,14.5,REVIEW,需人工判断
+overfit_3cond_comparison.png,file,0.113,1,18.1,REVIEW,需人工判断
+overfit_comparison.png,file,0.111,1,18.4,REVIEW,需人工判断
+std_gt/,dir,0.11,80,14.5,REVIEW,需人工判断
+train.py,file,0.109,1,0.1,REVIEW,需人工判断
+exp_v3a_glyph_cs3.log,file,0.102,1,15.1,REVIEW,需人工判断
+run_px_s.log,file,0.1,1,8.4,REVIEW,需人工判断
+exp_xl_lora_cs.log,file,0.099,1,15.0,REVIEW,需人工判断
+final_train_small.csv,file,0.098,1,17.0,REVIEW,需人工判断
+exp_v3a_glyph_cs.log,file,0.089,1,15.2,REVIEW,需人工判断
+gradio_test_龙.png,file,0.068,1,15.6,REVIEW,需人工判断
+gradio_test_永.png,file,0.066,1,15.6,REVIEW,需人工判断
+gradio_test_福.png,file,0.066,1,15.6,REVIEW,需人工判断
+overfit_500.csv,file,0.066,1,18.1,REVIEW,需人工判断
+train_factorized_latent_struct_v2.log,file,0.065,1,15.3,REVIEW,需人工判断
+cpu_eval_s5-2factor-B-canny05-pixelsk.log,file,0.064,1,11.5,REVIEW,需人工判断
+tmp_sync/,dir,0.06,4,2.2,REVIEW,需人工判断
+exp_v3a_glyph_cs2.log,file,0.057,1,15.1,REVIEW,需人工判断
+cond_ablate_C.png,file,0.053,1,15.5,REVIEW,需人工判断
+dit.py,file,0.052,1,2.0,REVIEW,需人工判断
+final_eval.csv,file,0.051,1,17.0,REVIEW,需人工判断
+cond_ablate_A.png,file,0.046,1,15.5,REVIEW,需人工判断
+exp_v3a_glyph.log,file,0.046,1,15.2,REVIEW,需人工判断
+logs_s8_eval.txt,file,0.045,1,6.7,REVIEW,需人工判断
+cond_ablate_B.png,file,0.039,1,15.5,REVIEW,需人工判断
+cpu_eval_s6_top6_diffonly_resume.log,file,0.037,1,9.7,REVIEW,需人工判断
+train.py.bak_exp,file,0.037,1,16.3,REVIEW,需人工判断
+train.py.bak_pre_opt,file,0.035,1,16.4,REVIEW,需人工判断
+train.py.bak_skel0,file,0.034,1,16.5,REVIEW,需人工判断
+cond_ablate_D.png,file,0.033,1,15.5,REVIEW,需人工判断
+run_struct_L.log,file,0.031,1,8.2,REVIEW,需人工判断
+tests/,dir,0.03,5,2.0,REVIEW,需人工判断
+train_dashboard.html,file,0.03,1,6.3,REVIEW,需人工判断
+cpu_eval_s6_top6_struct_fp32_resume.log,file,0.028,1,9.5,REVIEW,需人工判断
+logs_s8_dino.txt,file,0.028,1,6.7,REVIEW,需人工判断
+train_factorized_v1.log,file,0.028,1,15.4,REVIEW,需人工判断
+auto_eval_cpu.log,file,0.025,1,7.1,REVIEW,需人工判断
+cpu_eval_s7_ramp_b8all.log,file,0.025,1,9.2,REVIEW,需人工判断
+eval5.csv,file,0.024,1,15.5,REVIEW,需人工判断
+exp_xl_highdim_cs.log,file,0.024,1,14.6,REVIEW,需人工判断
+pull_monitor.py,file,0.024,1,6.3,REVIEW,需人工判断
+cpu_eval_s6_top6_struct_fp32.log,file,0.023,1,10.4,REVIEW,需人工判断
+cpu_eval_s9_skelonly.log,file,0.023,1,8.8,REVIEW,需人工判断
+exp_xl_skelhead.log,file,0.023,1,14.5,REVIEW,需人工判断
+exp_v3a_glyph_cs4.log,file,0.022,1,15.1,REVIEW,需人工判断
+_chars_all.txt,file,0.02,1,14.5,REVIEW,需人工判断
+cpu_eval_pixelfp32.log,file,0.02,1,11.1,REVIEW,需人工判断
+example_100/,dir,0.02,1,19.3,REVIEW,需人工判断
+exp_s_scratch.log,file,0.02,1,15.5,REVIEW,需人工判断
+LICENSE.txt,file,0.019,1,23.1,REVIEW,需人工判断
+controlnet.py,file,0.019,1,2.0,REVIEW,需人工判断
+_chars_zhuan.txt,file,0.017,1,14.5,REVIEW,需人工判断
+dit_s_pretrain_train.log,file,0.016,1,16.4,REVIEW,需人工判断
+flow_matching.py,file,0.016,1,2.0,REVIEW,需人工判断
+_,file,0.015,1,15.1,REVIEW,需人工判断
+cpu_eval_s8_structv2_b8all.log,file,0.015,1,9.1,REVIEW,需人工判断
+in_process_eval.py,file,0.015,1,0.1,REVIEW,需人工判断
+latent_dataset.py,file,0.015,1,0.1,REVIEW,需人工判断
+modules.py,file,0.014,1,2.0,REVIEW,需人工判断
+_chars_kai.txt,file,0.013,1,14.5,REVIEW,需人工判断
+kailishu_eval.csv,file,0.013,1,14.4,REVIEW,需人工判断
+prepare_mccd_dataset_gpu.py,file,0.013,1,18.4,REVIEW,需人工判断
+_chars_xing.txt,file,0.011,1,14.5,REVIEW,需人工判断
+cpu_eval_s6_top6_struct_fp32_full.log,file,0.011,1,10.3,REVIEW,需人工判断
+prepare_mccd_dataset_fast.py,file,0.011,1,18.4,REVIEW,需人工判断
+train_glyph_classifier.py,file,0.011,1,5.0,REVIEW,需人工判断
+_chars_cao.txt,file,0.01,1,14.5,REVIEW,需人工判断
+_chars_li.txt,file,0.01,1,14.5,REVIEW,需人工判断
+_sync_work/,dir,0.01,2,1.5,REVIEW,需人工判断
+configs_s11/,dir,0.01,3,6.1,REVIEW,需人工判断
+eval_def.log,file,0.01,1,15.6,REVIEW,需人工判断
+gradio_app.py,file,0.01,1,15.6,REVIEW,需人工判断
+lora.py.bak_exp,file,0.01,1,16.3,REVIEW,需人工判断
+train_eval_classifier.py,file,0.01,1,18.4,REVIEW,需人工判断
+README.md,file,0.009,1,18.4,REVIEW,需人工判断
+_audit_remote_files.py,file,0.009,1,0.0,REVIEW,需人工判断
+_scan_results.py,file,0.009,1,0.2,REVIEW,需人工判断
+cpu_eval_gpu_s5-2factor-B-latentC-pixelsk-opt.log,file,0.009,1,12.5,REVIEW,需人工判断
+cpu_eval_s5-2factor-B-latentC-pixelsk-opt.log,file,0.009,1,12.5,REVIEW,需人工判断
+cpu_eval_s6_top6_diffonly.log,file,0.009,1,11.0,REVIEW,需人工判断
+gradio_install.log,file,0.009,1,15.6,REVIEW,需人工判断
+prepare_mccd_dataset.py,file,0.009,1,18.4,REVIEW,需人工判断
+train_pixel_classifier.py,file,0.009,1,4.9,REVIEW,需人工判断
+train_pixel_classifier_v2.py,file,0.009,1,4.9,REVIEW,需人工判断
+_scan_assets.py,file,0.008,1,0.2,REVIEW,需人工判断
+midclean_chars_kai.txt,file,0.008,1,2.1,REVIEW,需人工判断
+midclean_chars_xing.txt,file,0.008,1,2.1,REVIEW,需人工判断
+_enrich_experiments.py,file,0.007,1,0.2,REVIEW,需人工判断
+_probe_top6.log,file,0.007,1,11.1,REVIEW,需人工判断
+eval_all_classifiers.py,file,0.007,1,4.7,REVIEW,需人工判断
+logs_s9_eval.txt,file,0.007,1,6.5,REVIEW,需人工判断
+run_skel_small.log,file,0.007,1,8.3,REVIEW,需人工判断
+_probe_fulldec.log,file,0.006,1,11.1,REVIEW,需人工判断
+_scan_model.py,file,0.006,1,0.2,REVIEW,需人工判断
+dataset.py,file,0.006,1,0.1,REVIEW,需人工判断
+flask_app.py,file,0.006,1,15.6,REVIEW,需人工判断
+logs_evalmetrics.txt,file,0.006,1,6.1,REVIEW,需人工判断
+preprocess_all.py,file,0.006,1,17.0,REVIEW,需人工判断
+run_ctrl_top30.log,file,0.006,1,7.5,REVIEW,需人工判断
+run_struct_gpu.log,file,0.006,1,8.3,REVIEW,需人工判断
+watchdog_out.log,file,0.006,1,15.8,REVIEW,需人工判断
+_stats_fontcov_remote.py,file,0.005,1,1.1,REVIEW,需人工判断
+dict.txt,file,0.005,1,18.4,REVIEW,需人工判断
+fast100.csv,file,0.005,1,15.5,REVIEW,需人工判断
+fast100_5script.csv,file,0.005,1,15.5,REVIEW,需人工判断
+gen_canny_skel.py,file,0.005,1,17.0,REVIEW,需人工判断
+midclean_chars_li.txt,file,0.005,1,2.1,REVIEW,需人工判断
+probe_b16.log,file,0.005,1,15.1,REVIEW,需人工判断
+probe_v3a_cs.log,file,0.005,1,15.2,REVIEW,需人工判断
+probe_xl_struct.log,file,0.005,1,15.1,REVIEW,需人工判断
+run_DiT.ipynb,file,0.005,1,18.4,REVIEW,需人工判断
+sample_3cond.py,file,0.005,1,18.2,REVIEW,需人工判断
+vae_hash.py,file,0.005,1,17.1,REVIEW,需人工判断
+CHAR_PLAN.json,file,0.004,1,16.1,REVIEW,需人工判断
+__init__.py,file,0.004,1,2.0,REVIEW,需人工判断
+_check_famous_ext.py,file,0.004,1,1.1,REVIEW,需人工判断
+_make_skel_ablation.py,file,0.004,1,0.2,REVIEW,需人工判断
+_smoke_exp1.log,file,0.004,1,11.1,REVIEW,需人工判断
+_smoke_resume.log,file,0.004,1,10.2,REVIEW,需人工判断
+_watchdog.sh,file,0.004,1,16.2,REVIEW,需人工判断
+eval_S_curves.log,file,0.004,1,15.5,REVIEW,需人工判断
+glyph_classifier.py,file,0.004,1,5.0,REVIEW,需人工判断
+gpu_eval_all.log,file,0.004,1,7.6,REVIEW,需人工判断
+logs_s10_eval.txt,file,0.004,1,6.4,REVIEW,需人工判断
+monitor_s13.py,file,0.004,1,4.6,REVIEW,需人工判断
+probe_factorized_struct_b32.log,file,0.004,1,15.4,REVIEW,需人工判断
+probe_factorized_struct_b64_rerun.log,file,0.004,1,15.4,REVIEW,需人工判断
+probe_latent_struct_b224.log,file,0.004,1,15.3,REVIEW,需人工判断
+probe_v3a_cs_b8.log,file,0.004,1,15.2,REVIEW,需人工判断
+run_skel_dec.log,file,0.004,1,8.4,REVIEW,需人工判断
+s23_glyph_cond.json,file,0.004,1,0.1,REVIEW,需人工判断
+verify_dataset_quality.py,file,0.004,1,18.4,REVIEW,需人工判断
+CODE_OF_CONDUCT.md,file,0.003,1,18.4,REVIEW,需人工判断
+_check_glyph_lib.py,file,0.003,1,0.3,REVIEW,需人工判断
+_smoke_ctrl_latent.py,file,0.003,1,2.2,REVIEW,需人工判断
+check_fonts_cov.py,file,0.003,1,14.5,REVIEW,需人工判断
+cpu_eval_ctrl.log,file,0.003,1,8.1,REVIEW,需人工判断
+dit_s_smoke.log,file,0.003,1,16.4,REVIEW,需人工判断
+eval_glyph_classifier.py,file,0.003,1,5.0,REVIEW,需人工判断
+logs_batcheval.txt,file,0.003,1,6.3,REVIEW,需人工判断
+probe_factorized_struct_b64.log,file,0.003,1,15.4,REVIEW,需人工判断
+run_4tests_serial.sh,file,0.003,1,4.5,REVIEW,需人工判断
+run_s6_experiments.sh,file,0.003,1,11.1,REVIEW,需人工判断
+run_skel_d3.log,file,0.003,1,8.4,REVIEW,需人工判断
+sample.py,file,0.003,1,18.4,REVIEW,需人工判断
+OOD_PLAN.json,file,0.002,1,16.1,REVIEW,需人工判断
+_check_emperor.py,file,0.002,1,1.1,REVIEW,需人工判断
+_make_vis_grid.py,file,0.002,1,0.3,REVIEW,需人工判断
+_probe_fame.py,file,0.002,1,0.3,REVIEW,需人工判断
+_probe_remote.py,file,0.002,1,1.1,REVIEW,需人工判断
+_scan_log_formats.py,file,0.002,1,0.2,REVIEW,需人工判断
+auto_eval_ctrl.log,file,0.002,1,7.6,REVIEW,需人工判断
+ckpt_config.json,file,0.002,1,15.6,REVIEW,需人工判断
+diag_dwm.ps1,file,0.002,1,18.4,REVIEW,需人工判断
+diag_primary.ps1,file,0.002,1,18.4,REVIEW,需人工判断
+encode_klf4.log,file,0.002,1,7.4,REVIEW,需人工判断
+exp_s2_fromscratch_2factor_kailishu.json,file,0.002,1,14.2,REVIEW,需人工判断
+exp_s2_fromscratch_glyphmid_kailishu.json,file,0.002,1,14.2,REVIEW,需人工判断
+exp_s5_2factor_5script.json,file,0.002,1,14.1,REVIEW,需人工判断
+exp_s5_2factor_B_canny05_pixelsk.json,file,0.002,1,12.5,REVIEW,需人工判断
+exp_s5_2factor_B_latent.json,file,0.002,1,13.4,REVIEW,需人工判断
+exp_s5_2factor_B_latentstruct_pixelsk_opt.json,file,0.002,1,13.0,REVIEW,需人工判断
+exp_s5_2factor_B_pixelfp32.json,file,0.002,1,11.5,REVIEW,需人工判断
+exp_s5_2factor_struct_post50k.json,file,0.002,1,13.5,REVIEW,需人工判断
+exp_s5_2factor_top30.json,file,0.002,1,13.6,REVIEW,需人工判断
+exp_s6_top6_diff_then_struct.json,file,0.002,1,10.3,REVIEW,需人工判断
+exp_s6_top6_diffonly.json,file,0.002,1,11.1,REVIEW,需人工判断
+exp_s6_top6_struct_fp32.json,file,0.002,1,10.3,REVIEW,需人工判断
+exp_s6_top6_struct_fp32_full.json,file,0.002,1,10.3,REVIEW,需人工判断
+exp_s7_ramp_b32sub8.json,file,0.002,1,9.5,REVIEW,需人工判断
+exp_s7_ramp_b8all.json,file,0.002,1,9.5,REVIEW,需人工判断
+exp_s8_structv2_b32sub8.json,file,0.002,1,9.1,REVIEW,需人工判断
+exp_s8_structv2_b8all.json,file,0.002,1,9.1,REVIEW,需人工判断
+exp_s9_skelonly.json,file,0.002,1,9.1,REVIEW,需人工判断
+exp_s_5script_factorized_latent_struct_v2.json,file,0.002,1,15.3,REVIEW,需人工判断
+exp_s_5script_v3a_XL_skelhead.json,file,0.002,1,14.5,REVIEW,需人工判断
+exp_s_5script_v3a_glyph_XL_highdim_cs.json,file,0.002,1,14.6,REVIEW,需人工判断
+exp_s_5script_v3a_glyph_XL_lora_cs.json,file,0.002,1,15.1,REVIEW,需人工判断
+exp_s_5script_v3a_glyph_cs.json,file,0.002,1,15.1,REVIEW,需人工判断
+exp_v3b_XL_glyphcond_kailishu.json,file,0.002,1,14.4,REVIEW,需人工判断
+exp_v3c_XL_glyphcond_midstep_kailishu.json,file,0.002,1,14.3,REVIEW,需人工判断
+gpu_eval_final.log,file,0.002,1,7.7,REVIEW,需人工判断
+launch_train.sh,file,0.002,1,13.0,REVIEW,需人工判断
+logs_evalmetrics_s11-top6-p4.txt,file,0.002,1,5.6,REVIEW,需人工判断
+logs_evalmetrics_s11.txt,file,0.002,1,6.1,REVIEW,需人工判断
+make_latent_shards.py,file,0.002,1,17.0,REVIEW,需人工判断
+monitor_dwm.ps1,file,0.002,1,18.4,REVIEW,需人工判断
+probe_factorized_nostruct_b224_mem.log,file,0.002,1,15.4,REVIEW,需人工判断
+probe_s_5script_factorized_latent_struct_b224.json,file,0.002,1,15.3,REVIEW,需人工判断
+resize_256.py,file,0.002,1,17.0,REVIEW,需人工判断
+resume_s5_top30_diffonly.json,file,0.002,1,7.5,REVIEW,需人工判断
+resume_s6_diffonly.json,file,0.002,1,10.2,REVIEW,需人工判断
+resume_s6_struct_fp32.json,file,0.002,1,10.2,REVIEW,需人工判断
+run_4full.sh,file,0.002,1,4.5,REVIEW,需人工判断
+run_flow_full.sh,file,0.002,1,4.5,REVIEW,需人工判断
+run_s20_midcommon.sh,file,0.002,1,1.9,REVIEW,需人工判断
+s10_b4_grey_clear.json,file,0.002,1,6.3,REVIEW,需人工判断
+s12_3top30_dino.json,file,0.002,1,5.3,REVIEW,需人工判断
+s13_3top30_dino_xs.json,file,0.002,1,4.6,REVIEW,需人工判断
+s14_ws_ddpm.json,file,0.002,1,4.5,REVIEW,需人工判断
+s14_ws_ddpm_test.json,file,0.002,1,4.5,REVIEW,需人工判断
+s14_xs_ddpm_aug.json,file,0.002,1,4.5,REVIEW,需人工判断
+s14_xs_ddpm_test.json,file,0.002,1,4.5,REVIEW,需人工判断
+s15_ws_flow.json,file,0.002,1,4.5,REVIEW,需人工判断
+s15_ws_flow_test.json,file,0.002,1,4.5,REVIEW,需人工判断
+s15_xs_flow_aug.json,file,0.002,1,4.5,REVIEW,需人工判断
+s15_xs_flow_test.json,file,0.002,1,4.5,REVIEW,需人工判断
+s16_s_ddpm.json,file,0.002,1,4.5,REVIEW,需人工判断
+s16_s_ddpm_aug.json,file,0.002,1,4.5,REVIEW,需人工判断
+s16_s_ddpm_test.json,file,0.002,1,4.5,REVIEW,需人工判断
+s17_s_flow.json,file,0.002,1,4.5,REVIEW,需人工判断
+s17_s_flow_aug.json,file,0.002,1,4.5,REVIEW,需人工判断
+s17_s_flow_test.json,file,0.002,1,4.5,REVIEW,需人工判断
+s18_s_flow_small.json,file,0.002,1,3.1,REVIEW,需人工判断
+s19_midclean_s_flow.json,file,0.002,1,2.4,REVIEW,需人工判断
+s7_klf4_top30_diffonly.json,file,0.002,1,7.3,REVIEW,需人工判断
+s8_klf4_clean_dino.json,file,0.002,1,7.0,REVIEW,需人工判断
+s9_b4_clean_dino.json,file,0.002,1,6.5,REVIEW,需人工判断
+smoke_factorized_ema_save_eval.log,file,0.002,1,15.4,REVIEW,需人工判断
+tweak_dwm.ps1,file,0.002,1,18.4,REVIEW,需人工判断
+CONTRIBUTING.md,file,0.001,1,18.4,REVIEW,需人工判断
+_bench_pixel_struct_result.json,file,0.001,1,11.1,REVIEW,需人工判断
+_check_zhaomeng.py,file,0.001,1,1.1,REVIEW,需人工判断
+_chk_ddpm100.json,file,0.001,1,2.9,REVIEW,需人工判断
+_diag_watchdog.sh,file,0.001,1,16.2,REVIEW,需人工判断
+_eval_B_curves.sh,file,0.001,1,15.5,REVIEW,需人工判断
+_eval_S_curves.sh,file,0.001,1,15.5,REVIEW,需人工判断
+_eval_all.sh,file,0.001,1,15.6,REVIEW,需人工判断
+_gpu_eval_all.sh,file,0.001,1,7.6,REVIEW,需人工判断
+_remote_inspect_ckpt.py,file,0.001,1,1.9,REVIEW,需人工判断
+_stop_full4.sh,file,0.001,1,3.1,REVIEW,需人工判断
+_strict_ddpm195k.json,file,0.001,1,2.9,REVIEW,需人工判断
+_strict_ddpm195k_v2.json,file,0.001,1,2.9,REVIEW,需人工判断
+_strict_flow43k.json,file,0.001,1,2.9,REVIEW,需人工判断
+build_s15_poster.sh,file,0.001,1,3.3,REVIEW,需人工判断
+check_vae.sh,file,0.001,1,18.4,REVIEW,需人工判断
+compose_test.json,file,0.001,1,15.2,REVIEW,需人工判断
+config.json,file,0.001,1,18.1,REVIEW,需人工判断
+config.json.save,file,0.001,1,13.0,REVIEW,需人工判断
+cpu_eval_px.log,file,0.001,1,8.4,REVIEW,需人工判断
+diag_disp.ps1,file,0.001,1,18.4,REVIEW,需人工判断
+diag_dwm2.ps1,file,0.001,1,18.4,REVIEW,需人工判断
+diag_gpu.ps1,file,0.001,1,18.4,REVIEW,需人工判断
+dit_dl_test.sh,file,0.001,1,18.4,REVIEW,需人工判断
+dit_search.sh,file,0.001,1,18.4,REVIEW,需人工判断
+download_vae_modelscope.py,file,0.001,1,18.4,REVIEW,需人工判断
+dwm_monitor_log.csv,file,0.001,1,18.4,REVIEW,需人工判断
+eval_B_curves.log,file,0.001,1,15.5,REVIEW,需人工判断
+eval_all.nohup,file,0.001,1,17.6,REVIEW,需人工判断
+exp_px_s_scratch.json,file,0.001,1,8.4,REVIEW,需人工判断
+exp_s_5script.json,file,0.001,1,15.5,REVIEW,需人工判断
+exp_s_5script_factorized_v1.json,file,0.001,1,15.4,REVIEW,需人工判断
+exp_s_5script_v3a_glyph.json,file,0.001,1,15.2,REVIEW,需人工判断
+exp_s_scratch.json,file,0.001,1,15.5,REVIEW,需人工判断
+exp_struct_skel_L.json,file,0.001,1,8.2,REVIEW,需人工判断
+exp_struct_skel_S.json,file,0.001,1,8.2,REVIEW,需人工判断
+exp_xl_head.json,file,0.001,1,16.3,REVIEW,需人工判断
+exp_xl_head_r32.json,file,0.001,1,16.3,REVIEW,需人工判断
+exp_xl_head_r32_attn.json,file,0.001,1,16.3,REVIEW,需人工判断
+exp_xl_head_r64.json,file,0.001,1,16.3,REVIEW,需人工判断
+exp_xl_head_r8.json,file,0.001,1,16.3,REVIEW,需人工判断
+find_plink.ps1,file,0.001,1,18.4,REVIEW,需人工判断
+gen_split_csv.py,file,0.001,1,17.0,REVIEW,需人工判断
+gpu_eval.log,file,0.001,1,8.1,REVIEW,需人工判断
+gpu_eval_20260822.log,file,0.001,1,8.0,REVIEW,需人工判断
+gpu_eval_launch.out,file,0.001,1,12.5,REVIEW,需人工判断
+gpu_eval_launch.sh,file,0.001,1,12.5,REVIEW,需人工判断
+install_ms_deps.sh,file,0.001,1,18.4,REVIEW,需人工判断
+install_sshpass.ps1,file,0.001,1,18.4,REVIEW,需人工判断
+launch_new_train.out,file,0.001,1,12.5,REVIEW,需人工判断
+launch_new_train.sh,file,0.001,1,12.5,REVIEW,需人工判断
+net_test.sh,file,0.001,1,18.4,REVIEW,需人工判断
+org_final_images.py,file,0.001,1,17.0,REVIEW,需人工判断
+overfit.json,file,0.001,1,18.1,REVIEW,需人工判断
+overfit_full.json,file,0.001,1,18.1,REVIEW,需人工判断
+preprocess_256.py,file,0.001,1,17.0,REVIEW,需人工判断
+probe_batch.sh,file,0.001,1,4.5,REVIEW,需人工判断
+probe_env.sh,file,0.001,1,18.4,REVIEW,需人工判断
+probe_factorized_nostruct_b224.log,file,0.001,1,15.4,REVIEW,需人工判断
+probe_s_5script_factorized_struct_b64.json,file,0.001,1,15.4,REVIEW,需人工判断
+probe_v3a_b16.json,file,0.001,1,15.1,REVIEW,需人工判断
+probe_v3a_canny_skel.json,file,0.001,1,15.2,REVIEW,需人工判断
+probe_v3a_canny_skel_b8.json,file,0.001,1,15.2,REVIEW,需人工判断
+probe_xl_lora2.log,file,0.001,1,15.1,REVIEW,需人工判断
+remote_check_dino_cover.py,file,0.001,1,7.0,REVIEW,需人工判断
+remote_clear_eval_errors.py,file,0.001,1,7.0,REVIEW,需人工判断
+remote_fix_eval_csv.py,file,0.001,1,7.0,REVIEW,需人工判断
+resume_10000.json,file,0.001,1,17.6,REVIEW,需人工判断
+run_eval_all.sh,file,0.001,1,17.6,REVIEW,需人工判断
+run_s11_serial.sh,file,0.001,1,6.1,REVIEW,需人工判断
+run_s6_resume.sh,file,0.001,1,10.2,REVIEW,需人工判断
+run_s7_serial.sh,file,0.001,1,9.4,REVIEW,需人工判断
+run_s8_serial.log,file,0.001,1,9.1,REVIEW,需人工判断
+run_s8_serial.sh,file,0.001,1,9.2,REVIEW,需人工判断
+run_structnet.log,file,0.001,1,8.5,REVIEW,需人工判断
+run_structnet_v2.log,file,0.001,1,8.5,REVIEW,需人工判断
+setup.ps1,file,0.001,1,18.4,REVIEW,需人工判断
+setup.sh,file,0.001,1,18.4,REVIEW,需人工判断
+setup_conda_remote.sh,file,0.001,1,18.4,REVIEW,需人工判断
+setup_ssh.ps1,file,0.001,1,18.4,REVIEW,需人工判断
+size_report.ps1,file,0.001,1,18.4,REVIEW,需人工判断
+train_dit_s_pretrain.json,file,0.001,1,16.4,REVIEW,需人工判断
+train_full_3cond.json,file,0.001,1,17.0,REVIEW,需人工判断
+train_full_3cond_skel.json,file,0.001,1,16.7,REVIEW,需人工判断
+train_full_3cond_skel0.json,file,0.001,1,16.6,REVIEW,需人工判断
+update_config3.py,file,0.001,1,17.0,REVIEW,需人工判断
+verify_ckpt.sh,file,0.001,1,18.4,REVIEW,需人工判断
+verify_klf4.log,file,0.001,1,7.4,REVIEW,需人工判断
+_eval_test.sh,file,0.0,1,16.2,REVIEW,需人工判断
+_launch_dit_s_pretrain.sh,file,0.0,1,16.4,REVIEW,需人工判断
+_launch_exp.sh,file,0.0,1,16.3,REVIEW,需人工判断
+_make_fast100.sh,file,0.0,1,15.5,REVIEW,需人工判断
+_probe_nodect.log,file,0.0,1,11.1,REVIEW,需人工判断
+_smoke_v3a.log,file,0.0,1,15.2,REVIEW,需人工判断
+_start_gradio.sh,file,0.0,1,15.6,REVIEW,需人工判断
+auto_eval_ctrl_flow.py,file,0.0,1,2.5,REVIEW,需人工判断
+check_portal.sh,file,0.0,1,18.4,REVIEW,需人工判断
+controlnet_dit.py,file,0.0,1,2.5,REVIEW,需人工判断
+cpu_eval_s8_structv2_b32sub8.log,file,0.0,1,9.1,REVIEW,需人工判断
+diffusion/,dir,0.0,6,2.5,REVIEW,需人工判断
+dl_dit_ms.sh,file,0.0,1,18.4,REVIEW,需人工判断
+do_copy.sh,file,0.0,1,18.4,REVIEW,需人工判断
+download.py,file,0.0,1,2.5,REVIEW,需人工判断
+download_vae.py,file,0.0,1,18.4,REVIEW,需人工判断
+environment.yml,file,0.0,1,18.4,REVIEW,需人工判断
+eval_ctrl_metrics_daemon.py,file,0.0,1,2.5,REVIEW,需人工判断
+eval_small.csv,file,0.0,1,17.2,REVIEW,需人工判断
+experiment_summary.txt,file,0.0,1,15.8,REVIEW,需人工判断
+fame_meta.json,file,0.0,1,1.1,REVIEW,需人工判断
+gen_curves_S_summary.csv,file,0.0,1,15.5,REVIEW,需人工判断
+gen_eval_C.json,file,0.0,1,15.6,REVIEW,需人工判断
+glyph_latent.py,file,0.0,1,2.5,REVIEW,需人工判断
+in_process_ctrl_eval.py,file,0.0,1,2.5,REVIEW,需人工判断
+latent_structure.py,file,0.0,1,2.5,REVIEW,需人工判断
+launch_1pix_daemon.sh,file,0.0,1,0.2,REVIEW,需人工判断
+launch_cpu_skel.sh,file,0.0,1,1.1,REVIEW,需人工判断
+launch_ctrl_daemon.sh,file,0.0,1,0.6,REVIEW,需人工判断
+launch_fame_1pix.sh,file,0.0,1,0.2,REVIEW,需人工判断
+launch_fame_std.sh,file,0.0,1,0.4,REVIEW,需人工判断
+launch_s21.sh,file,0.0,1,1.1,REVIEW,需人工判断
+launch_s21_daemon.sh,file,0.0,1,1.0,REVIEW,需人工判断
+launch_std_daemon.sh,file,0.0,1,0.4,REVIEW,需人工判断
+launch_watch_ctrl.sh,file,0.0,1,1.0,REVIEW,需人工判断
+lora.py,file,0.0,1,2.5,REVIEW,需人工判断
+losses.py,file,0.0,1,2.5,REVIEW,需人工判断
+models.py,file,0.0,1,2.5,REVIEW,需人工判断
+probe_xl_lora.log,file,0.0,1,15.1,REVIEW,需人工判断
+resume_1pix.sh,file,0.0,1,0.2,REVIEW,需人工判断
+run_build_fame.sh,file,0.0,1,1.1,REVIEW,需人工判断
+run_fame_skel.sh,file,0.0,1,1.1,REVIEW,需人工判断
+run_recover_skel.sh,file,0.0,1,1.0,REVIEW,需人工判断
+run_s21_pretrain.sh,file,0.0,1,1.1,REVIEW,需人工判断
+run_s6_resume.log,file,0.0,1,9.7,REVIEW,需人工判断
+run_s7_serial.log,file,0.0,1,9.4,REVIEW,需人工判断
+run_zs_eval.sh,file,0.0,1,0.4,REVIEW,需人工判断
+samplers.py,file,0.0,1,2.5,REVIEW,需人工判断
+skel_similarity_report.json,file,0.0,1,14.4,REVIEW,需人工判断
+std_gt_report.json,file,0.0,1,14.5,REVIEW,需人工判断
+std_vs_noise_dist.json,file,0.0,1,14.4,REVIEW,需人工判断
+test_eval_C.eval_log,file,0.0,1,16.1,REVIEW,需人工判断
+test_eval_C.json,file,0.0,1,15.6,REVIEW,需人工判断
+test_eval_D.eval_log,file,0.0,1,16.0,REVIEW,需人工判断
+test_eval_D.json,file,0.0,1,16.0,REVIEW,需人工判断
+test_eval_E.eval_log,file,0.0,1,15.8,REVIEW,需人工判断
+test_eval_E.json,file,0.0,1,15.8,REVIEW,需人工判断
+test_eval_F.eval_log,file,0.0,1,15.9,REVIEW,需人工判断
+test_eval_F.json,file,0.0,1,15.9,REVIEW,需人工判断
+test_ports.ps1,file,0.0,1,18.4,REVIEW,需人工判断
+update_cfg_newdata.py,file,0.0,1,17.0,REVIEW,需人工判断
+update_config.py,file,0.0,1,17.0,REVIEW,需人工判断
+update_config2.py,file,0.0,1,17.0,REVIEW,需人工判断
+update_config4.py,file,0.0,1,17.0,REVIEW,需人工判断
