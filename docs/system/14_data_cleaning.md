@@ -53,8 +53,9 @@
 | `final_imgs_256/` | **共享原始 GT**（fame 已原位清洗；其余数据集未动） | REPA 等 GT 图训练 |
 | **`final_imgs_fame_clean/`** | **fame 最终清洗图（51,822）** | fame 训练/推理的唯一图像引用 |
 | `final_imgs_256_v7backup/` | v7 清洗前原图备份 | 回滚/对照 |
-| `final_skel{1,3}_fame/` | 1px / 3px 骨架 PNG（清洗后图重算） | 骨架条件源 |
-| `final_skel_latents_fame[_1px]/` | 骨架 latents（20 shards） | ControlNet 条件 |
+| `final_skel1_fame_v8/` | 1px 骨架 PNG（现行，v8 数据集） | 骨架条件源 |
+| `final_skel{1,3}_fame/` | **已删除**（3px 弃用） | — |
+| `final_skel_latents_fame[_1px]/` | **已删除**（3px 弃用；1px 由 v8 目录 `..._1px_v8/` 取代） | — |
 | `final_skel_latents_fame_std/` | 标准字库骨架 latents | std 变体（已证未训通，保留） |
 
 注意：清洗后图像已变化 ⇒ **img latents / 骨架 / 骨架 latents 必须级联重编码**
@@ -79,7 +80,8 @@
   batch 72，cfg0.7，tmux `fame_1pix_ctrl`。
 - 中期指标（20k 步，resume 前）：SSIM 中位 0.7641 / MSE 0.1973 /
   SkelIoU 0.2810 —— **快于同期的 3px 版**（3px 25k 时 0.7288）。
-- ⚠ 本训练 preload 的是**清洗前** latents；encode 级联完成后建议重启以载入净数据。
+- ⚠ 该训练已于 50k 步完成（数据为清洗前版本，含约 896 张误翻图 ≈1.7% 污染）；
+  09-03 起被 V8-B（v8a 基模 + v8 净数据）取代，其 ckpt 仅作对照。
 
 ## 7. 验收指标（纳入 fame 数据管线）
 
