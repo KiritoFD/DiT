@@ -50,16 +50,20 @@
 
 | 目录 | 内容 | 用途 |
 |---|---|---|
-| `final_imgs_256/` | **共享原始 GT**（fame 已原位清洗；其余数据集未动） | REPA 等 GT 图训练 |
-| **`final_imgs_fame_clean/`** | **fame 最终清洗图（51,822）** | fame 训练/推理的唯一图像引用 |
-| `final_imgs_256_v7backup/` | v7 清洗前原图备份 | 回滚/对照 |
-| `final_skel1_fame_v8/` | 1px 骨架 PNG（现行，v8 数据集） | 骨架条件源 |
-| `final_skel{1,3}_fame/` | **已删除**（3px 弃用） | — |
-| `final_skel_latents_fame[_1px]/` | **已删除**（3px 弃用；1px 由 v8 目录 `..._1px_v8/` 取代） | — |
-| `final_skel_latents_fame_std/` | 标准字库骨架 latents | std 变体（已证未训通，保留） |
+| `final_imgs_256/` | **共享 GT**（fame 之外的数据集未动） | REPA 等 GT 图训练 |
+| **`final_imgs_fame_v8/`** | **fame 图像现行位置（51,822 张，v8 数据集 img_root）** | v8 训练 |
+| **`final_latents_fame_v8/`** | **img latents（20 shards，v8 构建）** | v8 训练 |
+| **`final_skel1_fame_v8/` + `final_skel_latents_fame_1px_v8/`** | **1px 骨架 PNG + latents（v8 构建）** | v8b ctrl 条件 |
+| `final_imgs_256_v7backup/` | v7 清洗前原图备份（51,822） | 回滚/对照 |
+| `final_skel_latents_fame_std/` | 标准字库骨架 latents | std 变体（未训通，归档） |
+| ~~`final_latents_fame/`、`fame.npz`、`final_skel{1,3}_fame/`、`final_skel_latents_fame[_std]/`、`final_imgs_fame_clean/`~~ | **已删除**（09-03，被 v8 目录取代；清单见 15_progress §五） | — |
 
-注意：清洗后图像已变化 ⇒ **img latents / 骨架 / 骨架 latents 必须级联重编码**
-（见 §5）；`fame-ctrl`（0.8045）与 1px 训练早期 ckpt 基于清洗前数据。
+注意：
+1. 清洗后图像已变化 ⇒ **img latents / 骨架 / 骨架 latents 必须级联重编码**（见 §5）。
+2. `fame-ctrl`（0.8045）训练于 09-02 上午，含约 896 张误翻图 ≈1.7% 污染——
+   指标仍有效（占比小），V8-B 训练已使用修正后数据。
+3. `skel_bank_{train,std}.npz` 中被清洗/翻转 id 的条目基于清洗前图，**未同步**，
+   推理用途影响极小（骨架结构不变），如需精确可重算。
 
 ## 5. CPU encode 级联（`/tmp/cpu_encode_v7.py` → tmux `cpu_encode`）
 
