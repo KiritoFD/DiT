@@ -60,13 +60,14 @@
 - ✅ 已有实现（`tools/clean_gt_images.py`），用户之前跑过修了 1430 张
 - ⚠ 误伤风险：飞白/草书的小笔画可能被当噪点删
 
-### 方案 B：基于参考字形（推荐）
-- 用标准字形 kai/li 渲染图作参考（已提取 DINO embedding）
-- 计算真迹墨 ∖ 参考墨 = **超出字形墨**（候选脏污）
-- 仅清除"超出字形"且面积小 / 距主字远 / 在边缘的墨
+### 方案 B：基于参考字形 bbox（已实现 `tools/clean_v2.py --scheme B`，推荐）
+- 用标准字形 kai 渲染图的**墨 bbox** 作参考（预计算于 `5script/..._sync_work/std_glyph_bbox.json`）
+- **bbox 外**（膨胀 12px）的非主墨 → 删（明确脏污/边界污染）
+- **bbox 内**的非主墨 且面积很小(<0.05%) → 也删（字内噪点）
+- **bbox 内**的中等/大面积非主墨 → 保留（正常飞白/连笔/分离笔画）
 - ✅ 避免误删字内飞白（飞白在字内，与参考字形重叠）
-- ✅ 边界大片黑（超出字形 bbox）在边缘
-- 待实现
+- ✅ 边界大片黑（超出字形 bbox）在边缘，被清掉
+- 实现: `tools/clean_v2.py --scheme B` → `5script/clean_report_train_B.csv` / `final_imgs_256_clean_v2/`
 
 ### 方案 C：连通域 + 空间拓扑（中等保守）
 - 主连通域 = 最大 CC
@@ -81,12 +82,38 @@
 - 成本高、过拟合风险大、需训练数据
 - 不推荐本轮
 
-## 4. 初步实测对比（待补）
-- A 已修 1430/51322（2.8%）
-- 需新增 B/C 实测，对比主连通域保留率 / 墨量变化 / 碎片度
+## 4. 实测对比（A / B 改进 / C 三方案）
+
+### 4.1 小样本(200张) 三方案对比
+| 指标 | A（基线） | **B（参考字形bbox）** | C（空间拓扑） |
+|---|---|---|---|
+| 墨量变化 mean | -0.0246 | **-0.0104** | -0.0835 |
+| \|ink_change\|>5%（过度删除） | 13.5% | **3.5%** | 33.0% ❌ |
+| 主连通域保留 | 0.99729 | **0.99729** | 0.99729 |
+| 小噪点残留 | 0.085 | **0.010** ✅ | 0.040 |
+
+**结论：方案 B 最优**——噪点清除最干净（残留 0.010，比 A 好 8×），过度删除最少（3.5%，比 A 好 4×，比 C 好 10×）。
+方案 C 因"距主字远即删"会误删正常分离笔画（如"氵"、左右结构偏旁），最差，**弃用**。
+
+### 4.2 全量方案 B（train=51322, eval=500，`tools/clean_v2.py --scheme B`）
+- **实际修复 18785 / 51322 (36.60%)**；评测 192 / 500 (38.40%)
+  - 其中反相反转 103 (0.20%)；黑边crop 959 (1.87%)
+- **质量**：
+  - 主连通域保留 mean=0.9897（train）/ 0.9815（eval）；严重误删(main_keep<0.95) 816 (1.59%)
+  - \|ink_change\|>5% 仅 1278 (2.49%)；>10% 仅 1013 (1.97%)
+  - 小噪点残留 mean=0.0027（几乎清零，>0 仅 55 张 0.11%）
+- 产物：`final_imgs_256_clean_v2/`（仅写被修改图）、`5script/clean_report_train_B.csv`
+
+### 4.3 与用户后续 v8 清洗的关系
+- 用户于 9/2 又做了一轮清洗：`5script/train_fame_clean_v8.csv` → `final_imgs_fame_v8/`（51322 行）。
+- 这是与 clean_v2(B) 不同的另一尝试，二者方法/阈值可能不同；**数据清洗是持续迭代项**，
+  本轮(28)的扫描+方案B提供了一套**可量化、基于参考字形的评估标准**与基线工具。
 
 ## 5. 复现
 
 - 扫描: `python tools/scan_image_pollution.py --csv 5script/train_fame.csv --out 5script/scan_train_pollution.csv`
-- 现有清洗: `python tools/clean_gt_images.py --audit ... --blacklist ... --img-root final_imgs_256 --out-root final_imgs_256_clean`
+- 方案B清洗: `python tools/clean_v2.py --csv 5script/train_fame.csv --img-root final_imgs_256 --out-root final_imgs_256_clean_v2 --scheme B --report 5script/clean_report_train_B.csv`
+- 现有清洗(旧): `python tools/clean_gt_images.py --audit ... --blacklist ... --img-root final_imgs_256 --out-root final_imgs_256_clean`
 - 样本图: `_sync_work/pollution_samples/`（各类 8 张，验证用）
+- dashboard: `tools/pretrain_eval_dashboard.html`（base/skel/repa 分组 eval 对比）
+- grid: `tools/make_base_model_grid.py --group all --step 30000`（生成改进链路视觉对比）
