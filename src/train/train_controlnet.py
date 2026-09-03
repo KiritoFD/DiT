@@ -217,6 +217,10 @@ def parse_args():
                     help="GT 图根目录 (w_repa_early>0 时加载, REPA 教师输入)")
     ap.add_argument("--repa-teacher-ckpt", type=str, default="",
                     help="本地 DINOv2 safetensors 教师; 空=自动查找")
+    ap.add_argument("--unfreeze-main", type=_str_to_bool, default=False,
+                    help="warm-start 后解冻主模型 (除 char 表), 用 --main-lr 低学习率联合训练")
+    ap.add_argument("--main-lr", type=float, default=3e-5,
+                    help="unfreeze-main 时主模型的独立低学习率")
     ap.add_argument("--epochs", type=int, default=1400)
     ap.add_argument("--max-steps", type=int, default=100000)
     ap.add_argument("--lr", type=float, default=3e-4)
@@ -366,6 +370,24 @@ def main():
     n_frozen = sum(p.numel() for p in ctrl.parameters() if not p.requires_grad)
     logger.info(f"[ctrl] trainable params: {n_train:,} | frozen: {n_frozen:,}")
 
+    # ---- 可选: 解冻主模型 (联合训练, 除 char 表) ----
+    # warm-start 分支里 load_main_model 已 freeze_char_table 冻结 char 表,
+    # 其余主模型参数本来 requires_grad=False (train_ctrl_only=True 语义)。
+    # 解冻 = 把这些参数置 True 并加入 trainable, optimizer 用两个 param group
+    # (ctrl 组 lr=args.lr, 主模型组 lr=args.main_lr)。
+    _main_lr_group = None
+    _main_params = []
+    if getattr(args, "unfreeze_main", False):
+        main_p = [p for p in ctrl.main.parameters() if not p.requires_grad]
+        for p in main_p:
+            p.requires_grad = True
+        trainable += main_p
+        _main_lr_group = "main"
+        _main_params = main_p
+        n_main = sum(p.numel() for p in main_p)
+        logger.info(f"[unfreeze-main] 主模型 {n_main:,} 参数解冻 (lr={args.main_lr}); "
+                    f"总 trainable {sum(p.numel() for p in trainable):,}")
+
     # torch.compile (torch>=2.0, cu121 env): 在 EMA deepcopy 与 optimizer 之前编译
     # 整个 ControlNetDiT（ctrl encoder + 冻结主模型）。EMA 是 eval-only 深拷贝，
     # 不编译（省编译时间/显存），权重同步走普通张量拷贝，与编译无关。
@@ -404,7 +426,16 @@ def main():
     if getattr(diffusion, 'is_flow', False):
         logger.info(f"[flow] {diffusion.describe()}")
 
-    optimizer = torch.optim.AdamW(trainable, lr=args.lr, weight_decay=args.weight_decay)
+    if _main_lr_group:
+        # 两个 param group: ctrl 组 (args.lr) + 主模型组 (args.main_lr)
+        optimizer = torch.optim.AdamW(
+            [
+                {"params": [p for p in trainable if p not in _main_params]},
+                {"params": _main_params, "lr": args.main_lr},
+            ],
+            lr=args.lr, weight_decay=args.weight_decay)
+    else:
+        optimizer = torch.optim.AdamW(trainable, lr=args.lr, weight_decay=args.weight_decay)
 
     def lr_lambda(step):
         if step < args.warmup_steps:
