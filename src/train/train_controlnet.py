@@ -428,9 +428,10 @@ def main():
 
     if _main_lr_group:
         # 两个 param group: ctrl 组 (args.lr) + 主模型组 (args.main_lr)
+        _main_ids = {id(p) for p in _main_params}
         optimizer = torch.optim.AdamW(
             [
-                {"params": [p for p in trainable if p not in _main_params]},
+                {"params": [p for p in trainable if id(p) not in _main_ids]},
                 {"params": _main_params, "lr": args.main_lr},
             ],
             lr=args.lr, weight_decay=args.weight_decay)
