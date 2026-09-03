@@ -50,18 +50,76 @@ SCRIPT_FONT = {"楷": "simkai.ttf", "行": "STXINGKA.TTF", "隶": "SIMLI.TTF",
                "草": "simkai.ttf", "篆": "simkai.ttf", "六体": "simkai.ttf"}
 GT_CACHE = os.path.join(ROOT, "_gt_cache")
 REMOTE = "4090"
+# ---- v8 链模型 (本地 ckpts_v8/), 可选加载 ----
+V8_CKPTS = {
+    "v8a-base(无骨架)": "_sync_work/ckpts_v8/A_main_final.pt",
+    "v8b-ctrl(skel)": "_sync_work/ckpts_v8/B_ctrl_best.pt",
+    "v8c-repa(skel)": "_sync_work/ckpts_v8/v8c_repa_015000.pt",
+}
 
 ap = argparse.ArgumentParser()
 ap.add_argument("--port", type=int, default=7863)
 ap.add_argument("--share", action="store_true")
+ap.add_argument("--model", default="s21",
+                help="默认模型: s21=旧双ctrl / v8a / v8b / v8c (可页面切换)")
 args = ap.parse_args()
 
 import gradio as gr
 from src.model.controlnet import load_main_model, ControlNetDiT
+from src.model import DiT_2Cond_models
 from src.eval.inference import build_diffusion, sample_latents, load_eval_vae
 
 print("[load] main/ctrl/vae ...", flush=True)
 dev = torch.device("cuda")
+
+def _strip_orig(prefix, sd):
+    """剥 _orig_mod. 前缀 + 按前缀过滤 (main./ctrl_encoder/injection)."""
+    out = {}
+    for k, v in sd.items():
+        k2 = k.replace("_orig_mod.", "", 1)
+        if k2.startswith(prefix):
+            out[k2[len(prefix):]] = v
+    return out
+
+def _load_full(ckpt_path):
+    """加载完整 ControlNetDiT (含 main + ctrl). 返回 (main_model, ctrl_encoder sd, 是否含 main)."""
+    ck = torch.load(ckpt_path, map_location="cpu", weights_only=False)
+    sd = ck.get("ema") or ck.get("ctrl") or {}
+    return sd
+
+# 预加载 v8 链模型 (main + ctrl 都从各自 ckpt 的 ema 提取)
+V8 = {}
+for _mk, _ck in V8_CKPTS.items():
+    _sd = _load_full(_ck)
+    _main_sd = _strip_orig("main.", _sd)
+    _ctrl_sd = _strip_orig("", {k: v for k, v in _sd.items()
+                                if ("ctrl_encoder" in k or "injection" in k)})
+    if not _main_sd:  # 纯 base ckpt (A_main_final: ema 即主模型, 无 ctrl)
+        _main_sd = {k.replace("_orig_mod.", "", 1): v for k, v in _sd.items()
+                    if not any(s in k for s in ("ctrl_encoder", "injection", "optimizer"))}
+        _ctrl_sd = {}
+    _m = DiT_2Cond_models["DiT-2Cond-S/2"](
+        num_calligraphers=1013, num_characters=35130,
+        condition_fusion="factorized_add", callig_embed_dim=128,
+        char_embed_dim=384, char_proj_mode="mlp", freeze_char_table=True,
+        cond_drop_all_prob=0.05, cond_drop_one_prob=0.30,
+        cond_drop_which_glyph_prob=0.85,
+        use_checkpoint=False, learn_sigma=False,
+        norm_type="rms", mlp_type="swiglu", qk_norm=True,
+        rope=True, rope_theta=100.0, attn_impl="sdpa")
+    _m.load_state_dict(_main_sd, strict=False)
+    _m.eval()
+    _c = ControlNetDiT(_m, cond_in_channels=4, train_ctrl_only=True).to(dev)
+    if _ctrl_sd:
+        _mm, _uu = _c.load_state_dict(_ctrl_sd, strict=False)
+        print(f"[load] v8[{_mk}] ctrl inj={sum(1 for k in _ctrl_sd if 'injection' in k)} "
+              f"miss={len(_mm)} unexp={len(_uu)}", flush=True)
+    else:
+        print(f"[load] v8[{_mk}] base-only (无 ctrl)", flush=True)
+    _c.eval()
+    V8[_mk] = (_m, _c)
+
+# 旧 s21 双 ctrl (保持原逻辑, 兼容)
 main = load_main_model(
     "DiT-2Cond-S/2",
     "5script/results/s21_fame_flow_v2/20260829-232329-s21-fame-flow-v2/checkpoints/0030000.pt",
@@ -171,22 +229,28 @@ def std_skel(script, ch, ps):
 
 SESSION = []
 
-def generate(ch, callig, script, steps, cfg, seed_n, ps, sketch):
+def generate(ch, callig, script, steps, cfg, seed_n, ps, sketch, model_key="s21"):
     ch = (ch or "").strip()
     if len(ch) != 1:
         return None, None, None, None, "请输入单个汉字", SESSION[:]
     if callig not in CALLIG_ID:
         return None, None, None, None, f"书家「{callig}」不在 fame 训练集", SESSION[:]
-    if ps not in CTRLS:
-        return None, None, None, None, f"ctrl[{ps}] 未加载", SESSION[:]
+    # 模型选择: v8 链 (v8a/v8b/v8c) 或旧 s21 双 ctrl
+    if model_key in V8:
+        _main_m, ctrl = V8[model_key]
+        _ps = "1px"  # v8 链统一 1px skel
+    else:
+        if ps not in CTRLS:
+            return None, None, None, None, f"ctrl[{ps}] 未加载", SESSION[:]
+        ctrl = CTRLS[ps]
+        _ps = ps
     known_pair = (script, ch) in by_pair
     known_char = any(c == ch for (s, c) in by_pair)
     key = script + "|" + ch
-    trained = known_pair and ps in BANK_TRAIN and key in BANK_TRAIN[ps]
+    trained = known_pair and _ps in BANK_TRAIN and key in BANK_TRAIN[_ps]
     callig_id = CALLIG_ID[callig]
     cid, _ = char_id_of(script, ch)
     gid = SCRIPT_ID[script] * NUM_CHARACTERS + cid
-    ctrl = CTRLS[ps]
 
     # 手绘骨架优先: 用户画了就用手画的
     sk_lat_user = None
@@ -229,34 +293,41 @@ def generate(ch, callig, script, steps, cfg, seed_n, ps, sketch):
 
     if sk_lat_user is not None:
         sk_lat = sk_lat_user
-        badge = f"手绘骨架 · ControlNet 条件（{ps}）"
+        badge = f"手绘骨架 · ControlNet 条件（{_ps}）"
         badge_color = "#FF6600"
         sk_img = decode_sk(sk_lat)
     elif trained:
-        sk_lat = BANK_TRAIN[ps][key]
-        badge = f"训练过 · 直出（骨架={ps} 训练集骨架库）"
+        sk_lat = BANK_TRAIN[_ps][key]
+        badge = f"训练过 · 直出（骨架={_ps} 训练集骨架库）"
         badge_color = "#227722"
         sk_img = decode_sk(sk_lat)
-    elif ps == "1px" and key in BANK_STD1:
+    elif _ps == "1px" and key in BANK_STD1:
         sk_lat = BANK_STD1[key]
         badge = ("ZERO-SHOT · 标准字形 1px 骨架库直查（该 (书体,字) 组合未训练）" if known_char
                  else "ZERO-SHOT · 标准字形 1px 骨架库直查（该字未训练）")
         badge_color = "#CC0000"
         sk_img = decode_sk(sk_lat)
     else:
-        sk_lat, sk_img = std_skel(script, ch, ps)
+        sk_lat, sk_img = std_skel(script, ch, _ps)
         if sk_lat is None:
             return None, None, None, None, f"标准字体不包含「{ch}」，无法构建骨架", SESSION[:]
         if known_char:
-            badge = f"ZERO-SHOT · 标准字形 {ps} 骨架（该 (书体,字) 组合未训练）"
+            badge = f"ZERO-SHOT · 标准字形 {_ps} 骨架（该 (书体,字) 组合未训练）"
         else:
-            badge = f"ZERO-SHOT · 标准字形 {ps} 骨架（该字未训练）"
+            badge = f"ZERO-SHOT · 标准字形 {_ps} 骨架（该字未训练）"
         badge_color = "#CC0000"
 
     seed = int(seed_n) if str(seed_n).strip() else int(time.time() * 1000) % 2**31
     diff_n = build_diffusion(int(steps), "flow")
+    _skel_arg = None
+    if model_key in V8:
+        # v8c/v8b 有 ctrl → 传 skel; v8a base-only → 不传 (走 base 通道)
+        if model_key != "v8a-base(无骨架)" and sk_lat is not None:
+            _skel_arg = torch.from_numpy(sk_lat.astype(np.float32))[None]
+    else:
+        _skel_arg = torch.from_numpy(sk_lat.astype(np.float32))[None]
     lat = sample_latents(ctrl, diff_n, torch.randn(1, 4, 32, 32), [(callig_id, gid)],
-                         float(cfg), 1, dev, skel=torch.from_numpy(sk_lat.astype(np.float32))[None],
+                         float(cfg), 1, dev, skel=_skel_arg,
                          seed=seed)
     with torch.no_grad():
         rec = vae.decode(lat.to(dev) / 0.18215).sample.float().cpu()
@@ -274,21 +345,25 @@ def generate(ch, callig, script, steps, cfg, seed_n, ps, sketch):
     gt_label = f"相近 GT（本地 MCCD：{ch}，n={len(gts)}）" if gts else "本地 MCCD 无该字样本"
     gts = [(im, cap) for im, cap in gts]
 
-    tag = f"{ps}·" + ("直出" if trained else "ZERO-SHOT")
+    tag = f"{_ps}·" + ("直出" if trained else "ZERO-SHOT")
     SESSION.append((out_img.copy(), f"{script}·{ch}·{callig} [{tag}] ssim_n/a"))
     note = f"{badge} ｜ {gt_label}"
     return out_img, badge, (sk_img if sk_img is not None else None), gts, note, SESSION[:]
 
 with gr.Blocks(title="fame 书法生成") as demo:
-    gr.Markdown("## fame 书法生成 — s21 基模 + GT 骨架 ControlNet（**1px / 3px** 双版本可切换）\n"
-                "训练过的字**直出**（骨架=对应 PS 的训练骨架库）；没有的字用**标准字形骨架** zero-shot 生成，红色徽标特殊标出。")
+    gr.Markdown("## fame 书法生成 — 多模型可选（s21 GT 骨架 CtrlNet / **v8 链 v8a·v8b·v8c**）\n"
+                "模型下拉切换：v8a（无骨架 base）、v8b（skel-ctrl）、v8c（REPA）为 v8 资产同协议产物；"
+                "s21 为旧双 ctrl（1px/3px）。训练过的字**直出**；没有的字用**标准字形骨架** zero-shot 生成，红色徽标特殊标出。")
     with gr.Row():
         with gr.Column():
+            model_in = gr.Dropdown(["s21", "v8a-base(无骨架)", "v8b-ctrl(skel)", "v8c-repa(skel)"],
+                                   label="模型", value=args.model if args.model in
+                                   ["s21", "v8a-base(无骨架)", "v8b-ctrl(skel)", "v8c-repa(skel)"] else "s21")
             char_in = gr.Textbox(label="汉字（单字）", value="阜")
             callig_in = gr.Dropdown(CALLIGS, label="书家",
                                     value="褚遂良" if "褚遂良" in CALLIGS else CALLIGS[0])
             script_in = gr.Radio(["楷", "行", "隶"], label="书体", value="楷")
-            ps_in = gr.Radio(["1px", "3px"], label="骨架 PS（ckpt 版本）", value="1px")
+            ps_in = gr.Radio(["1px", "3px"], label="骨架 PS（仅 s21 生效，v8 链固定 1px）", value="1px")
             sketch_in = gr.Sketchpad(type="pil", label="手绘骨架（白底黑笔，优先级最高）",
                                      height=256, brush=gr.Brush(colors=["#000000"], default_size=4))
             steps_in = gr.Slider(10, 100, value=50, step=5, label="采样步数 Euler")
@@ -305,7 +380,8 @@ with gr.Blocks(title="fame 书法生成") as demo:
     gr.Markdown("### 会话内所有生成结果")
     gallery = gr.Gallery(label="历史", columns=8)
 
-    btn.click(generate, [char_in, callig_in, script_in, steps_in, cfg_in, seed_in, ps_in, sketch_in],
+    btn.click(generate,
+              [char_in, callig_in, script_in, steps_in, cfg_in, seed_in, ps_in, sketch_in, model_in],
               [out_img, badge_tb, sk_img, gt_gal, note, gallery])
 
 if __name__ == "__main__":

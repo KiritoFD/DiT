@@ -19,17 +19,20 @@
 - C 段 v8c REPA：20000 步，同口径 ctrl.ssim **0.7674** / base 0.4702
 - 全链日志 `/tmp/v8_3stage.log`；tmux 已结束
 
-**后训练 5 实验串行（09-03 11:59 启动，进行中）**：
-| 实验 | 变体 | 起点 | 状态 |
-|---|---|---|---|
-| v8d | 解冻主模型 (main_lr 3e-5) | A_main_final | **训练中** (step 150+, 4.2 step/s) |
-| v8h | REPA 早期挂载 (w_early 0.2) | A_main_final | 排队 |
-| v8e | REPA 强 (w 0.5 @30k) | A+B | 排队 |
-| v8f | REPA 深 (layers 8,11,15) | A+B | 排队 |
-| v8g | REPA 低 LR (3e-5 vs 1e-4) | A+B | 排队 |
+**后训练 5 实验串行（09-03 11:59 启动）**：
+| 实验 | 变体 | 起点 | 状态 | 结果（同协议 eval） |
+|---|---|---|---|---|
+| v8d | 解冻主模型 (main_lr 3e-5) | A_main_final | ✅ 完成 50k 早停 | ctrl.ssim **0.7624**@35k / lpips 0.192 / **base 0.5182→0.5543↑** |
+| v8h | REPA 早期挂载 (w_early 0.2) | A_main_final | ✅ 完成 40k 早停 | ctrl.ssim **0.7651**@40k / lpips 0.186 / base 0.5182（不变）|
+| v8e | REPA 强 (w 0.5 @30k) | A+B | 🔄 训练中 @3.0 step/s | ETA ~22:20 |
+| v8f | REPA 深 (layers 8,11,15) | A+B | 排队 | ETA ~00:15 |
+| v8g | REPA 低 LR (3e-5 vs 1e-4) | A+B | 排队 | ETA ~02:10 |
 
 链日志 `/tmp/v8degh.log`，各段 `/tmp/v8{d,h,e,f,g}.log`，tmux `posttrain`。
-v8d 首次启动曾因 optimizer param group 张量布尔比较崩（`p not in _main_params`），已修复为 `id()` 集合判断（commit 8f39a75），重跑正常。
+
+**阶段性结论（v8d/v8h）**：
+- **v8d 解冻主模型**：base 提升显著（0.5182→**0.5543**，+3.6%，主模型被强化），但 ctrl.ssim 0.7624 < v8b 0.7641 —— 联合训练分流了容量，条件注入略降。**值：若目标是强化 base 或需要 base+ctrl 双优，值得保留；纯 ctrl 上限不如冻结**。
+- **v8h REPA 早挂**：ctrl.ssim 0.7651 高于 v8b（0.7641）、接近 v8c post-REPA（0.7675 需 12.5k 且 base 降），**且 base 全程不变** —— 早期 REPA 在 B 段内就完成对齐，**比后置 REPA 更稳（不伤 base）**，是最佳实践候选。
 
 | step | v8a ssim | mse | lpips | 旧S30 ssim(同step) |
 |---|---|---|---|---|
@@ -205,6 +208,15 @@ v8d 首次启动曾因 optimizer param group 张量布尔比较崩（`p not in _
 所有关键实验在同样本上的生成结果对比：从 base（s21/s25/s28/s30/v8a）到 skel（s26/s31/1pix）到 REPA（s32b/s32c），每行左侧标注具体做法，GT 置于最下方作为对照。
 
 ![grid_all](assets/v8_grid/grid_all.png)
+
+### 6.1b ⭐ v8 链同协议 grid（GT | v8a base | v8b ctrl | v8c repa）
+同一 eval 集（v8 资产、cfg 0.7、50 步）下 v8 三段链逐步演化的目视对比 —— 从"无骨架 base"到"skel 条件 ctrl"到"REPA 表示对齐"，同协议落盘图（数据：`_ot_scratch/v8_reeval_imgs/`）。
+
+![v8chain_all](assets/v8_grid/v8chain_grid_all.png)
+
+- 每行 = 同一 eval 样本，四列从左到右：**GT / v8a base（无骨架）/ v8b ctrl（skel 条件）/ v8c repa（REPA 强化）**
+- 单样本大图：`v8chain_gt_0.png`、`v8chain_gt_10.png`、`v8chain_gt_25.png`、`v8chain_gt_50.png`、`v8chain_gt_77.png`、`v8chain_gt_90.png`（均存于 `assets/v8_grid/`）
+- 观察要点：v8a→v8b 笔画实度/结构明显提升（对应 ctrl.ssim 0.5182→0.7641）；v8b→v8c 细节与墨色纯度微升（0.7641→0.7674，skel_iou 0.351→0.410）
 
 ### 6.2 单实验样本对比：s30（DINO char-strong base） vs v8a（清洗数据基模）
 固定 4 个 eval 样本（GT 相同），横向比较 s30 与当前最佳基模 v8a 在笔画实度、背景净度与结构保真上的差异。
