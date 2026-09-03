@@ -19,20 +19,19 @@
 - C 段 v8c REPA：20000 步，同口径 ctrl.ssim **0.7674** / base 0.4702
 - 全链日志 `/tmp/v8_3stage.log`；tmux 已结束
 
-**后训练 5 实验串行（09-03 11:59 启动）**：
-| 实验 | 变体 | 起点 | 状态 | 结果（同协议 eval） |
+**后训练链 v3（09-03 19:42 重启，max_steps 已按 24h 预算放大，早停自决）**：
+| 实验 | 变体 | 起点 | max_steps | 状态 |
 |---|---|---|---|---|
-| v8d | 解冻主模型 (main_lr 3e-5) | A_main_final | ✅ 完成 50k 早停 | ctrl.ssim **0.7624**@35k / lpips 0.192 / **base 0.5182→0.5543↑** |
-| v8h | REPA 早期挂载 (w_early 0.2) | A_main_final | ✅ 完成 40k 早停 | ctrl.ssim **0.7651**@40k / lpips 0.186 / base 0.5182（不变）|
-| v8e | REPA 强 (w 0.5 @30k) | A+B | 🔄 训练中 @3.0 step/s | ETA ~22:20 |
-| v8f | REPA 深 (layers 8,11,15) | A+B | 排队 | ETA ~00:15 |
-| v8g | REPA 低 LR (3e-5 vs 1e-4) | A+B | 排队 | ETA ~02:10 |
+| **v8i** | **解冻 base + REPA 早挂（组合）** | A_main_final | 100k | 🔄 **训练中** @3.05 step/s，双特征已生效 |
+| v8e | REPA 强 w0.5 | A+B | 80k | 排队 |
+| v8f | REPA 深 layers 8,11,15 | A+B | 60k | 排队 |
+| v8g | REPA 低 LR 3e-5 | A+B | 100k | 排队 |
 
-链日志 `/tmp/v8degh.log`，各段 `/tmp/v8{d,h,e,f,g}.log`，tmux `posttrain`。
+> **max_steps 修正（09-03 19:40）**：原 v8e 30k / v8f 20k / v8g 20k 偏小——尤其 v8g 低 LR 3e-5 在 2 万步内几乎不收敛（lr 只有 v8c 的 1/3），该实验直接失去意义。改为 80k/60k/100k 让 **early_stop（patience 5 + min_delta 0.002）自决**，max_steps 只是上限；实际预计 v8d/v8h 模式会提前到 40-60k 停。满跑 ETA：v8i ~8h → v8e ~7.4h → v8f ~5.6h → v8g ~9.3h（30h 预算，早停大幅提前）。
 
-**阶段性结论（v8d/v8h）**：
-- **v8d 解冻主模型**：base 提升显著（0.5182→**0.5543**，+3.6%，主模型被强化），但 ctrl.ssim 0.7624 < v8b 0.7641 —— 联合训练分流了容量，条件注入略降。**值：若目标是强化 base 或需要 base+ctrl 双优，值得保留；纯 ctrl 上限不如冻结**。
-- **v8h REPA 早挂**：ctrl.ssim 0.7651 高于 v8b（0.7641）、接近 v8c post-REPA（0.7675 需 12.5k 且 base 降），**且 base 全程不变** —— 早期 REPA 在 B 段内就完成对齐，**比后置 REPA 更稳（不伤 base）**，是最佳实践候选。
+**已完成实验（v8d / v8h）**：
+- **v8d 解冻主模型**：ctrl.ssim **0.7624**@35k / lpips 0.192 / **base 0.5182→0.5543↑**（base 被强化，ctrl 微降 -0.002）
+- **v8h REPA 早挂**：ctrl.ssim **0.7651**@40k / lpips 0.186 / base 0.5182 **不变**（比 v8c 后置更稳，不伤 base）
 
 | step | v8a ssim | mse | lpips | 旧S30 ssim(同step) |
 |---|---|---|---|---|
