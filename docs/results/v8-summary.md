@@ -6,21 +6,30 @@
 
 ---
 
-## 1. 训练进度（09-03 00:00 快照）
+## 1. 训练进度（09-03 12:00 快照）
 
 **v8a 基模（新，清洗数据 + batch432 + OT-chunks4 + compile + cu121）**：
 - step **132,500**，**已早停**（05:05 UTC，stale 5/5 @ 132.5k）
 - 全程 best：ssim **0.5121 @ 122.5k**（=130k =132.5k 并列），lpips **0.4132 @ 132.5k**（最低）
-- vs 旧 S30（0.4841 @ 130k）：**+0.028，+5.8%，省 23% 步数**
+- vs 旧 S30（同口径 0.4934）：**+0.025，+5.2%**
 - A 段终 ckpt 已 copy 固化 `5script/results/v8_3stage/A_main_final.pt`（无时间戳固定路径）
-- **B 段（s31-v8 skel-ctrl）已于 09-02 23:48 自动拉起**，tmux `v8bc`，输出 `v8b/20260902-234912-v8b-s31-ctrl`，early_stop (ctrl.ssim, patience 5, min 10000) 已启用
 
-**链路说明（含一次链断裂事故）**：原 `run_v8_3stage.sh` 三段自动衔接，A 段 23:05 早停后 B 未接上，断链 43 分钟。
-- **根因 1**：runner 用 `ls -dt 5script/results/v8_3stage/v8a_*/...` 找 A ckpt，但实际目录结构是 `v8a/<timestamp>/checkpoints/`，**glob 少一层 `/*/`**，A_CKPT 为空 → B 未启动
-- **根因 2**（修复过程中二次踩坑）：本地 `sed -i "s/\r//g"` 经 Windows→ssh 传参时 `\r` 被吃成 `r`，实际执行 `s/r//g`，**删光了脚本里所有 'r'**（root→oot, export→expot），脚本 cd 失败秒退
-- **根因 3**：非交互 ssh 继承 `TERM=dumb`，tmux server 起不来挂死；`TERM=xterm` 解决
-- **修复**：重写 `_sync_work/run_v8_bc.sh`，不依赖时间戳 glob，A best 先 copy 到固定路径，B/C 全部从固定路径读写；tmux 改为 `TERM=xterm`
-- 详细规范见根目录 `remote.md`
+**v8 三段链（已全部完成，09-03 04:49）**：
+- B 段 v8b skel-ctrl：40000 早停，同口径 ctrl.ssim **0.7641**（best 固化 `B_ctrl_best.pt`）
+- C 段 v8c REPA：20000 步，同口径 ctrl.ssim **0.7674** / base 0.4702
+- 全链日志 `/tmp/v8_3stage.log`；tmux 已结束
+
+**后训练 5 实验串行（09-03 11:59 启动，进行中）**：
+| 实验 | 变体 | 起点 | 状态 |
+|---|---|---|---|
+| v8d | 解冻主模型 (main_lr 3e-5) | A_main_final | **训练中** (step 150+, 4.2 step/s) |
+| v8h | REPA 早期挂载 (w_early 0.2) | A_main_final | 排队 |
+| v8e | REPA 强 (w 0.5 @30k) | A+B | 排队 |
+| v8f | REPA 深 (layers 8,11,15) | A+B | 排队 |
+| v8g | REPA 低 LR (3e-5 vs 1e-4) | A+B | 排队 |
+
+链日志 `/tmp/v8degh.log`，各段 `/tmp/v8{d,h,e,f,g}.log`，tmux `posttrain`。
+v8d 首次启动曾因 optimizer param group 张量布尔比较崩（`p not in _main_params`），已修复为 `id()` 集合判断（commit 8f39a75），重跑正常。
 
 | step | v8a ssim | mse | lpips | 旧S30 ssim(同step) |
 |---|---|---|---|---|
@@ -226,39 +235,47 @@
 
 **SkelIoU（↑，skel / REPA 专项指标）**：s32b/s32c 通过 REPA 把骨架交并比推到 0.43+，而普通 skel 条件（s26/s31）仅 ~0.01，印证 REPA 表示对齐带来的结构保真收益。
 
-### 6.4 ⭐ 同口径重评（v8 资产协议，历史 SOTA 判定基准）
+### 6.4 ⭐ 固定 eval 集重评：全部历史模型（SOTA 判定基准）
 
-> **问题**：v8b ctrl.ssim 0.7641 明显低于历史记录 s32c 0.8204，需判断是否倒退。
-> **结论：否——旧 0.82 是跨口径虚高。** 历史 s32c 训练时用旧数据资产（`eval_fame_strict_clean.csv` + `final_skel_latents_fame_1px` + `final_imgs_256`），其 eval 的 GT/skel latent 与 v8 链（`..._v8` 资产，27 张 v7 修复 GT + GPU 重编码 skel latent）**不同，SSIM 跨口径不可比**。
+> **协议**：统一 v8 资产（`eval_fame_strict_clean_v8.csv` + `final_skel_latents_fame_1px_v8` + `final_imgs_fame_v8`），`eval_ctrl_ckpt.py` cfg=0.7, n=100, 50 步, heun。全部旧 ckpt 重评（09-03），消除跨口径不可比问题。
 
-用 `src/eval/eval_ctrl_ckpt.py` + **统一 v8 资产协议**（cfg=0.7, n=100, 50 步, heun）重评四模型（09-03）：
+<details>
+<summary>同口径重评结果（全部模型）</summary>
 
-| 模型 | ctrl.ssim | ctrl.mse | ctrl.lpips | skel_iou | base.ssim |
-|---|---|---|---|---|---|
-| v8b skel-ctrl | **0.7641** | 0.1465 | 0.1843 | 0.3513 | 0.5182 |
-| v8c REPA (20k) | **0.7674** | **0.1418** | 0.1856 | 0.4099 | 0.4702 |
-| 旧 s32c REPA (80k) | 0.7425 | 0.1366 | 0.2333 | 0.4390 | **0.2288** |
+**指标**（ctrl 为带 skel 条件的生成，base 为纯主模型）：
 
-**同口径下 v8 链全面领先**：
-- ctrl.ssim：v8c 0.7674 > v8b 0.7641 > 旧 s32c 0.7425（旧 0.8204 虚高 -0.078）
-- lpips：v8 0.184-0.186 ≪ 旧 s32c 0.233（v8 感知质量显著更好）
-- base.ssim：v8 保持 0.47-0.52（REPA 后主模型健康），旧 s32c 长 REPA 毁到 **0.23**（灾难性遗忘）
-- skel_iou：旧链 0.439 > v8c 0.410 > v8b 0.351 —— 唯一旧链高于 v8 的项，代价是 base 崩溃
-
-**噪点/视觉质量（同一批重评落盘图，metrics_png）**：
-
-| 模型 | psnr | tv | lap_var | saltpepper | edge_clean | ink_purity | ringing |
+| 模型 | 类型 | ctrl.ssim | ctrl.mse | ctrl.lpips | skel_iou | base.ssim | 旧脏口径 |
 |---|---|---|---|---|---|---|---|
-| v8b ctrl | 14.72 | 0.0182 | 0.0353 | 0.0022 | 0.5405 | 0.9753 | 0.1489 |
-| v8c REPA | 14.89 | 0.0181 | 0.0332 | 0.0020 | 0.5391 | 0.9736 | 0.1539 |
-| 旧 s32c | 15.06 | 0.0172 | **0.0062** | 0.0009 | 0.5646 | 0.9598 | 0.1025 |
+| s21 base | 无skel | — | 1.073 | 0.445 | 0.012 | 0.4764 | 0.4670@30k |
+| s30 base | 无skel | — | 1.088 | 0.481 | 0.012 | 0.4934 | 0.4841@130k |
+| **v8a base** | 无skel | — | 1.001 | 0.414 | 0.015 | **0.5182** | 0.5121@122.5k |
+| s31 ctrl | skel-ctrl | 0.7387 | 0.142 | 0.233 | 0.333 | 0.4934 | 0.8081@42.5k |
+| s32 repa | REPA | 0.7424 | 0.138 | 0.232 | 0.386 | 0.5030 | 0.7861@12.5k |
+| s32b repa | REPA | 0.7447 | 0.140 | 0.227 | 0.399 | 0.4795 | 0.8177@15k |
+| s32c repa | REPA | 0.7425 | 0.137 | 0.233 | 0.439 | 0.2288 | 0.8204@40k |
+| s32d repa | REPA | 0.7227 | 0.136 | 0.232 | 0.393 | 0.5030 | 0.7227@10k |
+| **v8b ctrl** | skel-ctrl | **0.7641** | 0.147 | **0.184** | 0.351 | **0.5182** | — |
+| **v8c repa** | REPA | **0.7674** | **0.142** | 0.186 | 0.410 | 0.4702 | — |
 
-> 解读：旧 s32c 的"低噪点"（tv/saltpepper/lap_var 低）是**整体糊化**的副作用（lap_var 0.006 vs v8 0.033，差 5 倍清晰度）；v8 细节保留更好且 ink_purity（墨色纯度）更高（0.974 vs 0.960）。v8 的 ringing 略高是保留细节的代价。
+**噪点/视觉质量**（重评落盘 ctrl 图，metrics_png）：
 
-**关键结论**：
-1. **base 冻结是设计**：v8b `train_ctrl_only=true`（与 s31 相同），eval 里 base.ssim 恒 0.5182 即冻结生效证据；v8c REPA 段主模型解冻（eval base 0.5182→0.453→0.470 证明在动）。
-2. **"base 太强导致注入不足"不成立**：同口径下 v8b（强 base 0.5182）ctrl 0.7641 > 旧 s32c（弱 base 0.23）ctrl 0.7425，强 base 的 ctrl 反而更好，且 REPA 提升未伤结构。
-3. **历史 0.8204 是口径虚高**，真实同口径 SOTA 是 **v8c 0.7674**（且 lpips 大幅领先）。
+| 模型 | psnr | tv | lap_var | saltpepper | ink_purity | ringing |
+|---|---|---|---|---|---|---|
+| s31 ctrl | 14.81 | 0.0176 | 0.0066 | 0.0011 | 0.9605 | 0.090 |
+| s32 repa | 14.98 | 0.0175 | 0.0065 | 0.0010 | 0.9605 | 0.101 |
+| s32b repa | 14.92 | 0.0175 | 0.0070 | 0.0010 | 0.9629 | 0.105 |
+| s32c repa | 15.06 | 0.0172 | 0.0062 | 0.0009 | 0.9598 | 0.103 |
+| **v8b ctrl** | 14.72 | 0.0182 | **0.0353** | 0.0022 | **0.9753** | 0.149 |
+| **v8c repa** | 14.89 | 0.0181 | 0.0332 | 0.0020 | 0.9736 | 0.154 |
+
+</details>
+
+**结论**：
+1. **历史 0.80-0.82 全是跨口径虚高**（s31 0.8081→0.7387, s32 0.7861→0.7424, s32b 0.8177→0.7447, s32c 0.8204→0.7425）——旧 GT/skel latent 协议不同。
+2. **同口径 ctrl SOTA = v8c 0.7674**，略胜 v8b 0.7641；旧链全部 0.72-0.74 区间。
+3. **v8 链 LPIPS 碾压**（0.184 vs 0.227-0.233）——感知质量是真实差距。
+4. **base 健康度**：v8a 0.5182 历史最佳；s32c 长 REPA 毁 base 到 0.2288（灾难性遗忘实证）。
+5. **噪点**：旧链"低噪点"（lap_var 0.006 vs v8 0.033）是糊化副作用；v8 ink_purity（墨色纯度）0.97+ 全面领先。
 
 ![skel](assets/v8_grid/eval_curves_skel.png)
 
