@@ -1,9 +1,12 @@
 {
-  "_comment": "v8g: REPA 学习率扫描-低LR。基于 B_ctrl_best.pt + A_main_final.pt, w=0.3, layers 8,11, max_steps 100000, lr=3e-5 (vs v8c 1e-4, 降 3.3x)。低 LR 必须长训练才有可比性: 2万步在 3e-5 下几乎没收敛, 故抬到 10万让 early_stop 自决。对照 v8c (ctrl 0.7674 / base 0.4702): 同等收益下低 LR 是否更保 base。主模型解冻, char 表冻结。eval cfg 0.7。",
-  "experiment_name": "v8g-repa-lrlow",
-  "results_dir": "5script/results/v8_3stage/v8g",
+  "_comment": "v8i: B 段组合实验 = 解冻主模型 + REPA 早期挂载。unfreeze_main=true (main_lr 3e-5) + w_repa_early=0.2 (warmup 2000) 同时在 B 段生效。把 v8d(base 提升到 0.5543) 与 v8h(ctrl 0.7651 且 base 不变) 两个已验证方向合一, 验证能否同时拿到 base 强化 + ctrl 高位 + 骨架对齐。起点 A_main_final.pt, train_controlnet.py。max_steps=100000 让 early_stop 自决(patience5+min_delta0.002), 预算按实测 ~7.9h 满跑。主模型解冻(除char表), char 表冻结。eval cfg 0.7。",
+  "experiment_name": "v8i-unfreeze-repa-early",
+  "results_dir": "5script/results/v8_3stage/v8i",
 
   "model": "DiT-2Cond-S/2",
+  "train_ctrl_only": true,
+  "unfreeze_main": true,
+  "main_lr": 3e-5,
   "compile": true,
   "compile_mode": "default",
 
@@ -48,18 +51,13 @@
   "injection": "modulate",
   "null_cond": "gaussian",
 
-  "w_repa": 0.3,
-  "repa_layer": 8,
-  "repa_layers": "8,11",
-  "repa_teacher_ckpt": "pretrained_models/dinov2_vits14_pretrain.safetensors",
-
-  "epochs": 100000,
+  "epochs": 1400,
   "max_steps": 100000,
-  "lr": 3e-5,
-  "warmup_steps": 200,
+  "lr": 0.0003,
+  "warmup_steps": 500,
   "min_lr_ratio": 0.1,
   "weight_decay": 0.01,
-  "batch_size": 128,
+  "batch_size": 192,
   "num_workers": 4,
   "log_every": 50,
   "ckpt_every": 2500,
@@ -72,6 +70,12 @@
   "use_checkpoint": false,
   "seed": 0,
 
+  "early_stop": true,
+  "early_stop_metric": "ssim",
+  "early_stop_patience": 5,
+  "early_stop_min_delta": 0.002,
+  "early_stop_min_steps": 10000,
+
   "gpu_eval_csv": "5script/eval_fame_strict_clean_v8.csv",
   "gpu_eval_every": 2500,
   "gpu_eval_n": 100,
@@ -80,6 +84,11 @@
   "gpu_eval_img_root": "final_imgs_fame_v8",
   "gpu_eval_skel_root": "final_skel1_fame_v8",
   "gpu_eval_skel_latent_shards_dir": "final_skel_latents_fame_1px_v8",
-  "gpu_eval_dit_batch": 100,
-  "gpu_eval_vae_batch": 32
+  "gpu_eval_dit_batch": 8,
+  "gpu_eval_vae_batch": 16,
+
+  "w_repa_early": 0.2,
+  "repa_early_layer": 8,
+  "repa_early_warmup": 2000,
+  "repa_teacher_ckpt": "pretrained_models/dinov2_vits14_pretrain.safetensors"
 }
