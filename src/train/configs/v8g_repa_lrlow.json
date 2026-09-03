@@ -1,6 +1,6 @@
 {
-  "_comment": "v8g: REPA 最短干预。基于 B_ctrl_best.pt + A_main_final.pt, w=0.3, max_steps 10000 (vs v8c 20000)。回答: REPA 收益是否前 10k 就饱和; 更短训练能否更保 base (对照 v8c base 0.4702)。主模型解冻, char 表冻结。eval cfg 0.7。",
-  "experiment_name": "v8g-repa-short",
+  "_comment": "v8g: REPA 学习率扫描-低LR。基于 B_ctrl_best.pt + A_main_final.pt, w=0.3, layers 8,11, max_steps 20000, lr=3e-5 (vs v8c 1e-4, 降 3.3x)。回答: REPA 低 LR 能否在同等收益下更保 base (对照 v8c: ctrl 0.7674 / base 0.4702)。主模型解冻, char 表冻结。eval cfg 0.7。",
+  "experiment_name": "v8g-repa-lrlow",
   "results_dir": "5script/results/v8_3stage/v8g",
 
   "model": "DiT-2Cond-S/2",
@@ -54,8 +54,8 @@
   "repa_teacher_ckpt": "pretrained_models/dinov2_vits14_pretrain.safetensors",
 
   "epochs": 100000,
-  "max_steps": 10000,
-  "lr": 1e-4,
+  "max_steps": 20000,
+  "lr": 3e-5,
   "warmup_steps": 200,
   "min_lr_ratio": 0.1,
   "weight_decay": 0.01,
