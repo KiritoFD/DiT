@@ -630,8 +630,9 @@ def main():
                     "optimizer": optimizer.state_dict(),
                     "scheduler": scheduler.state_dict(),
                 }
-                if not args.train_ctrl_only:
-                    # from-scratch: also save full model weights
+                if not args.train_ctrl_only or getattr(args, "unfreeze_main", False):
+                    # from-scratch 或 unfreeze-main: 主模型被训练过, 必须把 main 权重也保存
+                    # (2026-09-04 修正: v8d/v8i 解冻训练的 base 强化曾因漏存丢失)
                     ck["model"] = {k: v.detach().cpu() for k, v in ctrl.state_dict().items()
                                    if k.startswith("main.")}
                     if ema_ctrl:
@@ -689,13 +690,9 @@ def main():
                         except Exception as _ee:
                             logger.warning(f"[early-stop] read {_ev_last} failed: {_ee}")
 
-                if args.ckpt_keep > 0:
-                    pts = sorted(glob.glob(os.path.join(ckpt_dir, "*.pt")))
-                    for p in pts[:-args.ckpt_keep]:
-                        os.remove(p)
-                        # 同步删 .done 标记
-                        if os.path.exists(p + ".done"):
-                            os.remove(p + ".done")
+                # 运行时绝不删除任何 ckpt (2026-09-04 修正): best 权重可能在任何 step,
+                # ckpt_keep 裁剪会永久丢失复盘所需权重。保留全部 + .done 标记。
+                # (原 ckpt_keep 删除逻辑已移除)
 
             if step >= args.max_steps:
                 break
