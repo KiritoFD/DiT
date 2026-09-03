@@ -190,17 +190,42 @@ def generate(ch, callig, script, steps, cfg, seed_n, ps, sketch):
 
     # 手绘骨架优先: 用户画了就用手画的
     sk_lat_user = None
+    print(f"[DEBUG] sketch type={type(sketch).__name__} value={repr(sketch)[:200] if sketch is not None else 'None'}", flush=True)
     if sketch is not None:
         try:
-            sa = np.asarray(sketch.convert("L"))
-            if (sa < 200).sum() > 20:   # 有实际笔画
-                sk = skeletonize(sa < 200)
-                sk3 = np.where(dil3(sk), 0, 255).astype("uint8")
-                with torch.no_grad():
-                    x = torch.from_numpy(sk3.astype(np.float32)/255.*2-1)[None,None].repeat(1,3,1,1).to(dev)
-                    sk_lat_user = (vae.encode(x).latent_dist.mode()*0.18215)[0].half().cpu().numpy()
-        except Exception:
-            pass
+            # gradio Sketchpad 可能返回 dict {"background":..., "layers":[...], "composite":...} 或 PIL Image
+            if isinstance(sketch, dict):
+                # 合成 background + layers
+                bg = sketch.get("background")
+                layers = sketch.get("layers", [])
+                if bg is not None:
+                    comp = bg.copy()
+                    for layer in layers:
+                        if layer is not None:
+                            comp = Image.alpha_composite(comp.convert("RGBA"), layer.convert("RGBA")).convert("RGB")
+                    sketch_img = comp
+                else:
+                    sketch_img = None
+            elif isinstance(sketch, (Image.Image, np.ndarray)):
+                sketch_img = sketch
+            else:
+                sketch_img = None
+            if sketch_img is not None:
+                sa = np.asarray(Image.fromarray(sketch_img).convert("L")) if not isinstance(sketch_img, Image.Image) else np.asarray(sketch_img.convert("L"))
+                ink_px = int((sa < 200).sum())
+                print(f"[DEBUG] sketch ink_px={ink_px} size={sa.shape}", flush=True)
+                if ink_px > 20:
+                    sk = skeletonize(sa < 200)
+                    sk3 = np.where(dil3(sk), 0, 255).astype("uint8")
+                    with torch.no_grad():
+                        x = torch.from_numpy(sk3.astype(np.float32)/255.*2-1)[None,None].repeat(1,3,1,1).to(dev)
+                        sk_lat_user = (vae.encode(x).latent_dist.mode()*0.18215)[0].half().cpu().numpy()
+                    print(f"[DEBUG] sk_lat_user OK, will use hand-drawn", flush=True)
+                else:
+                    print(f"[DEBUG] sketch too empty ({ink_px}px), skipping hand-drawn", flush=True)
+        except Exception as e:
+            print(f"[DEBUG] sketch processing ERROR: {type(e).__name__}: {e}", flush=True)
+            import traceback; traceback.print_exc()
 
     if sk_lat_user is not None:
         sk_lat = sk_lat_user

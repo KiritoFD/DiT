@@ -83,19 +83,28 @@ def _gaussian_window(window_size=11, sigma=1.5, device="cpu"):
 
 
 def _ssim(x, y, data_range=1.0, window_size=11, win=None):
-    if x.shape[1] == 3:
-        return sum(_ssim(x[:, i:i + 1], y[:, i:i + 1], data_range, window_size, win)
-                   for i in range(3)) / 3
+    """Fast batched SSIM computation for (B, 3, H, W) or (B, 1, H, W) tensors.
+    Uses grouped conv2d to evaluate all channels and batch elements in parallel."""
+    B, C, H, W = x.shape
     C1 = (0.01 * data_range) ** 2
     C2 = (0.03 * data_range) ** 2
-    mu_x = F.conv2d(x, win, padding=window_size // 2)
-    mu_y = F.conv2d(y, win, padding=window_size // 2)
-    mu_x2, mu_y2, mu_xy = mu_x ** 2, mu_y ** 2, mu_x * mu_y
-    sx2 = F.conv2d(x * x, win, padding=window_size // 2) - mu_x2
-    sy2 = F.conv2d(y * y, win, padding=window_size // 2) - mu_y2
-    sxy = F.conv2d(x * y, win, padding=window_size // 2) - mu_xy
-    m = ((2 * mu_xy + C1) * (2 * sxy + C2)) / ((mu_x2 + mu_y2 + C1) * (sx2 + sy2 + C2))
-    return float(m.mean().item())
+    pad = window_size // 2
+
+    if win is not None and win.shape[0] != C:
+        win = win.repeat(C, 1, 1, 1)
+
+    mu_x = F.conv2d(x, win, padding=pad, groups=C)
+    mu_y = F.conv2d(y, win, padding=pad, groups=C)
+    mu_x2 = mu_x.pow(2)
+    mu_y2 = mu_y.pow(2)
+    mu_xy = mu_x * mu_y
+
+    sx2 = F.conv2d(x * x, win, padding=pad, groups=C) - mu_x2
+    sy2 = F.conv2d(y * y, win, padding=pad, groups=C) - mu_y2
+    sxy = F.conv2d(x * y, win, padding=pad, groups=C) - mu_xy
+
+    ssim_map = ((2 * mu_xy + C1) * (2 * sxy + C2)) / ((mu_x2 + mu_y2 + C1) * (sx2 + sy2 + C2))
+    return float(ssim_map.mean().item())
 
 
 def prepare_eval_cache(vae, dataset, device, n=1000, t=T_EVAL, batch_size=16):
@@ -277,9 +286,12 @@ def eval_gen_in_memory(model, vae, device, cache, n=100, steps=50, cfg=4.0,
             dec = vae.decode(samples / scaling_factor).sample
             gt = gts[i:j]
             mse_sum += F.mse_loss(dec, gt).item() * (j - i)
-            for k in range(dec.shape[0]):
-                ssim_sum += _ssim((dec[k:k+1] + 1) / 2, (gt[k:k+1] + 1) / 2, 1.0, 11, win)
-                if (vis_out or save_samples_dir) and len(decoded_list) < vis_n:
+            # Fast batched SSIM over whole chunk
+            ssim_batch = _ssim((dec + 1.0) / 2.0, (gt + 1.0) / 2.0, 1.0, 11, win)
+            ssim_sum += ssim_batch * (j - i)
+            if (vis_out or save_samples_dir) and len(decoded_list) < vis_n:
+                needed = vis_n - len(decoded_list)
+                for k in range(min(dec.shape[0], needed)):
                     decoded_list.append(dec[k:k+1].detach().cpu())
                     gt_list.append(gt[k:k+1].detach().cpu())
     if vis_out and decoded_list:

@@ -226,6 +226,40 @@
 
 **SkelIoU（↑，skel / REPA 专项指标）**：s32b/s32c 通过 REPA 把骨架交并比推到 0.43+，而普通 skel 条件（s26/s31）仅 ~0.01，印证 REPA 表示对齐带来的结构保真收益。
 
+### 6.4 ⭐ 同口径重评（v8 资产协议，历史 SOTA 判定基准）
+
+> **问题**：v8b ctrl.ssim 0.7641 明显低于历史记录 s32c 0.8204，需判断是否倒退。
+> **结论：否——旧 0.82 是跨口径虚高。** 历史 s32c 训练时用旧数据资产（`eval_fame_strict_clean.csv` + `final_skel_latents_fame_1px` + `final_imgs_256`），其 eval 的 GT/skel latent 与 v8 链（`..._v8` 资产，27 张 v7 修复 GT + GPU 重编码 skel latent）**不同，SSIM 跨口径不可比**。
+
+用 `src/eval/eval_ctrl_ckpt.py` + **统一 v8 资产协议**（cfg=0.7, n=100, 50 步, heun）重评四模型（09-03）：
+
+| 模型 | ctrl.ssim | ctrl.mse | ctrl.lpips | skel_iou | base.ssim |
+|---|---|---|---|---|---|
+| v8b skel-ctrl | **0.7641** | 0.1465 | 0.1843 | 0.3513 | 0.5182 |
+| v8c REPA (20k) | **0.7674** | **0.1418** | 0.1856 | 0.4099 | 0.4702 |
+| 旧 s32c REPA (80k) | 0.7425 | 0.1366 | 0.2333 | 0.4390 | **0.2288** |
+
+**同口径下 v8 链全面领先**：
+- ctrl.ssim：v8c 0.7674 > v8b 0.7641 > 旧 s32c 0.7425（旧 0.8204 虚高 -0.078）
+- lpips：v8 0.184-0.186 ≪ 旧 s32c 0.233（v8 感知质量显著更好）
+- base.ssim：v8 保持 0.47-0.52（REPA 后主模型健康），旧 s32c 长 REPA 毁到 **0.23**（灾难性遗忘）
+- skel_iou：旧链 0.439 > v8c 0.410 > v8b 0.351 —— 唯一旧链高于 v8 的项，代价是 base 崩溃
+
+**噪点/视觉质量（同一批重评落盘图，metrics_png）**：
+
+| 模型 | psnr | tv | lap_var | saltpepper | edge_clean | ink_purity | ringing |
+|---|---|---|---|---|---|---|---|
+| v8b ctrl | 14.72 | 0.0182 | 0.0353 | 0.0022 | 0.5405 | 0.9753 | 0.1489 |
+| v8c REPA | 14.89 | 0.0181 | 0.0332 | 0.0020 | 0.5391 | 0.9736 | 0.1539 |
+| 旧 s32c | 15.06 | 0.0172 | **0.0062** | 0.0009 | 0.5646 | 0.9598 | 0.1025 |
+
+> 解读：旧 s32c 的"低噪点"（tv/saltpepper/lap_var 低）是**整体糊化**的副作用（lap_var 0.006 vs v8 0.033，差 5 倍清晰度）；v8 细节保留更好且 ink_purity（墨色纯度）更高（0.974 vs 0.960）。v8 的 ringing 略高是保留细节的代价。
+
+**关键结论**：
+1. **base 冻结是设计**：v8b `train_ctrl_only=true`（与 s31 相同），eval 里 base.ssim 恒 0.5182 即冻结生效证据；v8c REPA 段主模型解冻（eval base 0.5182→0.453→0.470 证明在动）。
+2. **"base 太强导致注入不足"不成立**：同口径下 v8b（强 base 0.5182）ctrl 0.7641 > 旧 s32c（弱 base 0.23）ctrl 0.7425，强 base 的 ctrl 反而更好，且 REPA 提升未伤结构。
+3. **历史 0.8204 是口径虚高**，真实同口径 SOTA 是 **v8c 0.7674**（且 lpips 大幅领先）。
+
 ![skel](assets/v8_grid/eval_curves_skel.png)
 
 > 交互式 chartjs dashboard（可 hover 查看数值、自由开关曲线）：`_ot_scratch/v8_dash/v8_dashboard.html`（与 chart.umd.min.js 同目录）。
