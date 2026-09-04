@@ -580,7 +580,8 @@ class DiT_2Cond(nn.Module):
         imgs = x.reshape(shape=(x.shape[0], c, h * p, h * p))
         return imgs
 
-    def forward(self, x, t, y_callig, y_char, return_intermediate_layer=None, g=None):
+    def forward(self, x, t, y_callig, y_char, return_intermediate_layer=None,
+                return_intermediate_layers=None, g=None):
         """
         Forward pass of DiT_2Cond.
         x: (N, C, H, W) noisy latents
@@ -672,14 +673,27 @@ class DiT_2Cond(nn.Module):
         rope = (self.rope_cos, self.rope_sin) if self.rope else None
 
         intermediate_feats = None
-        # 逐层注入的层号 -> injection 模块索引
+        # 多层 REPA 捕获 (统一): return_intermediate_layers=(8,11) -> dict {8:feats, 11:feats}
+        _repa_layers = None
+        if return_intermediate_layers is not None:
+            _repa_layers = (return_intermediate_layers
+                            if isinstance(return_intermediate_layers, (list, tuple))
+                            else (return_intermediate_layers,))
+            intermediate_feats = {}
+        # 兼容旧单层接口
+        _repa_single = None
+        if return_intermediate_layer is not None:
+            _repa_single = int(return_intermediate_layer)
         _inj = {}
         if self.glyph_injections is not None and g_tok is not None:
             _inj = {blk: k for k, blk in enumerate(self.glyph_inject_at)}
 
         if self.use_checkpoint:
             for i, block in enumerate(self.blocks):
-                if return_intermediate_layer is not None and i == return_intermediate_layer:
+                if _repa_layers is not None and i in _repa_layers:
+                    x = block(x, c, rope=rope)
+                    intermediate_feats[i] = x
+                elif _repa_single is not None and i == _repa_single:
                     # Run this single block eagerly so its output can be captured for REPA.
                     x = block(x, c, rope=rope)
                     intermediate_feats = x
@@ -690,7 +704,9 @@ class DiT_2Cond(nn.Module):
         else:
             for i, block in enumerate(self.blocks):
                 x = block(x, c, rope=rope)
-                if return_intermediate_layer is not None and i == return_intermediate_layer:
+                if _repa_layers is not None and i in _repa_layers:
+                    intermediate_feats[i] = x
+                elif _repa_single is not None and i == _repa_single:
                     intermediate_feats = x
                 if i in _inj:
                     # x = x*(1+s) + t，s/t 由 g_tok 经 zero-init Linear 产出。
@@ -719,6 +735,8 @@ class DiT_2Cond(nn.Module):
             # 返回 (主输出, skel_pred)；gaussian_diffusion.training_losses 会把第二元素
             # 当作 intermediate_feats 存入 loss_dict['intermediate_feats']
             return x, skel_pred
+        if _repa_layers is not None:
+            return x, intermediate_feats   # dict {layer: feats} (多层 REPA)
         if return_intermediate_layer is not None:
             return x, intermediate_feats
         return x

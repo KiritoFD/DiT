@@ -49,7 +49,7 @@ from src.model import DiT_2Cond_models
 from src.loss import create_diffusion_or_flow, flow_kwargs_from
 from src.utils import MCCDLatentDataset
 from src.model.controlnet import ControlNetDiT, load_main_model
-from src.eval.in_process_ctrl_eval import prepare_ctrl_eval_cache, run_ctrl_pair_eval
+# (eval 统一走 src.eval.eval_facade)
 
 if sys.platform == 'win32':
     sys.stdout.reconfigure(encoding="utf-8")
@@ -405,19 +405,24 @@ def main():
         ema_ctrl = copy.deepcopy(ctrl).eval()
         requires_grad(ema_ctrl, False)
 
-    # ---- B 段早期 REPA (可选) ----
+    # ---- 统一 REPA (公共 infra src.loss.repa, 与 base train.py 一致) ----
     repa_early = None
     if _repa_early:
-        from src.loss import REPALoss
+        from src.loss.repa import build_repa_module
         student_dim = 384  # DiT-S/2 block 输出维度
-        repa_early = REPALoss(
-            student_dim=student_dim, teacher_backbone="dinov2_vits14",
-            teacher_ckpt=args.repa_teacher_ckpt or None).to(device).eval()
-        for p in repa_early.proj.parameters():
+        repa_early = build_repa_module(
+            student_dim=student_dim,
+            layers=(int(args.repa_early_layer),),
+            teacher_ckpt=args.repa_teacher_ckpt or None,
+            w_repa=float(args.w_repa_early),
+            warmup_steps=int(getattr(args, 'repa_early_warmup', 0) or 0) if args.w_repa_early > 0 else 0,
+            device=device).eval()
+        for p in repa_early.parameters():
             p.requires_grad = True
-        trainable += [p for p in repa_early.proj.parameters() if p.requires_grad]
-        logger.info(f"[repa-early] w={args.w_repa_early} layer={args.repa_early_layer} "
-                    f"warmup={args.repa_early_warmup} proj_trainable={sum(p.numel() for p in repa_early.proj.parameters()):,}")
+        trainable += [p for p in repa_early.trainable_params() if p.requires_grad]
+        logger.info(f"[repa-early] 统一模块 w={args.w_repa_early} layer={args.repa_early_layer} "
+                    f"warmup={args.repa_early_warmup} proj_trainable="
+                    f"{sum(p.numel() for p in repa_early.trainable_params()):,}")
 
     # flow 的 t 分布 / 求解器配置与 train.py 共用同一份（否则训练/推理不一致）
     diffusion = create_diffusion_or_flow(
@@ -491,20 +496,18 @@ def main():
         if ema_ctrl:
             ema_ctrl.to(device)
 
-    # ---- In-process GPU eval setup (uses this process's GPU memory) ----
+    # ---- In-process eval setup (统一 eval_facade; VAE 每次 eval 才加载, 不常驻) ----
     gpu_eval_cache = None
     gpu_eval_vae = None
     if args.gpu_eval_csv and os.path.exists(args.gpu_eval_csv):
-        from diffusers.models import AutoencoderKL
-        gpu_eval_vae = AutoencoderKL.from_pretrained(
-            "pretrained_models/sd-vae-ft-ema").to(device).eval()
-        latent_spatial = 32  # DiT-S/2 latent 4x32x32
-        gpu_eval_cache = prepare_ctrl_eval_cache(
+        from src.eval.eval_facade import build_eval_cache
+        gpu_eval_cache = build_eval_cache(
             args.gpu_eval_csv, args.gpu_eval_img_root, args.gpu_eval_skel_root,
             256, args.gpu_eval_n, 8, 4, 0.18215,
-            skel_latent_shards_dir=args.gpu_eval_skel_latent_shards_dir)
-        logger.info(f"[gpu-eval] cache ready: {args.gpu_eval_csv} n={args.gpu_eval_n} "
-                    f"(eval every {args.gpu_eval_every} steps)")
+            skel_latent_shards_dir=args.gpu_eval_skel_latent_shards_dir or None)
+        gpu_eval_vae = None  # 延迟: eval_run 内加载/释放
+        logger.info(f"[eval-facade] cache ready: {args.gpu_eval_csv} n={args.gpu_eval_n} "
+                    f"(eval every {args.gpu_eval_every} steps, device={device})")
 
     ts = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
     exp_dir = os.path.join(args.results_dir, f"{ts}-{args.experiment_name}")
@@ -557,21 +560,23 @@ def main():
             t = diffusion.sample_t(x_latent.shape[0], device)
             model_kwargs = dict(y_callig=y_callig, y_char=y_char, cond=skel)
             if repa_early is not None:
-                model_kwargs['return_intermediate_layer'] = args.repa_early_layer
+                # 统一 REPA: 单层 (repa_early_layer) 或后续扩展多层
+                if len(repa_early.layers) > 1:
+                    model_kwargs['return_intermediate_layers'] = repa_early.layers
+                else:
+                    model_kwargs['return_intermediate_layer'] = repa_early.layers[0]
 
             with torch.autocast("cuda", dtype=torch.bfloat16):
                 loss_dict = diffusion.training_losses(ctrl, x_latent, t, model_kwargs)
                 loss = loss_dict["loss"].mean()
-                # B 段早期 REPA: 对齐主模型 block 特征到 DINOv2 (w 线性渐进)
+                # 统一 REPA: 公共模块 (含 warmup 渐进权重, return w*loss)
                 loss_repa = torch.tensor(0.0, device=device)
                 if repa_early is not None:
                     int_feats = loss_dict.get("intermediate_feats", None)
                     img_gt = batch.get('image')
                     if int_feats is not None and img_gt is not None and img_gt.numel() > 0:
-                        wr = args.w_repa_early * min(
-                            1.0, step / max(args.repa_early_warmup, 1))
-                        loss_repa = repa_early(int_feats, img_gt.to(device))
-                        loss = loss + wr * loss_repa
+                        loss_repa = repa_early(int_feats, img_gt.to(device), step=step)
+                        loss = loss + loss_repa
 
             if not torch.isfinite(loss):
                 logger.warning(f"[nan] step {step}; skip")
@@ -643,18 +648,19 @@ def main():
                 open(os.path.join(ckpt_dir, f"{step:07d}.pt") + ".done", "w").close()
                 logger.info(f"[save] {step}")
 
-                # In-process GPU eval (base vs GT-skel) -> pending marker for CPU daemon
+                # In-process eval (统一 eval_facade: VAE 临时加载, 本进程算指标+落盘)
                 if gpu_eval_cache is not None and step % args.gpu_eval_every == 0:
                     _eval_model = ema_ctrl if ema_ctrl is not None else ctrl
                     try:
-                        run_ctrl_pair_eval(
-                            _eval_model, gpu_eval_vae, diffusion, gpu_eval_cache,
-                            device, step, ckpt_dir,
+                        from src.eval.eval_facade import eval_run
+                        eval_run(
+                            _eval_model, diffusion, gpu_eval_cache, device, step, ckpt_dir,
                             ddim_steps=args.gpu_eval_steps, cfg_scale=args.gpu_eval_cfg,
                             dit_batch=args.gpu_eval_dit_batch,
-                            vae_batch=args.gpu_eval_vae_batch)
+                            vae_batch=args.gpu_eval_vae_batch,
+                            with_skel=True)
                     except Exception as _e:
-                        logger.warning(f"[gpu-eval] step {step} FAILED: {_e}")
+                        logger.warning(f"[eval] step {step} FAILED: {_e}")
 
                 # ---- ctrl 早停: 读 daemon 写的 eval_auto_ctrl_*.json (ctrl.ssim 越高越好) ----
                 if (getattr(args, 'early_stop', False) and gpu_eval_cache is not None

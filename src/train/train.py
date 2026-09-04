@@ -584,7 +584,10 @@ def main(args):
             return Output()
 
     try:
-        _need_vae = (not bool(getattr(args, "latent_shards_dir", None))) or args.w_repa > 0 or args.use_canny
+        # 2026-09-05: REPA 不再强制 VAE —— 配了 latent_shards_dir 时训练用预编码 latent,
+        # REPA 只需 GT 像素图(喂 DINO teacher), 不需要 vae.encode (与 train_repa 一致)。
+        # VAE 仅在 (a) 无 latent shards (需实时 encode) 或 (b) 像素级结构 loss 时加载。
+        _need_vae = (not bool(getattr(args, "latent_shards_dir", None))) or args.use_canny
         if _need_vae:
             if getattr(args, 'vae_path', None) is not None and os.path.exists(args.vae_path):
                 logger.info(f"Loading VAE from local path: {args.vae_path}")
@@ -663,22 +666,33 @@ def main(args):
         latent_struct_skel_fn = None
         latent_struct_canny_fn = None
     
+    # ---- 统一 REPA (公共 infra src.loss.repa) ----
+    # 支持多层 (repa_layers="8,11"/"8") + warmup 渐进, 与后训练(train_controlnet)完全一致。
     repa_loss_fn = None
+    _repa_layers = getattr(args, "repa_layers", "") or ""
     if args.w_repa > 0:
-        teacher_ckpt = getattr(args, "repa_teacher_ckpt", "") or None
-        # Student hidden dim = transformer hidden_size, derived from the patch
-        # embedder projection (S/2 -> 384, B/2 -> 768, ...).
+        try:
+            layers = tuple(int(x) for x in str(_repa_layers).split(",") if x.strip()) or (8,)
+        except Exception:
+            layers = (8,)
         try:
             student_hidden_size = int(model.x_embedder.proj.out_features)
         except Exception:
             student_hidden_size = 384
-        logger.info(f"Initializing REPA Loss (Teacher: dinov2_vits14, ckpt={teacher_ckpt or 'auto'}, Student Dim: {student_hidden_size})")
-        repa_loss_fn = REPALoss(student_dim=student_hidden_size, teacher_backbone="dinov2_vits14",
-                                teacher_ckpt=teacher_ckpt).to(device)
+        from src.loss.repa import build_repa_module
+        repa_loss_fn = build_repa_module(
+            student_dim=student_hidden_size, layers=layers,
+            teacher_ckpt=getattr(args, "repa_teacher_ckpt", "") or None,
+            w_repa=float(args.w_repa),
+            warmup_steps=int(getattr(args, "repa_warmup", 0) or 0),
+            device=device)
+        logger.info(f"Initializing unified REPA (Teacher: dinov2_vits14, "
+                    f"Student Dim: {student_hidden_size}, layers={layers}, "
+                    f"w={args.w_repa}, warmup={getattr(args, 'repa_warmup', 0)})")
 
     trainable_params_list = [p for p in model.parameters() if p.requires_grad]
     if repa_loss_fn is not None:
-        trainable_params_list.extend([p for p in repa_loss_fn.proj.parameters() if p.requires_grad])
+        trainable_params_list.extend(repa_loss_fn.trainable_params())
 
     _opt_name = getattr(args, "optimizer", "adamw")
     if _opt_name == "muon":
@@ -735,9 +749,10 @@ def main(args):
     need_canny_map = args.use_canny or args.w_latent_canny > 0 or getattr(args, 'w_latent_struct_canny', 0) > 0
     need_skel_map = args.use_skel or args.w_latent_skel > 0 or getattr(args, 'w_skel_head', 0) > 0 or getattr(args, 'w_latent_struct_skel', 0) > 0
 
-    # Re-decide VAE need: if we're in latent-only mode (no pixel struct/REPA), use MockVAE.
-    # VAE is only needed for on-the-fly encode (non-latent) or pixel structural losses.
-    _need_vae_now = (not use_latent) or args.w_repa > 0 or args.use_canny
+    # Re-decide VAE need: latent-only 模式训练用预编码 latent, 不需要 VAE (REPA 也只要 GT 图)。
+    # VAE 仅在 on-the-fly encode (非 latent) 或像素级结构 loss (canny) 时需要;
+    # eval 侧 VAE 由 load_eval_vae() 懒加载 (不常驻)。与 _need_vae (line 590) 一致。
+    _need_vae_now = (not use_latent) or args.use_canny
     if not _need_vae_now:
         vae = MockVAE(device)
         logger.info("[infra] VAE skipped (latent-only mode, no pixel struct/REPA) -> saves ~500MB VRAM")
@@ -1041,9 +1056,12 @@ def main(args):
                 if getattr(args, 'w_glyph_cond', False) and 'g' in batch and batch['g'].numel() > 0:
                     model_kwargs['g'] = batch['g'].to(device)   # (N,4,32,32)
                 
-                # If REPA is enabled, request intermediate layer 8 features
-                if args.w_repa > 0:
-                    model_kwargs['return_intermediate_layer'] = 8
+                # REPA: 请求多层中间特征 (统一 infra, 多层 dict / 单层兼容)
+                if args.w_repa > 0 and repa_loss_fn is not None:
+                    if len(repa_loss_fn.layers) > 1:
+                        model_kwargs['return_intermediate_layers'] = repa_loss_fn.layers
+                    else:
+                        model_kwargs['return_intermediate_layer'] = repa_loss_fn.layers[0]
 
                 # Forward pass under bf16 autocast (same exponent range as fp32, no overflow).
                 #
@@ -1243,8 +1261,8 @@ def main(args):
 
                 intermediate_feats = loss_dict.get("intermediate_feats", None)
                 if x is not None and intermediate_feats is not None and repa_loss_fn is not None and args.w_repa > 0:
-                    # original 'x' is ground truth x_0 [-1, 1]
-                    loss_repa = repa_loss_fn(intermediate_feats, x)
+                    # 统一 REPA (公共 infra): 多层 dict / 单层张量 + warmup 渐进
+                    loss_repa = repa_loss_fn(intermediate_feats, x, step=train_steps)
 
                 # Struct-loss weight ramp: linearly bring canny/skel from 0 to target over
                 # --struct-warmup-steps fine-tune steps (counted from the resume point) so a
@@ -1260,7 +1278,7 @@ def main(args):
                         + args.w_latent_skel * loss_latent_skel
                         + getattr(args, 'w_latent_struct_skel', 0) * _struct_scale * loss_latent_struct_skel
                         + getattr(args, 'w_latent_struct_canny', 0) * _struct_scale * loss_latent_struct_canny
-                        + args.w_repa * loss_repa
+                        + loss_repa  # 统一 REPA: w × (1 - cos) 已在 RepaModule.forward 内含 warmup
                         + getattr(args, 'w_skel_head', 0) * loss_skel_head
                         + getattr(args, 'w_std_mid', 0.0) * loss_std_mid)
 
@@ -1383,7 +1401,8 @@ def main(args):
                         wc = args.w_canny * _struct_scale
                         ws = args.w_skel * _struct_scale
                         wr = args.w_repa
-                        c_contrib, s_contrib, r_contrib = wc * avg_c, ws * avg_s, wr * avg_r
+                        c_contrib, s_contrib = wc * avg_c, ws * avg_s
+                        r_contrib = avg_r  # REPA 已含 w (统一模块) — 直接是贡献
                         latent_c_contrib = args.w_latent_canny * avg_lc
                         latent_s_contrib = args.w_latent_skel * avg_ls
                         ema_log = (f"EMA: {current_ema_decay:.6f} | "
@@ -1397,7 +1416,7 @@ def main(args):
                             f"LatS: raw {avg_ls:.4f} x {args.w_latent_skel:.3f} = {latent_s_contrib:.4f} | "
                             f"LStrS: raw {avg_lss:.4f} x {getattr(args,'w_latent_struct_skel',0):.1f} = {getattr(args,'w_latent_struct_skel',0)*avg_lss:.4f} | "
                             f"LStrC: raw {avg_lsc:.4f} x {getattr(args,'w_latent_struct_canny',0):.1f} = {getattr(args,'w_latent_struct_canny',0)*avg_lsc:.4f} | "
-                            f"REPA: raw {avg_r:.4f} x {wr:.2f} = {r_contrib:.4f} | "
+                            f"REPA(含w): raw {avg_r:.4f} (w={wr:.2f}) = {r_contrib if r_contrib == avg_r else avg_r:.4f} | "
                             f"SkelH: raw {avg_skel_h:.4f} | "
                             f"StdMid: raw {avg_std_mid:.4f} | "
                             f"LR: {opt.param_groups[0]['lr']:.2e} | {ema_log}"
