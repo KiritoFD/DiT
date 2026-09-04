@@ -677,8 +677,25 @@ def main(args):
     trainable_params_list = [p for p in model.parameters() if p.requires_grad]
     if repa_loss_fn is not None:
         trainable_params_list.extend([p for p in repa_loss_fn.proj.parameters() if p.requires_grad])
-        
-    opt = torch.optim.AdamW(trainable_params_list, lr=args.lr, weight_decay=args.weight_decay)
+
+    _opt_name = getattr(args, "optimizer", "adamw")
+    if _opt_name == "muon":
+        # Muon: 矩阵权重 NS-正交化 (独立 muon_lr, 典型 0.02-0.05), 向量/embedding 走 AdamW (adamw_lr)
+        try:
+            from src.optim.muon import Muon as _Muon
+        except Exception as e:
+            raise RuntimeError(f"src.optim.muon import failed: {e}")
+        _muon_lr = float(getattr(args, "muon_lr", 0.02))
+        _adamw_lr = float(getattr(args, "lr", 3e-4))
+        _adamw_wd = float(getattr(args, "weight_decay", 0.01))
+        # REPA proj 是矩阵 dim=2 -> 自动进 muon 组, 会用它; 向量(embedding标量)进 adamw
+        opt = _Muon(
+            trainable_params_list, lr=_muon_lr, weight_decay=0.0,
+            adamw_lr=_adamw_lr, adamw_weight_decay=_adamw_wd)
+        logger.info(f"[optim] Muon: 矩阵组 lr={_muon_lr} (NS正交) / 向量+embedding组 AdamW lr={_adamw_lr} wd={_adamw_wd}")
+    else:
+        opt = torch.optim.AdamW(trainable_params_list, lr=args.lr, weight_decay=args.weight_decay)
+        logger.info(f"[optim] AdamW lr={args.lr} wd={args.weight_decay}")
 
     # Restore optimizer state + step counter for full resume. If --resume-lr is given,
     # override the LR so we can test whether a smaller LR avoids the NaN.
@@ -1870,6 +1887,10 @@ def main_from_cli(argv=None):
     parser.add_argument("--repa-teacher-ckpt", type=str, default="",
                         help="Local path to DINOv2 teacher weights (ModelScope safetensors). "
                              "Empty = auto-detect pretrained_models/dinov2_vits14_pretrain.safetensors or $DINO_WEIGHTS.")
+    parser.add_argument("--optimizer", type=str, default="adamw", choices=["adamw", "muon"],
+                        help="Optimizer: adamw (default) or muon (matrix NS-orth + adamw for vec/embed).")
+    parser.add_argument("--muon-lr", type=float, default=0.02,
+                        help="Muon matrix-group LR (independent scale, ~0.01-0.1; adamw uses --lr).")
     parser.add_argument("--use-canny", type=_str_to_bool, default=False,
                         help="Enable Canny structural loss (requires canny maps in dataset/canny).")
     parser.add_argument("--use-skel", type=_str_to_bool, default=False,
