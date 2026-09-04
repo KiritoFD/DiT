@@ -211,6 +211,8 @@ def parse_args():
                     help="skel-ctrl 训练期 REPA 权重 (0=关闭; 建议 0.05~0.1 渐进)")
     ap.add_argument("--repa-early-layer", type=int, default=8,
                     help="早期 REPA 对齐的主模型 block 层 (默认 8)")
+    ap.add_argument("--repa-early-layers", type=str, default="",
+                    help="多层 REPA (逗号分隔, 如 8,11, 与 v8e 对齐); 非空时优先于 --repa-early-layer")
     ap.add_argument("--repa-early-warmup", type=int, default=2000,
                     help="REPA 权重线性从 0 爬到 --w-repa-early 的步数")
     ap.add_argument("--img-root", default="final_imgs_fame_v8",
@@ -273,6 +275,10 @@ def main():
     # ---- 数据: latent shards + skel latent (或 3px skel PNG) ----
     use_skel_latent = bool(args.skel_latent_shards_dir)
     _repa_early = bool(getattr(args, 'w_repa_early', 0) or 0) > 0
+    # 多层 REPA (v8e 对齐: 8,11); 逗号分隔, 优先于单层 repa_early_layer
+    _repa_early_layers = tuple(
+        int(x) for x in (getattr(args, 'repa_early_layers', '') or '').split(',')
+        if x.strip()) or (int(args.repa_early_layer),)
     logger.info(f"[data] loading latent + skel({'latent' if use_skel_latent else 'png'})"
                 f"{' + image(REPA)' if _repa_early else ''} ...")
     ds = MCCDLatentDataset(
@@ -412,7 +418,7 @@ def main():
         student_dim = 384  # DiT-S/2 block 输出维度
         repa_early = build_repa_module(
             student_dim=student_dim,
-            layers=(int(args.repa_early_layer),),
+            layers=_repa_early_layers,
             teacher_ckpt=args.repa_teacher_ckpt or None,
             w_repa=float(args.w_repa_early),
             warmup_steps=int(getattr(args, 'repa_early_warmup', 0) or 0) if args.w_repa_early > 0 else 0,
@@ -420,7 +426,7 @@ def main():
         for p in repa_early.parameters():
             p.requires_grad = True
         trainable += [p for p in repa_early.trainable_params() if p.requires_grad]
-        logger.info(f"[repa-early] 统一模块 w={args.w_repa_early} layer={args.repa_early_layer} "
+        logger.info(f"[repa-early] 统一模块 w={args.w_repa_early} layers={_repa_early_layers} "
                     f"warmup={args.repa_early_warmup} proj_trainable="
                     f"{sum(p.numel() for p in repa_early.trainable_params()):,}")
 

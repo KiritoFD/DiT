@@ -24,6 +24,25 @@
 `w_repa=0.5 + repa_layers 8,11 + max_steps 80000 但 early_stop(patience 5, delta 0.002)`——
 预计在 ~25k 早停取出 0.7761，省 55k 步算力。
 
+## 1.5 ⭐ v9 两阶段链（09-05 重构后落地，v8e 配置对齐）
+
+**教训落实**：v8e 峰值 22.5k（监控曲线确认 0.7761@22.5k → 77.5k 回退 0.762）——
+**继续跑反而更差**。v9 两阶段链已带正确早停：
+
+| 阶段 | 脚本 | REPA | 早停 |
+|---|---|---|---|
+| **A base 预训练** | train.py (v9a config) | w_repa=0.1, layers=(8,) 全程挂 | ✅ ssim_lpips, patience 5, min 20000 |
+| **B ctrl 后训练** | train_controlnet.py (v9b config) | w_repa_early=0.5, **layers 8,11** (=v8e) | ✅ ctrl.ssim, patience 5, min 10000 |
+
+**A→B 自动衔接**（run_v9_2stage.sh）：A 早停 → 取 best ckpt (eval_auto 最高 ssim) → B 从该 base 起。
+
+**B 段配置 = 完全对齐 v8e 成功配方**（修正：最初误用 v8b 参数）：
+- w_repa_early 0.5 (=v8e w_repa) + repa_early_layers "8,11" (多层, 新支持)
+- lr 1e-4 (=v8e, 非 3e-4) + batch 128 (非 192) + warmup 200 (非 500)
+- max 80000 + early_stop (v8e 本无, 改进)
+
+预期：B 段早停 ~25k 取出 0.7761+ 水平 ctrl SOTA（基于更优 v9a base）。
+
 ## 2. 对比微调方案（正确用 DINO 的落地设计）
 
 ### 背景
