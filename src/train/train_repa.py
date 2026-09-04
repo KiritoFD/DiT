@@ -376,6 +376,8 @@ def main():
     t0 = time.time()
     log_steps = 0
     run_diff = run_repa = 0.0
+    _es_best = None
+    _es_stale = 0
 
     for epoch in range(args.epochs):
         for batch in loader:
@@ -510,6 +512,39 @@ def main():
                             vae_batch=args.gpu_eval_vae_batch)
                     except Exception as _e:
                         logger.warning(f"[gpu-eval] step {step} FAILED: {_e}")
+
+                    # ---- REPA 早停: 读 daemon 写的 eval_auto_ctrl_*.json (ctrl.ssim 越高越好) ----
+                    # 2026-09-04: v8e 无早停跑满 80k 导致 ctrl 从 0.7761 回退到 0.762 (过拟合退化),
+                    # 补早停避免重演。逻辑同 train_controlnet, 由 max_steps 作硬上限。
+                    if (getattr(args, 'early_stop', False) and step >= int(getattr(args, 'early_stop_min_steps', 0))):
+                        _ev_files = sorted(glob.glob(os.path.join(ckpt_dir, "eval_auto_ctrl_*.json")))
+                        if _ev_files:
+                            try:
+                                with open(_ev_files[-1], "r", encoding="utf-8") as _f:
+                                    _d = json.load(_f)
+                                _ctrl_res = _d.get("ctrl", _d)
+                                _metric = (getattr(args, 'early_stop_metric', 'ssim') or 'ssim').lower()
+                                _val = _ctrl_res.get(_metric)
+                                _es_delta = float(getattr(args, 'early_stop_min_delta', 0.002) or 0.002)
+                                if _val is not None:
+                                    if (_es_best is None or
+                                            (_val > _es_best + _es_delta if _metric == 'ssim'
+                                             else _val < _es_best - _es_delta)):
+                                        _es_best = _val
+                                        _es_stale = 0
+                                        logger.info(f"[early-stop] eval step {step}: ctrl.{_metric}={_val:.4f} "
+                                                    f"-> NEW BEST ({_es_best:.4f})")
+                                    else:
+                                        _es_stale += 1
+                                        logger.info(f"[early-stop] eval step {step}: ctrl.{_metric}={_val:.4f} "
+                                                    f"(best {_es_best:.4f}, stale {_es_stale}/"
+                                                    f"{args.early_stop_patience})")
+                                        if _es_stale >= int(args.early_stop_patience):
+                                            logger.info(f"[early-stop] ctrl.{_metric} no improvement for "
+                                                        f"{_es_stale} evals; stopping ({step}).")
+                                            step = args.max_steps  # 结束训练循环
+                            except Exception as _ee:
+                                logger.warning(f"[early-stop] read {_ev_files[-1]} failed: {_ee}")
 
                 # 运行时绝不删除任何 ckpt (2026-09-04 修正): best 权重可能在任何 step,
                 # ckpt_keep 裁剪会永久丢失复盘所需权重。保留全部 + .done 标记。

@@ -1,0 +1,11 @@
+{
+ "n_common": 2990,
+ "cos_same_kai_li": 0.7461,
+ "cos_same_std": 0.0728,
+ "cos_sim": 0.8824,
+ "cos_rand": 0.7364,
+ "hierarchy_ok": false,
+ "margin": -0.1363,
+ "auc_sim_rand": 0.9355,
+ "eff_rank_kai": 132
+}

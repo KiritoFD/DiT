@@ -1,0 +1,56 @@
+[
+ {
+  "label": "0 raw",
+  "n_char": 4031,
+  "cos_sim": 0.3044416606426239,
+  "cos_rand": 0.046459801495075226,
+  "eff_rank": 67,
+  "nn_is_simpair": 0.1351,
+  "cos_same": 0.21125839263815907
+ },
+ {
+  "label": "1 L2",
+  "n_char": 4031,
+  "cos_sim": 0.3044416606426239,
+  "cos_rand": 0.04645979776978493,
+  "eff_rank": 67,
+  "nn_is_simpair": 0.1351,
+  "cos_same": 0.21125839219318868
+ },
+ {
+  "label": "3 global demean",
+  "n_char": 4031,
+  "cos_sim": 0.33121973276138306,
+  "cos_rand": 0.01184976939111948,
+  "eff_rank": 66,
+  "nn_is_simpair": 0.1351,
+  "cos_same": 0.20843502871412736
+ },
+ {
+  "label": "5 PCA-whiten",
+  "n_char": 4031,
+  "cos_sim": 0.15527962148189545,
+  "cos_rand": 0.0007247831672430038,
+  "eff_rank": 300,
+  "nn_is_simpair": 0.1351,
+  "cos_same": 0.1041239592642163
+ },
+ {
+  "label": "6 PCA-128",
+  "n_char": 4031,
+  "cos_sim": 0.33870092034339905,
+  "cos_rand": 0.012082857079803944,
+  "eff_rank": 41,
+  "nn_is_simpair": 0.1081,
+  "cos_same": 0.21550504996997402
+ },
+ {
+  "label": "7 rank-norm",
+  "n_char": 4031,
+  "cos_sim": 0.14998406171798706,
+  "cos_rand": 0.0003574661095626652,
+  "eff_rank": 301,
+  "nn_is_simpair": 0.1081,
+  "cos_same": 0.09877382874727357
+ }
+]

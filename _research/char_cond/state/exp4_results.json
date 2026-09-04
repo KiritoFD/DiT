@@ -1,0 +1,12 @@
+{
+ "ids_chars": 88937,
+ "our_chars": 4765,
+ "coverage": 0.9996,
+ "covered": 4763,
+ "comp_vocab": 1571,
+ "avg_comp_per_char": 2.08,
+ "cos_same": 1.0,
+ "cos_sim": 0.3233,
+ "cos_rand": 0.0091,
+ "hierarchy_ok": true
+}

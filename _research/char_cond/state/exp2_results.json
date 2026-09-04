@@ -1,0 +1,50 @@
+[
+ {
+  "scheme": "0 raw",
+  "cos_same_cross_script": 0.1547,
+  "within_auc": 0.7007,
+  "within_cos_sim": 0.4661,
+  "within_cos_rand": 0.2534,
+  "eff_rank": 72
+ },
+ {
+  "scheme": "1 L2",
+  "cos_same_cross_script": 0.1547,
+  "within_auc": 0.7007,
+  "within_cos_sim": 0.4661,
+  "within_cos_rand": 0.2534,
+  "eff_rank": 72
+ },
+ {
+  "scheme": "2 per-script center",
+  "cos_same_cross_script": 0.2418,
+  "within_auc": 0.7814,
+  "within_cos_sim": 0.402,
+  "within_cos_rand": 0.0019,
+  "eff_rank": 100
+ },
+ {
+  "scheme": "3 global demean",
+  "cos_same_cross_script": 0.1418,
+  "within_auc": 0.7211,
+  "within_cos_sim": 0.4772,
+  "within_cos_rand": 0.2306,
+  "eff_rank": 71
+ },
+ {
+  "scheme": "4 demean+script",
+  "cos_same_cross_script": 0.2418,
+  "within_auc": 0.7814,
+  "within_cos_sim": 0.402,
+  "within_cos_rand": 0.0019,
+  "eff_rank": 100
+ },
+ {
+  "scheme": "5 PCA-whiten",
+  "cos_same_cross_script": 0.0799,
+  "within_auc": 0.8037,
+  "within_cos_sim": 0.2054,
+  "within_cos_rand": 0.0124,
+  "eff_rank": 322
+ }
+]
