@@ -547,13 +547,15 @@ def main(args):
         logger.info(f"[flow] {diffusion.describe()}")
     if _is_flow:
         # Flow-Matching mode: disable DDPM-timestep-dependent auxiliaries.
-        # Flow trains on t in [0,1] with a velocity target; the structural/
-        # latent auxiliaries below gate on DDPM's 0..999 timestep schedule and
-        # would be semantically wrong. Hard-disable (with a log) so a flow run
-        # never silently mixes incompatible objectives.
+        # Flow trains on t in [0,1] with a velocity target; DDPM-gated structural/
+        # latent auxiliaries would be semantically wrong. Hard-disable them (with a
+        # log) so a flow run never silently mixes incompatible objectives.
+        # NOTE (2026-09-05): w_repa 从禁用列表移除 —— REPA 对齐主模型 block 特征到
+        # DINO (与 t 无关, 只需 GT 图 + teacher), 已在 train_repa/train_controlnet 的
+        # flow 下验证有效 (v8c/v8e SOTA 0.767/0.776)。flow 禁用它是过度限制。
         _flow_disabled = []
         for _attr in ('use_canny', 'use_skel', 'w_skel_head', 'w_std_mid',
-                      'w_latent_skel', 'w_latent_canny', 'w_repa'):
+                      'w_latent_skel', 'w_latent_canny'):
             if getattr(args, _attr, 0):
                 setattr(args, _attr, 0 if not isinstance(getattr(args, _attr, 0), bool) else False)
                 _flow_disabled.append(_attr)
