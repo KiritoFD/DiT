@@ -34,7 +34,10 @@ def main():
     ap.add_argument("--part-tag", required=True, help="part 标识 (p0/p1)")
     ap.add_argument("--mode", choices=["ctrl_pair", "pretrain_g"], default="ctrl_pair",
                     help="ctrl_pair: ControlNetDiT 双臂; pretrain_g: 裸主模型 g 条件单臂"
-                         " (train.py ckpt, g=标准字形库 latent, 部署态评测)")
+                         " (train.py ckpt)")
+    ap.add_argument("--g-source", choices=["gt_skel", "std_glyph"], default="gt_skel",
+                    help="g 条件来源: gt_skel=该样本 GT 实例骨架 (默认, 与训练/历史"
+                         " ctrl 臂协议一致); std_glyph=标准字形库 (部署态零样本)")
     args = ap.parse_args()
 
     import torch
@@ -50,6 +53,8 @@ def main():
 
     ck = torch.load(args.ckpt, map_location="cpu", weights_only=False)
     a = ck.get("args", {}) or {}
+    if isinstance(a, argparse.Namespace):   # train.py ckpt 存的是 Namespace
+        a = vars(a)
     ctrl_sd = _strip(ck.get("ema") or ck.get("ctrl") or {})
     main_sd = _strip(ck.get("model") or ck.get("ema_model") or {})
 
@@ -179,25 +184,33 @@ def _run_pretrain_g(args, ck, a, arch, common, t0):
     csv = a.get("gpu_eval_csv") or a.get("eval_csv") or a.get("data_csv")
     img_root = a.get("gpu_eval_img_root") or a.get("img_root") or None
     n = args.n or int(a.get("gpu_eval_n", a.get("eval_n", 100)))
-    cache = make_eval_cache(csv, img_root, None, 256, n, 8, 4, 0.18215)
+    shards = (a.get("gpu_eval_skel_latent_shards_dir")
+              or a.get("skel_latent_shards_dir") or None)
+    cache = make_eval_cache(csv, img_root, None, 256, n, 8, 4, 0.18215,
+                            skel_latent_shards_dir=shards)
     cfg = float(a.get("eval_cfg", a.get("gpu_eval_cfg", 0.7)))
     steps = int(a.get("eval_steps", a.get("gpu_eval_steps", 50)))
     shift = float(a.get("shift", 1.0))
 
-    # g 来源: 标准字形库 (script_id, char) —— 部署态零样本字条件
-    from src.utils import get_glyph_lookup_v2
-    lk = get_glyph_lookup_v2()
-    rows = list(csv.DictReader(open(csv, encoding="utf-8")))[:n] if False else None
-    import csv as _csv
-    rows = list(_csv.DictReader(open(csv, encoding="utf-8")))[:n]
-    g_all = torch.zeros(n, 4, 32, 32)
-    hit = 0
-    for i, r in enumerate(rows):
-        gv = lk.get(int(r["script_id"]), r.get("character", ""), random=False)
-        if gv is not None:
-            g_all[i] = gv.float()
-            hit += 1
-    print(f"[worker:g] glyph 库命中 {hit}/{n}", flush=True)
+    # g 来源 (默认 gt_skel: 该样本 GT 实例骨架 latent —— 与训练条件域一致,
+    # 与历史 ctrl 臂数字可比; std_glyph 可选: 标准字形库, 部署态零样本语义)
+    if args.g_source == "gt_skel":
+        g_all = cache["skels_latent"].float()
+        hit = int((g_all.view(n, -1).sum(1) != 0).sum())
+        print(f"[worker:g] GT 实例骨架覆盖 {hit}/{n} (条件域与训练一致)", flush=True)
+    else:
+        from src.utils import get_glyph_lookup_v2
+        lk = get_glyph_lookup_v2()
+        import csv as _csv
+        rows = list(_csv.DictReader(open(csv, encoding="utf-8")))[:n]
+        g_all = torch.zeros(n, 4, 32, 32)
+        hit = 0
+        for i, r in enumerate(rows):
+            gv = lk.get(int(r["script_id"]), r.get("character", ""), random=False)
+            if gv is not None:
+                g_all[i] = gv.float()
+                hit += 1
+        print(f"[worker:g] glyph 库命中 {hit}/{n} (部署态零样本语义)", flush=True)
 
     segs = []
     for seg in args.segments.split(","):
