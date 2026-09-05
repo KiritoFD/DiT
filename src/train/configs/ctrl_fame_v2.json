@@ -1,6 +1,6 @@
 {
   "_comment": "fame ControlNet: warm-start 自 s21 fame 预训练 best ckpt (由 run_fame_pipeline.py 自动填 main_ckpt)。eval cfg=0.7 (skeleton 条件下最优, 20260829 扫描结论)。",
-  "main_ckpt": "",
+  "main_ckpt": "5script/results/s21_fame_flow_v2/20260829-232329-s21-fame-flow-v2/checkpoints/0030000.pt",
   "csv": "5script/train_fame.csv",
   "latent_shards_dir": "final_latents_fame",
   "skel_root": "final_skel3_fame",
@@ -44,7 +44,7 @@
   "warmup_steps": 500,
   "min_lr_ratio": 0.1,
   "weight_decay": 0.01,
-  "batch_size": 96,
+  "batch_size": 72,
   "num_workers": 4,
   "log_every": 50,
   "ckpt_every": 2500,

@@ -75,17 +75,6 @@ onepix = [
     {"step": 47500, "mse": 0.14986, "ssim": 0.7969, "skel_iou": 0.3286},
     {"step": 50000, "mse": 0.14924, "ssim": 0.7974, "skel_iou": 0.3318},
 ]
-# 来源 4: v8b ctrl (当前训练)
-v8b = [
-    {"step": 2500, "delta_ssim": 0.2054}, {"step": 5000, "delta_ssim": 0.2124},
-    {"step": 7500, "delta_ssim": 0.2211},
-    {"step": 10000, "delta_ssim": 0.2276}, {"step": 12500, "delta_ssim": 0.2325},
-    {"step": 15000, "delta_ssim": 0.2371}, {"step": 17500, "delta_ssim": 0.2390},
-    {"step": 20000, "delta_ssim": 0.2418}, {"step": 22500, "delta_ssim": 0.2431},
-    {"step": 25000, "delta_ssim": 0.2444}, {"step": 27500, "delta_ssim": 0.2452},
-    {"step": 30000, "delta_ssim": 0.2457}, {"step": 32500, "delta_ssim": 0.2458},
-    {"step": 35000, "delta_ssim": 0.2459}, {"step": 37500, "delta_ssim": 0.2458},
-]
 # 来源 5: fame final eval
 final = "5script/fame_final_eval.json"
 if os.path.exists(final):
@@ -107,6 +96,22 @@ if os.path.exists(zs):
                         "n": data.get("n",""), "ssim_median": data.get("ssim_median",""),
                         "ssim_mean": data.get("ssim_mean",""), "mse_median": data.get("mse_median",""),
                         "fails": data.get("fails","")})
+
+# 来源 7: v8/v9 系列 eval_auto 逐步序列
+# (远程 tools/eval/collect_v89_series.py 产出 -> scp 回 5script/v89_eval_series.json)
+v89 = "5script/v89_eval_series.json"
+if os.path.exists(v89):
+    for run in json.load(open(v89, encoding="utf-8")):
+        steps = run.get("steps", {})
+        for step in sorted(steps, key=lambda s: int(s)):
+            m = steps[step]
+            all_runs.append({
+                "series": run["series"], "run": run.get("run_dir", ""),
+                "source": "eval_auto_v89", "step": int(step),
+                "ssim": m.get("ssim", ""), "base_ssim": m.get("base_ssim", ""),
+                "delta_ssim": m.get("delta_ssim", ""), "skel_iou": m.get("skel_iou", ""),
+                "mse": m.get("mse", ""), "lpips": m.get("lpips", ""), "n": m.get("n", ""),
+            })
 
 # ---- 输出 master CSV ----
 all_keys = set()
