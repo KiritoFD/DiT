@@ -236,8 +236,11 @@ def main(args):
             cond_drop_one_prob=args.cond_drop_one_prob,
             cond_drop_which_glyph_prob=getattr(args, 'cond_drop_which_glyph_prob', 0.5),
             skel_head_enabled=getattr(args, 'w_skel_head', 0) > 0,
-            use_glyph_cond=getattr(args, 'w_glyph_cond', 0) > 0,
+            use_glyph_cond=(getattr(args, 'w_glyph_cond', 0) > 0
+                            or getattr(args, 'skel_as_glyph_cond', False)),
             glyph_scale_init=getattr(args, 'glyph_scale_init', 0.4),
+            glyph_drop_prob=getattr(args, 'glyph_drop_prob', 0.0),
+            glyph_inject_layers=getattr(args, 'glyph_inject_layers', 0),
             in_channels=getattr(args, 'latent_channels', 4),
             char_proj_mode=getattr(args, 'char_proj_mode', 'full'),
             freeze_char_table=getattr(args, 'freeze_char_table', False),
@@ -267,7 +270,7 @@ def main(args):
                     f"fusion={args.condition_fusion}, dims={args.callig_embed_dim}/"
                     f"{args.char_embed_dim}, dropout=all:{args.cond_drop_all_prob}, "
                     f"one:{args.cond_drop_one_prob}, skel_head={getattr(args, 'w_skel_head', 0) > 0}, "
-                    f"glyph_cond={getattr(args, 'w_glyph_cond', 0) > 0}, glyph_scale_init={getattr(args, 'glyph_scale_init', 0.4)}, "
+                    f"glyph_cond={(getattr(args, 'w_glyph_cond', 0) > 0) or getattr(args, 'skel_as_glyph_cond', False)}, glyph_scale_init={getattr(args, 'glyph_scale_init', 0.4)}, "
                     f"char_proj_mode={getattr(args, 'char_proj_mode', 'full')}, "
                     f"freeze_char_table={getattr(args, 'freeze_char_table', False)})")
 
@@ -421,15 +424,6 @@ def main(args):
         logger.info("[cond-head] reset adaLN/final_layer to std=0.02 (retain task-agnostic "
                     "transformer engine, drop ImageNet class-condition coupling).")
 
-    # 注：LoRA 支持（inject_lora / upgrade_lora_rank / extract_full_inference）
-    # 已于 2026-08-31 随 src/model/lora.py 一并删除 —— 当前所有配置均为
-    # use_lora=false，ControlNet 训练用的是「冻结主干 + 只训 ctrl 分支」，
-    # 不需要 LoRA。若配置里仍带 use_lora=true，这里显式报错而不是静默忽略。
-    if getattr(args, 'use_lora', False):
-        raise ValueError(
-            "use_lora=true 已不支持：src/model/lora.py 已于 2026-08-31 删除。"
-            "请改用 use_lora=false（全参数训练）或 --pretrained 冻结主干模式。"
-            "若确实需要 LoRA，需从 git 历史恢复 src/model/lora.py。")
 
     # 3) full resume works for both LoRA and full-from-scratch checkpoints.
     if getattr(args, 'resume_full', None) is not None:
@@ -453,7 +447,7 @@ def main(args):
         requires_grad(model, False)
         train_cond_head = getattr(args, 'train_cond_head', True)
         for name, param in model.named_parameters():
-            if ('lora_' in name or 'y_callig_embedder' in name or 'y_char_embedder' in name
+            if ('y_callig_embedder' in name or 'y_char_embedder' in name
                     or 'cond_fusion' in name or 'y_script_embedder' in name
                     or 'callig_proj' in name or 'script_proj' in name or 'char_proj' in name
                     or 'y_scale' in name or 'skel_head' in name or 'glyph_scale' in name
@@ -769,7 +763,10 @@ def main(args):
                                     load_image=(args.w_repa > 0 or args.use_canny),
                                     num_preload_workers=int(getattr(args, 'preload_workers', 16)),
                                     structure_size=256,
-                                    use_glyph_cond=getattr(args, 'w_glyph_cond', False))
+                                    use_glyph_cond=getattr(args, 'w_glyph_cond', False),
+                                    skel_latent_shards_dir=(args.skel_latent_shards_dir
+                                                            if getattr(args, 'skel_as_glyph_cond', False)
+                                                            else None))
         logger.info("Using latent-cached dataset (skip on-the-fly VAE encode)."
                     + (" preload=ON" if getattr(args, 'preload', False) else ""))
     else:
@@ -1055,6 +1052,9 @@ def main(args):
                 # 标准字形条件 g(甲2 token-add): batch 由 dataset 提供, None=禁用对应项
                 if getattr(args, 'w_glyph_cond', False) and 'g' in batch and batch['g'].numel() > 0:
                     model_kwargs['g'] = batch['g'].to(device)   # (N,4,32,32)
+                elif getattr(args, 'skel_as_glyph_cond', False) and 'skel_latent' in batch                         and batch['skel_latent'].numel() > 0:
+                    # v10a: 实例 skel latent 即字条件 (与 ControlNet 的 cond 同源不同路)
+                    model_kwargs['g'] = batch['skel_latent'].to(device).float()
                 
                 # REPA: 请求多层中间特征 (统一 infra, 多层 dict / 单层兼容)
                 if args.w_repa > 0 and repa_loss_fn is not None:
@@ -1654,7 +1654,7 @@ def main_from_cli(argv=None):
                              "书家维度样本充足, 字符维度才是难点, 建议 >0.5. 0.5=均匀.")
     parser.add_argument("--num-scripts", type=int, default=12,
                         help="Number of script classes (only used in 3cond mode).")
-    parser.add_argument("--use-checkpoint", type=_str_to_bool, default=True,
+    parser.add_argument("--use-checkpoint", type=_str_to_bool, default=False,
                         help="Enable gradient checkpointing on DiT blocks (cuts activation memory).")
     parser.add_argument("--image-size", type=int, choices=[256, 512], default=256)
     parser.add_argument("--num-calligraphers", type=int, default=2021)
@@ -1791,8 +1791,6 @@ def main_from_cli(argv=None):
     parser.add_argument("--vae-in-channels", type=int, default=3, help="VAE input image channels (3=RGB, 1=grayscale)")
     parser.add_argument("--vae-out-channels", type=int, default=3, help="VAE output image channels (3=RGB, 1=grayscale)")
     parser.add_argument("--vae-scaling-factor", type=float, default=0.18215, help="VAE latent scaling factor")
-    parser.add_argument("--use-lora", type=_str_to_bool, default=True, help="Use LoRA for fine-tuning DiT blocks")
-    parser.add_argument("--lora-r", type=int, default=16, help="LoRA rank")
     parser.add_argument("--lora-alpha", type=int, default=None,
                         help="LoRA alpha (scaling = alpha/r). Default: same as r (scaling=1).")
     parser.add_argument("--lora-target", type=str, choices=["all", "attn", "mlp"], default="all",
@@ -1857,6 +1855,15 @@ def main_from_cli(argv=None):
                         help="Enable 甲2 standard-glyph token-add conditioning (use_glyph_cond).")
     parser.add_argument("--glyph-scale-init", type=float, default=0.4,
                         help="Initial glyph_scale (standard-glyph token-add strength).")
+    parser.add_argument("--skel-as-glyph-cond", type=_str_to_bool, default=False,
+                        help="v10a: 用实例 skel latent (skel_latent_shards_dir) 走 g 通路"
+                             " (use_glyph_cond 注入), 替代标准字形库——skel latent 即字条件, 从头预训练.")
+    parser.add_argument("--skel-latent-shards-dir", default="",
+                        help="实例 skel latent shards (--skel-as-glyph-cond 时必填)")
+    parser.add_argument("--glyph-drop-prob", type=float, default=0.0,
+                        help="g 条件训练期随机丢弃概率 (skel 模式建议 0.1, 保无 g 生成能力)")
+    parser.add_argument("--glyph-inject-layers", type=int, default=0,
+                        help="g 逐层注入层数 (0=仅输入层 token-add, s23 既有行为)")
     parser.add_argument("--glyph-init-mix", type=float, default=0.0,
                         help="HYBRID 初始点 alpha∈[0,1]: xT=alpha*randn+(1-alpha)*std字形latent。"
                              "0=纯噪声(现状); (0,1)=混合; 默认 0 保持当前行为, 收敛后按需设 e.g.0.6。"

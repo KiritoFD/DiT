@@ -80,6 +80,7 @@ def sample_latents(model, diffusion, noise, conds, cfg_scale, batch, device,
     lc, ls = noise.shape[1], noise.shape[2]
     all_latents = torch.zeros(n, lc, ls, ls, dtype=torch.float32)
     torch.manual_seed(seed)  # deterministic per call; noise itself is fixed anyway
+    dev_type = device.type if isinstance(device, torch.device) else str(device)
     # CFG 在模型层处理 (forward_with_cfg)。不能把 cfg_scale 塞进 model_kwargs:
     # sampler 只做 model(x, t, **kwargs) 转发, plain forward 收到 cfg_scale 会
     # 直接 TypeError (base 通道崩溃), ctrl 通道则静默吞掉 → CFG 从未生效。
@@ -96,20 +97,27 @@ def sample_latents(model, diffusion, noise, conds, cfg_scale, batch, device,
         mk = dict(y_callig=yc, y_char=yh)
         if skel is not None:
             mk["cond"] = skel[i:j].to(device)
-        with torch.autocast("cuda", dtype=torch.bfloat16):
+        # bf16 autocast 仅 cuda (CPU 无 AVX512-BF16/AMX 时 bf16 走软件上转反而慢)
+        if dev_type == "cuda":
+            with torch.autocast("cuda", dtype=torch.bfloat16):
+                samples = diffusion.ddim_sample_loop(
+                    model_fn, z.shape, z,
+                    clip_denoised=False, model_kwargs=mk, device=device)
+        else:
             samples = diffusion.ddim_sample_loop(
                 model_fn, z.shape, z,
                 clip_denoised=False, model_kwargs=mk, device=device)
         all_latents[i:j] = samples.float().cpu()
         del z, samples
-        torch.cuda.empty_cache()
+        if dev_type == "cuda":
+            torch.cuda.empty_cache()
     return all_latents
 
 
 # ── VAE decode (fp32) → PNG 落盘 ────────────────────────────────────────────
 @torch.no_grad()
 def decode_and_save(vae, latents, scaling_factor, out_dir, tag, conds=None,
-                    gts=None, vae_batch=16, skels=None):
+                    gts=None, vae_batch=16, skels=None, idx_offset=0):
     """Decode latents (fp32, force_upcast) → save {tag}{i}.png [+gt{i}.png, skel{i}.png].
 
     latents      : (N, C, H, W) CPU float32.
@@ -117,18 +125,20 @@ def decode_and_save(vae, latents, scaling_factor, out_dir, tag, conds=None,
     out_dir      : directory to write PNGs into (created).
     tag          : image prefix (e.g. 'ctrl' / 'base' / 'sample').
     conds/gts/skels: optional metadata / GT images (N,3,H,W) [-1,1] / skels.
+    idx_offset   : 全局下标偏移 (分段并行 eval 时 = 段起点, PNG 命名用全局下标).
     Returns number of saved images.
     """
     os.makedirs(out_dir, exist_ok=True)
     n = latents.shape[0]
     n_saved = 0
+    vae_dev = next(vae.parameters()).device
     for i in range(0, n, vae_batch):
         j = min(i + vae_batch, n)
-        lat = latents[i:j].to(latents.device if latents.is_cuda else next(vae.parameters()).device)
+        lat = latents[i:j].to(vae_dev)
         decoded = vae.decode(lat / scaling_factor).sample  # fp32
         preds = decoded.float().cpu()
         for k in range(j - i):
-            idx = i + k
+            idx = idx_offset + i + k
             p = ((preds[k].clamp(-1, 1) + 1) / 2).clamp(0, 1)
             Image.fromarray((p.permute(1, 2, 0).numpy() * 255).astype(np.uint8)).save(
                 os.path.join(out_dir, f"{tag}{idx}.png"))
@@ -151,7 +161,8 @@ def decode_and_save(vae, latents, scaling_factor, out_dir, tag, conds=None,
                         os.path.join(out_dir, f"skel{idx}.png"))
         n_saved += j - i
         del lat, decoded, preds
-        torch.cuda.empty_cache()
+        if vae_dev.type == "cuda":
+            torch.cuda.empty_cache()
     return n_saved
 
 
@@ -237,16 +248,20 @@ def _get_lpips():
     return _lpips_fn
 
 
-def compute_metrics(dec_dir, gt_dir, tag_prefix, n, use_lpips=True):
+def compute_metrics(dec_dir, gt_dir, tag_prefix, n, use_lpips=True, idx_range=None,
+                    with_lists=False):
     """Compute MSE/SSIM/skel_iou (optional LPIPS) from PNG pairs on CPU.
 
     dec_dir : dir with {tag_prefix}{i}.png
     gt_dir  : dir with gt{i}.png (== dec_dir in the ctrl eval layout)
-    Returns dict of scalar metrics.
+    idx_range : (start, end) 只统计该全局下标区间 (分段并行 eval 用); None = 0..n
+    with_lists : True 时额外返回逐样本指标列表 (供跨分段精确合并 std/分位数)
+    Returns dict of scalar metrics (with_lists 时返回 (dict, lists_dict)).
     """
     lpips_fn = _get_lpips() if use_lpips else None
     mses, ssims, skels, lpips_ = [], [], [], []
-    for i in range(n):
+    idxs = list(range(n)) if idx_range is None else list(range(*idx_range))
+    for i in idxs:
         p = os.path.join(dec_dir, f"{tag_prefix}{i}.png")
         g = os.path.join(gt_dir, f"gt{i}.png")
         if not (os.path.exists(p) and os.path.exists(g)):
@@ -273,6 +288,9 @@ def compute_metrics(dec_dir, gt_dir, tag_prefix, n, use_lpips=True):
         res["skel_iou_std"] = float(np.std(skels))
     if lpips_:
         res["lpips_mean"] = float(np.mean(lpips_))
+    if with_lists:
+        return res, {"idx": idxs, "mse": mses, "ssim": ssims, "skel_iou": skels,
+                     "lpips": lpips_}
     return res
 
 

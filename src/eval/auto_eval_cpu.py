@@ -124,10 +124,7 @@ def build_model(args, device="cpu"):
         missing, unexpected = model.load_state_dict(state_dict, strict=False)
         log(f"[model] loaded pretrained body {args.pretrained} "
             f"(missing={len(missing)}, unexpected={len(unexpected)})")
-    if getattr(args, "use_lora", False):
-        # LoRA 已于 2026-08-31 随 src/model/lora.py 删除。
-        raise ValueError(
-            "use_lora=true 已不支持：src/model/lora.py 已删除。请用 use_lora=false。")
+
     model = model.to(device).eval()
     return model
 

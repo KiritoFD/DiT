@@ -48,7 +48,7 @@ import numpy as np
 from src.model import DiT_2Cond_models
 from src.loss import create_diffusion_or_flow, flow_kwargs_from
 from src.utils import MCCDLatentDataset
-from src.model.controlnet import ControlNetDiT, load_main_model
+from src.model.controlnet import ControlNetDiT, load_main_model, _strip_compile_prefix
 # (eval 统一走 src.eval.eval_facade)
 
 if sys.platform == 'win32':
@@ -308,6 +308,12 @@ def main():
     logger.info(f"[arch] {_arch} | learn_sigma={_learn_sigma} | ctrl={_ctrl_cfg}")
 
     # ---- 模型构建 ----
+    # "有意冻结"的主模型参数 id (freeze_char_table 冻结的 DINO 字符表等)。
+    # ControlNetDiT(train_ctrl_only=True) 会把 main 全部置 requires_grad=False,
+    # 之后 unfreeze-main 无法凭 requires_grad 区分"联训要解冻的"与"必须保持冻结的",
+    # 必须在包装前先快照 (否则 freeze_char_table=True 时 char 表会被一并解冻,
+    # 13.5M 的 DINO 语义锚在 main_lr 下漂移, 字符条件随训练退化)。
+    _frozen_intentional = set()
     if args.train_ctrl_only:
         # warm-start: 加载已训练主模型, 冻结
         # 注意：不再做 `os.path.exists(...) or None` 兜底 —— 路径失效必须硬失败，
@@ -342,6 +348,7 @@ def main():
             use_checkpoint=args.use_checkpoint,
             learn_sigma=_learn_sigma, diffusion_type=args.diffusion_type, **_arch)
         main_model.eval()
+        _frozen_intentional = {id(p) for p in main_model.parameters() if not p.requires_grad}
         ctrl = ControlNetDiT(main_model, cond_in_channels=args.skel_cond_channels,
                             train_ctrl_only=True, **_ctrl_cfg, **_arch).to(device)
     else:
@@ -377,21 +384,23 @@ def main():
     logger.info(f"[ctrl] trainable params: {n_train:,} | frozen: {n_frozen:,}")
 
     # ---- 可选: 解冻主模型 (联合训练, 除 char 表) ----
-    # warm-start 分支里 load_main_model 已 freeze_char_table 冻结 char 表,
-    # 其余主模型参数本来 requires_grad=False (train_ctrl_only=True 语义)。
-    # 解冻 = 把这些参数置 True 并加入 trainable, optimizer 用两个 param group
-    # (ctrl 组 lr=args.lr, 主模型组 lr=args.main_lr)。
+    # warm-start 分支里 ControlNetDiT 已把 main 全部冻结; 解冻时豁免
+    # _frozen_intentional (freeze_char_table 的 DINO 字符表等), 其余全部解冻。
+    # optimizer 用两个 param group (ctrl 组 lr=args.lr, 主模型组 lr=args.main_lr)。
     _main_lr_group = None
     _main_params = []
     if getattr(args, "unfreeze_main", False):
-        main_p = [p for p in ctrl.main.parameters() if not p.requires_grad]
+        main_p = [p for p in ctrl.main.parameters()
+                  if not p.requires_grad and id(p) not in _frozen_intentional]
         for p in main_p:
             p.requires_grad = True
         trainable += main_p
         _main_lr_group = "main"
         _main_params = main_p
         n_main = sum(p.numel() for p in main_p)
+        n_keep_frozen = sum(p.numel() for p in ctrl.main.parameters() if not p.requires_grad)
         logger.info(f"[unfreeze-main] 主模型 {n_main:,} 参数解冻 (lr={args.main_lr}); "
+                    f"保持冻结 {n_keep_frozen:,} (char 表等); "
                     f"总 trainable {sum(p.numel() for p in trainable):,}")
 
     # torch.compile (torch>=2.0, cu121 env): 在 EMA deepcopy 与 optimizer 之前编译
@@ -462,24 +471,35 @@ def main():
     if args.resume and os.path.exists(args.resume):
         logger.info(f"[resume] loading {args.resume}")
         ck = torch.load(args.resume, map_location="cpu", weights_only=False)
+        # 编译包装: 权重必须载入未编译的原始模块 (键无 _orig_mod. 前缀);
+        # 旧 ckpt 若带前缀, 入侧先剥离
+        _tgt = getattr(ctrl, "_orig_mod", ctrl)
+        _ema_tgt = getattr(ema_ctrl, "_orig_mod", ema_ctrl) if ema_ctrl is not None else None
+
+        def _clean(sd):
+            return {(k[len("_orig_mod."):] if k.startswith("_orig_mod.") else k): v
+                    for k, v in sd.items()}
         # Load main model weights
         if ck.get("model"):
-            main_keys = {k: v for k, v in ck["model"].items() if k.startswith("main.")}
-            m_miss, m_unexp = ctrl.load_state_dict(main_keys, strict=False)
+            main_keys = _clean({k: v for k, v in ck["model"].items() if k.startswith("main.")})
+            m_miss, m_unexp = _tgt.load_state_dict(main_keys, strict=False)
             logger.info(f"[resume] main: {len(main_keys)} keys (missing={len(m_miss)}, unexpected={len(m_unexp)})")
         if ck.get("ema_model"):
-            ema_main_keys = {k: v for k, v in ck["ema_model"].items() if k.startswith("main.")}
-            ctrl.load_state_dict(ema_main_keys, strict=False)
-            logger.info(f"[resume] ema_model: {len(ema_main_keys)} keys")
+            ema_main_keys = _clean({k: v for k, v in ck["ema_model"].items() if k.startswith("main.")})
+            if _ema_tgt is not None:
+                _ema_tgt.load_state_dict(ema_main_keys, strict=False)
+                logger.info(f"[resume] ema_model(main): {len(ema_main_keys)} keys -> ema_ctrl")
+            else:
+                logger.warning("[resume] ckpt 含 ema_model 但本进程未开 EMA, 跳过")
         # Load ctrl_encoder weights (prefer ema)
         ctrl_src = ck.get("ema") or ck.get("ctrl")
         if ctrl_src:
             # 非 main.* 全载 (与存盘侧对称; 兼容旧 ckpt —— 旧 ckpt 本来就只有 ctrl_encoder.*)
-            ctrl_keys = {k: v for k, v in ctrl_src.items() if not k.startswith("main.")}
-            c_miss, c_unexp = ctrl.load_state_dict(ctrl_keys, strict=False)
+            ctrl_keys = _clean({k: v for k, v in ctrl_src.items() if not k.startswith("main.")})
+            c_miss, c_unexp = _tgt.load_state_dict(ctrl_keys, strict=False)
             logger.info(f"[resume] ctrl_encoder: {len(ctrl_keys)} keys (missing={len(c_miss)}, unexpected={len(c_unexp)})")
-            if ema_ctrl is not None:
-                e_miss, e_unexp = ema_ctrl.load_state_dict(ctrl_keys, strict=False)
+            if _ema_tgt is not None:
+                e_miss, e_unexp = _ema_tgt.load_state_dict(ctrl_keys, strict=False)
                 logger.info(f"[resume] ema_ctrl_encoder: {len(ctrl_keys)} keys (missing={len(e_miss)}, unexpected={len(e_unexp)})")
         # Load optimizer state
         if ck.get("optimizer"):
@@ -628,12 +648,17 @@ def main():
 
             if step % args.ckpt_every == 0 and step > 0:
                 # Save trainable weights (ctrl_encoder always; + main if from-scratch)
+                # torch.compile 会把 state_dict 键加上 `_orig_mod.` 前缀 —— 不剥离的话
+                # `startswith("main.")` 过滤全部失配, model/ema_model 存成空字典
+                # (下游 load_main_model / gradio 过滤同样失配, 权重静默丢载)。
+                _sd = _strip_compile_prefix(ctrl.state_dict())
+                _ema_sd = _strip_compile_prefix(ema_ctrl.state_dict()) if ema_ctrl else {}
                 ck = {
                     # 非 main.* 全存: ctrl_encoder + injections (zero-conv/modulate 注入)
                     # 旧过滤器只存 ctrl_encoder.* 会把训练好的 injections 丢掉
-                    "ctrl": {k: v.detach().cpu() for k, v in ctrl.state_dict().items()
+                    "ctrl": {k: v.detach().cpu() for k, v in _sd.items()
                              if not k.startswith("main.")},
-                    "ema": {k: v.detach().cpu() for k, v in ema_ctrl.state_dict().items()
+                    "ema": {k: v.detach().cpu() for k, v in _ema_sd.items()
                             if not k.startswith("main.")} if ema_ctrl else None,
                     "train_steps": step,
                     "args": vars(args),
@@ -644,10 +669,10 @@ def main():
                 if not args.train_ctrl_only or getattr(args, "unfreeze_main", False):
                     # from-scratch 或 unfreeze-main: 主模型被训练过, 必须把 main 权重也保存
                     # (2026-09-04 修正: v8d/v8i 解冻训练的 base 强化曾因漏存丢失)
-                    ck["model"] = {k: v.detach().cpu() for k, v in ctrl.state_dict().items()
+                    ck["model"] = {k: v.detach().cpu() for k, v in _sd.items()
                                    if k.startswith("main.")}
                     if ema_ctrl:
-                        ck["ema_model"] = {k: v.detach().cpu() for k, v in ema_ctrl.state_dict().items()
+                        ck["ema_model"] = {k: v.detach().cpu() for k, v in _ema_sd.items()
                                            if k.startswith("main.")}
                 torch.save(ck, os.path.join(ckpt_dir, f"{step:07d}.pt"))
                 # 写 .done 标记, 供 auto_eval_cpu 确认 ckpt 写完整
@@ -668,8 +693,10 @@ def main():
                     except Exception as _e:
                         logger.warning(f"[eval] step {step} FAILED: {_e}")
 
-                # ---- ctrl 早停: 读 daemon 写的 eval_auto_ctrl_*.json (ctrl.ssim 越高越好) ----
-                if (getattr(args, 'early_stop', False) and gpu_eval_cache is not None
+                # ---- ctrl 早停: 读 eval_auto_ctrl_*.json (ctrl.ssim 越高越好) ----
+                # json 来源可以是本进程 GPU eval (eval_facade) 或 CPU daemon
+                # (cpu_eval_daemon 写同格式) —— gpu_eval_csv 为空时纯靠 daemon。
+                if (getattr(args, 'early_stop', False)
                         and step >= int(getattr(args, 'early_stop_min_steps', 0))
                         and step % args.gpu_eval_every == 0):
                     _ev_files = sorted(glob.glob(os.path.join(ckpt_dir, "eval_auto_ctrl_*.json")))
