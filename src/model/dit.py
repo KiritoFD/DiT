@@ -245,6 +245,10 @@ class DiT_2Cond(nn.Module):
         skel_head_enabled=False,
         use_glyph_cond=False,
         glyph_scale_init=0.4,
+        # v10b: 去掉 char 向量条件 (skel-g 即字条件时的干净因子分解: 结构=skel, 风格=callig)。
+        # False 时不建 y_char_embedder/char_proj/char_scale, 4-way 退化为 callig 单向量因子
+        # (drop_all/drop_one 都丢 callig); forward 仍接受 y_char 形参但忽略 (接口零破坏)。
+        use_char_cond=True,
         # 标准字形条件的逐层注入层数。0 = 关闭（只用输入层 token-add，旧行为）；
         # >0 = 在该数量的 block 后注入（均匀分布），与 ControlNet 的
         # ZeroAdaLNInjection 完全对齐。见下方 glyph_embedder 处的说明。
@@ -292,6 +296,7 @@ class DiT_2Cond(nn.Module):
         self.skel_head_enabled = bool(skel_head_enabled)
         self.use_glyph_cond = bool(use_glyph_cond)
         self.glyph_scale_init = float(glyph_scale_init)
+        self.use_char_cond = bool(use_char_cond)
         self.char_proj_mode = char_proj_mode
         self.freeze_char_table = bool(freeze_char_table)
         if self.cond_drop_all_prob < 0 or self.cond_drop_one_prob < 0:
@@ -311,7 +316,12 @@ class DiT_2Cond(nn.Module):
             char_embed_dim = char_embed_dim or hidden_size
             self.y_callig_embedder = LabelEmbedder(
                 num_calligraphers, callig_embed_dim, 0.0, use_cfg_embedding=True)
-            if use_std_dino_char_embedder:
+            if not self.use_char_cond:
+                # v10b: skel-g 即字条件, char 向量因子整体移除
+                self.y_char_embedder = None
+                self.char_proj = None
+                self.char_scale = None
+            elif use_std_dino_char_embedder:
                 # 标准字形 DINO 冻结查表: 零可训练参数, 外形一致性 AUC>0.92
                 # (docs/system/25_dino_embed_direct.md)。char_embed_dim 应=DINO 维度(768)。
                 from .std_dino_embedder import StdDinoCharEmbedder
@@ -330,7 +340,9 @@ class DiT_2Cond(nn.Module):
                     num_characters, char_embed_dim, 0.0, use_cfg_embedding=True)
             self.callig_proj = nn.Sequential(nn.LayerNorm(callig_embed_dim),
                                              nn.Linear(callig_embed_dim, hidden_size))
-            if char_proj_mode == "ln_only":
+            if not self.use_char_cond:
+                pass    # char 侧已在上方整体移除
+            elif char_proj_mode == "ln_only":
                 # DINO 384 直通：char_embed_dim == hidden_size 时，char_proj 只做
                 # LayerNorm 归一化，不再 Linear 投影（省 384*384≈147K 冗余参数）。
                 #
@@ -375,7 +387,8 @@ class DiT_2Cond(nn.Module):
             # 而不是把比例硬编码成 1:1（书家与字的最优权重未必相等）。
             # 初值 1.0 保持与原实现等价，不会破坏已有 ckpt 的语义。
             self.callig_scale = nn.Parameter(torch.tensor(1.0))
-            self.char_scale = nn.Parameter(torch.tensor(1.0))
+            if self.use_char_cond:
+                self.char_scale = nn.Parameter(torch.tensor(1.0))
             self.cond_fusion = None
         elif condition_fusion == "xl_highdim":
             # XL 高维条件：callig(384) + glyph(768) concat -> MLP -> hidden(1152)，c = t_emb + y_emb。
@@ -525,8 +538,11 @@ class DiT_2Cond(nn.Module):
         nn.init.constant_(self.x_embedder.proj.bias, 0)
 
         nn.init.normal_(self.y_callig_embedder.embedding_table.weight, std=0.02)
+        # v10b: use_char_cond=False 时 char 侧整体不存在
         # IDSCharEmbedder 用 comp_embedding 而非 embedding_table
-        if hasattr(self.y_char_embedder, 'comp_embedding'):
+        if self.y_char_embedder is None:
+            pass    # v10b: 无 char 侧
+        elif self.y_char_embedder is not None and hasattr(self.y_char_embedder, 'comp_embedding'):
             nn.init.normal_(self.y_char_embedder.comp_embedding.weight, std=0.02)
             if self.y_char_embedder.null_embed is not None:
                 nn.init.normal_(self.y_char_embedder.null_embed, std=0.02)
@@ -633,21 +649,30 @@ class DiT_2Cond(nn.Module):
             # 默认 0.10/0.30 配比 => full 60% / callig-only 15% / glyph-only 15% / uncond 10%。
             # 书家维度样本充足而字符维度才是难点: cond_drop_which_glyph_prob 让 drop-one
             # 偏向 glyph-only（drop callig 保 char），把专门训练预算给 5461 个字符内容分。
-            if self.training and (self.cond_drop_all_prob > 0 or self.cond_drop_one_prob > 0):
-                r = torch.rand(y_callig.shape[0], device=y_callig.device)
-                drop_all = r < self.cond_drop_all_prob
-                drop_one = ((r >= self.cond_drop_all_prob)
-                            & (r < self.cond_drop_all_prob + self.cond_drop_one_prob))
-                which_glyph = torch.rand(y_callig.shape[0], device=y_callig.device) < self.cond_drop_which_glyph_prob
-                y_callig = torch.where(drop_all | (drop_one & which_glyph),
-                                       self.y_callig_embedder.num_classes, y_callig)
-                y_char = torch.where(drop_all | (drop_one & ~which_glyph),
-                                     self.y_char_embedder.num_classes, y_char)
-            e_callig = self.y_callig_embedder(y_callig, False)
-            e_char = self.y_char_embedder(y_char, False)
-            # 可学习幅度平衡：见 __init__ 处注释（DINO 区分度被书家分支淹没的实测）。
-            y_emb = (self.callig_scale * self.callig_proj(e_callig)
-                     + self.char_scale * self.char_proj(e_char)) / math.sqrt(2.0)
+            if not self.use_char_cond:
+                # v10b: 单向量因子 (callig), drop_all/drop_one 同义 —— 丢 callig = uncond 向量
+                if self.training and (self.cond_drop_all_prob > 0 or self.cond_drop_one_prob > 0):
+                    r = torch.rand(y_callig.shape[0], device=y_callig.device)
+                    drop = r < (self.cond_drop_all_prob + self.cond_drop_one_prob)
+                    y_callig = torch.where(drop, self.y_callig_embedder.num_classes, y_callig)
+                e_callig = self.y_callig_embedder(y_callig, False)
+                y_emb = self.callig_scale * self.callig_proj(e_callig)
+            else:
+                if self.training and (self.cond_drop_all_prob > 0 or self.cond_drop_one_prob > 0):
+                    r = torch.rand(y_callig.shape[0], device=y_callig.device)
+                    drop_all = r < self.cond_drop_all_prob
+                    drop_one = ((r >= self.cond_drop_all_prob)
+                                & (r < self.cond_drop_all_prob + self.cond_drop_one_prob))
+                    which_glyph = torch.rand(y_callig.shape[0], device=y_callig.device) < self.cond_drop_which_glyph_prob
+                    y_callig = torch.where(drop_all | (drop_one & which_glyph),
+                                           self.y_callig_embedder.num_classes, y_callig)
+                    y_char = torch.where(drop_all | (drop_one & ~which_glyph),
+                                         self.y_char_embedder.num_classes, y_char)
+                e_callig = self.y_callig_embedder(y_callig, False)
+                e_char = self.y_char_embedder(y_char, False)
+                # 可学习幅度平衡：见 __init__ 处注释（DINO 区分度被书家分支淹没的实测）。
+                y_emb = (self.callig_scale * self.callig_proj(e_callig)
+                         + self.char_scale * self.char_proj(e_char)) / math.sqrt(2.0)
         elif self.condition_fusion == "xl_highdim":
             # XL 高维条件：与 factorized_add 相同的 4-way 可控 mask（CFG 需要 uncond 维度）。
             if self.training and (self.cond_drop_all_prob > 0 or self.cond_drop_one_prob > 0):
@@ -749,9 +774,12 @@ class DiT_2Cond(nn.Module):
         y_callig = torch.cat([y_callig, y_callig], dim=0)
         y_char = torch.cat([y_char, y_char], dim=0)
         uncond_callig = torch.full_like(y_callig, self.y_callig_embedder.num_classes)
-        uncond_char = torch.full_like(y_char, self.y_char_embedder.num_classes)
         y_callig_combined = torch.cat([y_callig[:original_bs], uncond_callig[original_bs:]], dim=0)
-        y_char_combined = torch.cat([y_char[:original_bs], uncond_char[original_bs:]], dim=0)
+        if getattr(self, 'use_char_cond', True):
+            uncond_char = torch.full_like(y_char, self.y_char_embedder.num_classes)
+            y_char_combined = torch.cat([y_char[:original_bs], uncond_char[original_bs:]], dim=0)
+        else:
+            y_char_combined = y_char    # v10b: char 因子不存在, 值被 forward 忽略
         # 标准字形条件 g 始终全给(两半都用真实 g): 字形内容是正条件, CFG 只强化 callig 风格
         g2 = torch.cat([g, g], dim=0) if g is not None else None
         model_out = self.forward(x, t, y_callig_combined, y_char_combined, g=g2)

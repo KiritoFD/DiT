@@ -238,6 +238,7 @@ def main(args):
             skel_head_enabled=getattr(args, 'w_skel_head', 0) > 0,
             use_glyph_cond=(getattr(args, 'w_glyph_cond', 0) > 0
                             or getattr(args, 'skel_as_glyph_cond', False)),
+            use_char_cond=not getattr(args, 'no_char_cond', False),
             glyph_scale_init=getattr(args, 'glyph_scale_init', 0.4),
             glyph_drop_prob=getattr(args, 'glyph_drop_prob', 0.0),
             glyph_inject_layers=getattr(args, 'glyph_inject_layers', 0),
@@ -1855,6 +1856,9 @@ def main_from_cli(argv=None):
                         help="Enable 甲2 standard-glyph token-add conditioning (use_glyph_cond).")
     parser.add_argument("--glyph-scale-init", type=float, default=0.4,
                         help="Initial glyph_scale (standard-glyph token-add strength).")
+    parser.add_argument("--no-char-cond", type=_str_to_bool, default=False,
+                        help="v10b: 移除 char 向量条件 (skel-g 即字条件, 因子分解=callig+skel)."
+                             " 仅支持 condition_fusion=factorized_add.")
     parser.add_argument("--skel-as-glyph-cond", type=_str_to_bool, default=False,
                         help="v10a: 用实例 skel latent (skel_latent_shards_dir) 走 g 通路"
                              " (use_glyph_cond 注入), 替代标准字形库——skel latent 即字条件, 从头预训练.")
