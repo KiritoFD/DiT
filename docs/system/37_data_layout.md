@@ -14,3 +14,14 @@ legacy_csv 87M / std_legacy 269M / mid_data 3.8G / results_legacy 40G（5script 
 ## 教训
 批量 mv 的排除保护要用"先 mv 后恢复"之外的方式核对；整理后必须跑活跃资产在位检查
 （本次凭 data_path.json 清单抓回 3 个误归档文件）。
+
+## results/ 整理（同日追加）
+5script/results 532G→195G：66 个旧代实验 run（s2-s31/v3x/ctrl_skel/s21 等）移入
+`data/archive/results_legacy/`；保留 v8_3stage(123G)/v9 系/v10a/v10b。
+5script 大的根源 = 各代 ckpt + eval PNG 累积；下一个可整理杠杆是 v8_3stage 内部
+按 eval 裁剪 ckpt（123G，涉及引用检查，未动）。
+
+## v10b 训练性能（39.5k 步时点）
+2.83 sps / 20.66G / loss 0.2093；eval 每 2500 步 ~7 min（CPU daemon，零 Traceback）；
+GT 协议曲线：37500 → SSIM 0.7856 / IoU 0.4503（对照 v10a 同步 ~0.805，char 表中期
+贡献 ~0.02，收敛点差距待定）。
