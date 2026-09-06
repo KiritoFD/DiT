@@ -29,6 +29,10 @@ def main():
     ap.add_argument("--out", default="5script/results/v10b_handwrite_test")
     ap.add_argument("--model", choices=["v10b", "v8e"], default="v10b",
                     help="v10b=无char裸模型; v8e=两阶段最优 (ControlNetDiT on v8a, char=null行)")
+    ap.add_argument("--ckpt", default="",
+                    help="指定 ckpt 路径或 step 数字 (默认: 最新); 用于按训练步画遵循度曲线")
+    ap.add_argument("--tag", default="",
+                    help="输出子目录名 (默认 = step)")
     args = ap.parse_args()
 
     from src.model import DiT_2Cond_models
@@ -38,13 +42,27 @@ def main():
 
     # 最新 v10b ckpt
     arch = dict(norm_type="rms", mlp_type="swiglu", qk_norm=True, rope=True,
-                rope_theta=100.0, attn_impl="sdpa")
+                rope_theta=100.0, attn_impl="eager")  # CPU: eager (xformers sdpa 仅 cuda)
     if args.model == "v10b":
-        cks = sorted(__import__("glob").glob("5script/results/v10b_skel_only_pretrain/*/checkpoints/0*.pt"),
+        import glob as _g
+        cks = sorted(_g.glob("5script/results/v10b_skel_only_pretrain/*/checkpoints/0*.pt"),
                      key=lambda p: int(os.path.basename(p).split(".")[0]))
-        ck = cks[-1]
+        if args.ckpt:
+            if os.path.isfile(args.ckpt):
+                ck = args.ckpt
+            else:  # step 数字
+                match = [c for c in cks if int(os.path.basename(c).split(".")[0]) == int(args.ckpt)]
+                ck = match[0] if match else cks[-1]
+                if not match:
+                    print(f"[warn] --ckpt {args.ckpt} 无匹配, 用最新", flush=True)
+        else:
+            ck = cks[-1]
         step = int(os.path.basename(ck).split(".")[0])
         print(f"ckpt = {ck} (step {step})", flush=True)
+        if args.tag:
+            args.out = os.path.join(args.out, args.tag)
+        else:
+            args.out = os.path.join(args.out, f"step{step:07d}")
         d = torch.load(ck, map_location="cpu", weights_only=False)
         a = vars(d["args"]) if isinstance(d.get("args"), __import__("argparse").Namespace) else d["args"]
         model = DiT_2Cond_models[a.get("model", "DiT-2Cond-S/2")](
