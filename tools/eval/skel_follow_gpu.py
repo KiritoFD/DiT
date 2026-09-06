@@ -105,6 +105,11 @@ def main():
         print(f"[v8e] ckpt={v8e}", flush=True)
 
     # ---- 条件/数据 ----
+    # 对等协议: 三个模型统一 callig=1 + char=null + skel=字库骨架。
+    #   * v10a/v8e 有 char 因子: y_char 必须传 num_classes (null 占位符),
+    #     而非随机 id=0 —— id=0 是训练外查表污染向量, CFG 会当 positive 强化,
+    #     把有 char 模型人为拖垮 (v10a 0.541 低分的测量伪影)。
+    #   * v10b 无 char 因子: y_char 被 forward 忽略, 传啥都一样。
     fame_chars = {r["character"] for r in csv.DictReader(open("5script/train_fame_clean_v8.csv", encoding="utf-8"))}
     cand = []
     for p in sorted(glob.glob("src/utils/std_glyph_latent_v2/kai_gb/U+*.npy")):
@@ -119,6 +124,17 @@ def main():
     random.seed(7)
     picks = random.sample(cand, args.n)
     print("测试字:", " ".join(picks), flush=True)
+
+    if getattr(model, "use_char_cond", False) or getattr(
+            getattr(model, "main", None), "use_char_cond", False):
+        # 有 char 因子: 显式 null-char (num_classes 占位符)
+        char_embedder = getattr(model, "y_char_embedder", None) or model.main.y_char_embedder
+        y_char_null = char_embedder.num_classes
+        conds = [(1, y_char_null)]
+        print(f"[char] 有 char 因子 → y_char={y_char_null} (null), CFG 只推 callig 轴", flush=True)
+    else:
+        conds = [(1, 0)]   # v10b: 值被忽略
+        print("[char] 无 char 因子 (v10b), y_char 忽略", flush=True)
 
     vae = load_eval_vae(dev, "pretrained_models/sd-vae-ft-ema")
     diff = build_diffusion(50, "flow")
@@ -165,7 +181,7 @@ def main():
         noise = torch.randn(1, 4, 32, 32, generator=torch.Generator().manual_seed(7))
         t0 = time.time()
         # sample_latents: skel 参数自动路由 (use_glyph_cond → 'g'; ControlNet → 'cond')
-        lat = sample_latents(model, diff, noise, [(1, 0)], 0.7, 1, dev,
+        lat = sample_latents(model, diff, noise, conds, 0.7, 1, dev,
                              skel=g, seed=0)
         t_s = time.time() - t0
         with torch.no_grad():
