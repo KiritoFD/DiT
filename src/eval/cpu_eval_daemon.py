@@ -87,25 +87,24 @@ def newest_missing(ckpt_dir, state_last, flat=False):
 
 def merge_parts(part_files, n):
     """逐样本列表精确合并 → eval_facade 同 schema 的 res dict."""
-    agg = {"ctrl": {"mse": [], "ssim": [], "skel_iou": [], "lpips": []},
-           "base": {"mse": [], "ssim": [], "skel_iou": [], "lpips": []}}
+    agg = {}
     cfg = steps = None
     t_sample = t_decode = t_load = 0.0
     for pf in part_files:
         d = json.load(open(pf, encoding="utf-8"))
         t_load += d.get("t_load", 0)
         for p in d["parts"]:
-            agg[p["arm"]]["mse"] += p["lists"]["mse"]
-            agg[p["arm"]]["ssim"] += p["lists"]["ssim"]
-            agg[p["arm"]]["skel_iou"] += p["lists"]["skel_iou"]
+            a = agg.setdefault(p["arm"], {"mse": [], "ssim": [], "skel_iou": [], "lpips": []})
+            a["mse"] += p["lists"]["mse"]
+            a["ssim"] += p["lists"]["ssim"]
+            a["skel_iou"] += p["lists"]["skel_iou"]
             if p["lists"].get("lpips"):
-                agg[p["arm"]]["lpips"] += p["lists"]["lpips"]
+                a["lpips"] += p["lists"]["lpips"]
     res = {}
-    for arm in ("ctrl", "base"):
-        a = agg[arm]
+    for arm, a in agg.items():
         m = {"n": len(a["mse"])}
         if not a["mse"]:
-            return None
+            continue
         m["mse_mean"] = float(np.mean(a["mse"]))
         m["mse_std"] = float(np.std(a["mse"]))
         m["mse_q25"], m["mse_q50"], m["mse_q75"] = [float(q) for q in np.percentile(a["mse"], [25, 50, 75])]
@@ -116,9 +115,10 @@ def merge_parts(part_files, n):
         if a["lpips"]:
             m["lpips_mean"] = float(np.mean(a["lpips"]))
         res[arm] = m
-    for k in ("mse", "ssim", "lpips"):
-        if f"{k}_mean" in res["ctrl"] and f"{k}_mean" in res["base"]:
-            res[f"delta_{k}"] = res["ctrl"][f"{k}_mean"] - res["base"][f"{k}_mean"]
+    if "ctrl" in res and "base" in res:   # delta 仅 ctrl_pair 双臂模式存在
+        for k in ("mse", "ssim", "lpips"):
+            if f"{k}_mean" in res["ctrl"] and f"{k}_mean" in res["base"]:
+                res[f"delta_{k}"] = res["ctrl"][f"{k}_mean"] - res["base"][f"{k}_mean"]
     return res
 
 
@@ -159,13 +159,14 @@ def run_pair(ckpt, run_dir, threads, dit_batch, vae_batch, numactl, je, report=N
             stderr=subprocess.STDOUT)))
     ok = True
     for tag, p in procs:
+        rc = None
         try:
             rc = p.wait(timeout=30 * 60)
         except subprocess.TimeoutExpired:
             log(f"step {step}: {tag} 超时 kill")
             p.kill()
             ok = False
-        if rc != 0:
+        if rc is None or rc != 0:
             log(f"step {step}: {tag} rc={rc} (日志 /tmp/cpu_eval_w_{step}_{tag}.log)")
             ok = False
     part_files = [os.path.join(ckpt_dir, f".part_{t}.json") for t in ("p0", "p1")]
@@ -190,7 +191,8 @@ def run_pair(ckpt, run_dir, threads, dit_batch, vae_batch, numactl, je, report=N
     # cfg/steps 从 ckpt args 带回 (与 eval_facade json 字段一致)
     try:
         import torch as _t
-        a = _t.load(ckpt, map_location="cpu", weights_only=False).get("args", {})
+        _na = _t.load(ckpt, map_location="cpu", weights_only=False).get("args", {})
+        a = vars(_na) if isinstance(_na, argparse.Namespace) else (_na or {})
         _cfg = float(a.get("eval_cfg", a.get("gpu_eval_cfg", 0.7)))
         _steps = int(a.get("eval_steps", a.get("gpu_eval_steps", 50)))
         if mode == "pretrain_g":
@@ -208,8 +210,9 @@ def run_pair(ckpt, run_dir, threads, dit_batch, vae_batch, numactl, je, report=N
         if os.path.exists(p):
             os.remove(p)
     os.remove(lock)
-    log(f"step {step}: DONE {time.time()-t0:.0f}s ctrl_ssim={res['ctrl'].get('ssim_mean')} "
-        f"base_ssim={res['base'].get('ssim_mean')} -> {os.path.basename(out_json)}")
+    _r = flat if mode == "pretrain_g" else res
+    _ssim = _r.get("ssim") or (_r.get("ctrl", {}).get("ssim_mean"))
+    log(f"step {step}: DONE {time.time()-t0:.0f}s ssim={_ssim} -> {os.path.basename(out_json)}")
     return True
 
 

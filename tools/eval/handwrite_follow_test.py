@@ -27,6 +27,8 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--n", type=int, default=10)
     ap.add_argument("--out", default="5script/results/v10b_handwrite_test")
+    ap.add_argument("--model", choices=["v10b", "v8e"], default="v10b",
+                    help="v10b=无char裸模型; v8e=两阶段最优 (ControlNetDiT on v8a, char=null行)")
     args = ap.parse_args()
 
     from src.model import DiT_2Cond_models
@@ -35,28 +37,52 @@ def main():
     from src.eval.cpu_sampler import heun_sample_cpu
 
     # 最新 v10b ckpt
-    cks = sorted(__import__("glob").glob("5script/results/v10b_skel_only_pretrain/*/checkpoints/0*.pt"),
-                 key=lambda p: int(os.path.basename(p).split(".")[0]))
-    ck = cks[-1]
-    step = int(os.path.basename(ck).split(".")[0])
-    print(f"ckpt = {ck} (step {step})", flush=True)
-    d = torch.load(ck, map_location="cpu", weights_only=False)
-    a = vars(d["args"]) if isinstance(d.get("args"), __import__("argparse").Namespace) else d["args"]
     arch = dict(norm_type="rms", mlp_type="swiglu", qk_norm=True, rope=True,
                 rope_theta=100.0, attn_impl="sdpa")
-    model = DiT_2Cond_models[a.get("model", "DiT-2Cond-S/2")](
-        num_calligraphers=int(a.get("num_calligraphers", 1013)),
-        num_characters=int(a.get("num_characters", 35130)),
-        condition_fusion="factorized_add", callig_embed_dim=128,
-        char_embed_dim=384, char_proj_mode="mlp", freeze_char_table=False,
-        cond_drop_all_prob=0.05, cond_drop_one_prob=0.25,
-        cond_drop_which_glyph_prob=0.5, use_checkpoint=False, learn_sigma=False,
-        use_glyph_cond=True, use_char_cond=False,
-        glyph_scale_init=float(a.get("glyph_scale_init", 0.4)), **arch)
-    sd = _strip(d.get("ema") or d.get("model") or d)
-    miss, unexp = model.load_state_dict(sd, strict=False)
-    assert len(unexp) == 0
-    model.eval()
+    if args.model == "v10b":
+        cks = sorted(__import__("glob").glob("5script/results/v10b_skel_only_pretrain/*/checkpoints/0*.pt"),
+                     key=lambda p: int(os.path.basename(p).split(".")[0]))
+        ck = cks[-1]
+        step = int(os.path.basename(ck).split(".")[0])
+        print(f"ckpt = {ck} (step {step})", flush=True)
+        d = torch.load(ck, map_location="cpu", weights_only=False)
+        a = vars(d["args"]) if isinstance(d.get("args"), __import__("argparse").Namespace) else d["args"]
+        model = DiT_2Cond_models[a.get("model", "DiT-2Cond-S/2")](
+            num_calligraphers=int(a.get("num_calligraphers", 1013)),
+            num_characters=int(a.get("num_characters", 35130)),
+            condition_fusion="factorized_add", callig_embed_dim=128,
+            char_embed_dim=384, char_proj_mode="mlp", freeze_char_table=False,
+            cond_drop_all_prob=0.05, cond_drop_one_prob=0.25,
+            cond_drop_which_glyph_prob=0.5, use_checkpoint=False, learn_sigma=False,
+            use_glyph_cond=True, use_char_cond=False,
+            glyph_scale_init=float(a.get("glyph_scale_init", 0.4)), **arch)
+        sd = _strip(d.get("ema") or d.get("model") or d)
+        miss, unexp = model.load_state_dict(sd, strict=False)
+        assert len(unexp) == 0
+        model.eval()
+        cond_key = "g"
+    else:
+        # 两阶段最优 v8e: ControlNetDiT(v8a base) + ctrl ckpt; char 条件传 null 行
+        from src.model.controlnet import load_main_model, ControlNetDiT
+        main = load_main_model(
+            ckpt_path="5script/results/v8_3stage/A_main_final.pt", device=dev,
+            num_calligraphers=1013, num_characters=35130,
+            condition_fusion="factorized_add", callig_embed_dim=128,
+            char_embed_dim=384, char_proj_mode="mlp", freeze_char_table=True,
+            learn_sigma=False, **arch)
+        main.eval()
+        model = ControlNetDiT(main, cond_in_channels=4, train_ctrl_only=True,
+                              injection="modulate", null_cond="gaussian", **arch)
+        v8e = sorted(__import__("glob").glob(
+            "5script/results/v8_3stage/v8e/*/checkpoints/0022500.pt"))[-1]
+        step = 22500
+        print(f"ckpt = {v8e} (v8e ctrl @22500, 两阶段)", flush=True)
+        d = torch.load(v8e, map_location="cpu", weights_only=False)
+        sd = _strip(d.get("ema") or d.get("ctrl"))
+        miss, unexp = model.load_state_dict(sd, strict=False)
+        assert len(unexp) == 0
+        model.eval()
+        cond_key = "cond"
 
     # fame 训练字集合 (排除用)
     fame_chars = set()
@@ -87,6 +113,9 @@ def main():
     flow = create_diffusion_or_flow("50", diffusion_type="flow", t_sampler="logit_normal",
                                     sampler="heun", shift=1.0)
     y_callig = torch.tensor([1])   # 固定一个书家 id (风格)
+    null_char_id = None
+    if args.model == "v8e":
+        null_char_id = int(model.main.y_char_embedder.num_classes)  # 训练过的 null 行
 
     try:
         from skimage.morphology import skeletonize
@@ -109,6 +138,7 @@ def main():
         return binary_dilation(m, structure=generate_binary_structure(2, 2), iterations=3)
 
     os.makedirs(args.out, exist_ok=True)
+    print(f"model={args.model} out={args.out}", flush=True)
     rows = []
     for ch in picks:
         gv = lk.get(0, ch, random=False)     # 楷体
@@ -122,8 +152,9 @@ def main():
         in_mask = (gen.mean(0).numpy() < 0.5)
         noise = torch.randn(1, 4, 32, 32, generator=torch.Generator().manual_seed(7))
         t0 = time.time()
-        lat = heun_sample_cpu(model, noise, [(1, 0)], 0.7, 1, skel=g, seed=0,
-                              steps=50, shift=1.0, cond_key="g")
+        _yh = torch.tensor([null_char_id]) if null_char_id is not None else torch.tensor([0])
+        lat = heun_sample_cpu(model, noise, [(1, _yh.item())], 0.7, 1, skel=g, seed=0,
+                              steps=50, shift=1.0, cond_key=cond_key)
         t_s = time.time() - t0
         with torch.no_grad():
             img = vae.decode(lat / 0.18215).sample.float().cpu()[0]
