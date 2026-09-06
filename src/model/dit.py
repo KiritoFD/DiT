@@ -511,6 +511,11 @@ class DiT_2Cond(nn.Module):
                     _ye.null_embed.requires_grad_(True)
                 if _ye.fallback_embed is not None:
                     _ye.fallback_embed.requires_grad_(True)
+            elif hasattr(_ye, 'char_table'):
+                # StdDinoCharEmbedder: 冻结 buffer 查表, 天然不参与梯度;
+                # 仅确保 CFG null token 可学习 (与 IDS 分支一致)。
+                if _ye.null_embed is not None:
+                    _ye.null_embed.requires_grad_(True)
             else:
                 # LabelEmbedder: 冻结字符表
                 with torch.no_grad():
