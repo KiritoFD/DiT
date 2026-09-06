@@ -18,6 +18,8 @@ SERIES = [
     ("v9a_repa_pretrain", "5script/results/v9a_repa_pretrain"),
     ("v9b_ctrl_repa_strong", "5script/results/v9b_ctrl_strong"),
     ("v9c_skel_joint", "5script/results/v9c_skel_joint"),
+    ("v10a_skel_cond_pretrain", "5script/results/v10a_skel_cond_pretrain"),
+    ("v10b_skel_only_pretrain", "5script/results/v10b_skel_only_pretrain"),
 ]
 
 
