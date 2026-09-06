@@ -173,6 +173,7 @@ def _run_pretrain_g(args, ck, a, arch, common, t0):
         cond_drop_all_prob=0.05, cond_drop_one_prob=0.25,
         cond_drop_which_glyph_prob=0.5, use_checkpoint=False, learn_sigma=False,
         use_glyph_cond=use_g,
+        use_char_cond=not bool(a.get("no_char_cond", False)),
         glyph_scale_init=float(a.get("glyph_scale_init", 0.4)),
         glyph_drop_prob=float(a.get("glyph_drop_prob", 0.0)),
         glyph_inject_layers=int(a.get("glyph_inject_layers", 0)), **arch)

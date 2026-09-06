@@ -96,7 +96,12 @@ def sample_latents(model, diffusion, noise, conds, cfg_scale, batch, device,
         yh = torch.tensor([c[1] for c in conds[i:j]], device=device, dtype=torch.long)
         mk = dict(y_callig=yc, y_char=yh)
         if skel is not None:
-            mk["cond"] = skel[i:j].to(device)
+            # g 条件模型 (train.py use_glyph_cond/skel_as_glyph_cond 预训练) 走 'g' 键;
+            # ControlNetDiT 包装走 'cond' 键 —— 按模型类型自动路由
+            if getattr(model, "use_glyph_cond", False) or getattr(getattr(model, "main", None), "use_glyph_cond", False):
+                mk["g"] = skel[i:j].to(device)
+            else:
+                mk["cond"] = skel[i:j].to(device)
         # bf16 autocast 仅 cuda (CPU 无 AVX512-BF16/AMX 时 bf16 走软件上转反而慢)
         if dev_type == "cuda":
             with torch.autocast("cuda", dtype=torch.bfloat16):

@@ -432,6 +432,9 @@ def main(args):
         _rf = _torch.load(args.resume_full, map_location="cpu", weights_only=False)
         _resume_full_ckpt = _rf
         _sd = _rf.get("delta", _rf.get("model", _rf))
+        # torch.compile 存盘键带 _orig_mod. 前缀 —— 不剥离则全部 missing, 模型静默随机重启
+        _sd = {(k[len("_orig_mod."):] if k.startswith("_orig_mod.") else k): v
+               for k, v in _sd.items()}
         missing, unexpected = model.load_state_dict(_sd, strict=False)
         logger.info(f"[resume-full] Loaded weights from {args.resume_full} "
                     f"(missing={len(missing)}, unexpected={len(unexpected)}).")
@@ -719,6 +722,7 @@ def main(args):
                 logger.info(f"[resume-full] Restored optimizer state.")
             except Exception as _e:
                 logger.warning(f"[resume-full] Failed to restore optimizer state: {_e}")
+
         if getattr(args, 'resume_lr', None) is not None:
             for _pg in opt.param_groups:
                 _pg["lr"] = args.resume_lr
