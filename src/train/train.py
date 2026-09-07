@@ -242,6 +242,7 @@ def main(args):
             glyph_scale_init=getattr(args, 'glyph_scale_init', 0.4),
             glyph_drop_prob=getattr(args, 'glyph_drop_prob', 0.0),
             glyph_inject_layers=getattr(args, 'glyph_inject_layers', 0),
+            glyph_embedder_depth=getattr(args, 'glyph_embedder_depth', 0),
             in_channels=getattr(args, 'latent_channels', 4),
             char_proj_mode=getattr(args, 'char_proj_mode', 'full'),
             callig_proj_mode=getattr(args, 'callig_proj_mode', 'linear'),
@@ -1874,6 +1875,9 @@ def main_from_cli(argv=None):
                         help="g 条件训练期随机丢弃概率 (skel 模式建议 0.1, 保无 g 生成能力)")
     parser.add_argument("--glyph-inject-layers", type=int, default=0,
                         help="g 逐层注入层数 (0=仅输入层 token-add, s23 既有行为)")
+    parser.add_argument("--glyph-embedder-depth", type=int, default=0,
+                        help="g 编码器增强深度 (0=单层 Conv 现状; >0=降采样 Conv + N 层 "
+                             "(SiLU+Conv3x3) 残形增强 std 骨架特征, 治 std-skel g 通路不激活).")
     parser.add_argument("--glyph-init-mix", type=float, default=0.0,
                         help="HYBRID 初始点 alpha∈[0,1]: xT=alpha*randn+(1-alpha)*std字形latent。"
                              "0=纯噪声(现状); (0,1)=混合; 默认 0 保持当前行为, 收敛后按需设 e.g.0.6。"

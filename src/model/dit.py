@@ -257,6 +257,11 @@ class DiT_2Cond(nn.Module):
         # 标准字形条件的训练期随机丢弃概率。0 = 不丢弃。
         # 作用见 forward() 中的注释：防门控 + 模拟草/篆无标准字形的真实缺失。
         glyph_drop_prob=0.0,
+        # 标准字形编码器深度。0 = 单层 Conv2d(现状)；>0 = 降采样 Conv +
+        # depth 层 Conv+SiLU(逐层) 增强 std 骨架 latent 的编码能力。
+        # 动机(fame3 诊断)：std-g 下 g 注入作用仅 ~2.7%(GT-g 10.4%)、glyph_scale
+        # 梯度近零 —— 除 glyph_drop 外, 单层编码器可能提取不出足够结构特征。
+        glyph_embedder_depth=0,
         char_proj_mode="full",
         callig_proj_mode="linear",   # 42 号实验: "mlp" 两层 MLP 补 callig 容量
         callig_scale_init=1.0,       # 42 号实验: callig_scale 初值 (1.5 增强风格权重)
@@ -479,9 +484,19 @@ class DiT_2Cond(nn.Module):
         self.glyph_injections = None
         # 训练期随机丢弃标准字形条件的概率（见 forward 中注释）
         self.glyph_drop_prob = float(glyph_drop_prob)
+        self.glyph_embedder_depth = int(glyph_embedder_depth)
         if self.use_glyph_cond:
             ps_ = self.x_embedder.patch_size[0] if not isinstance(self.x_embedder.patch_size, int) else self.x_embedder.patch_size
-            self.glyph_embedder = nn.Conv2d(in_channels, hidden_size, kernel_size=ps_, stride=ps_, bias=False)
+            if self.glyph_embedder_depth <= 0:
+                self.glyph_embedder = nn.Conv2d(in_channels, hidden_size, kernel_size=ps_, stride=ps_, bias=False)
+            else:
+                # 增强编码器: 降采样 Conv + depth 层 SiLU+Conv(3x3 保分辨率),
+                # 提升 std 骨架 latent 的结构特征提取能力(fame3 诊断: g 注入作用仅 ~2.7%)。
+                _layers = [nn.Conv2d(in_channels, hidden_size, kernel_size=ps_, stride=ps_, bias=False)]
+                for _ in range(self.glyph_embedder_depth):
+                    _layers.append(nn.SiLU())
+                    _layers.append(nn.Conv2d(hidden_size, hidden_size, kernel_size=3, stride=1, padding=1, bias=False))
+                self.glyph_embedder = nn.Sequential(*_layers)
             #
             # 为什么需要逐层注入（这是本项目的关键设计修正）
             # ---------------------------------------------------------------
