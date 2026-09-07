@@ -258,6 +258,8 @@ class DiT_2Cond(nn.Module):
         # 作用见 forward() 中的注释：防门控 + 模拟草/篆无标准字形的真实缺失。
         glyph_drop_prob=0.0,
         char_proj_mode="full",
+        callig_proj_mode="linear",   # 42 号实验: "mlp" 两层 MLP 补 callig 容量
+        callig_scale_init=1.0,       # 42 号实验: callig_scale 初值 (1.5 增强风格权重)
         freeze_char_table=False,
         # ---- IDS 组件码本字嵌入 (替代 LabelEmbedder) ----
         use_ids_char_embedder=False,  # 是否用 IDS 组件码本
@@ -338,8 +340,18 @@ class DiT_2Cond(nn.Module):
             else:
                 self.y_char_embedder = LabelEmbedder(
                     num_characters, char_embed_dim, 0.0, use_cfg_embedding=True)
-            self.callig_proj = nn.Sequential(nn.LayerNorm(callig_embed_dim),
-                                             nn.Linear(callig_embed_dim, hidden_size))
+            if callig_proj_mode == "mlp":
+                # 42 号实验: callig 链增强 —— 两层 MLP 补容量 (诊断: callig_chain
+                # rel 0.0013 弱梯度, 128 维单层容量不足)。
+                self.callig_proj = nn.Sequential(
+                    nn.LayerNorm(callig_embed_dim),
+                    nn.Linear(callig_embed_dim, hidden_size),
+                    nn.SiLU(),
+                    nn.Linear(hidden_size, hidden_size),
+                )
+            else:
+                self.callig_proj = nn.Sequential(nn.LayerNorm(callig_embed_dim),
+                                                 nn.Linear(callig_embed_dim, hidden_size))
             if not self.use_char_cond:
                 pass    # char 侧已在上方整体移除
             elif char_proj_mode == "ln_only":
@@ -386,7 +398,7 @@ class DiT_2Cond(nn.Module):
             # 这里给两个分支各一个可学习标量，让模型自行收敛到合适比例，
             # 而不是把比例硬编码成 1:1（书家与字的最优权重未必相等）。
             # 初值 1.0 保持与原实现等价，不会破坏已有 ckpt 的语义。
-            self.callig_scale = nn.Parameter(torch.tensor(1.0))
+            self.callig_scale = nn.Parameter(torch.tensor(float(callig_scale_init)))
             if self.use_char_cond:
                 self.char_scale = nn.Parameter(torch.tensor(1.0))
             self.cond_fusion = None

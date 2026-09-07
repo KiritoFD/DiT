@@ -244,6 +244,8 @@ def main(args):
             glyph_inject_layers=getattr(args, 'glyph_inject_layers', 0),
             in_channels=getattr(args, 'latent_channels', 4),
             char_proj_mode=getattr(args, 'char_proj_mode', 'full'),
+            callig_proj_mode=getattr(args, 'callig_proj_mode', 'linear'),
+            callig_scale_init=float(getattr(args, 'callig_scale_init', 1.0)),
             freeze_char_table=getattr(args, 'freeze_char_table', False),
             # ---- IDS 组件码本字嵌入 ----
             use_ids_char_embedder=getattr(args, 'use_ids_char_embedder', False),
