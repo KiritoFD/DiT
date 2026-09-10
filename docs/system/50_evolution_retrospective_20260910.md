@@ -1,10 +1,11 @@
 # 50. 演进复盘（2026-08-12 ~ 09-10）：时间线详解版
 
-状态: 覆盖全程 6 纪元；**45 张里程碑 poster**（`imgs/retro/`）+ 早期 s 系图表全编入。
+状态: 覆盖全程 6 纪元；**110 张里程碑 poster**（`imgs/retro/`，seen + strict 对照）+ 早期 s 系图表全编入。
 本文按**时间线**记录所有改动（模型/注入/LR/数据/评测/失败），最后一次注入改动（风格 token）
 在 T8 详述"具体怎么改、为什么能实现局部化调制"。文末附：当前 attention 速查、失败汇总、口径警示。
 
-图例: 单张=左模型右 GT；有严格集 poster 的 run 均已出 5 张（正文列 p0，其余见目录）。
+图例: 单张=左模型右 GT；**每个里程碑均给 seen + strict50 对照**（strict 为前 50 新字样本，同协议 cfg；
+p1-p4 见目录）。strict 为后补生成的用 strict50 协议（前 50 行），历史已评的用原 strict 目录。
 
 ---
 
@@ -94,11 +95,17 @@ unified REPA（多中间层 + warmup）+ unified eval facade；OT chunks / compi
 
 ## T4 · 2026-09-04 ~ 09-06：skel 作字条件（v10a / v10b）
 
-![v10a 135k](imgs/retro/era3_v10a_step0135000_seen.png)
+![v10a 127.5k](imgs/retro/era3_v10a_step0127500_seen.png)
+
+![era3_v10a_step0127500 strict](imgs/retro/era3_v10a_step0127500_strict_p0.png)
 
 ![v10adino 80k](imgs/retro/era3_v10adino_step0080000_seen.png)
 
+![era3_v10adino_step0080000 strict](imgs/retro/era3_v10adino_step0080000_strict_p0.png)
+
 ![v10b skelonly 85k](imgs/retro/era3_v10b_skelonly_step0085000_seen.png)
+
+![era3_v10b_skelonly_step0085000 strict](imgs/retro/era3_v10b_skelonly_step0085000_strict_p0.png)
 
 **模型改动**：DiT-1CondSkel（v10a：skel latent 8ch concat 输入 + callig adaLN）→
 v10b 两因子极简（callig + skel-g，**移除 char 向量条件 −13.8M**，`use_char_cond=False`）。
@@ -134,17 +141,31 @@ xattn −0.24 / 书家 −0.22）；`learned glyph_scale=0.1896` 曾诱使误删
 
 ![v10b stdskel pretrain 2k](imgs/retro/era4_v10b_stdskel_pretrain_step0002000_seen.png)
 
+![era4_v10b_stdskel_pretrain_step0002000 strict](imgs/retro/era4_v10b_stdskel_pretrain_step0002000_strict_p0.png)
+
 ![v10b stdskel 57.5k](imgs/retro/era4_v10b_stdskel_step0057500_seen.png)
+
+![era4_v10b_stdskel_step0057500 strict](imgs/retro/era4_v10b_stdskel_step0057500_strict_p0.png)
 
 ![v10b d01 20k](imgs/retro/era4_v10b_d01_step0020000_seen.png)
 
+![era4_v10b_d01_step0020000 strict](imgs/retro/era4_v10b_d01_step0020000_strict_p0.png)
+
 ![v10b deep 30k](imgs/retro/era4_v10b_deep_step0030000_seen.png)
+
+![era4_v10b_deep_step0030000 strict](imgs/retro/era4_v10b_deep_step0030000_strict_p0.png)
 
 ![v10b mid 1k](imgs/retro/era4_v10b_mid_step0001000_seen.png)
 
+![era4_v10b_mid_step0001000 strict](imgs/retro/era4_v10b_mid_step0001000_strict_p0.png)
+
 ![v10brepa strong 7.5k](imgs/retro/era4_v10brepa_strong_step0007500_seen.png)
 
+![era4_v10brepa_strong_step0007500 strict](imgs/retro/era4_v10brepa_strong_step0007500_strict_p0.png)
+
 ![v10b sp2 27.5k](imgs/retro/era4_v10b_sp2_step0027500_seen.png)
+
+![era4_v10b_sp2_step0027500 strict](imgs/retro/era4_v10b_sp2_step0027500_strict_p0.png)
 
 **里程碑（c41x）**：seen n=10 **0.7638 / IoU 0.2227 / lpips 0.1778 @212.5k，仍升**。
 
@@ -193,9 +214,15 @@ fame3 0.5059 → Sp 0.5178 → LR 0.535 → **增强+机制 0.568@390k**。
 
 ![c41x scratch v2 12.5k](imgs/retro/era5_c41x_scratch_v2_step0012500_seen.png)
 
+![era5_c41x_scratch_v2_step0012500 strict](imgs/retro/era5_c41x_scratch_v2_step0012500_strict_p0.png)
+
 ![c41x cos clean 175k](imgs/retro/era5_c41x_cos_clean_step0175000_seen.png)
 
+![era5_c41x_cos_clean_step0175000 strict](imgs/retro/era5_c41x_cos_clean_step0175000_strict_p0.png)
+
 ![cos_e 390k](imgs/retro/era5_cos_e_step0390000_seen.png)
+
+![era5_cos_e_step0390000 strict](imgs/retro/era5_cos_e_step0390000_strict_p0.png)
 
 ---
 
@@ -362,7 +389,7 @@ e_c_ca = self.y_callig_embedder(y_callig_in, False)     # 风格注入与 adaLN 
 
 | 类型 | 路径 |
 |---|---|
-| poster（45 张） | `docs/system/imgs/retro/` |
+| poster（110 张: seen+strict 对照） | `docs/system/imgs/retro/` |
 | 早期 s 系图表 | `docs/system/imgs/fig1~fig7`、`poster_base/ctrl_cfg*`、`s21_base_grid` |
 | poster 生成器 | `src/eval/posters.py`（daemon 自动 + CLI 回填，`--prefix` 防撞名）|
 | eval 托管 | `tools/eval/eval_ctl.sh` |
