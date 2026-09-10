@@ -93,7 +93,7 @@ MIDSTEP_STD（标准字形作为去噪中线目标，v3c）。
 
 ![v10adino 80k](imgs/retro/era3_v10adino_step0080000_seen.png)
 
-![v10b skelonly 85k](imgs/retro/era3_v10b_skelonly_step085000_seen.png)
+![v10b skelonly 85k](imgs/retro/era3_v10b_skelonly_step0085000_seen.png)
 
 **设计变化**：DiT-1CondSkel（v10a：skel 8ch concat 输入 + callig adaLN）→
 v10b 两因子极简（callig + skel-g，**移除 char 向量条件 -13.8M**）。
@@ -144,7 +144,7 @@ v10b 两因子极简（callig + skel-g，**移除 char 向量条件 -13.8M**）�
 
 ![c41x cos 172.5k](imgs/retro/era5_c41x_cos_step0172500_seen.png)
 
-![c41x cos strict 170k p0](imgs/retro/era5_c41x_cos_step170000_strict_p0.png)
+![c41x cos strict 170k p0](imgs/retro/era5_c41x_cos_step0170000_strict_p0.png)
 
 ![c41x scratch v2 12.5k](imgs/retro/era5_c41x_scratch_v2_step0012500_seen.png)
 
