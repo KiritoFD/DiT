@@ -12,15 +12,10 @@
   "latent_shards_dir": "final_latents_fame_e",
   "img_root": "final_imgs_fame_e",
   "num_calligraphers": 41,
-  "num_characters": 35130,
   "condition_fusion": "factorized_add",
   "callig_embed_dim": 128,
-  "char_embed_dim": 384,
-  "char_proj_mode": "mlp",
-  "freeze_char_table": false,
   "cond_drop_all_prob": 0.05,
   "cond_drop_one_prob": 0.05,
-  "cond_drop_which_glyph_prob": 0.85,
   "diffusion_type": "flow",
   "t_sampler": "logit_normal",
   "t_mean": 0.0,
@@ -65,6 +60,5 @@
   "callig_emb_pretrained": "5script/callig_emb_pretrained.pt",
   "freeze_callig_table": true,
   "glyph_inject_mode": "xattn",
-  "lr_schedule": "cosine",
-  "callig_spatial": false
+  "lr_schedule": "cosine"
 }

@@ -583,7 +583,7 @@ def main(args):
         ema_model = copy.deepcopy(model).eval()
         requires_grad(ema_model, False)
         if _resume_full_ckpt is not None and _resume_full_ckpt.get("ema") is not None:
-            # strict=False: 模型新增模块 (如 callig_spatial) 在旧 ckpt EMA 里没有 keys;
+            # strict=False: 模型新增模块 (如 callig_style_ca/style_token) 在旧 ckpt EMA 里没有 keys;
             # 这些 keys 会走 _LRScheduler 式的缺省初始化路径, 由 copy.deepcopy(model) 保持零初始化.
             _ema_miss, _ema_unexp = ema_model.load_state_dict(_resume_full_ckpt["ema"], strict=False)
             if _ema_miss:
