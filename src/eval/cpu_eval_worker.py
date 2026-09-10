@@ -184,6 +184,10 @@ def _run_pretrain_g(args, ck, a, arch, common, t0):
         glyph_inject_layers=int(a.get("glyph_inject_layers", 0)),
         callig_style_attn=bool(a.get("callig_style_attn", False)),
         callig_n_style=int(a.get("callig_n_style", 8)),
+        # 风格 token 每层注入 (GlyphStyleCrossAttn): 漏传会使 ckpt 的
+        # style_proj.*/style_role 变成 unexpected -> assert 崩 (2026-09-10 修)
+        style_token_n=int(a.get("style_token_n", 0)),
+        style_role_init=float(a.get("style_role_init", 0.02)),
         glyph_inject_mode=a.get("glyph_inject_mode", "adaln"), **arch)
     # 冻结书家表会把 null token 拆成独立 Parameter (y_callig_embedder.null_embed),
     # ckpt 里带着这个键 —— eval 构建必须复现冻结结构, 否则 unexp=1 assert 崩
