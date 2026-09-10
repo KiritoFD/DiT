@@ -156,11 +156,12 @@ def main():
     model.eval()
     with torch.no_grad():
         b = next(iter(dl))
-        xb = b["latent"][:8].to(dev)
-        tb = torch.rand(8, device=dev)
-        ycb = b["y_callig"][:8].to(dev)
-        yhb = b["y_char"][:8].to(dev)
-        gb = b["skel_latent"][:8].to(dev).float() if use_g else None
+        _bs = min(8, b["latent"].shape[0])
+        xb = b["latent"][:_bs].to(dev)
+        tb = torch.rand(_bs, device=dev)
+        ycb = b["y_callig"][:_bs].to(dev)
+        yhb = b["y_char"][:_bs].to(dev)
+        gb = b["skel_latent"][:_bs].to(dev).float() if use_g else None
 
         feats_g, feats_nog = {}, {}
         hooks = []

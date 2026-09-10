@@ -68,18 +68,33 @@ def pick_font(script, font_dir, cache={}):
 
 
 def render_skel1(ch, script, size=256, font_size=200):
-    """渲染字 -> 1px 骨架 uint8 (255=白底, 0=黑线)"""
-    font = pick_font(script, FONT_DIR)
-    if font is None:
-        return None
-    img = Image.new("L", (size, size), 255)
-    d = ImageDraw.Draw(img)
-    d.text((size // 2, size // 2), ch, font=font, fill=0, anchor="mm")
-    a = np.asarray(img)
-    if (a < 250).sum() < 10:
-        return None  # 字体缺字
-    sk = skeletonize_1px(a < 127)
-    return np.where(sk, 0, 255).astype("uint8")
+    """渲染字 -> 1px 骨架 uint8 (255=白底, 0=黑线).
+
+    候选字体**级联**：STXINGKA(行楷 61.8%) / SIMLI(隶 99.2%) 缺字时
+    回退 simkai(楷 100%) / simhei(黑 100%)，保证全覆盖。
+    """
+    cands = list(SCRIPT_FONT.get(script, SCRIPT_FONT["楷"])) + ["simkai.ttf", "simhei.ttf"]
+    seen = set()
+    for f in cands:
+        if f in seen:
+            continue
+        seen.add(f)
+        p = os.path.join(FONT_DIR, f)
+        if not os.path.isfile(p):
+            continue
+        try:
+            font = ImageFont.truetype(p, font_size)
+        except Exception:
+            continue
+        img = Image.new("L", (size, size), 255)
+        d = ImageDraw.Draw(img)
+        d.text((size // 2, size // 2), ch, font=font, fill=0, anchor="mm")
+        a = np.asarray(img)
+        if (a < 250).sum() < 10:
+            continue  # 该字体缺字，试下一个
+        sk = skeletonize_1px(a < 127)
+        return np.where(sk, 0, 255).astype("uint8")
+    return None
 
 
 FONT_DIR = "/tmp"

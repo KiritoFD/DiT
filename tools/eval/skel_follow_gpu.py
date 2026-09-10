@@ -34,6 +34,10 @@ def main():
     ap.add_argument("--model", choices=["v10b", "v10a", "v8e"], default="v10b")
     ap.add_argument("--ckpt", default="", help="v10b/v10a: step 或路径; v8e: 忽略(固定22500)")
     ap.add_argument("--tag", default="")
+    ap.add_argument("--cfg", type=float, default=0.7, help="callig 轴 CFG (与 eval 协议一致)")
+    ap.add_argument("--cfg-g", type=float, default=0.0,
+                    help="g 轴 CFG: 0=关(历史协议, g 两分支全给); >0 时 uncond 分支 g=0, "
+                         "eps = eps(g=0) + cfg_g * (eps(g) - eps(g=0))。依赖训练期 glyph_drop")
     args = ap.parse_args()
 
     dev = torch.device("cuda")
@@ -63,7 +67,12 @@ def main():
             cond_drop_all_prob=0.05, cond_drop_one_prob=0.25,
             cond_drop_which_glyph_prob=0.5, use_checkpoint=False, learn_sigma=False,
             use_glyph_cond=True, use_char_cond=False,
-            glyph_scale_init=float(a.get("glyph_scale_init", 0.4)), **arch).to(dev)
+            glyph_scale_init=float(a.get("glyph_scale_init", 0.4)),
+            glyph_embedder_depth=int(a.get("glyph_embedder_depth", 0)),
+            glyph_inject_layers=int(a.get("glyph_inject_layers", 0)),
+            callig_style_attn=bool(a.get("callig_style_attn", False)),
+            callig_n_style=int(a.get("callig_n_style", 8)),
+            glyph_inject_mode=a.get("glyph_inject_mode", "adaln"), **arch).to(dev)
         model.load_state_dict(_strip(d.get("ema") or d.get("model") or d), strict=False)
         model.eval()
     elif args.model == "v10a":
@@ -103,6 +112,27 @@ def main():
         model.eval()
         step = 22500
         print(f"[v8e] ckpt={v8e}", flush=True)
+
+    # ---- g 轴 CFG (--cfg-g > 0) ----
+    # 历史 forward_with_cfg 两分支都给真实 g (g 是正条件), CFG 只推 callig 轴;
+    # 这里在采样端外包一层: uncond 臂 g=0, eps = eps(g=0) + cfg_g*(eps(g)-eps(g=0))。
+    # 依赖训练期 glyph_drop (>0) 造出的 uncond-g 分支在域内。
+    if args.cfg_g > 0:
+        _orig_fwd = model.forward_with_cfg
+
+        def _fwd_gcfg(x, t, cfg_scale=0.0, **kw):
+            a = _orig_fwd(x, t, cfg_scale=cfg_scale, **kw)
+            g = kw.get("g")
+            if g is None:
+                return a
+            kw0 = dict(kw)
+            kw0["g"] = torch.zeros_like(g)
+            b = _orig_fwd(x, t, cfg_scale=cfg_scale, **kw0)
+            return b + args.cfg_g * (a - b)
+
+        model.forward_with_cfg = _fwd_gcfg
+        print(f"[cfg-g] g 轴 CFG={args.cfg_g} (callig 轴 {args.cfg} 保持不变)", flush=True)
+
 
     # ---- 条件/数据 ----
     # 对等协议: 三个模型统一 callig=1 + char=null + skel=字库骨架。
@@ -181,7 +211,7 @@ def main():
         noise = torch.randn(1, 4, 32, 32, generator=torch.Generator().manual_seed(7))
         t0 = time.time()
         # sample_latents: skel 参数自动路由 (use_glyph_cond → 'g'; ControlNet → 'cond')
-        lat = sample_latents(model, diff, noise, conds, 0.7, 1, dev,
+        lat = sample_latents(model, diff, noise, conds, args.cfg, 1, dev,
                              skel=g, seed=0)
         t_s = time.time() - t0
         with torch.no_grad():
@@ -203,6 +233,7 @@ def main():
         ious3 = [r["iou3"] for r in rows]
         ious1 = [r["iou"] for r in rows]
         summary = {"model": args.model, "step": step, "n": len(rows),
+                   "cfg": args.cfg, "cfg_g": args.cfg_g,
                    "iou_mean": round(float(np.mean(ious1)), 4),
                    "iou3_mean": round(float(np.mean(ious3)), 4),
                    "iou3_median": round(float(np.median(ious3)), 4),

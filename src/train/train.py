@@ -121,6 +121,24 @@ def create_logger(logging_dir):
 def main(args):
     assert torch.cuda.is_available(), "Training currently requires at least one GPU."
 
+    # ── 书家词表收紧: 稀疏 raw id -> 连续 0..N-1 (见 src/utils/callig_map.py) ──
+    # 设置 --callig-id-map 后, num_calligraphers 自动设为词表长度, 数据层查表映射;
+    # 未设置时行为与旧版完全一致 (稀疏 id 直通)。
+    # 注意: 此时 logger 尚未创建 (create_logger 在 setup_log_directory 之后),
+    # 用 print + 前缀, 与后续 [callig-emb] 日志区分。
+    args._callig_map = None
+    if getattr(args, "callig_id_map", ""):
+        from src.utils.callig_map import load_callig_id_map
+        _cm_path = args.callig_id_map
+        if not os.path.isabs(_cm_path) and not os.path.exists(_cm_path):
+            _cm_path = os.path.join("/root/Workspace/xy/DiT", _cm_path)
+        _cmap, _n = load_callig_id_map(_cm_path)
+        args._callig_map = _cmap
+        args.callig_id_map = _cm_path     # 回写解析后的绝对路径 (ckpt args/eval 端复用)
+        print(f"[callig-map] 加载词表 {_cm_path}: "
+              f"num_calligraphers {args.num_calligraphers} -> {_n}", flush=True)
+        args.num_calligraphers = _n
+
     if 'LOCAL_RANK' not in os.environ:
         os.environ['LOCAL_RANK'] = '0'
         os.environ['RANK'] = '0'
@@ -242,11 +260,16 @@ def main(args):
             glyph_scale_init=getattr(args, 'glyph_scale_init', 0.4),
             glyph_drop_prob=getattr(args, 'glyph_drop_prob', 0.0),
             glyph_inject_layers=getattr(args, 'glyph_inject_layers', 0),
+            glyph_inject_mode=getattr(args, 'glyph_inject_mode', 'adaln'),
             glyph_embedder_depth=getattr(args, 'glyph_embedder_depth', 0),
+            style_token_n=getattr(args, 'style_token_n', 0),
+            style_role_init=getattr(args, 'style_role_init', 0.02),
             in_channels=getattr(args, 'latent_channels', 4),
             char_proj_mode=getattr(args, 'char_proj_mode', 'full'),
             callig_proj_mode=getattr(args, 'callig_proj_mode', 'linear'),
             callig_scale_init=float(getattr(args, 'callig_scale_init', 1.0)),
+            callig_style_attn=getattr(args, 'callig_style_attn', False),
+            callig_n_style=getattr(args, 'callig_n_style', 8),
             freeze_char_table=getattr(args, 'freeze_char_table', False),
             # ---- IDS 组件码本字嵌入 ----
             use_ids_char_embedder=getattr(args, 'use_ids_char_embedder', False),
@@ -277,6 +300,34 @@ def main(args):
                     f"glyph_cond={(getattr(args, 'w_glyph_cond', 0) > 0) or getattr(args, 'skel_as_glyph_cond', False)}, glyph_scale_init={getattr(args, 'glyph_scale_init', 0.4)}, "
                     f"char_proj_mode={getattr(args, 'char_proj_mode', 'full')}, "
                     f"freeze_char_table={getattr(args, 'freeze_char_table', False)})")
+
+    # ── 书家词表: 对比预训练 embedding 加载 + 可选冻结 (2026-09-08) ──────────
+    # 词表收紧 (--callig-id-map) 后表只有 N+1 行; 预训练表 (SupCon w/ DINO 风格
+    # 特征, tools/pretrain_callig_emb.py) 覆盖前 N 行, CFG null 行保持随机。
+    # freeze_callig_table 时 null token 拆成独立 Parameter 保持可训练
+    # (LabelEmbedder.freeze_table(), 同 char 表的成熟机制)。
+    if getattr(args, "callig_emb_pretrained", ""):
+        _cep = args.callig_emb_pretrained
+        if not os.path.isabs(_cep) and not os.path.exists(_cep):
+            _cep = os.path.join("/root/Workspace/xy/DiT", _cep)
+        _d = torch.load(_cep, map_location="cpu", weights_only=False)
+        _emb = _d["embedding"] if isinstance(_d, dict) else _d
+        _w = model.y_callig_embedder.embedding_table.weight
+        assert _emb.shape == (_w.shape[0] - 1, _w.shape[1]), \
+            f"预训练书家表形状 {_emb.shape} != 表 {tuple(_w.shape)} - null 行"
+        with torch.no_grad():
+            _w[:_emb.shape[0]].copy_(_emb.float())
+        logger.info(f"[callig-emb] 加载预训练书家表 {_cep}: {_emb.shape}, "
+                    f"null 行保持随机")
+    if getattr(args, "freeze_callig_table", False):
+        assert getattr(args, "callig_emb_pretrained", ""), \
+            "freeze_callig_table 需要先 --callig-emb-pretrained (否则冻结随机表)"
+        model.y_callig_embedder.freeze_table()
+        logger.info("[callig-emb] 书家表已冻结 [0,N), CFG null token 保持可训练")
+
+    # ── 注入门控统计 (debug): forward hook 记录 xattn 注入输出的平均 L2 ──
+    # 零初始化起点, 该值增长 = 注入正在学会写入残差流 (惰性注册, 首个 debug 步挂)
+    _inj_stats = {}
 
     # ── DINO glyph-embedding init for y_char_embedder ───────────────────────
     # glyph_id = script_id * 7026 + character_id (每 script 7026 个字符, 见
@@ -532,7 +583,11 @@ def main(args):
         ema_model = copy.deepcopy(model).eval()
         requires_grad(ema_model, False)
         if _resume_full_ckpt is not None and _resume_full_ckpt.get("ema") is not None:
-            ema_model.load_state_dict(_resume_full_ckpt["ema"], strict=True)
+            # strict=False: 模型新增模块 (如 callig_spatial) 在旧 ckpt EMA 里没有 keys;
+            # 这些 keys 会走 _LRScheduler 式的缺省初始化路径, 由 copy.deepcopy(model) 保持零初始化.
+            _ema_miss, _ema_unexp = ema_model.load_state_dict(_resume_full_ckpt["ema"], strict=False)
+            if _ema_miss:
+                logger.info(f"[EMA] missing (new modules, kept init): {sorted(set(k.split('.')[0] for k in _ema_miss))[:8]}")
             logger.info("[EMA] restored EMA weights from checkpoint")
         logger.info(f"[EMA] enabled with decay={args.ema_decay}")
     if dist.get_world_size() > 1:
@@ -554,8 +609,12 @@ def main(args):
         # NOTE (2026-09-05): w_repa 从禁用列表移除 —— REPA 对齐主模型 block 特征到
         # DINO (与 t 无关, 只需 GT 图 + teacher), 已在 train_repa/train_controlnet 的
         # flow 下验证有效 (v8c/v8e SOTA 0.767/0.776)。flow 禁用它是过度限制。
+        # NOTE (2026-09-07): w_std_mid 同理移除 —— 它的 "sqrt_alpha" 门控已改为
+        # flow 感知 (flow 下等效 sqrt_alpha = 1-t, 见训练循环处), 不再依赖
+        # DDPM 专属的 sqrt_alphas_cumprod 数组, flow 下语义正确 (mid 噪声段
+        # t∈[0.25,0.65])。留在禁用列表会让 mid 配置静默失效 (本仓库惯犯模式)。
         _flow_disabled = []
-        for _attr in ('use_canny', 'use_skel', 'w_skel_head', 'w_std_mid',
+        for _attr in ('use_canny', 'use_skel', 'w_skel_head',
                       'w_latent_skel', 'w_latent_canny'):
             if getattr(args, _attr, 0):
                 setattr(args, _attr, 0 if not isinstance(getattr(args, _attr, 0), bool) else False)
@@ -677,7 +736,12 @@ def main(args):
         except Exception:
             layers = (8,)
         try:
-            student_hidden_size = int(model.x_embedder.proj.out_features)
+            _proj = model.x_embedder.proj
+            # PatchEmbed.proj 是 Conv2d (out_channels), 非 Linear (out_features)
+            student_hidden_size = int(getattr(_proj, "out_channels",
+                                              getattr(_proj, "out_features", 0)))
+            if student_hidden_size <= 0:
+                raise ValueError("cannot infer student dim from x_embedder.proj")
         except Exception:
             student_hidden_size = 384
         from src.loss.repa import build_repa_module
@@ -774,7 +838,8 @@ def main(args):
                                     use_glyph_cond=getattr(args, 'w_glyph_cond', False),
                                     skel_latent_shards_dir=(args.skel_latent_shards_dir
                                                             if getattr(args, 'skel_as_glyph_cond', False)
-                                                            else None))
+                                                            else None),
+                                    callig_id_map=getattr(args, '_callig_map', None))
         logger.info("Using latent-cached dataset (skip on-the-fly VAE encode)."
                     + (" preload=ON" if getattr(args, 'preload', False) else ""))
     else:
@@ -811,14 +876,22 @@ def main(args):
 
     total_planned_steps = args.max_steps if args.max_steps > 0 else args.epochs * len(loader)
     if getattr(args, 'fresh_scheduler', False) and _resume_full_ckpt is not None and args.max_steps > 0:
-        total_planned_steps = max(args.max_steps - resume_start_step, 1)
-        logger.info(f"[LR] fresh-scheduler: fine-tune horizon = {total_planned_steps} steps "
-                    f"(max_steps {args.max_steps} - resume {resume_start_step})")
+        # 调度器按绝对步数(从 step 0)计算: resume 点落在 cosine 中段, 不是从头 warm restart
+        total_planned_steps = args.max_steps
+        for _pg in opt.param_groups:
+            _pg.pop('initial_lr', None)  # 丢弃 ckpt 里旧 LambdaLR 的 base, 让 resume_lr 覆盖生效
+        logger.info(f"[LR] fresh-scheduler: cosine computed from absolute step 0 "
+                    f"(total {total_planned_steps}); resume at {resume_start_step} "
+                    f"-> LR starts mid-decay at "
+                    f"{args.min_lr_ratio + (1.0 - args.min_lr_ratio) * 0.5 * (1.0 + math.cos(math.pi * max((resume_start_step - min(args.warmup_steps, total_planned_steps - 1)) / max(total_planned_steps - min(args.warmup_steps, total_planned_steps - 1), 1), 0.0))):.2e} (base)")
     scheduler = None
     if args.lr_schedule == "cosine":
         warmup_steps = min(args.warmup_steps, max(total_planned_steps - 1, 0))
+        _step_offset = resume_start_step if (getattr(args, 'fresh_scheduler', False)
+                                             and _resume_full_ckpt is not None) else 0
 
         def _lr_scale(step):
+            step = step + _step_offset
             if warmup_steps > 0 and step < warmup_steps:
                 return max((step + 1) / warmup_steps, 1e-8)
             progress = ((step - warmup_steps)
@@ -1139,8 +1212,17 @@ def main(args):
                 if (getattr(args, 'w_std_mid', 0.0) > 0
                         and pred_xstart_latent is not None
                         and model_kwargs.get('g') is not None):
-                    _sqrt_a = torch.as_tensor(diffusion.sqrt_alphas_cumprod, device=device)
-                    _a_t = _sqrt_a[t]                       # (N,)
+                    # "sqrt_alpha" 的定义随扩散形式而变:
+                    #   ddpm: sqrt_alphas_cumprod[t] (整数步索引)
+                    #   flow: x_t=(1-t)x0+t·noise, 等效 sqrt_alpha = 1-t (浮点 t)
+                    # FlowMatching 没有 sqrt_alphas_cumprod 属性 —— 直接
+                    # diffusion.sqrt_alphas_cumprod[t] 会在 flow 下 AttributeError
+                    # (且浮点 t 不能做数组索引)。
+                    _sq = getattr(diffusion, "sqrt_alphas_cumprod", None)
+                    if _sq is not None:
+                        _a_t = torch.as_tensor(_sq, device=device)[t]    # (N,)
+                    else:
+                        _a_t = (1.0 - t.float()).to(device)              # flow: 等效 sqrt_alpha
                     _alo = float(getattr(args, 'std_mid_alo', 0.35))
                     _ahi = float(getattr(args, 'std_mid_ahi', 0.75))
                     _mid = (_a_t >= _alo) & (_a_t <= _ahi)  # (N,) bool: 中间噪声水平子集
@@ -1416,22 +1498,55 @@ def main(args):
                         ema_log = (f"EMA: {current_ema_decay:.6f} | "
                                    if ema_model is not None else "")
                         logger.info(
-                            f"(step={train_steps:07d}) Total: {avg_l:.4f} | "
-                            f"Diff: {avg_d:.4f} | "
-                            f"Canny: raw {avg_c:.4f} x {wc:.2f} = {c_contrib:.4f} | "
-                            f"Skel: raw {avg_s:.4f} x {ws:.2f} = {s_contrib:.4f} | "
-                            f"LatC: raw {avg_lc:.4f} x {args.w_latent_canny:.3f} = {latent_c_contrib:.4f} | "
-                            f"LatS: raw {avg_ls:.4f} x {args.w_latent_skel:.3f} = {latent_s_contrib:.4f} | "
-                            f"LStrS: raw {avg_lss:.4f} x {getattr(args,'w_latent_struct_skel',0):.1f} = {getattr(args,'w_latent_struct_skel',0)*avg_lss:.4f} | "
-                            f"LStrC: raw {avg_lsc:.4f} x {getattr(args,'w_latent_struct_canny',0):.1f} = {getattr(args,'w_latent_struct_canny',0)*avg_lsc:.4f} | "
-                            f"REPA(含w): raw {avg_r:.4f} (w={wr:.2f}) = {r_contrib if r_contrib == avg_r else avg_r:.4f} | "
-                            f"SkelH: raw {avg_skel_h:.4f} | "
-                            f"StdMid: raw {avg_std_mid:.4f} | "
+                            f"(step={train_steps:07d}) Diff: {avg_d:.4f} | "
+                            f"REPA(w={wr:.2f}): {avg_r:.4f} | "
                             f"LR: {opt.param_groups[0]['lr']:.2e} | {ema_log}"
                             f"Steps/Sec: {steps_per_sec:.2f} | "
                             f"Mem: {torch.cuda.memory_reserved() / 1024 ** 3:.2f}G/"
                             f"{torch.cuda.max_memory_reserved() / 1024 ** 3:.2f}G"
                         )
+                        # ── 调试诊断 (每 1000 步): 梯度分组 + 注入门控强度 ──
+                        # 门控 = xattn 注入输出在残差流上的平均 L2 (零初始化起,
+                        # 增长 = 注入正在学会写入); 梯度分组看各通路是否在学习。
+                        if train_steps % 1000 == 0:
+                            if not _inj_stats:
+                                _mm = model.module if hasattr(model, 'module') else model
+                                for _i, _inj in enumerate(
+                                        getattr(_mm, 'glyph_injections', []) or []):
+                                    if not hasattr(_inj, 'out_proj'):
+                                        continue
+
+                                    def _mk(_i):
+                                        def _h(_m, _inp, _out):
+                                            _inj_stats[_i] = _out.detach().float() \
+                                                .norm(dim=-1).mean().item()
+                                        return _h
+                                    _inj.register_forward_hook(_mk(_i))
+                            _gn = {}
+                            for _n, _p in model.named_parameters():
+                                if _p.grad is None:
+                                    continue
+                                _g = _p.grad.norm().item()
+                                if "glyph_injections" in _n:
+                                    _k = "inj_out_proj"
+                                elif "glyph_embedder" in _n:
+                                    _k = "glyph_embedder"
+                                elif "callig_proj" in _n or "callig_scale" in _n:
+                                    _k = "callig_chain"
+                                elif "blocks." in _n:
+                                    _k = "blocks"
+                                else:
+                                    _k = "other"
+                                _gn[_k] = _gn.get(_k, 0.0) + _g * _g
+                            _gn = {k: v ** 0.5 for k, v in _gn.items()}
+                            _gate = ""
+                            if _inj_stats:
+                                _gate = " | inj|out|: " + " ".join(
+                                    f"L{i}={v:.3f}" for i, v in sorted(_inj_stats.items()))
+                            logger.info(
+                                f"(step={train_steps:07d}) [diag] grad-norm: "
+                                + " ".join(f"{k}={v:.3f}" for k, v in sorted(_gn.items()))
+                                + _gate)
                     
                     running_loss = running_diff = running_canny = running_skel = 0
                     running_latent_canny = running_latent_skel = running_repa = running_x0lat = running_skel_head = 0
@@ -1666,6 +1781,34 @@ def main_from_cli(argv=None):
                         help="Enable gradient checkpointing on DiT blocks (cuts activation memory).")
     parser.add_argument("--image-size", type=int, choices=[256, 512], default=256)
     parser.add_argument("--num-calligraphers", type=int, default=2021)
+    parser.add_argument("--callig-id-map", default="",
+                        help="干净书家词表映射 json 路径 (raw calligrapher_id -> 0..N-1)。"
+                             "设置后 num_calligraphers 自动收紧为词表长度, 数据层查表映射。"
+                             "见 tools/build_callig_map.py。空=保持现状(稀疏 id 直通)。")
+    parser.add_argument("--callig-emb-pretrained", default="",
+                        help="对比预训练的书家 embedding (.pt, 含 'embedding' (N,dim))。"
+                             "加载到 y_callig_embedder 表前 N 行, 配合 --freeze-callig-table")
+    parser.add_argument("--callig-style-attn", action="store_true",
+                        help="callig 风格 cross-attention(书家化骨架正确形态): 书家向量 -> N_style 个 "
+                             "style token, 骨架 token 内容寻址聚合风格, 产生'书家x字x位置'交互(结体差异)。"
+                             "zero-init 可 resume。")
+    parser.add_argument("--callig-n-style", type=int, default=8,
+                        help="callig style token 数量 (配合 --callig-style-attn)")
+    parser.add_argument("--glyph-inject-mode", choices=["adaln", "xattn"], default="adaln",
+                        help="g 逐层注入方式: adaln=ZeroAdaLN 固定位置调制 (旧默认), "
+                             "xattn=ZeroCrossAttention 空间寻址 (GlyphDraw 式, 新 ckpt 专用)")
+    parser.add_argument("--style-token-n", type=int, default=0,
+                        help="风格 token 数 (0=关闭): >0 时每层注入 context = "
+                             "[书家化骨架(+2D位置); 风格token(+可学习role)], "
+                             "使书家风格**直接参与每一层、每个空间位置**的内容寻址 "
+                             "(风格局部化, 与局部字形共同调制最终生成)。"
+                             "配 --glyph-inject-mode xattn 使用; 建议 16~64 并做容量扫描。")
+    parser.add_argument("--style-role-init", type=float, default=0.02,
+                        help="风格 token 的 role embedding 初始化 std (促 N 个 token 分化, "
+                             "避免塌缩为同一向量)")
+    parser.add_argument("--freeze-callig-table", action="store_true",
+                        help="冻结书家表 [0,N) 行 (CFG null token 仍可训练)。"
+                             "需先 --callig-emb-pretrained, 否则冻结随机初始化无意义")
     parser.add_argument("--num-characters", type=int, default=7765)
     parser.add_argument("--epochs", type=int, default=1400)
     parser.add_argument("--max-steps", type=int, default=0,

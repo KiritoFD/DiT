@@ -8,6 +8,8 @@ import numpy as np
 from torch.utils.data import Dataset
 from PIL import Image
 
+from .callig_map import map_callig_id as _map_callig
+
 
 def _load_one(task):
     """Module-level worker for preload: read one PNG as uint8 array."""
@@ -38,11 +40,14 @@ class MCCDLatentDataset(Dataset):
     def __init__(self, csv_file, latent_shards_dir, img_root, canny_root=None,
                  image_size=256, load_canny=False, load_skel=False, skel_root=None,
                  is_train=False, preload=False, load_image=True, num_preload_workers=16,
-                 structure_size=256, use_glyph_cond=False, skel_latent_shards_dir=None):
+                 structure_size=256, use_glyph_cond=False, skel_latent_shards_dir=None,
+                 callig_id_map=None):
         self.samples = []
         with open(csv_file, 'r', encoding='utf-8') as f:
             for row in csv.DictReader(f):
                 self.samples.append(row)
+        # 书家词表收紧: 稀疏 raw calligrapher_id -> 连续索引 (见 callig_map.py)
+        self._callig_map = callig_id_map
         self.use_glyph_cond = bool(use_glyph_cond)
         if self.use_glyph_cond:
             # 标准字形 latent 查询(懒加载, 全局单例), 训练/推理一致
@@ -344,7 +349,8 @@ class MCCDLatentDataset(Dataset):
             'canny': canny_t,
             'skeleton': skel_t,
             'skel_latent': skel_lat,
-            'y_callig': torch.tensor(int(row['calligrapher_id']), dtype=torch.long),
+            'y_callig': torch.tensor(
+                _map_callig(int(row['calligrapher_id']), self._callig_map), dtype=torch.long),
             'y_script': torch.tensor(int(row['script_id']), dtype=torch.long),
             'y_char': torch.tensor(
                 int(row.get('glyph_id', row['character_id'])), dtype=torch.long),

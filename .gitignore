@@ -183,3 +183,7 @@ _archive/
 skel_bank_std.npz
 skel_bank_train.npz
 fame_meta.json
+
+# ---- 工具/IDE 目录 ----
+.arts/
+.commandcode/

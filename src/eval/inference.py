@@ -302,7 +302,7 @@ def compute_metrics(dec_dir, gt_dir, tag_prefix, n, use_lpips=True, idx_range=No
 # ── eval 条件缓存 (GT 图 + conds + skel + 固定 noise) ───────────────────────
 def make_eval_cache(eval_csv, img_root, skel_root, image_size, n,
                     vae_downscale, latent_channels, scaling_factor,
-                    skel_latent_shards_dir=None):
+                    skel_latent_shards_dir=None, callig_id_map=None):
     """Pre-load N eval samples: GT images + conditions + skels + fixed noise (CPU).
 
     skel 条件: 优先从 skel_latent_shards_dir 加载 VAE latent (N,4,32,32);
@@ -340,8 +340,11 @@ def make_eval_cache(eval_csv, img_root, skel_root, image_size, n,
         if img_root and not os.path.isabs(p) and not p.startswith(img_root):
             p = os.path.join(img_root, p)
         gts[i] = transform(Image.open(p).convert("RGB"))
-        conds.append((int(row["calligrapher_id"]),
-                      int(row.get("glyph_id", row.get("character_id", 0)))))
+        # 书家词表收紧: raw id -> 连续索引 (与训练数据层同一张映射表, 见 callig_map.py)
+        _cid = int(row["calligrapher_id"])
+        if callig_id_map is not None:
+            _cid = callig_id_map.get(_cid, _cid)
+        conds.append((_cid, int(row.get("glyph_id", row.get("character_id", 0)))))
         m = re.search(r"(\d+)\.png", p)
         img_id = int(m.group(1)) if m else None
         if img_id is not None and skels_latent is not None:

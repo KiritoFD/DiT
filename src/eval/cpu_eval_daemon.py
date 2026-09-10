@@ -110,6 +110,8 @@ def merge_parts(part_files, n):
         m["mse_q25"], m["mse_q50"], m["mse_q75"] = [float(q) for q in np.percentile(a["mse"], [25, 50, 75])]
         m["ssim_mean"] = float(np.mean(a["ssim"]))
         m["ssim_std"] = float(np.std(a["ssim"]))
+        m["ssim_p10"], m["ssim_q25"], m["ssim_med"], m["ssim_q75"], m["ssim_p90"] = \
+            [float(q) for q in np.percentile(a["ssim"], [10, 25, 50, 75, 90])]
         m["skel_iou_mean"] = float(np.mean(a["skel_iou"]))
         m["skel_iou_std"] = float(np.std(a["skel_iou"]))
         if a["lpips"]:
@@ -123,7 +125,7 @@ def merge_parts(part_files, n):
 
 
 def run_pair(ckpt, run_dir, threads, dit_batch, vae_batch, numactl, je, report=None,
-             mode="ctrl_pair"):
+             mode="ctrl_pair", log_dir=None, eval_sets=None, strict_every=0):
     ckpt_dir = os.path.dirname(ckpt)
     step = int(os.path.basename(ckpt).split(".")[0])
     lock = os.path.join(ckpt_dir, f"{step:07d}.cpu_eval.lock")
@@ -135,9 +137,37 @@ def run_pair(ckpt, run_dir, threads, dit_batch, vae_batch, numactl, je, report=N
                _eval_step=str(step))
     py = sys.executable
     n = 100
+    n_map = {}
+    eval_sets_str = ""
     if mode == "pretrain_g":
-        seg0, seg1 = f"g:0:{n // 2}", f"g:{n // 2}:{n}"
-        log(f"step {step}: g 单臂双 worker (各 {n // 2} 样本, flat json)")
+        # 多 eval 集: seen (每 ckpt) + strict (每 strict_every 步)。
+        # 每集 n = 该 csv 实际行数; 两 worker 按集各切一半。
+        try:
+            import torch as _t
+            _na = _t.load(ckpt, map_location="cpu", weights_only=False).get("args", {})
+            _a = vars(_na) if isinstance(_na, argparse.Namespace) else (_na or {})
+            if not eval_sets:
+                _csv0 = _a.get("gpu_eval_csv") or _a.get("eval_csv") or _a.get("data_csv") or ""
+                eval_sets = [("g", _csv0)]
+        except Exception:
+            eval_sets = eval_sets or [("g", "")]
+        active = []
+        for _nm, _cp in eval_sets:
+            _cp_full = _cp if os.path.isabs(_cp) else os.path.join("/root/Workspace/xy/DiT", _cp)
+            if _nm != "seen" and _nm != "g" and strict_every > 0 and step % strict_every != 0:
+                continue
+            active.append((_nm, _cp_full))
+        seg0s, seg1s = [], []
+        for _nm, _cp_full in active:
+            _rows = max(sum(1 for _ in open(_cp_full, encoding="utf-8")) - 1, 2)
+            n_map[_nm] = _rows
+            seg0s.append(f"{_nm}:0:{_rows // 2}")
+            seg1s.append(f"{_nm}:{_rows // 2}:{_rows}")
+        seg0, seg1 = ",".join(seg0s), ",".join(seg1s)
+        eval_sets_str = ",".join(f"{_nm}={_cp_full}" for _nm, _cp_full in active)
+        n = n_map.get("seen") or n_map.get("g") or 100
+        log(f"step {step}: pretrain_g 双 worker, 集={list(n_map.keys())} "
+            f"n={n_map} (strict 每 {strict_every} 步)")
     else:
         b0, c0 = _balance(n)
         seg0 = f"base:0:{b0},ctrl:0:{c0}"
@@ -149,13 +179,20 @@ def run_pair(ckpt, run_dir, threads, dit_batch, vae_batch, numactl, je, report=N
     common = ["--ckpt", ckpt, "--out-dir", run_dir, "--threads", str(threads),
               "--dit-batch", str(dit_batch), "--vae-batch", str(vae_batch), "--n", str(n),
               "--mode", mode]
+    if eval_sets_str:
+        common += ["--eval-sets", eval_sets_str]
     t0 = time.time()
+    # worker 日志: logs/<exp>/ (不再写 /tmp)
+    if log_dir:
+        os.makedirs(log_dir, exist_ok=True)
+    wlog = lambda tag: os.path.join(
+        log_dir or "/tmp", f"cpu_eval_w_{step}_{tag}.log")
     procs = []
     for tag, cmd, segs in (("p0", cmd0, seg0), ("p1", cmd1, seg1)):
         procs.append((tag, subprocess.Popen(
             cmd + [py, "-u", "src/eval/cpu_eval_worker.py",
                    "--segments", segs, "--part-tag", tag] + common,
-            env=env, stdout=open(f"/tmp/cpu_eval_w_{step}_{tag}.log", "w"),
+            env=env, stdout=open(wlog(tag), "w"),
             stderr=subprocess.STDOUT)))
     ok = True
     for tag, p in procs:
@@ -167,7 +204,7 @@ def run_pair(ckpt, run_dir, threads, dit_batch, vae_batch, numactl, je, report=N
             p.kill()
             ok = False
         if rc is None or rc != 0:
-            log(f"step {step}: {tag} rc={rc} (日志 /tmp/cpu_eval_w_{step}_{tag}.log)")
+            log(f"step {step}: {tag} rc={rc} (日志 {wlog(tag)})")
             ok = False
     part_files = [os.path.join(ckpt_dir, f".part_{t}.json") for t in ("p0", "p1")]
     if not ok or not all(os.path.exists(p) for p in part_files):
@@ -179,12 +216,21 @@ def run_pair(ckpt, run_dir, threads, dit_batch, vae_batch, numactl, je, report=N
         os.remove(lock)
         return False
     if mode == "pretrain_g":
-        g = res.pop("g")
-        flat = {"n": g["n"], "ssim": g["ssim_mean"], "ssim_std": g["ssim_std"],
-                "mse": g["mse_mean"], "mse_std": g["mse_std"],
-                "lpips": g.get("lpips_mean"), "skel_iou": g["skel_iou_mean"],
+        # seen (旧平铺键, 兼容既有报表) + strict (嵌套字典) 双集落盘
+        _seen = res.get("seen") or res.get("g")
+        if _seen is None:
+            os.remove(lock)
+            return False
+        flat = {"n": _seen["n"], "ssim": _seen["ssim_mean"], "ssim_std": _seen["ssim_std"],
+                "mse": _seen["mse_mean"], "mse_std": _seen["mse_std"],
+                "lpips": _seen.get("lpips_mean"), "skel_iou": _seen["skel_iou_mean"],
+                "ssim_p10": _seen["ssim_p10"], "ssim_q25": _seen["ssim_q25"],
+                "ssim_med": _seen["ssim_med"], "ssim_q75": _seen["ssim_q75"],
+                "ssim_p90": _seen["ssim_p90"],
                 "step": step, "elapsed_s": round(time.time() - t0, 1),
                 "engine": "cpu_2sock_g"}
+        if "strict" in res:
+            flat["strict"] = res["strict"]
     else:
         flat = res
     flat.update({"n": n, "elapsed_s": round(time.time() - t0, 1)})
@@ -226,6 +272,10 @@ def main():
     ap.add_argument("--once", default="")
     ap.add_argument("--mode", choices=["ctrl_pair", "pretrain_g"], default="ctrl_pair")
     ap.add_argument("--report", default="")
+    ap.add_argument("--eval-sets", default="seen=5script/eval_seen_v10.csv,strict=5script/eval_fame3_strict_clean_v9.csv",
+                    help="pretrain_g 多 eval 集 'name=csv[,name=csv...]'; seen 每 ckpt, 其他集按 --strict-every")
+    ap.add_argument("--strict-every", type=int, default=10000,
+                    help="非 seen 集 (strict) 的评测间隔 (按 ckpt step); 0 = 每 ckpt 都评")
     args = ap.parse_args()
 
     numactl = find_numactl()
@@ -235,11 +285,21 @@ def main():
     log(f"daemon 启动: numactl={'y' if numactl else 'n(taskset)'} jemalloc={'y' if je else 'n'} "
         f"threads={args.threads} watch={args.watch_root or args.once}")
 
+    _es = []
+    for _spec in args.eval_sets.split(","):
+        if "=" in _spec:
+            _nm, _cp = _spec.split("=", 1)
+            _es.append((_nm, _cp))
+
     if args.once:
         ckpt = os.path.abspath(args.once)
         run_dir = os.path.dirname(os.path.dirname(ckpt))
+        _ld = os.path.join(
+            "/root/Workspace/xy/DiT/logs",
+            os.path.basename(os.path.normpath(os.path.dirname(run_dir))))
         ok = run_pair(ckpt, run_dir, args.threads, args.dit_batch, args.vae_batch,
-                      numactl, je, report=args.report or None, mode=args.mode)
+                      numactl, je, report=args.report or None, mode=args.mode,
+                      log_dir=_ld, eval_sets=_es, strict_every=args.strict_every)
         sys.exit(0 if ok else 1)
 
     state = {}
@@ -253,8 +313,11 @@ def main():
             if not hit:
                 continue
             ckpt, step = hit
+            _ld = os.path.join("/root/Workspace/xy/DiT/logs",
+                               os.path.basename(os.path.normpath(root)))
             if run_pair(ckpt, os.path.dirname(ckpt_dir), args.threads, args.dit_batch,
-                        args.vae_batch, numactl, je, mode=args.mode):
+                        args.vae_batch, numactl, je, mode=args.mode, log_dir=_ld,
+                        eval_sets=_es, strict_every=args.strict_every):
                 state[ckpt_dir] = step
         time.sleep(args.poll)
 

@@ -6,9 +6,12 @@ from torchvision import transforms
 from torchvision.transforms import functional as F
 from PIL import Image
 
+from .callig_map import map_callig_id as _map_callig
+
 class MCCDDataset(Dataset):
     def __init__(self, csv_file, root_dir, image_size=256, load_maps=True,
-                 load_canny=None, load_skel=None, is_train=False, use_glyph_cond=False):
+                 load_canny=None, load_skel=None, is_train=False, use_glyph_cond=False,
+                 callig_id_map=None):
         """
         csv_file: path to train.csv / val.csv
         root_dir: the root directory where 'images', 'canny', 'skeleton' are stored (e.g. 'dataset')
@@ -22,6 +25,7 @@ class MCCDDataset(Dataset):
         self.image_size = image_size
         self.load_maps = load_maps
         self.load_canny = load_maps if load_canny is None else load_canny
+        self._callig_map = callig_id_map
         self.use_glyph_cond = bool(use_glyph_cond)
         if self.use_glyph_cond:
             # 必须用 **v2**：v1 的 std_glyph_latent 目录不存在（fame 命中率 0.0%），
@@ -125,7 +129,8 @@ class MCCDDataset(Dataset):
             'image': img_t,
             'canny': canny_t,
             'skeleton': skeleton_t,
-            'y_callig': torch.tensor(int(row['calligrapher_id']), dtype=torch.long),
+            'y_callig': torch.tensor(
+                _map_callig(int(row['calligrapher_id']), self._callig_map), dtype=torch.long),
             'y_script': torch.tensor(int(row['script_id']), dtype=torch.long),
             'y_char': torch.tensor(
                 int(row.get('glyph_id', row['character_id'])), dtype=torch.long),
