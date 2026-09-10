@@ -104,11 +104,12 @@ def make_posters(run_dir, step, out_dir=None, n_seen=10, n_strict=50,
                  strict_per=10, which=("seen", "strict"),
                  seen_csv="5script/eval_seen_v10.csv",
                  strict_csv="5script/eval_fame3_strict_clean_v9.csv",
-                 tag=""):
+                 tag="", prefix=""):
     """为一个 step 生成 poster; 返回生成的文件路径列表."""
     step_dir = os.path.join(run_dir, "eval_samples_ctrl", f"step{step:07d}")
     out_dir = out_dir or os.path.join(run_dir, "posters")
     os.makedirs(out_dir, exist_ok=True)
+    pre = f"{prefix}_" if prefix else ""
     fp = _font_path()
     font = ImageFont.truetype(fp, 22) if fp else ImageFont.load_default()
     font_s = ImageFont.truetype(fp, 14) if fp else ImageFont.load_default()
@@ -128,7 +129,7 @@ def make_posters(run_dir, step, out_dir=None, n_seen=10, n_strict=50,
             items.append((f"#{i}", r.get("character", "?"), r.get("calligrapher", ""),
                           s, pm, gm))
         if items:
-            out = os.path.join(out_dir, f"step{step:07d}_seen.png")
+            out = os.path.join(out_dir, f"{pre}step{step:07d}_seen.png")
             made.append(_make_sheet(
                 items, f"{tag} {step/1000:.1f}k SEEN{len(items)} — 左=模型 右=GT", out,
                 font, font_s))
@@ -148,7 +149,7 @@ def make_posters(run_dir, step, out_dir=None, n_seen=10, n_strict=50,
                 r = rows[i] if i < len(rows) else {}
                 items.append((f"#{i}", r.get("character", "?"),
                               r.get("calligrapher", ""), s, pm, gm))
-            out = os.path.join(out_dir, f"step{step:07d}_strict_p{k}.png")
+            out = os.path.join(out_dir, f"{pre}step{step:07d}_strict_p{k}.png")
             made.append(_make_sheet(
                 items,
                 f"{tag} {step/1000:.1f}k STRICT{n_avail} [{k+1}/{n_part}] "
@@ -185,7 +186,7 @@ def make_aggregate(run_dir, set_name, out_path=None, cell=None,
                    n_seen=10, n_strict=50,
                    seen_csv="5script/eval_seen_v10.csv",
                    strict_csv="5script/eval_fame3_strict_clean_v9.csv",
-                   tag=""):
+                   tag="", prefix=""):
     """总集 poster: 每行一个 ckpt, 末行 GT; 列 = 样本.
 
     seen : 10 样本; strict: 50 样本. 输出 <run_dir>/posters/aggregate_{set}.png
@@ -255,8 +256,9 @@ def make_aggregate(run_dir, set_name, out_path=None, cell=None,
             img = _load_rgb(os.path.join(src_dir, f"g{i}.png"), cell)
             if img is not None:
                 cv.paste(img, (lab_w + i * (cell + gap), y))
+    _pre = f"{prefix}_" if prefix else ""
     out_path = out_path or os.path.join(run_dir, "posters",
-                                        f"aggregate_{set_name}.png")
+                                        f"{_pre}aggregate_{set_name}.png")
     os.makedirs(os.path.dirname(out_path), exist_ok=True)
     cv.save(out_path)
     return out_path
@@ -279,6 +281,7 @@ def main():
     ap.add_argument("--seen-csv", default="5script/eval_seen_v10.csv")
     ap.add_argument("--strict-csv", default="5script/eval_fame3_strict_clean_v9.csv")
     ap.add_argument("--tag", default="")
+    ap.add_argument("--prefix", default="", help="输出文件名前缀 (避免跨实验撞名)")
     args = ap.parse_args()
 
     steps = _latest_step_dirs(args.run_dir)
@@ -295,12 +298,13 @@ def main():
         made = make_posters(args.run_dir, st, args.out_dir, args.n_seen,
                             args.n_strict, args.strict_per, which,
                             seen_csv=args.seen_csv, strict_csv=args.strict_csv,
-                            tag=args.tag)
+                            tag=args.tag, prefix=args.prefix)
         for p in made:
             print(f"[posters] {p}")
     for s in (x for x in args.agg_sets.split(",") if x):
         cell = args.agg_seen_cell if s == "seen" else args.agg_strict_cell
         p = make_aggregate(args.run_dir, s, cell=cell, tag=args.tag,
+                           prefix=args.prefix,
                            n_seen=args.n_seen, n_strict=args.n_strict,
                            seen_csv=args.seen_csv, strict_csv=args.strict_csv)
         if p:
