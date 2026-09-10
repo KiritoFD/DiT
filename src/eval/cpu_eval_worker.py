@@ -272,9 +272,16 @@ def _run_pretrain_g(args, ck, a, arch, common, t0):
         noise, conds = cache["noise"], cache["conds"]
         for (s0, s1) in _segs:
             t1 = time.time()
+            print(f"[worker:{args.part_tag}:{name}] sampling [{s0}:{s1}] "
+                  f"({s1 - s0} samples) ...", flush=True)
+
+            def _prog(msg, _t=t1, _n=name):
+                print(f"[worker:{args.part_tag}:{_n}] {msg} "
+                      f"(elapsed {time.time() - _t:.0f}s)", flush=True)
+
             lat = heun_sample_cpu(model, noise[s0:s1], conds[s0:s1], cfg, args.dit_batch,
                                   skel=g_all[s0:s1], seed=0, steps=steps, shift=shift,
-                                  cond_key="g")
+                                  cond_key="g", log_fn=_prog)
             t_s = time.time() - t1
             t2 = time.time()
             decode_and_save(vae, lat, 0.18215, arm_dir, "g",
