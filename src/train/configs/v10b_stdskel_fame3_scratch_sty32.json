@@ -1,5 +1,5 @@
 {
-  "_comment": "GlyphStyleCrossAttn 容量扫描 n=32 (from scratch, 60k (4h 预算, cosine 完整退火)). 机制: 每层 xattn context=[骨架token+sincos位置 ; 32个风格token+可学习role], Q=x token; 风格在每一层被局部内容寻址(每个位置按自身字形内容/空间吸收不同风格分量) -> 风格调制有局部性且随字形变化, 而非全局常数模板. callig_style_attn=False (避免输入端冗余风格路径). 数据=增强 fame_e, lr 5e-5 cosine. 扫描问题: 有效秩/风格可分度/遵循度随 n 的变化. [2026-09-10 21:00: 60k->230k, 从 47500 resume (fresh scheduler, 绝对步数 cosine), 剩 182.5k 步 ~12.0h ETA]",
+  "_comment": "GlyphStyleCrossAttn 容量扫描 n=32 (from scratch, 60k (4h 预算, cosine 完整退火)). 机制: 每层 xattn context=[骨架token+sincos位置 ; 32个风格token+可学习role], Q=x token; 风格在每一层被局部内容寻址(每个位置按自身字形内容/空间吸收不同风格分量) -> 风格调制有局部性且随字形变化, 而非全局常数模板. callig_style_attn=False (避免输入端冗余风格路径). 数据=增强 fame_e, lr 5e-5 cosine. 扫描问题: 有效秩/风格可分度/遵循度随 n 的变化. [2026-09-10 21:00: 60k->230k, 从 47500 resume (fresh scheduler, 绝对步数 cosine), 剩 182.5k 步 ~12.0h ETA] [2026-09-10 23:00: 修正 fresh-scheduler base lr bug 后再次重启; 从 ~72.5k resume, 250k horizon, 剩 ~177.5k 步 ~12h ETA]",
   "experiment_name": "v10b-stdskel-fame3-scratch-sty32",
   "results_dir": "5script/results/v10b_stdskel_fame3_scratch_sty32",
   "model": "DiT-2Cond-Sp/2",
@@ -30,7 +30,7 @@
   "attn_impl": "sdpa",
   "compile": true,
   "epochs": 100000,
-  "max_steps": 230000,
+  "max_steps": 250000,
   "lr": 5e-05,
   "warmup_steps": 3000,
   "min_lr_ratio": 0.1,

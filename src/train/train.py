@@ -878,12 +878,18 @@ def main(args):
     if getattr(args, 'fresh_scheduler', False) and _resume_full_ckpt is not None and args.max_steps > 0:
         # 调度器按绝对步数(从 step 0)计算: resume 点落在 cosine 中段, 不是从头 warm restart
         total_planned_steps = args.max_steps
+        # ⚠ base 必须显式设为 config lr (或 --resume-lr); 否则 LambdaLR 会拿 ckpt 里恢复的
+        # 旧 param_group['lr'] 当 initial_lr -> 从旧曲线尾部(近 min)继续衰减 (2026-09-10 实测)
+        _fresh_base = float(getattr(args, 'resume_lr', None) or args.lr)
         for _pg in opt.param_groups:
-            _pg.pop('initial_lr', None)  # 丢弃 ckpt 里旧 LambdaLR 的 base, 让 resume_lr 覆盖生效
+            _pg.pop('initial_lr', None)  # 丢弃 ckpt 里旧 LambdaLR 的 base
+            _pg['lr'] = _fresh_base
         logger.info(f"[LR] fresh-scheduler: cosine computed from absolute step 0 "
                     f"(total {total_planned_steps}); resume at {resume_start_step} "
                     f"-> LR starts mid-decay at "
                     f"{args.min_lr_ratio + (1.0 - args.min_lr_ratio) * 0.5 * (1.0 + math.cos(math.pi * max((resume_start_step - min(args.warmup_steps, total_planned_steps - 1)) / max(total_planned_steps - min(args.warmup_steps, total_planned_steps - 1), 1), 0.0))):.2e} (base)")
+        logger.info(f"[LR] fresh-scheduler: base lr set to {_fresh_base:.2e} "
+                    f"(config/--resume-lr, not ckpt-restored)")
     scheduler = None
     if args.lr_schedule == "cosine":
         warmup_steps = min(args.warmup_steps, max(total_planned_steps - 1, 0))
