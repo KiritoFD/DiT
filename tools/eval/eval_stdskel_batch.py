@@ -78,12 +78,12 @@ def main():
                 attn_impl=a.get("attn_impl", "sdpa"))
     model = DiT_2Cond_models[a.get("model", "DiT-2Cond-S/2")](
         num_calligraphers=int(a.get("num_calligraphers", 1013)),
-        num_characters=int(a.get("num_characters", 35130)),
+        num_characters=int(a.get("num_characters") or 35130),
         condition_fusion=a.get("condition_fusion", "factorized_add"),
         callig_embed_dim=int(a.get("callig_embed_dim", 128)),
-        char_embed_dim=int(a.get("char_embed_dim", 384)),
-        char_proj_mode=a.get("char_proj_mode", "mlp"),
-        freeze_char_table=bool(a.get("freeze_char_table", False)),
+        char_embed_dim=int(a.get("char_embed_dim") or 384),
+        char_proj_mode=(a.get("char_proj_mode") or "mlp"),
+        freeze_char_table=bool((a.get("freeze_char_table") or False)),
         cond_drop_all_prob=0.05, cond_drop_one_prob=0.25,
         cond_drop_which_glyph_prob=0.5, use_checkpoint=False, learn_sigma=False,
         use_glyph_cond=True, use_char_cond=not bool(a.get("no_char_cond", False)),
@@ -93,6 +93,8 @@ def main():
         glyph_inject_layers=int(a.get("glyph_inject_layers", 0)),
         callig_style_attn=bool(a.get("callig_style_attn", False)) and not args.disable_callig_style,
         callig_n_style=int(a.get("callig_n_style", 8)),
+        style_token_n=int(a.get("style_token_n", 0)),
+        style_role_init=float(a.get("style_role_init", 0.02)),
         glyph_inject_mode=a.get("glyph_inject_mode", "adaln"), **arch).to(dev).eval()
     # 冻结书家表: 复现 null_embed 独立参数结构 (与 ckpt state_dict 对齐)
     if a.get("freeze_callig_table"):

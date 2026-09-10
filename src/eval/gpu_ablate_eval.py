@@ -82,12 +82,12 @@ def build_model(a, device):
                 attn_impl=a.get("attn_impl", "sdpa"))
     m = DiT_2Cond_models[a["model"]](
         num_calligraphers=int(a.get("num_calligraphers", 1013)),
-        num_characters=int(a.get("num_characters", 35130)),
+        num_characters=int(a.get("num_characters") or 35130),
         condition_fusion=a.get("condition_fusion", "factorized_add"),
         callig_embed_dim=int(a.get("callig_embed_dim", 128)),
-        char_embed_dim=int(a.get("char_embed_dim", 384)),
-        char_proj_mode=a.get("char_proj_mode", "mlp"),
-        freeze_char_table=bool(a.get("freeze_char_table", False)),
+        char_embed_dim=int(a.get("char_embed_dim") or 384),
+        char_proj_mode=(a.get("char_proj_mode") or "mlp"),
+        freeze_char_table=bool((a.get("freeze_char_table") or False)),
         cond_drop_all_prob=0.0, cond_drop_one_prob=0.0,
         cond_drop_which_glyph_prob=0.5,
         use_checkpoint=False, learn_sigma=False,

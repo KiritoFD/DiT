@@ -61,7 +61,7 @@ def main():
         a = vars(d["args"]) if isinstance(d.get("args"), argparse.Namespace) else d["args"]
         model = DiT_2Cond_models[a.get("model", "DiT-2Cond-S/2")](
             num_calligraphers=int(a.get("num_calligraphers", 1013)),
-            num_characters=int(a.get("num_characters", 35130)),
+            num_characters=int(a.get("num_characters") or 35130),
             condition_fusion="factorized_add", callig_embed_dim=128,
             char_embed_dim=384, char_proj_mode="mlp", freeze_char_table=False,
             cond_drop_all_prob=0.05, cond_drop_one_prob=0.25,
@@ -72,6 +72,8 @@ def main():
             glyph_inject_layers=int(a.get("glyph_inject_layers", 0)),
             callig_style_attn=bool(a.get("callig_style_attn", False)),
             callig_n_style=int(a.get("callig_n_style", 8)),
+            style_token_n=int(a.get("style_token_n", 0)),
+            style_role_init=float(a.get("style_role_init", 0.02)),
             glyph_inject_mode=a.get("glyph_inject_mode", "adaln"), **arch).to(dev)
         model.load_state_dict(_strip(d.get("ema") or d.get("model") or d), strict=False)
         model.eval()
@@ -87,7 +89,7 @@ def main():
         a = vars(d["args"]) if isinstance(d.get("args"), argparse.Namespace) else d["args"]
         model = DiT_2Cond_models[a.get("model", "DiT-2Cond-S/2")](
             num_calligraphers=int(a.get("num_calligraphers", 1013)),
-            num_characters=int(a.get("num_characters", 35130)),
+            num_characters=int(a.get("num_characters") or 35130),
             condition_fusion="factorized_add", callig_embed_dim=128,
             char_embed_dim=384, char_proj_mode="mlp", freeze_char_table=False,
             cond_drop_all_prob=0.05, cond_drop_one_prob=0.25,
