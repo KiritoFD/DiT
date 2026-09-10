@@ -278,6 +278,20 @@ def run_pair(ckpt, run_dir, threads, dit_batch, vae_batch, numactl, je, report=N
     _r = flat if mode == "pretrain_g" else res
     _ssim = _r.get("ssim") or (_r.get("ctrl", {}).get("ssim_mean"))
     log(f"step {step}: DONE {time.time()-t0:.0f}s ssim={_ssim} -> {os.path.basename(out_json)}")
+    # poster 自动生成: 每 step (seen 1 张 / strict 50->5 张) + 总集 (seen/strict 各 1 张)
+    if mode == "pretrain_g":
+        try:
+            from src.eval.posters import make_posters, make_aggregate
+            _tag = os.path.basename(os.path.normpath(run_dir))
+            made = make_posters(run_dir, step, tag=_tag)
+            for _s in ("seen", "strict"):
+                _p = make_aggregate(run_dir, _s, tag=_tag)
+                if _p:
+                    made.append(_p)
+            for _p in made:
+                log(f"step {step}: poster -> {os.path.relpath(_p, run_dir)}")
+        except Exception as _e:
+            log(f"step {step}: poster 生成失败 ({_e!r})")
     return True
 
 
