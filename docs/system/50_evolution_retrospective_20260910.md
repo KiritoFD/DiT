@@ -98,7 +98,7 @@ unified REPA（多中间层 + warmup）+ unified eval facade；OT chunks / compi
 
 ![v10adino 80k](imgs/retro/era3_v10adino_step0080000_seen.png)
 
-![v10b skelonly 85k](imgs/retro/era3_v10b_skelonly_step085000_seen.png)
+![v10b skelonly 85k](imgs/retro/era3_v10b_skelonly_step0085000_seen.png)
 
 **模型改动**：DiT-1CondSkel（v10a：skel latent 8ch concat 输入 + callig adaLN）→
 v10b 两因子极简（callig + skel-g，**移除 char 向量条件 −13.8M**，`use_char_cond=False`）。
