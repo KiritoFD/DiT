@@ -166,7 +166,10 @@ def main():
             sd = {k: v for k, v in sd.items()
                   if "callig_style" not in k and "callig_basis" not in k}
         miss, unexp = model.load_state_dict(sd, strict=False)
-        assert len(unexp) == 0, f"step{step} unexpected={len(unexp)[:3] if unexp else 0}"
+        if unexp:
+            raise RuntimeError(
+                f"step{step} unexpected={len(unexp)}: {sorted(unexp)[:10]} | "
+                f"missing={len(miss)}: {sorted(miss)[:5]}")
 
         for name in todo:
             S = sets[name]

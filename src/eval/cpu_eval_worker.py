@@ -196,7 +196,12 @@ def _run_pretrain_g(args, ck, a, arch, common, t0):
         m_ye.freeze_table()
     sd = _strip(ck.get("ema") or ck.get("model") or ck)
     miss, unexp = model.load_state_dict(sd, strict=False)
-    assert len(unexp) == 0, f"main weights unexpected={len(unexp)}"
+    if unexp:
+        # F5 修复: 崩溃前先打印明细 (缺哪个模块一眼可见, 不必复现调试)
+        _msg = (f"main weights unexpected={len(unexp)}: {sorted(unexp)[:10]} | "
+                f"missing={len(miss)}: {sorted(miss)[:5]}")
+        log(_msg)
+        raise RuntimeError(_msg)
     model.eval()
 
     csv = a.get("gpu_eval_csv") or a.get("eval_csv") or a.get("data_csv")

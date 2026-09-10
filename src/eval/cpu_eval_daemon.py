@@ -79,6 +79,19 @@ def newest_missing(ckpt_dir, state_last, flat=False):
             continue
         if step <= state_last:
             continue
+        # F4 修复: 陈旧 lock (daemon/worker 被杀残留) 会永久跳过该 step;
+        # 单次评测上限 = 30min/part, 超过 45min 的 lock 判定为残留并清理。
+        _lk = glob.glob(os.path.join(ckpt_dir, f"{step:07d}.cpu_eval.lock"))
+        if _lk:
+            if time.time() - os.path.getmtime(_lk[0]) > 2700:
+                for _f in _lk:
+                    try:
+                        os.remove(_f)
+                    except OSError:
+                        pass
+                log(f"step {step}: 清理陈旧 lock -> 重新评测")
+            else:
+                continue
         if glob.glob(os.path.join(ckpt_dir, f"{step:07d}.cpu_eval.*")):
             continue
         return ckpt, step
@@ -130,6 +143,12 @@ def run_pair(ckpt, run_dir, threads, dit_batch, vae_batch, numactl, je, report=N
     step = int(os.path.basename(ckpt).split(".")[0])
     lock = os.path.join(ckpt_dir, f"{step:07d}.cpu_eval.lock")
     open(lock, "w").close()
+    # F4 修复: 清理上次失败/被杀评测的 part 残留 —— 否则 run_pair 的
+    # all(os.path.exists(part_files)) 会把失败误判成功, 落盘错误指标。
+    for _t in ("p0", "p1"):
+        _pf = os.path.join(ckpt_dir, f".part_{_t}.json")
+        if os.path.exists(_pf):
+            os.remove(_pf)
     env = dict(os.environ)
     if je:
         env["LD_PRELOAD"] = je

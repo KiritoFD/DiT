@@ -87,3 +87,9 @@ n=10，与历史 `eval_auto_*.json` 同集同 seed；**cfg=0.7 一列精确复�
    不是评测口径问题 —— 这提高了 style_attn / 增强 / 更长训练的价值权重。
 3. c41x 在新口径下**未确认平台** → scratch 长训（400k）路线得到支持。
 4. c41x_scratch 已 resume（12.5k → 400k）。
+5. 评测守护修复（部署于本日）：
+   - **F4**：`*.cpu_eval.lock` 残留 >45min 自动清理重评；run_pair 启动时清理
+     `.part_*.json` 残留（否则失败评测被误判成功、落盘错误指标）。
+     实测清理了 13:34 被杀留下的 `0010000.cpu_eval.lock`。
+   - **F5**：worker/批量评测器 unexpected keys 崩溃前打印 missing/unexpected 明细。
+
