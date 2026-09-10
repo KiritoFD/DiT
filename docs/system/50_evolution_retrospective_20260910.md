@@ -1,6 +1,6 @@
 # 50. 演进复盘（2026-08-12 ~ 09-10）：时间线详解版
 
-状态: 覆盖全程 6 纪元；**110 张里程碑 poster**（`imgs/retro/`，seen + strict 对照）+ 早期 s 系图表全编入。
+状态: 覆盖全程 6 纪元；**106 张里程碑 poster**（`imgs/retro/`，seen + strict 对照）+ 早期 s 系图表全编入。
 本文按**时间线**记录所有改动（模型/注入/LR/数据/评测/失败），最后一次注入改动（风格 token）
 在 T8 详述"具体怎么改、为什么能实现局部化调制"。文末附：当前 attention 速查、失败汇总、口径警示。
 
@@ -313,16 +313,17 @@ e_c_ca = self.y_callig_embedder(y_callig_in, False)     # 风格注入与 adaLN 
 - 20:58 扩到 12h（230k）resume——**发现 LR 不对**（见 T9）；
 - 22:47 修复后再次 resume（250k horizon，12h ETA，LR 4.17e-5）。
 
-**注入改动③的验证进度**：sty16（n=16，30k）与 sty32（进行中）strict 上行
-（0.5109@10k → 0.5276@40k → 0.5293@70k）；风格分化是否转化为生成上的书家差异，待长跑。
+**注入改动③的验证进度**：sty16（n=16，30k）与 sty32（进行中）。sty32 至 202k：
+strict 0.5109@10k → **0.5518@190k**（缓升）；seen 0.6690@197.5k（140k 后陡涨，记忆化）；
+风格分化是否转化为生成上的书家差异，待最终 eval。
 
 ![sty16 20k](imgs/retro/era6_sty16_step0020000_seen.png)
 
 ![sty16 strict 20k p0](imgs/retro/era6_sty16_step0020000_strict_p0.png)
 
-![sty32 80k](imgs/retro/era6_sty32_step0080000_seen.png)
+![sty32 80k](imgs/retro/era6_sty32_step0197500_seen.png)
 
-![sty32 strict 70k p0](imgs/retro/era6_sty32_step0070000_strict_p0.png)
+![sty32 strict 70k p0](imgs/retro/era6_sty32_step0190000_strict_p0.png)
 
 **当前实验实时总集**（每行一个 ckpt，末行 GT；训练推进中持续刷新）：
 
@@ -330,7 +331,7 @@ e_c_ca = self.y_callig_embedder(y_callig_in, False)     # 风格注入与 adaLN 
 
 ![sty32 live strict](imgs/retro/sty32live_aggregate_strict.png)
 
-![sty32 live 77.5k](imgs/retro/sty32live_step0077500_seen.png)
+![sty32 live 77.5k](imgs/retro/sty32live_step0197500_seen.png)
 
 ---
 
@@ -389,7 +390,7 @@ e_c_ca = self.y_callig_embedder(y_callig_in, False)     # 风格注入与 adaLN 
 
 | 类型 | 路径 |
 |---|---|
-| poster（110 张: seen+strict 对照） | `docs/system/imgs/retro/` |
+| poster（106 张: seen+strict 对照） | `docs/system/imgs/retro/` |
 | 早期 s 系图表 | `docs/system/imgs/fig1~fig7`、`poster_base/ctrl_cfg*`、`s21_base_grid` |
 | poster 生成器 | `src/eval/posters.py`（daemon 自动 + CLI 回填，`--prefix` 防撞名）|
 | eval 托管 | `tools/eval/eval_ctl.sh` |
