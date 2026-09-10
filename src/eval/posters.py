@@ -135,7 +135,9 @@ def make_posters(run_dir, step, out_dir=None, n_seen=10, n_strict=50,
                 font, font_s))
 
     if "strict" in which:
-        d = os.path.join(step_dir, "strict")
+        d = os.path.join(step_dir, "strict50")
+        if not os.path.exists(os.path.join(d, "g0.png")):
+            d = os.path.join(step_dir, "strict")
         rows = _csv_rows(strict_csv, n_strict)
         n_avail = min(n_strict, sum(1 for i in range(n_strict)
                                     if os.path.exists(os.path.join(d, f"g{i}.png"))))
