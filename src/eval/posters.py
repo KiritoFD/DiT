@@ -276,6 +276,8 @@ def main():
                     help="生成总集 poster 的集合 (空=不生成)")
     ap.add_argument("--agg-seen-cell", type=int, default=148)
     ap.add_argument("--agg-strict-cell", type=int, default=96)
+    ap.add_argument("--seen-csv", default="5script/eval_seen_v10.csv")
+    ap.add_argument("--strict-csv", default="5script/eval_fame3_strict_clean_v9.csv")
     ap.add_argument("--tag", default="")
     args = ap.parse_args()
 
@@ -291,13 +293,16 @@ def main():
     which = tuple(s for s in args.sets.split(",") if s)
     for st in todo:
         made = make_posters(args.run_dir, st, args.out_dir, args.n_seen,
-                            args.n_strict, args.strict_per, which, tag=args.tag)
+                            args.n_strict, args.strict_per, which,
+                            seen_csv=args.seen_csv, strict_csv=args.strict_csv,
+                            tag=args.tag)
         for p in made:
             print(f"[posters] {p}")
     for s in (x for x in args.agg_sets.split(",") if x):
         cell = args.agg_seen_cell if s == "seen" else args.agg_strict_cell
         p = make_aggregate(args.run_dir, s, cell=cell, tag=args.tag,
-                           n_seen=args.n_seen, n_strict=args.n_strict)
+                           n_seen=args.n_seen, n_strict=args.n_strict,
+                           seen_csv=args.seen_csv, strict_csv=args.strict_csv)
         if p:
             print(f"[posters] {p}")
     return 0
