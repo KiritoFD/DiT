@@ -32,10 +32,11 @@ _eval_vae = None
 _eval_vae_ref = None
 
 
-def match_model_channels(noise, model):
+def match_model_channels(noise, model, seed=0):
     """aux 目标通道 (in_channels>4) 时, 把噪声扩到模型输入通道数 (多余通道随机, 推理时丢弃).
 
-    moyi 式辅助通道只用于训练目标; 推理时这些通道从噪声生成, 不参与图像解码。
+    **确定性**: 用固定 seed 的生成器填充, 保证同一 ckpt 多次评测结果完全一致
+    (否则随机 aux 经 attention 影响图像通道 -> ssim 抖动 ~0.02)。
     in_channels==4 时原样返回 (零开销, 兼容旧路径)。
     """
     import torch as _t
@@ -44,8 +45,9 @@ def match_model_channels(noise, model):
         return noise
     if noise.shape[1] > tgt:
         return noise[:, :tgt]
+    g = _t.Generator(device=noise.device).manual_seed(int(seed))
     extra = _t.randn(noise.shape[0], tgt - noise.shape[1], *noise.shape[2:],
-                     dtype=noise.dtype, device=noise.device)
+                     dtype=noise.dtype, device=noise.device, generator=g)
     return _t.cat([noise, extra], dim=1)
 
 

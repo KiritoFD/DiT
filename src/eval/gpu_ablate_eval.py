@@ -113,13 +113,14 @@ def strip(sd):
 # ── GPU Heun 采样 (复刻 cpu_sampler, 张量全部上 device) ───────────────────────
 @th.no_grad()
 def heun_gpu(model, noise, conds, cfg, batch, skel=None, steps=50, shift=1.0,
-             dev="cuda"):
+             dev="cuda", seed=0):
     n = noise.shape[0]
-    # aux 目标通道: 噪声扩到模型 in_channels
+    # aux 目标通道: 噪声扩到模型 in_channels (固定 seed 保证可复现)
     _tgt = int(getattr(model, "in_channels", noise.shape[1]))
     if noise.shape[1] < _tgt:
+        _g = th.Generator(device=noise.device).manual_seed(seed)
         _extra = th.randn(n, _tgt - noise.shape[1], *noise.shape[2:],
-                          dtype=noise.dtype, device=noise.device)
+                          dtype=noise.dtype, device=noise.device, generator=_g)
         noise = th.cat([noise, _extra], dim=1)
     out = th.zeros(n, *noise.shape[1:], dtype=th.float32)
     s = th.linspace(1.0, 0.0, steps + 1, dtype=th.float64)

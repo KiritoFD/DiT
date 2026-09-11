@@ -44,13 +44,19 @@ def main():
     ap.add_argument("--vae-batch", type=int, default=25)
     ap.add_argument("--include-steps", type=str, default="",
                     help="逗号分隔 step 列表 (空=全部); 如 180000,200000,250000")
+    ap.add_argument("--device", default="cuda", choices=["cuda", "cpu"],
+                    help="in-mem eval 设备 (cuda=GPU 内存内评测, cpu=CPU)")
+    ap.add_argument("--ckpt-override", default="",
+                    help="只评测指定 ckpt 路径 (用于 batch 扫描)")
     args = ap.parse_args()
 
-    dev = torch.device("cuda")
+    dev = torch.device(args.device)
     torch.set_grad_enabled(False)
 
     cks = sorted(glob.glob(f"{args.results_dir}/*/checkpoints/[0-9]*.pt"),
                  key=lambda p: int(os.path.basename(p).split(".")[0]))
+    if args.ckpt_override:
+        cks = [args.ckpt_override]
     if not cks:
         print("[batch] no ckpts"); return 1
     if args.include_steps:
@@ -212,6 +218,9 @@ def main():
             print(f"[batch] step{step} {name}: ssim={ssim.mean():.4f} "
                   f"P10={q10:.4f} med={q50:.4f} Q3={q75:.4f} ({t_s:.0f}s)", flush=True)
     f_sum.close(); f_raw.close()
+    if dev.type == "cuda":
+        print(f"[batch] peak GPU mem = {torch.cuda.max_memory_allocated() / 1024**3:.2f}G "
+              f"(device={dev}, dit_batch={args.dit_batch}, vae_batch={args.vae_batch})", flush=True)
     print("BATCH_EVAL_DONE", flush=True)
 
 
