@@ -66,11 +66,11 @@ def main():
                 attn_impl=a.get("attn_impl", "sdpa"))
     common = dict(model_name=a.get("model", "DiT-2Cond-S/2"), device=dev,
                   num_calligraphers=int(a.get("num_calligraphers", 1013)),
-                  num_characters=int(a.get("num_characters") or 35130),
+                  num_characters=int(a.get("num_characters", 35130)),
                   condition_fusion=a.get("condition_fusion", "factorized_add"),
                   callig_embed_dim=int(a.get("callig_embed_dim", 128)),
-                  char_embed_dim=int(a.get("char_embed_dim") or 384),
-                  char_proj_mode=(a.get("char_proj_mode") or "mlp"),
+                  char_embed_dim=int(a.get("char_embed_dim", 384)),
+                  char_proj_mode=a.get("char_proj_mode", "mlp"),
                   freeze_char_table=bool(a.get("freeze_char_table", True)),
                   learn_sigma=False, **arch)
 
@@ -176,13 +176,15 @@ def _run_pretrain_g(args, ck, a, arch, common, t0):
         cond_drop_which_glyph_prob=0.5, use_checkpoint=False, learn_sigma=False,
         use_glyph_cond=use_g,
         use_char_cond=not bool(a.get("no_char_cond", False)),
+        use_std_dino_char_embedder=bool(a.get("use_std_dino_char_embedder", False)),
+        std_dino_table_path=a.get("std_dino_table_path"),
         glyph_scale_init=float(a.get("glyph_scale_init", 0.4)),
         glyph_drop_prob=float(a.get("glyph_drop_prob", 0.0)),
         glyph_embedder_depth=int(a.get("glyph_embedder_depth", 0)),
         glyph_inject_layers=int(a.get("glyph_inject_layers", 0)),
-        in_channels=(int(a.get("latent_channels", 4))
-                     + 4 * len([s for s in str(a.get("aux_latent_shards_dirs", "") or "").split(",") if s])),
-        **arch)
+        callig_style_attn=bool(a.get("callig_style_attn", False)),
+        callig_n_style=int(a.get("callig_n_style", 8)),
+        glyph_inject_mode=a.get("glyph_inject_mode", "adaln"), **arch)
     # 冻结书家表会把 null token 拆成独立 Parameter (y_callig_embedder.null_embed),
     # ckpt 里带着这个键 —— eval 构建必须复现冻结结构, 否则 unexp=1 assert 崩
     if a.get("freeze_callig_table"):
@@ -190,12 +192,7 @@ def _run_pretrain_g(args, ck, a, arch, common, t0):
         m_ye.freeze_table()
     sd = _strip(ck.get("ema") or ck.get("model") or ck)
     miss, unexp = model.load_state_dict(sd, strict=False)
-    if unexp:
-        # F5 修复: 崩溃前先打印明细 (缺哪个模块一眼可见, 不必复现调试)
-        _msg = (f"main weights unexpected={len(unexp)}: {sorted(unexp)[:10]} | "
-                f"missing={len(miss)}: {sorted(miss)[:5]}")
-        log(_msg)
-        raise RuntimeError(_msg)
+    assert len(unexp) == 0, f"main weights unexpected={len(unexp)}"
     model.eval()
 
     csv = a.get("gpu_eval_csv") or a.get("eval_csv") or a.get("data_csv")
@@ -266,16 +263,9 @@ def _run_pretrain_g(args, ck, a, arch, common, t0):
         noise, conds = cache["noise"], cache["conds"]
         for (s0, s1) in _segs:
             t1 = time.time()
-            print(f"[worker:{args.part_tag}:{name}] sampling [{s0}:{s1}] "
-                  f"({s1 - s0} samples) ...", flush=True)
-
-            def _prog(msg, _t=t1, _n=name):
-                print(f"[worker:{args.part_tag}:{_n}] {msg} "
-                      f"(elapsed {time.time() - _t:.0f}s)", flush=True)
-
             lat = heun_sample_cpu(model, noise[s0:s1], conds[s0:s1], cfg, args.dit_batch,
                                   skel=g_all[s0:s1], seed=0, steps=steps, shift=shift,
-                                  cond_key="g", log_fn=_prog)
+                                  cond_key="g")
             t_s = time.time() - t1
             t2 = time.time()
             decode_and_save(vae, lat, 0.18215, arm_dir, "g",

@@ -229,6 +229,18 @@ def main(args):
         _heun_batch = bool(getattr(args, 'heun_batch', True))
 
         # IDS 组件码本: 构建 char_id -> char 映射
+        _ids_char_id_to_char = None
+        if getattr(args, 'use_ids_char_embedder', False):
+            _ids_csv = getattr(args, 'ids_char_map_csv', None)
+            if _ids_csv and os.path.isfile(_ids_csv):
+                from src.model.ids_embedder import build_char_id_map_from_csv
+                _ids_char_id_to_char = build_char_id_map_from_csv(_ids_csv)
+                logger.info(f"[ids] loaded char_id->char map from {_ids_csv}: "
+                            f"{len(_ids_char_id_to_char)} entries")
+            else:
+                logger.warning(f"[ids] ids_char_map_csv not found ({_ids_csv!r}), "
+                               f"assuming char_id == Unicode codepoint")
+
         model = DiT_2Cond_models[args.model](
             input_size=latent_size,
             num_calligraphers=args.num_calligraphers,
@@ -241,19 +253,35 @@ def main(args):
             cond_drop_all_prob=args.cond_drop_all_prob,
             cond_drop_one_prob=args.cond_drop_one_prob,
             cond_drop_which_glyph_prob=getattr(args, 'cond_drop_which_glyph_prob', 0.5),
+            skel_head_enabled=getattr(args, 'w_skel_head', 0) > 0,
             use_glyph_cond=(getattr(args, 'w_glyph_cond', 0) > 0
                             or getattr(args, 'skel_as_glyph_cond', False)),
             use_char_cond=not getattr(args, 'no_char_cond', False),
             glyph_scale_init=getattr(args, 'glyph_scale_init', 0.4),
             glyph_drop_prob=getattr(args, 'glyph_drop_prob', 0.0),
             glyph_inject_layers=getattr(args, 'glyph_inject_layers', 0),
+            glyph_inject_mode=getattr(args, 'glyph_inject_mode', 'adaln'),
             glyph_embedder_depth=getattr(args, 'glyph_embedder_depth', 0),
+            style_token_n=getattr(args, 'style_token_n', 0),
+            style_role_init=getattr(args, 'style_role_init', 0.02),
+            glyph_in_channels=4,
             in_channels=(getattr(args, 'latent_channels', 4)
                          + 4 * len([s for s in str(getattr(args, 'aux_latent_shards_dirs', '') or '').split(',') if s])),
             char_proj_mode=getattr(args, 'char_proj_mode', 'full'),
             callig_proj_mode=getattr(args, 'callig_proj_mode', 'linear'),
             callig_scale_init=float(getattr(args, 'callig_scale_init', 1.0)),
+            callig_style_attn=getattr(args, 'callig_style_attn', False),
+            callig_n_style=getattr(args, 'callig_n_style', 8),
+            callig_spatial=getattr(args, 'callig_spatial', False),
+            callig_spatial_rank=int(getattr(args, 'callig_spatial_rank', 64)),
             freeze_char_table=getattr(args, 'freeze_char_table', False),
+            # ---- IDS 组件码本字嵌入 ----
+            use_ids_char_embedder=getattr(args, 'use_ids_char_embedder', False),
+            ids_file=getattr(args, 'ids_file', None),
+            char_id_to_char=_ids_char_id_to_char,
+            # ---- 标准字形 DINO 字嵌入 (冻结查表) ----
+            use_std_dino_char_embedder=getattr(args, 'use_std_dino_char_embedder', False),
+            std_dino_table_path=getattr(args, 'std_dino_table_path', None),
             # ---- 现代化骨干开关 ----
             norm_type=getattr(args, 'norm_type', 'rms'),
             mlp_type=getattr(args, 'mlp_type', 'swiglu'),
@@ -272,7 +300,7 @@ def main(args):
                     f"(callig={args.num_calligraphers}, glyph/char={args.num_characters}, "
                     f"fusion={args.condition_fusion}, dims={args.callig_embed_dim}/"
                     f"{args.char_embed_dim}, dropout=all:{args.cond_drop_all_prob}, "
-                    f"one:{args.cond_drop_one_prob}, "
+                    f"one:{args.cond_drop_one_prob}, skel_head={getattr(args, 'w_skel_head', 0) > 0}, "
                     f"glyph_cond={(getattr(args, 'w_glyph_cond', 0) > 0) or getattr(args, 'skel_as_glyph_cond', False)}, glyph_scale_init={getattr(args, 'glyph_scale_init', 0.4)}, "
                     f"char_proj_mode={getattr(args, 'char_proj_mode', 'full')}, "
                     f"freeze_char_table={getattr(args, 'freeze_char_table', False)})")
@@ -304,6 +332,114 @@ def main(args):
     # ── 注入门控统计 (debug): forward hook 记录 xattn 注入输出的平均 L2 ──
     # 零初始化起点, 该值增长 = 注入正在学会写入残差流 (惰性注册, 首个 debug 步挂)
     _inj_stats = {}
+
+    # ── DINO glyph-embedding init for y_char_embedder ───────────────────────
+    # glyph_id = script_id * 7026 + character_id (每 script 7026 个字符, 见
+    # tools/remote_sync/_add_glyph_col.py). DINO vocab 是对"字*书体"(glyph) 取平均的:
+    # 同一 glyph 的所有书写样本的 CLS token 平均后 L2 归一化, 维度必须 == char_embed_dim
+    # (768), 之后 char_proj 直接 LayerNorm(768)->Linear(768,H) 投影, 不再经过中间 256 层。
+    #
+    # ⚠ 当 use_ids_char_embedder=True 时跳过 DINO 初始化:
+    # IDSCharEmbedder 用部件嵌入池化, 不需要 DINO 初始化。
+    _use_ids = getattr(args, 'use_ids_char_embedder', False)
+    _use_std_dino = getattr(args, 'use_std_dino_char_embedder', False)
+    _dino_emb_path = getattr(args, "char_dino_embeddings", None)
+    _dino_idx_path = getattr(args, "char_dino_index", None)
+    if _use_ids:
+        logger.info(f"[ids] using IDSCharEmbedder, skipping DINO init. "
+                    f"coverage={model.y_char_embedder.coverage:.2%}, "
+                    f"num_components={model.y_char_embedder.num_components}")
+    elif _use_std_dino:
+        logger.info(f"[std-dino] using StdDinoCharEmbedder (frozen standard-glyph DINO table), "
+                    f"skipping DINO init. table={tuple(model.y_char_embedder.char_table.shape)}")
+    elif _dino_emb_path and _dino_idx_path and os.path.isfile(_dino_emb_path) and os.path.isfile(_dino_idx_path):
+        _NUM_CH = 7026  # 与 _add_glyph_col.py 的 glyph_id 编码一致
+        _emb = np.load(_dino_emb_path)
+        with open(_dino_idx_path, "r", encoding="utf-8") as f:
+            _idx_data = json.load(f)
+        _glyphs = _idx_data.get("glyphs", _idx_data)
+        _table = model.y_char_embedder.embedding_table.weight
+        if _emb.ndim != 2 or _emb.shape[1] != _table.shape[1]:
+            logger.warning(f"[dino-init] shape mismatch: dino={_emb.shape} vs "
+                           f"char_embed_dim={_table.shape[1]} — skipping DINO init.")
+        else:
+            _emb = _emb.astype(np.float32)
+
+            # 未知行的填充向量必须在 centering **之前**算：centering 后每个 script
+            # 内部均值为 0，全体均值也趋近 0（实测 norm 仅 0.023），是个退化向量。
+            # 用未中心化的 DINO 均值并 L2 归一化 -> norm=1.0，与已知行同量级，
+            # 与已知行的平均余弦 +0.315（已知行两两之间平均 +0.115），
+            # 即"一个居中的典型字形"，比 N(0,0.02) 随机噪声(余弦≈0, 等同于随机字)好得多。
+            _fill_vec = _emb.mean(0)
+            _fill_vec = _fill_vec / max(float(np.linalg.norm(_fill_vec)), 1e-12)
+
+            # ---- (1) per-script centering（可选，实测有效）--------------------
+            # 冻结 DINO 表被"书体"主导：有效秩只有 34.1/384（PC1 占 26.3% 能量），
+            # 83% 的最近邻是同一书体，跨书体字符检索 top-1 仅 1.9%。
+            # 而书体信息本该由 y_callig_embedder 提供，char 分支里的书体分量
+            # 既是冗余也是噪声。减去每个书体的均值后：
+            #   有效秩 34.1 → 57.0，ret@1 1.9% → 2.6%，ret@5 4.2% → 6.8%，
+            #   书体泄漏 83.0% → 77.9%。
+            if getattr(args, 'dino_per_script_center', 0):
+                _sids = np.array([int(g[0]) for g in _glyphs])
+                for _s in np.unique(_sids):
+                    _m = _sids == _s
+                    if _m.sum() > 1:
+                        _emb[_m] -= _emb[_m].mean(0, keepdims=True)
+                _n = np.linalg.norm(_emb, axis=1, keepdims=True)
+                _emb = _emb / np.maximum(_n, 1e-12)
+                logger.info(f"[dino-init] per-script centering applied "
+                            f"({len(np.unique(_sids))} scripts) + L2 renormalized")
+
+            _loaded = 0
+            _dropped = 0
+            _filled_rows = []
+            with torch.no_grad():
+                for _gi, (_sid, _cid) in enumerate(_glyphs):
+                    _gid = int(_sid) * _NUM_CH + int(_cid)
+                    if 0 <= _gid < _table.shape[0] and _gi < _emb.shape[0]:
+                        _table[_gid].copy_(torch.from_numpy(_emb[_gi]).float())
+                        _loaded += 1
+                        _filled_rows.append(_gid)
+                    else:
+                        _dropped += 1
+
+                # ---- (2) 未命中行：用 DINO 均值填充，而不是留随机噪声 ----------
+                # y_char_embedder 有 num_characters=35130 行，而 DINO 只覆盖 20468 个
+                # glyph。未命中的行停留在 nn.Embedding 默认 N(0, 0.02) 且被冻结，
+                # 对模型来说就是一个"随机字符"。
+                # 更糟：char_proj='ln_only' 时 LayerNorm 逐样本归一化，把
+                # "已知行范数=1.0" 和 "未知行范数≈0.39" 这个唯一可辨的线索也抹掉了
+                # —— 模型在数值上无法区分。用 DINO 均值填充至少给出一个
+                # "平均字形"的合理先验（eval_unseen 上有 6.6% 的 glyph 落在这里）。
+                _fill = getattr(args, 'dino_fill_unknown', 1)
+                if _fill and _filled_rows:
+                    # 注意：embedding_table 有 num_classes + 1 行，最后一行是
+                    # LabelEmbedder 的 CFG null token，**绝不能覆盖**（否则 CFG 失效）。
+                    _n_classes = model.y_char_embedder.num_classes
+                    _mean = torch.from_numpy(_fill_vec).to(_table.device, _table.dtype)
+                    _known = set(_filled_rows)
+                    _n_unknown = _n_classes - len(_known)
+                    if _n_unknown > 0:
+                        # 只填充 [0, num_classes) 区间内未被 DINO 命中的行
+                        _unknown_rows = [r for r in range(_n_classes) if r not in _known]
+                        _rows_t = torch.as_tensor(_unknown_rows, device=_table.device)
+                        _table.index_copy_(0, _rows_t,
+                                           _mean[None].expand(len(_unknown_rows), -1))
+                        logger.info(f"[dino-init] filled {_n_unknown} unknown rows "
+                                    f"(of {_n_classes} classes) with the L2-normalized DINO "
+                                    f"mean vector (norm=1.0, was: frozen N(0,0.02) noise with "
+                                    f"~0 cosine to all real glyphs); "
+                                    f"CFG null token (row {_n_classes}) untouched.")
+
+            logger.info(f"[dino-init] injected {_loaded} glyph embeddings into "
+                        f"y_char_embedder ({_emb.shape[0]} in vocab, {_dropped} out-of-range), "
+                        f"table={tuple(_table.shape)}, L2-normalized DINO (glyph-averaged), "
+                        f"char_proj_mode={getattr(args, 'char_proj_mode', 'full')}, "
+                        f"freeze_char_table={getattr(args, 'freeze_char_table', False)}.")
+    else:
+        logger.warning(f"[dino-init] char_dino_embeddings/index not found "
+                       f"({_dino_emb_path!r}, {_dino_idx_path!r}) — y_char_embedder stays random init.")
 
     # Load order (fixed): pretrained body -> reset cond head -> inject LoRA -> load delta.
     # The checkpoint `delta` contains only the "changed" part (LoRA + condition head +
@@ -451,7 +587,7 @@ def main(args):
         ema_model = copy.deepcopy(model).eval()
         requires_grad(ema_model, False)
         if _resume_full_ckpt is not None and _resume_full_ckpt.get("ema") is not None:
-            # strict=False: 模型新增模块 (如 callig_style_ca/style_token) 在旧 ckpt EMA 里没有 keys;
+            # strict=False: 模型新增模块 (如 callig_spatial) 在旧 ckpt EMA 里没有 keys;
             # 这些 keys 会走 _LRScheduler 式的缺省初始化路径, 由 copy.deepcopy(model) 保持零初始化.
             _ema_miss, _ema_unexp = ema_model.load_state_dict(_resume_full_ckpt["ema"], strict=False)
             if _ema_miss:
@@ -482,7 +618,7 @@ def main(args):
         # DDPM 专属的 sqrt_alphas_cumprod 数组, flow 下语义正确 (mid 噪声段
         # t∈[0.25,0.65])。留在禁用列表会让 mid 配置静默失效 (本仓库惯犯模式)。
         _flow_disabled = []
-        for _attr in ('use_canny', 'use_skel',
+        for _attr in ('use_canny', 'use_skel', 'w_skel_head',
                       'w_latent_skel', 'w_latent_canny'):
             if getattr(args, _attr, 0):
                 setattr(args, _attr, 0 if not isinstance(getattr(args, _attr, 0), bool) else False)
@@ -681,7 +817,7 @@ def main(args):
     # structural losses stay fp32 for numerical stability.
     use_latent = bool(getattr(args, "latent_shards_dir", None))
     need_canny_map = args.use_canny or args.w_latent_canny > 0 or getattr(args, 'w_latent_struct_canny', 0) > 0
-    need_skel_map = args.use_skel or args.w_latent_skel > 0 or getattr(args, 'w_latent_struct_skel', 0) > 0
+    need_skel_map = args.use_skel or args.w_latent_skel > 0 or getattr(args, 'w_skel_head', 0) > 0 or getattr(args, 'w_latent_struct_skel', 0) > 0
 
     # Re-decide VAE need: latent-only 模式训练用预编码 latent, 不需要 VAE (REPA 也只要 GT 图)。
     # VAE 仅在 on-the-fly encode (非 latent) 或像素级结构 loss (canny) 时需要;
@@ -747,18 +883,12 @@ def main(args):
     if getattr(args, 'fresh_scheduler', False) and _resume_full_ckpt is not None and args.max_steps > 0:
         # 调度器按绝对步数(从 step 0)计算: resume 点落在 cosine 中段, 不是从头 warm restart
         total_planned_steps = args.max_steps
-        # ⚠ base 必须显式设为 config lr (或 --resume-lr); 否则 LambdaLR 会拿 ckpt 里恢复的
-        # 旧 param_group['lr'] 当 initial_lr -> 从旧曲线尾部(近 min)继续衰减 (2026-09-10 实测)
-        _fresh_base = float(getattr(args, 'resume_lr', None) or args.lr)
         for _pg in opt.param_groups:
-            _pg.pop('initial_lr', None)  # 丢弃 ckpt 里旧 LambdaLR 的 base
-            _pg['lr'] = _fresh_base
+            _pg.pop('initial_lr', None)  # 丢弃 ckpt 里旧 LambdaLR 的 base, 让 resume_lr 覆盖生效
         logger.info(f"[LR] fresh-scheduler: cosine computed from absolute step 0 "
                     f"(total {total_planned_steps}); resume at {resume_start_step} "
                     f"-> LR starts mid-decay at "
                     f"{args.min_lr_ratio + (1.0 - args.min_lr_ratio) * 0.5 * (1.0 + math.cos(math.pi * max((resume_start_step - min(args.warmup_steps, total_planned_steps - 1)) / max(total_planned_steps - min(args.warmup_steps, total_planned_steps - 1), 1), 0.0))):.2e} (base)")
-        logger.info(f"[LR] fresh-scheduler: base lr set to {_fresh_base:.2e} "
-                    f"(config/--resume-lr, not ckpt-restored)")
     scheduler = None
     if args.lr_schedule == "cosine":
         warmup_steps = min(args.warmup_steps, max(total_planned_steps - 1, 0))
@@ -800,6 +930,7 @@ def main(args):
     running_latent_struct_canny = 0
     running_repa = 0
     running_x0lat = 0
+    running_skel_head = 0
     running_std_mid = 0
     nan_steps = 0
     current_ema_decay = args.ema_decay
@@ -1115,6 +1246,20 @@ def main(args):
                         # 归一化到该子集作均值 (不按全 batch, 排除无监督噪声步)
                         loss_std_mid = ((_p[_mid] - _g[_mid]) ** 2).mean()
 
+                # 骨架辅助头监督（latent 空间，训练引导 / 推理不用）：
+                # forward 在 skel_head 启用时返回 (主输出, skel_pred)，
+                # gaussian_diffusion.training_losses 把第二元素存进 loss_dict['intermediate_feats']。
+                loss_skel_head = torch.tensor(0.0, device=device)
+                if getattr(args, 'w_skel_head', 0) > 0:
+                    skel_pred = loss_dict.get("intermediate_feats", None)
+                    if skel_pred is not None and skel_gt is not None and skel_gt.numel() > 0:
+                        # batch 可能取整后被 drop_last 截断，对齐批次
+                        _n = min(skel_pred.shape[0], skel_gt.shape[0])
+                        _skel_gt = skel_gt[:_n].float()
+                        _skel_pred = skel_pred[:_n].float()
+                        # BCE with logits（骨架头输出未 sigmoid）
+                        loss_skel_head = torch.nn.functional.binary_cross_entropy_with_logits(
+                            _skel_pred, _skel_gt).mean()
                 if x is not None and pred_xstart_latent is not None and (args.use_canny or args.use_skel):
                     # Infra 优化：pixel 结构损失只需要在 batch 的一个随机子集上做
                     # differentiable VAE decode（结构监督是低频辅助信号，子集采样
@@ -1238,6 +1383,7 @@ def main(args):
                         + getattr(args, 'w_latent_struct_skel', 0) * _struct_scale * loss_latent_struct_skel
                         + getattr(args, 'w_latent_struct_canny', 0) * _struct_scale * loss_latent_struct_canny
                         + loss_repa  # 统一 REPA: w × (1 - cos) 已在 RepaModule.forward 内含 warmup
+                        + getattr(args, 'w_skel_head', 0) * loss_skel_head
                         + getattr(args, 'w_std_mid', 0.0) * loss_std_mid)
 
                 opt.zero_grad(set_to_none=True)  # INFRA: set_to_none 释放梯度tensor, 比 zero_() 快且省内存
@@ -1253,6 +1399,7 @@ def main(args):
                 _v_lss = loss_latent_struct_skel.item() if isinstance(loss_latent_struct_skel, torch.Tensor) else 0.0
                 _v_lsc = loss_latent_struct_canny.item() if isinstance(loss_latent_struct_canny, torch.Tensor) else 0.0
                 _v_repa = loss_repa.item()
+                _v_skelh = loss_skel_head.item()
                 _v_stdmid = loss_std_mid.item()
 
                 # NaN guard: skip the step if loss is not finite (e.g. a bad sample).
@@ -1283,7 +1430,7 @@ def main(args):
                 # peak = diff_graph + struct_graph simultaneously → the 22G cycling.
                 del loss, loss_dict, loss_diff, pred_xstart_latent
                 del loss_canny, loss_skel, loss_repa, loss_latent_canny, loss_latent_skel
-                del loss_latent_struct_skel, loss_latent_struct_canny, loss_std_mid, loss_x0lat
+                del loss_latent_struct_skel, loss_latent_struct_canny, loss_skel_head, loss_std_mid, loss_x0lat
 
                 if _v_loss:
                     running_loss += _v_loss
@@ -1295,6 +1442,7 @@ def main(args):
                     running_latent_struct_skel += _v_lss
                     running_latent_struct_canny += _v_lsc
                     running_repa += _v_repa
+                    running_skel_head += _v_skelh
                     running_std_mid += _v_stdmid
                     running_x0lat += 0
                     log_steps += 1
@@ -1317,6 +1465,7 @@ def main(args):
                     avg_lsc = torch.tensor(running_latent_struct_canny / divisor, device=device)
                     avg_r = torch.tensor(running_repa / divisor, device=device)
                     avg_x0 = torch.tensor(running_x0lat / divisor, device=device)
+                    avg_skel_h = torch.tensor(running_skel_head / divisor, device=device)
                     avg_std_mid = torch.tensor(running_std_mid / divisor, device=device)
                     world_size = dist.get_world_size()
                     if world_size > 1:
@@ -1330,6 +1479,7 @@ def main(args):
                         dist.all_reduce(avg_lsc, op=dist.ReduceOp.SUM)
                         dist.all_reduce(avg_r, op=dist.ReduceOp.SUM)
                         dist.all_reduce(avg_x0, op=dist.ReduceOp.SUM)
+                        dist.all_reduce(avg_skel_h, op=dist.ReduceOp.SUM)
                         dist.all_reduce(avg_std_mid, op=dist.ReduceOp.SUM)
                         avg_l, avg_d = avg_l.item()/world_size, avg_d.item()/world_size
                         avg_c, avg_s = avg_c.item()/world_size, avg_s.item()/world_size
@@ -1338,6 +1488,7 @@ def main(args):
                         avg_lsc = avg_lsc.item()/world_size
                         avg_r = avg_r.item()/world_size
                         avg_x0 = avg_x0.item()/world_size
+                        avg_skel_h = avg_skel_h.item()/world_size
                         avg_std_mid = avg_std_mid.item()/world_size
                     else:
                         avg_l, avg_d = avg_l.item(), avg_d.item()
@@ -1347,6 +1498,7 @@ def main(args):
                         avg_lsc = avg_lsc.item()
                         avg_r = avg_r.item()
                         avg_x0 = avg_x0.item()
+                        avg_skel_h = avg_skel_h.item()
                         avg_std_mid = avg_std_mid.item()
                     
                     if rank == 0:
@@ -1362,6 +1514,8 @@ def main(args):
                         logger.info(
                             f"(step={train_steps:07d}) Diff: {avg_d:.4f} | "
                             f"REPA(w={wr:.2f}): {avg_r:.4f} | "
+                            f"skel_loss(w={getattr(args,'w_latent_skel',0.0):.3f}): {avg_ls:.4f} | "
+                            f"canny_loss(w={getattr(args,'w_latent_canny',0.0):.3f}): {avg_lc:.4f} | "
                             f"LR: {opt.param_groups[0]['lr']:.2e} | {ema_log}"
                             f"Steps/Sec: {steps_per_sec:.2f} | "
                             f"Mem: {torch.cuda.memory_reserved() / 1024 ** 3:.2f}G/"
@@ -1411,7 +1565,7 @@ def main(args):
                                 + _gate)
                     
                     running_loss = running_diff = running_canny = running_skel = 0
-                    running_latent_canny = running_latent_skel = running_repa = running_x0lat = 0
+                    running_latent_canny = running_latent_skel = running_repa = running_x0lat = running_skel_head = 0
                     running_std_mid = 0
                     running_latent_struct_skel = 0
                     running_latent_struct_canny = 0
@@ -1580,11 +1734,19 @@ def main_from_cli(argv=None):
     parser.add_argument("--cond-mode", type=str, choices=["2cond", "3cond"], default="2cond",
                         help="Conditioning mode: 2cond (callig+char) or 3cond (callig+script+char).")
     parser.add_argument("--condition-fusion", type=str,
-                        choices=["factorized_add"], default="factorized_add",
-                        help="Cond fusion: 仅支持 factorized_add (v10b 两因子: callig + skel-g)。")
+                        choices=["legacy", "factorized_add", "xl_highdim"], default="legacy",
+                        help="Cond fusion: legacy joint MLP | factorized_add (low-dim additive) | "
+                             "xl_highdim (high-dim, XL-aligned, preserves pretrained adaLN).")
     parser.add_argument("--callig-embed-dim", type=int, default=None)
     parser.add_argument("--script-embed-dim", type=int, default=None)
     parser.add_argument("--char-embed-dim", type=int, default=None)
+    parser.add_argument("--char-dino-embeddings", type=str, default=None,
+                        help="Path to glyph-level DINO embeddings npy (N, dim) used to init "
+                             "y_char_embedder rows via glyph_id = script_id*7026+character_id. "
+                             "Glyphs missing from the vocab keep their random init.")
+    parser.add_argument("--char-dino-index", type=str, default=None,
+                        help="Path to glyph index json ({\"glyphs\": [[script_id, char_id], ...]} "
+                             "aligned row-wise with char-dino-embeddings).")
     parser.add_argument("--char-proj-mode", type=str, choices=["full", "ln_only", "mlp"],
                         default="full",
                         help="char_proj: 'full'=LayerNorm+Linear (default) | "
@@ -1592,10 +1754,36 @@ def main_from_cli(argv=None):
                              "(DINO 384 direct, drops redundant 384->384 Linear — 但只给字符分支 "
                              "留下 768 个可学习参数, 实测不足以利用有效秩仅 3.1 的 DINO 向量) | "
                              "'mlp'=LayerNorm+Linear+SiLU+Linear (推荐, 给字符分支真正的容量)。")
+    parser.add_argument("--dino-per-script-center", type=int, default=0, choices=[0, 1],
+                        help="注入前先按 script 去均值再 L2 归一化。实测: 有效秩 34.1->57.0, "
+                             "跨书体字符检索 top1 1.9%%->2.6%%, top5 4.2%%->6.8%%, "
+                             "书体泄漏 83.0%%->77.9%%。书体信息本该由 y_callig_embedder 提供。")
+    parser.add_argument("--dino-fill-unknown", type=int, default=1, choices=[0, 1],
+                        help="DINO 未覆盖的 char 行用 DINO 均值填充 (默认开)。关闭则保留 "
+                             "nn.Embedding 默认的 N(0,0.02) 冻结噪声 —— 在 char_proj='ln_only' "
+                             "下 LayerNorm 会把范数线索也抹掉, 模型无法区分已知/未知字符。"
+                             "CFG null token 永远不会被覆盖。")
     parser.add_argument("--freeze-char-table", type=_str_to_bool, default=False,
                         help="Freeze y_char_embedder table after DINO init (keep CFG uncond row "
                              "trainable). Saves ~13.5M trainable params; conditions become pure "
                              "DINO 384 vectors.")
+    # ---- IDS 组件码本字嵌入 ----
+    parser.add_argument("--use-ids-char-embedder", type=_str_to_bool, default=False,
+                        help="Use IDS component-based char embedder instead of LabelEmbedder. "
+                             "Reduces char table from 35130×384 to ~1571×384 (95.5% fewer params), "
+                             "enables zero-shot generalization to unseen chars.")
+    parser.add_argument("--ids-file", type=str, default=None,
+                        help="Path to IDS dictionary file (cjkvi ids.txt format).")
+    parser.add_argument("--ids-char-map-csv", type=str, default=None,
+                        help="Path to csv with character_id,character columns for char_id->char mapping. "
+                             "If None, assumes char_id == Unicode codepoint.")
+    # ---- 标准字形 DINO 字嵌入 (冻结查表, 零可训练参数) ----
+    parser.add_argument("--use-std-dino-char-embedder", type=_str_to_bool, default=False,
+                        help="Use standard-glyph DINO frozen lookup table as char embedder "
+                             "(0 trainable params, shape-consistency AUC>0.92). "
+                             "Requires char_embed_dim == DINO dim (768).")
+    parser.add_argument("--std-dino-table-path", type=str, default=None,
+                        help="Path to std DINO char table npy (default _sync_work/std_dino_char_table_768.npy).")
     parser.add_argument("--cond-drop-all-prob", type=float, default=0.05,
                         help="Probability of dropping all factors for CFG.")
     parser.add_argument("--cond-drop-one-prob", type=float, default=0.0,
@@ -1616,6 +1804,23 @@ def main_from_cli(argv=None):
     parser.add_argument("--callig-emb-pretrained", default="",
                         help="对比预训练的书家 embedding (.pt, 含 'embedding' (N,dim))。"
                              "加载到 y_callig_embedder 表前 N 行, 配合 --freeze-callig-table")
+    parser.add_argument("--callig-spatial", action="store_true",
+                        help="旧外挂(已证伪死重): 书家向量->r 系数 x (r,256,D) 空间基图 加到骨架。"
+                             "保留为可配置开关以复评历史 ckpt。")
+    parser.add_argument("--callig-spatial-rank", type=int, default=64,
+                        help="外挂低秩基图数量 r (callig_spatial_net 输出维度)")
+    parser.add_argument("--aux-latent-shards-dirs", type=str, default="",
+                        help="moyi 式辅助目标通道: 逗号分隔 aux latent shard 目录 "
+                             "(如 aux_skel_latents_fame_e,aux_canny_latents_fame_e)。"
+                             "训练目标 x = cat(image, *aux), 对全部通道加噪/算 MSE; 推理只用前 4 通道。")
+    parser.add_argument("--aux-loss-weight", type=float, default=1.0,
+                        help="aux 通道 loss 权重 (1.0=等权/ref; <1 时图像主导)")
+    parser.add_argument("--callig-style-attn", action="store_true",
+                        help="callig 风格 cross-attention(书家化骨架正确形态): 书家向量 -> N_style 个 "
+                             "style token, 骨架 token 内容寻址聚合风格, 产生'书家x字x位置'交互(结体差异)。"
+                             "zero-init 可 resume。")
+    parser.add_argument("--callig-n-style", type=int, default=8,
+                        help="callig style token 数量 (配合 --callig-style-attn)")
     parser.add_argument("--glyph-inject-mode", choices=["adaln", "xattn"], default="adaln",
                         help="g 逐层注入方式: adaln=ZeroAdaLN 固定位置调制 (旧默认), "
                              "xattn=ZeroCrossAttention 空间寻址 (GlyphDraw 式, 新 ckpt 专用)")
@@ -1628,11 +1833,6 @@ def main_from_cli(argv=None):
     parser.add_argument("--style-role-init", type=float, default=0.02,
                         help="风格 token 的 role embedding 初始化 std (促 N 个 token 分化, "
                              "避免塌缩为同一向量)")
-    parser.add_argument("--aux-latent-shards-dirs", type=str, default="",
-                        help="moyi 式辅助目标通道: 逗号分隔的 aux latent shard 目录列表 "
-                             "(如 aux_skel_latents_fame_e,aux_canny_latents_fame_e)。"
-                             "训练目标 x = cat(image_latent, *aux_latents), 对全部通道加噪/算 MSE; "
-                             "推理只用前 4 通道 (与 moyi 12ch 一致)。空=关闭。")
     parser.add_argument("--freeze-callig-table", action="store_true",
                         help="冻结书家表 [0,N) 行 (CFG null token 仍可训练)。"
                              "需先 --callig-emb-pretrained, 否则冻结随机初始化无意义")
@@ -1826,6 +2026,9 @@ def main_from_cli(argv=None):
                         help="固定训练集内展示样本 CSV。")
     parser.add_argument("--w-canny", type=float, default=0.05, help="Weight for canny structural loss")
     parser.add_argument("--w-skel", type=float, default=0.05, help="Weight for skeleton structural loss")
+    parser.add_argument("--w-skel-head", type=float, default=0.0,
+                        help="Weight for latent skel_head aux supervision (train-only guide; "
+                             "inference uses pure ID conditions). 0=disabled. ")
     parser.add_argument("--w-glyph-cond", type=_str_to_bool, default=False,
                         help="Enable 甲2 standard-glyph token-add conditioning (use_glyph_cond).")
     parser.add_argument("--glyph-scale-init", type=float, default=0.4,

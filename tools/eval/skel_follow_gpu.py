@@ -61,7 +61,7 @@ def main():
         a = vars(d["args"]) if isinstance(d.get("args"), argparse.Namespace) else d["args"]
         model = DiT_2Cond_models[a.get("model", "DiT-2Cond-S/2")](
             num_calligraphers=int(a.get("num_calligraphers", 1013)),
-            num_characters=int(a.get("num_characters") or 35130),
+            num_characters=int(a.get("num_characters", 35130)),
             condition_fusion="factorized_add", callig_embed_dim=128,
             char_embed_dim=384, char_proj_mode="mlp", freeze_char_table=False,
             cond_drop_all_prob=0.05, cond_drop_one_prob=0.25,
@@ -70,9 +70,9 @@ def main():
             glyph_scale_init=float(a.get("glyph_scale_init", 0.4)),
             glyph_embedder_depth=int(a.get("glyph_embedder_depth", 0)),
             glyph_inject_layers=int(a.get("glyph_inject_layers", 0)),
-            in_channels=(int(a.get("latent_channels", 4))
-                         + 4 * len([s for s in str(a.get("aux_latent_shards_dirs", "") or "").split(",") if s])),
-            **arch).to(dev)
+            callig_style_attn=bool(a.get("callig_style_attn", False)),
+            callig_n_style=int(a.get("callig_n_style", 8)),
+            glyph_inject_mode=a.get("glyph_inject_mode", "adaln"), **arch).to(dev)
         model.load_state_dict(_strip(d.get("ema") or d.get("model") or d), strict=False)
         model.eval()
     elif args.model == "v10a":
@@ -87,7 +87,7 @@ def main():
         a = vars(d["args"]) if isinstance(d.get("args"), argparse.Namespace) else d["args"]
         model = DiT_2Cond_models[a.get("model", "DiT-2Cond-S/2")](
             num_calligraphers=int(a.get("num_calligraphers", 1013)),
-            num_characters=int(a.get("num_characters") or 35130),
+            num_characters=int(a.get("num_characters", 35130)),
             condition_fusion="factorized_add", callig_embed_dim=128,
             char_embed_dim=384, char_proj_mode="mlp", freeze_char_table=False,
             cond_drop_all_prob=0.05, cond_drop_one_prob=0.25,
@@ -215,8 +215,7 @@ def main():
                              skel=g, seed=0)
         t_s = time.time() - t0
         with torch.no_grad():
-            _lat = lat[:, :4] if lat.shape[1] > 4 else lat   # aux 目标通道丢弃
-            img = vae.decode(_lat.to(dev) / 0.18215).sample[0]
+            img = vae.decode(lat.to(dev) / 0.18215).sample[0]
         out_f = ((img.clamp(-1, 1) + 1) / 2).mean(0).cpu().numpy()
         out_mask = out_f < 0.5
         out_skel = skel_of(out_f)

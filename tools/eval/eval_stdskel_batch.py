@@ -44,10 +44,12 @@ def main():
     ap.add_argument("--vae-batch", type=int, default=25)
     ap.add_argument("--include-steps", type=str, default="",
                     help="逗号分隔 step 列表 (空=全部); 如 180000,200000,250000")
+    ap.add_argument("--disable-callig-style", action="store_true",
+                    help="强制 callig_style_attn=False 建模 (消融: 风格注入对指标的贡献)")
     ap.add_argument("--device", default="cuda", choices=["cuda", "cpu"],
-                    help="in-mem eval 设备 (cuda=GPU 内存内评测, cpu=CPU)")
+                    help="in-mem eval 设备 (cuda=GPU, cpu=CPU)")
     ap.add_argument("--ckpt-override", default="",
-                    help="只评测指定 ckpt 路径 (用于 batch 扫描)")
+                    help="只评测指定 ckpt 路径 (batch 扫描/单点复评)")
     ap.add_argument("--save-samples", action="store_true",
                     help="落盘 g{i}/gt{i}.png 到 eval_samples_ctrl/ (供 poster)")
     args = ap.parse_args()
@@ -82,24 +84,44 @@ def main():
                 qk_norm=bool(a.get("qk_norm", 1)), rope=bool(a.get("rope", 1)),
                 rope_theta=float(a.get("rope_theta", 100.0)),
                 attn_impl=a.get("attn_impl", "sdpa"))
+    # IDS 组件码本: 若 ckpt 用了 IDS, 需要复现 char_id->char 映射
+    _ids_c2c = None
+    if a.get("use_ids_char_embedder"):
+        _ic = a.get("ids_char_map_csv")
+        if _ic and os.path.isfile(_ic):
+            from src.model.ids_embedder import build_char_id_map_from_csv
+            _ids_c2c = build_char_id_map_from_csv(_ic)
     model = DiT_2Cond_models[a.get("model", "DiT-2Cond-S/2")](
-        num_calligraphers=int(a.get("num_calligraphers", 1013)),
+        num_calligraphers=int(a.get("num_calligraphers") or 1013),
         num_characters=int(a.get("num_characters") or 35130),
         condition_fusion=a.get("condition_fusion", "factorized_add"),
-        callig_embed_dim=int(a.get("callig_embed_dim", 128)),
+        callig_embed_dim=int(a.get("callig_embed_dim") or 128),
         char_embed_dim=int(a.get("char_embed_dim") or 384),
         char_proj_mode=(a.get("char_proj_mode") or "mlp"),
-        freeze_char_table=bool((a.get("freeze_char_table") or False)),
+        freeze_char_table=bool(a.get("freeze_char_table", False)),
         cond_drop_all_prob=0.05, cond_drop_one_prob=0.25,
         cond_drop_which_glyph_prob=0.5, use_checkpoint=False, learn_sigma=False,
         use_glyph_cond=True, use_char_cond=not bool(a.get("no_char_cond", False)),
-        glyph_scale_init=float(a.get("glyph_scale_init", 0.4)),
+        glyph_scale_init=float(a.get("glyph_scale_init") or 0.4),
         glyph_drop_prob=0.0,
-        glyph_embedder_depth=int(a.get("glyph_embedder_depth", 0)),
-        glyph_inject_layers=int(a.get("glyph_inject_layers", 0)),
-        in_channels=(int(a.get("latent_channels", 4))
-                     + 4 * len([s for s in str(a.get("aux_latent_shards_dirs", "") or "").split(",") if s])),
-        **arch).to(dev).eval()
+        glyph_embedder_depth=int(a.get("glyph_embedder_depth") or 0),
+        glyph_inject_layers=int(a.get("glyph_inject_layers") or 0),
+        callig_style_attn=bool(a.get("callig_style_attn", False)) and not args.disable_callig_style,
+        callig_n_style=int(a.get("callig_n_style") or 8),
+        callig_spatial=bool(a.get("callig_spatial", False)),
+        callig_spatial_rank=int(a.get("callig_spatial_rank") or 64),
+        style_token_n=int(a.get("style_token_n") or 0),
+        style_role_init=float(a.get("style_role_init") or 0.02),
+        glyph_in_channels=4,
+        in_channels=(int(a.get("latent_channels") or 4)
+                     + 4 * len([s for s in str(a.get("aux_latent_shards_dirs") or "").split(",") if s])),
+        use_ids_char_embedder=bool(a.get("use_ids_char_embedder", False)),
+        ids_file=a.get("ids_file"),
+        char_id_to_char=_ids_c2c,
+        use_std_dino_char_embedder=bool(a.get("use_std_dino_char_embedder", False)),
+        std_dino_table_path=a.get("std_dino_table_path"),
+        chars_per_script=int(a.get("chars_per_script") or 7026),
+        glyph_inject_mode=a.get("glyph_inject_mode", "adaln"), **arch).to(dev).eval()
     # 冻结书家表: 复现 null_embed 独立参数结构 (与 ckpt state_dict 对齐)
     if a.get("freeze_callig_table"):
         model.y_callig_embedder.freeze_table()
@@ -167,11 +189,12 @@ def main():
             continue
         d = torch.load(ck, map_location="cpu", weights_only=False)
         sd = _strip(d.get("ema") or d.get("model") or d)
+        if args.disable_callig_style:
+            # 消融模式: 丢弃 ckpt 里的 callig_style 系键 (模块已被禁用), 其余照常
+            sd = {k: v for k, v in sd.items()
+                  if "callig_style" not in k and "callig_basis" not in k}
         miss, unexp = model.load_state_dict(sd, strict=False)
-        if unexp:
-            raise RuntimeError(
-                f"step{step} unexpected={len(unexp)}: {sorted(unexp)[:10]} | "
-                f"missing={len(miss)}: {sorted(miss)[:5]}")
+        assert len(unexp) == 0, f"step{step} unexpected={len(unexp)[:3] if unexp else 0}"
 
         for name in todo:
             S = sets[name]
@@ -195,7 +218,7 @@ def main():
             pred_np = preds.cpu().numpy().transpose(0, 2, 3, 1)   # -> (n,H,W,C) 与 _ssim/_lpips 对齐
             gt_np = gts.cpu().numpy().transpose(0, 2, 3, 1)
             if args.save_samples:
-                # 落盘样本供 poster 使用: seen->g/, strict->strict50/ (posters.py 读取布局)
+                # 落盘样本供 poster: seen->g/, strict->strict50/
                 from PIL import Image as _Img
                 _sub = "g" if name in ("seen", "g") else ("strict50" if name == "strict" else name)
                 _sd = os.path.join(os.path.dirname(os.path.dirname(ck)), "eval_samples_ctrl",
