@@ -618,13 +618,15 @@ def main(args):
         # DDPM 专属的 sqrt_alphas_cumprod 数组, flow 下语义正确 (mid 噪声段
         # t∈[0.25,0.65])。留在禁用列表会让 mid 配置静默失效 (本仓库惯犯模式)。
         _flow_disabled = []
-        for _attr in ('use_canny', 'use_skel', 'w_skel_head',
-                      'w_latent_skel', 'w_latent_canny'):
+        for _attr in ('use_canny', 'use_skel'):
             if getattr(args, _attr, 0):
                 setattr(args, _attr, 0 if not isinstance(getattr(args, _attr, 0), bool) else False)
                 _flow_disabled.append(_attr)
         if _flow_disabled:
             logger.info(f"[flow] disabled DDPM-only auxiliaries: {', '.join(_flow_disabled)}")
+        # 注意: w_latent_skel / w_latent_canny 是 **latent 结构 loss** (基于 pred_xstart,
+        # flow 下 pred_xstart 由 return_pred_xstart 提供), 不属于 DDPM 专属, 不能禁用。
+        # 历史 bug: 留在禁用列表 -> 静默置 0, 结构 loss 从未生效 (2026-09-12 修)。
         logger.info(f"[flow] Flow-Matching enabled (velocity target, Euler ODE sampling, t in [0,1])")
     _vae_ds = getattr(args, 'vae_downscale', 8)
     _vae_lc = getattr(args, 'latent_channels', 4)
