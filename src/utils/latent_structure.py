@@ -78,7 +78,9 @@ class LatentStructureLoss(nn.Module):
     def __init__(self, probe=None, max_timestep=500):
         super().__init__()
         self.probe = probe
-        self.max_timestep = int(max_timestep)
+        # NOTE: flow matching 下 timestep ∈ [0,1]; DDPM 下 ∈ [0,1000]。必须用 float,
+        # 否则 flow 阈值 (如 0.3) 会被 int() 截成 0 -> 门控恒假 (静默失效惯犯)。
+        self.max_timestep = float(max_timestep)
         if self.probe is not None:
             self.probe.eval()
             self.probe.requires_grad_(False)

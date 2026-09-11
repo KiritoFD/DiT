@@ -1,5 +1,5 @@
 {
-  "_comment": "[2026-09-12] **v11_struct-loss 系列** 起点. 从 c41x_cos_e@390k (strict 0.5676, 全量GPU重评最佳) resume + latent 结构 loss (probe-based): skel=0.02 (0.1 降5倍, 用户裁定), canny=0.1. 数据=增强 fame_e 113,540; 结构像素图 struct_fame_e (白线黑底 >127=正类, 与 probe 口径一致). 架构与 ckpt 一致 (Sp/2 + xattn12 + 41 冻结表 + std-skel-g, callig_spatial 忽略). LR 5e-5 cosine→500k (起点 1.02e-5), batch 128, eval_cfg 0.7 (与 0.5676 同口径). eval interval: seen 每 2.5k (每个 ckpt), strict 每 10k.",
+  "_comment": "[2026-09-12] **v11_struct-loss 系列** 起点. 从 c41x_cos_e@390k (strict 0.5676, 全量GPU重评最佳) resume + latent 结构 loss (probe-based): skel=0.02, canny=0.1. !! 关键修复: latent_struct_max_t 500 -> 0.3 —— 该门控原为 DDPM(t∈0..1000) 设计, flow 下 t∈[0,1] 使 t<=500 恒真, 结构 loss 在高噪声步(pred_x0 全糊)也生效 -> loss 不降且拖累 strict (v1 @t<=500: strict@400k=0.5624 vs 基线 0.5676)。改为只监督低噪声步 t<=0.3。 数据=增强 fame_e 113,540; 结构像素图 struct_fame_e (白线黑底 >127=正类). 架构与 ckpt 一致 (Sp/2 + xattn12 + 41 冻结表 + std-skel-g). LR 5e-5 cosine→500k (起点 1.02e-5), batch 128, eval_cfg 0.7. eval: seen 2.5k / strict 10k.",
   "experiment_name": "v11_struct-loss",
   "results_dir": "5script/results/v11_struct-loss",
   "model": "DiT-2Cond-Sp/2",
@@ -64,7 +64,7 @@
   "w_latent_skel": 0.02,
   "w_latent_canny": 0.1,
   "latent_structure_probe": "5script/results/latent_struct_probe.pt",
-  "latent_struct_max_t": 500,
+  "latent_struct_max_t": 0.3,
   "skel_root": "struct_fame_e/skel",
   "canny_root": "struct_fame_e/canny"
 }

@@ -1348,7 +1348,7 @@ def main(args):
                 loss_latent_struct_skel = torch.tensor(0.0, device=device)
                 loss_latent_struct_canny = torch.tensor(0.0, device=device)
                 if latent_struct_loss_fn is not None and pred_xstart_latent is not None:
-                    _lst_max_t = int(getattr(args, 'latent_struct_max_t', 500))
+                    _lst_max_t = float(getattr(args, 'latent_struct_max_t', 500))
                     _lst_mask = t <= _lst_max_t
                     if bool(_lst_mask.any()):
                         _p = pred_xstart_latent[_lst_mask].float()
@@ -2084,7 +2084,7 @@ def main_from_cli(argv=None):
                         help="Weight for decoder-free frozen-probe skeleton loss.")
     parser.add_argument("--latent-structure-probe", type=str, default=None,
                         help="Checkpoint from train_latent_structure_probe.py (required for latent skeleton loss).")
-    parser.add_argument("--latent-struct-max-t", type=int, default=500,
+    parser.add_argument("--latent-struct-max-t", type=float, default=500.0,
                         help="Apply latent structural losses only at diffusion timesteps <= this value.")
     parser.add_argument("--w-latent-struct-skel", type=float, default=0.0,
                         help="Weight for frozen StructDecoder skel BCE loss (latent→skel decoder). "
