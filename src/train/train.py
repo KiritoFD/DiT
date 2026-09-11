@@ -984,6 +984,7 @@ def main(args):
                 if cond_mode == "3cond":
                     y_script = batch['y_script'].to(device)
 
+                _ch_w = None
                 if 'latent' in batch:
                     # Latent-cached training: latent pre-encoded (scaled by vae_scaling_factor).
                     x_latent = batch['latent'].to(device)
@@ -991,6 +992,10 @@ def main(args):
                     _aux = batch.get('aux_latents', None)
                     if _aux is not None and _aux.numel() > 0:
                         x_latent = torch.cat([x_latent, _aux.to(device).float()], dim=1)
+                        _w_aux = float(getattr(args, 'aux_loss_weight', 1.0))
+                        if _w_aux != 1.0:
+                            _ch_w = torch.ones(x_latent.shape[1], device=device)
+                            _ch_w[4:] = _w_aux
                     x = batch.get('image', None)
                     x = x.to(device) if x is not None else None
                     canny_gt = batch['canny'].to(device) if need_canny_map else None
@@ -1043,14 +1048,14 @@ def main(args):
                         try:
                             loss_dict = diffusion.training_losses(
                                 model, x_latent, t, model_kwargs,
-                                return_pred_xstart=True)
+                                return_pred_xstart=True, channel_weights=_ch_w)
                         except TypeError:
                             # gaussian_diffusion 不支持该参数，本身就会返回 pred_xstart
                             loss_dict = diffusion.training_losses(
                                 model, x_latent, t, model_kwargs)
                     else:
                         loss_dict = diffusion.training_losses(
-                            model, x_latent, t, model_kwargs)
+                            model, x_latent, t, model_kwargs, channel_weights=_ch_w)
                     loss_diff = loss_dict["loss"].mean()
 
                 loss_canny = torch.tensor(0.0, device=device)

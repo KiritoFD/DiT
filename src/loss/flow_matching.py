@@ -163,7 +163,7 @@ class FlowMatching:
         return (1.0 - t[:, None, None, None]) * x_start + t[:, None, None, None] * noise
 
     def training_losses(self, model, x_start, t, model_kwargs=None, noise=None,
-                        return_pred_xstart=False):
+                        return_pred_xstart=False, channel_weights=None):
         """
         Velocity-matching loss on the linear interpolant path.
 
@@ -233,6 +233,10 @@ class FlowMatching:
 
         # velocity MSE (optionally L2-weighted by (1-t); plain MSE is fine)
         loss = F.mse_loss(model_output, v_target.float(), reduction="none")
+        if channel_weights is not None:
+            # per-channel 加权 (aux 目标通道降权): 图像通道保持 1/C, aux 通道 ×w_aux/C。
+            # mean 仍在全部通道上做 -> 图像通道的梯度权重与不加权时完全一致。
+            loss = loss * channel_weights.view(1, -1, 1, 1).to(loss.dtype)
         loss = loss.mean(dim=list(range(1, loss.ndim)))
         terms["loss"] = loss
 
