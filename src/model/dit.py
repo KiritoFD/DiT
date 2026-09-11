@@ -211,97 +211,6 @@ def get_1d_sincos_pos_embed_from_grid(embed_dim, pos):
 
 
 
-class ZeroCrossAttention(nn.Module):
-    """零初始化 Cross-Attention 骨架注入 (GlyphDraw/IP-Adapter 式空间寻址).
-
-    Q = x token (去噪画布, 内容已含位置信息), K/V = g_tok (标准字形特征)。
-    与 ZeroAdaLNInjection (固定 1:1 位置对齐的逐 token 调制) 不同:
-    每个 query token 动态聚合全部 N_ctx 个骨架 token (内容寻址), 2D 绑定
-    靠 g 网格与 x 网格相同 (16×16) + 固定 sincos 位置嵌入保证。
-    out_proj 零初始化 → 初始恒等, 不破坏已有训练。
-    环境: cu121 torch>=2.0, 直接用 F.scaled_dot_product_attention。
-    """
-
-    def __init__(self, d_model, num_heads, grid_size=16):
-        super().__init__()
-        assert d_model % num_heads == 0
-        self.num_heads = num_heads
-        self.head_dim = d_model // num_heads
-        grid_size = int(round(grid_size))
-        self.norm_x = nn.LayerNorm(d_model)
-        self.norm_c = nn.LayerNorm(d_model)
-        self.q_proj = nn.Linear(d_model, d_model)
-        self.k_proj = nn.Linear(d_model, d_model)
-        self.v_proj = nn.Linear(d_model, d_model)
-        self.out_proj = nn.Linear(d_model, d_model)
-        # g 网格位置嵌入: 固定 sincos, 与 x 同 grid (N_ctx = grid_size²)
-        pe = get_2d_sincos_pos_embed(d_model, grid_size)
-        self.register_buffer(
-            "ctx_pos", torch.from_numpy(pe).float().unsqueeze(0), persistent=False)
-        nn.init.zeros_(self.out_proj.weight)
-        nn.init.zeros_(self.out_proj.bias)
-
-    def forward(self, x, context):
-        return self._inject(x, context)
-
-    def _inject(self, x, context):
-        B, N, D = x.shape
-        Nc = context.shape[1]
-        q = self.q_proj(self.norm_x(x)).view(B, N, self.num_heads, self.head_dim).transpose(1, 2)
-        k = self.k_proj(self.norm_c(context + self.ctx_pos[:, :Nc])) \
-            .view(B, Nc, self.num_heads, self.head_dim).transpose(1, 2)
-        v = self.v_proj(self.norm_c(context + self.ctx_pos[:, :Nc])) \
-            .view(B, Nc, self.num_heads, self.head_dim).transpose(1, 2)
-        out = F.scaled_dot_product_attention(q, k, v)
-        out = out.transpose(1, 2).reshape(B, N, D)
-        return x + self.out_proj(out)
-
-
-class GlyphStyleCrossAttn(nn.Module):
-    """每层注入: Q = x token, K/V = 外部拼好的 context = [骨架token(+pos); 风格token(+role)].
-
-    与 ZeroCrossAttention 的关键区别: 本模块**不在内部加位置嵌入**
-    (位置已在外部加到骨架 token, role 已加到风格 token), 因此风格 token 能
-    **直接参与每一层**的内容寻址 —— 避免风格只经"骨架调制"间接进入后被深层稀释。
-
-    每个 x 位置(query) 依据自身内容与空间位置, 同时聚合:
-      - 局部字形  : 骨架 token(与 x 同 16x16 网格, 空间对应)
-      - 书家风格  : style token(全局, 但 attention 权重随 query 位置变化
-                    => 同一书家在不同位置吸收不同风格分量 = 风格局部化)
-
-    这满足"图片上每一处都综合 局部字形 + 空间信息 + 书家风格 做调制"。
-    out_proj 零初始化 -> 初始恒等, 可安全从已训 ckpt 续跑。
-    """
-
-    def __init__(self, d_model, num_heads):
-        super().__init__()
-        assert d_model % num_heads == 0
-        self.num_heads = num_heads
-        self.head_dim = d_model // num_heads
-        self.norm_x = nn.LayerNorm(d_model)
-        self.norm_c = nn.LayerNorm(d_model)
-        self.q_proj = nn.Linear(d_model, d_model)
-        self.k_proj = nn.Linear(d_model, d_model)
-        self.v_proj = nn.Linear(d_model, d_model)
-        self.out_proj = nn.Linear(d_model, d_model)
-        nn.init.zeros_(self.out_proj.weight)
-        nn.init.zeros_(self.out_proj.bias)
-
-    def forward(self, x, context):
-        B, N, D = x.shape
-        Nc = context.shape[1]
-        q = self.q_proj(self.norm_x(x)).view(
-            B, N, self.num_heads, self.head_dim).transpose(1, 2)
-        ctx = self.norm_c(context)
-        k = self.k_proj(ctx).view(
-            B, Nc, self.num_heads, self.head_dim).transpose(1, 2)
-        v = self.v_proj(ctx).view(
-            B, Nc, self.num_heads, self.head_dim).transpose(1, 2)
-        out = F.scaled_dot_product_attention(q, k, v)
-        out = out.transpose(1, 2).reshape(B, N, D)
-        return x + self.out_proj(out)
-
-
 class DiT_2Cond(nn.Module):
     """
     Diffusion model with a Transformer backbone conditioned on 2 discrete labels:
@@ -341,7 +250,6 @@ class DiT_2Cond(nn.Module):
         # ZeroAdaLNInjection 完全对齐。见下方 glyph_embedder 处的说明。
         # 显存：每层约 +150MB（batch=192 时），12 层约 +1.8G，注意 OOM。
         glyph_inject_layers=0,
-        glyph_inject_mode="adaln",
         # 标准字形条件的训练期随机丢弃概率。0 = 不丢弃。
         # 作用见 forward() 中的注释：防门控 + 模拟草/篆无标准字形的真实缺失。
         glyph_drop_prob=0.0,
@@ -358,8 +266,6 @@ class DiT_2Cond(nn.Module):
         # style_token_n>0 时: 注入 context = [书家化骨架(+pos); 风格token(+role)],
         # 使风格在**每一层**都可见, 而非只经骨架间接进入被深层稀释。
         # 这是"图片每一处综合 局部字形+空间+风格 调制"的载体。
-        style_token_n=0,
-        style_role_init=0.02,
         freeze_char_table=False,
         # ---- 现代化开关（v2 arch）----
         # 默认全部开启。全部关闭时与旧实现数值等价（同 seed 可复现旧结果）。
@@ -479,22 +385,6 @@ class DiT_2Cond(nn.Module):
             if self.use_char_cond:
                 self.char_scale = nn.Parameter(torch.tensor(1.0))
             self.cond_fusion = None
-            # 风格 token(每层注入可见): 共享投影, 各层复用同一组 style token。
-            # role 可学习 -> 给 N 个 token 不同"角色", 防止塌缩为同一向量。
-            self.n_style_token = int(style_token_n)
-            if self.n_style_token > 0:
-                self.style_proj = nn.Sequential(
-                    nn.LayerNorm(callig_embed_dim),
-                    nn.Linear(callig_embed_dim, self.n_style_token * hidden_size))
-                self.style_role = nn.Parameter(
-                    torch.randn(self.n_style_token, hidden_size)
-                    * float(style_role_init))
-                _pe = get_2d_sincos_pos_embed(hidden_size, 16)
-                self.register_buffer(
-                    "ctx_pos_g", torch.from_numpy(_pe).float().unsqueeze(0),
-                    persistent=False)
-            else:
-                self.style_proj = None
         else:
             raise ValueError(f"condition_fusion={condition_fusion!r} 已废弃, 仅支持 'factorized_add'")
 
@@ -532,7 +422,6 @@ class DiT_2Cond(nn.Module):
         self.glyph_embedder = None
         # 逐层注入（glyph_inject_layers>0 时启用）：见下方说明
         self.glyph_inject_layers = int(glyph_inject_layers)
-        self.glyph_inject_mode = str(glyph_inject_mode)
         self.glyph_injections = None
         # 训练期随机丢弃标准字形条件的概率（见 forward 中注释）
         self.glyph_drop_prob = float(glyph_drop_prob)
@@ -572,29 +461,14 @@ class DiT_2Cond(nn.Module):
                 # 均匀分布在 depth 层中
                 self.glyph_inject_at = sorted(
                     set(int(round((i + 1) * depth / n_inj)) - 1 for i in range(n_inj)))
-                # glyph_inject_mode: "adaln" = ZeroAdaLNInjection (固定 1:1 位置调制,
-                # 旧 ckpt 兼容默认); "xattn" = ZeroCrossAttention (空间寻址注入,
-                # GlyphDraw/IP-Adapter 式内容+风格解耦, 2026-09-08)
-                if glyph_inject_mode == "xattn":
-                    if self.n_style_token > 0:
-                        # 风格 token 每层可见: context 由 forward 外部拼好
-                        # (骨架+pos ; 风格+role), 本类不再内部加位置。
-                        self.glyph_injections = nn.ModuleList([
-                            GlyphStyleCrossAttn(hidden_size, num_heads=num_heads)
-                            for _ in self.glyph_inject_at
-                        ])
-                    else:
-                        self.glyph_injections = nn.ModuleList([
-                            ZeroCrossAttention(hidden_size, num_heads=num_heads,
-                                               grid_size=self.x_embedder.num_patches ** 0.5)
-                            for _ in self.glyph_inject_at
-                        ])
-                else:
-                    from .controlnet import ZeroAdaLNInjection
-                    self.glyph_injections = nn.ModuleList([
-                        ZeroAdaLNInjection(hidden_size, mode="modulate")
-                        for _ in self.glyph_inject_at
-                    ])
+                # 干净 adaLN 注入 (与 ControlNet/ref 对齐): 
+                #   out = x * (1 + s) + t, s/t 由 zero-init Linear(g_tok) 产出
+                #   init 恒等; g_tok=0 (drop) 时 s=t=0 严格恒等 (uncond-g 语义纯净)
+                from .controlnet import ZeroAdaLNInjection
+                self.glyph_injections = nn.ModuleList([
+                    ZeroAdaLNInjection(hidden_size, mode="modulate")
+                    for _ in self.glyph_inject_at
+                ])
         self.initialize_weights()
         if self.freeze_char_table and hasattr(self, "y_char_embedder"):
             # 冻结 char 表：DINO 预填充后不再训练（省 35130×384≈13.5M 训练参数），
@@ -823,15 +697,7 @@ class DiT_2Cond(nn.Module):
         # style_token_n>0 时拼接风格 token: 让**每一层**的 attention 都能直接
         # 看到书家风格, 而不是只通过"书家化骨架"间接进入(会被深层稀释)。
         # 每个 x 位置(query)因此可同时寻址: 局部字形(空间对应) + 书家风格。
-        inject_ctx = g_tok
-        if getattr(self, "style_proj", None) is not None and g_tok is not None:
-            _B = g_tok.shape[0]
-            _D = g_tok.shape[-1]
-            _Ng = g_tok.shape[1]
-            _style = self.style_proj(e_callig).view(
-                _B, self.n_style_token, _D) + self.style_role.unsqueeze(0)
-            # 骨架 token 加 2D sincos 位置(空间对应), 风格 token 用可学习 role
-            inject_ctx = torch.cat([g_tok + self.ctx_pos_g[:, :_Ng], _style], dim=1)
+        inject_ctx = g_tok   # adaLN 注入: 直接用骨架 token (N,256,D)
 
         if self.use_checkpoint:
             for i, block in enumerate(self.blocks):

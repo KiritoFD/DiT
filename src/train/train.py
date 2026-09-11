@@ -247,10 +247,7 @@ def main(args):
             glyph_scale_init=getattr(args, 'glyph_scale_init', 0.4),
             glyph_drop_prob=getattr(args, 'glyph_drop_prob', 0.0),
             glyph_inject_layers=getattr(args, 'glyph_inject_layers', 0),
-            glyph_inject_mode=getattr(args, 'glyph_inject_mode', 'adaln'),
             glyph_embedder_depth=getattr(args, 'glyph_embedder_depth', 0),
-            style_token_n=getattr(args, 'style_token_n', 0),
-            style_role_init=getattr(args, 'style_role_init', 0.02),
             in_channels=(getattr(args, 'latent_channels', 4)
                          + 4 * len([s for s in str(getattr(args, 'aux_latent_shards_dirs', '') or '').split(',') if s])),
             char_proj_mode=getattr(args, 'char_proj_mode', 'full'),

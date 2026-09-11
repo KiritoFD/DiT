@@ -70,11 +70,9 @@ def main():
             glyph_scale_init=float(a.get("glyph_scale_init", 0.4)),
             glyph_embedder_depth=int(a.get("glyph_embedder_depth", 0)),
             glyph_inject_layers=int(a.get("glyph_inject_layers", 0)),
-            style_token_n=int(a.get("style_token_n", 0)),
-            style_role_init=float(a.get("style_role_init", 0.02)),
             in_channels=(int(a.get("latent_channels", 4))
                          + 4 * len([s for s in str(a.get("aux_latent_shards_dirs", "") or "").split(",") if s])),
-            glyph_inject_mode=a.get("glyph_inject_mode", "adaln"), **arch).to(dev)
+            **arch).to(dev)
         model.load_state_dict(_strip(d.get("ema") or d.get("model") or d), strict=False)
         model.eval()
     elif args.model == "v10a":
