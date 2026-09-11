@@ -48,6 +48,8 @@ def main():
                     help="in-mem eval 设备 (cuda=GPU 内存内评测, cpu=CPU)")
     ap.add_argument("--ckpt-override", default="",
                     help="只评测指定 ckpt 路径 (用于 batch 扫描)")
+    ap.add_argument("--save-samples", action="store_true",
+                    help="落盘 g{i}/gt{i}.png 到 eval_samples_ctrl/ (供 poster)")
     args = ap.parse_args()
 
     dev = torch.device(args.device)
@@ -192,6 +194,19 @@ def main():
                 preds[i:j] = (dec.clamp(-1, 1) + 1) / 2
             pred_np = preds.cpu().numpy().transpose(0, 2, 3, 1)   # -> (n,H,W,C) 与 _ssim/_lpips 对齐
             gt_np = gts.cpu().numpy().transpose(0, 2, 3, 1)
+            if args.save_samples:
+                # 落盘样本供 poster 使用: seen->g/, strict->strict50/ (posters.py 读取布局)
+                from PIL import Image as _Img
+                _sub = "g" if name in ("seen", "g") else ("strict50" if name == "strict" else name)
+                _sd = os.path.join(os.path.dirname(os.path.dirname(ck)), "eval_samples_ctrl",
+                                   f"step{step:07d}", _sub)
+                os.makedirs(_sd, exist_ok=True)
+                for i in range(n):
+                    _Img.fromarray((pred_np[i] * 255).astype(np.uint8)).save(
+                        os.path.join(_sd, f"g{i}.png"))
+                    _Img.fromarray((gt_np[i] * 255).astype(np.uint8)).save(
+                        os.path.join(_sd, f"gt{i}.png"))
+                print(f"[batch] step{step} {name}: saved {n} samples -> {_sub}/", flush=True)
             ssims, mses, lp_list = [], [], []
             for i in range(n):
                 mses.append(_mse(pred_np[i], gt_np[i]))
