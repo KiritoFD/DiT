@@ -251,7 +251,8 @@ def main(args):
             glyph_embedder_depth=getattr(args, 'glyph_embedder_depth', 0),
             style_token_n=getattr(args, 'style_token_n', 0),
             style_role_init=getattr(args, 'style_role_init', 0.02),
-            in_channels=getattr(args, 'latent_channels', 4),
+            in_channels=(getattr(args, 'latent_channels', 4)
+                         + 4 * len([s for s in str(getattr(args, 'aux_latent_shards_dirs', '') or '').split(',') if s])),
             char_proj_mode=getattr(args, 'char_proj_mode', 'full'),
             callig_proj_mode=getattr(args, 'callig_proj_mode', 'linear'),
             callig_scale_init=float(getattr(args, 'callig_scale_init', 1.0)),
@@ -709,7 +710,8 @@ def main(args):
                                     skel_latent_shards_dir=(args.skel_latent_shards_dir
                                                             if getattr(args, 'skel_as_glyph_cond', False)
                                                             else None),
-                                    callig_id_map=getattr(args, '_callig_map', None))
+                                    callig_id_map=getattr(args, '_callig_map', None),
+                                    aux_latent_shards_dirs=[s for s in str(getattr(args, 'aux_latent_shards_dirs', '') or '').split(',') if s])
         logger.info("Using latent-cached dataset (skip on-the-fly VAE encode)."
                     + (" preload=ON" if getattr(args, 'preload', False) else ""))
     else:
@@ -985,6 +987,10 @@ def main(args):
                 if 'latent' in batch:
                     # Latent-cached training: latent pre-encoded (scaled by vae_scaling_factor).
                     x_latent = batch['latent'].to(device)
+                    # moyi 式辅助目标通道: aux latents (skel/canny) 与图像 latent 拼接成扩散目标
+                    _aux = batch.get('aux_latents', None)
+                    if _aux is not None and _aux.numel() > 0:
+                        x_latent = torch.cat([x_latent, _aux.to(device).float()], dim=1)
                     x = batch.get('image', None)
                     x = x.to(device) if x is not None else None
                     canny_gt = batch['canny'].to(device) if need_canny_map else None
@@ -1620,6 +1626,11 @@ def main_from_cli(argv=None):
     parser.add_argument("--style-role-init", type=float, default=0.02,
                         help="风格 token 的 role embedding 初始化 std (促 N 个 token 分化, "
                              "避免塌缩为同一向量)")
+    parser.add_argument("--aux-latent-shards-dirs", type=str, default="",
+                        help="moyi 式辅助目标通道: 逗号分隔的 aux latent shard 目录列表 "
+                             "(如 aux_skel_latents_fame_e,aux_canny_latents_fame_e)。"
+                             "训练目标 x = cat(image_latent, *aux_latents), 对全部通道加噪/算 MSE; "
+                             "推理只用前 4 通道 (与 moyi 12ch 一致)。空=关闭。")
     parser.add_argument("--freeze-callig-table", action="store_true",
                         help="冻结书家表 [0,N) 行 (CFG null token 仍可训练)。"
                              "需先 --callig-emb-pretrained, 否则冻结随机初始化无意义")
