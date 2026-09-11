@@ -44,8 +44,6 @@ def main():
     ap.add_argument("--vae-batch", type=int, default=25)
     ap.add_argument("--include-steps", type=str, default="",
                     help="逗号分隔 step 列表 (空=全部); 如 180000,200000,250000")
-    ap.add_argument("--disable-callig-style", action="store_true",
-                    help="强制 callig_style_attn=False 建模 (消融: 风格注入对指标的贡献)")
     args = ap.parse_args()
 
     dev = torch.device("cuda")
@@ -91,8 +89,6 @@ def main():
         glyph_drop_prob=0.0,
         glyph_embedder_depth=int(a.get("glyph_embedder_depth", 0)),
         glyph_inject_layers=int(a.get("glyph_inject_layers", 0)),
-        callig_style_attn=bool(a.get("callig_style_attn", False)) and not args.disable_callig_style,
-        callig_n_style=int(a.get("callig_n_style", 8)),
         style_token_n=int(a.get("style_token_n", 0)),
         style_role_init=float(a.get("style_role_init", 0.02)),
         glyph_inject_mode=a.get("glyph_inject_mode", "adaln"), **arch).to(dev).eval()
@@ -163,10 +159,6 @@ def main():
             continue
         d = torch.load(ck, map_location="cpu", weights_only=False)
         sd = _strip(d.get("ema") or d.get("model") or d)
-        if args.disable_callig_style:
-            # 消融模式: 丢弃 ckpt 里的 callig_style 系键 (模块已被禁用), 其余照常
-            sd = {k: v for k, v in sd.items()
-                  if "callig_style" not in k and "callig_basis" not in k}
         miss, unexp = model.load_state_dict(sd, strict=False)
         if unexp:
             raise RuntimeError(

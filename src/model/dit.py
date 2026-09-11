@@ -302,56 +302,6 @@ class GlyphStyleCrossAttn(nn.Module):
         return x + self.out_proj(out)
 
 
-class CalligStyleCrossAttn(nn.Module):
-    """callig 空间化的正确形态: 书家风格以 cross-attention 内容寻址方式调制骨架.
-
-    与外挂(callig_spatial)的本质区别 —— 外挂把书家 128 维向量解算成"16x16 固定
-    空间模板"加到骨架上, N 书家 N 个常数模板, 与写哪个字无关 -> 无"书家x字"交互,
-    纯死重(实测 strict ±0.002)。
-
-    cross-attn: 书家向量 -> N_style 个 style token(风格维度分解),
-    query = 骨架 token g_tok(256, 随字变化的二维结构), K/V = style token。
-    attention 权重是数据相关的: 同一书家写不同字, 骨架 token 内容不同 -> 权重不同
-    -> 各 token 依自身结构动态吸收书家风格 -> 产生"书家x字x位置"三方交互,
-    骨架按"这个字 x 这个书家"组合变形(结体差异), 而非固定常数模板。
-    out_proj zero-init -> resume 恒等。
-    """
-
-    def __init__(self, callig_dim, hidden_size, num_heads, n_style=8):
-        super().__init__()
-        assert hidden_size % num_heads == 0
-        self.n_style = n_style
-        self.num_heads = num_heads
-        self.head_dim = hidden_size // num_heads
-        # 书家向量 -> N_style 个 style token (风格维度分解)
-        self.style_proj = nn.Sequential(
-            nn.LayerNorm(callig_dim),
-            nn.Linear(callig_dim, n_style * hidden_size),
-        )
-        self.norm_q = nn.LayerNorm(hidden_size)
-        self.norm_kv = nn.LayerNorm(hidden_size)
-        self.q_proj = nn.Linear(hidden_size, hidden_size)
-        self.k_proj = nn.Linear(hidden_size, hidden_size)
-        self.v_proj = nn.Linear(hidden_size, hidden_size)
-        self.out_proj = nn.Linear(hidden_size, hidden_size)
-        nn.init.zeros_(self.out_proj.weight)
-        nn.init.zeros_(self.out_proj.bias)
-
-    def forward(self, g_tok, e_callig):
-        """g_tok: (N, 256, D) 骨架 token; e_callig: (N, C) 书家向量 -> 返回书家化骨架."""
-        B, Nq, D = g_tok.shape
-        style = self.style_proj(e_callig).view(B, self.n_style, D)   # (N, n_style, D)
-        q = self.q_proj(self.norm_q(g_tok)).view(
-            B, Nq, self.num_heads, self.head_dim).transpose(1, 2)
-        k = self.k_proj(self.norm_kv(style)).view(
-            B, self.n_style, self.num_heads, self.head_dim).transpose(1, 2)
-        v = self.v_proj(self.norm_kv(style)).view(
-            B, self.n_style, self.num_heads, self.head_dim).transpose(1, 2)
-        out = F.scaled_dot_product_attention(q, k, v)
-        out = out.transpose(1, 2).reshape(B, Nq, D)
-        return g_tok + self.out_proj(out)
-
-
 class DiT_2Cond(nn.Module):
     """
     Diffusion model with a Transformer backbone conditioned on 2 discrete labels:
@@ -374,13 +324,12 @@ class DiT_2Cond(nn.Module):
         num_characters=1000,
         learn_sigma=True,
         use_checkpoint=True,
-        condition_fusion="legacy",
+        condition_fusion="factorized_add",
         callig_embed_dim=None,
         char_embed_dim=None,
         cond_drop_all_prob=0.05,
         cond_drop_one_prob=0.0,
         cond_drop_which_glyph_prob=0.5,
-        skel_head_enabled=False,
         use_glyph_cond=False,
         glyph_scale_init=0.4,
         # v10b: 去掉 char 向量条件 (skel-g 即字条件时的干净因子分解: 结构=skel, 风格=callig)。
@@ -404,12 +353,6 @@ class DiT_2Cond(nn.Module):
         char_proj_mode="full",
         callig_proj_mode="linear",   # 42 号实验: "mlp" 两层 MLP 补 callig 容量
         callig_scale_init=1.0,       # 42 号实验: callig_scale 初值 (1.5 增强风格权重)
-        # ---- callig 风格 cross-attention (书家化骨架: 风格×字形正确交互) ----
-        # 书家向量 -> N_style 个 style token, 骨架 token g_tok 作为 query 内容寻址聚合风格,
-        # attention 权重随字形内容变化 -> 产生"书家x字x位置"三方交互(结体差异)。
-        # 见 CalligStyleCrossAttn。从头训练, 不受旧 ckpt 约束。
-        callig_style_attn=False,
-        callig_n_style=8,
         # ---- 风格 token 直接参与每层注入 (GlyphStyleCrossAttn) ----
         # style_token_n>0 时: 注入 context = [书家化骨架(+pos); 风格token(+role)],
         # 使风格在**每一层**都可见, 而非只经骨架间接进入被深层稀释。
@@ -417,14 +360,6 @@ class DiT_2Cond(nn.Module):
         style_token_n=0,
         style_role_init=0.02,
         freeze_char_table=False,
-        # ---- IDS 组件码本字嵌入 (替代 LabelEmbedder) ----
-        use_ids_char_embedder=False,  # 是否用 IDS 组件码本
-        ids_file=None,                # IDS 字典文件路径
-        char_id_to_char=None,         # dict char_id -> char (None 时假设 char_id=Unicode)
-        # ---- 标准字形 DINO 字嵌入 (冻结查表, 零可训练参数) ----
-        use_std_dino_char_embedder=False,  # 是否用标准字形 DINO 冻结表
-        std_dino_table_path=None,          # 标准字形 DINO 表路径 (默认 _sync_work/std_dino_char_table_768.npy)
-        chars_per_script=7026,             # 每个书体字符数 (glyph_id = script*chars_per_script + char_id)
         # ---- 现代化开关（v2 arch）----
         # 默认全部开启。全部关闭时与旧实现数值等价（同 seed 可复现旧结果）。
         norm_type="rms",        # "rms" | "layer"
@@ -451,7 +386,6 @@ class DiT_2Cond(nn.Module):
         self.cond_drop_all_prob = float(cond_drop_all_prob)
         self.cond_drop_one_prob = float(cond_drop_one_prob)
         self.cond_drop_which_glyph_prob = float(cond_drop_which_glyph_prob)
-        self.skel_head_enabled = bool(skel_head_enabled)
         self.use_glyph_cond = bool(use_glyph_cond)
         self.glyph_scale_init = float(glyph_scale_init)
         self.use_char_cond = bool(use_char_cond)
@@ -479,20 +413,6 @@ class DiT_2Cond(nn.Module):
                 self.y_char_embedder = None
                 self.char_proj = None
                 self.char_scale = None
-            elif use_std_dino_char_embedder:
-                # 标准字形 DINO 冻结查表: 零可训练参数, 外形一致性 AUC>0.92
-                # (docs/system/25_dino_embed_direct.md)。char_embed_dim 应=DINO 维度(768)。
-                from .std_dino_embedder import StdDinoCharEmbedder
-                self.y_char_embedder = StdDinoCharEmbedder(
-                    num_characters, char_embed_dim, std_dino_table_path,
-                    dropout_prob=0.0, use_cfg_embedding=True,
-                    chars_per_script=chars_per_script)
-            elif use_ids_char_embedder:
-                # IDS 组件码本: 字嵌入 = 部件嵌入池化, 参数量降 95.5%, 零样本泛化
-                from .ids_embedder import IDSCharEmbedder
-                self.y_char_embedder = IDSCharEmbedder(
-                    num_characters, char_embed_dim, ids_file, char_id_to_char,
-                    dropout_prob=0.0, use_cfg_embedding=True)
             else:
                 self.y_char_embedder = LabelEmbedder(
                     num_characters, char_embed_dim, 0.0, use_cfg_embedding=True)
@@ -558,13 +478,6 @@ class DiT_2Cond(nn.Module):
             if self.use_char_cond:
                 self.char_scale = nn.Parameter(torch.tensor(1.0))
             self.cond_fusion = None
-            # callig 风格 cross-attention: 书家化骨架的正确形态 (见 CalligStyleCrossAttn)
-            if callig_style_attn:
-                self.callig_style_ca = CalligStyleCrossAttn(
-                    callig_embed_dim, hidden_size, num_heads=num_heads,
-                    n_style=int(callig_n_style))
-            else:
-                self.callig_style_ca = None
             # 风格 token(每层注入可见): 共享投影, 各层复用同一组 style token。
             # role 可学习 -> 给 N 个 token 不同"角色", 防止塌缩为同一向量。
             self.n_style_token = int(style_token_n)
@@ -581,37 +494,8 @@ class DiT_2Cond(nn.Module):
                     persistent=False)
             else:
                 self.style_proj = None
-        elif condition_fusion == "xl_highdim":
-            # XL 高维条件：callig(384) + glyph(768) concat -> MLP -> hidden(1152)，c = t_emb + y_emb。
-            # 关键认知修正：ImageNet 预训练的 adaLN/final_layer 是"分类→调制"耦合，与书法正交，
-            # 因此 train.py 里会把它们重置从头学。这里只保留高维条件结构，条件向量由训练
-            # 目标自行建立语义。y_scale 可学习缩放初值 ~1.0，让 y_emb 初始幅度接近 t_emb，
-            # 保证 adalaN(已重置) 早期稳定，同时允许模型自由扩大/缩小条件表达。
-            d_c = max(callig_embed_dim or (hidden_size // 3), 64)
-            d_g = max(char_embed_dim or (hidden_size - d_c), 64)
-            self.y_callig_embedder = LabelEmbedder(
-                num_calligraphers, d_c, 0.0, use_cfg_embedding=True)
-            self.y_char_embedder = LabelEmbedder(
-                num_characters, d_g, 0.0, use_cfg_embedding=True)
-            self.callig_proj = None
-            self.char_proj = None
-            self.cond_fusion = nn.Sequential(
-                nn.LayerNorm(d_c + d_g),
-                nn.Linear(d_c + d_g, hidden_size),
-                nn.SiLU(),
-                nn.Linear(hidden_size, hidden_size),
-            )
-            self.y_scale = nn.Parameter(torch.tensor(0.05))  # y_emb 初始 norm~1.0，可学习放大
-            self._y_scale_enabled = True
         else:
-            self.y_callig_embedder = LabelEmbedder(num_calligraphers, hidden_size, class_dropout_prob)
-            self.y_char_embedder = LabelEmbedder(num_characters, hidden_size, class_dropout_prob)
-            self.cond_fusion = nn.Sequential(
-                nn.Linear(hidden_size * 2, hidden_size),
-                nn.SiLU(),
-                nn.Linear(hidden_size, hidden_size)
-            )
-            self.callig_proj = self.char_proj = None
+            raise ValueError(f"condition_fusion={condition_fusion!r} 已废弃, 仅支持 'factorized_add'")
 
         num_patches = self.x_embedder.num_patches
         self.pos_embed = nn.Parameter(torch.zeros(1, num_patches, hidden_size), requires_grad=False)
@@ -638,14 +522,6 @@ class DiT_2Cond(nn.Module):
         else:
             self.register_buffer("rope_cos", None, persistent=False)
             self.register_buffer("rope_sin", None, persistent=False)
-        # 骨架辅助头（训练引导用，推理不用）：从 final_layer 前的 block 特征
-        # 并行解出 1×32×32 latent 骨架预测，与 GT latent 骨架对齐。
-        self.skel_head = None
-        if self.skel_head_enabled:
-            self.skel_head = nn.Sequential(
-                M.build_norm(norm_type, hidden_size),
-                nn.Linear(hidden_size, patch_size * patch_size, bias=True),
-            )
         # 甲2 标准字形条件的 token-add 缩放(可学习, 初始 glyph_scale_init, 让字形条件有存在感)
         self.glyph_scale = nn.Parameter(torch.tensor(self.glyph_scale_init))
         # 甲2 标准字形条件：独立可训练 glyph_embedder(Conv2d 4→hidden, patch 编码)
@@ -781,10 +657,6 @@ class DiT_2Cond(nn.Module):
         else:
             nn.init.normal_(self.y_char_embedder.embedding_table.weight, std=0.02)
 
-        if getattr(self, "skel_head_enabled", False) and self.skel_head is not None:
-            nn.init.zeros_(self.skel_head[-1].weight)
-            nn.init.zeros_(self.skel_head[-1].bias)
-
         nn.init.normal_(self.t_embedder.mlp[0].weight, std=0.02)
         nn.init.normal_(self.t_embedder.mlp[2].weight, std=0.02)
 
@@ -817,11 +689,6 @@ class DiT_2Cond(nn.Module):
 
         # callig 空间化最后一层 (to_spatial) 同样恢复 zero-init:
         # s_callig=0 初始恒等, 从已训 ckpt 续跑时不注入随机扰动。
-
-        # callig 风格 cross-attn 的 out_proj 同样恢复 zero-init (resume 恒等)。
-        if getattr(self, "callig_style_ca", None) is not None:
-            nn.init.zeros_(self.callig_style_ca.out_proj.weight)
-            nn.init.zeros_(self.callig_style_ca.out_proj.bias)
 
     def unpatchify(self, x):
         c = self.out_channels
@@ -870,7 +737,7 @@ class DiT_2Cond(nn.Module):
         #  的 adaLN 是 null 向量而骨架通路仍带真实风格 -> uncond 分支被污染)
         callig_drop = None
         char_drop = None
-        if (self.condition_fusion in ("factorized_add", "xl_highdim")
+        if (self.condition_fusion == "factorized_add"
                 and self.training
                 and (self.cond_drop_all_prob > 0 or self.cond_drop_one_prob > 0)):
             r = torch.rand(y_callig.shape[0], device=y_callig.device)
@@ -898,14 +765,6 @@ class DiT_2Cond(nn.Module):
         if self.use_glyph_cond and self.glyph_embedder is not None and g is not None:
             # 独立 glyph_embedder 把标准字形 latent 编成 (N, D, 16, 16) -> flat tokens (N,256,D)
             g_tok = self.glyph_embedder(g).flatten(2).transpose(1, 2)  # (N,256,D)
-            if self.callig_style_ca is not None:
-                # 书家化骨架(cross-attn): 骨架 token 内容寻址聚合书家 style token,
-                # 产生"书家x字x位置"交互(结体差异)。
-                # 注意 out_proj zero-init -> 注入从 0 平滑启动, 残差注入标准做法。
-                # e_c_ca 用 drop 后的 y_callig_in: drop-callig 样本的 style token
-                # 来自 null 嵌入, 与 adaLN 分支一致。
-                e_c_ca = self.y_callig_embedder(y_callig_in, False)
-                g_tok = self.callig_style_ca(g_tok, e_c_ca)
             if keep is not None:
                 # ⚠ 丢弃语义保护: style 注入会给零骨架加非零风格输出, 会把
                 # "uncond-g 分支"(drop 的样本)重新变成有条件 —— 必须**在风格调制
@@ -937,19 +796,6 @@ class DiT_2Cond(nn.Module):
                 # 可学习幅度平衡：见 __init__ 处注释（DINO 区分度被书家分支淹没的实测）。
                 y_emb = (self.callig_scale * self.callig_proj(e_callig)
                          + self.char_scale * self.char_proj(e_char)) / math.sqrt(2.0)
-        elif self.condition_fusion == "xl_highdim":
-            # XL 高维条件：与 factorized_add 相同的 4-way 可控 mask（CFG 需要 uncond 维度）。
-            # drop mask 已在 forward 顶部计算 (与骨架风格注入共享同一份)。
-            if self.training and char_drop is not None:
-                y_char = torch.where(char_drop, self.y_char_embedder.num_classes, y_char)
-            e_callig = self.y_callig_embedder(y_callig_in, False)
-            e_char = self.y_char_embedder(y_char, False)
-            y_emb = self.cond_fusion(torch.cat([e_callig, e_char], dim=-1)) * self.y_scale
-        else:
-            e_callig = self.y_callig_embedder(y_callig, self.training)
-            e_char = self.y_char_embedder(y_char, self.training)
-            y_concat = torch.cat([e_callig, e_char], dim=-1)
-            y_emb = self.cond_fusion(y_concat)
         c = t_emb + y_emb                        # (N, D)
 
         rope = (self.rope_cos, self.rope_sin) if self.rope else None
@@ -1013,25 +859,8 @@ class DiT_2Cond(nn.Module):
                     # 已提供直通梯度，故 glyph_embedder 从 step 0 即可学习。
                     x = self.glyph_injections[_inj[i]](x, inject_ctx)
 
-        # 骨架头：从 final_layer 前的 block 输出特征并行解码 latent 骨架 (N,1,32,32)
-        skel_pred = None
-        if self.skel_head_enabled and self.skel_head is not None:
-            skel_n = self.skel_head(x)                       # (N, T, p*p)，单通道 patch 值
-            B_, T_, PP = skel_n.shape
-            h_ = int(T_ ** 0.5)
-            p_ = self.x_embedder.patch_size[0]
-            # 完全镜像主 head 的 unpatchify（C=1）：
-            # (B,H*W,p*p) -> (B,H,W,p,p,1) -> einsum 'nhwpqc->nchpwq' -> (B,1,H,W,p,p) -> (B,1,H*p,W*p)
-            skel5 = skel_n.reshape(B_, h_, h_, p_, p_, 1)
-            skel5 = torch.einsum('nhwpqc->nchpwq', skel5)
-            skel_pred = skel5.reshape(B_, 1, h_ * p_, h_ * p_)
-
         x = self.final_layer(x, c)
         x = self.unpatchify(x)
-        if self.skel_head_enabled and skel_pred is not None:
-            # 返回 (主输出, skel_pred)；gaussian_diffusion.training_losses 会把第二元素
-            # 当作 intermediate_feats 存入 loss_dict['intermediate_feats']
-            return x, skel_pred
         if _repa_layers is not None:
             return x, intermediate_feats   # dict {layer: feats} (多层 REPA)
         if return_intermediate_layer is not None:
@@ -1056,7 +885,7 @@ class DiT_2Cond(nn.Module):
         g2 = torch.cat([g, g], dim=0) if g is not None else None
         model_out = self.forward(x, t, y_callig_combined, y_char_combined, g=g2)
         if isinstance(model_out, tuple):
-            model_out = model_out[0]  # skel_head 启用时 forward 返回 (主输出, skel_pred)，CFG 只取主输出
+            model_out = model_out[0]  # REPA 中间层返回时 CFG 只取主输出
         # Apply CFG on all learned channels (eps subspace), not a hard-coded prefix.
         eps, rest = model_out[:, :self.in_channels], model_out[:, self.in_channels:]
         cond_eps, uncond_eps = torch.split(eps, original_bs, dim=0)

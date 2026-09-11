@@ -8,7 +8,7 @@
 
 用法 (远程, 需整卡 GPU; 训练占满时跑会 OOM):
     python tools/lr_range_test.py --ckpt <path/to/xxxx.pt> [--steps 300] \
-        [--lr-min 1e-7] [--lr-max 1e-2] [--batch 16] [--callig-style-attn]
+        [--lr-min 1e-7] [--lr-max 1e-2] [--batch 16] [--style-token-n N]
 
 判读: 
     loss 最低点的 LR 的 1/10 作为保守复用点; loss 仍在陡降区间的 LR 可作为激进点。
@@ -43,7 +43,7 @@ def main():
     ap.add_argument("--lr-min", type=float, default=1e-7)
     ap.add_argument("--lr-max", type=float, default=1e-2)
     ap.add_argument("--batch", type=int, default=16)
-    ap.add_argument("--callig-style-attn", action="store_true")
+    ap.add_argument("--style-token-n", type=int, default=0)
     args = ap.parse_args()
 
     dev = torch.device("cuda")
@@ -72,13 +72,13 @@ def main():
         glyph_inject_layers=int(a.get("glyph_inject_layers", 12)),
         glyph_inject_mode=a.get("glyph_inject_mode", "xattn"),
         glyph_embedder_depth=int(a.get("glyph_embedder_depth", 2)),
-        callig_style_attn=args.callig_style_attn,
-        callig_n_style=int(a.get("callig_n_style", 8)), learn_sigma=False, **arch)
+        style_token_n=args.style_token_n,
+        style_role_init=float(a.get("style_role_init", 0.02)), learn_sigma=False, **arch)
     sd = ck.get("ema") or ck.get("model") or ck
     sd = {(k[len("_orig_mod."):] if k.startswith("_orig_mod.") else k): v for k, v in sd.items()}
     miss, unexp = model.load_state_dict(sd, strict=False)
     model.to(dev).train()
-    print(f"[model] {a.get('model')} miss={len(miss)} (callig_style_attn={args.callig_style_attn})",
+    print(f"[model] {a.get('model')} miss={len(miss)} (style_token_n={args.style_token_n})",
           flush=True)
 
     # 数据: csv 前 n 行, 固定一个 batch 贯穿全程 (LR range test 惯例)

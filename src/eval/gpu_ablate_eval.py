@@ -93,14 +93,10 @@ def build_model(a, device):
         use_checkpoint=False, learn_sigma=False,
         use_glyph_cond=bool(a.get("skel_as_glyph_cond") or a.get("w_glyph_cond")),
         use_char_cond=not bool(a.get("no_char_cond", False)),
-        use_std_dino_char_embedder=bool(a.get("use_std_dino_char_embedder", False)),
-        std_dino_table_path=a.get("std_dino_table_path"),
         glyph_scale_init=float(a.get("glyph_scale_init", 0.4)),
         glyph_drop_prob=0.0,
         glyph_embedder_depth=int(a.get("glyph_embedder_depth", 0)),
         glyph_inject_layers=int(a.get("glyph_inject_layers", 0)),
-        callig_style_attn=bool(a.get("callig_style_attn", False)),
-        callig_n_style=int(a.get("callig_n_style", 8)),
         style_token_n=int(a.get("style_token_n", 0)),
         style_role_init=float(a.get("style_role_init", 0.02)),
         glyph_inject_mode=a.get("glyph_inject_mode", "adaln"), **arch)
@@ -218,7 +214,7 @@ def main():
     del ck
     # 关键参数回显
     log(f"style_token_n={a.get('style_token_n', 0)} inject_mode={a.get('glyph_inject_mode')} "
-        f"inject_layers={a.get('glyph_inject_layers')} callig_style_attn={a.get('callig_style_attn')}")
+        f"inject_layers={a.get('glyph_inject_layers')} style_token_n={a.get('style_token_n')}")
     log(f"learned glyph_scale = {float(model.glyph_scale.data):.4f} "
         f"(init {a.get('glyph_scale_init')})")
 
@@ -289,7 +285,7 @@ def main():
         json.dump({"ckpt": args.ckpt, "n": n_eff, "steps": args.steps,
                    "args": {k: a.get(k) for k in
                             ("model", "style_token_n", "glyph_inject_mode",
-                             "glyph_inject_layers", "callig_style_attn",
+                             "glyph_inject_layers", "style_token_n",
                              "glyph_scale_init", "w_repa", "cond_drop_all_prob",
                              "cond_drop_one_prob", "eval_cfg")},
                    "learned_glyph_scale": float(model.glyph_scale.data),

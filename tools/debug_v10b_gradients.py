@@ -59,8 +59,6 @@ def main():
         cond_drop_which_glyph_prob=0.85, use_checkpoint=False, learn_sigma=False,
         use_glyph_cond=use_g,
         use_char_cond=not bool(a.get("no_char_cond", False)),
-        use_std_dino_char_embedder=bool(a.get("use_std_dino_char_embedder", False)),
-        std_dino_table_path=a.get("std_dino_table_path"),
         glyph_scale_init=float(a.get("glyph_scale_init", 0.4)),
         glyph_drop_prob=float(a.get("glyph_drop_prob", 0.0)),
         glyph_inject_layers=int(a.get("glyph_inject_layers", 0)), **arch).to(dev)
