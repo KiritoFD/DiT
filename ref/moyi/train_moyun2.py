@@ -1,0 +1,430 @@
+# Copyright (c) Meta Platforms, Inc. and affiliates.
+# All rights reserved.
+
+# This source code is licensed under the license found in the
+# LICENSE file in the root directory of this source tree.
+
+"""
+A minimal training script for DiT using PyTorch DDP.
+"""
+import wandb
+import os
+
+os.environ["PYTORCH_CUDA_ALLOC_CONF"] = "expandable_segments:True"
+# 设置环境变量 分布式部署端口
+# os.environ['MASTER_PORT'] = '29501'
+# os.environ['CUDA_VISIBLE_DEVICES']=1
+import torch
+
+# the first flag below was False when we tested this script but True makes A100 training a lot faster:
+torch.backends.cuda.matmul.allow_tf32 = True
+torch.backends.cudnn.allow_tf32 = True
+
+import torch.distributed as dist
+from torch.nn.parallel import DistributedDataParallel as DDP
+from torch.utils.data import DataLoader
+from torch.utils.data.distributed import DistributedSampler
+from torchvision.datasets import ImageFolder
+from torchvision import transforms
+import numpy as np
+from collections import OrderedDict
+from PIL import Image
+from copy import deepcopy
+from glob import glob
+from time import time
+import argparse
+import logging
+
+from moyun_2 import DiT_models
+from utils.diffusion import create_diffusion
+from diffusers.models import AutoencoderKL
+from utils.MultiLabelNestedDataset import MultiLabelNestedDataset
+
+
+#################################################################################
+#                             Training Helper Functions                         #
+#################################################################################
+
+@torch.no_grad()
+def update_ema(ema_model, model, decay=0.9999):
+    """
+    Step the EMA model towards the current model.
+    """
+    ema_params = OrderedDict(ema_model.named_parameters())
+    model_params = OrderedDict(model.named_parameters())
+
+    for name, param in model_params.items():
+        # TODO: Consider applying only to params that require_grad to avoid small numerical changes of pos_embed
+        ema_params[name].mul_(decay).add_(param.data, alpha=1 - decay)
+
+
+def requires_grad(model, flag=True):
+    """
+    Set requires_grad flag for all parameters in a model.
+    """
+    for p in model.parameters():
+        p.requires_grad = flag
+
+
+def cleanup():
+    """
+    End DDP training.
+    """
+    dist.destroy_process_group()
+
+
+def create_logger(logging_dir):
+    """
+    Create a logger that writes to a log file and stdout.
+    """
+    if dist.get_rank() == 0:  # real logger
+        logging.basicConfig(
+            level=logging.INFO,
+            format='[\033[34m%(asctime)s\033[0m] %(message)s',
+            datefmt='%Y-%m-%d %H:%M:%S',
+            handlers=[logging.StreamHandler(), logging.FileHandler(f"{logging_dir}/log.txt")]
+        )
+        logger = logging.getLogger(__name__)
+    else:  # dummy logger (does nothing)
+        logger = logging.getLogger(__name__)
+        logger.addHandler(logging.NullHandler())
+    return logger
+
+
+def center_crop_arr(pil_image, image_size):
+    """
+    Center cropping implementation from ADM.
+    https://github.com/openai/guided-diffusion/blob/8fb3ad9197f16bbc40620447b2742e13458d2831/guided_diffusion/image_datasets.py#L126
+    """
+    while min(*pil_image.size) >= 2 * image_size:
+        pil_image = pil_image.resize(
+            tuple(x // 2 for x in pil_image.size), resample=Image.BOX
+        )
+
+    scale = image_size / min(*pil_image.size)
+    pil_image = pil_image.resize(
+        tuple(round(x * scale) for x in pil_image.size), resample=Image.BICUBIC
+    )
+
+    arr = np.array(pil_image)
+    crop_y = (arr.shape[0] - image_size) // 2
+    crop_x = (arr.shape[1] - image_size) // 2
+    return Image.fromarray(arr[crop_y: crop_y + image_size, crop_x: crop_x + image_size])
+
+
+def rgb_to_grayscale(image):
+    # image shape: (batch_size, 3, height, width)
+    # 取出 R, G, B 通道
+    r, g, b = image[:, 0, :, :], image[:, 1, :, :], image[:, 2, :, :]
+    # 按加权公式将 RGB 转为灰度图
+    grayscale = 0.2989 * r + 0.5870 * g + 0.1140 * b
+    # 返回的灰度图 shape: (batch_size, height, width)
+    return grayscale.unsqueeze(1)  # 保持 batch 维度并加上 channel 维度
+
+
+def get_white_img_embedding(vae, img_size=256, device='cuda') -> torch.Tensor:
+    if isinstance(img_size, int):
+        img_size = (img_size, img_size)
+    image = Image.new("RGB", img_size, "white")
+    transform = transforms.Compose([
+        transforms.Lambda(lambda pil_image: center_crop_arr(pil_image, 256)),
+        # transforms.RandomHorizontalFlip(), # 水平翻转！！！
+        transforms.ToTensor(),
+        transforms.Normalize(mean=[0.5, 0.5, 0.5], std=[0.5, 0.5, 0.5], inplace=True)
+    ])
+    # x = torch.zeros_like(x) + 0
+    x = transform(image).to(device)
+    x = x.unsqueeze(0)
+    x = vae.encode(x).latent_dist.sample().mul_(0.18215)  # shape: b c h w (b=1)
+    x = torch.load("/home/team/paper/cvpr2025/moyun2/white.pt")
+
+
+#################################################################################
+#                                  Training Loop                                #
+#################################################################################
+
+def main(args):
+    """
+    Trains a new DiT model.
+    """
+    assert torch.cuda.is_available(), "Training currently requires at least one GPU."
+    # Setup DDP:
+    # 设置DDP，并且设置端口
+    # dist.init_process_group("nccl", init_method=f"tcp://127.0.0.1:29501", rank=rank, world_size=4)
+    dist.init_process_group("nccl")
+    assert args.global_batch_size % dist.get_world_size() == 0, f"Batch size must be divisible by world size."
+    rank = dist.get_rank()
+    device = rank % torch.cuda.device_count()
+    # device = args.device
+
+    # exit(1)
+    # device = torch.device("cuda:1")  
+    seed = args.global_seed * dist.get_world_size() + rank
+    torch.manual_seed(seed)
+    torch.cuda.set_device(device)
+    print(f"Starting rank={rank}, seed={seed}, world_size={dist.get_world_size()}.")
+
+    # Setup an experiment folder:
+    if rank == 0:
+        os.makedirs(args.results_dir, exist_ok=True)  # Make results folder (holds all experiment subfolders)
+        experiment_index = len(glob(f"{args.results_dir}/*"))
+        model_string_name = args.model.replace("/", "-")  # e.g., DiT-XL/2 --> DiT-XL-2 (for naming folders)
+        experiment_dir = f"{args.results_dir}/{experiment_index:03d}-{model_string_name}"  # Create an experiment folder
+        checkpoint_dir = f"{experiment_dir}/checkpoints"  # Stores saved model checkpoints
+        os.makedirs(checkpoint_dir, exist_ok=True)
+        logger = create_logger(experiment_dir)
+        logger.info(f"Experiment directory created at {experiment_dir}")
+    else:
+        logger = create_logger(None)
+
+    logger.info(f"device{device}")
+    # Create model:
+    assert args.image_size % 8 == 0, "Image size must be divisible by 8 (for the VAE encoder)."
+    latent_size = args.image_size // 8
+    logger.info(f"rope:{args.if_rope}")
+    logger.info(f"residual_rope:{args.if_rope_residual}")
+    model = DiT_models[args.model](
+        input_size=latent_size,
+        num_classes=args.num_classes,
+        device=f"cuda:{device}",
+        if_rope=args.if_rope == 1,
+        if_rope_residual=args.if_rope_residual == 1
+    )
+
+    # 从pt继续训练
+    if args.resume is not None:
+        logger.info(f"resume from{args.resume}")
+        checkponit = torch.load(args.resume, map_location=lambda storage, loc: storage)['ema']
+        model.load_state_dict(checkponit)
+
+        # Note that parameter initialization is done within the DiT constructor
+    ema = deepcopy(model).to(device)  # Create an EMA of the model for use after training
+    requires_grad(ema, False)
+    # 设置model的位置
+    # model = DDP(model.to(device), device_ids=[rank])
+    model = DDP(model.to(device), device_ids=[device])
+    diffusion = create_diffusion(
+        timestep_respacing="",
+        use_black_white_mse_loss=(args.use_black_white_mse_loss == 1),  # 更改loss
+        use_grey_mse_loss=(args.use_grey_mse_loss == 1),
+        )  # default: 1000 steps, linear noise schedule
+    vae = AutoencoderKL.from_pretrained(f"/home/team/model/diffusers_model/sd-vae-ft-{args.vae}").to(device)
+    logger.info(f"DiT Parameters: {sum(p.numel() for p in model.parameters()):,}")
+
+    # Setup optimizer (we used default Adam betas=(0.9, 0.999) and a constant learning rate of 1e-4 in our paper):
+    opt = torch.optim.AdamW(model.parameters(), lr=args.learning_rate, weight_decay=0)
+
+    # Setup data:
+    transform = transforms.Compose([
+        transforms.Lambda(lambda pil_image: center_crop_arr(pil_image, args.image_size)),
+        # transforms.RandomHorizontalFlip(), # 水平翻转！！！
+        transforms.ToTensor(),
+        transforms.Normalize(mean=[0.5, 0.5, 0.5], std=[0.5, 0.5, 0.5], inplace=True)
+    ])
+
+    print(args.feature_path)
+    dataset = MultiLabelNestedDataset(root_dir=args.data_path,
+                                      feature_dir=args.feature_path,
+                                      transform=transform)  # 加载数据集
+    sampler = DistributedSampler(
+        dataset,
+        num_replicas=dist.get_world_size(),
+        rank=rank,
+        shuffle=True,
+        seed=args.global_seed
+    )
+    # DataLoader  生成len(dataset)/batchsize的序列，这决定step
+    loader = DataLoader(
+        dataset,
+        batch_size=int(args.global_batch_size // dist.get_world_size()),
+        shuffle=False,
+        sampler=sampler,
+        num_workers=args.num_workers,
+        pin_memory=True,
+        drop_last=True
+    )
+    logger.info(f"Dataset contains {len(dataset):,} images ({args.data_path})")
+
+    # Prepare models for training:
+    update_ema(ema, model.module, decay=0)  # Ensure EMA is initialized with synced weights
+    model.train()  # important! This enables embedding dropout for classifier-free guidance
+    ema.eval()  # EMA model should always be in eval mode
+
+    # Variables for monitoring/logging purposes:
+    train_steps = 0
+    if args.resume_step is not None:
+        train_steps = args.resume_step
+
+    log_steps = 0
+    running_loss = 0
+    start_time = time()
+    best_loss = 10  # 初始化best_loss
+    logger.info(f"Training for {args.epochs} epochs...")
+    logger.info(f"Training from {train_steps} steps")
+    logger.info(f"Training log_every {args.log_every} steps, ckpt_every {args.ckpt_every} steps")
+    if rank == 0:
+        wandb.init(
+            # set the wandb project where this run will be logged
+            project="moyun2_test",
+            # track hyperparameters and run metadata
+            config={
+                "learning_rate": args.learning_rate,
+                "architecture": f"{args.model}",
+                "dataset": args.data_path,
+                "epochs": args.epochs,
+                "batch_size": args.global_batch_size,
+                "rope": f"rope{args.if_rope},residual{args.if_rope_residual}"
+            }
+        )
+    
+    if (args.custom_zero == 1):
+        print(f"{args.custom_zero=}")
+        white_sigle = torch.load("/home/team/paper/cvpr2025/moyun2/white.pt").to(device)
+        # print(white_sigle.shape)
+        # white_x = white_sigle.unsqueeze(0).repeat(args.batchsize)
+    for epoch in range(args.epochs):
+        sampler.set_epoch(epoch)
+        logger.info(f"Beginning epoch {epoch}...")
+        loss_epoch = 0
+        for image, edge, skeleton, y, stroke in loader:
+            # print(y.shape)
+            image = image.to(device)
+            edge = edge.to(device)
+            skeleton = skeleton.to(device)
+            y = y.to(device)
+            stroke.to(device)
+
+            if (args.use_12channel == 1):
+                with torch.no_grad():
+                    # Map input images to latent space + normalize latents:
+                    image = vae.encode(image).latent_dist.sample().mul_(0.18215)
+                with torch.no_grad():
+                    edge = vae.encode(edge).latent_dist.sample().mul_(0.18215)
+                with torch.no_grad():
+                    skeleton = vae.encode(skeleton).latent_dist.sample().mul_(0.18215)
+                if (args.custom_zero == 1):
+                    white_x = white_sigle.repeat(image.shape[0],1,1,1)
+                    # print(white_x.shape)
+                    image -= white_x
+                    edge -= white_x
+                    skeleton -= white_x
+
+                x = torch.cat((image, edge, skeleton), dim=1)
+            else:
+                gray_image = rgb_to_grayscale(image)  # shape: (batch_size, 1, height, width)
+                gray_edge = rgb_to_grayscale(edge)  # shape: (batch_size, 1, height, width)
+                gray_skeleton = rgb_to_grayscale(skeleton)  # shape: (batch_size, 1, height, width)
+
+                x = torch.cat([gray_image, gray_edge, gray_skeleton], dim=1)
+                # print(image.shape, edge.shape, skeleton.shape, y.shape, stroke.shape)
+                with torch.no_grad():
+                    # Map input images to latent space + normalize latents:
+                    x = vae.encode(x).latent_dist.sample().mul_(0.18215)
+            # print(x.shape)
+            t = torch.randint(0, diffusion.num_timesteps, (x.shape[0],), device=device)
+            model_kwargs = dict(y=y, stroke=stroke)
+            loss_dict = diffusion.training_losses(model, x, t, model_kwargs)
+            loss = loss_dict["loss"].mean()
+            opt.zero_grad()
+            loss.backward()
+            opt.step()
+            update_ema(ema, model.module)
+
+            # Log loss values:
+            running_loss += loss.item()
+            log_steps += 1
+            train_steps += 1
+            if train_steps % args.log_every == 0:
+                # Measure training speed:
+                torch.cuda.synchronize()
+                end_time = time()
+                steps_per_sec = log_steps / (end_time - start_time)
+                # Reduce loss history over all processes:
+                avg_loss = torch.tensor(running_loss / log_steps, device=device)
+                dist.all_reduce(avg_loss, op=dist.ReduceOp.SUM)
+                avg_loss = avg_loss.item() / dist.get_world_size()
+                logger.info(
+                    f"(step={train_steps:07d}) Train Loss: {avg_loss:.4f}, Train Steps/Sec: {steps_per_sec:.2f}")
+                if rank == 0:
+                    wandb.log({"loss": avg_loss})
+
+                # 存储loss最低的模型
+                if best_loss > avg_loss + 0.04:
+                    best_loss = avg_loss
+                    if rank == 0:
+                        checkpoint = {
+                            "model": model.module.state_dict(),
+                            "ema": ema.state_dict(),
+                            "opt": opt.state_dict(),
+                            "args": args
+                        }
+                        checkpoint_path = f"{checkpoint_dir}/{train_steps:07d}_loss{avg_loss}.pt"
+                        torch.save(checkpoint, checkpoint_path)
+                        logger.info(f"Saved checkpoint to {checkpoint_path}")
+                dist.barrier()
+                loss_epoch = avg_loss
+                # Reset monitoring variables:
+                running_loss = 0
+                log_steps = 0
+                start_time = time()
+
+            # Save DiT checkpoint:
+            if train_steps % args.ckpt_every == 0 and train_steps > 0:
+                if rank == 0:
+                    checkpoint = {
+                        "model": model.module.state_dict(),
+                        "ema": ema.state_dict(),
+                        "opt": opt.state_dict(),
+                        "args": args
+                    }
+                    checkpoint_path = f"{checkpoint_dir}/{train_steps:07d}.pt"
+                    torch.save(checkpoint, checkpoint_path)
+                    logger.info(f"Saved checkpoint to {checkpoint_path}")
+                dist.barrier()
+    # 记录最终的一次模型
+    if rank == 0:
+        checkpoint = {
+            "model": model.module.state_dict(),
+            "ema": ema.state_dict(),
+            "opt": opt.state_dict(),
+            "args": args
+        }
+        checkpoint_path = f"{checkpoint_dir}/{train_steps:07d}_Done.pt"
+        torch.save(checkpoint, checkpoint_path)
+        logger.info(f"Saved checkpoint to {checkpoint_path}")
+    dist.barrier()
+    model.eval()  # important! This disables randomized embedding dropout
+    # do any sampling/FID calculation/etc. with ema (or model) in eval mode ...
+
+    logger.info("Done!")
+    cleanup()
+
+
+if __name__ == "__main__":
+    # Default args here will train DiT-XL/2 with the hyperparameters we used in our paper (except training iters).
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--data-path", type=str, required=True)
+    parser.add_argument("--feature-path", type=str, default=None)
+    parser.add_argument("--results-dir", type=str, default="results")
+    parser.add_argument("--model", type=str, choices=list(DiT_models.keys()), default="DiT-XL/2")
+    parser.add_argument("--image-size", type=int, choices=[256, 512], default=256)
+    parser.add_argument("--num-classes", type=int, default=1000)
+    parser.add_argument("--epochs", type=int, default=1400)
+    parser.add_argument("--global-batch-size", type=int, default=256)
+    parser.add_argument("--global-seed", type=int, default=0)
+    parser.add_argument("--vae", type=str, choices=["ema", "mse"], default="ema")  # Choice doesn't affect training
+    parser.add_argument("--num-workers", type=int, default=4)
+    parser.add_argument("--log-every", type=int, default=100)
+    parser.add_argument("--ckpt-every", type=int, default=50_000)
+    parser.add_argument("--learning-rate", type=float, default=1e-4)
+    parser.add_argument("--resume", type=str, default=None)  # 从旧的pt重新训练
+    parser.add_argument("--resume-step", type=int, default=None)  # 从旧的pt训练记一下step
+    parser.add_argument("--if-rope", type=int, default=0)
+    parser.add_argument("--if-rope-residual", type=int, default=0)
+    parser.add_argument("--device", type=int, default=0)
+    parser.add_argument("--use_black_white_mse_loss", type=int, default=0)
+    parser.add_argument("--use_grey_mse_loss", type=int, default=0)
+    parser.add_argument("--use_12channel", type=int, default=1)
+    parser.add_argument("--custom_zero",type=int,default=0)
+    args = parser.parse_args()
+    main(args)
