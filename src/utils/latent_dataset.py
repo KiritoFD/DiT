@@ -41,7 +41,7 @@ class MCCDLatentDataset(Dataset):
                  image_size=256, load_canny=False, load_skel=False, skel_root=None,
                  is_train=False, preload=False, load_image=True, num_preload_workers=16,
                  structure_size=256, use_glyph_cond=False, skel_latent_shards_dir=None,
-                 callig_id_map=None):
+                 callig_id_map=None, aux_latent_shards_dirs=None):
         self.samples = []
         with open(csv_file, 'r', encoding='utf-8') as f:
             for row in csv.DictReader(f):
@@ -115,11 +115,34 @@ class MCCDLatentDataset(Dataset):
 
         self.is_train = is_train
         self.preload = preload
+        # ── aux latent 通道 (moyi 式辅助任务: 与图像 latent 一起作为扩散目标) ──
+        # 每个 dir 一个 (N,4,32,32) shard 集 (keyed by img_id); 训练目标 x = cat(image, *aux)
+        self.aux_latent_shards_dirs = list(aux_latent_shards_dirs or [])
+        self.aux_meta = []            # [(channels, spatial), ...]
+        self._aux_id_to_shard = []    # list[dict[id] -> (shard_path, j)]
+        self.aux_channels = 0
+        for _adir in self.aux_latent_shards_dirs:
+            _sh = sorted(glob.glob(os.path.join(_adir, "shard_*.npz")))
+            if not _sh:
+                raise FileNotFoundError(f"No aux latent shards in {_adir}")
+            _pr = np.load(_sh[0])
+            self.aux_meta.append((int(_pr["latents"].shape[1]),
+                                  int(_pr["latents"].shape[2])))
+            self.aux_channels += int(_pr["latents"].shape[1])
+            _pr.close()
+            _mp = {}
+            for _sp in _sh:
+                _d = np.load(_sp)
+                for _j, _iid in enumerate(_d["img_ids"]):
+                    _mp[int(_iid)] = (_sp, _j)
+                _d.close()
+            self._aux_id_to_shard.append(_mp)
         self._latents = None
         self._imgs = None
         self._cannys = None
         self._skels = None
         self._skel_latents = None
+        self._aux_latents = None
         if preload:
             self._preload_all(num_preload_workers)
 
@@ -213,11 +236,32 @@ class MCCDLatentDataset(Dataset):
             print(f"[preload] skel latents {n:,} loaded in {time.time() - t0:.1f}s "
                   f"({self._skel_latents.nbytes / 1024 ** 3:.1f}G)")
 
+        # --- aux latents (moyi 式辅助目标通道) ---
+        if self._aux_id_to_shard:
+            self._aux_latents = []
+            for _k, _mp in enumerate(self._aux_id_to_shard):
+                _ch, _sp_ = self.aux_meta[_k]
+                _arr = np.empty((n, _ch, _sp_, _sp_), dtype=np.float32)
+                _by = defaultdict(list)
+                for i, iid in enumerate(ids):
+                    _s, _j = _mp[iid]
+                    _by[_s].append((i, _j))
+                for _s, _items in _by.items():
+                    _d = np.load(_s)
+                    _lat = _d["latents"]
+                    for i, _j in _items:
+                        _arr[i] = _lat[_j]
+                    _d.close()
+                self._aux_latents.append(_arr)
+                print(f"[preload] aux[{_k}] {n:,} loaded ({_arr.nbytes / 1024 ** 3:.1f}G)")
+
         total = (self._latents.nbytes
                  + (self._imgs.nbytes if self._imgs is not None else 0)
                  + (self._cannys.nbytes if self._cannys is not None else 0)
                  + (self._skels.nbytes if self._skels is not None else 0)
-                 + (self._skel_latents.nbytes if self._skel_latents is not None else 0))
+                 + (self._skel_latents.nbytes if self._skel_latents is not None else 0)
+                 + (sum(a.nbytes for a in self._aux_latents)
+                    if self._aux_latents is not None else 0))
         print(f"[preload] ALL preloaded in {time.time() - t0:.1f}s, "
               f"total RAM {total / 1024 ** 3:.1f}G")
 
@@ -280,6 +324,8 @@ class MCCDLatentDataset(Dataset):
             skel_lat = torch.empty(0)
             if self._skel_latents is not None:
                 skel_lat = torch.from_numpy(self._skel_latents[idx])
+            aux_t = (torch.cat([torch.from_numpy(a[idx]) for a in self._aux_latents], 0)
+                     if self._aux_latents else torch.empty(0))
         else:
             m = re.search(r"(\d+)\.png", row['image_path'])
             if not m:
@@ -327,6 +373,15 @@ class MCCDLatentDataset(Dataset):
                     skel_lat = torch.from_numpy(
                         np.array(shard["latents"][j], copy=True)).float()
 
+            # aux latents (moyi 式辅助目标通道) -> (K*C,32,32)
+            _aux_parts = []
+            for _mp in self._aux_id_to_shard:
+                _sp, _j = _mp[img_id]
+                with np.load(_sp) as _shard:
+                    _aux_parts.append(torch.from_numpy(
+                        np.array(_shard["latents"][_j], copy=True)).float())
+            aux_t = torch.cat(_aux_parts, 0) if _aux_parts else torch.empty(0)
+
         # 标准字形 latent g(甲2): 按 (script_id, char) 查标准字形 latent; 缺失给零(保 collate 一致)
         if self._glookup is not None:
             script_id = int(row['script_id'])
@@ -349,6 +404,7 @@ class MCCDLatentDataset(Dataset):
             'canny': canny_t,
             'skeleton': skel_t,
             'skel_latent': skel_lat,
+            'aux_latents': aux_t,
             'y_callig': torch.tensor(
                 _map_callig(int(row['calligrapher_id']), self._callig_map), dtype=torch.long),
             'y_script': torch.tensor(int(row['script_id']), dtype=torch.long),

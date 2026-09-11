@@ -350,6 +350,7 @@ class DiT_2Cond(nn.Module):
         # 动机(fame3 诊断)：std-g 下 g 注入作用仅 ~2.7%(GT-g 10.4%)、glyph_scale
         # 梯度近零 —— 除 glyph_drop 外, 单层编码器可能提取不出足够结构特征。
         glyph_embedder_depth=0,
+        glyph_in_channels=4,   # g 骨架 latent 的通道数 (aux 目标通道不改变它)
         char_proj_mode="full",
         callig_proj_mode="linear",   # 42 号实验: "mlp" 两层 MLP 补 callig 容量
         callig_scale_init=1.0,       # 42 号实验: callig_scale 初值 (1.5 增强风格权重)
@@ -538,12 +539,13 @@ class DiT_2Cond(nn.Module):
         self.glyph_embedder_depth = int(glyph_embedder_depth)
         if self.use_glyph_cond:
             ps_ = self.x_embedder.patch_size[0] if not isinstance(self.x_embedder.patch_size, int) else self.x_embedder.patch_size
+            _g_in = int(glyph_in_channels)   # g 骨架 latent 通道 (通常 4; aux 目标通道不影响它)
             if self.glyph_embedder_depth <= 0:
-                self.glyph_embedder = nn.Conv2d(in_channels, hidden_size, kernel_size=ps_, stride=ps_, bias=False)
+                self.glyph_embedder = nn.Conv2d(_g_in, hidden_size, kernel_size=ps_, stride=ps_, bias=False)
             else:
                 # 增强编码器: 降采样 Conv + depth 层 SiLU+Conv(3x3 保分辨率),
                 # 提升 std 骨架 latent 的结构特征提取能力(fame3 诊断: g 注入作用仅 ~2.7%)。
-                _layers = [nn.Conv2d(in_channels, hidden_size, kernel_size=ps_, stride=ps_, bias=False)]
+                _layers = [nn.Conv2d(_g_in, hidden_size, kernel_size=ps_, stride=ps_, bias=False)]
                 for _ in range(self.glyph_embedder_depth):
                     _layers.append(nn.SiLU())
                     _layers.append(nn.Conv2d(hidden_size, hidden_size, kernel_size=3, stride=1, padding=1, bias=False))

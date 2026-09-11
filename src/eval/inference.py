@@ -32,6 +32,28 @@ _eval_vae = None
 _eval_vae_ref = None
 
 
+def match_model_channels(noise, model):
+    """aux 目标通道 (in_channels>4) 时, 把噪声扩到模型输入通道数 (多余通道随机, 推理时丢弃).
+
+    moyi 式辅助通道只用于训练目标; 推理时这些通道从噪声生成, 不参与图像解码。
+    in_channels==4 时原样返回 (零开销, 兼容旧路径)。
+    """
+    import torch as _t
+    tgt = int(getattr(model, "in_channels", noise.shape[1]))
+    if noise.shape[1] == tgt:
+        return noise
+    if noise.shape[1] > tgt:
+        return noise[:, :tgt]
+    extra = _t.randn(noise.shape[0], tgt - noise.shape[1], *noise.shape[2:],
+                     dtype=noise.dtype, device=noise.device)
+    return _t.cat([noise, extra], dim=1)
+
+
+def image_latent(lat):
+    """取图像 latent (前 4 通道) —— aux 目标通道在解码/评测时丢弃。"""
+    return lat[:, :4] if lat.shape[1] > 4 else lat
+
+
 def load_eval_vae(device, vae_path=None):
     """Lazily load the VAE once per process (modules that are eval shells share it)."""
     global _eval_vae, _eval_vae_ref
@@ -77,6 +99,7 @@ def sample_latents(model, diffusion, noise, conds, cfg_scale, batch, device,
     Returns (N, C, H, W) float32 latents on CPU.
     """
     n = noise.shape[0]
+    noise = match_model_channels(noise, model)   # aux 目标通道: 噪声扩到 in_channels
     lc, ls = noise.shape[1], noise.shape[2]
     all_latents = torch.zeros(n, lc, ls, ls, dtype=torch.float32)
     torch.manual_seed(seed)  # deterministic per call; noise itself is fixed anyway
@@ -140,6 +163,8 @@ def decode_and_save(vae, latents, scaling_factor, out_dir, tag, conds=None,
     for i in range(0, n, vae_batch):
         j = min(i + vae_batch, n)
         lat = latents[i:j].to(vae_dev)
+        if lat.shape[1] > 4:          # aux 目标通道: 解码只用图像 4 通道
+            lat = lat[:, :4]
         decoded = vae.decode(lat / scaling_factor).sample  # fp32
         preds = decoded.float().cpu()
         for k in range(j - i):

@@ -72,6 +72,8 @@ def main():
             glyph_inject_layers=int(a.get("glyph_inject_layers", 0)),
             style_token_n=int(a.get("style_token_n", 0)),
             style_role_init=float(a.get("style_role_init", 0.02)),
+            in_channels=(int(a.get("latent_channels", 4))
+                         + 4 * len([s for s in str(a.get("aux_latent_shards_dirs", "") or "").split(",") if s])),
             glyph_inject_mode=a.get("glyph_inject_mode", "adaln"), **arch).to(dev)
         model.load_state_dict(_strip(d.get("ema") or d.get("model") or d), strict=False)
         model.eval()
@@ -215,7 +217,8 @@ def main():
                              skel=g, seed=0)
         t_s = time.time() - t0
         with torch.no_grad():
-            img = vae.decode(lat.to(dev) / 0.18215).sample[0]
+            _lat = lat[:, :4] if lat.shape[1] > 4 else lat   # aux 目标通道丢弃
+            img = vae.decode(_lat.to(dev) / 0.18215).sample[0]
         out_f = ((img.clamp(-1, 1) + 1) / 2).mean(0).cpu().numpy()
         out_mask = out_f < 0.5
         out_skel = skel_of(out_f)

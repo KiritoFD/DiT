@@ -91,6 +91,8 @@ def main():
         glyph_inject_layers=int(a.get("glyph_inject_layers", 0)),
         style_token_n=int(a.get("style_token_n", 0)),
         style_role_init=float(a.get("style_role_init", 0.02)),
+        in_channels=(int(a.get("latent_channels", 4))
+                     + 4 * len([s for s in str(a.get("aux_latent_shards_dirs", "") or "").split(",") if s])),
         glyph_inject_mode=a.get("glyph_inject_mode", "adaln"), **arch).to(dev).eval()
     # 冻结书家表: 复现 null_embed 独立参数结构 (与 ckpt state_dict 对齐)
     if a.get("freeze_callig_table"):
@@ -178,8 +180,11 @@ def main():
             preds = torch.empty_like(gts)
             for i in range(0, n, args.vae_batch):
                 j = min(i + args.vae_batch, n)
+                _lat = lat[i:j].to(dev)
+                if _lat.shape[1] > 4:      # aux 目标通道: 只解码图像 4 通道
+                    _lat = _lat[:, :4]
                 with torch.autocast("cuda", dtype=torch.bfloat16):
-                    dec = vae.decode(lat[i:j].to(dev) / sf).sample
+                    dec = vae.decode(_lat / sf).sample
                 preds[i:j] = (dec.clamp(-1, 1) + 1) / 2
             pred_np = preds.cpu().numpy().transpose(0, 2, 3, 1)   # -> (n,H,W,C) 与 _ssim/_lpips 对齐
             gt_np = gts.cpu().numpy().transpose(0, 2, 3, 1)

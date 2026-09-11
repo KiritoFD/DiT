@@ -32,6 +32,12 @@ def heun_sample_cpu(model, noise, conds, cfg_scale, batch, skel=None, seed=0,
     返回   : (N,C,H,W) fp32 CPU
     """
     n = noise.shape[0]
+    # aux 目标通道 (in_channels>4): 噪声扩到模型输入通道 (推理时多余通道丢弃)
+    _tgt = int(getattr(model, "in_channels", noise.shape[1]))
+    if noise.shape[1] < _tgt:
+        _extra = th.randn(n, _tgt - noise.shape[1], *noise.shape[2:],
+                          dtype=noise.dtype, device=noise.device)
+        noise = th.cat([noise, _extra], dim=1)
     lc, ls = noise.shape[1], noise.shape[2]
     out = th.zeros(n, lc, ls, ls, dtype=th.float32)
     th.manual_seed(seed)  # 采样无随机分量 (noise 固定), 保持与 sample_latents 签名一致
