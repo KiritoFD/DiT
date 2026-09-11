@@ -25,6 +25,8 @@ from multiprocessing import Pool
 import numpy as np
 from PIL import Image
 import torch
+torch.backends.cuda.matmul.allow_tf32 = True
+torch.backends.cudnn.allow_tf32 = True
 
 CKPT_SF = 0.18215
 
