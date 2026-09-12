@@ -28,7 +28,6 @@ from .utils import (
     MCCDDataset, MCCDLatentDataset, DistributedFactorBalancedSampler,
     GlyphLatentLookup, get_glyph_lookup,
     GlyphLatentLookupV2, get_glyph_lookup_v2,
-    LatentStructureLoss, LatentStructureProbe,
     find_model,
 )
 
@@ -38,6 +37,5 @@ __all__ = [
     "MCCDDataset", "MCCDLatentDataset", "DistributedFactorBalancedSampler",
     "GlyphLatentLookup", "get_glyph_lookup",
     "GlyphLatentLookupV2", "get_glyph_lookup_v2",
-    "LatentStructureLoss", "LatentStructureProbe",
     "find_model",
 ]

@@ -30,10 +30,9 @@ from src.utils import find_model
 
 from src.utils import MCCDDataset
 from src.utils import MCCDLatentDataset
-from src.loss import EdgeGradientLoss, SkeletonLoss, REPALoss, StructDecoder, LatentStructLoss
+from src.loss import REPALoss
 from torch.utils.checkpoint import checkpoint as grad_ckpt
 from src.utils import DistributedFactorBalancedSampler
-from src.utils import LatentStructureLoss, LatentStructureProbe
 
 # In-process GPU eval (bf16 sampling → VAE decode → save PNGs).
 # Metrics computed by eval_ctrl_metrics_daemon.py (CPU, separate process).
@@ -178,14 +177,10 @@ def main(args):
             json.dump(vars(args), _cf, ensure_ascii=False, indent=2)
         _sources = {}
         for _path in ("models.py", "train.py", "losses.py", "latent_dataset.py",
-                      "latent_structure.py", "samplers.py", "eval_auto.py"):
+                      "samplers.py", "eval_auto.py"):
             if os.path.isfile(_path):
                 with open(_path, "rb") as _sf:
                     _sources[_path] = hashlib.sha256(_sf.read()).hexdigest()
-        _probe_path = getattr(args, "latent_structure_probe", None)
-        if _probe_path and os.path.isfile(_probe_path):
-            with open(_probe_path, "rb") as _pf:
-                _sources[f"probe:{_probe_path}"] = hashlib.sha256(_pf.read()).hexdigest()
         with open(f"{experiment_dir}/source_manifest.json", "w", encoding="utf-8") as _mf:
             json.dump({
                 "created_at": datetime.datetime.now().isoformat(),
@@ -253,7 +248,6 @@ def main(args):
             cond_drop_all_prob=args.cond_drop_all_prob,
             cond_drop_one_prob=args.cond_drop_one_prob,
             cond_drop_which_glyph_prob=getattr(args, 'cond_drop_which_glyph_prob', 0.5),
-            skel_head_enabled=getattr(args, 'w_skel_head', 0) > 0,
             use_glyph_cond=(getattr(args, 'w_glyph_cond', 0) > 0
                             or getattr(args, 'skel_as_glyph_cond', False)),
             use_char_cond=not getattr(args, 'no_char_cond', False),
@@ -300,7 +294,7 @@ def main(args):
                     f"(callig={args.num_calligraphers}, glyph/char={args.num_characters}, "
                     f"fusion={args.condition_fusion}, dims={args.callig_embed_dim}/"
                     f"{args.char_embed_dim}, dropout=all:{args.cond_drop_all_prob}, "
-                    f"one:{args.cond_drop_one_prob}, skel_head={getattr(args, 'w_skel_head', 0) > 0}, "
+                    f"one:{args.cond_drop_one_prob}, "
                     f"glyph_cond={(getattr(args, 'w_glyph_cond', 0) > 0) or getattr(args, 'skel_as_glyph_cond', False)}, glyph_scale_init={getattr(args, 'glyph_scale_init', 0.4)}, "
                     f"char_proj_mode={getattr(args, 'char_proj_mode', 'full')}, "
                     f"freeze_char_table={getattr(args, 'freeze_char_table', False)})")
@@ -605,29 +599,7 @@ def main(args):
     _is_flow = getattr(diffusion, 'is_flow', False)
     if _is_flow:
         logger.info(f"[flow] {diffusion.describe()}")
-    if _is_flow:
-        # Flow-Matching mode: disable DDPM-timestep-dependent auxiliaries.
-        # Flow trains on t in [0,1] with a velocity target; DDPM-gated structural/
-        # latent auxiliaries would be semantically wrong. Hard-disable them (with a
-        # log) so a flow run never silently mixes incompatible objectives.
-        # NOTE (2026-09-05): w_repa 从禁用列表移除 —— REPA 对齐主模型 block 特征到
-        # DINO (与 t 无关, 只需 GT 图 + teacher), 已在 train_repa/train_controlnet 的
-        # flow 下验证有效 (v8c/v8e SOTA 0.767/0.776)。flow 禁用它是过度限制。
-        # NOTE (2026-09-07): w_std_mid 同理移除 —— 它的 "sqrt_alpha" 门控已改为
-        # flow 感知 (flow 下等效 sqrt_alpha = 1-t, 见训练循环处), 不再依赖
-        # DDPM 专属的 sqrt_alphas_cumprod 数组, flow 下语义正确 (mid 噪声段
-        # t∈[0.25,0.65])。留在禁用列表会让 mid 配置静默失效 (本仓库惯犯模式)。
-        _flow_disabled = []
-        for _attr in ('use_canny', 'use_skel'):
-            if getattr(args, _attr, 0):
-                setattr(args, _attr, 0 if not isinstance(getattr(args, _attr, 0), bool) else False)
-                _flow_disabled.append(_attr)
-        if _flow_disabled:
-            logger.info(f"[flow] disabled DDPM-only auxiliaries: {', '.join(_flow_disabled)}")
-        # 注意: w_latent_skel / w_latent_canny 是 **latent 结构 loss** (基于 pred_xstart,
-        # flow 下 pred_xstart 由 return_pred_xstart 提供), 不属于 DDPM 专属, 不能禁用。
-        # 历史 bug: 留在禁用列表 -> 静默置 0, 结构 loss 从未生效 (2026-09-12 修)。
-        logger.info(f"[flow] Flow-Matching enabled (velocity target, Euler ODE sampling, t in [0,1])")
+        logger.info("[flow] Flow-Matching enabled (velocity target, Euler ODE sampling, t in [0,1])")
     _vae_ds = getattr(args, 'vae_downscale', 8)
     _vae_lc = getattr(args, 'latent_channels', 4)
     _vae_ic = getattr(args, 'vae_in_channels', 3)
@@ -649,89 +621,25 @@ def main(args):
                 sample = torch.randn(z.shape[0], _vae_oc, z.shape[2]*_vae_ds, z.shape[3]*_vae_ds, device=z.device)
             return Output()
 
-    try:
-        # 2026-09-05: REPA 不再强制 VAE —— 配了 latent_shards_dir 时训练用预编码 latent,
-        # REPA 只需 GT 像素图(喂 DINO teacher), 不需要 vae.encode (与 train_repa 一致)。
-        # VAE 仅在 (a) 无 latent shards (需实时 encode) 或 (b) 像素级结构 loss 时加载。
-        _need_vae = (not bool(getattr(args, "latent_shards_dir", None))) or args.use_canny
-        if _need_vae:
+    # 2026-09-05: REPA 不强制 VAE —— 配了 latent_shards_dir 时用预编码 latent,
+    # REPA 只需 GT 像素图(喂 DINO teacher), 不需要 vae.encode。
+    _need_vae = (not bool(getattr(args, "latent_shards_dir", None)))
+    if _need_vae:
+        try:
             if getattr(args, 'vae_path', None) is not None and os.path.exists(args.vae_path):
                 logger.info(f"Loading VAE from local path: {args.vae_path}")
                 vae = AutoencoderKL.from_pretrained(args.vae_path).to(device)
             else:
                 vae = AutoencoderKL.from_pretrained(f"stabilityai/sd-vae-ft-{args.vae}").to(device)
             requires_grad(vae, False)
-        else:
+        except Exception as e:
+            logger.warning(f"Failed to load AutoencoderKL due to network/path error: {e}")
+            logger.warning("Using MockVAE (random latents) for testing purposes!")
             vae = MockVAE(device)
-            logger.info("[infra] VAE skipped (latent-only mode, no pixel struct/REPA) -> saves ~500MB VRAM")
-    except Exception as e:
-        logger.warning(f"Failed to load AutoencoderKL due to network/path error: {e}")
-        logger.warning("Using MockVAE (random latents) for testing purposes!")
-        vae = MockVAE(device)
-    #     （不做逐图归一化、不做二值 Canny 拟合，保留灰度过渡/抗锯齿）
-    #   - SkeletonLoss: 只做正向牵引（recall-only），骨架上必须含墨，
-    #     绝不惩罚骨架以外的墨水（笔画粗细/飞白交给扩散损失决定）
-    canny_loss_fn = EdgeGradientLoss().to(device)
-    skel_loss_fn = SkeletonLoss().to(device)
-    logger.info("[struct] EdgeGradientLoss (gradient-profile, no per-image norm) "
-                "+ SkeletonLoss (recall-only, no off-skel penalization)")
-
-    latent_structure_loss_fn = None
-    if args.w_latent_canny > 0 or args.w_latent_skel > 0:
-        structure_probe = None
-        if args.w_latent_skel > 0:
-            if not args.latent_structure_probe:
-                raise ValueError("w_latent_skel > 0 requires --latent-structure-probe")
-            probe_ckpt = torch.load(
-                args.latent_structure_probe, map_location="cpu", weights_only=False)
-            probe_args = probe_ckpt.get("args", {})
-            structure_probe = LatentStructureProbe(
-                width=int(probe_args.get("width", 32)),
-                depth=int(probe_args.get("depth", 2)))
-            structure_probe.load_state_dict(probe_ckpt["model"], strict=True)
-            structure_probe.to(device)
-            logger.info(
-                f"[latent-structure] frozen probe={args.latent_structure_probe} "
-                f"metrics={probe_ckpt.get('metrics', {})}")
-        latent_structure_loss_fn = LatentStructureLoss(
-            probe=structure_probe, max_timestep=args.latent_struct_max_t).to(device)
-        logger.info(
-            f"[latent-structure] enabled: canny={args.w_latent_canny}, "
-            f"skeleton={args.w_latent_skel}, max_t={args.latent_struct_max_t}")
-
-    # ---- LatentStructLoss: 冻结 StructDecoder (latent→skel/canny) + BCE ----
-    latent_struct_loss_fn = None
-    if getattr(args, 'w_latent_struct_skel', 0) > 0 or getattr(args, 'w_latent_struct_canny', 0) > 0:
-        _lsd = getattr(args, 'latent_struct_decoder', '')
-        if not _lsd:
-            raise ValueError("w_latent_struct_skel/canny > 0 requires --latent-struct-decoder (path to skel_best.pt/canny_best.pt)")
-        if getattr(args, 'w_latent_struct_skel', 0) > 0:
-            latent_struct_skel_fn = LatentStructLoss(
-                _lsd.replace("canny", "skel") if "canny" in _lsd else _lsd,
-                decoder_type="skel",
-                pos_weight=float(getattr(args, 'latent_struct_pos_weight', 15.0)),
-                use_checkpoint=True).to(device)
-            logger.info(f"[latent-struct-decoder] skel decoder loaded from {_lsd}")
-        else:
-            latent_struct_skel_fn = None
-        if getattr(args, 'w_latent_struct_canny', 0) > 0:
-            latent_struct_canny_fn = LatentStructLoss(
-                _lsd.replace("skel", "canny") if "skel" in _lsd else _lsd,
-                decoder_type="canny",
-                pos_weight=float(getattr(args, 'latent_struct_pos_weight', 8.0)),
-                use_checkpoint=True).to(device)
-            logger.info(f"[latent-struct-decoder] canny decoder loaded from {_lsd}")
-        else:
-            latent_struct_canny_fn = None
-        latent_struct_loss_fn = True  # marker
-        logger.info(f"[latent-struct-decoder] enabled: "
-                    f"skel_w={getattr(args, 'w_latent_struct_skel', 0)}, "
-                    f"canny_w={getattr(args, 'w_latent_struct_canny', 0)}, "
-                    f"max_t={getattr(args, 'latent_struct_max_t', 500)}")
     else:
-        latent_struct_skel_fn = None
-        latent_struct_canny_fn = None
-    
+        vae = MockVAE(device)
+        logger.info("[infra] VAE skipped (latent-only mode) -> saves ~500MB VRAM")
+
     # ---- 统一 REPA (公共 infra src.loss.repa) ----
     # 支持多层 (repa_layers="8,11"/"8") + warmup 渐进, 与后训练(train_controlnet)完全一致。
     repa_loss_fn = None
@@ -818,29 +726,15 @@ def main(args):
     # the same exponent range as fp32, so it does not overflow like fp16 AMP). VAE and
     # structural losses stay fp32 for numerical stability.
     use_latent = bool(getattr(args, "latent_shards_dir", None))
-    need_canny_map = args.use_canny or args.w_latent_canny > 0 or getattr(args, 'w_latent_struct_canny', 0) > 0
-    need_skel_map = args.use_skel or args.w_latent_skel > 0 or getattr(args, 'w_skel_head', 0) > 0 or getattr(args, 'w_latent_struct_skel', 0) > 0
 
-    # Re-decide VAE need: latent-only 模式训练用预编码 latent, 不需要 VAE (REPA 也只要 GT 图)。
-    # VAE 仅在 on-the-fly encode (非 latent) 或像素级结构 loss (canny) 时需要;
-    # eval 侧 VAE 由 load_eval_vae() 懒加载 (不常驻)。与 _need_vae (line 590) 一致。
-    _need_vae_now = (not use_latent) or args.use_canny
-    if not _need_vae_now:
-        vae = MockVAE(device)
-        logger.info("[infra] VAE skipped (latent-only mode, no pixel struct/REPA) -> saves ~500MB VRAM")
     if use_latent:
         dataset = MCCDLatentDataset(csv_file=args.data_csv,
                                     latent_shards_dir=args.latent_shards_dir,
                                     img_root=args.img_root,
-                                    canny_root=args.canny_root if need_canny_map else None,
                                     image_size=args.image_size,
-                                    load_canny=need_canny_map,
-                                    load_skel=need_skel_map,
-                                    skel_root=args.skel_root if need_skel_map else None,
                                     preload=bool(getattr(args, 'preload', False)),
-                                    load_image=(args.w_repa > 0 or args.use_canny),
+                                    load_image=(args.w_repa > 0),
                                     num_preload_workers=int(getattr(args, 'preload_workers', 16)),
-                                    structure_size=256,
                                     use_glyph_cond=getattr(args, 'w_glyph_cond', False),
                                     skel_latent_shards_dir=(args.skel_latent_shards_dir
                                                             if getattr(args, 'skel_as_glyph_cond', False)
@@ -850,8 +744,7 @@ def main(args):
         logger.info("Using latent-cached dataset (skip on-the-fly VAE encode)."
                     + (" preload=ON" if getattr(args, 'preload', False) else ""))
     else:
-        dataset = MCCDDataset(csv_file=args.data_csv, root_dir=args.data_dir, image_size=args.image_size,
-                              load_canny=need_canny_map, load_skel=need_skel_map)
+        dataset = MCCDDataset(csv_file=args.data_csv, root_dir=args.data_dir, image_size=args.image_size)
     if args.sampler == "factor_balanced":
         sampler = DistributedFactorBalancedSampler(
             dataset, num_replicas=dist.get_world_size(), rank=rank, seed=args.global_seed,
@@ -924,16 +817,12 @@ def main(args):
     log_steps = 0
     running_loss = 0
     running_diff = 0
-    running_canny = 0
-    running_skel = 0
-    running_latent_canny = 0
-    running_latent_skel = 0
-    running_latent_struct_skel = 0
-    running_latent_struct_canny = 0
     running_repa = 0
     running_x0lat = 0
-    running_skel_head = 0
     running_std_mid = 0
+    running_c12_img = 0
+    running_c12_canny = 0
+    running_c12_skel = 0
     nan_steps = 0
     current_ema_decay = args.ema_decay
     start_time = time()
@@ -1128,12 +1017,8 @@ def main(args):
                             _ch_w[4:] = _w_aux
                     x = batch.get('image', None)
                     x = x.to(device) if x is not None else None
-                    canny_gt = batch['canny'].to(device) if need_canny_map else None
-                    skel_gt = batch['skeleton'].to(device) if need_skel_map else None
                 else:
                     x = batch['image'].to(device)
-                    canny_gt = batch['canny'].to(device)
-                    skel_gt = batch['skeleton'].to(device)
                     # VAE encode stays in fp32 for numerical stability (VAE is sensitive to low precision).
                     with torch.no_grad(), torch.autocast("cuda", dtype=torch.float32):
                         x_latent = vae.encode(x).latent_dist.sample().mul_(_vae_sf)
@@ -1163,16 +1048,12 @@ def main(args):
                 # Forward pass under bf16 autocast (same exponent range as fp32, no overflow).
                 #
                 # return_pred_xstart: flow 分支默认**不返回** pred_xstart（避免
-                # autograd 图膨胀），但下面 w_std_mid / latent_skel / latent_canny /
-                # latent_struct 都依赖它。若这里不请求，flow 模式下这些机制会
-                # 因 `loss_dict.get("pred_xstart", None)` 恒为 None 而**静默失效**
-                # —— 不报错、loss 正常下降、但从未生效。w_std_mid 正是「把去噪中
-                # 段预测的 x0 拉向标准字形 latent」的预训练改进项，失效代价很大。
+                # autograd 图膨胀），但下面 w_std_mid 依赖它。若这里不请求，flow
+                # 模式下该机制会因 `loss_dict.get("pred_xstart", None)` 恒为 None 而
+                # **静默失效** —— 不报错、loss 正常下降、但从未生效。w_std_mid 正是
+                # 「把去噪中段预测的 x0 拉向标准字形 latent」的预训练改进项。
                 # gaussian_diffusion 不接受该参数，故用 try/except 兼容。
-                _need_x0 = (latent_struct_loss_fn is not None
-                            or getattr(args, 'w_latent_skel', 0) > 0
-                            or getattr(args, 'w_latent_canny', 0) > 0
-                            or getattr(args, 'w_std_mid', 0.0) > 0)
+                _need_x0 = (getattr(args, 'w_std_mid', 0.0) > 0)
                 with torch.autocast("cuda", dtype=torch.bfloat16):
                     if _need_x0:
                         try:
@@ -1188,11 +1069,7 @@ def main(args):
                             model, x_latent, t, model_kwargs, channel_weights=_ch_w)
                     loss_diff = loss_dict["loss"].mean()
 
-                loss_canny = torch.tensor(0.0, device=device)
-                loss_skel = torch.tensor(0.0, device=device)
                 loss_repa = torch.tensor(0.0, device=device)
-                loss_latent_canny = torch.tensor(0.0, device=device)
-                loss_latent_skel = torch.tensor(0.0, device=device)
                 loss_x0lat = torch.tensor(0.0, device=device)
 
                 # === INFRA FIX: pred_xstart from training_losses carries the ENTIRE DiT
@@ -1208,10 +1085,7 @@ def main(args):
                 # for a differentiable struct loss (t<=max_t). For t>500 steps, detach
                 # immediately so the full graph is freed at the next zero_grad. We also
                 # break the reference in loss_dict so no stale graph survives the loop.
-                _need_x0_grad = (latent_struct_loss_fn is not None
-                                 or getattr(args, 'w_latent_skel', 0) > 0
-                                 or getattr(args, 'w_latent_canny', 0) > 0
-                                 or getattr(args, 'w_std_mid', 0.0) > 0)
+                _need_x0_grad = (getattr(args, 'w_std_mid', 0.0) > 0)
                 pred_xstart_latent = loss_dict.get("pred_xstart", None)
                 if pred_xstart_latent is not None and not _need_x0_grad:
                     # No struct loss this run at all — drop the graph immediately.
@@ -1248,144 +1122,13 @@ def main(args):
                         # 归一化到该子集作均值 (不按全 batch, 排除无监督噪声步)
                         loss_std_mid = ((_p[_mid] - _g[_mid]) ** 2).mean()
 
-                # 骨架辅助头监督（latent 空间，训练引导 / 推理不用）：
-                # forward 在 skel_head 启用时返回 (主输出, skel_pred)，
-                # gaussian_diffusion.training_losses 把第二元素存进 loss_dict['intermediate_feats']。
-                loss_skel_head = torch.tensor(0.0, device=device)
-                if getattr(args, 'w_skel_head', 0) > 0:
-                    skel_pred = loss_dict.get("intermediate_feats", None)
-                    if skel_pred is not None and skel_gt is not None and skel_gt.numel() > 0:
-                        # batch 可能取整后被 drop_last 截断，对齐批次
-                        _n = min(skel_pred.shape[0], skel_gt.shape[0])
-                        _skel_gt = skel_gt[:_n].float()
-                        _skel_pred = skel_pred[:_n].float()
-                        # BCE with logits（骨架头输出未 sigmoid）
-                        loss_skel_head = torch.nn.functional.binary_cross_entropy_with_logits(
-                            _skel_pred, _skel_gt).mean()
-                if x is not None and pred_xstart_latent is not None and (args.use_canny or args.use_skel):
-                    # Infra 优化：pixel 结构损失只需要在 batch 的一个随机子集上做
-                    # differentiable VAE decode（结构监督是低频辅助信号，子集采样
-                    # 是无偏估计）。默认 32 张，decode 显存从"全 batch"降为固定小量。
-                    # t 门控 (struct_max_t>0)：只在低噪声步 (t<=tmax) 施加结构损失。
-                    # 高噪声步的 x0 预测本来就是一团糊，逼它在此刻"成像"会让 x0
-                    # 整体漂出 VAE 流形（正是旧实验 X0Lat 30~50 的直接原因）。
-                    _ss = int(getattr(args, 'struct_subset', 32))
-                    _struct_tmax = int(getattr(args, 'struct_max_t', 0))
-                    _B = pred_xstart_latent.shape[0]
-                    _use_this_step = True
-                    if _struct_tmax > 0:
-                        _gidx = torch.nonzero(t <= _struct_tmax).view(-1)
-                        if _gidx.numel() == 0:
-                            _use_this_step = False
-                        elif _ss > 0 and _gidx.numel() > _ss:
-                            _perm = torch.randperm(_gidx.numel(), device=t.device)[:_ss]
-                            _idx = _gidx[_perm]
-                        else:
-                            _idx = _gidx
-                    else:
-                        if _ss > 0 and _ss < _B:
-                            _idx = torch.randperm(_B, device=pred_xstart_latent.device)[:_ss]
-                        else:
-                            _idx = None
-                    if _use_this_step and _idx is None:
-                        pred_xstart_sub = pred_xstart_latent
-                        canny_gt_sub = canny_gt if args.use_canny else None
-                        skel_gt_sub = skel_gt if args.use_skel else None
-                        x_sub = x if args.use_canny else None
-                    elif _use_this_step:
-                        pred_xstart_sub = pred_xstart_latent[_idx]
-                        x0_pred = None
-                        canny_gt_sub = canny_gt[_idx] if args.use_canny else None
-                        skel_gt_sub = skel_gt[_idx] if args.use_skel else None
-                        x_sub = x[_idx] if args.use_canny else None
-                    if _use_this_step:
-                        # VAE decode: optional bf16 autocast + optional lower-resolution decode.
-                        #  - struct_decode_bf16: bf16 has the same exponent range as fp32, so the
-                        #    SD-VAE decoder cannot overflow like fp16 AMP; the coarser mantissa only
-                        #    adds mild noise to an auxiliary structural loss. Output is cast back to
-                        #    fp32 before the losses for stability.
-                        #  - struct_decode_scale<1: feed a proportionally smaller latent into the
-                        #    fully-convolutional decoder so it emits a lower-res image (e.g. 0.5 ->
-                        #    128x128, ~4x cheaper); GT maps are resized to match.
-                        _dscale = float(getattr(args, 'struct_decode_scale', 1.0))
-                        _decode_dtype = (torch.bfloat16 if getattr(args, 'struct_decode_bf16', False)
-                                         else torch.float32)
-                        _decode_in = pred_xstart_sub.float() / _vae_sf
-                        if _dscale < 1.0:
-                            _decode_in = F.interpolate(
-                                _decode_in, scale_factor=_dscale, mode="area")
-
-                        def _decode(z):
-                            return vae.decode(z).sample
-                        with torch.autocast("cuda", dtype=_decode_dtype):
-                            x0_pred = grad_ckpt(_decode, _decode_in, use_reentrant=False)
-                        x0_pred = x0_pred.float()
-                        if _dscale < 1.0:
-                            if canny_gt_sub is not None:
-                                canny_gt_sub = F.interpolate(
-                                    canny_gt_sub, scale_factor=_dscale, mode="nearest")
-                            if skel_gt_sub is not None:
-                                skel_gt_sub = F.interpolate(
-                                    skel_gt_sub, scale_factor=_dscale, mode="nearest")
-                            if x_sub is not None:
-                                x_sub = F.interpolate(x_sub, scale_factor=_dscale, mode="area")
-                        # Structural losses computed in fp32 (outside autocast) for stability.
-                        if args.use_canny:
-                            # EdgeGradientLoss: 预测图 vs GT 图的梯度幅值场 L1 匹配
-                            loss_canny = canny_loss_fn(x0_pred, x_sub)
-                        if args.use_skel:
-                            loss_skel = skel_loss_fn(x0_pred, skel_gt_sub)
-
-                if latent_structure_loss_fn is not None and pred_xstart_latent is not None:
-                    latent_structure_losses = latent_structure_loss_fn(
-                        pred_xstart_latent, x_latent, t,
-                        canny=canny_gt if need_canny_map else None,
-                        skeleton=skel_gt if need_skel_map else None)
-                    loss_latent_canny = latent_structure_losses["canny"]
-                    loss_latent_skel = latent_structure_losses["skeleton"]
-
-                # ---- LatentStructLoss: 冻结 StructDecoder (latent→skel/canny) + BCE ----
-                loss_latent_struct_skel = torch.tensor(0.0, device=device)
-                loss_latent_struct_canny = torch.tensor(0.0, device=device)
-                if latent_struct_loss_fn is not None and pred_xstart_latent is not None:
-                    _lst_max_t = float(getattr(args, 'latent_struct_max_t', 500))
-                    _lst_mask = t <= _lst_max_t
-                    if bool(_lst_mask.any()):
-                        _p = pred_xstart_latent[_lst_mask].float()
-                        if latent_struct_skel_fn is not None and skel_gt is not None:
-                            _sk = skel_gt[_lst_mask].float()
-                            loss_latent_struct_skel = latent_struct_skel_fn(_p, _sk)
-                        if latent_struct_canny_fn is not None and canny_gt is not None:
-                            _ca = canny_gt[_lst_mask].float()
-                            loss_latent_struct_canny = latent_struct_canny_fn(_p, _ca)
-                        # Free the 256×256 decoder intermediate tensors NOW (they're
-                        # captured in the graph of the loss tensors, but the inputs
-                        # _p/_sk/_ca and the mask are no longer needed). This lets the
-                        # allocator compact before backward instead of holding two
-                        # decoder graphs + the DiT graph simultaneously.
-                        del _p, _sk, _ca, _lst_mask
-
                 intermediate_feats = loss_dict.get("intermediate_feats", None)
                 if x is not None and intermediate_feats is not None and repa_loss_fn is not None and args.w_repa > 0:
                     # 统一 REPA (公共 infra): 多层 dict / 单层张量 + warmup 渐进
                     loss_repa = repa_loss_fn(intermediate_feats, x, step=train_steps)
 
-                # Struct-loss weight ramp: linearly bring canny/skel from 0 to target over
-                # --struct-warmup-steps fine-tune steps (counted from the resume point) so a
-                # converged diff-only checkpoint adapts gradually instead of being jolted.
-                _struct_scale = 1.0
-                if int(getattr(args, 'struct_warmup_steps', 0)) > 0:
-                    _steps_ft = max(0, train_steps - resume_start_step)
-                    _struct_scale = min(1.0, _steps_ft / float(args.struct_warmup_steps))
                 loss = (loss_diff
-                        + args.w_canny * _struct_scale * loss_canny
-                        + args.w_skel * _struct_scale * loss_skel
-                        + args.w_latent_canny * loss_latent_canny
-                        + args.w_latent_skel * loss_latent_skel
-                        + getattr(args, 'w_latent_struct_skel', 0) * _struct_scale * loss_latent_struct_skel
-                        + getattr(args, 'w_latent_struct_canny', 0) * _struct_scale * loss_latent_struct_canny
                         + loss_repa  # 统一 REPA: w × (1 - cos) 已在 RepaModule.forward 内含 warmup
-                        + getattr(args, 'w_skel_head', 0) * loss_skel_head
                         + getattr(args, 'w_std_mid', 0.0) * loss_std_mid)
 
                 opt.zero_grad(set_to_none=True)  # INFRA: set_to_none 释放梯度tensor, 比 zero_() 快且省内存
@@ -1394,15 +1137,24 @@ def main(args):
                 # running accumulators (pure floats) survive for logging.
                 _v_loss = loss.item() if torch.isfinite(loss) else 0.0
                 _v_diff = loss_diff.item()
-                _v_canny = loss_canny.item()
-                _v_skel = loss_skel.item()
-                _v_lc = loss_latent_canny.item()
-                _v_ls = loss_latent_skel.item()
-                _v_lss = loss_latent_struct_skel.item() if isinstance(loss_latent_struct_skel, torch.Tensor) else 0.0
-                _v_lsc = loss_latent_struct_canny.item() if isinstance(loss_latent_struct_canny, torch.Tensor) else 0.0
                 _v_repa = loss_repa.item()
-                _v_skelh = loss_skel_head.item()
                 _v_stdmid = loss_std_mid.item()
+
+                # ── ref 12ch 联合目标: 逐通道 MSE 拆成 image/canny/skel 三组 (日志用) ──
+                # 目标 x = cat(image(4), *aux(4)); 等权时 Diff 即三组均值。这里把
+                # 原始逐通道 MSE 分组打印, 以便直接看到 canny/skel 通道在被优化。
+                _v_c12i = _v_c12c = _v_c12s = 0.0
+                _mse_ch = loss_dict.get("mse_ch", None) if isinstance(loss_dict, dict) else None
+                if _mse_ch is not None and _mse_ch.shape[1] > 4:
+                    _cm = _mse_ch.mean(dim=0)
+                    _v_c12i = float(_cm[:4].mean())
+                    _aux_names = [s for s in str(getattr(args, 'aux_latent_shards_dirs', '') or '').split(',') if s]
+                    for _gi, _nm in enumerate(_aux_names):
+                        _gm = float(_cm[4 + 4 * _gi: 8 + 4 * _gi].mean())
+                        if 'canny' in _nm:
+                            _v_c12c = _gm
+                        elif 'skel' in _nm:
+                            _v_c12s = _gm
 
                 # NaN guard: skip the step if loss is not finite (e.g. a bad sample).
                 if torch.isfinite(loss):
@@ -1423,29 +1175,22 @@ def main(args):
                     if rank == 0:
                         logger.warning(
                             f"Step {train_steps} skipped: non-finite loss "
-                            f"(diff={_v_diff:.4f}, canny={_v_canny:.4f}, "
-                            f"skel={_v_skel:.4f}). Accumulated skips: {nan_steps}"
+                            f"(diff={_v_diff:.4f}). Accumulated skips: {nan_steps}"
                         )
                 # === INFRA: release the autograd graph every step, finite or not.
-                # The graph built by training_losses (DiT forward + pred_xstart) and the
-                # struct decoder graphs must be freed BEFORE the next forward, otherwise
-                # peak = diff_graph + struct_graph simultaneously → the 22G cycling.
+                # The graph built by training_losses (DiT forward + pred_xstart) must be
+                # freed BEFORE the next forward, otherwise peak = diff_graph + aux_graph.
                 del loss, loss_dict, loss_diff, pred_xstart_latent
-                del loss_canny, loss_skel, loss_repa, loss_latent_canny, loss_latent_skel
-                del loss_latent_struct_skel, loss_latent_struct_canny, loss_skel_head, loss_std_mid, loss_x0lat
+                del loss_repa, loss_std_mid, loss_x0lat
 
                 if _v_loss:
                     running_loss += _v_loss
                     running_diff += _v_diff
-                    running_canny += _v_canny
-                    running_skel += _v_skel
-                    running_latent_canny += _v_lc
-                    running_latent_skel += _v_ls
-                    running_latent_struct_skel += _v_lss
-                    running_latent_struct_canny += _v_lsc
                     running_repa += _v_repa
-                    running_skel_head += _v_skelh
                     running_std_mid += _v_stdmid
+                    running_c12_img += _v_c12i
+                    running_c12_canny += _v_c12c
+                    running_c12_skel += _v_c12s
                     running_x0lat += 0
                     log_steps += 1
                 train_steps += 1
@@ -1459,65 +1204,35 @@ def main(args):
                     
                     avg_l = torch.tensor(running_loss / divisor, device=device)
                     avg_d = torch.tensor(running_diff / divisor, device=device)
-                    avg_c = torch.tensor(running_canny / divisor, device=device)
-                    avg_s = torch.tensor(running_skel / divisor, device=device)
-                    avg_lc = torch.tensor(running_latent_canny / divisor, device=device)
-                    avg_ls = torch.tensor(running_latent_skel / divisor, device=device)
-                    avg_lss = torch.tensor(running_latent_struct_skel / divisor, device=device)
-                    avg_lsc = torch.tensor(running_latent_struct_canny / divisor, device=device)
                     avg_r = torch.tensor(running_repa / divisor, device=device)
-                    avg_x0 = torch.tensor(running_x0lat / divisor, device=device)
-                    avg_skel_h = torch.tensor(running_skel_head / divisor, device=device)
                     avg_std_mid = torch.tensor(running_std_mid / divisor, device=device)
                     world_size = dist.get_world_size()
                     if world_size > 1:
                         dist.all_reduce(avg_l, op=dist.ReduceOp.SUM)
                         dist.all_reduce(avg_d, op=dist.ReduceOp.SUM)
-                        dist.all_reduce(avg_c, op=dist.ReduceOp.SUM)
-                        dist.all_reduce(avg_s, op=dist.ReduceOp.SUM)
-                        dist.all_reduce(avg_lc, op=dist.ReduceOp.SUM)
-                        dist.all_reduce(avg_ls, op=dist.ReduceOp.SUM)
-                        dist.all_reduce(avg_lss, op=dist.ReduceOp.SUM)
-                        dist.all_reduce(avg_lsc, op=dist.ReduceOp.SUM)
                         dist.all_reduce(avg_r, op=dist.ReduceOp.SUM)
-                        dist.all_reduce(avg_x0, op=dist.ReduceOp.SUM)
-                        dist.all_reduce(avg_skel_h, op=dist.ReduceOp.SUM)
                         dist.all_reduce(avg_std_mid, op=dist.ReduceOp.SUM)
                         avg_l, avg_d = avg_l.item()/world_size, avg_d.item()/world_size
-                        avg_c, avg_s = avg_c.item()/world_size, avg_s.item()/world_size
-                        avg_lc, avg_ls = avg_lc.item()/world_size, avg_ls.item()/world_size
-                        avg_lss = avg_lss.item()/world_size
-                        avg_lsc = avg_lsc.item()/world_size
                         avg_r = avg_r.item()/world_size
-                        avg_x0 = avg_x0.item()/world_size
-                        avg_skel_h = avg_skel_h.item()/world_size
                         avg_std_mid = avg_std_mid.item()/world_size
                     else:
                         avg_l, avg_d = avg_l.item(), avg_d.item()
-                        avg_c, avg_s = avg_c.item(), avg_s.item()
-                        avg_lc, avg_ls = avg_lc.item(), avg_ls.item()
-                        avg_lss = avg_lss.item()
-                        avg_lsc = avg_lsc.item()
                         avg_r = avg_r.item()
-                        avg_x0 = avg_x0.item()
-                        avg_skel_h = avg_skel_h.item()
                         avg_std_mid = avg_std_mid.item()
                     
+                    # ref 12ch 分组 loss (逐通道 MSE, 等权目标下直接反映结构通道)
+                    avg_c12i = running_c12_img / divisor
+                    avg_c12c = running_c12_canny / divisor
+                    avg_c12s = running_c12_skel / divisor
+
                     if rank == 0:
-                        wc = args.w_canny * _struct_scale
-                        ws = args.w_skel * _struct_scale
                         wr = args.w_repa
-                        c_contrib, s_contrib = wc * avg_c, ws * avg_s
-                        r_contrib = avg_r  # REPA 已含 w (统一模块) — 直接是贡献
-                        latent_c_contrib = args.w_latent_canny * avg_lc
-                        latent_s_contrib = args.w_latent_skel * avg_ls
                         ema_log = (f"EMA: {current_ema_decay:.6f} | "
                                    if ema_model is not None else "")
                         logger.info(
                             f"(step={train_steps:07d}) Diff: {avg_d:.4f} | "
+                            f"c12[img={avg_c12i:.4f} canny={avg_c12c:.4f} skel={avg_c12s:.4f}] | "
                             f"REPA(w={wr:.2f}): {avg_r:.4f} | "
-                            f"skel_loss(w={getattr(args,'w_latent_skel',0.0):.3f}): {avg_ls:.4f} | "
-                            f"canny_loss(w={getattr(args,'w_latent_canny',0.0):.3f}): {avg_lc:.4f} | "
                             f"LR: {opt.param_groups[0]['lr']:.2e} | {ema_log}"
                             f"Steps/Sec: {steps_per_sec:.2f} | "
                             f"Mem: {torch.cuda.memory_reserved() / 1024 ** 3:.2f}G/"
@@ -1566,11 +1281,10 @@ def main(args):
                                 + " ".join(f"{k}={v:.3f}" for k, v in sorted(_gn.items()))
                                 + _gate)
                     
-                    running_loss = running_diff = running_canny = running_skel = 0
-                    running_latent_canny = running_latent_skel = running_repa = running_x0lat = running_skel_head = 0
+                    running_loss = running_diff = 0
+                    running_repa = running_x0lat = 0
                     running_std_mid = 0
-                    running_latent_struct_skel = 0
-                    running_latent_struct_canny = 0
+                    running_c12_img = running_c12_canny = running_c12_skel = 0
                     log_steps = 0
                     start_time = time()
 
@@ -1932,19 +1646,10 @@ def main_from_cli(argv=None):
                         help="Do not early-stop before this many total steps (train_steps).")
     parser.add_argument("--early-stop-check-every", type=int, default=0,
                         help="Check eval_auto json every N training steps (0 = ckpt_every//2, min 1000).")
-    parser.add_argument("--struct-warmup-steps", type=int, default=0,
-                        help="Linearly ramp w_canny/w_skel from 0 to their target over N "
-                             "fine-tune steps counted from the resume point (0 = full weight "
-                             "immediately). Lets a converged diff-only checkpoint adapt to "
-                             "structural losses gradually.")
     parser.add_argument("--fresh-scheduler", type=_str_to_bool, default=False,
                         help="With --resume-full: ignore the restored scheduler state and "
                              "rebuild the LR schedule over the remaining fine-tune horizon "
                              "(max_steps - resume step) instead of continuing the old one.")
-    parser.add_argument("--struct-max-t", type=int, default=0,
-                        help="Only apply pixel structural losses on noise steps t<=struct-max-t "
-                             "(0 = apply at all timesteps). High-noise x0 predictions are blurry "
-                             "mush; forcing structure there drifts x0 off the VAE manifold.")
     parser.add_argument("--lr", type=float, default=1e-4, help="Learning rate")
     parser.add_argument("--lr-schedule", choices=["constant", "cosine"], default="constant")
     parser.add_argument("--warmup-steps", type=int, default=0)
@@ -2026,11 +1731,6 @@ def main_from_cli(argv=None):
                              "仅生成 eval_latest.png/eval_samples 展示, 与海报 GT 行同一批保证对照)。")
     parser.add_argument("--seen5-csv", type=str, default=None,
                         help="固定训练集内展示样本 CSV。")
-    parser.add_argument("--w-canny", type=float, default=0.05, help="Weight for canny structural loss")
-    parser.add_argument("--w-skel", type=float, default=0.05, help="Weight for skeleton structural loss")
-    parser.add_argument("--w-skel-head", type=float, default=0.0,
-                        help="Weight for latent skel_head aux supervision (train-only guide; "
-                             "inference uses pure ID conditions). 0=disabled. ")
     parser.add_argument("--w-glyph-cond", type=_str_to_bool, default=False,
                         help="Enable 甲2 standard-glyph token-add conditioning (use_glyph_cond).")
     parser.add_argument("--glyph-scale-init", type=float, default=0.4,
@@ -2062,41 +1762,6 @@ def main_from_cli(argv=None):
                         help="中间噪声带下界(sqrt_alpha_cumprod), 默认 0.35。")
     parser.add_argument("--std-mid-ahi", type=float, default=0.75,
                         help="中间噪声带上界(sqrt_alpha_cumprod), 默认 0.75。")
-    parser.add_argument("--struct-subset", type=int, default=32,
-                        help="Random per-step subset of the batch used for pixel canny/skel "
-                             "loss decode (infra optimization: bounds VAE-decode VRAM; "
-                             "0 = full batch).")
-    parser.add_argument("--struct-decode-bf16", type=_str_to_bool, default=False,
-                        help="Run the differentiable VAE decode for pixel structural losses "
-                             "under bf16 autocast. bf16 shares fp32's exponent range so the "
-                             "SD-VAE decoder cannot overflow (unlike fp16); the coarser "
-                             "mantissa only adds mild noise to an auxiliary structural loss. "
-                             "Output is cast back to fp32 before the losses.")
-    parser.add_argument("--struct-decode-scale", type=float, default=1.0,
-                        help="Downscale the decoded-image resolution for pixel structural "
-                             "losses by this factor (feed a proportionally smaller latent "
-                             "into the fully-convolutional decoder, e.g. 0.5 -> 128x128, "
-                             "~4x cheaper decode). GT canny/skel maps are resized to match. "
-                             "1.0 = full 256x256 decode.")
-    parser.add_argument("--w-latent-canny", type=float, default=0.0,
-                        help="Weight for decoder-free Canny-weighted latent gradient loss.")
-    parser.add_argument("--w-latent-skel", type=float, default=0.0,
-                        help="Weight for decoder-free frozen-probe skeleton loss.")
-    parser.add_argument("--latent-structure-probe", type=str, default=None,
-                        help="Checkpoint from train_latent_structure_probe.py (required for latent skeleton loss).")
-    parser.add_argument("--latent-struct-max-t", type=float, default=500.0,
-                        help="Apply latent structural losses only at diffusion timesteps <= this value.")
-    parser.add_argument("--w-latent-struct-skel", type=float, default=0.0,
-                        help="Weight for frozen StructDecoder skel BCE loss (latent→skel decoder). "
-                             "Gradient ~10^-5 of latent norm, so typical values 5000-20000.")
-    parser.add_argument("--w-latent-struct-canny", type=float, default=0.0,
-                        help="Weight for frozen StructDecoder canny BCE loss (latent→canny decoder).")
-    parser.add_argument("--latent-struct-decoder", type=str, default="",
-                        help="Path to struct decoder checkpoint (skel_best.pt or canny_best.pt). "
-                             "Both skel and canny decoders are loaded from same dir, filename "
-                             "skel→canny substitution applied automatically.")
-    parser.add_argument("--latent-struct-pos-weight", type=float, default=15.0,
-                        help="BCE pos_weight for latent struct loss (15 for 3px skel, 8 for 3px canny).")
     parser.add_argument("--w-repa", type=float, default=0.0, help="Weight for Representation Alignment (REPA) Loss (0 = disabled, default)")
     parser.add_argument("--repa-teacher-ckpt", type=str, default="",
                         help="Local path to DINOv2 teacher weights (ModelScope safetensors). "
@@ -2105,19 +1770,11 @@ def main_from_cli(argv=None):
                         help="Optimizer: adamw (default) or muon (matrix NS-orth + adamw for vec/embed).")
     parser.add_argument("--muon-lr", type=float, default=0.02,
                         help="Muon matrix-group LR (independent scale, ~0.01-0.1; adamw uses --lr).")
-    parser.add_argument("--use-canny", type=_str_to_bool, default=False,
-                        help="Enable Canny structural loss (requires canny maps in dataset/canny).")
-    parser.add_argument("--use-skel", type=_str_to_bool, default=False,
-                        help="Enable Skeleton structural loss (requires skeleton maps in dataset/skeleton).")
     parser.add_argument("--latent-shards-dir", type=str, default=None,
                         help="Dir of pre-built latent shards (shard_XXXXX.npz). If set, training reads "
                              "pre-encoded VAE latents instead of on-the-fly VAE encode.")
     parser.add_argument("--img-root", type=str, default="final_imgs_256",
                         help="Root dir of 256x256 gt images (used with latent-cached training for gt-losses).")
-    parser.add_argument("--canny-root", type=str, default="final_canny",
-                        help="Directory of precomputed canny images (img_id.png)")
-    parser.add_argument("--skel-root", type=str, default="final_skeleton",
-                        help="Directory of precomputed skeleton images (img_id.png)")
     parser.add_argument("--config", type=str, default="config.json",
                         help="Path to JSON config file with default args (CLI overrides).")
 

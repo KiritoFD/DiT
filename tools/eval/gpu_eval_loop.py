@@ -83,9 +83,8 @@ def main():
             sets = [f"seen:{args.seen_csv}:10"]
             if args.strict_every <= 0 or step % args.strict_every == 0:
                 sets.append(f"strict:{args.strict_csv}:237")
-            # 并发安全 batch: seen dit16/vae8; strict dit8/vae4
-            batches = ["--dit-batch", "16", "--vae-batch", "8"] if len(sets) == 1 else \
-                      ["--dit-batch", "8", "--vae-batch", "4"]
+            # 并发安全 batch: 训练占 ~20.1G, 剩余 ~3G -> dit8/vae4 (峰值 ~1.7G)
+            batches = ["--dit-batch", "8", "--vae-batch", "4"]
             cmd = [sys.executable, "-u", "tools/eval/eval_stdskel_batch.py",
                    "--results-dir", root, "--ckpt-override", ck, "--device", args.device,
                    "--save-samples", "--sets", *sets] + batches

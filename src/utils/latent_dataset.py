@@ -37,10 +37,9 @@ class MCCDLatentDataset(Dataset):
     训练过程中零磁盘 IO —— 适合内存充足的大内存机器。
     csv rows image_path 形如 `final_images/<img_id>.png` 或 `final_imgs_256/<img_id>.png`。
     """
-    def __init__(self, csv_file, latent_shards_dir, img_root, canny_root=None,
-                 image_size=256, load_canny=False, load_skel=False, skel_root=None,
-                 is_train=False, preload=False, load_image=True, num_preload_workers=16,
-                 structure_size=256, use_glyph_cond=False, skel_latent_shards_dir=None,
+    def __init__(self, csv_file, latent_shards_dir, img_root,
+                 image_size=256, is_train=False, preload=False, load_image=True,
+                 num_preload_workers=16, use_glyph_cond=False, skel_latent_shards_dir=None,
                  callig_id_map=None, aux_latent_shards_dirs=None):
         self.samples = []
         with open(csv_file, 'r', encoding='utf-8') as f:
@@ -67,16 +66,9 @@ class MCCDLatentDataset(Dataset):
 
         self.latent_shards_dir = latent_shards_dir
         self.img_root = img_root
-        self.canny_root = canny_root
-        self.load_canny = load_canny
-        self.load_skel = load_skel
-        self.skel_root = skel_root
         self.skel_latent_shards_dir = skel_latent_shards_dir
         self.image_size = image_size
         self.load_image = load_image
-        self.structure_size = int(structure_size)
-        if self.structure_size not in (32, 256):
-            raise ValueError("structure_size must be 32 or 256")
 
         self._shard_cache = {}
         self._id_to_shard = {}
@@ -139,8 +131,6 @@ class MCCDLatentDataset(Dataset):
             self._aux_id_to_shard.append(_mp)
         self._latents = None
         self._imgs = None
-        self._cannys = None
-        self._skels = None
         self._skel_latents = None
         self._aux_latents = None
         if preload:
@@ -204,21 +194,7 @@ class MCCDLatentDataset(Dataset):
                      for i in range(n)]
             _pool_fill(tasks, self._imgs, "images")
 
-        if self.load_canny and self.canny_root:
-            self._cannys = np.empty((n, self.structure_size, self.structure_size), dtype=np.uint8)
-            tasks = [(i, os.path.join(self.canny_root, f"{ids[i]}.png"), "L",
-                      self.structure_size)
-                     for i in range(n)]
-            _pool_fill(tasks, self._cannys, "canny")
-
-        if self.load_skel and self.skel_root:
-            self._skels = np.empty((n, self.structure_size, self.structure_size), dtype=np.uint8)
-            tasks = [(i, os.path.join(self.skel_root, f"{ids[i]}.png"), "L",
-                      self.structure_size)
-                     for i in range(n)]
-            _pool_fill(tasks, self._skels, "skeleton")
-
-        # --- skel latent shards (ControlNet latent 条件) ---
+        # --- skel latent shards (latent 条件) ---
         if self._skel_id_to_shard:
             self._skel_latents = np.empty(
                 (n, self.skel_latent_channels, self.skel_latent_spatial,
@@ -257,8 +233,6 @@ class MCCDLatentDataset(Dataset):
 
         total = (self._latents.nbytes
                  + (self._imgs.nbytes if self._imgs is not None else 0)
-                 + (self._cannys.nbytes if self._cannys is not None else 0)
-                 + (self._skels.nbytes if self._skels is not None else 0)
                  + (self._skel_latents.nbytes if self._skel_latents is not None else 0)
                  + (sum(a.nbytes for a in self._aux_latents)
                     if self._aux_latents is not None else 0))
@@ -313,14 +287,6 @@ class MCCDLatentDataset(Dataset):
             if self.load_image and self._imgs is not None:
                 a = self._imgs[idx].astype(np.float32) / 255.0 * 2.0 - 1.0
                 img_t = torch.from_numpy(a).permute(2, 0, 1)
-            canny_t = torch.empty(0)
-            if self.load_canny and self._cannys is not None:
-                c = self._cannys[idx].astype(np.float32) / 255.0
-                canny_t = (torch.from_numpy(c) > 0.5).float().unsqueeze(0)
-            skel_t = torch.empty(0)
-            if self.load_skel and self._skels is not None:
-                s = self._skels[idx].astype(np.float32) / 255.0
-                skel_t = (torch.from_numpy(s) > 0.5).float().unsqueeze(0)
             skel_lat = torch.empty(0)
             if self._skel_latents is not None:
                 skel_lat = torch.from_numpy(self._skel_latents[idx])
@@ -342,27 +308,7 @@ class MCCDLatentDataset(Dataset):
                     img = im.convert('RGB')
                 img_t = (torch.from_numpy(np.asarray(img, dtype=np.float32) / 255.0).permute(2, 0, 1) * 2.0 - 1.0)
 
-            # canny -> 二值 [0,1]
-            canny_t = torch.empty(0)
-            if self.load_canny and self.canny_root:
-                with Image.open(os.path.join(self.canny_root, f"{img_id}.png")) as c:
-                    canny = c.convert('L')
-                canny_a = np.asarray(canny, dtype=np.float32)
-                if self.structure_size == 32:
-                    canny_a = canny_a.reshape(32, 8, 32, 8).max(axis=(1, 3))
-                canny_t = (torch.from_numpy(canny_a / 255.0) > 0.5).float().unsqueeze(0)
-
-            # skeleton -> 单通道 [0,1]
-            skel_t = torch.empty(0)
-            if self.load_skel and self.skel_root:
-                with Image.open(os.path.join(self.skel_root, f"{img_id}.png")) as sk:
-                    skel = sk.convert('L')
-                skel_a = np.asarray(skel, dtype=np.float32)
-                if self.structure_size == 32:
-                    skel_a = skel_a.reshape(32, 8, 32, 8).max(axis=(1, 3))
-                skel_t = (torch.from_numpy(skel_a / 255.0) > 0.5).float().unsqueeze(0)
-
-            # skel latent (ControlNet latent 条件) -> (C,32,32) float32
+            # skel latent (latent 条件) -> (C,32,32) float32
             skel_lat = torch.empty(0)
             if self._skel_id_to_shard:
                 try:
@@ -401,8 +347,8 @@ class MCCDLatentDataset(Dataset):
         return {
             'latent': latent,
             'image': img_t,
-            'canny': canny_t,
-            'skeleton': skel_t,
+            'canny': torch.empty(0),
+            'skeleton': torch.empty(0),
             'skel_latent': skel_lat,
             'aux_latents': aux_t,
             'y_callig': torch.tensor(

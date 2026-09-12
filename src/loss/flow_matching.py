@@ -233,6 +233,8 @@ class FlowMatching:
 
         # velocity MSE (optionally L2-weighted by (1-t); plain MSE is fine)
         loss = F.mse_loss(model_output, v_target.float(), reduction="none")
+        # 逐通道 MSE (B, C), 仅用于日志: 12ch 联合目标下把 image/canny/skel 分组打印
+        terms["mse_ch"] = loss.detach().mean(dim=list(range(2, loss.ndim)))
         if channel_weights is not None:
             # per-channel 加权 (aux 目标通道降权): 图像通道保持 1/C, aux 通道 ×w_aux/C。
             # mean 仍在全部通道上做 -> 图像通道的梯度权重与不加权时完全一致。

@@ -8,9 +8,7 @@ from .respace import SpacedDiffusion, space_timesteps
 from .flow_matching import (
     create_flow_matching, FlowMatching, FLOW_PARAMS, FLOW_PARAM_ALIASES,
 )
-from .losses import (
-    StructDecoder, LatentStructLoss, EdgeGradientLoss, SkeletonLoss, REPALoss,
-)
+from .losses import REPALoss
 
 
 def create_diffusion(
@@ -103,6 +101,6 @@ __all__ = [
     "create_diffusion", "create_diffusion_or_flow", "create_flow_matching",
     "flow_kwargs_from", "FLOW_PARAMS", "FLOW_PARAM_ALIASES",
     "SpacedDiffusion", "space_timesteps", "FlowMatching",
-    "StructDecoder", "LatentStructLoss", "EdgeGradientLoss", "SkeletonLoss", "REPALoss",
+    "REPALoss",
 ]
 

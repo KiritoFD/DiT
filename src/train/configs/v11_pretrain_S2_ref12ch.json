@@ -1,7 +1,7 @@
 {
-  "_comment": "[2026-09-12] **v11_pretrain_S2: 从头预训练 (无 resume)**. 动机: Sp/2 (59M) 在 113k 数据上过拟合 (v11_struct-loss strict 0.5675 平, seen 见顶后回落). 改动: 模型 DiT-2Cond-S/2 (depth12/h384/heads6, ~30M, 0.5x 参数); batch 128->256 (S/2 参数减半, 适当放大 batch); LR 5e-5->1e-4 (随 batch 线性缩放), warmup 3000; max_steps 400k->300k (token 预算 300k*256=76.8M > 原 400k*128=51.2M). 架构取干净版: adaLN 注入 (xattn 消融实测约 0 且费计算, 关), 无 callig_style_attn/外挂 callig_spatial (归因均 0), 保留 41 冻结书家表 + REPA 0.03 + std-skel-g 骨架条件 (skel_as_glyph_cond) + no_char_cond. 结构 loss: skel=0.02/canny=0.1, probe, 门控 t<=0.3 (flow), struct_fame_e 像素图. 数据=增强 fame_e 113,540. eval: seen 2.5k / strict 10k, cfg 0.7.",
-  "experiment_name": "v11-pretrain-S2",
-  "results_dir": "5script/results/v11_pretrain_S2",
+  "_comment": "[2026-09-12] **v11_pretrain_S2_ref12ch: 按 ref/moyi 原样重跑 12ch 联合目标**. ref/moyi (train_moyun2.py:297-312): x = cat(vae(image), vae(edge), vae(skeleton)) = 12ch, 单头 FinalLayer 输出 12ch (moyun_2.py:459-460), diffusion_loss 对全部 12ch 等权 mean_flat。 本 run: S/2 (depth12/h384/heads6, ~30M) 从零预训练; batch 256; lr 1e-4 (随 batch 线性) cosine->300k; adaLN 注入; 保留 41 冻结书家表 + std-skel-g 条件; **aux_loss_weight=1.0 (等权, = ref)**; **w_repa=0** (REPA 是 DINOv2 对 GT 像素图, 非 latent, 关闭); 无像素结构 loss/probe (作废)。 aux latents = aux_canny_latents_fame_e + aux_skel_latents_fame_e (VAE-encoded 4ch, 32x32, 44 shards)。 与上一轮的区别: 上轮 aux 用了 w_aux=0.15 (自创偏离, config 注释 [2026-09-11e]), 且是 sty32_s 配方; 本轮为 ref 等权 + 干净 S/2 adaLN。eval: seen 2.5k / strict 10k, cfg 0.7。",
+  "experiment_name": "v11-pretrain-S2-ref12ch",
+  "results_dir": "5script/results/v11_pretrain_S2_ref12ch",
   "model": "DiT-2Cond-S/2",
   "skel_as_glyph_cond": true,
   "skel_latent_shards_dir": "std_skel1_latents_fame_e",
@@ -41,7 +41,7 @@
   "ema_decay": 0.9999,
   "seed": 0,
   "early_stop": false,
-  "w_repa": 0.03,
+  "w_repa": 0.0,
   "gpu_eval_cfg": 0.7,
   "gpu_eval_n": 10,
   "gpu_eval_img_root": "final_imgs_fame_e",
@@ -61,10 +61,6 @@
   "freeze_callig_table": true,
   "glyph_inject_mode": "adaln",
   "lr_schedule": "cosine",
-  "w_latent_skel": 0.02,
-  "w_latent_canny": 0.1,
-  "latent_structure_probe": "5script/results/latent_struct_probe.pt",
-  "latent_struct_max_t": 0.3,
-  "skel_root": "struct_fame_e/skel",
-  "canny_root": "struct_fame_e/canny"
+  "aux_latent_shards_dirs": "aux_canny_latents_fame_e,aux_skel_latents_fame_e",
+  "aux_loss_weight": 1.0
 }
