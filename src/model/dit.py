@@ -1154,6 +1154,13 @@ def DiT_2Cond_S_2(**kwargs):
     return DiT_2Cond(depth=12, hidden_size=384, patch_size=2, num_heads=6, **kwargs)
 
 
+def DiT_2Cond_M_2(**kwargs):
+    # M (between S and Sp): h=432, d=12, heads=6 (~42M). 2026-09-12 用户裁定:
+    # S/2 (384, 30M) seen 天花板 ~0.52 偏低; Sp/2 (512, 59M) 可达 0.67-0.76。
+    # 取中间容量点验证 "容量-质量" 曲线。
+    return DiT_2Cond(depth=12, hidden_size=432, patch_size=2, num_heads=6, **kwargs)
+
+
 def DiT_2Cond_Sp_2(**kwargs):
     # Sp (S-plus): h=512, d=12, heads=8, ~59M (1.8x S/2)。
     # 2026-09-08 欠拟合诊断 (train/strict velocity loss 全 t 桶高且平, 低 t 桶
@@ -1184,6 +1191,7 @@ DiT_2Cond_models = {
     'DiT-2Cond-XS/2': DiT_2Cond_XS_2,
     'DiT-2Cond-WS/2': DiT_2Cond_WS_2,
     'DiT-2Cond-S/2': DiT_2Cond_S_2,
+    'DiT-2Cond-M/2': DiT_2Cond_M_2,
     'DiT-2Cond-Sp/2': DiT_2Cond_Sp_2,
     'DiT-2Cond-S/4': DiT_2Cond_S_4,
     'DiT-2Cond-S/8': DiT_2Cond_S_8,

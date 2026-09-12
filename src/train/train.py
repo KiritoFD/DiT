@@ -743,6 +743,10 @@ def main(args):
                                     aux_latent_shards_dirs=[s for s in str(getattr(args, 'aux_latent_shards_dirs', '') or '').split(',') if s])
         logger.info("Using latent-cached dataset (skip on-the-fly VAE encode)."
                     + (" preload=ON" if getattr(args, 'preload', False) else ""))
+        _aux_dirs = [s for s in str(getattr(args, 'aux_latent_shards_dirs', '') or '').split(',') if s]
+        if _aux_dirs:
+            _aw = getattr(args, 'aux_loss_weights', '') or getattr(args, 'aux_loss_weight', 1.0)
+            logger.info(f"[aux] target=12ch+ dirs={_aux_dirs} per-group weights={_aw}")
     else:
         dataset = MCCDDataset(csv_file=args.data_csv, root_dir=args.data_dir, image_size=args.image_size)
     if args.sampler == "factor_balanced":
@@ -1011,10 +1015,20 @@ def main(args):
                     _aux = batch.get('aux_latents', None)
                     if _aux is not None and _aux.numel() > 0:
                         x_latent = torch.cat([x_latent, _aux.to(device).float()], dim=1)
-                        _w_aux = float(getattr(args, 'aux_loss_weight', 1.0))
-                        if _w_aux != 1.0:
+                        # per-group aux 权重 (与 aux_latent_shards_dirs 同序): e.g. "0.3,0.8"
+                        # -> canny 4ch ×0.3, skel 4ch ×0.8。空则回退单一 aux_loss_weight。
+                        _aux_w_list = [float(s) for s in
+                                       str(getattr(args, 'aux_loss_weights', '') or '').split(',')
+                                       if s.strip()]
+                        if _aux_w_list:
                             _ch_w = torch.ones(x_latent.shape[1], device=device)
-                            _ch_w[4:] = _w_aux
+                            for _gi, _w in enumerate(_aux_w_list):
+                                _ch_w[4 + 4 * _gi: 8 + 4 * _gi] = _w
+                        else:
+                            _w_aux = float(getattr(args, 'aux_loss_weight', 1.0))
+                            if _w_aux != 1.0:
+                                _ch_w = torch.ones(x_latent.shape[1], device=device)
+                                _ch_w[4:] = _w_aux
                     x = batch.get('image', None)
                     x = x.to(device) if x is not None else None
                 else:
@@ -1531,6 +1545,9 @@ def main_from_cli(argv=None):
                              "训练目标 x = cat(image, *aux), 对全部通道加噪/算 MSE; 推理只用前 4 通道。")
     parser.add_argument("--aux-loss-weight", type=float, default=1.0,
                         help="aux 通道 loss 权重 (1.0=等权/ref; <1 时图像主导)")
+    parser.add_argument("--aux-loss-weights", type=str, default="",
+                        help="per-group aux 权重, 逗号分隔, 与 aux-latent-shards-dirs 同序。"
+                             "如 '0.3,0.8' -> canny×0.3, skel×0.8 (覆盖 --aux-loss-weight)。")
     parser.add_argument("--callig-style-attn", action="store_true",
                         help="callig 风格 cross-attention(书家化骨架正确形态): 书家向量 -> N_style 个 "
                              "style token, 骨架 token 内容寻址聚合风格, 产生'书家x字x位置'交互(结体差异)。"
