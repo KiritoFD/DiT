@@ -82,8 +82,8 @@ def main():
           flush=True)
 
     # 数据: csv 前 n 行, 固定一个 batch 贯穿全程 (LR range test 惯例)
-    csv_path = "5script/train_fame3_e_full.csv" if "e_full" in str(a.get("data_csv", "")) \
-        else a.get("data_csv", "5script/train_fame3_clean_v8.csv")
+    csv_path = "assets/train_fame3_e_full.csv" if "e_full" in str(a.get("data_csv", "")) \
+        else a.get("data_csv", "assets/train_fame3_clean_v8.csv")
     rows = list(csv.DictReader(open(csv_path, encoding="utf-8")))[: args.batch]
     img_ids = [int(r["image_path"].rsplit(".", 1)[0].rsplit("/", 1)[-1]) for r in rows]
     y_callig = torch.tensor([int(r["calligrapher_id"]) for r in rows], dtype=torch.long).to(dev)

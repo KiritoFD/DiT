@@ -12,8 +12,8 @@ from models import DiT_2Cond
 from diffusion import create_diffusion
 
 device = "cuda"
-CKPT = "/root/Workspace/xy/DiT/5script/results/px_s_scratch/20260822-145511-px-s-scratch-diff/checkpoints/0055000.pt"
-EVAL_CSV = "/root/Workspace/xy/DiT/5script/eval100_top6.csv"
+CKPT = "/root/Workspace/xy/DiT/assets/results/px_s_scratch/20260822-145511-px-s-scratch-diff/checkpoints/0055000.pt"
+EVAL_CSV = "/root/Workspace/xy/DiT/assets/eval100_top6.csv"
 IMG_ROOT = "/root/Workspace/xy/DiT/final_imgs_256"
 OUT = "/tmp/px_eval_55k"
 

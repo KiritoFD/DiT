@@ -62,7 +62,7 @@
 
 - 工具：`tools/eval/gpu_eval_pretrain_g.py`（GPU 批量 pretrain_g eval，35 点 ~20min，
   支持 --steps/--g-source/--skip-existing）；`src/eval/cpu_eval_worker.py` 已修 DINO 透传
-- 曲线图：`5script/results/skel_follow_gpu/v10_arms_ssim.png`
+- 曲线图：`assets/results/skel_follow_gpu/v10_arms_ssim.png`
 - eval_auto 35 点入册（v10adino_skel_cond_pretrain/*/checkpoints/）
 - 方向：38 号文档 A（v10b resume 补净代价）仍待做；v10a-dino 不再续训（收敛 ~0.835 上限
   已可判读，与 v10a 差 -0.013 恒定，续到 150k 追平概率低）

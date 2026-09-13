@@ -1,4 +1,4 @@
-[[34m2026-08-15 21:30:15[0m] Experiment directory created at 5script/results/probes/20260815-213015-probe-v3a-batch-scale
+[[34m2026-08-15 21:30:15[0m] Experiment directory created at assets/results/probes/20260815-213015-probe-v3a-batch-scale
 [[34m2026-08-15 21:30:16[0m] Building 2-Cond model: DiT-2Cond-S/2 (callig=1011, glyph/char=35130, fusion=factorized_add, dims=128/192, dropout=all:0.1, one:0.3)
 [[34m2026-08-15 21:30:16[0m] Trainable Parameters: 39,479,648
 [[34m2026-08-15 21:30:16[0m] Frozen Parameters: 98,304 (trainable ratio: 99.75%)

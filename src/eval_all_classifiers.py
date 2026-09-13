@@ -19,7 +19,7 @@ from train_glyph_classifier import LatentGlyphDataset
 CKPT_DIR = "glyph_classifier_ckpts"
 LATENTS_PATH = "pretrained_models/3top30_latents.npz"
 PIXEL_NPZ = "_classifier_pixel64_data.npz"
-TRAIN_CSV = "5script/train_3top30_nobeike.csv"
+TRAIN_CSV = "assets/train_3top30_nobeike.csv"
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 

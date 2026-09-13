@@ -1,13 +1,13 @@
 {
   "_comment": "v8e: REPA 强度扫描-高强度。基于 B_ctrl_best.pt + A_main_final.pt, REPA w=0.5 (vs v8c 0.3), max_steps 30000 (vs 20000), L2(8,11)。对照 v8c 0.7674。回答: 更强 REPA 能否再提 skel_iou/ssim, 是否伤 base。主模型解冻, char 表冻结。eval cfg 0.7。",
   "experiment_name": "v8e-repa-strong",
-  "results_dir": "5script/results/v8_3stage/v8e",
+  "results_dir": "assets/results/v8_3stage/v8e",
 
   "model": "DiT-2Cond-S/2",
   "compile": true,
   "compile_mode": "default",
 
-  "csv": "5script/train_fame_clean_v8.csv",
+  "csv": "assets/train_fame_clean_v8.csv",
   "latent_shards_dir": "final_latents_fame_v8",
   "img_root": "final_imgs_fame_v8",
   "skel_root": "final_skel1_fame_v8",
@@ -72,7 +72,7 @@
   "use_checkpoint": false,
   "seed": 0,
 
-  "gpu_eval_csv": "5script/eval_fame_strict_clean_v8.csv",
+  "gpu_eval_csv": "assets/eval_fame_strict_clean_v8.csv",
   "gpu_eval_every": 2500,
   "gpu_eval_n": 100,
   "gpu_eval_steps": 50,

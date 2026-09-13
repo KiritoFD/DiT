@@ -1,10 +1,10 @@
 {
   "experiment_name": "px-s-scratch-diff",
-  "data_csv": "5script/train_top6.csv",
+  "data_csv": "assets/train_top6.csv",
   "img_root": "final_imgs_256",
   "canny_root": "final_canny",
   "skel_root": "final_skeleton",
-  "results_dir": "5script/results/px_s_scratch",
+  "results_dir": "assets/results/px_s_scratch",
   "image_size": 256,
   "patch_size": 8,
   "in_channels": 3,
@@ -25,7 +25,7 @@
   "ckpt_keep": 40,
   "preload": true,
   "preload_workers": 24,
-  "preload_dir": "5script/pixmap",
+  "preload_dir": "assets/pixmap",
   "use_canny": false,
   "use_skel": false,
   "w_canny": 0.0,
@@ -41,7 +41,7 @@
   "cond_drop_one": 0.25,
   "num_calligraphers": 1011,
   "num_characters": 35130,
-  "eval_csv": "5script/eval100_top6.csv",
+  "eval_csv": "assets/eval100_top6.csv",
   "eval_n": 100,
   "eval_steps": 50,
   "eval_cfg": 4.0,
@@ -51,5 +51,5 @@
   "early_stop_metric": "ssim",
   "early_stop_patience": 6,
   "early_stop_min_steps": 45000,
-  "resume_full": "5script/results/px_s_scratch/20260822-115020-px-s-scratch-diff/checkpoints/0045000.pt"
+  "resume_full": "assets/results/px_s_scratch/20260822-115020-px-s-scratch-diff/checkpoints/0045000.pt"
 }

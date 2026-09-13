@@ -228,5 +228,5 @@ def main(rd):
 
 
 if __name__ == "__main__":
-    rd = sys.argv[1] if len(sys.argv) > 1 else "5script/results/ctrl_skel"
+    rd = sys.argv[1] if len(sys.argv) > 1 else "assets/results/ctrl_skel"
     main(rd)

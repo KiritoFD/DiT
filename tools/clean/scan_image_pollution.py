@@ -23,7 +23,7 @@
 - n_cc: 连通域总数
 
 用法:
-  python tools/scan_image_pollution.py --csv 5script/train_fame.csv \
+  python tools/scan_image_pollution.py --csv assets/train_fame.csv \
       --out scan_train.csv [--workers 32]
 """
 import os
@@ -146,7 +146,7 @@ def analyze(path):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--csv", default="5script/train_fame.csv")
+    ap.add_argument("--csv", default="assets/train_fame.csv")
     ap.add_argument("--img-root", default="final_imgs_256")
     ap.add_argument("--out", default="scan_train.csv")
     ap.add_argument("--workers", type=int, default=32)

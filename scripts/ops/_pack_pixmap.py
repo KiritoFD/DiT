@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-"""把 5script/train_top6.csv 的图片打包成单个 .npy (uint8 N,H,W,3)。
+"""把 assets/train_top6.csv 的图片打包成单个 .npy (uint8 N,H,W,3)。
    顺序顺序读(顺序 IO 快), 支持 mmap 随机访问; canny/skel 单通道同样打包。
-   输出: 5script/pixmap/ 下 imgs.npy / cannys.npy / skels.npy + ids.txt
+   输出: assets/pixmap/ 下 imgs.npy / cannys.npy / skels.npy + ids.txt
 """
 import os, sys, csv, re, time
 import numpy as np
@@ -10,11 +10,11 @@ from PIL import Image
 
 sys.stdout.reconfigure(encoding="utf-8")
 BASE = "/root/Workspace/xy/DiT/"
-CSV = BASE + "5script/train_top6.csv"
+CSV = BASE + "assets/train_top6.csv"
 IMG_ROOT = BASE + "final_imgs_256"
 CAN_ROOT = BASE + "final_canny"
 SKEL_ROOT = BASE + "final_skeleton"
-OUT = BASE + "5script/pixmap"
+OUT = BASE + "assets/pixmap"
 os.makedirs(OUT, exist_ok=True)
 
 rows = list(csv.DictReader(open(CSV, encoding="utf-8")))

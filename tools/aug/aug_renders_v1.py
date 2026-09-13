@@ -6,8 +6,8 @@ aug_renders_v1.py — 墨迹渲染扰动 (target-only, 骨架 g 条件不动).
   _a: 墨密度扰动  (gamma 0.75-1.3 + contrast 0.85-1.15 + 可选轻度模糊 σ≤0.8)
   _b: 笔画宽度扰动 (±1px 膨胀/腐蚀) + 轻度 gamma 抖动
 骨架条件 g 不变 → 同一 (g, callig) 条件对应 K 个不同目标 → 打击"背单一图"记忆化.
-输出: 5script/aug_renders_fame_v1/<id>_a.png / _b.png
-      5script/train_fame3_aug_v1.csv (原 28385 行 + 56770 增强行)
+输出: assets/aug_renders_fame_v1/<id>_a.png / _b.png
+      assets/train_fame3_aug_v1.csv (原 28385 行 + 56770 增强行)
 """
 import csv
 import os
@@ -19,9 +19,9 @@ import numpy as np
 from PIL import Image, ImageEnhance, ImageFilter
 
 ROOT = "/root/Workspace/xy/DiT"
-SRC_CSV = f"{ROOT}/5script/train_fame3_clean_v8.csv"
-OUT_DIR = f"{ROOT}/5script/aug_renders_fame_v1"
-OUT_CSV = f"{ROOT}/5script/train_fame3_aug_v1.csv"
+SRC_CSV = f"{ROOT}/assets/train_fame3_clean_v8.csv"
+OUT_DIR = f"{ROOT}/assets/aug_renders_fame_v1"
+OUT_CSV = f"{ROOT}/assets/train_fame3_aug_v1.csv"
 sys.stdout.reconfigure(encoding="utf-8")
 
 os.makedirs(OUT_DIR, exist_ok=True)
@@ -93,7 +93,7 @@ if __name__ == "__main__":
             base = os.path.splitext(os.path.basename(r["image_path"]))[0]
             for kind in ("a", "b"):
                 r2 = dict(r)
-                r2["image_path"] = f"5script/aug_renders_fame_v1/{base}_{kind}.png"
+                r2["image_path"] = f"assets/aug_renders_fame_v1/{base}_{kind}.png"
                 r2["aug"] = f"ink_{kind}"
                 w.writerow(r2)
         # 原始行也重写进 aug csv (统一入口), aug 列 = orig

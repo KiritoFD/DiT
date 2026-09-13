@@ -1,7 +1,7 @@
 {
   "_comment": "v10b-stdskel: v10b(无char, 结构=skel-g/风格=callig) 把训练 g 从 GT 实例骨架(final_skel_latents_fame_1px_v8) 换成 标准字形骨架(std_skel1_latents_fame_v8, simkai 渲染, 100%覆盖 51321 样本)。训练/推理一致(都是标准骨架 g), 消除 GT 结构泄漏(历史 ctrl 指标虚高根源)。与 v10b 唯一差异 = skel_latent_shards_dir。",
   "experiment_name": "v10b-stdskel-pretrain",
-  "results_dir": "5script/results/v10b_stdskel_pretrain",
+  "results_dir": "assets/results/v10b_stdskel_pretrain",
   "model": "DiT-2Cond-S/2",
   "skel_as_glyph_cond": true,
   "skel_latent_shards_dir": "std_skel1_latents_fame_v8",
@@ -55,7 +55,7 @@
   "eval_csv": "",
   "eval_cfg": 0.7,
   "eval_steps": 50,
-  "data_csv": "5script/train_fame_clean_v8.csv",
+  "data_csv": "assets/train_fame_clean_v8.csv",
   "preload": true,
   "preload_workers": 16,
   "global_batch_size": 320,

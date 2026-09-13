@@ -49,7 +49,7 @@
 | 项 | 值 |
 |---|---|
 | 模型 | DiT-2Cond-**S**/2（from scratch） |
-| 数据 | **5 书 top30** `5script/train_top30.csv`（128842 行） |
+| 数据 | **5 书 top30** `assets/train_top30.csv`（128842 行） |
 | 条件 | 纯两因子 `callig × char`，`factorized_add` |
 | 标准字形条件 / 中间步 | ❌ / ❌ |
 | 结构损失 | ❌ 无 |

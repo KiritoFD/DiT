@@ -15,9 +15,9 @@ build_eval_strict_midclean.py — 对 mid_clean 训练集的组合泛化 eval �
 
 用法 (远程):
   /opt/conda/bin/python tools/build_eval_strict_midclean.py \
-      --train-csv 5script/train_mid_clean.csv \
+      --train-csv assets/train_mid_clean.csv \
       --manifest archive/final_manifest.json \
-      --out 5script/eval_strict_midclean.csv --total 600
+      --out assets/eval_strict_midclean.csv --total 600
 """
 import os
 import csv
@@ -36,9 +36,9 @@ SEED = 42
 
 def parse_args():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--train-csv", default="5script/train_mid_clean.csv")
+    ap.add_argument("--train-csv", default="assets/train_mid_clean.csv")
     ap.add_argument("--manifest", default="archive/final_manifest.json")
-    ap.add_argument("--out", default="5script/eval_strict_midclean.csv")
+    ap.add_argument("--out", default="assets/eval_strict_midclean.csv")
     ap.add_argument("--total", type=int, default=600)
     ap.add_argument("--seed", type=int, default=SEED)
     return ap.parse_args()

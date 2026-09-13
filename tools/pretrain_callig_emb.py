@@ -9,7 +9,7 @@
   锚定:    1 - cos(A·E[y], centroid[y]), 让 embedding 继承 DINO 风格语义
            (P/A 是投影头, 训练后丢弃; E 即最终接入 DiT 的表)
 
-输出: 5script/callig_emb_pretrained.pt  {"embedding": (41,128), "raw_ids": [...]}
+输出: assets/callig_emb_pretrained.pt  {"embedding": (41,128), "raw_ids": [...]}
 """
 import argparse
 import json
@@ -28,9 +28,9 @@ sys.stdout.reconfigure(encoding="utf-8")
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--dino-npz", default="5script/dino_cls_train.npz")
-    ap.add_argument("--id-map", default="5script/callig_id_map.json")
-    ap.add_argument("--out", default="5script/callig_emb_pretrained.pt")
+    ap.add_argument("--dino-npz", default="assets/dino_cls_train.npz")
+    ap.add_argument("--id-map", default="assets/callig_id_map.json")
+    ap.add_argument("--out", default="assets/callig_emb_pretrained.pt")
     ap.add_argument("--dim", type=int, default=128)
     ap.add_argument("--steps", type=int, default=3000)
     ap.add_argument("--batch", type=int, default=512)

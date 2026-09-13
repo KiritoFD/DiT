@@ -1,9 +1,9 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """把小网络训练数据打包: latent(4,32,32,f16) + skel(256,256) + canny(256,256)。
-   输出 5script/structnet/ 下三个 memmap npy, 供 CPU 训练随机访问。
+   输出 assets/structnet/ 下三个 memmap npy, 供 CPU 训练随机访问。
    latent 值域: 使用 shard 原始 float16 (与 latent_dataset 一致, 不改缩放)。
-   规模: top6 train ~10866 张; 这里直接用 5script/train_top6.csv 对应用图。
+   规模: top6 train ~10866 张; 这里直接用 assets/train_top6.csv 对应用图。
 """
 import os, sys, csv, re, time
 import numpy as np
@@ -11,11 +11,11 @@ from PIL import Image
 
 sys.stdout.reconfigure(encoding="utf-8")
 BASE = "/root/Workspace/xy/DiT/"
-CSV = BASE + "5script/train.csv"
+CSV = BASE + "assets/train.csv"
 SHARDS = BASE + "final_latents"
 CAN_ROOT = BASE + "final_canny"
 SKEL_ROOT = BASE + "final_skeleton"
-OUT = BASE + "5script/structnet"
+OUT = BASE + "assets/structnet"
 os.makedirs(OUT, exist_ok=True)
 
 rows = list(csv.DictReader(open(CSV, encoding="utf-8")))

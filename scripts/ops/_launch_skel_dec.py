@@ -25,7 +25,7 @@ print(run("pkill -9 -f train_struct_probe_256; pkill -9 -f train_struct_probe_25
 print(run("cd /root/Workspace/xy/DiT && tmux kill-session -t structnet 2>/dev/null; "
           "tmux new-session -d -s structnet '"
           "/opt/conda/bin/python tools/train_skel_decoder.py "
-          "--csv 5script/train.csv --epochs 10 --batch-size 256 --num-threads 32 "
+          "--csv assets/train.csv --epochs 10 --batch-size 256 --num-threads 32 "
           "--log-every 50 > run_skel_dec.log 2>&1' && echo SKEL_STARTED"))
 
 time.sleep(90)

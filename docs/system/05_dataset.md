@@ -19,8 +19,8 @@
 
 - 按 **GB2312 一级 + 二级汉字** 过滤（去掉生僻字/异体字）。
 - 各 (script, char, calli) 组合应至少有若干样本（top30 常见字 → 之、也、人 …）。
-- 输出 `5script/train_3top30_common.csv`（**23,597 行**）作为 mid-clean 的「干净原样本」。
-- 评测表 `5script/eval_strict_top6.csv`（271 行：楷 169 + 隶 102）从严格同分布组合抽取，`eval100_top30_clean.csv` 等为派生表。
+- 输出 `assets/train_3top30_common.csv`（**23,597 行**）作为 mid-clean 的「干净原样本」。
+- 评测表 `assets/eval_strict_top6.csv`（271 行：楷 169 + 隶 102）从严格同分布组合抽取，`eval100_top30_clean.csv` 等为派生表。
 
 ## 4. mid-clean 增广流水线（tools/aug6.py）
 
@@ -32,7 +32,7 @@
 |---|---|---|
 | **A. 增广（CPU 多进程）** | `--phase aug` | 对组合样本数 <6 的，生成 `(6-n)` 个增强变体（随机仿射/弹性等）→ `final_imgs_mid_clean/{new_id}.png`（**new_id ∈ 1000000–1095178**，与原始 img_id 3073–325944 空间分离）；写 `aug_meta.csv`（new_id, script, char, calli, calli_id, char_id, glyph_id, script_id）。产出 **95,179 张**。 |
 | **B. VAE 编码（GPU）** | `--phase encode` | 读 `final_imgs_mid_clean/*.png` → sd-vae-ft-ema 编码（fp32，scaling=0.18215）→ `/tmp/mid_clean_tmp/` 20 shards + aug_meta.csv。 |
-| **C. 合并（CPU）** | `--phase merge` | ① 从**原始** latent shards 里只保留 train_3top30_common.csv 出现过的 img_id（23,597 张，先过滤再合并，避免混入脏样本）；② 追加 B 的增广 shard → `final_latents_mid_clean/`（**25 shards / 118,776 latents**）；③ 写 `5script/train_mid_clean.csv`（**118,776 行**）：原行 + 增广行，`image_path = final_imgs_mid_clean/{id}.png`（原样样本 image_path 仍指向 final_imgs_256）。 |
+| **C. 合并（CPU）** | `--phase merge` | ① 从**原始** latent shards 里只保留 train_3top30_common.csv 出现过的 img_id（23,597 张，先过滤再合并，避免混入脏样本）；② 追加 B 的增广 shard → `final_latents_mid_clean/`（**25 shards / 118,776 latents**）；③ 写 `assets/train_mid_clean.csv`（**118,776 行**）：原行 + 增广行，`image_path = final_imgs_mid_clean/{id}.png`（原样样本 image_path 仍指向 final_imgs_256）。 |
 
 命令形态：`python tools/aug6.py --phase all [--csv ... --out-imgs ...]`；`--phase` 可 `all|aug|encode|merge`（断点续跑用）。
 

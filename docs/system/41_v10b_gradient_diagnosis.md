@@ -62,4 +62,4 @@ v10a-dino（冻结 DINO 表 + ln_only）base 0.8348 < v10a 0.8476 的差距，
 - 实验 3：REPA 仅浅层/off（对照）
 - 实验 4：两者组合
 
-存档：`5script/results/v10b_debug_grad.json`，工具 `tools/debug_v10b_gradients.py`。
+存档：`assets/results/v10b_debug_grad.json`，工具 `tools/debug_v10b_gradients.py`。

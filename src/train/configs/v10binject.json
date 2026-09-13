@@ -1,7 +1,7 @@
 {
   "_comment": "v10b-inject (方案C): 深层骨架注入 + scale 上调。v10b 基线 glyph_inject_layers=0 (仅输入层 token-add) + scale 0.4 + drop 0.1。改动: glyph_inject_layers 0->4 (ZeroAdaLNInjection 逐层调制, 与 ControlNet 对齐, 实现已在 dit.py), glyph_scale_init 0.4->0.6, glyph_drop_prob 0.1->0.05 (g 给得更足)。预期: 遵循度 0.57->0.62+ (骨架信息进深层), base 可能微升。显存 +0.6-1.2G (18.3->~19.5G 预算内)。其余 = v10b 全同 (batch320/compile/REPA w0.1/150k/早停)。eval 由 cpu_eval_daemon --mode pretrain_g 接管。",
   "experiment_name": "v10b-inject",
-  "results_dir": "5script/results/v10binject",
+  "results_dir": "assets/results/v10binject",
   "model": "DiT-2Cond-S/2",
   "skel_as_glyph_cond": true,
   "skel_latent_shards_dir": "final_skel_latents_fame_1px_v8",
@@ -58,7 +58,7 @@
   "eval_csv": "",
   "eval_cfg": 0.7,
   "eval_steps": 50,
-  "data_csv": "5script/train_fame_clean_v8.csv",
+  "data_csv": "assets/train_fame_clean_v8.csv",
   "preload": true,
   "preload_workers": 16,
   "global_batch_size": 320,

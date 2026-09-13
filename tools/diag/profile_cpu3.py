@@ -48,12 +48,12 @@ yc = torch.randint(0, 1000, (16,)).repeat(2)
 yh = torch.randint(0, 30000, (16,)).repeat(2)
 sk = torch.randn(16, 4, 32, 32).repeat(2, 1, 1, 1)
 for impl in ("sdpa", "eager"):
-    main = load_main_model(ckpt_path="5script/results/v8_3stage/A_main_final.pt",
+    main = load_main_model(ckpt_path="assets/results/v8_3stage/A_main_final.pt",
                            attn_impl=impl, **{k: v for k, v in COMMON.items() if k != "attn_impl"})
     main.eval()
     c = ControlNetDiT(main, cond_in_channels=4, train_ctrl_only=True,
                       injection="modulate", null_cond="gaussian", attn_impl=impl)
-    ckd = torch.load("5script/results/v8_3stage/v8b/20260902-234912-v8b-s31-ctrl/checkpoints/0035000.pt",
+    ckd = torch.load("assets/results/v8_3stage/v8b/20260902-234912-v8b-s31-ctrl/checkpoints/0035000.pt",
                      map_location="cpu", weights_only=False)
     sd = {k: v for k, v in (ckd.get("ema") or ckd.get("ctrl")).items()
           if not k.startswith("main.") and not k.startswith("_orig_mod.main.")}

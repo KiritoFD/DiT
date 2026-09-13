@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-"""汇总 5script/results 下所有实验的 eval 曲线到 CSV + 收集基模 grid 素材。
+"""汇总 assets/results 下所有实验的 eval 曲线到 CSV + 收集基模 grid 素材。
 用法: python /tmp/summarize_evals.py
 输出: /tmp/evals_summary.csv
       /tmp/grid_s30_130k/  /tmp/grid_v8a_95k/  (gt+sample 对)
@@ -23,7 +23,7 @@ for res_dir in ['s21_fame_flow_v2', 's26_ctrl_gt_skel', 's29_ctrl_gt_skel_1px',
                 's30_dino_char_strong_pretrain', 's31_ctrl_gt_skel_1px',
                 's32_repa_finetune', 's32b_repa_strong', 's32c_chain',
                 'v8_3stage']:
-    rd = os.path.join('5script/results', res_dir)
+    rd = os.path.join('assets/results', res_dir)
     if not os.path.isdir(rd):
         continue
     # 统一找所有含 checkpoints 的 run 目录 (支持 <res>/<run>/ 与 <res>/<stage>/<run>/ 两层嵌套)
@@ -89,8 +89,8 @@ def pull_grid(src_dir, out_dir, n=8):
         got += 1
     print('grid', out_dir, got, 'pairs')
 
-s30_src = '5script/results/s30_dino_char_strong_pretrain/20260901-052520-s30-dino-char-strong-pretrain/checkpoints/eval_samples/step0130000'
-v8_src = '5script/results/v8_3stage/v8a/20260902-125615-v8a-s30-base/checkpoints/eval_samples/step0095000'
+s30_src = 'assets/results/s30_dino_char_strong_pretrain/20260901-052520-s30-dino-char-strong-pretrain/checkpoints/eval_samples/step0130000'
+v8_src = 'assets/results/v8_3stage/v8a/20260902-125615-v8a-s30-base/checkpoints/eval_samples/step0095000'
 pull_grid(s30_src, '/tmp/grid_s30_130k')
 pull_grid(v8_src, '/tmp/grid_v8a_95k')
 print('DONE')

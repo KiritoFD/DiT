@@ -270,5 +270,5 @@ def main(results_dir=None, poll_interval=10):
 
 
 if __name__ == "__main__":
-    rd = sys.argv[1] if len(sys.argv) > 1 else "5script/results/s10_b4_grey_clear"
+    rd = sys.argv[1] if len(sys.argv) > 1 else "assets/results/s10_b4_grey_clear"
     main(rd)

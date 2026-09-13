@@ -21,5 +21,5 @@ print(run("pkill -9 -f train_struct_probe_256; sleep 2; echo KILLED"))
 print(run("cd /root/Workspace/xy/DiT && tmux kill-session -t structnet 2>/dev/null; "
           "tmux new-session -d -s structnet '"
           "/opt/conda/bin/python tools/train_struct_probe_256.py "
-          "--csv 5script/train.csv --epochs 8 --batch-size 64 --num-threads 32 "
+          "--csv assets/train.csv --epochs 8 --batch-size 64 --num-threads 32 "
           "--log-every 10 > run_structnet.log 2>&1' && echo STARTED"))

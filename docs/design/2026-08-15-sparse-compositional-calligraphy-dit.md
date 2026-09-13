@@ -720,7 +720,7 @@ flowchart TD
 建议：
 
 ```text
-5script/results/compositional/
+assets/results/compositional/
   20260815-v3a-s2-subset-score-poe-from-v1-20k/
   20260815-v3b-s2-factorgraph-r4-from-v1-20k/
   20260815-v4-s2-r4-glyph-sdf-refstyle-k4/

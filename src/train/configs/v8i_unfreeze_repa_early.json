@@ -1,7 +1,7 @@
 {
   "_comment": "v8i: B 段组合实验 = 解冻主模型 + REPA 早期挂载。unfreeze_main=true (main_lr 3e-5) + w_repa_early=0.2 (warmup 2000) 同时在 B 段生效。把 v8d(base 提升到 0.5543) 与 v8h(ctrl 0.7651 且 base 不变) 两个已验证方向合一, 验证能否同时拿到 base 强化 + ctrl 高位 + 骨架对齐。起点 A_main_final.pt, train_controlnet.py。max_steps=100000 让 early_stop 自决(patience5+min_delta0.002), 预算按实测 ~7.9h 满跑。主模型解冻(除char表), char 表冻结。eval cfg 0.7。",
   "experiment_name": "v8i-unfreeze-repa-early",
-  "results_dir": "5script/results/v8_3stage/v8i",
+  "results_dir": "assets/results/v8_3stage/v8i",
 
   "model": "DiT-2Cond-S/2",
   "train_ctrl_only": true,
@@ -10,7 +10,7 @@
   "compile": true,
   "compile_mode": "default",
 
-  "csv": "5script/train_fame_clean_v8.csv",
+  "csv": "assets/train_fame_clean_v8.csv",
   "latent_shards_dir": "final_latents_fame_v8",
   "img_root": "final_imgs_fame_v8",
   "skel_root": "final_skel1_fame_v8",
@@ -76,7 +76,7 @@
   "early_stop_min_delta": 0.002,
   "early_stop_min_steps": 10000,
 
-  "gpu_eval_csv": "5script/eval_fame_strict_clean_v8.csv",
+  "gpu_eval_csv": "assets/eval_fame_strict_clean_v8.csv",
   "gpu_eval_every": 2500,
   "gpu_eval_n": 100,
   "gpu_eval_steps": 50,

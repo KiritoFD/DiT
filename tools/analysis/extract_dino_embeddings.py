@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 """在本地 GPU 上批量提取 DINO embedding，按 glyph (script×char) 平均聚合。
 
-输入: 5script/mccd_image_map.csv (62157 张图片映射)
+输入: assets/mccd_image_map.csv (62157 张图片映射)
 输出:
   - glyph_dino_embeddings.npy  (num_glyphs, 768)  按 glyph 平均后的 embedding
   - glyph_dino_index.json       glyph_id → row index
@@ -20,7 +20,7 @@ from collections import defaultdict
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.join(HERE, "..")
-MAP_CSV = os.path.join(ROOT, "5script", "mccd_image_map.csv")
+MAP_CSV = os.path.join(ROOT, "assets", "mccd_image_map.csv")
 OUT_DIR = os.path.join(ROOT, "pretrained_models", "dino_embeddings")
 os.makedirs(OUT_DIR, exist_ok=True)
 

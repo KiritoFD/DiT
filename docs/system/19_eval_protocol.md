@@ -36,7 +36,7 @@ CFG: 0.7 (骨架条件); 1.0 (纯 ID 条件)
 
 ### universal_metrics_daemon（自动指标）
 ```
-递归扫描 5script/results + results 全部 checkpoints/
+递归扫描 assets/results + results 全部 checkpoints/
   ├── eval_pending_ctrl_*.json → base/ctrl 对比指标
   └── eval_pending_*.json      → 预训练单图指标
 产出: eval_auto_*.json (next to ckpts)
@@ -69,5 +69,5 @@ CFG: 0.7 (骨架条件); 1.0 (纯 ID 条件)
 ## 5. 历史评测数字（不可跨口径对比）
 
 各代 eval 集难度递增、指标口径不同。跨口径对比只认可：
-`5script/eval_unified_20260829.csv`（s15/s17/s18/s19 统一评测）
+`assets/eval_unified_20260829.csv`（s15/s17/s18/s19 统一评测）
 和 v8 系列（eval_fame_strict_clean_v8 同口径）。

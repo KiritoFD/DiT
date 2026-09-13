@@ -2,9 +2,9 @@
   "_comment": "v9a-smoke: v9a REPA 预训练短冒烟 (300 步, batch64), 验证 REPA loss 真正加载 (train.py flow 禁用 w_repa 已修复)。仅 max_steps/batch/exp 与全量不同, 其余 v9a 配方。验证通过后跑 v9a_repa_pretrain.json 全量。",
   "experiment_name": "v9a-repa-smoke",
 
-  "results_dir": "5script/results/v9a_repa_pretrain_smoke",
+  "results_dir": "assets/results/v9a_repa_pretrain_smoke",
 
-  "data_csv": "5script/train_fame_clean_v8.csv",
+  "data_csv": "assets/train_fame_clean_v8.csv",
   "latent_shards_dir": "final_latents_fame_v8",
   "img_root": "final_imgs_fame_v8",
 

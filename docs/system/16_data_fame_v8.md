@@ -59,9 +59,9 @@ MCCD 原始 (62k+ 张, 1011 书家, 12 书体)
 | **`final_skel_latents_fame_1px_v8/`** | 1px 骨架 latents（20 shards） | **v8b ctrl 条件** |
 | `final_imgs_256/` | 共享 GT（REPA 等用） | 非 fame 训练 |
 | `final_imgs_256_v7backup/` | v7 清洗前备份 | 回滚 |
-| `5script/train_fame_clean_v8.csv` | v8 训练表（51,321） | v8 训练 |
-| `5script/eval_fame_strict_clean_v8.csv` | v8 评测集（500，严格凸包） | v8 eval |
-| `5script/all_experiments_eval_20260903.csv` | 全实验汇总（224 run） | 查询 |
+| `assets/train_fame_clean_v8.csv` | v8 训练表（51,321） | v8 训练 |
+| `assets/eval_fame_strict_clean_v8.csv` | v8 评测集（500，严格凸包） | v8 eval |
+| `assets/all_experiments_eval_20260903.csv` | 全实验汇总（224 run） | 查询 |
 | `archive_20260903/` | 清洗 manifest/指标 json | 溯源 |
 
 已删除（09-03 清理，被 v8 取代）：`fame.npz`、`final_latents_fame/`、

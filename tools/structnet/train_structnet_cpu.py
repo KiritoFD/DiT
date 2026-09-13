@@ -8,7 +8,7 @@ skel/canny 图, 目前靠 vae.decode(整图) 或像素侧整图监督。本小�
   - 给 latent 训练提供轻量结构监督 (替代/辅助 VAE decode)
   - 或作为 ControlNet 的结构条件来源
 
-数据 (5script/structnet/, mmap):
+数据 (assets/structnet/, mmap):
   latents.npy  f16 (N,4,32,32)
   skels.npy    u8  (N,256,256)  (0/255 -> 0/1)
   cannys.npy   u8  (N,256,256)
@@ -21,7 +21,7 @@ skel/canny 图, 目前靠 vae.decode(整图) 或像素侧整图监督。本小�
 
 用法:
   /opt/conda/bin/python tools/structnet/train_structnet_cpu.py \
-      --data-dir 5script/structnet --epochs 30 --batch-size 64
+      --data-dir assets/structnet --epochs 30 --batch-size 64
 """
 import os
 import sys
@@ -139,7 +139,7 @@ def iou_binary(pred, gt, thr=0.5):
 # ---------------------------------------------------------------------------
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--data-dir", default="5script/structnet")
+    ap.add_argument("--data-dir", default="assets/structnet")
     ap.add_argument("--epochs", type=int, default=30)
     ap.add_argument("--batch-size", type=int, default=64)
     ap.add_argument("--lr", type=float, default=1e-3)
@@ -149,7 +149,7 @@ def main():
     ap.add_argument("--val-split", type=float, default=0.99, help="前 val_split 训练, 后 1-p 验证")
     ap.add_argument("--skel-pos-weight", type=float, default=20.0,
                     help="skel 密度 ~1%, 正类权重补偿")
-    ap.add_argument("--out-dir", default="5script/results/structnet")
+    ap.add_argument("--out-dir", default="assets/results/structnet")
     ap.add_argument("--resume", default=None)
     args = ap.parse_args()
 

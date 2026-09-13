@@ -17,7 +17,7 @@ import numpy as np
 from PIL import Image
 
 BASE = '/root/Workspace/xy/DiT'
-CSV_PATH = os.path.join(BASE, '5script/train_top30_clean.csv')
+CSV_PATH = os.path.join(BASE, 'assets/train_top30_clean.csv')
 
 with open(CSV_PATH, 'r', encoding='utf-8') as f:
     rows = list(csv.DictReader(f))

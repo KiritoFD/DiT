@@ -7,8 +7,8 @@
   eval_stdskel_summary.csv  每 ckpt x 集汇总 (mean + P10/Q1/med/Q3/P90)
 
 用法:
-  python tools/eval/eval_stdskel_batch.py --results-dir 5script/results/v10b_stdskel_fame3 \
-      --sets seen:5script/eval_seen_v10.csv:10 strict:5script/eval_fame3_strict_clean_v9.csv:237
+  python tools/eval/eval_stdskel_batch.py --results-dir assets/results/v10b_stdskel_fame3 \
+      --sets seen:assets/eval_seen_v10.csv:10 strict:assets/eval_fame3_strict_clean_v9.csv:237
 """
 import argparse
 import csv
@@ -36,8 +36,8 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--results-dir", required=True)
     ap.add_argument("--sets", nargs="+",
-                    default=["seen:5script/eval_seen_v10.csv:10",
-                             "strict:5script/eval_fame3_strict_clean_v9.csv:237"])
+                    default=["seen:assets/eval_seen_v10.csv:10",
+                             "strict:assets/eval_fame3_strict_clean_v9.csv:237"])
     ap.add_argument("--cfg", type=float, default=0.7)
     ap.add_argument("--steps", type=int, default=50)
     ap.add_argument("--dit-batch", type=int, default=50)

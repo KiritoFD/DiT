@@ -94,7 +94,7 @@ def collect_remote():
     返回 (latest_log_path, log_content, eval_json_content, ckpt_dir)"""
     # Step 1: 找最新 log.txt
     latest = _ssh(
-        f"find {REMOTE_BASE}/5script/results -name log.txt 2>/dev/null "
+        f"find {REMOTE_BASE}/assets/results -name log.txt 2>/dev/null "
         f"| xargs ls -t 2>/dev/null | head -1", timeout=20)
     latest = latest.strip()
     if not latest:

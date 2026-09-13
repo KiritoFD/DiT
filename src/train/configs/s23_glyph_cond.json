@@ -3,10 +3,10 @@
   "_bugfix_note": "本模式依赖两处修复：(1) latent_dataset.py/dataset.py 的标准字形查询从失效的 v1(get_glyph_lookup, std_glyph_latent 目录不存在, fame 命中率 0.0%) 改为 v2(get_glyph_lookup_v2, std_glyph_latent_v2, 53.1%)；(2) train.py 调 prepare_eval_cache 时传入 use_glyph_cond，使 eval 侧同步喂 g——否则训练喂 g 而 eval 不喂，条件域不匹配会让指标失真为『该条件无效』。",
 
   "experiment_name": "s23-glyph-cond",
-  "data_csv": "5script/train_fame.csv",
+  "data_csv": "assets/train_fame.csv",
   "latent_shards_dir": "final_latents_fame",
   "img_root": "final_imgs_256",
-  "results_dir": "5script/results/s23_glyph_cond",
+  "results_dir": "assets/results/s23_glyph_cond",
 
   "model": "DiT-2Cond-S/2",
   "cond_mode": "2cond",
@@ -63,7 +63,7 @@
   "ckpt_keep": 0,
 
   "auto_eval": true,
-  "eval_csv": "5script/eval_fame_strict.csv",
+  "eval_csv": "assets/eval_fame_strict.csv",
   "eval_n": 500,
   "eval_steps": 25,
   "eval_cfg": 0.7,

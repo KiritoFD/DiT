@@ -3,8 +3,8 @@
 import subprocess
 HOST = "root@10.176.54.17"; PORT = "36430"
 cmd = ("echo '=== LOG (last 20) ==='; tail -20 /root/Workspace/xy/DiT/run_structnet.log; "
-       "echo '=== HISTORY ==='; cat /root/Workspace/xy/DiT/5script/results/structnet256/history.json 2>/dev/null; "
-       "echo '=== CKPT ==='; ls -la /root/Workspace/xy/DiT/5script/results/structnet256/*.pt 2>/dev/null; "
+       "echo '=== HISTORY ==='; cat /root/Workspace/xy/DiT/assets/results/structnet256/history.json 2>/dev/null; "
+       "echo '=== CKPT ==='; ls -la /root/Workspace/xy/DiT/assets/results/structnet256/*.pt 2>/dev/null; "
        "echo '=== PROC ==='; ps aux | grep train_struct_probe | grep -v grep | head -2; "
        "echo '=== CPU ==='; top -bn1 | head -5")
 r = subprocess.run(["ssh","-o","ConnectTimeout=25","-p",PORT,HOST,cmd],

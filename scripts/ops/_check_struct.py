@@ -51,8 +51,8 @@ for name, p in [("canny", cf), ("skel", sf)]:
 # ---- 3) 采样一个训练 batch 验证对齐 ----
 from latent_dataset import MCCDLatentDataset
 import pandas as pd
-df = pd.read_csv("5script/train_top6.csv")
-ds = MCCDLatentDataset(csv_file="5script/train_top6.csv", latent_shards_dir="final_latents",
+df = pd.read_csv("assets/train_top6.csv")
+ds = MCCDLatentDataset(csv_file="assets/train_top6.csv", latent_shards_dir="final_latents",
                        img_root="final_imgs_256", canny_root=None, skel_root=None,
                        load_canny=True, load_skel=True)
 b = ds[0]

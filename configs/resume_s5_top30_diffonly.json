@@ -1,8 +1,8 @@
 {
   "experiment_name": "s5-top30-diffonly-resume",
-  "data_csv": "5script/train_top30.csv",
+  "data_csv": "assets/train_top30.csv",
   "data_dir": "",
-  "results_dir": "5script/results/s5_2factor_top30",
+  "results_dir": "assets/results/s5_2factor_top30",
   "pretrained": null,
   "model": "DiT-2Cond-S/2",
   "cond_mode": "2cond",
@@ -46,7 +46,7 @@
   "preload": true,
   "preload_workers": 24,
   "auto_eval": true,
-  "eval_csv": "5script/eval100_top30.csv",
+  "eval_csv": "assets/eval100_top30.csv",
   "eval_n": 100,
   "eval_steps": 50,
   "eval_cfg": 4.0,
@@ -56,7 +56,7 @@
   "early_stop_metric": "ssim",
   "early_stop_patience": 6,
   "early_stop_min_steps": 30000,
-  "resume_full": "5script/results/s5_2factor_top30/20260817-100535-s5-2factor-top30-bigbatch/checkpoints/0070000.pt",
+  "resume_full": "assets/results/s5_2factor_top30/20260817-100535-s5-2factor-top30-bigbatch/checkpoints/0070000.pt",
   "latent_shards_dir": "final_latents",
   "img_root": "final_imgs_256",
   "skel_root": "final_skeleton"

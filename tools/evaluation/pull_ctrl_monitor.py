@@ -126,7 +126,7 @@ def pull_eval_jsons():
     cmd = ["ssh", "-o", "ConnectTimeout=25", "-o", "ServerAliveInterval=3",
            "-p", REMOTE_PORT, f"{REMOTE_USER}@{REMOTE_HOST}"]
     script = (
-        f"for d in {REMOTE_BASE}/5script/results/ctrl_skel/*/checkpoints; do "
+        f"for d in {REMOTE_BASE}/assets/results/ctrl_skel/*/checkpoints; do "
         f"  for f in $d/eval_auto_*.json; do "
         f"    if [ -f $f ]; then echo $f; fi; "
         f"  done; "

@@ -1,7 +1,7 @@
 """Aggregate all eval points from all experiments into results.csv.
 
 Sources:
-- For each series dir under 5script/results/<series>/<run>/:
+- For each series dir under assets/results/<series>/<run>/:
   - run/resolved_config.json (or run/checkpoints ckpt args / series config json)
   - run/checkpoints/eval_auto_*.json (each eval point)
   - run/checkpoints/cpu_eval_state.json (s6-style evals without json per point)
@@ -9,7 +9,7 @@ Sources:
 import os, json, sys, glob, csv, re
 
 ROOT = "/root/Workspace/xy/DiT"
-RESULTS = os.path.join(ROOT, "5script/results")
+RESULTS = os.path.join(ROOT, "assets/results")
 
 # ---- helpers ----
 def safe(d, *keys, default=None):

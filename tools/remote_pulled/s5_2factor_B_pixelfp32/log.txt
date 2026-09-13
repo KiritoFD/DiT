@@ -1,4 +1,4 @@
-[[34m2026-08-19 12:51:37[0m] Experiment directory created at 5script/results/s5_2factor_B_pixelfp32/20260819-125137-s5-2factor-B-pixelfp32
+[[34m2026-08-19 12:51:37[0m] Experiment directory created at assets/results/s5_2factor_B_pixelfp32/20260819-125137-s5-2factor-B-pixelfp32
 [[34m2026-08-19 12:51:39[0m] Building 2-Cond model: DiT-2Cond-B/2 (callig=1011, glyph/char=35130, fusion=factorized_add, dims=128/256, dropout=all:0.05, one:0.25, skel_head=False, glyph_cond=False, glyph_scale_init=0.4)
 [[34m2026-08-19 12:51:39[0m] [cond-head] reset adaLN/final_layer to std=0.02 (retain task-agnostic transformer engine, drop ImageNet class-condition coupling).
 [[34m2026-08-19 12:51:39[0m] Trainable Parameters: 138,967,329

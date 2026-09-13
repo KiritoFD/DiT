@@ -1,10 +1,10 @@
 #!/bin/bash
 cd /root/Workspace/xy/DiT
 echo "=== 全部 stdskel results 目录 (按时间) ==="
-ls -dt 5script/results/*stdskel* 2>/dev/null
+ls -dt assets/results/*stdskel* 2>/dev/null
 echo
 echo "=== 每个目录的 ckpt 数 / 最新 eval 点 ==="
-for d in $(ls -dt 5script/results/*stdskel* 2>/dev/null); do
+for d in $(ls -dt assets/results/*stdskel* 2>/dev/null); do
   n=$(ls $d/*/checkpoints/*.pt 2>/dev/null | wc -l)
   last_ckpt=$(ls $d/*/checkpoints/[0-9]*.pt 2>/dev/null | sed 's|.*/||; s|\.pt||' | sort -n | tail -1)
   ne=$(ls $d/*/checkpoints/eval_auto_*.json 2>/dev/null | wc -l)

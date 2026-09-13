@@ -5,8 +5,8 @@ import os, csv, json, sys, io
 sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
 
 MCCD_DIR = r"G:\GitHub\DiT\MCCD\MCCD\MCCD-Calligrapher\calligrapher_dataset"
-CALLIGS_JSON = r"G:\GitHub\DiT\5script\top30_calligs_clean.json"
-TRAIN_CSV = r"G:\GitHub\DiT\5script\train_top30_clean.csv"
+CALLIGS_JSON = r"G:\GitHub\DiT\assets\top30_calligs_clean.json"
+TRAIN_CSV = r"G:\GitHub\DiT\assets\train_top30_clean.csv"
 
 # script 名 → script_id
 SCRIPT_MAP = {"楷": 0, "篆": 1, "草": 2, "行": 3, "隶": 4}
@@ -97,7 +97,7 @@ glyphs = set((r["script_id"], r["character_id"]) for r in records)
 print(f"\nUnique glyphs (script×char): {len(glyphs)}")
 
 # 写映射 CSV
-out = r"G:\GitHub\DiT\5script\mccd_image_map.csv"
+out = r"G:\GitHub\DiT\assets\mccd_image_map.csv"
 with open(out, "w", encoding="utf-8", newline="") as f:
     w = csv.DictWriter(f, fieldnames=["filepath","character","script_name","script_id",
                                        "calligrapher","calligrapher_id","character_id","glyph_id"])

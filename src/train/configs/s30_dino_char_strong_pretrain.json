@@ -1,10 +1,10 @@
 {
   "_comment": "s30 DINO 真迹字表预训练（S21 骨架 + char 强化）：回到 S21 胜出的 DINO 真迹字表(freeze) + char_proj=mlp；调 drop 让模型更多学 char 内容分(cond_drop_which_glyph_prob=0.85 → drop-one 时 85% 保 char)；use_ot=true；数据用清洗版 train_fame_clean.csv + final_latents_fame_clean；eval 用 eval_fame_strict_clean.csv。默认早停(ssim_lpips, patience 5, min 20000)。",
   "experiment_name": "s30-dino-char-strong-pretrain",
-  "data_csv": "5script/train_fame_clean.csv",
+  "data_csv": "assets/train_fame_clean.csv",
   "latent_shards_dir": "final_latents_fame_clean",
   "img_root": "final_imgs_256",
-  "results_dir": "5script/results/s30_dino_char_strong_pretrain",
+  "results_dir": "assets/results/s30_dino_char_strong_pretrain",
 
   "model": "DiT-2Cond-S/2",
   "cond_mode": "2cond",
@@ -61,7 +61,7 @@
   "ckpt_keep": 0,
 
   "auto_eval": true,
-  "eval_csv": "5script/eval_fame_strict_clean.csv",
+  "eval_csv": "assets/eval_fame_strict_clean.csv",
   "eval_n": 500,
   "eval_steps": 25,
   "eval_cfg": 0.7,

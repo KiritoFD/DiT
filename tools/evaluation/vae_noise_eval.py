@@ -15,7 +15,7 @@ sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 torch.set_num_threads(32)
 
 BASE = "/root/Workspace/xy/DiT"
-CSV_PATH = os.path.join(BASE, "5script", "eval100_top30_clean.csv")
+CSV_PATH = os.path.join(BASE, "assets", "eval100_top30_clean.csv")
 IMG_ROOT = BASE
 OUT_DIR = os.path.join(BASE, "tools", "vae_noise_results")
 os.makedirs(OUT_DIR, exist_ok=True)

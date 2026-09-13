@@ -31,7 +31,7 @@
 ### 2.1 干净 41 词表 (非重映射补丁)
 
 - `src/utils/callig_map.py`: raw calligrapher_id → 连续 0..40, 持久化 json
-  `5script/callig_id_map.json` (train/eval/inference 三端共用)。
+  `assets/callig_id_map.json` (train/eval/inference 三端共用)。
 - 数据层 (`latent_dataset.py` / `dataset.py`) 查表映射; `make_eval_cache` 加
   `callig_id_map` 参数 (worker / 批量评测器都传)。
 - `num_calligraphers` 自动收紧为词表长度 (41), 表 42 行 = 41 + CFG null。
@@ -43,7 +43,7 @@
 - `tools/pretrain_callig_emb.py`: SupCon (同书家正对, temp 0.07, logsumexp
   稳定实现) + DINO CLS 质心锚定 (A·E[y] ↔ centroid[y], 让 embedding 继承
   真实风格语义)。
-- DINO 特征: `5script/dino_cls_train.npz` (51321×384, 含 raw id, 覆盖 41/41
+- DINO 特征: `assets/dino_cls_train.npz` (51321×384, 含 raw id, 覆盖 41/41
   书家 min 268 样本)。
 - 结果: pairwise cos 0.323 → mean 0.024 / |0.073| / range [-0.24, 0.29] ✓
 - 接入: `--callig-emb-pretrained` 加载前 41 行 + `--freeze-callig-table`

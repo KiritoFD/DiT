@@ -1,13 +1,13 @@
 {
   "_comment": "v8c: s32-v8 REPA 强化 (基于 v8b ctrl best)。关键参数全量固化: compile=true, w_repa=0.3 + L2(8,11), max_steps=20000 (短促, 防 s32c 90k 的 base 崩)。数据全切 v8 base. main-ckpt/ctrl-ckpt 由 runner 传 (唯一保留的 CLI)。主模型解冻, char 表冻结。eval cfg 0.7。",
   "experiment_name": "v8c-s32-repa",
-  "results_dir": "5script/results/v8_3stage/v8c",
+  "results_dir": "assets/results/v8_3stage/v8c",
 
   "model": "DiT-2Cond-S/2",
   "compile": true,
   "compile_mode": "default",
 
-  "csv": "5script/train_fame_clean_v8.csv",
+  "csv": "assets/train_fame_clean_v8.csv",
   "latent_shards_dir": "final_latents_fame_v8",
   "img_root": "final_imgs_fame_v8",
   "skel_root": "final_skel1_fame_v8",
@@ -72,7 +72,7 @@
   "use_checkpoint": false,
   "seed": 0,
 
-  "gpu_eval_csv": "5script/eval_fame_strict_clean_v8.csv",
+  "gpu_eval_csv": "assets/eval_fame_strict_clean_v8.csv",
   "gpu_eval_every": 2500,
   "gpu_eval_n": 100,
   "gpu_eval_steps": 50,

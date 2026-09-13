@@ -13,7 +13,7 @@ from datetime import datetime
 
 REMOTE = "4090"
 REMOTE_ROOT = "/root/Workspace/xy/DiT"
-RESULTS_ROOT = f"{REMOTE_ROOT}/5script/results"
+RESULTS_ROOT = f"{REMOTE_ROOT}/assets/results"
 ANSI_RE = re.compile(r"\x1b\[[0-9;]*m")
 
 

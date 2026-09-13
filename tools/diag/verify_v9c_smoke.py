@@ -21,13 +21,13 @@ sys.path.insert(0, ROOT)
 sys.stdout.reconfigure(encoding="utf-8")
 
 SMOKE = sys.argv[1] if len(sys.argv) > 1 else sorted(
-    glob.glob("5script/results/_smoke_v9c/*/checkpoints/0000005.pt"))[-1]
+    glob.glob("assets/results/_smoke_v9c/*/checkpoints/0000005.pt"))[-1]
 V9A = sys.argv[2] if len(sys.argv) > 2 else sorted(
-    glob.glob("5script/results/v9a_repa_pretrain/*/checkpoints/eval_auto_*.json"))
+    glob.glob("assets/results/v9a_repa_pretrain/*/checkpoints/eval_auto_*.json"))
 V9A = sys.argv[2] if len(sys.argv) > 2 else None
 if V9A is None:
     best, best_step, rd = -1, "", None
-    for f in glob.glob("5script/results/v9a_repa_pretrain/*/checkpoints/eval_auto_*.json"):
+    for f in glob.glob("assets/results/v9a_repa_pretrain/*/checkpoints/eval_auto_*.json"):
         d = json.load(open(f, encoding="utf-8"))
         if d.get("ssim", -1) > best:
             best, best_step = d["ssim"], os.path.basename(f).replace("eval_auto_", "").replace(".json", "")

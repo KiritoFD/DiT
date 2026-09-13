@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-"""全量 VAE 本底噪声监测: 对 5script/train_top30_clean.csv 的全部 106,345 张图,
+"""全量 VAE 本底噪声监测: 对 assets/train_top30_clean.csv 的全部 106,345 张图,
 用 4 种 VAE×patch 组合 encode→decode, 统计 MSE/SSIM。
 组合:
   1. kl-f4 + patch4  (当前 s9 使用): downscale=4, latent_ch=3, scale=0.102079
@@ -27,7 +27,7 @@ from concurrent.futures import ThreadPoolExecutor
 
 # ── 配置 ──
 BASE = "/root/Workspace/xy/DiT"
-CSV_PATH = os.path.join(BASE, "5script", "train_top30_clean.csv")
+CSV_PATH = os.path.join(BASE, "assets", "train_top30_clean.csv")
 IMG_ROOT = BASE  # CSV 里是 final_imgs_256/xxx.png
 BATCH_SIZE = 256  # CPU batch (大 batch 更高效)
 DEVICE = "cpu"

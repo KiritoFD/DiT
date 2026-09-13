@@ -190,7 +190,7 @@ train loss 全程持平在 0.348–0.353（与 s21 收尾一致），没有可�
 - 配置：`src/train/configs/s22_char_embed_only.json`
 - 代码改动：`src/train/train.py`（`--train-only-char-embed`）、
   `src/loss/losses.py`（DINO 路径修复）
-- 结果：`5script/glyph_retrieval_calib.json`、`5script/results/s22_char_embed_only/`
+- 结果：`assets/glyph_retrieval_calib.json`、`assets/results/s22_char_embed_only/`
 
 ## 8. 附：fame 数据分布（_probe_fame.py）
 

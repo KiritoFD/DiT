@@ -126,7 +126,7 @@ src/model/__init__.py,file,0.001,1,2.0,KEEP,src/model 源码
 src/utils/__init__.py,file,0.001,1,0.1,KEEP,src/utils 源码
 src/eval/__init__.py,file,0.0,1,2.4,KEEP,src/eval 源码
 src/train/__init__.py,file,0.0,1,2.5,KEEP,src/train 源码
-5script/,dir,244872.83,255477,0.0,REVIEW,需人工判断
+assets/,dir,244872.83,255477,0.0,REVIEW,需人工判断
 results/,dir,40610.58,82144,7.5,REVIEW,需人工判断
 MCCD.7z,file,22644.091,1,19.4,REVIEW,需人工判断
 dataset.zip,file,13191.812,1,18.4,REVIEW,需人工判断
@@ -213,7 +213,7 @@ labels/,dir,0.33,1,15.6,REVIEW,需人工判断
 train_s8_structv2_b8all.log,file,0.327,1,9.1,REVIEW,需人工判断
 exp_xl_skelhead_c2.log,file,0.305,1,14.4,REVIEW,需人工判断
 eval_latest.png,file,0.276,1,15.6,REVIEW,需人工判断
-exp_s_5script.log,file,0.275,1,15.4,REVIEW,需人工判断
+exp_s_assets.log,file,0.275,1,15.4,REVIEW,需人工判断
 train_factorized_v1_ema_warmup.log,file,0.244,1,15.3,REVIEW,需人工判断
 test5.csv,file,0.233,1,15.5,REVIEW,需人工判断
 exp_s2_glyphmid.log,file,0.216,1,14.2,REVIEW,需人工判断
@@ -331,7 +331,7 @@ watchdog_out.log,file,0.006,1,15.8,REVIEW,需人工判断
 _stats_fontcov_remote.py,file,0.005,1,1.1,REVIEW,需人工判断
 dict.txt,file,0.005,1,18.4,REVIEW,需人工判断
 fast100.csv,file,0.005,1,15.5,REVIEW,需人工判断
-fast100_5script.csv,file,0.005,1,15.5,REVIEW,需人工判断
+fast100_assets.csv,file,0.005,1,15.5,REVIEW,需人工判断
 gen_canny_skel.py,file,0.005,1,17.0,REVIEW,需人工判断
 midclean_chars_li.txt,file,0.005,1,2.1,REVIEW,需人工判断
 probe_b16.log,file,0.005,1,15.1,REVIEW,需人工判断
@@ -385,7 +385,7 @@ diag_primary.ps1,file,0.002,1,18.4,REVIEW,需人工判断
 encode_klf4.log,file,0.002,1,7.4,REVIEW,需人工判断
 exp_s2_fromscratch_2factor_kailishu.json,file,0.002,1,14.2,REVIEW,需人工判断
 exp_s2_fromscratch_glyphmid_kailishu.json,file,0.002,1,14.2,REVIEW,需人工判断
-exp_s5_2factor_5script.json,file,0.002,1,14.1,REVIEW,需人工判断
+exp_s5_2factor_assets.json,file,0.002,1,14.1,REVIEW,需人工判断
 exp_s5_2factor_B_canny05_pixelsk.json,file,0.002,1,12.5,REVIEW,需人工判断
 exp_s5_2factor_B_latent.json,file,0.002,1,13.4,REVIEW,需人工判断
 exp_s5_2factor_B_latentstruct_pixelsk_opt.json,file,0.002,1,13.0,REVIEW,需人工判断
@@ -401,11 +401,11 @@ exp_s7_ramp_b8all.json,file,0.002,1,9.5,REVIEW,需人工判断
 exp_s8_structv2_b32sub8.json,file,0.002,1,9.1,REVIEW,需人工判断
 exp_s8_structv2_b8all.json,file,0.002,1,9.1,REVIEW,需人工判断
 exp_s9_skelonly.json,file,0.002,1,9.1,REVIEW,需人工判断
-exp_s_5script_factorized_latent_struct_v2.json,file,0.002,1,15.3,REVIEW,需人工判断
-exp_s_5script_v3a_XL_skelhead.json,file,0.002,1,14.5,REVIEW,需人工判断
-exp_s_5script_v3a_glyph_XL_highdim_cs.json,file,0.002,1,14.6,REVIEW,需人工判断
-exp_s_5script_v3a_glyph_XL_lora_cs.json,file,0.002,1,15.1,REVIEW,需人工判断
-exp_s_5script_v3a_glyph_cs.json,file,0.002,1,15.1,REVIEW,需人工判断
+exp_s_assets_factorized_latent_struct_v2.json,file,0.002,1,15.3,REVIEW,需人工判断
+exp_s_assets_v3a_XL_skelhead.json,file,0.002,1,14.5,REVIEW,需人工判断
+exp_s_assets_v3a_glyph_XL_highdim_cs.json,file,0.002,1,14.6,REVIEW,需人工判断
+exp_s_assets_v3a_glyph_XL_lora_cs.json,file,0.002,1,15.1,REVIEW,需人工判断
+exp_s_assets_v3a_glyph_cs.json,file,0.002,1,15.1,REVIEW,需人工判断
 exp_v3b_XL_glyphcond_kailishu.json,file,0.002,1,14.4,REVIEW,需人工判断
 exp_v3c_XL_glyphcond_midstep_kailishu.json,file,0.002,1,14.3,REVIEW,需人工判断
 gpu_eval_final.log,file,0.002,1,7.7,REVIEW,需人工判断
@@ -415,7 +415,7 @@ logs_evalmetrics_s11.txt,file,0.002,1,6.1,REVIEW,需人工判断
 make_latent_shards.py,file,0.002,1,17.0,REVIEW,需人工判断
 monitor_dwm.ps1,file,0.002,1,18.4,REVIEW,需人工判断
 probe_factorized_nostruct_b224_mem.log,file,0.002,1,15.4,REVIEW,需人工判断
-probe_s_5script_factorized_latent_struct_b224.json,file,0.002,1,15.3,REVIEW,需人工判断
+probe_s_assets_factorized_latent_struct_b224.json,file,0.002,1,15.3,REVIEW,需人工判断
 resize_256.py,file,0.002,1,17.0,REVIEW,需人工判断
 resume_s5_top30_diffonly.json,file,0.002,1,7.5,REVIEW,需人工判断
 resume_s6_diffonly.json,file,0.002,1,10.2,REVIEW,需人工判断
@@ -477,9 +477,9 @@ dwm_monitor_log.csv,file,0.001,1,18.4,REVIEW,需人工判断
 eval_B_curves.log,file,0.001,1,15.5,REVIEW,需人工判断
 eval_all.nohup,file,0.001,1,17.6,REVIEW,需人工判断
 exp_px_s_scratch.json,file,0.001,1,8.4,REVIEW,需人工判断
-exp_s_5script.json,file,0.001,1,15.5,REVIEW,需人工判断
-exp_s_5script_factorized_v1.json,file,0.001,1,15.4,REVIEW,需人工判断
-exp_s_5script_v3a_glyph.json,file,0.001,1,15.2,REVIEW,需人工判断
+exp_s_assets.json,file,0.001,1,15.5,REVIEW,需人工判断
+exp_s_assets_factorized_v1.json,file,0.001,1,15.4,REVIEW,需人工判断
+exp_s_assets_v3a_glyph.json,file,0.001,1,15.2,REVIEW,需人工判断
 exp_s_scratch.json,file,0.001,1,15.5,REVIEW,需人工判断
 exp_struct_skel_L.json,file,0.001,1,8.2,REVIEW,需人工判断
 exp_struct_skel_S.json,file,0.001,1,8.2,REVIEW,需人工判断
@@ -506,7 +506,7 @@ preprocess_256.py,file,0.001,1,17.0,REVIEW,需人工判断
 probe_batch.sh,file,0.001,1,4.5,REVIEW,需人工判断
 probe_env.sh,file,0.001,1,18.4,REVIEW,需人工判断
 probe_factorized_nostruct_b224.log,file,0.001,1,15.4,REVIEW,需人工判断
-probe_s_5script_factorized_struct_b64.json,file,0.001,1,15.4,REVIEW,需人工判断
+probe_s_assets_factorized_struct_b64.json,file,0.001,1,15.4,REVIEW,需人工判断
 probe_v3a_b16.json,file,0.001,1,15.1,REVIEW,需人工判断
 probe_v3a_canny_skel.json,file,0.001,1,15.2,REVIEW,需人工判断
 probe_v3a_canny_skel_b8.json,file,0.001,1,15.2,REVIEW,需人工判断

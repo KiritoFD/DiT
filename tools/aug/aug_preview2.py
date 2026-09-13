@@ -8,7 +8,7 @@ import sys
 from PIL import Image, ImageDraw, ImageFont
 
 ROOT = "/root/Workspace/xy/DiT"
-SRC_CSV = f"{ROOT}/5script/train_fame3_clean_v8.csv"
+SRC_CSV = f"{ROOT}/assets/train_fame3_clean_v8.csv"
 sys.stdout.reconfigure(encoding="utf-8")
 sys.path.insert(0, f"{ROOT}/tools/aug")
 from aug_renders_v2 import make_variant  # noqa: E402

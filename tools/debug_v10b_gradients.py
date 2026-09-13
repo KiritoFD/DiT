@@ -31,7 +31,7 @@ def main():
     ap.add_argument("--ckpt", required=True)
     ap.add_argument("--n-batch", type=int, default=4)
     ap.add_argument("--batch", type=int, default=16)
-    ap.add_argument("--out", default="5script/results/v10b_debug_grad.json")
+    ap.add_argument("--out", default="assets/results/v10b_debug_grad.json")
     args = ap.parse_args()
 
     dev = torch.device("cuda")

@@ -1,9 +1,9 @@
-[[34m2026-08-15 13:10:17[0m] Experiment directory created at 5script/results/exp_s_5script/20260815-131017-DiT-3Cond-S-2
+[[34m2026-08-15 13:10:17[0m] Experiment directory created at assets/results/exp_s_assets/20260815-131017-DiT-3Cond-S-2
 [[34m2026-08-15 13:10:17[0m] Building 3-Cond model: DiT-3Cond-S/2 (callig=1011, script=5, char=7026)
 [[34m2026-08-15 13:10:17[0m] Trainable Parameters: 36,160,544
 [[34m2026-08-15 13:10:17[0m] Frozen Parameters: 98,304 (trainable ratio: 99.73%)
 [[34m2026-08-15 13:10:18[0m] Loading VAE from local path: pretrained_models/sd-vae-ft-ema
-[[34m2026-08-15 13:10:18[0m] Preparing auto-eval cache (csv=5script/fast100.csv, n=100) ...
+[[34m2026-08-15 13:10:18[0m] Preparing auto-eval cache (csv=assets/fast100.csv, n=100) ...
 [[34m2026-08-15 13:10:19[0m] Auto-eval cache ready (free-sampling mode).
 [[34m2026-08-15 13:10:19[0m] DiT Parameters: 36,258,848
 [[34m2026-08-15 13:10:23[0m] Using latent-cached dataset (skip on-the-fly VAE encode). preload=ON
@@ -61,7 +61,7 @@
 [[34m2026-08-15 13:14:52[0m] (step=0000960) Total: 0.1117 | Diff: 0.1117 | Canny: raw 0.0000 x 0.00 = 0.0000 | Skel: raw 0.0000 x 0.00 = 0.0000 | REPA: raw 0.0000 x 0.00 = 0.0000 | Steps/Sec: 3.59 | Mem: 0.88G/19.10G
 [[34m2026-08-15 13:14:58[0m] (step=0000980) Total: 0.1094 | Diff: 0.1094 | Canny: raw 0.0000 x 0.00 = 0.0000 | Skel: raw 0.0000 x 0.00 = 0.0000 | REPA: raw 0.0000 x 0.00 = 0.0000 | Steps/Sec: 3.59 | Mem: 0.88G/19.10G
 [[34m2026-08-15 13:15:03[0m] (step=0001000) Total: 0.1039 | Diff: 0.1039 | Canny: raw 0.0000 x 0.00 = 0.0000 | Skel: raw 0.0000 x 0.00 = 0.0000 | REPA: raw 0.0000 x 0.00 = 0.0000 | Steps/Sec: 3.59 | Mem: 0.88G/19.10G
-[[34m2026-08-15 13:15:04[0m] Saved checkpoint to 5script/results/exp_s_5script/20260815-131017-DiT-3Cond-S-2/checkpoints/0001000.pt
+[[34m2026-08-15 13:15:04[0m] Saved checkpoint to assets/results/exp_s_assets/20260815-131017-DiT-3Cond-S-2/checkpoints/0001000.pt
 [[34m2026-08-15 13:15:14[0m] [auto-eval] step 1000: free-sampling MSE=1.73530 SSIM=0.3234
 [[34m2026-08-15 13:15:20[0m] (step=0001020) Total: 0.1100 | Diff: 0.1100 | Canny: raw 0.0000 x 0.00 = 0.0000 | Skel: raw 0.0000 x 0.00 = 0.0000 | REPA: raw 0.0000 x 0.00 = 0.0000 | Steps/Sec: 1.23 | Mem: 0.88G/19.10G
 [[34m2026-08-15 13:15:25[0m] (step=0001040) Total: 0.1077 | Diff: 0.1077 | Canny: raw 0.0000 x 0.00 = 0.0000 | Skel: raw 0.0000 x 0.00 = 0.0000 | REPA: raw 0.0000 x 0.00 = 0.0000 | Steps/Sec: 3.58 | Mem: 0.88G/19.10G
@@ -115,7 +115,7 @@
 [[34m2026-08-15 13:19:48[0m] (step=0001980) Total: 0.0961 | Diff: 0.0961 | Canny: raw 0.0000 x 0.00 = 0.0000 | Skel: raw 0.0000 x 0.00 = 0.0000 | REPA: raw 0.0000 x 0.00 = 0.0000 | Steps/Sec: 3.59 | Mem: 0.88G/19.10G
 [[34m2026-08-15 13:19:49[0m] Beginning epoch 3...
 [[34m2026-08-15 13:19:55[0m] (step=0002000) Total: 0.0981 | Diff: 0.0981 | Canny: raw 0.0000 x 0.00 = 0.0000 | Skel: raw 0.0000 x 0.00 = 0.0000 | REPA: raw 0.0000 x 0.00 = 0.0000 | Steps/Sec: 3.04 | Mem: 0.88G/19.10G
-[[34m2026-08-15 13:19:56[0m] Saved checkpoint to 5script/results/exp_s_5script/20260815-131017-DiT-3Cond-S-2/checkpoints/0002000.pt
+[[34m2026-08-15 13:19:56[0m] Saved checkpoint to assets/results/exp_s_assets/20260815-131017-DiT-3Cond-S-2/checkpoints/0002000.pt
 [[34m2026-08-15 13:20:05[0m] [auto-eval] step 2000: free-sampling MSE=1.47596 SSIM=0.3311
 [[34m2026-08-15 13:20:11[0m] (step=0002020) Total: 0.0988 | Diff: 0.0988 | Canny: raw 0.0000 x 0.00 = 0.0000 | Skel: raw 0.0000 x 0.00 = 0.0000 | REPA: raw 0.0000 x 0.00 = 0.0000 | Steps/Sec: 1.26 | Mem: 0.88G/19.10G
 [[34m2026-08-15 13:20:17[0m] (step=0002040) Total: 0.0944 | Diff: 0.0944 | Canny: raw 0.0000 x 0.00 = 0.0000 | Skel: raw 0.0000 x 0.00 = 0.0000 | REPA: raw 0.0000 x 0.00 = 0.0000 | Steps/Sec: 3.58 | Mem: 0.88G/19.10G
@@ -168,7 +168,7 @@
 [[34m2026-08-15 13:24:34[0m] (step=0002960) Total: 0.0861 | Diff: 0.0861 | Canny: raw 0.0000 x 0.00 = 0.0000 | Skel: raw 0.0000 x 0.00 = 0.0000 | REPA: raw 0.0000 x 0.00 = 0.0000 | Steps/Sec: 3.58 | Mem: 0.88G/19.10G
 [[34m2026-08-15 13:24:40[0m] (step=0002980) Total: 0.0918 | Diff: 0.0918 | Canny: raw 0.0000 x 0.00 = 0.0000 | Skel: raw 0.0000 x 0.00 = 0.0000 | REPA: raw 0.0000 x 0.00 = 0.0000 | Steps/Sec: 3.58 | Mem: 0.88G/19.10G
 [[34m2026-08-15 13:24:46[0m] (step=0003000) Total: 0.0926 | Diff: 0.0926 | Canny: raw 0.0000 x 0.00 = 0.0000 | Skel: raw 0.0000 x 0.00 = 0.0000 | REPA: raw 0.0000 x 0.00 = 0.0000 | Steps/Sec: 3.58 | Mem: 0.88G/19.10G
-[[34m2026-08-15 13:24:46[0m] Saved checkpoint to 5script/results/exp_s_5script/20260815-131017-DiT-3Cond-S-2/checkpoints/0003000.pt
+[[34m2026-08-15 13:24:46[0m] Saved checkpoint to assets/results/exp_s_assets/20260815-131017-DiT-3Cond-S-2/checkpoints/0003000.pt
 [[34m2026-08-15 13:24:56[0m] [auto-eval] step 3000: free-sampling MSE=1.13611 SSIM=0.4519
 [[34m2026-08-15 13:25:02[0m] (step=0003020) Total: 0.0916 | Diff: 0.0916 | Canny: raw 0.0000 x 0.00 = 0.0000 | Skel: raw 0.0000 x 0.00 = 0.0000 | REPA: raw 0.0000 x 0.00 = 0.0000 | Steps/Sec: 1.25 | Mem: 0.88G/19.10G
 [[34m2026-08-15 13:25:07[0m] (step=0003040) Total: 0.0895 | Diff: 0.0895 | Canny: raw 0.0000 x 0.00 = 0.0000 | Skel: raw 0.0000 x 0.00 = 0.0000 | REPA: raw 0.0000 x 0.00 = 0.0000 | Steps/Sec: 3.59 | Mem: 0.88G/19.10G
@@ -222,7 +222,7 @@
 [[34m2026-08-15 13:29:25[0m] Beginning epoch 6...
 [[34m2026-08-15 13:29:31[0m] (step=0003980) Total: 0.0888 | Diff: 0.0888 | Canny: raw 0.0000 x 0.00 = 0.0000 | Skel: raw 0.0000 x 0.00 = 0.0000 | REPA: raw 0.0000 x 0.00 = 0.0000 | Steps/Sec: 3.01 | Mem: 0.88G/19.10G
 [[34m2026-08-15 13:29:37[0m] (step=0004000) Total: 0.0889 | Diff: 0.0889 | Canny: raw 0.0000 x 0.00 = 0.0000 | Skel: raw 0.0000 x 0.00 = 0.0000 | REPA: raw 0.0000 x 0.00 = 0.0000 | Steps/Sec: 3.58 | Mem: 0.88G/19.10G
-[[34m2026-08-15 13:29:38[0m] Saved checkpoint to 5script/results/exp_s_5script/20260815-131017-DiT-3Cond-S-2/checkpoints/0004000.pt
+[[34m2026-08-15 13:29:38[0m] Saved checkpoint to assets/results/exp_s_assets/20260815-131017-DiT-3Cond-S-2/checkpoints/0004000.pt
 [[34m2026-08-15 13:29:47[0m] [auto-eval] step 4000: free-sampling MSE=1.28409 SSIM=0.3503
 [[34m2026-08-15 13:29:53[0m] (step=0004020) Total: 0.0882 | Diff: 0.0882 | Canny: raw 0.0000 x 0.00 = 0.0000 | Skel: raw 0.0000 x 0.00 = 0.0000 | REPA: raw 0.0000 x 0.00 = 0.0000 | Steps/Sec: 1.25 | Mem: 0.88G/19.10G
 [[34m2026-08-15 13:29:59[0m] (step=0004040) Total: 0.0859 | Diff: 0.0859 | Canny: raw 0.0000 x 0.00 = 0.0000 | Skel: raw 0.0000 x 0.00 = 0.0000 | REPA: raw 0.0000 x 0.00 = 0.0000 | Steps/Sec: 3.58 | Mem: 0.88G/19.10G
@@ -275,7 +275,7 @@
 [[34m2026-08-15 13:34:17[0m] (step=0004960) Total: 0.0830 | Diff: 0.0830 | Canny: raw 0.0000 x 0.00 = 0.0000 | Skel: raw 0.0000 x 0.00 = 0.0000 | REPA: raw 0.0000 x 0.00 = 0.0000 | Steps/Sec: 3.58 | Mem: 0.88G/19.10G
 [[34m2026-08-15 13:34:22[0m] (step=0004980) Total: 0.0857 | Diff: 0.0857 | Canny: raw 0.0000 x 0.00 = 0.0000 | Skel: raw 0.0000 x 0.00 = 0.0000 | REPA: raw 0.0000 x 0.00 = 0.0000 | Steps/Sec: 3.58 | Mem: 0.88G/19.10G
 [[34m2026-08-15 13:34:28[0m] (step=0005000) Total: 0.0882 | Diff: 0.0882 | Canny: raw 0.0000 x 0.00 = 0.0000 | Skel: raw 0.0000 x 0.00 = 0.0000 | REPA: raw 0.0000 x 0.00 = 0.0000 | Steps/Sec: 3.58 | Mem: 0.88G/19.10G
-[[34m2026-08-15 13:34:29[0m] Saved checkpoint to 5script/results/exp_s_5script/20260815-131017-DiT-3Cond-S-2/checkpoints/0005000.pt
+[[34m2026-08-15 13:34:29[0m] Saved checkpoint to assets/results/exp_s_assets/20260815-131017-DiT-3Cond-S-2/checkpoints/0005000.pt
 [[34m2026-08-15 13:34:38[0m] [auto-eval] step 5000: free-sampling MSE=1.14918 SSIM=0.4067
 [[34m2026-08-15 13:34:44[0m] (step=0005020) Total: 0.0867 | Diff: 0.0867 | Canny: raw 0.0000 x 0.00 = 0.0000 | Skel: raw 0.0000 x 0.00 = 0.0000 | REPA: raw 0.0000 x 0.00 = 0.0000 | Steps/Sec: 1.24 | Mem: 0.88G/19.10G
 [[34m2026-08-15 13:34:49[0m] (step=0005040) Total: 0.0846 | Diff: 0.0846 | Canny: raw 0.0000 x 0.00 = 0.0000 | Skel: raw 0.0000 x 0.00 = 0.0000 | REPA: raw 0.0000 x 0.00 = 0.0000 | Steps/Sec: 3.58 | Mem: 0.88G/19.10G
@@ -535,7 +535,7 @@
 [[34m2026-08-15 13:57:51[0m] (step=0009960) Total: 0.0824 | Diff: 0.0824 | Canny: raw 0.0000 x 0.00 = 0.0000 | Skel: raw 0.0000 x 0.00 = 0.0000 | REPA: raw 0.0000 x 0.00 = 0.0000 | Steps/Sec: 3.58 | Mem: 0.88G/19.10G
 [[34m2026-08-15 13:57:57[0m] (step=0009980) Total: 0.0827 | Diff: 0.0827 | Canny: raw 0.0000 x 0.00 = 0.0000 | Skel: raw 0.0000 x 0.00 = 0.0000 | REPA: raw 0.0000 x 0.00 = 0.0000 | Steps/Sec: 3.58 | Mem: 0.88G/19.10G
 [[34m2026-08-15 13:58:02[0m] (step=0010000) Total: 0.0794 | Diff: 0.0794 | Canny: raw 0.0000 x 0.00 = 0.0000 | Skel: raw 0.0000 x 0.00 = 0.0000 | REPA: raw 0.0000 x 0.00 = 0.0000 | Steps/Sec: 3.58 | Mem: 0.88G/19.10G
-[[34m2026-08-15 13:58:03[0m] Saved checkpoint to 5script/results/exp_s_5script/20260815-131017-DiT-3Cond-S-2/checkpoints/0010000.pt
+[[34m2026-08-15 13:58:03[0m] Saved checkpoint to assets/results/exp_s_assets/20260815-131017-DiT-3Cond-S-2/checkpoints/0010000.pt
 [[34m2026-08-15 13:58:13[0m] [auto-eval] step 10000: free-sampling MSE=0.90140 SSIM=0.5147
 [[34m2026-08-15 13:58:19[0m] (step=0010020) Total: 0.0809 | Diff: 0.0809 | Canny: raw 0.0000 x 0.00 = 0.0000 | Skel: raw 0.0000 x 0.00 = 0.0000 | REPA: raw 0.0000 x 0.00 = 0.0000 | Steps/Sec: 1.24 | Mem: 0.88G/19.10G
 [[34m2026-08-15 13:58:24[0m] (step=0010040) Total: 0.0779 | Diff: 0.0779 | Canny: raw 0.0000 x 0.00 = 0.0000 | Skel: raw 0.0000 x 0.00 = 0.0000 | REPA: raw 0.0000 x 0.00 = 0.0000 | Steps/Sec: 3.58 | Mem: 0.88G/19.10G
@@ -794,7 +794,7 @@
 [[34m2026-08-15 14:21:26[0m] (step=0014960) Total: 0.0761 | Diff: 0.0761 | Canny: raw 0.0000 x 0.00 = 0.0000 | Skel: raw 0.0000 x 0.00 = 0.0000 | REPA: raw 0.0000 x 0.00 = 0.0000 | Steps/Sec: 3.59 | Mem: 0.88G/19.10G
 [[34m2026-08-15 14:21:32[0m] (step=0014980) Total: 0.0786 | Diff: 0.0786 | Canny: raw 0.0000 x 0.00 = 0.0000 | Skel: raw 0.0000 x 0.00 = 0.0000 | REPA: raw 0.0000 x 0.00 = 0.0000 | Steps/Sec: 3.59 | Mem: 0.88G/19.10G
 [[34m2026-08-15 14:21:37[0m] (step=0015000) Total: 0.0773 | Diff: 0.0773 | Canny: raw 0.0000 x 0.00 = 0.0000 | Skel: raw 0.0000 x 0.00 = 0.0000 | REPA: raw 0.0000 x 0.00 = 0.0000 | Steps/Sec: 3.59 | Mem: 0.88G/19.10G
-[[34m2026-08-15 14:21:38[0m] Saved checkpoint to 5script/results/exp_s_5script/20260815-131017-DiT-3Cond-S-2/checkpoints/0015000.pt
+[[34m2026-08-15 14:21:38[0m] Saved checkpoint to assets/results/exp_s_assets/20260815-131017-DiT-3Cond-S-2/checkpoints/0015000.pt
 [[34m2026-08-15 14:21:48[0m] [auto-eval] step 15000: free-sampling MSE=0.91514 SSIM=0.5165
 [[34m2026-08-15 14:21:53[0m] (step=0015020) Total: 0.0761 | Diff: 0.0761 | Canny: raw 0.0000 x 0.00 = 0.0000 | Skel: raw 0.0000 x 0.00 = 0.0000 | REPA: raw 0.0000 x 0.00 = 0.0000 | Steps/Sec: 1.23 | Mem: 0.88G/19.10G
 [[34m2026-08-15 14:21:59[0m] (step=0015040) Total: 0.0737 | Diff: 0.0737 | Canny: raw 0.0000 x 0.00 = 0.0000 | Skel: raw 0.0000 x 0.00 = 0.0000 | REPA: raw 0.0000 x 0.00 = 0.0000 | Steps/Sec: 3.58 | Mem: 0.88G/19.10G
@@ -1054,7 +1054,7 @@
 [[34m2026-08-15 14:45:02[0m] (step=0019960) Total: 0.0737 | Diff: 0.0737 | Canny: raw 0.0000 x 0.00 = 0.0000 | Skel: raw 0.0000 x 0.00 = 0.0000 | REPA: raw 0.0000 x 0.00 = 0.0000 | Steps/Sec: 3.59 | Mem: 0.88G/19.10G
 [[34m2026-08-15 14:45:07[0m] (step=0019980) Total: 0.0745 | Diff: 0.0745 | Canny: raw 0.0000 x 0.00 = 0.0000 | Skel: raw 0.0000 x 0.00 = 0.0000 | REPA: raw 0.0000 x 0.00 = 0.0000 | Steps/Sec: 3.59 | Mem: 0.88G/19.10G
 [[34m2026-08-15 14:45:13[0m] (step=0020000) Total: 0.0740 | Diff: 0.0740 | Canny: raw 0.0000 x 0.00 = 0.0000 | Skel: raw 0.0000 x 0.00 = 0.0000 | REPA: raw 0.0000 x 0.00 = 0.0000 | Steps/Sec: 3.60 | Mem: 0.88G/19.10G
-[[34m2026-08-15 14:45:14[0m] Saved checkpoint to 5script/results/exp_s_5script/20260815-131017-DiT-3Cond-S-2/checkpoints/0020000.pt
+[[34m2026-08-15 14:45:14[0m] Saved checkpoint to assets/results/exp_s_assets/20260815-131017-DiT-3Cond-S-2/checkpoints/0020000.pt
 [[34m2026-08-15 14:45:24[0m] [auto-eval] step 20000: free-sampling MSE=0.97184 SSIM=0.4907
 [[34m2026-08-15 14:45:29[0m] (step=0020020) Total: 0.0762 | Diff: 0.0762 | Canny: raw 0.0000 x 0.00 = 0.0000 | Skel: raw 0.0000 x 0.00 = 0.0000 | REPA: raw 0.0000 x 0.00 = 0.0000 | Steps/Sec: 1.23 | Mem: 0.88G/19.10G
 [[34m2026-08-15 14:45:35[0m] (step=0020040) Total: 0.0727 | Diff: 0.0727 | Canny: raw 0.0000 x 0.00 = 0.0000 | Skel: raw 0.0000 x 0.00 = 0.0000 | REPA: raw 0.0000 x 0.00 = 0.0000 | Steps/Sec: 3.58 | Mem: 0.88G/19.10G
@@ -1313,7 +1313,7 @@
 [[34m2026-08-15 15:08:37[0m] (step=0024960) Total: 0.0725 | Diff: 0.0725 | Canny: raw 0.0000 x 0.00 = 0.0000 | Skel: raw 0.0000 x 0.00 = 0.0000 | REPA: raw 0.0000 x 0.00 = 0.0000 | Steps/Sec: 3.59 | Mem: 0.88G/19.10G
 [[34m2026-08-15 15:08:42[0m] (step=0024980) Total: 0.0734 | Diff: 0.0734 | Canny: raw 0.0000 x 0.00 = 0.0000 | Skel: raw 0.0000 x 0.00 = 0.0000 | REPA: raw 0.0000 x 0.00 = 0.0000 | Steps/Sec: 3.59 | Mem: 0.88G/19.10G
 [[34m2026-08-15 15:08:48[0m] (step=0025000) Total: 0.0717 | Diff: 0.0717 | Canny: raw 0.0000 x 0.00 = 0.0000 | Skel: raw 0.0000 x 0.00 = 0.0000 | REPA: raw 0.0000 x 0.00 = 0.0000 | Steps/Sec: 3.59 | Mem: 0.88G/19.10G
-[[34m2026-08-15 15:08:50[0m] Saved checkpoint to 5script/results/exp_s_5script/20260815-131017-DiT-3Cond-S-2/checkpoints/0025000.pt
+[[34m2026-08-15 15:08:50[0m] Saved checkpoint to assets/results/exp_s_assets/20260815-131017-DiT-3Cond-S-2/checkpoints/0025000.pt
 [[34m2026-08-15 15:08:59[0m] [auto-eval] step 25000: free-sampling MSE=0.94640 SSIM=0.4970
 [[34m2026-08-15 15:09:05[0m] (step=0025020) Total: 0.0723 | Diff: 0.0723 | Canny: raw 0.0000 x 0.00 = 0.0000 | Skel: raw 0.0000 x 0.00 = 0.0000 | REPA: raw 0.0000 x 0.00 = 0.0000 | Steps/Sec: 1.19 | Mem: 0.88G/19.10G
 [[34m2026-08-15 15:09:10[0m] (step=0025040) Total: 0.0688 | Diff: 0.0688 | Canny: raw 0.0000 x 0.00 = 0.0000 | Skel: raw 0.0000 x 0.00 = 0.0000 | REPA: raw 0.0000 x 0.00 = 0.0000 | Steps/Sec: 3.57 | Mem: 0.88G/19.10G

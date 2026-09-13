@@ -1,7 +1,7 @@
 {
   "_comment": "v8i-a: 最小干预锚定。w_repa_early=0.1 (help 建议区间下限), main_lr=1e-5 (极保守解冻), layer=8。验证: 弱 REPA + 微解冻能否在几乎不扰动 base 的前提下拿到 ctrl 增益 (对照 v8i-b 0.7657/0.5531)。两阶段: A(base)→B(ctrl+REPA早挂), 无 C 段。起点 A_main_final.pt。ckpt 全保留, main 权重保存已修复。",
   "experiment_name": "v8i-a-minimal",
-  "results_dir": "5script/results/v8_3stage/v8ia",
+  "results_dir": "assets/results/v8_3stage/v8ia",
 
   "model": "DiT-2Cond-S/2",
   "train_ctrl_only": true,
@@ -10,7 +10,7 @@
   "compile": true,
   "compile_mode": "default",
 
-  "csv": "5script/train_fame_clean_v8.csv",
+  "csv": "assets/train_fame_clean_v8.csv",
   "latent_shards_dir": "final_latents_fame_v8",
   "img_root": "final_imgs_fame_v8",
   "skel_root": "final_skel1_fame_v8",
@@ -76,7 +76,7 @@
   "early_stop_min_delta": 0.002,
   "early_stop_min_steps": 10000,
 
-  "gpu_eval_csv": "5script/eval_fame_strict_clean_v8.csv",
+  "gpu_eval_csv": "assets/eval_fame_strict_clean_v8.csv",
   "gpu_eval_every": 2500,
   "gpu_eval_n": 100,
   "gpu_eval_steps": 50,

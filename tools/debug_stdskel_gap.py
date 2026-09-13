@@ -40,8 +40,8 @@ def cos(a, b):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--n", type=int, default=3000)
-    ap.add_argument("--csv", default="5script/train_fame3_clean_v8.csv")
-    ap.add_argument("--out", default="5script/results/stdskel_gap.json")
+    ap.add_argument("--csv", default="assets/train_fame3_clean_v8.csv")
+    ap.add_argument("--out", default="assets/results/stdskel_gap.json")
     args = ap.parse_args()
 
     dirA, dirB, dirC = ("std_skel1_latents_fame3_v8",

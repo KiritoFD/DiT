@@ -1,7 +1,7 @@
 {
   "_comment": "v8i-d: 强度顶格。w_repa_early=0.3, main_lr=5e-5 (vs v8i-b 0.2/3e-5), layer=8。验证: 更强势 REPA + 更积极解冻能否突破 v8i-b 的 0.7657/0.5531, 还是引发 base 震荡。两阶段无 C 段。起点 A_main_final.pt。这是超参网格的激进角。",
   "experiment_name": "v8i-d-strong",
-  "results_dir": "5script/results/v8_3stage/v8id",
+  "results_dir": "assets/results/v8_3stage/v8id",
 
   "model": "DiT-2Cond-S/2",
   "train_ctrl_only": true,
@@ -10,7 +10,7 @@
   "compile": true,
   "compile_mode": "default",
 
-  "csv": "5script/train_fame_clean_v8.csv",
+  "csv": "assets/train_fame_clean_v8.csv",
   "latent_shards_dir": "final_latents_fame_v8",
   "img_root": "final_imgs_fame_v8",
   "skel_root": "final_skel1_fame_v8",
@@ -76,7 +76,7 @@
   "early_stop_min_delta": 0.002,
   "early_stop_min_steps": 10000,
 
-  "gpu_eval_csv": "5script/eval_fame_strict_clean_v8.csv",
+  "gpu_eval_csv": "assets/eval_fame_strict_clean_v8.csv",
   "gpu_eval_every": 2500,
   "gpu_eval_n": 100,
   "gpu_eval_steps": 50,

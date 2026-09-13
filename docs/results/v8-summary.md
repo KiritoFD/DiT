@@ -12,7 +12,7 @@
 - step **132,500**，**已早停**（05:05 UTC，stale 5/5 @ 132.5k）
 - 全程 best：ssim **0.5121 @ 122.5k**（=130k =132.5k 并列），lpips **0.4132 @ 132.5k**（最低）
 - vs 旧 S30（同口径 0.4934）：**+0.025，+5.2%**
-- A 段终 ckpt 已 copy 固化 `5script/results/v8_3stage/A_main_final.pt`（无时间戳固定路径）
+- A 段终 ckpt 已 copy 固化 `assets/results/v8_3stage/A_main_final.pt`（无时间戳固定路径）
 
 **v8 三段链（已全部完成，09-03 04:49）**：
 - B 段 v8b skel-ctrl：40000 早停，同口径 ctrl.ssim **0.7641**（best 固化 `B_ctrl_best.pt`）
@@ -61,7 +61,7 @@
 | 时间 | 实验/改动 | 改动内容（模型/infra/数据） | 结果/有效性 |
 |---|---|---|---|
 | 08-10→14 | V1/V2（背景） | DiT-S/2 + 3因子(callig×script×char) 联合concat MLP，全量从零，无EMA/无结构损失 | ❌ 3因子不组合（script与callig混淆 I=1.527bits，triple覆盖0.264%） |
-| 08-15 | exp_s_5script 终止 | legacy 联合MLP 36.16M 停于25.7k步（best≈10-15k，20k后回归） | ❌ 只能记忆稀疏triple → 转因子化 |
+| 08-15 | exp_s_assets 终止 | legacy 联合MLP 36.16M 停于25.7k步（best≈10-15k，20k后回归） | ❌ 只能记忆稀疏triple → 转因子化 |
 | 08-15 | compositional V1（=s2 因子化3cond） | callig128+script32+char192 **factorized_add**→384；4-way CFG(75/10/15)；factor-balanced采样；EMA 0.9999+warmup；b224；全量147,841行 | ✅ 组合泛化成立，best@20k SSIM 0.4576（1004书家口径） |
 | 08-15 | compositional V2 latent结构损失 | V1-20k续训 + latent Canny 0.05/Skel 0.005（max_t=500）4k步 | ❌ SSIM 0.4503 更差 |
 | 08-15 | v3a 二因子glyph 从零 | script×char→**glyph_id**(35,130类)；DiT-2Cond-S/2 39.58M，callig128+glyph192 factorized_add，4-way 60/15/15/10 | ⚠️ 早期短跑（best step≤25k）；v3b_xl_glyphcond SSIM 0.4888 |
@@ -305,7 +305,7 @@
 ## 6.5 ⭐ 基模质量评估框架（不止 SSIM）
 
 > SSIM/LPIPS 只证明"生成像不像 GT"，不证明基模对后训练（skel-ctrl / REPA）的价值。
-> 以下为 09-04 建立的多维评估（数据：同协议重评 + `_sync_work/research_dino_out.txt` + `5script/dino_probe.json`）。
+> 以下为 09-04 建立的多维评估（数据：同协议重评 + `_sync_work/research_dino_out.txt` + `assets/dino_probe.json`）。
 
 ### 维度 1+2：生成质量 & 一致性（已有）
 

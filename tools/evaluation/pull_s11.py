@@ -88,7 +88,7 @@ def collect_series(series):
     # 用 -printf 直接排序, 避免 `find|xargs ls -t` 在 find 无输出时
     # xargs 退化为 `ls -t` 列出远程 cwd 的坑。
     latest = pm._ssh(
-        f"find {pm.REMOTE_BASE}/5script/results/{series} -name log.txt "
+        f"find {pm.REMOTE_BASE}/assets/results/{series} -name log.txt "
         f"-printf '%T@ %p\\n' 2>/dev/null | sort -rn | head -1 | cut -d' ' -f2-",
         timeout=20).strip()
     # 去掉可能的 float 时间戳前缀残留 (cut -f2- 已处理, 但防御一下)
@@ -376,8 +376,8 @@ METRICS.forEach((m, mi) => {
 # ── 单轮 & loop ─────────────────────────────────────────────────────────────
 def run_once(verbose=True, do_poster=True):
     # 确保本地 CSV 存在 (show2/seen2 标注+GT 顺序)
-    for local, remote_path in [(SHOW_CSV, f"{pm.REMOTE_BASE}/5script/show2_top6.csv"),
-                               (SEEN_CSV, f"{pm.REMOTE_BASE}/5script/seen2_top6.csv")]:
+    for local, remote_path in [(SHOW_CSV, f"{pm.REMOTE_BASE}/assets/show2_top6.csv"),
+                               (SEEN_CSV, f"{pm.REMOTE_BASE}/assets/seen2_top6.csv")]:
         if not os.path.exists(local):
             subprocess.run(["scp", "-o", "ConnectTimeout=15", "-P", pm.REMOTE_PORT,
                             f"{pm.REMOTE_USER}@{pm.REMOTE_HOST}:{remote_path}", local],

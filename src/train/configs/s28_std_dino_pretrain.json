@@ -1,10 +1,10 @@
 {
   "_comment": "s28 标准字形 DINO 字嵌入预训练（清洗数据版）：char/glyph embedding 用「标准字形(kai/li) DINO 特征」PCA 降维到 384 冻结查表 + 直通（ln_only）。核心：(1) 标准字形 DINO 外形一致性 AUC 0.906；(2) 冻结查表零可训练参数，不用可训练投影扭曲信号；(3) char_proj_mode=ln_only 直通进 adaLN；(4) use_ot=true (OT-CFM 最优传输重排)；(5) 数据用清洗版：train_fame_clean.csv + final_latents_fame_clean（1430 张修复图局部替换 latent），eval 用 eval_fame_strict_clean.csv（27 张修复图 GT 实时读图）。",
   "experiment_name": "s28-std-dino-pretrain",
-  "data_csv": "5script/train_fame_clean.csv",
+  "data_csv": "assets/train_fame_clean.csv",
   "latent_shards_dir": "final_latents_fame_clean",
   "img_root": "final_imgs_256",
-  "results_dir": "5script/results/s28_std_dino_pretrain",
+  "results_dir": "assets/results/s28_std_dino_pretrain",
 
   "model": "DiT-2Cond-S/2",
   "cond_mode": "2cond",
@@ -59,7 +59,7 @@
   "ckpt_keep": 0,
 
   "auto_eval": true,
-  "eval_csv": "5script/eval_fame_strict_clean.csv",
+  "eval_csv": "assets/eval_fame_strict_clean.csv",
   "eval_n": 500,
   "eval_steps": 25,
   "eval_cfg": 0.7,

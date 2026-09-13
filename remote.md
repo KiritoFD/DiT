@@ -72,8 +72,8 @@ runner 用 `ls -dt dir_*` 猜最新目录，glob 少一层就断链。
 
 **规范**：
 - 所有跨阶段引用（A→B→C 的 ckpt）**先 copy 到固定无时间戳路径**再向下传：
-  - `5script/results/v8_3stage/A_main_final.pt`（A best）
-  - `5script/results/v8_3stage/B_ctrl_best.pt`（B best）
+  - `assets/results/v8_3stage/A_main_final.pt`（A best）
+  - `assets/results/v8_3stage/B_ctrl_best.pt`（B best）
 - 脚本内直接写死固定路径，**禁止 `ls -dt` + glob 猜目录**。
 - 多级目录查找最多只出现在"选出 best"这一步（eval json 扫 ssim），选完立刻 copy 成固定名。
 

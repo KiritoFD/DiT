@@ -38,17 +38,17 @@
 | `legacy/misc/` | 杂项产物（本地保留，不入库） |
 
 ## 远端大资产（不入 git，仅在 4090 主机）
-- 训练数据：`5script/train_fame3_*.csv`（元数据入库）、`final_imgs_fame_*/`、`5script/fame3-*/`
+- 训练数据：`assets/train_fame3_*.csv`（元数据入库）、`final_imgs_fame_*/`、`assets/fame3-*/`
 - VAE latent：`final_latents_fame_*/`、`std_skel*_latents_*/`（g 条件）、`aux_*_latents_*/`（12ch 监督）
-- 结果：`5script/results/<run>/`（ckpt + eval_auto json + poster）
-- 清单见远端 `ASSETS.md` / `5script/results/MANIFEST.md`（由整理脚本生成）
+- 结果：`assets/results/<run>/`（ckpt + eval_auto json + poster）
+- 清单见远端 `ASSETS.md` / `assets/results/MANIFEST.md`（由整理脚本生成）
 
 ## 当前推荐流水线（2026-09）
 ```bash
 # 训练（远端 tmux）: 配置在 src/train/configs/，launcher 在 scripts/ops/
 bash _sync_work/_launch_v10b_stdskel_fame3_variant.sh <tmux> <config> <results_dir> [resume_ckpt]
 # 评测（与训练配合）: 自动暂停训练、GPU in-mem 评测、恢复
-python tools/eval/gpu_eval_loop.py --results-dir 5script/results/<exp> --device cuda --pause-train
+python tools/eval/gpu_eval_loop.py --results-dir assets/results/<exp> --device cuda --pause-train
 # 前端（CPU, base env）
 /opt/conda/bin/python gradio_stdskel.py --device cpu --share
 ```

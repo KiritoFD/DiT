@@ -8,8 +8,8 @@
 ### 真迹数据 (fame)
 | 路径 | 内容 | 大小 |
 |---|---|---|
-| `5script/train_fame.csv` | 训练集索引 (51,322 样本) | - |
-| `5script/eval_fame_strict.csv` | 严格评估集 (500 样本) | - |
+| `assets/train_fame.csv` | 训练集索引 (51,322 样本) | - |
+| `assets/eval_fame_strict.csv` | 严格评估集 (500 样本) | - |
 | `final_imgs_256/` | 真迹图 256×256 | ~2GB |
 | `final_latents_fame/` | 真迹 VAE latent 分片 | ~1.5GB |
 
@@ -41,8 +41,8 @@
 ## 实验结果
 | 路径 | 内容 |
 |---|---|
-| `5script/results/s25_ids_pretrain/` | s25 IDS 预训练 (进行中) |
-| `5script/results/s20_ctrl_skel_flow_v2/` | s20 ControlNet GT skel |
+| `assets/results/s25_ids_pretrain/` | s25 IDS 预训练 (进行中) |
+| `assets/results/s20_ctrl_skel_flow_v2/` | s20 ControlNet GT skel |
 
 ## 数据流
 

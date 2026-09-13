@@ -5,8 +5,8 @@ estimate_scaling_factor.py — 估计 VAE latent 的 scaling factor.
 scaling_factor = 1 / std(latent_samples)  (使 latent std ≈ 1, 利于 diffusion 训练)
 
 用法:
-  python tools/vae/estimate_scaling_factor.py --vae pretrained_models/kl-f4 --csv 5script/train_top6.csv --n 500
-  python tools/vae/estimate_scaling_factor.py --vae pretrained_models/sd-vae-ft-ema --csv 5script/train_top6.csv --n 500
+  python tools/vae/estimate_scaling_factor.py --vae pretrained_models/kl-f4 --csv assets/train_top6.csv --n 500
+  python tools/vae/estimate_scaling_factor.py --vae pretrained_models/sd-vae-ft-ema --csv assets/train_top6.csv --n 500
 """
 import os
 import sys

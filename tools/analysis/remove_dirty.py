@@ -8,7 +8,7 @@ from concurrent.futures import ThreadPoolExecutor
 
 sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 BASE = "/root/Workspace/xy/DiT"
-CSV_PATH = os.path.join(BASE, "5script", "train_top30_clean.csv")
+CSV_PATH = os.path.join(BASE, "assets", "train_top30_clean.csv")
 THRESH = 0.3
 
 def fix_path(p):

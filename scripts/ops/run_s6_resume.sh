@@ -18,8 +18,8 @@ stop_cpu_eval(){
 start_cpu_eval(){
   local rd=$1
   local tag=${rd##*/}
-  nohup /opt/conda/bin/python auto_eval_cpu.py --results-dir "5script/results/$rd" \
-    --seen5-csv 5script/seen2_top6.csv --workers 4 --worker-threads 8 --interval 20 \
+  nohup /opt/conda/bin/python auto_eval_cpu.py --results-dir "assets/results/$rd" \
+    --seen5-csv assets/seen2_top6.csv --workers 4 --worker-threads 8 --interval 20 \
     > "cpu_eval_${tag}_resume.log" 2>&1 &
   say "cpu eval for $rd (pid $!)"
 }

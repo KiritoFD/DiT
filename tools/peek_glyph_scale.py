@@ -4,9 +4,9 @@
 import sys, glob, torch
 
 paths = {
-    "v10b-GT-g(85000)": "5script/results/v10b_skel_only_pretrain/*/checkpoints/0085000.pt",
-    "v10b-stdskel-pretrain": "5script/results/v10b_stdskel_pretrain/*/checkpoints/*.pt",
-    "fame3(57500)": "5script/results/v10b_stdskel_fame3/*/checkpoints/0057500.pt",
+    "v10b-GT-g(85000)": "assets/results/v10b_skel_only_pretrain/*/checkpoints/0085000.pt",
+    "v10b-stdskel-pretrain": "assets/results/v10b_stdskel_pretrain/*/checkpoints/*.pt",
+    "fame3(57500)": "assets/results/v10b_stdskel_fame3/*/checkpoints/0057500.pt",
 }
 for name, pat in paths.items():
     fs = sorted(glob.glob(pat), key=lambda p: int(p.split("/")[-1].split(".")[0]))

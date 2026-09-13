@@ -1,10 +1,10 @@
 {
   "_comment": "muon-5k: 5k 步确认实验。runner 用 CLI --max-steps 5000 覆盖。",
   "experiment_name": "muon-5k",
-  "data_csv": "5script/train_fame_clean_v8.csv",
+  "data_csv": "assets/train_fame_clean_v8.csv",
   "latent_shards_dir": "final_latents_fame_v8",
   "img_root": "final_imgs_fame_v8",
-  "results_dir": "5script/results/optim_smoke",
+  "results_dir": "assets/results/optim_smoke",
 
   "model": "DiT-2Cond-S/2",
   "cond_mode": "2cond",

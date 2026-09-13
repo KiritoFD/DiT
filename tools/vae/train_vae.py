@@ -11,10 +11,10 @@ Loss: L1 recon + KL(0.5) + perceptual(VGG, 可选)
 
 用法:
   # 微调 decoder
-  python tools/vae/train_vae.py --mode finetune-decoder --vae pretrained_models/sd-vae-ft-ema --csv 5script/train_top30.csv --epochs 20
+  python tools/vae/train_vae.py --mode finetune-decoder --vae pretrained_models/sd-vae-ft-ema --csv assets/train_top30.csv --epochs 20
 
   # 从头训黑白 VAE (f4, 1ch)
-  python tools/vae/train_vae.py --mode from-scratch --arch kl-f4 --grayscale --csv 5script/train_top30.csv --epochs 100
+  python tools/vae/train_vae.py --mode from-scratch --arch kl-f4 --grayscale --csv assets/train_top30.csv --epochs 100
 """
 import os
 import sys
@@ -225,9 +225,9 @@ if __name__ == "__main__":
     ap.add_argument("--mode", choices=["finetune-decoder", "finetune-full", "from-scratch"],
                     default="finetune-decoder")
     ap.add_argument("--vae", default="pretrained_models/sd-vae-ft-ema")
-    ap.add_argument("--csv", default="5script/train_top30.csv")
+    ap.add_argument("--csv", default="assets/train_top30.csv")
     ap.add_argument("--img-root", default="final_images")
-    ap.add_argument("--output", default="5script/results/vae")
+    ap.add_argument("--output", default="assets/results/vae")
     ap.add_argument("--size", type=int, default=256)
     ap.add_argument("--grayscale", action="store_true")
     ap.add_argument("--latent-channels", type=int, default=4)

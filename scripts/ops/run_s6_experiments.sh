@@ -21,8 +21,8 @@ stop_cpu_eval(){
 start_cpu_eval(){
   local rd=$1
   local tag=${rd##*/}
-  nohup /opt/conda/bin/python auto_eval_cpu.py --results-dir "5script/results/$rd" \
-    --seen5-csv 5script/seen2_top6.csv --workers 4 --worker-threads 8 --interval 20 \
+  nohup /opt/conda/bin/python auto_eval_cpu.py --results-dir "assets/results/$rd" \
+    --seen5-csv assets/seen2_top6.csv --workers 4 --worker-threads 8 --interval 20 \
     > "cpu_eval_$tag.log" 2>&1 &
   say "cpu eval started for $rd (pid $!)"
 }
@@ -38,7 +38,7 @@ say "===== EXP1 done ====="
 stop_cpu_eval
 
 # 实验4 阶段1 ckpt = exp1 最后 ckpt（diff 已收敛）
-PHASE1=$(ls -t 5script/results/s6_top6_diffonly/*/checkpoints/*.pt 2>/dev/null | head -1)
+PHASE1=$(ls -t assets/results/s6_top6_diffonly/*/checkpoints/*.pt 2>/dev/null | head -1)
 say "phase1 ckpt: ${PHASE1:-NONE}"
 
 # ---- 实验2: fp32 skel+canny 从零, subset=8 ----

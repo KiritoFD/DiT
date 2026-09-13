@@ -1,4 +1,4 @@
-# 5script/results MANIFEST (2026-09-13 整理)
+# assets/results MANIFEST (2026-09-13 整理)
 
 | run | 状态 | 大小 | last_step | best seen | best strict |
 |---|---|---|---|---|---|

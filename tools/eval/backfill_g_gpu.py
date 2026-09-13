@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """backfill_g_gpu.py — GPU 快速回填: g 条件预训练 ckpt 的 GT 骨架评测 (flat json).
 
-用法: python tools/eval/backfill_g_gpu.py --run-dir 5script/results/v10a_skel_cond_pretrain
+用法: python tools/eval/backfill_g_gpu.py --run-dir assets/results/v10a_skel_cond_pretrain
 对 run 下所有缺 eval_auto_{step}.json 的 ckpt: EMA 权重 → GPU 采样 (Heun50, CFG,
 g=该样本 GT 实例骨架 latent) → decode → 指标 → flat json (train.py 早停直读).
 """

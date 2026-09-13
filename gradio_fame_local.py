@@ -122,7 +122,7 @@ for _mk, _ck in V8_CKPTS.items():
 # 旧 s21 双 ctrl (保持原逻辑, 兼容)
 main = load_main_model(
     "DiT-2Cond-S/2",
-    "5script/results/s21_fame_flow_v2/20260829-232329-s21-fame-flow-v2/checkpoints/0030000.pt",
+    "assets/results/s21_fame_flow_v2/20260829-232329-s21-fame-flow-v2/checkpoints/0030000.pt",
     device=dev, num_calligraphers=1013, num_characters=35130,
     condition_fusion="factorized_add", callig_embed_dim=128,
     char_embed_dim=384, char_proj_mode="ln_only", freeze_char_table=True,
@@ -147,12 +147,12 @@ print("[load] done", flush=True)
 
 MCCD_MAP = {}
 try:
-    for r in csv.DictReader(open("5script/mccd_image_map.csv", encoding="utf-8")):
+    for r in csv.DictReader(open("assets/mccd_image_map.csv", encoding="utf-8")):
         MCCD_MAP.setdefault(r["character"], []).append(r["filepath"])
     print(f"[mccd] chars indexed: {len(MCCD_MAP)}", flush=True)
 except Exception as e:
     print("[mccd] map load failed:", e, flush=True)
-rows = list(csv.DictReader(open("5script/train_fame.csv", encoding="utf-8")))
+rows = list(csv.DictReader(open("assets/train_fame.csv", encoding="utf-8")))
 by_pair = {}
 for r in rows:
     by_pair.setdefault((r["script"], r["character"]), []).append(r)

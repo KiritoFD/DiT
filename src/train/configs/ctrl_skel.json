@@ -1,9 +1,9 @@
 {
-  "main_ckpt": "5script/results/s6_top6_diffonly/20260820-191536-s6-top6-diffonly-resume/checkpoints/0195000.pt",
-  "csv": "5script/train_top6.csv",
+  "main_ckpt": "assets/results/s6_top6_diffonly/20260820-191536-s6-top6-diffonly-resume/checkpoints/0195000.pt",
+  "csv": "assets/train_top6.csv",
   "latent_shards_dir": "final_latents",
   "skel_root": "final_skeleton_d3",
-  "results_dir": "5script/results/ctrl_skel",
+  "results_dir": "assets/results/ctrl_skel",
   "experiment_name": "ctrl-skel-3px",
   "model": "DiT-2Cond-S/2",
   "num_calligraphers": 1011,

@@ -84,7 +84,7 @@ def _work(item):
     return (k, r, a, clean, pre, post, score)
 
 def main():
-    rows = list(csv.DictReader(open('5script/train_fame.csv', encoding='utf-8')))
+    rows = list(csv.DictReader(open('assets/train_fame.csv', encoding='utf-8')))
     random.seed(0)
     sample = random.sample(rows, 4000)
     os.makedirs('/tmp/noise2', exist_ok=True)

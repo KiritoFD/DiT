@@ -1,5 +1,5 @@
 {
-  "ckpt": "5script/results/ctrl_skel/20260825-115527-ctrl-skel-s6-v2/checkpoints/0015000.pt",
+  "ckpt": "assets/results/ctrl_skel/20260825-115527-ctrl-skel-s6-v2/checkpoints/0015000.pt",
   "step": 15000,
   "cfgs": [
     1.0,

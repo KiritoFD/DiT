@@ -1,6 +1,6 @@
 # S6 Top6 实验总结报告:canny+skel 结构损失是副作用吗?
 
-**日期**: 2026-08-21 | **模型**: DiT-2Cond-S/2 | **数据**: MCCD top6 子集 (`5script/train_top6.csv`)
+**日期**: 2026-08-21 | **模型**: DiT-2Cond-S/2 | **数据**: MCCD top6 子集 (`assets/train_top6.csv`)
 **评测**: eval100_top6.csv 自由采样 DDIM (cfg=4.0, steps=50) → MSE / SSIM
 
 ---
@@ -135,7 +135,7 @@ diffonly 笔画锐利、结构完整;struct 被彩色噪声淹没,几乎不可�
 **方法**:本地 RTX 4070 Laptop,两 ckpt 在完全相同的条件上自由采样(DDIM 50 步,cfg=4.0,seed=0)。构建了两个互补集合:
 
 - **eval500(拟合集参考)**:从 top6 训练池分层抽样 493 张——经核查 **100% 是训练见过的(书家,字)对乃至原图**,只衡量拟合/记忆能力;
-- **eval_unseen255(真 held-out)**:从 `5script/test.csv` 筛 top6 书家、**(书家,字)对完全未在训练出现**的样本,楷 161 + 隶 94 共 **255 张**,GT 用与训练一致的远程 `final_images/` 权威版本。
+- **eval_unseen255(真 held-out)**:从 `assets/test.csv` 筛 top6 书家、**(书家,字)对完全未在训练出现**的样本,楷 161 + 隶 94 共 **255 张**,GT 用与训练一致的远程 `final_images/` 权威版本。
 
 ### 8.1 三层指标总表
 

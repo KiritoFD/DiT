@@ -13,13 +13,13 @@ from collections import defaultdict, Counter
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.join(HERE, "..")
 
-TRAIN_CSV = os.path.join(ROOT, "5script", "train_top30.csv")
-EVAL_CSV = os.path.join(ROOT, "5script", "eval100_top30.csv")
-CALLIGS = os.path.join(ROOT, "5script", "top30_calligs.json")
+TRAIN_CSV = os.path.join(ROOT, "assets", "train_top30.csv")
+EVAL_CSV = os.path.join(ROOT, "assets", "eval100_top30.csv")
+CALLIGS = os.path.join(ROOT, "assets", "top30_calligs.json")
 
-TRAIN_OUT = os.path.join(ROOT, "5script", "train_top30_clean.csv")
-EVAL_OUT = os.path.join(ROOT, "5script", "eval100_top30_clean.csv")
-CALLIGS_OUT = os.path.join(ROOT, "5script", "top30_calligs_clean.json")
+TRAIN_OUT = os.path.join(ROOT, "assets", "train_top30_clean.csv")
+EVAL_OUT = os.path.join(ROOT, "assets", "eval100_top30_clean.csv")
+CALLIGS_OUT = os.path.join(ROOT, "assets", "top30_calligs_clean.json")
 
 SCRIPT_NAMES = {0: "楷", 1: "篆", 2: "草", 3: "行", 4: "隶"}
 

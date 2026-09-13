@@ -67,7 +67,7 @@ def eval_one(ckpt, cfgs, csv, n, steps, batch, vae_batch):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--ckpts", required=True)
-    ap.add_argument("--csv", default="5script/eval_seen_v10.csv")
+    ap.add_argument("--csv", default="assets/eval_seen_v10.csv")
     ap.add_argument("--n", type=int, default=10)
     ap.add_argument("--steps", type=int, default=50)
     ap.add_argument("--batch", type=int, default=10)

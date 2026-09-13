@@ -12,7 +12,7 @@ Selection criteria (user-defined):
   - 书家出现: (script, calligrapher) by NAME in train CSV
   - 字出现:   (script, character) by NAME in train CSV (glyph 见过)
   - 图未见:   img_id NOT in train CSV (这个组合/这张图没训练过)
-Output: 5script/eval500_3top30.csv with same schema as eval100.
+Output: assets/eval500_3top30.csv with same schema as eval100.
 """
 import os, csv, sys, json, random
 from collections import Counter, defaultdict
@@ -21,9 +21,9 @@ sys.stdout.reconfigure(encoding='utf-8')
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.join(HERE, "..")
 MANIFEST = os.path.join(ROOT, "archive", "final_manifest.json")
-TRAIN_CSV = os.path.join(ROOT, "5script", "train_3top30_nobeike.csv")
-EVAL100 = os.path.join(ROOT, "5script", "eval100_3top30.csv")
-OUT = os.path.join(ROOT, "5script", "eval500_3top30.csv")
+TRAIN_CSV = os.path.join(ROOT, "assets", "train_3top30_nobeike.csv")
+EVAL100 = os.path.join(ROOT, "assets", "eval100_3top30.csv")
+OUT = os.path.join(ROOT, "assets", "eval500_3top30.csv")
 
 NUM_CHARACTERS = 7026  # per-script char count (glyph_id = script_id*7026 + char_id)
 SCRIPT_NAME_TO_ID = {"楷": 0, "行": 3, "隶": 4}

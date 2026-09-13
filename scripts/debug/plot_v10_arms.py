@@ -6,9 +6,9 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
 ARMS = {
-    "v10a":      "/root/Workspace/xy/DiT/5script/results/v10a_skel_cond_pretrain/*/checkpoints/eval_auto_*.json",
-    "v10b":      "/root/Workspace/xy/DiT/5script/results/v10b_skel_only_pretrain/*/checkpoints/eval_auto_*.json",
-    "v10a-dino": "/root/Workspace/xy/DiT/5script/results/v10adino_skel_cond_pretrain/*/checkpoints/eval_auto_*.json",
+    "v10a":      "/root/Workspace/xy/DiT/assets/results/v10a_skel_cond_pretrain/*/checkpoints/eval_auto_*.json",
+    "v10b":      "/root/Workspace/xy/DiT/assets/results/v10b_skel_only_pretrain/*/checkpoints/eval_auto_*.json",
+    "v10a-dino": "/root/Workspace/xy/DiT/assets/results/v10adino_skel_cond_pretrain/*/checkpoints/eval_auto_*.json",
 }
 
 def load_curve(pat):
@@ -42,6 +42,6 @@ ax.set_title("v10 series: SSIM curves (char factor ablation)")
 ax.legend()
 ax.grid(True, alpha=0.3)
 fig.tight_layout()
-out = "/root/Workspace/xy/DiT/5script/results/skel_follow_gpu/v10_arms_ssim.png"
+out = "/root/Workspace/xy/DiT/assets/results/skel_follow_gpu/v10_arms_ssim.png"
 fig.savefig(out, dpi=130)
 print("saved:", out)

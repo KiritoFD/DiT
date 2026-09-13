@@ -8,8 +8,8 @@ eval_unified.py — 历届预训练实验统一 eval → 汇总 CSV.
 
 用法 (远程 GPU):
   /opt/conda/bin/python tools/eval_unified.py \
-      --eval-csv 5script/eval_strict_midclean.csv \
-      --out-csv 5script/eval_unified_20260829.csv
+      --eval-csv assets/eval_strict_midclean.csv \
+      --out-csv assets/eval_unified_20260829.csv
 """
 import os
 import sys
@@ -43,8 +43,8 @@ EXPERIMENTS = [
 
 def parse_args():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--eval-csv", default="5script/eval_strict_midclean.csv")
-    ap.add_argument("--out-csv", default="5script/eval_unified_20260829.csv")
+    ap.add_argument("--eval-csv", default="assets/eval_strict_midclean.csv")
+    ap.add_argument("--out-csv", default="assets/eval_unified_20260829.csv")
     ap.add_argument("--cfgs", type=int, nargs="+", default=[17, 40],
                     help="cfg×10 整数列表, 17=1.7 40=4.0")
     ap.add_argument("--steps", type=int, default=50)
@@ -55,9 +55,9 @@ def parse_args():
 
 
 def eval_one(run_dir, step, cfgv, args, vae, rows_out):
-    cfg = json.load(open(os.path.join(ROOT, "5script/results", run_dir,
+    cfg = json.load(open(os.path.join(ROOT, "assets/results", run_dir,
                                       "resolved_config.json"), encoding="utf-8"))
-    ckpt_path = os.path.join(ROOT, "5script/results", run_dir,
+    ckpt_path = os.path.join(ROOT, "assets/results", run_dir,
                              "checkpoints", f"{step:07d}.pt")
     device = torch.device("cuda")
     model = load_main_model(

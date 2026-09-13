@@ -2,9 +2,9 @@
   "_comment": "v8a: S30-v8 base 预训练 (新资产集 v8)。关键参数全量固化: global_batch_size=432 (compile 下降显存实测 peak 19.75G@24G 卡安全; 大batch对OT匹配更准 + 吞吐 1769 img/s), compile=true, use_ot=true, ot_chunks=4 (分块匈牙利, 384batch 从 13ms 降至 ~4ms, 每块内精确无质量损失)。运行时 export TORCHINDUCTOR_CACHE_DIR=/root/.cache/torch/inductor 持久化 compile 缓存避免反复编译。早停挂 ssim_lpips (patience 5, min 20000)。",
   "experiment_name": "v8a-s30-base",
 
-  "results_dir": "5script/results/v8_3stage/v8a",
+  "results_dir": "assets/results/v8_3stage/v8a",
 
-  "data_csv": "5script/train_fame_clean_v8.csv",
+  "data_csv": "assets/train_fame_clean_v8.csv",
   "latent_shards_dir": "final_latents_fame_v8",
   "img_root": "final_imgs_fame_v8",
 
@@ -64,7 +64,7 @@
   "ckpt_keep": 0,
 
   "auto_eval": true,
-  "eval_csv": "5script/eval_fame_strict_clean_v8.csv",
+  "eval_csv": "assets/eval_fame_strict_clean_v8.csv",
   "eval_n": 500,
   "eval_steps": 25,
   "eval_cfg": 0.7,

@@ -18,7 +18,7 @@ import src.eval.gpu_ablate_eval as G
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--ckpt", required=True)
-    ap.add_argument("--csv", default="5script/eval_fame3_strict_clean_v9.csv")
+    ap.add_argument("--csv", default="assets/eval_fame3_strict_clean_v9.csv")
     ap.add_argument("--n", type=int, default=237)
     ap.add_argument("--steps", type=int, default=50)
     ap.add_argument("--batch", type=int, default=48)

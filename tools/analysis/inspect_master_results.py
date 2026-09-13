@@ -1,6 +1,6 @@
 import csv, os
 
-path = "5script/all_experiments_eval_20260903.csv"
+path = "assets/all_experiments_eval_20260903.csv"
 if os.path.exists(path):
     with open(path, "r", encoding="utf-8") as f:
         rows = list(csv.DictReader(f))

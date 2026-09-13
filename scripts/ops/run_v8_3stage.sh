@@ -9,7 +9,7 @@ export PYTHONPATH=/root/Workspace/xy/DiT${PYTHONPATH:+:$PYTHONPATH}
 export TORCHINDUCTOR_CACHE_DIR=/root/.cache/torch/inductor
 mkdir -p "$TORCHINDUCTOR_CACHE_DIR"
 PY=/opt/conda/envs/cu121/bin/python
-CHAIN_RES=5script/results/v8_3stage
+CHAIN_RES=assets/results/v8_3stage
 mkdir -p "$CHAIN_RES"
 LOG=/tmp/v8_3stage.log
 
@@ -24,8 +24,8 @@ echo "========== [A] rc=$RC $(date '+%F %T') ==========" >> $LOG
 [ $RC -ne 0 ] && tail -30 /tmp/v8a_s30_base.log >> $LOG
 
 # 找 A 的最终 ckpt (best 或最后一个)
-A_CKPT=$(ls -dt 5script/results/v8_3stage/v8a_*/checkpoints/*.pt 2>/dev/null | head -1)
-[ -z "$A_CKPT" ] && A_CKPT=$(ls -dt 5script/results/v8_3stage/*/checkpoints/*.pt 2>/dev/null | head -1)
+A_CKPT=$(ls -dt assets/results/v8_3stage/v8a_*/checkpoints/*.pt 2>/dev/null | head -1)
+[ -z "$A_CKPT" ] && A_CKPT=$(ls -dt assets/results/v8_3stage/*/checkpoints/*.pt 2>/dev/null | head -1)
 echo "[A] main ckpt: $A_CKPT" >> $LOG
 [ -z "$A_CKPT" ] && { echo "[A] 无 ckpt 终止"; exit 1; }
 
@@ -40,7 +40,7 @@ echo "========== [B] rc=$RC $(date '+%F %T') ==========" >> $LOG
 [ $RC -ne 0 ] && tail -30 /tmp/v8b_s31_ctrl.log >> $LOG
 
 # 找 B 的 best ctrl ckpt (取 eval ctrl.ssim 最大, 找不到就最后)
-B_DIR=$(ls -dt 5script/results/v8_3stage/v8b_* 2>/dev/null | head -1)
+B_DIR=$(ls -dt assets/results/v8_3stage/v8b_* 2>/dev/null | head -1)
 B_CKPT=$(/opt/conda/bin/python - "$B_DIR" <<'EOF'
 import os, sys, json, glob
 d = sys.argv[1]

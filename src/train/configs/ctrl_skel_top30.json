@@ -1,10 +1,10 @@
 {
   "main_ckpt": "",
   "pretrained": "",
-  "csv": "5script/train_top30.csv",
+  "csv": "assets/train_top30.csv",
   "latent_shards_dir": "final_latents",
   "skel_root": "final_skeleton_d3",
-  "results_dir": "5script/results/ctrl_skel",
+  "results_dir": "assets/results/ctrl_skel",
   "experiment_name": "ctrl-skel-top30-scratch",
   "model": "DiT-2Cond-S/2",
   "num_calligraphers": 1011,

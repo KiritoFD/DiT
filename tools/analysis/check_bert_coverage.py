@@ -8,7 +8,7 @@ t = AutoTokenizer.from_pretrained('bert-base-chinese')
 
 # 读取所有唯一字符
 chars = set()
-with open('5script/train_top30_clean.csv', encoding='utf-8') as f:
+with open('assets/train_top30_clean.csv', encoding='utf-8') as f:
     for r in csv.DictReader(f):
         chars.add(r['character'])
 chars = sorted(chars)

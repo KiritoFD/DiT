@@ -2,8 +2,8 @@
 import csv, json, os
 from collections import defaultdict, Counter
 
-CSV = os.path.join(os.path.dirname(__file__), "..", "5script", "train_top30.csv")
-CALLIGS = os.path.join(os.path.dirname(__file__), "..", "5script", "top30_calligs.json")
+CSV = os.path.join(os.path.dirname(__file__), "..", "assets", "train_top30.csv")
+CALLIGS = os.path.join(os.path.dirname(__file__), "..", "assets", "top30_calligs.json")
 
 # 加载 callig 名单
 with open(CALLIGS, encoding="utf-8") as f:

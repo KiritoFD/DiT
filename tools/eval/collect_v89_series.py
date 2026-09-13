@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""collect_v89_series.py — 收集 v8/v9 系列 eval_auto json → 5script/v89_eval_series.json.
+"""collect_v89_series.py — 收集 v8/v9 系列 eval_auto json → assets/v89_eval_series.json.
 
 在远程跑: /opt/conda/envs/cu121/bin/python tools/eval/collect_v89_series.py
 每个系列取最新 run 目录, 兼容两种 json 格式:
@@ -14,12 +14,12 @@ os.chdir(ROOT)
 sys.stdout.reconfigure(encoding="utf-8")
 
 SERIES = [
-    ("v8b_ctrl_1px", "5script/results/v8_3stage/v8b"),
-    ("v9a_repa_pretrain", "5script/results/v9a_repa_pretrain"),
-    ("v9b_ctrl_repa_strong", "5script/results/v9b_ctrl_strong"),
-    ("v9c_skel_joint", "5script/results/v9c_skel_joint"),
-    ("v10a_skel_cond_pretrain", "5script/results/v10a_skel_cond_pretrain"),
-    ("v10b_skel_only_pretrain", "5script/results/v10b_skel_only_pretrain"),
+    ("v8b_ctrl_1px", "assets/results/v8_3stage/v8b"),
+    ("v9a_repa_pretrain", "assets/results/v9a_repa_pretrain"),
+    ("v9b_ctrl_repa_strong", "assets/results/v9b_ctrl_strong"),
+    ("v9c_skel_joint", "assets/results/v9c_skel_joint"),
+    ("v10a_skel_cond_pretrain", "assets/results/v10a_skel_cond_pretrain"),
+    ("v10b_skel_only_pretrain", "assets/results/v10b_skel_only_pretrain"),
 ]
 
 
@@ -85,6 +85,6 @@ for name, base in SERIES:
     best = max((v.get("ssim", -1) for v in steps.values() if v.get("ssim") is not None), default=None)
     print(f"[ok] {name}: {len(steps)} eval points, best ssim = {best}")
 
-json.dump(out, open("5script/v89_eval_series.json", "w", encoding="utf-8"),
+json.dump(out, open("assets/v89_eval_series.json", "w", encoding="utf-8"),
           ensure_ascii=False, indent=1)
-print("wrote 5script/v89_eval_series.json")
+print("wrote assets/v89_eval_series.json")

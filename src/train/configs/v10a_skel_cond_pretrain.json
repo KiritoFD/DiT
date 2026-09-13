@@ -1,7 +1,7 @@
 {
   "_comment": "v10a: skel latent 即字条件的从头预训练 (用户方案: 预训练阶段就把实例骨架 latent 经 g 通路注入主干, 不再依赖 ControlNet 外挂). 实现复用既有 glyph-cond 全链路 (dit.use_glyph_cond token-add + 训练期 glyph_drop_prob + eval 侧标准字形库 g), train.py 仅加 skel_as_glyph_cond 接线 (batch['skel_latent'] → model_kwargs['g']). 与 v9c 的关系: v9c = 冻结路径外挂+联训 (ControlNet 通路), v10a = 主干原生吃 g (预训练从头). 语义: g 两半都给真实骨架 (forward_with_cfg 既有行为, 字形内容是正条件, CFG 只强化 callig 风格); glyph_drop_prob=0.1 保无 g 生成能力. eval: prepare_eval_cache(use_glyph_cond) 走标准字形库 g = 部署态零样本评测 (s23/v3b 既有约定). 预训练配方 = v9a 档案 (batch 320 / lr 1.5e-4 / warmup 3000 / 150k / REPA w0.1 / compile). 等 v9c 结束后由 waiter 自动拉起. | eval 由 cpu_eval_daemon --mode pretrain_g 接管 (g 单臂, 标准字形库 g, flat eval_auto json), train.py auto_eval=false 关进程内 GPU eval; 早停读 flat json 无门控。 | freeze_char_table=false: 从头预训练无 DINO index 文件, char 表随机初始化需可训练。",
   "experiment_name": "v10a-skel-cond-pretrain",
-  "results_dir": "5script/results/v10a_skel_cond_pretrain",
+  "results_dir": "assets/results/v10a_skel_cond_pretrain",
   "model": "DiT-2Cond-S/2",
   "skel_as_glyph_cond": true,
   "skel_latent_shards_dir": "final_skel_latents_fame_1px_v8",
@@ -55,7 +55,7 @@
   "eval_csv": "",
   "eval_cfg": 0.7,
   "eval_steps": 50,
-  "data_csv": "5script/train_fame_clean_v8.csv",
+  "data_csv": "assets/train_fame_clean_v8.csv",
   "preload": true,
   "preload_workers": 16,
   "global_batch_size": 320,

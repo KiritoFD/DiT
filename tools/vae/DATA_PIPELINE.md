@@ -15,7 +15,7 @@
 ├── final_skeleton_d3/      329,715 张 d3 骨架图
 ├── final_canny/            329,715 张 canny 边缘图
 ├── final_manifest.json    329,715 条目 (img_id → 元数据)
-├── 5script/
+├── assets/
 │   ├── train_top30.csv    128,842 行 (top30 calligraphers, 6952 chars)
 │   ├── eval100_top30.csv  100 行 (eval set)
 │   ├── train_top6.csv     10,866 行 (top6 calligraphers, 3154 chars)
@@ -81,7 +81,7 @@ kl-f4 底噪: MSE 0.0019, SSIM 0.988 — 接近无损重建。
 # 1. 编码 (远程 tmux)
 tmux new-session -d -s encode_klf4 \
   'python tools/vae/encode_latents_klf4.py \
-    --csv 5script/train_top30.csv \
+    --csv assets/train_top30.csv \
     --img-root final_images \
     --vae pretrained_models/kl-f4 \
     --out final_latents_f4 \
@@ -137,9 +137,9 @@ tmux new-session -d -s s7klf4 \
 # auto eval (CPU, tmux evalcpu, 独立进程不阻塞 GPU)
 tmux new-session -d -s evalcpu \
   'python auto_eval_cpu.py \
-    --results-dir 5script/results/s7_klf4_top30 \
+    --results-dir assets/results/s7_klf4_top30 \
     --workers 8 --worker-threads 8 \
-    --seen5-csv 5script/seen5_top30.csv'
+    --seen5-csv assets/seen5_top30.csv'
 ```
 
 - 训练速度: 3.51 steps/s, 每 5000 步存 ckpt + auto eval

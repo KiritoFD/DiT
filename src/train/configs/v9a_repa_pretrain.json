@@ -2,9 +2,9 @@
   "_comment": "v9a: 全程 REPA 预训练。v8a 配方 + w_repa=0.1 (全程挂, 主模型 block8 中间层对齐 DINOv2)。动机: v8i 证明 REPA+解冻强化 base (0.5182->0.5531), 现在把 REPA 直接放进预训练阶段, 期望 base 起点更高且 ctrl 更顺。w_repa=0.1 保守 (早期主模型未被强对齐约束过)。train.py 的 w_repa 为常数(无 warmup)。batch432/OT/compile 同 v8a。eval 与 v8a 同协议(cfg0.7 n500 25步)。",
   "experiment_name": "v9a-repa-pretrain",
 
-  "results_dir": "5script/results/v9a_repa_pretrain",
+  "results_dir": "assets/results/v9a_repa_pretrain",
 
-  "data_csv": "5script/train_fame_clean_v8.csv",
+  "data_csv": "assets/train_fame_clean_v8.csv",
   "latent_shards_dir": "final_latents_fame_v8",
   "img_root": "final_imgs_fame_v8",
 
@@ -64,7 +64,7 @@
   "ckpt_keep": 0,
 
   "auto_eval": true,
-  "eval_csv": "5script/eval_fame_strict_clean_v8.csv",
+  "eval_csv": "assets/eval_fame_strict_clean_v8.csv",
   "eval_n": 500,
   "eval_steps": 25,
   "eval_cfg": 0.7,

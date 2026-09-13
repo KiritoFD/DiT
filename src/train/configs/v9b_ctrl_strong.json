@@ -1,14 +1,14 @@
 {
   "_comment": "v9b: ctrl 后训练 (两阶段链 B 段)。**完全对齐 v8e 成功配方** (ctrl SOTA 0.7761): w_repa_early=0.5(=v8e w_repa) + layers 8,11 + lr 1e-4 + batch 128 + warmup 200 + max 80000。改进: 加 early_stop (v8e 缺早停, 峰值 22.5k 后跑满 80k 回退到 0.762; patience 5 + min_delta 0.002 让 ~25k 早停)。main-ckpt 由 chain 传 (v9a base best)。数据 v8 资产, eval cfg 0.7。",
   "experiment_name": "v9b-ctrl-repa-strong",
-  "results_dir": "5script/results/v9b_ctrl_strong",
+  "results_dir": "assets/results/v9b_ctrl_strong",
 
   "model": "DiT-2Cond-S/2",
   "train_ctrl_only": true,
   "compile": true,
   "compile_mode": "default",
 
-  "csv": "5script/train_fame_clean_v8.csv",
+  "csv": "assets/train_fame_clean_v8.csv",
   "latent_shards_dir": "final_latents_fame_v8",
   "img_root": "final_imgs_fame_v8",
   "skel_root": "final_skel1_fame_v8",
@@ -74,7 +74,7 @@
   "early_stop_min_delta": 0.002,
   "early_stop_min_steps": 10000,
 
-  "gpu_eval_csv": "5script/eval_fame_strict_clean_v8.csv",
+  "gpu_eval_csv": "assets/eval_fame_strict_clean_v8.csv",
   "gpu_eval_every": 2500,
   "gpu_eval_n": 100,
   "gpu_eval_steps": 50,

@@ -1,9 +1,9 @@
 {
   "_comment": "v10b: skel-1cond + patch=1 变体 (DiT-1CondSkel-S/1)。patch_size=1 → latent 32x32 → 1024 tokens (4x 计算/显存 vs S/2)。同为无 char + skel latent 输入, 单阶段从头。显存预算更大: batch 调小 (96), 需 compile。数据 v8 资产。可选 REPA。",
   "experiment_name": "v10b-skel1cond-S1",
-  "results_dir": "5script/results/v10_skel1cond",
+  "results_dir": "assets/results/v10_skel1cond",
 
-  "csv": "5script/train_fame_clean_v8.csv",
+  "csv": "assets/train_fame_clean_v8.csv",
   "latent_shards_dir": "final_latents_fame_v8",
   "skel_latent_shards_dir": "final_skel_latents_fame_1px_v8",
   "img_root": "final_imgs_fame_v8",
@@ -44,7 +44,7 @@
   "repa_layers": "8,11",
   "repa_teacher_ckpt": "pretrained_models/dinov2_vits14_pretrain.safetensors",
 
-  "gpu_eval_csv": "5script/eval_fame_strict_clean_v8.csv",
+  "gpu_eval_csv": "assets/eval_fame_strict_clean_v8.csv",
   "gpu_eval_every": 2500,
   "gpu_eval_n": 100,
   "gpu_eval_steps": 50,

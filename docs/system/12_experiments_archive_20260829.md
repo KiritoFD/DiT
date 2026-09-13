@@ -6,14 +6,14 @@
 
 ## 清理结果
 
-- 扫描范围：`5script/results/` + `results/`，共 77 个 run
+- 扫描范围：`assets/results/` + `results/`，共 77 个 run
 - 保护（未动）：11 个 run —— `ctrl_skel`（含在跑）、`s20_ctrl_skel_flow_v2`（用户在跑）、
   2 小时内有写入的目录；以及 s20 被引用的 `0102500.pt`
-- 清理：66 个 run，**释放 ~882 GB**（`5script/results` 885G→184G，`results` 221G→40G）
+- 清理：66 个 run，**释放 ~882 GB**（`assets/results` 885G→184G，`results` 221G→40G）
 - 产物：
-  - 汇总 CSV：`5script/old_experiments_summary_20260829.csv`（每 run：状态/说明/
+  - 汇总 CSV：`assets/old_experiments_summary_20260829.csv`（每 run：状态/说明/
     n_ckpts/保留/删除/释放/best_step/best_metrics）
-  - 每 run 快照 JSON：`5script/results/_cleanup_20260829/<series>__<run>.json`
+  - 每 run 快照 JSON：`assets/results/_cleanup_20260829/<series>__<run>.json`
     （配置摘要 + best2 指标 + eval 历史尾部 + 保留清单）
 
 ## 主要系列一览（best 指标为各自口径，跨代不可直接比）
@@ -33,18 +33,18 @@
 
 > ⚠ 指标口径演变：pixel 时代（s2–s11、v3、exp_*）与 latent+flow 时代
 > （s12 之后）的 eval 集和指标定义不同；s18→s19→s20 的 eval 口径也各不相同。
-> 真正同口径的对比只有 `5script/eval_unified_20260829.csv`（s15/s17/s18/s19
+> 真正同口径的对比只有 `assets/eval_unified_20260829.csv`（s15/s17/s18/s19
 > 在 eval_strict_midclean 上的统一评测）与 s20 的 eval_auto 曲线。
 
 ## 现存关键资产
 
 | 资产 | 位置 |
 |---|---|
-| s20 基模 best ckpt | `5script/results/s20_midcommon_s_flow_v2/.../checkpoints/0102500.pt`（被 ctrl 训练引用，永久保护） |
+| s20 基模 best ckpt | `assets/results/s20_midcommon_s_flow_v2/.../checkpoints/0102500.pt`（被 ctrl 训练引用，永久保护） |
 | s20 eval 曲线 | 同目录 `eval_auto_*.json` + `/tmp/s20_eval_daemon.log` |
-| 统一对比 CSV | `5script/eval_unified_20260829.csv`（s15/s17/s18/s19） |
-| ctrl 训练（在跑） | `5script/results/s20_ctrl_skel_flow_v2/`（注意 injections ckpt bug，见诊断报告） |
-| 旁路监控 CSV | `5script/eval_s20_ctrl_monitor.csv` |
+| 统一对比 CSV | `assets/eval_unified_20260829.csv`（s15/s17/s18/s19） |
+| ctrl 训练（在跑） | `assets/results/s20_ctrl_skel_flow_v2/`（注意 injections ckpt bug，见诊断报告） |
+| 旁路监控 CSV | `assets/eval_s20_ctrl_monitor.csv` |
 
 ## 综合分析图（docs/system/imgs/）
 

@@ -9,7 +9,7 @@ sys.path.insert(0, HERE)
 import pull_monitor as pm
 
 S8_RUN = "20260823-234546-s8-klf4-clean-dino"
-S8_SERIES = "/root/Workspace/xy/DiT/5script/results/s8_klf4_clean_dino"
+S8_SERIES = "/root/Workspace/xy/DiT/assets/results/s8_klf4_clean_dino"
 S8_RUN_DIR = f"{S8_SERIES}/{S8_RUN}"
 S8_CKPT = f"{S8_RUN_DIR}/checkpoints"
 

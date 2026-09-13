@@ -17,7 +17,7 @@ from PIL import Image
 
 # ── 配置 ──
 BASE = "/root/Workspace/xy/DiT"
-CSV_PATH = os.path.join(BASE, "5script", "eval100_top30_clean.csv")  # 79 张干净评测图
+CSV_PATH = os.path.join(BASE, "assets", "eval100_top30_clean.csv")  # 79 张干净评测图
 IMG_ROOT = BASE  # CSV 里是 final_imgs_256/xxx.png
 N = 100  # 用前 N 张
 DEVICE = "cpu"  # 远程 CPU，不干扰 GPU 训练

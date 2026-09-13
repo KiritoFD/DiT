@@ -44,12 +44,12 @@ sys.path.insert(0, ROOT)
 sys.stdout.reconfigure(encoding="utf-8")
 
 ap = argparse.ArgumentParser()
-ap.add_argument("--ckpt", default="5script/results/v10b_stdskel_fame3_c41x_cos_e/"
+ap.add_argument("--ckpt", default="assets/results/v10b_stdskel_fame3_c41x_cos_e/"
                                   "20260909-193018-v10b-stdskel-fame3-c41x-cos-e/checkpoints/0390000.pt")
 ap.add_argument("--bank", default="_sync_work/skel_bank_std1_v8.npz",
                 help="keys='script|char', latents=(N,4,32,32) 标准字形骨架 latent")
-ap.add_argument("--train-csv", default="5script/train_fame3_clean_v8.csv")
-ap.add_argument("--callig-map", default="5script/callig_id_map.json")
+ap.add_argument("--train-csv", default="assets/train_fame3_clean_v8.csv")
+ap.add_argument("--callig-map", default="assets/callig_id_map.json")
 ap.add_argument("--vae-path", default="pretrained_models/sd-vae-ft-ema")
 ap.add_argument("--device", default="cpu", choices=["cpu", "cuda"])
 ap.add_argument("--steps", type=int, default=50)

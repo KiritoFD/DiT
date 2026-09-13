@@ -33,10 +33,10 @@
 | std_skel3_latents_fame_sym | 标准字形骨架 VAE latent (g 条件) | 668M | 33 | 85,402 |
 | struct_fame3 | 结构像素图 (白线黑底) | 224M | 0 | 0 |
 | struct_fame_e | 结构像素图 (白线黑底) | 896M | 0 | 0 |
-| 5script/fame3-e | 增强生成图 (v3/v4) | 336M | 0 | 0 |
-| 5script/fame3-sym | 增强生成图 (v3/v4) | 224M | 0 | 0 |
-| 5script/pixmap | - | 3.4G | 0 | 0 |
-| 5script/structnet | - | 80M | 0 | 0 |
-| 5script/structure_probe_cache | - | 1.2G | 1 | 0 |
-| 5script/structure_probes | - | 176K | 0 | 0 |
+| assets/fame3-e | 增强生成图 (v3/v4) | 336M | 0 | 0 |
+| assets/fame3-sym | 增强生成图 (v3/v4) | 224M | 0 | 0 |
+| assets/pixmap | - | 3.4G | 0 | 0 |
+| assets/structnet | - | 80M | 0 | 0 |
+| assets/structure_probe_cache | - | 1.2G | 1 | 0 |
+| assets/structure_probes | - | 176K | 0 | 0 |
 | fame_clean_v8.npz | 旧 npz 打包 | 355M | - | - |

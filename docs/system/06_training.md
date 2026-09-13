@@ -68,8 +68,8 @@ with torch.autocast("cuda", dtype=torch.bfloat16):
 | 字段 | 值（s19） | 含义 |
 |---|---|---|
 | `experiment_name` | s19-midclean-s-flow | 实验 slug（拼在时间戳后，唯一目录） |
-| `data_csv` | 5script/train_mid_clean.csv | 训练表（mid-clean 118,776 行） |
-| `results_dir` | 5script/results/s19_midclean_s_flow | 实验根目录 |
+| `data_csv` | assets/train_mid_clean.csv | 训练表（mid-clean 118,776 行） |
+| `results_dir` | assets/results/s19_midclean_s_flow | 实验根目录 |
 | `model` | DiT-2Cond-S/2 | 模型规格 |
 | `cond_mode` / `condition_fusion` | 2cond / factorized_add | 条件模式与融合 |
 | `callig_embed_dim` / `char_embed_dim` | 128 / 384 | 条件嵌入维度 |

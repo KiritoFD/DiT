@@ -3,8 +3,8 @@
 import glob, json
 
 for pat in [
-    "/root/Workspace/xy/DiT/5script/results/s6_top6_diffonly/*resume*/checkpoints/eval_auto_*.json",
-    "/root/Workspace/xy/DiT/5script/results/s6_top6_*/**/eval_auto_*.json",
+    "/root/Workspace/xy/DiT/assets/results/s6_top6_diffonly/*resume*/checkpoints/eval_auto_*.json",
+    "/root/Workspace/xy/DiT/assets/results/s6_top6_*/**/eval_auto_*.json",
 ]:
     files = sorted(glob.glob(pat, recursive=True))
     for jp in files:

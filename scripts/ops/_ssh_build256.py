@@ -28,9 +28,9 @@ print("grep tool:\n", out)
 # 清 pyc + 杀旧进程 + 重跑
 out = run("find /root/Workspace/xy/DiT/tools/__pycache__ -name '*structure_cache*' -delete 2>/dev/null; "
           "pkill -9 -f build_latent_structure_cache.py 2>/dev/null; sleep 1; "
-          "rm -f /root/Workspace/xy/DiT/5script/structnet/structure256_cache.npz*; "
+          "rm -f /root/Workspace/xy/DiT/assets/structnet/structure256_cache.npz*; "
           "cd /root/Workspace/xy/DiT && nohup /opt/conda/bin/python tools/build_latent_structure_cache.py "
-          "--csv 5script/train.csv --out 5script/structnet/structure256_cache.npz "
+          "--csv assets/train.csv --out assets/structnet/structure256_cache.npz "
           "--size 256 --workers 16 > /tmp/_build_cache256b.log 2>&1 & echo BUILD3_STARTED")
 print("launch:", out)
 

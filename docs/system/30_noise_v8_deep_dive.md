@@ -173,15 +173,15 @@
 # 远程：隔离 → 删除
 mv final_imgs_fame_v9 final_imgs_fame_v9_REJECTED
 rm -rf final_imgs_fame_v9_REJECTED
-rm -f 5script/train_fame_clean_v9.csv      # 会被误用作训练清单，一并删除
+rm -f assets/train_fame_clean_v9.csv      # 会被误用作训练清单，一并删除
 ```
 
 **v8 完好性验证**：删除后 `final_imgs_fame_v8` 仍为 **51822 张**（未受任何影响）。
 
 保留作为证据（小体积 CSV，不参与训练）：
-- `5script/stroke_damage_v9.csv` — 全量笔画级损伤评估（废弃依据）
-- `5script/clean_report_v9.csv` — v3.7 逐图报告
-- `5script/scan_v9_noise.csv` — v3.7 版同口径扫描
+- `assets/stroke_damage_v9.csv` — 全量笔画级损伤评估（废弃依据）
+- `assets/clean_report_v9.csv` — v3.7 逐图报告
+- `assets/scan_v9_noise.csv` — v3.7 版同口径扫描
 
 ---
 
@@ -200,12 +200,12 @@ rm -f 5script/train_fame_clean_v9.csv      # 会被误用作训练清单，一�
 ```bash
 # 1) 扫描（原图，基础指标）
 python tools/clean/scan_image_pollution.py \
-    --csv 5script/train_fame.csv --out 5script/scan_train_pollution.csv --workers 32
+    --csv assets/train_fame.csv --out assets/scan_train_pollution.csv --workers 32
 
 # 2) 扫描（v8，扩展指标）—— 脚本先 scp 到远程 _sync_work/
 ssh 4090 'cd /root/Workspace/xy/DiT && /opt/conda/bin/python _sync_work/scan_v8_noise.py \
-    --csv 5script/train_fame_clean_v8.csv --img-root final_imgs_fame_v8 \
-    --out 5script/scan_v8_noise.csv --workers 8'
+    --csv assets/train_fame_clean_v8.csv --img-root final_imgs_fame_v8 \
+    --out assets/scan_v8_noise.csv --workers 8'
 
 # 3) 原图 vs v8 对比
 python _ot_scratch/_cmp_v8_orig.py

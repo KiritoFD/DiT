@@ -17,8 +17,8 @@ import torch
 
 # ── A. 预训练书家表塌缩度 ──
 print("=" * 60)
-print("[A] 预训练书家表塌缩度 (5script/callig_emb_pretrained.pt)")
-pt = torch.load("5script/callig_emb_pretrained.pt", map_location="cpu", weights_only=False)
+print("[A] 预训练书家表塌缩度 (assets/callig_emb_pretrained.pt)")
+pt = torch.load("assets/callig_emb_pretrained.pt", map_location="cpu", weights_only=False)
 print("  文件 keys:", list(pt.keys()) if isinstance(pt, dict) else type(pt))
 emb = None
 if isinstance(pt, dict):
@@ -45,10 +45,10 @@ if emb is not None:
 # ── B. 模型里 callig/glyph scale ──
 print("=" * 60)
 print("[B] 最新 c41x_cos_e ckpt 的通路活性")
-ck_paths = sorted(glob.glob("5script/results/v10b_stdskel_fame3_c41x_cos_e/*/checkpoints/*.pt"),
+ck_paths = sorted(glob.glob("assets/results/v10b_stdskel_fame3_c41x_cos_e/*/checkpoints/*.pt"),
                   key=lambda p: int(os.path.basename(p).split(".")[0]))
 if not ck_paths:
-    ck_paths = sorted(glob.glob("5script/results/v10b_stdskel_fame3_c41x_cos/*/checkpoints/*.pt"),
+    ck_paths = sorted(glob.glob("assets/results/v10b_stdskel_fame3_c41x_cos/*/checkpoints/*.pt"),
                       key=lambda p: int(os.path.basename(p).split(".")[0]))
 ck = torch.load(ck_paths[-1], map_location="cpu", weights_only=False)
 a = ck.get("args", {}) or {}

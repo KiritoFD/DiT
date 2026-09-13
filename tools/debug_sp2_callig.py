@@ -25,7 +25,7 @@ def main():
     ap.add_argument("--ckpt", required=True)
     args = ap.parse_args()
 
-    specs = sorted(glob.glob("5script/results/v10b_stdskel_fame3_sp2/*/checkpoints/*.pt"),
+    specs = sorted(glob.glob("assets/results/v10b_stdskel_fame3_sp2/*/checkpoints/*.pt"),
                    key=lambda p: int(os.path.basename(p).split(".")[0]))
     ck_path = (next((p for p in specs if int(os.path.basename(p).split(".")[0]) == int(args.ckpt)), specs[-1])
                if args.ckpt.isdigit() else args.ckpt)

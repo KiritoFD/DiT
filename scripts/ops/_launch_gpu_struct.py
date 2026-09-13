@@ -31,9 +31,9 @@ print("compile:", run("cd /root/Workspace/xy/DiT && /opt/conda/bin/python -m py_
 print("launch:", run("cd /root/Workspace/xy/DiT && "
     "tmux new-session -d -s structgpu '"
     "/opt/conda/bin/python tools/train_struct_decoder_gpu.py "
-    "--csv 5script/train.csv --epochs 20 --batch-size 512 --base 64 --depth 4 "
+    "--csv assets/train.csv --epochs 20 --batch-size 512 --base 64 --depth 4 "
     "--skel-pos-weight 15 --canny-pos-weight 10 "
-    "--out-dir 5script/results/struct_decoder_gpu "
+    "--out-dir assets/results/struct_decoder_gpu "
     "--log-every 50 > run_struct_gpu.log 2>&1' && echo GPU_STARTED", timeout=30))
 
 time.sleep(30)

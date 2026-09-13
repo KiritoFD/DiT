@@ -1,7 +1,7 @@
 {
-  "data_csv": "5script/train.csv",
+  "data_csv": "assets/train.csv",
   "data_dir": null,
-  "results_dir": "5script/results/v3a",
+  "results_dir": "assets/results/v3a",
   "experiment_name": "v3a-2factor-glyph-canny-skel",
   "pretrained": null,
   "reset_cond_head": false,
@@ -42,7 +42,7 @@
   "lora_target": "all",
   "resume_lora": null,
   "old_lora_r": 16,
-  "resume_full": "5script/results/v3a/20260815-195729-v3a-2factor-glyph-canny-skel/checkpoints/0005000.pt",
+  "resume_full": "assets/results/v3a/20260815-195729-v3a-2factor-glyph-canny-skel/checkpoints/0005000.pt",
   "resume_lr": null,
   "num_workers": 8,
   "log_every": 20,
@@ -51,7 +51,7 @@
   "preload": true,
   "preload_workers": 24,
   "auto_eval": true,
-  "eval_csv": "5script/eval_strata/clean_unseen_triple_100.csv",
+  "eval_csv": "assets/eval_strata/clean_unseen_triple_100.csv",
   "eval_n": 100,
   "eval_steps": 50,
   "eval_cfg": 4.0,
@@ -72,5 +72,5 @@
   "img_root": "final_imgs_256",
   "canny_root": "final_canny",
   "skel_root": "final_skeleton",
-  "config": "exp_s_5script_v3a_glyph_cs.json"
+  "config": "exp_s_assets_v3a_glyph_cs.json"
 }

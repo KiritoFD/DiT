@@ -6,12 +6,12 @@ os.chdir("/root/Workspace/xy/DiT")
 import torch
 
 # 活跃书家 id
-rows = list(csv.DictReader(open('5script/train_fame3_clean_v8.csv', encoding='utf-8')))
+rows = list(csv.DictReader(open('assets/train_fame3_clean_v8.csv', encoding='utf-8')))
 c = Counter(int(r['calligrapher_id']) for r in rows)
 active = sorted(c)
 print(f"活跃书家数 = {len(active)}  id = {active}")
 
-ck_path = sorted(glob.glob("5script/results/v10b_stdskel_fame3_sp2/*/checkpoints/*.pt"),
+ck_path = sorted(glob.glob("assets/results/v10b_stdskel_fame3_sp2/*/checkpoints/*.pt"),
                  key=lambda p: int(os.path.basename(p).split(".")[0]))[-1]
 ck = torch.load(ck_path, map_location="cpu", weights_only=False)
 a = ck.get("args", {}) or {}

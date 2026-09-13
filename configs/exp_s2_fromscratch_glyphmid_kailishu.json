@@ -2,7 +2,7 @@
   "experiment_name": "s-fromscratch-2cond-glyph-midstep-kailishu",
   "data_csv": "kailishu_train.csv",
   "data_dir": "",
-  "results_dir": "5script/results/s2_fromscratch_glyphmid",
+  "results_dir": "assets/results/s2_fromscratch_glyphmid",
   "pretrained": null,
   "model": "DiT-2Cond-S/2",
   "cond_mode": "2cond",

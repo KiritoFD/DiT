@@ -41,7 +41,7 @@ for sp in sorted(glob.glob(os.path.join(SHARDS, "shard_*.npz"))):
     d.close()
 all_ids.sort()
 print(f"[csv] {len(all_ids)} img_ids from shards", flush=True)
-out_csv = "/root/Workspace/xy/DiT/5script/train_full.csv"
+out_csv = "/root/Workspace/xy/DiT/assets/train_full.csv"
 with open(out_csv, "w", encoding="utf-8") as f:
     w = csv.DictWriter(f, fieldnames=["image_path","calligrapher_id","script_id","glyph_id","character_id","character"])
     w.writeheader()

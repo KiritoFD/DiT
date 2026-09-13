@@ -25,15 +25,15 @@ import argparse
 import datetime
 
 ROOT = "/root/Workspace/xy/DiT"
-OUT_DIR = os.path.join(ROOT, "5script", "results", "_cleanup_20260829")
-CSV_OUT = os.path.join(ROOT, "5script", "old_experiments_summary_20260829.csv")
+OUT_DIR = os.path.join(ROOT, "assets", "results", "_cleanup_20260829")
+CSV_OUT = os.path.join(ROOT, "assets", "old_experiments_summary_20260829.csv")
 SEARCH_ROOTS = [
-    os.path.join(ROOT, "5script", "results"),
+    os.path.join(ROOT, "assets", "results"),
     os.path.join(ROOT, "results"),
 ]
 PROTECT_SERIES = {"ctrl_skel", "s20_ctrl_skel_flow_v2"}  # 在跑/用户在用
 PROTECT_CKPTS = {  # 被活动训练引用的 ckpt (绝对路径)
-    os.path.join(ROOT, "5script/results/s20_midcommon_s_flow_v2/"
+    os.path.join(ROOT, "assets/results/s20_midcommon_s_flow_v2/"
                  "20260829-023132-s20-midcommon-s-flow-v2/checkpoints/0102500.pt"),
 }
 FRESH_HOURS = 2.0

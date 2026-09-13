@@ -13,7 +13,7 @@ eval_vae.py — 比较不同 VAE 的重建质量 (MSE/SSIM/LPIPS).
   - latent MSE (encode→decode 往返)
 
 用法:
-  python tools/vae/eval_vae.py --vae1 pretrained_models/sd-vae-ft-ema --vae2 pretrained_models/kl-f4 --data 5script/eval100_top30.csv --n 100
+  python tools/vae/eval_vae.py --vae1 pretrained_models/sd-vae-ft-ema --vae2 pretrained_models/kl-f4 --data assets/eval100_top30.csv --n 100
 """
 import os
 import sys
@@ -111,7 +111,7 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--vae1", default="pretrained_models/sd-vae-ft-ema", help="VAE 1 (baseline)")
     ap.add_argument("--vae2", default="pretrained_models/kl-f4", help="VAE 2 (comparison)")
-    ap.add_argument("--data", default="5script/eval100_top30.csv", help="eval CSV")
+    ap.add_argument("--data", default="assets/eval100_top30.csv", help="eval CSV")
     ap.add_argument("--img-root", default="final_images", help="image root")
     ap.add_argument("--n", type=int, default=100)
     ap.add_argument("--batch", type=int, default=8)

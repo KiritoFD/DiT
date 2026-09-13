@@ -1,7 +1,7 @@
 {
   "_comment": "v8d: B 段变体-解冻主模型 (unfreeze-main)。从 A_main_final 起, warm-start + 解冻主模型(除char表, 低 lr 3e-5) + ctrl(3e-4) 联合训练。对照 v8b(冻结 base, ctrl.ssim 0.7641@35k)。回答: 解冻主模型能否提升 ctrl 注入上限, 代价是多少 base 遗忘。数据 v8 资产。eval cfg 0.7。",
   "experiment_name": "v8d-unfreeze-main",
-  "results_dir": "5script/results/v8_3stage/v8d",
+  "results_dir": "assets/results/v8_3stage/v8d",
 
   "model": "DiT-2Cond-S/2",
   "train_ctrl_only": true,
@@ -10,7 +10,7 @@
   "compile": true,
   "compile_mode": "default",
 
-  "csv": "5script/train_fame_clean_v8.csv",
+  "csv": "assets/train_fame_clean_v8.csv",
   "latent_shards_dir": "final_latents_fame_v8",
   "img_root": "final_imgs_fame_v8",
   "skel_root": "final_skel1_fame_v8",
@@ -76,7 +76,7 @@
   "early_stop_min_delta": 0.002,
   "early_stop_min_steps": 10000,
 
-  "gpu_eval_csv": "5script/eval_fame_strict_clean_v8.csv",
+  "gpu_eval_csv": "assets/eval_fame_strict_clean_v8.csv",
   "gpu_eval_every": 2500,
   "gpu_eval_n": 100,
   "gpu_eval_steps": 50,

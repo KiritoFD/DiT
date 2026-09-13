@@ -3,7 +3,7 @@
 import json, glob, sys, csv
 import statistics
 
-paths = sorted(glob.glob("/root/Workspace/xy/DiT/5script/results/skel_follow_gpu/*_charnull/metrics.json"))
+paths = sorted(glob.glob("/root/Workspace/xy/DiT/assets/results/skel_follow_gpu/*_charnull/metrics.json"))
 rows = []
 for p in paths:
     tag = p.split("/")[-2]
@@ -30,7 +30,7 @@ for tag, d in rows:
     print(f"{tag:<24}{n:>4}{m3:>10.3f}{md3:>10.3f}{sd3:>10.3f}{m1:>10.3f}{md1:>10.3f}")
     out_rows.append((tag, n, round(m3,4), round(md3,4), round(sd3,4), round(m1,4), round(md1,4)))
 
-out = "/root/Workspace/xy/DiT/5script/results/skel_follow_gpu/summary_charnull.csv"
+out = "/root/Workspace/xy/DiT/assets/results/skel_follow_gpu/summary_charnull.csv"
 with open(out, "w", newline="") as f:
     w = csv.writer(f)
     w.writerow(["tag", "n", "iou3_mean", "iou3_median", "iou3_std", "iou1_mean", "iou1_median"])

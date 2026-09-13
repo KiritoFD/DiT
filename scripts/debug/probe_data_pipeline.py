@@ -3,7 +3,7 @@ import os, csv, json, numpy as np
 os.chdir('/root/Workspace/xy/DiT')
 
 # 1) train_fame_clean.csv 的 image_path 指向哪里?
-rows = list(csv.DictReader(open('5script/train_fame_clean.csv', encoding='utf-8')))
+rows = list(csv.DictReader(open('assets/train_fame_clean.csv', encoding='utf-8')))
 print('train_fame_clean rows:', len(rows))
 print('cols:', list(rows[0].keys()))
 p = rows[0]['image_path']

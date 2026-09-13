@@ -1,6 +1,6 @@
-[[34m2026-08-21 21:18:23[0m] Experiment directory created at 5script/results/s8_structv2_b32sub8/20260821-211823-s8-structv2-b32sub8
+[[34m2026-08-21 21:18:23[0m] Experiment directory created at assets/results/s8_structv2_b32sub8/20260821-211823-s8-structv2-b32sub8
 [[34m2026-08-21 21:18:23[0m] Building 2-Cond model: DiT-2Cond-S/2 (callig=1011, glyph/char=35130, fusion=factorized_add, dims=128/256, dropout=all:0.05, one:0.25, skel_head=False, glyph_cond=False, glyph_scale_init=0.4)
-[[34m2026-08-21 21:18:24[0m] [resume-full] Loaded weights from 5script/results/s6_top6_diffonly/20260820-191536-s6-top6-diffonly-resume/checkpoints/0195000.pt (missing=0, unexpected=0).
+[[34m2026-08-21 21:18:24[0m] [resume-full] Loaded weights from assets/results/s6_top6_diffonly/20260820-191536-s6-top6-diffonly-resume/checkpoints/0195000.pt (missing=0, unexpected=0).
 [[34m2026-08-21 21:18:24[0m] Trainable Parameters: 41,752,737
 [[34m2026-08-21 21:18:24[0m] Frozen Parameters: 98,304 (trainable ratio: 99.77%)
 [[34m2026-08-21 21:18:25[0m] [EMA] restored EMA weights from checkpoint

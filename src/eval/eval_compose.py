@@ -16,7 +16,7 @@
 
 用法:
   /opt/conda/bin/python eval_compose.py --ckpt <ckpt.pt> \
-      --csv 5script/eval_strata/clean_unseen_triple_100.csv --n 100 --out compose_eval
+      --csv assets/eval_strata/clean_unseen_triple_100.csv --n 100 --out compose_eval
 """
 import os, sys, json, argparse, datetime
 sys.stdout.reconfigure(encoding="utf-8", errors="replace")
@@ -77,7 +77,7 @@ def compose_ddim_loop(diffusion, model, z, conds_yc, conds_yh, cfg, wI, device,
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--ckpt", required=True)
-    ap.add_argument("--csv", default="5script/eval_strata/clean_unseen_triple_100.csv")
+    ap.add_argument("--csv", default="assets/eval_strata/clean_unseen_triple_100.csv")
     ap.add_argument("--n", type=int, default=100)
     ap.add_argument("--steps", type=int, default=50)
     ap.add_argument("--cfg", type=float, default=4.0)

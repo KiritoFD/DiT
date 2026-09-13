@@ -5,7 +5,7 @@ eval_s20_ctrl_monitor.py — s20 ControlNet 训练的旁路轻量 eval (单次).
 用法: /opt/conda/bin/python tools/eval_s20_ctrl_monitor.py
   * 找 s20_ctrl_skel_flow_v2 系列 run 里最新的 *.pt.done ckpt
   * base (无 skel) vs ctrl (GT skel latent) 各采样 n=100, cfg 1.7, Heun 25 步 (=50 NFE)
-  * 指标追加到 5script/eval_s20_ctrl_monitor.csv (小 batch, 不干扰主训练)
+  * 指标追加到 assets/eval_s20_ctrl_monitor.csv (小 batch, 不干扰主训练)
 """
 import os
 import sys
@@ -25,11 +25,11 @@ sys.stdout.reconfigure(encoding="utf-8")
 from src.model.controlnet import load_main_model, ControlNetDiT
 from src.eval.inference import build_diffusion, sample_latents, _ssim, _mse
 
-RESULTS_SERIES = "5script/results/s20_ctrl_skel_flow_v2"
-EVAL_CSV = "5script/eval_strict_midclean.csv"
+RESULTS_SERIES = "assets/results/s20_ctrl_skel_flow_v2"
+EVAL_CSV = "assets/eval_strict_midclean.csv"
 SKEL_SHARDS = "final_skel_latents_eval_v2"
 IMG_ROOT = "final_imgs_256"
-OUT_CSV = "5script/eval_s20_ctrl_monitor.csv"
+OUT_CSV = "assets/eval_s20_ctrl_monitor.csv"
 N = 100
 CFG = 1.7
 STEPS = 25  # heun@25 = 50 NFE, 与训练 gpu_eval / s20 统一 eval 协议一致
@@ -59,7 +59,7 @@ def main():
     device = torch.device("cuda")
     # 主模型 = s20 预训练 best ckpt (ctrl ckpt 里没有 main.* 权重!)
     # arch 参数必须与 s20 预训练配置 (s20_midcommon_s_flow_v2.json) 完全一致
-    main_ckpt = ("5script/results/s20_midcommon_s_flow_v2/"
+    main_ckpt = ("assets/results/s20_midcommon_s_flow_v2/"
                  "20260829-023132-s20-midcommon-s-flow-v2/checkpoints/0102500.pt")
     main_model = load_main_model(
         "DiT-2Cond-S/2", main_ckpt, device=device,

@@ -12,5 +12,5 @@ def run(cmd, timeout=90):
 print(run("pkill -9 -f auto_eval_pixel 2>/dev/null; sleep 1; "
           "cd /root/Workspace/xy/DiT && "
           "nohup /opt/conda/bin/python tools/auto_eval_pixel.py "
-          "--results-dir 5script/results/px_s_scratch "
+          "--results-dir assets/results/px_s_scratch "
           "--device cpu --interval 20 > cpu_eval_px.log 2>&1 & echo EVAL_RESTARTED"))

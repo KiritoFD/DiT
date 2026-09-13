@@ -3,9 +3,9 @@
 import json, glob
 
 ARMS = {
-    "v10a":      "/root/Workspace/xy/DiT/5script/results/v10a_skel_cond_pretrain/*/checkpoints/eval_auto_*.json",
-    "v10b":      "/root/Workspace/xy/DiT/5script/results/v10b_skel_only_pretrain/*/checkpoints/eval_auto_*.json",
-    "v10a-dino": "/root/Workspace/xy/DiT/5script/results/v10adino_skel_cond_pretrain/*/checkpoints/eval_auto_*.json",
+    "v10a":      "/root/Workspace/xy/DiT/assets/results/v10a_skel_cond_pretrain/*/checkpoints/eval_auto_*.json",
+    "v10b":      "/root/Workspace/xy/DiT/assets/results/v10b_skel_only_pretrain/*/checkpoints/eval_auto_*.json",
+    "v10a-dino": "/root/Workspace/xy/DiT/assets/results/v10adino_skel_cond_pretrain/*/checkpoints/eval_auto_*.json",
 }
 
 def load_curve(pat):

@@ -11,7 +11,7 @@ def run(cmd, timeout=60):
 # 简单版: 杀旧 eval, 用 nohup 重启
 out = run("pkill -9 -f auto_eval_pixel 2>/dev/null")
 print("kill:", out)
-out = run("cd /root/Workspace/xy/DiT && nohup /opt/conda/bin/python tools/auto_eval_pixel.py --results-dir 5script/results/px_s_scratch --device cpu --interval 20 > cpu_eval_px.log 2>&1 &")
+out = run("cd /root/Workspace/xy/DiT && nohup /opt/conda/bin/python tools/auto_eval_pixel.py --results-dir assets/results/px_s_scratch --device cpu --interval 20 > cpu_eval_px.log 2>&1 &")
 print("launch:", out)
 time.sleep(5)
 out = run("pgrep -af auto_eval_pixel | head -2")

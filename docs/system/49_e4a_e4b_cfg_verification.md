@@ -7,7 +7,7 @@
 
 ## 1. E4a：strict 集（n=237）CFG 复核 — 修正 doc48 §2 的适用范围
 
-ckpt: c41x @212.5k（与 doc48 同一 ckpt），strict = `5script/eval_fame3_strict_clean_v9.csv`，
+ckpt: c41x @212.5k（与 doc48 同一 ckpt），strict = `assets/eval_fame3_strict_clean_v9.csv`，
 Heun50，skel hit 237/237：
 
 | cfg | ssim | skel_iou |

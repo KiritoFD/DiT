@@ -11,7 +11,7 @@
 写 eval_auto_ctrl_{step}.json (eval_facade 同 schema, 早停/daemon/collect 零改动兼容).
 
 用法:
-  常驻: python -u src/eval/cpu_eval_daemon.py --watch-root 5script/results/v9c_skel_joint
+  常驻: python -u src/eval/cpu_eval_daemon.py --watch-root assets/results/v9c_skel_joint
   验证: python -u src/eval/cpu_eval_daemon.py --once <ckpt.pt> --report /tmp/r.json
 """
 import os, sys, json, time, glob, argparse, subprocess
@@ -305,7 +305,7 @@ def main():
     ap.add_argument("--once", default="")
     ap.add_argument("--mode", choices=["ctrl_pair", "pretrain_g"], default="ctrl_pair")
     ap.add_argument("--report", default="")
-    ap.add_argument("--eval-sets", default="seen=5script/eval_seen_v10.csv,strict=5script/eval_fame3_strict_clean_v9.csv",
+    ap.add_argument("--eval-sets", default="seen=assets/eval_seen_v10.csv,strict=assets/eval_fame3_strict_clean_v9.csv",
                     help="pretrain_g 多 eval 集 'name=csv[,name=csv...]'; seen 每 ckpt, 其他集按 --strict-every")
     ap.add_argument("--strict-every", type=int, default=10000,
                     help="非 seen 集 (strict) 的评测间隔 (按 ckpt step); 0 = 每 ckpt 都评")

@@ -1,0 +1,12 @@
+{
+  "rows": 147841,
+  "latent_dtype": "float16",
+  "latent_shape": [
+    4,
+    32,
+    32
+  ],
+  "structure_size": 32,
+  "bit_packed": true,
+  "source_csv": "assets/train.csv"
+}

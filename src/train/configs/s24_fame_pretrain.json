@@ -1,10 +1,10 @@
 {
   "_comment": "s24 fame 基本预训练：只用 fame 真迹 + glyph级DINO字嵌入，不喂标准字形空间条件（那是后训练内容）。设计依据：(1) 字级DINO表(768d)实测不可用——字间余弦均值0.83窄锥，中心化后最近邻多为无关字（跨书体平均抹掉了字身份），故仍用glyph级384d表（异字余弦0.08，覆盖fame glyph 91.8%）。(2) 字信号被掩盖的主因是幅度（callig_proj 12.90 vs char_proj 7.32）与冻结容量不足，而非drop频率——故解冻字表（DINO初始化作先验，训练中向任务几何漂移）+ drop偏向保字（字在场85%/书家在场70%）+ 可学习char_scale。(3) fame 44书家40个写多书体，书体信号必须由字分支提供，glyph=script×char 的书体分量是必需信息而非纯噪声。与 s23 的唯一变量：w_glyph_cond off + freeze_char_table off + drop 配比。",
   "experiment_name": "s24-fame-pretrain",
-  "data_csv": "5script/train_fame.csv",
+  "data_csv": "assets/train_fame.csv",
   "latent_shards_dir": "final_latents_fame",
   "img_root": "final_imgs_256",
-  "results_dir": "5script/results/s24_fame_pretrain",
+  "results_dir": "assets/results/s24_fame_pretrain",
 
   "model": "DiT-2Cond-S/2",
   "cond_mode": "2cond",
@@ -60,7 +60,7 @@
   "ckpt_keep": 0,
 
   "auto_eval": true,
-  "eval_csv": "5script/eval_fame_strict.csv",
+  "eval_csv": "assets/eval_fame_strict.csv",
   "eval_n": 500,
   "eval_steps": 25,
   "eval_cfg": 0.7,

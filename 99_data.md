@@ -17,8 +17,8 @@ b1/b2/b3 = 同一算子不同强度: 测笔画宽 w, 朝带中 mid=(4.5+9)/2=6.7
   target = K*(mid-w), 封顶 cap_frac*w, 每 pass ≈ ±2px, 离散二值形态学(纯黑白无中间灰)
   b1: K=0.6 cap 0.35w   b2: K=1.2 cap 0.5w   b3: K=2.0 cap 0.65w
 细→粗 / 粗→细, 更好看更好学. 无 _a/_c.
-输出: 5script/aug_renders_fame_v3/<id>_{b1,b2,b3}.png + train_fame3_aug_v3.csv
-输出: 5script/fame3-e/<id>_{b1,b2,b3}.png + 5script/train_fame3_e.csv
+输出: assets/aug_renders_fame_v3/<id>_{b1,b2,b3}.png + train_fame3_aug_v3.csv
+输出: assets/fame3-e/<id>_{b1,b2,b3}.png + assets/train_fame3_e.csv
 """
 import csv
 import json
@@ -27,11 +27,11 @@ import os
 from PIL import Image, ImageFilter
 
 ROOT = "/root/Workspace/xy/DiT"
-SRC_CSV = f"{ROOT}/5script/train_fame3_clean_v8.csv"
-OUT_DIR = f"{ROOT}/5script/aug_renders_fame_v3"
-OUT_CSV = f"{ROOT}/5script/train_fame3_aug_v3.csv"
-OUT_DIR = f"{ROOT}/5script/fame3-e"
-OUT_CSV = f"{ROOT}/5script/train_fame3_e.csv"
+SRC_CSV = f"{ROOT}/assets/train_fame3_clean_v8.csv"
+OUT_DIR = f"{ROOT}/assets/aug_renders_fame_v3"
+OUT_CSV = f"{ROOT}/assets/train_fame3_aug_v3.csv"
+OUT_DIR = f"{ROOT}/assets/fame3-e"
+OUT_CSV = f"{ROOT}/assets/train_fame3_e.csv"
 sys.stdout.reconfigure(encoding="utf-8")
 
 LO, HI = 4.5, 9.0
@@ -41,13 +41,13 @@ MID = (LO + HI) / 2.0
         base = os.path.splitext(os.path.basename(r["image_path"]))[0]
         for kind in KINDS:
             r2 = dict(r)
-            r2["image_path"] = f"5script/aug_renders_fame_v3/{base}_{kind}.png"
-            r2["image_path"] = f"5script/fame3-e/{base}_{kind}.png"
+            r2["image_path"] = f"assets/aug_renders_fame_v3/{base}_{kind}.png"
+            r2["image_path"] = f"assets/fame3-e/{base}_{kind}.png"
             r2["aug"] = kind
             w.writerow(r2)
 n = sum(1 for _ in open(OUT_CSV, encoding="utf-8")) - 1
 print(f"{OUT_CSV}: {n} rows")
-$ python -c "import ast; ast.parse(open('tools/aug/aug_renders_v3.py',encoding='utf-8').read()); print('ok')" && scp tools/aug/aug_renders_v3.py 4090:/root/Workspace/xy/DiT/tools/aug/ && ssh 4090 "cd /root/Workspace/xy/DiT && /opt/conda/bin/python tools/aug/aug_renders_v3.py 2>&1 | tail -8 && ls 5script/fame3-e | wc -l && du -sh 5script/fame3-e"
+$ python -c "import ast; ast.parse(open('tools/aug/aug_renders_v3.py',encoding='utf-8').read()); print('ok')" && scp tools/aug/aug_renders_v3.py 4090:/root/Workspace/xy/DiT/tools/aug/ && ssh 4090 "cd /root/Workspace/xy/DiT && /opt/conda/bin/python tools/aug/aug_renders_v3.py 2>&1 | tail -8 && ls assets/fame3-e | wc -l && du -sh assets/fame3-e"
 ok
 5000/28385
 10000/28385
@@ -55,25 +55,25 @@ ok
 20000/28385
 25000/28385
 done: 28385 fails: 0
-/root/Workspace/xy/DiT/5script/train_fame3_e.csv: 85155 rows
+/root/Workspace/xy/DiT/assets/train_fame3_e.csv: 85155 rows
 85155
-336M	5script/fame3-e
+336M	assets/fame3-e
 + Thought: 2.7s
 全量生成完毕，顺手看一眼训练进度：
-$ ssh 4090 "tail -1 /root/Workspace/xy/DiT/logs/v10b_stdskel_fame3_c41x_cos/train_*.log | head -1; ls /root/Workspace/xy/DiT/5script/results/v10b_stdskel_fame3_c41x_cos/20260909-103136-*/checkpoints/*.pt 2>/dev/null | tail -2; cat /root/Workspace/xy/DiT/5script/results/v10b_stdskel_fame3_c41x_cos/20260909-103136-*/checkpoints/eval_auto_*.json 2>/dev/null | python3 -c \"import json,sys; [print(f) for f in [x] ]\" 2>/dev/null; ls /root/Workspace/xy/DiT/5script/results/v10b_stdskel_fame3_c41x_cos/20260909-103136-*/checkpoints/ | grep eval_auto | tail -3"
+$ ssh 4090 "tail -1 /root/Workspace/xy/DiT/logs/v10b_stdskel_fame3_c41x_cos/train_*.log | head -1; ls /root/Workspace/xy/DiT/assets/results/v10b_stdskel_fame3_c41x_cos/20260909-103136-*/checkpoints/*.pt 2>/dev/null | tail -2; cat /root/Workspace/xy/DiT/assets/results/v10b_stdskel_fame3_c41x_cos/20260909-103136-*/checkpoints/eval_auto_*.json 2>/dev/null | python3 -c \"import json,sys; [print(f) for f in [x] ]\" 2>/dev/null; ls /root/Workspace/xy/DiT/assets/results/v10b_stdskel_fame3_c41x_cos/20260909-103136-*/checkpoints/ | grep eval_auto | tail -3"
 [2026-09-09 11:15:13] (step=0110550) Diff: 0.1880 | REPA(w=0.03): 0.0033 | LR: 1.50e-04 | EMA: 0.999900 | Steps/Sec: 4.00 | Mem: 20.04G/20.04G
-/root/Workspace/xy/DiT/5script/results/v10b_stdskel_fame3_c41x_cos/20260909-103136-v10b-stdskel-fame3-c41x/checkpoints/0107500.pt
-/root/Workspace/xy/DiT/5script/results/v10b_stdskel_fame3_c41x_cos/20260909-103136-v10b-stdskel-fame3-c41x/checkpoints/0110000.pt
+/root/Workspace/xy/DiT/assets/results/v10b_stdskel_fame3_c41x_cos/20260909-103136-v10b-stdskel-fame3-c41x/checkpoints/0107500.pt
+/root/Workspace/xy/DiT/assets/results/v10b_stdskel_fame3_c41x_cos/20260909-103136-v10b-stdskel-fame3-c41x/checkpoints/0110000.pt
 eval_auto_102500.json
 eval_auto_105000.json
 eval_auto_107500.json
-$ ssh 4090 "cat /root/Workspace/xy/DiT/5script/results/v10b_stdskel_fame3_c41x_cos/20260909-103136-*/checkpoints/eval_auto_107500.json"
+$ ssh 4090 "cat /root/Workspace/xy/DiT/assets/results/v10b_stdskel_fame3_c41x_cos/20260909-103136-*/checkpoints/eval_auto_107500.json"
 {"n": 10, "ssim": 0.6193304254657364, "ssim_std": 0.0958054180905552, "mse": 0.5913373321294785, "mse_std": 0.2502990885919415, "lpips": 0.2891031116247177, "skel_iou": 0.053828485886313296, "ssim_p10": 0.49714103575880514, "ssim_q25": 0.5534853201433232, "ssim_med": 0.6258783852337422, "ssim_q75": 0.6855849631000162, "ssim_p90": 0.7155708852456623, "step": 107500, "elapsed_s": 78.8, "engine": "cpu_2sock_g", "cfg": 0.7, "ddim_steps": 50}
 + Thought: 2.2s
 完成。状态汇总：
 fame3-e 已生成
-- 5script/fame3-e/：85,155 张（28,385 × b1/b2/b3），0 失败，336MB
-- 5script/train_fame3_e.csv：85,155 行（aug 列标记 b1/b2/b3；原图行训练时从原 csv 引入）
+- assets/fame3-e/：85,155 张（28,385 × b1/b2/b3），0 失败，336MB
+- assets/train_fame3_e.csv：85,155 行（aug 列标记 b1/b2/b3；原图行训练时从原 csv 引入）
 - b3 的“扭曲”顾虑留档了：它是 diversity 最大的一档（0.774≈真实再写差异），如果最后嫌它野，训练 csv 里剔除 b3 行即可，图已备着
 训练（c41x_cos）
 - step 110550，warmup 结束、LR 已到峰值 1.50e-04 开始 cosine 下降；4.0 sps，健康
@@ -199,8 +199,8 @@ if args.lr_schedule == "cosine":
 $ python -c "import ast; ast.parse(open('src/train/train.py',encoding='utf-8').read()); print('syntax ok')" && scp src/train/train.py 4090:/root/Workspace/xy/DiT/src/train/train.py
 syntax ok
 + Thought: 2.9s
-$ ssh 4090 "bash /root/Workspace/xy/DiT/_sync_work/_launch_v10b_stdskel_fame3_variant.sh v10bstdskel3c41xcos v10b_stdskel_fame3_c41x_cos v10b_stdskel_fame3_c41x_cos /root/Workspace/xy/DiT/5script/results/v10b_stdskel_fame3_c41x_cos/20260909-103136-v10b-stdskel-fame3-c41x/checkpoints/0110000.pt"
-[launch] resume from /root/Workspace/xy/DiT/5script/results/v10b_stdskel_fame3_c41x_cos/20260909-103136-v10b-stdskel-fame3-c41x/checkpoints/0110000.pt (fresh scheduler)
+$ ssh 4090 "bash /root/Workspace/xy/DiT/_sync_work/_launch_v10b_stdskel_fame3_variant.sh v10bstdskel3c41xcos v10b_stdskel_fame3_c41x_cos v10b_stdskel_fame3_c41x_cos /root/Workspace/xy/DiT/assets/results/v10b_stdskel_fame3_c41x_cos/20260909-103136-v10b-stdskel-fame3-c41x/checkpoints/0110000.pt"
+[launch] resume from /root/Workspace/xy/DiT/assets/results/v10b_stdskel_fame3_c41x_cos/20260909-103136-v10b-stdskel-fame3-c41x/checkpoints/0110000.pt (fresh scheduler)
 tmux:
 cpu_eval: 1 windows (created Wed Sep  9 11:33:01 2026) [80x24]
 v10bstdskel3c41xcos: 1 windows (created Wed Sep  9 11:33:01 2026) [80x24]
@@ -299,9 +299,9 @@ if [ -n "$RESUME" ]; then
 fi
 tmux new-session -d -s "$NAME" \
   "export PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True; export PYTHONPATH=/root/Workspace/xy/DiT; $PY -u src/train/train.py --config src/train/configs/$CFG.json $RESUME_ARGS 2>&1 | tee $LOGD/train_$TS.log"
-$ scp _sync_work/_launch_v10b_stdskel_fame3_variant.sh 4090:/root/Workspace/xy/DiT/_sync_work/ && ssh 4090 "bash /root/Workspace/xy/DiT/_sync_work/_launch_v10b_stdskel_fame3_variant.sh v10bstdskel3c41xcos v10b_stdskel_fame3_c41x_cos v10b_stdskel_fame3_c41x_cos /root/Workspace/xy/DiT/5script/results/v10b_stdskel_fame3_c41x_cos/20260909-103136-v10b-stdskel-fame3-c41x/checkpoints/0110000.pt 6.75e-5"
+$ scp _sync_work/_launch_v10b_stdskel_fame3_variant.sh 4090:/root/Workspace/xy/DiT/_sync_work/ && ssh 4090 "bash /root/Workspace/xy/DiT/_sync_work/_launch_v10b_stdskel_fame3_variant.sh v10bstdskel3c41xcos v10b_stdskel_fame3_c41x_cos v10b_stdskel_fame3_c41x_cos /root/Workspace/xy/DiT/assets/results/v10b_stdskel_fame3_c41x_cos/20260909-103136-v10b-stdskel-fame3-c41x/checkpoints/0110000.pt 6.75e-5"
 [launch] override base LR -> 6.75e-5
-[launch] resume from /root/Workspace/xy/DiT/5script/results/v10b_stdskel_fame3_c41x_cos/20260909-103136-v10b-stdskel-fame3-c41x/checkpoints/0110000.pt (fresh scheduler)
+[launch] resume from /root/Workspace/xy/DiT/assets/results/v10b_stdskel_fame3_c41x_cos/20260909-103136-v10b-stdskel-fame3-c41x/checkpoints/0110000.pt (fresh scheduler)
 tmux:
 cpu_eval: 1 windows (created Wed Sep  9 12:32:28 2026) [80x24]
 v10bstdskel3c41xcos: 1 windows (created Wed Sep  9 12:32:28 2026) [80x24]
@@ -334,10 +334,10 @@ if getattr(args, 'fresh_scheduler', False) and _resume_full_ckpt is not None and
                 f"(total {total_planned_steps}); resume at {resume_start_step} "
                 f"-> LR starts mid-decay at "
                 f"{args.min_lr_ratio + (1.0 - args.min_lr_ratio) * 0.5 * (1.0 + math.cos(math.pi * max((resume_start_step - min(args.warmup_steps, total_planned_steps - 1)) / max(total_planned_steps - min(args.warmup_steps, total_planned_steps - 1), 1), 0.0))):.2e} (base)")
-$ python -c "import ast; ast.parse(open('src/train/train.py',encoding='utf-8').read()); print('ok')" && scp src/train/train.py 4090:/root/Workspace/xy/DiT/src/train/train.py && ssh 4090 "bash /root/Workspace/xy/DiT/_sync_work/_launch_v10b_stdskel_fame3_variant.sh v10bstdskel3c41xcos v10b_stdskel_fame3_c41x_cos v10b_stdskel_fame3_c41x_cos /root/Workspace/xy/DiT/5script/results/v10b_stdskel_fame3_c41x_cos/20260909-103136-v10b-stdskel-fame3-c41x/checkpoints/0110000.pt 6.75e-5"
+$ python -c "import ast; ast.parse(open('src/train/train.py',encoding='utf-8').read()); print('ok')" && scp src/train/train.py 4090:/root/Workspace/xy/DiT/src/train/train.py && ssh 4090 "bash /root/Workspace/xy/DiT/_sync_work/_launch_v10b_stdskel_fame3_variant.sh v10bstdskel3c41xcos v10b_stdskel_fame3_c41x_cos v10b_stdskel_fame3_c41x_cos /root/Workspace/xy/DiT/assets/results/v10b_stdskel_fame3_c41x_cos/20260909-103136-v10b-stdskel-fame3-c41x/checkpoints/0110000.pt 6.75e-5"
 ok
 [launch] override base LR -> 6.75e-5
-[launch] resume from /root/Workspace/xy/DiT/5script/results/v10b_stdskel_fame3_c41x_cos/20260909-103136-v10b-stdskel-fame3-c41x/checkpoints/0110000.pt (fresh scheduler)
+[launch] resume from /root/Workspace/xy/DiT/assets/results/v10b_stdskel_fame3_c41x_cos/20260909-103136-v10b-stdskel-fame3-c41x/checkpoints/0110000.pt (fresh scheduler)
 tmux:
 cpu_eval: 1 windows (created Wed Sep  9 12:39:00 2026) [80x24]
 v10bstdskel3c41xcos: 1 windows (created Wed Sep  9 12:39:00 2026) [80x24]
@@ -368,7 +368,7 @@ step 110700  LR: 4.98e-05  Diff: 0.1736
 报告进度--模型真的在改善吗？双通道的注入有好的效果吗？lr呢
 $ ssh 4090 "ls -t /root/Workspace/xy/DiT/logs/v10b_stdskel_fame3_c41x_cos/train_*.log | head -1"
 /root/Workspace/xy/DiT/logs/v10b_stdskel_fame3_c41x_cos/train_20260909-123857.log
-$ ssh 4090 "grep 'step=' /root/Workspace/xy/DiT/logs/v10b_stdskel_fame3_c41x_cos/train_20260909-123857.log | tail -5; echo ---; ls /root/Workspace/xy/DiT/5script/results/v10b_stdskel_fame3_c41x_cos/ | tail -3; echo ---; ls -t /root/Workspace/xy/DiT/5script/results/v10b_stdskel_fame3_c41x_cos/20260909-123850*/checkpoints/ 2>/dev/null | grep eval_auto | tail -5"
+$ ssh 4090 "grep 'step=' /root/Workspace/xy/DiT/logs/v10b_stdskel_fame3_c41x_cos/train_20260909-123857.log | tail -5; echo ---; ls /root/Workspace/xy/DiT/assets/results/v10b_stdskel_fame3_c41x_cos/ | tail -3; echo ---; ls -t /root/Workspace/xy/DiT/assets/results/v10b_stdskel_fame3_c41x_cos/20260909-123850*/checkpoints/ 2>/dev/null | grep eval_auto | tail -5"
 [2026-09-09 16:46:27] (step=0170500) Diff: 0.1304 | REPA(w=0.03): 0.0032 | LR: 3.11e-05 | EMA: 0.999900 | Steps/Sec: 4.13 | Mem: 20.06G/20.06G
 [2026-09-09 16:46:39] (step=0170550) Diff: 0.1320 | REPA(w=0.03): 0.0032 | LR: 3.10e-05 | EMA: 0.999900 | Steps/Sec: 4.11 | Mem: 20.06G/20.06G
 [2026-09-09 16:46:52] (step=0170600) Diff: 0.1294 | REPA(w=0.03): 0.0032 | LR: 3.10e-05 | EMA: 0.999900 | Steps/Sec: 3.70 | Mem: 20.06G/20.06G
@@ -379,7 +379,7 @@ $ ssh 4090 "grep 'step=' /root/Workspace/xy/DiT/logs/v10b_stdskel_fame3_c41x_cos
 20260909-123903-v10b-stdskel-fame3-c41x
 _active_ckpt_dir.txt
 ---
-$ ssh 4090 "ls /root/Workspace/xy/DiT/5script/results/v10b_stdskel_fame3_c41x_cos/20260909-123903-v10b-stdskel-fame3-c41x/checkpoints/ | grep eval_auto | tail -8; echo ---; for f in /root/Workspace/xy/DiT/5script/results/v10b_stdskel_fame3_c41x_cos/20260909-123903-v10b-stdskel-fame3-c41x/checkpoints/eval_auto_1*.json; do /opt/conda/bin/python -c \"import json,sys; d=json.load(open('\$f')); s=d.get('strict'); seen=d['ssim']; st=s['ssim'] if s else None; print(d['step'], round(seen,4), round(st,4) if st else '-')\"; done | tail -10"
+$ ssh 4090 "ls /root/Workspace/xy/DiT/assets/results/v10b_stdskel_fame3_c41x_cos/20260909-123903-v10b-stdskel-fame3-c41x/checkpoints/ | grep eval_auto | tail -8; echo ---; for f in /root/Workspace/xy/DiT/assets/results/v10b_stdskel_fame3_c41x_cos/20260909-123903-v10b-stdskel-fame3-c41x/checkpoints/eval_auto_1*.json; do /opt/conda/bin/python -c \"import json,sys; d=json.load(open('\$f')); s=d.get('strict'); seen=d['ssim']; st=s['ssim'] if s else None; print(d['step'], round(seen,4), round(st,4) if st else '-')\"; done | tail -10"
 eval_auto_145000.json
 eval_auto_147500.json
 eval_auto_150000.json
@@ -397,7 +397,7 @@ import glob
 import json
 
 D = sorted(glob.glob(
-    "/root/Workspace/xy/DiT/5script/results/v10b_stdskel_fame3_c41x_cos/"
+    "/root/Workspace/xy/DiT/assets/results/v10b_stdskel_fame3_c41x_cos/"
     "20260909-123903-v10b-stdskel-fame3-c41x/checkpoints/eval_auto_*.json"))
 print("step     seen    strict  strict_med")
 for f in D:

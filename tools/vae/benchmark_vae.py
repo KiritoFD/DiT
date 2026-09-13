@@ -16,7 +16,7 @@ VAE:
   D. kl-f4-gray         (f4, 3ch, 55.3M, 1ch IO)
 
 用法:
-  python tools/vae/benchmark_vae.py --csv 5script/train_top6.csv --n 200 --device cpu --out tools/vae/bench_results
+  python tools/vae/benchmark_vae.py --csv assets/train_top6.csv --n 200 --device cpu --out tools/vae/bench_results
 """
 import os
 import sys
@@ -225,7 +225,7 @@ def save_comparison_grid(results, out_dir):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--csv", default="5script/train_top6.csv")
+    ap.add_argument("--csv", default="assets/train_top6.csv")
     ap.add_argument("--n", type=int, default=200)
     ap.add_argument("--batch", type=int, default=4)
     ap.add_argument("--device", default="cpu")

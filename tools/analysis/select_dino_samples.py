@@ -3,7 +3,7 @@
 import csv, os
 from collections import defaultdict
 
-CSV = "5script/train_top30_clean.csv"
+CSV = "assets/train_top30_clean.csv"
 rows = []
 with open(CSV, encoding="utf-8") as f:
     for r in csv.DictReader(f):

@@ -1,0 +1,55 @@
+{
+  "best_skeleton_iou": 0.8944352865219116,
+  "history": [
+    {
+      "canny_iou": 0.9721719026565552,
+      "skeleton_iou": 0.8738062381744385,
+      "canny_accuracy": 0.9872840642929077,
+      "skeleton_accuracy": 0.9773847460746765,
+      "epoch": 1,
+      "train_loss": 0.16776082697103542,
+      "seconds": 14.00487232208252,
+      "peak_vram_gib": 0.142578125
+    },
+    {
+      "canny_iou": 0.9744637608528137,
+      "skeleton_iou": 0.8843321800231934,
+      "canny_accuracy": 0.9883521795272827,
+      "skeleton_accuracy": 0.9794463515281677,
+      "epoch": 2,
+      "train_loss": 0.11368644947797905,
+      "seconds": 11.86932635307312,
+      "peak_vram_gib": 0.142578125
+    },
+    {
+      "canny_iou": 0.9754392504692078,
+      "skeleton_iou": 0.8908757567405701,
+      "canny_accuracy": 0.988771378993988,
+      "skeleton_accuracy": 0.9807250499725342,
+      "epoch": 3,
+      "train_loss": 0.10510399624061202,
+      "seconds": 11.914431810379028,
+      "peak_vram_gib": 0.142578125
+    },
+    {
+      "canny_iou": 0.9765031337738037,
+      "skeleton_iou": 0.8821204304695129,
+      "canny_accuracy": 0.9892808198928833,
+      "skeleton_accuracy": 0.9789580702781677,
+      "epoch": 4,
+      "train_loss": 0.10092702253457586,
+      "seconds": 11.962657690048218,
+      "peak_vram_gib": 0.142578125
+    },
+    {
+      "canny_iou": 0.9764853715896606,
+      "skeleton_iou": 0.8944352865219116,
+      "canny_accuracy": 0.9892615079879761,
+      "skeleton_accuracy": 0.9814384579658508,
+      "epoch": 5,
+      "train_loss": 0.09858907096680004,
+      "seconds": 12.092138290405273,
+      "peak_vram_gib": 0.142578125
+    }
+  ]
+}

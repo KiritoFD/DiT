@@ -57,12 +57,12 @@ def find_ckpt(base_glob, step):
     return bestf
 
 
-V8A = "5script/results/v8_3stage/A_main_final.pt"
-V9A = sorted(glob.glob("5script/results/v9a_repa_pretrain/*/checkpoints/0130000.pt"))[-1]
+V8A = "assets/results/v8_3stage/A_main_final.pt"
+V9A = sorted(glob.glob("assets/results/v9a_repa_pretrain/*/checkpoints/0130000.pt"))[-1]
 PAIRS = {  # tag -> (base_ckpt, ctrl_ckpt, trained_step)
-    "v8b": (V8A, find_ckpt("5script/results/v8_3stage/v8b/*/checkpoints/*.pt", 35000), 35000),
-    "v8e": (V8A, find_ckpt("5script/results/v8_3stage/v8e/*/checkpoints/*.pt", 22500), 22500),
-    "v9b": (V9A, find_ckpt("5script/results/v9b_ctrl_strong/*/checkpoints/*.pt", 35000), 35000),
+    "v8b": (V8A, find_ckpt("assets/results/v8_3stage/v8b/*/checkpoints/*.pt", 35000), 35000),
+    "v8e": (V8A, find_ckpt("assets/results/v8_3stage/v8e/*/checkpoints/*.pt", 22500), 22500),
+    "v9b": (V9A, find_ckpt("assets/results/v9b_ctrl_strong/*/checkpoints/*.pt", 35000), 35000),
 }
 print("v8a =", V8A, "\nv9a =", V9A)
 for k, (b, c, s) in PAIRS.items():
@@ -70,7 +70,7 @@ for k, (b, c, s) in PAIRS.items():
 
 # ---- 固定评测 batch (16 样本, 与训练 eval 同源) ----
 N = 16
-cache = make_eval_cache("5script/eval_fame_strict_clean_v8.csv", "final_imgs_fame_v8", None,
+cache = make_eval_cache("assets/eval_fame_strict_clean_v8.csv", "final_imgs_fame_v8", None,
                         256, N, 8, 4, 0.18215,
                         skel_latent_shards_dir="final_skel_latents_fame_1px_v8")
 yc = torch.tensor([c[0] for c in cache["conds"]], device=dev)

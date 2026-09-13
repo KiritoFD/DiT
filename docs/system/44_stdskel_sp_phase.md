@@ -78,4 +78,4 @@ skel_iou 0.060（新 metric 口径；注意 GT-g 抄写任务 follow-IoU3 0.57 �
 - 若 c41x 平台：glyph_embedder_depth 2→3、xattn 加 KV 投影正交初始化、
   或 std skel gap 弥补（std + 实例骨架混合训练）
 
-存档：`5script/results/stdskel_gap.json`（缺口分析）、各 results 目录 eval_auto json。
+存档：`assets/results/stdskel_gap.json`（缺口分析）、各 results 目录 eval_auto json。

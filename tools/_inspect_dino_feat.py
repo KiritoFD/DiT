@@ -27,7 +27,7 @@ print('各书家覆盖字数: min=%d med=%d max=%d' % (
 # 与 train csv 的 41 书家是否一致
 import csv
 train_ca = set()
-for r in csv.DictReader(open('/root/Workspace/xy/DiT/5script/train_fame3_clean_v8.csv', encoding='utf-8')):
+for r in csv.DictReader(open('/root/Workspace/xy/DiT/assets/train_fame3_clean_v8.csv', encoding='utf-8')):
     train_ca.add(int(r['calligrapher_id']))
 print('DINO calligs 集合 == train csv 书家集合:', set(cc) == train_ca)
 print('DINO 有但 train 没有:', sorted(set(cc) - train_ca))

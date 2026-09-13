@@ -10,7 +10,7 @@ sys.path.insert(0, HERE)
 import pull_monitor as pm
 
 S7_RUN = "20260823-163710-s7-klf4-top30-diffonly"
-S7_SERIES = "/root/Workspace/xy/DiT/5script/results/s7_klf4_top30"
+S7_SERIES = "/root/Workspace/xy/DiT/assets/results/s7_klf4_top30"
 S7_RUN_DIR = f"{S7_SERIES}/{S7_RUN}"
 S7_CKPT = f"{S7_RUN_DIR}/checkpoints"
 

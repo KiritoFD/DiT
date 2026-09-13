@@ -26,8 +26,8 @@ for root, _, files in os.walk('_sync_work'):
                 print(' ', p, '|', ' '.join(txt[max(0, i - 60):i + 40].split()))
 
 # --- 2) csv ids 在 final_imgs_fame_clean 的覆盖 ---
-rows = list(csv.DictReader(open('5script/train_fame_clean.csv', encoding='utf-8')))
-rows += list(csv.DictReader(open('5script/eval_fame_strict_clean.csv', encoding='utf-8')))
+rows = list(csv.DictReader(open('assets/train_fame_clean.csv', encoding='utf-8')))
+rows += list(csv.DictReader(open('assets/eval_fame_strict_clean.csv', encoding='utf-8')))
 print()
 print('train+eval csv rows:', len(rows))
 ids = set()

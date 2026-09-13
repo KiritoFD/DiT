@@ -413,9 +413,9 @@ tmux new-session -d -s s7klf4 \
 # auto eval（CPU，独立进程，不阻塞 GPU）
 tmux new-session -d -s evalcpu \
   'python auto_eval_cpu.py \
-    --results-dir 5script/results/s7_klf4_top30 \
+    --results-dir assets/results/s7_klf4_top30 \
     --workers 8 --worker-threads 8 \
-    --seen5-csv 5script/seen5_top30.csv'
+    --seen5-csv assets/seen5_top30.csv'
 ```
 
 两个 tmux 会话**解耦**：训练在 GPU 上跑，eval 在 CPU 上轮询 `{checkpoint_dir}/*.done`，读最新 ckpt 做 SSIM/MSE，写 `eval_auto_{step}.json`。训练进程的 early-stop 读这些 JSON 决定是否停（`train.py:600-636`）。
@@ -433,7 +433,7 @@ tmux new-session -d -s evalcpu \
 
 - 训练日志：`run_s7_klf4.log` + tmux attach `s7klf4`。
 - 日志每 `log_every=20` 步输出一行，含 `Total/Diff/...` 各损失、`Mem: <当前>G/<峰值>G`、`EMA: <decay>`、`steps/s`（`train.py:1003-1019`）。
-- eval 结果：`5script/results/s7_klf4_top30/eval_auto_*.json` + `eval_<step>/` 对比图。
+- eval 结果：`assets/results/s7_klf4_top30/eval_auto_*.json` + `eval_<step>/` 对比图。
 
 ---
 
@@ -471,7 +471,7 @@ tmux new-session -d -s evalcpu \
 | `latent_shards_dir` | `final_latents_f4` | 预编码 latent shard |
 | `img_root` / `skel_root` | `final_imgs_256` / `final_skeleton` | |
 | `preload` / `preload_workers` | `true` / 24 | |
-| `auto_eval` / `eval_csv` / `eval_n` / `eval_steps` | `true` / `5script/eval100_top30.csv` / 100 / 50 | |
+| `auto_eval` / `eval_csv` / `eval_n` / `eval_steps` | `true` / `assets/eval100_top30.csv` / 100 / 50 | |
 | `eval_cfg` / `eval_seed` / `eval_batch` | 4.0 / 0 / 20 | |
 | `num_workers` / `log_every` | 8 / 20 | |
 | **速度** | **3.51 steps/s** | 实测 |

@@ -11,7 +11,7 @@ ControlNet ckpt 只含 ctrl_encoder 权重, 主模型 (195k) 固定。
 模型构建: 加载 195k 主模型 + ctrl ckpt → ControlNetDiT。
 
 用法:
-  python auto_eval_ctrl.py --results-dir 5script/results/ctrl_skel [--interval 30]
+  python auto_eval_ctrl.py --results-dir assets/results/ctrl_skel [--interval 30]
 """
 import argparse
 import glob
@@ -34,8 +34,8 @@ if _src_dir not in sys.path:
 
 sys.stdout.reconfigure(encoding="utf-8")
 
-DEFAULT_MAIN_CKPT = "5script/results/s6_top6_diffonly/20260820-191536-s6-top6-diffonly-resume/checkpoints/0195000.pt"
-DEFAULT_EVAL_CSV = "5script/eval100_top6.csv"
+DEFAULT_MAIN_CKPT = "assets/results/s6_top6_diffonly/20260820-191536-s6-top6-diffonly-resume/checkpoints/0195000.pt"
+DEFAULT_EVAL_CSV = "assets/eval100_top6.csv"
 DEFAULT_VAE = "pretrained_models/sd-vae-ft-ema"
 SKEL_ROOT = "final_skeleton_d3"
 IMG_ROOT = "final_imgs_256"
@@ -384,7 +384,7 @@ def save_state(ckpt_dir, state):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--results-dir", default="5script/results/ctrl_skel",
+    ap.add_argument("--results-dir", default="assets/results/ctrl_skel",
                     help="ctrl 训练 results 目录 (train 写 _active_ckpt_dir.txt)")
     ap.add_argument("--ckpt-dir", default=None,
                     help="直接指定 ckpt 目录 (优先于轮询)")

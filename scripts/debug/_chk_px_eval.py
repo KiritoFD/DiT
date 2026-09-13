@@ -8,6 +8,6 @@ r = subprocess.run(["ssh","-o","ConnectTimeout=25","-p",PORT,HOST,
 print("EVAL LINES:", r.stdout if r.returncode==0 else f"rc={r.returncode}")
 # 查 50000 ckpt 目录下有没有 eval json
 r2 = subprocess.run(["ssh","-o","ConnectTimeout=25","-p",PORT,HOST,
-    "ls -la /root/Workspace/xy/DiT/5script/results/px_s_scratch/20260822-145511-px-s-scratch-diff/checkpoints/eval_auto_* 2>/dev/null; echo '---'; ls /root/Workspace/xy/DiT/5script/results/px_s_scratch/20260822-145511-px-s-scratch-diff/checkpoints/"],
+    "ls -la /root/Workspace/xy/DiT/assets/results/px_s_scratch/20260822-145511-px-s-scratch-diff/checkpoints/eval_auto_* 2>/dev/null; echo '---'; ls /root/Workspace/xy/DiT/assets/results/px_s_scratch/20260822-145511-px-s-scratch-diff/checkpoints/"],
     capture_output=True,text=True,timeout=60)
 print("CKPT DIR:", r2.stdout if r2.returncode==0 else f"rc={r2.returncode}")

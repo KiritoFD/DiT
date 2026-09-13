@@ -2,7 +2,7 @@
 
 > 从 225 个训练日志 + 50 个结果目录中自动提取，**640 个评测点、47 个实验**。
 > 生成工具：`_scan_results.py` / `_enrich_experiments.py` / `_make_difficulty_summary.py`
-> 配套 CSV（均在 `5script/`）：
+> 配套 CSV（均在 `assets/`）：
 >
 > | CSV | 行数 | 内容 |
 > |---|---:|---|
@@ -71,7 +71,7 @@ SSIM_mean 从 0.55 降到 0.26。整体单调下降，但有噪声——原因�
 | s8_klf4_clean_dino | pretrain | large | 105 | 6,697 | 0.5257 | 105,000 | 105,000 | |
 | s19_midclean_s_flow | pretrain | large | 67 | 2,523 | 0.5222 | 50,000 | 57,500 | flow |
 | s5_2factor_top30 | pretrain | large | 108 | 6,952 | 0.5197 | 70,000 | 70,000 | |
-| exp_s_5script | pretrain | unknown | | | 0.5165 | 15,000 | 25,000 | |
+| exp_s_assets | pretrain | unknown | | | 0.5165 | 15,000 | 25,000 | |
 | s5_2factor_top30 | pretrain | large | 108 | 6,952 | 0.5120 | 50,000 | 50,000 | |
 | s7_klf4_top30 | pretrain | large | 108 | 6,952 | 0.5090 | 75,000 | 75,000 | |
 | s5_2factor_B_latentstruct | pretrain | large | 108 | 6,952 | 0.5067 | 130,000 | 130,000 | |

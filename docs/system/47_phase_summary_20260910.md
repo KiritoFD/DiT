@@ -219,7 +219,7 @@ c41x @150k 的 `strict` 子指标（n=237）：`ssim_mean 0.5304`、`skel_iou_me
 | 主线 config | `src/train/configs/v10b_stdskel_fame3_c41x.json` |
 | 容量扫描 config | `src/train/configs/c41x_sty{16,32,64}.json` |
 | 串行链 | `_sync_work/run_sty_scan_chain.sh` |
-| 书家词表 | `src/utils/callig_map.py` + `5script/callig_id_map.json` |
+| 书家词表 | `src/utils/callig_map.py` + `assets/callig_id_map.json` |
 | 预训练书家表 | `tools/pretrain_callig_emb.py` → `callig_emb_pretrained.pt` |
 | resume 兼容性实测 | `_chk_resume_compat.py`（_ot_scratch，本地） |
 | 笔画级评估 | `_ot_scratch/_eval_stroke_damage{,_full}.py` |

@@ -20,7 +20,7 @@ def fix_path(p):
 # ── 1) 扩展 eval 集 ──
 print("=" * 60)
 print("=== 1. 扩展 eval 集 ===")
-eval_csv = os.path.join(BASE, "5script", "eval.csv")
+eval_csv = os.path.join(BASE, "assets", "eval.csv")
 rows = list(csv.DictReader(open(eval_csv, encoding="utf-8")))
 print(f"eval.csv: {len(rows)} rows")
 
@@ -35,7 +35,7 @@ for r in rows:
 print(f"valid (exist on disk): {len(valid)}")
 
 # 写扩展 eval
-out_path = os.path.join(BASE, "5script", "eval500_clean.csv")
+out_path = os.path.join(BASE, "assets", "eval500_clean.csv")
 with open(out_path, "w", encoding="utf-8", newline="") as f:
     w = csv.DictWriter(f, fieldnames=valid[0].keys())
     w.writeheader()
@@ -50,7 +50,7 @@ print(f"script 分布: {dict(sc)}")
 # ── 2) 不干净图片统计 ──
 print("\n" + "=" * 60)
 print("=== 2. 不干净图片统计 (全量 train) ===")
-train_csv = os.path.join(BASE, "5script", "train_top30_clean.csv")
+train_csv = os.path.join(BASE, "assets", "train_top30_clean.csv")
 train_rows = list(csv.DictReader(open(train_csv, encoding="utf-8")))
 print(f"train: {len(train_rows)} rows")
 

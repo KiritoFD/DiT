@@ -102,8 +102,8 @@ def _make_sheet(items, title, out_path, font, font_s, cell=CELL):
 
 def make_posters(run_dir, step, out_dir=None, n_seen=10, n_strict=50,
                  strict_per=10, which=("seen", "strict"),
-                 seen_csv="5script/eval_seen_v10.csv",
-                 strict_csv="5script/eval_fame3_strict_clean_v9.csv",
+                 seen_csv="assets/eval_seen_v10.csv",
+                 strict_csv="assets/eval_fame3_strict_clean_v9.csv",
                  tag="", prefix=""):
     """为一个 step 生成 poster; 返回生成的文件路径列表."""
     step_dir = os.path.join(run_dir, "eval_samples_ctrl", f"step{step:07d}")
@@ -186,8 +186,8 @@ def _step_metrics(run_dir, step, set_name):
 
 def make_aggregate(run_dir, set_name, out_path=None, cell=None,
                    n_seen=10, n_strict=50,
-                   seen_csv="5script/eval_seen_v10.csv",
-                   strict_csv="5script/eval_fame3_strict_clean_v9.csv",
+                   seen_csv="assets/eval_seen_v10.csv",
+                   strict_csv="assets/eval_fame3_strict_clean_v9.csv",
                    tag="", prefix=""):
     """总集 poster: 每行一个 ckpt, 末行 GT; 列 = 样本.
 
@@ -280,8 +280,8 @@ def main():
                     help="生成总集 poster 的集合 (空=不生成)")
     ap.add_argument("--agg-seen-cell", type=int, default=148)
     ap.add_argument("--agg-strict-cell", type=int, default=96)
-    ap.add_argument("--seen-csv", default="5script/eval_seen_v10.csv")
-    ap.add_argument("--strict-csv", default="5script/eval_fame3_strict_clean_v9.csv")
+    ap.add_argument("--seen-csv", default="assets/eval_seen_v10.csv")
+    ap.add_argument("--strict-csv", default="assets/eval_fame3_strict_clean_v9.csv")
     ap.add_argument("--tag", default="")
     ap.add_argument("--prefix", default="", help="输出文件名前缀 (避免跨实验撞名)")
     args = ap.parse_args()

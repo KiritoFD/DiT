@@ -17,10 +17,10 @@ train.py 只训练+保存 ckpt（GPU 只训练）。本进程轮询 ckpt 目录�
   3) 展示: seen5 → seen_samples/stepXXXXXXX/
 
 用法:
-  python auto_eval_cpu.py --results-dir 5script/results/<exp>
+  python auto_eval_cpu.py --results-dir assets/results/<exp>
                            --workers 8 --worker-threads 8
-                           [--seen5-csv 5script/seen5_top30.csv]
-                           [--show5-csv 5script/show5_top30.csv]
+                           [--seen5-csv assets/seen5_top30.csv]
+                           [--show5-csv assets/show5_top30.csv]
                            [--eval-n 100] [--steps 50] [--cfg 4.0] [--batch 8]
                            [--interval 30] [--once]
 """
@@ -39,7 +39,7 @@ import torch
 
 sys.stdout.reconfigure(encoding="utf-8")
 
-DEFAULT_SEEN5_CSV = "5script/seen5_top30.csv"
+DEFAULT_SEEN5_CSV = "assets/seen5_top30.csv"
 # eval100 动态分批的默认每批样本数；None=自动按 ceil(eval_n / workers) 计算
 EVAL_BATCH_SIZE = None
 

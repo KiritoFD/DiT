@@ -1,6 +1,6 @@
 {
-  "ckpt": "5script/results/v3a/20260815-195729-v3a-2factor-glyph-canny-skel/checkpoints/0005000.pt",
-  "csv": "5script/eval_strata/clean_unseen_triple_100.csv",
+  "ckpt": "assets/results/v3a/20260815-195729-v3a-2factor-glyph-canny-skel/checkpoints/0005000.pt",
+  "csv": "assets/eval_strata/clean_unseen_triple_100.csv",
   "n": 5,
   "time": "2026-08-15 21:10:58",
   "rows": [

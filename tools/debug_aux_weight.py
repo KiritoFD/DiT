@@ -22,7 +22,7 @@ from src.utils.callig_map import load_callig_id_map  # noqa: E402
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--csv", default="5script/train_fame3_e_full.csv")
+    ap.add_argument("--csv", default="assets/train_fame3_e_full.csv")
     ap.add_argument("--batch", type=int, default=8)
     ap.add_argument("--steps", type=int, default=30)
     ap.add_argument("--lr", type=float, default=5e-5)
@@ -39,7 +39,7 @@ def main():
         glyph_drop_prob=0.1, glyph_inject_layers=args.layers, glyph_embedder_depth=2,
         in_channels=12, learn_sigma=False).to(dev)
     opt = torch.optim.AdamW(m.parameters(), lr=args.lr, weight_decay=0.02)
-    cmap, _ = load_callig_id_map("5script/callig_id_map.json")
+    cmap, _ = load_callig_id_map("assets/callig_id_map.json")
     ds = MCCDLatentDataset(
         csv_file=args.csv, latent_shards_dir="final_latents_fame_e",
         img_root="final_imgs_fame_e", preload=False, load_image=False,

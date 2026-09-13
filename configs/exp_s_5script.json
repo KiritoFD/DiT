@@ -1,7 +1,7 @@
 {
-  "data_csv": "5script/train.csv",
+  "data_csv": "assets/train.csv",
   "data_dir": "",
-  "results_dir": "5script/results/exp_s_5script",
+  "results_dir": "assets/results/exp_s_assets",
   "pretrained": null,
   "model": "DiT-3Cond-S/2",
   "cond_mode": "3cond",
@@ -26,7 +26,7 @@
   "preload": true,
   "preload_workers": 24,
   "auto_eval": true,
-  "eval_csv": "5script/fast100.csv",
+  "eval_csv": "assets/fast100.csv",
   "eval_n": 100,
   "eval_steps": 50,
   "eval_cfg": 4.0,

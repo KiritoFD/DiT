@@ -17,7 +17,7 @@ gradio_controlnet.py — 书法生成前端 (top6 195k DiT-2Cond-S/2).
 
 用法:
   python tools/controlnet/gradio_controlnet.py \
-      --main-ckpt 5script/results/s6_top6_diffonly/20260820-191536-s6-top6-diffonly-resume/checkpoints/0195000.pt
+      --main-ckpt assets/results/s6_top6_diffonly/20260820-191536-s6-top6-diffonly-resume/checkpoints/0195000.pt
 """
 import os
 os.environ["XFORMERS_DISABLED"] = "1"
@@ -43,7 +43,7 @@ if sys.platform == 'win32':
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.join(HERE, "..", "..")
 MANIFEST_PATH = os.path.join(ROOT, "final_manifest.json")
-CSV_PATH = os.path.join(ROOT, "5script", "train_top6.csv")
+CSV_PATH = os.path.join(ROOT, "assets", "train_top6.csv")
 MCCD_CHAR_DIR = os.path.join(ROOT, "MCCD", "MCCD", "MCCD_Character", "character_dataset")
 CALLIGS_JSON = os.path.join(HERE, "calligraphers.json")
 CHAR_META = os.path.join(HERE, "char_meta.json")
@@ -174,7 +174,7 @@ class CalligraphySampler:
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--main-ckpt",
-                    default="5script/results/s6_top6_diffonly/20260820-191536-s6-top6-diffonly-resume/checkpoints/0195000.pt")
+                    default="assets/results/s6_top6_diffonly/20260820-191536-s6-top6-diffonly-resume/checkpoints/0195000.pt")
     ap.add_argument("--vae-path", default="pretrained_models/sd-vae-ft-ema")
     ap.add_argument("--port", type=int, default=7861)
     ap.add_argument("--server-name", default="0.0.0.0")

@@ -95,12 +95,12 @@ def parse_args():
     ap.add_argument("--limit-n", type=int, default=0,
                     help="调试: 只用前 N 个训练样本 (0=全部)")
     # ---- 数据 ----
-    ap.add_argument("--csv", default="5script/train_fame_clean.csv")
+    ap.add_argument("--csv", default="assets/train_fame_clean.csv")
     ap.add_argument("--latent-shards-dir", default="final_latents_fame_clean")
     ap.add_argument("--img-root", default="final_imgs_256", help="GT 图 (REPA 教师输入)")
     ap.add_argument("--skel-root", default="final_skel1_fame")
     ap.add_argument("--skel-latent-shards-dir", default="final_skel_latents_fame_1px")
-    ap.add_argument("--results-dir", default="5script/results/s32_repa_finetune")
+    ap.add_argument("--results-dir", default="assets/results/s32_repa_finetune")
     ap.add_argument("--experiment-name", default="s32-repa-finetune")
     # ---- 架构 (必须与 S30/s31 一致) ----
     ap.add_argument("--model", default="DiT-2Cond-S/2")

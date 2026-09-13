@@ -2,7 +2,7 @@
   "experiment_name": "v3b-XL-glyphcond-kailishu",
   "data_csv": "kailishu_train.csv",
   "data_dir": "",
-  "results_dir": "5script/results/v3b_xl_glyphcond",
+  "results_dir": "assets/results/v3b_xl_glyphcond",
   "pretrained": "pretrained_models/DiT-XL-2-256x256.pt",
   "model": "DiT-2Cond-XL/2",
   "cond_mode": "2cond",

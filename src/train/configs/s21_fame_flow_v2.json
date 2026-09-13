@@ -1,10 +1,10 @@
 {
   "_comment": "s21 fame 预训练：s20 新架构 (rms/swiglu/qk_norm/RoPE) + fame 名家数据集 (~52k 张, 44 位规范书家, 全白底黑字)。eval_fame_strict (组合泛化口径), eval cfg=0.7 (ctrl 侧已验证 0.7 优于 1.7; 基模同口径对齐)。",
   "experiment_name": "s21-fame-flow-v2",
-  "data_csv": "5script/train_fame.csv",
+  "data_csv": "assets/train_fame.csv",
   "latent_shards_dir": "final_latents_fame",
   "img_root": "final_imgs_256",
-  "results_dir": "5script/results/s21_fame_flow_v2",
+  "results_dir": "assets/results/s21_fame_flow_v2",
 
   "model": "DiT-2Cond-S/2",
   "cond_mode": "2cond",
@@ -62,7 +62,7 @@
   "ckpt_keep": 0,
 
   "auto_eval": true,
-  "eval_csv": "5script/eval_fame_strict.csv",
+  "eval_csv": "assets/eval_fame_strict.csv",
   "eval_n": 500,
   "eval_steps": 25,
   "eval_cfg": 0.7,

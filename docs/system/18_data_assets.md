@@ -1,6 +1,6 @@
 # 数据资产清单（2026-08-30）
 
-> 自动生成：`_scan_assets.py` → `5script/data_assets.csv`（78 行）
+> 自动生成：`_scan_assets.py` → `assets/data_assets.csv`（78 行）
 > 覆盖：数据集 CSV、latent/骨架目录、标准字形库、预训练权重。
 
 ---
@@ -13,27 +13,27 @@
 |---|---:|---:|---:|---:|---|
 | `final_train.csv` | 318,715 | **1,853** | 7,765 | 12 | 全量训练集 |
 | `train.csv` | 298,281 | 1,850 | 7,765 | 12 | 全量（旧） |
-| `5script/train.csv` | 147,841 | 1,004 | 7,011 | 5 | |
+| `assets/train.csv` | 147,841 | 1,004 | 7,011 | 5 | |
 | `val.csv` / `test.csv` | 37,285 / 37,286 | 883 / 882 | 6,503 / 6,529 | 12 | |
 | `final_test.csv` | 10,000 | 532 | 4,092 | 12 | |
 | `kailishu_train.csv` | 51,098 | 447 | 4,933 | 2 | 楷书单书体 |
-| **`5script/train_fame.csv`** | **51,322** | **44** | **4,765** | **7** | **当前主力（fame）** |
-| `5script/train_fame_3script.csv` | 28,385 | 41 | 4,039 | 3 | fame 三书体子集 |
-| `5script/train_top30.csv` | 128,842 | 108 | 6,952 | 5 | |
-| `5script/train_top6.csv` | 10,866 | **11** | 3,154 | 2 | 最小集，指标虚高 |
+| **`assets/train_fame.csv`** | **51,322** | **44** | **4,765** | **7** | **当前主力（fame）** |
+| `assets/train_fame_3script.csv` | 28,385 | 41 | 4,039 | 3 | fame 三书体子集 |
+| `assets/train_top30.csv` | 128,842 | 108 | 6,952 | 5 | |
+| `assets/train_top6.csv` | 10,866 | **11** | 3,154 | 2 | 最小集，指标虚高 |
 
 ### 1.2 评测集
 
 | 文件 | 行数 | 书家 | 字 | 书体 | 用途 |
 |---|---:|---:|---:|---:|---|
-| **`5script/eval_fame_strict.csv`** | **500** | 42 | 432 | 6 | **当前主力评测** |
-| `5script/eval100_top.csv` | 100 | 46 | 97 | 5 | |
-| `5script/eval100_top30.csv` | 100 | 42 | 97 | 5 | |
-| `5script/eval100_top6.csv` | 100 | 11 | 99 | 2 | |
-| `5script/eval_strict_top6.csv` | 271 | 11 | 263 | 2 | |
-| `5script/eval_unseen_top6.csv` | 255 | 11 | 242 | 2 | **未见字评测** |
+| **`assets/eval_fame_strict.csv`** | **500** | 42 | 432 | 6 | **当前主力评测** |
+| `assets/eval100_top.csv` | 100 | 46 | 97 | 5 | |
+| `assets/eval100_top30.csv` | 100 | 42 | 97 | 5 | |
+| `assets/eval100_top6.csv` | 100 | 11 | 99 | 2 | |
+| `assets/eval_strict_top6.csv` | 271 | 11 | 263 | 2 | |
+| `assets/eval_unseen_top6.csv` | 255 | 11 | 242 | 2 | **未见字评测** |
 | `final_eval.csv` | 1,000 | 202 | 839 | 12 | |
-| `5script/eval500_clean.csv` | 455 | 122 | 421 | 5 | |
+| `assets/eval500_clean.csv` | 455 | 122 | 421 | 5 | |
 | `overfit_500.csv` | 500 | 151 | 455 | 11 | 过拟合测试 |
 
 ### 1.3 fame 数据集的组合覆盖（关键）
@@ -160,7 +160,7 @@ train.csv 的 image_path（如 final_images/12345.png）
 ## 6. 复现
 
 ```bash
-python _scan_assets.py     # 重新清点 -> 5script/data_assets.csv
+python _scan_assets.py     # 重新清点 -> assets/data_assets.csv
 python _check_glyph_lib.py # v1/v2 对 fame 的覆盖率实测
 python _probe_fame.py      # fame 组合覆盖密度
 ```

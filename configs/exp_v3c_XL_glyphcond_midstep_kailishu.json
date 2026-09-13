@@ -2,7 +2,7 @@
   "experiment_name": "v3c-XL-glyphcond-midstep-kailishu",
   "data_csv": "kailishu_train.csv",
   "data_dir": "",
-  "results_dir": "5script/results/v3c_xl_glyphcond_midstep",
+  "results_dir": "assets/results/v3c_xl_glyphcond_midstep",
   "pretrained": "pretrained_models/DiT-XL-2-256x256.pt",
   "model": "DiT-2Cond-XL/2",
   "cond_mode": "2cond",

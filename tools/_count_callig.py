@@ -1,14 +1,14 @@
 import csv
 from collections import Counter
 
-rows = list(csv.DictReader(open('5script/train_fame3_clean_v8.csv', encoding='utf-8')))
+rows = list(csv.DictReader(open('assets/train_fame3_clean_v8.csv', encoding='utf-8')))
 c = Counter(int(r['calligrapher_id']) for r in rows)
 print('train 样本数 =', len(rows))
 print('train 唯一书家数 =', len(c))
 print('calligrapher_id 范围 =', min(c), '..', max(c))
 print('样本数 top15 书家:', c.most_common(15))
 
-ev = list(csv.DictReader(open('5script/eval_seen_v10.csv', encoding='utf-8')))
+ev = list(csv.DictReader(open('assets/eval_seen_v10.csv', encoding='utf-8')))
 ce = Counter(int(r['calligrapher_id']) for r in ev)
 print('eval_seen 样本数 =', len(ev), '唯一书家数 =', len(ce))
 print('eval 书家 id 集合:', sorted(ce))

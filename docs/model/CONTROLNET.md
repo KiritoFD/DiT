@@ -141,7 +141,7 @@ tmux new-session -d -s ctrlTop30 \
 
 # CPU/GPU eval (后台)
 nohup /opt/conda/bin/python auto_eval_ctrl.py \
-  --results-dir 5script/results/ctrl_skel --interval 30 > cpu_eval_ctrl.log 2>&1 &
+  --results-dir assets/results/ctrl_skel --interval 30 > cpu_eval_ctrl.log 2>&1 &
 
 # GPU 一次性 eval 所有 ckpt
 /opt/conda/bin/python auto_eval_ctrl.py \

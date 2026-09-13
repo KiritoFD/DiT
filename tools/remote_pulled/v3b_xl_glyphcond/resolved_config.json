@@ -1,7 +1,7 @@
 {
   "data_csv": "kailishu_train.csv",
   "data_dir": null,
-  "results_dir": "5script/results/v3b_xl_glyphcond",
+  "results_dir": "assets/results/v3b_xl_glyphcond",
   "experiment_name": "v3b-XL-glyphcond-kailishu",
   "pretrained": "pretrained_models/DiT-XL-2-256x256.pt",
   "reset_cond_head": true,

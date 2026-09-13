@@ -1,6 +1,6 @@
 """Train glyph classifier on 3-top30 VAE latents.
 
-Input: pretrained_models/3top30_latents.npz (41029, 4, 32, 32) + 5script/train_3top30_nobeike.csv
+Input: pretrained_models/3top30_latents.npz (41029, 4, 32, 32) + assets/train_3top30_nobeike.csv
 Output: glyph_classifier_ckpts/best.pt
 
 Usage:
@@ -23,8 +23,8 @@ from glyph_classifier import GlyphLatentClassifier
 
 # ── Config ──────────────────────────────────────────────────────────────────
 LATENTS_PATH = "pretrained_models/3top30_latents.npz"
-TRAIN_CSV = "5script/train_3top30_nobeike.csv"
-EVAL_CSV = "5script/eval100_3top30.csv"
+TRAIN_CSV = "assets/train_3top30_nobeike.csv"
+EVAL_CSV = "assets/eval100_3top30.csv"
 CKPT_DIR = "glyph_classifier_ckpts"
 NUM_CLASSES = 9401
 LABEL_SMOOTHING = 0.1

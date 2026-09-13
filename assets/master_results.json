@@ -4,72 +4,72 @@
   "run": "20260815-153954-probe-s2-factorized-balanced-ema-no-struct-b224",
   "source": "all_experiments_20260903",
   "model": "DiT-3Cond-S/2",
-  "data": "5script/train.csv",
+  "data": "assets/train.csv",
   "diffusion": "",
   "best_step": "",
   "best_ssim": "",
   "best_mse": "",
-  "config_json": "{\"cfg_model\": \"DiT-3Cond-S/2\", \"cfg_data_csv\": \"5script/train.csv\", \"cfg_diffusion_type\": \"\", \"cfg_main_ckpt\": \"\", \"cfg_skel_latent_shards_dir\": \"\", \"cfg_global_batch_size\": \"224\", \"cfg_batch_size\": \"\", \"cfg_lr\": \"0.0001\", \"cfg_max_steps\": \"5\", \"cfg_eval_csv\": \"5script/eval_strata/clean_unseen_triple_100.csv\", \"cfg_eval_cfg\": \"4.0\"}"
+  "config_json": "{\"cfg_model\": \"DiT-3Cond-S/2\", \"cfg_data_csv\": \"assets/train.csv\", \"cfg_diffusion_type\": \"\", \"cfg_main_ckpt\": \"\", \"cfg_skel_latent_shards_dir\": \"\", \"cfg_global_batch_size\": \"224\", \"cfg_batch_size\": \"\", \"cfg_lr\": \"0.0001\", \"cfg_max_steps\": \"5\", \"cfg_eval_csv\": \"assets/eval_strata/clean_unseen_triple_100.csv\", \"cfg_eval_cfg\": \"4.0\"}"
  },
  {
   "series": "compositional",
   "run": "20260815-154036-probe-s2-factorized-balanced-ema-no-struct-b224-mem",
   "source": "all_experiments_20260903",
   "model": "DiT-3Cond-S/2",
-  "data": "5script/train.csv",
+  "data": "assets/train.csv",
   "diffusion": "",
   "best_step": "",
   "best_ssim": "",
   "best_mse": "",
-  "config_json": "{\"cfg_model\": \"DiT-3Cond-S/2\", \"cfg_data_csv\": \"5script/train.csv\", \"cfg_diffusion_type\": \"\", \"cfg_main_ckpt\": \"\", \"cfg_skel_latent_shards_dir\": \"\", \"cfg_global_batch_size\": \"224\", \"cfg_batch_size\": \"\", \"cfg_lr\": \"0.0001\", \"cfg_max_steps\": \"5\", \"cfg_eval_csv\": \"5script/eval_strata/clean_unseen_triple_100.csv\", \"cfg_eval_cfg\": \"4.0\"}"
+  "config_json": "{\"cfg_model\": \"DiT-3Cond-S/2\", \"cfg_data_csv\": \"assets/train.csv\", \"cfg_diffusion_type\": \"\", \"cfg_main_ckpt\": \"\", \"cfg_skel_latent_shards_dir\": \"\", \"cfg_global_batch_size\": \"224\", \"cfg_batch_size\": \"\", \"cfg_lr\": \"0.0001\", \"cfg_max_steps\": \"5\", \"cfg_eval_csv\": \"assets/eval_strata/clean_unseen_triple_100.csv\", \"cfg_eval_cfg\": \"4.0\"}"
  },
  {
   "series": "compositional",
   "run": "20260815-154357-smoke-s2-factorized-ema-save-eval",
   "source": "all_experiments_20260903",
   "model": "DiT-3Cond-S/2",
-  "data": "5script/train.csv",
+  "data": "assets/train.csv",
   "diffusion": "",
   "best_step": "2",
   "best_ssim": "0.032",
   "best_mse": "3.2228",
-  "config_json": "{\"cfg_model\": \"DiT-3Cond-S/2\", \"cfg_data_csv\": \"5script/train.csv\", \"cfg_diffusion_type\": \"\", \"cfg_main_ckpt\": \"\", \"cfg_skel_latent_shards_dir\": \"\", \"cfg_global_batch_size\": \"224\", \"cfg_batch_size\": \"\", \"cfg_lr\": \"0.0001\", \"cfg_max_steps\": \"2\", \"cfg_eval_csv\": \"5script/eval_strata/clean_unseen_triple_100.csv\", \"cfg_eval_cfg\": \"4.0\"}"
+  "config_json": "{\"cfg_model\": \"DiT-3Cond-S/2\", \"cfg_data_csv\": \"assets/train.csv\", \"cfg_diffusion_type\": \"\", \"cfg_main_ckpt\": \"\", \"cfg_skel_latent_shards_dir\": \"\", \"cfg_global_batch_size\": \"224\", \"cfg_batch_size\": \"\", \"cfg_lr\": \"0.0001\", \"cfg_max_steps\": \"2\", \"cfg_eval_csv\": \"assets/eval_strata/clean_unseen_triple_100.csv\", \"cfg_eval_cfg\": \"4.0\"}"
  },
  {
   "series": "compositional",
   "run": "20260815-154610-s2-factorized-add-balanced-ema-no-struct-v1",
   "source": "all_experiments_20260903",
   "model": "DiT-3Cond-S/2",
-  "data": "5script/train.csv",
+  "data": "assets/train.csv",
   "diffusion": "",
   "best_step": "2000",
   "best_ssim": "0.0302",
   "best_mse": "3.2513",
-  "config_json": "{\"cfg_model\": \"DiT-3Cond-S/2\", \"cfg_data_csv\": \"5script/train.csv\", \"cfg_diffusion_type\": \"\", \"cfg_main_ckpt\": \"\", \"cfg_skel_latent_shards_dir\": \"\", \"cfg_global_batch_size\": \"224\", \"cfg_batch_size\": \"\", \"cfg_lr\": \"0.0001\", \"cfg_max_steps\": \"20000\", \"cfg_eval_csv\": \"5script/eval_strata/clean_unseen_triple_100.csv\", \"cfg_eval_cfg\": \"4.0\"}"
+  "config_json": "{\"cfg_model\": \"DiT-3Cond-S/2\", \"cfg_data_csv\": \"assets/train.csv\", \"cfg_diffusion_type\": \"\", \"cfg_main_ckpt\": \"\", \"cfg_skel_latent_shards_dir\": \"\", \"cfg_global_batch_size\": \"224\", \"cfg_batch_size\": \"\", \"cfg_lr\": \"0.0001\", \"cfg_max_steps\": \"20000\", \"cfg_eval_csv\": \"assets/eval_strata/clean_unseen_triple_100.csv\", \"cfg_eval_cfg\": \"4.0\"}"
  },
  {
   "series": "compositional",
   "run": "20260815-155912-s2-factorized-add-balanced-ema-no-struct-v1",
   "source": "all_experiments_20260903",
   "model": "DiT-3Cond-S/2",
-  "data": "5script/train.csv",
+  "data": "assets/train.csv",
   "diffusion": "",
   "best_step": "18000",
   "best_ssim": "0.4578",
   "best_mse": "1.0087",
-  "config_json": "{\"cfg_model\": \"DiT-3Cond-S/2\", \"cfg_data_csv\": \"5script/train.csv\", \"cfg_diffusion_type\": \"\", \"cfg_main_ckpt\": \"\", \"cfg_skel_latent_shards_dir\": \"\", \"cfg_global_batch_size\": \"224\", \"cfg_batch_size\": \"\", \"cfg_lr\": \"0.0001\", \"cfg_max_steps\": \"20000\", \"cfg_eval_csv\": \"5script/eval_strata/clean_unseen_triple_100.csv\", \"cfg_eval_cfg\": \"4.0\"}"
+  "config_json": "{\"cfg_model\": \"DiT-3Cond-S/2\", \"cfg_data_csv\": \"assets/train.csv\", \"cfg_diffusion_type\": \"\", \"cfg_main_ckpt\": \"\", \"cfg_skel_latent_shards_dir\": \"\", \"cfg_global_batch_size\": \"224\", \"cfg_batch_size\": \"\", \"cfg_lr\": \"0.0001\", \"cfg_max_steps\": \"20000\", \"cfg_eval_csv\": \"assets/eval_strata/clean_unseen_triple_100.csv\", \"cfg_eval_cfg\": \"4.0\"}"
  },
  {
   "series": "compositional",
   "run": "20260815-174722-s2-factorized-latent-canny-skel-probe-ft-from20k-v2",
   "source": "all_experiments_20260903",
   "model": "DiT-3Cond-S/2",
-  "data": "5script/train.csv",
+  "data": "assets/train.csv",
   "diffusion": "",
   "best_step": "21000",
   "best_ssim": "0.4545",
   "best_mse": "1.0043",
-  "config_json": "{\"cfg_model\": \"DiT-3Cond-S/2\", \"cfg_data_csv\": \"5script/train.csv\", \"cfg_diffusion_type\": \"\", \"cfg_main_ckpt\": \"\", \"cfg_skel_latent_shards_dir\": \"\", \"cfg_global_batch_size\": \"224\", \"cfg_batch_size\": \"\", \"cfg_lr\": \"1e-05\", \"cfg_max_steps\": \"24000\", \"cfg_eval_csv\": \"5script/eval_strata/clean_unseen_triple_100.csv\", \"cfg_eval_cfg\": \"4.0\"}"
+  "config_json": "{\"cfg_model\": \"DiT-3Cond-S/2\", \"cfg_data_csv\": \"assets/train.csv\", \"cfg_diffusion_type\": \"\", \"cfg_main_ckpt\": \"\", \"cfg_skel_latent_shards_dir\": \"\", \"cfg_global_batch_size\": \"224\", \"cfg_batch_size\": \"\", \"cfg_lr\": \"1e-05\", \"cfg_max_steps\": \"24000\", \"cfg_eval_csv\": \"assets/eval_strata/clean_unseen_triple_100.csv\", \"cfg_eval_cfg\": \"4.0\"}"
  },
  {
   "series": "ctrl_skel",
@@ -144,7 +144,7 @@
   "config_json": "{\"cfg_model\": \"\", \"cfg_data_csv\": \"\", \"cfg_diffusion_type\": \"\", \"cfg_main_ckpt\": \"\", \"cfg_skel_latent_shards_dir\": \"\", \"cfg_global_batch_size\": \"\", \"cfg_batch_size\": \"\", \"cfg_lr\": \"\", \"cfg_max_steps\": \"\", \"cfg_eval_csv\": \"\", \"cfg_eval_cfg\": \"\"}"
  },
  {
-  "series": "exp_s_5script",
+  "series": "exp_s_assets",
   "run": "20260815-131017-DiT-3Cond-S-2",
   "source": "all_experiments_20260903",
   "model": "",
@@ -160,84 +160,84 @@
   "run": "20260815-153545-probe-s2-factorized-ema-canny-skel-b64",
   "source": "all_experiments_20260903",
   "model": "DiT-3Cond-S/2",
-  "data": "5script/train.csv",
+  "data": "assets/train.csv",
   "diffusion": "",
   "best_step": "",
   "best_ssim": "",
   "best_mse": "",
-  "config_json": "{\"cfg_model\": \"DiT-3Cond-S/2\", \"cfg_data_csv\": \"5script/train.csv\", \"cfg_diffusion_type\": \"\", \"cfg_main_ckpt\": \"\", \"cfg_skel_latent_shards_dir\": \"\", \"cfg_global_batch_size\": \"64\", \"cfg_batch_size\": \"\", \"cfg_lr\": \"0.0001\", \"cfg_max_steps\": \"5\", \"cfg_eval_csv\": \"test.csv\", \"cfg_eval_cfg\": \"4.0\"}"
+  "config_json": "{\"cfg_model\": \"DiT-3Cond-S/2\", \"cfg_data_csv\": \"assets/train.csv\", \"cfg_diffusion_type\": \"\", \"cfg_main_ckpt\": \"\", \"cfg_skel_latent_shards_dir\": \"\", \"cfg_global_batch_size\": \"64\", \"cfg_batch_size\": \"\", \"cfg_lr\": \"0.0001\", \"cfg_max_steps\": \"5\", \"cfg_eval_csv\": \"test.csv\", \"cfg_eval_cfg\": \"4.0\"}"
  },
  {
   "series": "probes",
   "run": "20260815-153803-probe-s2-factorized-ema-canny-skel-b64",
   "source": "all_experiments_20260903",
   "model": "DiT-3Cond-S/2",
-  "data": "5script/train.csv",
+  "data": "assets/train.csv",
   "diffusion": "",
   "best_step": "",
   "best_ssim": "",
   "best_mse": "",
-  "config_json": "{\"cfg_model\": \"DiT-3Cond-S/2\", \"cfg_data_csv\": \"5script/train.csv\", \"cfg_diffusion_type\": \"\", \"cfg_main_ckpt\": \"\", \"cfg_skel_latent_shards_dir\": \"\", \"cfg_global_batch_size\": \"64\", \"cfg_batch_size\": \"\", \"cfg_lr\": \"0.0001\", \"cfg_max_steps\": \"5\", \"cfg_eval_csv\": \"test.csv\", \"cfg_eval_cfg\": \"4.0\"}"
+  "config_json": "{\"cfg_model\": \"DiT-3Cond-S/2\", \"cfg_data_csv\": \"assets/train.csv\", \"cfg_diffusion_type\": \"\", \"cfg_main_ckpt\": \"\", \"cfg_skel_latent_shards_dir\": \"\", \"cfg_global_batch_size\": \"64\", \"cfg_batch_size\": \"\", \"cfg_lr\": \"0.0001\", \"cfg_max_steps\": \"5\", \"cfg_eval_csv\": \"test.csv\", \"cfg_eval_cfg\": \"4.0\"}"
  },
  {
   "series": "probes",
   "run": "20260815-153912-probe-s2-factorized-ema-canny-skel-b32",
   "source": "all_experiments_20260903",
   "model": "DiT-3Cond-S/2",
-  "data": "5script/train.csv",
+  "data": "assets/train.csv",
   "diffusion": "",
   "best_step": "",
   "best_ssim": "",
   "best_mse": "",
-  "config_json": "{\"cfg_model\": \"DiT-3Cond-S/2\", \"cfg_data_csv\": \"5script/train.csv\", \"cfg_diffusion_type\": \"\", \"cfg_main_ckpt\": \"\", \"cfg_skel_latent_shards_dir\": \"\", \"cfg_global_batch_size\": \"32\", \"cfg_batch_size\": \"\", \"cfg_lr\": \"0.0001\", \"cfg_max_steps\": \"5\", \"cfg_eval_csv\": \"test.csv\", \"cfg_eval_cfg\": \"4.0\"}"
+  "config_json": "{\"cfg_model\": \"DiT-3Cond-S/2\", \"cfg_data_csv\": \"assets/train.csv\", \"cfg_diffusion_type\": \"\", \"cfg_main_ckpt\": \"\", \"cfg_skel_latent_shards_dir\": \"\", \"cfg_global_batch_size\": \"32\", \"cfg_batch_size\": \"\", \"cfg_lr\": \"0.0001\", \"cfg_max_steps\": \"5\", \"cfg_eval_csv\": \"test.csv\", \"cfg_eval_cfg\": \"4.0\"}"
  },
  {
   "series": "probes",
   "run": "20260815-174444-s2-factorized-latent-struct-b224-probe-from20k",
   "source": "all_experiments_20260903",
   "model": "DiT-3Cond-S/2",
-  "data": "5script/train.csv",
+  "data": "assets/train.csv",
   "diffusion": "",
   "best_step": "",
   "best_ssim": "",
   "best_mse": "",
-  "config_json": "{\"cfg_model\": \"DiT-3Cond-S/2\", \"cfg_data_csv\": \"5script/train.csv\", \"cfg_diffusion_type\": \"\", \"cfg_main_ckpt\": \"\", \"cfg_skel_latent_shards_dir\": \"\", \"cfg_global_batch_size\": \"224\", \"cfg_batch_size\": \"\", \"cfg_lr\": \"0.0001\", \"cfg_max_steps\": \"20020\", \"cfg_eval_csv\": \"test.csv\", \"cfg_eval_cfg\": \"4.0\"}"
+  "config_json": "{\"cfg_model\": \"DiT-3Cond-S/2\", \"cfg_data_csv\": \"assets/train.csv\", \"cfg_diffusion_type\": \"\", \"cfg_main_ckpt\": \"\", \"cfg_skel_latent_shards_dir\": \"\", \"cfg_global_batch_size\": \"224\", \"cfg_batch_size\": \"\", \"cfg_lr\": \"0.0001\", \"cfg_max_steps\": \"20020\", \"cfg_eval_csv\": \"test.csv\", \"cfg_eval_cfg\": \"4.0\"}"
  },
  {
   "series": "probes",
   "run": "20260815-195112-probe-v3a-glyph-canny-skel-b128-ss16",
   "source": "all_experiments_20260903",
   "model": "DiT-2Cond-S/2",
-  "data": "5script/train.csv",
+  "data": "assets/train.csv",
   "diffusion": "",
   "best_step": "",
   "best_ssim": "",
   "best_mse": "",
-  "config_json": "{\"cfg_model\": \"DiT-2Cond-S/2\", \"cfg_data_csv\": \"5script/train.csv\", \"cfg_diffusion_type\": \"\", \"cfg_main_ckpt\": \"\", \"cfg_skel_latent_shards_dir\": \"\", \"cfg_global_batch_size\": \"128\", \"cfg_batch_size\": \"\", \"cfg_lr\": \"0.0001\", \"cfg_max_steps\": \"5\", \"cfg_eval_csv\": \"test.csv\", \"cfg_eval_cfg\": \"4.0\"}"
+  "config_json": "{\"cfg_model\": \"DiT-2Cond-S/2\", \"cfg_data_csv\": \"assets/train.csv\", \"cfg_diffusion_type\": \"\", \"cfg_main_ckpt\": \"\", \"cfg_skel_latent_shards_dir\": \"\", \"cfg_global_batch_size\": \"128\", \"cfg_batch_size\": \"\", \"cfg_lr\": \"0.0001\", \"cfg_max_steps\": \"5\", \"cfg_eval_csv\": \"test.csv\", \"cfg_eval_cfg\": \"4.0\"}"
  },
  {
   "series": "probes",
   "run": "20260815-195423-probe-v3a-glyph-canny-skel-b8-full",
   "source": "all_experiments_20260903",
   "model": "DiT-2Cond-S/2",
-  "data": "5script/train.csv",
+  "data": "assets/train.csv",
   "diffusion": "",
   "best_step": "",
   "best_ssim": "",
   "best_mse": "",
-  "config_json": "{\"cfg_model\": \"DiT-2Cond-S/2\", \"cfg_data_csv\": \"5script/train.csv\", \"cfg_diffusion_type\": \"\", \"cfg_main_ckpt\": \"\", \"cfg_skel_latent_shards_dir\": \"\", \"cfg_global_batch_size\": \"8\", \"cfg_batch_size\": \"\", \"cfg_lr\": \"0.0001\", \"cfg_max_steps\": \"5\", \"cfg_eval_csv\": \"test.csv\", \"cfg_eval_cfg\": \"4.0\"}"
+  "config_json": "{\"cfg_model\": \"DiT-2Cond-S/2\", \"cfg_data_csv\": \"assets/train.csv\", \"cfg_diffusion_type\": \"\", \"cfg_main_ckpt\": \"\", \"cfg_skel_latent_shards_dir\": \"\", \"cfg_global_batch_size\": \"8\", \"cfg_batch_size\": \"\", \"cfg_lr\": \"0.0001\", \"cfg_max_steps\": \"5\", \"cfg_eval_csv\": \"test.csv\", \"cfg_eval_cfg\": \"4.0\"}"
  },
  {
   "series": "probes",
   "run": "20260815-213015-probe-v3a-batch-scale",
   "source": "all_experiments_20260903",
   "model": "DiT-2Cond-S/2",
-  "data": "5script/train.csv",
+  "data": "assets/train.csv",
   "diffusion": "",
   "best_step": "",
   "best_ssim": "",
   "best_mse": "",
-  "config_json": "{\"cfg_model\": \"DiT-2Cond-S/2\", \"cfg_data_csv\": \"5script/train.csv\", \"cfg_diffusion_type\": \"\", \"cfg_main_ckpt\": \"\", \"cfg_skel_latent_shards_dir\": \"\", \"cfg_global_batch_size\": \"16\", \"cfg_batch_size\": \"\", \"cfg_lr\": \"0.0001\", \"cfg_max_steps\": \"8\", \"cfg_eval_csv\": \"test.csv\", \"cfg_eval_cfg\": \"4.0\"}"
+  "config_json": "{\"cfg_model\": \"DiT-2Cond-S/2\", \"cfg_data_csv\": \"assets/train.csv\", \"cfg_diffusion_type\": \"\", \"cfg_main_ckpt\": \"\", \"cfg_skel_latent_shards_dir\": \"\", \"cfg_global_batch_size\": \"16\", \"cfg_batch_size\": \"\", \"cfg_lr\": \"0.0001\", \"cfg_max_steps\": \"8\", \"cfg_eval_csv\": \"test.csv\", \"cfg_eval_cfg\": \"4.0\"}"
  },
  {
   "series": "px_s_scratch",
@@ -256,324 +256,324 @@
   "run": "20260824-151758-s10-b4-grey-clear",
   "source": "all_experiments_20260903",
   "model": "DiT-2Cond-B/4",
-  "data": "5script/train_top30_clean.csv",
+  "data": "assets/train_top30_clean.csv",
   "diffusion": "",
   "best_step": "4000",
   "best_ssim": "0.3035",
   "best_mse": "1.344",
-  "config_json": "{\"cfg_model\": \"DiT-2Cond-B/4\", \"cfg_data_csv\": \"5script/train_top30_clean.csv\", \"cfg_diffusion_type\": \"\", \"cfg_main_ckpt\": \"\", \"cfg_skel_latent_shards_dir\": \"\", \"cfg_global_batch_size\": \"96\", \"cfg_batch_size\": \"\", \"cfg_lr\": \"0.0002\", \"cfg_max_steps\": \"600000\", \"cfg_eval_csv\": \"5script/eval500_clean.csv\", \"cfg_eval_cfg\": \"4.0\"}"
+  "config_json": "{\"cfg_model\": \"DiT-2Cond-B/4\", \"cfg_data_csv\": \"assets/train_top30_clean.csv\", \"cfg_diffusion_type\": \"\", \"cfg_main_ckpt\": \"\", \"cfg_skel_latent_shards_dir\": \"\", \"cfg_global_batch_size\": \"96\", \"cfg_batch_size\": \"\", \"cfg_lr\": \"0.0002\", \"cfg_max_steps\": \"600000\", \"cfg_eval_csv\": \"assets/eval500_clean.csv\", \"cfg_eval_cfg\": \"4.0\"}"
  },
  {
   "series": "s10_b4_grey_clear",
   "run": "20260824-164822-s10-b4-grey-clear",
   "source": "all_experiments_20260903",
   "model": "DiT-2Cond-B/4",
-  "data": "5script/train_top30_clean.csv",
+  "data": "assets/train_top30_clean.csv",
   "diffusion": "",
   "best_step": "65000",
   "best_ssim": "0.4668",
   "best_mse": "1.071",
-  "config_json": "{\"cfg_model\": \"DiT-2Cond-B/4\", \"cfg_data_csv\": \"5script/train_top30_clean.csv\", \"cfg_diffusion_type\": \"\", \"cfg_main_ckpt\": \"\", \"cfg_skel_latent_shards_dir\": \"\", \"cfg_global_batch_size\": \"96\", \"cfg_batch_size\": \"\", \"cfg_lr\": \"0.0002\", \"cfg_max_steps\": \"600000\", \"cfg_eval_csv\": \"5script/eval500_clean.csv\", \"cfg_eval_cfg\": \"4.0\"}"
+  "config_json": "{\"cfg_model\": \"DiT-2Cond-B/4\", \"cfg_data_csv\": \"assets/train_top30_clean.csv\", \"cfg_diffusion_type\": \"\", \"cfg_main_ckpt\": \"\", \"cfg_skel_latent_shards_dir\": \"\", \"cfg_global_batch_size\": \"96\", \"cfg_batch_size\": \"\", \"cfg_lr\": \"0.0002\", \"cfg_max_steps\": \"600000\", \"cfg_eval_csv\": \"assets/eval500_clean.csv\", \"cfg_eval_cfg\": \"4.0\"}"
  },
  {
   "series": "s11_top6_p4",
   "run": "20260824-224524-s11-top6-p4",
   "source": "all_experiments_20260903",
   "model": "DiT-2Cond-S/4",
-  "data": "5script/train_top6.csv",
+  "data": "assets/train_top6.csv",
   "diffusion": "",
   "best_step": "",
   "best_ssim": "",
   "best_mse": "",
-  "config_json": "{\"cfg_model\": \"DiT-2Cond-S/4\", \"cfg_data_csv\": \"5script/train_top6.csv\", \"cfg_diffusion_type\": \"\", \"cfg_main_ckpt\": \"\", \"cfg_skel_latent_shards_dir\": \"\", \"cfg_global_batch_size\": \"224\", \"cfg_batch_size\": \"\", \"cfg_lr\": \"0.0002\", \"cfg_max_steps\": \"600000\", \"cfg_eval_csv\": \"5script/eval100_top6.csv\", \"cfg_eval_cfg\": \"4.0\"}"
+  "config_json": "{\"cfg_model\": \"DiT-2Cond-S/4\", \"cfg_data_csv\": \"assets/train_top6.csv\", \"cfg_diffusion_type\": \"\", \"cfg_main_ckpt\": \"\", \"cfg_skel_latent_shards_dir\": \"\", \"cfg_global_batch_size\": \"224\", \"cfg_batch_size\": \"\", \"cfg_lr\": \"0.0002\", \"cfg_max_steps\": \"600000\", \"cfg_eval_csv\": \"assets/eval100_top6.csv\", \"cfg_eval_cfg\": \"4.0\"}"
  },
  {
   "series": "s11_top6_p4",
   "run": "20260824-224716-s11-top6-p4",
   "source": "all_experiments_20260903",
   "model": "DiT-2Cond-S/4",
-  "data": "5script/train_top6.csv",
+  "data": "assets/train_top6.csv",
   "diffusion": "",
   "best_step": "5000",
   "best_ssim": "0.337",
   "best_mse": "1.1715",
-  "config_json": "{\"cfg_model\": \"DiT-2Cond-S/4\", \"cfg_data_csv\": \"5script/train_top6.csv\", \"cfg_diffusion_type\": \"\", \"cfg_main_ckpt\": \"\", \"cfg_skel_latent_shards_dir\": \"\", \"cfg_global_batch_size\": \"224\", \"cfg_batch_size\": \"\", \"cfg_lr\": \"0.0002\", \"cfg_max_steps\": \"600000\", \"cfg_eval_csv\": \"5script/eval100_top6.csv\", \"cfg_eval_cfg\": \"4.0\"}"
+  "config_json": "{\"cfg_model\": \"DiT-2Cond-S/4\", \"cfg_data_csv\": \"assets/train_top6.csv\", \"cfg_diffusion_type\": \"\", \"cfg_main_ckpt\": \"\", \"cfg_skel_latent_shards_dir\": \"\", \"cfg_global_batch_size\": \"224\", \"cfg_batch_size\": \"\", \"cfg_lr\": \"0.0002\", \"cfg_max_steps\": \"600000\", \"cfg_eval_csv\": \"assets/eval100_top6.csv\", \"cfg_eval_cfg\": \"4.0\"}"
  },
  {
   "series": "s11_top6_p4",
   "run": "20260824-231810-s11-top6-p4",
   "source": "all_experiments_20260903",
   "model": "DiT-2Cond-S/4",
-  "data": "5script/train_top6.csv",
+  "data": "assets/train_top6.csv",
   "diffusion": "",
   "best_step": "125000",
   "best_ssim": "0.619",
   "best_mse": "0.582",
-  "config_json": "{\"cfg_model\": \"DiT-2Cond-S/4\", \"cfg_data_csv\": \"5script/train_top6.csv\", \"cfg_diffusion_type\": \"\", \"cfg_main_ckpt\": \"\", \"cfg_skel_latent_shards_dir\": \"\", \"cfg_global_batch_size\": \"224\", \"cfg_batch_size\": \"\", \"cfg_lr\": \"0.0002\", \"cfg_max_steps\": \"600000\", \"cfg_eval_csv\": \"5script/eval100_top6.csv\", \"cfg_eval_cfg\": \"4.0\"}"
+  "config_json": "{\"cfg_model\": \"DiT-2Cond-S/4\", \"cfg_data_csv\": \"assets/train_top6.csv\", \"cfg_diffusion_type\": \"\", \"cfg_main_ckpt\": \"\", \"cfg_skel_latent_shards_dir\": \"\", \"cfg_global_batch_size\": \"224\", \"cfg_batch_size\": \"\", \"cfg_lr\": \"0.0002\", \"cfg_max_steps\": \"600000\", \"cfg_eval_csv\": \"assets/eval100_top6.csv\", \"cfg_eval_cfg\": \"4.0\"}"
  },
  {
   "series": "s11_top6_p4",
   "run": "20260825-093159-s11-top6-p4",
   "source": "all_experiments_20260903",
   "model": "DiT-2Cond-S/4",
-  "data": "5script/train_top6.csv",
+  "data": "assets/train_top6.csv",
   "diffusion": "",
   "best_step": "145000",
   "best_ssim": "0.6455",
   "best_mse": "0.5476",
-  "config_json": "{\"cfg_model\": \"DiT-2Cond-S/4\", \"cfg_data_csv\": \"5script/train_top6.csv\", \"cfg_diffusion_type\": \"\", \"cfg_main_ckpt\": \"\", \"cfg_skel_latent_shards_dir\": \"\", \"cfg_global_batch_size\": \"224\", \"cfg_batch_size\": \"\", \"cfg_lr\": \"0.0002\", \"cfg_max_steps\": \"600000\", \"cfg_eval_csv\": \"5script/eval100_top6.csv\", \"cfg_eval_cfg\": \"4.0\"}"
+  "config_json": "{\"cfg_model\": \"DiT-2Cond-S/4\", \"cfg_data_csv\": \"assets/train_top6.csv\", \"cfg_diffusion_type\": \"\", \"cfg_main_ckpt\": \"\", \"cfg_skel_latent_shards_dir\": \"\", \"cfg_global_batch_size\": \"224\", \"cfg_batch_size\": \"\", \"cfg_lr\": \"0.0002\", \"cfg_max_steps\": \"600000\", \"cfg_eval_csv\": \"assets/eval100_top6.csv\", \"cfg_eval_cfg\": \"4.0\"}"
  },
  {
   "series": "s12_3top30_dino",
   "run": "20260825-174750-s12-3top30-dino",
   "source": "all_experiments_20260903",
   "model": "DiT-2Cond-S/2",
-  "data": "5script/train_3top30_nobeike.csv",
+  "data": "assets/train_3top30_nobeike.csv",
   "diffusion": "",
   "best_step": "1000",
   "best_ssim": "0.0453",
   "best_mse": "1.6321",
-  "config_json": "{\"cfg_model\": \"DiT-2Cond-S/2\", \"cfg_data_csv\": \"5script/train_3top30_nobeike.csv\", \"cfg_diffusion_type\": \"\", \"cfg_main_ckpt\": \"\", \"cfg_skel_latent_shards_dir\": \"\", \"cfg_global_batch_size\": \"176\", \"cfg_batch_size\": \"\", \"cfg_lr\": \"0.0002\", \"cfg_max_steps\": \"600000\", \"cfg_eval_csv\": \"5script/eval100_3top30.csv\", \"cfg_eval_cfg\": \"4.0\"}"
+  "config_json": "{\"cfg_model\": \"DiT-2Cond-S/2\", \"cfg_data_csv\": \"assets/train_3top30_nobeike.csv\", \"cfg_diffusion_type\": \"\", \"cfg_main_ckpt\": \"\", \"cfg_skel_latent_shards_dir\": \"\", \"cfg_global_batch_size\": \"176\", \"cfg_batch_size\": \"\", \"cfg_lr\": \"0.0002\", \"cfg_max_steps\": \"600000\", \"cfg_eval_csv\": \"assets/eval100_3top30.csv\", \"cfg_eval_cfg\": \"4.0\"}"
  },
  {
   "series": "s12_3top30_dino",
   "run": "20260825-175939-s12-3top30-dino",
   "source": "all_experiments_20260903",
   "model": "DiT-2Cond-S/2",
-  "data": "5script/train_3top30_nobeike.csv",
+  "data": "assets/train_3top30_nobeike.csv",
   "diffusion": "",
   "best_step": "",
   "best_ssim": "",
   "best_mse": "",
-  "config_json": "{\"cfg_model\": \"DiT-2Cond-S/2\", \"cfg_data_csv\": \"5script/train_3top30_nobeike.csv\", \"cfg_diffusion_type\": \"\", \"cfg_main_ckpt\": \"\", \"cfg_skel_latent_shards_dir\": \"\", \"cfg_global_batch_size\": \"224\", \"cfg_batch_size\": \"\", \"cfg_lr\": \"0.0002\", \"cfg_max_steps\": \"600000\", \"cfg_eval_csv\": \"5script/eval100_3top30.csv\", \"cfg_eval_cfg\": \"4.0\"}"
+  "config_json": "{\"cfg_model\": \"DiT-2Cond-S/2\", \"cfg_data_csv\": \"assets/train_3top30_nobeike.csv\", \"cfg_diffusion_type\": \"\", \"cfg_main_ckpt\": \"\", \"cfg_skel_latent_shards_dir\": \"\", \"cfg_global_batch_size\": \"224\", \"cfg_batch_size\": \"\", \"cfg_lr\": \"0.0002\", \"cfg_max_steps\": \"600000\", \"cfg_eval_csv\": \"assets/eval100_3top30.csv\", \"cfg_eval_cfg\": \"4.0\"}"
  },
  {
   "series": "s12_3top30_dino",
   "run": "20260825-180335-s12-3top30-dino",
   "source": "all_experiments_20260903",
   "model": "DiT-2Cond-S/2",
-  "data": "5script/train_3top30_nobeike.csv",
+  "data": "assets/train_3top30_nobeike.csv",
   "diffusion": "",
   "best_step": "80000",
   "best_ssim": "0.4888",
   "best_mse": "0.9226",
-  "config_json": "{\"cfg_model\": \"DiT-2Cond-S/2\", \"cfg_data_csv\": \"5script/train_3top30_nobeike.csv\", \"cfg_diffusion_type\": \"\", \"cfg_main_ckpt\": \"\", \"cfg_skel_latent_shards_dir\": \"\", \"cfg_global_batch_size\": \"224\", \"cfg_batch_size\": \"\", \"cfg_lr\": \"0.0002\", \"cfg_max_steps\": \"600000\", \"cfg_eval_csv\": \"5script/eval100_3top30.csv\", \"cfg_eval_cfg\": \"4.0\"}"
+  "config_json": "{\"cfg_model\": \"DiT-2Cond-S/2\", \"cfg_data_csv\": \"assets/train_3top30_nobeike.csv\", \"cfg_diffusion_type\": \"\", \"cfg_main_ckpt\": \"\", \"cfg_skel_latent_shards_dir\": \"\", \"cfg_global_batch_size\": \"224\", \"cfg_batch_size\": \"\", \"cfg_lr\": \"0.0002\", \"cfg_max_steps\": \"600000\", \"cfg_eval_csv\": \"assets/eval100_3top30.csv\", \"cfg_eval_cfg\": \"4.0\"}"
  },
  {
   "series": "s13_3top30_dino_xs",
   "run": "20260826-095711-s13-3top30-dino-xs",
   "source": "all_experiments_20260903",
   "model": "DiT-2Cond-XS/2",
-  "data": "5script/train_3top30_nobeike.csv",
+  "data": "assets/train_3top30_nobeike.csv",
   "diffusion": "ddpm",
   "best_step": "",
   "best_ssim": "",
   "best_mse": "",
-  "config_json": "{\"cfg_model\": \"DiT-2Cond-XS/2\", \"cfg_data_csv\": \"5script/train_3top30_nobeike.csv\", \"cfg_diffusion_type\": \"ddpm\", \"cfg_main_ckpt\": \"\", \"cfg_skel_latent_shards_dir\": \"\", \"cfg_global_batch_size\": \"224\", \"cfg_batch_size\": \"\", \"cfg_lr\": \"0.0002\", \"cfg_max_steps\": \"200000\", \"cfg_eval_csv\": \"5script/eval500_3top30.csv\", \"cfg_eval_cfg\": \"4.0\"}"
+  "config_json": "{\"cfg_model\": \"DiT-2Cond-XS/2\", \"cfg_data_csv\": \"assets/train_3top30_nobeike.csv\", \"cfg_diffusion_type\": \"ddpm\", \"cfg_main_ckpt\": \"\", \"cfg_skel_latent_shards_dir\": \"\", \"cfg_global_batch_size\": \"224\", \"cfg_batch_size\": \"\", \"cfg_lr\": \"0.0002\", \"cfg_max_steps\": \"200000\", \"cfg_eval_csv\": \"assets/eval500_3top30.csv\", \"cfg_eval_cfg\": \"4.0\"}"
  },
  {
   "series": "s13_3top30_dino_xs",
   "run": "20260826-101935-s13-3top30-dino-xs",
   "source": "all_experiments_20260903",
   "model": "DiT-2Cond-XS/2",
-  "data": "5script/train_3top30_nobeike.csv",
+  "data": "assets/train_3top30_nobeike.csv",
   "diffusion": "ddpm",
   "best_step": "",
   "best_ssim": "",
   "best_mse": "",
-  "config_json": "{\"cfg_model\": \"DiT-2Cond-XS/2\", \"cfg_data_csv\": \"5script/train_3top30_nobeike.csv\", \"cfg_diffusion_type\": \"ddpm\", \"cfg_main_ckpt\": \"\", \"cfg_skel_latent_shards_dir\": \"\", \"cfg_global_batch_size\": \"224\", \"cfg_batch_size\": \"\", \"cfg_lr\": \"0.0002\", \"cfg_max_steps\": \"200000\", \"cfg_eval_csv\": \"5script/eval500_3top30.csv\", \"cfg_eval_cfg\": \"4.0\"}"
+  "config_json": "{\"cfg_model\": \"DiT-2Cond-XS/2\", \"cfg_data_csv\": \"assets/train_3top30_nobeike.csv\", \"cfg_diffusion_type\": \"ddpm\", \"cfg_main_ckpt\": \"\", \"cfg_skel_latent_shards_dir\": \"\", \"cfg_global_batch_size\": \"224\", \"cfg_batch_size\": \"\", \"cfg_lr\": \"0.0002\", \"cfg_max_steps\": \"200000\", \"cfg_eval_csv\": \"assets/eval500_3top30.csv\", \"cfg_eval_cfg\": \"4.0\"}"
  },
  {
   "series": "s13_3top30_dino_xs",
   "run": "20260826-102132-s13-3top30-dino-xs",
   "source": "all_experiments_20260903",
   "model": "DiT-2Cond-XS/2",
-  "data": "5script/train_3top30_nobeike.csv",
+  "data": "assets/train_3top30_nobeike.csv",
   "diffusion": "ddpm",
   "best_step": "",
   "best_ssim": "",
   "best_mse": "",
-  "config_json": "{\"cfg_model\": \"DiT-2Cond-XS/2\", \"cfg_data_csv\": \"5script/train_3top30_nobeike.csv\", \"cfg_diffusion_type\": \"ddpm\", \"cfg_main_ckpt\": \"\", \"cfg_skel_latent_shards_dir\": \"\", \"cfg_global_batch_size\": \"320\", \"cfg_batch_size\": \"\", \"cfg_lr\": \"0.0002\", \"cfg_max_steps\": \"200000\", \"cfg_eval_csv\": \"5script/eval500_3top30.csv\", \"cfg_eval_cfg\": \"4.0\"}"
+  "config_json": "{\"cfg_model\": \"DiT-2Cond-XS/2\", \"cfg_data_csv\": \"assets/train_3top30_nobeike.csv\", \"cfg_diffusion_type\": \"ddpm\", \"cfg_main_ckpt\": \"\", \"cfg_skel_latent_shards_dir\": \"\", \"cfg_global_batch_size\": \"320\", \"cfg_batch_size\": \"\", \"cfg_lr\": \"0.0002\", \"cfg_max_steps\": \"200000\", \"cfg_eval_csv\": \"assets/eval500_3top30.csv\", \"cfg_eval_cfg\": \"4.0\"}"
  },
  {
   "series": "s13_3top30_dino_xs",
   "run": "20260826-103832-s13-3top30-dino-xs",
   "source": "all_experiments_20260903",
   "model": "DiT-2Cond-XS/2",
-  "data": "5script/train_3top30_nobeike.csv",
+  "data": "assets/train_3top30_nobeike.csv",
   "diffusion": "ddpm",
   "best_step": "2000",
   "best_ssim": "0.3355",
   "best_mse": "1.0947",
-  "config_json": "{\"cfg_model\": \"DiT-2Cond-XS/2\", \"cfg_data_csv\": \"5script/train_3top30_nobeike.csv\", \"cfg_diffusion_type\": \"ddpm\", \"cfg_main_ckpt\": \"\", \"cfg_skel_latent_shards_dir\": \"\", \"cfg_global_batch_size\": \"320\", \"cfg_batch_size\": \"\", \"cfg_lr\": \"0.0002\", \"cfg_max_steps\": \"200000\", \"cfg_eval_csv\": \"5script/eval500_3top30.csv\", \"cfg_eval_cfg\": \"4.0\"}"
+  "config_json": "{\"cfg_model\": \"DiT-2Cond-XS/2\", \"cfg_data_csv\": \"assets/train_3top30_nobeike.csv\", \"cfg_diffusion_type\": \"ddpm\", \"cfg_main_ckpt\": \"\", \"cfg_skel_latent_shards_dir\": \"\", \"cfg_global_batch_size\": \"320\", \"cfg_batch_size\": \"\", \"cfg_lr\": \"0.0002\", \"cfg_max_steps\": \"200000\", \"cfg_eval_csv\": \"assets/eval500_3top30.csv\", \"cfg_eval_cfg\": \"4.0\"}"
  },
  {
   "series": "s14_xs_ddpm_orig",
   "run": "20260826-115802-s14-xs-ddpm-aug-test",
   "source": "all_experiments_20260903",
   "model": "DiT-2Cond-XS/2",
-  "data": "5script/train_3top30_nobeike.csv",
+  "data": "assets/train_3top30_nobeike.csv",
   "diffusion": "ddpm",
   "best_step": "1000",
   "best_ssim": "0.2414",
   "best_mse": "1.2264",
-  "config_json": "{\"cfg_model\": \"DiT-2Cond-XS/2\", \"cfg_data_csv\": \"5script/train_3top30_nobeike.csv\", \"cfg_diffusion_type\": \"ddpm\", \"cfg_main_ckpt\": \"\", \"cfg_skel_latent_shards_dir\": \"\", \"cfg_global_batch_size\": \"320\", \"cfg_batch_size\": \"\", \"cfg_lr\": \"0.0002\", \"cfg_max_steps\": \"1000\", \"cfg_eval_csv\": \"5script/eval500_3top30.csv\", \"cfg_eval_cfg\": \"4.0\"}"
+  "config_json": "{\"cfg_model\": \"DiT-2Cond-XS/2\", \"cfg_data_csv\": \"assets/train_3top30_nobeike.csv\", \"cfg_diffusion_type\": \"ddpm\", \"cfg_main_ckpt\": \"\", \"cfg_skel_latent_shards_dir\": \"\", \"cfg_global_batch_size\": \"320\", \"cfg_batch_size\": \"\", \"cfg_lr\": \"0.0002\", \"cfg_max_steps\": \"1000\", \"cfg_eval_csv\": \"assets/eval500_3top30.csv\", \"cfg_eval_cfg\": \"4.0\"}"
  },
  {
   "series": "s15_ws_flow",
   "run": "20260826-133102-s15-ws-flow",
   "source": "all_experiments_20260903",
   "model": "DiT-2Cond-WS/2",
-  "data": "5script/train_3top30_nobeike.csv",
+  "data": "assets/train_3top30_nobeike.csv",
   "diffusion": "flow",
   "best_step": "160000",
   "best_ssim": "0.5409",
   "best_mse": "0.7479",
-  "config_json": "{\"cfg_model\": \"DiT-2Cond-WS/2\", \"cfg_data_csv\": \"5script/train_3top30_nobeike.csv\", \"cfg_diffusion_type\": \"flow\", \"cfg_main_ckpt\": \"\", \"cfg_skel_latent_shards_dir\": \"\", \"cfg_global_batch_size\": \"160\", \"cfg_batch_size\": \"\", \"cfg_lr\": \"0.0002\", \"cfg_max_steps\": \"200000\", \"cfg_eval_csv\": \"5script/eval500_3top30.csv\", \"cfg_eval_cfg\": \"4.0\"}"
+  "config_json": "{\"cfg_model\": \"DiT-2Cond-WS/2\", \"cfg_data_csv\": \"assets/train_3top30_nobeike.csv\", \"cfg_diffusion_type\": \"flow\", \"cfg_main_ckpt\": \"\", \"cfg_skel_latent_shards_dir\": \"\", \"cfg_global_batch_size\": \"160\", \"cfg_batch_size\": \"\", \"cfg_lr\": \"0.0002\", \"cfg_max_steps\": \"200000\", \"cfg_eval_csv\": \"assets/eval500_3top30.csv\", \"cfg_eval_cfg\": \"4.0\"}"
  },
  {
   "series": "s17_s_flow",
   "run": "20260827-070924-s17-s-flow",
   "source": "all_experiments_20260903",
   "model": "DiT-2Cond-S/2",
-  "data": "5script/train_3top30_nobeike.csv",
+  "data": "assets/train_3top30_nobeike.csv",
   "diffusion": "flow",
   "best_step": "100000",
   "best_ssim": "0.5344",
   "best_mse": "0.7762",
-  "config_json": "{\"cfg_model\": \"DiT-2Cond-S/2\", \"cfg_data_csv\": \"5script/train_3top30_nobeike.csv\", \"cfg_diffusion_type\": \"flow\", \"cfg_main_ckpt\": \"\", \"cfg_skel_latent_shards_dir\": \"\", \"cfg_global_batch_size\": \"240\", \"cfg_batch_size\": \"\", \"cfg_lr\": \"0.0002\", \"cfg_max_steps\": \"200000\", \"cfg_eval_csv\": \"5script/eval500_3top30.csv\", \"cfg_eval_cfg\": \"4.0\"}"
+  "config_json": "{\"cfg_model\": \"DiT-2Cond-S/2\", \"cfg_data_csv\": \"assets/train_3top30_nobeike.csv\", \"cfg_diffusion_type\": \"flow\", \"cfg_main_ckpt\": \"\", \"cfg_skel_latent_shards_dir\": \"\", \"cfg_global_batch_size\": \"240\", \"cfg_batch_size\": \"\", \"cfg_lr\": \"0.0002\", \"cfg_max_steps\": \"200000\", \"cfg_eval_csv\": \"assets/eval500_3top30.csv\", \"cfg_eval_cfg\": \"4.0\"}"
  },
  {
   "series": "s18_s_flow_small",
   "run": "20260827-232003-s18-s-flow-small",
   "source": "all_experiments_20260903",
   "model": "DiT-2Cond-S/2",
-  "data": "5script/train_top6.csv",
+  "data": "assets/train_top6.csv",
   "diffusion": "flow",
   "best_step": "35000",
   "best_ssim": "0.5455",
   "best_mse": "0.727",
-  "config_json": "{\"cfg_model\": \"DiT-2Cond-S/2\", \"cfg_data_csv\": \"5script/train_top6.csv\", \"cfg_diffusion_type\": \"flow\", \"cfg_main_ckpt\": \"\", \"cfg_skel_latent_shards_dir\": \"\", \"cfg_global_batch_size\": \"240\", \"cfg_batch_size\": \"\", \"cfg_lr\": \"0.0002\", \"cfg_max_steps\": \"200000\", \"cfg_eval_csv\": \"5script/eval_strict_top6.csv\", \"cfg_eval_cfg\": \"4.0\"}"
+  "config_json": "{\"cfg_model\": \"DiT-2Cond-S/2\", \"cfg_data_csv\": \"assets/train_top6.csv\", \"cfg_diffusion_type\": \"flow\", \"cfg_main_ckpt\": \"\", \"cfg_skel_latent_shards_dir\": \"\", \"cfg_global_batch_size\": \"240\", \"cfg_batch_size\": \"\", \"cfg_lr\": \"0.0002\", \"cfg_max_steps\": \"200000\", \"cfg_eval_csv\": \"assets/eval_strict_top6.csv\", \"cfg_eval_cfg\": \"4.0\"}"
  },
  {
   "series": "s19_midclean_s_flow",
   "run": "20260828-143711-s19-midclean-s-flow",
   "source": "all_experiments_20260903",
   "model": "DiT-2Cond-S/2",
-  "data": "5script/train_mid_clean.csv",
+  "data": "assets/train_mid_clean.csv",
   "diffusion": "flow",
   "best_step": "50000",
   "best_ssim": "0.5222",
   "best_mse": "0.7949",
-  "config_json": "{\"cfg_model\": \"DiT-2Cond-S/2\", \"cfg_data_csv\": \"5script/train_mid_clean.csv\", \"cfg_diffusion_type\": \"flow\", \"cfg_main_ckpt\": \"\", \"cfg_skel_latent_shards_dir\": \"\", \"cfg_global_batch_size\": \"240\", \"cfg_batch_size\": \"\", \"cfg_lr\": \"0.0002\", \"cfg_max_steps\": \"300000\", \"cfg_eval_csv\": \"5script/eval_strict_top6.csv\", \"cfg_eval_cfg\": \"1.7\"}"
+  "config_json": "{\"cfg_model\": \"DiT-2Cond-S/2\", \"cfg_data_csv\": \"assets/train_mid_clean.csv\", \"cfg_diffusion_type\": \"flow\", \"cfg_main_ckpt\": \"\", \"cfg_skel_latent_shards_dir\": \"\", \"cfg_global_batch_size\": \"240\", \"cfg_batch_size\": \"\", \"cfg_lr\": \"0.0002\", \"cfg_max_steps\": \"300000\", \"cfg_eval_csv\": \"assets/eval_strict_top6.csv\", \"cfg_eval_cfg\": \"1.7\"}"
  },
  {
   "series": "s20_midcommon_s_flow_v2",
   "run": "20260829-021733-s20-midcommon-s-flow-v2",
   "source": "all_experiments_20260903",
   "model": "DiT-2Cond-S/2",
-  "data": "5script/train_mid_common.csv",
+  "data": "assets/train_mid_common.csv",
   "diffusion": "flow",
   "best_step": "",
   "best_ssim": "",
   "best_mse": "",
-  "config_json": "{\"cfg_model\": \"DiT-2Cond-S/2\", \"cfg_data_csv\": \"5script/train_mid_common.csv\", \"cfg_diffusion_type\": \"flow\", \"cfg_main_ckpt\": \"\", \"cfg_skel_latent_shards_dir\": \"\", \"cfg_global_batch_size\": \"240\", \"cfg_batch_size\": \"\", \"cfg_lr\": \"0.0002\", \"cfg_max_steps\": \"120000\", \"cfg_eval_csv\": \"5script/eval_strict_midclean.csv\", \"cfg_eval_cfg\": \"1.7\"}"
+  "config_json": "{\"cfg_model\": \"DiT-2Cond-S/2\", \"cfg_data_csv\": \"assets/train_mid_common.csv\", \"cfg_diffusion_type\": \"flow\", \"cfg_main_ckpt\": \"\", \"cfg_skel_latent_shards_dir\": \"\", \"cfg_global_batch_size\": \"240\", \"cfg_batch_size\": \"\", \"cfg_lr\": \"0.0002\", \"cfg_max_steps\": \"120000\", \"cfg_eval_csv\": \"assets/eval_strict_midclean.csv\", \"cfg_eval_cfg\": \"1.7\"}"
  },
  {
   "series": "s20_midcommon_s_flow_v2",
   "run": "20260829-023132-s20-midcommon-s-flow-v2",
   "source": "all_experiments_20260903",
   "model": "DiT-2Cond-S/2",
-  "data": "5script/train_mid_common.csv",
+  "data": "assets/train_mid_common.csv",
   "diffusion": "flow",
   "best_step": "102500",
   "best_ssim": "0.5294",
   "best_mse": "0.8155",
-  "config_json": "{\"cfg_model\": \"DiT-2Cond-S/2\", \"cfg_data_csv\": \"5script/train_mid_common.csv\", \"cfg_diffusion_type\": \"flow\", \"cfg_main_ckpt\": \"\", \"cfg_skel_latent_shards_dir\": \"\", \"cfg_global_batch_size\": \"128\", \"cfg_batch_size\": \"\", \"cfg_lr\": \"0.00015\", \"cfg_max_steps\": \"150000\", \"cfg_eval_csv\": \"5script/eval_strict_midclean.csv\", \"cfg_eval_cfg\": \"1.7\"}"
+  "config_json": "{\"cfg_model\": \"DiT-2Cond-S/2\", \"cfg_data_csv\": \"assets/train_mid_common.csv\", \"cfg_diffusion_type\": \"flow\", \"cfg_main_ckpt\": \"\", \"cfg_skel_latent_shards_dir\": \"\", \"cfg_global_batch_size\": \"128\", \"cfg_batch_size\": \"\", \"cfg_lr\": \"0.00015\", \"cfg_max_steps\": \"150000\", \"cfg_eval_csv\": \"assets/eval_strict_midclean.csv\", \"cfg_eval_cfg\": \"1.7\"}"
  },
  {
   "series": "s21_fame_flow_v2",
   "run": "20260829-231425-s21-fame-flow-v2",
   "source": "all_experiments_20260903",
   "model": "DiT-2Cond-S/2",
-  "data": "5script/train_fame.csv",
+  "data": "assets/train_fame.csv",
   "diffusion": "flow",
   "best_step": "",
   "best_ssim": "",
   "best_mse": "",
-  "config_json": "{\"cfg_model\": \"DiT-2Cond-S/2\", \"cfg_data_csv\": \"5script/train_fame.csv\", \"cfg_diffusion_type\": \"flow\", \"cfg_main_ckpt\": \"\", \"cfg_skel_latent_shards_dir\": \"\", \"cfg_global_batch_size\": \"128\", \"cfg_batch_size\": \"\", \"cfg_lr\": \"0.00015\", \"cfg_max_steps\": \"150000\", \"cfg_eval_csv\": \"5script/eval_fame_strict.csv\", \"cfg_eval_cfg\": \"0.7\"}"
+  "config_json": "{\"cfg_model\": \"DiT-2Cond-S/2\", \"cfg_data_csv\": \"assets/train_fame.csv\", \"cfg_diffusion_type\": \"flow\", \"cfg_main_ckpt\": \"\", \"cfg_skel_latent_shards_dir\": \"\", \"cfg_global_batch_size\": \"128\", \"cfg_batch_size\": \"\", \"cfg_lr\": \"0.00015\", \"cfg_max_steps\": \"150000\", \"cfg_eval_csv\": \"assets/eval_fame_strict.csv\", \"cfg_eval_cfg\": \"0.7\"}"
  },
  {
   "series": "s21_fame_flow_v2",
   "run": "20260829-231728-s21-fame-flow-v2",
   "source": "all_experiments_20260903",
   "model": "DiT-2Cond-S/2",
-  "data": "5script/train_fame.csv",
+  "data": "assets/train_fame.csv",
   "diffusion": "flow",
   "best_step": "",
   "best_ssim": "",
   "best_mse": "",
-  "config_json": "{\"cfg_model\": \"DiT-2Cond-S/2\", \"cfg_data_csv\": \"5script/train_fame.csv\", \"cfg_diffusion_type\": \"flow\", \"cfg_main_ckpt\": \"\", \"cfg_skel_latent_shards_dir\": \"\", \"cfg_global_batch_size\": \"128\", \"cfg_batch_size\": \"\", \"cfg_lr\": \"0.00015\", \"cfg_max_steps\": \"150000\", \"cfg_eval_csv\": \"5script/eval_fame_strict.csv\", \"cfg_eval_cfg\": \"0.7\"}"
+  "config_json": "{\"cfg_model\": \"DiT-2Cond-S/2\", \"cfg_data_csv\": \"assets/train_fame.csv\", \"cfg_diffusion_type\": \"flow\", \"cfg_main_ckpt\": \"\", \"cfg_skel_latent_shards_dir\": \"\", \"cfg_global_batch_size\": \"128\", \"cfg_batch_size\": \"\", \"cfg_lr\": \"0.00015\", \"cfg_max_steps\": \"150000\", \"cfg_eval_csv\": \"assets/eval_fame_strict.csv\", \"cfg_eval_cfg\": \"0.7\"}"
  },
  {
   "series": "s21_fame_flow_v2",
   "run": "20260829-232329-s21-fame-flow-v2",
   "source": "all_experiments_20260903",
   "model": "DiT-2Cond-S/2",
-  "data": "5script/train_fame.csv",
+  "data": "assets/train_fame.csv",
   "diffusion": "flow",
   "best_step": "30000",
   "best_ssim": "0.467",
   "best_mse": "1.0338",
-  "config_json": "{\"cfg_model\": \"DiT-2Cond-S/2\", \"cfg_data_csv\": \"5script/train_fame.csv\", \"cfg_diffusion_type\": \"flow\", \"cfg_main_ckpt\": \"\", \"cfg_skel_latent_shards_dir\": \"\", \"cfg_global_batch_size\": \"192\", \"cfg_batch_size\": \"\", \"cfg_lr\": \"0.00015\", \"cfg_max_steps\": \"150000\", \"cfg_eval_csv\": \"5script/eval_fame_strict.csv\", \"cfg_eval_cfg\": \"0.7\"}"
+  "config_json": "{\"cfg_model\": \"DiT-2Cond-S/2\", \"cfg_data_csv\": \"assets/train_fame.csv\", \"cfg_diffusion_type\": \"flow\", \"cfg_main_ckpt\": \"\", \"cfg_skel_latent_shards_dir\": \"\", \"cfg_global_batch_size\": \"192\", \"cfg_batch_size\": \"\", \"cfg_lr\": \"0.00015\", \"cfg_max_steps\": \"150000\", \"cfg_eval_csv\": \"assets/eval_fame_strict.csv\", \"cfg_eval_cfg\": \"0.7\"}"
  },
  {
   "series": "s22_char_embed_only",
   "run": "20260830-181142-s22-char-embed-only",
   "source": "all_experiments_20260903",
   "model": "DiT-2Cond-S/2",
-  "data": "5script/train_fame.csv",
+  "data": "assets/train_fame.csv",
   "diffusion": "flow",
   "best_step": "30000",
   "best_ssim": "0.4622",
   "best_mse": "1.0389",
-  "config_json": "{\"cfg_model\": \"DiT-2Cond-S/2\", \"cfg_data_csv\": \"5script/train_fame.csv\", \"cfg_diffusion_type\": \"flow\", \"cfg_main_ckpt\": \"\", \"cfg_skel_latent_shards_dir\": \"\", \"cfg_global_batch_size\": \"192\", \"cfg_batch_size\": \"\", \"cfg_lr\": \"0.0005\", \"cfg_max_steps\": \"47500\", \"cfg_eval_csv\": \"5script/eval_fame_strict.csv\", \"cfg_eval_cfg\": \"0.7\"}"
+  "config_json": "{\"cfg_model\": \"DiT-2Cond-S/2\", \"cfg_data_csv\": \"assets/train_fame.csv\", \"cfg_diffusion_type\": \"flow\", \"cfg_main_ckpt\": \"\", \"cfg_skel_latent_shards_dir\": \"\", \"cfg_global_batch_size\": \"192\", \"cfg_batch_size\": \"\", \"cfg_lr\": \"0.0005\", \"cfg_max_steps\": \"47500\", \"cfg_eval_csv\": \"assets/eval_fame_strict.csv\", \"cfg_eval_cfg\": \"0.7\"}"
  },
  {
   "series": "s23_glyph_cond",
   "run": "20260830-225724-s23-glyph-cond",
   "source": "all_experiments_20260903",
   "model": "DiT-2Cond-S/2",
-  "data": "5script/train_fame.csv",
+  "data": "assets/train_fame.csv",
   "diffusion": "flow",
   "best_step": "",
   "best_ssim": "",
   "best_mse": "",
-  "config_json": "{\"cfg_model\": \"DiT-2Cond-S/2\", \"cfg_data_csv\": \"5script/train_fame.csv\", \"cfg_diffusion_type\": \"flow\", \"cfg_main_ckpt\": \"\", \"cfg_skel_latent_shards_dir\": \"\", \"cfg_global_batch_size\": \"192\", \"cfg_batch_size\": \"\", \"cfg_lr\": \"0.00015\", \"cfg_max_steps\": \"150000\", \"cfg_eval_csv\": \"5script/eval_fame_strict.csv\", \"cfg_eval_cfg\": \"0.7\"}"
+  "config_json": "{\"cfg_model\": \"DiT-2Cond-S/2\", \"cfg_data_csv\": \"assets/train_fame.csv\", \"cfg_diffusion_type\": \"flow\", \"cfg_main_ckpt\": \"\", \"cfg_skel_latent_shards_dir\": \"\", \"cfg_global_batch_size\": \"192\", \"cfg_batch_size\": \"\", \"cfg_lr\": \"0.00015\", \"cfg_max_steps\": \"150000\", \"cfg_eval_csv\": \"assets/eval_fame_strict.csv\", \"cfg_eval_cfg\": \"0.7\"}"
  },
  {
   "series": "s23_glyph_cond",
   "run": "20260831-005426-s23-glyph-cond",
   "source": "all_experiments_20260903",
   "model": "DiT-2Cond-S/2",
-  "data": "5script/train_fame.csv",
+  "data": "assets/train_fame.csv",
   "diffusion": "flow",
   "best_step": "",
   "best_ssim": "",
   "best_mse": "",
-  "config_json": "{\"cfg_model\": \"DiT-2Cond-S/2\", \"cfg_data_csv\": \"5script/train_fame.csv\", \"cfg_diffusion_type\": \"flow\", \"cfg_main_ckpt\": \"\", \"cfg_skel_latent_shards_dir\": \"\", \"cfg_global_batch_size\": \"192\", \"cfg_batch_size\": \"\", \"cfg_lr\": \"0.00015\", \"cfg_max_steps\": \"150000\", \"cfg_eval_csv\": \"5script/eval_fame_strict.csv\", \"cfg_eval_cfg\": \"0.7\"}"
+  "config_json": "{\"cfg_model\": \"DiT-2Cond-S/2\", \"cfg_data_csv\": \"assets/train_fame.csv\", \"cfg_diffusion_type\": \"flow\", \"cfg_main_ckpt\": \"\", \"cfg_skel_latent_shards_dir\": \"\", \"cfg_global_batch_size\": \"192\", \"cfg_batch_size\": \"\", \"cfg_lr\": \"0.00015\", \"cfg_max_steps\": \"150000\", \"cfg_eval_csv\": \"assets/eval_fame_strict.csv\", \"cfg_eval_cfg\": \"0.7\"}"
  },
  {
   "series": "s25_ids_pretrain",
   "run": "20260831-033258-s25-ids-pretrain",
   "source": "all_experiments_20260903",
   "model": "DiT-2Cond-S/2",
-  "data": "5script/train_fame.csv",
+  "data": "assets/train_fame.csv",
   "diffusion": "flow",
   "best_step": "45000",
   "best_ssim": "0.4618",
   "best_mse": "1.0452",
-  "config_json": "{\"cfg_model\": \"DiT-2Cond-S/2\", \"cfg_data_csv\": \"5script/train_fame.csv\", \"cfg_diffusion_type\": \"flow\", \"cfg_main_ckpt\": \"\", \"cfg_skel_latent_shards_dir\": \"\", \"cfg_global_batch_size\": \"192\", \"cfg_batch_size\": \"\", \"cfg_lr\": \"0.00015\", \"cfg_max_steps\": \"150000\", \"cfg_eval_csv\": \"5script/eval_fame_strict.csv\", \"cfg_eval_cfg\": \"0.7\"}"
+  "config_json": "{\"cfg_model\": \"DiT-2Cond-S/2\", \"cfg_data_csv\": \"assets/train_fame.csv\", \"cfg_diffusion_type\": \"flow\", \"cfg_main_ckpt\": \"\", \"cfg_skel_latent_shards_dir\": \"\", \"cfg_global_batch_size\": \"192\", \"cfg_batch_size\": \"\", \"cfg_lr\": \"0.00015\", \"cfg_max_steps\": \"150000\", \"cfg_eval_csv\": \"assets/eval_fame_strict.csv\", \"cfg_eval_cfg\": \"0.7\"}"
  },
  {
   "series": "s26_ctrl_gt_skel",
@@ -592,120 +592,120 @@
   "run": "20260831-192249-s28-std-dino-pretrain",
   "source": "all_experiments_20260903",
   "model": "DiT-2Cond-S/2",
-  "data": "5script/train_fame.csv",
+  "data": "assets/train_fame.csv",
   "diffusion": "flow",
   "best_step": "3000",
   "best_ssim": "0.4229",
   "best_mse": "1.1683",
-  "config_json": "{\"cfg_model\": \"DiT-2Cond-S/2\", \"cfg_data_csv\": \"5script/train_fame.csv\", \"cfg_diffusion_type\": \"flow\", \"cfg_main_ckpt\": \"\", \"cfg_skel_latent_shards_dir\": \"\", \"cfg_global_batch_size\": \"192\", \"cfg_batch_size\": \"\", \"cfg_lr\": \"0.00015\", \"cfg_max_steps\": \"150000\", \"cfg_eval_csv\": \"5script/eval_fame_strict.csv\", \"cfg_eval_cfg\": \"0.7\"}"
+  "config_json": "{\"cfg_model\": \"DiT-2Cond-S/2\", \"cfg_data_csv\": \"assets/train_fame.csv\", \"cfg_diffusion_type\": \"flow\", \"cfg_main_ckpt\": \"\", \"cfg_skel_latent_shards_dir\": \"\", \"cfg_global_batch_size\": \"192\", \"cfg_batch_size\": \"\", \"cfg_lr\": \"0.00015\", \"cfg_max_steps\": \"150000\", \"cfg_eval_csv\": \"assets/eval_fame_strict.csv\", \"cfg_eval_cfg\": \"0.7\"}"
  },
  {
   "series": "s28_std_dino_pretrain",
   "run": "20260831-201139-s28-std-dino-pretrain",
   "source": "all_experiments_20260903",
   "model": "DiT-2Cond-S/2",
-  "data": "5script/train_fame.csv",
+  "data": "assets/train_fame.csv",
   "diffusion": "flow",
   "best_step": "",
   "best_ssim": "",
   "best_mse": "",
-  "config_json": "{\"cfg_model\": \"DiT-2Cond-S/2\", \"cfg_data_csv\": \"5script/train_fame.csv\", \"cfg_diffusion_type\": \"flow\", \"cfg_main_ckpt\": \"\", \"cfg_skel_latent_shards_dir\": \"\", \"cfg_global_batch_size\": \"192\", \"cfg_batch_size\": \"\", \"cfg_lr\": \"0.00015\", \"cfg_max_steps\": \"150000\", \"cfg_eval_csv\": \"5script/eval_fame_strict.csv\", \"cfg_eval_cfg\": \"0.7\"}"
+  "config_json": "{\"cfg_model\": \"DiT-2Cond-S/2\", \"cfg_data_csv\": \"assets/train_fame.csv\", \"cfg_diffusion_type\": \"flow\", \"cfg_main_ckpt\": \"\", \"cfg_skel_latent_shards_dir\": \"\", \"cfg_global_batch_size\": \"192\", \"cfg_batch_size\": \"\", \"cfg_lr\": \"0.00015\", \"cfg_max_steps\": \"150000\", \"cfg_eval_csv\": \"assets/eval_fame_strict.csv\", \"cfg_eval_cfg\": \"0.7\"}"
  },
  {
   "series": "s28_std_dino_pretrain",
   "run": "20260831-201158-s28-std-dino-pretrain",
   "source": "all_experiments_20260903",
   "model": "DiT-2Cond-S/2",
-  "data": "5script/train_fame.csv",
+  "data": "assets/train_fame.csv",
   "diffusion": "flow",
   "best_step": "2000",
   "best_ssim": "0.44",
   "best_mse": "1.0999",
-  "config_json": "{\"cfg_model\": \"DiT-2Cond-S/2\", \"cfg_data_csv\": \"5script/train_fame.csv\", \"cfg_diffusion_type\": \"flow\", \"cfg_main_ckpt\": \"\", \"cfg_skel_latent_shards_dir\": \"\", \"cfg_global_batch_size\": \"192\", \"cfg_batch_size\": \"\", \"cfg_lr\": \"0.00015\", \"cfg_max_steps\": \"150000\", \"cfg_eval_csv\": \"5script/eval_fame_strict.csv\", \"cfg_eval_cfg\": \"0.7\"}"
+  "config_json": "{\"cfg_model\": \"DiT-2Cond-S/2\", \"cfg_data_csv\": \"assets/train_fame.csv\", \"cfg_diffusion_type\": \"flow\", \"cfg_main_ckpt\": \"\", \"cfg_skel_latent_shards_dir\": \"\", \"cfg_global_batch_size\": \"192\", \"cfg_batch_size\": \"\", \"cfg_lr\": \"0.00015\", \"cfg_max_steps\": \"150000\", \"cfg_eval_csv\": \"assets/eval_fame_strict.csv\", \"cfg_eval_cfg\": \"0.7\"}"
  },
  {
   "series": "s28_std_dino_pretrain",
   "run": "20260831-204702-s28-std-dino-pretrain",
   "source": "all_experiments_20260903",
   "model": "DiT-2Cond-S/2",
-  "data": "5script/train_fame_clean.csv",
+  "data": "assets/train_fame_clean.csv",
   "diffusion": "flow",
   "best_step": "3000",
   "best_ssim": "0.4469",
   "best_mse": "1.0861",
-  "config_json": "{\"cfg_model\": \"DiT-2Cond-S/2\", \"cfg_data_csv\": \"5script/train_fame_clean.csv\", \"cfg_diffusion_type\": \"flow\", \"cfg_main_ckpt\": \"\", \"cfg_skel_latent_shards_dir\": \"\", \"cfg_global_batch_size\": \"192\", \"cfg_batch_size\": \"\", \"cfg_lr\": \"0.00015\", \"cfg_max_steps\": \"150000\", \"cfg_eval_csv\": \"5script/eval_fame_strict_clean.csv\", \"cfg_eval_cfg\": \"0.7\"}"
+  "config_json": "{\"cfg_model\": \"DiT-2Cond-S/2\", \"cfg_data_csv\": \"assets/train_fame_clean.csv\", \"cfg_diffusion_type\": \"flow\", \"cfg_main_ckpt\": \"\", \"cfg_skel_latent_shards_dir\": \"\", \"cfg_global_batch_size\": \"192\", \"cfg_batch_size\": \"\", \"cfg_lr\": \"0.00015\", \"cfg_max_steps\": \"150000\", \"cfg_eval_csv\": \"assets/eval_fame_strict_clean.csv\", \"cfg_eval_cfg\": \"0.7\"}"
  },
  {
   "series": "s28_std_dino_pretrain",
   "run": "20260831-224438-s28-bench-cu121_base",
   "source": "all_experiments_20260903",
   "model": "DiT-2Cond-S/2",
-  "data": "5script/train_fame_clean.csv",
+  "data": "assets/train_fame_clean.csv",
   "diffusion": "flow",
   "best_step": "",
   "best_ssim": "",
   "best_mse": "",
-  "config_json": "{\"cfg_model\": \"DiT-2Cond-S/2\", \"cfg_data_csv\": \"5script/train_fame_clean.csv\", \"cfg_diffusion_type\": \"flow\", \"cfg_main_ckpt\": \"\", \"cfg_skel_latent_shards_dir\": \"\", \"cfg_global_batch_size\": \"192\", \"cfg_batch_size\": \"\", \"cfg_lr\": \"0.00015\", \"cfg_max_steps\": \"400\", \"cfg_eval_csv\": \"\", \"cfg_eval_cfg\": \"0.7\"}"
+  "config_json": "{\"cfg_model\": \"DiT-2Cond-S/2\", \"cfg_data_csv\": \"assets/train_fame_clean.csv\", \"cfg_diffusion_type\": \"flow\", \"cfg_main_ckpt\": \"\", \"cfg_skel_latent_shards_dir\": \"\", \"cfg_global_batch_size\": \"192\", \"cfg_batch_size\": \"\", \"cfg_lr\": \"0.00015\", \"cfg_max_steps\": \"400\", \"cfg_eval_csv\": \"\", \"cfg_eval_cfg\": \"0.7\"}"
  },
  {
   "series": "s28_std_dino_pretrain",
   "run": "20260831-224808-s28-bench-cu121_compile",
   "source": "all_experiments_20260903",
   "model": "DiT-2Cond-S/2",
-  "data": "5script/train_fame_clean.csv",
+  "data": "assets/train_fame_clean.csv",
   "diffusion": "flow",
   "best_step": "",
   "best_ssim": "",
   "best_mse": "",
-  "config_json": "{\"cfg_model\": \"DiT-2Cond-S/2\", \"cfg_data_csv\": \"5script/train_fame_clean.csv\", \"cfg_diffusion_type\": \"flow\", \"cfg_main_ckpt\": \"\", \"cfg_skel_latent_shards_dir\": \"\", \"cfg_global_batch_size\": \"192\", \"cfg_batch_size\": \"\", \"cfg_lr\": \"0.00015\", \"cfg_max_steps\": \"400\", \"cfg_eval_csv\": \"\", \"cfg_eval_cfg\": \"0.7\"}"
+  "config_json": "{\"cfg_model\": \"DiT-2Cond-S/2\", \"cfg_data_csv\": \"assets/train_fame_clean.csv\", \"cfg_diffusion_type\": \"flow\", \"cfg_main_ckpt\": \"\", \"cfg_skel_latent_shards_dir\": \"\", \"cfg_global_batch_size\": \"192\", \"cfg_batch_size\": \"\", \"cfg_lr\": \"0.00015\", \"cfg_max_steps\": \"400\", \"cfg_eval_csv\": \"\", \"cfg_eval_cfg\": \"0.7\"}"
  },
  {
   "series": "s28_std_dino_pretrain",
   "run": "20260831-225554-s28-bench-b384",
   "source": "all_experiments_20260903",
   "model": "DiT-2Cond-S/2",
-  "data": "5script/train_fame_clean.csv",
+  "data": "assets/train_fame_clean.csv",
   "diffusion": "flow",
   "best_step": "",
   "best_ssim": "",
   "best_mse": "",
-  "config_json": "{\"cfg_model\": \"DiT-2Cond-S/2\", \"cfg_data_csv\": \"5script/train_fame_clean.csv\", \"cfg_diffusion_type\": \"flow\", \"cfg_main_ckpt\": \"\", \"cfg_skel_latent_shards_dir\": \"\", \"cfg_global_batch_size\": \"384\", \"cfg_batch_size\": \"\", \"cfg_lr\": \"0.00015\", \"cfg_max_steps\": \"120\", \"cfg_eval_csv\": \"\", \"cfg_eval_cfg\": \"0.7\"}"
+  "config_json": "{\"cfg_model\": \"DiT-2Cond-S/2\", \"cfg_data_csv\": \"assets/train_fame_clean.csv\", \"cfg_diffusion_type\": \"flow\", \"cfg_main_ckpt\": \"\", \"cfg_skel_latent_shards_dir\": \"\", \"cfg_global_batch_size\": \"384\", \"cfg_batch_size\": \"\", \"cfg_lr\": \"0.00015\", \"cfg_max_steps\": \"120\", \"cfg_eval_csv\": \"\", \"cfg_eval_cfg\": \"0.7\"}"
  },
  {
   "series": "s28_std_dino_pretrain",
   "run": "20260831-225825-s28-bench-b448",
   "source": "all_experiments_20260903",
   "model": "DiT-2Cond-S/2",
-  "data": "5script/train_fame_clean.csv",
+  "data": "assets/train_fame_clean.csv",
   "diffusion": "flow",
   "best_step": "",
   "best_ssim": "",
   "best_mse": "",
-  "config_json": "{\"cfg_model\": \"DiT-2Cond-S/2\", \"cfg_data_csv\": \"5script/train_fame_clean.csv\", \"cfg_diffusion_type\": \"flow\", \"cfg_main_ckpt\": \"\", \"cfg_skel_latent_shards_dir\": \"\", \"cfg_global_batch_size\": \"448\", \"cfg_batch_size\": \"\", \"cfg_lr\": \"0.00015\", \"cfg_max_steps\": \"100\", \"cfg_eval_csv\": \"\", \"cfg_eval_cfg\": \"0.7\"}"
+  "config_json": "{\"cfg_model\": \"DiT-2Cond-S/2\", \"cfg_data_csv\": \"assets/train_fame_clean.csv\", \"cfg_diffusion_type\": \"flow\", \"cfg_main_ckpt\": \"\", \"cfg_skel_latent_shards_dir\": \"\", \"cfg_global_batch_size\": \"448\", \"cfg_batch_size\": \"\", \"cfg_lr\": \"0.00015\", \"cfg_max_steps\": \"100\", \"cfg_eval_csv\": \"\", \"cfg_eval_cfg\": \"0.7\"}"
  },
  {
   "series": "s28_std_dino_pretrain",
   "run": "20260831-225949-s28-bench-b416",
   "source": "all_experiments_20260903",
   "model": "DiT-2Cond-S/2",
-  "data": "5script/train_fame_clean.csv",
+  "data": "assets/train_fame_clean.csv",
   "diffusion": "flow",
   "best_step": "",
   "best_ssim": "",
   "best_mse": "",
-  "config_json": "{\"cfg_model\": \"DiT-2Cond-S/2\", \"cfg_data_csv\": \"5script/train_fame_clean.csv\", \"cfg_diffusion_type\": \"flow\", \"cfg_main_ckpt\": \"\", \"cfg_skel_latent_shards_dir\": \"\", \"cfg_global_batch_size\": \"416\", \"cfg_batch_size\": \"\", \"cfg_lr\": \"0.00015\", \"cfg_max_steps\": \"100\", \"cfg_eval_csv\": \"\", \"cfg_eval_cfg\": \"0.7\"}"
+  "config_json": "{\"cfg_model\": \"DiT-2Cond-S/2\", \"cfg_data_csv\": \"assets/train_fame_clean.csv\", \"cfg_diffusion_type\": \"flow\", \"cfg_main_ckpt\": \"\", \"cfg_skel_latent_shards_dir\": \"\", \"cfg_global_batch_size\": \"416\", \"cfg_batch_size\": \"\", \"cfg_lr\": \"0.00015\", \"cfg_max_steps\": \"100\", \"cfg_eval_csv\": \"\", \"cfg_eval_cfg\": \"0.7\"}"
  },
  {
   "series": "s28_std_dino_pretrain",
   "run": "20260831-231516-s28-std-dino-pretrain",
   "source": "all_experiments_20260903",
   "model": "DiT-2Cond-S/2",
-  "data": "5script/train_fame_clean.csv",
+  "data": "assets/train_fame_clean.csv",
   "diffusion": "flow",
   "best_step": "3000",
   "best_ssim": "0.4476",
   "best_mse": "1.0788",
-  "config_json": "{\"cfg_model\": \"DiT-2Cond-S/2\", \"cfg_data_csv\": \"5script/train_fame_clean.csv\", \"cfg_diffusion_type\": \"flow\", \"cfg_main_ckpt\": \"\", \"cfg_skel_latent_shards_dir\": \"\", \"cfg_global_batch_size\": \"384\", \"cfg_batch_size\": \"\", \"cfg_lr\": \"0.00015\", \"cfg_max_steps\": \"150000\", \"cfg_eval_csv\": \"5script/eval_fame_strict_clean.csv\", \"cfg_eval_cfg\": \"0.7\"}"
+  "config_json": "{\"cfg_model\": \"DiT-2Cond-S/2\", \"cfg_data_csv\": \"assets/train_fame_clean.csv\", \"cfg_diffusion_type\": \"flow\", \"cfg_main_ckpt\": \"\", \"cfg_skel_latent_shards_dir\": \"\", \"cfg_global_batch_size\": \"384\", \"cfg_batch_size\": \"\", \"cfg_lr\": \"0.00015\", \"cfg_max_steps\": \"150000\", \"cfg_eval_csv\": \"assets/eval_fame_strict_clean.csv\", \"cfg_eval_cfg\": \"0.7\"}"
  },
  {
   "series": "s2_fromscratch_2factor",
@@ -736,480 +736,480 @@
   "run": "20260901-035827-s30-dino-char-strong-pretrain",
   "source": "all_experiments_20260903",
   "model": "DiT-2Cond-S/2",
-  "data": "5script/train_fame_clean.csv",
+  "data": "assets/train_fame_clean.csv",
   "diffusion": "flow",
   "best_step": "3000",
   "best_ssim": "0.4503",
   "best_mse": "1.0717",
-  "config_json": "{\"cfg_model\": \"DiT-2Cond-S/2\", \"cfg_data_csv\": \"5script/train_fame_clean.csv\", \"cfg_diffusion_type\": \"flow\", \"cfg_main_ckpt\": \"\", \"cfg_skel_latent_shards_dir\": \"\", \"cfg_global_batch_size\": \"384\", \"cfg_batch_size\": \"\", \"cfg_lr\": \"0.00015\", \"cfg_max_steps\": \"150000\", \"cfg_eval_csv\": \"5script/eval_fame_strict_clean.csv\", \"cfg_eval_cfg\": \"0.7\"}"
+  "config_json": "{\"cfg_model\": \"DiT-2Cond-S/2\", \"cfg_data_csv\": \"assets/train_fame_clean.csv\", \"cfg_diffusion_type\": \"flow\", \"cfg_main_ckpt\": \"\", \"cfg_skel_latent_shards_dir\": \"\", \"cfg_global_batch_size\": \"384\", \"cfg_batch_size\": \"\", \"cfg_lr\": \"0.00015\", \"cfg_max_steps\": \"150000\", \"cfg_eval_csv\": \"assets/eval_fame_strict_clean.csv\", \"cfg_eval_cfg\": \"0.7\"}"
  },
  {
   "series": "s30_dino_char_strong_pretrain",
   "run": "20260901-052520-s30-dino-char-strong-pretrain",
   "source": "all_experiments_20260903",
   "model": "DiT-2Cond-S/2",
-  "data": "5script/train_fame_clean.csv",
+  "data": "assets/train_fame_clean.csv",
   "diffusion": "flow",
   "best_step": "130000",
   "best_ssim": "0.4841",
   "best_mse": "0.9299",
-  "config_json": "{\"cfg_model\": \"DiT-2Cond-S/2\", \"cfg_data_csv\": \"5script/train_fame_clean.csv\", \"cfg_diffusion_type\": \"flow\", \"cfg_main_ckpt\": \"\", \"cfg_skel_latent_shards_dir\": \"\", \"cfg_global_batch_size\": \"384\", \"cfg_batch_size\": \"\", \"cfg_lr\": \"0.00015\", \"cfg_max_steps\": \"150000\", \"cfg_eval_csv\": \"5script/eval_fame_strict_clean.csv\", \"cfg_eval_cfg\": \"0.7\"}"
+  "config_json": "{\"cfg_model\": \"DiT-2Cond-S/2\", \"cfg_data_csv\": \"assets/train_fame_clean.csv\", \"cfg_diffusion_type\": \"flow\", \"cfg_main_ckpt\": \"\", \"cfg_skel_latent_shards_dir\": \"\", \"cfg_global_batch_size\": \"384\", \"cfg_batch_size\": \"\", \"cfg_lr\": \"0.00015\", \"cfg_max_steps\": \"150000\", \"cfg_eval_csv\": \"assets/eval_fame_strict_clean.csv\", \"cfg_eval_cfg\": \"0.7\"}"
  },
  {
   "series": "s5_2factor_B_canny05_pixelsk",
   "run": "20260818-134212-s5-2factor-B-canny05-pixelsk",
   "source": "all_experiments_20260903",
   "model": "DiT-2Cond-B/2",
-  "data": "5script/train_top30.csv",
+  "data": "assets/train_top30.csv",
   "diffusion": "",
   "best_step": "325000",
   "best_ssim": "0.4822",
   "best_mse": "0.7815",
-  "config_json": "{\"cfg_model\": \"DiT-2Cond-B/2\", \"cfg_data_csv\": \"5script/train_top30.csv\", \"cfg_diffusion_type\": \"\", \"cfg_main_ckpt\": \"\", \"cfg_skel_latent_shards_dir\": \"\", \"cfg_global_batch_size\": \"64\", \"cfg_batch_size\": \"\", \"cfg_lr\": \"0.0002\", \"cfg_max_steps\": \"400000\", \"cfg_eval_csv\": \"5script/eval100_top30.csv\", \"cfg_eval_cfg\": \"4.0\"}"
+  "config_json": "{\"cfg_model\": \"DiT-2Cond-B/2\", \"cfg_data_csv\": \"assets/train_top30.csv\", \"cfg_diffusion_type\": \"\", \"cfg_main_ckpt\": \"\", \"cfg_skel_latent_shards_dir\": \"\", \"cfg_global_batch_size\": \"64\", \"cfg_batch_size\": \"\", \"cfg_lr\": \"0.0002\", \"cfg_max_steps\": \"400000\", \"cfg_eval_csv\": \"assets/eval100_top30.csv\", \"cfg_eval_cfg\": \"4.0\"}"
  },
  {
   "series": "s5_2factor_B_latentstruct",
   "run": "20260817-162129-s5-2factor-B-latent-struct",
   "source": "all_experiments_20260903",
   "model": "DiT-2Cond-B/2",
-  "data": "5script/train_top30.csv",
+  "data": "assets/train_top30.csv",
   "diffusion": "",
   "best_step": "130000",
   "best_ssim": "0.5067",
   "best_mse": "0.8828",
-  "config_json": "{\"cfg_model\": \"DiT-2Cond-B/2\", \"cfg_data_csv\": \"5script/train_top30.csv\", \"cfg_diffusion_type\": \"\", \"cfg_main_ckpt\": \"\", \"cfg_skel_latent_shards_dir\": \"\", \"cfg_global_batch_size\": \"64\", \"cfg_batch_size\": \"\", \"cfg_lr\": \"0.0002\", \"cfg_max_steps\": \"200000\", \"cfg_eval_csv\": \"5script/eval100_top30.csv\", \"cfg_eval_cfg\": \"4.0\"}"
+  "config_json": "{\"cfg_model\": \"DiT-2Cond-B/2\", \"cfg_data_csv\": \"assets/train_top30.csv\", \"cfg_diffusion_type\": \"\", \"cfg_main_ckpt\": \"\", \"cfg_skel_latent_shards_dir\": \"\", \"cfg_global_batch_size\": \"64\", \"cfg_batch_size\": \"\", \"cfg_lr\": \"0.0002\", \"cfg_max_steps\": \"200000\", \"cfg_eval_csv\": \"assets/eval100_top30.csv\", \"cfg_eval_cfg\": \"4.0\"}"
  },
  {
   "series": "s5_2factor_B_latentstruct_pixelsk_opt",
   "run": "20260817-235725-s5-2factor-B-latentC-pixelsk-opt",
   "source": "all_experiments_20260903",
   "model": "DiT-2Cond-B/2",
-  "data": "5script/train_top30.csv",
+  "data": "assets/train_top30.csv",
   "diffusion": "",
   "best_step": "5000",
   "best_ssim": "0.1164",
   "best_mse": "1.7656",
-  "config_json": "{\"cfg_model\": \"DiT-2Cond-B/2\", \"cfg_data_csv\": \"5script/train_top30.csv\", \"cfg_diffusion_type\": \"\", \"cfg_main_ckpt\": \"\", \"cfg_skel_latent_shards_dir\": \"\", \"cfg_global_batch_size\": \"64\", \"cfg_batch_size\": \"\", \"cfg_lr\": \"0.0002\", \"cfg_max_steps\": \"400000\", \"cfg_eval_csv\": \"5script/eval100_top30.csv\", \"cfg_eval_cfg\": \"4.0\"}"
+  "config_json": "{\"cfg_model\": \"DiT-2Cond-B/2\", \"cfg_data_csv\": \"assets/train_top30.csv\", \"cfg_diffusion_type\": \"\", \"cfg_main_ckpt\": \"\", \"cfg_skel_latent_shards_dir\": \"\", \"cfg_global_batch_size\": \"64\", \"cfg_batch_size\": \"\", \"cfg_lr\": \"0.0002\", \"cfg_max_steps\": \"400000\", \"cfg_eval_csv\": \"assets/eval100_top30.csv\", \"cfg_eval_cfg\": \"4.0\"}"
  },
  {
   "series": "s5_2factor_B_latentstruct_pixelsk_opt",
   "run": "20260818-004938-s5-2factor-B-latentC-pixelsk-opt",
   "source": "all_experiments_20260903",
   "model": "DiT-2Cond-B/2",
-  "data": "5script/train_top30.csv",
+  "data": "assets/train_top30.csv",
   "diffusion": "",
   "best_step": "115000",
   "best_ssim": "0.3907",
   "best_mse": "0.8715",
-  "config_json": "{\"cfg_model\": \"DiT-2Cond-B/2\", \"cfg_data_csv\": \"5script/train_top30.csv\", \"cfg_diffusion_type\": \"\", \"cfg_main_ckpt\": \"\", \"cfg_skel_latent_shards_dir\": \"\", \"cfg_global_batch_size\": \"64\", \"cfg_batch_size\": \"\", \"cfg_lr\": \"0.0002\", \"cfg_max_steps\": \"400000\", \"cfg_eval_csv\": \"5script/eval100_top30.csv\", \"cfg_eval_cfg\": \"4.0\"}"
+  "config_json": "{\"cfg_model\": \"DiT-2Cond-B/2\", \"cfg_data_csv\": \"assets/train_top30.csv\", \"cfg_diffusion_type\": \"\", \"cfg_main_ckpt\": \"\", \"cfg_skel_latent_shards_dir\": \"\", \"cfg_global_batch_size\": \"64\", \"cfg_batch_size\": \"\", \"cfg_lr\": \"0.0002\", \"cfg_max_steps\": \"400000\", \"cfg_eval_csv\": \"assets/eval100_top30.csv\", \"cfg_eval_cfg\": \"4.0\"}"
  },
  {
   "series": "s5_2factor_B_pixelfp32",
   "run": "20260819-124351-s5-2factor-B-pixelfp32",
   "source": "all_experiments_20260903",
   "model": "DiT-2Cond-B/2",
-  "data": "5script/train_top30.csv",
+  "data": "assets/train_top30.csv",
   "diffusion": "",
   "best_step": "",
   "best_ssim": "",
   "best_mse": "",
-  "config_json": "{\"cfg_model\": \"DiT-2Cond-B/2\", \"cfg_data_csv\": \"5script/train_top30.csv\", \"cfg_diffusion_type\": \"\", \"cfg_main_ckpt\": \"\", \"cfg_skel_latent_shards_dir\": \"\", \"cfg_global_batch_size\": \"96\", \"cfg_batch_size\": \"\", \"cfg_lr\": \"0.0002\", \"cfg_max_steps\": \"300000\", \"cfg_eval_csv\": \"5script/eval100_top30.csv\", \"cfg_eval_cfg\": \"4.0\"}"
+  "config_json": "{\"cfg_model\": \"DiT-2Cond-B/2\", \"cfg_data_csv\": \"assets/train_top30.csv\", \"cfg_diffusion_type\": \"\", \"cfg_main_ckpt\": \"\", \"cfg_skel_latent_shards_dir\": \"\", \"cfg_global_batch_size\": \"96\", \"cfg_batch_size\": \"\", \"cfg_lr\": \"0.0002\", \"cfg_max_steps\": \"300000\", \"cfg_eval_csv\": \"assets/eval100_top30.csv\", \"cfg_eval_cfg\": \"4.0\"}"
  },
  {
   "series": "s5_2factor_B_pixelfp32",
   "run": "20260819-124629-s5-2factor-B-pixelfp32",
   "source": "all_experiments_20260903",
   "model": "DiT-2Cond-B/2",
-  "data": "5script/train_top30.csv",
+  "data": "assets/train_top30.csv",
   "diffusion": "",
   "best_step": "",
   "best_ssim": "",
   "best_mse": "",
-  "config_json": "{\"cfg_model\": \"DiT-2Cond-B/2\", \"cfg_data_csv\": \"5script/train_top30.csv\", \"cfg_diffusion_type\": \"\", \"cfg_main_ckpt\": \"\", \"cfg_skel_latent_shards_dir\": \"\", \"cfg_global_batch_size\": \"128\", \"cfg_batch_size\": \"\", \"cfg_lr\": \"0.0002\", \"cfg_max_steps\": \"300000\", \"cfg_eval_csv\": \"5script/eval100_top30.csv\", \"cfg_eval_cfg\": \"4.0\"}"
+  "config_json": "{\"cfg_model\": \"DiT-2Cond-B/2\", \"cfg_data_csv\": \"assets/train_top30.csv\", \"cfg_diffusion_type\": \"\", \"cfg_main_ckpt\": \"\", \"cfg_skel_latent_shards_dir\": \"\", \"cfg_global_batch_size\": \"128\", \"cfg_batch_size\": \"\", \"cfg_lr\": \"0.0002\", \"cfg_max_steps\": \"300000\", \"cfg_eval_csv\": \"assets/eval100_top30.csv\", \"cfg_eval_cfg\": \"4.0\"}"
  },
  {
   "series": "s5_2factor_B_pixelfp32",
   "run": "20260819-125137-s5-2factor-B-pixelfp32",
   "source": "all_experiments_20260903",
   "model": "DiT-2Cond-B/2",
-  "data": "5script/train_top30.csv",
+  "data": "assets/train_top30.csv",
   "diffusion": "",
   "best_step": "",
   "best_ssim": "",
   "best_mse": "",
-  "config_json": "{\"cfg_model\": \"DiT-2Cond-B/2\", \"cfg_data_csv\": \"5script/train_top30.csv\", \"cfg_diffusion_type\": \"\", \"cfg_main_ckpt\": \"\", \"cfg_skel_latent_shards_dir\": \"\", \"cfg_global_batch_size\": \"64\", \"cfg_batch_size\": \"\", \"cfg_lr\": \"0.0002\", \"cfg_max_steps\": \"300000\", \"cfg_eval_csv\": \"5script/eval100_top30.csv\", \"cfg_eval_cfg\": \"4.0\"}"
+  "config_json": "{\"cfg_model\": \"DiT-2Cond-B/2\", \"cfg_data_csv\": \"assets/train_top30.csv\", \"cfg_diffusion_type\": \"\", \"cfg_main_ckpt\": \"\", \"cfg_skel_latent_shards_dir\": \"\", \"cfg_global_batch_size\": \"64\", \"cfg_batch_size\": \"\", \"cfg_lr\": \"0.0002\", \"cfg_max_steps\": \"300000\", \"cfg_eval_csv\": \"assets/eval100_top30.csv\", \"cfg_eval_cfg\": \"4.0\"}"
  },
  {
   "series": "s5_2factor_B_pixelfp32",
   "run": "20260819-125422-s5-2factor-B-pixelfp32",
   "source": "all_experiments_20260903",
   "model": "DiT-2Cond-B/2",
-  "data": "5script/train_top30.csv",
+  "data": "assets/train_top30.csv",
   "diffusion": "",
   "best_step": "",
   "best_ssim": "",
   "best_mse": "",
-  "config_json": "{\"cfg_model\": \"DiT-2Cond-B/2\", \"cfg_data_csv\": \"5script/train_top30.csv\", \"cfg_diffusion_type\": \"\", \"cfg_main_ckpt\": \"\", \"cfg_skel_latent_shards_dir\": \"\", \"cfg_global_batch_size\": \"64\", \"cfg_batch_size\": \"\", \"cfg_lr\": \"0.0002\", \"cfg_max_steps\": \"300000\", \"cfg_eval_csv\": \"5script/eval100_top30.csv\", \"cfg_eval_cfg\": \"4.0\"}"
+  "config_json": "{\"cfg_model\": \"DiT-2Cond-B/2\", \"cfg_data_csv\": \"assets/train_top30.csv\", \"cfg_diffusion_type\": \"\", \"cfg_main_ckpt\": \"\", \"cfg_skel_latent_shards_dir\": \"\", \"cfg_global_batch_size\": \"64\", \"cfg_batch_size\": \"\", \"cfg_lr\": \"0.0002\", \"cfg_max_steps\": \"300000\", \"cfg_eval_csv\": \"assets/eval100_top30.csv\", \"cfg_eval_cfg\": \"4.0\"}"
  },
  {
   "series": "s5_2factor_B_pixelfp32",
   "run": "20260819-125708-s5-2factor-B-pixelfp32",
   "source": "all_experiments_20260903",
   "model": "DiT-2Cond-B/2",
-  "data": "5script/train_top30.csv",
+  "data": "assets/train_top30.csv",
   "diffusion": "",
   "best_step": "50000",
   "best_ssim": "0.2367",
   "best_mse": "1.142",
-  "config_json": "{\"cfg_model\": \"DiT-2Cond-B/2\", \"cfg_data_csv\": \"5script/train_top30.csv\", \"cfg_diffusion_type\": \"\", \"cfg_main_ckpt\": \"\", \"cfg_skel_latent_shards_dir\": \"\", \"cfg_global_batch_size\": \"32\", \"cfg_batch_size\": \"\", \"cfg_lr\": \"0.0002\", \"cfg_max_steps\": \"300000\", \"cfg_eval_csv\": \"5script/eval100_top30.csv\", \"cfg_eval_cfg\": \"4.0\"}"
+  "config_json": "{\"cfg_model\": \"DiT-2Cond-B/2\", \"cfg_data_csv\": \"assets/train_top30.csv\", \"cfg_diffusion_type\": \"\", \"cfg_main_ckpt\": \"\", \"cfg_skel_latent_shards_dir\": \"\", \"cfg_global_batch_size\": \"32\", \"cfg_batch_size\": \"\", \"cfg_lr\": \"0.0002\", \"cfg_max_steps\": \"300000\", \"cfg_eval_csv\": \"assets/eval100_top30.csv\", \"cfg_eval_cfg\": \"4.0\"}"
  },
  {
   "series": "s5_2factor_struct_post50k",
   "run": "20260817-114502-struct-post50k",
   "source": "all_experiments_20260903",
   "model": "DiT-2Cond-S/2",
-  "data": "5script/train_top30.csv",
+  "data": "assets/train_top30.csv",
   "diffusion": "",
   "best_step": "55000",
   "best_ssim": "0.5319",
   "best_mse": "0.9151",
-  "config_json": "{\"cfg_model\": \"DiT-2Cond-S/2\", \"cfg_data_csv\": \"5script/train_top30.csv\", \"cfg_diffusion_type\": \"\", \"cfg_main_ckpt\": \"\", \"cfg_skel_latent_shards_dir\": \"\", \"cfg_global_batch_size\": \"12\", \"cfg_batch_size\": \"\", \"cfg_lr\": \"0.0002\", \"cfg_max_steps\": \"200000\", \"cfg_eval_csv\": \"5script/eval100_top30.csv\", \"cfg_eval_cfg\": \"4.0\"}"
+  "config_json": "{\"cfg_model\": \"DiT-2Cond-S/2\", \"cfg_data_csv\": \"assets/train_top30.csv\", \"cfg_diffusion_type\": \"\", \"cfg_main_ckpt\": \"\", \"cfg_skel_latent_shards_dir\": \"\", \"cfg_global_batch_size\": \"12\", \"cfg_batch_size\": \"\", \"cfg_lr\": \"0.0002\", \"cfg_max_steps\": \"200000\", \"cfg_eval_csv\": \"assets/eval100_top30.csv\", \"cfg_eval_cfg\": \"4.0\"}"
  },
  {
   "series": "s5_2factor_top30",
   "run": "20260816-230931-s5-2factor-top30-bigbatch",
   "source": "all_experiments_20260903",
   "model": "DiT-2Cond-S/2",
-  "data": "5script/train_top30.csv",
+  "data": "assets/train_top30.csv",
   "diffusion": "",
   "best_step": "1000",
   "best_ssim": "0.1198",
   "best_mse": "2.4657",
-  "config_json": "{\"cfg_model\": \"DiT-2Cond-S/2\", \"cfg_data_csv\": \"5script/train_top30.csv\", \"cfg_diffusion_type\": \"\", \"cfg_main_ckpt\": \"\", \"cfg_skel_latent_shards_dir\": \"\", \"cfg_global_batch_size\": \"192\", \"cfg_batch_size\": \"\", \"cfg_lr\": \"0.0002\", \"cfg_max_steps\": \"50000\", \"cfg_eval_csv\": \"5script/eval100_top30.csv\", \"cfg_eval_cfg\": \"4.0\"}"
+  "config_json": "{\"cfg_model\": \"DiT-2Cond-S/2\", \"cfg_data_csv\": \"assets/train_top30.csv\", \"cfg_diffusion_type\": \"\", \"cfg_main_ckpt\": \"\", \"cfg_skel_latent_shards_dir\": \"\", \"cfg_global_batch_size\": \"192\", \"cfg_batch_size\": \"\", \"cfg_lr\": \"0.0002\", \"cfg_max_steps\": \"50000\", \"cfg_eval_csv\": \"assets/eval100_top30.csv\", \"cfg_eval_cfg\": \"4.0\"}"
  },
  {
   "series": "s5_2factor_top30",
   "run": "20260816-232040-s5-2factor-top30-bigbatch",
   "source": "all_experiments_20260903",
   "model": "DiT-2Cond-S/2",
-  "data": "5script/train_top30.csv",
+  "data": "assets/train_top30.csv",
   "diffusion": "",
   "best_step": "50000",
   "best_ssim": "0.512",
   "best_mse": "0.8543",
-  "config_json": "{\"cfg_model\": \"DiT-2Cond-S/2\", \"cfg_data_csv\": \"5script/train_top30.csv\", \"cfg_diffusion_type\": \"\", \"cfg_main_ckpt\": \"\", \"cfg_skel_latent_shards_dir\": \"\", \"cfg_global_batch_size\": \"192\", \"cfg_batch_size\": \"\", \"cfg_lr\": \"0.0002\", \"cfg_max_steps\": \"50000\", \"cfg_eval_csv\": \"5script/eval100_top30.csv\", \"cfg_eval_cfg\": \"4.0\"}"
+  "config_json": "{\"cfg_model\": \"DiT-2Cond-S/2\", \"cfg_data_csv\": \"assets/train_top30.csv\", \"cfg_diffusion_type\": \"\", \"cfg_main_ckpt\": \"\", \"cfg_skel_latent_shards_dir\": \"\", \"cfg_global_batch_size\": \"192\", \"cfg_batch_size\": \"\", \"cfg_lr\": \"0.0002\", \"cfg_max_steps\": \"50000\", \"cfg_eval_csv\": \"assets/eval100_top30.csv\", \"cfg_eval_cfg\": \"4.0\"}"
  },
  {
   "series": "s5_2factor_top30",
   "run": "20260817-100535-s5-2factor-top30-bigbatch",
   "source": "all_experiments_20260903",
   "model": "DiT-2Cond-S/2",
-  "data": "5script/train_top30.csv",
+  "data": "assets/train_top30.csv",
   "diffusion": "",
   "best_step": "70000",
   "best_ssim": "0.5197",
   "best_mse": "0.8412",
-  "config_json": "{\"cfg_model\": \"DiT-2Cond-S/2\", \"cfg_data_csv\": \"5script/train_top30.csv\", \"cfg_diffusion_type\": \"\", \"cfg_main_ckpt\": \"\", \"cfg_skel_latent_shards_dir\": \"\", \"cfg_global_batch_size\": \"192\", \"cfg_batch_size\": \"\", \"cfg_lr\": \"0.0002\", \"cfg_max_steps\": \"200000\", \"cfg_eval_csv\": \"5script/eval100_top30.csv\", \"cfg_eval_cfg\": \"4.0\"}"
+  "config_json": "{\"cfg_model\": \"DiT-2Cond-S/2\", \"cfg_data_csv\": \"assets/train_top30.csv\", \"cfg_diffusion_type\": \"\", \"cfg_main_ckpt\": \"\", \"cfg_skel_latent_shards_dir\": \"\", \"cfg_global_batch_size\": \"192\", \"cfg_batch_size\": \"\", \"cfg_lr\": \"0.0002\", \"cfg_max_steps\": \"200000\", \"cfg_eval_csv\": \"assets/eval100_top30.csv\", \"cfg_eval_cfg\": \"4.0\"}"
  },
  {
   "series": "s5_2factor_top30",
   "run": "20260823-120253-s5-top30-diffonly-resume",
   "source": "all_experiments_20260903",
   "model": "DiT-2Cond-S/2",
-  "data": "5script/train_top30.csv",
+  "data": "assets/train_top30.csv",
   "diffusion": "",
   "best_step": "",
   "best_ssim": "",
   "best_mse": "",
-  "config_json": "{\"cfg_model\": \"DiT-2Cond-S/2\", \"cfg_data_csv\": \"5script/train_top30.csv\", \"cfg_diffusion_type\": \"\", \"cfg_main_ckpt\": \"\", \"cfg_skel_latent_shards_dir\": \"\", \"cfg_global_batch_size\": \"192\", \"cfg_batch_size\": \"\", \"cfg_lr\": \"0.0002\", \"cfg_max_steps\": \"200000\", \"cfg_eval_csv\": \"5script/eval100_top30.csv\", \"cfg_eval_cfg\": \"4.0\"}"
+  "config_json": "{\"cfg_model\": \"DiT-2Cond-S/2\", \"cfg_data_csv\": \"assets/train_top30.csv\", \"cfg_diffusion_type\": \"\", \"cfg_main_ckpt\": \"\", \"cfg_skel_latent_shards_dir\": \"\", \"cfg_global_batch_size\": \"192\", \"cfg_batch_size\": \"\", \"cfg_lr\": \"0.0002\", \"cfg_max_steps\": \"200000\", \"cfg_eval_csv\": \"assets/eval100_top30.csv\", \"cfg_eval_cfg\": \"4.0\"}"
  },
  {
   "series": "s6_top6_diffonly",
   "run": "20260819-225143-s6-top6-diffonly",
   "source": "all_experiments_20260903",
   "model": "DiT-2Cond-S/2",
-  "data": "5script/train_top6.csv",
+  "data": "assets/train_top6.csv",
   "diffusion": "",
   "best_step": "20000",
   "best_ssim": "0.5078",
   "best_mse": "0.8488",
-  "config_json": "{\"cfg_model\": \"DiT-2Cond-S/2\", \"cfg_data_csv\": \"5script/train_top6.csv\", \"cfg_diffusion_type\": \"\", \"cfg_main_ckpt\": \"\", \"cfg_skel_latent_shards_dir\": \"\", \"cfg_global_batch_size\": \"192\", \"cfg_batch_size\": \"\", \"cfg_lr\": \"0.0002\", \"cfg_max_steps\": \"200000\", \"cfg_eval_csv\": \"5script/eval100_top6.csv\", \"cfg_eval_cfg\": \"4.0\"}"
+  "config_json": "{\"cfg_model\": \"DiT-2Cond-S/2\", \"cfg_data_csv\": \"assets/train_top6.csv\", \"cfg_diffusion_type\": \"\", \"cfg_main_ckpt\": \"\", \"cfg_skel_latent_shards_dir\": \"\", \"cfg_global_batch_size\": \"192\", \"cfg_batch_size\": \"\", \"cfg_lr\": \"0.0002\", \"cfg_max_steps\": \"200000\", \"cfg_eval_csv\": \"assets/eval100_top6.csv\", \"cfg_eval_cfg\": \"4.0\"}"
  },
  {
   "series": "s6_top6_diffonly",
   "run": "20260820-191536-s6-top6-diffonly-resume",
   "source": "all_experiments_20260903",
   "model": "DiT-2Cond-S/2",
-  "data": "5script/train_top6.csv",
+  "data": "assets/train_top6.csv",
   "diffusion": "",
   "best_step": "195000",
   "best_ssim": "0.7322",
   "best_mse": "0.4319",
-  "config_json": "{\"cfg_model\": \"DiT-2Cond-S/2\", \"cfg_data_csv\": \"5script/train_top6.csv\", \"cfg_diffusion_type\": \"\", \"cfg_main_ckpt\": \"\", \"cfg_skel_latent_shards_dir\": \"\", \"cfg_global_batch_size\": \"192\", \"cfg_batch_size\": \"\", \"cfg_lr\": \"0.0002\", \"cfg_max_steps\": \"200000\", \"cfg_eval_csv\": \"5script/eval100_top6.csv\", \"cfg_eval_cfg\": \"4.0\"}"
+  "config_json": "{\"cfg_model\": \"DiT-2Cond-S/2\", \"cfg_data_csv\": \"assets/train_top6.csv\", \"cfg_diffusion_type\": \"\", \"cfg_main_ckpt\": \"\", \"cfg_skel_latent_shards_dir\": \"\", \"cfg_global_batch_size\": \"192\", \"cfg_batch_size\": \"\", \"cfg_lr\": \"0.0002\", \"cfg_max_steps\": \"200000\", \"cfg_eval_csv\": \"assets/eval100_top6.csv\", \"cfg_eval_cfg\": \"4.0\"}"
  },
  {
   "series": "s6_top6_struct_fp32",
   "run": "20260820-002342-s6-top6-struct-fp32",
   "source": "all_experiments_20260903",
   "model": "DiT-2Cond-S/2",
-  "data": "5script/train_top6.csv",
+  "data": "assets/train_top6.csv",
   "diffusion": "",
   "best_step": "90000",
   "best_ssim": "0.3314",
   "best_mse": "0.9105",
-  "config_json": "{\"cfg_model\": \"DiT-2Cond-S/2\", \"cfg_data_csv\": \"5script/train_top6.csv\", \"cfg_diffusion_type\": \"\", \"cfg_main_ckpt\": \"\", \"cfg_skel_latent_shards_dir\": \"\", \"cfg_global_batch_size\": \"48\", \"cfg_batch_size\": \"\", \"cfg_lr\": \"0.0002\", \"cfg_max_steps\": \"200000\", \"cfg_eval_csv\": \"5script/eval100_top6.csv\", \"cfg_eval_cfg\": \"4.0\"}"
+  "config_json": "{\"cfg_model\": \"DiT-2Cond-S/2\", \"cfg_data_csv\": \"assets/train_top6.csv\", \"cfg_diffusion_type\": \"\", \"cfg_main_ckpt\": \"\", \"cfg_skel_latent_shards_dir\": \"\", \"cfg_global_batch_size\": \"48\", \"cfg_batch_size\": \"\", \"cfg_lr\": \"0.0002\", \"cfg_max_steps\": \"200000\", \"cfg_eval_csv\": \"assets/eval100_top6.csv\", \"cfg_eval_cfg\": \"4.0\"}"
  },
  {
   "series": "s6_top6_struct_fp32",
   "run": "20260821-073004-s6-top6-struct-fp32-resume",
   "source": "all_experiments_20260903",
   "model": "DiT-2Cond-S/2",
-  "data": "5script/train_top6.csv",
+  "data": "assets/train_top6.csv",
   "diffusion": "",
   "best_step": "125000",
   "best_ssim": "0.4044",
   "best_mse": "0.7828",
-  "config_json": "{\"cfg_model\": \"DiT-2Cond-S/2\", \"cfg_data_csv\": \"5script/train_top6.csv\", \"cfg_diffusion_type\": \"\", \"cfg_main_ckpt\": \"\", \"cfg_skel_latent_shards_dir\": \"\", \"cfg_global_batch_size\": \"48\", \"cfg_batch_size\": \"\", \"cfg_lr\": \"0.0002\", \"cfg_max_steps\": \"200000\", \"cfg_eval_csv\": \"5script/eval100_top6.csv\", \"cfg_eval_cfg\": \"4.0\"}"
+  "config_json": "{\"cfg_model\": \"DiT-2Cond-S/2\", \"cfg_data_csv\": \"assets/train_top6.csv\", \"cfg_diffusion_type\": \"\", \"cfg_main_ckpt\": \"\", \"cfg_skel_latent_shards_dir\": \"\", \"cfg_global_batch_size\": \"48\", \"cfg_batch_size\": \"\", \"cfg_lr\": \"0.0002\", \"cfg_max_steps\": \"200000\", \"cfg_eval_csv\": \"assets/eval100_top6.csv\", \"cfg_eval_cfg\": \"4.0\"}"
  },
  {
   "series": "s6_top6_struct_fp32_full",
   "run": "20260820-161241-s6-top6-struct-fp32-fullbatch",
   "source": "all_experiments_20260903",
   "model": "DiT-2Cond-S/2",
-  "data": "5script/train_top6.csv",
+  "data": "assets/train_top6.csv",
   "diffusion": "",
   "best_step": "15000",
   "best_ssim": "0.166",
   "best_mse": "1.4542",
-  "config_json": "{\"cfg_model\": \"DiT-2Cond-S/2\", \"cfg_data_csv\": \"5script/train_top6.csv\", \"cfg_diffusion_type\": \"\", \"cfg_main_ckpt\": \"\", \"cfg_skel_latent_shards_dir\": \"\", \"cfg_global_batch_size\": \"8\", \"cfg_batch_size\": \"\", \"cfg_lr\": \"0.0002\", \"cfg_max_steps\": \"200000\", \"cfg_eval_csv\": \"5script/eval100_top6.csv\", \"cfg_eval_cfg\": \"4.0\"}"
+  "config_json": "{\"cfg_model\": \"DiT-2Cond-S/2\", \"cfg_data_csv\": \"assets/train_top6.csv\", \"cfg_diffusion_type\": \"\", \"cfg_main_ckpt\": \"\", \"cfg_skel_latent_shards_dir\": \"\", \"cfg_global_batch_size\": \"8\", \"cfg_batch_size\": \"\", \"cfg_lr\": \"0.0002\", \"cfg_max_steps\": \"200000\", \"cfg_eval_csv\": \"assets/eval100_top6.csv\", \"cfg_eval_cfg\": \"4.0\"}"
  },
  {
   "series": "s7_klf4_top30",
   "run": "20260823-163710-s7-klf4-top30-diffonly",
   "source": "all_experiments_20260903",
   "model": "DiT-2Cond-S/4",
-  "data": "5script/train_top30.csv",
+  "data": "assets/train_top30.csv",
   "diffusion": "",
   "best_step": "75000",
   "best_ssim": "0.509",
   "best_mse": "0.8879",
-  "config_json": "{\"cfg_model\": \"DiT-2Cond-S/4\", \"cfg_data_csv\": \"5script/train_top30.csv\", \"cfg_diffusion_type\": \"\", \"cfg_main_ckpt\": \"\", \"cfg_skel_latent_shards_dir\": \"\", \"cfg_global_batch_size\": \"224\", \"cfg_batch_size\": \"\", \"cfg_lr\": \"0.0002\", \"cfg_max_steps\": \"600000\", \"cfg_eval_csv\": \"5script/eval100_top30.csv\", \"cfg_eval_cfg\": \"4.0\"}"
+  "config_json": "{\"cfg_model\": \"DiT-2Cond-S/4\", \"cfg_data_csv\": \"assets/train_top30.csv\", \"cfg_diffusion_type\": \"\", \"cfg_main_ckpt\": \"\", \"cfg_skel_latent_shards_dir\": \"\", \"cfg_global_batch_size\": \"224\", \"cfg_batch_size\": \"\", \"cfg_lr\": \"0.0002\", \"cfg_max_steps\": \"600000\", \"cfg_eval_csv\": \"assets/eval100_top30.csv\", \"cfg_eval_cfg\": \"4.0\"}"
  },
  {
   "series": "s7_ramp_b8all",
   "run": "20260821-142832-s7-ramp-b8all",
   "source": "all_experiments_20260903",
   "model": "DiT-2Cond-S/2",
-  "data": "5script/train_top6.csv",
+  "data": "assets/train_top6.csv",
   "diffusion": "",
   "best_step": "200000",
   "best_ssim": "0.6524",
   "best_mse": "0.5351",
-  "config_json": "{\"cfg_model\": \"DiT-2Cond-S/2\", \"cfg_data_csv\": \"5script/train_top6.csv\", \"cfg_diffusion_type\": \"\", \"cfg_main_ckpt\": \"\", \"cfg_skel_latent_shards_dir\": \"\", \"cfg_global_batch_size\": \"8\", \"cfg_batch_size\": \"\", \"cfg_lr\": \"0.0001\", \"cfg_max_steps\": \"275000\", \"cfg_eval_csv\": \"5script/eval100_top6.csv\", \"cfg_eval_cfg\": \"4.0\"}"
+  "config_json": "{\"cfg_model\": \"DiT-2Cond-S/2\", \"cfg_data_csv\": \"assets/train_top6.csv\", \"cfg_diffusion_type\": \"\", \"cfg_main_ckpt\": \"\", \"cfg_skel_latent_shards_dir\": \"\", \"cfg_global_batch_size\": \"8\", \"cfg_batch_size\": \"\", \"cfg_lr\": \"0.0001\", \"cfg_max_steps\": \"275000\", \"cfg_eval_csv\": \"assets/eval100_top6.csv\", \"cfg_eval_cfg\": \"4.0\"}"
  },
  {
   "series": "s8_klf4_clean_dino",
   "run": "20260823-234546-s8-klf4-clean-dino",
   "source": "all_experiments_20260903",
   "model": "DiT-2Cond-S/4",
-  "data": "5script/train_top30_clean.csv",
+  "data": "assets/train_top30_clean.csv",
   "diffusion": "",
   "best_step": "105000",
   "best_ssim": "0.5257",
   "best_mse": "0.8369",
-  "config_json": "{\"cfg_model\": \"DiT-2Cond-S/4\", \"cfg_data_csv\": \"5script/train_top30_clean.csv\", \"cfg_diffusion_type\": \"\", \"cfg_main_ckpt\": \"\", \"cfg_skel_latent_shards_dir\": \"\", \"cfg_global_batch_size\": \"224\", \"cfg_batch_size\": \"\", \"cfg_lr\": \"0.0002\", \"cfg_max_steps\": \"600000\", \"cfg_eval_csv\": \"5script/eval100_top30_clean.csv\", \"cfg_eval_cfg\": \"4.0\"}"
+  "config_json": "{\"cfg_model\": \"DiT-2Cond-S/4\", \"cfg_data_csv\": \"assets/train_top30_clean.csv\", \"cfg_diffusion_type\": \"\", \"cfg_main_ckpt\": \"\", \"cfg_skel_latent_shards_dir\": \"\", \"cfg_global_batch_size\": \"224\", \"cfg_batch_size\": \"\", \"cfg_lr\": \"0.0002\", \"cfg_max_steps\": \"600000\", \"cfg_eval_csv\": \"assets/eval100_top30_clean.csv\", \"cfg_eval_cfg\": \"4.0\"}"
  },
  {
   "series": "s8_klf4_clean_dino",
   "run": "20260824-083321-s8-klf4-clean-dino",
   "source": "all_experiments_20260903",
   "model": "DiT-2Cond-S/4",
-  "data": "5script/train_top30_clean.csv",
+  "data": "assets/train_top30_clean.csv",
   "diffusion": "",
   "best_step": "",
   "best_ssim": "",
   "best_mse": "",
-  "config_json": "{\"cfg_model\": \"DiT-2Cond-S/4\", \"cfg_data_csv\": \"5script/train_top30_clean.csv\", \"cfg_diffusion_type\": \"\", \"cfg_main_ckpt\": \"\", \"cfg_skel_latent_shards_dir\": \"\", \"cfg_global_batch_size\": \"224\", \"cfg_batch_size\": \"\", \"cfg_lr\": \"0.0002\", \"cfg_max_steps\": \"600000\", \"cfg_eval_csv\": \"5script/eval100_top30_clean.csv\", \"cfg_eval_cfg\": \"4.0\"}"
+  "config_json": "{\"cfg_model\": \"DiT-2Cond-S/4\", \"cfg_data_csv\": \"assets/train_top30_clean.csv\", \"cfg_diffusion_type\": \"\", \"cfg_main_ckpt\": \"\", \"cfg_skel_latent_shards_dir\": \"\", \"cfg_global_batch_size\": \"224\", \"cfg_batch_size\": \"\", \"cfg_lr\": \"0.0002\", \"cfg_max_steps\": \"600000\", \"cfg_eval_csv\": \"assets/eval100_top30_clean.csv\", \"cfg_eval_cfg\": \"4.0\"}"
  },
  {
   "series": "s8_structv2_b32sub8",
   "run": "20260821-211823-s8-structv2-b32sub8",
   "source": "all_experiments_20260903",
   "model": "DiT-2Cond-S/2",
-  "data": "5script/train_top6.csv",
+  "data": "assets/train_top6.csv",
   "diffusion": "",
   "best_step": "",
   "best_ssim": "",
   "best_mse": "",
-  "config_json": "{\"cfg_model\": \"DiT-2Cond-S/2\", \"cfg_data_csv\": \"5script/train_top6.csv\", \"cfg_diffusion_type\": \"\", \"cfg_main_ckpt\": \"\", \"cfg_skel_latent_shards_dir\": \"\", \"cfg_global_batch_size\": \"32\", \"cfg_batch_size\": \"\", \"cfg_lr\": \"0.0001\", \"cfg_max_steps\": \"275000\", \"cfg_eval_csv\": \"5script/eval100_top6.csv\", \"cfg_eval_cfg\": \"4.0\"}"
+  "config_json": "{\"cfg_model\": \"DiT-2Cond-S/2\", \"cfg_data_csv\": \"assets/train_top6.csv\", \"cfg_diffusion_type\": \"\", \"cfg_main_ckpt\": \"\", \"cfg_skel_latent_shards_dir\": \"\", \"cfg_global_batch_size\": \"32\", \"cfg_batch_size\": \"\", \"cfg_lr\": \"0.0001\", \"cfg_max_steps\": \"275000\", \"cfg_eval_csv\": \"assets/eval100_top6.csv\", \"cfg_eval_cfg\": \"4.0\"}"
  },
  {
   "series": "s8_structv2_b8all",
   "run": "20260821-212149-s8-structv2-b8all",
   "source": "all_experiments_20260903",
   "model": "DiT-2Cond-S/2",
-  "data": "5script/train_top6.csv",
+  "data": "assets/train_top6.csv",
   "diffusion": "",
   "best_step": "200000",
   "best_ssim": "0.641",
   "best_mse": "0.5528",
-  "config_json": "{\"cfg_model\": \"DiT-2Cond-S/2\", \"cfg_data_csv\": \"5script/train_top6.csv\", \"cfg_diffusion_type\": \"\", \"cfg_main_ckpt\": \"\", \"cfg_skel_latent_shards_dir\": \"\", \"cfg_global_batch_size\": \"8\", \"cfg_batch_size\": \"\", \"cfg_lr\": \"0.0001\", \"cfg_max_steps\": \"275000\", \"cfg_eval_csv\": \"5script/eval100_top6.csv\", \"cfg_eval_cfg\": \"4.0\"}"
+  "config_json": "{\"cfg_model\": \"DiT-2Cond-S/2\", \"cfg_data_csv\": \"assets/train_top6.csv\", \"cfg_diffusion_type\": \"\", \"cfg_main_ckpt\": \"\", \"cfg_skel_latent_shards_dir\": \"\", \"cfg_global_batch_size\": \"8\", \"cfg_batch_size\": \"\", \"cfg_lr\": \"0.0001\", \"cfg_max_steps\": \"275000\", \"cfg_eval_csv\": \"assets/eval100_top6.csv\", \"cfg_eval_cfg\": \"4.0\"}"
  },
  {
   "series": "s9_skelonly",
   "run": "20260821-232920-s9-skelonly",
   "source": "all_experiments_20260903",
   "model": "DiT-2Cond-S/2",
-  "data": "5script/train_top6.csv",
+  "data": "assets/train_top6.csv",
   "diffusion": "",
   "best_step": "205000",
   "best_ssim": "0.6102",
   "best_mse": "0.622",
-  "config_json": "{\"cfg_model\": \"DiT-2Cond-S/2\", \"cfg_data_csv\": \"5script/train_top6.csv\", \"cfg_diffusion_type\": \"\", \"cfg_main_ckpt\": \"\", \"cfg_skel_latent_shards_dir\": \"\", \"cfg_global_batch_size\": \"32\", \"cfg_batch_size\": \"\", \"cfg_lr\": \"0.0001\", \"cfg_max_steps\": \"260000\", \"cfg_eval_csv\": \"5script/eval100_top6.csv\", \"cfg_eval_cfg\": \"4.0\"}"
+  "config_json": "{\"cfg_model\": \"DiT-2Cond-S/2\", \"cfg_data_csv\": \"assets/train_top6.csv\", \"cfg_diffusion_type\": \"\", \"cfg_main_ckpt\": \"\", \"cfg_skel_latent_shards_dir\": \"\", \"cfg_global_batch_size\": \"32\", \"cfg_batch_size\": \"\", \"cfg_lr\": \"0.0001\", \"cfg_max_steps\": \"260000\", \"cfg_eval_csv\": \"assets/eval100_top6.csv\", \"cfg_eval_cfg\": \"4.0\"}"
  },
  {
   "series": "v3a",
   "run": "20260815-193523-v3a-2factor-glyph-composable",
   "source": "all_experiments_20260903",
   "model": "DiT-2Cond-S/2",
-  "data": "5script/train.csv",
+  "data": "assets/train.csv",
   "diffusion": "",
   "best_step": "2000",
   "best_ssim": "0.2708",
   "best_mse": "1.699",
-  "config_json": "{\"cfg_model\": \"DiT-2Cond-S/2\", \"cfg_data_csv\": \"5script/train.csv\", \"cfg_diffusion_type\": \"\", \"cfg_main_ckpt\": \"\", \"cfg_skel_latent_shards_dir\": \"\", \"cfg_global_batch_size\": \"224\", \"cfg_batch_size\": \"\", \"cfg_lr\": \"0.0001\", \"cfg_max_steps\": \"39600\", \"cfg_eval_csv\": \"5script/eval_strata/clean_unseen_triple_100.csv\", \"cfg_eval_cfg\": \"4.0\"}"
+  "config_json": "{\"cfg_model\": \"DiT-2Cond-S/2\", \"cfg_data_csv\": \"assets/train.csv\", \"cfg_diffusion_type\": \"\", \"cfg_main_ckpt\": \"\", \"cfg_skel_latent_shards_dir\": \"\", \"cfg_global_batch_size\": \"224\", \"cfg_batch_size\": \"\", \"cfg_lr\": \"0.0001\", \"cfg_max_steps\": \"39600\", \"cfg_eval_csv\": \"assets/eval_strata/clean_unseen_triple_100.csv\", \"cfg_eval_cfg\": \"4.0\"}"
  },
  {
   "series": "v3a",
   "run": "20260815-195729-v3a-2factor-glyph-canny-skel",
   "source": "all_experiments_20260903",
   "model": "DiT-2Cond-S/2",
-  "data": "5script/train.csv",
+  "data": "assets/train.csv",
   "diffusion": "",
   "best_step": "5000",
   "best_ssim": "0.1284",
   "best_mse": "1.8293",
-  "config_json": "{\"cfg_model\": \"DiT-2Cond-S/2\", \"cfg_data_csv\": \"5script/train.csv\", \"cfg_diffusion_type\": \"\", \"cfg_main_ckpt\": \"\", \"cfg_skel_latent_shards_dir\": \"\", \"cfg_global_batch_size\": \"8\", \"cfg_batch_size\": \"\", \"cfg_lr\": \"0.0001\", \"cfg_max_steps\": \"39600\", \"cfg_eval_csv\": \"5script/eval_strata/clean_unseen_triple_100.csv\", \"cfg_eval_cfg\": \"4.0\"}"
+  "config_json": "{\"cfg_model\": \"DiT-2Cond-S/2\", \"cfg_data_csv\": \"assets/train.csv\", \"cfg_diffusion_type\": \"\", \"cfg_main_ckpt\": \"\", \"cfg_skel_latent_shards_dir\": \"\", \"cfg_global_batch_size\": \"8\", \"cfg_batch_size\": \"\", \"cfg_lr\": \"0.0001\", \"cfg_max_steps\": \"39600\", \"cfg_eval_csv\": \"assets/eval_strata/clean_unseen_triple_100.csv\", \"cfg_eval_cfg\": \"4.0\"}"
  },
  {
   "series": "v3a",
   "run": "20260815-205533-v3a-2factor-glyph-canny-skel",
   "source": "all_experiments_20260903",
   "model": "DiT-2Cond-S/2",
-  "data": "5script/train.csv",
+  "data": "assets/train.csv",
   "diffusion": "",
   "best_step": "",
   "best_ssim": "",
   "best_mse": "",
-  "config_json": "{\"cfg_model\": \"DiT-2Cond-S/2\", \"cfg_data_csv\": \"5script/train.csv\", \"cfg_diffusion_type\": \"\", \"cfg_main_ckpt\": \"\", \"cfg_skel_latent_shards_dir\": \"\", \"cfg_global_batch_size\": \"8\", \"cfg_batch_size\": \"\", \"cfg_lr\": \"0.0001\", \"cfg_max_steps\": \"39600\", \"cfg_eval_csv\": \"5script/eval_strata/clean_unseen_triple_100.csv\", \"cfg_eval_cfg\": \"4.0\"}"
+  "config_json": "{\"cfg_model\": \"DiT-2Cond-S/2\", \"cfg_data_csv\": \"assets/train.csv\", \"cfg_diffusion_type\": \"\", \"cfg_main_ckpt\": \"\", \"cfg_skel_latent_shards_dir\": \"\", \"cfg_global_batch_size\": \"8\", \"cfg_batch_size\": \"\", \"cfg_lr\": \"0.0001\", \"cfg_max_steps\": \"39600\", \"cfg_eval_csv\": \"assets/eval_strata/clean_unseen_triple_100.csv\", \"cfg_eval_cfg\": \"4.0\"}"
  },
  {
   "series": "v3a",
   "run": "20260815-213305-v3a-2factor-glyph-canny-skel",
   "source": "all_experiments_20260903",
   "model": "DiT-2Cond-S/2",
-  "data": "5script/train.csv",
+  "data": "assets/train.csv",
   "diffusion": "",
   "best_step": "5000",
   "best_ssim": "0.1565",
   "best_mse": "1.6107",
-  "config_json": "{\"cfg_model\": \"DiT-2Cond-S/2\", \"cfg_data_csv\": \"5script/train.csv\", \"cfg_diffusion_type\": \"\", \"cfg_main_ckpt\": \"\", \"cfg_skel_latent_shards_dir\": \"\", \"cfg_global_batch_size\": \"12\", \"cfg_batch_size\": \"\", \"cfg_lr\": \"0.0001\", \"cfg_max_steps\": \"39600\", \"cfg_eval_csv\": \"5script/eval_strata/clean_unseen_triple_100.csv\", \"cfg_eval_cfg\": \"4.0\"}"
+  "config_json": "{\"cfg_model\": \"DiT-2Cond-S/2\", \"cfg_data_csv\": \"assets/train.csv\", \"cfg_diffusion_type\": \"\", \"cfg_main_ckpt\": \"\", \"cfg_skel_latent_shards_dir\": \"\", \"cfg_global_batch_size\": \"12\", \"cfg_batch_size\": \"\", \"cfg_lr\": \"0.0001\", \"cfg_max_steps\": \"39600\", \"cfg_eval_csv\": \"assets/eval_strata/clean_unseen_triple_100.csv\", \"cfg_eval_cfg\": \"4.0\"}"
  },
  {
   "series": "v3a",
   "run": "20260815-225356-v3a-2factor-glyph-canny-skel",
   "source": "all_experiments_20260903",
   "model": "DiT-2Cond-S/2",
-  "data": "5script/train.csv",
+  "data": "assets/train.csv",
   "diffusion": "",
   "best_step": "1000",
   "best_ssim": "0.1048",
   "best_mse": "2.0707",
-  "config_json": "{\"cfg_model\": \"DiT-2Cond-S/2\", \"cfg_data_csv\": \"5script/train.csv\", \"cfg_diffusion_type\": \"\", \"cfg_main_ckpt\": \"\", \"cfg_skel_latent_shards_dir\": \"\", \"cfg_global_batch_size\": \"12\", \"cfg_batch_size\": \"\", \"cfg_lr\": \"0.0001\", \"cfg_max_steps\": \"39600\", \"cfg_eval_csv\": \"5script/eval_strata/clean_unseen_triple_100.csv\", \"cfg_eval_cfg\": \"4.0\"}"
+  "config_json": "{\"cfg_model\": \"DiT-2Cond-S/2\", \"cfg_data_csv\": \"assets/train.csv\", \"cfg_diffusion_type\": \"\", \"cfg_main_ckpt\": \"\", \"cfg_skel_latent_shards_dir\": \"\", \"cfg_global_batch_size\": \"12\", \"cfg_batch_size\": \"\", \"cfg_lr\": \"0.0001\", \"cfg_max_steps\": \"39600\", \"cfg_eval_csv\": \"assets/eval_strata/clean_unseen_triple_100.csv\", \"cfg_eval_cfg\": \"4.0\"}"
  },
  {
   "series": "v3a",
   "run": "20260816-002421-v3a-2factor-glyph-canny-skel",
   "source": "all_experiments_20260903",
   "model": "DiT-2Cond-S/2",
-  "data": "5script/train.csv",
+  "data": "assets/train.csv",
   "diffusion": "",
   "best_step": "35000",
   "best_ssim": "0.3946",
   "best_mse": "1.0807",
-  "config_json": "{\"cfg_model\": \"DiT-2Cond-S/2\", \"cfg_data_csv\": \"5script/train.csv\", \"cfg_diffusion_type\": \"\", \"cfg_main_ckpt\": \"\", \"cfg_skel_latent_shards_dir\": \"\", \"cfg_global_batch_size\": \"12\", \"cfg_batch_size\": \"\", \"cfg_lr\": \"0.0001\", \"cfg_max_steps\": \"39600\", \"cfg_eval_csv\": \"5script/eval_strata/clean_unseen_triple_100.csv\", \"cfg_eval_cfg\": \"4.0\"}"
+  "config_json": "{\"cfg_model\": \"DiT-2Cond-S/2\", \"cfg_data_csv\": \"assets/train.csv\", \"cfg_diffusion_type\": \"\", \"cfg_main_ckpt\": \"\", \"cfg_skel_latent_shards_dir\": \"\", \"cfg_global_batch_size\": \"12\", \"cfg_batch_size\": \"\", \"cfg_lr\": \"0.0001\", \"cfg_max_steps\": \"39600\", \"cfg_eval_csv\": \"assets/eval_strata/clean_unseen_triple_100.csv\", \"cfg_eval_cfg\": \"4.0\"}"
  },
  {
   "series": "v3a_xl",
   "run": "20260815-232600-v3a-2factor-glyph-XL-lora-cs",
   "source": "all_experiments_20260903",
   "model": "DiT-2Cond-XL/2",
-  "data": "5script/train.csv",
+  "data": "assets/train.csv",
   "diffusion": "",
   "best_step": "1000",
   "best_ssim": "0.0349",
   "best_mse": "2.9445",
-  "config_json": "{\"cfg_model\": \"DiT-2Cond-XL/2\", \"cfg_data_csv\": \"5script/train.csv\", \"cfg_diffusion_type\": \"\", \"cfg_main_ckpt\": \"\", \"cfg_skel_latent_shards_dir\": \"\", \"cfg_global_batch_size\": \"4\", \"cfg_batch_size\": \"\", \"cfg_lr\": \"0.0001\", \"cfg_max_steps\": \"39600\", \"cfg_eval_csv\": \"5script/eval_strata/clean_unseen_triple_100.csv\", \"cfg_eval_cfg\": \"4.0\"}"
+  "config_json": "{\"cfg_model\": \"DiT-2Cond-XL/2\", \"cfg_data_csv\": \"assets/train.csv\", \"cfg_diffusion_type\": \"\", \"cfg_main_ckpt\": \"\", \"cfg_skel_latent_shards_dir\": \"\", \"cfg_global_batch_size\": \"4\", \"cfg_batch_size\": \"\", \"cfg_lr\": \"0.0001\", \"cfg_max_steps\": \"39600\", \"cfg_eval_csv\": \"assets/eval_strata/clean_unseen_triple_100.csv\", \"cfg_eval_cfg\": \"4.0\"}"
  },
  {
   "series": "v3a_xl_highdim",
   "run": "20260816-101955-v3a-2factor-glyph-XL-highdim-LoRA-cs",
   "source": "all_experiments_20260903",
   "model": "DiT-2Cond-XL/2",
-  "data": "5script/train.csv",
+  "data": "assets/train.csv",
   "diffusion": "",
   "best_step": "1000",
   "best_ssim": "0.015",
   "best_mse": "4.4435",
-  "config_json": "{\"cfg_model\": \"DiT-2Cond-XL/2\", \"cfg_data_csv\": \"5script/train.csv\", \"cfg_diffusion_type\": \"\", \"cfg_main_ckpt\": \"\", \"cfg_skel_latent_shards_dir\": \"\", \"cfg_global_batch_size\": \"4\", \"cfg_batch_size\": \"\", \"cfg_lr\": \"0.0001\", \"cfg_max_steps\": \"35000\", \"cfg_eval_csv\": \"5script/eval_strata/clean_unseen_triple_100.csv\", \"cfg_eval_cfg\": \"4.0\"}"
+  "config_json": "{\"cfg_model\": \"DiT-2Cond-XL/2\", \"cfg_data_csv\": \"assets/train.csv\", \"cfg_diffusion_type\": \"\", \"cfg_main_ckpt\": \"\", \"cfg_skel_latent_shards_dir\": \"\", \"cfg_global_batch_size\": \"4\", \"cfg_batch_size\": \"\", \"cfg_lr\": \"0.0001\", \"cfg_max_steps\": \"35000\", \"cfg_eval_csv\": \"assets/eval_strata/clean_unseen_triple_100.csv\", \"cfg_eval_cfg\": \"4.0\"}"
  },
  {
   "series": "v3a_xl_highdim",
   "run": "20260816-103708-v3a-2factor-glyph-XL-highdim-LoRA-cs",
   "source": "all_experiments_20260903",
   "model": "DiT-2Cond-XL/2",
-  "data": "5script/train.csv",
+  "data": "assets/train.csv",
   "diffusion": "",
   "best_step": "3000",
   "best_ssim": "0.1997",
   "best_mse": "1.6758",
-  "config_json": "{\"cfg_model\": \"DiT-2Cond-XL/2\", \"cfg_data_csv\": \"5script/train.csv\", \"cfg_diffusion_type\": \"\", \"cfg_main_ckpt\": \"\", \"cfg_skel_latent_shards_dir\": \"\", \"cfg_global_batch_size\": \"4\", \"cfg_batch_size\": \"\", \"cfg_lr\": \"0.0001\", \"cfg_max_steps\": \"35000\", \"cfg_eval_csv\": \"5script/eval_strata/clean_unseen_triple_100.csv\", \"cfg_eval_cfg\": \"4.0\"}"
+  "config_json": "{\"cfg_model\": \"DiT-2Cond-XL/2\", \"cfg_data_csv\": \"assets/train.csv\", \"cfg_diffusion_type\": \"\", \"cfg_main_ckpt\": \"\", \"cfg_skel_latent_shards_dir\": \"\", \"cfg_global_batch_size\": \"4\", \"cfg_batch_size\": \"\", \"cfg_lr\": \"0.0001\", \"cfg_max_steps\": \"35000\", \"cfg_eval_csv\": \"assets/eval_strata/clean_unseen_triple_100.csv\", \"cfg_eval_cfg\": \"4.0\"}"
  },
  {
   "series": "v3a_xl_highdim",
   "run": "20260816-114452-v3a-2factor-glyph-XL-highdim-LoRA-cs",
   "source": "all_experiments_20260903",
   "model": "DiT-2Cond-XL/2",
-  "data": "5script/train.csv",
+  "data": "assets/train.csv",
   "diffusion": "",
   "best_step": "5000",
   "best_ssim": "0.1758",
   "best_mse": "1.5214",
-  "config_json": "{\"cfg_model\": \"DiT-2Cond-XL/2\", \"cfg_data_csv\": \"5script/train.csv\", \"cfg_diffusion_type\": \"\", \"cfg_main_ckpt\": \"\", \"cfg_skel_latent_shards_dir\": \"\", \"cfg_global_batch_size\": \"4\", \"cfg_batch_size\": \"\", \"cfg_lr\": \"0.0001\", \"cfg_max_steps\": \"35000\", \"cfg_eval_csv\": \"5script/eval_strata/clean_unseen_triple_100.csv\", \"cfg_eval_cfg\": \"4.0\"}"
+  "config_json": "{\"cfg_model\": \"DiT-2Cond-XL/2\", \"cfg_data_csv\": \"assets/train.csv\", \"cfg_diffusion_type\": \"\", \"cfg_main_ckpt\": \"\", \"cfg_skel_latent_shards_dir\": \"\", \"cfg_global_batch_size\": \"4\", \"cfg_batch_size\": \"\", \"cfg_lr\": \"0.0001\", \"cfg_max_steps\": \"35000\", \"cfg_eval_csv\": \"assets/eval_strata/clean_unseen_triple_100.csv\", \"cfg_eval_cfg\": \"4.0\"}"
  },
  {
   "series": "v3a_xl_skelhead",
   "run": "20260816-132613-v3a-XL-skelhead-guide",
   "source": "all_experiments_20260903",
   "model": "DiT-2Cond-XL/2",
-  "data": "5script/train.csv",
+  "data": "assets/train.csv",
   "diffusion": "",
   "best_step": "1000",
   "best_ssim": "0.1261",
   "best_mse": "2.005",
-  "config_json": "{\"cfg_model\": \"DiT-2Cond-XL/2\", \"cfg_data_csv\": \"5script/train.csv\", \"cfg_diffusion_type\": \"\", \"cfg_main_ckpt\": \"\", \"cfg_skel_latent_shards_dir\": \"\", \"cfg_global_batch_size\": \"16\", \"cfg_batch_size\": \"\", \"cfg_lr\": \"0.0001\", \"cfg_max_steps\": \"30000\", \"cfg_eval_csv\": \"5script/eval_strata/clean_unseen_triple_100.csv\", \"cfg_eval_cfg\": \"4.0\"}"
+  "config_json": "{\"cfg_model\": \"DiT-2Cond-XL/2\", \"cfg_data_csv\": \"assets/train.csv\", \"cfg_diffusion_type\": \"\", \"cfg_main_ckpt\": \"\", \"cfg_skel_latent_shards_dir\": \"\", \"cfg_global_batch_size\": \"16\", \"cfg_batch_size\": \"\", \"cfg_lr\": \"0.0001\", \"cfg_max_steps\": \"30000\", \"cfg_eval_csv\": \"assets/eval_strata/clean_unseen_triple_100.csv\", \"cfg_eval_cfg\": \"4.0\"}"
  },
  {
   "series": "v3a_xl_skelhead",
   "run": "20260816-133413-v3a-XL-skelhead-guide",
   "source": "all_experiments_20260903",
   "model": "DiT-2Cond-XL/2",
-  "data": "5script/train.csv",
+  "data": "assets/train.csv",
   "diffusion": "",
   "best_step": "15000",
   "best_ssim": "0.4045",
   "best_mse": "1.1843",
-  "config_json": "{\"cfg_model\": \"DiT-2Cond-XL/2\", \"cfg_data_csv\": \"5script/train.csv\", \"cfg_diffusion_type\": \"\", \"cfg_main_ckpt\": \"\", \"cfg_skel_latent_shards_dir\": \"\", \"cfg_global_batch_size\": \"16\", \"cfg_batch_size\": \"\", \"cfg_lr\": \"0.0001\", \"cfg_max_steps\": \"30000\", \"cfg_eval_csv\": \"5script/eval_strata/clean_unseen_triple_100.csv\", \"cfg_eval_cfg\": \"4.0\"}"
+  "config_json": "{\"cfg_model\": \"DiT-2Cond-XL/2\", \"cfg_data_csv\": \"assets/train.csv\", \"cfg_diffusion_type\": \"\", \"cfg_main_ckpt\": \"\", \"cfg_skel_latent_shards_dir\": \"\", \"cfg_global_batch_size\": \"16\", \"cfg_batch_size\": \"\", \"cfg_lr\": \"0.0001\", \"cfg_max_steps\": \"30000\", \"cfg_eval_csv\": \"assets/eval_strata/clean_unseen_triple_100.csv\", \"cfg_eval_cfg\": \"4.0\"}"
  },
  {
   "series": "v3b_xl_glyphcond",
@@ -1487,7 +1487,7 @@
  },
  {
   "series": "v8b_ctrl_1px",
-  "run": "5script/results/v8_3stage/v8b/20260902-234912-v8b-s31-ctrl",
+  "run": "assets/results/v8_3stage/v8b/20260902-234912-v8b-s31-ctrl",
   "source": "eval_auto_v89",
   "step": 2500,
   "ssim": 0.723573,
@@ -1500,7 +1500,7 @@
  },
  {
   "series": "v8b_ctrl_1px",
-  "run": "5script/results/v8_3stage/v8b/20260902-234912-v8b-s31-ctrl",
+  "run": "assets/results/v8_3stage/v8b/20260902-234912-v8b-s31-ctrl",
   "source": "eval_auto_v89",
   "step": 5000,
   "ssim": 0.730571,
@@ -1513,7 +1513,7 @@
  },
  {
   "series": "v8b_ctrl_1px",
-  "run": "5script/results/v8_3stage/v8b/20260902-234912-v8b-s31-ctrl",
+  "run": "assets/results/v8_3stage/v8b/20260902-234912-v8b-s31-ctrl",
   "source": "eval_auto_v89",
   "step": 7500,
   "ssim": 0.739255,
@@ -1526,7 +1526,7 @@
  },
  {
   "series": "v8b_ctrl_1px",
-  "run": "5script/results/v8_3stage/v8b/20260902-234912-v8b-s31-ctrl",
+  "run": "assets/results/v8_3stage/v8b/20260902-234912-v8b-s31-ctrl",
   "source": "eval_auto_v89",
   "step": 10000,
   "ssim": 0.745785,
@@ -1539,7 +1539,7 @@
  },
  {
   "series": "v8b_ctrl_1px",
-  "run": "5script/results/v8_3stage/v8b/20260902-234912-v8b-s31-ctrl",
+  "run": "assets/results/v8_3stage/v8b/20260902-234912-v8b-s31-ctrl",
   "source": "eval_auto_v89",
   "step": 12500,
   "ssim": 0.750682,
@@ -1552,7 +1552,7 @@
  },
  {
   "series": "v8b_ctrl_1px",
-  "run": "5script/results/v8_3stage/v8b/20260902-234912-v8b-s31-ctrl",
+  "run": "assets/results/v8_3stage/v8b/20260902-234912-v8b-s31-ctrl",
   "source": "eval_auto_v89",
   "step": 15000,
   "ssim": 0.755268,
@@ -1565,7 +1565,7 @@
  },
  {
   "series": "v8b_ctrl_1px",
-  "run": "5script/results/v8_3stage/v8b/20260902-234912-v8b-s31-ctrl",
+  "run": "assets/results/v8_3stage/v8b/20260902-234912-v8b-s31-ctrl",
   "source": "eval_auto_v89",
   "step": 17500,
   "ssim": 0.757198,
@@ -1578,7 +1578,7 @@
  },
  {
   "series": "v8b_ctrl_1px",
-  "run": "5script/results/v8_3stage/v8b/20260902-234912-v8b-s31-ctrl",
+  "run": "assets/results/v8_3stage/v8b/20260902-234912-v8b-s31-ctrl",
   "source": "eval_auto_v89",
   "step": 20000,
   "ssim": 0.759977,
@@ -1591,7 +1591,7 @@
  },
  {
   "series": "v8b_ctrl_1px",
-  "run": "5script/results/v8_3stage/v8b/20260902-234912-v8b-s31-ctrl",
+  "run": "assets/results/v8_3stage/v8b/20260902-234912-v8b-s31-ctrl",
   "source": "eval_auto_v89",
   "step": 22500,
   "ssim": 0.761281,
@@ -1604,7 +1604,7 @@
  },
  {
   "series": "v8b_ctrl_1px",
-  "run": "5script/results/v8_3stage/v8b/20260902-234912-v8b-s31-ctrl",
+  "run": "assets/results/v8_3stage/v8b/20260902-234912-v8b-s31-ctrl",
   "source": "eval_auto_v89",
   "step": 25000,
   "ssim": 0.762517,
@@ -1617,7 +1617,7 @@
  },
  {
   "series": "v8b_ctrl_1px",
-  "run": "5script/results/v8_3stage/v8b/20260902-234912-v8b-s31-ctrl",
+  "run": "assets/results/v8_3stage/v8b/20260902-234912-v8b-s31-ctrl",
   "source": "eval_auto_v89",
   "step": 27500,
   "ssim": 0.76332,
@@ -1630,7 +1630,7 @@
  },
  {
   "series": "v8b_ctrl_1px",
-  "run": "5script/results/v8_3stage/v8b/20260902-234912-v8b-s31-ctrl",
+  "run": "assets/results/v8_3stage/v8b/20260902-234912-v8b-s31-ctrl",
   "source": "eval_auto_v89",
   "step": 30000,
   "ssim": 0.76383,
@@ -1643,7 +1643,7 @@
  },
  {
   "series": "v8b_ctrl_1px",
-  "run": "5script/results/v8_3stage/v8b/20260902-234912-v8b-s31-ctrl",
+  "run": "assets/results/v8_3stage/v8b/20260902-234912-v8b-s31-ctrl",
   "source": "eval_auto_v89",
   "step": 32500,
   "ssim": 0.76398,
@@ -1656,7 +1656,7 @@
  },
  {
   "series": "v8b_ctrl_1px",
-  "run": "5script/results/v8_3stage/v8b/20260902-234912-v8b-s31-ctrl",
+  "run": "assets/results/v8_3stage/v8b/20260902-234912-v8b-s31-ctrl",
   "source": "eval_auto_v89",
   "step": 35000,
   "ssim": 0.764052,
@@ -1669,7 +1669,7 @@
  },
  {
   "series": "v8b_ctrl_1px",
-  "run": "5script/results/v8_3stage/v8b/20260902-234912-v8b-s31-ctrl",
+  "run": "assets/results/v8_3stage/v8b/20260902-234912-v8b-s31-ctrl",
   "source": "eval_auto_v89",
   "step": 37500,
   "ssim": 0.763934,
@@ -1682,7 +1682,7 @@
  },
  {
   "series": "v8b_ctrl_1px",
-  "run": "5script/results/v8_3stage/v8b/20260902-234912-v8b-s31-ctrl",
+  "run": "assets/results/v8_3stage/v8b/20260902-234912-v8b-s31-ctrl",
   "source": "eval_auto_v89",
   "step": 40000,
   "ssim": 0.763878,
@@ -1695,7 +1695,7 @@
  },
  {
   "series": "v9a_repa_pretrain",
-  "run": "5script/results/v9a_repa_pretrain/20260905-004106-v9a-repa-pretrain",
+  "run": "assets/results/v9a_repa_pretrain/20260905-004106-v9a-repa-pretrain",
   "source": "eval_auto_v89",
   "step": 1000,
   "ssim": 0.449474,
@@ -1708,7 +1708,7 @@
  },
  {
   "series": "v9a_repa_pretrain",
-  "run": "5script/results/v9a_repa_pretrain/20260905-004106-v9a-repa-pretrain",
+  "run": "assets/results/v9a_repa_pretrain/20260905-004106-v9a-repa-pretrain",
   "source": "eval_auto_v89",
   "step": 2000,
   "ssim": 0.465631,
@@ -1721,7 +1721,7 @@
  },
  {
   "series": "v9a_repa_pretrain",
-  "run": "5script/results/v9a_repa_pretrain/20260905-004106-v9a-repa-pretrain",
+  "run": "assets/results/v9a_repa_pretrain/20260905-004106-v9a-repa-pretrain",
   "source": "eval_auto_v89",
   "step": 3000,
   "ssim": 0.467768,
@@ -1734,7 +1734,7 @@
  },
  {
   "series": "v9a_repa_pretrain",
-  "run": "5script/results/v9a_repa_pretrain/20260905-004106-v9a-repa-pretrain",
+  "run": "assets/results/v9a_repa_pretrain/20260905-004106-v9a-repa-pretrain",
   "source": "eval_auto_v89",
   "step": 4000,
   "ssim": 0.472721,
@@ -1747,7 +1747,7 @@
  },
  {
   "series": "v9a_repa_pretrain",
-  "run": "5script/results/v9a_repa_pretrain/20260905-004106-v9a-repa-pretrain",
+  "run": "assets/results/v9a_repa_pretrain/20260905-004106-v9a-repa-pretrain",
   "source": "eval_auto_v89",
   "step": 5000,
   "ssim": 0.471687,
@@ -1760,7 +1760,7 @@
  },
  {
   "series": "v9a_repa_pretrain",
-  "run": "5script/results/v9a_repa_pretrain/20260905-004106-v9a-repa-pretrain",
+  "run": "assets/results/v9a_repa_pretrain/20260905-004106-v9a-repa-pretrain",
   "source": "eval_auto_v89",
   "step": 7500,
   "ssim": 0.474193,
@@ -1773,7 +1773,7 @@
  },
  {
   "series": "v9a_repa_pretrain",
-  "run": "5script/results/v9a_repa_pretrain/20260905-004106-v9a-repa-pretrain",
+  "run": "assets/results/v9a_repa_pretrain/20260905-004106-v9a-repa-pretrain",
   "source": "eval_auto_v89",
   "step": 10000,
   "ssim": 0.478976,
@@ -1786,7 +1786,7 @@
  },
  {
   "series": "v9a_repa_pretrain",
-  "run": "5script/results/v9a_repa_pretrain/20260905-004106-v9a-repa-pretrain",
+  "run": "assets/results/v9a_repa_pretrain/20260905-004106-v9a-repa-pretrain",
   "source": "eval_auto_v89",
   "step": 12500,
   "ssim": 0.477931,
@@ -1799,7 +1799,7 @@
  },
  {
   "series": "v9a_repa_pretrain",
-  "run": "5script/results/v9a_repa_pretrain/20260905-004106-v9a-repa-pretrain",
+  "run": "assets/results/v9a_repa_pretrain/20260905-004106-v9a-repa-pretrain",
   "source": "eval_auto_v89",
   "step": 15000,
   "ssim": 0.478839,
@@ -1812,7 +1812,7 @@
  },
  {
   "series": "v9a_repa_pretrain",
-  "run": "5script/results/v9a_repa_pretrain/20260905-004106-v9a-repa-pretrain",
+  "run": "assets/results/v9a_repa_pretrain/20260905-004106-v9a-repa-pretrain",
   "source": "eval_auto_v89",
   "step": 17500,
   "ssim": 0.482456,
@@ -1825,7 +1825,7 @@
  },
  {
   "series": "v9a_repa_pretrain",
-  "run": "5script/results/v9a_repa_pretrain/20260905-004106-v9a-repa-pretrain",
+  "run": "assets/results/v9a_repa_pretrain/20260905-004106-v9a-repa-pretrain",
   "source": "eval_auto_v89",
   "step": 20000,
   "ssim": 0.484203,
@@ -1838,7 +1838,7 @@
  },
  {
   "series": "v9a_repa_pretrain",
-  "run": "5script/results/v9a_repa_pretrain/20260905-004106-v9a-repa-pretrain",
+  "run": "assets/results/v9a_repa_pretrain/20260905-004106-v9a-repa-pretrain",
   "source": "eval_auto_v89",
   "step": 22500,
   "ssim": 0.485742,
@@ -1851,7 +1851,7 @@
  },
  {
   "series": "v9a_repa_pretrain",
-  "run": "5script/results/v9a_repa_pretrain/20260905-004106-v9a-repa-pretrain",
+  "run": "assets/results/v9a_repa_pretrain/20260905-004106-v9a-repa-pretrain",
   "source": "eval_auto_v89",
   "step": 25000,
   "ssim": 0.486565,
@@ -1864,7 +1864,7 @@
  },
  {
   "series": "v9a_repa_pretrain",
-  "run": "5script/results/v9a_repa_pretrain/20260905-004106-v9a-repa-pretrain",
+  "run": "assets/results/v9a_repa_pretrain/20260905-004106-v9a-repa-pretrain",
   "source": "eval_auto_v89",
   "step": 27500,
   "ssim": 0.487662,
@@ -1877,7 +1877,7 @@
  },
  {
   "series": "v9a_repa_pretrain",
-  "run": "5script/results/v9a_repa_pretrain/20260905-004106-v9a-repa-pretrain",
+  "run": "assets/results/v9a_repa_pretrain/20260905-004106-v9a-repa-pretrain",
   "source": "eval_auto_v89",
   "step": 30000,
   "ssim": 0.490347,
@@ -1890,7 +1890,7 @@
  },
  {
   "series": "v9a_repa_pretrain",
-  "run": "5script/results/v9a_repa_pretrain/20260905-004106-v9a-repa-pretrain",
+  "run": "assets/results/v9a_repa_pretrain/20260905-004106-v9a-repa-pretrain",
   "source": "eval_auto_v89",
   "step": 32500,
   "ssim": 0.492567,
@@ -1903,7 +1903,7 @@
  },
  {
   "series": "v9a_repa_pretrain",
-  "run": "5script/results/v9a_repa_pretrain/20260905-004106-v9a-repa-pretrain",
+  "run": "assets/results/v9a_repa_pretrain/20260905-004106-v9a-repa-pretrain",
   "source": "eval_auto_v89",
   "step": 35000,
   "ssim": 0.494708,
@@ -1916,7 +1916,7 @@
  },
  {
   "series": "v9a_repa_pretrain",
-  "run": "5script/results/v9a_repa_pretrain/20260905-004106-v9a-repa-pretrain",
+  "run": "assets/results/v9a_repa_pretrain/20260905-004106-v9a-repa-pretrain",
   "source": "eval_auto_v89",
   "step": 37500,
   "ssim": 0.497641,
@@ -1929,7 +1929,7 @@
  },
  {
   "series": "v9a_repa_pretrain",
-  "run": "5script/results/v9a_repa_pretrain/20260905-004106-v9a-repa-pretrain",
+  "run": "assets/results/v9a_repa_pretrain/20260905-004106-v9a-repa-pretrain",
   "source": "eval_auto_v89",
   "step": 40000,
   "ssim": 0.498832,
@@ -1942,7 +1942,7 @@
  },
  {
   "series": "v9a_repa_pretrain",
-  "run": "5script/results/v9a_repa_pretrain/20260905-004106-v9a-repa-pretrain",
+  "run": "assets/results/v9a_repa_pretrain/20260905-004106-v9a-repa-pretrain",
   "source": "eval_auto_v89",
   "step": 42500,
   "ssim": 0.500872,
@@ -1955,7 +1955,7 @@
  },
  {
   "series": "v9a_repa_pretrain",
-  "run": "5script/results/v9a_repa_pretrain/20260905-004106-v9a-repa-pretrain",
+  "run": "assets/results/v9a_repa_pretrain/20260905-004106-v9a-repa-pretrain",
   "source": "eval_auto_v89",
   "step": 45000,
   "ssim": 0.500858,
@@ -1968,7 +1968,7 @@
  },
  {
   "series": "v9a_repa_pretrain",
-  "run": "5script/results/v9a_repa_pretrain/20260905-004106-v9a-repa-pretrain",
+  "run": "assets/results/v9a_repa_pretrain/20260905-004106-v9a-repa-pretrain",
   "source": "eval_auto_v89",
   "step": 47500,
   "ssim": 0.501813,
@@ -1981,7 +1981,7 @@
  },
  {
   "series": "v9a_repa_pretrain",
-  "run": "5script/results/v9a_repa_pretrain/20260905-004106-v9a-repa-pretrain",
+  "run": "assets/results/v9a_repa_pretrain/20260905-004106-v9a-repa-pretrain",
   "source": "eval_auto_v89",
   "step": 50000,
   "ssim": 0.502528,
@@ -1994,7 +1994,7 @@
  },
  {
   "series": "v9a_repa_pretrain",
-  "run": "5script/results/v9a_repa_pretrain/20260905-004106-v9a-repa-pretrain",
+  "run": "assets/results/v9a_repa_pretrain/20260905-004106-v9a-repa-pretrain",
   "source": "eval_auto_v89",
   "step": 52500,
   "ssim": 0.504087,
@@ -2007,7 +2007,7 @@
  },
  {
   "series": "v9a_repa_pretrain",
-  "run": "5script/results/v9a_repa_pretrain/20260905-004106-v9a-repa-pretrain",
+  "run": "assets/results/v9a_repa_pretrain/20260905-004106-v9a-repa-pretrain",
   "source": "eval_auto_v89",
   "step": 55000,
   "ssim": 0.504857,
@@ -2020,7 +2020,7 @@
  },
  {
   "series": "v9a_repa_pretrain",
-  "run": "5script/results/v9a_repa_pretrain/20260905-004106-v9a-repa-pretrain",
+  "run": "assets/results/v9a_repa_pretrain/20260905-004106-v9a-repa-pretrain",
   "source": "eval_auto_v89",
   "step": 57500,
   "ssim": 0.505776,
@@ -2033,7 +2033,7 @@
  },
  {
   "series": "v9a_repa_pretrain",
-  "run": "5script/results/v9a_repa_pretrain/20260905-004106-v9a-repa-pretrain",
+  "run": "assets/results/v9a_repa_pretrain/20260905-004106-v9a-repa-pretrain",
   "source": "eval_auto_v89",
   "step": 60000,
   "ssim": 0.505884,
@@ -2046,7 +2046,7 @@
  },
  {
   "series": "v9a_repa_pretrain",
-  "run": "5script/results/v9a_repa_pretrain/20260905-004106-v9a-repa-pretrain",
+  "run": "assets/results/v9a_repa_pretrain/20260905-004106-v9a-repa-pretrain",
   "source": "eval_auto_v89",
   "step": 62500,
   "ssim": 0.506877,
@@ -2059,7 +2059,7 @@
  },
  {
   "series": "v9a_repa_pretrain",
-  "run": "5script/results/v9a_repa_pretrain/20260905-004106-v9a-repa-pretrain",
+  "run": "assets/results/v9a_repa_pretrain/20260905-004106-v9a-repa-pretrain",
   "source": "eval_auto_v89",
   "step": 65000,
   "ssim": 0.507681,
@@ -2072,7 +2072,7 @@
  },
  {
   "series": "v9a_repa_pretrain",
-  "run": "5script/results/v9a_repa_pretrain/20260905-004106-v9a-repa-pretrain",
+  "run": "assets/results/v9a_repa_pretrain/20260905-004106-v9a-repa-pretrain",
   "source": "eval_auto_v89",
   "step": 67500,
   "ssim": 0.509704,
@@ -2085,7 +2085,7 @@
  },
  {
   "series": "v9a_repa_pretrain",
-  "run": "5script/results/v9a_repa_pretrain/20260905-004106-v9a-repa-pretrain",
+  "run": "assets/results/v9a_repa_pretrain/20260905-004106-v9a-repa-pretrain",
   "source": "eval_auto_v89",
   "step": 70000,
   "ssim": 0.510558,
@@ -2098,7 +2098,7 @@
  },
  {
   "series": "v9a_repa_pretrain",
-  "run": "5script/results/v9a_repa_pretrain/20260905-004106-v9a-repa-pretrain",
+  "run": "assets/results/v9a_repa_pretrain/20260905-004106-v9a-repa-pretrain",
   "source": "eval_auto_v89",
   "step": 72500,
   "ssim": 0.511221,
@@ -2111,7 +2111,7 @@
  },
  {
   "series": "v9a_repa_pretrain",
-  "run": "5script/results/v9a_repa_pretrain/20260905-004106-v9a-repa-pretrain",
+  "run": "assets/results/v9a_repa_pretrain/20260905-004106-v9a-repa-pretrain",
   "source": "eval_auto_v89",
   "step": 75000,
   "ssim": 0.511994,
@@ -2124,7 +2124,7 @@
  },
  {
   "series": "v9a_repa_pretrain",
-  "run": "5script/results/v9a_repa_pretrain/20260905-004106-v9a-repa-pretrain",
+  "run": "assets/results/v9a_repa_pretrain/20260905-004106-v9a-repa-pretrain",
   "source": "eval_auto_v89",
   "step": 77500,
   "ssim": 0.511607,
@@ -2137,7 +2137,7 @@
  },
  {
   "series": "v9a_repa_pretrain",
-  "run": "5script/results/v9a_repa_pretrain/20260905-004106-v9a-repa-pretrain",
+  "run": "assets/results/v9a_repa_pretrain/20260905-004106-v9a-repa-pretrain",
   "source": "eval_auto_v89",
   "step": 80000,
   "ssim": 0.511518,
@@ -2150,7 +2150,7 @@
  },
  {
   "series": "v9a_repa_pretrain",
-  "run": "5script/results/v9a_repa_pretrain/20260905-004106-v9a-repa-pretrain",
+  "run": "assets/results/v9a_repa_pretrain/20260905-004106-v9a-repa-pretrain",
   "source": "eval_auto_v89",
   "step": 82500,
   "ssim": 0.512609,
@@ -2163,7 +2163,7 @@
  },
  {
   "series": "v9a_repa_pretrain",
-  "run": "5script/results/v9a_repa_pretrain/20260905-004106-v9a-repa-pretrain",
+  "run": "assets/results/v9a_repa_pretrain/20260905-004106-v9a-repa-pretrain",
   "source": "eval_auto_v89",
   "step": 85000,
   "ssim": 0.513107,
@@ -2176,7 +2176,7 @@
  },
  {
   "series": "v9a_repa_pretrain",
-  "run": "5script/results/v9a_repa_pretrain/20260905-004106-v9a-repa-pretrain",
+  "run": "assets/results/v9a_repa_pretrain/20260905-004106-v9a-repa-pretrain",
   "source": "eval_auto_v89",
   "step": 87500,
   "ssim": 0.513495,
@@ -2189,7 +2189,7 @@
  },
  {
   "series": "v9a_repa_pretrain",
-  "run": "5script/results/v9a_repa_pretrain/20260905-004106-v9a-repa-pretrain",
+  "run": "assets/results/v9a_repa_pretrain/20260905-004106-v9a-repa-pretrain",
   "source": "eval_auto_v89",
   "step": 90000,
   "ssim": 0.514375,
@@ -2202,7 +2202,7 @@
  },
  {
   "series": "v9a_repa_pretrain",
-  "run": "5script/results/v9a_repa_pretrain/20260905-004106-v9a-repa-pretrain",
+  "run": "assets/results/v9a_repa_pretrain/20260905-004106-v9a-repa-pretrain",
   "source": "eval_auto_v89",
   "step": 92500,
   "ssim": 0.514282,
@@ -2215,7 +2215,7 @@
  },
  {
   "series": "v9a_repa_pretrain",
-  "run": "5script/results/v9a_repa_pretrain/20260905-004106-v9a-repa-pretrain",
+  "run": "assets/results/v9a_repa_pretrain/20260905-004106-v9a-repa-pretrain",
   "source": "eval_auto_v89",
   "step": 95000,
   "ssim": 0.514853,
@@ -2228,7 +2228,7 @@
  },
  {
   "series": "v9a_repa_pretrain",
-  "run": "5script/results/v9a_repa_pretrain/20260905-004106-v9a-repa-pretrain",
+  "run": "assets/results/v9a_repa_pretrain/20260905-004106-v9a-repa-pretrain",
   "source": "eval_auto_v89",
   "step": 97500,
   "ssim": 0.51515,
@@ -2241,7 +2241,7 @@
  },
  {
   "series": "v9a_repa_pretrain",
-  "run": "5script/results/v9a_repa_pretrain/20260905-004106-v9a-repa-pretrain",
+  "run": "assets/results/v9a_repa_pretrain/20260905-004106-v9a-repa-pretrain",
   "source": "eval_auto_v89",
   "step": 100000,
   "ssim": 0.51538,
@@ -2254,7 +2254,7 @@
  },
  {
   "series": "v9a_repa_pretrain",
-  "run": "5script/results/v9a_repa_pretrain/20260905-004106-v9a-repa-pretrain",
+  "run": "assets/results/v9a_repa_pretrain/20260905-004106-v9a-repa-pretrain",
   "source": "eval_auto_v89",
   "step": 102500,
   "ssim": 0.515587,
@@ -2267,7 +2267,7 @@
  },
  {
   "series": "v9a_repa_pretrain",
-  "run": "5script/results/v9a_repa_pretrain/20260905-004106-v9a-repa-pretrain",
+  "run": "assets/results/v9a_repa_pretrain/20260905-004106-v9a-repa-pretrain",
   "source": "eval_auto_v89",
   "step": 105000,
   "ssim": 0.516022,
@@ -2280,7 +2280,7 @@
  },
  {
   "series": "v9a_repa_pretrain",
-  "run": "5script/results/v9a_repa_pretrain/20260905-004106-v9a-repa-pretrain",
+  "run": "assets/results/v9a_repa_pretrain/20260905-004106-v9a-repa-pretrain",
   "source": "eval_auto_v89",
   "step": 107500,
   "ssim": 0.516753,
@@ -2293,7 +2293,7 @@
  },
  {
   "series": "v9a_repa_pretrain",
-  "run": "5script/results/v9a_repa_pretrain/20260905-004106-v9a-repa-pretrain",
+  "run": "assets/results/v9a_repa_pretrain/20260905-004106-v9a-repa-pretrain",
   "source": "eval_auto_v89",
   "step": 110000,
   "ssim": 0.516716,
@@ -2306,7 +2306,7 @@
  },
  {
   "series": "v9a_repa_pretrain",
-  "run": "5script/results/v9a_repa_pretrain/20260905-004106-v9a-repa-pretrain",
+  "run": "assets/results/v9a_repa_pretrain/20260905-004106-v9a-repa-pretrain",
   "source": "eval_auto_v89",
   "step": 112500,
   "ssim": 0.517107,
@@ -2319,7 +2319,7 @@
  },
  {
   "series": "v9a_repa_pretrain",
-  "run": "5script/results/v9a_repa_pretrain/20260905-004106-v9a-repa-pretrain",
+  "run": "assets/results/v9a_repa_pretrain/20260905-004106-v9a-repa-pretrain",
   "source": "eval_auto_v89",
   "step": 115000,
   "ssim": 0.518059,
@@ -2332,7 +2332,7 @@
  },
  {
   "series": "v9a_repa_pretrain",
-  "run": "5script/results/v9a_repa_pretrain/20260905-004106-v9a-repa-pretrain",
+  "run": "assets/results/v9a_repa_pretrain/20260905-004106-v9a-repa-pretrain",
   "source": "eval_auto_v89",
   "step": 117500,
   "ssim": 0.51905,
@@ -2345,7 +2345,7 @@
  },
  {
   "series": "v9a_repa_pretrain",
-  "run": "5script/results/v9a_repa_pretrain/20260905-004106-v9a-repa-pretrain",
+  "run": "assets/results/v9a_repa_pretrain/20260905-004106-v9a-repa-pretrain",
   "source": "eval_auto_v89",
   "step": 120000,
   "ssim": 0.51895,
@@ -2358,7 +2358,7 @@
  },
  {
   "series": "v9a_repa_pretrain",
-  "run": "5script/results/v9a_repa_pretrain/20260905-004106-v9a-repa-pretrain",
+  "run": "assets/results/v9a_repa_pretrain/20260905-004106-v9a-repa-pretrain",
   "source": "eval_auto_v89",
   "step": 122500,
   "ssim": 0.518655,
@@ -2371,7 +2371,7 @@
  },
  {
   "series": "v9a_repa_pretrain",
-  "run": "5script/results/v9a_repa_pretrain/20260905-004106-v9a-repa-pretrain",
+  "run": "assets/results/v9a_repa_pretrain/20260905-004106-v9a-repa-pretrain",
   "source": "eval_auto_v89",
   "step": 125000,
   "ssim": 0.519406,
@@ -2384,7 +2384,7 @@
  },
  {
   "series": "v9a_repa_pretrain",
-  "run": "5script/results/v9a_repa_pretrain/20260905-004106-v9a-repa-pretrain",
+  "run": "assets/results/v9a_repa_pretrain/20260905-004106-v9a-repa-pretrain",
   "source": "eval_auto_v89",
   "step": 127500,
   "ssim": 0.519699,
@@ -2397,7 +2397,7 @@
  },
  {
   "series": "v9a_repa_pretrain",
-  "run": "5script/results/v9a_repa_pretrain/20260905-004106-v9a-repa-pretrain",
+  "run": "assets/results/v9a_repa_pretrain/20260905-004106-v9a-repa-pretrain",
   "source": "eval_auto_v89",
   "step": 130000,
   "ssim": 0.520379,
@@ -2410,7 +2410,7 @@
  },
  {
   "series": "v9b_ctrl_repa_strong",
-  "run": "5script/results/v9b_ctrl_strong/20260905-145643-v9b-ctrl-repa-strong",
+  "run": "assets/results/v9b_ctrl_strong/20260905-145643-v9b-ctrl-repa-strong",
   "source": "eval_auto_v89",
   "step": 2500,
   "ssim": 0.725089,
@@ -2423,7 +2423,7 @@
  },
  {
   "series": "v9b_ctrl_repa_strong",
-  "run": "5script/results/v9b_ctrl_strong/20260905-145643-v9b-ctrl-repa-strong",
+  "run": "assets/results/v9b_ctrl_strong/20260905-145643-v9b-ctrl-repa-strong",
   "source": "eval_auto_v89",
   "step": 5000,
   "ssim": 0.727932,
@@ -2436,7 +2436,7 @@
  },
  {
   "series": "v9b_ctrl_repa_strong",
-  "run": "5script/results/v9b_ctrl_strong/20260905-145643-v9b-ctrl-repa-strong",
+  "run": "assets/results/v9b_ctrl_strong/20260905-145643-v9b-ctrl-repa-strong",
   "source": "eval_auto_v89",
   "step": 7500,
   "ssim": 0.733061,
@@ -2449,7 +2449,7 @@
  },
  {
   "series": "v9b_ctrl_repa_strong",
-  "run": "5script/results/v9b_ctrl_strong/20260905-145643-v9b-ctrl-repa-strong",
+  "run": "assets/results/v9b_ctrl_strong/20260905-145643-v9b-ctrl-repa-strong",
   "source": "eval_auto_v89",
   "step": 10000,
   "ssim": 0.737526,
@@ -2462,7 +2462,7 @@
  },
  {
   "series": "v9b_ctrl_repa_strong",
-  "run": "5script/results/v9b_ctrl_strong/20260905-145643-v9b-ctrl-repa-strong",
+  "run": "assets/results/v9b_ctrl_strong/20260905-145643-v9b-ctrl-repa-strong",
   "source": "eval_auto_v89",
   "step": 12500,
   "ssim": 0.743507,
@@ -2475,7 +2475,7 @@
  },
  {
   "series": "v9b_ctrl_repa_strong",
-  "run": "5script/results/v9b_ctrl_strong/20260905-145643-v9b-ctrl-repa-strong",
+  "run": "assets/results/v9b_ctrl_strong/20260905-145643-v9b-ctrl-repa-strong",
   "source": "eval_auto_v89",
   "step": 15000,
   "ssim": 0.748242,
@@ -2488,7 +2488,7 @@
  },
  {
   "series": "v9b_ctrl_repa_strong",
-  "run": "5script/results/v9b_ctrl_strong/20260905-145643-v9b-ctrl-repa-strong",
+  "run": "assets/results/v9b_ctrl_strong/20260905-145643-v9b-ctrl-repa-strong",
   "source": "eval_auto_v89",
   "step": 17500,
   "ssim": 0.752037,
@@ -2501,7 +2501,7 @@
  },
  {
   "series": "v9b_ctrl_repa_strong",
-  "run": "5script/results/v9b_ctrl_strong/20260905-145643-v9b-ctrl-repa-strong",
+  "run": "assets/results/v9b_ctrl_strong/20260905-145643-v9b-ctrl-repa-strong",
   "source": "eval_auto_v89",
   "step": 20000,
   "ssim": 0.755273,
@@ -2514,7 +2514,7 @@
  },
  {
   "series": "v9b_ctrl_repa_strong",
-  "run": "5script/results/v9b_ctrl_strong/20260905-145643-v9b-ctrl-repa-strong",
+  "run": "assets/results/v9b_ctrl_strong/20260905-145643-v9b-ctrl-repa-strong",
   "source": "eval_auto_v89",
   "step": 22500,
   "ssim": 0.755741,
@@ -2527,7 +2527,7 @@
  },
  {
   "series": "v9b_ctrl_repa_strong",
-  "run": "5script/results/v9b_ctrl_strong/20260905-145643-v9b-ctrl-repa-strong",
+  "run": "assets/results/v9b_ctrl_strong/20260905-145643-v9b-ctrl-repa-strong",
   "source": "eval_auto_v89",
   "step": 25000,
   "ssim": 0.757147,
@@ -2540,7 +2540,7 @@
  },
  {
   "series": "v9b_ctrl_repa_strong",
-  "run": "5script/results/v9b_ctrl_strong/20260905-145643-v9b-ctrl-repa-strong",
+  "run": "assets/results/v9b_ctrl_strong/20260905-145643-v9b-ctrl-repa-strong",
   "source": "eval_auto_v89",
   "step": 27500,
   "ssim": 0.756489,
@@ -2553,7 +2553,7 @@
  },
  {
   "series": "v9b_ctrl_repa_strong",
-  "run": "5script/results/v9b_ctrl_strong/20260905-145643-v9b-ctrl-repa-strong",
+  "run": "assets/results/v9b_ctrl_strong/20260905-145643-v9b-ctrl-repa-strong",
   "source": "eval_auto_v89",
   "step": 30000,
   "ssim": 0.757734,
@@ -2566,7 +2566,7 @@
  },
  {
   "series": "v9b_ctrl_repa_strong",
-  "run": "5script/results/v9b_ctrl_strong/20260905-145643-v9b-ctrl-repa-strong",
+  "run": "assets/results/v9b_ctrl_strong/20260905-145643-v9b-ctrl-repa-strong",
   "source": "eval_auto_v89",
   "step": 32500,
   "ssim": 0.758676,
@@ -2579,7 +2579,7 @@
  },
  {
   "series": "v9b_ctrl_repa_strong",
-  "run": "5script/results/v9b_ctrl_strong/20260905-145643-v9b-ctrl-repa-strong",
+  "run": "assets/results/v9b_ctrl_strong/20260905-145643-v9b-ctrl-repa-strong",
   "source": "eval_auto_v89",
   "step": 35000,
   "ssim": 0.759147,
@@ -2592,7 +2592,7 @@
  },
  {
   "series": "v9b_ctrl_repa_strong",
-  "run": "5script/results/v9b_ctrl_strong/20260905-145643-v9b-ctrl-repa-strong",
+  "run": "assets/results/v9b_ctrl_strong/20260905-145643-v9b-ctrl-repa-strong",
   "source": "eval_auto_v89",
   "step": 37500,
   "ssim": 0.758865,
@@ -2605,7 +2605,7 @@
  },
  {
   "series": "v9b_ctrl_repa_strong",
-  "run": "5script/results/v9b_ctrl_strong/20260905-145643-v9b-ctrl-repa-strong",
+  "run": "assets/results/v9b_ctrl_strong/20260905-145643-v9b-ctrl-repa-strong",
   "source": "eval_auto_v89",
   "step": 40000,
   "ssim": 0.75876,
@@ -2618,7 +2618,7 @@
  },
  {
   "series": "v9b_ctrl_repa_strong",
-  "run": "5script/results/v9b_ctrl_strong/20260905-145643-v9b-ctrl-repa-strong",
+  "run": "assets/results/v9b_ctrl_strong/20260905-145643-v9b-ctrl-repa-strong",
   "source": "eval_auto_v89",
   "step": 42500,
   "ssim": 0.759108,
@@ -2631,7 +2631,7 @@
  },
  {
   "series": "v9b_ctrl_repa_strong",
-  "run": "5script/results/v9b_ctrl_strong/20260905-145643-v9b-ctrl-repa-strong",
+  "run": "assets/results/v9b_ctrl_strong/20260905-145643-v9b-ctrl-repa-strong",
   "source": "eval_auto_v89",
   "step": 45000,
   "ssim": 0.759179,
@@ -2644,7 +2644,7 @@
  },
  {
   "series": "v9b_ctrl_repa_strong",
-  "run": "5script/results/v9b_ctrl_strong/20260905-145643-v9b-ctrl-repa-strong",
+  "run": "assets/results/v9b_ctrl_strong/20260905-145643-v9b-ctrl-repa-strong",
   "source": "eval_auto_v89",
   "step": 47500,
   "ssim": 0.758819,
@@ -2657,7 +2657,7 @@
  },
  {
   "series": "v9b_ctrl_repa_strong",
-  "run": "5script/results/v9b_ctrl_strong/20260905-145643-v9b-ctrl-repa-strong",
+  "run": "assets/results/v9b_ctrl_strong/20260905-145643-v9b-ctrl-repa-strong",
   "source": "eval_auto_v89",
   "step": 50000,
   "ssim": 0.758631,
@@ -2670,7 +2670,7 @@
  },
  {
   "series": "v10a_skel_cond_pretrain",
-  "run": "5script/results/v10a_skel_cond_pretrain/20260906-054549-v10a-skel-cond-pretrain",
+  "run": "assets/results/v10a_skel_cond_pretrain/20260906-054549-v10a-skel-cond-pretrain",
   "source": "eval_auto_v89",
   "step": 25000,
   "ssim": 0.785754,
@@ -2683,7 +2683,7 @@
  },
  {
   "series": "v10a_skel_cond_pretrain",
-  "run": "5script/results/v10a_skel_cond_pretrain/20260906-054549-v10a-skel-cond-pretrain",
+  "run": "assets/results/v10a_skel_cond_pretrain/20260906-054549-v10a-skel-cond-pretrain",
   "source": "eval_auto_v89",
   "step": 27500,
   "ssim": 0.784059,
@@ -2696,7 +2696,7 @@
  },
  {
   "series": "v10a_skel_cond_pretrain",
-  "run": "5script/results/v10a_skel_cond_pretrain/20260906-054549-v10a-skel-cond-pretrain",
+  "run": "assets/results/v10a_skel_cond_pretrain/20260906-054549-v10a-skel-cond-pretrain",
   "source": "eval_auto_v89",
   "step": 30000,
   "ssim": 0.787576,
@@ -2709,7 +2709,7 @@
  },
  {
   "series": "v10a_skel_cond_pretrain",
-  "run": "5script/results/v10a_skel_cond_pretrain/20260906-054549-v10a-skel-cond-pretrain",
+  "run": "assets/results/v10a_skel_cond_pretrain/20260906-054549-v10a-skel-cond-pretrain",
   "source": "eval_auto_v89",
   "step": 32500,
   "ssim": 0.79374,
@@ -2722,7 +2722,7 @@
  },
  {
   "series": "v10a_skel_cond_pretrain",
-  "run": "5script/results/v10a_skel_cond_pretrain/20260906-054549-v10a-skel-cond-pretrain",
+  "run": "assets/results/v10a_skel_cond_pretrain/20260906-054549-v10a-skel-cond-pretrain",
   "source": "eval_auto_v89",
   "step": 35000,
   "ssim": 0.800059,
@@ -2735,7 +2735,7 @@
  },
  {
   "series": "v10a_skel_cond_pretrain",
-  "run": "5script/results/v10a_skel_cond_pretrain/20260906-054549-v10a-skel-cond-pretrain",
+  "run": "assets/results/v10a_skel_cond_pretrain/20260906-054549-v10a-skel-cond-pretrain",
   "source": "eval_auto_v89",
   "step": 37500,
   "ssim": 0.801478,
@@ -2748,7 +2748,7 @@
  },
  {
   "series": "v10a_skel_cond_pretrain",
-  "run": "5script/results/v10a_skel_cond_pretrain/20260906-054549-v10a-skel-cond-pretrain",
+  "run": "assets/results/v10a_skel_cond_pretrain/20260906-054549-v10a-skel-cond-pretrain",
   "source": "eval_auto_v89",
   "step": 40000,
   "ssim": 0.805231,
@@ -2761,7 +2761,7 @@
  },
  {
   "series": "v10a_skel_cond_pretrain",
-  "run": "5script/results/v10a_skel_cond_pretrain/20260906-054549-v10a-skel-cond-pretrain",
+  "run": "assets/results/v10a_skel_cond_pretrain/20260906-054549-v10a-skel-cond-pretrain",
   "source": "eval_auto_v89",
   "step": 42500,
   "ssim": 0.809318,
@@ -2774,7 +2774,7 @@
  },
  {
   "series": "v10a_skel_cond_pretrain",
-  "run": "5script/results/v10a_skel_cond_pretrain/20260906-054549-v10a-skel-cond-pretrain",
+  "run": "assets/results/v10a_skel_cond_pretrain/20260906-054549-v10a-skel-cond-pretrain",
   "source": "eval_auto_v89",
   "step": 45000,
   "ssim": 0.814775,
@@ -2787,7 +2787,7 @@
  },
  {
   "series": "v10a_skel_cond_pretrain",
-  "run": "5script/results/v10a_skel_cond_pretrain/20260906-054549-v10a-skel-cond-pretrain",
+  "run": "assets/results/v10a_skel_cond_pretrain/20260906-054549-v10a-skel-cond-pretrain",
   "source": "eval_auto_v89",
   "step": 47500,
   "ssim": 0.81736,
@@ -2800,7 +2800,7 @@
  },
  {
   "series": "v10a_skel_cond_pretrain",
-  "run": "5script/results/v10a_skel_cond_pretrain/20260906-054549-v10a-skel-cond-pretrain",
+  "run": "assets/results/v10a_skel_cond_pretrain/20260906-054549-v10a-skel-cond-pretrain",
   "source": "eval_auto_v89",
   "step": 50000,
   "ssim": 0.820399,
@@ -2813,7 +2813,7 @@
  },
  {
   "series": "v10a_skel_cond_pretrain",
-  "run": "5script/results/v10a_skel_cond_pretrain/20260906-054549-v10a-skel-cond-pretrain",
+  "run": "assets/results/v10a_skel_cond_pretrain/20260906-054549-v10a-skel-cond-pretrain",
   "source": "eval_auto_v89",
   "step": 52500,
   "ssim": 0.822463,
@@ -2826,7 +2826,7 @@
  },
  {
   "series": "v10a_skel_cond_pretrain",
-  "run": "5script/results/v10a_skel_cond_pretrain/20260906-054549-v10a-skel-cond-pretrain",
+  "run": "assets/results/v10a_skel_cond_pretrain/20260906-054549-v10a-skel-cond-pretrain",
   "source": "eval_auto_v89",
   "step": 55000,
   "ssim": 0.823983,
@@ -2839,7 +2839,7 @@
  },
  {
   "series": "v10a_skel_cond_pretrain",
-  "run": "5script/results/v10a_skel_cond_pretrain/20260906-054549-v10a-skel-cond-pretrain",
+  "run": "assets/results/v10a_skel_cond_pretrain/20260906-054549-v10a-skel-cond-pretrain",
   "source": "eval_auto_v89",
   "step": 57500,
   "ssim": 0.825876,
@@ -2852,7 +2852,7 @@
  },
  {
   "series": "v10a_skel_cond_pretrain",
-  "run": "5script/results/v10a_skel_cond_pretrain/20260906-054549-v10a-skel-cond-pretrain",
+  "run": "assets/results/v10a_skel_cond_pretrain/20260906-054549-v10a-skel-cond-pretrain",
   "source": "eval_auto_v89",
   "step": 60000,
   "ssim": 0.828421,
@@ -2865,7 +2865,7 @@
  },
  {
   "series": "v10a_skel_cond_pretrain",
-  "run": "5script/results/v10a_skel_cond_pretrain/20260906-054549-v10a-skel-cond-pretrain",
+  "run": "assets/results/v10a_skel_cond_pretrain/20260906-054549-v10a-skel-cond-pretrain",
   "source": "eval_auto_v89",
   "step": 62500,
   "ssim": 0.831252,
@@ -2878,7 +2878,7 @@
  },
  {
   "series": "v10a_skel_cond_pretrain",
-  "run": "5script/results/v10a_skel_cond_pretrain/20260906-054549-v10a-skel-cond-pretrain",
+  "run": "assets/results/v10a_skel_cond_pretrain/20260906-054549-v10a-skel-cond-pretrain",
   "source": "eval_auto_v89",
   "step": 65000,
   "ssim": 0.827939,
@@ -2891,7 +2891,7 @@
  },
  {
   "series": "v10a_skel_cond_pretrain",
-  "run": "5script/results/v10a_skel_cond_pretrain/20260906-054549-v10a-skel-cond-pretrain",
+  "run": "assets/results/v10a_skel_cond_pretrain/20260906-054549-v10a-skel-cond-pretrain",
   "source": "eval_auto_v89",
   "step": 67500,
   "ssim": 0.829664,
@@ -2904,7 +2904,7 @@
  },
  {
   "series": "v10a_skel_cond_pretrain",
-  "run": "5script/results/v10a_skel_cond_pretrain/20260906-054549-v10a-skel-cond-pretrain",
+  "run": "assets/results/v10a_skel_cond_pretrain/20260906-054549-v10a-skel-cond-pretrain",
   "source": "eval_auto_v89",
   "step": 70000,
   "ssim": 0.83069,
@@ -2917,7 +2917,7 @@
  },
  {
   "series": "v10a_skel_cond_pretrain",
-  "run": "5script/results/v10a_skel_cond_pretrain/20260906-054549-v10a-skel-cond-pretrain",
+  "run": "assets/results/v10a_skel_cond_pretrain/20260906-054549-v10a-skel-cond-pretrain",
   "source": "eval_auto_v89",
   "step": 72500,
   "ssim": 0.834915,
@@ -2930,7 +2930,7 @@
  },
  {
   "series": "v10a_skel_cond_pretrain",
-  "run": "5script/results/v10a_skel_cond_pretrain/20260906-054549-v10a-skel-cond-pretrain",
+  "run": "assets/results/v10a_skel_cond_pretrain/20260906-054549-v10a-skel-cond-pretrain",
   "source": "eval_auto_v89",
   "step": 75000,
   "ssim": 0.836192,
@@ -2943,7 +2943,7 @@
  },
  {
   "series": "v10a_skel_cond_pretrain",
-  "run": "5script/results/v10a_skel_cond_pretrain/20260906-054549-v10a-skel-cond-pretrain",
+  "run": "assets/results/v10a_skel_cond_pretrain/20260906-054549-v10a-skel-cond-pretrain",
   "source": "eval_auto_v89",
   "step": 80000,
   "ssim": 0.838135,
@@ -2956,7 +2956,7 @@
  },
  {
   "series": "v10a_skel_cond_pretrain",
-  "run": "5script/results/v10a_skel_cond_pretrain/20260906-054549-v10a-skel-cond-pretrain",
+  "run": "assets/results/v10a_skel_cond_pretrain/20260906-054549-v10a-skel-cond-pretrain",
   "source": "eval_auto_v89",
   "step": 85000,
   "ssim": 0.838344,
@@ -2969,7 +2969,7 @@
  },
  {
   "series": "v10a_skel_cond_pretrain",
-  "run": "5script/results/v10a_skel_cond_pretrain/20260906-054549-v10a-skel-cond-pretrain",
+  "run": "assets/results/v10a_skel_cond_pretrain/20260906-054549-v10a-skel-cond-pretrain",
   "source": "eval_auto_v89",
   "step": 90000,
   "ssim": 0.840826,
@@ -2982,7 +2982,7 @@
  },
  {
   "series": "v10a_skel_cond_pretrain",
-  "run": "5script/results/v10a_skel_cond_pretrain/20260906-054549-v10a-skel-cond-pretrain",
+  "run": "assets/results/v10a_skel_cond_pretrain/20260906-054549-v10a-skel-cond-pretrain",
   "source": "eval_auto_v89",
   "step": 92500,
   "ssim": 0.841141,
@@ -2995,7 +2995,7 @@
  },
  {
   "series": "v10a_skel_cond_pretrain",
-  "run": "5script/results/v10a_skel_cond_pretrain/20260906-054549-v10a-skel-cond-pretrain",
+  "run": "assets/results/v10a_skel_cond_pretrain/20260906-054549-v10a-skel-cond-pretrain",
   "source": "eval_auto_v89",
   "step": 95000,
   "ssim": 0.842176,
@@ -3008,7 +3008,7 @@
  },
  {
   "series": "v10a_skel_cond_pretrain",
-  "run": "5script/results/v10a_skel_cond_pretrain/20260906-054549-v10a-skel-cond-pretrain",
+  "run": "assets/results/v10a_skel_cond_pretrain/20260906-054549-v10a-skel-cond-pretrain",
   "source": "eval_auto_v89",
   "step": 100000,
   "ssim": 0.84297,
@@ -3021,7 +3021,7 @@
  },
  {
   "series": "v10a_skel_cond_pretrain",
-  "run": "5script/results/v10a_skel_cond_pretrain/20260906-054549-v10a-skel-cond-pretrain",
+  "run": "assets/results/v10a_skel_cond_pretrain/20260906-054549-v10a-skel-cond-pretrain",
   "source": "eval_auto_v89",
   "step": 102500,
   "ssim": 0.843583,
@@ -3034,7 +3034,7 @@
  },
  {
   "series": "v10a_skel_cond_pretrain",
-  "run": "5script/results/v10a_skel_cond_pretrain/20260906-054549-v10a-skel-cond-pretrain",
+  "run": "assets/results/v10a_skel_cond_pretrain/20260906-054549-v10a-skel-cond-pretrain",
   "source": "eval_auto_v89",
   "step": 105000,
   "ssim": 0.844418,
@@ -3047,7 +3047,7 @@
  },
  {
   "series": "v10a_skel_cond_pretrain",
-  "run": "5script/results/v10a_skel_cond_pretrain/20260906-054549-v10a-skel-cond-pretrain",
+  "run": "assets/results/v10a_skel_cond_pretrain/20260906-054549-v10a-skel-cond-pretrain",
   "source": "eval_auto_v89",
   "step": 110000,
   "ssim": 0.84583,
@@ -3060,7 +3060,7 @@
  },
  {
   "series": "v10a_skel_cond_pretrain",
-  "run": "5script/results/v10a_skel_cond_pretrain/20260906-054549-v10a-skel-cond-pretrain",
+  "run": "assets/results/v10a_skel_cond_pretrain/20260906-054549-v10a-skel-cond-pretrain",
   "source": "eval_auto_v89",
   "step": 112500,
   "ssim": 0.846029,
@@ -3073,7 +3073,7 @@
  },
  {
   "series": "v10a_skel_cond_pretrain",
-  "run": "5script/results/v10a_skel_cond_pretrain/20260906-054549-v10a-skel-cond-pretrain",
+  "run": "assets/results/v10a_skel_cond_pretrain/20260906-054549-v10a-skel-cond-pretrain",
   "source": "eval_auto_v89",
   "step": 115000,
   "ssim": 0.846219,
@@ -3086,7 +3086,7 @@
  },
  {
   "series": "v10a_skel_cond_pretrain",
-  "run": "5script/results/v10a_skel_cond_pretrain/20260906-054549-v10a-skel-cond-pretrain",
+  "run": "assets/results/v10a_skel_cond_pretrain/20260906-054549-v10a-skel-cond-pretrain",
   "source": "eval_auto_v89",
   "step": 117500,
   "ssim": 0.846264,
@@ -3099,7 +3099,7 @@
  },
  {
   "series": "v10a_skel_cond_pretrain",
-  "run": "5script/results/v10a_skel_cond_pretrain/20260906-054549-v10a-skel-cond-pretrain",
+  "run": "assets/results/v10a_skel_cond_pretrain/20260906-054549-v10a-skel-cond-pretrain",
   "source": "eval_auto_v89",
   "step": 120000,
   "ssim": 0.846611,
@@ -3112,7 +3112,7 @@
  },
  {
   "series": "v10a_skel_cond_pretrain",
-  "run": "5script/results/v10a_skel_cond_pretrain/20260906-054549-v10a-skel-cond-pretrain",
+  "run": "assets/results/v10a_skel_cond_pretrain/20260906-054549-v10a-skel-cond-pretrain",
   "source": "eval_auto_v89",
   "step": 122500,
   "ssim": 0.847265,
@@ -3125,7 +3125,7 @@
  },
  {
   "series": "v10a_skel_cond_pretrain",
-  "run": "5script/results/v10a_skel_cond_pretrain/20260906-054549-v10a-skel-cond-pretrain",
+  "run": "assets/results/v10a_skel_cond_pretrain/20260906-054549-v10a-skel-cond-pretrain",
   "source": "eval_auto_v89",
   "step": 125000,
   "ssim": 0.847527,
@@ -3138,7 +3138,7 @@
  },
  {
   "series": "v10a_skel_cond_pretrain",
-  "run": "5script/results/v10a_skel_cond_pretrain/20260906-054549-v10a-skel-cond-pretrain",
+  "run": "assets/results/v10a_skel_cond_pretrain/20260906-054549-v10a-skel-cond-pretrain",
   "source": "eval_auto_v89",
   "step": 127500,
   "ssim": 0.847613,
@@ -3151,7 +3151,7 @@
  },
  {
   "series": "v10a_skel_cond_pretrain",
-  "run": "5script/results/v10a_skel_cond_pretrain/20260906-054549-v10a-skel-cond-pretrain",
+  "run": "assets/results/v10a_skel_cond_pretrain/20260906-054549-v10a-skel-cond-pretrain",
   "source": "eval_auto_v89",
   "step": 130000,
   "ssim": 0.846921,
@@ -3164,7 +3164,7 @@
  },
  {
   "series": "v10a_skel_cond_pretrain",
-  "run": "5script/results/v10a_skel_cond_pretrain/20260906-054549-v10a-skel-cond-pretrain",
+  "run": "assets/results/v10a_skel_cond_pretrain/20260906-054549-v10a-skel-cond-pretrain",
   "source": "eval_auto_v89",
   "step": 132500,
   "ssim": 0.847154,
@@ -3177,7 +3177,7 @@
  },
  {
   "series": "v10a_skel_cond_pretrain",
-  "run": "5script/results/v10a_skel_cond_pretrain/20260906-054549-v10a-skel-cond-pretrain",
+  "run": "assets/results/v10a_skel_cond_pretrain/20260906-054549-v10a-skel-cond-pretrain",
   "source": "eval_auto_v89",
   "step": 135000,
   "ssim": 0.847608,

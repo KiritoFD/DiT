@@ -6,9 +6,9 @@ aug_renders_v2.py — 安全墨迹增强 (骨架 g 条件不动, 不做宽度双
   _a: 墨密度温和扰动 (×0.8-1.25, 风格不变 — 同一人换墨浓淡)
   _b: 去噪 + 选择性加粗 (底噪钳制; 仅当笔画过细/易断时 +1px 补粗, 治断笔, 不动粗风格)
 变体 _c (shift/rotate ±4px/±1.5°) 需与骨架 g 联动, 记录变换参数, encode 阶段同步套用到骨架.
-输出: 5script/aug_renders_fame_v2/<id>_a.png / _b.png
-      5script/aug_transforms_v2.json (仅 _c 的变换参数)
-      5script/train_fame3_aug_v2.csv
+输出: assets/aug_renders_fame_v2/<id>_a.png / _b.png
+      assets/aug_transforms_v2.json (仅 _c 的变换参数)
+      assets/train_fame3_aug_v2.csv
 """
 import csv
 import json
@@ -21,10 +21,10 @@ import numpy as np
 from PIL import Image, ImageFilter
 
 ROOT = "/root/Workspace/xy/DiT"
-SRC_CSV = f"{ROOT}/5script/train_fame3_clean_v8.csv"
-OUT_DIR = f"{ROOT}/5script/aug_renders_fame_v2"
-OUT_CSV = f"{ROOT}/5script/train_fame3_aug_v2.csv"
-OUT_TF = f"{ROOT}/5script/aug_transforms_v2.json"
+SRC_CSV = f"{ROOT}/assets/train_fame3_clean_v8.csv"
+OUT_DIR = f"{ROOT}/assets/aug_renders_fame_v2"
+OUT_CSV = f"{ROOT}/assets/train_fame3_aug_v2.csv"
+OUT_TF = f"{ROOT}/assets/aug_transforms_v2.json"
 sys.stdout.reconfigure(encoding="utf-8")
 
 os.makedirs(OUT_DIR, exist_ok=True)
@@ -137,7 +137,7 @@ if __name__ == "__main__":
             base = os.path.splitext(os.path.basename(r["image_path"]))[0]
             for kind in ("a", "b", "c"):
                 r2 = dict(r)
-                r2["image_path"] = f"5script/aug_renders_fame_v2/{base}_{kind}.png"
+                r2["image_path"] = f"assets/aug_renders_fame_v2/{base}_{kind}.png"
                 r2["aug"] = f"{kind}{out[kind] and ':' + out[kind]}"
                 w.writerow(r2)
         for i, r in enumerate(rows):

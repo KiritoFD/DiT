@@ -99,8 +99,8 @@ s28 已开启（`use_ot=true`）。代价 O(B³) scipy + 一次 GPU→CPU 同步
 
 清洗管线（用户执行）产出：
 - `final_imgs_256_clean/`：1457 张修复图（denoise 1030 / crop 357 / invert 70 / big_glyph 327）
-- `5script/train_fame_clean.csv`：51321 行（丢弃 1 张垃圾图）
-- `5script/eval_fame_strict_clean.csv`：500 行（27 张 clean）
+- `assets/train_fame_clean.csv`：51321 行（丢弃 1 张垃圾图）
+- `assets/eval_fame_strict_clean.csv`：500 行（27 张 clean）
 
 **latent 局部替换**（不全部重 encode）：
 - 只 encode 1430 张 clean 修复图（29s），按 img_id 替换进 20 个旧 shards

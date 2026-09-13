@@ -5,7 +5,7 @@ set -u
 cd /root/Workspace/xy/DiT || exit 1
 export PYTHONPATH=/root/Workspace/xy/DiT
 PY=/opt/conda/envs/cu121/bin/python
-RES=5script/results/skel_follow_gpu
+RES=assets/results/skel_follow_gpu
 
 run() { # model ckpt tag
   local m=$1 c=$2 t=$3

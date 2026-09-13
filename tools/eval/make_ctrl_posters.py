@@ -49,14 +49,14 @@ def main():
     dev = torch.device("cuda")
     main_model = load_main_model(
         "DiT-2Cond-S/2",
-        "5script/results/s21_fame_flow_v2/20260829-232329-s21-fame-flow-v2/checkpoints/0030000.pt",
+        "assets/results/s21_fame_flow_v2/20260829-232329-s21-fame-flow-v2/checkpoints/0030000.pt",
         device=dev, num_calligraphers=1013, num_characters=35130,
         condition_fusion="factorized_add", callig_embed_dim=128,
         char_embed_dim=384, char_proj_mode="ln_only", freeze_char_table=True)
     main_model.eval()
     ctrl = ControlNetDiT(main_model, cond_in_channels=4, train_ctrl_only=True).to(dev)
     ck = torch.load(
-        "5script/results/s20_ctrl_skel_flow_v2/20260829-161522-s20-ctrl-skel-flow-v2/checkpoints/0050000.pt",
+        "assets/results/s20_ctrl_skel_flow_v2/20260829-161522-s20-ctrl-skel-flow-v2/checkpoints/0050000.pt",
         map_location="cpu", weights_only=False)
     sd = {k: v for k, v in (ck.get("ema") or ck.get("ctrl")).items()
           if not k.startswith("main.")}
@@ -66,10 +66,10 @@ def main():
     print(f"injections loaded: {n_inj}")
     vae = load_eval_vae(dev, "pretrained_models/sd-vae-ft-ema")
     diffusion = build_diffusion(STEPS, "flow")
-    cache = make_eval_cache("5script/eval_fame_strict.csv", "final_imgs_256",
+    cache = make_eval_cache("assets/eval_fame_strict.csv", "final_imgs_256",
                             None, 256, 100, 8, 4, 0.18215,
                             skel_latent_shards_dir="final_skel_latents_fame")
-    rows = list(csv.DictReader(open("5script/eval_fame_strict.csv",
+    rows = list(csv.DictReader(open("assets/eval_fame_strict.csv",
                                     encoding="utf-8")))[:cache["n"]]
     picks = pick_indices(rows)
     print("picks:", [(rows[i]["script"], rows[i]["character"]) for i in picks])

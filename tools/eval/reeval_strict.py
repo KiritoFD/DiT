@@ -14,8 +14,8 @@ import subprocess
 import sys
 
 D = "/root/Workspace/xy/DiT"
-R = os.path.join(D, "5script/results")
-CSV = "5script/eval_fame3_strict_clean_v9.csv"
+R = os.path.join(D, "assets/results")
+CSV = "assets/eval_fame3_strict_clean_v9.csv"
 TMP = "/tmp/reeval_tmp"
 
 runs = sorted([os.path.basename(p.rstrip("/")) for p in glob.glob(os.path.join(R, "*")) if os.path.isdir(p)])

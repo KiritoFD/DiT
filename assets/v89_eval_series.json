@@ -1,7 +1,7 @@
 [
  {
   "series": "v8b_ctrl_1px",
-  "run_dir": "5script/results/v8_3stage/v8b/20260902-234912-v8b-s31-ctrl",
+  "run_dir": "assets/results/v8_3stage/v8b/20260902-234912-v8b-s31-ctrl",
   "steps": {
    "10000": {
     "ssim": 0.745785,
@@ -151,7 +151,7 @@
  },
  {
   "series": "v9a_repa_pretrain",
-  "run_dir": "5script/results/v9a_repa_pretrain/20260905-004106-v9a-repa-pretrain",
+  "run_dir": "assets/results/v9a_repa_pretrain/20260905-004106-v9a-repa-pretrain",
   "steps": {
    "120000": {
     "ssim": 0.51895,
@@ -542,7 +542,7 @@
  },
  {
   "series": "v9b_ctrl_repa_strong",
-  "run_dir": "5script/results/v9b_ctrl_strong/20260905-145643-v9b-ctrl-repa-strong",
+  "run_dir": "assets/results/v9b_ctrl_strong/20260905-145643-v9b-ctrl-repa-strong",
   "steps": {
    "15000": {
     "ssim": 0.748242,
@@ -728,12 +728,12 @@
  },
  {
   "series": "v9c_skel_joint",
-  "run_dir": "5script/results/v9c_skel_joint/20260905-221454-v9c-skel-joint",
+  "run_dir": "assets/results/v9c_skel_joint/20260905-221454-v9c-skel-joint",
   "steps": {}
  },
  {
   "series": "v10a_skel_cond_pretrain",
-  "run_dir": "5script/results/v10a_skel_cond_pretrain/20260906-054549-v10a-skel-cond-pretrain",
+  "run_dir": "assets/results/v10a_skel_cond_pretrain/20260906-054549-v10a-skel-cond-pretrain",
   "steps": {
    "40000": {
     "ssim": 0.805231,
@@ -1019,7 +1019,7 @@
  },
  {
   "series": "v10b_skel_only_pretrain",
-  "run_dir": "5script/results/v10b_skel_only_pretrain/20260906-175850-v10b-skel-only-pretrain",
+  "run_dir": "assets/results/v10b_skel_only_pretrain/20260906-175850-v10b-skel-only-pretrain",
   "steps": {}
  }
 ]

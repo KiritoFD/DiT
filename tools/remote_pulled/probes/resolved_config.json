@@ -1,7 +1,7 @@
 {
-  "data_csv": "5script/train.csv",
+  "data_csv": "assets/train.csv",
   "data_dir": null,
-  "results_dir": "5script/results/probes",
+  "results_dir": "assets/results/probes",
   "experiment_name": "probe-v3a-batch-scale",
   "pretrained": null,
   "reset_cond_head": false,

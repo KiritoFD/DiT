@@ -1,11 +1,11 @@
-[[34m2026-08-16 23:09:31[0m] Experiment directory created at 5script/results/s5_2factor_top30/20260816-230931-s5-2factor-top30-bigbatch
+[[34m2026-08-16 23:09:31[0m] Experiment directory created at assets/results/s5_2factor_top30/20260816-230931-s5-2factor-top30-bigbatch
 [[34m2026-08-16 23:09:31[0m] Building 2-Cond model: DiT-2Cond-S/2 (callig=1011, glyph/char=35130, fusion=factorized_add, dims=128/256, dropout=all:0.05, one:0.25, skel_head=False, glyph_cond=False, glyph_scale_init=0.4)
 [[34m2026-08-16 23:09:31[0m] [cond-head] reset adaLN/final_layer to std=0.02 (retain task-agnostic transformer engine, drop ImageNet class-condition coupling).
 [[34m2026-08-16 23:09:31[0m] Trainable Parameters: 41,752,737
 [[34m2026-08-16 23:09:31[0m] Frozen Parameters: 98,304 (trainable ratio: 99.77%)
 [[34m2026-08-16 23:09:32[0m] [EMA] enabled with decay=0.9999
 [[34m2026-08-16 23:09:32[0m] Loading VAE from local path: pretrained_models/sd-vae-ft-ema
-[[34m2026-08-16 23:09:32[0m] Preparing auto-eval cache (csv=5script/eval100_top30.csv, n=100) ...
+[[34m2026-08-16 23:09:32[0m] Preparing auto-eval cache (csv=assets/eval100_top30.csv, n=100) ...
 [[34m2026-08-16 23:09:33[0m] Auto-eval cache ready (free-sampling mode).
 [[34m2026-08-16 23:09:33[0m] DiT Parameters: 41,851,041
 [[34m2026-08-16 23:09:38[0m] Using latent-cached dataset (skip on-the-fly VAE encode). preload=ON
@@ -67,7 +67,7 @@
 [[34m2026-08-16 23:13:44[0m] (step=0000960) Total: 0.1282 | Diff: 0.1282 | Canny: raw 0.0000 x 0.00 = 0.0000 | Skel: raw 0.0000 x 0.00 = 0.0000 | LatC: raw 0.0000 x 0.000 = 0.0000 | LatS: raw 0.0000 x 0.000 = 0.0000 | REPA: raw 0.0000 x 0.00 = 0.0000 | SkelH: raw 0.0000 | StdMid: raw 0.0000 | X0Lat: raw 5.4506 | LR: 1.92e-04 | EMA: 0.990712 | Steps/Sec: 4.10 | Mem: 1.12G/16.75G
 [[34m2026-08-16 23:13:48[0m] (step=0000980) Total: 0.1193 | Diff: 0.1193 | Canny: raw 0.0000 x 0.00 = 0.0000 | Skel: raw 0.0000 x 0.00 = 0.0000 | LatC: raw 0.0000 x 0.000 = 0.0000 | LatS: raw 0.0000 x 0.000 = 0.0000 | REPA: raw 0.0000 x 0.00 = 0.0000 | SkelH: raw 0.0000 | StdMid: raw 0.0000 | X0Lat: raw 5.5162 | LR: 1.96e-04 | EMA: 0.990900 | Steps/Sec: 4.10 | Mem: 1.12G/16.75G
 [[34m2026-08-16 23:13:53[0m] (step=0001000) Total: 0.1295 | Diff: 0.1295 | Canny: raw 0.0000 x 0.00 = 0.0000 | Skel: raw 0.0000 x 0.00 = 0.0000 | LatC: raw 0.0000 x 0.000 = 0.0000 | LatS: raw 0.0000 x 0.000 = 0.0000 | REPA: raw 0.0000 x 0.00 = 0.0000 | SkelH: raw 0.0000 | StdMid: raw 0.0000 | X0Lat: raw 4.6458 | LR: 2.00e-04 | EMA: 0.991080 | Steps/Sec: 4.10 | Mem: 1.12G/16.75G
-[[34m2026-08-16 23:13:55[0m] Saved checkpoint to 5script/results/s5_2factor_top30/20260816-230931-s5-2factor-top30-bigbatch/checkpoints/0001000.pt
+[[34m2026-08-16 23:13:55[0m] Saved checkpoint to assets/results/s5_2factor_top30/20260816-230931-s5-2factor-top30-bigbatch/checkpoints/0001000.pt
 [[34m2026-08-16 23:14:04[0m] [auto-eval] step 1000: free-sampling MSE=2.46571 SSIM=0.1198
 [[34m2026-08-16 23:14:09[0m] (step=0001020) Total: 0.1129 | Diff: 0.1129 | Canny: raw 0.0000 x 0.00 = 0.0000 | Skel: raw 0.0000 x 0.00 = 0.0000 | LatC: raw 0.0000 x 0.000 = 0.0000 | LatS: raw 0.0000 x 0.000 = 0.0000 | REPA: raw 0.0000 x 0.00 = 0.0000 | SkelH: raw 0.0000 | StdMid: raw 0.0000 | X0Lat: raw 4.6457 | LR: 2.00e-04 | EMA: 0.991254 | Steps/Sec: 1.24 | Mem: 1.12G/16.75G
 [[34m2026-08-16 23:14:14[0m] (step=0001040) Total: 0.1178 | Diff: 0.1178 | Canny: raw 0.0000 x 0.00 = 0.0000 | Skel: raw 0.0000 x 0.00 = 0.0000 | LatC: raw 0.0000 x 0.000 = 0.0000 | LatS: raw 0.0000 x 0.000 = 0.0000 | REPA: raw 0.0000 x 0.00 = 0.0000 | SkelH: raw 0.0000 | StdMid: raw 0.0000 | X0Lat: raw 4.7522 | LR: 2.00e-04 | EMA: 0.991420 | Steps/Sec: 4.12 | Mem: 1.12G/16.75G
@@ -120,4 +120,4 @@
 [[34m2026-08-16 23:17:59[0m] (step=0001960) Total: 0.1126 | Diff: 0.1126 | Canny: raw 0.0000 x 0.00 = 0.0000 | Skel: raw 0.0000 x 0.00 = 0.0000 | LatC: raw 0.0000 x 0.000 = 0.0000 | LatS: raw 0.0000 x 0.000 = 0.0000 | REPA: raw 0.0000 x 0.00 = 0.0000 | SkelH: raw 0.0000 | StdMid: raw 0.0000 | X0Lat: raw 2.0723 | LR: 2.00e-04 | EMA: 0.995429 | Steps/Sec: 4.10 | Mem: 1.12G/16.75G
 [[34m2026-08-16 23:18:04[0m] (step=0001980) Total: 0.1058 | Diff: 0.1058 | Canny: raw 0.0000 x 0.00 = 0.0000 | Skel: raw 0.0000 x 0.00 = 0.0000 | LatC: raw 0.0000 x 0.000 = 0.0000 | LatS: raw 0.0000 x 0.000 = 0.0000 | REPA: raw 0.0000 x 0.00 = 0.0000 | SkelH: raw 0.0000 | StdMid: raw 0.0000 | X0Lat: raw 2.0286 | LR: 2.00e-04 | EMA: 0.995475 | Steps/Sec: 4.10 | Mem: 1.12G/16.75G
 [[34m2026-08-16 23:18:09[0m] (step=0002000) Total: 0.1147 | Diff: 0.1147 | Canny: raw 0.0000 x 0.00 = 0.0000 | Skel: raw 0.0000 x 0.00 = 0.0000 | LatC: raw 0.0000 x 0.000 = 0.0000 | LatS: raw 0.0000 x 0.000 = 0.0000 | REPA: raw 0.0000 x 0.00 = 0.0000 | SkelH: raw 0.0000 | StdMid: raw 0.0000 | X0Lat: raw 1.8614 | LR: 2.00e-04 | EMA: 0.995520 | Steps/Sec: 4.11 | Mem: 1.12G/16.75G
-[[34m2026-08-16 23:18:11[0m] Saved checkpoint to 5script/results/s5_2factor_top30/20260816-230931-s5-2factor-top30-bigbatch/checkpoints/0002000.pt
+[[34m2026-08-16 23:18:11[0m] Saved checkpoint to assets/results/s5_2factor_top30/20260816-230931-s5-2factor-top30-bigbatch/checkpoints/0002000.pt

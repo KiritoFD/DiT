@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 import glob, json, os
 
-BASE = "/root/Workspace/xy/DiT/5script/results/"
+BASE = "/root/Workspace/xy/DiT/assets/results/"
 EXPS = ["s6_top6_diffonly", "s6_top6_struct_fp32", "s6_top6_struct_fp32_full", "s6_top6_diff_then_struct"]
 for e in EXPS:
     jsons = sorted(glob.glob(os.path.join(BASE, e, "*/checkpoints/eval_auto_*.json")))

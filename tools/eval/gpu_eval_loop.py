@@ -8,7 +8,7 @@
   - --device cuda|cpu 开关
 
 用法:
-  python tools/eval/gpu_eval_loop.py --results-dir 5script/results/<exp> \
+  python tools/eval/gpu_eval_loop.py --results-dir assets/results/<exp> \
       [--device cuda] [--strict-every 10000] [--poll 30] [--pause-train]
 """
 import argparse
@@ -88,8 +88,8 @@ def main():
     ap.add_argument("--device", default="cuda", choices=["cuda", "cpu"])
     ap.add_argument("--poll", type=int, default=30)
     ap.add_argument("--strict-every", type=int, default=10000)
-    ap.add_argument("--seen-csv", default="5script/eval_seen_v10.csv")
-    ap.add_argument("--strict-csv", default="5script/eval_fame3_strict_clean_v9.csv")
+    ap.add_argument("--seen-csv", default="assets/eval_seen_v10.csv")
+    ap.add_argument("--strict-csv", default="assets/eval_fame3_strict_clean_v9.csv")
     ap.add_argument("--run", action="store_true", help="跑一次遍历后退出 (debug)")
     ap.add_argument("--pause-train", action="store_true", default=True,
                     help="评测期间 SIGSTOP 训练进程, 结束 SIGCONT (默认开)")

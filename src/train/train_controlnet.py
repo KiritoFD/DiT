@@ -105,7 +105,7 @@ def parse_args():
                     help="warm-start: 已训练主模型 ckpt (train_ctrl_only=true 时用)")
     ap.add_argument("--train-ctrl-only", type=_str_to_bool, default=True,
                     help="True=warm-start(冻结主模型), False=from-scratch(主模型也训练)")
-    ap.add_argument("--csv", default="5script/train_top6.csv")
+    ap.add_argument("--csv", default="assets/train_top6.csv")
     ap.add_argument("--latent-shards-dir", default="final_latents")
     ap.add_argument("--skel-root", default="final_skeleton_1px",
                     help="(兼容/显示用) 1px skel PNG 根目录; 训练条件优先用 skel_latent_shards_dir")
@@ -115,7 +115,7 @@ def parse_args():
     ap.add_argument("--blacklist-csv", default="",
                     help="GT 噪点审计 blacklist (img_id,reasons), 命中的样本在训练中被过滤. "
                          "空则不过滤")
-    ap.add_argument("--results-dir", default="5script/results/ctrl_skel")
+    ap.add_argument("--results-dir", default="assets/results/ctrl_skel")
     ap.add_argument("--experiment-name", default="ctrl-skel-1px")
     ap.add_argument("--model", default="DiT-2Cond-S/2")
     ap.add_argument("--num-calligraphers", type=int, default=1011)

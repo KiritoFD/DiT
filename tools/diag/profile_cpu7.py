@@ -15,11 +15,11 @@ COMMON = dict(device=torch.device("cpu"), num_calligraphers=1013,
               num_characters=35130, condition_fusion="factorized_add",
               callig_embed_dim=128, char_embed_dim=384, char_proj_mode="mlp",
               freeze_char_table=True, learn_sigma=False, **ARCH)
-main = load_main_model(ckpt_path="5script/results/v8_3stage/A_main_final.pt", **COMMON)
+main = load_main_model(ckpt_path="assets/results/v8_3stage/A_main_final.pt", **COMMON)
 main.eval()
 c = ControlNetDiT(main, cond_in_channels=4, train_ctrl_only=True,
                   injection="modulate", null_cond="gaussian")
-ckd = torch.load("5script/results/v8_3stage/v8b/20260902-234912-v8b-s31-ctrl/checkpoints/0035000.pt",
+ckd = torch.load("assets/results/v8_3stage/v8b/20260902-234912-v8b-s31-ctrl/checkpoints/0035000.pt",
                  map_location="cpu", weights_only=False)
 sd = {k: v for k, v in (ckd.get("ema") or ckd.get("ctrl")).items()
       if not k.startswith("main.") and not k.startswith("_orig_mod.main.")}

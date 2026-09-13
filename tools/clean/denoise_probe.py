@@ -86,7 +86,7 @@ def letterbox(clean_u8, orig_size, out=256):
 
 def main():
     # fame 原图 → 本地 MCCD 路径
-    map_rows = list(csv.DictReader(open("5script/mccd_image_map.csv", encoding="utf-8")))
+    map_rows = list(csv.DictReader(open("assets/mccd_image_map.csv", encoding="utf-8")))
     by_id = {}
     for r in map_rows:
         base = os.path.basename(r["filepath"])
@@ -95,7 +95,7 @@ def main():
         mm = re.search(r"-(\d+)\.png$", base)
         if mm:
             by_id[int(mm.group(1))] = r["filepath"]
-    tr = list(csv.DictReader(open("5script/train_fame.csv", encoding="utf-8")))
+    tr = list(csv.DictReader(open("assets/train_fame.csv", encoding="utf-8")))
     worst = json.load(open("_diag/probe/worst_ids.json", encoding="utf-8")) \
         if os.path.exists("_diag/probe/worst_ids.json") else []
     # 探测集: worst(来自 fame 噪声扫描) + 随机

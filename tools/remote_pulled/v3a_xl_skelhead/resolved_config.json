@@ -1,7 +1,7 @@
 {
-  "data_csv": "5script/train.csv",
+  "data_csv": "assets/train.csv",
   "data_dir": null,
-  "results_dir": "5script/results/v3a_xl_skelhead",
+  "results_dir": "assets/results/v3a_xl_skelhead",
   "experiment_name": "v3a-XL-skelhead-guide",
   "pretrained": "pretrained_models/DiT-XL-2-256x256.pt",
   "reset_cond_head": true,
@@ -51,7 +51,7 @@
   "preload": true,
   "preload_workers": 24,
   "auto_eval": true,
-  "eval_csv": "5script/eval_strata/clean_unseen_triple_100.csv",
+  "eval_csv": "assets/eval_strata/clean_unseen_triple_100.csv",
   "eval_n": 100,
   "eval_steps": 50,
   "eval_cfg": 4.0,
@@ -73,5 +73,5 @@
   "img_root": "final_imgs_256",
   "canny_root": "final_canny",
   "skel_root": "final_skeleton",
-  "config": "exp_s_5script_v3a_XL_skelhead.json"
+  "config": "exp_s_assets_v3a_XL_skelhead.json"
 }

@@ -4,7 +4,7 @@ echo "=== docs/system 编号 44+ ==="
 ls docs/system/ | grep -E "^4[4-9]|^5[0-9]" | sort
 echo
 echo "=== stdskel_gap.json ==="
-cat 5script/results/stdskel_gap.json 2>/dev/null | head -50
+cat assets/results/stdskel_gap.json 2>/dev/null | head -50
 echo
 echo "=== Sp 模型定义 ==="
 grep -n "DiT-2Cond-Sp\|def DiT_2Cond_Sp" src/model/dit.py | head -5
@@ -13,7 +13,7 @@ echo "=== 各实验 eval 曲线 (ssim, 每10点抽1) ==="
 /opt/conda/bin/python -c "
 import json, glob
 for d in ['v10b_stdskel_fame3','v10b_stdskel_fame3_c41x','v10b_stdskel_fame3_sp2','v10b_stdskel_fame3_deep','v10b_stdskel_fame3_d01']:
-    files = sorted(glob.glob(f'5script/results/{d}/*/checkpoints/eval_auto_*.json'),
+    files = sorted(glob.glob(f'assets/results/{d}/*/checkpoints/eval_auto_*.json'),
                    key=lambda p: int(p.split('eval_auto_')[1].split('.')[0]))
     if not files: print(f'{d}: no eval'); continue
     pts = []
@@ -31,7 +31,7 @@ echo "=== 遵循度相关 json (skel_iou / follow) ==="
 /opt/conda/bin/python -c "
 import json, glob
 for d in ['v10b_stdskel_fame3','v10b_stdskel_fame3_c41x']:
-    files = sorted(glob.glob(f'5script/results/{d}/*/checkpoints/eval_auto_*.json'))
+    files = sorted(glob.glob(f'assets/results/{d}/*/checkpoints/eval_auto_*.json'))
     if not files: continue
     f = files[-1]
     j = json.load(open(f))

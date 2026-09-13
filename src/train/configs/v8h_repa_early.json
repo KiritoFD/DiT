@@ -1,14 +1,14 @@
 {
   "_comment": "v8h: REPA 早期挂载 (B 段内全程联合)。从 A_main_final 起, skel-ctrl 训练同时 w_repa_early 从 0 线性爬升到 0.2 (warmup 2000), 主模型从开始就受 REPA 牵引。对照 v8b(无早挂, 0.7641@35k) + v8c(后挂, 0.7674)。回答: 早期联合是否比后置 REPA 更优/更稳。数据 v8 资产, eval cfg 0.7。",
   "experiment_name": "v8h-repa-early",
-  "results_dir": "5script/results/v8_3stage/v8h",
+  "results_dir": "assets/results/v8_3stage/v8h",
 
   "model": "DiT-2Cond-S/2",
   "train_ctrl_only": true,
   "compile": true,
   "compile_mode": "default",
 
-  "csv": "5script/train_fame_clean_v8.csv",
+  "csv": "assets/train_fame_clean_v8.csv",
   "latent_shards_dir": "final_latents_fame_v8",
   "img_root": "final_imgs_fame_v8",
   "skel_root": "final_skel1_fame_v8",
@@ -74,7 +74,7 @@
   "early_stop_min_delta": 0.002,
   "early_stop_min_steps": 10000,
 
-  "gpu_eval_csv": "5script/eval_fame_strict_clean_v8.csv",
+  "gpu_eval_csv": "assets/eval_fame_strict_clean_v8.csv",
   "gpu_eval_every": 2500,
   "gpu_eval_n": 100,
   "gpu_eval_steps": 50,

@@ -5,7 +5,7 @@
 
 ## 归档摘要
 legacy_latents 6.7G / legacy_images 18G / legacy_skeletons 6.9G / legacy_plans 0.16G /
-legacy_csv 87M / std_legacy 269M / mid_data 3.8G / results_legacy 40G（5script 之前的结果）。
+legacy_csv 87M / std_legacy 269M / mid_data 3.8G / results_legacy 40G（assets 之前的结果）。
 
 ## 根目录脚本整理
 ~470 散文件归入 `scripts/{scratch,legacy_py,legacy_sh,exp_configs,misc}` 与 `logs/`；
@@ -16,9 +16,9 @@ legacy_csv 87M / std_legacy 269M / mid_data 3.8G / results_legacy 40G（5script 
 （本次凭 data_path.json 清单抓回 3 个误归档文件）。
 
 ## results/ 整理（同日追加）
-5script/results 532G→195G：66 个旧代实验 run（s2-s31/v3x/ctrl_skel/s21 等）移入
+assets/results 532G→195G：66 个旧代实验 run（s2-s31/v3x/ctrl_skel/s21 等）移入
 `data/archive/results_legacy/`；保留 v8_3stage(123G)/v9 系/v10a/v10b。
-5script 大的根源 = 各代 ckpt + eval PNG 累积；下一个可整理杠杆是 v8_3stage 内部
+assets 大的根源 = 各代 ckpt + eval PNG 累积；下一个可整理杠杆是 v8_3stage 内部
 按 eval 裁剪 ckpt（123G，涉及引用检查，未动）。
 
 ## v10b 训练性能（39.5k 步时点）

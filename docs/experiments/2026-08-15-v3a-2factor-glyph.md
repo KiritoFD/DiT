@@ -25,11 +25,11 @@
 
 ## 数据
 
-- `5script/train.csv`（147,841 行）新增 `glyph_id = script_id×7026 + character_id` 列；
+- `assets/train.csv`（147,841 行）新增 `glyph_id = script_id×7026 + character_id` 列；
 - eval 集（`clean_unseen_triple_100.csv` 等）同样加列；dataset 的 `y_char` 读 `glyph_id`（无列时回退 `character_id`）；
 - factor-balanced sampler 的字符权重按 glyph 计数。
 
-## 训练配置（exp_s_5script_v3a_glyph_cs.json，第二轮：结构损失回归）
+## 训练配置（exp_s_assets_v3a_glyph_cs.json，第二轮：结构损失回归）
 
 用户决策：**不要结构损失子集采样；batch 降到 8，对每一张都算 pixel canny+skel loss，两个权重拉到相当高**。
 
@@ -56,7 +56,7 @@
 - 2026-08-15 19:35：V3-A 无结构损失版拉起（PID 333717），step 1000 MSE=2.0889/SSIM=0.2027，step 2000 MSE=1.6990/SSIM=0.2708。
 - 2026-08-15 19:51：用户决策：结构损失回归，batch 8 全量 canny+skel，权重 1.0/1.0。停掉无结构版。
 - 2026-08-15 19:56：b8 全量结构损失 probe 通过（15.69G / 1.68 steps/s）。
-- 2026-08-15 20:02：正式拉起 exp_s_5script_v3a_glyph_cs.json（PID 336762），loss 快速下降中。
+- 2026-08-15 20:02：正式拉起 exp_s_assets_v3a_glyph_cs.json（PID 336762），loss 快速下降中。
 
 ## 结果
 

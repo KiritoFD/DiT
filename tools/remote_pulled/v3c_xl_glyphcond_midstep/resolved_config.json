@@ -1,7 +1,7 @@
 {
   "data_csv": "kailishu_train.csv",
   "data_dir": null,
-  "results_dir": "5script/results/v3c_xl_glyphcond_midstep",
+  "results_dir": "assets/results/v3c_xl_glyphcond_midstep",
   "experiment_name": "v3c-XL-glyphcond-midstep-kailishu",
   "pretrained": "pretrained_models/DiT-XL-2-256x256.pt",
   "reset_cond_head": true,

@@ -3,9 +3,9 @@ import csv, json, os
 from collections import defaultdict, Counter
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-TRAIN_CSV = os.path.join(HERE, "..", "5script", "train_top30.csv")
-EVAL_CSV = os.path.join(HERE, "..", "5script", "eval100_top30.csv")
-CALLIGS = os.path.join(HERE, "..", "5script", "top30_calligs.json")
+TRAIN_CSV = os.path.join(HERE, "..", "assets", "train_top30.csv")
+EVAL_CSV = os.path.join(HERE, "..", "assets", "eval100_top30.csv")
+CALLIGS = os.path.join(HERE, "..", "assets", "top30_calligs.json")
 
 SCRIPT_NAMES = {0: "楷", 1: "篆", 2: "草", 3: "行", 4: "隶"}
 

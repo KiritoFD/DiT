@@ -43,7 +43,7 @@ done
 
 daemon_pids() { ps ax -o pid=,args= | grep 'cpu_eval_daemon' | grep -- "--watch-root $ROOT" | grep -v grep | awk '{print $1}'; }
 other_daemons() { ps ax -o pid=,args= | grep 'cpu_eval_daemon' | grep -v -- "--watch-root $ROOT" | grep -v grep; }
-# worker 的 --ckpt 可能是相对路径 (5script/results/<name>/...), 用 results/<name> 匹配
+# worker 的 --ckpt 可能是相对路径 (assets/results/<name>/...), 用 results/<name> 匹配
 worker_pids() { ps ax -o pid=,args= | grep 'cpu_eval_worker' | grep -F "results/$NAME/" | grep -v grep | awk '{print $1}'; }
 
 case "$CMD" in

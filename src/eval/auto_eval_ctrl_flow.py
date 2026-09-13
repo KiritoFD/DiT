@@ -14,8 +14,8 @@ sys.stdout.reconfigure(encoding="utf-8")
 
 SKEL_ROOT = "final_skeleton_d3"
 IMG_ROOT = "final_imgs_256"
-DEFAULT_MAIN_CKPT = "5script/results/s6_top6_diffonly/20260820-191536-s6-top6-diffonly-resume/checkpoints/0195000.pt"
-DEFAULT_EVAL_CSV = "5script/eval100_top6.csv"
+DEFAULT_MAIN_CKPT = "assets/results/s6_top6_diffonly/20260820-191536-s6-top6-diffonly-resume/checkpoints/0195000.pt"
+DEFAULT_EVAL_CSV = "assets/eval100_top6.csv"
 DEFAULT_VAE = "pretrained_models/sd-vae-ft-ema"
 
 
@@ -216,7 +216,7 @@ def build_cache(eval_csv, n=100):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--results-dir", default="5script/results/ctrl_skel")
+    ap.add_argument("--results-dir", default="assets/results/ctrl_skel")
     ap.add_argument("--ckpt-dir", default=None)
     ap.add_argument("--interval", type=int, default=30)
     ap.add_argument("--once", action="store_true")

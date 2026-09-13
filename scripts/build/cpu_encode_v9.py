@@ -53,8 +53,8 @@ def load_changed():
     return sorted(changed)
 
 def build_path_map():
-    rows = list(csv.DictReader(open('5script/train_fame.csv', encoding='utf-8')))
-    rows += list(csv.DictReader(open('5script/eval_fame_strict.csv', encoding='utf-8')))
+    rows = list(csv.DictReader(open('assets/train_fame.csv', encoding='utf-8')))
+    rows += list(csv.DictReader(open('assets/eval_fame_strict.csv', encoding='utf-8')))
     m = {}
     for r in rows:
         iid = int(r['image_path'].split('/')[-1][:-4])

@@ -14,7 +14,7 @@ def log(msg):
     print(f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] {msg}", flush=True)
 
 # 加载 ckpt args
-ckpt_dir = "5script/results/s10_b4_grey_clear/20260824-151758-s10-b4-grey-clear/checkpoints"
+ckpt_dir = "assets/results/s10_b4_grey_clear/20260824-151758-s10-b4-grey-clear/checkpoints"
 first_ckpt = sorted(glob.glob(os.path.join(ckpt_dir, "*.pt.done")))[0].replace(".done", "")
 ckpt = torch.load(first_ckpt, map_location="cpu", weights_only=False)
 args = ckpt["args"]

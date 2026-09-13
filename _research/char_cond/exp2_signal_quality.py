@@ -23,7 +23,7 @@ os.chdir(ROOT)
 
 EMB = "pretrained_models/dino_embeddings/glyph_dino_embeddings_384.npy"
 IDX = "pretrained_models/dino_embeddings/glyph_dino_index.json"
-CSV = "5script/train_fame.csv"
+CSV = "assets/train_fame.csv"
 SCRIPT_NAME = {0: "楷", 1: "行", 2: "草", 3: "篆", 4: "隶"}
 
 SIM_PAIRS = [

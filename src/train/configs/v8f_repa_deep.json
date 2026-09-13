@@ -1,13 +1,13 @@
 {
   "_comment": "v8f: REPA 深度扫描。基于 B_ctrl_best.pt + A_main_final.pt, repa_layers=8,11,15 (vs v8c 8,11), w=0.3, max_steps 20000。回答: 更深层对齐(15 是后半模型)能否提升结构保真。主模型解冻, char 表冻结。eval cfg 0.7。",
   "experiment_name": "v8f-repa-deep",
-  "results_dir": "5script/results/v8_3stage/v8f",
+  "results_dir": "assets/results/v8_3stage/v8f",
 
   "model": "DiT-2Cond-S/2",
   "compile": true,
   "compile_mode": "default",
 
-  "csv": "5script/train_fame_clean_v8.csv",
+  "csv": "assets/train_fame_clean_v8.csv",
   "latent_shards_dir": "final_latents_fame_v8",
   "img_root": "final_imgs_fame_v8",
   "skel_root": "final_skel1_fame_v8",
@@ -72,7 +72,7 @@
   "use_checkpoint": false,
   "seed": 0,
 
-  "gpu_eval_csv": "5script/eval_fame_strict_clean_v8.csv",
+  "gpu_eval_csv": "assets/eval_fame_strict_clean_v8.csv",
   "gpu_eval_every": 2500,
   "gpu_eval_n": 100,
   "gpu_eval_steps": 50,

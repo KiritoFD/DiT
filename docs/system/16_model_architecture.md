@@ -2,7 +2,7 @@
 
 > 本文是对 `src/model/` 的静态梳理 + 实测参数统计，数据来自
 > `_scan_model.py`（CPU 实例化 DiT-2Cond-S/2 逐模块统计）。
-> 配套 CSV：`5script/model_components.csv`、`5script/condition_dims.csv`。
+> 配套 CSV：`assets/model_components.csv`、`assets/condition_dims.csv`。
 
 ## 0. 一句话概括
 

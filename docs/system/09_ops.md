@@ -36,7 +36,7 @@ Host 4090
 ssh 4090 "echo alive"
 ssh 4090 "nvidia-smi --query-gpu=memory.used,memory.total --format=csv"
 ssh 4090 "tail -20 /tmp/s19_midclean_train.log"
-ssh 4090 "ls -lt /root/Workspace/xy/DiT/5script/results/s19_midclean_s_flow/*/checkpoints | head"
+ssh 4090 "ls -lt /root/Workspace/xy/DiT/assets/results/s19_midclean_s_flow/*/checkpoints | head"
 
 # 停训练（单卡）：
 ssh 4090 "pkill -f 'train.py.*s19_midclean'"
@@ -46,7 +46,7 @@ ssh 4090 "cd /root/Workspace/xy/DiT && nohup /opt/conda/bin/python train.py --co
 
 # 起 CPU 指标 daemon（主模型 eval 需要）——⚠️ results_dir 必须传绝对路径
 # （daemon 的 BASE=src/eval，相对路径会解析错、扫不到任何 ckpt 目录）：
-ssh 4090 "cd /root/Workspace/xy/DiT && nohup /opt/conda/bin/python src/eval/eval_metrics_daemon.py /root/Workspace/xy/DiT/5script/results/s19_midclean_s_flow > /tmp/eval_metrics_daemon_s19.log 2>&1 &"
+ssh 4090 "cd /root/Workspace/xy/DiT && nohup /opt/conda/bin/python src/eval/eval_metrics_daemon.py /root/Workspace/xy/DiT/assets/results/s19_midclean_s_flow > /tmp/eval_metrics_daemon_s19.log 2>&1 &"
 
 # 起 CPU 指标 daemon（ControlNet eval 需要）：
 ssh 4090 "cd /root/Workspace/xy/DiT && nohup /opt/conda/bin/python src/eval/eval_ctrl_metrics_daemon.py > /tmp/eval_ctrl_daemon.log 2>&1 &"
@@ -74,7 +74,7 @@ scp -r src 4090:/root/Workspace/xy/DiT/
 ## 5. git 与目录纪律
 
 - 本地 commit 是权威；远程 git 是旧 fork 历史，不直接回推。
-- `.gitignore` 忽略数据目录：`5script/`、`results/`、`final_*`、`pretrained_models/`、`.venv/`、大日志与 png。
+- `.gitignore` 忽略数据目录：`assets/`、`results/`、`final_*`、`pretrained_models/`、`.venv/`、大日志与 png。
 - 提交信息用「feat:/fix:/refactor:」前缀 + 中文说明（历史惯例）。
 - `archive/diag_backup_20260828/` 放一次性诊断脚本（`_*.py`），不参与主流程与 py_compile。
 

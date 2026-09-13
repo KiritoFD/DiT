@@ -10,7 +10,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
 import pull_monitor as pm
 
-S7_CKPT = "/root/Workspace/xy/DiT/5script/results/s7_klf4_top30/20260823-163710-s7-klf4-top30-diffonly/checkpoints"
+S7_CKPT = "/root/Workspace/xy/DiT/assets/results/s7_klf4_top30/20260823-163710-s7-klf4-top30-diffonly/checkpoints"
 
 # s7 专用本地目录, 和 s8 分开
 S7_ES = os.path.join(HERE, "s7_eval_samples")

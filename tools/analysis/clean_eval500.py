@@ -6,7 +6,7 @@ from PIL import Image
 sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 
 BASE = "/root/Workspace/xy/DiT"
-CSV = os.path.join(BASE, "5script", "eval500_clean.csv")
+CSV = os.path.join(BASE, "assets", "eval500_clean.csv")
 THRESH = 0.2
 
 def fix_path(p):

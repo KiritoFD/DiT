@@ -1,10 +1,10 @@
 {
   "_comment": "s25 IDS 组件码本预训练：用 IDS 部件嵌入替代 DINO 字表。核心改动：(1) use_ids_char_embedder=true，字嵌入 = 部件嵌入池化（1571 部件 vs 35130 字，参数降 95.5%）；(2) 零样本泛化：没见过的字查 IDS 组合即得嵌入；(3) 书体解耦：部件是书体无关的，书体差异全归 callig 分支；(4) 草篆覆盖：部件从真迹学，不依赖标准字体。IDS 覆盖率 4763/4765=100%，扁平池化歧义率仅 1.02%（多为异体字）。",
   "experiment_name": "s25-ids-pretrain",
-  "data_csv": "5script/train_fame.csv",
+  "data_csv": "assets/train_fame.csv",
   "latent_shards_dir": "final_latents_fame",
   "img_root": "final_imgs_256",
-  "results_dir": "5script/results/s25_ids_pretrain",
+  "results_dir": "assets/results/s25_ids_pretrain",
 
   "model": "DiT-2Cond-S/2",
   "cond_mode": "2cond",
@@ -14,7 +14,7 @@
 
   "use_ids_char_embedder": true,
   "ids_file": "_sync_work/cjkvi-ids/cjkvi-ids-master/ids.txt",
-  "ids_char_map_csv": "5script/train_fame.csv",
+  "ids_char_map_csv": "assets/train_fame.csv",
 
   "cond_drop_all_prob": 0.10,
   "cond_drop_one_prob": 0.25,
@@ -59,7 +59,7 @@
   "ckpt_keep": 0,
 
   "auto_eval": true,
-  "eval_csv": "5script/eval_fame_strict.csv",
+  "eval_csv": "assets/eval_fame_strict.csv",
   "eval_n": 500,
   "eval_steps": 25,
   "eval_cfg": 0.7,

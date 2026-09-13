@@ -26,7 +26,7 @@ def main():
 
     ap = argparse.ArgumentParser()
     ap.add_argument("--n", type=int, default=10)
-    ap.add_argument("--out", default="5script/results/v10b_handwrite_test")
+    ap.add_argument("--out", default="assets/results/v10b_handwrite_test")
     ap.add_argument("--model", choices=["v10b", "v8e"], default="v10b",
                     help="v10b=无char裸模型; v8e=两阶段最优 (ControlNetDiT on v8a, char=null行)")
     ap.add_argument("--ckpt", default="",
@@ -45,7 +45,7 @@ def main():
                 rope_theta=100.0, attn_impl="eager")  # CPU: eager (xformers sdpa 仅 cuda)
     if args.model == "v10b":
         import glob as _g
-        cks = sorted(_g.glob("5script/results/v10b_skel_only_pretrain/*/checkpoints/0*.pt"),
+        cks = sorted(_g.glob("assets/results/v10b_skel_only_pretrain/*/checkpoints/0*.pt"),
                      key=lambda p: int(os.path.basename(p).split(".")[0]))
         if args.ckpt:
             if os.path.isfile(args.ckpt):
@@ -83,7 +83,7 @@ def main():
         # 两阶段最优 v8e: ControlNetDiT(v8a base) + ctrl ckpt; char 条件传 null 行
         from src.model.controlnet import load_main_model, ControlNetDiT
         main = load_main_model(
-            ckpt_path="5script/results/v8_3stage/A_main_final.pt", device=dev,
+            ckpt_path="assets/results/v8_3stage/A_main_final.pt", device=dev,
             num_calligraphers=1013, num_characters=35130,
             condition_fusion="factorized_add", callig_embed_dim=128,
             char_embed_dim=384, char_proj_mode="mlp", freeze_char_table=True,
@@ -92,7 +92,7 @@ def main():
         model = ControlNetDiT(main, cond_in_channels=4, train_ctrl_only=True,
                               injection="modulate", null_cond="gaussian", **arch)
         v8e = sorted(__import__("glob").glob(
-            "5script/results/v8_3stage/v8e/*/checkpoints/0022500.pt"))[-1]
+            "assets/results/v8_3stage/v8e/*/checkpoints/0022500.pt"))[-1]
         step = 22500
         print(f"ckpt = {v8e} (v8e ctrl @22500, 两阶段)", flush=True)
         d = torch.load(v8e, map_location="cpu", weights_only=False)
@@ -104,7 +104,7 @@ def main():
 
     # fame 训练字集合 (排除用)
     fame_chars = set()
-    for r in csv.DictReader(open("5script/train_fame_clean_v8.csv", encoding="utf-8")):
+    for r in csv.DictReader(open("assets/train_fame_clean_v8.csv", encoding="utf-8")):
         fame_chars.add(r["character"])
     print(f"fame 训练字数 {len(fame_chars)}", flush=True)
 

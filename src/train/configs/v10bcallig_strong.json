@@ -1,7 +1,7 @@
 {
   "_comment": "v10b-callig (42号实验2): callig 风格链增强。诊断 (41号): callig_chain rel 0.0013 弱梯度, 比 glyph 低 6 倍 — 书家风格条件更新慢。改动: callig_embed_dim 128->256 (embedding 容量翻倍), callig_proj_mode 'mlp' (两层 MLP 补投影容量, dit.py 新开关), callig_scale_init 1.5 (风格权重初值上调, 抵消弱梯度)。其余 = v10b 全同 (batch320/compile/REPA w0.1/skel-g/150k/早停)。注意: 这是 v10b 唯一动条件链结构的实验, 参数量 +128*384+384*384+384*384≈295K。eval 由 cpu_eval_daemon --mode pretrain_g 接管。",
   "experiment_name": "v10b-callig",
-  "results_dir": "5script/results/v10bcallig_strong",
+  "results_dir": "assets/results/v10bcallig_strong",
   "model": "DiT-2Cond-S/2",
   "skel_as_glyph_cond": true,
   "skel_latent_shards_dir": "final_skel_latents_fame_1px_v8",
@@ -60,7 +60,7 @@
   "eval_csv": "",
   "eval_cfg": 0.7,
   "eval_steps": 50,
-  "data_csv": "5script/train_fame_clean_v8.csv",
+  "data_csv": "assets/train_fame_clean_v8.csv",
   "preload": true,
   "preload_workers": 16,
   "global_batch_size": 320,

@@ -78,10 +78,10 @@ v10b 的骨架是主干的原生输入语言，无词汇边界。
 4. 完全开放词汇 + 结构=骨架/风格=callig 的因子分解，是新字遵循的正确架构；
    char 因子的存在与否不改变遵循能力，v10b 的价值在**参数少 13.8M + 无字表边界**。
 
-存档：`5script/results/skel_follow_gpu/{v10b_67500..v10b_85000, v10a_127500_charnull,
+存档：`assets/results/skel_follow_gpu/{v10b_67500..v10b_85000, v10a_127500_charnull,
 v8e_22500_charnull}*/`（每字 `*_gen.png` + `*_inputskel.png` + `metrics.json`），
 汇总 `skel_follow_gpu/summary_charnull.csv`，本地镜像
-`5script/results/skel_follow_gpu_summary_charnull.csv`。脚本 `tools/eval/skel_follow_gpu.py`
+`assets/results/skel_follow_gpu_summary_charnull.csv`。脚本 `tools/eval/skel_follow_gpu.py`
 （`use_char_cond` 自动路由 null-char 协议）。旧 y_char=0 协议数据保留在
 `{v10a_127500, v8e_22500}` 目录仅供对照存档，不入结论。
 

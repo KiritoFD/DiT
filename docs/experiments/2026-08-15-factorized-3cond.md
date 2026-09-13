@@ -7,8 +7,8 @@ the individual factors and pairwise relations were all observed in training.
 
 ## Baseline stopped
 
-- Config: `exp_s_5script.json`
-- Directory: `5script/results/exp_s_5script/20260815-131017-DiT-3Cond-S-2`
+- Config: `exp_s_assets.json`
+- Directory: `assets/results/exp_s_assets/20260815-131017-DiT-3Cond-S-2`
 - Stopped cleanly with SIGTERM on 2026-08-15 at approximately step 25,760,
   epoch 39. The last complete checkpoint is `0025000.pt`.
 - Model: legacy concatenation MLP, 36.16M trainable parameters, random sampler,
@@ -54,7 +54,7 @@ clearly cheap. Probe results are appended below before the formal launch.
 
 - 2026-08-15: inspected remote process tree, log and checkpoints.
 - 2026-08-15: stopped only PID 295381 and its eight DataLoader children; verified
-  that no `exp_s_5script.json` training process remained.
+  that no `exp_s_assets.json` training process remained.
 - 2026-08-15: confirmed local and remote core-file SHA-256 hashes matched before
   applying the new patches; preserved all pre-existing dirty-worktree changes.
 
@@ -87,7 +87,7 @@ supervise observed target geometry rather than factor composition.
 ### Formal V1
 
 - Launched directory:
-  `5script/results/compositional/20260815-155912-s2-factorized-add-balanced-ema-no-struct-v1`
+  `assets/results/compositional/20260815-155912-s2-factorized-add-balanced-ema-no-struct-v1`
 - Planned stop: 20,000 optimizer steps; checkpoint/eval every 2,000 steps.
 - Clean composition auto-eval: 100 unseen triples, 20 per script, with every
   factor and pairwise edge observed in training.

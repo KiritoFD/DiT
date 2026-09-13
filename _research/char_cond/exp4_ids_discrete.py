@@ -23,7 +23,7 @@ ROOT = r"G:\GitHub\DiT"
 os.chdir(ROOT)
 
 IDS_FILE = "_sync_work/cjkvi-ids/cjkvi-ids-master/ids.txt"
-CSV = "5script/train_fame.csv"
+CSV = "assets/train_fame.csv"
 IDS_OPS = set("⿰⿱⿲⿳⿴⿵⿶⿷⿸⿹⿺⿻")
 
 SIM_PAIRS = [

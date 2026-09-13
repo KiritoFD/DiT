@@ -14,10 +14,10 @@
   },
 
   "experiment_name": "s20-midcommon-s-flow-v2",
-  "data_csv": "5script/train_mid_common.csv",
+  "data_csv": "assets/train_mid_common.csv",
   "latent_shards_dir": "final_latents_mid_clean",
   "img_root": "final_imgs_256",
-  "results_dir": "5script/results/s20_midcommon_s_flow_v2",
+  "results_dir": "assets/results/s20_midcommon_s_flow_v2",
 
   "model": "DiT-2Cond-S/2",
   "cond_mode": "2cond",
@@ -77,7 +77,7 @@
   "ckpt_keep": 0,
 
   "auto_eval": true,
-  "eval_csv": "5script/eval_strict_midclean.csv",
+  "eval_csv": "assets/eval_strict_midclean.csv",
   "eval_n": 501,
   "eval_steps": 25,
   "eval_cfg": 1.7,

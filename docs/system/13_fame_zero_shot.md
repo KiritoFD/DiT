@@ -24,7 +24,7 @@
 | `final_skel_latents_fame_std/` | **标准字库骨架** latents（训练条件，20 shards） |
 | `skel_bank_train.npz` | 推理库：训练集每字一张骨架 latent（14,372 字） |
 | `skel_bank_std.npz` | 推理库：标准字库骨架 latent（eval 覆盖 238/483） |
-| `5script/train_fame.csv` / `eval_fame_strict.csv` | 训练/评测表（严格凸包：两要素覆盖+组合未现+图未训） |
+| `assets/train_fame.csv` / `eval_fame_strict.csv` | 训练/评测表（严格凸包：两要素覆盖+组合未现+图未训） |
 
 ### 1.3 评测协议（重要）
 
@@ -78,5 +78,5 @@ char ID 之外的实例/风格信息。佐证：该模型用 GT 骨架评测 ΔS
 - 本地评测：`_diag/local_zero_shot.py`（4 臂）、`_diag/skel_follow_test.py`（跟随度）
 - 远程量化：`/tmp/std_ctrl_quant.py`、`/tmp/decisive_follow{,_gt}.py`
 - 数据：`fame_meta.json`、`fame_flip2.json`、`skel_banks_meta.json`
-- 指标：`5script/fame_final_eval.json`、`5script/fame_zero_shot_eval.json`、
-  `5script/fame_ctrl_watchdog.json`
+- 指标：`assets/fame_final_eval.json`、`assets/fame_zero_shot_eval.json`、
+  `assets/fame_ctrl_watchdog.json`

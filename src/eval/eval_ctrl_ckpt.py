@@ -4,12 +4,12 @@ eval_ctrl_ckpt.py — 独立 ControlNet 评测（GPU 采样 + 全图落盘 + CPU
 
 用法示例:
     python src/eval/eval_ctrl_ckpt.py \\
-        --main-ckpt 5script/results/s30_dino_char_strong_pretrain/.../0132500.pt \\
-        --ctrl-ckpt 5script/results/s31_ctrl_gt_skel_1px/.../0042500.pt \\
-        --eval-csv 5script/eval_fame_strict_clean.csv \\
+        --main-ckpt assets/results/s30_dino_char_strong_pretrain/.../0132500.pt \\
+        --ctrl-ckpt assets/results/s31_ctrl_gt_skel_1px/.../0042500.pt \\
+        --eval-csv assets/eval_fame_strict_clean.csv \\
         --skel-latent-dir final_skel_latents_fame_1px \\
         --skel-root final_skel1_fame --img-root final_imgs_256 \\
-        --out-dir 5script/results/s31_ctrl_gt_skel_1px/manual_eval/step0042500 \\
+        --out-dir assets/results/s31_ctrl_gt_skel_1px/manual_eval/step0042500 \\
         --n 100 --cfg 0.7 --steps 50 --device cuda
 
 行为:

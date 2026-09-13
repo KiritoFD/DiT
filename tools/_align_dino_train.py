@@ -8,7 +8,7 @@ chars = d['chars']
 calligs = [int(x) for x in d['calligs'].tolist()]  # 字符串转 int
 
 # 当前训练集 41 书家
-train_rows = list(csv.DictReader(open('/root/Workspace/xy/DiT/5script/train_fame3_clean_v8.csv', encoding='utf-8')))
+train_rows = list(csv.DictReader(open('/root/Workspace/xy/DiT/assets/train_fame3_clean_v8.csv', encoding='utf-8')))
 train_ca = sorted(set(int(r['calligrapher_id']) for r in train_rows))
 print('train 书家数:', len(train_ca))
 

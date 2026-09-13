@@ -43,8 +43,8 @@ from scipy.ndimage import binary_dilation
 # ──────────────────────────────────────────────────────────────────────────
 # 常量
 # ──────────────────────────────────────────────────────────────────────────
-MAIN_CKPT = os.path.join(_ROOT, r"5script\results\s20_midcommon_s_flow_v2\20260829-023132-s20-midcommon-s-flow-v2\checkpoints\0102500.pt")
-CTRL_CKPT = os.path.join(_ROOT, r"5script\results\s20_ctrl_skel_flow_v2\20260829-161522-s20-ctrl-skel-flow-v2\checkpoints\0075000.pt")
+MAIN_CKPT = os.path.join(_ROOT, r"assets\results\s20_midcommon_s_flow_v2\20260829-023132-s20-midcommon-s-flow-v2\checkpoints\0102500.pt")
+CTRL_CKPT = os.path.join(_ROOT, r"assets\results\s20_ctrl_skel_flow_v2\20260829-161522-s20-ctrl-skel-flow-v2\checkpoints\0075000.pt")
 VAE_PATH = os.path.join(_ROOT, "pretrained_models", "sd-vae-ft-ema")
 DINO_EMB = os.path.join(_ROOT, "pretrained_models", "dino_embeddings", "glyph_dino_embeddings_384.npy")
 DINO_IDX = os.path.join(_ROOT, "pretrained_models", "dino_embeddings", "glyph_dino_index.json")

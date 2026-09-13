@@ -8,7 +8,7 @@ encode_latents_klf4.py — 用 kl-f4 VAE 编码全量 MCCD 图片 → shard_XXXX
 - scaling_factor = 0.102079 (1/std, 从 200 张样本估计)
 
 用法 (远程):
-  python tools/vae/encode_latents_klf4.py --csv 5script/train_top30.csv --img-root final_images \
+  python tools/vae/encode_latents_klf4.py --csv assets/train_top30.csv --img-root final_images \
     --vae pretrained_models/kl-f4 --out final_latents_f4 --shard-size 5000 --scaling-factor 0.102079
 """
 import os, sys, csv, json, glob, time, re, argparse

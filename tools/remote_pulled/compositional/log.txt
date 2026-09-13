@@ -1,10 +1,10 @@
-[[34m2026-08-15 15:46:10[0m] Experiment directory created at 5script/results/compositional/20260815-154610-s2-factorized-add-balanced-ema-no-struct-v1
+[[34m2026-08-15 15:46:10[0m] Experiment directory created at assets/results/compositional/20260815-154610-s2-factorized-add-balanced-ema-no-struct-v1
 [[34m2026-08-15 15:46:11[0m] Building 3-Cond model: DiT-3Cond-S/2 (callig=1011, script=5, char=7026, fusion=factorized_add, dims=128/32/192, dropout=all:0.1, one:0.15)
 [[34m2026-08-15 15:46:11[0m] Trainable Parameters: 34,096,608
 [[34m2026-08-15 15:46:11[0m] Frozen Parameters: 98,304 (trainable ratio: 99.71%)
 [[34m2026-08-15 15:46:12[0m] [EMA] enabled with decay=0.9999
 [[34m2026-08-15 15:46:12[0m] Loading VAE from local path: pretrained_models/sd-vae-ft-ema
-[[34m2026-08-15 15:46:12[0m] Preparing auto-eval cache (csv=5script/eval_strata/clean_unseen_triple_100.csv, n=100) ...
+[[34m2026-08-15 15:46:12[0m] Preparing auto-eval cache (csv=assets/eval_strata/clean_unseen_triple_100.csv, n=100) ...
 [[34m2026-08-15 15:46:12[0m] Auto-eval cache ready (free-sampling mode).
 [[34m2026-08-15 15:46:12[0m] DiT Parameters: 34,194,912
 [[34m2026-08-15 15:46:17[0m] Using latent-cached dataset (skip on-the-fly VAE encode). preload=ON
@@ -116,7 +116,7 @@
 [[34m2026-08-15 15:55:42[0m] (step=0001980) Total: 0.0979 | Diff: 0.0979 | Canny: raw 0.0000 x 0.00 = 0.0000 | Skel: raw 0.0000 x 0.00 = 0.0000 | REPA: raw 0.0000 x 0.00 = 0.0000 | LR: 9.87e-05 | Steps/Sec: 3.53 | Mem: 0.98G/19.20G
 [[34m2026-08-15 15:55:42[0m] Beginning epoch 3...
 [[34m2026-08-15 15:55:48[0m] (step=0002000) Total: 0.0958 | Diff: 0.0958 | Canny: raw 0.0000 x 0.00 = 0.0000 | Skel: raw 0.0000 x 0.00 = 0.0000 | REPA: raw 0.0000 x 0.00 = 0.0000 | LR: 9.87e-05 | Steps/Sec: 3.08 | Mem: 0.98G/19.20G
-[[34m2026-08-15 15:55:49[0m] Saved checkpoint to 5script/results/compositional/20260815-154610-s2-factorized-add-balanced-ema-no-struct-v1/checkpoints/0002000.pt
+[[34m2026-08-15 15:55:49[0m] Saved checkpoint to assets/results/compositional/20260815-154610-s2-factorized-add-balanced-ema-no-struct-v1/checkpoints/0002000.pt
 [[34m2026-08-15 15:56:01[0m] [auto-eval] step 2000: free-sampling MSE=3.25130 SSIM=0.0302
 [[34m2026-08-15 15:56:07[0m] (step=0002020) Total: 0.0995 | Diff: 0.0995 | Canny: raw 0.0000 x 0.00 = 0.0000 | Skel: raw 0.0000 x 0.00 = 0.0000 | REPA: raw 0.0000 x 0.00 = 0.0000 | LR: 9.87e-05 | Steps/Sec: 1.06 | Mem: 0.98G/19.20G
 [[34m2026-08-15 15:56:13[0m] (step=0002040) Total: 0.0989 | Diff: 0.0989 | Canny: raw 0.0000 x 0.00 = 0.0000 | Skel: raw 0.0000 x 0.00 = 0.0000 | REPA: raw 0.0000 x 0.00 = 0.0000 | LR: 9.86e-05 | Steps/Sec: 3.52 | Mem: 0.98G/19.20G

@@ -33,7 +33,7 @@ def _locate_ckpt(spec):
     if os.path.isfile(spec):
         return spec
     import glob
-    cands = sorted(glob.glob("5script/results/v10b_stdskel_fame3/*/checkpoints/*.pt"),
+    cands = sorted(glob.glob("assets/results/v10b_stdskel_fame3/*/checkpoints/*.pt"),
                    key=lambda p: int(os.path.basename(p).split(".")[0]))
     if not cands:
         raise FileNotFoundError("找不到 v10b_stdskel_fame3 的 checkpoints")
@@ -76,7 +76,7 @@ def main():
     ap.add_argument("--n", type=int, default=32, help="follow IoU 采样样本数")
     ap.add_argument("--n-batch", type=int, default=4, help="梯度/注入作用诊断 batch 数")
     ap.add_argument("--batch", type=int, default=16)
-    ap.add_argument("--out", default="5script/results/v10b_stdskel_fame3/debug_stdskel.json")
+    ap.add_argument("--out", default="assets/results/v10b_stdskel_fame3/debug_stdskel.json")
     args = ap.parse_args()
 
     dev = torch.device("cuda")

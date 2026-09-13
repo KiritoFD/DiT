@@ -11,7 +11,7 @@ import scipy.ndimage as ndi
 from skimage.metrics import structural_similarity as ssim_fn
 
 ROOT = "/root/Workspace/xy/DiT"
-SRC_CSV = f"{ROOT}/5script/train_fame3_clean_v8.csv"
+SRC_CSV = f"{ROOT}/assets/train_fame3_clean_v8.csv"
 sys.stdout.reconfigure(encoding="utf-8")
 
 LO, HI = 4.5, 9.0

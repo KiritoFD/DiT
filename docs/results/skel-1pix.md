@@ -19,21 +19,21 @@
 
 ### S21 base
 ```
-5script/results/s21_fame_flow_v2/20260829-232329-s21-fame-flow-v2/checkpoints/0030000.pt   # ctrl 挂载点
-5script/results/s21_fame_flow_v2/20260829-232329-s21-fame-flow-v2/checkpoints/0040000.pt   # 最终（早停）
+assets/results/s21_fame_flow_v2/20260829-232329-s21-fame-flow-v2/checkpoints/0030000.pt   # ctrl 挂载点
+assets/results/s21_fame_flow_v2/20260829-232329-s21-fame-flow-v2/checkpoints/0040000.pt   # 最终（早停）
 ```
 
 ### S30 base（当前最优 base）
 ```
-5script/results/s30_dino_char_strong_pretrain/20260901-052520-s30-dino-char-strong-pretrain/checkpoints/0132500.pt
+assets/results/s30_dino_char_strong_pretrain/20260901-052520-s30-dino-char-strong-pretrain/checkpoints/0132500.pt
 ```
 - S30 best ssim = **0.4841** @ 130k（比 S21 高 **+0.0171 / +3.7%**）
 - S30 ckpt 含 `_orig_mod.` 前缀（compile 存盘），跨脚本加载需剥前缀（`load_main_model` 已处理）
 
 ### 旧 S21-based 1px ctrl（ctrl_fame_1pix_v1）
 ```
-5script/results/ctrl_fame_1pix_v1/20260830-205652-fame-ctrl-skel-1px-v1/checkpoints/0050000.pt   # 主批次（更优）
-5script/results/ctrl_fame_1pix_v1/20260830-185731-fame-ctrl-skel-1px-v1/checkpoints/0022500.pt   # 早期批次
+assets/results/ctrl_fame_1pix_v1/20260830-205652-fame-ctrl-skel-1px-v1/checkpoints/0050000.pt   # 主批次（更优）
+assets/results/ctrl_fame_1pix_v1/20260830-185731-fame-ctrl-skel-1px-v1/checkpoints/0022500.pt   # 早期批次
 ```
 - 配置：`char_proj_mode=ln_only, freeze_char_table=true, batch=72, cond_drop_which_glyph_prob=0.5`
 - eval：`eval_fame_strict.csv, n=100, cfg=0.7, steps=50, skel=final_skel_latents_fame_1px`
@@ -41,7 +41,7 @@
 
 ### 当前 S30-based 1px ctrl（s31）
 ```
-5script/results/s31_ctrl_gt_skel_1px/20260901-135832-s31-ctrl-gt-skel-1px/checkpoints/<step>.pt
+assets/results/s31_ctrl_gt_skel_1px/20260901-135832-s31-ctrl-gt-skel-1px/checkpoints/<step>.pt
 ```
 - 配置：`char_proj_mode=mlp, freeze_char_table=true, batch=192, cond_drop_which_glyph_prob=0.85`
 - 训练数据 skel：`final_skel_latents_fame_1px` ✅（覆盖训练集 51822）

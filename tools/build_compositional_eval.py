@@ -53,9 +53,9 @@ def stratified_take(rows, n, seed):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--train", default="5script/train.csv")
-    parser.add_argument("--test", default="5script/test.csv")
-    parser.add_argument("--out-dir", default="5script/eval_strata")
+    parser.add_argument("--train", default="assets/train.csv")
+    parser.add_argument("--test", default="assets/test.csv")
+    parser.add_argument("--out-dir", default="assets/eval_strata")
     parser.add_argument("--n", type=int, default=100)
     parser.add_argument("--seed", type=int, default=0)
     args = parser.parse_args()

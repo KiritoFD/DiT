@@ -45,7 +45,7 @@ with torch.no_grad():
 print(f"[4] 开/关输出差异 (zero-init 时应≈0): {(o0-o1).abs().max().item():.2e}")
 
 # 5. resume 兼容: 加载现有 c41x_cos ckpt (无 callig_spatial_net)
-ck = sorted(glob.glob("5script/results/v10b_stdskel_fame3_c41x_cos/20260909-123903-*/checkpoints/*.pt"),
+ck = sorted(glob.glob("assets/results/v10b_stdskel_fame3_c41x_cos/20260909-123903-*/checkpoints/*.pt"),
             key=lambda p: int(os.path.basename(p).split(".")[0]))[-1]
 sd_full = torch.load(ck, map_location="cpu", weights_only=False)
 sd = sd_full.get("ema") or sd_full.get("model") or sd_full

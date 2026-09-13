@@ -16,7 +16,7 @@
 ## 2. 当前运行状态（2026-08-28 15:20 复查）
 
 - **s19 mid-clean 预训练 RUNNING**：
-  - 配置：`s19_midclean_s_flow.json` → `5script/results/s19_midclean_s_flow/20260828-143711-s19-midclean-s-flow/`
+  - 配置：`s19_midclean_s_flow.json` → `assets/results/s19_midclean_s_flow/20260828-143711-s19-midclean-s-flow/`
   - 模型 DiT-2Cond-S/2 33M，batch 240，~3.37 steps/s，显存 ~21.6G/24G
   - step ~7680：Total loss 0.45（正常收敛），LR 2e-4，EMA 0.9988
   - 存盘节奏：**前 5000 步每 1000 存，之后每 ckpt_every=2500**（相对 5000 偏移）→ ckpt 1000/2000/…/7500

@@ -1,8 +1,8 @@
 {
   "experiment_name": "probe-s2-factorized-ema-canny-skel-b64",
-  "data_csv": "5script/train.csv",
+  "data_csv": "assets/train.csv",
   "data_dir": "",
-  "results_dir": "5script/results/probes",
+  "results_dir": "assets/results/probes",
   "pretrained": null,
   "model": "DiT-3Cond-S/2",
   "cond_mode": "3cond",

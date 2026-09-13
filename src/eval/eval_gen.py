@@ -29,7 +29,7 @@ from eval_auto import _gaussian_window, _ssim
 def parse_args():
     parser = argparse.ArgumentParser(description="Evaluate free-sampling generation against GT.")
     parser.add_argument("--ckpt", type=str, required=True, help="Path to checkpoint")
-    parser.add_argument("--csv", type=str, default="5script/eval100_top30_clean.csv", help="Evaluation CSV")
+    parser.add_argument("--csv", type=str, default="assets/eval100_top30_clean.csv", help="Evaluation CSV")
     parser.add_argument("--n", type=int, default=100, help="Number of samples to evaluate")
     parser.add_argument("--batch", type=int, default=16, help="Batch size for sampling")
     parser.add_argument("--steps", type=int, default=50, help="DDIM sampling steps")

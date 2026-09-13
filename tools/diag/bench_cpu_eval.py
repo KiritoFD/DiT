@@ -32,12 +32,12 @@ COMMON = dict(device=torch.device("cpu"), num_calligraphers=1013,
 
 dev = torch.device("cpu")
 main = load_main_model(
-    ckpt_path="5script/results/v8_3stage/A_main_final.pt", **COMMON)
+    ckpt_path="assets/results/v8_3stage/A_main_final.pt", **COMMON)
 main.eval()
 c = ControlNetDiT(main, cond_in_channels=4, train_ctrl_only=True,
                   injection="modulate", null_cond="gaussian")
 ckd = __import__("torch").load(
-    "5script/results/v8_3stage/v8b/20260902-234912-v8b-s31-ctrl/checkpoints/0035000.pt",
+    "assets/results/v8_3stage/v8b/20260902-234912-v8b-s31-ctrl/checkpoints/0035000.pt",
     map_location="cpu", weights_only=False)
 sd = {k: v for k, v in (ckd.get("ema") or ckd.get("ctrl")).items()
       if not k.startswith("main.") and not k.startswith("_orig_mod.main.")}
@@ -47,7 +47,7 @@ vae = load_eval_vae(dev, "pretrained_models/sd-vae-ft-ema")
 flow = create_diffusion_or_flow("50", diffusion_type="flow",
                                 **{"t_sampler": "logit_normal", "sampler": "heun",
                                    "t_mean": 0.0, "t_std": 1.0, "shift": 1.0})
-cache = make_eval_cache("5script/eval_fame_strict_clean_v8.csv", "final_imgs_fame_v8", None,
+cache = make_eval_cache("assets/eval_fame_strict_clean_v8.csv", "final_imgs_fame_v8", None,
                         256, 64, 8, 4, 0.18215,
                         skel_latent_shards_dir="final_skel_latents_fame_1px_v8")
 noise, conds, skels = cache["noise"], cache["conds"], cache["skels_latent"].float()

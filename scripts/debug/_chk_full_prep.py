@@ -6,7 +6,7 @@ cmds = [
     ("GEN LOG", "tail -8 /tmp/_gen_canny_d3.log"),
     ("TMUX", "tmux ls 2>/dev/null"),
     ("GPU", "nvidia-smi --query-gpu=memory.used --format=csv,noheader"),
-    ("TRAIN_FULL", "wc -l /root/Workspace/xy/DiT/5script/train_full.csv"),
+    ("TRAIN_FULL", "wc -l /root/Workspace/xy/DiT/assets/train_full.csv"),
 ]
 for name, cmd in cmds:
     r = subprocess.run(["ssh","-o","ConnectTimeout=25","-p",PORT,HOST,cmd],

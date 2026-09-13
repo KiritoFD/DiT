@@ -61,7 +61,7 @@ tmux new-session -d -s v9c_waiter 'bash /root/Workspace/xy/DiT/_sync_work/run_v9
 
 守护每 120s 查 GPU，连续 2 次 <2000MiB（v9b 退出）+60s 稳定后：
 自动挑 v9a best ckpt（eval_auto ssim 最高 = 0130000.pt / 0.5204）→ 启动联训。
-日志 `/tmp/v9c_joint.log`，结果 `5script/results/v9c_skel_joint/`。
+日志 `/tmp/v9c_joint.log`，结果 `assets/results/v9c_skel_joint/`。
 
 ## 6. 评测与汇总（全自动，无需人工）
 

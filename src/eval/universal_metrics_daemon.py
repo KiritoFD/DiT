@@ -28,7 +28,7 @@ from src.eval import eval_metrics_daemon as pre_d
 ctrl_d.BASE = ROOT            # 修复 ctrl daemon 的相对路径基准
 pre_d.BASE = ROOT
 
-SCAN_ROOTS = [os.path.join(ROOT, "5script", "results"), os.path.join(ROOT, "results")]
+SCAN_ROOTS = [os.path.join(ROOT, "assets", "results"), os.path.join(ROOT, "results")]
 LOCK = "/tmp/universal_eval_daemon.lock"
 POLL = 20
 

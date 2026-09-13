@@ -1,12 +1,12 @@
-[[34m2026-08-15 20:55:33[0m] Experiment directory created at 5script/results/v3a/20260815-205533-v3a-2factor-glyph-canny-skel
+[[34m2026-08-15 20:55:33[0m] Experiment directory created at assets/results/v3a/20260815-205533-v3a-2factor-glyph-canny-skel
 [[34m2026-08-15 20:55:33[0m] Building 2-Cond model: DiT-2Cond-S/2 (callig=1011, glyph/char=35130, fusion=factorized_add, dims=128/192, dropout=all:0.1, one:0.3)
-[[34m2026-08-15 20:55:34[0m] [resume-full] Loaded weights from 5script/results/v3a/20260815-195729-v3a-2factor-glyph-canny-skel/checkpoints/0005000.pt (missing=0, unexpected=0).
+[[34m2026-08-15 20:55:34[0m] [resume-full] Loaded weights from assets/results/v3a/20260815-195729-v3a-2factor-glyph-canny-skel/checkpoints/0005000.pt (missing=0, unexpected=0).
 [[34m2026-08-15 20:55:34[0m] Trainable Parameters: 39,479,648
 [[34m2026-08-15 20:55:34[0m] Frozen Parameters: 98,304 (trainable ratio: 99.75%)
 [[34m2026-08-15 20:55:35[0m] [EMA] restored EMA weights from checkpoint
 [[34m2026-08-15 20:55:35[0m] [EMA] enabled with decay=0.9999
 [[34m2026-08-15 20:55:35[0m] Loading VAE from local path: pretrained_models/sd-vae-ft-ema
-[[34m2026-08-15 20:55:35[0m] Preparing auto-eval cache (csv=5script/eval_strata/clean_unseen_triple_100.csv, n=100) ...
+[[34m2026-08-15 20:55:35[0m] Preparing auto-eval cache (csv=assets/eval_strata/clean_unseen_triple_100.csv, n=100) ...
 [[34m2026-08-15 20:55:35[0m] Auto-eval cache ready (free-sampling mode).
 [[34m2026-08-15 20:55:35[0m] DiT Parameters: 39,577,952
 [[34m2026-08-15 20:55:35[0m] [resume-full] Restored optimizer state.

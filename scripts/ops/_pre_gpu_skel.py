@@ -18,6 +18,6 @@ def run(cmd, timeout=60):
 print("GPU:", run("nvidia-smi --query-gpu=memory.used --format=csv,noheader"))
 # 3px 进度
 print("3px:", run("tail -3 /root/Workspace/xy/DiT/run_skel_d3.log"))
-print("3px HIST:", run("cat /root/Workspace/xy/DiT/5script/results/skel_decoder_d3/history.json 2>/dev/null"))
+print("3px HIST:", run("cat /root/Workspace/xy/DiT/assets/results/skel_decoder_d3/history.json 2>/dev/null"))
 # tmux
 print("TMUX:", run("tmux ls 2>/dev/null"))

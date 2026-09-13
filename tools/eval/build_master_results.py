@@ -28,7 +28,7 @@ def era_of(model, series):
 all_runs = []
 
 # 来源 1: all_experiments_eval_20260903.csv (224 runs, 含配置)
-src1 = "5script/all_experiments_eval_20260903.csv"
+src1 = "assets/all_experiments_eval_20260903.csv"
 if os.path.exists(src1):
     seen = set()
     for r in csv.DictReader(open(src1, encoding="utf-8")):
@@ -46,7 +46,7 @@ if os.path.exists(src1):
         })
 
 # 来源 2: eval_unified_20260829.csv (统一口径)
-src2 = "5script/eval_unified_20260829.csv"
+src2 = "assets/eval_unified_20260829.csv"
 if os.path.exists(src2):
     for r in csv.DictReader(open(src2, encoding="utf-8")):
         all_runs.append({
@@ -76,7 +76,7 @@ onepix = [
     {"step": 50000, "mse": 0.14924, "ssim": 0.7974, "skel_iou": 0.3318},
 ]
 # 来源 5: fame final eval
-final = "5script/fame_final_eval.json"
+final = "assets/fame_final_eval.json"
 if os.path.exists(final):
     d = json.load(open(final, encoding="utf-8"))
     for arm, data in d.items():
@@ -88,7 +88,7 @@ if os.path.exists(final):
             "per_script": json.dumps(data.get("per_script_median",""), ensure_ascii=False),
         })
 # 来源 6: zero-shot
-zs = "5script/fame_zero_shot_eval.json"
+zs = "assets/fame_zero_shot_eval.json"
 if os.path.exists(zs):
     d = json.load(open(zs, encoding="utf-8"))
     for arm, data in d.items():
@@ -98,8 +98,8 @@ if os.path.exists(zs):
                         "fails": data.get("fails","")})
 
 # 来源 7: v8/v9 系列 eval_auto 逐步序列
-# (远程 tools/eval/collect_v89_series.py 产出 -> scp 回 5script/v89_eval_series.json)
-v89 = "5script/v89_eval_series.json"
+# (远程 tools/eval/collect_v89_series.py 产出 -> scp 回 assets/v89_eval_series.json)
+v89 = "assets/v89_eval_series.json"
 if os.path.exists(v89):
     for run in json.load(open(v89, encoding="utf-8")):
         steps = run.get("steps", {})
@@ -118,7 +118,7 @@ all_keys = set()
 for r in all_runs:
     all_keys.update(r.keys())
 fieldnames = sorted(all_keys)
-out_csv = os.path.join(ROOT, '5script', 'master_results.csv')
+out_csv = os.path.join(ROOT, 'assets', 'master_results.csv')
 with open(out_csv, "w", encoding="utf-8", newline="") as f:
     w = csv.DictWriter(f, fieldnames=fieldnames, extrasaction="ignore")
     w.writeheader()
@@ -126,7 +126,7 @@ with open(out_csv, "w", encoding="utf-8", newline="") as f:
 print(f"master_results.csv: {len(all_runs)} rows, {len(fieldnames)} columns")
 
 # ---- 输出 master JSON (带完整嵌套) ----
-out_json = os.path.join(ROOT, '5script', 'master_results.json')
+out_json = os.path.join(ROOT, 'assets', 'master_results.json')
 json.dump(all_runs, open(out_json, "w", encoding="utf-8"), ensure_ascii=False, indent=1, default=str)
 print(f"master_results.json: {len(all_runs)} entries")
 

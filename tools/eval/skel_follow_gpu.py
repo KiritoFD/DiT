@@ -30,7 +30,7 @@ def _strip(sd):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--n", type=int, default=10)
-    ap.add_argument("--out", default="5script/results/skel_follow_gpu")
+    ap.add_argument("--out", default="assets/results/skel_follow_gpu")
     ap.add_argument("--model", choices=["v10b", "v10a", "v8e"], default="v10b")
     ap.add_argument("--ckpt", default="", help="v10b/v10a: step 或路径; v8e: 忽略(固定22500)")
     ap.add_argument("--tag", default="")
@@ -50,7 +50,7 @@ def main():
 
     # ---- 模型加载 ----
     if args.model == "v10b":
-        cks = sorted(glob.glob("5script/results/v10b_skel_only_pretrain/*/checkpoints/*.pt"),
+        cks = sorted(glob.glob("assets/results/v10b_skel_only_pretrain/*/checkpoints/*.pt"),
                      key=lambda p: int(os.path.basename(p).split(".")[0]))
         ck = args.ckpt if os.path.isfile(args.ckpt) else \
             next((c for c in cks if int(os.path.basename(c).split(".")[0]) == int(args.ckpt)),
@@ -76,7 +76,7 @@ def main():
         model.load_state_dict(_strip(d.get("ema") or d.get("model") or d), strict=False)
         model.eval()
     elif args.model == "v10a":
-        cks = sorted(glob.glob("5script/results/v10a_skel_cond_pretrain/*/checkpoints/*.pt"),
+        cks = sorted(glob.glob("assets/results/v10a_skel_cond_pretrain/*/checkpoints/*.pt"),
                      key=lambda p: int(os.path.basename(p).split(".")[0]))
         ck = args.ckpt if os.path.isfile(args.ckpt) else \
             next((c for c in cks if int(os.path.basename(c).split(".")[0]) == int(args.ckpt)),
@@ -99,14 +99,14 @@ def main():
     else:  # v8e
         from src.model.controlnet import load_main_model, ControlNetDiT
         main = load_main_model(
-            ckpt_path="5script/results/v8_3stage/A_main_final.pt", device=dev,
+            ckpt_path="assets/results/v8_3stage/A_main_final.pt", device=dev,
             num_calligraphers=1013, num_characters=35130,
             condition_fusion="factorized_add", callig_embed_dim=128,
             char_embed_dim=384, char_proj_mode="mlp", freeze_char_table=True,
             learn_sigma=False, **arch).eval()
         model = ControlNetDiT(main, cond_in_channels=4, train_ctrl_only=True,
                               injection="modulate", null_cond="gaussian", **arch).to(dev)
-        v8e = sorted(glob.glob("5script/results/v8_3stage/v8e/*/checkpoints/0022500.pt"))[-1]
+        v8e = sorted(glob.glob("assets/results/v8_3stage/v8e/*/checkpoints/0022500.pt"))[-1]
         d = torch.load(v8e, map_location="cpu", weights_only=False)
         model.load_state_dict(_strip(d.get("ema") or d.get("ctrl")), strict=False)
         model.eval()
@@ -140,7 +140,7 @@ def main():
     #     而非随机 id=0 —— id=0 是训练外查表污染向量, CFG 会当 positive 强化,
     #     把有 char 模型人为拖垮 (v10a 0.541 低分的测量伪影)。
     #   * v10b 无 char 因子: y_char 被 forward 忽略, 传啥都一样。
-    fame_chars = {r["character"] for r in csv.DictReader(open("5script/train_fame_clean_v8.csv", encoding="utf-8"))}
+    fame_chars = {r["character"] for r in csv.DictReader(open("assets/train_fame_clean_v8.csv", encoding="utf-8"))}
     cand = []
     for p in sorted(glob.glob("src/utils/std_glyph_latent_v2/kai_gb/U+*.npy")):
         try:

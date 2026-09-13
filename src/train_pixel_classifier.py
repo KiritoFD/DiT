@@ -18,7 +18,7 @@ from torch.optim.lr_scheduler import CosineAnnealingLR
 sys.stdout.reconfigure(encoding='utf-8')
 
 PIXEL_NPZ = "_classifier_pixel64_data.npz"
-TRAIN_CSV = "5script/train_3top30_nobeike.csv"
+TRAIN_CSV = "assets/train_3top30_nobeike.csv"
 CKPT_DIR = "glyph_classifier_ckpts"
 LABEL_SMOOTHING = 0.1
 

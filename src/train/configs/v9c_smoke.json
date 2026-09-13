@@ -1,7 +1,7 @@
 {
   "_comment": "v9c smoke: 联训路径冒烟验证 (与 v9c_skel_joint 同路径, 仅规模缩小)。验证点: (1) unfreeze-main 双参数组启动; (2) char 表保持冻结; (3) 存盘含 model.*/ema_model.*(main)+ctrl.*/ema; (4) torch.compile 与联训兼容; (5) 零初始注入使首步 loss ≈ v9a 主干水平。跑法: train_controlnet.py --config v9c_smoke.json --main-ckpt <v9a best>, 跑完删 results 并用 tools/diag/verify_v9c_smoke.py 校验 ckpt。",
   "experiment_name": "v9c-smoke",
-  "results_dir": "5script/results/_smoke_v9c",
+  "results_dir": "assets/results/_smoke_v9c",
 
   "model": "DiT-2Cond-S/2",
   "train_ctrl_only": true,
@@ -10,7 +10,7 @@
   "compile": true,
   "compile_mode": "default",
 
-  "csv": "5script/train_fame_clean_v8.csv",
+  "csv": "assets/train_fame_clean_v8.csv",
   "latent_shards_dir": "final_latents_fame_v8",
   "img_root": "final_imgs_fame_v8",
   "skel_root": "final_skel1_fame_v8",

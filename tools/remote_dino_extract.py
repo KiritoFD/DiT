@@ -19,7 +19,7 @@ from collections import defaultdict
 from concurrent.futures import ThreadPoolExecutor
 
 REMOTE_BASE = "/root/Workspace/xy/DiT"
-CSV_PATH = os.path.join(REMOTE_BASE, "5script", "train_top30.csv")
+CSV_PATH = os.path.join(REMOTE_BASE, "assets", "train_top30.csv")
 OUT_DIR = os.path.join(REMOTE_BASE, "pretrained_models", "dino_embeddings")
 os.makedirs(OUT_DIR, exist_ok=True)
 

@@ -8,7 +8,7 @@ Criteria (mirror tools/build_eval500.py for mid):
 
 Because top6's domain is small, strict candidates = 286 (楷 179 + 隶 107),
 so this eval is 286 rows (vs 500 for mid). Prefer unique glyphs first.
-Output: 5script/eval_strict_top6.csv  (same schema as eval100_top6)
+Output: assets/eval_strict_top6.csv  (same schema as eval100_top6)
 """
 import os, csv, json, random, sys
 from collections import Counter, defaultdict
@@ -17,8 +17,8 @@ sys.stdout.reconfigure(encoding='utf-8')
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.join(HERE, "..")
 MANIFEST = os.path.join(ROOT, "archive", "final_manifest.json")
-TRAIN_CSV = os.path.join(ROOT, "5script", "train_top6.csv")
-OUT = os.path.join(ROOT, "5script", "eval_strict_top6.csv")
+TRAIN_CSV = os.path.join(ROOT, "assets", "train_top6.csv")
+OUT = os.path.join(ROOT, "assets", "eval_strict_top6.csv")
 
 NUM_CHARACTERS = 7026
 SCRIPT_NAME_TO_ID = {"楷": 0, "隶": 4}

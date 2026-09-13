@@ -100,8 +100,8 @@ def patch_npz(fname, key, tag):
 def make_v8_csv():
     # 生成 v8 csv: image_path 全部指向 final_imgs_fame_v8/
     for src_csv, dst_csv in [
-        ('5script/train_fame_clean.csv', '5script/train_fame_clean_v8.csv'),
-        ('5script/eval_fame_strict_clean.csv', '5script/eval_fame_strict_clean_v8.csv'),
+        ('assets/train_fame_clean.csv', 'assets/train_fame_clean_v8.csv'),
+        ('assets/eval_fame_strict_clean.csv', 'assets/eval_fame_strict_clean_v8.csv'),
     ]:
         rows = list(csv.DictReader(open(src_csv, encoding='utf-8')))
         with open(dst_csv, 'w', newline='', encoding='utf-8') as f:

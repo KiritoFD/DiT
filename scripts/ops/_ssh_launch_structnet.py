@@ -25,7 +25,7 @@ cmd = ("cd /root/Workspace/xy/DiT && "
        "tmux kill-session -t structnet 2>/dev/null; "
        "tmux new-session -d -s structnet '"
        "/opt/conda/bin/python tools/train_struct_probe_256.py "
-       "--csv 5script/train.csv --epochs 8 --batch-size 64 --num-threads 16 "
+       "--csv assets/train.csv --epochs 8 --batch-size 64 --num-threads 16 "
        "> run_structnet.log 2>&1' && echo STRUCTNET_STARTED")
 out = run(cmd, timeout=60)
 print("launch:", out)

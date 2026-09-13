@@ -3,7 +3,7 @@
 import json, glob
 
 for tag in ["v10a_skel_cond_pretrain", "v10b_skel_only_pretrain"]:
-    fs = sorted(glob.glob("/root/Workspace/xy/DiT/5script/results/%s/*/checkpoints/eval_auto_*.json" % tag))
+    fs = sorted(glob.glob("/root/Workspace/xy/DiT/assets/results/%s/*/checkpoints/eval_auto_*.json" % tag))
     if not fs:
         print(tag, "无 eval_auto 文件"); continue
     best = (0.0, None)

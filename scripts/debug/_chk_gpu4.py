@@ -13,7 +13,7 @@ for i in range(8):
                 capture_output=True,text=True,timeout=30, encoding="utf-8", errors="replace")
             print("LOG:", r2.stdout if r2.returncode==0 else f"rc={r2.returncode}")
             r3 = subprocess.run(["ssh","-o","ConnectTimeout=25","-p",PORT,HOST,
-                "cat /root/Workspace/xy/DiT/5script/results/struct_decoder_gpu/history.json 2>/dev/null || echo none"],
+                "cat /root/Workspace/xy/DiT/assets/results/struct_decoder_gpu/history.json 2>/dev/null || echo none"],
                 capture_output=True,text=True,timeout=30, encoding="utf-8", errors="replace")
             print("HIST:", r3.stdout if r3.returncode==0 else f"rc={r3.returncode}")
             break

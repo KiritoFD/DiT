@@ -363,7 +363,7 @@ strict 0.5109@10k → **0.5518@190k**（缓升）；seen 0.6690@197.5k（140k �
 seen 陡涨是否推迟或减弱。
 
 配置：`src/train/configs/v10b_stdskel_fame3_scratch_sty32_s.json`
-结果目录：`5script/results/v10b_stdskel_fame3_scratch_sty32_s`
+结果目录：`assets/results/v10b_stdskel_fame3_scratch_sty32_s`
 
 ---
 

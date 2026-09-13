@@ -76,9 +76,9 @@ checkpoint directory at `--interval` seconds and evaluating any new `.done` chec
 ```bash
 tmux new-session -d -s evalcpu \
   'python auto_eval_cpu.py \
-    --results-dir 5script/results/s7_klf4_top30 \
+    --results-dir assets/results/s7_klf4_top30 \
     --workers 8 --worker-threads 8 \
-    --seen5-csv 5script/seen5_top30.csv'
+    --seen5-csv assets/seen5_top30.csv'
 ```
 
 Key flags (see `auto_eval_cpu.py:447` for the full parser):
@@ -93,7 +93,7 @@ Key flags (see `auto_eval_cpu.py:447` for the full parser):
 | `--threads` | 0 | torch threads for the parent (0 = all cores; forced to 1 when `--workers>1`) |
 | `--workers` | 1 | Number of persistent fork workers for `eval100` data parallelism |
 | `--worker-threads` | 8 | torch threads *per worker* |
-| `--seen5-csv` | `5script/seen5_top30.csv` | Training-set CSV for the `seen5` preview |
+| `--seen5-csv` | `assets/seen5_top30.csv` | Training-set CSV for the `seen5` preview |
 | `--eval-n` / `--steps` / `--cfg` / `--batch` | from ckpt args | Override eval params without touching training |
 
 ### How It Works (per poll iteration)

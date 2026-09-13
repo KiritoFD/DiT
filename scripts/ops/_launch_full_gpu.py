@@ -25,15 +25,15 @@ print("scp:", r.returncode==0)
 print("compile:", run("cd /root/Workspace/xy/DiT && /opt/conda/bin/python -m py_compile tools/train_struct_decoder_gpu.py && echo OK", timeout=30))
 
 # 清旧结果
-print("clean:", run("rm -rf /root/Workspace/xy/DiT/5script/results/struct_decoder_gpu 2>/dev/null; echo C", timeout=30))
+print("clean:", run("rm -rf /root/Workspace/xy/DiT/assets/results/struct_decoder_gpu 2>/dev/null; echo C", timeout=30))
 
 # 启动: 全量 329k, skel_d3+canny_d3, base=96 depth=6 (pixel-shuffle 解码), 30 epoch
 print("launch:", run("cd /root/Workspace/xy/DiT && "
     "tmux new-session -d -s structgpu '"
     "/opt/conda/bin/python tools/train_struct_decoder_gpu.py "
-    "--csv 5script/train_full.csv --epochs 30 --batch-size 512 "
+    "--csv assets/train_full.csv --epochs 30 --batch-size 512 "
     "--base 96 --depth 6 --skel-pos-weight 15 --canny-pos-weight 8 "
-    "--out-dir 5script/results/struct_decoder_gpu --log-every 100 "
+    "--out-dir assets/results/struct_decoder_gpu --log-every 100 "
     "> run_struct_gpu.log 2>&1' && echo GPU_STARTED", timeout=30))
 
 time.sleep(60)

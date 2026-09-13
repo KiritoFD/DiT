@@ -116,13 +116,13 @@ def eval_single_step(model, vae, diffusion, samples, device, t=T_EVAL, use_skel=
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--main-ckpt",
-                    default="5script/results/s6_top6_diffonly/20260820-191536-s6-top6-diffonly-resume/checkpoints/0195000.pt")
+                    default="assets/results/s6_top6_diffonly/20260820-191536-s6-top6-diffonly-resume/checkpoints/0195000.pt")
     ap.add_argument("--ctrl-ckpt", default="",
                     help="ControlNet ckpt. Empty = auto-find latest.")
-    ap.add_argument("--ctrl-dir", default="5script/results/ctrl_skel",
+    ap.add_argument("--ctrl-dir", default="assets/results/ctrl_skel",
                     help="Search dir for controlnet ckpts")
     ap.add_argument("--vae-path", default="pretrained_models/sd-vae-ft-ema")
-    ap.add_argument("--csv", default="5script/train_top6.csv")
+    ap.add_argument("--csv", default="assets/train_top6.csv")
     ap.add_argument("--latent-dir", default="final_latents")
     ap.add_argument("--skel-root", default="final_skeleton_d3")
     ap.add_argument("--img-root", default="final_images")

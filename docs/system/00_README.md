@@ -26,7 +26,7 @@
  └──────────────┘       │ │                       (统一 sample_t)     │ │
         │               │ └─────────────────────────────────────────┘ │
         ▼               │ ┌─────────────────────────────────────────┐ │
- 5script/*.csv          │ │ src/train/train.py        主模型预训练    │ │
+ assets/*.csv          │ │ src/train/train.py        主模型预训练    │ │
   (条件/评测表)          │ │ src/train/train_controlnet.py  ControlNet│ │
                         │ └─────────────────────────────────────────┘ │
                         └──────────────────┬──────────────────────────┘
@@ -69,19 +69,19 @@
 
 > **新读者建议**：先读 [19_core_findings.md](19_core_findings.md)（一页看懂现状），
 > 再按需查 [16 架构](16_model_architecture.md) / [17 实验](17_experiments_registry.md) / [18 数据](18_data_assets.md)。
-> 这三篇的数据来自 `5script/*.csv`，由 `_scan_*.py` 自动生成，可随时重跑刷新。
+> 这三篇的数据来自 `assets/*.csv`，由 `_scan_*.py` 自动生成，可随时重跑刷新。
 
 ### 3.1 结构化数据（CSV）
 
 | CSV | 行数 | 内容 |
 |---|---:|---|
-| `5script/eval_points.csv` | 640 | 每个评测点（实验 × step × arm × 指标） |
-| `5script/experiments_enriched.csv` | 47 | 实验级指标 + 数据集难度维度 |
-| `5script/difficulty_summary.csv` | 7 | **数据难度 vs 指标**（SSIM 不可跨数据集比较） |
-| `5script/skel_ablation.csv` | 20 | **骨架消融 1px / 3px / std-skel** |
-| `5script/data_assets.csv` | 78 | 数据集 / latent / 骨架 / 字形库清点 |
-| `5script/model_components.csv` | 10 | 模型逐模块参数量 |
-| `5script/condition_dims.csv` | 4 | 条件信号维度对比 |
+| `assets/eval_points.csv` | 640 | 每个评测点（实验 × step × arm × 指标） |
+| `assets/experiments_enriched.csv` | 47 | 实验级指标 + 数据集难度维度 |
+| `assets/difficulty_summary.csv` | 7 | **数据难度 vs 指标**（SSIM 不可跨数据集比较） |
+| `assets/skel_ablation.csv` | 20 | **骨架消融 1px / 3px / std-skel** |
+| `assets/data_assets.csv` | 78 | 数据集 / latent / 骨架 / 字形库清点 |
+| `assets/model_components.csv` | 10 | 模型逐模块参数量 |
+| `assets/condition_dims.csv` | 4 | 条件信号维度对比 |
 
 ## 4. 核心事实速查（2026-08-30，fame 主干）
 
