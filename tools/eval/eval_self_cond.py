@@ -70,6 +70,9 @@ def load_model_from_ckpt(ckpt_path, config_path, device):
         style_token_n=cfg.get('style_token_n', 0),
     )
 
+    if cfg.get("freeze_callig_table"):
+        model.y_callig_embedder.freeze_table()
+
     # 加载权重
     ckpt = torch.load(ckpt_path, map_location='cpu')
     state = ckpt.get('ema', ckpt.get('model', ckpt))
@@ -87,11 +90,11 @@ def load_model_from_ckpt(ckpt_path, config_path, device):
 def load_eval_data(eval_csv, skel_dir, n, callig_id_map_path=None):
     """加载评测 CSV + 标准骨架 latent。"""
     import csv as csv_mod
+    from src.utils.callig_map import load_callig_id_map
 
-    callig_map = {}
+    callig_map = None
     if callig_id_map_path and os.path.exists(callig_id_map_path):
-        with open(callig_id_map_path, 'r') as f:
-            callig_map = json.load(f)
+        callig_map, _ = load_callig_id_map(callig_id_map_path)
 
     rows = []
     with open(eval_csv, 'r', encoding='utf-8') as f:
@@ -105,7 +108,7 @@ def load_eval_data(eval_csv, skel_dir, n, callig_id_map_path=None):
     n_missing = 0
     for row in rows:
         callig_raw = int(row.get('calligrapher_id', row.get('callig_id', 0)))
-        callig_id = int(callig_map.get(str(callig_raw), callig_raw))
+        callig_id = callig_map.get(callig_raw, callig_raw) if callig_map else callig_raw
         char_id = int(row.get('character_id', row.get('char_id', 0)))
         conds.append((callig_id, char_id))
         gt_paths.append(row.get('image_path', row.get('path', '')))
