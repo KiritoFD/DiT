@@ -188,10 +188,15 @@ class MCCDLatentDataset(Dataset):
             print(f"[preload] {desc} {n:,} loaded in {time.time() - t0:.1f}s "
                   f"({out.nbytes / 1024 ** 3:.1f}G)")
 
-        if self.load_image and self.img_root:
+        if self.load_image:
             self._imgs = np.empty((n, 256, 256, 3), dtype=np.uint8)
-            tasks = [(i, os.path.join(self.img_root, f"{ids[i]}.png"), "RGB")
-                     for i in range(n)]
+            tasks = []
+            for i, r in enumerate(self.samples):
+                p = r["image_path"]
+                full = p if os.path.isabs(p) else os.path.join(os.getcwd(), p)
+                if not os.path.isfile(full) and self.img_root:
+                    full = os.path.join(self.img_root, f"{ids[i]}.png")
+                tasks.append((i, full, "RGB"))
             _pool_fill(tasks, self._imgs, "images")
 
         # --- skel latent shards (latent 条件) ---
@@ -300,11 +305,14 @@ class MCCDLatentDataset(Dataset):
 
             latent = self._get_latent(img_id)
 
-            # 原始图 256 -> [-1,1]
+            # 原始图 256 -> [-1,1] (优先 csv image_path, 支持变体分散在多个目录)
             img_t = torch.empty(0)
-            if self.load_image and self.img_root:
-                img_path = os.path.join(self.img_root, f"{img_id}.png")
-                with Image.open(img_path) as im:
+            if self.load_image:
+                p = row["image_path"]
+                full = p if os.path.isabs(p) else os.path.join(os.getcwd(), p)
+                if not os.path.isfile(full) and self.img_root:
+                    full = os.path.join(self.img_root, f"{img_id}.png")
+                with Image.open(full) as im:
                     img = im.convert('RGB')
                 img_t = (torch.from_numpy(np.asarray(img, dtype=np.float32) / 255.0).permute(2, 0, 1) * 2.0 - 1.0)
 

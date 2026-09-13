@@ -32,8 +32,12 @@ CKPT_SF = 0.18215
 
 
 def _process_one(task):
-    """CPU: 读图 -> (skel_img, canny_img) 均为 uint8 黑线白底 256x256."""
-    i, path = task
+    """CPU: 读图 -> (skel_img, canny_img) 均为 uint8 黑线白底 256x256.
+
+    task = (i, path, skel_dilate): skel_dilate>0 时对 1px 骨架做 N 次 3x3 膨胀
+    (N=1 -> ~3px), 提升 VAE 256->32 下的可编码性/区分度。
+    """
+    i, path, skel_dilate = task
     try:
         with Image.open(path) as im:
             g = np.asarray(im.convert("L"), dtype=np.uint8)
@@ -54,6 +58,9 @@ def _process_one(task):
             er = binary_erosion(im2, structure=st)
             sk |= im2 & ~er
             im2 = er
+    if int(skel_dilate) > 0:
+        from scipy.ndimage import binary_dilation, generate_binary_structure as _gbs
+        sk = binary_dilation(sk, _gbs(2, 2), iterations=int(skel_dilate))
     skel_img = np.where(sk, 0, 255).astype(np.uint8)
     # canny
     try:
@@ -79,6 +86,13 @@ def _encode(vae, imgs, dev, batch):
     return np.concatenate(out, 0)
 
 
+def _encode_fast(fv, imgs, batch):
+    """imgs: list of uint8 (256,256) -> (N,4,32,32) fp16 numpy (FastVAE, bf16 encode)."""
+    x = torch.from_numpy(np.stack(imgs).astype(np.float32) / 255.0 * 2 - 1)[:, None]
+    z = fv.encode(x, chunk=int(batch))
+    return z.half().numpy()
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--csv", default="5script/train_fame3_e_full.csv")
@@ -90,6 +104,10 @@ def main():
     ap.add_argument("--shard-size", type=int, default=2592)
     ap.add_argument("--workers", type=int, default=32)
     ap.add_argument("--device", default="cuda")
+    ap.add_argument("--skel-dilate", type=int, default=0,
+                    help="1px 骨架膨胀次数 (1 -> ~3px); 用于更易编码/更可分的 skel 监督")
+    ap.add_argument("--skip-canny", action="store_true")
+    ap.add_argument("--skip-skel", action="store_true")
     args = ap.parse_args()
 
     rows = list(csv.DictReader(open(args.csv, encoding="utf-8")))
@@ -99,8 +117,11 @@ def main():
         if not m:
             continue
         iid = int(m.group(1))
+        # 优先用 csv 的 image_path (相对仓库根); 否则回退 img_root/<id>.png
+        cand = r["image_path"] if os.path.isabs(r["image_path"]) else os.path.join(os.getcwd(), r["image_path"])
+        p = cand if os.path.isfile(cand) else os.path.join(args.img_root, f"{iid}.png")
         ids.append(iid)
-        paths.append(os.path.join(args.img_root, f"{iid}.png"))
+        paths.append(p)
     n = len(ids)
     print(f"[csv] {n} rows; missing images -> blank", flush=True)
 
@@ -109,7 +130,8 @@ def main():
     cannys = [None] * n
     with Pool(args.workers) as pool:
         for done, (i, sk, ca) in enumerate(pool.imap_unordered(
-                _process_one, list(enumerate(paths)), chunksize=256), 1):
+                _process_one, [(i, p, args.skel_dilate) for i, p in enumerate(paths)],
+                chunksize=256), 1):
             skels[i] = sk
             cannys[i] = ca
             if done % 20000 == 0:
@@ -122,8 +144,12 @@ def main():
     for p in vae.parameters():
         p.requires_grad_(False)
 
-    for tag, imgs, outdir in (("skel", skels, args.out_skel),
-                              ("canny", cannys, args.out_canny)):
+    jobs = []
+    if not args.skip_skel:
+        jobs.append(("skel", skels, args.out_skel))
+    if not args.skip_canny:
+        jobs.append(("canny", cannys, args.out_canny))
+    for tag, imgs, outdir in jobs:
         os.makedirs(outdir, exist_ok=True)
         nsh = 0
         for s in range(0, n, args.shard_size):
