@@ -2,17 +2,7 @@
 """A/B 测试: 普通采样 vs 自条件采样 (Self-Conditioning)。
 
 在已有 12ch ckpt 上直接测试，无需重新训练。
-比较同一组评测样本上的 SSIM / MSE / Skel Follow IoU。
-
-用法 (远程 4090):
-    python tools/eval/eval_self_cond.py \
-        --ckpt assets/results/v11_pretrain_M432_adaln4_sym/checkpoints/<step>.pt \
-        --config src/train/configs/v11_pretrain_M432_adaln4_sym.json \
-        --eval-csv assets/eval_seen_v10.csv \
-        --skel-dir data/skel/std_skel3_latents_fame_sym \
-        --n 50 --device cuda \
-        --first-pass-steps 20 \
-        --blend-alphas 0.0,0.3,0.5
+统一使用 make_eval_cache 加载 shard 数据，保证与官方评测完全同口径。
 """
 import argparse
 import json
@@ -22,7 +12,7 @@ import time
 
 import numpy as np
 import torch
-from PIL import Image
+from skimage.metrics import structural_similarity as ssim
 
 # 确保项目根目录在 path 中
 _ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -30,9 +20,10 @@ if _ROOT not in sys.path:
     sys.path.insert(0, _ROOT)
 
 from src.eval.inference import (
-    sample_latents, sample_latents_self_cond,
+    make_eval_cache, sample_latents, sample_latents_self_cond,
     load_eval_vae, build_diffusion, image_latent,
 )
+from src.utils.callig_map import load_callig_id_map
 
 
 def load_model_from_ckpt(ckpt_path, config_path, device):
@@ -40,7 +31,6 @@ def load_model_from_ckpt(ckpt_path, config_path, device):
     with open(config_path, 'r', encoding='utf-8') as f:
         cfg = json.load(f)
 
-    # 构建模型
     from src.model import DiT_2Cond_models
     model_name = cfg.get('model', 'DiT-2Cond-S/2')
     _aux_dirs = [s for s in str(cfg.get('aux_latent_shards_dirs', '') or '').split(',') if s]
@@ -73,7 +63,6 @@ def load_model_from_ckpt(ckpt_path, config_path, device):
     if cfg.get("freeze_callig_table"):
         model.y_callig_embedder.freeze_table()
 
-    # 加载权重
     ckpt = torch.load(ckpt_path, map_location='cpu')
     state = ckpt.get('ema', ckpt.get('model', ckpt))
     state = {k.replace('module.', ''): v for k, v in state.items()}
@@ -87,82 +76,36 @@ def load_model_from_ckpt(ckpt_path, config_path, device):
     return model, cfg
 
 
-def load_eval_data(eval_csv, skel_dir, n, callig_id_map_path=None):
-    """加载评测 CSV + 标准骨架 latent。"""
-    import csv as csv_mod
-    from src.utils.callig_map import load_callig_id_map
-
-    callig_map = None
-    if callig_id_map_path and os.path.exists(callig_id_map_path):
-        callig_map, _ = load_callig_id_map(callig_id_map_path)
-
-    rows = []
-    with open(eval_csv, 'r', encoding='utf-8') as f:
-        reader = csv_mod.DictReader(f)
-        for row in reader:
-            rows.append(row)
-            if len(rows) >= n:
-                break
-
-    conds, skels, gt_paths = [], [], []
-    n_missing = 0
-    for row in rows:
-        callig_raw = int(row.get('calligrapher_id', row.get('callig_id', 0)))
-        callig_id = callig_map.get(callig_raw, callig_raw) if callig_map else callig_raw
-        char_id = int(row.get('character_id', row.get('char_id', 0)))
-        conds.append((callig_id, char_id))
-        gt_paths.append(row.get('image_path', row.get('path', '')))
-
-        img_id = row.get('img_id', row.get('image_id', ''))
-        if not img_id and row.get('image_path'):
-            img_id = os.path.splitext(os.path.basename(row['image_path']))[0]
-        skel_path = os.path.join(skel_dir, f"{img_id}.npy")
-        if os.path.exists(skel_path):
-            skels.append(torch.from_numpy(np.load(skel_path)).float())
-        else:
-            skels.append(torch.zeros(4, 32, 32))
-            n_missing += 1
-
-    skels = torch.stack(skels)
-    coverage = 1.0 - n_missing / len(conds) if conds else 0
-    print(f"[ok] Loaded {len(conds)} eval samples, skel coverage: {coverage:.1%}")
-    if coverage < 0.5:
-        print(f"[WARN] Low skel coverage ({n_missing}/{len(conds)} missing). "
-              f"Check skel_dir path.")
-    return conds, skels, gt_paths
-
-
-def compute_metrics(latents, gt_paths, vae, scaling_factor, device):
-    """计算 SSIM 和 MSE (在像素空间)。"""
-    from skimage.metrics import structural_similarity as ssim
-
+def decode_latents_to_images(latents, vae, scaling_factor):
+    """把 latents 解码为 [0, 1] 范围的 numpy 图像 (N, H, W, 3)。"""
     lat = image_latent(latents)
-    results = []
     vae_dev = next(vae.parameters()).device
-
-    for i in range(lat.shape[0]):
+    images = []
+    batch_size = 16
+    for i in range(0, lat.shape[0], batch_size):
+        j = min(i + batch_size, lat.shape[0])
         with torch.no_grad():
-            decoded = vae.decode(lat[i:i+1].to(vae_dev) / scaling_factor).sample
-        pred = ((decoded[0].float().cpu().clamp(-1, 1) + 1) / 2).clamp(0, 1)
-        pred_np = pred.permute(1, 2, 0).numpy()
+            dec = vae.decode(lat[i:j].to(vae_dev) / scaling_factor).sample
+        preds = ((dec.float().cpu().clamp(-1, 1) + 1) / 2).clamp(0, 1)
+        for p in preds:
+            images.append(p.permute(1, 2, 0).numpy())
+    return images
 
-        gt_path = gt_paths[i]
-        if os.path.exists(gt_path):
-            gt_img = np.array(Image.open(gt_path).convert('RGB')).astype(np.float32) / 255.0
-        else:
-            results.append({'ssim': 0.0, 'mse': 1.0})
-            continue
 
-        _ssim = ssim(gt_img, pred_np, data_range=1.0, channel_axis=2)
-        _mse = float(np.mean((gt_img - pred_np) ** 2))
-        results.append({'ssim': _ssim, 'mse': _mse})
-
+def compute_metrics(pred_imgs, gt_tensors):
+    """计算 SSIM 和 MSE。gt_tensors 为 [-1, 1] 的 torch.Tensor (N, 3, H, W)。"""
+    results = []
+    for i in range(len(pred_imgs)):
+        pred = pred_imgs[i]
+        gt = ((gt_tensors[i].clamp(-1, 1) + 1) / 2).permute(1, 2, 0).numpy()
+        _s = ssim(gt, pred, data_range=1.0, channel_axis=2)
+        _m = float(np.mean((gt - pred) ** 2))
+        results.append({'ssim': _s, 'mse': _m})
     return results
 
 
 def main():
-    parser = argparse.ArgumentParser(
-        description="A/B test: normal vs self-conditioning inference")
+    parser = argparse.ArgumentParser(description="A/B test: normal vs self-conditioning inference")
     parser.add_argument("--ckpt", required=True)
     parser.add_argument("--config", required=True)
     parser.add_argument("--eval-csv", required=True)
@@ -172,8 +115,7 @@ def main():
     parser.add_argument("--cfg-scale", type=float, default=0.7)
     parser.add_argument("--eval-steps", type=int, default=50)
     parser.add_argument("--batch", type=int, default=8)
-    parser.add_argument("--first-pass-steps", type=int, default=None,
-                        help="ODE steps for pass 1 (None=same as pass 2)")
+    parser.add_argument("--first-pass-steps", type=int, default=None)
     parser.add_argument("--blend-alphas", type=str, default="0.0,0.3,0.5")
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--callig-id-map", type=str, default="assets/callig_id_map.json")
@@ -193,14 +135,29 @@ def main():
         })
 
     vae = load_eval_vae(device)
-    scaling_factor = 0.18215
+    scaling_factor = float(cfg.get('vae_scaling_factor', 0.18215))
 
-    conds, skels, gt_paths = load_eval_data(
-        args.eval_csv, args.skel_dir, args.n, args.callig_id_map)
+    # 加载 callig map
+    cmap = None
+    if args.callig_id_map and os.path.exists(args.callig_id_map):
+        cmap, _ = load_callig_id_map(args.callig_id_map)
 
-    torch.manual_seed(args.seed)
+    # 统一使用 make_eval_cache
+    img_root = cfg.get("gpu_eval_img_root") or cfg.get("img_root")
+    gts, conds, _, skels_latent, noise = make_eval_cache(
+        args.eval_csv, img_root, None, 256, args.n, 8, 4, scaling_factor,
+        skel_latent_shards_dir=args.skel_dir, callig_id_map=cmap,
+    )
+
+    coverage = (skels_latent.abs().sum(dim=(1, 2, 3)) > 0).float().mean() if skels_latent is not None else 0
+    print(f"[ok] Loaded {len(conds)} samples via make_eval_cache, skel coverage: {coverage:.1%}")
+
+    # 将 noise 扩展到模型通道数
     in_ch = int(getattr(model, 'in_channels', 4))
-    noise = torch.randn(len(conds), in_ch, 32, 32)
+    if noise.shape[1] < in_ch:
+        torch.manual_seed(args.seed)
+        extra = torch.randn(noise.shape[0], in_ch - noise.shape[1], *noise.shape[2:])
+        noise = torch.cat([noise, extra], dim=1)
 
     # ── Baseline ──
     print(f"\n{'='*60}")
@@ -208,9 +165,10 @@ def main():
     print(f"{'='*60}")
     t0 = time.time()
     lat_base = sample_latents(model, diffusion, noise, conds, args.cfg_scale,
-                              args.batch, device, skel=skels, seed=args.seed)
+                              args.batch, device, skel=skels_latent, seed=args.seed)
     t_base = time.time() - t0
-    m_base = compute_metrics(lat_base, gt_paths, vae, scaling_factor, device)
+    imgs_base = decode_latents_to_images(lat_base, vae, scaling_factor)
+    m_base = compute_metrics(imgs_base, gts)
     ssim_base = np.mean([m['ssim'] for m in m_base])
     mse_base = np.mean([m['mse'] for m in m_base])
     print(f"  SSIM: {ssim_base:.4f}  MSE: {mse_base:.4f}  Time: {t_base:.1f}s")
@@ -226,12 +184,13 @@ def main():
         t0 = time.time()
         lat_sc = sample_latents_self_cond(
             model, diffusion, noise, conds, args.cfg_scale,
-            args.batch, device, skel=skels, seed=args.seed,
+            args.batch, device, skel=skels_latent, seed=args.seed,
             first_pass_steps=args.first_pass_steps,
             blend_alpha=alpha,
         )
         t_sc = time.time() - t0
-        m_sc = compute_metrics(lat_sc, gt_paths, vae, scaling_factor, device)
+        imgs_sc = decode_latents_to_images(lat_sc, vae, scaling_factor)
+        m_sc = compute_metrics(imgs_sc, gts)
         ssim_sc = np.mean([m['ssim'] for m in m_sc])
         mse_sc = np.mean([m['mse'] for m in m_sc])
         delta = ssim_sc - ssim_base
