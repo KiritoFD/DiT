@@ -32,6 +32,10 @@ def parse_args():
     ap.add_argument("--shard-size", type=int, default=2592)
     ap.add_argument("--dilate", type=int, default=0,
                     help="1px 骨架膨胀次数 (1 -> ~3px); 提升 VAE 256->32 可编码性/字间区分度")
+    ap.add_argument("--device", default="cpu", choices=["cpu", "cuda"],
+                    help="VAE encode device. cpu = 单线程不与训练抢 GPU (慢, ~10s/图)")
+    ap.add_argument("--threads", type=int, default=1,
+                    help="torch CPU 线程数 (cpu 模式下 1 = 不影响训练 dataloader)")
     return ap.parse_args()
 
 
@@ -145,8 +149,9 @@ def main():
 
     # VAE encode (按唯一骨架编码一次, 样本行复用索引)
     import torch
+    torch.set_num_threads(int(getattr(args, "threads", 1)))
+    dev = torch.device(args.device)
     from diffusers import AutoencoderKL
-    dev = "cuda"
     vae = AutoencoderKL.from_pretrained(args.vae_path).to(dev).eval()
     latents = np.zeros((len(skels), 4, 32, 32), dtype=np.float16)
     with torch.no_grad():
