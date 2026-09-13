@@ -1048,9 +1048,28 @@ def main(args):
                 # 标准字形条件 g(甲2 token-add): batch 由 dataset 提供, None=禁用对应项
                 if getattr(args, 'w_glyph_cond', False) and 'g' in batch and batch['g'].numel() > 0:
                     model_kwargs['g'] = batch['g'].to(device)   # (N,4,32,32)
-                elif getattr(args, 'skel_as_glyph_cond', False) and 'skel_latent' in batch                         and batch['skel_latent'].numel() > 0:
+                elif getattr(args, 'skel_as_glyph_cond', False) and 'skel_latent' in batch \
+                        and batch['skel_latent'].numel() > 0:
                     # v10a: 实例 skel latent 即字条件 (与 ControlNet 的 cond 同源不同路)
                     model_kwargs['g'] = batch['skel_latent'].to(device).float()
+
+                # ── 条件噪声增强 (Condition Noise Augmentation) ───────────
+                # 标准骨架 g 是固定的印刷体 latent (cos=0.902 to GT)。加噪声迫使
+                # 模型学会从「不完美的结构条件」中提取拓扑信息，避免对 g 精确数值过拟合。
+                _gn_scale = float(getattr(args, 'glyph_noise_scale', 0.0))
+                _gn_prob = float(getattr(args, 'glyph_noise_prob', 0.0))
+                _gpd = float(getattr(args, 'glyph_patch_drop', 0.0))
+                if 'g' in model_kwargs and (_gn_scale > 0 or _gpd > 0):
+                    _g = model_kwargs['g']
+                    if _gn_scale > 0 and _gn_prob > 0:
+                        _mask = (torch.rand(_g.shape[0], 1, 1, 1, device=device) < _gn_prob).to(_g.dtype)
+                        _scales = torch.rand(_g.shape[0], 1, 1, 1, device=device) * _gn_scale
+                        _g = _g + _mask * torch.randn_like(_g) * _scales
+                    if _gpd > 0:
+                        _pmask = (torch.rand(_g.shape[0], 1, _g.shape[2], _g.shape[3],
+                                             device=device) > _gpd).to(_g.dtype)
+                        _g = _g * _pmask
+                    model_kwargs['g'] = _g
                 
                 # REPA: 请求多层中间特征 (统一 infra, 多层 dict / 单层兼容)
                 if args.w_repa > 0 and repa_loss_fn is not None:

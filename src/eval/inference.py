@@ -62,8 +62,20 @@ def load_eval_vae(device, vae_path=None):
     if _eval_vae is not None and _eval_vae_ref is device:
         return _eval_vae
     from diffusers.models import AutoencoderKL
-    if vae_path and os.path.exists(vae_path):
-        _eval_vae = AutoencoderKL.from_pretrained(vae_path).to(device).eval()
+    candidates = [
+        vae_path,
+        "data/pretrained/pretrained_models/sd-vae-ft-ema",
+        "pretrained_models/sd-vae-ft-ema",
+        "/root/Workspace/xy/DiT/data/pretrained/pretrained_models/sd-vae-ft-ema",
+        "/root/Workspace/xy/DiT/pretrained_models/sd-vae-ft-ema",
+    ]
+    resolved = None
+    for cand in candidates:
+        if cand and os.path.exists(cand):
+            resolved = cand
+            break
+    if resolved:
+        _eval_vae = AutoencoderKL.from_pretrained(resolved).to(device).eval()
     else:
         _eval_vae = AutoencoderKL.from_pretrained("stabilityai/sd-vae-ft-ema").to(device).eval()
     for p in _eval_vae.parameters():
