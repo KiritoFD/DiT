@@ -1,0 +1,80 @@
+{
+  "plan": [
+    {
+      "odd": {
+        "calligrapher_id": "115",
+        "script_id": "1",
+        "character_id": "2175",
+        "tag": "char2175|script1|calli115(OOD no-train)"
+      },
+      "gt": {
+        "image_path": "final_images/0.png",
+        "calligrapher_id": "12",
+        "script_id": "2",
+        "character_id": "2175",
+        "tag": "char2175 GT (script2 calli12)"
+      }
+    },
+    {
+      "odd": {
+        "calligrapher_id": "0",
+        "script_id": "0",
+        "character_id": "2175",
+        "tag": "char2175|script0|calli0(OOD no-train)"
+      },
+      "gt": {
+        "image_path": "final_images/0.png",
+        "calligrapher_id": "12",
+        "script_id": "2",
+        "character_id": "2175",
+        "tag": "char2175 GT (script2 calli12)"
+      }
+    },
+    {
+      "odd": {
+        "calligrapher_id": "0",
+        "script_id": "0",
+        "character_id": "2247",
+        "tag": "char2247|script0|calli0(OOD no-train)"
+      },
+      "gt": {
+        "image_path": "final_images/8.png",
+        "calligrapher_id": "14",
+        "script_id": "2",
+        "character_id": "2247",
+        "tag": "char2247 GT (script2 calli14)"
+      }
+    },
+    {
+      "odd": {
+        "calligrapher_id": "0",
+        "script_id": "3",
+        "character_id": "431",
+        "tag": "char431|script3|calli0(OOD no-train)"
+      },
+      "gt": {
+        "image_path": "final_images/18.png",
+        "calligrapher_id": "12",
+        "script_id": "2",
+        "character_id": "431",
+        "tag": "char431 GT (script2 calli12)"
+      }
+    },
+    {
+      "odd": {
+        "calligrapher_id": "1189",
+        "script_id": "1",
+        "character_id": "431",
+        "tag": "char431|script1|calli1189(OOD no-train)"
+      },
+      "gt": {
+        "image_path": "final_images/18.png",
+        "calligrapher_id": "12",
+        "script_id": "2",
+        "character_id": "431",
+        "tag": "char431 GT (script2 calli12)"
+      }
+    }
+  ],
+  "total_train_triples": 176805
+}

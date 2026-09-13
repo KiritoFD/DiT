@@ -1,0 +1,473 @@
+[2026-08-24 00:11:36] [main] workers=8, worker_threads=6, cores_per_worker=6, batch=auto, affinity=ON
+[2026-08-24 00:11:36] [main] core affinity table: W0=[0, 1, 2, 3, 4, 5] W1=[6, 7, 8, 9, 10, 11] W2=[12, 13, 14, 15, 16, 17] W3=[18, 19, 20, 21, 22, 23] W4=[24, 25, 26, 27, 28, 29] W5=[30, 31, 32, 33, 34, 35] W6=[36, 37, 38, 39, 40, 41] W7=[42, 43, 44, 45, 46, 47]
+[2026-08-24 00:11:36] [watch] active ckpt dir: assets/results/s8_klf4_clean_dino/20260823-234546-s8-klf4-clean-dino/checkpoints
+[2026-08-24 00:11:36] [watch] loaded state: 0 entries
+[2026-08-24 00:11:36] [scan] 5 ckpts total, 0 done, 5 pending
+[2026-08-24 00:11:36] [scan] loading 0001000.pt (961MB)...
+[2026-08-24 00:11:37] [eval] === processing 0001000.pt (step 1000) ===
+[2026-08-24 00:11:37] [pool] creating ProcessPoolExecutor: 8 workers (spawn, affinity=ON), args_dict=103 keys
+[2026-08-24 00:11:37] [pool] ProcessPoolExecutor created, waiting for workers...
+[2026-08-24 00:11:38] [worker 0 pid=1552773] pinned to cores [0, 1, 2, 3, 4, 5]
+[2026-08-24 00:11:38] [worker 1 pid=1552774] pinned to cores [6, 7, 8, 9, 10, 11]
+[2026-08-24 00:11:38] [worker 2 pid=1552769] pinned to cores [12, 13, 14, 15, 16, 17]
+[2026-08-24 00:11:38] [worker 3 pid=1552770] pinned to cores [18, 19, 20, 21, 22, 23]
+[2026-08-24 00:11:38] [worker 4 pid=1552775] pinned to cores [24, 25, 26, 27, 28, 29]
+[2026-08-24 00:11:38] [worker 5 pid=1552771] pinned to cores [30, 31, 32, 33, 34, 35]
+[2026-08-24 00:11:38] [worker 6 pid=1552772] pinned to cores [36, 37, 38, 39, 40, 41]
+[2026-08-24 00:11:38] [worker 7 pid=1552766] pinned to cores [42, 43, 44, 45, 46, 47]
+[2026-08-24 00:11:40] [vae] loading data/pretrained/kl-f4
+The config attributes {'mid_block_add_attention': True, 'shift_factor': None, 'use_post_quant_conv': True, 'use_quant_conv': True} were passed to AutoencoderKL, but are not expected and will be ignored. Please verify your config.json configuration file.
+[2026-08-24 00:11:40] [vae] loading data/pretrained/kl-f4
+The config attributes {'mid_block_add_attention': True, 'shift_factor': None, 'use_post_quant_conv': True, 'use_quant_conv': True} were passed to AutoencoderKL, but are not expected and will be ignored. Please verify your config.json configuration file.
+[2026-08-24 00:11:40] [vae] loading data/pretrained/kl-f4
+The config attributes {'mid_block_add_attention': True, 'shift_factor': None, 'use_post_quant_conv': True, 'use_quant_conv': True} were passed to AutoencoderKL, but are not expected and will be ignored. Please verify your config.json configuration file.
+[2026-08-24 00:11:40] [vae] loading data/pretrained/kl-f4
+The config attributes {'mid_block_add_attention': True, 'shift_factor': None, 'use_post_quant_conv': True, 'use_quant_conv': True} were passed to AutoencoderKL, but are not expected and will be ignored. Please verify your config.json configuration file.
+[2026-08-24 00:11:40] [vae] loading data/pretrained/kl-f4
+The config attributes {'mid_block_add_attention': True, 'shift_factor': None, 'use_post_quant_conv': True, 'use_quant_conv': True} were passed to AutoencoderKL, but are not expected and will be ignored. Please verify your config.json configuration file.
+[2026-08-24 00:11:40] [vae] loading data/pretrained/kl-f4
+The config attributes {'mid_block_add_attention': True, 'shift_factor': None, 'use_post_quant_conv': True, 'use_quant_conv': True} were passed to AutoencoderKL, but are not expected and will be ignored. Please verify your config.json configuration file.
+[2026-08-24 00:11:40] [cache] assets/eval100_top30_clean.csv -> 79 samples
+[2026-08-24 00:11:40] [cache] assets/show5_top30.csv -> 5 samples
+[2026-08-24 00:11:40] [cache] assets/seen5_top30.csv -> 5 samples
+[2026-08-24 00:11:40] [worker 2 pid=1552769] initialized (threads=6, cores=6)
+[2026-08-24 00:11:40] [cache] assets/eval100_top30_clean.csv -> 79 samples
+[2026-08-24 00:11:40] [cache] assets/show5_top30.csv -> 5 samples
+[2026-08-24 00:11:40] [vae] loading data/pretrained/kl-f4
+The config attributes {'mid_block_add_attention': True, 'shift_factor': None, 'use_post_quant_conv': True, 'use_quant_conv': True} were passed to AutoencoderKL, but are not expected and will be ignored. Please verify your config.json configuration file.
+[2026-08-24 00:11:40] [cache] assets/seen5_top30.csv -> 5 samples
+[2026-08-24 00:11:40] [worker 0 pid=1552773] initialized (threads=6, cores=6)
+[2026-08-24 00:11:40] [vae] loading data/pretrained/kl-f4
+The config attributes {'mid_block_add_attention': True, 'shift_factor': None, 'use_post_quant_conv': True, 'use_quant_conv': True} were passed to AutoencoderKL, but are not expected and will be ignored. Please verify your config.json configuration file.
+[2026-08-24 00:11:40] [cache] assets/eval100_top30_clean.csv -> 79 samples
+[2026-08-24 00:11:40] [cache] assets/show5_top30.csv -> 5 samples
+[2026-08-24 00:11:40] [cache] assets/seen5_top30.csv -> 5 samples
+[2026-08-24 00:11:40] [worker 3 pid=1552770] initialized (threads=6, cores=6)
+[2026-08-24 00:11:40] [cache] assets/eval100_top30_clean.csv -> 79 samples
+[2026-08-24 00:11:40] [cache] assets/eval100_top30_clean.csv -> 79 samples
+[2026-08-24 00:11:40] [cache] assets/show5_top30.csv -> 5 samples
+[2026-08-24 00:11:40] [cache] assets/show5_top30.csv -> 5 samples
+[2026-08-24 00:11:40] [cache] assets/seen5_top30.csv -> 5 samples
+[2026-08-24 00:11:40] [worker 5 pid=1552771] initialized (threads=6, cores=6)
+[2026-08-24 00:11:40] [cache] assets/seen5_top30.csv -> 5 samples
+[2026-08-24 00:11:40] [worker 4 pid=1552775] initialized (threads=6, cores=6)
+[2026-08-24 00:11:40] [cache] assets/eval100_top30_clean.csv -> 79 samples
+[2026-08-24 00:11:40] [cache] assets/show5_top30.csv -> 5 samples
+[2026-08-24 00:11:40] [cache] assets/seen5_top30.csv -> 5 samples
+[2026-08-24 00:11:40] [worker 7 pid=1552766] initialized (threads=6, cores=6)
+[2026-08-24 00:11:40] [cache] assets/eval100_top30_clean.csv -> 79 samples
+[2026-08-24 00:11:40] [cache] assets/show5_top30.csv -> 5 samples
+[2026-08-24 00:11:40] [cache] assets/seen5_top30.csv -> 5 samples
+[2026-08-24 00:11:40] [worker 6 pid=1552772] initialized (threads=6, cores=6)
+[2026-08-24 00:11:41] [cache] assets/eval100_top30_clean.csv -> 79 samples
+[2026-08-24 00:11:41] [cache] assets/show5_top30.csv -> 5 samples
+[2026-08-24 00:11:41] [cache] assets/seen5_top30.csv -> 5 samples
+[2026-08-24 00:11:41] [worker 1 pid=1552774] initialized (threads=6, cores=6)
+[2026-08-24 00:11:41] [model] loaded weights from ema (0001000.pt): missing=0, unexpected=0
+[2026-08-24 00:11:41] [model] loaded weights from ema (0001000.pt): missing=0, unexpected=0
+[2026-08-24 00:11:41] [model] loaded weights from ema (0001000.pt): missing=0, unexpected=0
+[2026-08-24 00:11:41] [model] loaded weights from ema (0001000.pt): missing=0, unexpected=0
+[2026-08-24 00:11:41] [model] loaded weights from ema (0001000.pt): missing=0, unexpected=0
+[2026-08-24 00:11:41] [model] loaded weights from ema (0001000.pt): missing=0, unexpected=0
+[2026-08-24 00:11:41] [model] loaded weights from ema (0001000.pt): missing=0, unexpected=0
+[2026-08-24 00:11:42] [model] loaded weights from ema (0001000.pt): missing=0, unexpected=0
+[2026-08-24 00:15:30] [eval] step 1000: 2 errors: ['eval: The size of tensor a (26) must match the size of tensor b (2) at non-singleton dimension 0', "eval: Expected tensor for argument #1 'indices' to have one of the following scalar types: Long, Int; but got torch.FloatTensor instead (while checking arguments for embedding)"]
+[2026-08-24 00:15:30] [eval] step 1000: MSE=1.68418 SSIM=0.0936 (233s, show5=ok, seen5=ok)
+[2026-08-24 00:15:30] [scan] loading 0002000.pt (961MB)...
+[2026-08-24 00:15:30] [eval] === processing 0002000.pt (step 2000) ===
+[2026-08-24 00:15:31] [model] loaded weights from ema (0002000.pt): missing=0, unexpected=0
+[2026-08-24 00:15:31] [model] loaded weights from ema (0002000.pt): missing=0, unexpected=0
+[2026-08-24 00:15:31] [model] loaded weights from ema (0002000.pt): missing=0, unexpected=0
+[2026-08-24 00:15:31] [model] loaded weights from ema (0002000.pt): missing=0, unexpected=0
+[2026-08-24 00:15:31] [model] loaded weights from ema (0002000.pt): missing=0, unexpected=0
+[2026-08-24 00:15:31] [model] loaded weights from ema (0002000.pt): missing=0, unexpected=0
+[2026-08-24 00:15:31] [model] loaded weights from ema (0002000.pt): missing=0, unexpected=0
+[2026-08-24 00:15:31] [model] loaded weights from ema (0002000.pt): missing=0, unexpected=0
+[2026-08-24 00:19:20] [eval] step 2000: 2 errors: ['eval: The size of tensor a (26) must match the size of tensor b (2) at non-singleton dimension 0', "eval: Expected tensor for argument #1 'indices' to have one of the following scalar types: Long, Int; but got torch.FloatTensor instead (while checking arguments for embedding)"]
+[2026-08-24 00:19:20] [eval] step 2000: MSE=1.51039 SSIM=0.2145 (229s, show5=ok, seen5=ok)
+[2026-08-24 00:19:20] [scan] loading 0003000.pt (961MB)...
+[2026-08-24 00:19:20] [eval] === processing 0003000.pt (step 3000) ===
+[2026-08-24 00:19:21] [model] loaded weights from ema (0003000.pt): missing=0, unexpected=0
+[2026-08-24 00:19:21] [model] loaded weights from ema (0003000.pt): missing=0, unexpected=0
+[2026-08-24 00:19:21] [model] loaded weights from ema (0003000.pt): missing=0, unexpected=0
+[2026-08-24 00:19:21] [model] loaded weights from ema (0003000.pt): missing=0, unexpected=0
+[2026-08-24 00:19:21] [model] loaded weights from ema (0003000.pt): missing=0, unexpected=0
+[2026-08-24 00:19:21] [model] loaded weights from ema (0003000.pt): missing=0, unexpected=0
+[2026-08-24 00:19:21] [model] loaded weights from ema (0003000.pt): missing=0, unexpected=0
+[2026-08-24 00:19:21] [model] loaded weights from ema (0003000.pt): missing=0, unexpected=0
+[2026-08-24 00:23:19] [eval] step 3000: 2 errors: ['eval: The size of tensor a (26) must match the size of tensor b (2) at non-singleton dimension 0', "eval: Expected tensor for argument #1 'indices' to have one of the following scalar types: Long, Int; but got torch.FloatTensor instead (while checking arguments for embedding)"]
+[2026-08-24 00:23:19] [eval] step 3000: MSE=1.48477 SSIM=0.2532 (239s, show5=ok, seen5=ok)
+[2026-08-24 00:23:19] [scan] loading 0004000.pt (961MB)...
+[2026-08-24 00:23:20] [eval] === processing 0004000.pt (step 4000) ===
+[2026-08-24 00:23:20] [model] loaded weights from ema (0004000.pt): missing=0, unexpected=0
+[2026-08-24 00:23:20] [model] loaded weights from ema (0004000.pt): missing=0, unexpected=0
+[2026-08-24 00:23:20] [model] loaded weights from ema (0004000.pt): missing=0, unexpected=0
+[2026-08-24 00:23:20] [model] loaded weights from ema (0004000.pt): missing=0, unexpected=0
+[2026-08-24 00:23:20] [model] loaded weights from ema (0004000.pt): missing=0, unexpected=0
+[2026-08-24 00:23:20] [model] loaded weights from ema (0004000.pt): missing=0, unexpected=0
+[2026-08-24 00:23:20] [model] loaded weights from ema (0004000.pt): missing=0, unexpected=0
+[2026-08-24 00:23:20] [model] loaded weights from ema (0004000.pt): missing=0, unexpected=0
+[2026-08-24 00:27:10] [eval] step 4000: 2 errors: ['eval: The size of tensor a (26) must match the size of tensor b (2) at non-singleton dimension 0', "eval: Expected tensor for argument #1 'indices' to have one of the following scalar types: Long, Int; but got torch.FloatTensor instead (while checking arguments for embedding)"]
+[2026-08-24 00:27:10] [eval] step 4000: MSE=1.39852 SSIM=0.2908 (231s, show5=ok, seen5=ok)
+[2026-08-24 00:27:10] [scan] loading 0005000.pt (961MB)...
+[2026-08-24 00:27:11] [eval] === processing 0005000.pt (step 5000) ===
+[2026-08-24 00:27:11] [model] loaded weights from ema (0005000.pt): missing=0, unexpected=0
+[2026-08-24 00:27:11] [model] loaded weights from ema (0005000.pt): missing=0, unexpected=0
+[2026-08-24 00:27:11] [model] loaded weights from ema (0005000.pt): missing=0, unexpected=0
+[2026-08-24 00:27:11] [model] loaded weights from ema (0005000.pt): missing=0, unexpected=0
+[2026-08-24 00:27:11] [model] loaded weights from ema (0005000.pt): missing=0, unexpected=0
+[2026-08-24 00:27:11] [model] loaded weights from ema (0005000.pt): missing=0, unexpected=0
+[2026-08-24 00:27:11] [model] loaded weights from ema (0005000.pt): missing=0, unexpected=0
+[2026-08-24 00:27:11] [model] loaded weights from ema (0005000.pt): missing=0, unexpected=0
+[2026-08-24 00:30:56] [eval] step 5000: 2 errors: ['eval: The size of tensor a (26) must match the size of tensor b (2) at non-singleton dimension 0', "eval: Expected tensor for argument #1 'indices' to have one of the following scalar types: Long, Int; but got torch.FloatTensor instead (while checking arguments for embedding)"]
+[2026-08-24 00:30:56] [eval] step 5000: MSE=1.34861 SSIM=0.3148 (225s, show5=ok, seen5=ok)
+[2026-08-24 00:31:26] [scan] 5 ckpts, 5 done, 0 pending — waiting for new ckpt
+[2026-08-24 00:33:56] [scan] 6 ckpts total, 5 done, 1 pending
+[2026-08-24 00:33:56] [scan] loading 0010000.pt (961MB)...
+[2026-08-24 00:33:56] [eval] === processing 0010000.pt (step 10000) ===
+[2026-08-24 00:33:57] [model] loaded weights from ema (0010000.pt): missing=0, unexpected=0
+[2026-08-24 00:33:57] [model] loaded weights from ema (0010000.pt): missing=0, unexpected=0
+[2026-08-24 00:33:57] [model] loaded weights from ema (0010000.pt): missing=0, unexpected=0
+[2026-08-24 00:33:57] [model] loaded weights from ema (0010000.pt): missing=0, unexpected=0
+[2026-08-24 00:33:57] [model] loaded weights from ema (0010000.pt): missing=0, unexpected=0
+[2026-08-24 00:33:57] [model] loaded weights from ema (0010000.pt): missing=0, unexpected=0
+[2026-08-24 00:33:57] [model] loaded weights from ema (0010000.pt): missing=0, unexpected=0
+[2026-08-24 00:33:57] [model] loaded weights from ema (0010000.pt): missing=0, unexpected=0
+[2026-08-24 00:37:51] [eval] step 10000: 2 errors: ['eval: The size of tensor a (26) must match the size of tensor b (2) at non-singleton dimension 0', "eval: Expected tensor for argument #1 'indices' to have one of the following scalar types: Long, Int; but got torch.FloatTensor instead (while checking arguments for embedding)"]
+[2026-08-24 00:37:51] [eval] step 10000: MSE=1.00622 SSIM=0.4287 (235s, show5=ok, seen5=ok)
+[2026-08-24 00:38:21] [scan] 6 ckpts, 6 done, 0 pending — waiting for new ckpt
+[2026-08-24 00:43:21] [scan] 6 ckpts, 6 done, 0 pending — waiting for new ckpt
+[2026-08-24 00:48:22] [scan] 6 ckpts, 6 done, 0 pending — waiting for new ckpt
+[2026-08-24 00:53:22] [scan] 6 ckpts, 6 done, 0 pending — waiting for new ckpt
+[2026-08-24 00:57:52] [scan] 7 ckpts total, 6 done, 1 pending
+[2026-08-24 00:57:52] [scan] loading 0015000.pt (961MB)...
+[2026-08-24 00:57:52] [eval] === processing 0015000.pt (step 15000) ===
+[2026-08-24 00:57:53] [model] loaded weights from ema (0015000.pt): missing=0, unexpected=0
+[2026-08-24 00:57:53] [model] loaded weights from ema (0015000.pt): missing=0, unexpected=0
+[2026-08-24 00:57:53] [model] loaded weights from ema (0015000.pt): missing=0, unexpected=0
+[2026-08-24 00:57:53] [model] loaded weights from ema (0015000.pt): missing=0, unexpected=0
+[2026-08-24 00:57:53] [model] loaded weights from ema (0015000.pt): missing=0, unexpected=0
+[2026-08-24 00:57:53] [model] loaded weights from ema (0015000.pt): missing=0, unexpected=0
+[2026-08-24 00:57:53] [model] loaded weights from ema (0015000.pt): missing=0, unexpected=0
+[2026-08-24 00:57:53] [model] loaded weights from ema (0015000.pt): missing=0, unexpected=0
+[2026-08-24 01:01:38] [eval] step 15000: 2 errors: ['eval: The size of tensor a (26) must match the size of tensor b (2) at non-singleton dimension 0', "eval: Expected tensor for argument #1 'indices' to have one of the following scalar types: Long, Int; but got torch.FloatTensor instead (while checking arguments for embedding)"]
+[2026-08-24 01:01:38] [eval] step 15000: MSE=0.95619 SSIM=0.4604 (226s, show5=ok, seen5=ok)
+[2026-08-24 01:02:08] [scan] 7 ckpts, 7 done, 0 pending — waiting for new ckpt
+[2026-08-24 01:07:08] [scan] 7 ckpts, 7 done, 0 pending — waiting for new ckpt
+[2026-08-24 01:12:09] [scan] 7 ckpts, 7 done, 0 pending — waiting for new ckpt
+[2026-08-24 01:17:09] [scan] 7 ckpts, 7 done, 0 pending — waiting for new ckpt
+[2026-08-24 01:21:39] [scan] 8 ckpts total, 7 done, 1 pending
+[2026-08-24 01:21:39] [scan] loading 0020000.pt (961MB)...
+[2026-08-24 01:21:39] [eval] === processing 0020000.pt (step 20000) ===
+[2026-08-24 01:21:40] [model] loaded weights from ema (0020000.pt): missing=0, unexpected=0
+[2026-08-24 01:21:40] [model] loaded weights from ema (0020000.pt): missing=0, unexpected=0
+[2026-08-24 01:21:40] [model] loaded weights from ema (0020000.pt): missing=0, unexpected=0
+[2026-08-24 01:21:40] [model] loaded weights from ema (0020000.pt): missing=0, unexpected=0
+[2026-08-24 01:21:40] [model] loaded weights from ema (0020000.pt): missing=0, unexpected=0
+[2026-08-24 01:21:40] [model] loaded weights from ema (0020000.pt): missing=0, unexpected=0
+[2026-08-24 01:21:40] [model] loaded weights from ema (0020000.pt): missing=0, unexpected=0
+[2026-08-24 01:21:40] [model] loaded weights from ema (0020000.pt): missing=0, unexpected=0
+[2026-08-24 01:25:29] [eval] step 20000: 2 errors: ['eval: The size of tensor a (26) must match the size of tensor b (2) at non-singleton dimension 0', "eval: Expected tensor for argument #1 'indices' to have one of the following scalar types: Long, Int; but got torch.FloatTensor instead (while checking arguments for embedding)"]
+[2026-08-24 01:25:29] [eval] step 20000: MSE=0.91875 SSIM=0.4826 (230s, show5=ok, seen5=ok)
+[2026-08-24 01:25:59] [scan] 8 ckpts, 8 done, 0 pending — waiting for new ckpt
+[2026-08-24 01:31:00] [scan] 8 ckpts, 8 done, 0 pending — waiting for new ckpt
+[2026-08-24 01:36:00] [scan] 8 ckpts, 8 done, 0 pending — waiting for new ckpt
+[2026-08-24 01:41:00] [scan] 8 ckpts, 8 done, 0 pending — waiting for new ckpt
+[2026-08-24 01:45:31] [scan] 9 ckpts total, 8 done, 1 pending
+[2026-08-24 01:45:31] [scan] loading 0025000.pt (961MB)...
+[2026-08-24 01:45:31] [eval] === processing 0025000.pt (step 25000) ===
+[2026-08-24 01:45:31] [model] loaded weights from ema (0025000.pt): missing=0, unexpected=0
+[2026-08-24 01:45:31] [model] loaded weights from ema (0025000.pt): missing=0, unexpected=0
+[2026-08-24 01:45:31] [model] loaded weights from ema (0025000.pt): missing=0, unexpected=0
+[2026-08-24 01:45:31] [model] loaded weights from ema (0025000.pt): missing=0, unexpected=0
+[2026-08-24 01:45:31] [model] loaded weights from ema (0025000.pt): missing=0, unexpected=0
+[2026-08-24 01:45:31] [model] loaded weights from ema (0025000.pt): missing=0, unexpected=0
+[2026-08-24 01:45:31] [model] loaded weights from ema (0025000.pt): missing=0, unexpected=0
+[2026-08-24 01:45:31] [model] loaded weights from ema (0025000.pt): missing=0, unexpected=0
+[2026-08-24 01:49:27] [eval] step 25000: 2 errors: ['eval: The size of tensor a (26) must match the size of tensor b (2) at non-singleton dimension 0', "eval: Expected tensor for argument #1 'indices' to have one of the following scalar types: Long, Int; but got torch.FloatTensor instead (while checking arguments for embedding)"]
+[2026-08-24 01:49:27] [eval] step 25000: MSE=0.90758 SSIM=0.4892 (237s, show5=ok, seen5=ok)
+[2026-08-24 01:49:58] [scan] 9 ckpts, 9 done, 0 pending — waiting for new ckpt
+[2026-08-24 01:54:58] [scan] 9 ckpts, 9 done, 0 pending — waiting for new ckpt
+[2026-08-24 01:59:58] [scan] 9 ckpts, 9 done, 0 pending — waiting for new ckpt
+[2026-08-24 02:04:58] [scan] 9 ckpts, 9 done, 0 pending — waiting for new ckpt
+[2026-08-24 02:09:29] [scan] 10 ckpts total, 9 done, 1 pending
+[2026-08-24 02:09:29] [scan] loading 0030000.pt (961MB)...
+[2026-08-24 02:09:29] [eval] === processing 0030000.pt (step 30000) ===
+[2026-08-24 02:09:29] [model] loaded weights from ema (0030000.pt): missing=0, unexpected=0
+[2026-08-24 02:09:29] [model] loaded weights from ema (0030000.pt): missing=0, unexpected=0
+[2026-08-24 02:09:30] [model] loaded weights from ema (0030000.pt): missing=0, unexpected=0
+[2026-08-24 02:09:30] [model] loaded weights from ema (0030000.pt): missing=0, unexpected=0
+[2026-08-24 02:09:30] [model] loaded weights from ema (0030000.pt): missing=0, unexpected=0
+[2026-08-24 02:09:30] [model] loaded weights from ema (0030000.pt): missing=0, unexpected=0
+[2026-08-24 02:09:30] [model] loaded weights from ema (0030000.pt): missing=0, unexpected=0
+[2026-08-24 02:09:30] [model] loaded weights from ema (0030000.pt): missing=0, unexpected=0
+[2026-08-24 02:13:18] [eval] step 30000: 2 errors: ['eval: The size of tensor a (26) must match the size of tensor b (2) at non-singleton dimension 0', "eval: Expected tensor for argument #1 'indices' to have one of the following scalar types: Long, Int; but got torch.FloatTensor instead (while checking arguments for embedding)"]
+[2026-08-24 02:13:18] [eval] step 30000: MSE=0.89560 SSIM=0.4967 (229s, show5=ok, seen5=ok)
+[2026-08-24 02:13:48] [scan] 10 ckpts, 10 done, 0 pending — waiting for new ckpt
+[2026-08-24 02:18:49] [scan] 10 ckpts, 10 done, 0 pending — waiting for new ckpt
+[2026-08-24 02:23:49] [scan] 10 ckpts, 10 done, 0 pending — waiting for new ckpt
+[2026-08-24 02:28:49] [scan] 10 ckpts, 10 done, 0 pending — waiting for new ckpt
+[2026-08-24 02:33:20] [scan] 11 ckpts total, 10 done, 1 pending
+[2026-08-24 02:33:20] [scan] loading 0035000.pt (961MB)...
+[2026-08-24 02:33:20] [eval] === processing 0035000.pt (step 35000) ===
+[2026-08-24 02:33:20] [model] loaded weights from ema (0035000.pt): missing=0, unexpected=0
+[2026-08-24 02:33:20] [model] loaded weights from ema (0035000.pt): missing=0, unexpected=0
+[2026-08-24 02:33:20] [model] loaded weights from ema (0035000.pt): missing=0, unexpected=0
+[2026-08-24 02:33:20] [model] loaded weights from ema (0035000.pt): missing=0, unexpected=0
+[2026-08-24 02:33:20] [model] loaded weights from ema (0035000.pt): missing=0, unexpected=0
+[2026-08-24 02:33:20] [model] loaded weights from ema (0035000.pt): missing=0, unexpected=0
+[2026-08-24 02:33:21] [model] loaded weights from ema (0035000.pt): missing=0, unexpected=0
+[2026-08-24 02:33:21] [model] loaded weights from ema (0035000.pt): missing=0, unexpected=0
+[2026-08-24 02:37:24] [eval] step 35000: 2 errors: ['eval: The size of tensor a (26) must match the size of tensor b (2) at non-singleton dimension 0', "eval: Expected tensor for argument #1 'indices' to have one of the following scalar types: Long, Int; but got torch.FloatTensor instead (while checking arguments for embedding)"]
+[2026-08-24 02:37:24] [eval] step 35000: MSE=0.88878 SSIM=0.5007 (245s, show5=ok, seen5=ok)
+[2026-08-24 02:37:54] [scan] 11 ckpts, 11 done, 0 pending — waiting for new ckpt
+[2026-08-24 02:42:55] [scan] 11 ckpts, 11 done, 0 pending — waiting for new ckpt
+[2026-08-24 02:47:55] [scan] 11 ckpts, 11 done, 0 pending — waiting for new ckpt
+[2026-08-24 02:52:55] [scan] 11 ckpts, 11 done, 0 pending — waiting for new ckpt
+[2026-08-24 02:57:26] [scan] 12 ckpts total, 11 done, 1 pending
+[2026-08-24 02:57:26] [scan] loading 0040000.pt (961MB)...
+[2026-08-24 02:57:26] [eval] === processing 0040000.pt (step 40000) ===
+[2026-08-24 02:57:26] [model] loaded weights from ema (0040000.pt): missing=0, unexpected=0
+[2026-08-24 02:57:26] [model] loaded weights from ema (0040000.pt): missing=0, unexpected=0
+[2026-08-24 02:57:26] [model] loaded weights from ema (0040000.pt): missing=0, unexpected=0
+[2026-08-24 02:57:26] [model] loaded weights from ema (0040000.pt): missing=0, unexpected=0
+[2026-08-24 02:57:26] [model] loaded weights from ema (0040000.pt): missing=0, unexpected=0
+[2026-08-24 02:57:26] [model] loaded weights from ema (0040000.pt): missing=0, unexpected=0
+[2026-08-24 02:57:26] [model] loaded weights from ema (0040000.pt): missing=0, unexpected=0
+[2026-08-24 02:57:26] [model] loaded weights from ema (0040000.pt): missing=0, unexpected=0
+[2026-08-24 03:01:28] [eval] step 40000: 2 errors: ['eval: The size of tensor a (26) must match the size of tensor b (2) at non-singleton dimension 0', "eval: Expected tensor for argument #1 'indices' to have one of the following scalar types: Long, Int; but got torch.FloatTensor instead (while checking arguments for embedding)"]
+[2026-08-24 03:01:28] [eval] step 40000: MSE=0.89221 SSIM=0.5002 (242s, show5=ok, seen5=ok)
+[2026-08-24 03:01:58] [scan] 12 ckpts, 12 done, 0 pending — waiting for new ckpt
+[2026-08-24 03:06:59] [scan] 12 ckpts, 12 done, 0 pending — waiting for new ckpt
+[2026-08-24 03:11:59] [scan] 12 ckpts, 12 done, 0 pending — waiting for new ckpt
+[2026-08-24 03:16:59] [scan] 12 ckpts, 12 done, 0 pending — waiting for new ckpt
+[2026-08-24 03:20:59] [scan] 13 ckpts total, 12 done, 1 pending
+[2026-08-24 03:20:59] [scan] loading 0045000.pt (961MB)...
+[2026-08-24 03:21:00] [eval] === processing 0045000.pt (step 45000) ===
+[2026-08-24 03:21:00] [model] loaded weights from ema (0045000.pt): missing=0, unexpected=0
+[2026-08-24 03:21:00] [model] loaded weights from ema (0045000.pt): missing=0, unexpected=0
+[2026-08-24 03:21:00] [model] loaded weights from ema (0045000.pt): missing=0, unexpected=0
+[2026-08-24 03:21:00] [model] loaded weights from ema (0045000.pt): missing=0, unexpected=0
+[2026-08-24 03:21:00] [model] loaded weights from ema (0045000.pt): missing=0, unexpected=0
+[2026-08-24 03:21:00] [model] loaded weights from ema (0045000.pt): missing=0, unexpected=0
+[2026-08-24 03:21:00] [model] loaded weights from ema (0045000.pt): missing=0, unexpected=0
+[2026-08-24 03:21:00] [model] loaded weights from ema (0045000.pt): missing=0, unexpected=0
+[2026-08-24 03:25:07] [eval] step 45000: 2 errors: ['eval: The size of tensor a (26) must match the size of tensor b (2) at non-singleton dimension 0', "eval: Expected tensor for argument #1 'indices' to have one of the following scalar types: Long, Int; but got torch.FloatTensor instead (while checking arguments for embedding)"]
+[2026-08-24 03:25:07] [eval] step 45000: MSE=0.87865 SSIM=0.5059 (247s, show5=ok, seen5=ok)
+[2026-08-24 03:25:37] [scan] 13 ckpts, 13 done, 0 pending — waiting for new ckpt
+[2026-08-24 03:30:37] [scan] 13 ckpts, 13 done, 0 pending — waiting for new ckpt
+[2026-08-24 03:35:37] [scan] 13 ckpts, 13 done, 0 pending — waiting for new ckpt
+[2026-08-24 03:40:38] [scan] 13 ckpts, 13 done, 0 pending — waiting for new ckpt
+[2026-08-24 03:45:08] [scan] 14 ckpts total, 13 done, 1 pending
+[2026-08-24 03:45:08] [scan] loading 0050000.pt (961MB)...
+[2026-08-24 03:45:08] [eval] === processing 0050000.pt (step 50000) ===
+[2026-08-24 03:45:09] [model] loaded weights from ema (0050000.pt): missing=0, unexpected=0
+[2026-08-24 03:45:09] [model] loaded weights from ema (0050000.pt): missing=0, unexpected=0
+[2026-08-24 03:45:09] [model] loaded weights from ema (0050000.pt): missing=0, unexpected=0
+[2026-08-24 03:45:09] [model] loaded weights from ema (0050000.pt): missing=0, unexpected=0
+[2026-08-24 03:45:09] [model] loaded weights from ema (0050000.pt): missing=0, unexpected=0
+[2026-08-24 03:45:09] [model] loaded weights from ema (0050000.pt): missing=0, unexpected=0
+[2026-08-24 03:45:09] [model] loaded weights from ema (0050000.pt): missing=0, unexpected=0
+[2026-08-24 03:45:09] [model] loaded weights from ema (0050000.pt): missing=0, unexpected=0
+[2026-08-24 03:49:00] [eval] step 50000: 2 errors: ['eval: The size of tensor a (26) must match the size of tensor b (2) at non-singleton dimension 0', "eval: Expected tensor for argument #1 'indices' to have one of the following scalar types: Long, Int; but got torch.FloatTensor instead (while checking arguments for embedding)"]
+[2026-08-24 03:49:00] [eval] step 50000: MSE=0.87055 SSIM=0.5094 (232s, show5=ok, seen5=ok)
+[2026-08-24 03:49:30] [scan] 14 ckpts, 14 done, 0 pending — waiting for new ckpt
+[2026-08-24 03:54:30] [scan] 14 ckpts, 14 done, 0 pending — waiting for new ckpt
+[2026-08-24 03:59:31] [scan] 14 ckpts, 14 done, 0 pending — waiting for new ckpt
+[2026-08-24 04:04:31] [scan] 14 ckpts, 14 done, 0 pending — waiting for new ckpt
+[2026-08-24 04:09:01] [scan] 15 ckpts total, 14 done, 1 pending
+[2026-08-24 04:09:01] [scan] loading 0055000.pt (961MB)...
+[2026-08-24 04:09:02] [eval] === processing 0055000.pt (step 55000) ===
+[2026-08-24 04:09:02] [model] loaded weights from ema (0055000.pt): missing=0, unexpected=0
+[2026-08-24 04:09:02] [model] loaded weights from ema (0055000.pt): missing=0, unexpected=0
+[2026-08-24 04:09:02] [model] loaded weights from ema (0055000.pt): missing=0, unexpected=0
+[2026-08-24 04:09:02] [model] loaded weights from ema (0055000.pt): missing=0, unexpected=0
+[2026-08-24 04:09:02] [model] loaded weights from ema (0055000.pt): missing=0, unexpected=0
+[2026-08-24 04:09:02] [model] loaded weights from ema (0055000.pt): missing=0, unexpected=0
+[2026-08-24 04:09:02] [model] loaded weights from ema (0055000.pt): missing=0, unexpected=0
+[2026-08-24 04:09:02] [model] loaded weights from ema (0055000.pt): missing=0, unexpected=0
+[2026-08-24 04:12:57] [eval] step 55000: 2 errors: ['eval: The size of tensor a (26) must match the size of tensor b (2) at non-singleton dimension 0', "eval: Expected tensor for argument #1 'indices' to have one of the following scalar types: Long, Int; but got torch.FloatTensor instead (while checking arguments for embedding)"]
+[2026-08-24 04:12:57] [eval] step 55000: MSE=0.86013 SSIM=0.5146 (236s, show5=ok, seen5=ok)
+[2026-08-24 04:13:27] [scan] 15 ckpts, 15 done, 0 pending — waiting for new ckpt
+[2026-08-24 04:18:28] [scan] 15 ckpts, 15 done, 0 pending — waiting for new ckpt
+[2026-08-24 04:23:28] [scan] 15 ckpts, 15 done, 0 pending — waiting for new ckpt
+[2026-08-24 04:28:28] [scan] 15 ckpts, 15 done, 0 pending — waiting for new ckpt
+[2026-08-24 04:32:59] [scan] 16 ckpts total, 15 done, 1 pending
+[2026-08-24 04:32:59] [scan] loading 0060000.pt (961MB)...
+[2026-08-24 04:32:59] [eval] === processing 0060000.pt (step 60000) ===
+[2026-08-24 04:32:59] [model] loaded weights from ema (0060000.pt): missing=0, unexpected=0
+[2026-08-24 04:32:59] [model] loaded weights from ema (0060000.pt): missing=0, unexpected=0
+[2026-08-24 04:32:59] [model] loaded weights from ema (0060000.pt): missing=0, unexpected=0
+[2026-08-24 04:32:59] [model] loaded weights from ema (0060000.pt): missing=0, unexpected=0
+[2026-08-24 04:32:59] [model] loaded weights from ema (0060000.pt): missing=0, unexpected=0
+[2026-08-24 04:32:59] [model] loaded weights from ema (0060000.pt): missing=0, unexpected=0
+[2026-08-24 04:32:59] [model] loaded weights from ema (0060000.pt): missing=0, unexpected=0
+[2026-08-24 04:33:00] [model] loaded weights from ema (0060000.pt): missing=0, unexpected=0
+[2026-08-24 04:36:49] [eval] step 60000: 2 errors: ['eval: The size of tensor a (26) must match the size of tensor b (2) at non-singleton dimension 0', "eval: Expected tensor for argument #1 'indices' to have one of the following scalar types: Long, Int; but got torch.FloatTensor instead (while checking arguments for embedding)"]
+[2026-08-24 04:36:49] [eval] step 60000: MSE=0.85629 SSIM=0.5183 (231s, show5=ok, seen5=ok)
+[2026-08-24 04:37:19] [scan] 16 ckpts, 16 done, 0 pending — waiting for new ckpt
+[2026-08-24 04:42:20] [scan] 16 ckpts, 16 done, 0 pending — waiting for new ckpt
+[2026-08-24 04:47:20] [scan] 16 ckpts, 16 done, 0 pending — waiting for new ckpt
+[2026-08-24 04:52:20] [scan] 16 ckpts, 16 done, 0 pending — waiting for new ckpt
+[2026-08-24 04:56:51] [scan] 17 ckpts total, 16 done, 1 pending
+[2026-08-24 04:56:51] [scan] loading 0065000.pt (961MB)...
+[2026-08-24 04:56:51] [eval] === processing 0065000.pt (step 65000) ===
+[2026-08-24 04:56:51] [model] loaded weights from ema (0065000.pt): missing=0, unexpected=0
+[2026-08-24 04:56:51] [model] loaded weights from ema (0065000.pt): missing=0, unexpected=0
+[2026-08-24 04:56:51] [model] loaded weights from ema (0065000.pt): missing=0, unexpected=0
+[2026-08-24 04:56:51] [model] loaded weights from ema (0065000.pt): missing=0, unexpected=0
+[2026-08-24 04:56:51] [model] loaded weights from ema (0065000.pt): missing=0, unexpected=0
+[2026-08-24 04:56:51] [model] loaded weights from ema (0065000.pt): missing=0, unexpected=0
+[2026-08-24 04:56:51] [model] loaded weights from ema (0065000.pt): missing=0, unexpected=0
+[2026-08-24 04:56:52] [model] loaded weights from ema (0065000.pt): missing=0, unexpected=0
+[2026-08-24 05:00:42] [eval] step 65000: 2 errors: ['eval: The size of tensor a (26) must match the size of tensor b (2) at non-singleton dimension 0', "eval: Expected tensor for argument #1 'indices' to have one of the following scalar types: Long, Int; but got torch.FloatTensor instead (while checking arguments for embedding)"]
+[2026-08-24 05:00:42] [eval] step 65000: MSE=0.85231 SSIM=0.5202 (232s, show5=ok, seen5=ok)
+[2026-08-24 05:01:12] [scan] 17 ckpts, 17 done, 0 pending — waiting for new ckpt
+[2026-08-24 05:06:13] [scan] 17 ckpts, 17 done, 0 pending — waiting for new ckpt
+[2026-08-24 05:11:13] [scan] 17 ckpts, 17 done, 0 pending — waiting for new ckpt
+[2026-08-24 05:16:13] [scan] 17 ckpts, 17 done, 0 pending — waiting for new ckpt
+[2026-08-24 05:20:44] [scan] 18 ckpts total, 17 done, 1 pending
+[2026-08-24 05:20:44] [scan] loading 0070000.pt (961MB)...
+[2026-08-24 05:20:44] [eval] === processing 0070000.pt (step 70000) ===
+[2026-08-24 05:20:44] [model] loaded weights from ema (0070000.pt): missing=0, unexpected=0
+[2026-08-24 05:20:44] [model] loaded weights from ema (0070000.pt): missing=0, unexpected=0
+[2026-08-24 05:20:44] [model] loaded weights from ema (0070000.pt): missing=0, unexpected=0
+[2026-08-24 05:20:44] [model] loaded weights from ema (0070000.pt): missing=0, unexpected=0
+[2026-08-24 05:20:44] [model] loaded weights from ema (0070000.pt): missing=0, unexpected=0
+[2026-08-24 05:20:44] [model] loaded weights from ema (0070000.pt): missing=0, unexpected=0
+[2026-08-24 05:20:44] [model] loaded weights from ema (0070000.pt): missing=0, unexpected=0
+[2026-08-24 05:20:44] [model] loaded weights from ema (0070000.pt): missing=0, unexpected=0
+[2026-08-24 05:24:40] [eval] step 70000: 2 errors: ['eval: The size of tensor a (26) must match the size of tensor b (2) at non-singleton dimension 0', "eval: Expected tensor for argument #1 'indices' to have one of the following scalar types: Long, Int; but got torch.FloatTensor instead (while checking arguments for embedding)"]
+[2026-08-24 05:24:40] [eval] step 70000: MSE=0.84537 SSIM=0.5221 (236s, show5=ok, seen5=ok)
+[2026-08-24 05:25:10] [scan] 18 ckpts, 18 done, 0 pending — waiting for new ckpt
+[2026-08-24 05:30:10] [scan] 18 ckpts, 18 done, 0 pending — waiting for new ckpt
+[2026-08-24 05:35:11] [scan] 18 ckpts, 18 done, 0 pending — waiting for new ckpt
+[2026-08-24 05:40:11] [scan] 18 ckpts, 18 done, 0 pending — waiting for new ckpt
+[2026-08-24 05:44:41] [scan] 19 ckpts total, 18 done, 1 pending
+[2026-08-24 05:44:41] [scan] loading 0075000.pt (961MB)...
+[2026-08-24 05:44:41] [eval] === processing 0075000.pt (step 75000) ===
+[2026-08-24 05:44:42] [model] loaded weights from ema (0075000.pt): missing=0, unexpected=0
+[2026-08-24 05:44:42] [model] loaded weights from ema (0075000.pt): missing=0, unexpected=0
+[2026-08-24 05:44:42] [model] loaded weights from ema (0075000.pt): missing=0, unexpected=0
+[2026-08-24 05:44:42] [model] loaded weights from ema (0075000.pt): missing=0, unexpected=0
+[2026-08-24 05:44:42] [model] loaded weights from ema (0075000.pt): missing=0, unexpected=0
+[2026-08-24 05:44:42] [model] loaded weights from ema (0075000.pt): missing=0, unexpected=0
+[2026-08-24 05:44:42] [model] loaded weights from ema (0075000.pt): missing=0, unexpected=0
+[2026-08-24 05:44:42] [model] loaded weights from ema (0075000.pt): missing=0, unexpected=0
+[2026-08-24 05:48:34] [eval] step 75000: 2 errors: ['eval: The size of tensor a (26) must match the size of tensor b (2) at non-singleton dimension 0', "eval: Expected tensor for argument #1 'indices' to have one of the following scalar types: Long, Int; but got torch.FloatTensor instead (while checking arguments for embedding)"]
+[2026-08-24 05:48:34] [eval] step 75000: MSE=0.85574 SSIM=0.5181 (232s, show5=ok, seen5=ok)
+[2026-08-24 05:49:04] [scan] 19 ckpts, 19 done, 0 pending — waiting for new ckpt
+[2026-08-24 05:54:04] [scan] 19 ckpts, 19 done, 0 pending — waiting for new ckpt
+[2026-08-24 05:59:04] [scan] 19 ckpts, 19 done, 0 pending — waiting for new ckpt
+[2026-08-24 06:04:05] [scan] 19 ckpts, 19 done, 0 pending — waiting for new ckpt
+[2026-08-24 06:08:35] [scan] 20 ckpts total, 19 done, 1 pending
+[2026-08-24 06:08:35] [scan] loading 0080000.pt (961MB)...
+[2026-08-24 06:08:35] [eval] === processing 0080000.pt (step 80000) ===
+[2026-08-24 06:08:36] [model] loaded weights from ema (0080000.pt): missing=0, unexpected=0
+[2026-08-24 06:08:36] [model] loaded weights from ema (0080000.pt): missing=0, unexpected=0
+[2026-08-24 06:08:36] [model] loaded weights from ema (0080000.pt): missing=0, unexpected=0
+[2026-08-24 06:08:36] [model] loaded weights from ema (0080000.pt): missing=0, unexpected=0
+[2026-08-24 06:08:36] [model] loaded weights from ema (0080000.pt): missing=0, unexpected=0
+[2026-08-24 06:08:36] [model] loaded weights from ema (0080000.pt): missing=0, unexpected=0
+[2026-08-24 06:08:36] [model] loaded weights from ema (0080000.pt): missing=0, unexpected=0
+[2026-08-24 06:08:36] [model] loaded weights from ema (0080000.pt): missing=0, unexpected=0
+[2026-08-24 06:12:27] [eval] step 80000: 2 errors: ['eval: The size of tensor a (26) must match the size of tensor b (2) at non-singleton dimension 0', "eval: Expected tensor for argument #1 'indices' to have one of the following scalar types: Long, Int; but got torch.FloatTensor instead (while checking arguments for embedding)"]
+[2026-08-24 06:12:27] [eval] step 80000: MSE=0.85580 SSIM=0.5186 (232s, show5=ok, seen5=ok)
+[2026-08-24 06:12:57] [scan] 20 ckpts, 20 done, 0 pending — waiting for new ckpt
+[2026-08-24 06:17:58] [scan] 20 ckpts, 20 done, 0 pending — waiting for new ckpt
+[2026-08-24 06:22:58] [scan] 20 ckpts, 20 done, 0 pending — waiting for new ckpt
+[2026-08-24 06:27:58] [scan] 20 ckpts, 20 done, 0 pending — waiting for new ckpt
+[2026-08-24 06:32:28] [scan] 21 ckpts total, 20 done, 1 pending
+[2026-08-24 06:32:28] [scan] loading 0085000.pt (961MB)...
+[2026-08-24 06:32:29] [eval] === processing 0085000.pt (step 85000) ===
+[2026-08-24 06:32:29] [model] loaded weights from ema (0085000.pt): missing=0, unexpected=0
+[2026-08-24 06:32:29] [model] loaded weights from ema (0085000.pt): missing=0, unexpected=0
+[2026-08-24 06:32:29] [model] loaded weights from ema (0085000.pt): missing=0, unexpected=0
+[2026-08-24 06:32:29] [model] loaded weights from ema (0085000.pt): missing=0, unexpected=0
+[2026-08-24 06:32:29] [model] loaded weights from ema (0085000.pt): missing=0, unexpected=0
+[2026-08-24 06:32:29] [model] loaded weights from ema (0085000.pt): missing=0, unexpected=0
+[2026-08-24 06:32:29] [model] loaded weights from ema (0085000.pt): missing=0, unexpected=0
+[2026-08-24 06:32:29] [model] loaded weights from ema (0085000.pt): missing=0, unexpected=0
+[2026-08-24 06:36:26] [eval] step 85000: 2 errors: ['eval: The size of tensor a (26) must match the size of tensor b (2) at non-singleton dimension 0', "eval: Expected tensor for argument #1 'indices' to have one of the following scalar types: Long, Int; but got torch.FloatTensor instead (while checking arguments for embedding)"]
+[2026-08-24 06:36:26] [eval] step 85000: MSE=0.85410 SSIM=0.5184 (238s, show5=ok, seen5=ok)
+[2026-08-24 06:36:56] [scan] 21 ckpts, 21 done, 0 pending — waiting for new ckpt
+[2026-08-24 06:41:57] [scan] 21 ckpts, 21 done, 0 pending — waiting for new ckpt
+[2026-08-24 06:46:57] [scan] 21 ckpts, 21 done, 0 pending — waiting for new ckpt
+[2026-08-24 06:51:57] [scan] 21 ckpts, 21 done, 0 pending — waiting for new ckpt
+[2026-08-24 06:55:58] [scan] 22 ckpts total, 21 done, 1 pending
+[2026-08-24 06:55:58] [scan] loading 0090000.pt (961MB)...
+[2026-08-24 06:55:58] [eval] === processing 0090000.pt (step 90000) ===
+[2026-08-24 06:55:58] [model] loaded weights from ema (0090000.pt): missing=0, unexpected=0
+[2026-08-24 06:55:58] [model] loaded weights from ema (0090000.pt): missing=0, unexpected=0
+[2026-08-24 06:55:58] [model] loaded weights from ema (0090000.pt): missing=0, unexpected=0
+[2026-08-24 06:55:58] [model] loaded weights from ema (0090000.pt): missing=0, unexpected=0
+[2026-08-24 06:55:58] [model] loaded weights from ema (0090000.pt): missing=0, unexpected=0
+[2026-08-24 06:55:58] [model] loaded weights from ema (0090000.pt): missing=0, unexpected=0
+[2026-08-24 06:55:59] [model] loaded weights from ema (0090000.pt): missing=0, unexpected=0
+[2026-08-24 06:55:59] [model] loaded weights from ema (0090000.pt): missing=0, unexpected=0
+[2026-08-24 06:59:49] [eval] step 90000: 2 errors: ['eval: The size of tensor a (26) must match the size of tensor b (2) at non-singleton dimension 0', "eval: Expected tensor for argument #1 'indices' to have one of the following scalar types: Long, Int; but got torch.FloatTensor instead (while checking arguments for embedding)"]
+[2026-08-24 06:59:49] [eval] step 90000: MSE=0.84679 SSIM=0.5224 (231s, show5=ok, seen5=ok)
+[2026-08-24 07:00:19] [scan] 22 ckpts, 22 done, 0 pending — waiting for new ckpt
+[2026-08-24 07:05:19] [scan] 22 ckpts, 22 done, 0 pending — waiting for new ckpt
+[2026-08-24 07:10:20] [scan] 22 ckpts, 22 done, 0 pending — waiting for new ckpt
+[2026-08-24 07:15:20] [scan] 22 ckpts, 22 done, 0 pending — waiting for new ckpt
+[2026-08-24 07:19:50] [scan] 23 ckpts total, 22 done, 1 pending
+[2026-08-24 07:19:50] [scan] loading 0095000.pt (961MB)...
+[2026-08-24 07:19:50] [eval] === processing 0095000.pt (step 95000) ===
+[2026-08-24 07:19:51] [model] loaded weights from ema (0095000.pt): missing=0, unexpected=0
+[2026-08-24 07:19:51] [model] loaded weights from ema (0095000.pt): missing=0, unexpected=0
+[2026-08-24 07:19:51] [model] loaded weights from ema (0095000.pt): missing=0, unexpected=0
+[2026-08-24 07:19:51] [model] loaded weights from ema (0095000.pt): missing=0, unexpected=0
+[2026-08-24 07:19:51] [model] loaded weights from ema (0095000.pt): missing=0, unexpected=0
+[2026-08-24 07:19:51] [model] loaded weights from ema (0095000.pt): missing=0, unexpected=0
+[2026-08-24 07:19:51] [model] loaded weights from ema (0095000.pt): missing=0, unexpected=0
+[2026-08-24 07:19:51] [model] loaded weights from ema (0095000.pt): missing=0, unexpected=0
+[2026-08-24 07:23:42] [eval] step 95000: 2 errors: ['eval: The size of tensor a (26) must match the size of tensor b (2) at non-singleton dimension 0', "eval: Expected tensor for argument #1 'indices' to have one of the following scalar types: Long, Int; but got torch.FloatTensor instead (while checking arguments for embedding)"]
+[2026-08-24 07:23:42] [eval] step 95000: MSE=0.85110 SSIM=0.5211 (231s, show5=ok, seen5=ok)
+[2026-08-24 07:24:12] [scan] 23 ckpts, 23 done, 0 pending — waiting for new ckpt
+[2026-08-24 07:29:12] [scan] 23 ckpts, 23 done, 0 pending — waiting for new ckpt
+[2026-08-24 07:34:12] [scan] 23 ckpts, 23 done, 0 pending — waiting for new ckpt
+[2026-08-24 07:39:13] [scan] 23 ckpts, 23 done, 0 pending — waiting for new ckpt
+[2026-08-24 07:43:43] [scan] 24 ckpts total, 23 done, 1 pending
+[2026-08-24 07:43:43] [scan] loading 0100000.pt (961MB)...
+[2026-08-24 07:43:43] [eval] === processing 0100000.pt (step 100000) ===
+[2026-08-24 07:43:44] [model] loaded weights from ema (0100000.pt): missing=0, unexpected=0
+[2026-08-24 07:43:44] [model] loaded weights from ema (0100000.pt): missing=0, unexpected=0
+[2026-08-24 07:43:44] [model] loaded weights from ema (0100000.pt): missing=0, unexpected=0
+[2026-08-24 07:43:44] [model] loaded weights from ema (0100000.pt): missing=0, unexpected=0
+[2026-08-24 07:43:44] [model] loaded weights from ema (0100000.pt): missing=0, unexpected=0
+[2026-08-24 07:43:44] [model] loaded weights from ema (0100000.pt): missing=0, unexpected=0
+[2026-08-24 07:43:44] [model] loaded weights from ema (0100000.pt): missing=0, unexpected=0
+[2026-08-24 07:43:44] [model] loaded weights from ema (0100000.pt): missing=0, unexpected=0
+[2026-08-24 07:47:34] [eval] step 100000: 2 errors: ['eval: The size of tensor a (26) must match the size of tensor b (2) at non-singleton dimension 0', "eval: Expected tensor for argument #1 'indices' to have one of the following scalar types: Long, Int; but got torch.FloatTensor instead (while checking arguments for embedding)"]
+[2026-08-24 07:47:34] [eval] step 100000: MSE=0.84136 SSIM=0.5239 (231s, show5=ok, seen5=ok)
+[2026-08-24 07:48:04] [scan] 24 ckpts, 24 done, 0 pending — waiting for new ckpt
+[2026-08-24 07:53:05] [scan] 24 ckpts, 24 done, 0 pending — waiting for new ckpt
+[2026-08-24 07:58:05] [scan] 24 ckpts, 24 done, 0 pending — waiting for new ckpt
+[2026-08-24 08:03:05] [scan] 24 ckpts, 24 done, 0 pending — waiting for new ckpt
+[2026-08-24 08:07:35] [scan] 25 ckpts total, 24 done, 1 pending
+[2026-08-24 08:07:35] [scan] loading 0105000.pt (961MB)...
+[2026-08-24 08:07:36] [eval] === processing 0105000.pt (step 105000) ===
+[2026-08-24 08:07:36] [model] loaded weights from ema (0105000.pt): missing=0, unexpected=0
+[2026-08-24 08:07:36] [model] loaded weights from ema (0105000.pt): missing=0, unexpected=0
+[2026-08-24 08:07:36] [model] loaded weights from ema (0105000.pt): missing=0, unexpected=0
+[2026-08-24 08:07:36] [model] loaded weights from ema (0105000.pt): missing=0, unexpected=0
+[2026-08-24 08:07:36] [model] loaded weights from ema (0105000.pt): missing=0, unexpected=0
+[2026-08-24 08:07:36] [model] loaded weights from ema (0105000.pt): missing=0, unexpected=0
+[2026-08-24 08:07:36] [model] loaded weights from ema (0105000.pt): missing=0, unexpected=0
+[2026-08-24 08:07:36] [model] loaded weights from ema (0105000.pt): missing=0, unexpected=0
+[2026-08-24 08:11:33] [eval] step 105000: 2 errors: ['eval: The size of tensor a (26) must match the size of tensor b (2) at non-singleton dimension 0', "eval: Expected tensor for argument #1 'indices' to have one of the following scalar types: Long, Int; but got torch.FloatTensor instead (while checking arguments for embedding)"]
+[2026-08-24 08:11:33] [eval] step 105000: MSE=0.83685 SSIM=0.5257 (237s, show5=ok, seen5=ok)
+[2026-08-24 08:12:03] [scan] 25 ckpts, 25 done, 0 pending — waiting for new ckpt
+[2026-08-24 08:17:04] [scan] 25 ckpts, 25 done, 0 pending — waiting for new ckpt
+[2026-08-24 08:22:04] [scan] 25 ckpts, 25 done, 0 pending — waiting for new ckpt
+[2026-08-24 08:27:04] [scan] 25 ckpts, 25 done, 0 pending — waiting for new ckpt
+[2026-08-24 08:31:34] [watch] active ckpt dir: assets/results/s8_klf4_clean_dino/20260824-083116-s8-klf4-clean-dino/checkpoints
+[2026-08-24 08:31:34] [watch] loaded state: 0 entries
+[2026-08-24 08:32:04] [wait] no active ckpt dir yet (/root/Workspace/xy/DiT/assets/results/s8_klf4_clean_dino) ...
+[2026-08-24 08:32:34] [watch] active ckpt dir: assets/results/s8_klf4_clean_dino/20260823-234546-s8-klf4-clean-dino/checkpoints
+[2026-08-24 08:32:34] [watch] loaded state: 25 entries
+[2026-08-24 08:32:34] [scan] 25 ckpts, 25 done, 0 pending — waiting for new ckpt
+[2026-08-24 08:33:35] [watch] active ckpt dir: assets/results/s8_klf4_clean_dino/20260824-083321-s8-klf4-clean-dino/checkpoints
+[2026-08-24 08:33:35] [watch] loaded state: 0 entries
+[2026-08-24 08:37:35] [scan] 0 ckpts, 0 done, 0 pending — waiting for new ckpt

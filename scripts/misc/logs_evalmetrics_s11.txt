@@ -1,0 +1,16 @@
+[22:48:33] [eval-metrics] watching assets/results/s11_top6_p4 for eval pending markers (scans all run dirs)
+[22:52:23] [eval-metrics] step 1000: computing metrics for 100 images in /root/Workspace/xy/DiT/assets/results/s11_top6_p4/20260824-224716-s11-top6-p4/checkpoints/eval_samples/step0001000
+/opt/conda/lib/python3.10/site-packages/torchvision/models/_utils.py:208: UserWarning: The parameter 'pretrained' is deprecated since 0.13 and may be removed in the future, please use 'weights' instead.
+  warnings.warn(
+/opt/conda/lib/python3.10/site-packages/torchvision/models/_utils.py:223: UserWarning: Arguments other than a weight enum or `None` for 'weights' are deprecated since 0.13 and may be removed in the future. The current behavior is equivalent to passing `weights=VGG16_Weights.IMAGENET1K_V1`. You can also use `weights=VGG16_Weights.DEFAULT` to get the most up-to-date weights.
+  warnings.warn(msg)
+[22:52:26] [eval-metrics] LPIPS model loaded (vgg, CPU)
+[22:52:46] [eval-metrics] step 1000: MSE=1.23032 SSIM=0.0687 SkelIoU=0.2132 LPIPS=0.7241 (23.0s)
+[22:57:27] [eval-metrics] step 2000: computing metrics for 100 images in /root/Workspace/xy/DiT/assets/results/s11_top6_p4/20260824-224716-s11-top6-p4/checkpoints/eval_samples/step0002000
+[22:57:45] [eval-metrics] step 2000: MSE=1.41133 SSIM=0.1299 SkelIoU=0.2222 LPIPS=0.6612 (18.9s)
+[23:02:26] [eval-metrics] step 3000: computing metrics for 100 images in /root/Workspace/xy/DiT/assets/results/s11_top6_p4/20260824-224716-s11-top6-p4/checkpoints/eval_samples/step0003000
+[23:02:45] [eval-metrics] step 3000: MSE=1.31172 SSIM=0.2081 SkelIoU=0.2190 LPIPS=0.6123 (19.7s)
+[23:07:26] [eval-metrics] step 4000: computing metrics for 100 images in /root/Workspace/xy/DiT/assets/results/s11_top6_p4/20260824-224716-s11-top6-p4/checkpoints/eval_samples/step0004000
+[23:07:45] [eval-metrics] step 4000: MSE=1.20243 SSIM=0.2651 SkelIoU=0.2326 LPIPS=0.5733 (19.6s)
+[23:12:26] [eval-metrics] step 5000: computing metrics for 100 images in /root/Workspace/xy/DiT/assets/results/s11_top6_p4/20260824-224716-s11-top6-p4/checkpoints/eval_samples/step0005000
+[23:12:44] [eval-metrics] step 5000: MSE=1.17148 SSIM=0.2744 SkelIoU=0.2482 LPIPS=0.5593 (18.6s)

@@ -1,0 +1,56 @@
+{
+  "_comment": "v10a: 无 char 条件 + skel latent 直接输入的单阶段训练 (DiT-1CondSkel-S/2)。不两阶段、从头开始。输入 concat(img_latent4ch + skel_latent4ch)=8ch → patch embed; 条件仅书家 callig (adaLN)。无 char 表/char proj。skel_drop 0.1 (CFG 无条件) + callig_drop 0.1。数据 v8 资产 (img+skel latent 双 shards)。可选 REPA (w_repa=0, 预留给后续)。eval 统一 eval_facade (base 协议, with_skel=False)。独立入口 train_skel_1cond.py。",
+  "experiment_name": "v10a-skel1cond-S2",
+  "results_dir": "assets/results/v10_skel1cond",
+
+  "csv": "assets/train_fame_clean_v8.csv",
+  "latent_shards_dir": "data/latents/final_latents_fame_v8",
+  "skel_latent_shards_dir": "data/skel/final_skel_latents_fame_1px_v8",
+  "img_root": "data/imgs/final_imgs_fame_v8",
+  "image_size": 256,
+
+  "num_calligraphers": 1013,
+  "patch_size": 2,
+  "hidden_size": 384,
+  "depth": 12,
+  "num_heads": 6,
+  "cond_drop_prob": 0.1,
+  "skel_drop_prob": 0.1,
+
+  "diffusion_type": "flow",
+  "t_sampler": "logit_normal",
+  "t_mean": 0.0,
+  "t_std": 1.0,
+  "flow_sampler": "heun",
+  "heun_batch": 1,
+  "shift": 1.0,
+
+  "epochs": 1000,
+  "max_steps": 150000,
+  "lr": 1.5e-4,
+  "warmup_steps": 3000,
+  "min_lr_ratio": 0.1,
+  "weight_decay": 0.02,
+  "batch_size": 192,
+  "num_workers": 8,
+  "log_every": 50,
+  "ckpt_every": 2500,
+
+  "preload": true,
+  "seed": 0,
+
+  "w_repa": 0.0,
+  "repa_layers": "8,11",
+  "repa_warmup": 0,
+  "repa_teacher_ckpt": "data/pretrained/dinov2_vits14_pretrain.safetensors",
+
+  "gpu_eval_csv": "assets/eval_fame_strict_clean_v8.csv",
+  "gpu_eval_every": 2500,
+  "gpu_eval_n": 100,
+  "gpu_eval_steps": 50,
+  "gpu_eval_cfg": 0.7,
+  "gpu_eval_img_root": "data/imgs/final_imgs_fame_v8",
+  "gpu_eval_skel_latent_shards_dir": "data/skel/final_skel_latents_fame_1px_v8",
+  "gpu_eval_dit_batch": 8,
+  "gpu_eval_vae_batch": 16
+}

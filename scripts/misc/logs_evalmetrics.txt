@@ -1,0 +1,40 @@
+[19:31:47] [eval-metrics] watching assets/results/s10_b4_grey_clear for eval pending markers (scans all run dirs)
+[19:31:47] [eval-metrics] step 1000: computing metrics for 455 images in /root/Workspace/xy/DiT/assets/results/s10_b4_grey_clear/20260824-151758-s10-b4-grey-clear/checkpoints/eval_samples/step0001000
+/opt/conda/lib/python3.10/site-packages/torchvision/models/_utils.py:208: UserWarning: The parameter 'pretrained' is deprecated since 0.13 and may be removed in the future, please use 'weights' instead.
+  warnings.warn(
+/opt/conda/lib/python3.10/site-packages/torchvision/models/_utils.py:223: UserWarning: Arguments other than a weight enum or `None` for 'weights' are deprecated since 0.13 and may be removed in the future. The current behavior is equivalent to passing `weights=VGG16_Weights.IMAGENET1K_V1`. You can also use `weights=VGG16_Weights.DEFAULT` to get the most up-to-date weights.
+  warnings.warn(msg)
+[19:31:49] [eval-metrics] LPIPS model loaded (vgg, CPU)
+[19:33:08] [eval-metrics] step 1000: MSE=1.30928 SSIM=0.0425 SkelIoU=0.1616 LPIPS=0.7404 (81.5s)
+[19:33:08] [eval-metrics] step 2000: computing metrics for 455 images in /root/Workspace/xy/DiT/assets/results/s10_b4_grey_clear/20260824-151758-s10-b4-grey-clear/checkpoints/eval_samples/step0002000
+[19:34:22] [eval-metrics] step 2000: MSE=1.34637 SSIM=0.1233 SkelIoU=0.1744 LPIPS=0.6785 (73.9s)
+[19:34:22] [eval-metrics] step 3000: computing metrics for 455 images in /root/Workspace/xy/DiT/assets/results/s10_b4_grey_clear/20260824-151758-s10-b4-grey-clear/checkpoints/eval_samples/step0003000
+[19:35:39] [eval-metrics] step 3000: MSE=1.31980 SSIM=0.2069 SkelIoU=0.1801 LPIPS=0.6229 (76.8s)
+[19:35:39] [eval-metrics] step 4000: computing metrics for 455 images in /root/Workspace/xy/DiT/assets/results/s10_b4_grey_clear/20260824-151758-s10-b4-grey-clear/checkpoints/eval_samples/step0004000
+[19:36:56] [eval-metrics] step 4000: MSE=1.34402 SSIM=0.2458 SkelIoU=0.1808 LPIPS=0.5944 (77.1s)
+[19:36:56] [eval-metrics] step 5000: computing metrics for 455 images in /root/Workspace/xy/DiT/assets/results/s10_b4_grey_clear/20260824-164822-s10-b4-grey-clear/checkpoints/eval_samples/step0005000
+[19:38:13] [eval-metrics] step 5000: MSE=1.35274 SSIM=0.2456 SkelIoU=0.1877 LPIPS=0.5891 (77.3s)
+[19:38:13] [eval-metrics] step 10000: computing metrics for 455 images in /root/Workspace/xy/DiT/assets/results/s10_b4_grey_clear/20260824-164822-s10-b4-grey-clear/checkpoints/eval_samples/step0010000
+[19:39:32] [eval-metrics] step 10000: MSE=1.11407 SSIM=0.2802 SkelIoU=0.1969 LPIPS=0.5701 (79.0s)
+[19:39:32] [eval-metrics] step 15000: computing metrics for 455 images in /root/Workspace/xy/DiT/assets/results/s10_b4_grey_clear/20260824-164822-s10-b4-grey-clear/checkpoints/eval_samples/step0015000
+[19:40:53] [eval-metrics] step 15000: MSE=1.08067 SSIM=0.3525 SkelIoU=0.2097 LPIPS=0.5152 (80.3s)
+[19:40:53] [eval-metrics] step 20000: computing metrics for 455 images in /root/Workspace/xy/DiT/assets/results/s10_b4_grey_clear/20260824-164822-s10-b4-grey-clear/checkpoints/eval_samples/step0020000
+[19:42:11] [eval-metrics] step 20000: MSE=1.12336 SSIM=0.3686 SkelIoU=0.2163 LPIPS=0.4964 (78.6s)
+[19:42:11] [eval-metrics] step 25000: computing metrics for 455 images in /root/Workspace/xy/DiT/assets/results/s10_b4_grey_clear/20260824-164822-s10-b4-grey-clear/checkpoints/eval_samples/step0025000
+[19:43:31] [eval-metrics] step 25000: MSE=1.14224 SSIM=0.3771 SkelIoU=0.2221 LPIPS=0.4820 (79.5s)
+[19:43:31] [eval-metrics] step 30000: computing metrics for 455 images in /root/Workspace/xy/DiT/assets/results/s10_b4_grey_clear/20260824-164822-s10-b4-grey-clear/checkpoints/eval_samples/step0030000
+[19:44:48] [eval-metrics] step 30000: MSE=1.13035 SSIM=0.3848 SkelIoU=0.2264 LPIPS=0.4733 (77.5s)
+[19:44:48] [eval-metrics] step 35000: computing metrics for 455 images in /root/Workspace/xy/DiT/assets/results/s10_b4_grey_clear/20260824-164822-s10-b4-grey-clear/checkpoints/eval_samples/step0035000
+[19:46:07] [eval-metrics] step 35000: MSE=1.12061 SSIM=0.3901 SkelIoU=0.2282 LPIPS=0.4670 (78.6s)
+[19:49:37] [eval-metrics] step 40000: computing metrics for 455 images in /root/Workspace/xy/DiT/assets/results/s10_b4_grey_clear/20260824-164822-s10-b4-grey-clear/checkpoints/eval_samples/step0040000
+[19:50:58] [eval-metrics] step 40000: MSE=1.09739 SSIM=0.3989 SkelIoU=0.2316 LPIPS=0.4504 (80.6s)
+[20:14:29] [eval-metrics] step 45000: computing metrics for 455 images in /root/Workspace/xy/DiT/assets/results/s10_b4_grey_clear/20260824-164822-s10-b4-grey-clear/checkpoints/eval_samples/step0045000
+[20:15:48] [eval-metrics] step 45000: MSE=1.08242 SSIM=0.4029 SkelIoU=0.2336 LPIPS=0.4445 (78.8s)
+[20:39:20] [eval-metrics] step 50000: computing metrics for 455 images in /root/Workspace/xy/DiT/assets/results/s10_b4_grey_clear/20260824-164822-s10-b4-grey-clear/checkpoints/eval_samples/step0050000
+[20:40:39] [eval-metrics] step 50000: MSE=1.08067 SSIM=0.4034 SkelIoU=0.2347 LPIPS=0.4410 (79.4s)
+[21:04:10] [eval-metrics] step 55000: computing metrics for 455 images in /root/Workspace/xy/DiT/assets/results/s10_b4_grey_clear/20260824-164822-s10-b4-grey-clear/checkpoints/eval_samples/step0055000
+[21:05:50] [eval-metrics] step 55000: MSE=1.07549 SSIM=0.4051 SkelIoU=0.2352 LPIPS=0.4381 (99.4s)
+[21:29:11] [eval-metrics] step 60000: computing metrics for 455 images in /root/Workspace/xy/DiT/assets/results/s10_b4_grey_clear/20260824-164822-s10-b4-grey-clear/checkpoints/eval_samples/step0060000
+[21:30:31] [eval-metrics] step 60000: MSE=1.07725 SSIM=0.4045 SkelIoU=0.2355 LPIPS=0.4369 (80.1s)
+[21:54:13] [eval-metrics] step 65000: computing metrics for 455 images in /root/Workspace/xy/DiT/assets/results/s10_b4_grey_clear/20260824-164822-s10-b4-grey-clear/checkpoints/eval_samples/step0065000
+[21:55:31] [eval-metrics] step 65000: MSE=1.07103 SSIM=0.4063 SkelIoU=0.2364 LPIPS=0.4362 (78.6s)

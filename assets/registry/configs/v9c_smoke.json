@@ -1,0 +1,82 @@
+{
+  "_comment": "v9c smoke: 联训路径冒烟验证 (与 v9c_skel_joint 同路径, 仅规模缩小)。验证点: (1) unfreeze-main 双参数组启动; (2) char 表保持冻结; (3) 存盘含 model.*/ema_model.*(main)+ctrl.*/ema; (4) torch.compile 与联训兼容; (5) 零初始注入使首步 loss ≈ v9a 主干水平。跑法: train_controlnet.py --config v9c_smoke.json --main-ckpt <v9a best>, 跑完删 results 并用 tools/diag/verify_v9c_smoke.py 校验 ckpt。",
+  "experiment_name": "v9c-smoke",
+  "results_dir": "assets/results/_smoke_v9c",
+
+  "model": "DiT-2Cond-S/2",
+  "train_ctrl_only": true,
+  "unfreeze_main": true,
+  "main_lr": 3e-5,
+  "compile": true,
+  "compile_mode": "default",
+
+  "csv": "assets/train_fame_clean_v8.csv",
+  "latent_shards_dir": "data/latents/final_latents_fame_v8",
+  "img_root": "data/imgs/final_imgs_fame_v8",
+  "skel_root": "data/skel/final_skel1_fame_v8",
+  "skel_latent_shards_dir": "data/skel/final_skel_latents_fame_1px_v8",
+  "skel_cond_channels": 4,
+
+  "num_calligraphers": 1013,
+  "num_characters": 35130,
+  "condition_fusion": "factorized_add",
+  "callig_embed_dim": 128,
+  "char_embed_dim": 384,
+  "char_proj_mode": "mlp",
+  "freeze_char_table": true,
+
+  "cond_drop_all_prob": 0.05,
+  "cond_drop_one_prob": 0.30,
+  "cond_drop_which_glyph_prob": 0.85,
+  "cond_drop_struct_prob": 0.1,
+
+  "diffusion_type": "flow",
+  "t_sampler": "logit_normal",
+  "t_mean": 0.0,
+  "t_std": 1.0,
+  "flow_sampler": "heun",
+  "heun_batch": 1,
+  "shift": 1.0,
+
+  "norm_type": "rms",
+  "mlp_type": "swiglu",
+  "qk_norm": 1,
+  "rope": 1,
+  "rope_theta": 100.0,
+  "attn_impl": "sdpa",
+
+  "ctrl_depth": 0,
+  "ctrl_hidden": 0,
+  "ctrl_num_heads": 0,
+  "injection": "modulate",
+  "null_cond": "gaussian",
+
+  "epochs": 1,
+  "max_steps": 6,
+  "lr": 0.0001,
+  "warmup_steps": 200,
+  "min_lr_ratio": 0.1,
+  "weight_decay": 0.01,
+  "batch_size": 8,
+  "num_workers": 2,
+  "log_every": 1,
+  "ckpt_every": 5,
+  "ckpt_keep": 0,
+
+  "use_ema": true,
+  "ema_decay": 0.9999,
+  "preload": true,
+  "preload_workers": 8,
+  "use_checkpoint": false,
+  "seed": 0,
+
+  "early_stop": false,
+
+  "gpu_eval_csv": "",
+
+  "w_repa_early": 0.5,
+  "repa_early_layers": "8,11",
+  "repa_early_layer": 8,
+  "repa_early_warmup": 2000,
+  "repa_teacher_ckpt": "data/pretrained/dinov2_vits14_pretrain.safetensors"
+}

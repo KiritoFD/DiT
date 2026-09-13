@@ -1,0 +1,46 @@
+ckpt_dir: /root/Workspace/xy/DiT/assets/results/s10_b4_grey_clear/20260824-151758-s10-b4-grey-clear/checkpoints
+ckpts: 4
+model loaded, VRAM: 0.59G
+[16:39:40] [gpu-eval] building eval cache from assets/eval500_clean.csv (n=455)
+[16:39:41] [gpu-eval] cache ready: 455 samples, gt=torch.Size([455, 3, 256, 256]), latent=3x64x64
+[16:39:41] [gpu-eval] loading VAE from data/pretrained/kl-f4
+The config attributes {'mid_block_add_attention': True, 'shift_factor': None, 'use_post_quant_conv': True, 'use_quant_conv': True} were passed to AutoencoderKL, but are not expected and will be ignored. Please verify your config.json configuration file.
+[16:39:41] [gpu-eval] VAE ready on cuda
+
+============================================================
+evaluating 0001000.pt (step 1000)
+loaded EMA: missing=0, unexpected=0
+[16:39:43] [gpu-eval] phase 1: DiT sampling (bf16, batch=240, 455 samples)
+[16:40:28] [gpu-eval] phase 1 done: 455 latents on CPU, peak VRAM so far: 6.04G
+[16:40:28] [gpu-eval] phase 2: VAE decode (fp32, batch=32, 455 samples)
+[16:40:48] [gpu-eval] step 1000: saved 455 images to eval_samples/step0001000/ (64.5s), peak VRAM: 10.31G
+[16:40:48] [gpu-eval] wrote pending marker: /root/Workspace/xy/DiT/assets/results/s10_b4_grey_clear/20260824-151758-s10-b4-grey-clear/checkpoints/eval_pending_0001000.json
+
+============================================================
+evaluating 0002000.pt (step 2000)
+loaded EMA: missing=0, unexpected=0
+[16:40:49] [gpu-eval] phase 1: DiT sampling (bf16, batch=240, 455 samples)
+[16:41:33] [gpu-eval] phase 1 done: 455 latents on CPU, peak VRAM so far: 10.31G
+[16:41:33] [gpu-eval] phase 2: VAE decode (fp32, batch=32, 455 samples)
+[16:41:52] [gpu-eval] step 2000: saved 455 images to eval_samples/step0002000/ (63.0s), peak VRAM: 10.31G
+[16:41:52] [gpu-eval] wrote pending marker: /root/Workspace/xy/DiT/assets/results/s10_b4_grey_clear/20260824-151758-s10-b4-grey-clear/checkpoints/eval_pending_0002000.json
+
+============================================================
+evaluating 0003000.pt (step 3000)
+loaded EMA: missing=0, unexpected=0
+[16:41:53] [gpu-eval] phase 1: DiT sampling (bf16, batch=240, 455 samples)
+[16:42:37] [gpu-eval] phase 1 done: 455 latents on CPU, peak VRAM so far: 10.31G
+[16:42:37] [gpu-eval] phase 2: VAE decode (fp32, batch=32, 455 samples)
+[16:42:55] [gpu-eval] step 3000: saved 455 images to eval_samples/step0003000/ (62.5s), peak VRAM: 10.31G
+[16:42:55] [gpu-eval] wrote pending marker: /root/Workspace/xy/DiT/assets/results/s10_b4_grey_clear/20260824-151758-s10-b4-grey-clear/checkpoints/eval_pending_0003000.json
+
+============================================================
+evaluating 0004000.pt (step 4000)
+loaded EMA: missing=0, unexpected=0
+[16:42:56] [gpu-eval] phase 1: DiT sampling (bf16, batch=240, 455 samples)
+[16:43:40] [gpu-eval] phase 1 done: 455 latents on CPU, peak VRAM so far: 10.31G
+[16:43:40] [gpu-eval] phase 2: VAE decode (fp32, batch=32, 455 samples)
+[16:43:59] [gpu-eval] step 4000: saved 455 images to eval_samples/step0004000/ (62.9s), peak VRAM: 10.31G
+[16:43:59] [gpu-eval] wrote pending marker: /root/Workspace/xy/DiT/assets/results/s10_b4_grey_clear/20260824-151758-s10-b4-grey-clear/checkpoints/eval_pending_0004000.json
+
+All done! Peak VRAM: 10.31G

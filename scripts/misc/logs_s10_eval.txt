@@ -1,0 +1,42 @@
+[2026-08-24 14:27:39] [main] device=cuda, eval_csv=assets/eval500_clean.csv, eval_n=472
+[2026-08-24 14:27:39] [watch] active ckpt dir: /root/Workspace/xy/DiT/assets/results/s10_b4_grey_clear/20260824-140208-s10-b4-grey-clear/checkpoints
+[2026-08-24 14:27:41] [main] loaded train args from 0001000.pt
+[2026-08-24 14:27:46] [vae] loading data/pretrained/kl-f4
+The config attributes {'mid_block_add_attention': True, 'shift_factor': None, 'use_post_quant_conv': True, 'use_quant_conv': True} were passed to AutoencoderKL, but are not expected and will be ignored. Please verify your config.json configuration file.
+[2026-08-24 14:28:14] [dino-init] injected 20468 glyph embeddings
+[2026-08-24 14:28:14] [dino] injected glyph embeddings
+[2026-08-24 14:28:15] [cache] assets/eval500_clean.csv -> 472 samples
+[2026-08-24 14:28:15] [cache] assets/show5_top30.csv -> 5 samples
+[2026-08-24 14:28:15] [cache] assets/seen5_top30.csv -> 5 samples
+[2026-08-24 14:28:15] [main] eval config: {'steps': 50, 'cfg': 4.0, 'seed': 0, 'batch': 4, 'cond_mode': '2cond', 'glyph_init_mix': 0.0, 'latent_channels': 3, 'latent_spatial': 64, 'scaling_factor': 0.102079}
+[2026-08-24 14:28:15] [scan] 5 ckpts total, 0 done, 5 pending
+[2026-08-24 14:28:17] [model] loaded weights from ema (0001000.pt)
+[2026-08-24 14:28:17] [eval] === processing 0001000.pt (step 1000) ===
+[2026-08-24 14:34:25] [eval] saved 472 images to /root/Workspace/xy/DiT/assets/results/s10_b4_grey_clear/20260824-140208-s10-b4-grey-clear/checkpoints/eval_samples/step0001000/
+[2026-08-24 14:34:45] [eval] step 1000: MSE=0.32949 SSIM=0.0762 SkelIoU=0.1617 (390s)
+[2026-08-24 14:34:47] [model] loaded weights from ema (0002000.pt)
+[2026-08-24 14:34:47] [eval] === processing 0002000.pt (step 2000) ===
+[2026-08-24 14:40:54] [eval] saved 472 images to /root/Workspace/xy/DiT/assets/results/s10_b4_grey_clear/20260824-140208-s10-b4-grey-clear/checkpoints/eval_samples/step0002000/
+[2026-08-24 14:41:15] [eval] step 2000: MSE=0.33159 SSIM=0.1787 SkelIoU=0.1707 (390s)
+[2026-08-24 14:41:17] [model] loaded weights from ema (0003000.pt)
+[2026-08-24 14:41:17] [eval] === processing 0003000.pt (step 3000) ===
+[2026-08-24 14:47:22] [eval] saved 472 images to /root/Workspace/xy/DiT/assets/results/s10_b4_grey_clear/20260824-140208-s10-b4-grey-clear/checkpoints/eval_samples/step0003000/
+[2026-08-24 14:47:44] [eval] step 3000: MSE=0.32513 SSIM=0.2610 SkelIoU=0.1714 (389s)
+[2026-08-24 14:47:45] [model] loaded weights from ema (0004000.pt)
+[2026-08-24 14:47:45] [eval] === processing 0004000.pt (step 4000) ===
+[2026-08-24 14:53:52] [eval] saved 472 images to /root/Workspace/xy/DiT/assets/results/s10_b4_grey_clear/20260824-140208-s10-b4-grey-clear/checkpoints/eval_samples/step0004000/
+[2026-08-24 14:54:15] [eval] step 4000: MSE=0.32802 SSIM=0.2982 SkelIoU=0.1727 (391s)
+[2026-08-24 14:54:16] [model] loaded weights from ema (0005000.pt)
+[2026-08-24 14:54:16] [eval] === processing 0005000.pt (step 5000) ===
+[2026-08-24 15:00:24] [eval] saved 472 images to /root/Workspace/xy/DiT/assets/results/s10_b4_grey_clear/20260824-140208-s10-b4-grey-clear/checkpoints/eval_samples/step0005000/
+[2026-08-24 15:00:47] [eval] step 5000: MSE=0.33269 SSIM=0.3019 SkelIoU=0.1790 (392s)
+[2026-08-24 15:01:17] [scan] 5 ckpts, 5 done, 0 pending — waiting
+[2026-08-24 15:01:47] [scan] 5 ckpts, 5 done, 0 pending — waiting
+[2026-08-24 15:02:17] [scan] 5 ckpts, 5 done, 0 pending — waiting
+[2026-08-24 15:02:47] [scan] 6 ckpts total, 5 done, 1 pending
+[2026-08-24 15:02:48] [model] loaded weights from ema (0010000.pt)
+[2026-08-24 15:02:48] [eval] === processing 0010000.pt (step 10000) ===
+[2026-08-24 15:08:55] [eval] saved 472 images to /root/Workspace/xy/DiT/assets/results/s10_b4_grey_clear/20260824-140208-s10-b4-grey-clear/checkpoints/eval_samples/step0010000/
+[2026-08-24 15:09:17] [eval] step 10000: MSE=0.27892 SSIM=0.3399 SkelIoU=0.1934 (390s)
+[2026-08-24 15:09:47] [scan] 6 ckpts, 6 done, 0 pending — waiting
+[2026-08-24 15:10:17] [scan] 6 ckpts, 6 done, 0 pending — waiting

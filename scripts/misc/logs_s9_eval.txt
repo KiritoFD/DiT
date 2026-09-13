@@ -1,0 +1,74 @@
+[2026-08-24 13:27:11] [main] workers=8, worker_threads=6, cores_per_worker=6, batch=auto, affinity=ON
+[2026-08-24 13:27:11] [main] core affinity table: W0=[0, 1, 2, 3, 4, 5] W1=[6, 7, 8, 9, 10, 11] W2=[12, 13, 14, 15, 16, 17] W3=[18, 19, 20, 21, 22, 23] W4=[24, 25, 26, 27, 28, 29] W5=[30, 31, 32, 33, 34, 35] W6=[36, 37, 38, 39, 40, 41] W7=[42, 43, 44, 45, 46, 47]
+[2026-08-24 13:27:11] [watch] active ckpt dir: assets/results/s9_b4_clean_dino/20260824-132558-s9-b4-clean-dino/checkpoints
+[2026-08-24 13:27:11] [watch] loaded state: 0 entries
+[2026-08-24 13:27:11] [scan] 0 ckpts, 0 done, 0 pending — waiting for new ckpt
+[2026-08-24 13:31:11] [scan] 1 ckpts total, 0 done, 1 pending
+[2026-08-24 13:31:11] [scan] loading 0001000.pt (2521MB)...
+[2026-08-24 13:31:13] [eval] === processing 0001000.pt (step 1000) ===
+[2026-08-24 13:31:13] [pool] creating ProcessPoolExecutor: 8 workers (spawn, affinity=ON), args_dict=103 keys
+[2026-08-24 13:31:13] [pool] ProcessPoolExecutor created, waiting for workers...
+[2026-08-24 13:31:14] [worker 0 pid=1600731] pinned to cores [0, 1, 2, 3, 4, 5]
+[2026-08-24 13:31:14] [worker 1 pid=1600740] pinned to cores [6, 7, 8, 9, 10, 11]
+[2026-08-24 13:31:14] [worker 2 pid=1600734] pinned to cores [12, 13, 14, 15, 16, 17]
+[2026-08-24 13:31:14] [worker 3 pid=1600736] pinned to cores [18, 19, 20, 21, 22, 23]
+[2026-08-24 13:31:14] [worker 4 pid=1600738] pinned to cores [24, 25, 26, 27, 28, 29]
+[2026-08-24 13:31:14] [worker 5 pid=1600739] pinned to cores [30, 31, 32, 33, 34, 35]
+[2026-08-24 13:31:14] [worker 6 pid=1600735] pinned to cores [36, 37, 38, 39, 40, 41]
+[2026-08-24 13:31:14] [worker 7 pid=1600737] pinned to cores [42, 43, 44, 45, 46, 47]
+[2026-08-24 13:31:17] [vae] loading data/pretrained/kl-f4
+The config attributes {'mid_block_add_attention': True, 'shift_factor': None, 'use_post_quant_conv': True, 'use_quant_conv': True} were passed to AutoencoderKL, but are not expected and will be ignored. Please verify your config.json configuration file.
+[2026-08-24 13:31:17] [vae] loading data/pretrained/kl-f4
+The config attributes {'mid_block_add_attention': True, 'shift_factor': None, 'use_post_quant_conv': True, 'use_quant_conv': True} were passed to AutoencoderKL, but are not expected and will be ignored. Please verify your config.json configuration file.
+[2026-08-24 13:31:17] [vae] loading data/pretrained/kl-f4
+The config attributes {'mid_block_add_attention': True, 'shift_factor': None, 'use_post_quant_conv': True, 'use_quant_conv': True} were passed to AutoencoderKL, but are not expected and will be ignored. Please verify your config.json configuration file.
+[2026-08-24 13:31:17] [vae] loading data/pretrained/kl-f4
+The config attributes {'mid_block_add_attention': True, 'shift_factor': None, 'use_post_quant_conv': True, 'use_quant_conv': True} were passed to AutoencoderKL, but are not expected and will be ignored. Please verify your config.json configuration file.
+[2026-08-24 13:31:17] [vae] loading data/pretrained/kl-f4
+The config attributes {'mid_block_add_attention': True, 'shift_factor': None, 'use_post_quant_conv': True, 'use_quant_conv': True} were passed to AutoencoderKL, but are not expected and will be ignored. Please verify your config.json configuration file.
+[2026-08-24 13:31:17] [vae] loading data/pretrained/kl-f4
+The config attributes {'mid_block_add_attention': True, 'shift_factor': None, 'use_post_quant_conv': True, 'use_quant_conv': True} were passed to AutoencoderKL, but are not expected and will be ignored. Please verify your config.json configuration file.
+[2026-08-24 13:31:17] [vae] loading data/pretrained/kl-f4
+The config attributes {'mid_block_add_attention': True, 'shift_factor': None, 'use_post_quant_conv': True, 'use_quant_conv': True} were passed to AutoencoderKL, but are not expected and will be ignored. Please verify your config.json configuration file.
+[2026-08-24 13:31:18] [vae] loading data/pretrained/kl-f4
+The config attributes {'mid_block_add_attention': True, 'shift_factor': None, 'use_post_quant_conv': True, 'use_quant_conv': True} were passed to AutoencoderKL, but are not expected and will be ignored. Please verify your config.json configuration file.
+[2026-08-24 13:31:18] [cache] assets/eval500_clean.csv -> 472 samples
+[2026-08-24 13:31:18] [cache] assets/eval500_clean.csv -> 472 samples
+[2026-08-24 13:31:18] [cache] assets/show5_top30.csv -> 5 samples
+[2026-08-24 13:31:18] [cache] assets/seen5_top30.csv -> 5 samples
+[2026-08-24 13:31:18] [worker 6 pid=1600735] initialized (threads=6, cores=6)
+[2026-08-24 13:31:18] [cache] assets/show5_top30.csv -> 5 samples
+[2026-08-24 13:31:18] [cache] assets/seen5_top30.csv -> 5 samples
+[2026-08-24 13:31:18] [worker 4 pid=1600738] initialized (threads=6, cores=6)
+[2026-08-24 13:31:18] [cache] assets/eval500_clean.csv -> 472 samples
+[2026-08-24 13:31:18] [cache] assets/eval500_clean.csv -> 472 samples
+[2026-08-24 13:31:18] [cache] assets/show5_top30.csv -> 5 samples
+[2026-08-24 13:31:18] [cache] assets/show5_top30.csv -> 5 samples
+[2026-08-24 13:31:18] [cache] assets/seen5_top30.csv -> 5 samples
+[2026-08-24 13:31:18] [worker 0 pid=1600731] initialized (threads=6, cores=6)
+[2026-08-24 13:31:18] [cache] assets/seen5_top30.csv -> 5 samples
+[2026-08-24 13:31:18] [worker 3 pid=1600736] initialized (threads=6, cores=6)
+[2026-08-24 13:31:18] [cache] assets/eval500_clean.csv -> 472 samples
+[2026-08-24 13:31:18] [cache] assets/show5_top30.csv -> 5 samples
+[2026-08-24 13:31:18] [cache] assets/seen5_top30.csv -> 5 samples
+[2026-08-24 13:31:18] [worker 7 pid=1600737] initialized (threads=6, cores=6)
+[2026-08-24 13:31:18] [cache] assets/eval500_clean.csv -> 472 samples
+[2026-08-24 13:31:18] [cache] assets/show5_top30.csv -> 5 samples
+[2026-08-24 13:31:18] [cache] assets/seen5_top30.csv -> 5 samples
+[2026-08-24 13:31:18] [worker 1 pid=1600740] initialized (threads=6, cores=6)
+[2026-08-24 13:31:19] [cache] assets/eval500_clean.csv -> 472 samples
+[2026-08-24 13:31:19] [cache] assets/show5_top30.csv -> 5 samples
+[2026-08-24 13:31:19] [cache] assets/seen5_top30.csv -> 5 samples
+[2026-08-24 13:31:19] [worker 2 pid=1600734] initialized (threads=6, cores=6)
+[2026-08-24 13:31:20] [model] loaded weights from ema (0001000.pt): missing=0, unexpected=0
+[2026-08-24 13:31:20] [model] loaded weights from ema (0001000.pt): missing=0, unexpected=0
+[2026-08-24 13:31:20] [model] loaded weights from ema (0001000.pt): missing=0, unexpected=0
+[2026-08-24 13:31:20] [model] loaded weights from ema (0001000.pt): missing=0, unexpected=0
+[2026-08-24 13:31:20] [cache] assets/eval500_clean.csv -> 472 samples
+[2026-08-24 13:31:20] [model] loaded weights from ema (0001000.pt): missing=0, unexpected=0
+[2026-08-24 13:31:20] [cache] assets/show5_top30.csv -> 5 samples
+[2026-08-24 13:31:20] [cache] assets/seen5_top30.csv -> 5 samples
+[2026-08-24 13:31:20] [worker 5 pid=1600739] initialized (threads=6, cores=6)
+[2026-08-24 13:31:20] [model] loaded weights from ema (0001000.pt): missing=0, unexpected=0
+[2026-08-24 13:31:20] [model] loaded weights from ema (0001000.pt): missing=0, unexpected=0
+[2026-08-24 13:31:22] [model] loaded weights from ema (0001000.pt): missing=0, unexpected=0
