@@ -1,21 +1,22 @@
 # -*- coding: utf-8 -*-
-"""gpu_eval_loop.py — GPU in-mem 评测循环 (替代 CPU daemon).
+"""gpu_eval_loop.py — GPU in-mem 评测循环.
 
-特性:
-  - 与训练**并发** (seen: dit16/vae8 ≈3s/2.2G; strict: dit8/vae4 ≈76s/1.7G)
+设计: **评测时暂停训练 (SIGSTOP) -> in-mem GPU 采样 -> 恢复训练 (SIGCONT)**。
+  - 不再与训练抢 SM; eval 用独立进程加载 ckpt (训练进程显存仍占用, 故 batch 仍小)
   - in-mem 指标 (无 PNG 必需; --save-samples 落盘供 poster)
   - 自动写 eval_auto_<step>.json + 生成 poster
-  - --device cuda|cpu 开关 (cpu 走原 CPU 路径, 慢)
+  - --device cuda|cpu 开关
 
 用法:
   python tools/eval/gpu_eval_loop.py --results-dir 5script/results/<exp> \
-      [--device cuda] [--strict-every 10000] [--poll 30]
+      [--device cuda] [--strict-every 10000] [--poll 30] [--pause-train]
 """
 import argparse
 import csv
 import glob
 import json
 import os
+import signal
 import subprocess
 import sys
 import time
@@ -28,6 +29,31 @@ sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 
 def log(m):
     print(f"[{time.strftime('%H:%M:%S')}] [gpu-eval] {m}", flush=True)
+
+
+def train_pids(pattern):
+    try:
+        r = subprocess.run(["pgrep", "-f", pattern], capture_output=True, text=True)
+        return [int(x) for x in r.stdout.split() if x.strip()]
+    except Exception:
+        return []
+
+
+def pause_procs(pids):
+    for p in pids:
+        try:
+            os.kill(p, signal.SIGSTOP)
+        except Exception:
+            pass
+
+
+def resume_procs(pids):
+    for p in pids:
+        try:
+            os.kill(p, signal.SIGCONT)
+        except Exception:
+            pass
+
 
 
 def active_ckpt_dir(root):
@@ -65,6 +91,11 @@ def main():
     ap.add_argument("--seen-csv", default="5script/eval_seen_v10.csv")
     ap.add_argument("--strict-csv", default="5script/eval_fame3_strict_clean_v9.csv")
     ap.add_argument("--run", action="store_true", help="跑一次遍历后退出 (debug)")
+    ap.add_argument("--pause-train", action="store_true", default=True,
+                    help="评测期间 SIGSTOP 训练进程, 结束 SIGCONT (默认开)")
+    ap.add_argument("--no-pause-train", dest="pause_train", action="store_false")
+    ap.add_argument("--pause-match", default="src/train/train.py",
+                    help="训练进程匹配串 (pgrep -f)")
     args = ap.parse_args()
 
     root = os.path.abspath(args.results_dir)
@@ -83,20 +114,29 @@ def main():
             sets = [f"seen:{args.seen_csv}:10"]
             if args.strict_every <= 0 or step % args.strict_every == 0:
                 sets.append(f"strict:{args.strict_csv}:237")
-            # 并发安全 batch: 训练占 ~20.1G, 剩余 ~3G -> dit8/vae4 (峰值 ~1.7G)
-            batches = ["--dit-batch", "8", "--vae-batch", "4"]
+            # 训练 SIGSTOP 后显存仍占用; batch192 训练 ~18G -> 留 ~6G, dit16/vae8 (~2.2G)
+            batches = ["--dit-batch", "16", "--vae-batch", "8"]
             cmd = [sys.executable, "-u", "tools/eval/eval_stdskel_batch.py",
                    "--results-dir", root, "--ckpt-override", ck, "--device", args.device,
                    "--save-samples", "--sets", *sets] + batches
             log(f"step {step}: eval {sets} on {args.device} ...")
             t0 = time.time()
-            r = subprocess.run(cmd, capture_output=True, text=True)
-            if r.returncode != 0:
-                log(f"step {step}: eval FAILED rc={r.returncode} :: {r.stderr.strip()[-300:]}")
-                break
-            tail = [l for l in r.stdout.splitlines() if "step" in l or "peak" in l][-4:]
-            for l in tail:
-                log("  " + l)
+            pids = train_pids(args.pause_match) if args.pause_train else []
+            if pids:
+                log(f"step {step}: PAUSE training pids={pids} -> eval in-mem")
+                pause_procs(pids)
+            try:
+                r = subprocess.run(cmd, capture_output=True, text=True)
+                if r.returncode != 0:
+                    log(f"step {step}: eval FAILED rc={r.returncode} :: {r.stderr.strip()[-300:]}")
+                    break
+                tail = [l for l in r.stdout.splitlines() if "step" in l or "peak" in l][-4:]
+                for l in tail:
+                    log("  " + l)
+            finally:
+                if pids:
+                    resume_procs(pids)
+                    log(f"step {step}: RESUME training pids={pids}")
             # 汇总 eval_auto json (seen ssim + strict)
             flat = {"step": step, "elapsed_s": round(time.time() - t0, 1),
                     "engine": f"gpu_inmem_{args.device}"}
