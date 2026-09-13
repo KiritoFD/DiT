@@ -134,32 +134,40 @@ class REPALoss(nn.Module):
     Aligns DiT intermediate features with DINOv2 semantic features.
     """
     def __init__(self, student_dim, teacher_dim=384, teacher_backbone="dinov2_vits14",
-                 teacher_ckpt=None, teacher=None):
+                 teacher_ckpt=None, teacher=None, feature_cache=None, lazy_teacher=False):
         super().__init__()
-        # Load frozen DINOv2 teacher:
-        #   1) a reused teacher (shared across REPA layers) if provided
-        #   2) a local safetensors checkpoint (ModelScope export) if provided or found
-        #   3) otherwise fall back to torch.hub from github.
-        if teacher is None:
-            if teacher_ckpt is None:
-                teacher_ckpt = _default_dino_ckpt()
-            teacher = None
-            if teacher_ckpt and os.path.exists(teacher_ckpt):
-                try:
-                    teacher = _load_local_dinov2(teacher_ckpt)
-                    print(f"[REPALoss] loaded local DINOv2 teacher from {teacher_ckpt}")
-                except Exception as e:  # noqa: BLE001 - fall back below
-                    print(f"[REPALoss] failed to load local teacher ({e!r}); falling back to torch.hub")
-                    teacher = None
+        # Feature cache (REPA teacher 特征离线缓存, src/utils/dino_cache.py):
+        # 命中时免 teacher 前向; miss 时兜底 (lazy_teacher=True 则延迟加载 teacher,
+        # 全命中时彻底不占 DINO 的显存)。
+        self.feature_cache = feature_cache
+        self._lazy_teacher = bool(lazy_teacher)
+        self._shared_teacher_getter = None
+        self._teacher_backbone_name = teacher_backbone
+        self._teacher_ckpt_path = teacher_ckpt
+        if teacher is None and lazy_teacher and feature_cache is not None:
+            # 延迟加载: teacher 权重/激活显存 ~1.5GB, 全命中时省下
+            self.teacher = None
+        else:
             if teacher is None:
-                teacher = torch.hub.load('facebookresearch/dinov2', teacher_backbone)
-        # 共享 teacher 复用: 只包一层 _TeacherWrapper (避免重复包装/重复 forward_features)
-        if not isinstance(teacher, _TeacherWrapper):
-            teacher = _TeacherWrapper(teacher)
-        self.teacher = teacher
-        for param in self.teacher.parameters():
-            param.requires_grad = False
-        self.teacher.eval()
+                if teacher_ckpt is None:
+                    teacher_ckpt = _default_dino_ckpt()
+                teacher = None
+                if teacher_ckpt and os.path.exists(teacher_ckpt):
+                    try:
+                        teacher = _load_local_dinov2(teacher_ckpt)
+                        print(f"[REPALoss] loaded local DINOv2 teacher from {teacher_ckpt}")
+                    except Exception as e:  # noqa: BLE001 - fall back below
+                        print(f"[REPALoss] failed to load local teacher ({e!r}); falling back to torch.hub")
+                        teacher = None
+                if teacher is None:
+                    teacher = torch.hub.load('facebookresearch/dinov2', teacher_backbone)
+            # 共享 teacher 复用: 只包一层 _TeacherWrapper (避免重复包装/重复 forward_features)
+            if not isinstance(teacher, _TeacherWrapper):
+                teacher = _TeacherWrapper(teacher)
+            self.teacher = teacher
+            for param in self.teacher.parameters():
+                param.requires_grad = False
+            self.teacher.eval()
 
         self.is_vits14 = (teacher_backbone == "dinov2_vits14")
 
@@ -174,23 +182,72 @@ class REPALoss(nn.Module):
         self.register_buffer("mean", torch.tensor([0.485, 0.456, 0.406]).view(1, 3, 1, 1))
         self.register_buffer("std", torch.tensor([0.229, 0.224, 0.225]).view(1, 3, 1, 1))
 
-    def forward(self, student_feats, x_0):
+    def ensure_teacher(self):
+        """lazy 模式下首次 miss 时加载 teacher (仅当缓存未全命中才会走到)。"""
+        if self.teacher is not None:
+            return self.teacher
+        if self._shared_teacher_getter is not None:
+            tw = self._shared_teacher_getter()
+            if tw is not None:
+                self.teacher = tw
+                return tw
+        teacher = None
+        ckpt = self._teacher_ckpt_path or _default_dino_ckpt()
+        if ckpt and os.path.exists(ckpt):
+            try:
+                teacher = _load_local_dinov2(ckpt)
+                print(f"[REPALoss] lazy-loaded local DINOv2 teacher from {ckpt}")
+            except Exception as e:  # noqa: BLE001
+                print(f"[REPALoss] failed to load local teacher ({e!r}); falling back to torch.hub")
+                teacher = None
+        if teacher is None:
+            teacher = torch.hub.load('facebookresearch/dinov2', self._teacher_backbone_name)
+        if not isinstance(teacher, _TeacherWrapper):
+            teacher = _TeacherWrapper(teacher)
+        for param in teacher.parameters():
+            param.requires_grad = False
+        teacher.eval()
+        # lazy 加载的 teacher 搬到与 proj 一致的设备 (否则 DINO 前向 device mismatch)
+        try:
+            _dev = next(self.proj.parameters()).device
+            teacher = teacher.to(_dev)
+        except StopIteration:
+            pass
+        self.teacher = teacher
+        return teacher
+
+    def _teacher_forward(self, x_0):
+        """DINOv2 前向: [-1,1] -> [0,1] -> ImageNet 归一化 -> 224 bicubic -> patch tokens。"""
+        x_0 = x_0.float()
+        x_0_01 = (x_0 + 1.0) / 2.0
+        x_norm = (x_0_01 - self.mean) / self.std
+        x_224 = F.interpolate(x_norm, size=(224, 224), mode='bicubic', align_corners=False)
+        return self.teacher.forward_features(x_224).float()  # (B, 256, teacher_dim)
+
+    def forward(self, student_feats, x_0, img_ids=None):
         """
         student_feats: (B, num_patches, student_dim) e.g. (B, 256, 384)，
             或 list/tuple 多个这样的张量 (REPA-L2 多层对齐, 共享一次 teacher 前向)。
         x_0: (B, 3, 256, 256) original image in [-1, 1]
+        img_ids: (B,) 样本 id (dataset 提供) — 配合 feature_cache 查表免 teacher 前向。
         """
-        self.teacher.eval()
-        with torch.no_grad():
-            # 1. Prepare input for DINOv2: [-1, 1] -> [0, 1] -> Normalize -> Resize to 224x224
-            x_0 = x_0.float()
-            x_0_01 = (x_0 + 1.0) / 2.0
-            x_norm = (x_0_01 - self.mean) / self.std
-            x_224 = F.interpolate(x_norm, size=(224, 224), mode='bicubic', align_corners=False)
-
-            # 2. Extract teacher features (wrapper normalizes dict / BaseModelOutput
-            #    to a (B, num_patches, teacher_dim) patch-token tensor)
-            teacher_feats = self.teacher.forward_features(x_224).float()  # (B, 256, teacher_dim)
+        teacher_feats = None
+        if self.feature_cache is not None and img_ids is not None:
+            # 缓存路径: 命中行查表, miss 行才跑 teacher 前向 (lazy 加载)
+            feats_cache, missing = self.feature_cache.gather(img_ids, device=x_0.device)
+            if missing:
+                self.ensure_teacher()
+                self.teacher.eval()
+                with torch.no_grad():
+                    _m = torch.as_tensor(missing, device=x_0.device, dtype=torch.long)
+                    feats_cache[_m] = self._teacher_forward(x_0[_m])
+            teacher_feats = feats_cache
+        else:
+            if self.teacher is None:
+                self.ensure_teacher()
+            self.teacher.eval()
+            with torch.no_grad():
+                teacher_feats = self._teacher_forward(x_0)
 
         def _one(sf):
             # Project student features (upcast fp16 -> fp32 before matmul)

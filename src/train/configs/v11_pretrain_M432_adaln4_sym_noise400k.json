@@ -67,5 +67,8 @@
   "aux_latent_shards_dirs": "data/aux/aux_canny_latents_sym,data/aux/aux_skel3_latents_sym",
   "aux_loss_weight": 1.0,
   "aux_loss_weights": "0.3,0.8",
-  "repa_layers": "8"
+  "repa_layers": "8",
+  "repa_cache_dir": "data/dino_cache/v11_sym_full",
+  "ema_interval": 4,
+  "compile_mode": "default"
 }

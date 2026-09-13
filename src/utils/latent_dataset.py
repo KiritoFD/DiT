@@ -286,6 +286,12 @@ class MCCDLatentDataset(Dataset):
     def __getitem__(self, idx):
         row = self.samples[idx]
 
+        # img_id: 全局唯一样本键 (REPA DINO 特征缓存查表用)
+        _m = re.search(r"(\d+)\.png", row['image_path'])
+        if not _m:
+            raise ValueError(f"Cannot parse img_id from {row['image_path']}")
+        img_id = int(_m.group(1))
+
         if self.preload:
             latent = torch.from_numpy(self._latents[idx])
             img_t = torch.empty(0)
@@ -298,11 +304,6 @@ class MCCDLatentDataset(Dataset):
             aux_t = (torch.cat([torch.from_numpy(a[idx]) for a in self._aux_latents], 0)
                      if self._aux_latents else torch.empty(0))
         else:
-            m = re.search(r"(\d+)\.png", row['image_path'])
-            if not m:
-                raise ValueError(f"Cannot parse img_id from {row['image_path']}")
-            img_id = int(m.group(1))
-
             latent = self._get_latent(img_id)
 
             # 原始图 256 -> [-1,1] (优先 csv image_path, 支持变体分散在多个目录)
@@ -354,6 +355,7 @@ class MCCDLatentDataset(Dataset):
 
         return {
             'latent': latent,
+            'img_id': img_id,
             'image': img_t,
             'canny': torch.empty(0),
             'skeleton': torch.empty(0),

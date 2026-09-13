@@ -33,7 +33,7 @@ class RepaModule(nn.Module):
 
     def __init__(self, student_dim, layers=(8,), teacher_ckpt=None,
                  teacher_backbone="dinov2_vits14", w_repa=0.1,
-                 warmup_steps=0, device=None):
+                 warmup_steps=0, device=None, feature_cache=None):
         super().__init__()
         if isinstance(layers, int):
             layers = (layers,)
@@ -43,26 +43,42 @@ class RepaModule(nn.Module):
 
         # 共享 teacher: 第一个 REPALoss 加载 teacher (缓存), 其余复用同对象
         # (REPALoss 内部 has 共享 teacher 的 _TeacherWrapper 复用机制)
+        # feature_cache 配上时 teacher 延迟加载 (lazy): 全命中 = DINO 完全不占显存
         self._teacher = None
+        self.feature_cache = feature_cache
         self.losses = nn.ModuleList()
         for l in self.layers:
             kw = dict(student_dim=student_dim,
                       teacher_backbone=teacher_backbone,
-                      teacher_ckpt=teacher_ckpt)
+                      teacher_ckpt=teacher_ckpt,
+                      feature_cache=feature_cache,
+                      lazy_teacher=feature_cache is not None)
             if self._teacher is not None:
                 kw["teacher"] = self._teacher
             rl = REPALoss(**kw)
             # 保存 teacher 引用供后续层复用 (REPALoss 里 teacher 已 wrapper)
-            self._teacher = rl.teacher
+            if rl.teacher is not None:
+                self._teacher = rl.teacher
+            # lazy 层的兜底 teacher 也共享同一个 loader
+            rl._shared_teacher_getter = self._get_shared_teacher
             self.losses.append(rl)
             print(f"[repa] layer {l}: REPALoss (student_dim={student_dim}, "
-                  f"teacher={rl.is_vits14 and 'vits14' or 'dino'})")
+                  f"teacher={'cache' if feature_cache is not None else (rl.is_vits14 and 'vits14' or 'dino')}"
+                  f"{', lazy' if feature_cache is not None else ''})")
 
-        self._eval_teacher = None  # eval 用
         if device is not None:
             self.to(device)
 
-    def forward(self, intermediate_feats, img, step=0, w_override=None):
+    def _get_shared_teacher(self):
+        """lazy 模式共享 teacher: 首次 miss 时加载一次, 所有层复用。"""
+        if self._teacher is None:
+            rl0 = self.losses[0]
+            rl0._shared_teacher_getter = None
+            self._teacher = rl0.ensure_teacher()
+            rl0._shared_teacher_getter = self._get_shared_teacher
+        return self._teacher
+
+    def forward(self, intermediate_feats, img, step=0, w_override=None, img_ids=None):
         """计算 REPA loss (w 渐进)。
 
         intermediate_feats: 与 self.layers 对应的特征:
@@ -70,6 +86,7 @@ class RepaModule(nn.Module):
             * list/tuple 长度 == len(layers)
             * 单张量 (len(layers)==1)
         img: (B,3,H,W) GT 图 [-1,1]
+        img_ids: (B,) 样本 id — 配合 feature_cache 查表 (免 DINO 前向)
         返回: w_eff * loss (标量张量), 当 img 为 None 或缺少特征时返回 0
         """
         if img is None:
@@ -94,8 +111,11 @@ class RepaModule(nn.Module):
         if w <= 0:
             return torch.tensor(0.0, device=next(self.parameters()).device)
         # REPALoss.forward 支持 list (多层取平均共享一次 teacher)
-        loss = self.losses[0](feats, img) if len(self.losses) == 1 else \
-            sum(l(f, img) for l, f in zip(self.losses, feats)) / len(self.losses)
+        if len(self.losses) == 1:
+            loss = self.losses[0](feats, img, img_ids=img_ids)
+        else:
+            loss = sum(l(f, img, img_ids=img_ids)
+                       for l, f in zip(self.losses, feats)) / len(self.losses)
         return w * loss
 
     def trainable_params(self):
@@ -116,7 +136,7 @@ class RepaModule(nn.Module):
 
 def build_repa_module(student_dim, layers=(8,), teacher_ckpt=None,
                       teacher_backbone="dinov2_vits14", w_repa=0.1,
-                      warmup_steps=0, device=None):
+                      warmup_steps=0, device=None, feature_cache=None):
     """工厂: 从 config 参数构建 RepaModule (nil-safe, w_repa<=0 返回 None)."""
     if float(w_repa) <= 0:
         return None
@@ -124,4 +144,4 @@ def build_repa_module(student_dim, layers=(8,), teacher_ckpt=None,
                       teacher_ckpt=teacher_ckpt,
                       teacher_backbone=teacher_backbone,
                       w_repa=w_repa, warmup_steps=warmup_steps,
-                      device=device)
+                      device=device, feature_cache=feature_cache)
