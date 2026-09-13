@@ -96,6 +96,11 @@ def main():
     ap.add_argument("--no-pause-train", dest="pause_train", action="store_false")
     ap.add_argument("--pause-match", default="src/train/train.py",
                     help="训练进程匹配串 (pgrep -f)")
+    ap.add_argument("--self-cond", action="store_true", default=True,
+                    help="同时运行自条件评测并对比记录 (默认开)")
+    ap.add_argument("--no-self-cond", dest="self_cond", action="store_false")
+    ap.add_argument("--blend-alpha", type=float, default=0.5,
+                    help="自条件骨架混合系数 (默认 0.5)")
     args = ap.parse_args()
 
     root = os.path.abspath(args.results_dir)
@@ -127,32 +132,102 @@ def main():
                 log(f"step {step}: PAUSE training pids={pids} -> eval in-mem")
                 pause_procs(pids)
             try:
+                # 1) Origin baseline 评测
                 r = subprocess.run(cmd, capture_output=True, text=True, env=_env)
                 if r.returncode != 0:
                     log(f"step {step}: eval FAILED rc={r.returncode} :: {r.stderr.strip()[-300:]}")
                     break
                 tail = [l for l in r.stdout.splitlines() if "step" in l or "peak" in l][-4:]
                 for l in tail:
-                    log("  " + l)
+                    log("  [orig] " + l)
+
+                # 2) Self-Conditioning 评测 (如果启用)
+                if args.self_cond:
+                    sets_sc = [f"seen_sc:{args.seen_csv}:10"]
+                    if args.strict_every <= 0 or step % args.strict_every == 0:
+                        sets_sc.append(f"strict_sc:{args.strict_csv}:237")
+                    cmd_sc = [sys.executable, "-u", "-m", "src.eval.batch_eval",
+                              "--results-dir", root, "--ckpt-override", ck, "--device", args.device,
+                              "--self-cond", "--blend-alpha", str(args.blend_alpha),
+                              "--sets", *sets_sc] + batches
+                    r_sc = subprocess.run(cmd_sc, capture_output=True, text=True, env=_env)
+                    if r_sc.returncode == 0:
+                        tail_sc = [l for l in r_sc.stdout.splitlines() if "step" in l or "peak" in l][-4:]
+                        for l in tail_sc:
+                            log("  [self-cond] " + l)
+                    else:
+                        log(f"step {step}: self-cond eval failed rc={r_sc.returncode}")
             finally:
                 if pids:
                     resume_procs(pids)
                     log(f"step {step}: RESUME training pids={pids}")
-            # 汇总 eval_auto json (seen ssim + strict)
+
+            # 汇总 eval_auto json (seen + strict, origin + self-cond)
             flat = {"step": step, "elapsed_s": round(time.time() - t0, 1),
                     "engine": f"gpu_inmem_{args.device}"}
+            seen_orig = None
+            seen_sc = None
+            strict_orig = None
+            strict_sc = None
             if os.path.exists(sum_path):
                 for row in csv.DictReader(open(sum_path, encoding="utf-8")):
                     if int(row["step"]) != step:
                         continue
-                    if row["set"] == "seen":
-                        flat.update({"ssim": float(row["ssim_mean"]), "mse": float(row["mse_mean"]),
-                                     "lpips": float(row["lpips_mean"]) if row.get("lpips_mean") else None})
-                    elif row["set"] == "strict":
-                        flat["strict"] = {"n": int(row["n"]), "ssim_mean": float(row["ssim_mean"]),
-                                          "mse_mean": float(row["mse_mean"])}
+                    sname = row["set"]
+                    if sname == "seen":
+                        seen_orig = {"ssim": float(row["ssim_mean"]), "mse": float(row["mse_mean"]),
+                                     "med": float(row.get("ssim_med", 0)), "q3": float(row.get("ssim_q3", 0))}
+                    elif sname == "seen_sc":
+                        seen_sc = {"ssim": float(row["ssim_mean"]), "mse": float(row["mse_mean"]),
+                                   "med": float(row.get("ssim_med", 0)), "q3": float(row.get("ssim_q3", 0))}
+                    elif sname == "strict":
+                        strict_orig = {"n": int(row["n"]), "ssim": float(row["ssim_mean"]),
+                                       "mse": float(row["mse_mean"]), "med": float(row.get("ssim_med", 0)),
+                                       "q3": float(row.get("ssim_q3", 0))}
+                    elif sname == "strict_sc":
+                        strict_sc = {"n": int(row["n"]), "ssim": float(row["ssim_mean"]),
+                                     "mse": float(row["mse_mean"]), "med": float(row.get("ssim_med", 0)),
+                                     "q3": float(row.get("ssim_q3", 0))}
+
+            # 结构化字段
+            flat["origin"] = {"seen": seen_orig, "strict": strict_orig}
+            flat["self_cond"] = {"seen": seen_sc, "strict": strict_sc, "blend_alpha": args.blend_alpha}
+            if seen_orig:
+                flat.update({"ssim": seen_orig["ssim"], "mse": seen_orig["mse"]})
+            if strict_orig:
+                flat["strict"] = {"n": strict_orig["n"], "ssim_mean": strict_orig["ssim"], "mse_mean": strict_orig["mse"]}
+            if seen_orig and seen_sc:
+                flat["delta_seen_ssim"] = round(seen_sc["ssim"] - seen_orig["ssim"], 4)
+            if strict_orig and strict_sc:
+                flat["delta_strict_ssim"] = round(strict_sc["ssim"] - strict_orig["ssim"], 4)
+
+            # 写入单独的 eval_auto_{step}.json
             with open(os.path.join(ckpt_dir, f"eval_auto_{step}.json"), "w", encoding="utf-8") as f:
-                json.dump(flat, f, ensure_ascii=False)
+                json.dump(flat, f, ensure_ascii=False, indent=2)
+
+            # 写入实验专属对比汇总 CSV (每次实验专门写到 eval_comparison.csv)
+            comp_csv = os.path.join(root, "eval_comparison.csv")
+            new_comp = not os.path.exists(comp_csv)
+            try:
+                with open(comp_csv, "a", newline="", encoding="utf-8") as f:
+                    w_comp = csv.writer(f)
+                    if new_comp:
+                        w_comp.writerow(["step", "seen_orig_ssim", "seen_sc_ssim", "seen_delta",
+                                         "strict_orig_ssim", "strict_sc_ssim", "strict_delta",
+                                         "elapsed_s"])
+                    w_comp.writerow([
+                        step,
+                        seen_orig["ssim"] if seen_orig else "",
+                        seen_sc["ssim"] if seen_sc else "",
+                        flat.get("delta_seen_ssim", ""),
+                        strict_orig["ssim"] if strict_orig else "",
+                        strict_sc["ssim"] if strict_sc else "",
+                        flat.get("delta_strict_ssim", ""),
+                        flat["elapsed_s"],
+                    ])
+            except Exception as e:
+                log(f"write eval_comparison.csv failed: {e}")
+
             # 自动刷新统一登记处 (best-effort)
             try:
                 import subprocess as _sp
@@ -160,8 +235,8 @@ def main():
                         cwd=BASE, capture_output=True, timeout=300)
             except Exception:
                 pass
-            log(f"step {step}: DONE seen={flat.get('ssim')} strict="
-                f"{(flat.get('strict') or {}).get('ssim_mean')}")
+            log(f"step {step}: DONE origin_seen={flat.get('ssim')} sc_seen={seen_sc.get('ssim') if seen_sc else None} "
+                f"delta={flat.get('delta_seen_ssim')}")
             # poster
             try:
                 subprocess.run([sys.executable, "-u", "src/eval/posters.py", "--run-dir", seg,
