@@ -87,6 +87,32 @@ for d in sorted(glob.glob(os.path.join(TONGJI_IMG_ROOT, "*"))):
         iid += 1
 print(f"tongji base rows: {len(tongji_rows)}, skipped={skipped}")
 
+# ── UniCalli 原始行 (已裁切单字 256, calligrapher_id 由这里分配) ──────────
+uc_rows = []
+if os.path.exists("assets/unicalli_rows.csv"):
+    with open("assets/unicalli_rows.csv", encoding="utf-8") as f:
+        for r in csv.DictReader(f):
+            callig = r["calligrapher"]
+            if callig not in callig_name2raw:
+                callig_name2raw[callig] = 9100 + len(new_calligs)
+                new_calligs[callig] = 9100 + len(new_calligs)
+            ch = r["character"]
+            if ch not in char_map:
+                char_map[ch] = (str(50000 + len(char_map)), str(50000 + len(char_map)))
+            if (callig, r["script"], ch) in strict_pairs:
+                skipped["uc_leak"] = skipped.get("uc_leak", 0) + 1
+                continue
+            csid, gid = char_map[ch]
+            uc_rows.append({
+                "image_path": r["image_path"], "calligrapher": callig,
+                "script": r["script"], "character": ch,
+                "calligrapher_id": str(callig_name2raw[callig]),
+                "script_id": r["script_id"], "character_id": csid,
+                "glyph_id": gid, "aug": "",
+            })
+print(f"unicalli base rows: {len(uc_rows)}, uc_leak={skipped.get('uc_leak', 0)}, "
+      f"total new calligraphers: {len(new_calligs)}")
+
 fields = ["image_path", "calligrapher", "script", "character", "calligrapher_id",
           "script_id", "character_id", "glyph_id", "aug"]
 with open(OUT_CSV, "w", encoding="utf-8", newline="") as f:
@@ -96,7 +122,9 @@ with open(OUT_CSV, "w", encoding="utf-8", newline="") as f:
         w.writerow({k: r[k] for k in fields})
     for r in tongji_rows:
         w.writerow({k: r[k] for k in fields})
-print(f"written {OUT_CSV}: {len(fame_rows)} + {len(tongji_rows)} rows")
+    for r in uc_rows:
+        w.writerow({k: r[k] for k in fields})
+print(f"written {OUT_CSV}: {len(fame_rows)} + {len(tongji_rows)} + {len(uc_rows)} rows")
 
 # ── callig id map ──────────────────────────────────────────────────────────
 with open("assets/callig_id_map.json", encoding="utf-8") as f:
@@ -104,9 +132,10 @@ with open("assets/callig_id_map.json", encoding="utf-8") as f:
 id_map = {str(k): int(v) for k, v in cmap.get("id_map", {}).items()}
 n_cont = int(cmap.get("num_calligraphers", 41))
 for callig, new_raw in sorted(new_calligs.items()):
-    id_map[str(new_raw)] = n_cont + sorted(new_calligs).index(callig)
+    id_map[str(new_raw)] = n_cont + list(new_calligs).index(callig)
 cmap["id_map"] = id_map
 cmap["num_calligraphers"] = n_cont + len(new_calligs)
 with open(OUT_MAP, "w", encoding="utf-8") as f:
     json.dump(cmap, f, ensure_ascii=False, indent=2)
-print(f"written {OUT_MAP}: num_calligraphers={cmap['num_calligraphers']}")
+print(f"written {OUT_MAP}: num_calligraphers={cmap['num_calligraphers']}, "
+      f"new: {sorted(new_calligs)}")
