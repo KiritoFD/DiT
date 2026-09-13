@@ -1,0 +1,7 @@
+old train_fame_clean_v8: 44 calligraphers, 51321 rows
+fame3 clean_v8: 41 calligraphers
+
+calligraphers in old but NOT in fame3:
+  赵孟頫 (1029 rows; 六体:1029)
+  李斯 (482 rows; 篆:482)
+  乾隆 (311 rows; 六体:311)
