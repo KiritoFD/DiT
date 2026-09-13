@@ -1387,6 +1387,27 @@ def main(args):
                             if len(_pts) > ckpt_keep:
                                 logger.info(f"[ckpt-keep] pruned {len(_pts) - ckpt_keep} old checkpoint(s), keeping {ckpt_keep}")
 
+                        # ── 真·in-mem eval (可选 config 模式): 暂停 stepping, 用常驻
+                        # EMA 模型同卡采样+decode+指标一次算完, PNG 落盘, 无 daemon。
+                        # 显存: 训练 17G + eval ~2G ≈ 19.5G < 24G; 默认关。
+                        if getattr(args, 'in_mem_eval', False):
+                            try:
+                                from src.eval.in_mem_eval import run_in_mem_eval
+                                _em = (ema_model if ema_model is not None
+                                       else (model.module if hasattr(model, 'module') else model))
+                                _em.eval()
+                                _im_t0 = time()
+                                _im_res = run_in_mem_eval(
+                                    _em, args, train_steps, device,
+                                    results_dir=str(getattr(args, 'results_dir', '')
+                                                    or os.path.dirname(os.path.dirname(checkpoint_dir))))
+                                logger.info(
+                                    f"[in-mem-eval] step {train_steps} done in {time()-_im_t0:.0f}s: "
+                                    + " | ".join(f"{k} ssim={v:.4f}" for k, v in _im_res.items()))
+                            except Exception as _ie:
+                                logger.warning(f"[in-mem-eval] step {train_steps} FAILED: {_ie}",
+                                               exc_info=True)
+
                         # ── In-process GPU eval: bf16 DDIM → VAE decode → save PNGs ──
                         # GPU-only (~40s for 455 imgs at batch=48). CPU metrics
                         # computed by eval_metrics_daemon.py (separate process).
@@ -1829,6 +1850,27 @@ def main_from_cli(argv=None):
                              "built by tools/build_dino_cache.py). Hits skip the per-step DINO "
                              "forward (+15~20% throughput, -1.5GB VRAM); misses fall back to the "
                              "teacher forward (lazy-loaded). Empty = disabled (teacher every step).")
+    parser.add_argument("--in-mem-eval", type=_str_to_bool, default=False, dest="in_mem_eval",
+                        help="True in-mem eval inside the training process: at each ckpt point, "
+                             "pause stepping, sample with the resident EMA model on the same GPU, "
+                             "decode + compute SSIM/MSE in-memory, append eval_stdskel_*.csv "
+                             "(batch_eval-compatible), then resume. No daemon, no PNGs, no ckpt reload.")
+    parser.add_argument("--in-mem-eval-sets", type=str, default="",
+                        dest="in_mem_eval_sets",
+                        help="Sets spec for --in-mem-eval: 'name:csv:n' comma-separated. "
+                             "Default: seen:assets/eval_seen_v10.csv:10,"
+                             "strict:assets/eval_fame3_strict_clean_v9.csv:50")
+    parser.add_argument("--in-mem-eval-batch", type=int, default=16, dest="in_mem_eval_batch",
+                        help="DiT sampling batch for --in-mem-eval (VRAM-safe: 16).")
+    parser.add_argument("--in-mem-eval-save-samples", type=_str_to_bool, default=True,
+                        dest="in_mem_eval_save_samples",
+                        help="Save generated + GT PNGs to eval_samples_ctrl/step{N}/{set}/ "
+                             "during --in-mem-eval (poster/sanity use).")
+    parser.add_argument("--eval-self-cond", type=_str_to_bool, default=False, dest="eval_self_cond",
+                        help="Two-pass self-conditioning sampling in --in-mem-eval "
+                             "(pass-1 predicted skel channels fed back as g for pass-2).")
+    parser.add_argument("--eval-blend-alpha", type=float, default=0.0, dest="eval_blend_alpha",
+                        help="Self-conditioning skeleton blend (0=pure predicted, 0.5=half-half).")
     parser.add_argument("--optimizer", type=str, default="adamw", choices=["adamw", "muon"],
                         help="Optimizer: adamw (default) or muon (matrix NS-orth + adamw for vec/embed).")
     parser.add_argument("--muon-lr", type=float, default=0.02,

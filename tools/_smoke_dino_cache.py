@@ -15,8 +15,8 @@ from src.loss.repa import build_repa_module
 
 tmp = tempfile.mkdtemp()
 N, P, D = 16, 8, 384
-feats = (np.random.randn(N, P, D).astype(np.float32) * 2).astype(np.float16)
-with open(os.path.join(tmp, "feats.f16"), "wb") as f:
+feats = (np.random.randn(N, P, D).astype(np.float32) * 2).astype(np.float32)
+with open(os.path.join(tmp, "feats.f32"), "wb") as f:
     f.write(feats.tobytes())
 ids = np.arange(100, 100 + N, dtype=np.int64)
 np.save(os.path.join(tmp, "ids.npy"), ids)
