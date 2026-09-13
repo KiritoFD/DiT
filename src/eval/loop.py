@@ -153,6 +153,13 @@ def main():
                                           "mse_mean": float(row["mse_mean"])}
             with open(os.path.join(ckpt_dir, f"eval_auto_{step}.json"), "w", encoding="utf-8") as f:
                 json.dump(flat, f, ensure_ascii=False)
+            # 自动刷新统一登记处 (best-effort)
+            try:
+                import subprocess as _sp
+                _sp.run([sys.executable, "tools/registry.py", "--build"],
+                        cwd=BASE, capture_output=True, timeout=300)
+            except Exception:
+                pass
             log(f"step {step}: DONE seen={flat.get('ssim')} strict="
                 f"{(flat.get('strict') or {}).get('ssim_mean')}")
             # poster

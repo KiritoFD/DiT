@@ -111,6 +111,8 @@ def load_eval_data(eval_csv, skel_dir, n, callig_id_map_path=None):
         gt_paths.append(row.get('image_path', row.get('path', '')))
 
         img_id = row.get('img_id', row.get('image_id', ''))
+        if not img_id and row.get('image_path'):
+            img_id = os.path.splitext(os.path.basename(row['image_path']))[0]
         skel_path = os.path.join(skel_dir, f"{img_id}.npy")
         if os.path.exists(skel_path):
             skels.append(torch.from_numpy(np.load(skel_path)).float())

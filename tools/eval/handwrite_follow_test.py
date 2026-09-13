@@ -51,7 +51,7 @@ def main():
             if os.path.isfile(args.ckpt):
                 ck = args.ckpt
             else:  # step 数字
-                match = [c for c in cks if int(os.path.basename(c).split(".")[0]) == int(args.ckpt)]
+                match = [c for c in cks if os.path.basename(c).startswith(str(args.ckpt))]
                 ck = match[0] if match else cks[-1]
                 if not match:
                     print(f"[warn] --ckpt {args.ckpt} 无匹配, 用最新", flush=True)
