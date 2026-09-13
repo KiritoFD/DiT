@@ -50,6 +50,9 @@ def main():
                     help="in-mem eval 设备 (cuda=GPU, cpu=CPU)")
     ap.add_argument("--ckpt-override", default="",
                     help="只评测指定 ckpt 路径 (batch 扫描/单点复评)")
+    ap.add_argument("--skel-shards", default="",
+                    help="覆盖 ckpt args 里的 skel_latent_shards_dir (g 条件); "
+                         "用于修复 shard 覆盖不到 eval id 时 g=零 的静默失效")
     ap.add_argument("--save-samples", action="store_true",
                     help="落盘 g{i}/gt{i}.png 到 eval_samples_ctrl/ (供 poster)")
     args = ap.parse_args()
@@ -127,7 +130,7 @@ def main():
         model.y_callig_embedder.freeze_table()
     vae = load_eval_vae(dev, "pretrained_models/sd-vae-ft-ema")
     diff = build_diffusion(args.steps, "flow")
-    shards = a.get("skel_latent_shards_dir") or "std_skel1_latents_fame3_v8"
+    shards = args.skel_shards or a.get("skel_latent_shards_dir") or "std_skel1_latents_fame3_v8"
     img_root = a.get("gpu_eval_img_root") or a.get("img_root")
     sf = float(a.get("vae_scaling_factor", 0.18215))
     # 书家词表收紧: y_callig 与训练数据层同一张映射表

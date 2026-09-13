@@ -362,6 +362,7 @@ def make_eval_cache(eval_csv, img_root, skel_root, image_size, n,
                 for j, iid in enumerate(d["img_ids"]):
                     skel_id_to_shard[int(iid)] = (sp, j)
 
+    missing_skel = 0
     for i, row in enumerate(rows):
         p = row["image_path"]
         if img_root and not os.path.isabs(p) and not p.startswith(img_root):
@@ -379,14 +380,19 @@ def make_eval_cache(eval_csv, img_root, skel_root, image_size, n,
                 sp, j = skel_id_to_shard[img_id]
                 with np.load(sp) as d:
                     skels_latent[i] = torch.from_numpy(np.array(d["latents"][j], copy=True)).float()
+            else:
+                missing_skel += 1
         elif img_id is not None and skel_root:
             sk = Image.open(os.path.join(skel_root, f"{img_id}.png")).convert("L")
             sk = sk.resize((image_size, image_size), Image.NEAREST)
             skels[i, 0] = torch.from_numpy(np.asarray(sk, np.float32) / 255.0)
     g = torch.Generator().manual_seed(0)
     noise = torch.randn(n, latent_channels, latent_spatial, latent_spatial, generator=g)
+    if skels_latent is not None and missing_skel:
+        print(f"[eval-cache] WARNING: {missing_skel}/{n} samples missing skel latent in "
+              f"{skel_latent_shards_dir} -> g=ZERO (字条件失效! 检查 shard 覆盖)", flush=True)
     return {"gts": gts, "conds": conds, "noise": noise, "skels": skels,
-            "skels_latent": skels_latent,
+            "skels_latent": skels_latent, "missing_skel": missing_skel,
             "n": n, "latent_channels": latent_channels,
             "latent_spatial": latent_spatial, "scaling_factor": scaling_factor,
             "img_root": img_root, "skel_root": skel_root, "image_size": image_size}
