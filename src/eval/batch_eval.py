@@ -59,6 +59,8 @@ def main():
                     help="启用两遍自条件采样 (Self-Conditioning)")
     ap.add_argument("--blend-alpha", type=float, default=0.0,
                     help="自条件骨架混合系数 (0=纯预测骨架, 0.5=各半)")
+    ap.add_argument("--force", action="store_true", default=False,
+                    help="强制重新评测 (忽略已有 summary 记录)")
     args = ap.parse_args()
 
     dev = torch.device(args.device)
@@ -192,7 +194,7 @@ def main():
 
     for ck in cks:
         step = int(os.path.basename(ck).split(".")[0])
-        todo = [s for s in sets if (step, s) not in done]
+        todo = list(sets.keys()) if getattr(args, "force", False) else [s for s in sets if (step, s) not in done]
         if not todo:
             continue
         d = torch.load(ck, map_location="cpu", weights_only=False)
