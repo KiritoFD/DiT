@@ -55,6 +55,10 @@ def main():
                          "用于修复 shard 覆盖不到 eval id 时 g=零 的静默失效")
     ap.add_argument("--save-samples", action="store_true",
                     help="落盘 g{i}/gt{i}.png 到 eval_samples_ctrl/ (供 poster)")
+    ap.add_argument("--self-cond", action="store_true", default=False,
+                    help="启用两遍自条件采样 (Self-Conditioning)")
+    ap.add_argument("--blend-alpha", type=float, default=0.0,
+                    help="自条件骨架混合系数 (0=纯预测骨架, 0.5=各半)")
     args = ap.parse_args()
 
     dev = torch.device(args.device)
@@ -76,6 +80,7 @@ def main():
     # ── 模型/VAE 只建一次 (架构取自首个 ckpt args) ──────────────────────
     from src.model import DiT_2Cond_models
     from src.eval.inference import (make_eval_cache, load_eval_vae, sample_latents,
+                                    sample_latents_self_cond,
                                     _mse, _ssim, build_diffusion)
 
     ck0 = torch.load(cks[0], map_location="cpu", weights_only=False)
@@ -203,9 +208,17 @@ def main():
             S = sets[name]
             cache, n = S["cache"], S["n"]
             t0 = time.time()
-            lat = sample_latents(model, diff, cache["noise"], cache["conds"],
-                                 args.cfg, args.dit_batch, dev,
-                                 skel=cache["skels_latent"], seed=0)
+            if getattr(args, "self_cond", False):
+                lat = sample_latents_self_cond(
+                    model, diff, cache["noise"], cache["conds"],
+                    args.cfg, args.dit_batch, dev,
+                    skel=cache["skels_latent"], seed=0,
+                    blend_alpha=args.blend_alpha)
+            else:
+                lat = sample_latents(
+                    model, diff, cache["noise"], cache["conds"],
+                    args.cfg, args.dit_batch, dev,
+                    skel=cache["skels_latent"], seed=0)
             t_s = time.time() - t0
             # decode in memory (bf16 autocast: 共 GPU 训练时省一半激活显存)
             gts = (cache["gts"].to(dev) + 1) / 2
