@@ -1,0 +1,9 @@
+{
+  "ckpt": "results/exp_xl_head_r64/20260815-012124-DiT-3Cond-XL-2/checkpoints/0037000.pt",
+  "model": "DiT-3Cond-XL/2",
+  "csv": "final_test.csv",
+  "n": 10000,
+  "mse": 0.025321922054700553,
+  "ssim": 0.9080065416475139,
+  "time": "2026-08-15 03:26:34"
+}

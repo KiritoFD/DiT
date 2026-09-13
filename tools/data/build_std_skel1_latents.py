@@ -11,6 +11,7 @@ CPU 渲染/骨架化 + GPU VAE encode (batch 小, 不影响并行训练).
 import os
 import sys
 import csv
+import re
 import argparse
 import numpy as np
 from PIL import Image, ImageDraw, ImageFont
@@ -29,6 +30,8 @@ def parse_args():
     ap.add_argument("--font-size", type=int, default=200)
     ap.add_argument("--batch", type=int, default=16)
     ap.add_argument("--shard-size", type=int, default=2592)
+    ap.add_argument("--dilate", type=int, default=0,
+                    help="1px 骨架膨胀次数 (1 -> ~3px); 提升 VAE 256->32 可编码性/字间区分度")
     return ap.parse_args()
 
 
@@ -93,17 +96,22 @@ def render_skel1(ch, script, size=256, font_size=200):
         if (a < 250).sum() < 10:
             continue  # 该字体缺字，试下一个
         sk = skeletonize_1px(a < 127)
+        if DILATE > 0:
+            from scipy.ndimage import binary_dilation, generate_binary_structure
+            sk = binary_dilation(sk, generate_binary_structure(2, 2), iterations=DILATE)
         return np.where(sk, 0, 255).astype("uint8")
     return None
 
 
 FONT_DIR = "/tmp"
+DILATE = 0
 
 
 def main():
-    global FONT_DIR
+    global FONT_DIR, DILATE
     args = parse_args()
     FONT_DIR = args.font_dir
+    DILATE = int(args.dilate)
 
     rows = list(csv.DictReader(open(args.csv, encoding="utf-8")))
     print(f"[csv] {len(rows)} rows")
@@ -174,8 +182,11 @@ def main():
     for row_i, sk_i in enumerate(sample_idx):
         if sk_i < 0:
             continue
+        m = re.search(r"(\d+)\.png", rows[row_i]["image_path"])
+        if not m:
+            continue
         shard.append(latents[sk_i])
-        ids.append(row_i)
+        ids.append(int(m.group(1)))   # shard key = img_id (与 final_latents/数据集查找一致)
         if len(shard) >= args.shard_size:
             flush_shard()
     flush_shard()

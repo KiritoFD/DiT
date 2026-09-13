@@ -1,0 +1,43 @@
+{
+  "config": "exp_s6_top6_diffonly.json",
+  "mode": "no-decode",
+  "struct_subset": 0,
+  "summary": [
+    {
+      "batch": 64,
+      "peak_gib": 7.26,
+      "alloc_gib": 6.4,
+      "step_ms": 83.0,
+      "steps_per_s": 12.05,
+      "img_per_s": 771.4
+    },
+    {
+      "batch": 128,
+      "peak_gib": 13.71,
+      "alloc_gib": 11.62,
+      "step_ms": 159.6,
+      "steps_per_s": 6.27,
+      "img_per_s": 802.0
+    },
+    {
+      "batch": 192,
+      "peak_gib": 21.12,
+      "alloc_gib": 16.84,
+      "step_ms": 240.2,
+      "steps_per_s": 4.16,
+      "img_per_s": 799.3
+    },
+    {
+      "batch": 256,
+      "peak_gib": 22.93,
+      "alloc_gib": 22.07,
+      "step_ms": 316.6,
+      "steps_per_s": 3.16,
+      "img_per_s": 808.6
+    },
+    {
+      "batch": 320,
+      "oom": true
+    }
+  ]
+}

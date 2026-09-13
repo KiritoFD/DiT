@@ -1,0 +1,690 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DiT 训练监控</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<style>
+:root {
+  --bg:#0f1117; --card:#1a1d27; --line:#2a2f3c; --txt:#e6e9ef; --dim:#8b93a7;
+  --acc:#4f9cff; --warn:#ff6b6b; --ok:#3ddc97; --track:#3a4150;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--txt);font-family:-apple-system,"Segoe UI",Roboto,sans-serif;font-size:13px;line-height:1.5}
+header{padding:12px 20px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+header h1{font-size:15px;font-weight:600}
+.meta{color:var(--dim);font-size:12px}
+.controls{margin-left:auto;display:flex;gap:8px;align-items:center}
+button{background:var(--acc);color:#fff;border:0;border-radius:6px;padding:6px 12px;font-size:12px;cursor:pointer}
+button.sec{background:var(--card);border:1px solid var(--line);color:var(--txt)}
+.badge{display:inline-block;padding:1px 7px;border-radius:4px;font-size:11px;margin-left:6px}
+.badge.nan{background:rgba(255,107,107,.15);color:var(--warn)}
+.badge.ok{background:rgba(61,220,151,.15);color:var(--ok)}
+
+/* 统计卡片 */
+.stats{display:flex;gap:10px;padding:14px 20px 0;flex-wrap:wrap}
+.stat{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:10px 14px;min-width:110px}
+.stat .k{color:var(--dim);font-size:11px}
+.stat .v{font-size:20px;font-weight:700;margin-top:2px}
+.v.warn{color:var(--warn)} .v.ok{color:var(--ok)}
+
+/* 图表网格 */
+.charts{padding:14px 20px 24px;display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media(max-width:900px){.charts{grid-template-columns:1fr}}
+.panel{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:14px}
+.panel h2{font-size:13px;margin:0 0 10px;font-weight:600}
+.chart-wrap{position:relative;height:260px}
+
+/* 缩放控制条：左右两个独立滑块轨道 */
+.zoom-bar{display:flex;align-items:center;gap:8px;margin-top:8px;padding-top:8px;border-top:1px solid var(--line)}
+.zbar{flex:1;display:flex;flex-direction:row;gap:8px}
+.zbar input[type=range]{flex:1;width:auto;margin:0;-webkit-appearance:none;appearance:none;
+  height:4px;background:var(--track);border-radius:2px;outline:none}
+.zbar input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:12px;height:12px;
+  border-radius:50%;cursor:pointer;border:2px solid var(--bg)}
+.zbar-lo input::-webkit-slider-thumb{background:var(--ok)}
+.zbar-hi input::-webkit-slider-thumb{background:var(--warn)}
+.zoom-btn{background:none;border:1px solid var(--line);color:var(--dim);border-radius:4px;padding:2px 8px;font-size:11px;cursor:pointer}
+.zoom-btn:hover{color:var(--txt);border-color:var(--dim)}
+
+.status{padding:0 20px 10px;color:var(--dim);font-size:12px}
+
+/* 海报 */
+.poster-section{padding:14px 20px 0}
+.poster-section .panel{margin-bottom:14px}
+.poster-section img{width:100%;max-width:100%;border-radius:6px;border:1px solid var(--line);display:block;background:#000}
+
+/* Tab 切换 */
+.tabs{display:flex;gap:0;padding:14px 20px 0;border-bottom:1px solid var(--line)}
+.tab{padding:8px 16px;font-size:12px;color:var(--dim);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px}
+.tab.active{color:var(--txt);border-bottom-color:var(--acc);font-weight:600}
+.tab:hover{color:var(--txt)}
+.tab-content{display:block}
+.tab-content.active{display:block}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>DiT-3Cond 训练监控</h1>
+  <span class="meta" id="meta">未加载</span>
+  <div class="controls">
+    <span class="meta" id="countdown"></span>
+    <label class="meta"><input type="checkbox" id="autoChk" checked> 自动刷新(10s)</label>
+    <button class="sec" id="refreshBtn">刷新</button>
+  </div>
+</header>
+
+<div class="stats" id="statGrid"></div>
+<div class="status" id="statusLine"></div>
+
+<!-- 全局错误显示条（调试用） -->
+<div id="errbar" style="display:none;background:#ff4d4f;color:#fff;padding:8px 12px;font:12px monospace;white-space:pre-wrap;position:sticky;top:0;z-index:999"></div>
+
+<!-- Tab 导航 -->
+<div class="tabs">
+  <div class="tab active" data-tab="loss">Loss 曲线</div>
+  <div class="tab" data-tab="eval">评估指标</div>
+  <div class="tab" data-tab="sys">系统 / 海报</div>
+</div>
+
+<!-- Tab: Loss -->
+<div class="tab-content active" id="tab-loss">
+<div class="charts">
+  <div class="panel">
+    <h2>Diff Loss（核心指标）</h2>
+    <div class="chart-wrap"><canvas id="diffChart"></canvas></div>
+    <div class="zoom-bar" data-for="diffChart">
+      <button class="zoom-btn" onclick="zoomOut(this)">−</button>
+      <div class="zbar zbar-lo"><input type="range" class="zlo" min="0" max="100" value="0" step="0.5"></div>
+      <div class="zbar zbar-hi"><input type="range" class="zhi" min="0" max="100" value="100" step="0.5"></div>
+      <button class="zoom-btn" onclick="zoomIn(this)">+</button>
+      <button class="zoom-btn sec" onclick="resetZoom(this)">重置</button>
+    </div>
+  </div>
+  <div class="panel">
+    <h2>Total Loss</h2>
+    <div class="chart-wrap"><canvas id="totalChart"></canvas></div>
+    <div class="zoom-bar" data-for="totalChart">
+      <button class="zoom-btn" onclick="zoomOut(this)">−</button>
+      <div class="zbar zbar-lo"><input type="range" class="zlo" min="0" max="100" value="0" step="0.5"></div>
+      <div class="zbar zbar-hi"><input type="range" class="zhi" min="0" max="100" value="100" step="0.5"></div>
+      <button class="zoom-btn" onclick="zoomIn(this)">+</button>
+      <button class="zoom-btn sec" onclick="resetZoom(this)">重置</button>
+    </div>
+  </div>
+  <div class="panel">
+    <h2>结构 Loss：Canny / Skel / REPA</h2>
+    <div class="chart-wrap"><canvas id="structChart"></canvas></div>
+    <div class="zoom-bar" data-for="structChart">
+      <button class="zoom-btn" onclick="zoomOut(this)">−</button>
+      <div class="zbar zbar-lo"><input type="range" class="zlo" min="0" max="100" value="0" step="0.5"></div>
+      <div class="zbar zbar-hi"><input type="range" class="zhi" min="0" max="100" value="100" step="0.5"></div>
+      <button class="zoom-btn" onclick="zoomIn(this)">+</button>
+      <button class="zoom-btn sec" onclick="resetZoom(this)">重置</button>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- Tab: Eval -->
+<div class="tab-content" id="tab-eval">
+<div class="charts">
+  <div class="panel">
+    <h2>Auto-Eval MSE（越低越好）</h2>
+    <div class="chart-wrap"><canvas id="mseChart"></canvas></div>
+    <div class="zoom-bar" data-for="mseChart">
+      <button class="zoom-btn" onclick="zoomOut(this)">−</button>
+      <div class="zbar zbar-lo"><input type="range" class="zlo" min="0" max="100" value="0" step="0.5"></div>
+      <div class="zbar zbar-hi"><input type="range" class="zhi" min="0" max="100" value="100" step="0.5"></div>
+      <button class="zoom-btn" onclick="zoomIn(this)">+</button>
+      <button class="zoom-btn sec" onclick="resetZoom(this)">重置</button>
+    </div>
+  </div>
+  <div class="panel">
+    <h2>Auto-Eval SSIM（越高越好）</h2>
+    <div class="chart-wrap"><canvas id="ssimChart"></canvas></div>
+    <div class="zoom-bar" data-for="ssimChart">
+      <button class="zoom-btn" onclick="zoomOut(this)">−</button>
+      <div class="zbar zbar-lo"><input type="range" class="zlo" min="0" max="100" value="0" step="0.5"></div>
+      <div class="zbar zbar-hi"><input type="range" class="zhi" min="0" max="100" value="100" step="0.5"></div>
+      <button class="zoom-btn" onclick="zoomIn(this)">+</button>
+      <button class="zoom-btn sec" onclick="resetZoom(this)">重置</button>
+    </div>
+  </div>
+  <div class="panel">
+    <h2>X0Lat MSE（预测 vs GT latent）</h2>
+    <div class="chart-wrap"><canvas id="x0Chart"></canvas></div>
+    <div class="zoom-bar" data-for="x0Chart">
+      <button class="zoom-btn" onclick="zoomOut(this)">−</button>
+      <div class="zbar zbar-lo"><input type="range" class="zlo" min="0" max="100" value="0" step="0.5"></div>
+      <div class="zbar zbar-hi"><input type="range" class="zhi" min="0" max="100" value="100" step="0.5"></div>
+      <button class="zoom-btn" onclick="zoomIn(this)">+</button>
+      <button class="zoom-btn sec" onclick="resetZoom(this)">重置</button>
+    </div>
+  </div>
+
+  <!-- 朴素画图框（独立实现，不缩放，照搬基础写法；用于确认 eval 指标能否正常绘制） -->
+  <div class="panel">
+    <h2>Auto-Eval MSE（朴素）</h2>
+    <div class="chart-wrap"><canvas id="mseSimple"></canvas></div>
+  </div>
+  <div class="panel">
+    <h2>Auto-Eval SSIM（朴素）</h2>
+    <div class="chart-wrap"><canvas id="ssimSimple"></canvas></div>
+  </div>
+  <pre id="dbgSimple" style="background:#11151c;color:#7fd1ff;font:11px monospace;padding:8px;white-space:pre-wrap;margin:8px 0;"></pre>
+</div>
+</div>
+
+<!-- Tab: System -->
+<div class="tab-content" id="tab-sys">
+<div class="charts">
+  <div class="panel">
+    <h2>吞吐 Steps/Sec</h2>
+    <div class="chart-wrap"><canvas id="spdChart"></canvas></div>
+    <div class="zoom-bar" data-for="spdChart">
+      <button class="zoom-btn" onclick="zoomOut(this)">−</button>
+      <div class="zbar zbar-lo"><input type="range" class="zlo" min="0" max="100" value="0" step="0.5"></div>
+      <div class="zbar zbar-hi"><input type="range" class="zhi" min="0" max="100" value="100" step="0.5"></div>
+      <button class="zoom-btn" onclick="zoomIn(this)">+</button>
+      <button class="zoom-btn sec" onclick="resetZoom(this)">重置</button>
+    </div>
+  </div>
+  <div class="panel">
+    <h2>显存 GB（当前 / 峰值）</h2>
+    <div class="chart-wrap"><canvas id="memChart"></canvas></div>
+    <div class="zoom-bar" data-for="memChart">
+      <button class="zoom-btn" onclick="zoomOut(this)">−</button>
+      <div class="zbar zbar-lo"><input type="range" class="zlo" min="0" max="100" value="0" step="0.5"></div>
+      <div class="zbar zbar-hi"><input type="range" class="zhi" min="0" max="100" value="100" step="0.5"></div>
+      <button class="zoom-btn" onclick="zoomIn(this)">+</button>
+      <button class="zoom-btn sec" onclick="resetZoom(this)">重置</button>
+    </div>
+  </div>
+</div>
+<div class="poster-section">
+  <div class="panel">
+    <h2>Eval 取样海报（每行 = 一个 ckpt · 10 样本 = show5|seen5 × img|canny|skel · 末行 GT）</h2>
+    <img id="posterImg" alt="eval 海报" style="display:block;" />
+  </div>
+  <div class="panel">
+    <h2>最新 Eval 快照（当前 ckpt · 每样本 img|canny|skel）</h2>
+    <img id="latestImg" alt="最新 eval 快照" style="display:block;" />
+  </div>
+</div>
+</div>
+
+<script>
+// 全局错误捕获（调试用，直接显示到页面顶部）
+window.onerror = function(msg, src, line, col) {
+  var e = document.getElementById('errbar');
+  if (e) { e.style.display = 'block'; e.textContent = 'JS Error: ' + msg + ' @' + line + ':' + col; }
+};
+// ============================================================
+// 配置常量
+// ============================================================
+const __DATA__ = {"source": "remote:10.176.54.17:/root/Workspace/xy/DiT/5script/results/s9_b4_clean_dino/20260824-132558-s9-b4-clean-dino/log.txt", "pulledAt": "2026-08-24 13:56:54", "count": 317, "rows": [{"step": 20, "total": 1.278, "diff": 1.278, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 2.74, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:26:16", "is_eval": false, "epoch": 0.018329180628347222}, {"step": 40, "total": 1.12, "diff": 1.12, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.53, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:26:21", "is_eval": false, "epoch": 0.036658361256694444}, {"step": 60, "total": 1.0172, "diff": 1.0172, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.52, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:26:27", "is_eval": false, "epoch": 0.05498754188504167}, {"step": 80, "total": 0.9184, "diff": 0.9184, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.53, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:26:33", "is_eval": false, "epoch": 0.07331672251338889}, {"step": 100, "total": 0.719, "diff": 0.719, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.53, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:26:38", "is_eval": false, "epoch": 0.09164590314173612}, {"step": 120, "total": 0.4445, "diff": 0.4445, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.52, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:26:44", "is_eval": false, "epoch": 0.10997508377008335}, {"step": 140, "total": 0.2843, "diff": 0.2843, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.53, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:26:50", "is_eval": false, "epoch": 0.12830426439843057}, {"step": 160, "total": 0.2239, "diff": 0.2239, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.52, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:26:55", "is_eval": false, "epoch": 0.14663344502677778}, {"step": 180, "total": 0.2056, "diff": 0.2056, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.53, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:27:01", "is_eval": false, "epoch": 0.164962625655125}, {"step": 200, "total": 0.1994, "diff": 0.1994, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.53, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:27:07", "is_eval": false, "epoch": 0.18329180628347225}, {"step": 220, "total": 0.1858, "diff": 0.1858, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.53, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:27:12", "is_eval": false, "epoch": 0.20162098691181946}, {"step": 240, "total": 0.1636, "diff": 0.1636, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.52, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:27:18", "is_eval": false, "epoch": 0.2199501675401667}, {"step": 260, "total": 0.1602, "diff": 0.1602, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.52, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:27:24", "is_eval": false, "epoch": 0.2382793481685139}, {"step": 280, "total": 0.1512, "diff": 0.1512, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.52, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:27:29", "is_eval": false, "epoch": 0.25660852879686114}, {"step": 300, "total": 0.1565, "diff": 0.1565, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.53, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:27:35", "is_eval": false, "epoch": 0.27493770942520834}, {"step": 320, "total": 0.1473, "diff": 0.1473, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.52, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:27:41", "is_eval": false, "epoch": 0.29326689005355555}, {"step": 340, "total": 0.1344, "diff": 0.1344, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.52, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:27:46", "is_eval": false, "epoch": 0.3115960706819028}, {"step": 360, "total": 0.1412, "diff": 0.1412, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.52, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:27:52", "is_eval": false, "epoch": 0.32992525131025}, {"step": 380, "total": 0.1293, "diff": 0.1293, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.52, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:27:58", "is_eval": false, "epoch": 0.34825443193859723}, {"step": 400, "total": 0.1289, "diff": 0.1289, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.52, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:28:03", "is_eval": false, "epoch": 0.3665836125669445}, {"step": 420, "total": 0.1244, "diff": 0.1244, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.53, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:28:09", "is_eval": false, "epoch": 0.3849127931952917}, {"step": 440, "total": 0.1183, "diff": 0.1183, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.52, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:28:15", "is_eval": false, "epoch": 0.4032419738236389}, {"step": 460, "total": 0.111, "diff": 0.111, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.53, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:28:20", "is_eval": false, "epoch": 0.4215711544519861}, {"step": 480, "total": 0.1183, "diff": 0.1183, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.52, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:28:26", "is_eval": false, "epoch": 0.4399003350803334}, {"step": 500, "total": 0.1076, "diff": 0.1076, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.52, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:28:32", "is_eval": false, "epoch": 0.4582295157086806}, {"step": 520, "total": 0.1037, "diff": 0.1037, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.52, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:28:37", "is_eval": false, "epoch": 0.4765586963370278}, {"step": 540, "total": 0.0971, "diff": 0.0971, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.52, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:28:43", "is_eval": false, "epoch": 0.494887876965375}, {"step": 560, "total": 0.095, "diff": 0.095, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.52, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:28:49", "is_eval": false, "epoch": 0.5132170575937223}, {"step": 580, "total": 0.0986, "diff": 0.0986, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.53, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:28:54", "is_eval": false, "epoch": 0.5315462382220695}, {"step": 600, "total": 0.0934, "diff": 0.0934, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.52, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:29:00", "is_eval": false, "epoch": 0.5498754188504167}, {"step": 620, "total": 0.0868, "diff": 0.0868, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.53, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:29:06", "is_eval": false, "epoch": 0.5682045994787639}, {"step": 640, "total": 0.0844, "diff": 0.0844, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.52, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:29:11", "is_eval": false, "epoch": 0.5865337801071111}, {"step": 660, "total": 0.0842, "diff": 0.0842, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.52, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:29:17", "is_eval": false, "epoch": 0.6048629607354584}, {"step": 680, "total": 0.0925, "diff": 0.0925, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.52, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:29:23", "is_eval": false, "epoch": 0.6231921413638056}, {"step": 700, "total": 0.0959, "diff": 0.0959, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.52, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:29:28", "is_eval": false, "epoch": 0.6415213219921528}, {"step": 720, "total": 0.0973, "diff": 0.0973, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.52, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:29:34", "is_eval": false, "epoch": 0.6598505026205}, {"step": 740, "total": 0.0853, "diff": 0.0853, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.52, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:29:40", "is_eval": false, "epoch": 0.6781796832488473}, {"step": 760, "total": 0.0824, "diff": 0.0824, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.53, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:29:46", "is_eval": false, "epoch": 0.6965088638771945}, {"step": 780, "total": 0.0825, "diff": 0.0825, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.53, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:29:51", "is_eval": false, "epoch": 0.7148380445055417}, {"step": 800, "total": 0.0803, "diff": 0.0803, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.53, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:29:57", "is_eval": false, "epoch": 0.733167225133889}, {"step": 820, "total": 0.0793, "diff": 0.0793, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.52, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:30:03", "is_eval": false, "epoch": 0.7514964057622362}, {"step": 840, "total": 0.0873, "diff": 0.0873, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.53, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:30:08", "is_eval": false, "epoch": 0.7698255863905834}, {"step": 860, "total": 0.0736, "diff": 0.0736, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.53, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:30:14", "is_eval": false, "epoch": 0.7881547670189306}, {"step": 880, "total": 0.0766, "diff": 0.0766, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.52, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:30:20", "is_eval": false, "epoch": 0.8064839476472778}, {"step": 900, "total": 0.0733, "diff": 0.0733, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.53, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:30:25", "is_eval": false, "epoch": 0.824813128275625}, {"step": 920, "total": 0.0768, "diff": 0.0768, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.52, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:30:31", "is_eval": false, "epoch": 0.8431423089039722}, {"step": 940, "total": 0.0775, "diff": 0.0775, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.53, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:30:37", "is_eval": false, "epoch": 0.8614714895323194}, {"step": 960, "total": 0.0824, "diff": 0.0824, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.53, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:30:42", "is_eval": false, "epoch": 0.8798006701606668}, {"step": 980, "total": 0.0715, "diff": 0.0715, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.53, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:30:48", "is_eval": false, "epoch": 0.898129850789014}, {"step": 1000, "total": 0.069, "diff": 0.069, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.53, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:30:54", "is_eval": false, "epoch": 0.9164590314173612}, {"step": 1020, "total": 0.0737, "diff": 0.0737, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 1.95, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:31:04", "is_eval": false, "epoch": 0.9347882120457084}, {"step": 1040, "total": 0.0787, "diff": 0.0787, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.53, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:31:10", "is_eval": false, "epoch": 0.9531173926740556}, {"step": 1060, "total": 0.076, "diff": 0.076, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.5, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:31:15", "is_eval": false, "epoch": 0.9714465733024028}, {"step": 1080, "total": 0.0658, "diff": 0.0658, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.49, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:31:21", "is_eval": false, "epoch": 0.98977575393075}, {"step": 1100, "total": 0.0654, "diff": 0.0654, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.46, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:31:27", "is_eval": false, "epoch": 1.0081049345590973}, {"step": 1120, "total": 0.0739, "diff": 0.0739, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.51, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:31:32", "is_eval": false, "epoch": 1.0264341151874445}, {"step": 1140, "total": 0.0667, "diff": 0.0667, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.51, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:31:38", "is_eval": false, "epoch": 1.0447632958157917}, {"step": 1160, "total": 0.0675, "diff": 0.0675, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.51, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:31:44", "is_eval": false, "epoch": 1.063092476444139}, {"step": 1180, "total": 0.0674, "diff": 0.0674, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.48, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:31:50", "is_eval": false, "epoch": 1.0814216570724862}, {"step": 1200, "total": 0.0656, "diff": 0.0656, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.51, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:31:55", "is_eval": false, "epoch": 1.0997508377008334}, {"step": 1220, "total": 0.0686, "diff": 0.0686, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.51, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:32:01", "is_eval": false, "epoch": 1.1180800183291806}, {"step": 1240, "total": 0.0603, "diff": 0.0603, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.51, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:32:07", "is_eval": false, "epoch": 1.1364091989575278}, {"step": 1260, "total": 0.0659, "diff": 0.0659, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.52, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:32:12", "is_eval": false, "epoch": 1.154738379585875}, {"step": 1280, "total": 0.0667, "diff": 0.0667, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.51, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:32:18", "is_eval": false, "epoch": 1.1730675602142222}, {"step": 1300, "total": 0.0656, "diff": 0.0656, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.48, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:32:24", "is_eval": false, "epoch": 1.1913967408425694}, {"step": 1320, "total": 0.0609, "diff": 0.0609, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.45, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:32:30", "is_eval": false, "epoch": 1.2097259214709168}, {"step": 1340, "total": 0.0658, "diff": 0.0658, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.51, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:32:35", "is_eval": false, "epoch": 1.228055102099264}, {"step": 1360, "total": 0.0644, "diff": 0.0644, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.5, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:32:41", "is_eval": false, "epoch": 1.2463842827276113}, {"step": 1380, "total": 0.0638, "diff": 0.0638, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.51, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:32:47", "is_eval": false, "epoch": 1.2647134633559585}, {"step": 1400, "total": 0.0682, "diff": 0.0682, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.51, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:32:52", "is_eval": false, "epoch": 1.2830426439843057}, {"step": 1420, "total": 0.0644, "diff": 0.0644, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.51, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:32:58", "is_eval": false, "epoch": 1.3013718246126529}, {"step": 1440, "total": 0.0639, "diff": 0.0639, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.51, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:33:04", "is_eval": false, "epoch": 1.319701005241}, {"step": 1460, "total": 0.0611, "diff": 0.0611, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.52, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:33:10", "is_eval": false, "epoch": 1.3380301858693473}, {"step": 1480, "total": 0.0607, "diff": 0.0607, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.51, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:33:15", "is_eval": false, "epoch": 1.3563593664976945}, {"step": 1500, "total": 0.0581, "diff": 0.0581, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.48, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:33:21", "is_eval": false, "epoch": 1.3746885471260417}, {"step": 1520, "total": 0.066, "diff": 0.066, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.51, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:33:27", "is_eval": false, "epoch": 1.393017727754389}, {"step": 1540, "total": 0.0608, "diff": 0.0608, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.5, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:33:32", "is_eval": false, "epoch": 1.4113469083827361}, {"step": 1560, "total": 0.0602, "diff": 0.0602, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.5, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:33:38", "is_eval": false, "epoch": 1.4296760890110833}, {"step": 1580, "total": 0.0606, "diff": 0.0606, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.51, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:33:44", "is_eval": false, "epoch": 1.4480052696394305}, {"step": 1600, "total": 0.0618, "diff": 0.0618, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.5, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:33:50", "is_eval": false, "epoch": 1.466334450267778}, {"step": 1620, "total": 0.0565, "diff": 0.0565, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.5, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:33:55", "is_eval": false, "epoch": 1.4846636308961252}, {"step": 1640, "total": 0.0604, "diff": 0.0604, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.5, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:34:01", "is_eval": false, "epoch": 1.5029928115244724}, {"step": 1660, "total": 0.0572, "diff": 0.0572, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.51, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:34:07", "is_eval": false, "epoch": 1.5213219921528196}, {"step": 1680, "total": 0.0594, "diff": 0.0594, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.47, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:34:12", "is_eval": false, "epoch": 1.5396511727811668}, {"step": 1700, "total": 0.0591, "diff": 0.0591, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.51, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:34:18", "is_eval": false, "epoch": 1.557980353409514}, {"step": 1720, "total": 0.0608, "diff": 0.0608, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.51, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:34:24", "is_eval": false, "epoch": 1.5763095340378612}, {"step": 1740, "total": 0.0594, "diff": 0.0594, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.51, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:34:30", "is_eval": false, "epoch": 1.5946387146662084}, {"step": 1760, "total": 0.0605, "diff": 0.0605, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.51, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:34:35", "is_eval": false, "epoch": 1.6129678952945556}, {"step": 1780, "total": 0.0577, "diff": 0.0577, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.46, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:34:41", "is_eval": false, "epoch": 1.6312970759229029}, {"step": 1800, "total": 0.0566, "diff": 0.0566, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.41, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:34:47", "is_eval": false, "epoch": 1.64962625655125}, {"step": 1820, "total": 0.0513, "diff": 0.0513, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.44, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:34:53", "is_eval": false, "epoch": 1.6679554371795973}, {"step": 1840, "total": 0.0581, "diff": 0.0581, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.44, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:34:59", "is_eval": false, "epoch": 1.6862846178079445}, {"step": 1860, "total": 0.0559, "diff": 0.0559, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.5, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:35:04", "is_eval": false, "epoch": 1.7046137984362917}, {"step": 1880, "total": 0.059, "diff": 0.059, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.5, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:35:10", "is_eval": false, "epoch": 1.722942979064639}, {"step": 1900, "total": 0.058, "diff": 0.058, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.51, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:35:16", "is_eval": false, "epoch": 1.7412721596929863}, {"step": 1920, "total": 0.0598, "diff": 0.0598, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.49, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:35:21", "is_eval": false, "epoch": 1.7596013403213335}, {"step": 1940, "total": 0.0563, "diff": 0.0563, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.41, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:35:27", "is_eval": false, "epoch": 1.7779305209496807}, {"step": 1960, "total": 0.0612, "diff": 0.0612, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.41, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:35:33", "is_eval": false, "epoch": 1.796259701578028}, {"step": 1980, "total": 0.0557, "diff": 0.0557, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.41, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:35:39", "is_eval": false, "epoch": 1.8145888822063752}, {"step": 2000, "total": 0.0582, "diff": 0.0582, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.42, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:35:45", "is_eval": false, "epoch": 1.8329180628347224}, {"step": 2020, "total": 0.0547, "diff": 0.0547, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 1.75, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:35:56", "is_eval": false, "epoch": 1.8512472434630696}, {"step": 2040, "total": 0.0515, "diff": 0.0515, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.43, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:36:02", "is_eval": false, "epoch": 1.8695764240914168}, {"step": 2060, "total": 0.0588, "diff": 0.0588, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.42, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:36:08", "is_eval": false, "epoch": 1.887905604719764}, {"step": 2080, "total": 0.0547, "diff": 0.0547, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.44, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:36:14", "is_eval": false, "epoch": 1.9062347853481112}, {"step": 2100, "total": 0.0594, "diff": 0.0594, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.42, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:36:20", "is_eval": false, "epoch": 1.9245639659764584}, {"step": 2120, "total": 0.0567, "diff": 0.0567, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.44, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:36:25", "is_eval": false, "epoch": 1.9428931466048056}, {"step": 2140, "total": 0.0616, "diff": 0.0616, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.29, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:36:32", "is_eval": false, "epoch": 1.9612223272331528}, {"step": 2160, "total": 0.0555, "diff": 0.0555, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.41, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:36:37", "is_eval": false, "epoch": 1.9795515078615}, {"step": 2180, "total": 0.0559, "diff": 0.0559, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.43, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:36:43", "is_eval": false, "epoch": 1.9978806884898475}, {"step": 2200, "total": 0.0549, "diff": 0.0549, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.42, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:36:49", "is_eval": false, "epoch": 2.0162098691181947}, {"step": 2220, "total": 0.0521, "diff": 0.0521, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.45, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:36:55", "is_eval": false, "epoch": 2.0345390497465417}, {"step": 2240, "total": 0.0522, "diff": 0.0522, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.49, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:37:01", "is_eval": false, "epoch": 2.052868230374889}, {"step": 2260, "total": 0.0502, "diff": 0.0502, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.51, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:37:06", "is_eval": false, "epoch": 2.071197411003236}, {"step": 2280, "total": 0.0501, "diff": 0.0501, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.44, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:37:12", "is_eval": false, "epoch": 2.0895265916315835}, {"step": 2300, "total": 0.0522, "diff": 0.0522, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.5, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:37:18", "is_eval": false, "epoch": 2.1078557722599305}, {"step": 2320, "total": 0.0515, "diff": 0.0515, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.51, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:37:24", "is_eval": false, "epoch": 2.126184952888278}, {"step": 2340, "total": 0.0543, "diff": 0.0543, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.5, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:37:29", "is_eval": false, "epoch": 2.1445141335166253}, {"step": 2360, "total": 0.0524, "diff": 0.0524, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.5, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:37:35", "is_eval": false, "epoch": 2.1628433141449723}, {"step": 2380, "total": 0.0559, "diff": 0.0559, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.49, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:37:41", "is_eval": false, "epoch": 2.1811724947733198}, {"step": 2400, "total": 0.0499, "diff": 0.0499, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.5, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:37:46", "is_eval": false, "epoch": 2.1995016754016667}, {"step": 2420, "total": 0.0483, "diff": 0.0483, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.5, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:37:52", "is_eval": false, "epoch": 2.217830856030014}, {"step": 2440, "total": 0.0527, "diff": 0.0527, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.51, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:37:58", "is_eval": false, "epoch": 2.236160036658361}, {"step": 2460, "total": 0.0578, "diff": 0.0578, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.51, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:38:03", "is_eval": false, "epoch": 2.2544892172867086}, {"step": 2480, "total": 0.0583, "diff": 0.0583, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.51, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:38:09", "is_eval": false, "epoch": 2.2728183979150556}, {"step": 2500, "total": 0.0504, "diff": 0.0504, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.51, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:38:15", "is_eval": false, "epoch": 2.291147578543403}, {"step": 2520, "total": 0.0541, "diff": 0.0541, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.51, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:38:21", "is_eval": false, "epoch": 2.30947675917175}, {"step": 2540, "total": 0.0595, "diff": 0.0595, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.52, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:38:26", "is_eval": false, "epoch": 2.3278059398000974}, {"step": 2560, "total": 0.0517, "diff": 0.0517, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.52, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:38:32", "is_eval": false, "epoch": 2.3461351204284444}, {"step": 2580, "total": 0.0498, "diff": 0.0498, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.44, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:38:38", "is_eval": false, "epoch": 2.364464301056792}, {"step": 2600, "total": 0.0511, "diff": 0.0511, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.44, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:38:44", "is_eval": false, "epoch": 2.382793481685139}, {"step": 2620, "total": 0.0538, "diff": 0.0538, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.43, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:38:49", "is_eval": false, "epoch": 2.4011226623134863}, {"step": 2640, "total": 0.0536, "diff": 0.0536, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.44, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:38:55", "is_eval": false, "epoch": 2.4194518429418337}, {"step": 2660, "total": 0.0543, "diff": 0.0543, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.43, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:39:01", "is_eval": false, "epoch": 2.4377810235701807}, {"step": 2680, "total": 0.0541, "diff": 0.0541, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.44, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:39:07", "is_eval": false, "epoch": 2.456110204198528}, {"step": 2700, "total": 0.0503, "diff": 0.0503, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.44, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:39:13", "is_eval": false, "epoch": 2.474439384826875}, {"step": 2720, "total": 0.0543, "diff": 0.0543, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.43, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:39:19", "is_eval": false, "epoch": 2.4927685654552225}, {"step": 2740, "total": 0.0564, "diff": 0.0564, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.44, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:39:24", "is_eval": false, "epoch": 2.5110977460835695}, {"step": 2760, "total": 0.049, "diff": 0.049, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.45, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:39:30", "is_eval": false, "epoch": 2.529426926711917}, {"step": 2780, "total": 0.0502, "diff": 0.0502, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.44, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:39:36", "is_eval": false, "epoch": 2.547756107340264}, {"step": 2800, "total": 0.0489, "diff": 0.0489, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.41, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:39:42", "is_eval": false, "epoch": 2.5660852879686114}, {"step": 2820, "total": 0.0485, "diff": 0.0485, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.43, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:39:48", "is_eval": false, "epoch": 2.5844144685969583}, {"step": 2840, "total": 0.0471, "diff": 0.0471, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.5, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:39:53", "is_eval": false, "epoch": 2.6027436492253058}, {"step": 2860, "total": 0.0491, "diff": 0.0491, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.5, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:39:59", "is_eval": false, "epoch": 2.6210728298536528}, {"step": 2880, "total": 0.0521, "diff": 0.0521, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.51, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:40:05", "is_eval": false, "epoch": 2.639402010482}, {"step": 2900, "total": 0.048, "diff": 0.048, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.5, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:40:10", "is_eval": false, "epoch": 2.6577311911103476}, {"step": 2920, "total": 0.0496, "diff": 0.0496, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.52, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:40:16", "is_eval": false, "epoch": 2.6760603717386946}, {"step": 2940, "total": 0.0479, "diff": 0.0479, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.51, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:40:22", "is_eval": false, "epoch": 2.694389552367042}, {"step": 2960, "total": 0.048, "diff": 0.048, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.52, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:40:28", "is_eval": false, "epoch": 2.712718732995389}, {"step": 2980, "total": 0.0495, "diff": 0.0495, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.51, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:40:33", "is_eval": false, "epoch": 2.7310479136237364}, {"step": 3000, "total": 0.0462, "diff": 0.0462, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.51, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:40:39", "is_eval": false, "epoch": 2.7493770942520834}, {"step": 3020, "total": 0.0442, "diff": 0.0442, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 2.01, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:40:49", "is_eval": false, "epoch": 2.767706274880431}, {"step": 3040, "total": 0.0506, "diff": 0.0506, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.48, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:40:55", "is_eval": false, "epoch": 2.786035455508778}, {"step": 3060, "total": 0.049, "diff": 0.049, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.51, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:41:00", "is_eval": false, "epoch": 2.8043646361371253}, {"step": 3080, "total": 0.0489, "diff": 0.0489, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.5, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:41:06", "is_eval": false, "epoch": 2.8226938167654723}, {"step": 3100, "total": 0.0518, "diff": 0.0518, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.5, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:41:12", "is_eval": false, "epoch": 2.8410229973938197}, {"step": 3120, "total": 0.045, "diff": 0.045, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.5, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:41:18", "is_eval": false, "epoch": 2.8593521780221667}, {"step": 3140, "total": 0.0444, "diff": 0.0444, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.51, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:41:23", "is_eval": false, "epoch": 2.877681358650514}, {"step": 3160, "total": 0.0437, "diff": 0.0437, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.5, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:41:29", "is_eval": false, "epoch": 2.896010539278861}, {"step": 3180, "total": 0.0448, "diff": 0.0448, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.5, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:41:35", "is_eval": false, "epoch": 2.9143397199072085}, {"step": 3200, "total": 0.0455, "diff": 0.0455, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.5, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:41:40", "is_eval": false, "epoch": 2.932668900535556}, {"step": 3220, "total": 0.0449, "diff": 0.0449, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.47, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:41:46", "is_eval": false, "epoch": 2.950998081163903}, {"step": 3240, "total": 0.042, "diff": 0.042, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.44, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:41:52", "is_eval": false, "epoch": 2.9693272617922504}, {"step": 3260, "total": 0.049, "diff": 0.049, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.43, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:41:58", "is_eval": false, "epoch": 2.9876564424205974}, {"step": 3280, "total": 0.0522, "diff": 0.0522, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.36, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:42:04", "is_eval": false, "epoch": 3.005985623048945}, {"step": 3300, "total": 0.0435, "diff": 0.0435, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.42, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:42:10", "is_eval": false, "epoch": 3.0243148036772918}, {"step": 3320, "total": 0.0453, "diff": 0.0453, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.43, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:42:15", "is_eval": false, "epoch": 3.042643984305639}, {"step": 3340, "total": 0.043, "diff": 0.043, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.41, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:42:21", "is_eval": false, "epoch": 3.060973164933986}, {"step": 3360, "total": 0.0466, "diff": 0.0466, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.49, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:42:27", "is_eval": false, "epoch": 3.0793023455623336}, {"step": 3380, "total": 0.0487, "diff": 0.0487, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.5, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:42:33", "is_eval": false, "epoch": 3.0976315261906806}, {"step": 3400, "total": 0.0429, "diff": 0.0429, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.5, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:42:38", "is_eval": false, "epoch": 3.115960706819028}, {"step": 3420, "total": 0.0446, "diff": 0.0446, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.5, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:42:44", "is_eval": false, "epoch": 3.134289887447375}, {"step": 3440, "total": 0.0514, "diff": 0.0514, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.49, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:42:50", "is_eval": false, "epoch": 3.1526190680757225}, {"step": 3460, "total": 0.0439, "diff": 0.0439, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.49, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:42:56", "is_eval": false, "epoch": 3.1709482487040694}, {"step": 3480, "total": 0.0505, "diff": 0.0505, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.48, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:43:01", "is_eval": false, "epoch": 3.189277429332417}, {"step": 3500, "total": 0.0417, "diff": 0.0417, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.5, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:43:07", "is_eval": false, "epoch": 3.2076066099607643}, {"step": 3520, "total": 0.0451, "diff": 0.0451, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.51, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:43:13", "is_eval": false, "epoch": 3.2259357905891113}, {"step": 3540, "total": 0.0428, "diff": 0.0428, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.51, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:43:18", "is_eval": false, "epoch": 3.2442649712174587}, {"step": 3560, "total": 0.0409, "diff": 0.0409, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.5, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:43:24", "is_eval": false, "epoch": 3.2625941518458057}, {"step": 3580, "total": 0.0473, "diff": 0.0473, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.51, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:43:30", "is_eval": false, "epoch": 3.280923332474153}, {"step": 3600, "total": 0.0447, "diff": 0.0447, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.51, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:43:36", "is_eval": false, "epoch": 3.2992525131025}, {"step": 3620, "total": 0.04, "diff": 0.04, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.51, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:43:41", "is_eval": false, "epoch": 3.3175816937308475}, {"step": 3640, "total": 0.0396, "diff": 0.0396, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.51, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:43:47", "is_eval": false, "epoch": 3.3359108743591945}, {"step": 3660, "total": 0.0435, "diff": 0.0435, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.5, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:43:53", "is_eval": false, "epoch": 3.354240054987542}, {"step": 3680, "total": 0.0537, "diff": 0.0537, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.5, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:43:58", "is_eval": false, "epoch": 3.372569235615889}, {"step": 3700, "total": 0.0437, "diff": 0.0437, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.5, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:44:04", "is_eval": false, "epoch": 3.3908984162442364}, {"step": 3720, "total": 0.0445, "diff": 0.0445, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.5, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:44:10", "is_eval": false, "epoch": 3.4092275968725834}, {"step": 3740, "total": 0.0425, "diff": 0.0425, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.51, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:44:16", "is_eval": false, "epoch": 3.427556777500931}, {"step": 3760, "total": 0.0457, "diff": 0.0457, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.51, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:44:21", "is_eval": false, "epoch": 3.445885958129278}, {"step": 3780, "total": 0.0419, "diff": 0.0419, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.51, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:44:27", "is_eval": false, "epoch": 3.464215138757625}, {"step": 3800, "total": 0.0396, "diff": 0.0396, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.51, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:44:33", "is_eval": false, "epoch": 3.4825443193859726}, {"step": 3820, "total": 0.0411, "diff": 0.0411, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.5, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:44:38", "is_eval": false, "epoch": 3.5008735000143196}, {"step": 3840, "total": 0.0484, "diff": 0.0484, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.5, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:44:44", "is_eval": false, "epoch": 3.519202680642667}, {"step": 3860, "total": 0.045, "diff": 0.045, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.46, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:44:50", "is_eval": false, "epoch": 3.537531861271014}, {"step": 3880, "total": 0.0417, "diff": 0.0417, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.49, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:44:56", "is_eval": false, "epoch": 3.5558610418993615}, {"step": 3900, "total": 0.0421, "diff": 0.0421, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.49, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:45:01", "is_eval": false, "epoch": 3.5741902225277085}, {"step": 3920, "total": 0.0448, "diff": 0.0448, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.49, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:45:07", "is_eval": false, "epoch": 3.592519403156056}, {"step": 3940, "total": 0.0406, "diff": 0.0406, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.43, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:45:13", "is_eval": false, "epoch": 3.610848583784403}, {"step": 3960, "total": 0.0446, "diff": 0.0446, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.43, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:45:19", "is_eval": false, "epoch": 3.6291777644127503}, {"step": 3980, "total": 0.0421, "diff": 0.0421, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.45, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:45:25", "is_eval": false, "epoch": 3.6475069450410973}, {"step": 4000, "total": 0.0427, "diff": 0.0427, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.43, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:45:30", "is_eval": false, "epoch": 3.6658361256694447}, {"step": 4020, "total": 0.0404, "diff": 0.0404, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 1.84, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:45:41", "is_eval": false, "epoch": 3.6841653062977917}, {"step": 4040, "total": 0.0435, "diff": 0.0435, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.44, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:45:47", "is_eval": false, "epoch": 3.702494486926139}, {"step": 4060, "total": 0.0423, "diff": 0.0423, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.43, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:45:53", "is_eval": false, "epoch": 3.7208236675544866}, {"step": 4080, "total": 0.0477, "diff": 0.0477, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.47, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:45:59", "is_eval": false, "epoch": 3.7391528481828336}, {"step": 4100, "total": 0.0415, "diff": 0.0415, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.51, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:46:04", "is_eval": false, "epoch": 3.757482028811181}, {"step": 4120, "total": 0.0407, "diff": 0.0407, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.51, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:46:10", "is_eval": false, "epoch": 3.775811209439528}, {"step": 4140, "total": 0.0453, "diff": 0.0453, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.5, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:46:16", "is_eval": false, "epoch": 3.7941403900678754}, {"step": 4160, "total": 0.0379, "diff": 0.0379, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.5, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:46:21", "is_eval": false, "epoch": 3.8124695706962224}, {"step": 4180, "total": 0.0451, "diff": 0.0451, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.51, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:46:27", "is_eval": false, "epoch": 3.83079875132457}, {"step": 4200, "total": 0.0456, "diff": 0.0456, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.47, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:46:33", "is_eval": false, "epoch": 3.849127931952917}, {"step": 4220, "total": 0.0443, "diff": 0.0443, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.43, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:46:39", "is_eval": false, "epoch": 3.8674571125812642}, {"step": 4240, "total": 0.0435, "diff": 0.0435, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.44, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:46:45", "is_eval": false, "epoch": 3.885786293209611}, {"step": 4260, "total": 0.0398, "diff": 0.0398, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.44, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:46:50", "is_eval": false, "epoch": 3.9041154738379586}, {"step": 4280, "total": 0.038, "diff": 0.038, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.49, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:46:56", "is_eval": false, "epoch": 3.9224446544663056}, {"step": 4300, "total": 0.0458, "diff": 0.0458, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.51, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:47:02", "is_eval": false, "epoch": 3.940773835094653}, {"step": 4320, "total": 0.0393, "diff": 0.0393, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.5, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:47:08", "is_eval": false, "epoch": 3.959103015723}, {"step": 4340, "total": 0.0421, "diff": 0.0421, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.51, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:47:13", "is_eval": false, "epoch": 3.9774321963513475}, {"step": 4360, "total": 0.0387, "diff": 0.0387, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.52, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:47:19", "is_eval": false, "epoch": 3.995761376979695}, {"step": 4380, "total": 0.0454, "diff": 0.0454, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.49, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:47:25", "is_eval": false, "epoch": 4.014090557608042}, {"step": 4400, "total": 0.039, "diff": 0.039, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.48, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:47:30", "is_eval": false, "epoch": 4.032419738236389}, {"step": 4420, "total": 0.0431, "diff": 0.0431, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.47, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:47:36", "is_eval": false, "epoch": 4.050748918864737}, {"step": 4440, "total": 0.0432, "diff": 0.0432, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.49, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:47:42", "is_eval": false, "epoch": 4.069078099493083}, {"step": 4460, "total": 0.0453, "diff": 0.0453, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.49, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:47:48", "is_eval": false, "epoch": 4.087407280121431}, {"step": 4480, "total": 0.0419, "diff": 0.0419, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.49, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:47:53", "is_eval": false, "epoch": 4.105736460749778}, {"step": 4500, "total": 0.037, "diff": 0.037, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.48, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:47:59", "is_eval": false, "epoch": 4.124065641378126}, {"step": 4520, "total": 0.0429, "diff": 0.0429, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.5, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:48:05", "is_eval": false, "epoch": 4.142394822006472}, {"step": 4540, "total": 0.0457, "diff": 0.0457, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.5, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:48:11", "is_eval": false, "epoch": 4.16072400263482}, {"step": 4560, "total": 0.0411, "diff": 0.0411, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.43, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:48:16", "is_eval": false, "epoch": 4.179053183263167}, {"step": 4580, "total": 0.0464, "diff": 0.0464, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.45, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:48:22", "is_eval": false, "epoch": 4.197382363891514}, {"step": 4600, "total": 0.0393, "diff": 0.0393, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.44, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:48:28", "is_eval": false, "epoch": 4.215711544519861}, {"step": 4620, "total": 0.0409, "diff": 0.0409, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.44, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:48:34", "is_eval": false, "epoch": 4.234040725148208}, {"step": 4640, "total": 0.0421, "diff": 0.0421, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.5, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:48:39", "is_eval": false, "epoch": 4.252369905776556}, {"step": 4660, "total": 0.0409, "diff": 0.0409, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.52, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:48:45", "is_eval": false, "epoch": 4.270699086404903}, {"step": 4680, "total": 0.0439, "diff": 0.0439, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.52, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:48:51", "is_eval": false, "epoch": 4.289028267033251}, {"step": 4700, "total": 0.0442, "diff": 0.0442, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.51, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:48:57", "is_eval": false, "epoch": 4.307357447661597}, {"step": 4720, "total": 0.0464, "diff": 0.0464, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.51, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:49:02", "is_eval": false, "epoch": 4.325686628289945}, {"step": 4740, "total": 0.0406, "diff": 0.0406, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.5, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:49:08", "is_eval": false, "epoch": 4.344015808918292}, {"step": 4760, "total": 0.0446, "diff": 0.0446, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.47, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:49:14", "is_eval": false, "epoch": 4.3623449895466395}, {"step": 4780, "total": 0.0419, "diff": 0.0419, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.5, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:49:19", "is_eval": false, "epoch": 4.380674170174986}, {"step": 4800, "total": 0.0415, "diff": 0.0415, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.5, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:49:25", "is_eval": false, "epoch": 4.3990033508033335}, {"step": 4820, "total": 0.0406, "diff": 0.0406, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.51, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:49:31", "is_eval": false, "epoch": 4.417332531431681}, {"step": 4840, "total": 0.0406, "diff": 0.0406, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.51, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:49:37", "is_eval": false, "epoch": 4.435661712060028}, {"step": 4860, "total": 0.0442, "diff": 0.0442, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.51, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:49:42", "is_eval": false, "epoch": 4.453990892688375}, {"step": 4880, "total": 0.0422, "diff": 0.0422, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.5, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:49:48", "is_eval": false, "epoch": 4.472320073316722}, {"step": 4900, "total": 0.0436, "diff": 0.0436, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.51, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:49:54", "is_eval": false, "epoch": 4.49064925394507}, {"step": 4920, "total": 0.041, "diff": 0.041, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.49, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:49:59", "is_eval": false, "epoch": 4.508978434573417}, {"step": 4940, "total": 0.0434, "diff": 0.0434, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.48, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:50:05", "is_eval": false, "epoch": 4.527307615201765}, {"step": 4960, "total": 0.0366, "diff": 0.0366, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.51, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:50:11", "is_eval": false, "epoch": 4.545636795830111}, {"step": 4980, "total": 0.0411, "diff": 0.0411, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.51, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:50:17", "is_eval": false, "epoch": 4.563965976458459}, {"step": 5000, "total": 0.0399, "diff": 0.0399, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.51, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:50:22", "is_eval": false, "epoch": 4.582295157086806}, {"step": 5020, "total": 0.0403, "diff": 0.0403, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 2.08, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:50:32", "is_eval": false, "epoch": 4.6006243377151534}, {"step": 5040, "total": 0.038, "diff": 0.038, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.52, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:50:38", "is_eval": false, "epoch": 4.6189535183435}, {"step": 5060, "total": 0.0396, "diff": 0.0396, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.51, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:50:43", "is_eval": false, "epoch": 4.637282698971847}, {"step": 5080, "total": 0.0379, "diff": 0.0379, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.52, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:50:49", "is_eval": false, "epoch": 4.655611879600195}, {"step": 5100, "total": 0.0434, "diff": 0.0434, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.5, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:50:55", "is_eval": false, "epoch": 4.673941060228542}, {"step": 5120, "total": 0.0385, "diff": 0.0385, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.51, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:51:00", "is_eval": false, "epoch": 4.692270240856889}, {"step": 5140, "total": 0.0386, "diff": 0.0386, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.52, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:51:06", "is_eval": false, "epoch": 4.710599421485236}, {"step": 5160, "total": 0.0433, "diff": 0.0433, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.51, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:51:12", "is_eval": false, "epoch": 4.728928602113584}, {"step": 5180, "total": 0.0421, "diff": 0.0421, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.52, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:51:17", "is_eval": false, "epoch": 4.747257782741931}, {"step": 5200, "total": 0.0389, "diff": 0.0389, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.51, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:51:23", "is_eval": false, "epoch": 4.765586963370278}, {"step": 5220, "total": 0.0387, "diff": 0.0387, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.52, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:51:29", "is_eval": false, "epoch": 4.783916143998625}, {"step": 5240, "total": 0.0437, "diff": 0.0437, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.51, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:51:34", "is_eval": false, "epoch": 4.8022453246269725}, {"step": 5260, "total": 0.0407, "diff": 0.0407, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.52, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:51:40", "is_eval": false, "epoch": 4.82057450525532}, {"step": 5280, "total": 0.042, "diff": 0.042, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.51, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:51:46", "is_eval": false, "epoch": 4.838903685883667}, {"step": 5300, "total": 0.0355, "diff": 0.0355, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.52, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:51:52", "is_eval": false, "epoch": 4.857232866512014}, {"step": 5320, "total": 0.0451, "diff": 0.0451, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.51, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:51:57", "is_eval": false, "epoch": 4.875562047140361}, {"step": 5340, "total": 0.0398, "diff": 0.0398, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.51, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:52:03", "is_eval": false, "epoch": 4.893891227768709}, {"step": 5360, "total": 0.0415, "diff": 0.0415, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.52, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:52:09", "is_eval": false, "epoch": 4.912220408397056}, {"step": 5380, "total": 0.0389, "diff": 0.0389, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.52, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:52:14", "is_eval": false, "epoch": 4.930549589025403}, {"step": 5400, "total": 0.0483, "diff": 0.0483, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.52, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:52:20", "is_eval": false, "epoch": 4.94887876965375}, {"step": 5420, "total": 0.0416, "diff": 0.0416, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.51, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:52:26", "is_eval": false, "epoch": 4.967207950282098}, {"step": 5440, "total": 0.0442, "diff": 0.0442, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.51, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:52:31", "is_eval": false, "epoch": 4.985537130910445}, {"step": 5460, "total": 0.0415, "diff": 0.0415, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.5, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:52:37", "is_eval": false, "epoch": 5.003866311538792}, {"step": 5480, "total": 0.0412, "diff": 0.0412, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.51, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:52:43", "is_eval": false, "epoch": 5.022195492167139}, {"step": 5500, "total": 0.0406, "diff": 0.0406, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.51, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:52:49", "is_eval": false, "epoch": 5.040524672795486}, {"step": 5520, "total": 0.0383, "diff": 0.0383, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.51, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:52:54", "is_eval": false, "epoch": 5.058853853423834}, {"step": 5540, "total": 0.038, "diff": 0.038, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.51, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:53:00", "is_eval": false, "epoch": 5.077183034052181}, {"step": 5560, "total": 0.0393, "diff": 0.0393, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.5, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:53:06", "is_eval": false, "epoch": 5.095512214680528}, {"step": 5580, "total": 0.0387, "diff": 0.0387, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.5, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:53:11", "is_eval": false, "epoch": 5.113841395308875}, {"step": 5600, "total": 0.0403, "diff": 0.0403, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.5, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:53:17", "is_eval": false, "epoch": 5.132170575937223}, {"step": 5620, "total": 0.0389, "diff": 0.0389, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.51, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:53:23", "is_eval": false, "epoch": 5.15049975656557}, {"step": 5640, "total": 0.0419, "diff": 0.0419, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.5, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:53:28", "is_eval": false, "epoch": 5.168828937193917}, {"step": 5660, "total": 0.0391, "diff": 0.0391, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.51, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:53:34", "is_eval": false, "epoch": 5.187158117822264}, {"step": 5680, "total": 0.0395, "diff": 0.0395, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.51, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:53:40", "is_eval": false, "epoch": 5.2054872984506115}, {"step": 5700, "total": 0.0373, "diff": 0.0373, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.51, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:53:46", "is_eval": false, "epoch": 5.223816479078959}, {"step": 5720, "total": 0.0424, "diff": 0.0424, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.52, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:53:51", "is_eval": false, "epoch": 5.2421456597073055}, {"step": 5740, "total": 0.0464, "diff": 0.0464, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.51, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:53:57", "is_eval": false, "epoch": 5.260474840335653}, {"step": 5760, "total": 0.0355, "diff": 0.0355, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.51, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:54:03", "is_eval": false, "epoch": 5.278804020964}, {"step": 5780, "total": 0.0378, "diff": 0.0378, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.51, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:54:08", "is_eval": false, "epoch": 5.297133201592348}, {"step": 5800, "total": 0.0406, "diff": 0.0406, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.51, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:54:14", "is_eval": false, "epoch": 5.315462382220695}, {"step": 5820, "total": 0.041, "diff": 0.041, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.5, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:54:20", "is_eval": false, "epoch": 5.333791562849042}, {"step": 5840, "total": 0.0402, "diff": 0.0402, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.48, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:54:26", "is_eval": false, "epoch": 5.352120743477389}, {"step": 5860, "total": 0.0421, "diff": 0.0421, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.51, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:54:31", "is_eval": false, "epoch": 5.370449924105737}, {"step": 5880, "total": 0.0376, "diff": 0.0376, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.51, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:54:37", "is_eval": false, "epoch": 5.388779104734084}, {"step": 5900, "total": 0.041, "diff": 0.041, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.51, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:54:43", "is_eval": false, "epoch": 5.407108285362431}, {"step": 5920, "total": 0.0443, "diff": 0.0443, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.51, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:54:48", "is_eval": false, "epoch": 5.425437465990778}, {"step": 5940, "total": 0.0387, "diff": 0.0387, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.51, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:54:54", "is_eval": false, "epoch": 5.4437666466191255}, {"step": 5960, "total": 0.0406, "diff": 0.0406, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.51, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:55:00", "is_eval": false, "epoch": 5.462095827247473}, {"step": 5980, "total": 0.0415, "diff": 0.0415, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.5, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:55:05", "is_eval": false, "epoch": 5.480425007875819}, {"step": 6000, "total": 0.0371, "diff": 0.0371, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.52, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:55:11", "is_eval": false, "epoch": 5.498754188504167}, {"step": 6020, "total": 0.0388, "diff": 0.0388, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.46, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:55:17", "is_eval": false, "epoch": 5.517083369132514}, {"step": 6040, "total": 0.0419, "diff": 0.0419, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.52, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:55:23", "is_eval": false, "epoch": 5.535412549760862}, {"step": 6060, "total": 0.0353, "diff": 0.0353, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.52, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:55:28", "is_eval": false, "epoch": 5.553741730389208}, {"step": 6080, "total": 0.0368, "diff": 0.0368, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.51, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:55:34", "is_eval": false, "epoch": 5.572070911017556}, {"step": 6100, "total": 0.0404, "diff": 0.0404, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.51, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:55:40", "is_eval": false, "epoch": 5.590400091645903}, {"step": 6120, "total": 0.0352, "diff": 0.0352, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.52, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:55:45", "is_eval": false, "epoch": 5.6087292722742506}, {"step": 6140, "total": 0.0382, "diff": 0.0382, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.52, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:55:51", "is_eval": false, "epoch": 5.627058452902598}, {"step": 6160, "total": 0.0403, "diff": 0.0403, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.52, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:55:57", "is_eval": false, "epoch": 5.6453876335309445}, {"step": 6180, "total": 0.0393, "diff": 0.0393, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.51, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:56:02", "is_eval": false, "epoch": 5.663716814159292}, {"step": 6200, "total": 0.0371, "diff": 0.0371, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.52, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:56:08", "is_eval": false, "epoch": 5.682045994787639}, {"step": 6220, "total": 0.0398, "diff": 0.0398, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.51, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:56:14", "is_eval": false, "epoch": 5.700375175415987}, {"step": 6240, "total": 0.0431, "diff": 0.0431, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.51, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:56:20", "is_eval": false, "epoch": 5.718704356044333}, {"step": 6260, "total": 0.0401, "diff": 0.0401, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.46, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:56:25", "is_eval": false, "epoch": 5.737033536672681}, {"step": 6280, "total": 0.0405, "diff": 0.0405, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.44, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:56:31", "is_eval": false, "epoch": 5.755362717301028}, {"step": 6300, "total": 0.0416, "diff": 0.0416, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.45, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:56:37", "is_eval": false, "epoch": 5.773691897929376}, {"step": 6320, "total": 0.0372, "diff": 0.0372, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.45, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:56:43", "is_eval": false, "epoch": 5.792021078557722}, {"step": 6340, "total": 0.0385, "diff": 0.0385, "canny": 0.0, "skel": 0.0, "latc": 0.0, "lats": 0.0, "stdmid": 0.0, "x0lat": null, "stepsPerSec": 3.44, "memCur": 19.78, "memPeak": 19.78, "mse": null, "ssim": null, "ts": "2026-08-24 13:56:49", "is_eval": false, "epoch": 5.81035025918607}], "dataset_size": 104751, "batch": 96, "stepsPerSec": 3.44, "total_steps": 600000, "eta_hours": 47.93766149870801};
+const COLORS = {
+  diff:'#4f9cff', total:'#ffb84f', canny:'#ff6b6b',
+  skel:'#b06bff', repa:'#3ddc97', spd:'#8b93a7',
+  warn:'#ff6b6b', ok:'#3ddc97'
+};
+const REFRESH_MS = 10000;
+
+// ============================================================
+// 全局状态
+// ============================================================
+const charts = {};       // {id: Chart实例}
+const chartMeta = {};    // {id: {fullData, fullLabels, fullTs, viewStart, viewEnd}}
+const simpleCharts = {}; // 朴素画图框（mse/ssim），独立实现
+let chartsBuilt = false; // 所有图表是否已创建
+let allRows = [];        // 原始全量数据
+let epochMeta = {epoch_now:0, hr_per_epoch:0, sec_per_epoch:0, steps_per_epoch:0, dataset_size:0, stepsPerSec:0};
+let rafPending = null;   // requestAnimationFrame 节流
+
+// ============================================================
+// 创建图表（无 zoom 插件依赖）
+// ============================================================
+function makeChart(id, datasets) {
+  const ctx = document.getElementById(id);
+  if (!ctx) return null;
+
+  if (charts[id]) charts[id].destroy();
+
+  const ch = new Chart(ctx, {
+    type:'line',
+    data:{ labels:[], datasets: datasets.map(d => ({
+      label:d.label, data:[], borderColor:d.color,
+      backgroundColor:d.color+'18', borderWidth:1.5,
+      pointRadius:0, tension:0.2, spanGaps:true, _key:d.key
+    }))},
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      animation:{duration:0},          // 关闭动画防卡顿
+      interaction:{ mode:'index', intersect:false },
+      plugins:{
+        legend:{ labels:{ color:'#8b93a7', boxWidth:12, font:{size:11} }, position:'top' },
+        tooltip:{ callbacks:{
+          title(items){
+            const it = items[0];
+            const t = it.dataset._rawTs ? it.dataset._rawTs[it.dataIndex] : '';
+            return (t ? t+'  ':'') + 'step '+it.label;
+          }
+        }}
+      },
+      scales:{
+        x:{ ticks:{ color:'#8b93a7', maxTicksLimit:10, font:{size:10} },
+             grid:{ color:'#2a2f3c' } },
+        y:{ ticks:{ color:'#8b93a7', font:{size:10} },
+             grid:{ color:'#2a2f3c' } }
+      }
+    }
+  });
+  charts[id] = ch;
+  chartMeta[id] = {
+    fullData:[], keys: datasets.map(d=>d.key),
+    fullLabels:[], fullTs:[], viewStart:0, viewEnd:1
+  };
+
+  // 绑定缩放条的 range 输入
+  bindZoomBar(id);
+  return ch;
+}
+
+// ============================================================
+// 一次性创建所有图表（始终渲染，不在隐藏 tab 内延迟创建）
+// 隐藏 tab 的 canvas 初始尺寸为 0，靠切 tab 时的 resize 兜底恢复绘制。
+// ============================================================
+function buildAllCharts() {
+  if (chartsBuilt) return;
+  makeChart('diffChart', [{label:'Diff', color:COLORS.diff, key:'diff'}]);
+  makeChart('totalChart', [{label:'Total', color:COLORS.total, key:'total'}]);
+  makeChart('structChart', [
+    {label:'Canny', color:COLORS.canny, key:'canny'},
+    {label:'Skel', color:COLORS.skel, key:'skel'},
+    {label:'LatC', color:'#3ddc97', key:'latc'},
+    {label:'LatS', color:'#f5a623', key:'lats'},
+    {label:'REPA', color:COLORS.repa, key:'repa'}
+  ]);
+  makeChart('mseChart', [{label:'MSE', color:COLORS.warn, key:'mse'}]);
+  makeChart('ssimChart', [{label:'SSIM', color:COLORS.ok, key:'ssim'}]);
+  makeChart('x0Chart', [{label:'X0Lat', color:COLORS.total, key:'x0lat'}]);
+  makeChart('spdChart', [{label:'Steps/Sec', color:COLORS.spd, key:'stepsPerSec'}]);
+  makeChart('memChart', [
+    {label:'当前', color:COLORS.canny, key:'memCur'},
+    {label:'峰值', color:COLORS.skel, key:'memPeak'}
+  ]);
+  // 朴素画图框：独立、不缩放、照搬基础写法，专用于确认 eval 指标能否正常绘制
+  simpleCharts.mse = new Chart(document.getElementById('mseSimple'), {
+    type: 'line',
+    data: { labels: [], datasets: [{ label: 'MSE', data: [], borderColor: COLORS.warn,
+      backgroundColor: COLORS.warn + '18', borderWidth: 1.5, pointRadius: 0, tension: 0.2, spanGaps: true }] },
+    options: { responsive: true, maintainAspectRatio: false, animation: false,
+      plugins: { legend: { labels: { color: '#c4ccdb' } } },
+      scales: { x: { ticks: { color: '#8b93a7', font: { size: 10 } }, grid: { color: '#2a2f3c' } },
+                y: { ticks: { color: '#8b93a7', font: { size: 10 } }, grid: { color: '#2a2f3c' } } } }
+  });
+  simpleCharts.ssim = new Chart(document.getElementById('ssimSimple'), {
+    type: 'line',
+    data: { labels: [], datasets: [{ label: 'SSIM', data: [], borderColor: COLORS.ok,
+      backgroundColor: COLORS.ok + '18', borderWidth: 1.5, pointRadius: 0, tension: 0.2, spanGaps: true }] },
+    options: { responsive: true, maintainAspectRatio: false, animation: false,
+      plugins: { legend: { labels: { color: '#c4ccdb' } } },
+      scales: { x: { ticks: { color: '#8b93a7', font: { size: 10 } }, grid: { color: '#2a2f3c' } },
+                y: { ticks: { color: '#8b93a7', font: { size: 10 } }, grid: { color: '#2a2f3c' } } } }
+  });
+  chartsBuilt = true;
+}
+
+// ============================================================
+// 缩放条绑定：range slider ↔ 图表 X 轴
+// ============================================================
+function bindZoomBar(chartId) {
+  const bar = document.querySelector(`.zoom-bar[data-for="${chartId}"]`);
+  if (!bar) return;
+  const lo = bar.querySelector('input.zlo');
+  const hi = bar.querySelector('input.zhi');
+  if (!lo || !hi) return;
+
+  // 双滑块：分别控制左右边界（0..100）
+  const MIN_GAP = 1;   // 最小可见宽度（%）
+
+  function onSlide() {
+    let a = parseFloat(lo.value);
+    let b = parseFloat(hi.value);
+    if (a > b - MIN_GAP) {
+      // 谁在动就推谁：简单处理——保持 gap
+      if (document.activeElement === lo) { b = Math.min(100, a + MIN_GAP); hi.value = b; }
+      else { a = Math.max(0, b - MIN_GAP); lo.value = a; }
+    }
+    const meta = chartMeta[chartId];
+    if (!meta) return;
+    meta.viewStart = a / 100;
+    meta.viewEnd = b / 100;
+    scheduleUpdate(chartId);
+  }
+  lo.addEventListener('input', onSlide);
+  hi.addEventListener('input', onSlide);
+
+  // 鼠标滚轮缩放（在图表区域上），以光标为中心
+  const canvas = document.getElementById(chartId);
+  if (canvas) {
+    canvas.addEventListener('wheel', (e) => {
+      e.preventDefault();
+      const delta = e.deltaY > 0 ? 0.04 : -0.04;  // 向下缩小/向上放大
+      const meta = chartMeta[chartId];
+      if (!meta || !allRows.length) return;
+      const span = meta.viewEnd - meta.viewStart;
+      const newSpan = Math.max(0.02, Math.min(1, span + delta));
+      const rect = canvas.getBoundingClientRect();
+      const mx = (e.clientX - rect.left) / rect.width;  // 0..1 相对位置
+      const center = meta.viewStart + span * mx;
+      meta.viewStart = Math.max(0, center - newSpan * mx);
+      meta.viewEnd = Math.min(1, center + newSpan * (1 - mx));
+      syncSlider(chartId);
+      scheduleUpdate(chartId);
+    }, {passive:false});
+  }
+
+  // 拖拽平移（在图表上按住拖动）
+  let dragging = false, dragStartX = 0, s0 = 0, span0 = 0;
+  if (canvas) {
+    canvas.addEventListener('mousedown', (e) => {
+      const meta = chartMeta[chartId];
+      if (!meta) return;
+      dragging = true; dragStartX = e.clientX;
+      s0 = meta.viewStart; span0 = meta.viewEnd - meta.viewStart;
+      e.preventDefault();
+    });
+    canvas.addEventListener('mousemove', (e) => {
+      if (!dragging) return;
+      const meta = chartMeta[chartId];
+      if (!meta) return;
+      const dx = (e.clientX - dragStartX) / (canvas.clientWidth || 400);
+      let ns = s0 - dx * span0;
+      let ne = ns + span0;
+      if (ns < 0) { ne -= ns; ns = 0; }
+      if (ne > 1) { ns -= (ne - 1); ne = 1; }
+      meta.viewStart = Math.max(0, ns);
+      meta.viewEnd = Math.min(1, ne);
+      syncSlider(chartId);
+      scheduleUpdate(chartId);
+    });
+    canvas.addEventListener('mouseup', () => dragging = false);
+    canvas.addEventListener('mouseleave', () => dragging = false);
+  }
+}
+
+function syncSlider(chartId) {
+  const bar = document.querySelector(`.zoom-bar[data-for="${chartId}"]`);
+  const lo = bar?.querySelector('input.zlo');
+  const hi = bar?.querySelector('input.zhi');
+  if (!lo || !hi) return;
+  const meta = chartMeta[chartId];
+  if (!meta) return;
+  lo.value = (meta.viewStart * 100).toFixed(1);
+  hi.value = (meta.viewEnd * 100).toFixed(1);
+}
+
+// 缩放按钮（以中心为锚点扩大/缩小区间）
+function zoomOut(btn) {
+  const chartId = btn.closest('.zoom-bar').dataset.for;
+  const meta = chartMeta[chartId];
+  if (!meta) return;
+  const center = (meta.viewStart + meta.viewEnd) / 2;
+  const span = Math.min(1, (meta.viewEnd - meta.viewStart) * 1.5);
+  meta.viewStart = Math.max(0, center - span/2);
+  meta.viewEnd = Math.min(1, center + span/2);
+  syncSlider(chartId);
+  scheduleUpdate(chartId);
+}
+function zoomIn(btn) {
+  const chartId = btn.closest('.zoom-bar').dataset.for;
+  const meta = chartMeta[chartId];
+  if (!meta) return;
+  const center = (meta.viewStart + meta.viewEnd) / 2;
+  const span = Math.max(0.02, (meta.viewEnd - meta.viewStart) / 1.5);
+  meta.viewStart = Math.max(0, center - span/2);
+  meta.viewEnd = Math.min(1, center + span/2);
+  syncSlider(chartId);
+  scheduleUpdate(chartId);
+}
+function resetZoom(btn) {
+  const chartId = btn.closest('.zoom-bar').dataset.for;
+  const meta = chartMeta[chartId];
+  if (!meta) return;
+  meta.viewStart = 0;
+  meta.viewEnd = 1;
+  syncSlider(chartId);
+  scheduleUpdate(chartId);
+}
+
+// ============================================================
+// 节流更新：同一帧内合并多次调用
+// ============================================================
+function scheduleUpdate(chartId) {
+  if (rafPending) return;
+  rafPending = requestAnimationFrame(() => {
+    rafPending = null;
+    refreshAllCharts();
+  });
+}
+
+function refreshAllCharts() {
+  Object.keys(charts).forEach(id => {
+    if (id) refreshChart(id);
+  });
+}
+
+// 朴素画图框刷新：直接把全量 step 与 mse/ssim 塞进去，不缩放、不切片
+function refreshSimpleCharts() {
+  const dbg = document.getElementById('dbgSimple');
+  const log = [];
+  if (!allRows.length) { if (dbg) dbg.textContent = 'allRows 为空（fetch 失败？检查是否用 http 打开而非 file://）'; return; }
+  const labels = allRows.map(r => r.step);
+  const mse = allRows.map(r => (r.mse == null || isNaN(r.mse)) ? null : r.mse);
+  const ssim = allRows.map(r => (r.ssim == null || isNaN(r.ssim)) ? null : r.ssim);
+  log.push('allRows=' + allRows.length + ' labels=' + labels.length);
+  log.push('mse: defined=' + mse.filter(v=>v!==null).length + ' first=' + mse[0] + ' last=' + mse[mse.length-1]);
+  log.push('ssim: defined=' + ssim.filter(v=>v!==null).length + ' first=' + ssim[0] + ' last=' + ssim[ssim.length-1]);
+  log.push('simpleCharts.mse exists=' + !!simpleCharts.mse + ' ssim exists=' + !!simpleCharts.ssim);
+  if (simpleCharts.mse) {
+    simpleCharts.mse.data.labels = labels;
+    simpleCharts.mse.data.datasets[0].data = mse;
+    simpleCharts.mse.update('none');
+    log.push('mse chart data len=' + simpleCharts.mse.data.datasets[0].data.length);
+  }
+  if (simpleCharts.ssim) {
+    simpleCharts.ssim.data.labels = labels;
+    simpleCharts.ssim.data.datasets[0].data = ssim;
+    simpleCharts.ssim.update('none');
+    log.push('ssim chart data len=' + simpleCharts.ssim.data.datasets[0].data.length);
+  }
+  if (dbg) dbg.textContent = log.join('\n');
+}
+
+function refreshChart(id) {
+  const ch = charts[id];
+  const meta = chartMeta[id];
+  if (!ch || !meta.keys.length) return;
+
+  const n = meta.fullLabels.length;
+  const loI = Math.max(0, Math.floor(meta.viewStart * (n - 1)));
+  const hiI = Math.min(n - 1, Math.ceil(meta.viewEnd * (n - 1)));
+
+  // 直接用全量 labels；dataset 仅显示可见区间的数据（标准写法，不手动算 y 轴）
+  ch.data.labels = meta.fullLabels;
+  ch.data.datasets.forEach((ds, i) => {
+    const arr = meta.fullData[i];
+    if (!arr) return;
+    const sliced = arr.slice(loI, hiI + 1);
+    ds.data = sliced;
+    ds._rawTs = meta.fullTs.slice(loI, hiI + 1);
+  });
+
+  // 让 Chart.js 自动计算 Y 轴（标准行为，避免手动 fit 出问题）
+  delete ch.options.scales.y.min;
+  delete ch.options.scales.y.max;
+
+  ch.update('none');
+}
+
+// ============================================================
+// 数据加载
+// ============================================================
+let currentExp = '';
+async function loadImg(id, names){
+  const cands = currentExp ? names.map(n=>n.replace('.png?',`_${currentExp}.png?`).replace(/\?\w+$/,'?t='+Date.now())).concat(names.map(n=>n.replace(/\?\w+$/,'?t='+Date.now()))) : names.map(n=>n.replace(/\?\w+$/,'?t='+Date.now()));
+  for(const c of cands){
+    try {
+      const res = await fetch(c);
+      if(!res.ok) continue;
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const img = document.getElementById(id);
+      img.src = url;
+      img.onload = ()=>URL.revokeObjectURL(url);
+      return;
+    }catch(e){}
+  }
+}
+function loadPoster(){
+  const li=document.getElementById('latestImg'); if(li){li.src='poster_s9_b4_grey_clear.png';li.onerror=()=>{li.style.display='none';};}
+  const pi=document.getElementById('posterImg'); if(pi){pi.src='poster_s9_b4_grey_clear.png';pi.onerror=()=>{pi.style.display='none';};}
+}
+
+async function load(){
+  try {
+    const data = __DATA__;
+    currentExp = data.expName || '';
+    document.getElementById('meta').textContent =
+      `${data.source||''} · ${data.pulledAt||''} · ${data.count||0} 条` +
+      (currentExp ? ` · ${currentExp}` : '');
+
+    allRows = data.rows || [];
+    epochMeta = {
+      epoch_now: data.epoch_now || 0,
+      hr_per_epoch: data.hr_per_epoch || 0,
+      sec_per_epoch: data.sec_per_epoch || 0,
+      steps_per_epoch: data.steps_per_epoch || 0,
+      dataset_size: data.dataset_size || 0,
+      stepsPerSec: data.stepsPerSec || 0,
+    };
+    if (!allRows.length) return;
+
+    // 一次性创建所有图表（始终渲染）
+    buildAllCharts();
+
+    // 存储全量数据到 meta：fullData 按 dataset 顺序存数组
+    Object.values(charts).forEach(ch => {
+      const id = ch.canvas.id;
+      const m = chartMeta[id];
+      m.fullLabels = allRows.map(r => r.step);
+      m.fullTs = allRows.map(r => r.ts || '');
+      m.fullData = m.keys.map(key => allRows.map(r => r[key]));
+    });
+
+    // 刷新所有图表
+    refreshAllCharts();
+    // 朴素画图框：直接塞全量数据，不缩放
+    refreshSimpleCharts();
+
+    // 统计卡片
+    renderStats(allRows);
+    loadPoster();
+
+  } catch(e){
+    document.getElementById('meta').textContent = '加载失败: '+e.message;
+  }
+}
+
+// ============================================================
+// 统计卡片
+// ============================================================
+function renderStats(rows){
+  const last = rows[rows.length-1];
+  const nan = v=>v==null||isNaN(v);
+  const s=(k,v,c)=>`<div class="stat"><div class="k">${k}</div><div class="v ${c||''}">${v}</div></div>`;
+
+  const hasEval = !nan(last.mse);
+  const finite = rows.filter(r=>!nan(r.diff));
+  const firstD = finite.length?finite[0].diff:null;
+  const trend = (firstD!=null&&!nan(last.diff))?((last.diff-firstD)/firstD*100):null;
+
+  let statusText = '正常';
+  if(hasEval) statusText = 'auto-eval';
+  else if(nan(last.diff)) statusText = 'NaN';
+  else if(!nan(last.diff)&&finite.length>5&&last.diff<finite[0].diff) statusText = '下降中';
+
+  document.getElementById('statGrid').innerHTML =
+    s('Step', last.step) +
+    s('Diff', nan(last.diff)?'—':last.diff.toFixed(4), nan(last.diff)?'warn':'') +
+    s('Diff Δ', trend==null?'—':(trend>0?'+':'')+trend.toFixed(1)+'%', (trend!=null&&trend<0)?'ok':'') +
+    s('Canny', nan(last.canny)?'—':last.canny.toFixed(4)) +
+    s('Skel', nan(last.skel)?'—':last.skel.toFixed(4)) +
+    s('LatC', nan(last.latc)?'—':last.latc.toFixed(4)) +
+    s('LatS', nan(last.lats)?'—':last.lats.toFixed(4)) +
+    s('MSE', nan(last.mse)?'—':last.mse.toFixed(5)) +
+    s('SSIM', nan(last.ssim)?'—':last.ssim.toFixed(4), nan(last.ssim)?'':'ok') +
+    s('Steps/s', nan(last.stepsPerSec)?'—':last.stepsPerSec.toFixed(1)) +
+    s('已过数据遍数', epochMeta.epoch_now?epochMeta.epoch_now.toFixed(2)+' 遍':'—') +
+    s('每遍耗时', epochMeta.hr_per_epoch?(
+        epochMeta.hr_per_epoch<1 ? Math.round(epochMeta.sec_per_epoch)+'s'
+        : epochMeta.hr_per_epoch.toFixed(1)+'h') : '—') +
+    s('状态', statusText, statusText==='NaN'?'warn':(statusText==='auto-eval'||statusText==='下降中'?'ok':''));
+
+  // 状态行
+  let st = '';
+  if(!hasEval&&!nan(last.diff))
+    st += 'Diff '+(firstD!=null?firstD.toFixed(4):'→')+' → '+last.diff.toFixed(4);
+  else if(hasEval)
+    st += 'MSE='+last.mse.toFixed(5)+' SSIM='+last.ssim.toFixed(4);
+  document.getElementById('statusLine').textContent = st || '等待数据…';
+}
+
+// ============================================================
+// Tab 导航（仅滚动定位；所有图表区块始终可见，不做 display 隐藏）
+// —— 修复：之前用 display:none 隐藏 tab 内容，导致该 tab 内 canvas 初始
+//    尺寸为 0，Chart.js 在 0 尺寸上初始化后曲线无法正确绘制（"有数据没图表"）。
+//    现所有 .tab-content 常驻 display:block，canvas 从一开始就具备正确尺寸。
+// ============================================================
+document.querySelectorAll('.tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+    tab.classList.add('active');
+    const el = document.getElementById('tab-'+tab.dataset.tab);
+    if (el) el.scrollIntoView({behavior:'smooth', block:'start'});
+  });
+});
+
+// ============================================================
+// 自动刷新 & 倒计时
+// ============================================================
+document.getElementById('refreshBtn').addEventListener('click', load);
+let secLeft = 10, timer=null, cdTimer=null;
+const autoChk=document.getElementById('autoChk');
+function tick(){
+  secLeft = secLeft<=0?10:secLeft-1;
+  const el=document.getElementById('countdown');
+  if(el) el.textContent = autoChk.checked?`下次 ${secLeft}s`:'已关闭';
+}
+function syncAuto(){
+  if(autoChk.checked){
+    if(!timer) timer=setInterval(load, REFRESH_MS);
+    if(!cdTimer){secLeft=10;cdTimer=setInterval(tick,1000);}
+  }else{
+    if(timer){clearInterval(timer);timer=null;}
+    if(cdTimer){clearInterval(cdTimer);cdTimer=null;}
+    const el=document.getElementById('countdown');
+    if(el) el.textContent='已关闭';
+  }
+}
+autoChk.addEventListener('change', syncAuto);
+
+// 启动
+load();
+</script>
+</body>
+</html>

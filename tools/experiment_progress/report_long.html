@@ -1,0 +1,185 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>字形条件扩散模型训练实验 — 指标与海报</title>
+<style>
+  :root{--bg:#f7f7f8;--accent:#111;--muted:#555}
+  body{margin:0;font-family:Inter,system-ui,Segoe UI,Helvetica,Arial;padding:24px;background:var(--bg);color:var(--accent);line-height:1.6}
+  header{max-width:1100px;margin:0 auto 18px}
+  main{max-width:1100px;margin:0 auto}
+  h1{font-size:26px;margin:6px 0}
+  h2{font-size:20px;margin:22px 0 8px}
+  h3{font-size:16px;margin:12px 0}
+  p{margin:8px 0}
+  .meta{color:var(--muted);font-size:14px}
+  table{width:100%;border-collapse:collapse;margin:14px 0 22px;background:#fff}
+  th,td{padding:8px 10px;border:1px solid #e6e6e9;text-align:left}
+  th{background:#f1f1f1}
+  .lead{background:#fff;padding:14px;border-radius:8px;margin-bottom:16px}
+  /* posters: full-width images, preserve aspect ratio, captions below images */
+  .poster{width:100%;margin:18px 0;position:relative;display:block;background:transparent}
+  .poster img{width:100%;height:auto;display:block;border-radius:6px}
+  .poster .caption{position:relative;margin-top:6px;color:var(--muted);font-size:13px;background:transparent;padding:0}
+  .eval{margin-top:6px;color:var(--muted);font-size:13px}
+  .poster .eval{margin-top:6px;color:var(--muted);font-size:13px;background:transparent}
+  /* compact image gallery for smaller screens */
+  @media (max-width:720px){body{padding:10px} .poster{height:60vh}}
+  /* navigation */
+  nav{position:fixed;right:18px;top:80px;width:200px}
+  nav ul{list-style:none;padding:0;margin:0}
+  nav li{margin:6px 0}
+  nav a{color:#0a58ca;text-decoration:none;font-size:14px}
+</style>
+</head>
+<body>
+<header>
+  <div class="lead">
+    <h1>字形条件扩散模型训练实验——指标分析与海报汇总</h1>
+    <div class="meta">实验进度报告 • 生成于 本地</div>
+  </div>
+</header>
+<main>
+
+<section>
+  <h2>总体设置</h2>
+  <p>所有实验基于 <strong>DiT-2Cond</strong> 架构（S/2048 维小模型、B/768 维中模型、XL/预训练大模型），在 MC 书法数据上训练。条件方式为两因子：书家 × 字形（calligrapher × character class），融合方式 factorized_add（XL 用 xl_highdim）。单书用楷书数据（kailishu_train.csv），多书用 5 书 top-30 书家数据（train_top30.csv，约 12.9 万行）。所有实验均使用 SD-VAE-ft-ema 编码 latent，训练目标为 MSE + 可选结构损失（像素域 canny/skel 或 latent 域 canny）。</p>
+</section>
+
+<section>
+  <h2>指标汇总</h2>
+  <p>指标来自远程 CPU 评估 <code>eval_auto_&lt;step&gt;.json</code>（eval100）：MSE（越低越好）、SSIM（越高越好）。下表为每个实验最后一档有评估结果的 ckpt。</p>
+
+  <table>
+    <thead>
+      <tr><th>实验</th><th>模型</th><th>数据</th><th>last step</th><th>MSE</th><th>SSIM</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>s2_fromscratch_2factor</td><td>S</td><td>楷书单书</td><td>50000</td><td>0.702</td><td><strong>0.577</strong></td></tr>
+      <tr><td>s2_fromscratch_glyphmid</td><td>S</td><td>楷书单书</td><td>10000</td><td>1.284</td><td>0.453</td></tr>
+      <tr><td>s5_2factor_top30</td><td>S</td><td>5书top30</td><td>70000</td><td>0.841</td><td><strong>0.520</strong></td></tr>
+      <tr><td>s5_2factor_struct_post50k</td><td>S</td><td>5书top30</td><td>60000</td><td>0.969</td><td>0.508</td></tr>
+      <tr><td>s5_2factor_B_latentstruct</td><td>B</td><td>5书top30</td><td>130000</td><td>0.883</td><td>0.507</td></tr>
+      <tr><td>s5_2factor_B_latentstruct_pixelsk_opt</td><td>B</td><td>5书top30</td><td>115000</td><td>0.871</td><td>0.391</td></tr>
+      <tr><td>s5_2factor_B_canny05_pixelsk</td><td>B</td><td>5书top30</td><td>325000</td><td>0.782</td><td>0.482</td></tr>
+      <tr><td>s5_2factor_B_pixelfp32*</td><td>B</td><td>5书top30</td><td>35000</td><td>1.296</td><td>0.183</td></tr>
+      <tr><td>v3b_xl_glyphcond</td><td>XL+LoRA</td><td>楷书单书</td><td>30000</td><td>0.992</td><td>0.489</td></tr>
+      <tr><td>v3c_xl_glyphcond_midstep†</td><td>XL+LoRA</td><td>楷书单书</td><td>—</td><td>—</td><td>—</td></tr>
+    </tbody>
+  </table>
+
+</section>
+
+<!-- Sections and posters -->
+
+<section>
+  <h2>各实验分析与海报</h2>
+
+  <article id="s2">
+    <h3>s2_fromscratch_2factor（楷书基线，SSIM 0.577）</h3>
+    <p><strong>条件：</strong>DiT-2Cond-S/2（from scratch），楷书单书，纯两因子 callig×char，batch 128，训练至 50k。</p>
+    <p><strong>分析：</strong>作为单书纯两因子基线，达到最高 SSIM 0.577。说明在楷书单书场景下，纯两因子条件已足够捕捉书家风格与字形特征的联合分布，无需额外字形监督或结构辅助。</p>
+    <div class="poster"><img src="s2_fromscratch_2factor.png" alt="s2_fromscratch_2factor"><div class="caption">s2_fromscratch_2factor：训练快照（按 step 标注 MSE/SSIM）</div></div>
+    <div class="poster eval">评估：画面干净程度 4/5；字形正确程度 4/5。要点：中后期帧清晰，骨架与填充一致；少量块状噪声可通过中值或形态学滤波清理。</div>
+  </article>
+
+  <article id="s2_glyphmid">
+    <h3>s2_fromscratch_glyphmid（楷书 + 字形中间步监督，SSIM 0.453）</h3>
+    <p><strong>条件：</strong>S，楷书单书，两因子 + 标准字形条件 + 中间步标准字形监督（w_std_mid=0.8），50k。</p>
+    <p><strong>分析：</strong>SSIM 0.453 显著低于纯两因子基线 0.577，且仅 eval 至 10k。中间步监督可能引入梯度冲突或与真实书法分布不匹配。</p>
+    <div class="poster"><img src="s2_fromscratch_glyphmid.png" alt="s2_fromscratch_glyphmid"><div class="caption">s2_fromscratch_glyphmid：训练快照</div></div>
+    <div class="poster eval">评估：画面干净程度 3/5；字形正确程度 3/5。要点：存在色块/网格噪声，轮廓较碎；建议减小中间步监督权重并增加训练步数。</div>
+  </article>
+
+  <article id="s5_top30">
+    <h3>s5_2factor_top30（5 书纯两因子主基线，SSIM 0.520）</h3>
+    <p><strong>条件：</strong>S，5 书 top30，纯两因子，大 batch 192，训练上限 200k（当前 eval 至 70k）。</p>
+    <p><strong>分析：</strong>多书场景下 SSIM 0.520，略低于单书。多书任务对抗/遗忘更强。</p>
+    <div class="poster"><img src="s5_2factor_top30.png" alt="s5_2factor_top30"><div class="caption">s5_2factor_top30：训练快照</div></div>
+      <div class="poster eval">评估：画面干净程度 3/5；字形正确程度 3/5。要点：多书体混合导致线条风格多变，整体略显杂；建议数据归一化或更多训练以平衡书体。</div>
+  </article>
+
+  <article id="s5_struct">
+    <h3>s5_2factor_struct_post50k（5 书 + 像素结构损失，SSIM 0.508）</h3>
+    <p><strong>条件：</strong>S，5 书 top30，像素域 canny+skel（w_canny=0.5，w_skel=0.5），50k 后叠加结构监督，batch 12。</p>
+    <p><strong>分析：</strong>SSIM 0.508 略低于无结构基线，结构损失更多影响边缘/骨架但未反映在 SSIM。</p>
+    <div class="poster"><img src="s5_2factor_struct_post50k.png" alt="s5_2factor_struct_post50k"><div class="caption">s5_2factor_struct_post50k：训练快照</div></div>
+      <div class="poster eval">评估：画面干净程度 3.5/5；字形正确程度 3.5/5。要点：结构损失令边缘更清晰，但出现轮廓断裂；建议减小结构损失权重或加入平滑正则项。</div>
+  </article>
+
+  <article id="b_latent">
+    <h3>s5_2factor_B_latentstruct（B + latent canny，SSIM 0.507）</h3>
+    <p><strong>条件：</strong>B，5 书 top30，latent 域 canny（w_latent_canny=0.5），batch 64，eval 至 130k。</p>
+    <p><strong>分析：</strong>SSIM 0.507，与 S 多书基线接近，latent 域结构监督未带来明显增益。</p>
+    <div class="poster"><img src="s5_2factor_B_latentstruct.png" alt="s5_2factor_B_latentstruct"><div class="caption">s5_2factor_B_latentstruct：训练快照</div></div>
+      <div class="poster eval">评估：画面干净程度 3.5/5；字形正确程度 3.5/5。要点：latent 域结构监督使骨架稳定但细节略平滑，可在细节层加入补偿损失。</div>
+  </article>
+
+  <article id="b_pixelsk_opt">
+    <h3>s5_2factor_B_latentstruct_pixelsk_opt（B + 像素 skel，SSIM 0.391）</h3>
+    <p><strong>条件：</strong>B，像素域 skel（w_skel=1.0），bf16 解码，struct_subset=16，batch 64。</p>
+    <p><strong>分析：</strong>SSIM 0.391，较低，单纯骨架监督效果差。</p>
+    <div class="poster"><img src="s5_2factor_B_latentstruct_pixelsk_opt.png" alt="s5_2factor_B_latentstruct_pixelsk_opt"><div class="caption">s5_2factor_B_latentstruct_pixelsk_opt：训练快照</div></div>
+      <div class="poster eval">评估：画面干净程度 2/5；字形正确程度 2/5。要点：仅 skel 监督导致笔画稀疏、断裂，字形不完整；建议混合像素与骨架监督并降低权重。</div>
+  </article>
+
+  <article id="b_canny">
+    <h3>s5_2factor_B_canny05_pixelsk（B + 像素 canny+skel bf16，SSIM 0.482）</h3>
+    <p><strong>条件：</strong>B，像素 canny+skel（w_canny=0.5，w_skel=1.0），bf16 解码，subset=16，batch 64，eval 至 325k。</p>
+    <p><strong>分析：</strong>SSIM 0.482，训练较深时效果较好但仍低于 S 基线。</p>
+    <div class="poster"><img src="s5_2factor_B_canny05_pixelsk.png" alt="s5_2factor_B_canny05_pixelsk"><div class="caption">s5_2factor_B_canny05_pixelsk：训练快照</div></div>
+      <div class="poster eval">评估：画面干净程度 3/5；字形正确程度 3/5。要点：canny+skel 强化边缘但带来噪点和假轮廓，可用形态学滤波后处理。</div>
+  </article>
+
+  <article id="b_fp32">
+    <h3>s5_2factor_B_pixelfp32（B + 像素 canny+skel fp32，运行中，SSIM 0.183@35k）</h3>
+    <p><strong>条件：</strong>B，fp32 解码，subset=8，batch 32，当前约 35.5k。</p>
+    <p><strong>分析：</strong>SSIM 0.183（未收敛）。</p>
+    <div class="poster"><img src="s5_2factor_B_pixelfp32.png" alt="s5_2factor_B_pixelfp32"><div class="caption">s5_2factor_B_pixelfp32：训练快照（运行中）</div></div>
+      <div class="poster eval">评估：画面干净程度 2/5；字形正确程度 2/5。要点：训练早期噪声较多且笔画粗糙；建议继续训练并参考 bf16 收敛曲线。</div>
+  </article>
+
+  <article id="xl_b">
+    <h3>v3b_xl_glyphcond（XL+LoRA + 字形条件，SSIM 0.489）</h3>
+    <p><strong>条件：</strong>DiT-2Cond-XL/2 + LoRA r=16，楷书单书，字形条件，batch 16，30k。</p>
+    <p><strong>分析：</strong>SSIM 0.489，未超越 S 基线，可能因过参或训练时长不足。</p>
+    <div class="poster"><img src="v3b_xl_glyphcond.png" alt="v3b_xl_glyphcond"><div class="caption">v3b_xl_glyphcond：训练快照</div></div>
+      <div class="poster eval">评估：画面干净程度 3/5；字形正确程度 3/5。要点：XL+LoRA 在纹理细节上有所表现，但字形准确性未明显提升；可延长微调或放宽 LoRA 限制。</div>
+  </article>
+
+  <article id="xl_c">
+    <h3>v3c_xl_glyphcond_midstep（XL+LoRA + 字形 + 中间步监督，eval 未完成）</h3>
+    <p><strong>条件：</strong>XL+LoRA，增加中间步字形监督，30k；仅保存少量样本，eval 未完成。</p>
+    <p><strong>分析：</strong>无完整指标可分析。</p>
+    <div class="poster"><img src="v3c_xl_glyphcond_midstep.png" alt="v3c_xl_glyphcond_midstep"><div class="caption">v3c_xl_glyphcond_midstep：训练快照（运行中）</div></div>
+      <div class="poster eval">评估：画面干净程度 2.5/5；字形正确程度 2.5/5。要点：样本少且中间步监督带来碎片化，不建议在当前权重下推广。</div>
+  </article>
+
+</section>
+
+<section>
+  <h2>Insight 与结论</h2>
+  <h3>S 模型优于 B 模型</h3>
+  <p>小模型 S 在给定数据/结构监督下性价比最高（S: 楷书 0.577 / 5书 0.520），B 系列表现未明显优于 S。</p>
+
+  <h3>标准字形/中间步监督未提升 SSIM</h3>
+  <p>多次实验显示中间步字形监督并未带来 SSIM 提升，建议降低权重或延迟使用。</p>
+
+  <h3>结构损失改善观感但不提升 SSIM</h3>
+  <p>像素/latent 结构损失对视觉边缘影响明显，但 SSIM 未必反映该改进，建议保留为辅助监督并使用 LPIPS/FID 评估视觉质量。</p>
+
+  <h3>总体建议</h3>
+  <ul>
+    <li>优先在 S 尺度上迭代实验</li>
+    <li>把字形监督权重降至 0.2--0.4 或延迟到训练后期</li>
+    <li>多书场景可考虑书体显式建模或分书体训练</li>
+  </ul>
+</section>
+
+</main>
+
+<!-- navigation removed for PDF export -->
+
+</body>
+</html>

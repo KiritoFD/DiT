@@ -1,63 +1,66 @@
-# -*- coding: utf-8 -*-
-# ---- 澶ф潈閲?/ 鏁版嵁 ----
-*.pt
-*.pth
-*.onnx
-*.zip
+# ============================================================
+# DiT 书法仓库 .gitignore  (2026-09-13 整理)
+# 原则: 代码/配置/文档/小样本 CSV 入库; 大资产(权重/latent/图/结果)一律不入库。
+# ============================================================
+
+# ---- 数据集 / 大压缩包 ----
+data/
+dataset/
+dataset.zip
+MCCD/
+MCCD.7z
 *.7z
+*.zip
 *.tar.gz
 *.tgz
 *.rar
 *.exe
-dataset/
-MCCD/
+
+# ---- 预训练权重 / 模型文件 ----
 pretrained_models/
+*.pt
+*.pth
+*.onnx
+*.safetensors
 
-# ---- 澶ф暟鎹?JSON锛堟竻娲楃閬撲骇鐗╋紝涓嶅叆搴擄級----
-final_manifest*.json
-final_img_plan.json
-final_latent_plan.json
-final_split.json
-latent_missing.json
-latent_reuse_map.json
-final_local_imgs.tar.gz
-latent_missing.tar.gz
-_remote_vae_index.json
-_remote_dedup.json
-_remote_latent*.json
-_official_4tuples.json
-_official_vocab.json
-_id_maps.json
-_calli_map.json
-CHAR_PLAN.json
-OOD_PLAN.json
-all_logs_summary.json
-mccd_mapping.json
-remote_labels_map.json
-remote_mccd_mapping.json
-train_data.json
+# ---- 数值大文件 ----
+*.npz
+*.npy
 
-# ---- 鎺ㄧ悊/鍙鍖栦复鏃朵骇鐗?----
-/*.png
-ood_results/
-viz_ab_*.png
-skel_*.png
-gtskel_*.png
-gtimg_*.png
+# ---- 训练/评测大资产 (repo 根 & 5script) ----
+5script/results/
+5script/pixmap/
+5script/fame3-e/
+5script/fame3-sym/
+5script/structnet/
+5script/structure_probe_cache/
+5script/condition_probes/
+5script/structure_probes/
+5script/*.npz
+final_latents_*/
+final_imgs_*/
+final_skel_latents_*/
+final_skel*/
+final_images/
+final_imgs_256/
+final_canny/
+final_skeleton*/
+final_latents/
+final_skel3_*/
+final_skel1_*/
+std_skel*_latents_*/
+std_glyph_latent_v2/
+aux_*_latents_*/
+struct_fame*/
+test_eval_*_imgs/
+fame_clean_v8.npz
+skel_bank*.npz
+_gt_cache/
 
-# ---- 涓存椂鎺㈤拡鑴氭湰 ----
-_diag_watchdog.sh
-_check_libs.py
-_verify_gt_labels.py
-_find_script_id.py
-_probe_dit_urls.py
-
-# ---- 褰掓。锛堟湰鍦颁繚鐣欙紝涓嶈繘 git锛?---
-archive/
-_sync_work/
-
-# ---- 鏁版嵁/浜х墿鐩綍锛堜笉杩?git锛?---
-eval_imgs_10000/
+# ---- 训练/评测产物 ----
+results/
+eval_samples*/
+eval_imgs_*/
 eval_pics/
 eval_pngs/
 eval_logs/
@@ -65,12 +68,6 @@ example_100/
 final/
 latent_missing/
 remote_logs/
-results/
-!docs/results/
-results_lora/
-results_overfit/
-results_relative/
-results_test/
 scratch/
 test_1k/
 visuals/
@@ -78,29 +75,42 @@ s6_top6_dashboard/
 onnx_vae/
 _exp_cache/
 new_data_eval_imgs/
+_classifier_pixel_data.npz
+glyph_classifier_ckpts/
+_smoke_data/
 
-# ---- 鏁版嵁 CSV ----
-dwm_monitor_log.csv
-eval_all_summary.csv
-eval_quant_result.csv
-
-# ---- 鏃ュ織 / 杩愯鏃?----
+# ---- 日志 / 运行态 ----
 *.log
 *.err
 __pycache__/
 *.pyc
 .vscode/
 .gradio/
+.gradio/
+.venv/
 
-# ---- 鍙啀鐢熸垚缂撳瓨 ----
-5script/structure_probe_cache/
-5script/condition_probes/
-5script/structure_probes/
+# ---- 临时/归档目录 (远端运维脚本、探针、旧产物) ----
+_ot_scratch/
+_sync_work/
+_diag/
+_zs/
+legacy/misc/
+archive/
+_archive/
+
+# ---- 根目录散落的可视化/临时 ----
+/*.png
+ood_results/
+viz_ab_*.png
+skel_*.png
+gtskel_*.png
+gtimg_*.png
+nul
+
+# ---- 旧工具目录 (repo 内保留代码, 其产物不入库) ----
 tools/std_glyph_img/
 tools/std_glyph_latent/
-tools/remote_eval_samples/
-tools/remote_eval_samples_test/
-tools/remote_eval_samples_test_steps/
+tools/remote_eval_samples*/
 tools/remote_gt/
 tools/snapshots/
 tools/_cs3_check/
@@ -110,80 +120,25 @@ tools/_exp_poster_tmp/
 tools/poster_archive/
 tools/remote_eval_jsons/
 tools/remote_seen_samples/
-tools/experiment_progress/
-tools/dashboards/
-
-# ---- 鎷夊彇鐨?eval 鏍锋湰 PNG / 娴锋姤浜х墿 ----
 tools/remote_show_samples/
-tools/remote_seen_samples/
-tools/remote_eval_samples/
 tools/s7_eval_samples/
 tools/s7_seen_samples/
 tools/evaluation/remote_*/
 tools/evaluation/s11_*/
-tools/evaluation/remote_show_samples/
-tools/5script/
+tools/evaluation/dashboards/
+tools/dino_samples/
+tools/poster_s*.png
+tools/s7_eval_poster.png
+tools/logs_pull_monitor.txt
 tools/*_history.json
 tools/s8_train_data.json
 tools/ev_mse6.py
-tools/logs_pull_monitor.txt
-tools/poster_s*.png
-tools/poster_s10_b4_grey_clear.png
-tools/dino_samples/
-tools/legacy/
-tools/s7_eval_poster.png
 tools/evaluation/train_data*.json
 tools/evaluation/current_train.log
 tools/evaluation/poster_*.png
-tools/evaluation/seen*.csv
-tools/evaluation/show*.csv
-tools/evaluation/remote_eval_auto.json
-tools/evaluation/dashboards/
 tools/evaluation/train_dashboard.html
-tools/seen5_top30.csv
-tools/show5_top30.csv
 
-# ---- 璁粌浜х墿鐩綍 ----
-final_images/
-final_imgs_256/
-final_canny/
-final_skeleton/
-final_skeleton_d3/
-final_latents/
-
-# 淇濈暀 docs/s6_report 涓嬬殑璇勬祴浜х墿涓庢捣鎶?!docs/s6_report/**/*.png
+# ---- docs 里保留 png 海报 (旧规则) ----
+!docs/s6_report/**/*.png
 !docs/s6_report/**/*.json
-
-# ---- local smoke test artifacts ----
-_smoke_data/
-
-glyph_classifier_ckpts/
-
-_classifier_pixel_data.npz
-
-# ---- v2 鏀归€犳湡鐨勪复鏃?浜х墿鐩綍 ----
-_zs/
-_diag/
-_ot_scratch/
-std_glyph_latent_v2/
-final_latents_mid_clean/
-
-# ---- fame 绯诲垪鏁版嵁/浜х墿鐩綍锛堣繙绋嬬敓鎴愶紝涓嶅叆搴擄級----
-final_latents_fame/
-final_skel_latents_fame/
-final_skel_latents_fame_1px/
-final_skel_latents_train_1px/
-final_skel_latents_eval_1px/
-final_skel3_fame/
-final_skel1_fame/
-final_skel3_mid_clean/
-final_skel1/
-_gt_cache/
-_archive/
-skel_bank_std.npz
-skel_bank_train.npz
-fame_meta.json
-
-# ---- 工具/IDE 目录 ----
-.arts/
-.commandcode/
+!docs/system/imgs/**

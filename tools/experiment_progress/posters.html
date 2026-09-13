@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>训练海报集</title>
+  <style>
+    html,body{height:100%;margin:0;background:#111;color:#fff;font-family:system-ui,Segoe UI,Roboto,'Helvetica Neue',Arial}
+    .slide{height:100vh;display:flex;align-items:center;justify-content:center;background:#000;position:relative}
+    .caption{position:absolute;left:12px;bottom:12px;background:rgba(0,0,0,0.5);padding:8px 10px;border-radius:6px;font-size:14px}
+    .nav{position:absolute;top:50%;width:100%;display:flex;justify-content:space-between;pointer-events:none}
+    .btn{pointer-events:auto;background:rgba(0,0,0,0.35);border:1px solid rgba(255,255,255,0.12);color:#fff;padding:12px;border-radius:6px;margin:0 12px;cursor:pointer}
+    .hidden{display:none}
+  </style>
+</head>
+<body>
+
+<div id="container"></div>
+
+<script>
+const images = [
+  's2_fromscratch_2factor.png',
+  's2_fromscratch_glyphmid.png',
+  's5_2factor_top30.png',
+  's5_2factor_struct_post50k.png',
+  's5_2factor_B_latentstruct.png',
+  's5_2factor_B_latentstruct_pixelsk_opt.png',
+  's5_2factor_B_canny05_pixelsk.png',
+  's5_2factor_B_pixelfp32.png',
+  'v3b_xl_glyphcond.png',
+  'v3c_xl_glyphcond_midstep.png'
+];
+
+const container = document.getElementById('container');
+let idx = 0;
+
+function makeSlide(src){
+  const slide = document.createElement('div');
+  slide.className = 'slide';
+  const img = document.createElement('img');
+  img.src = src;
+  img.alt = src;
+  slide.appendChild(img);
+  const cap = document.createElement('div');
+  cap.className = 'caption';
+  cap.textContent = src.replace(/_/g,' ');
+  slide.appendChild(cap);
+  return slide;
+}
+
+images.forEach((p)=> container.appendChild(makeSlide(p)));
+const slides = Array.from(document.querySelectorAll('.slide'));
+
+function show(i){
+  slides.forEach((s,si)=> s.style.display = (si===i)?'flex':'none');
+  document.title = `${i+1}/${slides.length} - ${images[i]}`;
+}
+
+function next(){ idx = (idx+1) % slides.length; show(idx); }
+function prev(){ idx = (idx-1+slides.length) % slides.length; show(idx); }
+
+// keyboard
+window.addEventListener('keydown', (e)=>{
+  if(e.key === 'ArrowRight' || e.key === 'PageDown') next();
+  if(e.key === 'ArrowLeft' || e.key === 'PageUp') prev();
+  if(e.key === 'Home') { idx = 0; show(idx);} 
+  if(e.key === 'End') { idx = slides.length-1; show(idx);} 
+});
+
+// touch swipe
+let touchStartX = null;
+window.addEventListener('touchstart', (e)=>{ touchStartX = e.touches[0].clientX; });
+window.addEventListener('touchend', (e)=>{ if(touchStartX==null) return; const dx = e.changedTouches[0].clientX - touchStartX; if(dx<-40) next(); if(dx>40) prev(); touchStartX=null; });
+
+// init
+show(0);
+
+</script>
+
+</body>
+</html>
