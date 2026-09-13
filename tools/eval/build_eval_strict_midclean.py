@@ -110,7 +110,7 @@ def main():
         char_id = train_char_map[(sname, char)]
         calli_id = train_calli_map[(sname, calli)]
         out_rows.append({
-            "image_path": f"final_imgs_256/{iid}.png",
+            "image_path": f"data/imgs/final_imgs_256/{iid}.png",
             "calligrapher": calli,
             "script": sname,
             "character": char,

@@ -1,9 +1,9 @@
 {
-  "_comment": "s30 DINO 真迹字表预训练（S21 骨架 + char 强化）：回到 S21 胜出的 DINO 真迹字表(freeze) + char_proj=mlp；调 drop 让模型更多学 char 内容分(cond_drop_which_glyph_prob=0.85 → drop-one 时 85% 保 char)；use_ot=true；数据用清洗版 train_fame_clean.csv + final_latents_fame_clean；eval 用 eval_fame_strict_clean.csv。默认早停(ssim_lpips, patience 5, min 20000)。",
+  "_comment": "s30 DINO 真迹字表预训练（S21 骨架 + char 强化）：回到 S21 胜出的 DINO 真迹字表(freeze) + char_proj=mlp；调 drop 让模型更多学 char 内容分(cond_drop_which_glyph_prob=0.85 → drop-one 时 85% 保 char)；use_ot=true；数据用清洗版 train_fame_clean.csv + data/latents/final_latents_fame_clean；eval 用 eval_fame_strict_clean.csv。默认早停(ssim_lpips, patience 5, min 20000)。",
   "experiment_name": "s30-dino-char-strong-pretrain",
   "data_csv": "assets/train_fame_clean.csv",
-  "latent_shards_dir": "final_latents_fame_clean",
-  "img_root": "final_imgs_256",
+  "latent_shards_dir": "data/latents/final_latents_fame_clean",
+  "img_root": "data/imgs/final_imgs_256",
   "results_dir": "assets/results/s30_dino_char_strong_pretrain",
 
   "model": "DiT-2Cond-S/2",
@@ -13,8 +13,8 @@
   "char_embed_dim": 384,
   "char_proj_mode": "mlp",
   "freeze_char_table": true,
-  "char_dino_embeddings": "pretrained_models/dino_embeddings/glyph_dino_embeddings_384.npy",
-  "char_dino_index": "pretrained_models/dino_embeddings/glyph_dino_index.json",
+  "char_dino_embeddings": "data/pretrained/dino_embeddings/glyph_dino_embeddings_384.npy",
+  "char_dino_index": "data/pretrained/dino_embeddings/glyph_dino_index.json",
   "dino_per_script_center": 1,
   "dino_fill_unknown": 1,
 
@@ -47,7 +47,7 @@
   "use_ema": true,
   "ema_decay": 0.9999,
   "ema_warmup": true,
-  "vae_path": "pretrained_models/sd-vae-ft-ema",
+  "vae_path": "data/pretrained/sd-vae-ft-ema",
   "vae_scaling_factor": 0.18215,
   "use_lora": false,
   "reset_cond_head": false,

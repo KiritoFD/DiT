@@ -26,8 +26,8 @@ std-g 场景下模型被要求写 std 骨架的字形，与 GT 图天然不同 �
 
 | 对 | cos 相似度 |
 |---|---|
-| std_skel ↔ GT_1px_skel | **0.9017** |
-| std_skel ↔ GT_target | 0.593 |
+| data/skel/std_skel ↔ GT_1px_skel | **0.9017** |
+| data/skel/std_skel ↔ GT_target | 0.593 |
 | GT_skel ↔ GT_target | 0.626 |
 
 std 骨架 latent 与 GT 骨架 latent **几乎等价**（0.90）。

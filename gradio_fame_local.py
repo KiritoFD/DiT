@@ -141,7 +141,7 @@ for _ps, _ck in (("1px", "_sync_work/ckpts/ctrl_1px_0050000.pt"),   # 1px GT ske
     CTRLS[_ps] = _c
     print(f"[load] ctrl[{_ps}] {_ck} inj={sum(1 for k in _sd if 'injection' in k)}", flush=True)
 
-vae = load_eval_vae(dev, "pretrained_models/sd-vae-ft-ema")
+vae = load_eval_vae(dev, "data/pretrained/sd-vae-ft-ema")
 diff = build_diffusion(50, "flow")
 print("[load] done", flush=True)
 
@@ -167,8 +167,8 @@ USED_IDS = set(CHAR_IDS.values())
 _next_cid = [7000]
 
 BANK_TRAIN = {}
-for _ps, _fn in (("1px", "_sync_work/skel_bank_train_1px.npz"),   # 1px GT 骨架库 (与 1px ctrl 训练条件一致)
-                 ("3px", "skel_bank_train.npz")):                 # 3px GT 骨架库 (与 3px ctrl 训练条件一致)
+for _ps, _fn in (("1px", "_sync_work/data/skel/skel_bank_train_1px.npz"),   # 1px GT 骨架库 (与 1px ctrl 训练条件一致)
+                 ("3px", "data/skel/skel_bank_train.npz")):                 # 3px GT 骨架库 (与 3px ctrl 训练条件一致)
     if not os.path.isfile(_fn):
         print(f"[WARN] 骨架库缺失: {_fn} -> {_ps} 直出不可用, 回退 ZERO-SHOT", flush=True)
         continue
@@ -179,7 +179,7 @@ for _ps, _fn in (("1px", "_sync_work/skel_bank_train_1px.npz"),   # 1px GT 骨�
     print(f"[bank] train[{_ps}]: {len(BANK_TRAIN[_ps])} entries <- {_fn}", flush=True)
 
 BANK_STD1 = {}   # 1px 标准字形骨架库 (与 s27 训练条件同源, zero-shot 优先查表)
-_std1_fn = "_sync_work/skel_bank_std1.npz"
+_std1_fn = "_sync_work/data/skel/skel_bank_std1.npz"
 if os.path.isfile(_std1_fn):
     _b = np.load(_std1_fn)
     _lat = _b["latents"]
@@ -210,7 +210,7 @@ def decode_sk(sk_lat):
         rec = vae.decode(torch.from_numpy(sk_lat.astype(np.float32))[None].to(dev) / 0.18215).sample.float().cpu()
     return Image.fromarray((((rec[0].clamp(-1, 1) + 1) / 2).permute(1, 2, 0).numpy() * 255).astype("uint8"))
 
-def std_skel(script, ch, ps):
+def data/skel/std_skel(script, ch, ps):
     img = Image.new("L", (256, 256), 255)
     d = ImageDraw.Draw(img)
     d.text((128, 128), ch, font=font_of(script, 200), fill=0, anchor="mm")
@@ -308,7 +308,7 @@ def generate(ch, callig, script, steps, cfg, seed_n, ps, sketch, model_key="s21"
         badge_color = "#CC0000"
         sk_img = decode_sk(sk_lat)
     else:
-        sk_lat, sk_img = std_skel(script, ch, _ps)
+        sk_lat, sk_img = data/skel/std_skel(script, ch, _ps)
         if sk_lat is None:
             return None, None, None, None, f"标准字体不包含「{ch}」，无法构建骨架", SESSION[:]
         if known_char:

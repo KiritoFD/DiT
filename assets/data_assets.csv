@@ -59,21 +59,21 @@ test5.csv,dataset_csv,4653,323,2591,5,0.23,cols=image_path|calligrapher|script|c
 train.csv,dataset_csv,298281,1850,7765,12,39.26,cols=image_path|canny_path|skeleton_path|calligrapher|script|character|calligrapher_id|script_id
 train5.csv,dataset_csv,147841,1004,7011,5,7.37,cols=image_path|calligrapher|script|character|calligrapher_id|script_id|character_id
 val.csv,dataset_csv,37285,883,6503,12,4.91,cols=image_path|canny_path|skeleton_path|calligrapher|script|character|calligrapher_id|script_id
-final_imgs_256,image_dir,329715,,,,11898.8,latent_shape= dtype= keys=
-final_latents_fame,latent_dir,20,,,,358.7,"latent_shape=(2626, 4, 32, 32) dtype=float16 keys=latents,img_ids"
-final_latents_f4,latent_dir,26,,,,3020.7,latent_shape= dtype= keys=
-final_latents_mid_clean,latent_dir,25,,,,807.9,latent_shape= dtype= keys=
+data/imgs/final_imgs_256,image_dir,329715,,,,11898.8,latent_shape= dtype= keys=
+data/latents/final_latents_fame,latent_dir,20,,,,358.7,"latent_shape=(2626, 4, 32, 32) dtype=float16 keys=latents,img_ids"
+data/latents/final_latents_f4,latent_dir,26,,,,3020.7,latent_shape= dtype= keys=
+data/latents/final_latents_mid_clean,latent_dir,25,,,,807.9,latent_shape= dtype= keys=
 final_latents,latent_dir,66,,,,2577.2,latent_shape= dtype= keys=
-final_skel3_fame,skel_png_dir,51822,,,,94.2,latent_shape= dtype= keys=
-final_skel1_fame,skel_png_dir,51822,,,,80.1,latent_shape= dtype= keys=
-final_skel1,skel_png_dir,24225,,,,36.5,latent_shape= dtype= keys=
-final_skel_latents_fame,skel_latent_dir,20,,,,339.3,"latent_shape=(2592, 4, 32, 32) dtype=float16 keys=latents,img_ids"
-final_skel_latents_fame_1px,skel_latent_dir,21,,,,668.7,"latent_shape=(2592, 4, 32, 32) dtype=float16 keys=latents,img_ids"
-final_skel_latents_train_1px,skel_latent_dir,1475,,,,185.3,latent_shape= dtype= keys=
-final_skel_latents_eval_1px,skel_latent_dir,32,,,,3.9,latent_shape= dtype= keys=
+data/skel/final_skel3_fame,skel_png_dir,51822,,,,94.2,latent_shape= dtype= keys=
+data/skel/final_skel1_fame,skel_png_dir,51822,,,,80.1,latent_shape= dtype= keys=
+data/skel/final_skel1,skel_png_dir,24225,,,,36.5,latent_shape= dtype= keys=
+data/skel/final_skel_latents_fame,skel_latent_dir,20,,,,339.3,"latent_shape=(2592, 4, 32, 32) dtype=float16 keys=latents,img_ids"
+data/skel/final_skel_latents_fame_1px,skel_latent_dir,21,,,,668.7,"latent_shape=(2592, 4, 32, 32) dtype=float16 keys=latents,img_ids"
+data/skel/final_skel_latents_train_1px,skel_latent_dir,1475,,,,185.3,latent_shape= dtype= keys=
+data/skel/final_skel_latents_eval_1px,skel_latent_dir,32,,,,3.9,latent_shape= dtype= keys=
 src/utils/std_glyph_latent,glyph_lib,0,,,,,** 目录不存在 **
 src/utils/std_glyph_latent_v2,glyph_lib,43755,,,,347.2,kai_gb=8118; kai_st=7842; li_gb=7842; li_st=6651; preview=0; wei_st=6651; xing_st=6651
-pretrained_models/dino_embeddings/glyph_dino_embeddings_384.npy,pretrained,1,,,,30.0,"shape=(20468, 384) dtype=float32"
-pretrained_models/dino_embeddings/glyph_dino_index.json,pretrained,20468,,,,0.2,"keys=glyphs,count,source"
-pretrained_models/dinov2_vits14_pretrain.safetensors,pretrained,1,,,,84.2,dir/file
-pretrained_models/sd-vae-ft-ema,pretrained,1,,,,,VAE dir
+data/pretrained/dino_embeddings/glyph_dino_embeddings_384.npy,pretrained,1,,,,30.0,"shape=(20468, 384) dtype=float32"
+data/pretrained/dino_embeddings/glyph_dino_index.json,pretrained,20468,,,,0.2,"keys=glyphs,count,source"
+data/pretrained/dinov2_vits14_pretrain.safetensors,pretrained,1,,,,84.2,dir/file
+data/pretrained/sd-vae-ft-ema,pretrained,1,,,,,VAE dir

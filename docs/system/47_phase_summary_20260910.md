@@ -11,7 +11,7 @@
 - **主线模型**：`DiT-2Cond-Sp/2`（h512/d12，~59M）+ **std skel 骨架条件** + **41 书家冻结表** + **xattn 全 12 层骨架注入**。
 - **最好结果**：`c41x` 212.5k 步 ssim **0.7638** / skel_iou **0.2227** / lpips **0.1778**（n=10 协议）。
 - **当前推进**：新增"风格 token 每层注入"（46 号），三档容量 `n_style ∈ {16,32,64}` 正在串行从零训练。
-- **数据侧**：fame v9 去噪线**已被证伪并隔离**（`final_imgs_fame_v9_REJECTED`），训练继续用 `fame v8` + `fame3`，**v8 全程只读未动**。
+- **数据侧**：fame v9 去噪线**已被证伪并隔离**（`data/imgs/final_imgs_fame_v9_REJECTED`），训练继续用 `fame v8` + `fame3`，**v8 全程只读未动**。
 - **两条硬教训**：① 评估必须用**笔画级**指标（`skeleton_keep`），全图 `ink_delta` 会掩盖损伤；② 结构改动后**不能盲目 resume**（key 表面兼容、语义不安全）。
 
 ---
@@ -22,15 +22,15 @@
 
 | 数据 | 规模 | 用途 | 状态 |
 |---|---|---|---|
-| `final_imgs_256`（原始 MCCD 落盘） | 51,322 | 噪声诊断基线 | 只读 |
-| **`fame v8`**（`final_imgs_fame_v8`） | **51,822** | **v9c/v10 系列训练** | **只读未动 ✓** |
+| `data/imgs/final_imgs_256`（原始 MCCD 落盘） | 51,322 | 噪声诊断基线 | 只读 |
+| **`fame v8`**（`data/imgs/final_imgs_fame_v8`） | **51,822** | **v9c/v10 系列训练** | **只读未动 ✓** |
 | `fame v9_REJECTED` | 51,321 | 去噪实验产物 | **已隔离，勿用** |
 | `fame3`（`train_fame3_clean_v8.csv`） | **28,386** | **v10b 主线训练** | 41 书家精选子集 |
 
 ### 1.2 fame3：书家收紧 + 骨架条件换代
 
 - 书家 **1013 → 41**（精选，样本/书家 ~700）→ 风格学习密度大增。
-- 骨架条件从"GT 实例骨架 latent"换成 **std skel latent**（`build_std_skel1_latents.py`，
+- 骨架条件从"GT 实例骨架 latent"换成 **std skel latent**（`build_data/skel/std_skel1_latents.py`，
   用字帖标准字形生成）——关键动机：**实例骨架推理时拿不到**。
 - 条件质量实测（`stdskel_gap.json`, n=3000）：`cos(std, GT_skel)=0.902`，
   `|std−GT|_nmse=0.197` → std 与实例骨架有 ~20% 缺口（笔势/个人风格），但远好于

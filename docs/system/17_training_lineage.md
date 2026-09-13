@@ -31,7 +31,7 @@ v8a_s30_base (预训练 132.5k, fame 数据)
 
 ### v8b 关键配置
 - 条件: `cond_drop_all=0.05 / one=0.30 / which_glyph=0.85 / struct=0.1`
-- 骨架条件: `final_skel_latents_fame_1px_v8/`（1px，非 3px）
+- 骨架条件: `data/skel/final_skel_latents_fame_1px_v8/`（1px，非 3px）
 - 注入: `injection=modulate`（ZeroAdaLN 零初始化）
 - eval: `eval_fame_strict_clean_v8.csv` n=100, cfg0.7, 每 2500 步
 

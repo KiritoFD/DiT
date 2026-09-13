@@ -73,7 +73,7 @@ c = t_embedder(t) + callig_proj(y_callig_emb) + char_proj(y_char_emb)
 | 书家 ID | `y_callig_embedder` (1,013 类) | 128 | 全局标量 | 已启用 |
 | 字 ID | `y_char_embedder` (35,130 类, DINO 初始化) | 384 | 全局标量 | 已启用（**冻结**） |
 | 标准字形 latent `g` | `std_glyph_latent_v2` | 4,096 | **4×32×32 空间图** | 代码完整但**接线失效**（见 §2.3） |
-| 骨架 latent | `final_skel_latents_fame` | 4,096 | **4×32×32 空间图** | ControlNet 专用，可用 |
+| 骨架 latent | `data/skel/final_skel_latents_fame` | 4,096 | **4×32×32 空间图** | ControlNet 专用，可用 |
 
 **核心量化对比**（`condition_dims.csv`）：
 

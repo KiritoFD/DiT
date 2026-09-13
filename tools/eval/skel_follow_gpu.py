@@ -166,7 +166,7 @@ def main():
         conds = [(1, 0)]   # v10b: 值被忽略
         print("[char] 无 char 因子 (v10b), y_char 忽略", flush=True)
 
-    vae = load_eval_vae(dev, "pretrained_models/sd-vae-ft-ema")
+    vae = load_eval_vae(dev, "data/pretrained/sd-vae-ft-ema")
     diff = build_diffusion(50, "flow")
     y_callig = torch.tensor([1])   # 固定书家 (与 CPU 版一致)
 

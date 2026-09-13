@@ -90,7 +90,7 @@
 |---|---|---|---|
 | D3 | config 残留字段 | 所有 `c41*`/`sty*` config | `num_characters:35130`、`char_embed_dim:384`、`char_proj_mode:"mlp"`、`freeze_char_table:false`、`cond_drop_which_glyph_prob:0.85` —— `use_char_cond=false` 下**全部不生效**（代码已确认不建参数、不参与分支），纯误导读者的噪声 |
 | D5 | 孤儿 config | `v10b{repa_strong,norepa,shallow_repa}.json` | 43 号设计的 5 实验链**全仓库无结果记录**；要么补跑要么删，避免被误认为"已做过对照" |
-| D7 | `final_imgs_fame_v9_REJECTED`（51,321 张） | 远程 | 30 号已全量证伪（骨架丢>5% 共 5414 张），无保留价值 |
+| D7 | `data/imgs/final_imgs_fame_v9_REJECTED`（51,321 张） | 远程 | 30 号已全量证伪（骨架丢>5% 共 5414 张），无保留价值 |
 | — | ❌ **D1 / D2 撤回** | — | 见 §1，实测证明必需 |
 
 ---

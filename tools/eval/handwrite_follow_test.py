@@ -126,7 +126,7 @@ def main():
     picks = random.sample(cand, args.n)
     print("测试字:", " ".join(picks), flush=True)
 
-    vae = load_eval_vae(dev, "pretrained_models/sd-vae-ft-ema")
+    vae = load_eval_vae(dev, "data/pretrained/sd-vae-ft-ema")
     from src.loss import create_diffusion_or_flow
     flow = create_diffusion_or_flow("50", diffusion_type="flow", t_sampler="logit_normal",
                                     sampler="heun", shift=1.0)

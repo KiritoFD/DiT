@@ -15,9 +15,9 @@ for p in paths:
     prefixes[d] = prefixes.get(d, 0) + 1
 print('path dirs (sample 5000):', prefixes)
 
-# 2) final_latents_fame_clean vs final_latents_fame 内容是否一致?
-a = np.load('final_latents_fame_clean/shard_0000.npz')
-b = np.load('final_latents_fame/shard_0000.npz')
+# 2) data/latents/final_latents_fame_clean vs data/latents/final_latents_fame 内容是否一致?
+a = np.load('data/latents/final_latents_fame_clean/shard_0000.npz')
+b = np.load('data/latents/final_latents_fame/shard_0000.npz')
 print('clean==plain shard0 ids equal:', np.array_equal(a['img_ids'], b['img_ids']))
 print('clean==plain shard0 latents equal:', np.array_equal(a['latents'], b['latents']))
 if not np.array_equal(a['latents'], b['latents']):
@@ -40,13 +40,13 @@ except Exception:
     pass
 print('changed ids:', len(changed))
 
-# 4) final_imgs_fame_clean vs final_imgs_256: 训练 csv 用哪个? img 文件是否已更新?
+# 4) data/imgs/final_imgs_fame_clean vs data/imgs/final_imgs_256: 训练 csv 用哪个? img 文件是否已更新?
 # 检查 changed 中一个 id 的两个目录文件是否一致
 sample = sorted(changed)[:3]
 from PIL import Image
 for iid in sample:
-    f_clean = 'final_imgs_fame_clean/%d.png' % iid
-    f_plain = 'final_imgs_256/%d.png' % iid
+    f_clean = 'data/imgs/final_imgs_fame_clean/%d.png' % iid
+    f_plain = 'data/imgs/final_imgs_256/%d.png' % iid
     ex1, ex2 = os.path.exists(f_clean), os.path.exists(f_plain)
     same = None
     if ex1 and ex2:

@@ -6,7 +6,7 @@ b1/b2/b3 = 同一算子不同强度: 测笔画宽 w, 朝带中 mid=(4.5+9)/2=6.7
   target = K*(mid-w), 封顶 cap_frac*w, 每 pass ≈ ±2px, 离散二值形态学(纯黑白无中间灰)
   b1: K=0.6 cap 0.35w   b2: K=1.2 cap 0.5w   b3: K=2.0 cap 0.65w
 细→粗 / 粗→细, 更好看更好学. 无 _a/_c.
-输出: assets/fame3-e/<id>_{b1,b2,b3}.png + assets/train_fame3_e.csv
+输出: data/imgs/fame3-e/<id>_{b1,b2,b3}.png + assets/train_fame3_e.csv
 """
 import csv
 import json
@@ -20,7 +20,7 @@ from PIL import Image, ImageFilter
 
 ROOT = "/root/Workspace/xy/DiT"
 SRC_CSV = f"{ROOT}/assets/train_fame3_clean_v8.csv"
-OUT_DIR = f"{ROOT}/assets/fame3-e"
+OUT_DIR = f"{ROOT}/data/imgs/fame3-e"
 OUT_CSV = f"{ROOT}/assets/train_fame3_e.csv"
 sys.stdout.reconfigure(encoding="utf-8")
 
@@ -111,7 +111,7 @@ if __name__ == "__main__":
             base = os.path.splitext(os.path.basename(r["image_path"]))[0]
             for kind in KINDS:
                 r2 = dict(r)
-                r2["image_path"] = f"assets/fame3-e/{base}_{kind}.png"
+                r2["image_path"] = f"data/imgs/fame3-e/{base}_{kind}.png"
                 r2["aug"] = kind
                 w.writerow(r2)
     n = sum(1 for _ in open(OUT_CSV, encoding="utf-8")) - 1

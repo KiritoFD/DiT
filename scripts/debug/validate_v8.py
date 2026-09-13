@@ -5,7 +5,7 @@ os.chdir('/root/Workspace/xy/DiT')
 import torchvision.transforms as T
 tf = T.Compose([T.Resize((256, 256)), T.ToTensor(), T.Normalize([0.5]*3, [0.5]*3)])
 from diffusers.models import AutoencoderKL
-vae = AutoencoderKL.from_pretrained('pretrained_models/sd-vae-ft-ema').eval().cuda()
+vae = AutoencoderKL.from_pretrained('data/pretrained/sd-vae-ft-ema').eval().cuda()
 
 def enc(img):
     with torch.no_grad():
@@ -43,22 +43,22 @@ print('validating %d changed ids ...' % len(sample))
 bad_img = bad_s1 = bad_s3 = 0
 for iid in sample:
     # img latent
-    img = tf(Image.open('final_imgs_fame_v8/%d.png' % iid).convert('RGB'))
+    img = tf(Image.open('data/imgs/final_imgs_fame_v8/%d.png' % iid).convert('RGB'))
     z_img = enc(img)
-    st_img = find_in('final_latents_fame_v8', iid)
+    st_img = find_in('data/latents/final_latents_fame_v8', iid)
     if st_img is None or float(np.abs(st_img.astype(np.float32) - z_img.astype(np.float32)).max()) > 0.05:
         bad_img += 1
     # skel1
-    img1 = tf(Image.open('final_skel1_fame_v8/%d.png' % iid).convert('RGB'))
+    img1 = tf(Image.open('data/skel/final_skel1_fame_v8/%d.png' % iid).convert('RGB'))
     z1 = enc(img1)
-    st1 = find_in('final_skel_latents_fame_1px_v8', iid)
+    st1 = find_in('data/skel/final_skel_latents_fame_1px_v8', iid)
     if st1 is None or float(np.abs(st1.astype(np.float32) - z1.astype(np.float32)).max()) > 0.05:
         bad_s1 += 1
     # skel3
-    sk3 = np.asarray(Image.open('final_skel3_fame_v8/%d.png' % iid).convert('L')).astype(np.float32) / 255.0 * 2 - 1
+    sk3 = np.asarray(Image.open('data/skel/final_skel3_fame_v8/%d.png' % iid).convert('L')).astype(np.float32) / 255.0 * 2 - 1
     x3 = torch.from_numpy(np.repeat(sk3[None, :, :], 3, axis=0))  # (3,256,256)
     z3 = enc(x3)
-    st3 = find_in('final_skel_latents_fame_v8', iid)
+    st3 = find_in('data/skel/final_skel_latents_fame_v8', iid)
     if st3 is None or float(np.abs(st3.astype(np.float32) - z3.astype(np.float32)).max()) > 0.05:
         bad_s3 += 1
 print('img  consistency: %d/%d OK' % (len(sample) - bad_img, len(sample)))

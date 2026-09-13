@@ -78,7 +78,7 @@ def eval_one(run_dir, step, cfgv, args, vae, rows_out):
     tf = T.Compose([
         T.Resize((256, 256), interpolation=T.InterpolationMode.BICUBIC),
         T.ToTensor(), T.Normalize([0.5] * 3, [0.5] * 3)])
-    img_root = cfg.get("img_root", "final_imgs_256")
+    img_root = cfg.get("img_root", "data/imgs/final_imgs_256")
     gts = torch.stack([
         tf(Image.open(os.path.join(ROOT, img_root,
                                    os.path.basename(r["image_path"]))).convert("RGB"))
@@ -128,7 +128,7 @@ def eval_one(run_dir, step, cfgv, args, vae, rows_out):
 def main():
     args = parse_args()
     device = torch.device("cuda")
-    vae = load_eval_vae(device, os.path.join(ROOT, "pretrained_models/sd-vae-ft-ema"))
+    vae = load_eval_vae(device, os.path.join(ROOT, "data/pretrained/sd-vae-ft-ema"))
     rows_out = []
     for name, run_dir, step in EXPERIMENTS:
         for cfgv10 in args.cfgs:

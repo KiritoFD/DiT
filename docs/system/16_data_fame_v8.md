@@ -47,25 +47,25 @@ MCCD 原始 (62k+ 张, 1011 书家, 12 书体)
 （切断触边笔画，v6 事故：最上面一笔被切）、任何缩放。
 
 全量执行结果：切条 11,287、去赃物 ~21,022、极性修正 896+97+39（人工标注）、
-0 错误。原图备份 `final_imgs_256_v7backup/`（可回滚）。
+0 错误。原图备份 `data/imgs/final_imgs_256_v7backup/`（可回滚）。
 
 ## 4. 现行目录地图
 
 | 目录 | 内容 | 消费方 |
 |---|---|---|
-| **`final_imgs_fame_v8/`** | fame 图像（51,822 张清洗后） | v8 训练 img_root |
-| **`final_latents_fame_v8/`** | img VAE latents（20 shards, f16 4×32×32） | v8a/v8b 训练 |
-| **`final_skel1_fame_v8/`** | 1px 骨架 PNG（51,822） | 骨架可视化 |
-| **`final_skel_latents_fame_1px_v8/`** | 1px 骨架 latents（20 shards） | **v8b ctrl 条件** |
-| `final_imgs_256/` | 共享 GT（REPA 等用） | 非 fame 训练 |
-| `final_imgs_256_v7backup/` | v7 清洗前备份 | 回滚 |
+| **`data/imgs/final_imgs_fame_v8/`** | fame 图像（51,822 张清洗后） | v8 训练 img_root |
+| **`data/latents/final_latents_fame_v8/`** | img VAE latents（20 shards, f16 4×32×32） | v8a/v8b 训练 |
+| **`data/skel/final_skel1_fame_v8/`** | 1px 骨架 PNG（51,822） | 骨架可视化 |
+| **`data/skel/final_skel_latents_fame_1px_v8/`** | 1px 骨架 latents（20 shards） | **v8b ctrl 条件** |
+| `data/imgs/final_imgs_256/` | 共享 GT（REPA 等用） | 非 fame 训练 |
+| `data/imgs/final_imgs_256_v7backup/` | v7 清洗前备份 | 回滚 |
 | `assets/train_fame_clean_v8.csv` | v8 训练表（51,321） | v8 训练 |
 | `assets/eval_fame_strict_clean_v8.csv` | v8 评测集（500，严格凸包） | v8 eval |
 | `assets/all_experiments_eval_20260903.csv` | 全实验汇总（224 run） | 查询 |
 | `archive_20260903/` | 清洗 manifest/指标 json | 溯源 |
 
-已删除（09-03 清理，被 v8 取代）：`fame.npz`、`final_latents_fame/`、
-`final_skel{1,3}_fame/`、`final_skel_latents_fame[_std]/`、`final_imgs_fame_clean/`。
+已删除（09-03 清理，被 v8 取代）：`fame.npz`、`data/latents/final_latents_fame/`、
+`data/skel/final_skel{1,3}_fame/`、`data/skel/final_skel_latents_fame[_std]/`、`data/imgs/final_imgs_fame_clean/`。
 
 ## 5. 骨架体系
 
@@ -79,8 +79,8 @@ ControlNet 条件 = 骨架 latent（4×32×32 f16）。
 ### 骨架库（推理用）
 | 库 | 内容 | 覆盖 |
 |---|---|---|
-| `skel_bank_train.npz` | 训练集每字一张骨架 latent（14,372 字） | 训练字 zero-shot |
-| `skel_bank_std.npz` | 标准字体渲染骨架 latent（238 eval 字） | 楷/行/隶（草/篆/六体无标准字体） |
+| `data/skel/skel_bank_train.npz` | 训练集每字一张骨架 latent（14,372 字） | 训练字 zero-shot |
+| `data/skel/skel_bank_std.npz` | 标准字体渲染骨架 latent（238 eval 字） | 楷/行/隶（草/篆/六体无标准字体） |
 
 ## 6. 评测集（严格凸包准则）
 
@@ -107,4 +107,4 @@ ControlNet 条件 = 骨架 latent（4×32×32 f16）。
 1. ink≈0.5 的宽白边拓片（~0.1%）判据边界，需人工兜底；
 2. 石花纹理与笔画粘连的深纹理拓片，去噪后笔画有残缺（v6 探测案例 江/旗）；
 3. `skel_bank_{train,std}.npz` 未同步清洗后变更（推理影响极小）；
-4. fame.npz/final_latents_fame 旧目录已删——旧脚本引用需改指 v8 目录。
+4. fame.npz/data/latents/final_latents_fame 旧目录已删——旧脚本引用需改指 v8 目录。

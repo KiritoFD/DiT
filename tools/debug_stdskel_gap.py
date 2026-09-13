@@ -3,9 +3,9 @@
 """debug_stdskel_gap.py — 量化 std 骨架 latent 与 GT 结构的 latent 域 gap (CPU, 只读数据).
 
 对 fame3 训练集前 N 个 img_id, 读三份 latent 两两比较 cosine 相似度:
-  A = std_skel1_latents_fame3_v8    (std 骨架, 训练 g)
-  B = final_skel_latents_fame_1px_v8 (GT 1px 实例骨架, 历史成功条件)
-  C = final_latents_fame3_v8         (GT 目标 latent, 训练目标 x0)
+  A = data/skel/std_skel1_latents_fame3_v8    (std 骨架, 训练 g)
+  B = data/skel/final_skel_latents_fame_1px_v8 (GT 1px 实例骨架, 历史成功条件)
+  C = data/latents/final_latents_fame3_v8         (GT 目标 latent, 训练目标 x0)
 
 用法: python tools/debug_stdskel_gap.py --n 3000
 """
@@ -44,9 +44,9 @@ def main():
     ap.add_argument("--out", default="assets/results/stdskel_gap.json")
     args = ap.parse_args()
 
-    dirA, dirB, dirC = ("std_skel1_latents_fame3_v8",
-                        "final_skel_latents_fame_1px_v8",
-                        "final_latents_fame3_v8")
+    dirA, dirB, dirC = ("data/skel/std_skel1_latents_fame3_v8",
+                        "data/skel/final_skel_latents_fame_1px_v8",
+                        "data/latents/final_latents_fame3_v8")
     print("加载 A(std skel)...", flush=True); A = load_all(dirA)
     print("加载 B(GT 1px skel)...", flush=True); B = load_all(dirB)
     print("加载 C(GT target)...", flush=True); C = load_all(dirC)
@@ -81,7 +81,7 @@ def main():
         res[label] = {"mean": round(m, 4), "median": round(med, 4)}
 
     print("\n能量 (L2 norm):", flush=True)
-    for label, arr in [("|std_skel|", nA), ("|GT_skel|", nB), ("|GT_target|", nC)]:
+    for label, arr in [("|data/skel/std_skel|", nA), ("|GT_skel|", nB), ("|GT_target|", nC)]:
         m = float(np.mean(arr))
         print(f"  {label:<14} mean={m:.3f}", flush=True)
         res[label] = round(m, 3)

@@ -65,7 +65,7 @@ def worker(cfg, q):
     import torchvision.transforms as T
     tf = T.Compose([T.Resize((256, 256)), T.ToTensor(), T.Normalize([0.5]*3, [0.5]*3)])
     from diffusers.models import AutoencoderKL
-    vae = AutoencoderKL.from_pretrained(BASE + '/pretrained_models/sd-vae-ft-ema').eval()
+    vae = AutoencoderKL.from_pretrained(BASE + '/data/pretrained/sd-vae-ft-ema').eval()
     if dtype == 'bf16':
         vae = vae.to(torch.bfloat16)
     def enc(x):
@@ -98,8 +98,8 @@ def worker(cfg, q):
         sk = skeletonize(a < 127)
         sk3 = np.where(dil3(sk), 0, 255).astype('uint8')   # 3px 骨架 PNG (黑线白底)
         sk1 = np.where(sk, 0, 255).astype('uint8')          # 1px 骨架 PNG
-        Image.fromarray(sk3, 'L').save('final_skel3_fame/%d.png' % iid)
-        Image.fromarray(sk1, 'L').save('final_skel1_fame/%d.png' % iid)
+        Image.fromarray(sk3, 'L').save('data/skel/final_skel3_fame/%d.png' % iid)
+        Image.fromarray(sk1, 'L').save('data/skel/final_skel1_fame/%d.png' % iid)
         acc.append(tf(Image.open(p).convert('RGB')).numpy()); acc_id.append(iid)
         if len(acc) >= batch:
             flush_img()
@@ -111,7 +111,7 @@ def worker(cfg, q):
     # ---- pass 2: skel3 latent (灰度 -> [-1,1] 3ch) ----
     acc = []; acc_id = []
     for iid in mine:
-        sk3 = np.asarray(Image.open('final_skel3_fame/%d.png' % iid).convert('L'))
+        sk3 = np.asarray(Image.open('data/skel/final_skel3_fame/%d.png' % iid).convert('L'))
         x = np.repeat((sk3.astype(np.float32) / 255.0 * 2 - 1)[None, None, :, :], 3, axis=1)
         acc.append(x); acc_id.append(iid)
         if len(acc) >= batch:
@@ -133,7 +133,7 @@ def worker(cfg, q):
     # ---- pass 3: skel1 latent (PNG RGB) ----
     acc = []; acc_id = []
     for iid in mine:
-        acc.append(tf(Image.open('final_skel1_fame/%d.png' % iid).convert('RGB')).numpy()); acc_id.append(iid)
+        acc.append(tf(Image.open('data/skel/final_skel1_fame/%d.png' % iid).convert('RGB')).numpy()); acc_id.append(iid)
         if len(acc) >= batch:
             xb = torch.from_numpy(np.stack(acc))
             if dtype == 'bf16':
@@ -239,17 +239,17 @@ if __name__ == '__main__':
     n0 = patch_npz('fame.npz', img_lat)
     print('fame.npz patched:', n0, flush=True)
     n1 = 0
-    for shard in sorted(glob.glob('final_latents_fame/shard_*.npz')):
+    for shard in sorted(glob.glob('data/latents/final_latents_fame/shard_*.npz')):
         n1 += patch_npz(shard, img_lat)
-    print('final_latents_fame patched:', n1, flush=True)
+    print('data/latents/final_latents_fame patched:', n1, flush=True)
     n2 = 0
-    for shard in sorted(glob.glob('final_skel_latents_fame/shard_*.npz')):
+    for shard in sorted(glob.glob('data/skel/final_skel_latents_fame/shard_*.npz')):
         n2 += patch_npz(shard, skel3_lat)
-    print('final_skel_latents_fame patched:', n2, flush=True)
+    print('data/skel/final_skel_latents_fame patched:', n2, flush=True)
     n3 = 0
-    for shard in sorted(glob.glob('final_skel_latents_fame_1px/shard_*.npz')):
+    for shard in sorted(glob.glob('data/skel/final_skel_latents_fame_1px/shard_*.npz')):
         n3 += patch_npz(shard, skel1_lat)
-    print('final_skel_latents_fame_1px patched:', n3, flush=True)
+    print('data/skel/final_skel_latents_fame_1px patched:', n3, flush=True)
 
     # ---------------- skel 一致性抽查 ----------------
     import random
@@ -262,9 +262,9 @@ if __name__ == '__main__':
             a = np.asarray(Image.open(path_of[iid]).convert('L').resize((256, 256)))
         sk = skeletonize(a < 127)
         chk3 = np.where(dil3(sk), 0, 255).astype('uint8')
-        on3 = np.asarray(Image.open('final_skel3_fame/%d.png' % iid).convert('L'))
+        on3 = np.asarray(Image.open('data/skel/final_skel3_fame/%d.png' % iid).convert('L'))
         chk1 = np.where(sk, 0, 255).astype('uint8')
-        on1 = np.asarray(Image.open('final_skel1_fame/%d.png' % iid).convert('L'))
+        on1 = np.asarray(Image.open('data/skel/final_skel1_fame/%d.png' % iid).convert('L'))
         if not np.array_equal(chk3, on3) or not np.array_equal(chk1, on1):
             bad += 1
     print('skel consistency spot-check: %d/%d OK' % (len(sample) - bad, len(sample)), flush=True)

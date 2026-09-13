@@ -3,7 +3,7 @@
 """debug_fame3_stdskel.py — v10b-stdskel-fame3 的 std-g 通路诊断 (GPU).
 
 针对当前实验 (训练 g = std 骨架 latent, 无 GT 实例信息) 做数值诊断, 回答:
-  1. g 来源一致性 : 读到的 g 是否真是 std_skel1 (非 GT 泄漏), 覆盖几何
+  1. g 来源一致性 : 读到的 g 是否真是 data/skel/std_skel1 (非 GT 泄漏), 覆盖几何
   2. glyph_scale   : 训练后 scale 学到多少 (init 0.4), 是否漂离/趋零 (g 通路生命信号)
   3. g 注入作用    : 有/无 g 的整网输出相对差 (应 >~2%)
   4. 逐层 g 衰减   : 单层 token-add 穿过 12 block 后被稀释到多少 (每层有/无 g 相对差)
@@ -196,7 +196,7 @@ def main():
 
     # ── 5. follow IoU3 (vs 输入 std 骨架) ──
     from src.eval.inference import load_eval_vae, sample_latents, build_diffusion
-    vae = load_eval_vae(dev, "pretrained_models/sd-vae-ft-ema")
+    vae = load_eval_vae(dev, "data/pretrained/sd-vae-ft-ema")
     diff = build_diffusion(int(a.get("eval_steps", 50)), "flow")
     n_follow = min(args.n, len(ds))
     sub = DataLoader(Subset(ds, list(range(n_follow))), batch_size=args.batch,

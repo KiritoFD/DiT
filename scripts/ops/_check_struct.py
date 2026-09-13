@@ -14,7 +14,7 @@ os.chdir("/root/Workspace/xy/DiT")
 
 # ---- 1) VAE decode 值域 (CPU, 避免与训练抢 GPU) ----
 from diffusers.models import AutoencoderKL
-vae = AutoencoderKL.from_pretrained("pretrained_models/sd-vae-ft-ema")
+vae = AutoencoderKL.from_pretrained("data/pretrained/sd-vae-ft-ema")
 vae.eval()
 vae = vae.to("cpu")
 # 用真实 latent shard 抽几张来 decode (接近训练输入分布)
@@ -39,8 +39,8 @@ print("frac pixels outside [-1,1]: %.4f" % frac_oob)
 
 # ---- 2) GT canny/skel 值域 ----
 import PIL.Image as Image
-c_dir = "final_canny"; s_dir = "final_skeleton"
-for sub in ["final_canny", "final_skel" ]:
+c_dir = "final_canny"; s_dir = "data/skel/final_skeleton"
+for sub in ["final_canny", "data/skel/final_skel" ]:
     pass
 cf = os.path.join(c_dir, os.listdir(c_dir)[0])
 sf = os.path.join(s_dir, os.listdir(s_dir)[0])
@@ -53,7 +53,7 @@ from latent_dataset import MCCDLatentDataset
 import pandas as pd
 df = pd.read_csv("assets/train_top6.csv")
 ds = MCCDLatentDataset(csv_file="assets/train_top6.csv", latent_shards_dir="final_latents",
-                       img_root="final_imgs_256", canny_root=None, skel_root=None,
+                       img_root="data/imgs/final_imgs_256", canny_root=None, skel_root=None,
                        load_canny=True, load_skel=True)
 b = ds[0]
 print("sample keys:", list(b.keys()) if isinstance(b, dict) else type(b))

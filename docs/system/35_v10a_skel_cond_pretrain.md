@@ -33,8 +33,8 @@ skel_iou 0.4229、base 臂 0.5295 > v9a 自身——联训无崩塌且为正收�
 
 ```
 global_batch_size=320  compile=true  use_checkpoint=false   ← 三件套必须齐全(见 §4 陷阱)
-data_csv=train_fame_clean_v8.csv  latent_shards_dir=final_latents_fame_v8
-skel_as_glyph_cond=true  skel_latent_shards_dir=final_skel_latents_fame_1px_v8
+data_csv=train_fame_clean_v8.csv  latent_shards_dir=data/latents/final_latents_fame_v8
+skel_as_glyph_cond=true  skel_latent_shards_dir=data/skel/final_skel_latents_fame_1px_v8
 glyph_scale_init=0.4  glyph_drop_prob=0.1  glyph_inject_layers=0
 freeze_char_table=false  (从头无 DINO index, char 表随机初始化需可训练)
 lr=1.5e-4 warmup=3000 max=150k  REPA w=0.1 layer8  auto_eval=false (eval 归 CPU daemon)

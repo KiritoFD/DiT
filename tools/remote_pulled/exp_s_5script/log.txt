@@ -2,7 +2,7 @@
 [[34m2026-08-15 13:10:17[0m] Building 3-Cond model: DiT-3Cond-S/2 (callig=1011, script=5, char=7026)
 [[34m2026-08-15 13:10:17[0m] Trainable Parameters: 36,160,544
 [[34m2026-08-15 13:10:17[0m] Frozen Parameters: 98,304 (trainable ratio: 99.73%)
-[[34m2026-08-15 13:10:18[0m] Loading VAE from local path: pretrained_models/sd-vae-ft-ema
+[[34m2026-08-15 13:10:18[0m] Loading VAE from local path: data/pretrained/sd-vae-ft-ema
 [[34m2026-08-15 13:10:18[0m] Preparing auto-eval cache (csv=assets/fast100.csv, n=100) ...
 [[34m2026-08-15 13:10:19[0m] Auto-eval cache ready (free-sampling mode).
 [[34m2026-08-15 13:10:19[0m] DiT Parameters: 36,258,848

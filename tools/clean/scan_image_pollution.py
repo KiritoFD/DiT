@@ -147,7 +147,7 @@ def analyze(path):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--csv", default="assets/train_fame.csv")
-    ap.add_argument("--img-root", default="final_imgs_256")
+    ap.add_argument("--img-root", default="data/imgs/final_imgs_256")
     ap.add_argument("--out", default="scan_train.csv")
     ap.add_argument("--workers", type=int, default=32)
     ap.add_argument("--limit", type=int, default=0)

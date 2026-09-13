@@ -5,7 +5,7 @@
 [[34m2026-08-17 11:45:03[0m] Frozen Parameters: 98,304 (trainable ratio: 99.77%)
 [[34m2026-08-17 11:45:05[0m] [EMA] restored EMA weights from checkpoint
 [[34m2026-08-17 11:45:05[0m] [EMA] enabled with decay=0.9999
-[[34m2026-08-17 11:45:05[0m] Loading VAE from local path: pretrained_models/sd-vae-ft-ema
+[[34m2026-08-17 11:45:05[0m] Loading VAE from local path: data/pretrained/sd-vae-ft-ema
 [[34m2026-08-17 11:45:05[0m] Preparing auto-eval cache (csv=assets/eval100_top30.csv, n=100) ...
 [[34m2026-08-17 11:45:05[0m] Auto-eval cache ready (free-sampling mode).
 [[34m2026-08-17 11:45:05[0m] Show5 展示 cache ready: assets/eval5_top30.csv (5 样本)

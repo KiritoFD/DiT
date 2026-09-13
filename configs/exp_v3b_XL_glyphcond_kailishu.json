@@ -3,7 +3,7 @@
   "data_csv": "kailishu_train.csv",
   "data_dir": "",
   "results_dir": "assets/results/v3b_xl_glyphcond",
-  "pretrained": "pretrained_models/DiT-XL-2-256x256.pt",
+  "pretrained": "data/pretrained/DiT-XL-2-256x256.pt",
   "model": "DiT-2Cond-XL/2",
   "cond_mode": "2cond",
   "condition_fusion": "xl_highdim",
@@ -32,7 +32,7 @@
   "ema_decay": 0.9999,
   "ema_warmup": true,
   "vae": "ema",
-  "vae_path": "pretrained_models/sd-vae-ft-ema",
+  "vae_path": "data/pretrained/sd-vae-ft-ema",
   "use_lora": true,
   "lora_r": 16,
   "lora_alpha": 16,
@@ -63,7 +63,7 @@
   "eval_seed": 0,
   "eval_batch": 16,
   "latent_shards_dir": "final_latents",
-  "img_root": "final_imgs_256",
+  "img_root": "data/imgs/final_imgs_256",
   "canny_root": "final_canny",
-  "skel_root": "final_skeleton"
+  "skel_root": "data/skel/final_skeleton"
 }

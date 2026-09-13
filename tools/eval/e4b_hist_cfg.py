@@ -40,7 +40,7 @@ def eval_one(ckpt, cfgs, csv, n, steps, batch, vae_batch):
     g = cache["skels_latent"].float()
     gts = cache["gts"]
     n_eff = gts.shape[0]
-    vae = load_eval_vae("cuda", "pretrained_models/sd-vae-ft-ema")
+    vae = load_eval_vae("cuda", "data/pretrained/sd-vae-ft-ema")
     tag = G.os.path.basename(G.os.path.dirname(G.os.path.dirname(ckpt))) + "/" + \
         G.os.path.basename(ckpt)
     out = {"ckpt": ckpt, "n": n_eff, "miss": len(miss)}

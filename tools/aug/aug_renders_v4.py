@@ -11,7 +11,7 @@
   保护: thin 过度腐蚀(面积<15% 或 <20px) -> 减 p; 仍不可 -> 跳过该变体.
 
 产物:
-  assets/fame3-sym/<uid>.png             (uid = 900000+idx 加粗 / 1800000+idx 变细)
+  data/imgs/fame3-sym/<uid>.png             (uid = 900000+idx 加粗 / 1800000+idx 变细)
   assets/train_fame3_sym_full.csv        (orig + 变体, 新增 aug 列: '' / tp / tn)
 """
 import csv
@@ -25,7 +25,7 @@ from scipy.ndimage import binary_dilation, binary_erosion, generate_binary_struc
 
 ROOT = "/root/Workspace/xy/DiT"
 SRC_CSV = f"{ROOT}/assets/train_fame3_clean_v8.csv"
-OUT_DIR = f"{ROOT}/assets/fame3-sym"
+OUT_DIR = f"{ROOT}/data/imgs/fame3-sym"
 OUT_CSV = f"{ROOT}/assets/train_fame3_sym_full.csv"
 ST = generate_binary_structure(2, 2)
 UID_T = 900000
@@ -95,7 +95,7 @@ if __name__ == "__main__":
                 if v.get(kind) is None:
                     continue
                 r2 = dict(r)
-                r2["image_path"] = f"assets/fame3-sym/{v[kind]}.png"
+                r2["image_path"] = f"data/imgs/fame3-sym/{v[kind]}.png"
                 r2["aug"] = kind
                 w.writerow(r2)
     print(f"{OUT_CSV}: {sum(1 for _ in open(OUT_CSV, encoding='utf-8')) - 1} rows", flush=True)

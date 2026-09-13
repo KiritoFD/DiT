@@ -39,13 +39,13 @@
 
 | 特征 | 形状 | 来源 |
 |---|---|---|
-| 真迹 DINO CLS 768 | glyph 级 20468×768 | `pretrained_models/dino_embeddings/glyph_dino_embeddings.npy` |
+| 真迹 DINO CLS 768 | glyph 级 20468×768 | `data/pretrained/dino_embeddings/glyph_dino_embeddings.npy` |
 | 真迹 DINO CLS 384 | glyph 级 20468×384 | `glyph_dino_embeddings_384.npy`（PCA/投影降维） |
 | 真迹 DINO PatchMean 768 | glyph 级 13056×768 | `_sync_work/dino_patch_glyph_mean.npy`（本次提取） |
 | 标准字形 kai CLS/Patch | 4521×768 | `_sync_work/std_kai_cls.npy` / `std_kai_patch_mean.npy`（本次提取） |
 | 标准字形 li CLS/Patch | 3402×768 | `_sync_work/std_li_cls.npy` / `std_li_patch_mean.npy`（本次提取） |
 
-标准字形 = 干净印刷体骨架图（`std_skeleton_d3/kai`、`std_skeleton_d3/li`），
+标准字形 = 干净印刷体骨架图（`data/skel/std_skeleton_d3/kai`、`data/skel/std_skeleton_d3/li`），
 消除了书法真迹的书体混淆，是测「外形一致性」的最干净来源。
 
 ### 2.2 判别性评测结果（形近 vs 随机，AUC 越高越好）

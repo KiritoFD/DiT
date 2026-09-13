@@ -19,8 +19,8 @@ from src.model import inject_lora
 BASE = "/root/Workspace/xy/DiT"
 EXP = f"{BASE}/new_data/results_full_3cond/20260814-013816-DiT-3Cond-XL-2"
 CKPT_DIR = f"{EXP}/checkpoints"
-PRETRAINED = f"{BASE}/pretrained_models/DiT-XL-2-256x256.pt"
-VAE_PATH = f"{BASE}/pretrained_models/sd-vae-ft-ema"
+PRETRAINED = f"{BASE}/data/pretrained/DiT-XL-2-256x256.pt"
+VAE_PATH = f"{BASE}/data/pretrained/sd-vae-ft-ema"
 EVAL_CSV = f"{BASE}/final_eval.csv"
 
 STEPS = list(range(1000, 11000, 1000))  # 1000..10000

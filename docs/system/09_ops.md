@@ -74,7 +74,7 @@ scp -r src 4090:/root/Workspace/xy/DiT/
 ## 5. git 与目录纪律
 
 - 本地 commit 是权威；远程 git 是旧 fork 历史，不直接回推。
-- `.gitignore` 忽略数据目录：`assets/`、`results/`、`final_*`、`pretrained_models/`、`.venv/`、大日志与 png。
+- `.gitignore` 忽略数据目录：`assets/`、`results/`、`final_*`、`data/pretrained/`、`.venv/`、大日志与 png。
 - 提交信息用「feat:/fix:/refactor:」前缀 + 中文说明（历史惯例）。
 - `archive/diag_backup_20260828/` 放一次性诊断脚本（`_*.py`），不参与主流程与 py_compile。
 

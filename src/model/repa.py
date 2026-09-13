@@ -11,7 +11,7 @@ repa.py — 公共 REPA (Representation Alignment) infra。
 用法 (两个阶段一致):
     from src.loss.repa import build_repa_module
     repa = build_repa_module(student_dim=384, layers=(8, 11),
-                             teacher_ckpt='pretrained_models/dinov2_vits14_pretrain.safetensors',
+                             teacher_ckpt='data/pretrained/dinov2_vits14_pretrain.safetensors',
                              w_repa=0.3, warmup_steps=2000)
     # 训练循环:
     model.return_intermediate_layers = repa.layers   # 或 forward 传参

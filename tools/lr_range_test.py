@@ -88,8 +88,8 @@ def main():
     img_ids = [int(r["image_path"].rsplit(".", 1)[0].rsplit("/", 1)[-1]) for r in rows]
     y_callig = torch.tensor([int(r["calligrapher_id"]) for r in rows], dtype=torch.long).to(dev)
 
-    lat_map = load_all("final_latents_fame_e" if "fame_e" in csv_path else "final_latents_fame3_v8")
-    g_map = load_all("std_skel1_latents_fame_e" if "fame_e" in csv_path else "std_skel1_latents_fame3_v8")
+    lat_map = load_all("data/latents/final_latents_fame_e" if "fame_e" in csv_path else "data/latents/final_latents_fame3_v8")
+    g_map = load_all("data/skel/std_skel1_latents_fame_e" if "fame_e" in csv_path else "data/skel/std_skel1_latents_fame3_v8")
     x0 = torch.stack([torch.from_numpy(lat_map[i]) for i in img_ids]).to(dev)
     g = torch.stack([torch.from_numpy(g_map.get(i, np.zeros_like(x0[0].cpu()))) for i in img_ids]).to(dev)
     print(f"[data] csv={csv_path} batch={args.batch} ||x0||={x0.norm():.2f}", flush=True)

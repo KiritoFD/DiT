@@ -12,8 +12,8 @@
 ## 2. latent 缓存（原始）
 
 - `make_latent_shards.py`：把 329,715 个 latent 按 img_id 排序打包为 `final_latents/shard_XXXXX.npz`（每 5000 张）：`{"latents": (N,4,32,32) f16, "img_ids": (N,) int32}`。
-- 另有 `final_latents_mid_clean/`（25 shards，118,776 latents，mid-clean 专用，见 §4）。
-- 图片根：`final_imgs_256/{img_id}.png`；骨架：`final_skeleton_d3/{img_id}.png`（3px 骨架）；VAE：`pretrained_models/sd-vae-ft-ema`（sd-vae-ft-ema，scaling 0.18215，f8 32×32 latent）。
+- 另有 `data/latents/final_latents_mid_clean/`（25 shards，118,776 latents，mid-clean 专用，见 §4）。
+- 图片根：`data/imgs/final_imgs_256/{img_id}.png`；骨架：`data/skel/final_skeleton_d3/{img_id}.png`（3px 骨架）；VAE：`data/pretrained/sd-vae-ft-ema`（sd-vae-ft-ema，scaling 0.18215，f8 32×32 latent）。
 
 ## 3. 清洗原则（train_3top30_common）
 
@@ -30,9 +30,9 @@
 
 | Phase | 执行 | 内容 |
 |---|---|---|
-| **A. 增广（CPU 多进程）** | `--phase aug` | 对组合样本数 <6 的，生成 `(6-n)` 个增强变体（随机仿射/弹性等）→ `final_imgs_mid_clean/{new_id}.png`（**new_id ∈ 1000000–1095178**，与原始 img_id 3073–325944 空间分离）；写 `aug_meta.csv`（new_id, script, char, calli, calli_id, char_id, glyph_id, script_id）。产出 **95,179 张**。 |
-| **B. VAE 编码（GPU）** | `--phase encode` | 读 `final_imgs_mid_clean/*.png` → sd-vae-ft-ema 编码（fp32，scaling=0.18215）→ `/tmp/mid_clean_tmp/` 20 shards + aug_meta.csv。 |
-| **C. 合并（CPU）** | `--phase merge` | ① 从**原始** latent shards 里只保留 train_3top30_common.csv 出现过的 img_id（23,597 张，先过滤再合并，避免混入脏样本）；② 追加 B 的增广 shard → `final_latents_mid_clean/`（**25 shards / 118,776 latents**）；③ 写 `assets/train_mid_clean.csv`（**118,776 行**）：原行 + 增广行，`image_path = final_imgs_mid_clean/{id}.png`（原样样本 image_path 仍指向 final_imgs_256）。 |
+| **A. 增广（CPU 多进程）** | `--phase aug` | 对组合样本数 <6 的，生成 `(6-n)` 个增强变体（随机仿射/弹性等）→ `data/imgs/final_imgs_mid_clean/{new_id}.png`（**new_id ∈ 1000000–1095178**，与原始 img_id 3073–325944 空间分离）；写 `aug_meta.csv`（new_id, script, char, calli, calli_id, char_id, glyph_id, script_id）。产出 **95,179 张**。 |
+| **B. VAE 编码（GPU）** | `--phase encode` | 读 `data/imgs/final_imgs_mid_clean/*.png` → sd-vae-ft-ema 编码（fp32，scaling=0.18215）→ `/tmp/mid_clean_tmp/` 20 shards + aug_meta.csv。 |
+| **C. 合并（CPU）** | `--phase merge` | ① 从**原始** latent shards 里只保留 train_3top30_common.csv 出现过的 img_id（23,597 张，先过滤再合并，避免混入脏样本）；② 追加 B 的增广 shard → `data/latents/final_latents_mid_clean/`（**25 shards / 118,776 latents**）；③ 写 `assets/train_mid_clean.csv`（**118,776 行**）：原行 + 增广行，`image_path = data/imgs/final_imgs_mid_clean/{id}.png`（原样样本 image_path 仍指向 data/imgs/final_imgs_256）。 |
 
 命令形态：`python tools/aug6.py --phase all [--csv ... --out-imgs ...]`；`--phase` 可 `all|aug|encode|merge`（断点续跑用）。
 
@@ -43,7 +43,7 @@
 | train_mid_clean.csv 行数 | 118,776（楷 47,976 / 行 45,804 / 隶 24,996） |
 | 唯一 glyph 数 | **5,461** |
 | 唯一书家数 | **67** |
-| latent shards | final_latents_mid_clean/ 25 个（118,776 latents，f16 (4,32,32) + img_ids int32） |
+| latent shards | data/latents/final_latents_mid_clean/ 25 个（118,776 latents，f16 (4,32,32) + img_ids int32） |
 | 缺失图片数 | 0（CSV 全部可解析，`re.search(r"(\d+)\.png")` 取 img_id） |
 | DINO 索引覆盖 | 100%（20468 glyph 条目，glyph_id=sid*7026+cid 与 mid-clean 全对齐） |
 | 每组合样本 | 恰 6 |

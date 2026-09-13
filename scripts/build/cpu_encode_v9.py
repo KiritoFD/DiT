@@ -85,7 +85,7 @@ def worker(me, nproc, ithr, batch, paths, tag, q):
     import torchvision.transforms as T
     tf = T.Compose([T.Resize((256, 256)), T.ToTensor(), T.Normalize([0.5]*3, [0.5]*3)])
     from diffusers.models import AutoencoderKL
-    vae = AutoencoderKL.from_pretrained(BASE + '/pretrained_models/sd-vae-ft-ema').eval()
+    vae = AutoencoderKL.from_pretrained(BASE + '/data/pretrained/sd-vae-ft-ema').eval()
     def enc(x):
         with torch.no_grad():
             return (vae.encode(x).latent_dist.mode() * 0.18215).to(torch.float16).cpu().numpy()
@@ -100,8 +100,8 @@ def worker(me, nproc, ithr, batch, paths, tag, q):
 
     t0 = time.time()
     if tag == 'img':
-        os.makedirs('final_skel3_fame', exist_ok=True)
-        os.makedirs('final_skel1_fame', exist_ok=True)
+        os.makedirs('data/skel/final_skel3_fame', exist_ok=True)
+        os.makedirs('data/skel/final_skel1_fame', exist_ok=True)
         ids = []; lat = []
         acc = []; acc_id = []
         def flush():
@@ -115,8 +115,8 @@ def worker(me, nproc, ithr, batch, paths, tag, q):
         done = 0
         for iid in mine:
             sk3, sk1 = skel_from(iid, paths)
-            Image.fromarray(sk3, 'L').save('final_skel3_fame/%d.png' % iid)
-            Image.fromarray(sk1, 'L').save('final_skel1_fame/%d.png' % iid)
+            Image.fromarray(sk3, 'L').save('data/skel/final_skel3_fame/%d.png' % iid)
+            Image.fromarray(sk1, 'L').save('data/skel/final_skel1_fame/%d.png' % iid)
             acc.append(tf(Image.open(paths[iid]).convert('RGB')).numpy()); acc_id.append(iid)
             if len(acc) >= batch:
                 flush(); done += batch
@@ -161,7 +161,7 @@ def worker(me, nproc, ithr, batch, paths, tag, q):
         done = 0
         for iid in mine:
             _, sk1 = skel_from(iid, paths)
-            Image.fromarray(sk1, 'L').save('final_skel1_fame/%d.png' % iid)
+            Image.fromarray(sk1, 'L').save('data/skel/final_skel1_fame/%d.png' % iid)
             acc.append(tf(Image.fromarray(sk1, 'L').convert('RGB')).numpy()); acc_id.append(iid)
             if len(acc) >= batch:
                 flush(); done += batch
@@ -224,17 +224,17 @@ def writeback(path_of):
     n0 = patch_npz('fame.npz', img_lat)
     print('fame.npz patched:', n0, flush=True)
     n1 = 0
-    for shard in sorted(glob.glob('final_latents_fame/shard_*.npz')):
+    for shard in sorted(glob.glob('data/latents/final_latents_fame/shard_*.npz')):
         n1 += patch_npz(shard, img_lat)
-    print('final_latents_fame patched:', n1, flush=True)
+    print('data/latents/final_latents_fame patched:', n1, flush=True)
     n2 = 0
-    for shard in sorted(glob.glob('final_skel_latents_fame/shard_*.npz')):
+    for shard in sorted(glob.glob('data/skel/final_skel_latents_fame/shard_*.npz')):
         n2 += patch_npz(shard, skel3_lat)
-    print('final_skel_latents_fame patched:', n2, flush=True)
+    print('data/skel/final_skel_latents_fame patched:', n2, flush=True)
     n3 = 0
-    for shard in sorted(glob.glob('final_skel_latents_fame_1px/shard_*.npz')):
+    for shard in sorted(glob.glob('data/skel/final_skel_latents_fame_1px/shard_*.npz')):
         n3 += patch_npz(shard, skel1_lat)
-    print('final_skel_latents_fame_1px patched:', n3, flush=True)
+    print('data/skel/final_skel_latents_fame_1px patched:', n3, flush=True)
 
     import random
     rng = random.Random(0)
@@ -242,8 +242,8 @@ def writeback(path_of):
     bad = 0
     for iid in sample:
         sk3, sk1 = skel_from(iid, path_of)
-        on3 = np.asarray(Image.open('final_skel3_fame/%d.png' % iid).convert('L'))
-        on1 = np.asarray(Image.open('final_skel1_fame/%d.png' % iid).convert('L'))
+        on3 = np.asarray(Image.open('data/skel/final_skel3_fame/%d.png' % iid).convert('L'))
+        on1 = np.asarray(Image.open('data/skel/final_skel1_fame/%d.png' % iid).convert('L'))
         if not np.array_equal(sk3, on3) or not np.array_equal(sk1, on1):
             bad += 1
     print('skel consistency spot-check: %d/%d OK' % (len(sample) - bad, len(sample)), flush=True)

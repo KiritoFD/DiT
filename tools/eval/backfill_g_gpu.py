@@ -66,7 +66,7 @@ def main():
     g_all = cache["skels_latent"].float()
     hit = int((g_all.view(args.n, -1).sum(1) != 0).sum())
     print(f"GT 骨架覆盖 {hit}/{args.n}", flush=True)
-    vae = load_eval_vae(dev, "pretrained_models/sd-vae-ft-ema")
+    vae = load_eval_vae(dev, "data/pretrained/sd-vae-ft-ema")
     from src.loss import create_diffusion_or_flow
     flow = create_diffusion_or_flow(str(int(a.get("eval_steps", a.get("gpu_eval_steps", 50)))),
                                     diffusion_type=a.get("diffusion_type", "flow"),

@@ -36,7 +36,7 @@ dirty_samples = []
 for r in sample_rows:
     p = r['image_path']
     if p.startswith('final_images/'):
-        p = p.replace('final_images/', 'final_imgs_256/', 1)
+        p = p.replace('final_images/', 'data/imgs/final_imgs_256/', 1)
     full_path = os.path.join(BASE, p)
     if not os.path.exists(full_path):
         continue

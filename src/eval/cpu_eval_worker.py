@@ -122,7 +122,7 @@ def main():
     shift = float(a.get("shift", 1.0))
     noise, conds = cache["noise"], cache["conds"]
     skels_lat = cache["skels_latent"].float()
-    vae = load_eval_vae(dev, "pretrained_models/sd-vae-ft-ema")
+    vae = load_eval_vae(dev, "data/pretrained/sd-vae-ft-ema")
     step = int(a.get("_eval_step", os.path.basename(args.ckpt).split(".")[0]))
     step_tag = f"step{step:07d}"
 
@@ -211,7 +211,7 @@ def _run_pretrain_g(args, ck, a, arch, common, t0):
     cfg = float(a.get("eval_cfg", a.get("gpu_eval_cfg", 0.7)))
     steps = int(a.get("eval_steps", a.get("gpu_eval_steps", 50)))
     shift = float(a.get("shift", 1.0))
-    vae = load_eval_vae(dev, "pretrained_models/sd-vae-ft-ema")
+    vae = load_eval_vae(dev, "data/pretrained/sd-vae-ft-ema")
 
     # ── eval 集: --eval-sets "name=csv[,name=csv...]" 多集; 空 = 旧单 csv (arm "g")
     eval_sets = []

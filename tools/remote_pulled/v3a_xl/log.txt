@@ -1,6 +1,6 @@
 [[34m2026-08-15 23:26:00[0m] Experiment directory created at assets/results/v3a_xl/20260815-232600-v3a-2factor-glyph-XL-lora-cs
 [[34m2026-08-15 23:26:08[0m] Building 2-Cond model: DiT-2Cond-XL/2 (callig=1011, glyph/char=35130, fusion=factorized_add, dims=128/192, dropout=all:0.1, one:0.3)
-[[34m2026-08-15 23:26:11[0m] Loaded pre-trained weights from pretrained_models/DiT-XL-2-256x256.pt.
+[[34m2026-08-15 23:26:11[0m] Loaded pre-trained weights from data/pretrained/DiT-XL-2-256x256.pt.
 [[34m2026-08-15 23:26:11[0m] Missing keys (expected for 2/3-cond): ['y_callig_embedder.embedding_table.weight', 'y_char_embedder.embedding_table.weight', 'callig_proj.0.weight', 'callig_proj.0.bias', 'callig_proj.1.weight', 'callig_proj.1.bias', 'char_proj.0.weight', 'char_proj.0.bias', 'char_proj.1.weight', 'char_proj.1.bias']
 [[34m2026-08-15 23:26:11[0m] Unexpected keys (filtered): []
 [[34m2026-08-15 23:26:12[0m] Re-initialized adaLN/final_layer (std=0.02) to fit new 3-cond condition head.
@@ -8,7 +8,7 @@
 [[34m2026-08-15 23:26:12[0m] Trainable Parameters: 249,601,760
 [[34m2026-08-15 23:26:12[0m] Frozen Parameters: 448,136,064 (trainable ratio: 35.77%)
 [[34m2026-08-15 23:26:14[0m] [EMA] enabled with decay=0.9999
-[[34m2026-08-15 23:26:14[0m] Loading VAE from local path: pretrained_models/sd-vae-ft-ema
+[[34m2026-08-15 23:26:14[0m] Loading VAE from local path: data/pretrained/sd-vae-ft-ema
 [[34m2026-08-15 23:26:14[0m] Preparing auto-eval cache (csv=assets/eval_strata/clean_unseen_triple_100.csv, n=100) ...
 [[34m2026-08-15 23:26:14[0m] Auto-eval cache ready (free-sampling mode).
 [[34m2026-08-15 23:26:14[0m] DiT Parameters: 697,737,824

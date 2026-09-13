@@ -3,7 +3,7 @@
 [[34m2026-08-15 21:30:16[0m] Trainable Parameters: 39,479,648
 [[34m2026-08-15 21:30:16[0m] Frozen Parameters: 98,304 (trainable ratio: 99.75%)
 [[34m2026-08-15 21:30:17[0m] [EMA] enabled with decay=0.9999
-[[34m2026-08-15 21:30:17[0m] Loading VAE from local path: pretrained_models/sd-vae-ft-ema
+[[34m2026-08-15 21:30:17[0m] Loading VAE from local path: data/pretrained/sd-vae-ft-ema
 [[34m2026-08-15 21:30:17[0m] DiT Parameters: 39,577,952
 [[34m2026-08-15 21:31:15[0m] Using latent-cached dataset (skip on-the-fly VAE encode). preload=ON
 [[34m2026-08-15 21:31:15[0m] Using factor-balanced sampler: {'weight_min': 0.29758899049352444, 'weight_mean': 1.0, 'weight_max': 6.533702005246278} (char_alpha=0.35, callig_alpha=0.15)

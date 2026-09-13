@@ -7,8 +7,8 @@ eval_ctrl_ckpt.py — 独立 ControlNet 评测（GPU 采样 + 全图落盘 + CPU
         --main-ckpt assets/results/s30_dino_char_strong_pretrain/.../0132500.pt \\
         --ctrl-ckpt assets/results/s31_ctrl_gt_skel_1px/.../0042500.pt \\
         --eval-csv assets/eval_fame_strict_clean.csv \\
-        --skel-latent-dir final_skel_latents_fame_1px \\
-        --skel-root final_skel1_fame --img-root final_imgs_256 \\
+        --skel-latent-dir data/skel/final_skel_latents_fame_1px \\
+        --skel-root data/skel/final_skel1_fame --img-root data/imgs/final_imgs_256 \\
         --out-dir assets/results/s31_ctrl_gt_skel_1px/manual_eval/step0042500 \\
         --n 100 --cfg 0.7 --steps 50 --device cuda
 
@@ -52,8 +52,8 @@ def parse_args():
     # 数据
     ap.add_argument("--eval-csv", required=True, help="eval 集 csv (有无 skel latent 均可)")
     ap.add_argument("--skel-latent-dir", default="", help="skel VAE latent 目录 (优先); 空=用 PNG skel_root")
-    ap.add_argument("--skel-root", default="final_skel1_fame", help="skel PNG 根 (fallback)")
-    ap.add_argument("--img-root", default="final_imgs_256", help="GT 图根")
+    ap.add_argument("--skel-root", default="data/skel/final_skel1_fame", help="skel PNG 根 (fallback)")
+    ap.add_argument("--img-root", default="data/imgs/final_imgs_256", help="GT 图根")
     # eval 协议
     ap.add_argument("--n", type=int, default=100)
     ap.add_argument("--cfg", type=float, default=0.7)
@@ -65,7 +65,7 @@ def parse_args():
     ap.add_argument("--out-dir", required=True, help="落盘目录; base/ctrl 子目录自动建")
     # 环境
     ap.add_argument("--device", default="cuda", choices=["cpu", "cuda"])
-    ap.add_argument("--vae-path", default="pretrained_models/sd-vae-ft-ema")
+    ap.add_argument("--vae-path", default="data/pretrained/sd-vae-ft-ema")
     return ap.parse_args()
 
 

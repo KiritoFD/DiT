@@ -96,7 +96,7 @@ def main():
     # 转成 256 路径
     valid = []
     for r in records:
-        img_path = os.path.join(REMOTE_BASE, r["image_path"].replace("final_images", "final_imgs_256"))
+        img_path = os.path.join(REMOTE_BASE, r["image_path"].replace("final_images", "data/imgs/final_imgs_256"))
         if os.path.isfile(img_path):
             valid.append((img_path, int(r["script_id"]), int(r["character_id"])))
     records = valid
@@ -173,7 +173,7 @@ def main():
         json.dump({
             "glyphs": [[g[0], g[1]] for g in glyph_list],
             "count": len(glyph_list),
-            "source": "final_imgs_256, full train_top30.csv (128842 images), fp16, GPU resize",
+            "source": "data/imgs/final_imgs_256, full train_top30.csv (128842 images), fp16, GPU resize",
         }, f)
     print(f"\nGlyph embeddings: {glyph_embeds.shape}")
     print(f"  avg images/glyph: {glyph_counts.mean():.1f}")

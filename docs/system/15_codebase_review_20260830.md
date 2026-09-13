@@ -95,13 +95,13 @@ v1 是 v2 的子集且已废弃，却仍被 dataset 引用。建议**让 v1 代�
 _check_*.py  _probe_*.py  _debug_*.py  _diag_*.py  _dump_*.py  _inspect_*.py
 _verify_*.py _stats_*.py  _launch_*.sh
 _archive/  _sync_work/  _gt_cache/
-fame_meta.json  skel_bank_std.npz  skel_bank_train.npz  gradio_fame_local.py
-final_skel_latents_fame/          ← 数据集目录出现在仓库根
+fame_meta.json  data/skel/skel_bank_std.npz  data/skel/skel_bank_train.npz  gradio_fame_local.py
+data/skel/final_skel_latents_fame/          ← 数据集目录出现在仓库根
 ```
 
 问题：
 - 无法区分"当前可用工具"与"当时调试用的临时文件"
-- `final_skel_latents_fame/` 这类数据目录混在源码树里，容易被误提交或误删
+- `data/skel/final_skel_latents_fame/` 这类数据目录混在源码树里，容易被误提交或误删
 - 新会话难以快速判断哪些能跑
 
 建议：可用工具归入 `tools/`，调试脚本归入 `tools/_scratch/` 并加 `.gitignore`，

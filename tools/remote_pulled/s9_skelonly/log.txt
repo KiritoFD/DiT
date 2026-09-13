@@ -5,7 +5,7 @@
 [[34m2026-08-21 23:29:21[0m] Frozen Parameters: 98,304 (trainable ratio: 99.77%)
 [[34m2026-08-21 23:29:22[0m] [EMA] restored EMA weights from checkpoint
 [[34m2026-08-21 23:29:22[0m] [EMA] enabled with decay=0.9999
-[[34m2026-08-21 23:29:22[0m] Loading VAE from local path: pretrained_models/sd-vae-ft-ema
+[[34m2026-08-21 23:29:22[0m] Loading VAE from local path: data/pretrained/sd-vae-ft-ema
 [[34m2026-08-21 23:29:23[0m] DiT Parameters: 41,851,041
 [[34m2026-08-21 23:29:23[0m] [struct] EdgeGradientLoss (gradient-profile, no per-image norm) + SkeletonLoss (recall-only, no off-skel penalization)
 [[34m2026-08-21 23:29:23[0m] [resume-full] Restored optimizer state.

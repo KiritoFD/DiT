@@ -246,7 +246,7 @@ def main():
     log(f"eval samples n={n_eff}, skel hit={int((g.view(n_eff, -1).sum(1) != 0).sum())}/{n_eff}, "
         f"cfg={args.cfg}, steps={args.steps}")
 
-    vae = load_eval_vae(dev, "pretrained_models/sd-vae-ft-ema")
+    vae = load_eval_vae(dev, "data/pretrained/sd-vae-ft-ema")
     sf = 0.18215
     null_callig = model.y_callig_embedder.num_classes
     null_char = model.y_char_embedder.num_classes if model.y_char_embedder is not None else 0

@@ -9,7 +9,7 @@ encode_latents_klf4.py — 用 kl-f4 VAE 编码全量 MCCD 图片 → shard_XXXX
 
 用法 (远程):
   python tools/vae/encode_latents_klf4.py --csv assets/train_top30.csv --img-root final_images \
-    --vae pretrained_models/kl-f4 --out final_latents_f4 --shard-size 5000 --scaling-factor 0.102079
+    --vae data/pretrained/kl-f4 --out data/latents/final_latents_f4 --shard-size 5000 --scaling-factor 0.102079
 """
 import os, sys, csv, json, glob, time, re, argparse
 sys.stdout.reconfigure(encoding="utf-8")
@@ -38,8 +38,8 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--csv", required=True)
     ap.add_argument("--img-root", default="final_images")
-    ap.add_argument("--vae", default="pretrained_models/kl-f4")
-    ap.add_argument("--out", default="final_latents_f4")
+    ap.add_argument("--vae", default="data/pretrained/kl-f4")
+    ap.add_argument("--out", default="data/latents/final_latents_f4")
     ap.add_argument("--shard-size", type=int, default=5000)
     ap.add_argument("--batch", type=int, default=16)
     ap.add_argument("--scaling-factor", type=float, default=0.102079)

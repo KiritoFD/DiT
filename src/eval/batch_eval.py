@@ -128,9 +128,9 @@ def main():
     # 冻结书家表: 复现 null_embed 独立参数结构 (与 ckpt state_dict 对齐)
     if a.get("freeze_callig_table"):
         model.y_callig_embedder.freeze_table()
-    vae = load_eval_vae(dev, "pretrained_models/sd-vae-ft-ema")
+    vae = load_eval_vae(dev, "data/pretrained/sd-vae-ft-ema")
     diff = build_diffusion(args.steps, "flow")
-    shards = args.skel_shards or a.get("skel_latent_shards_dir") or "std_skel1_latents_fame3_v8"
+    shards = args.skel_shards or a.get("skel_latent_shards_dir") or "data/skel/std_skel1_latents_fame3_v8"
     img_root = a.get("gpu_eval_img_root") or a.get("img_root")
     sf = float(a.get("vae_scaling_factor", 0.18215))
     # 书家词表收紧: y_callig 与训练数据层同一张映射表

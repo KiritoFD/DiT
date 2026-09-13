@@ -41,11 +41,11 @@ def main():
     opt = torch.optim.AdamW(m.parameters(), lr=args.lr, weight_decay=0.02)
     cmap, _ = load_callig_id_map("assets/callig_id_map.json")
     ds = MCCDLatentDataset(
-        csv_file=args.csv, latent_shards_dir="final_latents_fame_e",
-        img_root="final_imgs_fame_e", preload=False, load_image=False,
-        use_glyph_cond=True, skel_latent_shards_dir="std_skel1_latents_fame_e",
+        csv_file=args.csv, latent_shards_dir="data/latents/final_latents_fame_e",
+        img_root="data/imgs/final_imgs_fame_e", preload=False, load_image=False,
+        use_glyph_cond=True, skel_latent_shards_dir="data/skel/std_skel1_latents_fame_e",
         callig_id_map=cmap, is_train=True,
-        aux_latent_shards_dirs=["aux_skel_latents_fame_e", "aux_canny_latents_fame_e"])
+        aux_latent_shards_dirs=["data/aux/aux_skel_latents_fame_e", "data/aux/aux_canny_latents_fame_e"])
     print(f"dataset {len(ds)} rows; model in_ch={m.in_channels} layers={args.layers}")
 
     def get_batch(i0):

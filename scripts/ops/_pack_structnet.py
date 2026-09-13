@@ -14,7 +14,7 @@ BASE = "/root/Workspace/xy/DiT/"
 CSV = BASE + "assets/train.csv"
 SHARDS = BASE + "final_latents"
 CAN_ROOT = BASE + "final_canny"
-SKEL_ROOT = BASE + "final_skeleton"
+SKEL_ROOT = BASE + "data/skel/final_skeleton"
 OUT = BASE + "assets/structnet"
 os.makedirs(OUT, exist_ok=True)
 

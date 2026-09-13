@@ -31,18 +31,18 @@ def load_latent(ids, name):
 sample_ids = sorted(changed)[:8]
 print('sample ids:', sample_ids)
 
-lat_clean = load_latent(sample_ids, 'final_latents_fame_clean')
-lat_plain = load_latent(sample_ids, 'final_latents_fame')
+lat_clean = load_latent(sample_ids, 'data/latents/final_latents_fame_clean')
+lat_plain = load_latent(sample_ids, 'data/latents/final_latents_fame')
 print('found in clean:', len(lat_clean), 'in plain:', len(lat_plain))
 
 # 用干净图 encode 作对比
 import torchvision.transforms as T
 tf = T.Compose([T.Resize((256, 256)), T.ToTensor(), T.Normalize([0.5]*3, [0.5]*3)])
 from diffusers.models import AutoencoderKL
-vae = AutoencoderKL.from_pretrained('pretrained_models/sd-vae-ft-ema').eval()
+vae = AutoencoderKL.from_pretrained('data/pretrained/sd-vae-ft-ema').eval()
 
 def enc_ref(iid):
-    for root in ['final_imgs_fame_clean', 'final_imgs_256', 'final_imgs_256_clean']:
+    for root in ['data/imgs/final_imgs_fame_clean', 'data/imgs/final_imgs_256', 'data/imgs/final_imgs_256_clean']:
         p = '%s/%d.png' % (root, iid)
         if os.path.exists(p):
             x = tf(Image.open(p).convert('RGB'))[None]

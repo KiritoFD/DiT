@@ -46,7 +46,7 @@ with open(out_csv, "w", encoding="utf-8") as f:
     w = csv.DictWriter(f, fieldnames=["image_path","calligrapher_id","script_id","glyph_id","character_id","character"])
     w.writeheader()
     for iid in all_ids:
-        w.writerow({"image_path": f"final_imgs_256/{iid}.png",
+        w.writerow({"image_path": f"data/imgs/final_imgs_256/{iid}.png",
                      "calligrapher_id": 0, "script_id": 0,
                      "glyph_id": 0, "character_id": 0, "character": ""})
 print(f"[csv] wrote {out_csv} ({len(all_ids)} rows)", flush=True)

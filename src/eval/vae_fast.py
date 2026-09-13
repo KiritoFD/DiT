@@ -33,7 +33,7 @@ def _default_cache_dir():
 
 
 class FastVAE:
-    def __init__(self, vae_path="pretrained_models/sd-vae-ft-ema", device="cuda",
+    def __init__(self, vae_path="data/pretrained/sd-vae-ft-ema", device="cuda",
                  compile=True, compile_mode="max-autotune-no-cudagraphs",
                  encode_dtype=torch.bfloat16, decode_dtype=torch.float32,
                  cache_dir=None, chunk=64):
@@ -153,7 +153,7 @@ def main():
     ap.add_argument("--precompile", action="store_true")
     ap.add_argument("--bench", action="store_true")
     ap.add_argument("--compare", action="store_true", help="同时跑默认实现对比")
-    ap.add_argument("--vae-path", default="pretrained_models/sd-vae-ft-ema")
+    ap.add_argument("--vae-path", default="data/pretrained/sd-vae-ft-ema")
     ap.add_argument("--device", default="cuda")
     ap.add_argument("--batch", type=int, default=64)
     ap.add_argument("--n", type=int, default=1024)

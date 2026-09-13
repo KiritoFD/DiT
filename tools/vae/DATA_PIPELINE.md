@@ -8,11 +8,11 @@
 ```
 /root/Workspace/xy/DiT/
 ├── final_images/          329,715 张 PNG (256x256 RGB, 已 resize)
-├── final_imgs_256/        329,715 张 (与 final_images 内容完全相同, md5 一致)
+├── data/imgs/final_imgs_256/        329,715 张 (与 final_images 内容完全相同, md5 一致)
 ├── final_latents/         66 shards, sd-vae-ft-ema 编码, (5000, 4, 32, 32) fp16
-├── final_latents_f4/      26 shards, kl-f4 编码, (5008, 3, 64, 64) fp16 [NEW]
-├── final_skeleton/         329,715 张骨架图
-├── final_skeleton_d3/      329,715 张 d3 骨架图
+├── data/latents/final_latents_f4/      26 shards, kl-f4 编码, (5008, 3, 64, 64) fp16 [NEW]
+├── data/skel/final_skeleton/         329,715 张骨架图
+├── data/skel/final_skeleton_d3/      329,715 张 d3 骨架图
 ├── final_canny/            329,715 张 canny 边缘图
 ├── final_manifest.json    329,715 条目 (img_id → 元数据)
 ├── assets/
@@ -20,14 +20,14 @@
 │   ├── eval100_top30.csv  100 行 (eval set)
 │   ├── train_top6.csv     10,866 行 (top6 calligraphers, 3154 chars)
 │   └── eval100_top6.csv   100 行
-└── pretrained_models/
+└── data/pretrained/
     ├── sd-vae-ft-ema/     f8, 4ch latent, 83.7M params (旧)
     └── kl-f4/              f4, 3ch latent, 55.3M params (新)
 ```
 
 ## 图片数据说明
 
-- **final_images/** 和 **final_imgs_256/** 内容完全相同 (md5 一致), 均为 256×256 RGB
+- **final_images/** 和 **data/imgs/final_imgs_256/** 内容完全相同 (md5 一致), 均为 256×256 RGB
 - 采样 500 张检查: 96.8% 为 256×256, ~3% 为其他尺寸 → encode 时强制 resize 到 256×256
 - CSV 的 `image_path` 列指向 `final_images/{id}.png`
 
@@ -83,16 +83,16 @@ tmux new-session -d -s encode_klf4 \
   'python tools/vae/encode_latents_klf4.py \
     --csv assets/train_top30.csv \
     --img-root final_images \
-    --vae pretrained_models/kl-f4 \
-    --out final_latents_f4 \
+    --vae data/pretrained/kl-f4 \
+    --out data/latents/final_latents_f4 \
     --shard-size 5000 --batch 16 \
     --scaling-factor 0.102079'
 
 # 2. 验证 (encode 完成后)
 tmux new-session -d -s verify_klf4 \
   'python tools/vae/verify_latents_f4.py \
-    --shards final_latents_f4 \
-    --vae pretrained_models/kl-f4 \
+    --shards data/latents/final_latents_f4 \
+    --vae data/pretrained/kl-f4 \
     --img-root final_images \
     --n 100 --batch 8'
 ```
@@ -115,8 +115,8 @@ shard_XXXXX.npz:
 | vae_downscale | 4 | f4 (256→64) |
 | latent_channels | 3 | kl-f4 latent ch |
 | vae_scaling_factor | 0.102079 | encode 前 1/std 估计, 全量统计 std=0.98 ≈ 1 |
-| latent_shards_dir | final_latents_f4 | 26 shards, 128,842 latents |
-| vae_path | pretrained_models/kl-f4 | kl-f4 VAE |
+| latent_shards_dir | data/latents/final_latents_f4 | 26 shards, 128,842 latents |
+| vae_path | data/pretrained/kl-f4 | kl-f4 VAE |
 | global_batch_size | 224 | 显存 19.7G/24G (4090) |
 | image_size | 256 | 输入图片尺寸 |
 | latent_size | 64 | 256/4 (DiT input_size) |

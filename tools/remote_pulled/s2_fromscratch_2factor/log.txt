@@ -4,7 +4,7 @@
 [[34m2026-08-16 20:08:00[0m] Trainable Parameters: 41,752,737
 [[34m2026-08-16 20:08:00[0m] Frozen Parameters: 98,304 (trainable ratio: 99.77%)
 [[34m2026-08-16 20:08:01[0m] [EMA] enabled with decay=0.9999
-[[34m2026-08-16 20:08:01[0m] Loading VAE from local path: pretrained_models/sd-vae-ft-ema
+[[34m2026-08-16 20:08:01[0m] Loading VAE from local path: data/pretrained/sd-vae-ft-ema
 [[34m2026-08-16 20:08:01[0m] Preparing auto-eval cache (csv=kailishu_eval.csv, n=100) ...
 [[34m2026-08-16 20:08:01[0m] Auto-eval cache ready (free-sampling mode).
 [[34m2026-08-16 20:08:01[0m] DiT Parameters: 41,851,041

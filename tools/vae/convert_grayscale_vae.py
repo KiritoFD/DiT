@@ -10,8 +10,8 @@ convert_grayscale_vae.py — 把 3ch VAE 改造成 1ch 黑白 VAE (外科手术)
 做完后 VAE 变成纯正单通道黑白压缩器, 且吃满预训练特征.
 
 用法:
-  python tools/vae/convert_grayscale_vae.py --src pretrained_models/sd-vae-ft-ema --dst pretrained_models/sd-vae-ft-ema-gray
-  python tools/vae/convert_grayscale_vae.py --src pretrained_models/kl-f4 --dst pretrained_models/kl-f4-gray
+  python tools/vae/convert_grayscale_vae.py --src data/pretrained/sd-vae-ft-ema --dst data/pretrained/sd-vae-ft-ema-gray
+  python tools/vae/convert_grayscale_vae.py --src data/pretrained/kl-f4 --dst data/pretrained/kl-f4-gray
 """
 import os
 import sys

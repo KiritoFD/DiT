@@ -19,13 +19,13 @@ import torch.nn.functional as F
 def _default_dino_ckpt():
     """Resolve a local DINOv2 checkpoint path.
 
-    Priority: $DINO_WEIGHTS env var, then ./pretrained_models/dinov2_vits14_pretrain.safetensors
+    Priority: $DINO_WEIGHTS env var, then ./data/pretrained/dinov2_vits14_pretrain.safetensors
     (next to this file). Returns None if nothing exists.
     """
     env = os.environ.get("DINO_WEIGHTS", "")
     if env and os.path.exists(env):
         return env
-    # 从本文件向上逐层查找 pretrained_models/。
+    # 从本文件向上逐层查找 data/pretrained/。
     # 注意：本文件位于 src/loss/ 下，"向上两级" 得到的是 src/ 而不是项目根，
     # 早期实现正是少算了一级，导致本地 ckpt 永远找不到、静默回退到
     # torch.hub（需访问 github，在受限机器上会失败）。这里改成向上搜索，

@@ -27,8 +27,8 @@ from src.eval.inference import build_diffusion, sample_latents, _ssim, _mse
 
 RESULTS_SERIES = "assets/results/s20_ctrl_skel_flow_v2"
 EVAL_CSV = "assets/eval_strict_midclean.csv"
-SKEL_SHARDS = "final_skel_latents_eval_v2"
-IMG_ROOT = "final_imgs_256"
+SKEL_SHARDS = "data/skel/final_skel_latents_eval_v2"
+IMG_ROOT = "data/imgs/final_imgs_256"
 OUT_CSV = "assets/eval_s20_ctrl_monitor.csv"
 N = 100
 CFG = 1.7
@@ -82,7 +82,7 @@ def main():
     diffusion = build_diffusion(STEPS, "flow", flow_kwargs=FLOW_KWARGS)
 
     from diffusers.models import AutoencoderKL
-    vae = AutoencoderKL.from_pretrained("pretrained_models/sd-vae-ft-ema").to(device).eval()
+    vae = AutoencoderKL.from_pretrained("data/pretrained/sd-vae-ft-ema").to(device).eval()
 
     from src.eval.inference import make_eval_cache
     cache = make_eval_cache(EVAL_CSV, IMG_ROOT, None, 256, N, 8, 4, 0.18215,

@@ -211,7 +211,7 @@ out_channels    = latent_channels × 2  (learn_sigma)  # 8 或 6
 ```
 
 - **编码**：`z = vae.encode(x).latent_dist.sample() * scaling_factor`（见 `tools/vae/encode_latents_klf4.py`、`src/eval_auto.py:115`）。
-  latent 预编码后缓存为 shard（`final_latents` / `final_latents_f4`），训练直接读缓存。
+  latent 预编码后缓存为 shard（`final_latents` / `data/latents/final_latents_f4`），训练直接读缓存。
 - **解码**：`x = vae.decode(z / scaling_factor).sample`（见 `sample.py:65`、`src/eval_auto.py:279`）。
 - `scaling_factor` = `1 / std(latent_samples)`（见 `tools/vae/estimate_scaling_factor.py`），
   sd-vae 对应 std≈5.49，故 0.18215。

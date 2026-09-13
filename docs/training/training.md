@@ -297,7 +297,7 @@ f4（kl-f4）与 f8（sd-vae）在 train.py 里由一组 `--vae-*` / `--latent-*
 | `--vae-in-channels` | 3 | 3 | 3 |
 | `--vae-out-channels` | 3 | 3 | 3 |
 | `--vae-scaling-factor` | 0.18215 | 0.18215 | **0.102079** |
-| `--vae-path` | sd-vae-ft-ema | sd-vae-ft-ema | `pretrained_models/kl-f4` |
+| `--vae-path` | sd-vae-ft-ema | sd-vae-ft-ema | `data/pretrained/kl-f4` |
 
 派生关系（`train.py:174-177`）：
 
@@ -460,7 +460,7 @@ tmux new-session -d -s evalcpu \
 | `use_ema` | `true`（`ema_decay=0.9999`, `ema_warmup=true`） | |
 | `use_lora` / `pretrained` | `false` / `null` | 从零全参 |
 | `reset_cond_head` / `train_cond_head` | `false` / `false` | 从零无需 reset |
-| `vae` / `vae_path` | `ema` / `pretrained_models/kl-f4` | f4 |
+| `vae` / `vae_path` | `ema` / `data/pretrained/kl-f4` | f4 |
 | `vae_downscale` | 4 | |
 | `latent_channels` | 3 | |
 | `vae_in_channels` / `vae_out_channels` | 3 / 3 | |
@@ -468,8 +468,8 @@ tmux new-session -d -s evalcpu \
 | `bf16` | autocast | |
 | `ckpt_every` / `ckpt_keep` | 5000 / 60 | |
 | `early_stop` | `true`（`patience=6`, `min_steps=60000`, `metric=ssim`） | |
-| `latent_shards_dir` | `final_latents_f4` | 预编码 latent shard |
-| `img_root` / `skel_root` | `final_imgs_256` / `final_skeleton` | |
+| `latent_shards_dir` | `data/latents/final_latents_f4` | 预编码 latent shard |
+| `img_root` / `skel_root` | `data/imgs/final_imgs_256` / `data/skel/final_skeleton` | |
 | `preload` / `preload_workers` | `true` / 24 | |
 | `auto_eval` / `eval_csv` / `eval_n` / `eval_steps` | `true` / `assets/eval100_top30.csv` / 100 / 50 | |
 | `eval_cfg` / `eval_seed` / `eval_batch` | 4.0 / 0 / 20 | |

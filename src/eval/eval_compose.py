@@ -86,7 +86,7 @@ def main():
     ap.add_argument("--out", default="compose_eval")
     ap.add_argument("--vis-n", type=int, default=8)
     ap.add_argument("--wI", type=float, nargs="*", default=[0.0, 0.25, 0.5, 1.0])
-    ap.add_argument("--vae-path", default="pretrained_models/sd-vae-ft-ema")
+    ap.add_argument("--vae-path", default="data/pretrained/sd-vae-ft-ema")
     args = ap.parse_args()
 
     device = "cuda" if torch.cuda.is_available() else "cpu"

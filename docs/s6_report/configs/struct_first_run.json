@@ -40,7 +40,7 @@
   "ema_decay": 0.9999,
   "ema_warmup": true,
   "vae": "ema",
-  "vae_path": "pretrained_models/sd-vae-ft-ema",
+  "vae_path": "data/pretrained/sd-vae-ft-ema",
   "use_lora": false,
   "lora_r": 16,
   "lora_alpha": null,
@@ -84,8 +84,8 @@
   "use_canny": true,
   "use_skel": true,
   "latent_shards_dir": "final_latents",
-  "img_root": "final_imgs_256",
+  "img_root": "data/imgs/final_imgs_256",
   "canny_root": "final_canny",
-  "skel_root": "final_skeleton",
+  "skel_root": "data/skel/final_skeleton",
   "config": "exp_s6_top6_struct_fp32.json"
 }

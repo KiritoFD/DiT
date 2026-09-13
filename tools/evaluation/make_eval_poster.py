@@ -11,7 +11,7 @@
 算法（复刻远程 gen_canny_skel.py，保证与训练监督完全一致）：
   canny : 灰度 Rec.601(0.299R+0.587G+0.114B) -> Sobel 幅值 sqrt(gx^2+gy^2) > 150 -> 255
   skel  : 灰度 >127 二值化，均值>127 取反（适配白/黑底）-> Zhang-Suen 细化 -> 255
-GT 行的 show5 canny/skel 直接用远程 final_canny/final_skeleton 真值图（不含计算）。
+GT 行的 show5 canny/skel 直接用远程 final_canny/data/skel/final_skeleton 真值图（不含计算）。
 
 完整性约定（与 CPU eval 解耦，只渲染已完成 step）：
   只渲染带 samples.json 的 step 目录（eval 最后写 samples.json = 该 step 已画完）。
@@ -20,7 +20,7 @@ GT 行的 show5 canny/skel 直接用远程 final_canny/final_skeleton 真值图�
 数据源（远程拉回本地）：
   生成图(show5) : remote_eval_samples/<exp>/eval_samples/stepXXXXXX/sample{i}.png
   生成图(seen5) : remote_seen_samples/<exp>/seen_samples/stepXXXXXX/sample{i}.png
-  GT真值(show5) : remote_gt/{id}.png  (id=240699 等，来自 final_canny/final_skeleton)
+  GT真值(show5) : remote_gt/{id}.png  (id=240699 等，来自 final_canny/data/skel/final_skeleton)
   GT真值(seen5) : seen_samples/stepXXXXXX/gt{i}.png
 
 用法:

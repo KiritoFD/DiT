@@ -11,7 +11,7 @@ THRESH = 0.2
 
 def fix_path(p):
     if p.startswith("final_images/"):
-        return p.replace("final_images/", "final_imgs_256/", 1)
+        return p.replace("final_images/", "data/imgs/final_imgs_256/", 1)
     return p
 
 rows = list(csv.DictReader(open(CSV, encoding="utf-8")))

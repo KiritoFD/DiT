@@ -175,7 +175,7 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--main-ckpt",
                     default="assets/results/s6_top6_diffonly/20260820-191536-s6-top6-diffonly-resume/checkpoints/0195000.pt")
-    ap.add_argument("--vae-path", default="pretrained_models/sd-vae-ft-ema")
+    ap.add_argument("--vae-path", default="data/pretrained/sd-vae-ft-ema")
     ap.add_argument("--port", type=int, default=7861)
     ap.add_argument("--server-name", default="0.0.0.0")
     ap.add_argument("--share", action="store_true", default=True)

@@ -11,7 +11,7 @@
 1. **v8 已把小噪点/反相/黑条清干净**（`small_cc_n>0` 34.69%→0.00%），
    但**装裱黑边/边界墨块几乎没动**（`edge_blob>0` 仍 **43.99%**）——这是 v8 的主要残留，
    也是復/楷书上肉眼可见的"脏"的来源。综合噪点率 **44.06%**。
-2. **本轮 8 轮去噪算法迭代全部失败**，v9 产物（`final_imgs_fame_v9/`，51321 张）已删除。
+2. **本轮 8 轮去噪算法迭代全部失败**，v9 产物（`data/imgs/final_imgs_fame_v9/`，51321 张）已删除。
    最好的一版（v3.7）让 **5414 张字（10.55%）的笔画骨架断裂/消失**，细笔画字受损率 49%。
 3. **根因**：毛刺(1–2px) 与细笔画(2–4px) **尺度连续重叠**，装裱与多部件字形**几何特征重叠**；
    无参考的形态学方法在"去噪"与"保笔画"之间无法两全（见 §4）。
@@ -171,12 +171,12 @@
 
 ```bash
 # 远程：隔离 → 删除
-mv final_imgs_fame_v9 final_imgs_fame_v9_REJECTED
-rm -rf final_imgs_fame_v9_REJECTED
+mv data/imgs/final_imgs_fame_v9 data/imgs/final_imgs_fame_v9_REJECTED
+rm -rf data/imgs/final_imgs_fame_v9_REJECTED
 rm -f assets/train_fame_clean_v9.csv      # 会被误用作训练清单，一并删除
 ```
 
-**v8 完好性验证**：删除后 `final_imgs_fame_v8` 仍为 **51822 张**（未受任何影响）。
+**v8 完好性验证**：删除后 `data/imgs/final_imgs_fame_v8` 仍为 **51822 张**（未受任何影响）。
 
 保留作为证据（小体积 CSV，不参与训练）：
 - `assets/stroke_damage_v9.csv` — 全量笔画级损伤评估（废弃依据）
@@ -204,7 +204,7 @@ python tools/clean/scan_image_pollution.py \
 
 # 2) 扫描（v8，扩展指标）—— 脚本先 scp 到远程 _sync_work/
 ssh 4090 'cd /root/Workspace/xy/DiT && /opt/conda/bin/python _sync_work/scan_v8_noise.py \
-    --csv assets/train_fame_clean_v8.csv --img-root final_imgs_fame_v8 \
+    --csv assets/train_fame_clean_v8.csv --img-root data/imgs/final_imgs_fame_v8 \
     --out assets/scan_v8_noise.csv --workers 8'
 
 # 3) 原图 vs v8 对比

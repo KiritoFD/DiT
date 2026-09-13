@@ -1,16 +1,16 @@
 {
-  "_comment": "[2026-09-11] 从 c41x_cos_e@390k resume (strict 0.5676, 已证最佳) + skel/canny 结构 loss. 数据=增强 fame_e 113,540 (latent/canny/skel 全对齐); 结构图 struct_fame_e (白线黑底, >127=正类, 与 probe 训练口径一致). 架构与 ckpt 完全一致 (Sp/2 + xattn12 + 41 冻结表 + std-skel-g), callig_spatial 不建 (ckpt 里该键被忽略, 实测 ±0.002 死重). LR 5e-5 cosine 到 500k, batch 128, eval_cfg 0.7 (与 0.5676 同口径). 观测: log 里 skel_loss/canny_loss 值 + strict 曲线.",
+  "_comment": "[2026-09-11] 从 c41x_cos_e@390k resume (strict 0.5676, 已证最佳) + skel/canny 结构 loss. 数据=增强 fame_e 113,540 (latent/canny/skel 全对齐); 结构图 data/struct/struct_fame_e (白线黑底, >127=正类, 与 probe 训练口径一致). 架构与 ckpt 完全一致 (Sp/2 + xattn12 + 41 冻结表 + std-skel-g), callig_spatial 不建 (ckpt 里该键被忽略, 实测 ±0.002 死重). LR 5e-5 cosine 到 500k, batch 128, eval_cfg 0.7 (与 0.5676 同口径). 观测: log 里 skel_loss/canny_loss 值 + strict 曲线.",
   "experiment_name": "v10b-stdskel-fame3-c41x-cos-e-struct",
   "results_dir": "assets/results/v10b_stdskel_fame3_c41x_cos_e_struct",
   "model": "DiT-2Cond-Sp/2",
   "skel_as_glyph_cond": true,
-  "skel_latent_shards_dir": "std_skel1_latents_fame_e",
+  "skel_latent_shards_dir": "data/skel/std_skel1_latents_fame_e",
   "glyph_scale_init": 0.6,
   "glyph_drop_prob": 0.1,
   "glyph_embedder_depth": 2,
   "glyph_inject_layers": 12,
-  "latent_shards_dir": "final_latents_fame_e",
-  "img_root": "final_imgs_fame_e",
+  "latent_shards_dir": "data/latents/final_latents_fame_e",
+  "img_root": "data/imgs/final_imgs_fame_e",
   "num_calligraphers": 41,
   "condition_fusion": "factorized_add",
   "callig_embed_dim": 128,
@@ -44,7 +44,7 @@
   "w_repa": 0.03,
   "gpu_eval_cfg": 0.7,
   "gpu_eval_n": 10,
-  "gpu_eval_img_root": "final_imgs_fame_e",
+  "gpu_eval_img_root": "data/imgs/final_imgs_fame_e",
   "gpu_eval_every": 2500,
   "auto_eval": false,
   "eval_csv": "assets/eval_seen_v10.csv",
@@ -65,6 +65,6 @@
   "w_latent_canny": 0.1,
   "latent_structure_probe": "assets/results/latent_struct_probe.pt",
   "latent_struct_max_t": 500,
-  "skel_root": "struct_fame_e/skel",
-  "canny_root": "struct_fame_e/canny"
+  "skel_root": "data/struct/struct_fame_e/skel",
+  "canny_root": "data/struct/struct_fame_e/canny"
 }

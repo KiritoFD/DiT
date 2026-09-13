@@ -18,7 +18,7 @@ b1/b2/b3 = 同一算子不同强度: 测笔画宽 w, 朝带中 mid=(4.5+9)/2=6.7
   b1: K=0.6 cap 0.35w   b2: K=1.2 cap 0.5w   b3: K=2.0 cap 0.65w
 细→粗 / 粗→细, 更好看更好学. 无 _a/_c.
 输出: assets/aug_renders_fame_v3/<id>_{b1,b2,b3}.png + train_fame3_aug_v3.csv
-输出: assets/fame3-e/<id>_{b1,b2,b3}.png + assets/train_fame3_e.csv
+输出: data/imgs/fame3-e/<id>_{b1,b2,b3}.png + assets/train_fame3_e.csv
 """
 import csv
 import json
@@ -30,7 +30,7 @@ ROOT = "/root/Workspace/xy/DiT"
 SRC_CSV = f"{ROOT}/assets/train_fame3_clean_v8.csv"
 OUT_DIR = f"{ROOT}/assets/aug_renders_fame_v3"
 OUT_CSV = f"{ROOT}/assets/train_fame3_aug_v3.csv"
-OUT_DIR = f"{ROOT}/assets/fame3-e"
+OUT_DIR = f"{ROOT}/data/imgs/fame3-e"
 OUT_CSV = f"{ROOT}/assets/train_fame3_e.csv"
 sys.stdout.reconfigure(encoding="utf-8")
 
@@ -42,12 +42,12 @@ MID = (LO + HI) / 2.0
         for kind in KINDS:
             r2 = dict(r)
             r2["image_path"] = f"assets/aug_renders_fame_v3/{base}_{kind}.png"
-            r2["image_path"] = f"assets/fame3-e/{base}_{kind}.png"
+            r2["image_path"] = f"data/imgs/fame3-e/{base}_{kind}.png"
             r2["aug"] = kind
             w.writerow(r2)
 n = sum(1 for _ in open(OUT_CSV, encoding="utf-8")) - 1
 print(f"{OUT_CSV}: {n} rows")
-$ python -c "import ast; ast.parse(open('tools/aug/aug_renders_v3.py',encoding='utf-8').read()); print('ok')" && scp tools/aug/aug_renders_v3.py 4090:/root/Workspace/xy/DiT/tools/aug/ && ssh 4090 "cd /root/Workspace/xy/DiT && /opt/conda/bin/python tools/aug/aug_renders_v3.py 2>&1 | tail -8 && ls assets/fame3-e | wc -l && du -sh assets/fame3-e"
+$ python -c "import ast; ast.parse(open('tools/aug/aug_renders_v3.py',encoding='utf-8').read()); print('ok')" && scp tools/aug/aug_renders_v3.py 4090:/root/Workspace/xy/DiT/tools/aug/ && ssh 4090 "cd /root/Workspace/xy/DiT && /opt/conda/bin/python tools/aug/aug_renders_v3.py 2>&1 | tail -8 && ls data/imgs/fame3-e | wc -l && du -sh data/imgs/fame3-e"
 ok
 5000/28385
 10000/28385
@@ -57,7 +57,7 @@ ok
 done: 28385 fails: 0
 /root/Workspace/xy/DiT/assets/train_fame3_e.csv: 85155 rows
 85155
-336M	assets/fame3-e
+336M	data/imgs/fame3-e
 + Thought: 2.7s
 全量生成完毕，顺手看一眼训练进度：
 $ ssh 4090 "tail -1 /root/Workspace/xy/DiT/logs/v10b_stdskel_fame3_c41x_cos/train_*.log | head -1; ls /root/Workspace/xy/DiT/assets/results/v10b_stdskel_fame3_c41x_cos/20260909-103136-*/checkpoints/*.pt 2>/dev/null | tail -2; cat /root/Workspace/xy/DiT/assets/results/v10b_stdskel_fame3_c41x_cos/20260909-103136-*/checkpoints/eval_auto_*.json 2>/dev/null | python3 -c \"import json,sys; [print(f) for f in [x] ]\" 2>/dev/null; ls /root/Workspace/xy/DiT/assets/results/v10b_stdskel_fame3_c41x_cos/20260909-103136-*/checkpoints/ | grep eval_auto | tail -3"
@@ -72,7 +72,7 @@ $ ssh 4090 "cat /root/Workspace/xy/DiT/assets/results/v10b_stdskel_fame3_c41x_co
 + Thought: 2.2s
 完成。状态汇总：
 fame3-e 已生成
-- assets/fame3-e/：85,155 张（28,385 × b1/b2/b3），0 失败，336MB
+- data/imgs/fame3-e/：85,155 张（28,385 × b1/b2/b3），0 失败，336MB
 - assets/train_fame3_e.csv：85,155 行（aug 列标记 b1/b2/b3；原图行训练时从原 csv 引入）
 - b3 的“扭曲”顾虑留档了：它是 diversity 最大的一档（0.774≈真实再写差异），如果最后嫌它野，训练 csv 里剔除 b3 行即可，图已备着
 训练（c41x_cos）

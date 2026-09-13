@@ -88,7 +88,7 @@ for iid, e, skey, ckey in selected:
     calli_id = train_calli_map[ckey]
     glyph_id = sid * NUM_CHARACTERS + char_id
     out_rows.append({
-        'image_path': f"final_imgs_256/{iid}.png",
+        'image_path': f"data/imgs/final_imgs_256/{iid}.png",
         'calligrapher': e.get('orig_calli', ''),
         'script': skey[0],
         'character': e.get('orig_char', ''),

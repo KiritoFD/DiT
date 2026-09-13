@@ -9,8 +9,8 @@
   "condition_fusion": "factorized_add",
   "callig_embed_dim": 128,
   "char_embed_dim": 384,
-  "char_dino_embeddings": "pretrained_models/dino_embeddings/glyph_dino_embeddings_384.npy",
-  "char_dino_index": "pretrained_models/dino_embeddings/glyph_dino_index.json",
+  "char_dino_embeddings": "data/pretrained/dino_embeddings/glyph_dino_embeddings_384.npy",
+  "char_dino_index": "data/pretrained/dino_embeddings/glyph_dino_index.json",
   "cond_drop_all_prob": 0.05,
   "cond_drop_one_prob": 0.25,
   "image_size": 256,
@@ -33,7 +33,7 @@
   "ema_decay": 0.9999,
   "ema_warmup": true,
   "vae": "ema",
-  "vae_path": "pretrained_models/sd-vae-ft-ema",
+  "vae_path": "data/pretrained/sd-vae-ft-ema",
   "use_lora": false,
   "reset_cond_head": false,
   "train_cond_head": false,
@@ -64,7 +64,7 @@
   "early_stop_patience": 6,
   "early_stop_min_steps": 60000,
   "latent_shards_dir": "final_latents",
-  "img_root": "final_imgs_256",
+  "img_root": "data/imgs/final_imgs_256",
   "canny_root": "final_canny",
-  "skel_root": "final_skeleton"
+  "skel_root": "data/skel/final_skeleton"
 }

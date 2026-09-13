@@ -31,7 +31,7 @@
 | `src/train/train.py` | 新增 `--use-std-dino-char-embedder` / `--std-dino-table-path` / `--use-ot`；DINO init 跳过 std_dino；`opt.zero_grad(set_to_none=True)`。 |
 | `src/train/train_controlnet.py` | 新增 std_dino 参数透传。 |
 | `src/utils/latent_dataset.py` | 清洗数据相关（img_id 解析等）。 |
-| `gradio_fame_local.py`、`s27_ctrl_std_skel.json` | 推理/配置微调。 |
+| `gradio_fame_local.py`、`s27_ctrl_data/skel/std_skel.json` | 推理/配置微调。 |
 
 ---
 
@@ -98,13 +98,13 @@ s28 已开启（`use_ot=true`）。代价 O(B³) scipy + 一次 GPU→CPU 同步
 ## 4. 数据清洗
 
 清洗管线（用户执行）产出：
-- `final_imgs_256_clean/`：1457 张修复图（denoise 1030 / crop 357 / invert 70 / big_glyph 327）
+- `data/imgs/final_imgs_256_clean/`：1457 张修复图（denoise 1030 / crop 357 / invert 70 / big_glyph 327）
 - `assets/train_fame_clean.csv`：51321 行（丢弃 1 张垃圾图）
 - `assets/eval_fame_strict_clean.csv`：500 行（27 张 clean）
 
 **latent 局部替换**（不全部重 encode）：
 - 只 encode 1430 张 clean 修复图（29s），按 img_id 替换进 20 个旧 shards
-- 生成 `final_latents_fame_clean/`，校验 1430/1430 替换、id 集合一致
+- 生成 `data/latents/final_latents_fame_clean/`，校验 1430/1430 替换、id 集合一致
 - eval 不需要 latent（`prepare_eval_cache` 实时读 csv 的 image_path，自动用 clean 图）
 
 ---

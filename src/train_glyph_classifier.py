@@ -1,6 +1,6 @@
 """Train glyph classifier on 3-top30 VAE latents.
 
-Input: pretrained_models/3top30_latents.npz (41029, 4, 32, 32) + assets/train_3top30_nobeike.csv
+Input: data/pretrained/3top30_latents.npz (41029, 4, 32, 32) + assets/train_3top30_nobeike.csv
 Output: glyph_classifier_ckpts/best.pt
 
 Usage:
@@ -22,7 +22,7 @@ from torch.optim.lr_scheduler import CosineAnnealingLR
 from glyph_classifier import GlyphLatentClassifier
 
 # ── Config ──────────────────────────────────────────────────────────────────
-LATENTS_PATH = "pretrained_models/3top30_latents.npz"
+LATENTS_PATH = "data/pretrained/3top30_latents.npz"
 TRAIN_CSV = "assets/train_3top30_nobeike.csv"
 EVAL_CSV = "assets/eval100_3top30.csv"
 CKPT_DIR = "glyph_classifier_ckpts"

@@ -14,7 +14,7 @@ BASE = "/root/Workspace/xy/DiT"
 
 def fix_path(p):
     if p.startswith("final_images/"):
-        return p.replace("final_images/", "final_imgs_256/", 1)
+        return p.replace("final_images/", "data/imgs/final_imgs_256/", 1)
     return p
 
 # ── 1) 扩展 eval 集 ──

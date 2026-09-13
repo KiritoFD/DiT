@@ -28,7 +28,7 @@ from concurrent.futures import ThreadPoolExecutor
 # ── 配置 ──
 BASE = "/root/Workspace/xy/DiT"
 CSV_PATH = os.path.join(BASE, "assets", "train_top30_clean.csv")
-IMG_ROOT = BASE  # CSV 里是 final_imgs_256/xxx.png
+IMG_ROOT = BASE  # CSV 里是 data/imgs/final_imgs_256/xxx.png
 BATCH_SIZE = 256  # CPU batch (大 batch 更高效)
 DEVICE = "cpu"
 MAX_IMAGES = 0  # 0 = 全量 106,345
@@ -89,9 +89,9 @@ def load_image_paths(csv_path, max_n=0):
     paths = []
     for r in rows:
         p = r["image_path"]
-        # final_images/ 已删除, 统一替换为 final_imgs_256/
+        # final_images/ 已删除, 统一替换为 data/imgs/final_imgs_256/
         if p.startswith("final_images/"):
-            p = p.replace("final_images/", "final_imgs_256/", 1)
+            p = p.replace("final_images/", "data/imgs/final_imgs_256/", 1)
         full = os.path.join(IMG_ROOT, p)
         if os.path.isfile(full):
             paths.append(full)

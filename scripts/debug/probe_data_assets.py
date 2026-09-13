@@ -22,16 +22,16 @@ def summarize(name):
     print('  first %d shards: %d imgs, unique ids %d' % (min(5, len(fs)), tot, len(idset)))
     return fs
 
-for name in ['final_latents_fame_clean', 'final_latents_fame',
-             'final_skel_latents_fame_1px', 'final_skel_latents_fame',
-             'final_latents_f4', 'final_skel_latents_eval_1px']:
+for name in ['data/latents/final_latents_fame_clean', 'data/latents/final_latents_fame',
+             'data/skel/final_skel_latents_fame_1px', 'data/skel/final_skel_latents_fame',
+             'data/latents/final_latents_f4', 'data/skel/final_skel_latents_eval_1px']:
     try:
         summarize(name)
     except Exception as e:
         print('== %s == ERR %r' % (name, e))
 
-# inode check: is final_latents_fame_clean a symlink or hardlink of final_latents_fame?
-for a, b in [('final_latents_fame_clean/shard_0000.npz', 'final_latents_fame/shard_0000.npz')]:
+# inode check: is data/latents/final_latents_fame_clean a symlink or hardlink of data/latents/final_latents_fame?
+for a, b in [('data/latents/final_latents_fame_clean/shard_0000.npz', 'data/latents/final_latents_fame/shard_0000.npz')]:
     if os.path.exists(a) and os.path.exists(b):
         print(a, '==', b, 'hardlink?', os.stat(a).st_ino == os.stat(b).st_ino,
               'size', os.path.getsize(a), os.path.getsize(b))
@@ -40,5 +40,5 @@ for a, b in [('final_latents_fame_clean/shard_0000.npz', 'final_latents_fame/sha
 # fame.npz img_ids coverage vs clean shards
 npz = np.load('fame.npz')
 print('fame.npz ids:', npz['img_ids'].shape, 'latents:', npz['latents'].shape, npz['latents'].dtype)
-d0 = np.load('final_latents_fame_clean/shard_0000.npz')
+d0 = np.load('data/latents/final_latents_fame_clean/shard_0000.npz')
 print('clean shard0 ids[:5]:', d0['img_ids'][:5])

@@ -58,7 +58,7 @@ def main():
     n_eff = gts.shape[0]
     G.log(f"strict n={n_eff}, skel hit={int((g.view(n_eff, -1).sum(1) != 0).sum())}/{n_eff}")
 
-    vae = load_eval_vae(dev, "pretrained_models/sd-vae-ft-ema")
+    vae = load_eval_vae(dev, "data/pretrained/sd-vae-ft-ema")
     results = {}
     for c in cfgs:
         t0 = time.time()

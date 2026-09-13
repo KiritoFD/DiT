@@ -11,10 +11,10 @@
   "compile_mode": "default",
 
   "csv": "assets/train_fame_clean_v8.csv",
-  "latent_shards_dir": "final_latents_fame_v8",
-  "img_root": "final_imgs_fame_v8",
-  "skel_root": "final_skel1_fame_v8",
-  "skel_latent_shards_dir": "final_skel_latents_fame_1px_v8",
+  "latent_shards_dir": "data/latents/final_latents_fame_v8",
+  "img_root": "data/imgs/final_imgs_fame_v8",
+  "skel_root": "data/skel/final_skel1_fame_v8",
+  "skel_latent_shards_dir": "data/skel/final_skel_latents_fame_1px_v8",
   "skel_cond_channels": 4,
 
   "num_calligraphers": 1013,
@@ -78,5 +78,5 @@
   "repa_early_layers": "8,11",
   "repa_early_layer": 8,
   "repa_early_warmup": 2000,
-  "repa_teacher_ckpt": "pretrained_models/dinov2_vits14_pretrain.safetensors"
+  "repa_teacher_ckpt": "data/pretrained/dinov2_vits14_pretrain.safetensors"
 }

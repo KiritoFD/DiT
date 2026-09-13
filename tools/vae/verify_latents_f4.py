@@ -5,7 +5,7 @@ verify_latents_f4.py — encode 完后验证:
   2. 随机挑 N 张: decode(latent) vs GT → MSE/SSIM 底噪
 
 用法 (远程):
-  python tools/vae/verify_latents_f4.py --shards final_latents_f4 --vae pretrained_models/kl-f4 --img-root final_images --n 100
+  python tools/vae/verify_latents_f4.py --shards data/latents/final_latents_f4 --vae data/pretrained/kl-f4 --img-root final_images --n 100
 """
 import os, sys, glob, random, time
 sys.stdout.reconfigure(encoding="utf-8")
@@ -45,8 +45,8 @@ def _ssim(x, y, data_range=2.0, win=None):
 def main():
     import argparse
     ap = argparse.ArgumentParser()
-    ap.add_argument("--shards", default="final_latents_f4")
-    ap.add_argument("--vae", default="pretrained_models/kl-f4")
+    ap.add_argument("--shards", default="data/latents/final_latents_f4")
+    ap.add_argument("--vae", default="data/pretrained/kl-f4")
     ap.add_argument("--img-root", default="final_images")
     ap.add_argument("--n", type=int, default=100, help="N images for recon test")
     ap.add_argument("--batch", type=int, default=8)

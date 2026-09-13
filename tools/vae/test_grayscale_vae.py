@@ -111,10 +111,10 @@ def eval_vae(vae, images_gray, device, batch=8, is_1ch=True):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--vae3", default="pretrained_models/sd-vae-ft-ema", help="3ch VAE (baseline)")
-    ap.add_argument("--vae1", default="pretrained_models/sd-vae-ft-ema-gray", help="1ch grayscale VAE")
-    ap.add_argument("--vae-klf4", default="pretrained_models/kl-f4", help="kl-f4 3ch VAE")
-    ap.add_argument("--vae-klf4-gray", default="pretrained_models/kl-f4-gray", help="kl-f4 1ch VAE")
+    ap.add_argument("--vae3", default="data/pretrained/sd-vae-ft-ema", help="3ch VAE (baseline)")
+    ap.add_argument("--vae1", default="data/pretrained/sd-vae-ft-ema-gray", help="1ch grayscale VAE")
+    ap.add_argument("--vae-klf4", default="data/pretrained/kl-f4", help="kl-f4 3ch VAE")
+    ap.add_argument("--vae-klf4-gray", default="data/pretrained/kl-f4-gray", help="kl-f4 1ch VAE")
     ap.add_argument("--csv", default="assets/eval100_top30.csv")
     ap.add_argument("--img-root", default="final_images")
     ap.add_argument("--n", type=int, default=50)

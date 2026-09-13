@@ -40,7 +40,7 @@ def build_eval_cache(eval_csv, img_root, skel_root, image_size=256, n=100,
         skel_latent_shards_dir=skel_latent_shards_dir)
 
 
-def _load_vae(device, vae_path="pretrained_models/sd-vae-ft-ema"):
+def _load_vae(device, vae_path="data/pretrained/sd-vae-ft-ema"):
     from diffusers.models import AutoencoderKL
     vae = AutoencoderKL.from_pretrained(vae_path).to(device).eval()
     for p in vae.parameters():
@@ -69,7 +69,7 @@ def _compute_and_save(vae, latents, cache, out_dir, tag, step_tag, device,
 
 def eval_run(model, diffusion, cache, device, step, out_dir,
              ddim_steps=50, cfg_scale=0.7, dit_batch=8, vae_batch=16,
-             with_skel=True, vae_path="pretrained_models/sd-vae-ft-ema",
+             with_skel=True, vae_path="data/pretrained/sd-vae-ft-ema",
              use_lpips=True, n_samples=None):
     """统一 in-process eval: 采样(GPU/CPU) → 落盘 → 同进程指标 → eval_auto_*.
 

@@ -32,7 +32,7 @@
   "ema_decay": 0.9999,
   "ema_warmup": true,
   "vae": "ema",
-  "vae_path": "pretrained_models/sd-vae-ft-ema",
+  "vae_path": "data/pretrained/sd-vae-ft-ema",
   "use_lora": false,
   "reset_cond_head": false,
   "train_cond_head": false,
@@ -69,7 +69,7 @@
   "early_stop_min_steps": 30000,
   "resume_full": "assets/results/s6_top6_diffonly/20260819-225143-s6-top6-diffonly/checkpoints/0020000.pt",
   "latent_shards_dir": "final_latents",
-  "img_root": "final_imgs_256",
+  "img_root": "data/imgs/final_imgs_256",
   "canny_root": "final_canny",
-  "skel_root": "final_skeleton"
+  "skel_root": "data/skel/final_skeleton"
 }

@@ -1541,7 +1541,7 @@ def main_from_cli(argv=None):
                         help="外挂低秩基图数量 r (callig_spatial_net 输出维度)")
     parser.add_argument("--aux-latent-shards-dirs", type=str, default="",
                         help="moyi 式辅助目标通道: 逗号分隔 aux latent shard 目录 "
-                             "(如 aux_skel_latents_fame_e,aux_canny_latents_fame_e)。"
+                             "(如 data/aux/aux_skel_latents_fame_e,data/aux/aux_canny_latents_fame_e)。"
                              "训练目标 x = cat(image, *aux), 对全部通道加噪/算 MSE; 推理只用前 4 通道。")
     parser.add_argument("--aux-loss-weight", type=float, default=1.0,
                         help="aux 通道 loss 权重 (1.0=等权/ref; <1 时图像主导)")
@@ -1687,7 +1687,7 @@ def main_from_cli(argv=None):
     parser.add_argument("--ema-warmup", type=_str_to_bool, default=True,
                         help="Cap early EMA decay by update count to avoid random-init lag.")
     parser.add_argument("--vae", type=str, choices=["ema", "mse"], default="ema")
-    parser.add_argument("--vae-path", type=str, default="pretrained_models/sd-vae-ft-ema", help="Local path to VAE weights")
+    parser.add_argument("--vae-path", type=str, default="data/pretrained/sd-vae-ft-ema", help="Local path to VAE weights")
     parser.add_argument("--vae-downscale", type=int, default=8, help="VAE spatial downsample factor (8=f8 sd-vae, 4=f4 kl-f4)")
     parser.add_argument("--latent-channels", type=int, default=4, help="VAE latent channel count (4=sd-vae, 3=kl-f4)")
     parser.add_argument("--vae-in-channels", type=int, default=3, help="VAE input image channels (3=RGB, 1=grayscale)")
@@ -1782,7 +1782,7 @@ def main_from_cli(argv=None):
     parser.add_argument("--w-repa", type=float, default=0.0, help="Weight for Representation Alignment (REPA) Loss (0 = disabled, default)")
     parser.add_argument("--repa-teacher-ckpt", type=str, default="",
                         help="Local path to DINOv2 teacher weights (ModelScope safetensors). "
-                             "Empty = auto-detect pretrained_models/dinov2_vits14_pretrain.safetensors or $DINO_WEIGHTS.")
+                             "Empty = auto-detect data/pretrained/dinov2_vits14_pretrain.safetensors or $DINO_WEIGHTS.")
     parser.add_argument("--optimizer", type=str, default="adamw", choices=["adamw", "muon"],
                         help="Optimizer: adamw (default) or muon (matrix NS-orth + adamw for vec/embed).")
     parser.add_argument("--muon-lr", type=float, default=0.02,
@@ -1790,7 +1790,7 @@ def main_from_cli(argv=None):
     parser.add_argument("--latent-shards-dir", type=str, default=None,
                         help="Dir of pre-built latent shards (shard_XXXXX.npz). If set, training reads "
                              "pre-encoded VAE latents instead of on-the-fly VAE encode.")
-    parser.add_argument("--img-root", type=str, default="final_imgs_256",
+    parser.add_argument("--img-root", type=str, default="data/imgs/final_imgs_256",
                         help="Root dir of 256x256 gt images (used with latent-cached training for gt-losses).")
     parser.add_argument("--config", type=str, default="config.json",
                         help="Path to JSON config file with default args (CLI overrides).")

@@ -70,9 +70,9 @@ for k, (b, c, s) in PAIRS.items():
 
 # ---- 固定评测 batch (16 样本, 与训练 eval 同源) ----
 N = 16
-cache = make_eval_cache("assets/eval_fame_strict_clean_v8.csv", "final_imgs_fame_v8", None,
+cache = make_eval_cache("assets/eval_fame_strict_clean_v8.csv", "data/imgs/final_imgs_fame_v8", None,
                         256, N, 8, 4, 0.18215,
-                        skel_latent_shards_dir="final_skel_latents_fame_1px_v8")
+                        skel_latent_shards_dir="data/skel/final_skel_latents_fame_1px_v8")
 yc = torch.tensor([c[0] for c in cache["conds"]], device=dev)
 yh = torch.tensor([c[1] for c in cache["conds"]], device=dev)
 skel = cache["skels_latent"].float().to(dev)

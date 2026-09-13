@@ -83,7 +83,7 @@ ZeroAdaLNInjection 逐层调制更稳。且 glyph_scale 固定 0.4 偏保守。
 **混合 1px/3px**，模型对"粗骨架到生成"的映射更稳，部署端（手绘/字库）更贴。
 
 **改动**：
-- 新增 3px 骨架 shard（`final_skel_latents_fame_3px_v8`，若存在）或训练期
+- 新增 3px 骨架 shard（`data/skel/final_skel_latents_fame_3px_v8`，若存在）或训练期
   对 1px latent 做形态膨胀增强（低成本，采样时随机 dilate 1-3px）
 - eval g 条件也用 3px（与测评协议对齐）
 

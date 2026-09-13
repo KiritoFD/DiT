@@ -1,7 +1,7 @@
 [
   {
     "name": "kl-f4_p4",
-    "vae_path": "/root/Workspace/xy/DiT/pretrained_models/kl-f4",
+    "vae_path": "/root/Workspace/xy/DiT/data/pretrained/kl-f4",
     "downscale": 4,
     "latent_channels": 3,
     "scaling_factor": 0.102079,
@@ -25,7 +25,7 @@
   },
   {
     "name": "kl-f4_p2",
-    "vae_path": "/root/Workspace/xy/DiT/pretrained_models/kl-f4",
+    "vae_path": "/root/Workspace/xy/DiT/data/pretrained/kl-f4",
     "downscale": 4,
     "latent_channels": 3,
     "scaling_factor": 0.102079,
@@ -49,7 +49,7 @@
   },
   {
     "name": "sd-vae-ft-ema_p4",
-    "vae_path": "/root/Workspace/xy/DiT/pretrained_models/sd-vae-ft-ema",
+    "vae_path": "/root/Workspace/xy/DiT/data/pretrained/sd-vae-ft-ema",
     "downscale": 8,
     "latent_channels": 4,
     "scaling_factor": 0.18215,
@@ -73,7 +73,7 @@
   },
   {
     "name": "sd-vae-ft-ema_p2",
-    "vae_path": "/root/Workspace/xy/DiT/pretrained_models/sd-vae-ft-ema",
+    "vae_path": "/root/Workspace/xy/DiT/data/pretrained/sd-vae-ft-ema",
     "downscale": 8,
     "latent_channels": 4,
     "scaling_factor": 0.18215,

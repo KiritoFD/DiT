@@ -15,6 +15,6 @@ def run(cmd, timeout=60):
     return None
 
 # 杀 1px 进程 + 杀 tmux session
-print(run("tmux kill-session -t structnet 2>/dev/null; pkill -9 -f 'train_skel_decoder.py.*skel_root.*final_skeleton ' 2>/dev/null; sleep 1; echo KILLED"))
+print(run("tmux kill-session -t structnet 2>/dev/null; pkill -9 -f 'train_skel_decoder.py.*skel_root.*data/skel/final_skeleton ' 2>/dev/null; sleep 1; echo KILLED"))
 # 确认只剩 3px
 print(run("pgrep -af train_skel_decoder | head -4; echo '---'; tmux ls 2>/dev/null"))

@@ -2,7 +2,7 @@
   "data_csv": "final_train.csv",
   "data_dir": "",
   "results_dir": "results/exp_xl_head_r64",
-  "pretrained": "pretrained_models/DiT-XL-2-256x256.pt",
+  "pretrained": "data/pretrained/DiT-XL-2-256x256.pt",
   "model": "DiT-3Cond-XL/2",
   "cond_mode": "3cond",
   "image_size": 256,
@@ -15,7 +15,7 @@
   "global_batch_size": 8,
   "global_seed": 0,
   "vae": "ema",
-  "vae_path": "pretrained_models/sd-vae-ft-ema",
+  "vae_path": "data/pretrained/sd-vae-ft-ema",
   "use_lora": true,
   "lora_r": 64,
   "lora_alpha": 64,
@@ -36,5 +36,5 @@
   "use_canny": false,
   "use_skel": false,
   "latent_shards_dir": "final_latents",
-  "img_root": "final_imgs_256"
+  "img_root": "data/imgs/final_imgs_256"
 }

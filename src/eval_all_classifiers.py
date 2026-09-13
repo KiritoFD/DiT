@@ -17,7 +17,7 @@ from glyph_classifier import GlyphLatentClassifier
 from train_glyph_classifier import LatentGlyphDataset
 
 CKPT_DIR = "glyph_classifier_ckpts"
-LATENTS_PATH = "pretrained_models/3top30_latents.npz"
+LATENTS_PATH = "data/pretrained/3top30_latents.npz"
 PIXEL_NPZ = "_classifier_pixel64_data.npz"
 TRAIN_CSV = "assets/train_3top30_nobeike.csv"
 

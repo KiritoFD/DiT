@@ -65,7 +65,7 @@ def main():
     cache = make_eval_cache(csv_path, img_root, None, 256, n, 8, 4, 0.18215,
                             skel_latent_shards_dir=shards)
     noise, conds = cache["noise"], cache["conds"]
-    vae = load_eval_vae(dev, "pretrained_models/sd-vae-ft-ema")
+    vae = load_eval_vae(dev, "data/pretrained/sd-vae-ft-ema")
     diff = build_diffusion(args.ddim_steps, "flow")
 
     arch = dict(norm_type=a.get("norm_type", "rms"), mlp_type=a.get("mlp_type", "swiglu"),

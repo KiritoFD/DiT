@@ -1,6 +1,6 @@
 [[34m2026-08-16 13:34:13[0m] Experiment directory created at assets/results/v3a_xl_skelhead/20260816-133413-v3a-XL-skelhead-guide
 [[34m2026-08-16 13:34:21[0m] Building 2-Cond model: DiT-2Cond-XL/2 (callig=1011, glyph/char=35130, fusion=xl_highdim, dims=384/768, dropout=all:0.05, one:0.25, skel_head=True)
-[[34m2026-08-16 13:34:24[0m] Loaded pre-trained weights from pretrained_models/DiT-XL-2-256x256.pt.
+[[34m2026-08-16 13:34:24[0m] Loaded pre-trained weights from data/pretrained/DiT-XL-2-256x256.pt.
 [[34m2026-08-16 13:34:24[0m] Missing keys (expected for 2/3-cond): ['y_scale', 'y_callig_embedder.embedding_table.weight', 'y_char_embedder.embedding_table.weight', 'cond_fusion.0.weight', 'cond_fusion.0.bias', 'cond_fusion.1.weight', 'cond_fusion.1.bias', 'cond_fusion.3.weight', 'cond_fusion.3.bias', 'skel_head.1.weight', 'skel_head.1.bias']
 [[34m2026-08-16 13:34:24[0m] Unexpected keys (filtered): []
 [[34m2026-08-16 13:34:25[0m] [cond-head] reset adaLN/final_layer to std=0.02 (retain task-agnostic transformer engine, drop ImageNet class-condition coupling).
@@ -8,7 +8,7 @@
 [[34m2026-08-16 13:34:25[0m] Trainable Parameters: 264,130,597
 [[34m2026-08-16 13:34:25[0m] Frozen Parameters: 448,136,064 (trainable ratio: 37.08%)
 [[34m2026-08-16 13:34:27[0m] [EMA] enabled with decay=0.9999
-[[34m2026-08-16 13:34:27[0m] Loading VAE from local path: pretrained_models/sd-vae-ft-ema
+[[34m2026-08-16 13:34:27[0m] Loading VAE from local path: data/pretrained/sd-vae-ft-ema
 [[34m2026-08-16 13:34:27[0m] Preparing auto-eval cache (csv=assets/eval_strata/clean_unseen_triple_100.csv, n=100) ...
 [[34m2026-08-16 13:34:27[0m] Auto-eval cache ready (free-sampling mode).
 [[34m2026-08-16 13:34:27[0m] DiT Parameters: 712,266,661

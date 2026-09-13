@@ -3,7 +3,7 @@
   "data_dir": null,
   "results_dir": "assets/results/v3a_xl_skelhead",
   "experiment_name": "v3a-XL-skelhead-guide",
-  "pretrained": "pretrained_models/DiT-XL-2-256x256.pt",
+  "pretrained": "data/pretrained/DiT-XL-2-256x256.pt",
   "reset_cond_head": true,
   "train_cond_head": true,
   "model": "DiT-2Cond-XL/2",
@@ -35,7 +35,7 @@
   "ema_decay": 0.9999,
   "ema_warmup": true,
   "vae": "ema",
-  "vae_path": "pretrained_models/sd-vae-ft-ema",
+  "vae_path": "data/pretrained/sd-vae-ft-ema",
   "use_lora": true,
   "lora_r": 16,
   "lora_alpha": 16,
@@ -70,8 +70,8 @@
   "use_canny": false,
   "use_skel": false,
   "latent_shards_dir": "final_latents",
-  "img_root": "final_imgs_256",
+  "img_root": "data/imgs/final_imgs_256",
   "canny_root": "final_canny",
-  "skel_root": "final_skeleton",
+  "skel_root": "data/skel/final_skeleton",
   "config": "exp_s_assets_v3a_XL_skelhead.json"
 }

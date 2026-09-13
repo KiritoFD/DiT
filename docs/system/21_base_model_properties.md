@@ -164,7 +164,7 @@ early_stop = SSIM 停止提升
 ## 8. 特征空间分离度实测（2026-09-04，`_diag/feature_analysis.py`，s21 base @0030000）
 
 用 silhouette / 线性探针直接测量 s21 base 的特征空间，样本 = `eval_fame_strict.csv` 前 100 条
-（94 字 / 30 书家），骨架 latent 取 `final_skel_latents_fame_1px_v8`。
+（94 字 / 30 书家），骨架 latent 取 `data/skel/final_skel_latents_fame_1px_v8`。
 
 ### 8.1 条件嵌入层面（查表值）
 

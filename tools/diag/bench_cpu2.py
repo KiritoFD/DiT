@@ -41,9 +41,9 @@ sd = {k: v for k, v in (ckd.get("ema") or ckd.get("ctrl")).items()
 c.load_state_dict(sd, strict=False)
 c.eval()
 
-cache = make_eval_cache("assets/eval_fame_strict_clean_v8.csv", "final_imgs_fame_v8",
+cache = make_eval_cache("assets/eval_fame_strict_clean_v8.csv", "data/imgs/final_imgs_fame_v8",
                         None, 256, 16, 8, 4, 0.18215,
-                        skel_latent_shards_dir="final_skel_latents_fame_1px_v8")
+                        skel_latent_shards_dir="data/skel/final_skel_latents_fame_1px_v8")
 noise, conds, skels = cache["noise"], cache["conds"], cache["skels_latent"].float()
 
 N = 16
@@ -54,7 +54,7 @@ t0 = time.time()
 lat_b = heun_sample_cpu(c, noise[:N], conds[:N], 0.7, BATCH, skel=None, seed=0)
 t_base = time.time() - t0
 
-vae = load_eval_vae(dev, "pretrained_models/sd-vae-ft-ema")
+vae = load_eval_vae(dev, "data/pretrained/sd-vae-ft-ema")
 t0 = time.time()
 _ = vae.decode(lat_b[:4] / 0.18215).sample  # warm
 t1 = time.time()

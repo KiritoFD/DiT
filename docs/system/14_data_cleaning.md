@@ -50,13 +50,13 @@
 
 | 目录 | 内容 | 用途 |
 |---|---|---|
-| `final_imgs_256/` | **共享 GT**（fame 之外的数据集未动） | REPA 等 GT 图训练 |
-| **`final_imgs_fame_v8/`** | **fame 图像现行位置（51,822 张，v8 数据集 img_root）** | v8 训练 |
-| **`final_latents_fame_v8/`** | **img latents（20 shards，v8 构建）** | v8 训练 |
-| **`final_skel1_fame_v8/` + `final_skel_latents_fame_1px_v8/`** | **1px 骨架 PNG + latents（v8 构建）** | v8b ctrl 条件 |
-| `final_imgs_256_v7backup/` | v7 清洗前原图备份（51,822） | 回滚/对照 |
-| `final_skel_latents_fame_std/` | 标准字库骨架 latents | std 变体（未训通，归档） |
-| ~~`final_latents_fame/`、`fame.npz`、`final_skel{1,3}_fame/`、`final_skel_latents_fame[_std]/`、`final_imgs_fame_clean/`~~ | **已删除**（09-03，被 v8 目录取代；清单见 15_progress §五） | — |
+| `data/imgs/final_imgs_256/` | **共享 GT**（fame 之外的数据集未动） | REPA 等 GT 图训练 |
+| **`data/imgs/final_imgs_fame_v8/`** | **fame 图像现行位置（51,822 张，v8 数据集 img_root）** | v8 训练 |
+| **`data/latents/final_latents_fame_v8/`** | **img latents（20 shards，v8 构建）** | v8 训练 |
+| **`data/skel/final_skel1_fame_v8/` + `data/skel/final_skel_latents_fame_1px_v8/`** | **1px 骨架 PNG + latents（v8 构建）** | v8b ctrl 条件 |
+| `data/imgs/final_imgs_256_v7backup/` | v7 清洗前原图备份（51,822） | 回滚/对照 |
+| `data/skel/final_skel_latents_fame_std/` | 标准字库骨架 latents | std 变体（未训通，归档） |
+| ~~`data/latents/final_latents_fame/`、`fame.npz`、`data/skel/final_skel{1,3}_fame/`、`data/skel/final_skel_latents_fame[_std]/`、`data/imgs/final_imgs_fame_clean/`~~ | **已删除**（09-03，被 v8 目录取代；清单见 15_progress §五） | — |
 
 注意：
 1. 清洗后图像已变化 ⇒ **img latents / 骨架 / 骨架 latents 必须级联重编码**（见 §5）。
@@ -71,15 +71,15 @@
 - 设计：CPU VAE encode（RAM 251G，batch 256，DataLoader 24 workers 预解码），
   **不占 GPU**（与 1px 训练并行）；GPU 版此前已处理人工 39 张。
 - 级联内容：① 骨架 PNG 重算（1px+3px）② img latents → `fame.npz` +
-  `final_latents_fame/` ③ 3px skel latents → `final_skel_latents_fame/`
-  ④ 1px skel latents → `final_skel_latents_fame_1px/`。
+  `data/latents/final_latents_fame/` ③ 3px skel latents → `data/skel/final_skel_latents_fame/`
+  ④ 1px skel latents → `data/skel/final_skel_latents_fame_1px/`。
 - 坑：DataLoader collate 将 numpy 转 tensor（astype 前需 `.numpy()`）；
   CPU 上 `.to(torch.float16).cpu().numpy()`。
 
 ## 6. 1px ControlNet 变体（`ctrl_fame_1pix_v1`）
 
 - 动机：3px 骨架太粗（用户判断），1px 保留笔画中心线。
-- 数据：`final_skel_latents_fame_1px/`（1px 骨架 latent，训练/评测同域）。
+- 数据：`data/skel/final_skel_latents_fame_1px/`（1px 骨架 latent，训练/评测同域）。
 - 训练：warm-start s21@30000，resume 自 22500，**max_steps 扩至 100k**（用户），
   batch 72，cfg0.7，tmux `fame_1pix_ctrl`。
 - 中期指标（20k 步，resume 前）：SSIM 中位 0.7641 / MSE 0.1973 /

@@ -19,14 +19,14 @@ except Exception:
     pass
 changed = sorted(changed)
 
-# 对比 final_imgs_fame_clean vs final_imgs_256 (changed 抽样 + 非 changed 抽样)
+# 对比 data/imgs/final_imgs_fame_clean vs data/imgs/final_imgs_256 (changed 抽样 + 非 changed 抽样)
 import random
 rng = random.Random(3)
 ch_s = rng.sample(changed, 8)
 un_s = rng.sample([i for i in range(1, 60000) if i not in changed], 8)
 for iid in ch_s + un_s:
-    f1 = 'final_imgs_fame_clean/%d.png' % iid
-    f2 = 'final_imgs_256/%d.png' % iid
+    f1 = 'data/imgs/final_imgs_fame_clean/%d.png' % iid
+    f2 = 'data/imgs/final_imgs_256/%d.png' % iid
     e1, e2 = os.path.exists(f1), os.path.exists(f2)
     same = None
     if e1 and e2:
@@ -36,6 +36,6 @@ for iid in ch_s + un_s:
     print('id %6d %s changed=%s | clean_exists=%s p256_exists=%s same=%s' % (
         iid, 'CH' if iid in changed else 'un', iid in changed, e1, e2, same))
 
-# 非 changed 但 csv 指向 final_imgs_256: 它们是否与 fame_clean 一致?
+# 非 changed 但 csv 指向 data/imgs/final_imgs_256: 它们是否与 fame_clean 一致?
 print()
 print('total changed:', len(changed))

@@ -9,8 +9,8 @@
 1. **实例骨架不可推理**：v10 系 g 条件用 GT 实例骨架 latent —— 训练/评测可用，
    但真实生成时**没有目标样本的骨架**（只有要写的字）。遵循度 0.57 建立在一个
    推理时拿不到的条件上。
-2. **std skel**（`build_std_skel1_latents.py`）：用**标准字形**（字帖骨架）生成
-   骨架 latent `std_skel1_latents_fame3_v8` 作 g —— 推理时可得的骨架条件。
+2. **std skel**（`build_data/skel/std_skel1_latents.py`）：用**标准字形**（字帖骨架）生成
+   骨架 latent `data/skel/std_skel1_latents_fame3_v8` 作 g —— 推理时可得的骨架条件。
    - 信息缺口实测（`stdskel_gap.json`, n=3000）：cos(std, GT_skel)=0.902，
      |std−GT|_nmse=0.197 —— std 与实例骨架有 ~20% 差距（笔势/个人风格），
      但远好于 std 与最终目标 (0.814 nmse)。

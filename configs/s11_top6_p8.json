@@ -31,7 +31,7 @@
   "balance_char_alpha": 0.35,
   "balance_callig_alpha": 0.15,
   "vae": "ema",
-  "vae_path": "pretrained_models/kl-f4",
+  "vae_path": "data/pretrained/kl-f4",
   "vae_downscale": 4,
   "latent_channels": 3,
   "vae_in_channels": 3,
@@ -67,9 +67,9 @@
   "early_stop_metric": "ssim",
   "early_stop_patience": 6,
   "early_stop_min_steps": 60000,
-  "latent_shards_dir": "final_latents_f4",
-  "img_root": "final_imgs_256",
-  "skel_root": "final_skeleton",
-  "char_dino_embeddings": "pretrained_models/dino_embeddings/glyph_dino_embeddings.npy",
-  "char_dino_index": "pretrained_models/dino_embeddings/glyph_dino_index.json"
+  "latent_shards_dir": "data/latents/final_latents_f4",
+  "img_root": "data/imgs/final_imgs_256",
+  "skel_root": "data/skel/final_skeleton",
+  "char_dino_embeddings": "data/pretrained/dino_embeddings/glyph_dino_embeddings.npy",
+  "char_dino_index": "data/pretrained/dino_embeddings/glyph_dino_index.json"
 }

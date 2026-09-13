@@ -38,7 +38,7 @@ def load_image_paths():
     for r in rows:
         p = r["image_path"]
         if p.startswith("final_images/"):
-            p = p.replace("final_images/", "final_imgs_256/", 1)
+            p = p.replace("final_images/", "data/imgs/final_imgs_256/", 1)
         full = os.path.join(IMG_ROOT, p)
         if os.path.isfile(full):
             paths.append(full)

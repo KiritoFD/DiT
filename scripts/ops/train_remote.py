@@ -1013,7 +1013,7 @@ if __name__ == "__main__":
     parser.add_argument("--ema-warmup", type=_str_to_bool, default=True,
                         help="Cap early EMA decay by update count to avoid random-init lag.")
     parser.add_argument("--vae", type=str, choices=["ema", "mse"], default="ema")
-    parser.add_argument("--vae-path", type=str, default="pretrained_models/sd-vae-ft-ema", help="Local path to VAE weights")
+    parser.add_argument("--vae-path", type=str, default="data/pretrained/sd-vae-ft-ema", help="Local path to VAE weights")
     parser.add_argument("--use-lora", type=_str_to_bool, default=True, help="Use LoRA for fine-tuning DiT blocks")
     parser.add_argument("--lora-r", type=int, default=16, help="LoRA rank")
     parser.add_argument("--lora-alpha", type=int, default=None,
@@ -1109,7 +1109,7 @@ if __name__ == "__main__":
     parser.add_argument("--w-repa", type=float, default=1.0, help="Weight for Representation Alignment (REPA) Loss")
     parser.add_argument("--repa-teacher-ckpt", type=str, default="",
                         help="Local path to DINOv2 teacher weights (ModelScope safetensors). "
-                             "Empty = auto-detect pretrained_models/dinov2_vits14_pretrain.safetensors or $DINO_WEIGHTS.")
+                             "Empty = auto-detect data/pretrained/dinov2_vits14_pretrain.safetensors or $DINO_WEIGHTS.")
     parser.add_argument("--use-canny", type=_str_to_bool, default=False,
                         help="Enable Canny structural loss (requires canny maps in dataset/canny).")
     parser.add_argument("--use-skel", type=_str_to_bool, default=False,
@@ -1117,11 +1117,11 @@ if __name__ == "__main__":
     parser.add_argument("--latent-shards-dir", type=str, default=None,
                         help="Dir of pre-built latent shards (shard_XXXXX.npz). If set, training reads "
                              "pre-encoded VAE latents instead of on-the-fly VAE encode.")
-    parser.add_argument("--img-root", type=str, default="final_imgs_256",
+    parser.add_argument("--img-root", type=str, default="data/imgs/final_imgs_256",
                         help="Root dir of 256x256 gt images (used with latent-cached training for gt-losses).")
     parser.add_argument("--canny-root", type=str, default="final_canny",
                         help="Directory of precomputed canny images (img_id.png)")
-    parser.add_argument("--skel-root", type=str, default="final_skeleton",
+    parser.add_argument("--skel-root", type=str, default="data/skel/final_skeleton",
                         help="Directory of precomputed skeleton images (img_id.png)")
     parser.add_argument("--config", type=str, default="config.json",
                         help="Path to JSON config file with default args (CLI overrides).")

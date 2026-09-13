@@ -3,7 +3,7 @@
 [[34m2026-08-15 15:46:11[0m] Trainable Parameters: 34,096,608
 [[34m2026-08-15 15:46:11[0m] Frozen Parameters: 98,304 (trainable ratio: 99.71%)
 [[34m2026-08-15 15:46:12[0m] [EMA] enabled with decay=0.9999
-[[34m2026-08-15 15:46:12[0m] Loading VAE from local path: pretrained_models/sd-vae-ft-ema
+[[34m2026-08-15 15:46:12[0m] Loading VAE from local path: data/pretrained/sd-vae-ft-ema
 [[34m2026-08-15 15:46:12[0m] Preparing auto-eval cache (csv=assets/eval_strata/clean_unseen_triple_100.csv, n=100) ...
 [[34m2026-08-15 15:46:12[0m] Auto-eval cache ready (free-sampling mode).
 [[34m2026-08-15 15:46:12[0m] DiT Parameters: 34,194,912

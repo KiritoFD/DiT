@@ -62,18 +62,18 @@ eval 书家未见 0/500      ← 100% 见过
 
 | 目录 | 类别 | 文件数 | 大小 | latent 形状 | 说明 |
 |---|---|---:|---:|---|---|
-| `final_imgs_256` | 图片 | 329,715 | — | — | 256px RGB，平铺 `{id}.png` |
-| `final_latents_fame` | latent | 20 | 358.7 MB | (N,4,32,32) f16 | fame 图 latent |
-| `final_latents_f4` | latent | 26 | 3,020.7 MB | (N,4,32,32) | 全量 kl-f4，**仅 128,842 个 id** |
-| `final_latents_mid_clean` | latent | 25 | 807.9 MB | (N,4,32,32) | midclean |
+| `data/imgs/final_imgs_256` | 图片 | 329,715 | — | — | 256px RGB，平铺 `{id}.png` |
+| `data/latents/final_latents_fame` | latent | 20 | 358.7 MB | (N,4,32,32) f16 | fame 图 latent |
+| `data/latents/final_latents_f4` | latent | 26 | 3,020.7 MB | (N,4,32,32) | 全量 kl-f4，**仅 128,842 个 id** |
+| `data/latents/final_latents_mid_clean` | latent | 25 | 807.9 MB | (N,4,32,32) | midclean |
 | `final_latents` | latent | 66 | 2,577.2 MB | (N,4,32,32) | 早期 |
-| `final_skel3_fame` | 骨架 PNG | 51,822 | — | — | 3px 膨胀骨架 |
-| **`final_skel1_fame`** | 骨架 PNG | **51,822** | — | — | **1px 细骨架（新）** |
-| `final_skel_latents_fame` | 骨架 latent | 20 | 339.3 MB | (N,4,32,32) f16 | 3px |
-| **`final_skel_latents_fame_1px`** | 骨架 latent | **21** | **668.7 MB** | (N,4,32,32) f16 | **1px（新）** |
+| `data/skel/final_skel3_fame` | 骨架 PNG | 51,822 | — | — | 3px 膨胀骨架 |
+| **`data/skel/final_skel1_fame`** | 骨架 PNG | **51,822** | — | — | **1px 细骨架（新）** |
+| `data/skel/final_skel_latents_fame` | 骨架 latent | 20 | 339.3 MB | (N,4,32,32) f16 | 3px |
+| **`data/skel/final_skel_latents_fame_1px`** | 骨架 latent | **21** | **668.7 MB** | (N,4,32,32) f16 | **1px（新）** |
 
 **注意**：
-- `final_latents_f4` 只有 128,842 个 id，**不覆盖全量 329,715 张图**。
+- `data/latents/final_latents_f4` 只有 128,842 个 id，**不覆盖全量 329,715 张图**。
   需要新 latent 时必须现编码，不能假设已存在。
 - 1px 骨架目录是本次新建的（51,822 张，覆盖 train+eval 全量，无 stale 缺口）。
 
@@ -111,10 +111,10 @@ eval 书家未见 0/500      ← 100% 见过
 
 | 文件 | 大小 | 说明 |
 |---|---:|---|
-| `pretrained_models/dino_embeddings/glyph_dino_embeddings_384.npy` | — | 35,130×384 字形表 |
-| `pretrained_models/dino_embeddings/glyph_dino_index.json` | — | glyph → (script_id, char_id) |
-| `pretrained_models/dinov2_vits14_pretrain.safetensors` | — | DINOv2 ViT-S/14（本地） |
-| `pretrained_models/sd-vae-ft-ema` | — | kl-f4 VAE |
+| `data/pretrained/dino_embeddings/glyph_dino_embeddings_384.npy` | — | 35,130×384 字形表 |
+| `data/pretrained/dino_embeddings/glyph_dino_index.json` | — | glyph → (script_id, char_id) |
+| `data/pretrained/dinov2_vits14_pretrain.safetensors` | — | DINOv2 ViT-S/14（本地） |
+| `data/pretrained/sd-vae-ft-ema` | — | kl-f4 VAE |
 
 **DINO embedding 覆盖率**：20,468 / 35,130 行有真实 DINO 值，其余填均值。
 有效秩 34.1/384（见 14 文档）。
@@ -130,9 +130,9 @@ eval 书家未见 0/500      ← 100% 见过
 ```
 train.csv 的 image_path（如 final_images/12345.png）
   → 正则提取数字 → img_id = 12345
-  → final_imgs_256/12345.png
-  → final_latents_fame/shard_*.npz 里的 img_ids
-  → final_skel1_fame/12345.png
+  → data/imgs/final_imgs_256/12345.png
+  → data/latents/final_latents_fame/shard_*.npz 里的 img_ids
+  → data/skel/final_skel1_fame/12345.png
 ```
 
 ### 5.2 已知的 stale 陷阱

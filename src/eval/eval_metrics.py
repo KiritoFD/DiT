@@ -11,7 +11,7 @@ class CalligraphyEvaluator:
     """
     def __init__(
         self,
-        checkpoint_path="pretrained_models/eval_classifier.pt",
+        checkpoint_path="data/pretrained/eval_classifier.pt",
         backbone="dinov2_vits14",
         device=None
     ):

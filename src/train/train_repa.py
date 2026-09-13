@@ -96,10 +96,10 @@ def parse_args():
                     help="调试: 只用前 N 个训练样本 (0=全部)")
     # ---- 数据 ----
     ap.add_argument("--csv", default="assets/train_fame_clean.csv")
-    ap.add_argument("--latent-shards-dir", default="final_latents_fame_clean")
-    ap.add_argument("--img-root", default="final_imgs_256", help="GT 图 (REPA 教师输入)")
-    ap.add_argument("--skel-root", default="final_skel1_fame")
-    ap.add_argument("--skel-latent-shards-dir", default="final_skel_latents_fame_1px")
+    ap.add_argument("--latent-shards-dir", default="data/latents/final_latents_fame_clean")
+    ap.add_argument("--img-root", default="data/imgs/final_imgs_256", help="GT 图 (REPA 教师输入)")
+    ap.add_argument("--skel-root", default="data/skel/final_skel1_fame")
+    ap.add_argument("--skel-latent-shards-dir", default="data/skel/final_skel_latents_fame_1px")
     ap.add_argument("--results-dir", default="assets/results/s32_repa_finetune")
     ap.add_argument("--experiment-name", default="s32-repa-finetune")
     # ---- 架构 (必须与 S30/s31 一致) ----
@@ -162,8 +162,8 @@ def parse_args():
     ap.add_argument("--gpu-eval-n", type=int, default=100)
     ap.add_argument("--gpu-eval-steps", type=int, default=50)
     ap.add_argument("--gpu-eval-cfg", type=float, default=1.7)
-    ap.add_argument("--gpu-eval-img-root", default="final_imgs_256")
-    ap.add_argument("--gpu-eval-skel-root", default="final_skel1_fame")
+    ap.add_argument("--gpu-eval-img-root", default="data/imgs/final_imgs_256")
+    ap.add_argument("--gpu-eval-skel-root", default="data/skel/final_skel1_fame")
     ap.add_argument("--gpu-eval-skel-latent-shards-dir", default="")
     ap.add_argument("--gpu-eval-dit-batch", type=int, default=8)
     ap.add_argument("--gpu-eval-vae-batch", type=int, default=16)
@@ -356,7 +356,7 @@ def main():
     if use_cuda and args.gpu_eval_csv and os.path.exists(args.gpu_eval_csv):
         from diffusers.models import AutoencoderKL
         gpu_eval_vae = AutoencoderKL.from_pretrained(
-            "pretrained_models/sd-vae-ft-ema").to(device).eval()
+            "data/pretrained/sd-vae-ft-ema").to(device).eval()
         gpu_eval_cache = prepare_ctrl_eval_cache(
             args.gpu_eval_csv, args.gpu_eval_img_root, args.gpu_eval_skel_root,
             256, args.gpu_eval_n, 8, 4, 0.18215,

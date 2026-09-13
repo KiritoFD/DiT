@@ -53,7 +53,7 @@ def main(ckpt_path, n=8, t=150, out="eval_full_3cond.png", start=0, csv_path="te
         print("[eval] WARNING: checkpoint contains non-finite (NaN/Inf) weights -> output will be noise.")
     model.eval()
 
-    vae = AutoencoderKL.from_pretrained("pretrained_models/sd-vae-ft-ema").to(device)
+    vae = AutoencoderKL.from_pretrained("data/pretrained/sd-vae-ft-ema").to(device)
     vae.eval()
     with torch.no_grad():
         x_latent = vae.encode(x).latent_dist.sample().mul_(0.18215)

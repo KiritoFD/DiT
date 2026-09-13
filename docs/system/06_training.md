@@ -43,7 +43,7 @@ with torch.autocast("cuda", dtype=torch.bfloat16):
 ## 2. ControlNet 训练（train_controlnet.py）
 
 - warm-start（`train_ctrl_only=true`）：`load_main_model(main_ckpt)` 冻结主模型 → `ControlNetDiT(main, train_ctrl_only=True)` → 只训 `ctrl_encoder` + `out_projs`（EMA 只更新 trainable 参数）。
-- 数据：latent shards + `final_skeleton_d3` 骨架（(N,1,256,256) 0/1）。
+- 数据：latent shards + `data/skel/final_skeleton_d3` 骨架（(N,1,256,256) 0/1）。
 - **统一 `sample_t`**；可选 skel 条件 dropout（`cond_drop_struct_prob`）。
 - ckpt：只存 `ctrl_encoder` 权重（`"ctrl"` + `"ema"`），from-scratch 模式另存 `main.*`。
 - 每 `gpu_eval_every` 步 in-process GPU eval（GT-skel 的 ctrl 组 + 无 skel 的 base 组）→ pending marker → CPU daemon 出指标（`07_eval.md`）。
@@ -73,7 +73,7 @@ with torch.autocast("cuda", dtype=torch.bfloat16):
 | `model` | DiT-2Cond-S/2 | 模型规格 |
 | `cond_mode` / `condition_fusion` | 2cond / factorized_add | 条件模式与融合 |
 | `callig_embed_dim` / `char_embed_dim` | 128 / 384 | 条件嵌入维度 |
-| `char_dino_embeddings` / `char_dino_index` | pretrained_models/dino_embeddings/glyph_dino_embeddings_384.npy (+index) | DINO 字形表（384 维，LN-only 直通） |
+| `char_dino_embeddings` / `char_dino_index` | data/pretrained/dino_embeddings/glyph_dino_embeddings_384.npy (+index) | DINO 字形表（384 维，LN-only 直通） |
 | `char_proj_mode` / `freeze_char_table` | ln_only / true | 字符投影只 LN、表冻结（条件=纯 DINO 向量） |
 | `cond_drop_all_prob` / `cond_drop_one_prob` / `cond_drop_which_glyph_prob` | 0.05 / 0.25 / **0.75** | 4-way dropout 配比（`03_model.md` §2） |
 | `image_size` | 256 | 图片尺寸（latent 32） |
@@ -84,10 +84,10 @@ with torch.autocast("cuda", dtype=torch.bfloat16):
 | `global_batch_size` / `global_seed` | 240 / 0 | 数据 |
 | `sampler` / `balance_char_alpha` / `balance_callig_alpha` | factor_balanced / 0.35 / 0.15 | 平衡采样 |
 | `use_ema` / `ema_decay` / `ema_warmup` | true / 0.9999 / true | EMA |
-| `vae` / `vae_path` | ema / pretrained_models/sd-vae-ft-ema | 解码用 VAE |
+| `vae` / `vae_path` | ema / data/pretrained/sd-vae-ft-ema | 解码用 VAE |
 | `autoeval*`（`eval_csv` / `eval_n` / `eval_steps` / `eval_cfg` / `eval_seed` / `eval_batch` / `eval_vae_batch`） | eval_strict_top6.csv / 271 / 50 / **1.7** / 0 / 100 / 32 | in-process GPU eval 参数（`07_eval.md`） |
 | `early_stop*` | combo / patience 3 / min 30000 | 早停（依赖 CPU daemon 出的指标 json） |
-| `latent_shards_dir` | final_latents_mid_clean | latent 缓存 |
+| `latent_shards_dir` | data/latents/final_latents_mid_clean | latent 缓存 |
 | `diffusion_type` | **flow** | 扩散框架（`02_diffusion.md`） |
 | `ckpt_every` / `ckpt_keep` / `log_every` / `num_workers` / `preload*` | 2500 / 0 / 20 / 8 / true+48 | 训练节奏 |
 | `use_lora` / `reset_cond_head` / `train_cond_head` | false / false / false | 微调开关（当前预训练关闭） |

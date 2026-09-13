@@ -15,9 +15,9 @@ for k in sorted(j):
         v = str(v)[:80]
     print(f'  {k}: {v}')"
 echo
-echo "=== std_skel 生成脚本/工具 ==="
+echo "=== data/skel/std_skel 生成脚本/工具 ==="
 ls tools/ 2>/dev/null | grep -iE "std|skel" | head
-grep -rn "std_skel1_latents" tools/ src/ --include="*.py" -l 2>/dev/null | head -5
+grep -rn "data/skel/std_skel1_latents" tools/ src/ --include="*.py" -l 2>/dev/null | head -5
 echo
 echo "=== fame3 数据规模 ==="
 wc -l assets/train_fame3_clean_v8.csv 2>/dev/null

@@ -10,9 +10,9 @@
 | `build_fame_fast.py` | fame 数据集快速构建（CSV + GPU encode，v8 前身） |
 | `flip_all_fame.py` | 全量极性归一（ink>0.5 翻转，mp64） |
 | `build_std_glyph_latents.py` | 标准字库渲染 + VAE encode（v1 骨架库来源） |
-| `build_std_skel_latents.py` / `build_std_skel1_latents.py` | 标准字库骨架 latents |
+| `build_data/skel/std_skel_latents.py` / `build_data/skel/std_skel1_latents.py` | 标准字库骨架 latents |
 | `build_skel_latents.py` | GT 图 → 1px/3px 骨架 PNG + latents（断点续跑） |
-| `build_fame_skel1px.py` / `build_std_skel1_latents.py` | fame 1px 骨架派生 |
+| `build_fame_skel1px.py` / `build_data/skel/std_skel1_latents.py` | fame 1px 骨架派生 |
 | `build_std_glyph_bbox.py` | 字库 bbox 统计 |
 | `charsets/` | 字表（8105 规范字 / mid_clean 分书体字表） |
 

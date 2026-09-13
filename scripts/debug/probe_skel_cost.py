@@ -3,7 +3,7 @@ import numpy as np
 from PIL import Image
 
 os.chdir('/root/Workspace/xy/DiT')
-a = np.asarray(Image.open('final_imgs_256/100560.png').convert('L'))
+a = np.asarray(Image.open('data/imgs/final_imgs_256/100560.png').convert('L'))
 print('img shape', a.shape, flush=True)
 
 t0 = time.time()
@@ -42,8 +42,8 @@ torch.set_num_threads(4)
 import torchvision.transforms as T
 from diffusers.models import AutoencoderKL
 tf = T.Compose([T.Resize((256, 256)), T.ToTensor(), T.Normalize([0.5]*3, [0.5]*3)])
-vae = AutoencoderKL.from_pretrained('pretrained_models/sd-vae-ft-ema').eval()
-xb = torch.stack([tf(Image.open('final_imgs_256/100560.png').convert('RGB'))] * 16)
+vae = AutoencoderKL.from_pretrained('data/pretrained/sd-vae-ft-ema').eval()
+xb = torch.stack([tf(Image.open('data/imgs/final_imgs_256/100560.png').convert('RGB'))] * 16)
 with torch.no_grad():
     vae.encode(xb).latent_dist.mode()
     t0 = time.time()

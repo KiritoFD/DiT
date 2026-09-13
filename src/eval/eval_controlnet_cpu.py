@@ -121,10 +121,10 @@ def main():
                     help="ControlNet ckpt. Empty = auto-find latest.")
     ap.add_argument("--ctrl-dir", default="assets/results/ctrl_skel",
                     help="Search dir for controlnet ckpts")
-    ap.add_argument("--vae-path", default="pretrained_models/sd-vae-ft-ema")
+    ap.add_argument("--vae-path", default="data/pretrained/sd-vae-ft-ema")
     ap.add_argument("--csv", default="assets/train_top6.csv")
     ap.add_argument("--latent-dir", default="final_latents")
-    ap.add_argument("--skel-root", default="final_skeleton_d3")
+    ap.add_argument("--skel-root", default="data/skel/final_skeleton_d3")
     ap.add_argument("--img-root", default="final_images")
     ap.add_argument("--n", type=int, default=50)
     ap.add_argument("--t", type=int, default=T_EVAL)

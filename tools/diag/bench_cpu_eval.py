@@ -43,13 +43,13 @@ sd = {k: v for k, v in (ckd.get("ema") or ckd.get("ctrl")).items()
       if not k.startswith("main.") and not k.startswith("_orig_mod.main.")}
 c.load_state_dict(sd, strict=False)
 c.eval()
-vae = load_eval_vae(dev, "pretrained_models/sd-vae-ft-ema")
+vae = load_eval_vae(dev, "data/pretrained/sd-vae-ft-ema")
 flow = create_diffusion_or_flow("50", diffusion_type="flow",
                                 **{"t_sampler": "logit_normal", "sampler": "heun",
                                    "t_mean": 0.0, "t_std": 1.0, "shift": 1.0})
-cache = make_eval_cache("assets/eval_fame_strict_clean_v8.csv", "final_imgs_fame_v8", None,
+cache = make_eval_cache("assets/eval_fame_strict_clean_v8.csv", "data/imgs/final_imgs_fame_v8", None,
                         256, 64, 8, 4, 0.18215,
-                        skel_latent_shards_dir="final_skel_latents_fame_1px_v8")
+                        skel_latent_shards_dir="data/skel/final_skel_latents_fame_1px_v8")
 noise, conds, skels = cache["noise"], cache["conds"], cache["skels_latent"].float()
 
 for BATCH in (8, 16, 32):

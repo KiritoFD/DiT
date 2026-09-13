@@ -1,6 +1,6 @@
 [[34m2026-08-16 18:33:48[0m] Experiment directory created at assets/results/v3c_xl_glyphcond_midstep/20260816-183348-v3c-XL-glyphcond-midstep-kailishu
 [[34m2026-08-16 18:33:56[0m] Building 2-Cond model: DiT-2Cond-XL/2 (callig=1011, glyph/char=35130, fusion=xl_highdim, dims=384/768, dropout=all:0.05, one:0.25, skel_head=False, glyph_cond=True, glyph_scale_init=0.4)
-[[34m2026-08-16 18:33:59[0m] Loaded pre-trained weights from pretrained_models/DiT-XL-2-256x256.pt.
+[[34m2026-08-16 18:33:59[0m] Loaded pre-trained weights from data/pretrained/DiT-XL-2-256x256.pt.
 [[34m2026-08-16 18:33:59[0m] Missing keys (expected for 2/3-cond): ['y_scale', 'glyph_scale', 'y_callig_embedder.embedding_table.weight', 'y_char_embedder.embedding_table.weight', 'cond_fusion.0.weight', 'cond_fusion.0.bias', 'cond_fusion.1.weight', 'cond_fusion.1.bias', 'cond_fusion.3.weight', 'cond_fusion.3.bias', 'glyph_embedder.weight']
 [[34m2026-08-16 18:33:59[0m] Unexpected keys (filtered): []
 [[34m2026-08-16 18:34:00[0m] [cond-head] reset adaLN/final_layer to std=0.02 (retain task-agnostic transformer engine, drop ImageNet class-condition coupling).
@@ -8,7 +8,7 @@
 [[34m2026-08-16 18:34:00[0m] Trainable Parameters: 264,144,418
 [[34m2026-08-16 18:34:00[0m] Frozen Parameters: 448,136,064 (trainable ratio: 37.08%)
 [[34m2026-08-16 18:34:02[0m] [EMA] enabled with decay=0.9999
-[[34m2026-08-16 18:34:02[0m] Loading VAE from local path: pretrained_models/sd-vae-ft-ema
+[[34m2026-08-16 18:34:02[0m] Loading VAE from local path: data/pretrained/sd-vae-ft-ema
 [[34m2026-08-16 18:34:02[0m] Preparing auto-eval cache (csv=kailishu_eval.csv, n=100) ...
 [[34m2026-08-16 18:34:04[0m] Auto-eval cache ready (free-sampling mode).
 [[34m2026-08-16 18:34:04[0m] DiT Parameters: 712,280,482

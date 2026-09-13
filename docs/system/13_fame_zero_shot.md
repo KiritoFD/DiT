@@ -17,13 +17,13 @@
 
 | 文件 | 内容 |
 |---|---|
-| ~~`fame.npz` / `final_latents_fame/`~~ | **已删除**（img latents 由 v8 数据集 `final_latents_fame_v8/` 取代） |
-| ~~`final_skel3_fame/` / `final_skel_latents_fame/`~~ | **已删除**（3px 弃用；1px 由 `final_skel1_fame_v8/` + `final_skel_latents_fame_1px_v8/` 取代） |
-| `final_imgs_fame_v8/` | fame 图像现行位置（51,822 张，v8 数据集 img_root） |
-| `skel_bank_train.npz` / `skel_bank_std.npz` | 推理骨架库（**注意**：部分条目基于清洗前图，changed ids 的骨架已重算但 bank 未同步） |
-| `final_skel_latents_fame_std/` | **标准字库骨架** latents（训练条件，20 shards） |
-| `skel_bank_train.npz` | 推理库：训练集每字一张骨架 latent（14,372 字） |
-| `skel_bank_std.npz` | 推理库：标准字库骨架 latent（eval 覆盖 238/483） |
+| ~~`fame.npz` / `data/latents/final_latents_fame/`~~ | **已删除**（img latents 由 v8 数据集 `data/latents/final_latents_fame_v8/` 取代） |
+| ~~`data/skel/final_skel3_fame/` / `data/skel/final_skel_latents_fame/`~~ | **已删除**（3px 弃用；1px 由 `data/skel/final_skel1_fame_v8/` + `data/skel/final_skel_latents_fame_1px_v8/` 取代） |
+| `data/imgs/final_imgs_fame_v8/` | fame 图像现行位置（51,822 张，v8 数据集 img_root） |
+| `data/skel/skel_bank_train.npz` / `data/skel/skel_bank_std.npz` | 推理骨架库（**注意**：部分条目基于清洗前图，changed ids 的骨架已重算但 bank 未同步） |
+| `data/skel/final_skel_latents_fame_std/` | **标准字库骨架** latents（训练条件，20 shards） |
+| `data/skel/skel_bank_train.npz` | 推理库：训练集每字一张骨架 latent（14,372 字） |
+| `data/skel/skel_bank_std.npz` | 推理库：标准字库骨架 latent（eval 覆盖 238/483） |
 | `assets/train_fame.csv` / `eval_fame_strict.csv` | 训练/评测表（严格凸包：两要素覆盖+组合未现+图未训） |
 
 ### 1.3 评测协议（重要）

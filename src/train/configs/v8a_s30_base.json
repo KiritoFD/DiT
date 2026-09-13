@@ -5,8 +5,8 @@
   "results_dir": "assets/results/v8_3stage/v8a",
 
   "data_csv": "assets/train_fame_clean_v8.csv",
-  "latent_shards_dir": "final_latents_fame_v8",
-  "img_root": "final_imgs_fame_v8",
+  "latent_shards_dir": "data/latents/final_latents_fame_v8",
+  "img_root": "data/imgs/final_imgs_fame_v8",
 
   "model": "DiT-2Cond-S/2",
   "cond_mode": "2cond",
@@ -15,8 +15,8 @@
   "char_embed_dim": 384,
   "char_proj_mode": "mlp",
   "freeze_char_table": true,
-  "char_dino_embeddings": "pretrained_models/dino_embeddings/glyph_dino_embeddings_384.npy",
-  "char_dino_index": "pretrained_models/dino_embeddings/glyph_dino_index.json",
+  "char_dino_embeddings": "data/pretrained/dino_embeddings/glyph_dino_embeddings_384.npy",
+  "char_dino_index": "data/pretrained/dino_embeddings/glyph_dino_index.json",
   "dino_per_script_center": 1,
   "dino_fill_unknown": 1,
 
@@ -50,7 +50,7 @@
   "use_ema": true,
   "ema_decay": 0.9999,
   "ema_warmup": true,
-  "vae_path": "pretrained_models/sd-vae-ft-ema",
+  "vae_path": "data/pretrained/sd-vae-ft-ema",
   "vae_scaling_factor": 0.18215,
   "use_lora": false,
   "reset_cond_head": false,

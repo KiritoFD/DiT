@@ -113,7 +113,7 @@ DINO CLS 提供的信息不如瞎猜。
 **本地 DINO ckpt 永远找不到，静默回退到 `torch.hub`**（需访问 github）。
 即 `w_repa` 若启用过，实际走的都是被墙的那条路径。
 
-已改为向上逐层搜索 `pretrained_models/`，兼容 `src/loss/` 与 `src/` 两种布局。
+已改为向上逐层搜索 `data/pretrained/`，兼容 `src/loss/` 与 `src/` 两种布局。
 
 ## 5. 诊断实验 s22：冻结主干，只训字 embedding
 

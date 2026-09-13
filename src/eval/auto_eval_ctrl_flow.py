@@ -12,11 +12,11 @@ import torch
 
 sys.stdout.reconfigure(encoding="utf-8")
 
-SKEL_ROOT = "final_skeleton_d3"
-IMG_ROOT = "final_imgs_256"
+SKEL_ROOT = "data/skel/final_skeleton_d3"
+IMG_ROOT = "data/imgs/final_imgs_256"
 DEFAULT_MAIN_CKPT = "assets/results/s6_top6_diffonly/20260820-191536-s6-top6-diffonly-resume/checkpoints/0195000.pt"
 DEFAULT_EVAL_CSV = "assets/eval100_top6.csv"
-DEFAULT_VAE = "pretrained_models/sd-vae-ft-ema"
+DEFAULT_VAE = "data/pretrained/sd-vae-ft-ema"
 
 
 def log(msg):

@@ -233,10 +233,10 @@ def main():
     ap.add_argument("--save-grid", action="store_true")
     ap.add_argument("--skip-lpips", action="store_true")
     ap.add_argument("--vaes", nargs="*",
-                    default=["pretrained_models/sd-vae-ft-ema",
-                             "pretrained_models/sd-vae-ft-ema-gray",
-                             "pretrained_models/kl-f4",
-                             "pretrained_models/kl-f4-gray"])
+                    default=["data/pretrained/sd-vae-ft-ema",
+                             "data/pretrained/sd-vae-ft-ema-gray",
+                             "data/pretrained/kl-f4",
+                             "data/pretrained/kl-f4-gray"])
     args = ap.parse_args()
 
     device = torch.device(args.device if args.device == "cuda" and torch.cuda.is_available() else "cpu")

@@ -81,7 +81,7 @@ def _step_key(d):
     return int(m.group(1)) if m else 0
 
 
-def render_std_skel(ch, script, font_dir, size=256):
+def render_data/skel/std_skel(ch, script, font_dir, size=256):
     cands = list(SCRIPT_FONT.get(script, SCRIPT_FONT["楷"])) + ["simkai.ttf", "simhei.ttf"]
     seen = set()
     for f in cands:
@@ -266,7 +266,7 @@ def main():
     label_row(y, "STD-COND  (标准骨架输入)", color=(120, 200, 255)); y += LABEL_H
     x = GAP
     for r in rows:
-        img = render_std_skel(r.get("character", ""), r.get("script", "楷"), args.font_dir)
+        img = render_data/skel/std_skel(r.get("character", ""), r.get("script", "楷"), args.font_dir)
         canvas.paste(_load_cell(None) if img is None else img.resize((CELL, CELL), Image.LANCZOS), (x, y))
         x += CELL
     y += CELL + GAP

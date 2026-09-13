@@ -1,9 +1,9 @@
 {
   "experiment_name": "px-s-scratch-diff",
   "data_csv": "assets/train_top6.csv",
-  "img_root": "final_imgs_256",
+  "img_root": "data/imgs/final_imgs_256",
   "canny_root": "final_canny",
-  "skel_root": "final_skeleton",
+  "skel_root": "data/skel/final_skeleton",
   "results_dir": "assets/results/px_s_scratch",
   "image_size": 256,
   "patch_size": 8,

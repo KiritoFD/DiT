@@ -17,8 +17,8 @@ from latent_dataset import MCCDLatentDataset
 print("loading dataset (preload=False) ...", flush=True)
 ds = MCCDLatentDataset(
     csv_file=cfg["data_csv"], latent_shards_dir="final_latents",
-    img_root="final_imgs_256",
-    canny_root="final_canny", skel_root="final_skeleton",
+    img_root="data/imgs/final_imgs_256",
+    canny_root="final_canny", skel_root="data/skel/final_skeleton",
     load_canny=True, load_skel=True, preload=False)
 print("dataset len:", len(ds), flush=True)
 

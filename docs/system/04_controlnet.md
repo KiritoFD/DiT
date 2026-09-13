@@ -78,7 +78,7 @@ loss = diffusion.training_losses(ctrl, x_latent, t, model_kwargs)["loss"].mean()
   "main_ckpt": "assets/results/s18_s_flow_small/20260827-232003-s18-s-flow-small/checkpoints/0043000.pt",
   "csv": "assets/train_top6.csv",
   "latent_shards_dir": "final_latents",
-  "skel_root": "final_skeleton_d3",
+  "skel_root": "data/skel/final_skeleton_d3",
   "model": "DiT-2Cond-S/2",
   "diffusion_type": "flow",
   "cond_drop_all_prob": 0.05,

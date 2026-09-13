@@ -23,7 +23,7 @@ print(run("pgrep -af train_skel_decoder | head -2; echo '---'; tail -3 /root/Wor
 
 # 后台启动 3px skel 生成 (nohup, 不影响训练)
 print(run("cd /root/Workspace/xy/DiT && nohup /opt/conda/bin/python tools/gen_skel_d3.py "
-          "--in-dir final_skeleton --out-dir final_skeleton_d3 --r 3 --workers 16 "
+          "--in-dir data/skel/final_skeleton --out-dir data/skel/final_skeleton_d3 --r 3 --workers 16 "
           "> /tmp/_gen_skel_d3.log 2>&1 & echo GEN_PID=$!"))
 
 time.sleep(10)

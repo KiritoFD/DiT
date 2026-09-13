@@ -27,7 +27,7 @@ print(run("tmux kill-session -t skel3 2>/dev/null; "
           "tmux new-session -d -s skel3 '"
           "/opt/conda/bin/python tools/train_skel_decoder.py "
           "--csv assets/train.csv --epochs 10 --batch-size 256 --num-threads 16 "
-          "--skel-root final_skeleton_d3 --pos-weight 15 --out-dir assets/results/skel_decoder_d3 "
+          "--skel-root data/skel/final_skeleton_d3 --pos-weight 15 --out-dir assets/results/skel_decoder_d3 "
           "--log-every 50 > run_skel_d3.log 2>&1' && echo D3_STARTED"))
 
 time.sleep(90)

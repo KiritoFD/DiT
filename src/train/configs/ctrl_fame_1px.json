@@ -1,10 +1,10 @@
 {
-  "_comment": "fame ControlNet (1px 细骨架版)。与 ctrl_fame_v2.json 的唯一差异是骨架源: final_skel3_fame(3px 膨胀) -> final_skel1_fame(1px 细线), latent 同理。用于验证 3px 条件下 0.8045 的高分是否部分来自『条件本身泄露』(3px 骨架在 256px 图上面积可观, 其 latent 已接近真实书法图)。判读: 若 1px 下 SSIM 下降但跟随 IoU 持平/上升, 说明 3px 高分含泄露, 1px 才是干净的纯结构条件。其余超参严格与 v2 一致, 保证唯一变量。",
+  "_comment": "fame ControlNet (1px 细骨架版)。与 ctrl_fame_v2.json 的唯一差异是骨架源: data/skel/final_skel3_fame(3px 膨胀) -> data/skel/final_skel1_fame(1px 细线), latent 同理。用于验证 3px 条件下 0.8045 的高分是否部分来自『条件本身泄露』(3px 骨架在 256px 图上面积可观, 其 latent 已接近真实书法图)。判读: 若 1px 下 SSIM 下降但跟随 IoU 持平/上升, 说明 3px 高分含泄露, 1px 才是干净的纯结构条件。其余超参严格与 v2 一致, 保证唯一变量。",
   "main_ckpt": "",
   "csv": "assets/train_fame.csv",
-  "latent_shards_dir": "final_latents_fame",
-  "skel_root": "final_skel1_fame",
-  "skel_latent_shards_dir": "final_skel_latents_fame_1px",
+  "latent_shards_dir": "data/latents/final_latents_fame",
+  "skel_root": "data/skel/final_skel1_fame",
+  "skel_latent_shards_dir": "data/skel/final_skel_latents_fame_1px",
   "results_dir": "assets/results/ctrl_fame_1px",
   "experiment_name": "fame-ctrl-skel-1px",
   "model": "DiT-2Cond-S/2",
@@ -60,9 +60,9 @@
   "gpu_eval_n": 100,
   "gpu_eval_steps": 50,
   "gpu_eval_cfg": 0.7,
-  "gpu_eval_img_root": "final_imgs_256",
-  "gpu_eval_skel_root": "final_skel1_fame",
-  "gpu_eval_skel_latent_shards_dir": "final_skel_latents_fame_1px",
+  "gpu_eval_img_root": "data/imgs/final_imgs_256",
+  "gpu_eval_skel_root": "data/skel/final_skel1_fame",
+  "gpu_eval_skel_latent_shards_dir": "data/skel/final_skel_latents_fame_1px",
   "gpu_eval_dit_batch": 8,
   "gpu_eval_vae_batch": 16
 }

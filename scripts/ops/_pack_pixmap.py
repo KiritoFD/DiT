@@ -11,9 +11,9 @@ from PIL import Image
 sys.stdout.reconfigure(encoding="utf-8")
 BASE = "/root/Workspace/xy/DiT/"
 CSV = BASE + "assets/train_top6.csv"
-IMG_ROOT = BASE + "final_imgs_256"
+IMG_ROOT = BASE + "data/imgs/final_imgs_256"
 CAN_ROOT = BASE + "final_canny"
-SKEL_ROOT = BASE + "final_skeleton"
+SKEL_ROOT = BASE + "data/skel/final_skeleton"
 OUT = BASE + "assets/pixmap"
 os.makedirs(OUT, exist_ok=True)
 

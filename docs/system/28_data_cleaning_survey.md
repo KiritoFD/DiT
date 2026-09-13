@@ -67,7 +67,7 @@
 - **bbox 内**的中等/大面积非主墨 → 保留（正常飞白/连笔/分离笔画）
 - ✅ 避免误删字内飞白（飞白在字内，与参考字形重叠）
 - ✅ 边界大片黑（超出字形 bbox）在边缘，被清掉
-- 实现: `tools/clean_v2.py --scheme B` → `assets/clean_report_train_B.csv` / `final_imgs_256_clean_v2/`
+- 实现: `tools/clean_v2.py --scheme B` → `assets/clean_report_train_B.csv` / `data/imgs/final_imgs_256_clean_v2/`
 
 ### 方案 C：连通域 + 空间拓扑（中等保守）
 - 主连通域 = 最大 CC
@@ -102,18 +102,18 @@
   - 主连通域保留 mean=0.9897（train）/ 0.9815（eval）；严重误删(main_keep<0.95) 816 (1.59%)
   - \|ink_change\|>5% 仅 1278 (2.49%)；>10% 仅 1013 (1.97%)
   - 小噪点残留 mean=0.0027（几乎清零，>0 仅 55 张 0.11%）
-- 产物：`final_imgs_256_clean_v2/`（仅写被修改图）、`assets/clean_report_train_B.csv`
+- 产物：`data/imgs/final_imgs_256_clean_v2/`（仅写被修改图）、`assets/clean_report_train_B.csv`
 
 ### 4.3 与用户后续 v8 清洗的关系
-- 用户于 9/2 又做了一轮清洗：`assets/train_fame_clean_v8.csv` → `final_imgs_fame_v8/`（51322 行）。
+- 用户于 9/2 又做了一轮清洗：`assets/train_fame_clean_v8.csv` → `data/imgs/final_imgs_fame_v8/`（51322 行）。
 - 这是与 clean_v2(B) 不同的另一尝试，二者方法/阈值可能不同；**数据清洗是持续迭代项**，
   本轮(28)的扫描+方案B提供了一套**可量化、基于参考字形的评估标准**与基线工具。
 
 ## 5. 复现
 
 - 扫描: `python tools/scan_image_pollution.py --csv assets/train_fame.csv --out assets/scan_train_pollution.csv`
-- 方案B清洗: `python tools/clean_v2.py --csv assets/train_fame.csv --img-root final_imgs_256 --out-root final_imgs_256_clean_v2 --scheme B --report assets/clean_report_train_B.csv`
-- 现有清洗(旧): `python tools/clean_gt_images.py --audit ... --blacklist ... --img-root final_imgs_256 --out-root final_imgs_256_clean`
+- 方案B清洗: `python tools/clean_v2.py --csv assets/train_fame.csv --img-root data/imgs/final_imgs_256 --out-root data/imgs/final_imgs_256_clean_v2 --scheme B --report assets/clean_report_train_B.csv`
+- 现有清洗(旧): `python tools/clean_gt_images.py --audit ... --blacklist ... --img-root data/imgs/final_imgs_256 --out-root data/imgs/final_imgs_256_clean`
 - 样本图: `_sync_work/pollution_samples/`（各类 8 张，验证用）
 - dashboard: `tools/pretrain_eval_dashboard.html`（base/skel/repa 分组 eval 对比）
 - grid: `tools/make_base_model_grid.py --group all --step 30000`（生成改进链路视觉对比）

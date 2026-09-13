@@ -10,16 +10,16 @@
 |---|---|---|
 | `assets/train_fame.csv` | 训练集索引 (51,322 样本) | - |
 | `assets/eval_fame_strict.csv` | 严格评估集 (500 样本) | - |
-| `final_imgs_256/` | 真迹图 256×256 | ~2GB |
-| `final_latents_fame/` | 真迹 VAE latent 分片 | ~1.5GB |
+| `data/imgs/final_imgs_256/` | 真迹图 256×256 | ~2GB |
+| `data/latents/final_latents_fame/` | 真迹 VAE latent 分片 | ~1.5GB |
 
 ### 骨架数据 (skel)
 | 路径 | 内容 | 大小 |
 |---|---|---|
-| `final_skeleton_d3/` | GT 骨架 PNG (3px 白底黑线) | 1.3GB, 329,715 张 |
-| `final_skel_latents_fame/` | GT 骨架 VAE latent | 340MB |
-| `final_skel_latents_fame_std/` | **标准字库骨架 VAE latent** | 62MB |
-| `std_skeleton_d3/` | 标准字库骨架 PNG | 7926 张 (kai 4521 + li 3402) |
+| `data/skel/final_skeleton_d3/` | GT 骨架 PNG (3px 白底黑线) | 1.3GB, 329,715 张 |
+| `data/skel/final_skel_latents_fame/` | GT 骨架 VAE latent | 340MB |
+| `data/skel/final_skel_latents_fame_std/` | **标准字库骨架 VAE latent** | 62MB |
+| `data/skel/std_skeleton_d3/` | 标准字库骨架 PNG | 7926 张 (kai 4521 + li 3402) |
 
 ### 标准字形库
 | 路径 | 内容 | 大小 |
@@ -35,8 +35,8 @@
 ## 预训练模型
 | 路径 | 内容 |
 |---|---|
-| `pretrained_models/sd-vae-ft-ema/` | VAE (SD 1.5 fine-tuned) |
-| `pretrained_models/dino_embeddings/` | DINO 字嵌入 (glyph 级 384d, 字级 768d) |
+| `data/pretrained/sd-vae-ft-ema/` | VAE (SD 1.5 fine-tuned) |
+| `data/pretrained/dino_embeddings/` | DINO 字嵌入 (glyph 级 384d, 字级 768d) |
 
 ## 实验结果
 | 路径 | 内容 |
@@ -47,9 +47,9 @@
 ## 数据流
 
 ```
-真迹图 (final_imgs_256)
+真迹图 (data/imgs/final_imgs_256)
     ↓ VAE encode
-真迹 latent (final_latents_fame)
+真迹 latent (data/latents/final_latents_fame)
     ↓ 训练
 s25 IDS 预训练模型
     ↓ 后训练 (ControlNet)
@@ -60,14 +60,14 @@ s26 GT skel / s27 标准字库 skel
 
 ### 数据构建
 - `tools/build_skel_latents.py` — GT 骨架 → latent
-- `tools/build_std_skel_latents.py` — 标准字库骨架 → latent
+- `tools/build_data/skel/std_skel_latents.py` — 标准字库骨架 → latent
 - `tools/build_std_glyph_latents.py` — 标准字形 → latent
 
 ### 训练
 - `src/train/train.py` — 主训练脚本
 - `src/train/configs/s25_ids_pretrain.json` — IDS 预训练配置
 - `src/train/configs/s26_ctrl_gt_skel.json` — GT skel ControlNet
-- `src/train/configs/s27_ctrl_std_skel.json` — 标准字库 skel ControlNet
+- `src/train/configs/s27_ctrl_data/skel/std_skel.json` — 标准字库 skel ControlNet
 
 ### 远程操作
 - `_sync_work/_btn.py` — SSH 班车 (up/env/run/poll/pull)

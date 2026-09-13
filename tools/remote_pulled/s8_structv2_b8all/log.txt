@@ -5,7 +5,7 @@
 [[34m2026-08-21 21:21:50[0m] Frozen Parameters: 98,304 (trainable ratio: 99.77%)
 [[34m2026-08-21 21:21:51[0m] [EMA] restored EMA weights from checkpoint
 [[34m2026-08-21 21:21:51[0m] [EMA] enabled with decay=0.9999
-[[34m2026-08-21 21:21:51[0m] Loading VAE from local path: pretrained_models/sd-vae-ft-ema
+[[34m2026-08-21 21:21:51[0m] Loading VAE from local path: data/pretrained/sd-vae-ft-ema
 [[34m2026-08-21 21:21:51[0m] DiT Parameters: 41,851,041
 [[34m2026-08-21 21:21:51[0m] [struct] use_struct_loss_v2: EdgeGradientLoss + SkeletonLossV2 (骨架 recall-only, 边缘梯度场匹配)
 [[34m2026-08-21 21:21:52[0m] [resume-full] Restored optimizer state.

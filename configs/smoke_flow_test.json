@@ -1,7 +1,7 @@
 {
   "data_csv": "_smoke_data/train.csv",
   "data_dir": "_smoke_data",
-  "img_root": "final_imgs_256",
+  "img_root": "data/imgs/final_imgs_256",
   "results_dir": "_smoke_data/results",
   "model": "DiT-2Cond-S/2",
   "image_size": 256,
@@ -9,7 +9,7 @@
   "num_characters": 16,
   "num_scripts": 3,
   "vae": "ema",
-  "vae_path": "pretrained_models/sd-vae-ft-ema",
+  "vae_path": "data/pretrained/sd-vae-ft-ema",
   "latent_shards_dir": "_smoke_data/final_latents",
   "vae_downscale": 8,
   "latent_channels": 4,

@@ -11,7 +11,7 @@ kl-f4 mid block 有 attention (attn_1), 用 q/k/v (不是 to_q/to_k/to_v).
          attn_1.proj_out → to_out.0
 
 用法:
-  python tools/vae/convert_klf4.py --ckpt _sync_work/kl-f4/model.ckpt --out pretrained_models/kl-f4
+  python tools/vae/convert_klf4.py --ckpt _sync_work/kl-f4/model.ckpt --out data/pretrained/kl-f4
 """
 import os
 import sys
@@ -141,6 +141,6 @@ def convert(ckpt_path, out_dir):
 if __name__ == "__main__":
     ap = argparse.ArgumentParser()
     ap.add_argument("--ckpt", default="_sync_work/kl-f4/model.ckpt")
-    ap.add_argument("--out", default="pretrained_models/kl-f4")
+    ap.add_argument("--out", default="data/pretrained/kl-f4")
     args = ap.parse_args()
     convert(args.ckpt, args.out)

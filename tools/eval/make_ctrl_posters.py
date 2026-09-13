@@ -64,11 +64,11 @@ def main():
     ctrl.eval()
     n_inj = sum(1 for k in sd if k.startswith("injections"))
     print(f"injections loaded: {n_inj}")
-    vae = load_eval_vae(dev, "pretrained_models/sd-vae-ft-ema")
+    vae = load_eval_vae(dev, "data/pretrained/sd-vae-ft-ema")
     diffusion = build_diffusion(STEPS, "flow")
-    cache = make_eval_cache("assets/eval_fame_strict.csv", "final_imgs_256",
+    cache = make_eval_cache("assets/eval_fame_strict.csv", "data/imgs/final_imgs_256",
                             None, 256, 100, 8, 4, 0.18215,
-                            skel_latent_shards_dir="final_skel_latents_fame")
+                            skel_latent_shards_dir="data/skel/final_skel_latents_fame")
     rows = list(csv.DictReader(open("assets/eval_fame_strict.csv",
                                     encoding="utf-8")))[:cache["n"]]
     picks = pick_indices(rows)

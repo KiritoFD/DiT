@@ -107,9 +107,9 @@ def parse_args():
                     help="True=warm-start(冻结主模型), False=from-scratch(主模型也训练)")
     ap.add_argument("--csv", default="assets/train_top6.csv")
     ap.add_argument("--latent-shards-dir", default="final_latents")
-    ap.add_argument("--skel-root", default="final_skeleton_1px",
+    ap.add_argument("--skel-root", default="data/skel/final_skeleton_1px",
                     help="(兼容/显示用) 1px skel PNG 根目录; 训练条件优先用 skel_latent_shards_dir")
-    ap.add_argument("--skel-latent-shards-dir", default="final_skel_latents_fame_1px",
+    ap.add_argument("--skel-latent-shards-dir", default="data/skel/final_skel_latents_fame_1px",
                     help="skel VAE latent shards 目录 (ControlNet 条件, 4ch/32x32). "
                          "为空则退回 skel-root PNG (旧行为). 默认 1px latent")
     ap.add_argument("--blacklist-csv", default="",
@@ -215,7 +215,7 @@ def parse_args():
                     help="多层 REPA (逗号分隔, 如 8,11, 与 v8e 对齐); 非空时优先于 --repa-early-layer")
     ap.add_argument("--repa-early-warmup", type=int, default=2000,
                     help="REPA 权重线性从 0 爬到 --w-repa-early 的步数")
-    ap.add_argument("--img-root", default="final_imgs_fame_v8",
+    ap.add_argument("--img-root", default="data/imgs/final_imgs_fame_v8",
                     help="GT 图根目录 (w_repa_early>0 时加载, REPA 教师输入)")
     ap.add_argument("--repa-teacher-ckpt", type=str, default="",
                     help="本地 DINOv2 safetensors 教师; 空=自动查找")
@@ -250,8 +250,8 @@ def parse_args():
     ap.add_argument("--gpu-eval-n", type=int, default=100)
     ap.add_argument("--gpu-eval-steps", type=int, default=50)
     ap.add_argument("--gpu-eval-cfg", type=float, default=1.7, help="flow ctrl 推理最佳 CFG ~1.7")
-    ap.add_argument("--gpu-eval-img-root", default="final_imgs_256")
-    ap.add_argument("--gpu-eval-skel-root", default="final_skel1_fame")
+    ap.add_argument("--gpu-eval-img-root", default="data/imgs/final_imgs_256")
+    ap.add_argument("--gpu-eval-skel-root", default="data/skel/final_skel1_fame")
     ap.add_argument("--gpu-eval-skel-latent-shards-dir", default="",
                     help="eval 用 skel VAE latent shards (与训练条件一致); 空=PNG")
     ap.add_argument("--gpu-eval-dit-batch", type=int, default=16)

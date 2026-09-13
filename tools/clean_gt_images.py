@@ -12,7 +12,7 @@
 用法:
   /opt/conda/bin/python tools/clean_gt_images.py \
       --audit gt_audit.csv --blacklist gt_blacklist_fame.csv \
-      --img-root final_imgs_256 --out-root final_imgs_256_clean
+      --img-root data/imgs/final_imgs_256 --out-root data/imgs/final_imgs_256_clean
 """
 import os
 import sys
@@ -92,8 +92,8 @@ def clean_one(task):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--img-root", default="final_imgs_256")
-    ap.add_argument("--out-root", default="final_imgs_256_clean")
+    ap.add_argument("--img-root", default="data/imgs/final_imgs_256")
+    ap.add_argument("--out-root", default="data/imgs/final_imgs_256_clean")
     ap.add_argument("--blacklist", default="gt_blacklist_fame.csv")
     ap.add_argument("--edge", type=int, default=8)
     ap.add_argument("--workers", type=int, default=16)

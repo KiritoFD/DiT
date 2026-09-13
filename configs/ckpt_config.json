@@ -9,7 +9,7 @@
       "use_lora": true,
       "lora_r": 8,
       "lora_target": "all",
-      "pretrained": "pretrained_models/DiT-XL-2-256x256.pt"
+      "pretrained": "data/pretrained/DiT-XL-2-256x256.pt"
     },
     {
       "name": "B · XL-head (无 LoRA)",
@@ -19,7 +19,7 @@
       "use_lora": false,
       "lora_r": 0,
       "lora_target": "all",
-      "pretrained": "pretrained_models/DiT-XL-2-256x256.pt"
+      "pretrained": "data/pretrained/DiT-XL-2-256x256.pt"
     },
     {
       "name": "A · S-scratch",
@@ -39,7 +39,7 @@
       "use_lora": true,
       "lora_r": 32,
       "lora_target": "all",
-      "pretrained": "pretrained_models/DiT-XL-2-256x256.pt"
+      "pretrained": "data/pretrained/DiT-XL-2-256x256.pt"
     },
     {
       "name": "E · XL-head-r32-attn",
@@ -49,7 +49,7 @@
       "use_lora": true,
       "lora_r": 32,
       "lora_target": "attn",
-      "pretrained": "pretrained_models/DiT-XL-2-256x256.pt"
+      "pretrained": "data/pretrained/DiT-XL-2-256x256.pt"
     },
     {
       "name": "F · XL-head-r64",
@@ -59,7 +59,7 @@
       "use_lora": true,
       "lora_r": 64,
       "lora_target": "all",
-      "pretrained": "pretrained_models/DiT-XL-2-256x256.pt"
+      "pretrained": "data/pretrained/DiT-XL-2-256x256.pt"
     }
   ]
 }

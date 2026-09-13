@@ -71,7 +71,7 @@ DiT/
    - v1 字形字典不存在 → `w_glyph_cond` 全程零条件（历史）。
    - 旧 `w[-1].requires_grad_(True)` 对索引张量是 no-op → null token 实际冻结（历史）。
    **对策**：所有"可选项"在启动时打印生效状态 + 覆盖率；凡"查表失败"必须显式告警或报错。
-2. **id 解析 bug**：`re.search(r"(\d+)\.png", "_b1.png")` 会把变体 id 解成 `1`；`build_std_skel1_latents.py` 曾用**行号**当 img_id（与 dataset 的 img_id 查找不一致，已修为 img_id）。
+2. **id 解析 bug**：`re.search(r"(\d+)\.png", "_b1.png")` 会把变体 id 解成 `1`；`build_data/skel/std_skel1_latents.py` 曾用**行号**当 img_id（与 dataset 的 img_id 查找不一致，已修为 img_id）。
 3. **配置系统过厚**：argparse + JSON 默认注入 + 大量兼容开关（`getattr(args, ...)`）使"配置未生效"难发现；建议：**显式 dataclass 配置 + 未识别键报错**。
 4. **重复实现**：`MCCDDataset` vs `MCCDLatentDataset`；CPU eval daemon / in-process auto_eval / GPU loop 三套评测；`build_*` 各自实现 VAE encode（本次收敛到 `vae_io`）。
 5. **死开关**：`callig_spatial`、`callig_style_attn/style_token`、`xl_highdim`、`IDS/DINO char embedder`、`skel_head`（均为 0 效果或旧线），增加阅读/维护成本；建议移入 `legacy` 或删除（旧 ckpt 用 legacy 分支推理）。

@@ -35,7 +35,7 @@ class MCCDLatentDataset(Dataset):
 
     preload=True 时在启动阶段把所需数据一次性读入内存（并行 PNG 解码），
     训练过程中零磁盘 IO —— 适合内存充足的大内存机器。
-    csv rows image_path 形如 `final_images/<img_id>.png` 或 `final_imgs_256/<img_id>.png`。
+    csv rows image_path 形如 `final_images/<img_id>.png` 或 `data/imgs/final_imgs_256/<img_id>.png`。
     """
     def __init__(self, csv_file, latent_shards_dir, img_root,
                  image_size=256, is_train=False, preload=False, load_image=True,
