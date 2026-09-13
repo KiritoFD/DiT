@@ -70,5 +70,9 @@
   "repa_layers": "8",
   "repa_cache_dir": "data/dino_cache/v11_sym_full",
   "ema_interval": 4,
-  "compile_mode": "default"
+  "compile_mode": "default",
+  "in_mem_eval": true,
+  "eval_self_cond": true,
+  "eval_blend_alpha": 0.5,
+  "in_mem_eval_sets": "seen:assets/eval_seen_v10.csv:10,strict:assets/eval_fame3_strict_clean_v9.csv:50"
 }

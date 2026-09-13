@@ -27,6 +27,7 @@ import time
 
 import numpy as np
 import torch
+from PIL import Image
 
 from src.eval.inference import (build_diffusion, load_eval_vae, make_eval_cache,
                                 sample_latents, sample_latents_self_cond,
@@ -65,6 +66,96 @@ def _get_cache(csv_path, n, img_root, shards, args):
             skel_latent_shards_dir=shards,
             callig_id_map=_get_callig_map(getattr(args, "callig_id_map", None)))
     return _CACHES[ck]
+
+
+def _poster_canny(img):
+    """从 gen 图现算 canny 边缘列 (与老 make_seen_poster 同逻辑)。"""
+    import cv2
+    a = np.asarray(img, dtype=np.float32)
+    gray = 0.299 * a[..., 0] + 0.587 * a[..., 1] + 0.114 * a[..., 2]
+    kx = np.array([[-1, 0, 1], [-2, 0, 2], [-1, 0, 1]], dtype=np.float32)
+    ky = np.array([[-1, -2, -1], [0, 0, 0], [1, 2, 1]], dtype=np.float32)
+    gx = cv2.filter2D(gray, -1, kx, borderType=cv2.BORDER_REFLECT)
+    gy = cv2.filter2D(gray, -1, ky, borderType=cv2.BORDER_REFLECT)
+    return Image.fromarray(((np.sqrt(gx ** 2 + gy ** 2)) > 150).astype(np.uint8) * 255).convert("RGB")
+
+
+def _poster_skeleton(img):
+    """从 gen 图现算骨架列 (与老 make_seen_poster 同逻辑)。"""
+    from skimage.morphology import skeletonize
+    a = np.asarray(img, dtype=np.float32)
+    gray = 0.299 * a[..., 0] + 0.587 * a[..., 1] + 0.114 * a[..., 2]
+    bin_b = (gray > 127).astype(np.uint8)
+    if gray.mean() > 127:
+        bin_b = 1 - bin_b
+    sk = skeletonize(bin_b.astype(bool)).astype(np.uint8) * 255
+    return Image.fromarray(sk).convert("RGB")
+
+
+def render_poster(results_dir, set_name, out=None, cell=224, gap=6):
+    """自动 poster: 扫描 eval_samples_ctrl/step*/{set}/ 的 g{i}.png + gt{i}.png,
+    时间升序每 step 一行 (gen | canny | skel | gt 每样本), 每次全量重画并覆盖
+    → posters/{set}_poster.png 永远是所有 step 的最新版。纯 CPU, 秒级。"""
+    from PIL import Image as _Img, ImageDraw
+    sub = "g" if set_name in ("seen", "g") else set_name
+    base = os.path.join(results_dir, "eval_samples_ctrl")
+    steps = []
+    for d in sorted(glob.glob(os.path.join(base, "step*"))):
+        n = 0
+        while os.path.exists(os.path.join(d, sub, f"g{n}.png")):
+            n += 1
+        if n:
+            steps.append((int(re.search(r"step(\d+)", os.path.basename(d)).group(1)),
+                          os.path.join(d, sub), n))
+    if not steps:
+        return None
+    n_max = max(s[2] for s in steps)
+    n_cols = n_max * 4
+    W = cell * n_cols + gap * 2
+    H = (gap + 56 + len(steps) * (56 + cell + gap) + gap + 30)
+    canvas = _Img.new("RGB", (W, H), (15, 17, 22))
+    draw = ImageDraw.Draw(canvas)
+    font = _load_font(r"/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", 17)
+    font_big = _load_font(r"/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", 40)
+    y = gap
+    draw.rectangle([0, y, W, y + 56], fill=(0, 0, 0))
+    draw.text((gap, y + 18), f"{set_name} (n={n_max})", font=font, fill=(255, 200, 120))
+    y += 56 + gap
+    for step, d, n in steps:
+        # 行标签: step 号 + 该 step 的 ssim (从 summary csv 读)
+        ssim_txt = _step_ssim_txt(results_dir, step, set_name)
+        draw.text((gap, y + 8), f"step {step}  {ssim_txt}", font=font_big, fill=(160, 200, 255))
+        y += 56
+        for i in range(n):
+            x = gap + i * 4 * cell
+            gen = _Img.open(os.path.join(d, f"g{i}.png")).convert("RGB").resize((cell, cell))
+            gt = _Img.open(os.path.join(d, f"gt{i}.png")).convert("RGB").resize((cell, cell))
+            canvas.paste(gen, (x, y))
+            canvas.paste(_poster_canny(gen), (x + cell, y))
+            canvas.paste(_poster_skeleton(gen), (x + 2 * cell, y))
+            canvas.paste(gt, (x + 3 * cell, y))
+        y += cell + gap
+    out = out or os.path.join(results_dir, "posters", f"{set_name}_poster.png")
+    os.makedirs(os.path.dirname(out), exist_ok=True)
+    canvas.save(out)
+    return out
+
+
+def _load_font(fp, size):
+    from PIL import ImageFont
+    try:
+        return ImageFont.truetype(fp, size)
+    except Exception:
+        return ImageFont.load_default()
+
+
+def _step_ssim_txt(results_dir, step, set_name):
+    sum_path = os.path.join(results_dir, "eval_stdskel_summary.csv")
+    if os.path.exists(sum_path):
+        for r in csv.DictReader(open(sum_path, encoding="utf-8")):
+            if int(r["step"]) == step and r["set"] == set_name:
+                return f"ssim={float(r['ssim_mean']):.4f}"
+    return ""
 
 
 @torch.no_grad()
@@ -184,6 +275,13 @@ def run_in_mem_eval(model, args, step, device, results_dir, sets=None,
             logger(f"[in-mem-eval] step={step} set={name} n={n} "
                    f"ssim={ssim.mean():.4f} (med={q50:.4f}) mse={mse:.5f} "
                    f"sample={t_s:.0f}s total={time.time()-t0:.0f}s")
+            # 自动 poster: 全量重画该 set 所有 step (秒级, 覆盖旧文件)
+            try:
+                _p = render_poster(results_dir, name)
+                if _p:
+                    logger(f"[in-mem-eval] poster updated: {_p}")
+            except Exception as _pe:
+                logger(f"[in-mem-eval] poster render failed: {_pe!r}")
     finally:
         f_sum.close()
         f_raw.close()
