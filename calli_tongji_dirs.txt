@@ -1,0 +1,58 @@
+于右任-草: 100 chars, unique=100
+伊秉绶-隶: 100 chars, unique=100
+何绍基-篆: 100 chars, unique=100
+傅山-草: 100 chars, unique=100
+吴昌硕-篆: 100 chars, unique=100
+吴让之-隶: 100 chars, unique=100
+姜夔-楷: 100 chars, unique=100
+孙过庭-草: 100 chars, unique=100
+康里巎巎-草: 100 chars, unique=100
+张旭-草: 100 chars, unique=100
+徐渭-草: 100 chars, unique=100
+怀素-草: 100 chars, unique=100
+文征明-行: 100 chars, unique=100
+智永-楷: 100 chars, unique=100
+朱耷-草: 100 chars, unique=100
+李阳冰-篆: 100 chars, unique=100
+林散之-隶: 100 chars, unique=100
+柯九思-楷: 100 chars, unique=100
+柳公权-楷: 100 chars, unique=100
+梁诗正-行: 100 chars, unique=100
+欧阳询-楷: 100 chars, unique=100
+欧阳询-行: 100 chars, unique=100
+沈尹默-楷: 100 chars, unique=100
+王宠-行: 100 chars, unique=100
+王献之-草: 100 chars, unique=100
+王羲之-草: 100 chars, unique=100
+王羲之-行: 100 chars, unique=100
+王铎-草: 100 chars, unique=100
+白蕉-行: 100 chars, unique=100
+皇象-草: 100 chars, unique=100
+祝允明-草: 100 chars, unique=100
+米芾-行: 100 chars, unique=100
+苏轼-行: 100 chars, unique=100
+董其昌-行: 100 chars, unique=100
+蔡襄-楷: 100 chars, unique=100
+蔡襄-行: 100 chars, unique=100
+虞世南-楷: 100 chars, unique=100
+褚遂良-楷: 100 chars, unique=100
+谭延闿-行: 100 chars, unique=100
+赵之谦-篆: 100 chars, unique=100
+赵孟頫-楷: 100 chars, unique=100
+赵孟頫-行: 100 chars, unique=100
+赵构-草: 100 chars, unique=100
+邓石如-篆: 100 chars, unique=100
+金农-隶: 100 chars, unique=100
+钟繇-楷: 100 chars, unique=100
+顾仲安-楷: 100 chars, unique=100
+颜真卿-楷: 100 chars, unique=100
+鲜于枢-行: 100 chars, unique=100
+黄庭坚-草: 100 chars, unique=100
+
+scripts: 蔡襄(2), 欧阳询(2), 王羲之(2), 赵孟頫(2), 白蕉(1), 褚遂良(1), 邓石如(1), 董其昌(1), 傅山(1), 顾仲安(1), 何绍基(1), 怀素(1), 皇象(1), 黄庭坚(1), 姜夔(1), 金农(1), 康里巎巎(1), 柯九思(1), 李阳冰(1), 梁诗正(1), 林散之(1), 柳公权(1), 米芾(1), 沈尹默(1), 苏轼(1), 孙过庭(1), 谭延闿(1), 王宠(1), 王铎(1), 王献之(1), 文征明(1), 吴昌硕(1), 吴让之(1), 鲜于枢(1), 徐渭(1), 颜真卿(1), 伊秉绶(1), 于右任(1), 虞世南(1), 张旭(1), 赵构(1), 赵之谦(1), 智永(1), 钟繇(1), 朱耷(1), 祝允明(1)
+calligraphers (5): 楷, 篆, 草, 行, 隶
+
+fame calligraphers (41): 于右任, 伊秉绶, 何绍基, 吴昌硕, 唐寅, 孙过庭, 张旭, 怀素, 文徵明, 智永, 朱耷, 李世民, 李邕, 李阳冰, 柳公权, 欧阳询, 欧阳通, 武则天, 沈尹默, 王献之, 王羲之, 王铎, 祝允明, 米芾, 苏轼, 董其昌, 蔡襄, 薛稷, 虞世南, 褚遂良, 赵之谦, 赵佶, 赵构, 邓石如, 郑板桥, 金农, 钟繇, 颜真卿, 鲜于枢, 黄庭坚, 黄易
+name overlap (tongji dirs matching fame calligrapher): 0 -> []
+(callig,script,char) exact overlap with fame_clean_v8: 0 of 5000
+exact overlap with fame3_e_full: 0 of 5000
