@@ -156,6 +156,82 @@ def sample_latents(model, diffusion, noise, conds, cfg_scale, batch, device,
     return all_latents
 
 
+# ── 两遍自条件采样 (Self-Conditioning) ───────────────────────────────────────
+# 核心思路: 12ch 联合模型在推理时同时去噪 image/canny/skel 三组通道。
+# 其中 skel 通道 (ch 8-11) 的预测实质是「模型认为这个书家会怎么写这个字的骨架」
+# —— 即一个 **书家风格化骨架**，比通用印刷标准骨架 g 更接近 GT 骨架。
+#
+# 将 pass-1 预测的 skel 通道回灌为 pass-2 的条件 g，让模型在第二遍时拿到
+# 一个自洽的、带书家个性的骨架条件，而非千篇一律的楷体印刷骨架。
+#
+# 开销: 约 1.4× (pass-1 用较少 ODE 步) 到 2× (pass-1 同等步数)。
+# 不改训练，纯推理侧增益。
+
+@torch.no_grad()
+def sample_latents_self_cond(
+    model, diffusion, noise, conds, cfg_scale, batch, device,
+    skel=None, seed=0,
+    # ── self-cond 参数 ──
+    skel_ch_start=8, skel_ch_end=12,
+    first_pass_steps=None,
+    blend_alpha=0.0,
+):
+    """两遍自条件采样 (Self-Conditioning) for 12ch joint models.
+
+    Pass 1: 用标准骨架 g 正常采样 → 得到 12ch 预测 (含 skel ch)
+    Pass 2: 用 pass-1 预测的 skel 通道替换 g 重新采样 → 更优图像
+
+    Args:
+        skel_ch_start, skel_ch_end: 输出中骨架 latent 的通道范围
+            (默认 8:12, 即 [img(0-3), canny(4-7), skel(8-11)])。
+        first_pass_steps: pass-1 的 ODE 步数 (None = 与 pass-2 相同;
+            设较小值如 20 可将总开销从 2× 降至 ~1.4×)。
+        blend_alpha: pass-2 条件的混合系数:
+            g_pass2 = (1 - α) · predicted_skel + α · g_original
+            0.0 = 纯自条件; 0.5 = 各半; 1.0 = 无自条件 (退化为普通采样)。
+
+    Returns:
+        (N, C, H, W) float32 CPU latents (与 sample_latents 相同格式)。
+    """
+    # 非 12ch 模型或无 skel 条件 → 退化为普通采样
+    _main = getattr(model, 'main', model)
+    model_ch = int(getattr(_main, 'in_channels', 4))
+    if model_ch <= 4 or skel is None or blend_alpha >= 1.0:
+        return sample_latents(model, diffusion, noise, conds, cfg_scale,
+                              batch, device, skel=skel, seed=seed)
+
+    # ── Pass 1: 用标准骨架采样，得到书家风格化骨架预测 ──
+    if first_pass_steps is not None and first_pass_steps != diffusion.num_timesteps:
+        diff1 = build_diffusion(
+            first_pass_steps, diffusion_type='flow',
+            flow_kwargs={
+                'sampler': getattr(diffusion, 'sampler', 'heun'),
+                'heun_batch': getattr(diffusion, 'heun_batch', True),
+                'shift': getattr(diffusion, 'shift', 1.0),
+            })
+    else:
+        diff1 = diffusion
+
+    x0_pass1 = sample_latents(model, diff1, noise, conds, cfg_scale,
+                              batch, device, skel=skel, seed=seed)
+
+    # 提取预测骨架 (pass-1 的 skel 通道)
+    if x0_pass1.shape[1] <= skel_ch_start:
+        # 模型输出通道不够 → 无 skel 可提取，退化为普通采样
+        return x0_pass1
+
+    predicted_skel = x0_pass1[:, skel_ch_start:skel_ch_end].clone()
+
+    # 混合: 保留部分标准骨架信息 (α > 0 时对预测骨架做保守修正)
+    if blend_alpha > 0:
+        predicted_skel = (1.0 - blend_alpha) * predicted_skel + blend_alpha * skel
+
+    # ── Pass 2: 用风格化骨架作为条件重新采样 ──
+    x0_pass2 = sample_latents(model, diffusion, noise, conds, cfg_scale,
+                              batch, device, skel=predicted_skel, seed=seed)
+    return x0_pass2
+
+
 # ── VAE decode (fp32) → PNG 落盘 ────────────────────────────────────────────
 @torch.no_grad()
 def decode_and_save(vae, latents, scaling_factor, out_dir, tag, conds=None,
