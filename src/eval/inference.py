@@ -267,8 +267,12 @@ def maybe_add_white(lat, zero_white=False):
         # 加回时按组重复到 C 通道, 否则 8ch + 4ch 维度不匹配 (2026-09-14 事故续)。
         c = lat.shape[1]
         if c % w.shape[0] != 0:
-            return lat          # 非 4 的整数组通道, 放弃加回 (避免维度错)
-        w = w.repeat(c // w.shape[0])
+            raise ValueError(
+                f"maybe_add_white: 通道数 {c} 不是 {w.shape[0]} 的整数倍, 无法按组加回白底")
+        # ⚠ Tensor.repeat 的实参个数必须等于张量维数: (4,32,32) 要写 repeat(n,1,1),
+        #   写成 repeat(n) 会直接报 "Number of dimensions of repeat dims can not be
+        #   smaller than number of dimensions of tensor"。此前 eval 全线 FAILED 就是这个。
+        w = w.repeat(c // w.shape[0], 1, 1)
     return lat + (w[None] if lat.dim() == 4 else w)
 
 
