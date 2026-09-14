@@ -1605,6 +1605,13 @@ def main_from_cli(argv=None):
     parser.add_argument("--aux-loss-weights", type=str, default="",
                         help="per-group aux 权重, 逗号分隔, 与 aux-latent-shards-dirs 同序。"
                              "如 '0.3,0.8' -> canny×0.3, skel×0.8 (覆盖 --aux-loss-weight)。")
+    # ⚠ 必须注册: 未注册的参数会被 config 加载器**静默丢弃**
+    #   (main_from_cli 只把 config 的键套到已注册的 action 上), getattr 取到 False,
+    #   于是 decode 前不加回白底 -> 全图发黄/发黑 (2026-09-14 事故根因)。
+    parser.add_argument("--aux-zero-white", type=_str_to_bool, default=False,
+                        help="白底归零: 训练目标已减去白底 latent (见 tools/rebuild_latents_wz.py), "
+                             "评测/推理 decode 前**必须加回**, 否则 latent 的零向量会被 VAE 解成"
+                             "灰黄棕色 (实测 RGB≈[129,110,89]) -> 整图发黄、更负处发黑。")
     parser.add_argument("--callig-style-attn", action="store_true",
                         help="callig 风格 cross-attention(书家化骨架正确形态): 书家向量 -> N_style 个 "
                              "style token, 骨架 token 内容寻址聚合风格, 产生'书家x字x位置'交互(结体差异)。"

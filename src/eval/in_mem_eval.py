@@ -31,7 +31,7 @@ from PIL import Image
 
 from src.eval.inference import (build_diffusion, load_eval_vae, make_eval_cache,
                                 sample_latents, sample_latents_self_cond,
-                                _mse, _ssim)
+                                maybe_add_white, _mse, _ssim)
 
 # 模块级缓存: 跨 step 复用 (eval cache / VAE / diffusion / id_map)
 _CACHES = {}
@@ -310,17 +310,8 @@ def run_in_mem_eval(model, args, step, device, results_dir, sets=None,
                 _lat = lat[i:j].to(device)
                 if _lat.shape[1] > 4:
                     _lat = _lat[:, :4]
-                # 白底归零 (aux_zero_white): 训练目标已减去白底 latent,
-                # decode 前必须**加回**, 否则整幅图偏色。
-                if bool(getattr(args, "aux_zero_white", False)):
-                    _wl = _WHITE_LAT_CACHE.get("w")
-                    if _wl is None:
-                        _p = "data/white_latent.npy"
-                        if os.path.exists(_p):
-                            _wl = torch.from_numpy(np.load(_p)).float().to(_lat.device)
-                            _WHITE_LAT_CACHE["w"] = _wl
-                    if _wl is not None:
-                        _lat = _lat + _wl[None]
+                # 白底归零 (aux_zero_white): 统一走 maybe_add_white, 勿内联 (防漂移/漏改)
+                _lat = maybe_add_white(_lat, bool(getattr(args, "aux_zero_white", False)))
                 with torch.autocast("cuda", dtype=torch.bfloat16):
                     dec = vae.decode(_lat / sf).sample
                 preds[i:j] = (dec.clamp(-1, 1) + 1) / 2

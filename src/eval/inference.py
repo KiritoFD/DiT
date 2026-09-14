@@ -232,10 +232,43 @@ def sample_latents_self_cond(
     return x0_pass2
 
 
+# ── 白底归零 (aux_zero_white) 的**唯一**加回入口 ──────────────────────────────
+_WHITE_LAT = {}
+
+
+def get_white_latent(device=None, path="data/white_latent.npy"):
+    """白底图的 VAE latent (4,32,32)，已乘 scaling_factor（与训练目标同尺度）。"""
+    z = _WHITE_LAT.get("w")
+    if z is None:
+        z = torch.from_numpy(np.load(path)).float()
+        _WHITE_LAT["w"] = z
+    return z if device is None else z.to(device)
+
+
+def maybe_add_white(lat, zero_white=False):
+    """decode 前把白底加回（当训练用 `tools/rebuild_latents_wz.py` 减过白底时）。
+
+    ⚠ 为什么不内联在各处:
+      2026-09-14 事故 —— 训练目标减了白底, 但 `aux_zero_white` 没在 train.py 注册,
+      config 的值被静默丢弃, 于是**所有** decode 路径都没加回:
+      VAE 把 latent 零向量解成灰黄棕色 (实测 RGB≈[129,110,89]), 更负处变黑,
+      生成图整体发黄/发黑, poster 上看起来"全黑"。而训练本身完全正常。
+      → 新增任何 decode 路径都必须走本函数, 不要各自实现。
+    """
+    if not zero_white:
+        return lat
+    try:
+        w = get_white_latent(lat.device)
+    except Exception:
+        return lat
+    return lat + (w[None] if lat.dim() == 4 else w)
+
+
 # ── VAE decode (fp32) → PNG 落盘 ────────────────────────────────────────────
 @torch.no_grad()
 def decode_and_save(vae, latents, scaling_factor, out_dir, tag, conds=None,
-                    gts=None, vae_batch=16, skels=None, idx_offset=0):
+                    gts=None, vae_batch=16, skels=None, idx_offset=0,
+                    zero_white=False):
     """Decode latents (fp32, force_upcast) → save {tag}{i}.png [+gt{i}.png, skel{i}.png].
 
     latents      : (N, C, H, W) CPU float32.
@@ -255,6 +288,7 @@ def decode_and_save(vae, latents, scaling_factor, out_dir, tag, conds=None,
         lat = latents[i:j].to(vae_dev)
         if lat.shape[1] > 4:          # aux 目标通道: 解码只用图像 4 通道
             lat = lat[:, :4]
+        lat = maybe_add_white(lat, zero_white)      # 白底归零: 减过的必须加回
         decoded = vae.decode(lat / scaling_factor).sample  # fp32
         preds = decoded.float().cpu()
         for k in range(j - i):

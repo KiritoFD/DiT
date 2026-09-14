@@ -20,6 +20,9 @@ import torch
 import torch.nn.functional as F
 from PIL import Image
 
+# 白底归零 (aux_zero_white) 的加回入口 —— decode 前统一走它, 勿内联
+from src.eval.inference import maybe_add_white
+
 
 def _log(msg):
     from datetime import datetime
@@ -252,6 +255,7 @@ def run_gpu_eval(ema_model, args, cache, step, checkpoint_dir, device,
         for i in range(0, n, vae_batch):
             j = min(i + vae_batch, n)
             lat = all_latents[i:j].to(device)
+            lat = maybe_add_white(lat, getattr(args, "aux_zero_white", False))
             # fp32 decode — force_upcast=True in kl-f4, do NOT use autocast
             decoded = vae.decode(lat / sf).sample  # (bs, 3, 256, 256) fp32
             preds_cpu = decoded.float().cpu()
@@ -345,6 +349,7 @@ def run_show5(ema_model, args, cache, step, checkpoint_dir, device,
                 ema_model.forward_with_cfg, z.shape, z,
                 clip_denoised=False, model_kwargs=mk, device=device,
             )
+            samples = maybe_add_white(samples, getattr(args, "aux_zero_white", False))
             decoded = vae.decode(samples / sf).sample
         _save_batch_pngs(decoded.float().cpu(), gts_all[:n].clone(),
                          conds, out_dir, step, 0)
