@@ -261,6 +261,14 @@ def maybe_add_white(lat, zero_white=False):
         w = get_white_latent(lat.device)
     except Exception:
         return lat
+    if lat.dim() == 4 and lat.shape[1] != w.shape[0]:
+        # aux 多通道 (如 8ch = canny4 + skel4 / 12ch = img4+canny4+skel4):
+        # 白底 latent 固定 4ch, 每个 4ch 目标组都减过同一个白底,
+        # 加回时按组重复到 C 通道, 否则 8ch + 4ch 维度不匹配 (2026-09-14 事故续)。
+        c = lat.shape[1]
+        if c % w.shape[0] != 0:
+            return lat          # 非 4 的整数组通道, 放弃加回 (避免维度错)
+        w = w.repeat(c // w.shape[0])
     return lat + (w[None] if lat.dim() == 4 else w)
 
 
