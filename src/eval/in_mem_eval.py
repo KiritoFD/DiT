@@ -38,6 +38,7 @@ _CACHES = {}
 _VAE = None
 _DIFF = None
 _CMAP = None
+_WHITE_LAT_CACHE = {}       # 白底 latent (aux_zero_white 时 decode 前加回)
 
 
 def _get_vae(device, vae_path="data/pretrained/sd-vae-ft-ema"):
@@ -92,12 +93,23 @@ def _poster_skeleton(img):
     return Image.fromarray(sk).convert("RGB")
 
 
-def render_poster(results_dir, set_name, out=None, cell=224, gap=6):
-    """自动 poster: 扫描 eval_samples_ctrl/step*/{set}/ 的 g{i}.png + gt{i}.png,
-    时间升序每 step 一行 (gen | canny | skel | gt 每样本), 每次全量重画并覆盖
-    → posters/{set}_poster.png 永远是所有 step 的最新版。纯 CPU, 秒级。"""
-    from PIL import Image as _Img, ImageDraw
-    sub = "g" if set_name in ("seen", "g") else set_name
+def save_input_g(results_dir, set_name, skels_latent, vae, sf):
+    """标准字输入 (g 条件) 落盘: eval_samples_ctrl/{set}_input_g/g{i}.png (幂等)。"""
+    out_dir = os.path.join(results_dir, "eval_samples_ctrl", f"{set_name}_input_g")
+    os.makedirs(out_dir, exist_ok=True)
+    n = skels_latent.shape[0]
+    if all(os.path.exists(os.path.join(out_dir, f"g{i}.png")) for i in range(n)):
+        return out_dir
+    with torch.autocast("cuda", dtype=torch.bfloat16):
+        dec = vae.decode(skels_latent.to(next(vae.parameters()).device) / sf).sample
+    dec = ((dec.float().clamp(-1, 1) + 1) / 2).cpu().numpy().transpose(0, 2, 3, 1)
+    from PIL import Image as _Img
+    for i in range(n):
+        _Img.fromarray((dec[i] * 255).astype(np.uint8)).save(os.path.join(out_dir, f"g{i}.png"))
+    return out_dir
+
+
+def _steps_scan(results_dir, sub):
     base = os.path.join(results_dir, "eval_samples_ctrl")
     steps = []
     for d in sorted(glob.glob(os.path.join(base, "step*"))):
@@ -107,37 +119,97 @@ def render_poster(results_dir, set_name, out=None, cell=224, gap=6):
         if n:
             steps.append((int(re.search(r"step(\d+)", os.path.basename(d)).group(1)),
                           os.path.join(d, sub), n))
+    return steps
+
+
+def render_poster(results_dir, set_name, out=None, cell=224, gap=6):
+    """自动 poster (每 set 两张):
+
+    主图 posters/{set}_poster.png:
+      第 1 行 = 输入标准字 (eval_samples_ctrl/{set}_input_g/g{i}.png)
+      中间每行 = 一个 ckpt 的生成结果 (时间升序, 行标签带 ssim)
+      最后 1 行 = GT (最新 step 的 gt{i}.png)
+    结构图 posters/{set}_struct.png (另放, 不挤主图):
+      每 ckpt 一行, 每样本 gen | canny | skel 三列。
+    均为全量重画并覆盖 → 永远是所有 step 的最新版。纯 CPU, 秒级。
+    """
+    from PIL import Image as _Img, ImageDraw
+    sub = "g" if set_name in ("seen", "g") else set_name
+    steps = _steps_scan(results_dir, sub)
     if not steps:
         return None
     n_max = max(s[2] for s in steps)
-    n_cols = n_max * 4
-    W = cell * n_cols + gap * 2
-    H = (gap + 56 + len(steps) * (56 + cell + gap) + gap + 30)
+    cell = max(64, min(224, 1280 // max(n_max, 1)))
+    input_dir = os.path.join(results_dir, "eval_samples_ctrl", f"{set_name}_input_g")
+    has_input = os.path.isdir(input_dir) and bool(glob.glob(os.path.join(input_dir, "g*.png")))
+
+    def _cell(path, bg):
+        if path and os.path.exists(path):
+            return _Img.open(path).convert("RGB").resize((cell, cell), _Img.LANCZOS)
+        return _Img.new("RGB", (cell, cell), bg)
+
+    font = _load_font(r"/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", max(14, cell // 8))
+    font_big = _load_font(r"/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", max(28, cell // 3))
+    label_h = max(40, cell // 4)
+    hdr_h = 56
+
+    # ── 主图: input 行 + 每 step gen 行 + GT 行 ──────────────────────────
+    W = cell * n_max + gap * 2
+    n_rows = len(steps) + 1 + (1 if has_input else 0)
+    H = hdr_h + gap + n_rows * (label_h + cell + gap) + gap + 30
     canvas = _Img.new("RGB", (W, H), (15, 17, 22))
     draw = ImageDraw.Draw(canvas)
-    font = _load_font(r"/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", 17)
-    font_big = _load_font(r"/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", 40)
     y = gap
-    draw.rectangle([0, y, W, y + 56], fill=(0, 0, 0))
-    draw.text((gap, y + 18), f"{set_name} (n={n_max})", font=font, fill=(255, 200, 120))
-    y += 56 + gap
-    for step, d, n in steps:
-        # 行标签: step 号 + 该 step 的 ssim (从 summary csv 读)
-        ssim_txt = _step_ssim_txt(results_dir, step, set_name)
-        draw.text((gap, y + 8), f"step {step}  {ssim_txt}", font=font_big, fill=(160, 200, 255))
-        y += 56
-        for i in range(n):
-            x = gap + i * 4 * cell
-            gen = _Img.open(os.path.join(d, f"g{i}.png")).convert("RGB").resize((cell, cell))
-            gt = _Img.open(os.path.join(d, f"gt{i}.png")).convert("RGB").resize((cell, cell))
-            canvas.paste(gen, (x, y))
-            canvas.paste(_poster_canny(gen), (x + cell, y))
-            canvas.paste(_poster_skeleton(gen), (x + 2 * cell, y))
-            canvas.paste(gt, (x + 3 * cell, y))
+    draw.rectangle([0, y, W, y + hdr_h], fill=(0, 0, 0))
+    draw.text((gap, y + 12), f"{set_name} (n={n_max}) — input g / per-ckpt gen / GT",
+              font=font, fill=(255, 200, 120))
+    y += hdr_h + gap
+    if has_input:
+        draw.text((gap, y + 8), "input (标准字 g)", font=font_big, fill=(120, 220, 255))
+        y += label_h
+        for i in range(n_max):
+            canvas.paste(_cell(os.path.join(input_dir, f"g{i}.png"), (30, 40, 60)),
+                         (gap + i * cell, y))
         y += cell + gap
+    for step, d, n in steps:
+        draw.text((gap, y + 8), f"step {step}  {_step_ssim_txt(results_dir, step, set_name)}",
+                  font=font_big, fill=(160, 200, 255))
+        y += label_h
+        for i in range(n):
+            canvas.paste(_cell(os.path.join(d, f"g{i}.png"), (40, 40, 40)), (gap + i * cell, y))
+        y += cell + gap
+    draw.text((gap, y + 8), "GT", font=font_big, fill=(255, 160, 160))
+    y += label_h
+    gt_dir = steps[-1][1]
+    for i in range(n_max):
+        canvas.paste(_cell(os.path.join(gt_dir, f"gt{i}.png"), (50, 50, 50)), (gap + i * cell, y))
     out = out or os.path.join(results_dir, "posters", f"{set_name}_poster.png")
     os.makedirs(os.path.dirname(out), exist_ok=True)
     canvas.save(out)
+
+    # ── 结构图: 每 step 一行, gen|canny|skel ─────────────────────────────
+    W2 = cell * n_max * 3 + gap * 2
+    H2 = hdr_h + gap + len(steps) * (label_h + cell + gap) + gap + 30
+    canvas2 = _Img.new("RGB", (W2, H2), (15, 17, 22))
+    draw2 = ImageDraw.Draw(canvas2)
+    y = gap
+    draw2.rectangle([0, y, W2, y + hdr_h], fill=(0, 0, 0))
+    draw2.text((gap, y + 12), f"{set_name} structure — gen | canny | skel (per ckpt)",
+               font=font, fill=(255, 200, 120))
+    y += hdr_h + gap
+    for step, d, n in steps:
+        draw2.text((gap, y + 8), f"step {step}  {_step_ssim_txt(results_dir, step, set_name)}",
+                   font=font_big, fill=(160, 200, 255))
+        y += label_h
+        for i in range(n):
+            x = gap + i * 3 * cell
+            gen = _cell(os.path.join(d, f"g{i}.png"), (40, 40, 40))
+            canvas2.paste(gen, (x, y))
+            canvas2.paste(_poster_canny(gen), (x + cell, y))
+            canvas2.paste(_poster_skeleton(gen), (x + 2 * cell, y))
+        y += cell + gap
+    out2 = os.path.join(results_dir, "posters", f"{set_name}_struct.png")
+    canvas2.save(out2)
     return out
 
 
@@ -238,6 +310,17 @@ def run_in_mem_eval(model, args, step, device, results_dir, sets=None,
                 _lat = lat[i:j].to(device)
                 if _lat.shape[1] > 4:
                     _lat = _lat[:, :4]
+                # 白底归零 (aux_zero_white): 训练目标已减去白底 latent,
+                # decode 前必须**加回**, 否则整幅图偏色。
+                if bool(getattr(args, "aux_zero_white", False)):
+                    _wl = _WHITE_LAT_CACHE.get("w")
+                    if _wl is None:
+                        _p = "data/white_latent.npy"
+                        if os.path.exists(_p):
+                            _wl = torch.from_numpy(np.load(_p)).float().to(_lat.device)
+                            _WHITE_LAT_CACHE["w"] = _wl
+                    if _wl is not None:
+                        _lat = _lat + _wl[None]
                 with torch.autocast("cuda", dtype=torch.bfloat16):
                     dec = vae.decode(_lat / sf).sample
                 preds[i:j] = (dec.clamp(-1, 1) + 1) / 2
@@ -255,6 +338,12 @@ def run_in_mem_eval(model, args, step, device, results_dir, sets=None,
                         os.path.join(_sd, f"g{i}.png"))
                     _Img.fromarray((gt_np[i] * 255).astype(np.uint8)).save(
                         os.path.join(_sd, f"gt{i}.png"))
+                # 标准字输入 (g 条件) 落盘 (poster 第 1 行, 跨 step 复用, 幂等)
+                if cache.get("skels_latent") is not None:
+                    try:
+                        save_input_g(results_dir, name, cache["skels_latent"], vae, sf)
+                    except Exception as _se:
+                        logger(f"[in-mem-eval] input-g save failed: {_se!r}")
 
             ssims, mses = [], []
             for i in range(n):

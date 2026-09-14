@@ -142,3 +142,7 @@ tools/evaluation/train_dashboard.html
 !docs/s6_report/**/*.png
 !docs/s6_report/**/*.json
 !docs/system/imgs/**
+
+# ---- 工具 session 记录 / 大图海报 (不入库) ----
+session-*.md
+assets/posters_12ch/
