@@ -75,5 +75,6 @@
   "aux_loss_weight": 0.0,
   "aux_loss_weights": "",
   "repa_layers": "8",
-  "cond_drop_which_glyph_prob": 0.85
+  "cond_drop_which_glyph_prob": 0.85,
+  "eval_skel_latent_shards_dir": "data/skel/std_skel3_latents_base_full"
 }

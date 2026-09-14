@@ -300,7 +300,11 @@ def run_in_mem_eval(model, args, step, device, results_dir, sets=None,
 
     # csv image_path 已含完整相对路径 (data/imgs/...), img_root 置 None 避免重复拼接
     img_root = None
-    shards = getattr(args, "skel_latent_shards_dir", "") or ""
+    # ⚠ eval 的 g 必须用**评测专用**目录: 训练 shard 按 train csv 的 img_id 建,
+    #   与 eval 集 img_id 不是同一套 (实测 strict 命中 0/237 -> g 全零 -> decode(0)
+    #   解出灰黄棕, poster 首行发黄且指标失真)。留空才退回训练目录。
+    shards = (getattr(args, "eval_skel_latent_shards_dir", "") or ""
+              or getattr(args, "skel_latent_shards_dir", "") or "")
     cfg_scale = float(getattr(args, "eval_cfg", 0.7))
     ddim_steps = int(getattr(args, "eval_steps", 50))
     dit_batch = int(getattr(args, "in_mem_eval_batch", 16))

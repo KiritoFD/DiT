@@ -1858,6 +1858,14 @@ def main_from_cli(argv=None):
                              "built by tools/build_dino_cache.py). Hits skip the per-step DINO "
                              "forward (+15~20% throughput, -1.5GB VRAM); misses fall back to the "
                              "teacher forward (lazy-loaded). Empty = disabled (teacher every step).")
+    parser.add_argument("--eval-skel-latent-shards-dir", type=str, default="",
+                        dest="eval_skel_latent_shards_dir",
+                        help="评测专用的标准字形(g) latent 目录。⚠ 必须与训练侧的 "
+                             "--skel-latent-shards-dir 分开: 训练 shard 按 **train csv 的 img_id** 建, "
+                             "而 eval 集的 img_id 是另一套。实测: 用 base_sym(train) 查 strict 命中 0/237 "
+                             "-> g 全零 -> VAE decode(0) 解出灰黄棕 [129,110,89] -> poster 首行发黄, "
+                             "且 strict 指标完全失真(曾出现 strict 0.4837 > seen 0.4577 的反常)。"
+                             "留空则退回 --skel-latent-shards-dir。")
     parser.add_argument("--in-mem-eval", type=_str_to_bool, default=False, dest="in_mem_eval",
                         help="True in-mem eval inside the training process: at each ckpt point, "
                              "pause stepping, sample with the resident EMA model on the same GPU, "
