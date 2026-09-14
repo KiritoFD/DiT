@@ -125,6 +125,7 @@ def main():
         glyph_in_channels=4,
         in_channels=(int(a.get("latent_channels") or 4)
                      + 4 * len([s for s in str(a.get("aux_latent_shards_dirs") or "").split(",") if s])),
+        image_channels=int(a.get("latent_channels") or 4),
         use_ids_char_embedder=bool(a.get("use_ids_char_embedder", False)),
         ids_file=a.get("ids_file"),
         char_id_to_char=_ids_c2c,

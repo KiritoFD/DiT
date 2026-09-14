@@ -99,6 +99,7 @@ def build_model(a, device):
         glyph_inject_layers=int(a.get("glyph_inject_layers", 0)),
         in_channels=(int(a.get("latent_channels", 4))
                      + 4 * len([s for s in str(a.get("aux_latent_shards_dirs", "") or "").split(",") if s])),
+        image_channels=int(a.get("latent_channels", 4)),
         **arch)
     if a.get("freeze_callig_table"):
         m.y_callig_embedder.freeze_table()

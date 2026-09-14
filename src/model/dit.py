@@ -437,11 +437,13 @@ class DiT_2Cond(nn.Module):
         rope=True,              # 2D axial RoPE；False 时退回固定 2D sin-cos 加到 x
         rope_theta=100.0,
         attn_impl="sdpa",       # "sdpa" | "eager"
+        image_channels=None,    # CFG 只作用于 image latent 通道; None 时退回 in_channels (向后兼容)
     ):
         super().__init__()
         self.learn_sigma = learn_sigma
         self.use_checkpoint = use_checkpoint
         self.in_channels = in_channels
+        self.image_channels = int(image_channels) if image_channels is not None else in_channels
         self.norm_type = norm_type
         self.mlp_type = mlp_type
         self.qk_norm = bool(qk_norm)
@@ -1084,8 +1086,8 @@ class DiT_2Cond(nn.Module):
         model_out = self.forward(x, t, y_callig_combined, y_char_combined, g=g2)
         if isinstance(model_out, tuple):
             model_out = model_out[0]  # skel_head 启用时 forward 返回 (主输出, skel_pred)，CFG 只取主输出
-        # Apply CFG on all learned channels (eps subspace), not a hard-coded prefix.
-        eps, rest = model_out[:, :self.in_channels], model_out[:, self.in_channels:]
+        # Apply CFG only on image latent channels (eps subspace), not canny/skel structure channels.
+        eps, rest = model_out[:, :self.image_channels], model_out[:, self.image_channels:]
         cond_eps, uncond_eps = torch.split(eps, original_bs, dim=0)
         half_eps = uncond_eps + cfg_scale * (cond_eps - uncond_eps)
         eps = torch.cat([half_eps, half_eps], dim=0)
@@ -1124,7 +1126,7 @@ class DiT_2Cond(nn.Module):
         if isinstance(model_out, tuple):
             model_out = model_out[0]
 
-        eps4, rest4 = model_out[:, :self.in_channels], model_out[:, self.in_channels:]
+        eps4, rest4 = model_out[:, :self.image_channels], model_out[:, self.image_channels:]
         eps_full, eps_callig, eps_glyph, eps_uncond = torch.split(eps4, B, dim=0)
 
         eps_guided = (

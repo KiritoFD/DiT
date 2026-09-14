@@ -57,7 +57,7 @@ def gen_one(task):
         sk3 = binary_dilation(sk, ST, iterations=1)
         Image.fromarray(np.where(sk3, 0, 255).astype(np.uint8), "L").save(f"{SKEL_OUT}/{iid}.png")
         import cv2
-        edges = cv2.Canny(a, 80, 180)
+        edges = 255 - cv2.Canny(a, 80, 180)
         Image.fromarray(edges, "L").save(f"{CANNY_OUT}/{iid}.png")
         return iid, None
     except Exception as e:

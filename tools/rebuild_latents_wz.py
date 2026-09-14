@@ -50,7 +50,7 @@ TF = T.Compose([T.Resize((256, 256), interpolation=T.InterpolationMode.BICUBIC),
 JOBS = [
     ("img",   None,                          "data/latents/final_latents_base_wz",  False),
     ("skel3", "data/skel/final_skel3_base",  "data/skel/aux_skel3_latents_base_wz", False),
-    ("canny", "data/aux/final_canny_base",   "data/aux/aux_canny_latents_base_wz",  True),
+    ("canny", "data/aux/final_canny_base",   "data/aux/aux_canny_latents_base_wz",  False),
 ]
 
 

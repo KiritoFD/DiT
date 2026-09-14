@@ -283,6 +283,7 @@ def main(args):
             rope=_rope,
             rope_theta=getattr(args, 'rope_theta', 100.0),
             attn_impl=getattr(args, 'attn_impl', 'sdpa'),
+            image_channels=getattr(args, 'latent_channels', 4),
         )
         logger.info(f"Building 2-Cond model: {args.model} "
                     f"(learn_sigma={_learn_sigma}, diffusion_type={_diffusion_type}, "
