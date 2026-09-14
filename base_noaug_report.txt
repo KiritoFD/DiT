@@ -1,0 +1,95 @@
+kept rows: 54892 (fame 28385, tongji 2092, unicalli 25248)
+skipped: {'uc_leak': 121}
+
+dropped calligraphers (<224 张): 44
+  李孝光: 207
+  赵构: 188
+  李世民: 188
+  柯九思: 182
+  简牍帛书盟书: 167
+  于右任: 147
+  朱登: 140
+  怀素: 131
+  吴昌硕: 124
+  姚孟起: 104
+  吴让之: 100
+  林散之: 100
+  文征明: 100
+  梁诗正: 100
+  王宠: 100
+  白蕉: 100
+  谭延闿: 100
+  顾仲安: 100
+  乾隆: 92
+  杨秀: 84
+  文彭: 84
+  仇靖: 83
+  吴琚: 75
+  王诜: 67
+  黄道周: 65
+  武则天: 60
+  康熙: 53
+  小野道风: 52
+  宋珏: 51
+  李倜: 50
+  王珣: 47
+  空海: 46
+  曾巩: 41
+  杨凝式: 40
+  黄养正: 34
+  刘日升: 34
+  龚贤: 33
+  姜立纲: 32
+  冯子振: 28
+  陆游: 28
+  蔡京: 27
+  陶弘景: 19
+  张瑞图: 13
+  李阳冰: 1
+
+kept calligraphers (45):
+  颜真卿: 4233 (fame+tongji+unicalli)
+  王羲之: 4165 (fame+tongji+unicalli)
+  欧阳询: 3797 (fame+tongji+unicalli)
+  赵孟頫: 3487 (tongji+unicalli)
+  褚遂良: 3074 (fame+tongji+unicalli)
+  苏轼: 2954 (fame+tongji+unicalli)
+  米芾: 2468 (fame+tongji+unicalli)
+  文徵明: 2451 (fame+unicalli)
+  柳公权: 2394 (fame+tongji+unicalli)
+  李邕: 1877 (fame+unicalli)
+  智永: 1478 (fame+tongji+unicalli)
+  黄庭坚: 1478 (fame+unicalli)
+  欧阳通: 1396 (fame+unicalli)
+  张即之: 1242 (unicalli)
+  沈尹默: 1214 (fame+tongji+unicalli)
+  何绍基: 1188 (fame+unicalli)
+  虞世南: 1088 (fame+tongji+unicalli)
+  金农: 1067 (fame+tongji+unicalli)
+  董其昌: 1007 (fame+tongji+unicalli)
+  祝允明: 909 (fame+unicalli)
+  蔡襄: 901 (fame+tongji+unicalli)
+  唐寅: 864 (fame+unicalli)
+  赵之谦: 793 (fame+unicalli)
+  赵佶: 773 (fame)
+  王献之: 696 (fame+unicalli)
+  钟绍京: 659 (unicalli)
+  钟繇: 629 (fame+tongji+unicalli)
+  邓石如: 613 (fame+unicalli)
+  宋徽宗: 530 (unicalli)
+  姜夔: 513 (tongji+unicalli)
+  王铎: 503 (fame+unicalli)
+  鲜于枢: 468 (fame+tongji+unicalli)
+  朱耷: 437 (fame+unicalli)
+  张旭: 366 (fame+unicalli)
+  黄自元: 361 (unicalli)
+  薛稷: 345 (fame)
+  吴通微: 307 (unicalli)
+  伊秉绶: 304 (fame+tongji)
+  陆柬之: 304 (unicalli)
+  孙过庭: 296 (fame)
+  杨维桢: 279 (unicalli)
+  傅山: 276 (unicalli)
+  黄易: 246 (fame)
+  郑板桥: 238 (fame)
+  徐渭: 224 (unicalli)

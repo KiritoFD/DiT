@@ -1,0 +1,33 @@
+train: 54892 rows
+scripts: {'行': 23378, '楷': 28704, '隶': 2810}
+
+(callig,char) unique pairs: 32354
+(callig,char) with >1 instance: 9778
+instances per (callig,char): med=1, p10=1, max=112
+
+unique chars per calligrapher: min=(165, '杨维桢'), med=(623, '蔡襄'), max=(2108, '颜真卿')
+
+[strict n=237 (可部署主指标)] n=237
+  (callig,script,char) 泄漏进 train: 0 (应为 0)
+  书家在 train: 226/237 (不在的 11 家)
+  eval 书家的 train 字数: min=212 med=1092 max=2108
+  eval 字有其他书家实例 (结构迁移): 208
+
+[seen n=10] n=10
+  (callig,script,char) 泄漏进 train: 10 (应为 0)
+  书家在 train: 10/10 (不在的 0 家)
+  eval 书家的 train 字数: min=212 med=1092 max=2108
+  eval 字有其他书家实例 (结构迁移): 0
+
+base 新增书家 (fame3 之外): 11 家, 共 8182 行
+  赵孟頫: 3487 (unique chars 1293)
+  张即之: 1242 (unique chars 546)
+  钟绍京: 659 (unique chars 319)
+  宋徽宗: 530 (unique chars 434)
+  姜夔: 513 (unique chars 309)
+  黄自元: 361 (unique chars 290)
+  吴通微: 307 (unique chars 218)
+  陆柬之: 304 (unique chars 198)
+  杨维桢: 279 (unique chars 165)
+  傅山: 276 (unique chars 225)
+  徐渭: 224 (unique chars 176)
