@@ -103,8 +103,10 @@ def main():
     if not run_dir:
         cands = sorted(glob.glob(os.path.join(args.results_dir, "*")),
                        key=os.path.getmtime)
-        cands = [c for c in cands if os.path.isdir(os.path.join(c, "checkpoints"))]
-        assert cands, f"no run dir with checkpoints under {args.results_dir}"
+        # 只认**真的含 ckpt** 的目录 (中断/取消的启动会留下空 checkpoints/)
+        cands = [c for c in cands
+                 if glob.glob(os.path.join(c, "checkpoints", "[0-9]*.pt"))]
+        assert cands, f"no run dir with ckpt under {args.results_dir}"
         run_dir = cands[-1]
     ck_dir = os.path.join(run_dir, "checkpoints")
     ckpts = sorted(glob.glob(os.path.join(ck_dir, "[0-9]*.pt")))

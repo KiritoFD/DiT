@@ -70,7 +70,13 @@ def _get_cache(csv_path, n, img_root, shards, args):
 
 
 def _poster_canny(img):
-    """从 gen 图现算 canny 边缘列 (与老 make_seen_poster 同逻辑)。"""
+    """从 gen 图现算 canny 边缘列。
+
+    ⚠ 极性: 统一成**白底黑线**, 与数据侧约定一致。
+    库原生输出 (cv2.Canny / 梯度阈值) 是"前景=255/背景=0"(黑底白线), 直接落盘
+    会与 final_canny_base / skel3 PNG 的极性相反 -> 看起来像"数据错了"。
+    这与 2026-09-14 的 E1(canny 黑底未归一)属同一类疏漏: 别把库的原生输出直接当交付格式。
+    """
     import cv2
     a = np.asarray(img, dtype=np.float32)
     gray = 0.299 * a[..., 0] + 0.587 * a[..., 1] + 0.114 * a[..., 2]
@@ -78,19 +84,24 @@ def _poster_canny(img):
     ky = np.array([[-1, -2, -1], [0, 0, 0], [1, 2, 1]], dtype=np.float32)
     gx = cv2.filter2D(gray, -1, kx, borderType=cv2.BORDER_REFLECT)
     gy = cv2.filter2D(gray, -1, ky, borderType=cv2.BORDER_REFLECT)
-    return Image.fromarray(((np.sqrt(gx ** 2 + gy ** 2)) > 150).astype(np.uint8) * 255).convert("RGB")
+    edge = np.sqrt(gx ** 2 + gy ** 2) > 150
+    return Image.fromarray(np.where(edge, 0, 255).astype(np.uint8)).convert("RGB")
 
 
 def _poster_skeleton(img):
-    """从 gen 图现算骨架列 (与老 make_seen_poster 同逻辑)。"""
+    """从 gen 图现算骨架列。
+
+    ⚠ 极性同 `_poster_canny`: 输出**白底黑线**(骨架=0), 而不是 skeletonize 的
+    原生 "骨架=255" —— 否则与 skel3 PNG / 输入 g 的极性相反, 造成误读。
+    """
     from skimage.morphology import skeletonize
     a = np.asarray(img, dtype=np.float32)
     gray = 0.299 * a[..., 0] + 0.587 * a[..., 1] + 0.114 * a[..., 2]
     bin_b = (gray > 127).astype(np.uint8)
     if gray.mean() > 127:
         bin_b = 1 - bin_b
-    sk = skeletonize(bin_b.astype(bool)).astype(np.uint8) * 255
-    return Image.fromarray(sk).convert("RGB")
+    sk = skeletonize(bin_b.astype(bool))
+    return Image.fromarray(np.where(sk, 0, 255).astype(np.uint8)).convert("RGB")
 
 
 def save_input_g(results_dir, set_name, skels_latent, vae, sf):
@@ -187,27 +198,65 @@ def render_poster(results_dir, set_name, out=None, cell=224, gap=6):
     os.makedirs(os.path.dirname(out), exist_ok=True)
     canvas.save(out)
 
-    # ── 结构图: 每 step 一行, gen|canny|skel ─────────────────────────────
-    W2 = cell * n_max * 3 + gap * 2
-    H2 = hdr_h + gap + len(steps) * (label_h + cell + gap) + gap + 30
+    # ── 结构图: input 行 + 每 step 行 (gen | 模型预测的 aux) + GT 行 ────────
+    # 展示**模型自己预测的**结构通道 (aux_*{i}.png, 由 run_in_mem_eval 落盘),
+    # 而不是从 gen 图重算 —— 后者只是"生成图的边缘", 无法判断模型是否学对了 aux 目标。
+    _aux_cols = []
+    for f in sorted(glob.glob(os.path.join(steps[-1][1], "aux_*0.png"))):
+        _b = os.path.basename(f)
+        _aux_cols.append(_b[len("aux_"):-len("0.png")])
+    ncol = 1 + (len(_aux_cols) if _aux_cols else 2)
+    W2 = cell * n_max * ncol + gap * 2
+    n_rows2 = len(steps) + (1 if has_input else 0) + 1
+    H2 = hdr_h + gap + n_rows2 * (label_h + cell + gap) + gap + 30
     canvas2 = _Img.new("RGB", (W2, H2), (15, 17, 22))
     draw2 = ImageDraw.Draw(canvas2)
     y = gap
     draw2.rectangle([0, y, W2, y + hdr_h], fill=(0, 0, 0))
-    draw2.text((gap, y + 12), f"{set_name} structure — gen | canny | skel (per ckpt)",
+    draw2.text((gap, y + 12),
+               f"{set_name} structure — input g / per-ckpt gen|"
+               + ("|".join(_aux_cols) if _aux_cols else "canny|skel(recomputed)")
+               + " / GT",
                font=font, fill=(255, 200, 120))
     y += hdr_h + gap
+    if has_input:
+        draw2.text((gap, y + 8), "input (标准字 g)", font=font_big, fill=(120, 220, 255))
+        y += label_h
+        for i in range(n_max):
+            canvas2.paste(_cell(os.path.join(input_dir, f"g{i}.png"), (30, 40, 60)),
+                          (gap + i * ncol * cell, y))
+        y += cell + gap
     for step, d, n in steps:
         draw2.text((gap, y + 8), f"step {step}  {_step_ssim_txt(results_dir, step, set_name)}",
                    font=font_big, fill=(160, 200, 255))
         y += label_h
         for i in range(n):
-            x = gap + i * 3 * cell
+            x = gap + i * ncol * cell
             gen = _cell(os.path.join(d, f"g{i}.png"), (40, 40, 40))
             canvas2.paste(gen, (x, y))
-            canvas2.paste(_poster_canny(gen), (x + cell, y))
-            canvas2.paste(_poster_skeleton(gen), (x + 2 * cell, y))
+            if _aux_cols:
+                for k, an in enumerate(_aux_cols):
+                    canvas2.paste(_cell(os.path.join(d, f"aux_{an}{i}.png"), (30, 30, 30)),
+                                  (x + (k + 1) * cell, y))
+            else:   # 兼容: 老 ckpt 没有 aux 落盘时退回"从 gen 现算"
+                canvas2.paste(_poster_canny(gen), (x + cell, y))
+                canvas2.paste(_poster_skeleton(gen), (x + 2 * cell, y))
         y += cell + gap
+    # GT 行: gt | 目标结构参照 (skel -> 骨架, 其余 -> 边缘; 均从 GT 图现算, 白底黑线)
+    draw2.text((gap, y + 8), "GT", font=font_big, fill=(255, 160, 160))
+    y += label_h
+    _gt_dir2 = steps[-1][1]
+    for i in range(n_max):
+        x = gap + i * ncol * cell
+        gti = _cell(os.path.join(_gt_dir2, f"gt{i}.png"), (50, 50, 50))
+        canvas2.paste(gti, (x, y))
+        if _aux_cols:
+            for k, an in enumerate(_aux_cols):
+                ref = _poster_skeleton(gti) if "skel" in an else _poster_canny(gti)
+                canvas2.paste(ref, (x + (k + 1) * cell, y))
+        else:
+            canvas2.paste(_poster_canny(gti), (x + cell, y))
+            canvas2.paste(_poster_skeleton(gti), (x + 2 * cell, y))
     out2 = os.path.join(results_dir, "posters", f"{set_name}_struct.png")
     canvas2.save(out2)
     return out
@@ -305,16 +354,46 @@ def run_in_mem_eval(model, args, step, device, results_dir, sets=None,
             vae = _get_vae(device)
             gts = (cache["gts"].to(device) + 1) / 2
             preds = torch.empty_like(gts)
+            _zw = bool(getattr(args, "aux_zero_white", False))
+            # aux 组名 (顺序 == aux_latent_shards_dirs) —— 落盘 aux_{name}{i}.png,
+            # struct poster 直接展示**模型预测的**结构通道 (而不是从 gen 图重算)。
+            _aux_names = []
+            for _d in (getattr(args, "aux_latent_shards_dirs", "") or "").split(","):
+                _d = _d.strip()
+                if not _d:
+                    continue
+                _tk = [t for t in os.path.basename(_d).split("_") if t]
+                _aux_names.append(_tk[1] if len(_tk) > 1 else f"aux{len(_aux_names)}")
+            _sub = "g" if name in ("seen", "g") else name
+            _sd = os.path.join(results_dir, "eval_samples_ctrl", f"step{int(step):07d}", _sub)
+            _save = bool(getattr(args, "in_mem_eval_save_samples", True))
+            _n_aux = max(0, (lat.shape[1] - 4) // 4)
             for i in range(0, n, vae_batch):
                 j = min(i + vae_batch, n)
                 _lat = lat[i:j].to(device)
+                _aux_lat = None
                 if _lat.shape[1] > 4:
+                    _aux_lat = _lat[:, 4:]
                     _lat = _lat[:, :4]
                 # 白底归零 (aux_zero_white): 统一走 maybe_add_white, 勿内联 (防漂移/漏改)
-                _lat = maybe_add_white(_lat, bool(getattr(args, "aux_zero_white", False)))
+                _lat = maybe_add_white(_lat, _zw)
                 with torch.autocast("cuda", dtype=torch.bfloat16):
                     dec = vae.decode(_lat / sf).sample
                 preds[i:j] = (dec.clamp(-1, 1) + 1) / 2
+                # aux 通道同样减过白底 -> 也要加回再 decode, 否则整列发黄/发黑
+                if _aux_lat is not None and _save:
+                    from PIL import Image as _AImg
+                    _aux_lat = maybe_add_white(_aux_lat, _zw)
+                    os.makedirs(_sd, exist_ok=True)
+                    for _g in range(_n_aux):
+                        _nm = _aux_names[_g] if _g < len(_aux_names) else f"aux{_g}"
+                        with torch.autocast("cuda", dtype=torch.bfloat16):
+                            _da = vae.decode(_aux_lat[:, _g * 4:(_g + 1) * 4] / sf).sample
+                        for _k in range(_da.shape[0]):
+                            _ar = ((_da[_k].float().clamp(-1, 1) + 1) / 2
+                                   ).cpu().numpy().transpose(1, 2, 0)
+                            _AImg.fromarray((_ar * 255).astype(np.uint8)).save(
+                                os.path.join(_sd, f"aux_{_nm}{i + _k}.png"))
             pred_np = preds.cpu().numpy().transpose(0, 2, 3, 1)
             gt_np = gts.cpu().numpy().transpose(0, 2, 3, 1)
 
