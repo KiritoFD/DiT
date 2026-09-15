@@ -1,7 +1,7 @@
 {
-  "_comment": "[2026-09-15] **原版配方 + 158K 全对称增强**. 背景: 12ch(aux)线 42.5k 仍为墨团而 4ch 线 ~30k 就出字形; 且 CFG 作用域靠 image_channels 生效, 而配置里是 None -> 回退 in_channels, CFG 对全部 12 通道做引导, aux(canny/skel)分布与 image 不同却被同一 cfg 放大 -> 轨迹跑飞(4ch 无此问题)。故放弃 12ch 与 wz(白底归零未证收益), 回到 4ch。配方 = v10b 0.5680 线: Sp/2 + 4ch + g 骨架条件 + xattn 全 12 层 + REPA0.03 + flow(logit_normal/heun) + rms/swiglu/qk_norm + rope=1 + lr5e-5 + batch128(xattn12 激活+9G, 不用梯度检查点) + cosine 400k + EMA0.9999。数据 train_base_sym 158,814 = base 54,892(fame 27,552 + UniCalli 25,248 + tongji 2,092) + 笔画粗细对称增强 103,922。本轮新建配套资产: final_latents_base_sym / std_skel3_latents_base_sym(g 覆盖 100%) / dino_cache/base_sym_v1(100%) —— 增强图均按 (script,character) 复用原图。 [2026-09-15 追加] lr 5e-5 -> 1.5e-4: 5e-5 是 c41x_cos_e **resume 阶段**的 lr (该线从 30k ckpt resume + fresh_scheduler), 我误把它当成从头训练的值抄了过来, 导致收敛慢 3 倍。同配置(xattn12 + batch128 + 从头)的 v10b_stdskel_fame3_c41x 用的是 lr=1.5e-4, 已对齐。",
-  "experiment_name": "v11-pretrain-Sp2-base-sym",
-  "results_dir": "assets/results/v11_pretrain_Sp2_base_sym",
+  "_comment": "[2026-09-15] **从头干净重跑 (sym2)**. 与 sym 的区别: (1) 数据换成**修正后**的 train_base_sym.csv (161,766 行, img_id 全部唯一) —— 旧版有 aug_base_sym.py 的 uid 双重叠加 bug (tasks 传 UID_T+k 而 work() 又 +idx -> 实际 UID_T+2k), k>49999 时 tp 溢出到 tn 段并覆盖其图, 4,892 个 uid 冲突 / csv 4,292 个 id 重复 / 8,584 行(5.41%)指向错误的图; (2) 不 resume, 从头训, 因为已训的 122.5K 步是在含 5.4% 错标数据上学的; (3) 全部资产按新 id 重建: final_latents_base_sym(161,766) / std_skel3_latents_base_sym(g 覆盖 100%) / dino_cache/base_sym_v1 (**重复 0**, 旧版因 id 重复导致 REPA cache 加载失败退化成 teacher forward). 配方 = v10b 0.5680 线: Sp/2 + 4ch + g 骨架条件 + xattn 全 12 层 + REPA0.03 + flow(logit_normal/heun) + rms/swiglu/qk_norm + rope=1 + lr=1.5e-4 (**从头训练的正确值**; 5e-5 是 c41x_cos_e resume 阶段的 lr, 曾被误用) + batch128 + cosine 400k + EMA0.9999。",
+  "experiment_name": "v11-pretrain-Sp2-base-sym2",
+  "results_dir": "assets/results/v11_pretrain_Sp2_base_sym2",
   "model": "DiT-2Cond-Sp/2",
   "callig_emb_pretrained": "assets/callig_emb_pretrained_base.pt",
   "skel_as_glyph_cond": true,

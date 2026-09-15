@@ -92,7 +92,12 @@ def main():
         fields = fields + ["aug"]
     print(f"src rows: {len(rows)}  fields: {fields}", flush=True)
 
-    tasks = [(k, r["image_path"], UID_T + k, UID_N + k) for k, r in enumerate(rows)]
+    # ⚠ 这里必须传**基址** (UID_T / UID_N), 不能传 UID_T + k —— work() 里还会
+    #   再 +idx, 传 UID_T+k 会变成双重叠加 (= UID_T + 2k)。k>49999 时
+    #   7000000+2k 溢出到 tn 段(7100000+), 把 tn 的图覆盖掉: 实测 4892 个 uid 冲突,
+    #   csv 里 4292 个 img_id 重复(8584 行 = 5.41%)指向错误的图。
+    #   (2026-09-15 定位并修正)
+    tasks = [(k, r["image_path"], UID_T, UID_N) for k, r in enumerate(rows)]
     t0 = time.time()
     results = {}
     with mp.Pool(NPROC) as pool:
