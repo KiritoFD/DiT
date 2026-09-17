@@ -40,7 +40,10 @@ def main():
                              "strict:assets/eval_fame3_strict_clean_v9.csv:237"])
     ap.add_argument("--cfg", type=float, default=0.7)
     ap.add_argument("--steps", type=int, default=50)
-    ap.add_argument("--dit-batch", type=int, default=50)
+    # ★ 2026-09-17: 50 -> 240。默认 50 在 4090 上对 37M 小模型**严重欠载**
+    #   （doc70 §7.2c），批量补跑的全部收益都会被这个默认值吃掉。
+    #   240 与训练侧 in_mem_eval_batch 对齐；显存不够时用 --dit-batch 回调。
+    ap.add_argument("--dit-batch", type=int, default=240)
     ap.add_argument("--vae-batch", type=int, default=25)
     ap.add_argument("--include-steps", type=str, default="",
                     help="逗号分隔 step 列表 (空=全部); 如 180000,200000,250000")

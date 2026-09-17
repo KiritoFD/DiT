@@ -108,12 +108,83 @@ def _state_to_cpu(obj):
     and lists (param_groups), so a flat .detach().cpu() pass is not enough.
     """
     if isinstance(obj, torch.Tensor):
-        return obj.detach().cpu()
+        # ★ 2026-09-17: `.cpu()` 对**已在 CPU 的张量是 no-op**（返回同一 storage），
+        #   只有 GPU->CPU 才拷贝。异步存盘（后台线程序列化）时，若与训练共享
+        #   storage 就会被改坏 —— 典型是 optimizer 的 step 计数器（CPU 标量）。
+        #   `copy=True` 保证两种情况都真的复制，且都只复制一次。
+        return obj.detach().to("cpu", copy=True)
     if isinstance(obj, dict):
         return {k: _state_to_cpu(v) for k, v in obj.items()}
     if isinstance(obj, list):
         return [_state_to_cpu(v) for v in obj]
     return obj
+
+
+class _AsyncCkptWriter:
+    """后台线程写 ckpt —— 主进程把**已搬到 CPU 的状态**交给它后立刻继续训练。
+
+    动机（见 docs/system/70 §7.5）: `torch.save` 592MB 在训练循环里**同步**执行，
+    单卡时 GPU 全程停摆等写盘。状态搬到 CPU 后（~0.5s，必须同步），
+    序列化 + 落盘（~2s）完全可以与训练重叠。
+
+    RAM 代价: 每个在途 ckpt 持有 ~592MB CPU 张量。保存间隔 ~22 分钟、写盘 ~2s，
+    所以实际上永远只有 1 个在途。`max_pending` 兜底防积压。
+
+    ⚠ 前提: 交给它的状态必须**不与训练共享 storage**（见 `_state_to_cpu` 的 copy=True）。
+    """
+
+    def __init__(self, max_pending=2):
+        import queue
+        import threading
+        self._q = queue.Queue(maxsize=max_pending)
+        self._thread = None
+        self._errors = []
+        self._lock = threading.Lock()
+        self._n_done = 0
+
+    def _run(self):
+        while True:
+            item = self._q.get()
+            if item is None:
+                self._q.task_done()
+                return
+            checkpoint, path = item
+            try:
+                torch.save(checkpoint, path)
+                open(path + ".done", "w").close()
+                with self._lock:
+                    self._n_done += 1
+            except Exception as e:                            # noqa: BLE001
+                with self._lock:
+                    self._errors.append((path, repr(e)))
+            finally:
+                del checkpoint                                # 尽早释放 RAM
+                self._q.task_done()
+
+    def submit(self, checkpoint, path):
+        """异步入队。队列满时**同步等待**（宁可慢也不丢 ckpt）。"""
+        if self._thread is None or not self._thread.is_alive():
+            import threading
+            self._thread = threading.Thread(target=self._run, daemon=False,
+                                            name="ckpt-writer")
+            self._thread.start()
+        self._q.put((checkpoint, path))
+
+    def drain(self, timeout=None):
+        """等待全部写完并停掉线程。训练结束 / 异常退出前必须调用。"""
+        self._q.join()
+        if self._thread is not None and self._thread.is_alive():
+            self._q.put(None)
+            self._thread.join(timeout=timeout)
+        with self._lock:
+            errs = list(self._errors)
+        if errs:
+            print(f"[ckpt] ⚠ {len(errs)} 个 ckpt 写盘失败: {errs[:3]}")
+        return self._n_done, errs
+
+
+_CKPT_WRITER = _AsyncCkptWriter()
+
 
 def cleanup():
     dist.destroy_process_group()
@@ -927,6 +998,38 @@ def main(args):
         _epoch_steps = 0          # 显式退回旧行为(epoch = 数据集一遍)
     if _epoch_steps == 0 and int(getattr(args, 'ckpt_every', 0) or 0) > 0:
         _epoch_steps = int(args.ckpt_every)
+
+    # ── deferred eval 的一致性护栏（doc70 §7.2b）────────────────────────────
+    # deferred 模式的前提是"**每个 eval 点都有 ckpt**"。成立条件是 ckpt 周期
+    # 整除 eval 周期（eval 落在 epoch 边界上）。不满足就会有评测点永远拿不到
+    # ckpt -> 事后补跑**静默丢点**，而且是在训练跑完之后才发现。
+    # 这里在启动时就算清楚，不满足直接拒绝。
+    if str(getattr(args, 'eval_mode', 'inline')) == "deferred":
+        _ep = _epoch_steps or int(getattr(args, 'ckpt_every', 0) or 0)
+        _ck = int(getattr(args, 'ckpt_every', 0) or 0)
+        if _ep <= 0 or _ck <= 0:
+            raise SystemExit(
+                "[eval-mode] deferred 需要显式且 >0 的 epoch_steps 与 ckpt_every "
+                f"(当前 epoch_steps={_ep}, ckpt_every={_ck}) —— 否则无法保证 eval 点都有 ckpt。")
+        # ⚠ 判据要用**实际存盘周期** _period = min(ckpt_every, epoch_steps)，
+        #   而不是裸的 ckpt_every。训练循环里的存盘条件是
+        #   `train_steps % min(ckpt_every, epoch_steps) == 0`（见 §7 的简化）。
+        #   ck > ep 时实际周期被压到 ep -> 每个 eval 点天然都有 ckpt，是安全的；
+        #   直接拿 ck 判会**误报**。
+        _period_chk = min(_ck, _ep)
+        if _ep % _period_chk != 0:
+            raise SystemExit(
+                f"[eval-mode] deferred 不可用: epoch_steps={_ep} 不是实际存盘周期 "
+                f"{_period_chk}(=min(ckpt_every={_ck}, epoch_steps={_ep})) 的整数倍。\n"
+                f"  eval 落在 epoch 边界({_ep} 的倍数)，而 ckpt 每 {_period_chk} 步存一次；\n"
+                f"  这会导致部分 eval 点**没有对应 ckpt** -> 事后补跑会静默丢评测点。\n"
+                f"  修法: 让 ckpt_every 整除 epoch_steps（例如两者都设 5000），"
+                f"或改回 --eval-mode inline。")
+        logger.info(f"[eval-mode] deferred: 训练中不 eval，训练后用 "
+                    f"`python -m src.eval.batch_eval --results-dir <dir> --sets ...` 补跑 "
+                    f"(eval 每 {_ep} 步 x ckpt 每 {_ck} 步 -> 全覆盖)")
+    # deferred 模式下这两块整段跳过（见 --eval-mode 的 help）
+    _EVAL_INLINE = str(getattr(args, 'eval_mode', 'inline')) == "inline"
     if args.sampler == "factor_balanced":
         sampler = DistributedFactorBalancedSampler(
             dataset, num_replicas=dist.get_world_size(), rank=rank, seed=args.global_seed,
@@ -1602,11 +1705,19 @@ def main(args):
                     log_steps = 0
                     start_time = time()
 
-                _save_ckpt = args.ckpt_every > 0 and train_steps % args.ckpt_every == 0
-                if train_steps <= 5000:
-                    _save_ckpt = args.ckpt_every > 0 and train_steps % 1000 == 0
-                elif train_steps > 5000:
-                    _save_ckpt = args.ckpt_every > 0 and (train_steps - 5000) % args.ckpt_every == 0
+                # ★ 2026-09-17 简化: 原来三段 if/elif 拼出"前 5000 步每 1000 存一次、
+                #   之后按 ckpt_every 存"的混合节奏（ckpt_every=5000 时实际落在
+                #   1000..5000 + 7500/12500/... —— 与 eval 的 5000 边界**错开**）。
+                #   现在统一成 **按 epoch 边界存**：train_steps % epoch_steps == 0。
+                #   好处（doc70 §7）:
+                #     ① ckpt 点 == eval 点 == epoch 边界，三者重合，逻辑只剩一行
+                #     ② 每个 eval 点都必有 ckpt -> 可安全使用 --eval-mode deferred
+                #     ③ 省掉开头 1000/2000/3000/4000 四次存盘（每次 592MB）
+                #   若 ckpt_every 显式配了更小的值，仍尊重它（取两者较小者）。
+                _ck = int(getattr(args, 'ckpt_every', 0) or 0)
+                _ep = int(getattr(args, 'epoch_steps', 0) or 0)
+                _period = min([x for x in (_ck, _ep) if x > 0], default=0)
+                _save_ckpt = _period > 0 and train_steps % _period == 0
 
                 if _save_ckpt and train_steps > 0:
                     if rank == 0:
@@ -1629,9 +1740,13 @@ def main(args):
                         if scheduler is not None:
                             checkpoint["scheduler"] = scheduler.state_dict()
                         checkpoint_path = f"{checkpoint_dir}/{train_steps:07d}.pt"
-                        torch.save(checkpoint, checkpoint_path)
-                        open(checkpoint_path + ".done", "w").close()
-                        logger.info(f"Saved checkpoint to {checkpoint_path}")
+                        # ★ 2026-09-17: 同步 torch.save -> **后台线程写**。
+                        #   上面 _state_to_cpu 已把状态搬到 CPU（必须同步，~0.5s），
+                        #   剩下的序列化+落盘（~2s）与训练重叠。状态是独立副本
+                        #   （_state_to_cpu 里 copy=True），后台写不会读到被改的数据。
+                        _CKPT_WRITER.submit(checkpoint, checkpoint_path)
+                        logger.info(f"[ckpt] queued {checkpoint_path} "
+                                    f"(async write, {len(_CKPT_WRITER._q.queue)} in flight)")
 
                         # Rotation: keep only the most recent ckpt_keep checkpoints
                         # (and their eval dirs) to bound disk usage on long runs.
@@ -1654,7 +1769,8 @@ def main(args):
                         # ── 真·in-mem eval (可选 config 模式): 暂停 stepping, 用常驻
                         # EMA 模型同卡采样+decode+指标一次算完, PNG 落盘, 无 daemon。
                         # 显存: 训练 17G + eval ~2G ≈ 19.5G < 24G; 默认关。
-                        if getattr(args, 'in_mem_eval', False):
+                        if (_EVAL_INLINE and getattr(args, 'in_mem_eval', False)
+                                and _save_ckpt):
                             try:
                                 from src.eval.in_mem_eval import run_in_mem_eval
                                 _em = (ema_model if ema_model is not None
@@ -1675,8 +1791,10 @@ def main(args):
                         # ── In-process GPU eval: bf16 DDIM → VAE decode → save PNGs ──
                         # GPU-only (~40s for 455 imgs at batch=48). CPU metrics
                         # computed by eval_metrics_daemon.py (separate process).
-                        if (_HAS_IN_PROCESS_EVAL and _eval_cache is not None
-                                and ema_model is not None):
+                        if (_EVAL_INLINE and _HAS_IN_PROCESS_EVAL
+                                and _eval_cache is not None
+                                and ema_model is not None
+                                and _save_ckpt):
                             try:
                                 _eval_bs = int(getattr(args, 'eval_batch', 240))
                                 _eval_vae_bs = int(getattr(args, 'eval_vae_batch', 32))
@@ -1757,6 +1875,12 @@ def main(args):
             dist.barrier()
 
     model.eval()
+    # ★ 2026-09-17: 等后台写盘收尾 —— 否则最后一个 ckpt 可能还没落盘进程就退了。
+    #   drain 会 join 队列并停掉写线程，同时报告任何写盘失败。
+    if dist.get_rank() == 0:
+        _n, _errs = _CKPT_WRITER.drain(timeout=600)
+        logger.info(f"[ckpt] async writer drained: {_n} 个已落盘"
+                    + (f", **{len(_errs)} 个失败**: {_errs[:3]}" if _errs else ""))
     logger.info("Done!")
     cleanup()
 
@@ -2211,6 +2335,16 @@ def main_from_cli(argv=None):
                              "pause stepping, sample with the resident EMA model on the same GPU, "
                              "decode + compute SSIM/MSE in-memory, append eval_stdskel_*.csv "
                              "(batch_eval-compatible), then resume. No daemon, no PNGs, no ckpt reload.")
+    parser.add_argument("--eval-mode", type=str, default="inline", dest="eval_mode",
+                        choices=["inline", "deferred"],
+                        help="**inline**: 训练中按 eval 周期就地评测（默认，现状）。\n"
+                             "**deferred**: 训练循环**完全不 eval**，只存 ckpt；训练结束后用\n"
+                             "  `python -m src.eval.batch_eval --results-dir <dir> --sets ...` 批量补跑。\n"
+                             "动机（docs/system/70 §7）: 单卡时 eval 会独占 GPU 使训练停摆\n"
+                             "（实测 40 次 x 42s = 28 分钟）；批量跑还能把 40 个 batch-60 的小作业\n"
+                             "合成 1 个 batch-240 的大作业，GPU 利用率高得多。\n"
+                             "⚠ 前提: **每个 eval 点都必须有 ckpt**（即 ckpt 周期整除 eval 周期）。\n"
+                             "  启动时会断言 `ckpt_every % epoch_steps == 0`，不满足直接拒绝。")
     parser.add_argument("--in-mem-eval-sets", type=str, default="",
                         dest="in_mem_eval_sets",
                         help="Sets spec for --in-mem-eval: 'name:csv:n' comma-separated. "

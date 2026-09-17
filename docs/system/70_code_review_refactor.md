@@ -414,15 +414,39 @@ scheduler(996-1021) / 早停(1040-1164) / eval cache(1168-1202) / **训练循环
 | preload | 一次性 10 GB | 用户裁定可接受 |
 | 磁盘 | 1.3 T 空闲 | ✓ |
 
-### 7.6 结论
+### 7.6 已实现（2026-09-17）
 
-**对齐是"能用推迟模式"的必要条件，而不是偶然。** 具体建议：
+| # | 项 | 说明 |
+|---|---|---|
+| 22 | **`--eval-mode {inline,deferred}`** | 两处 eval 块（in-mem + in-process）用 `_EVAL_INLINE` 整段跳过；deferred 时训练循环**只存 ckpt** |
+| 23 | **启动一致性护栏** | deferred 下断言 `epoch_steps % min(ckpt_every, epoch_steps) == 0`，不满足 **直接 SystemExit**（附具体修法）。⚠ 判据必须用**实际存盘周期** `min(ck, ep)` 而非裸 `ck`：`ck > ep` 时周期被压到 `ep`，拿 `ck` 判会**误报**（已验证 7 组组合） |
+| 24 | **`batch_eval.py --dit-batch` 50 → 240** | 默认 50 在 4090 上欠载，会把批量补跑的全部收益吃掉 |
+| 25 | **ckpt 写盘改异步** | `_AsyncCkptWriter`：后台线程序列化 + 落盘，主进程交完 CPU 状态立刻继续训练；`drain()` 在训练结束/退出前 join 并报告失败 |
+| 26 | **`_state_to_cpu` 强制拷贝** | 原 `obj.detach().cpu()` 对**已在 CPU 的张量是 no-op**（共享 storage）→ 异步写会读到被训练改坏的数据。改 `.to("cpu", copy=True)`，两种情况都真复制且只复制一次 |
+| 27 | **存盘节奏统一到 epoch 边界** | 原三段 `if/elif`（前 5000 步每 1000、之后按 `ckpt_every`，实测落在 1000..5000 + 7500/12500/...，**与 eval 的 5000 边界错开**）→ 统一为 `train_steps % min(ckpt_every, epoch_steps) == 0`。顺带**去掉开头 1000/2000/3000/4000 四次存盘**（每次 592 MB） |
 
-1. 加 `--eval-mode deferred`（**复用现成的 `batch_eval.py`，代码量很小**）
-2. 启动时断言 `ckpt_every % epoch_steps == 0`
-3. `batch_eval.py --dit-batch` 默认提到 240
-4. ckpt 写盘改异步（独立小改动，收益 ~40-80 s/run + 去掉 GPU 停顿）
-5. ckpt 密度按需从 2500 降到 5000
+**验证**：
+- `_state_to_cpu` 对 CPU 张量确实产生独立副本（`data_ptr` 不同，改原张量不影响副本）✓
+- `_AsyncCkptWriter` 连写 3 个文件 → 全部落盘 + `.done` 标记 + 可 `torch.load` 读回 ✓
+- 护栏逻辑 7 组组合逐一核对，拒绝的正是真正不安全的组合 ✓
+- `--eval-mode` 已注册、`python -m src.eval.batch_eval --help` 可跑 ✓
+
+**预期收益**（12ch 口径）：
+- eval 的 **28 分钟 GPU 停摆 → 0**（挪到训练后批量跑）
+- 批量后 40 个 batch-60 小作业 → 1 个 batch-240 大作业
+- ckpt 写盘停顿从"写盘时间"降到"CPU 拷贝时间"（~2s → ~0.5s）× 40 次
+- ckpt 数量减半（2500→5000 密度）+ 去掉 4 次开头存盘 → 写盘量 **23 GB → 约 10 GB**
+
+### 7.7 用法
+
+```bash
+# 训练（完全不 eval，只按 epoch 存 ckpt）
+python -m src.train.train --config <cfg>.json --eval-mode deferred
+
+# 训练结束后批量补跑（幂等，可断点续跑，可 --include-steps 选步）
+python -m src.eval.batch_eval --results-dir assets/results/<exp> \
+    --sets seen:assets/eval_seen_v10.csv:10 strict:assets/eval_fame3_strict_clean_v9.csv:50
+```
 
 ## 附：未做的事
 
