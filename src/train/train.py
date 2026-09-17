@@ -39,6 +39,7 @@ from src.utils import (DistributedFactorBalancedSampler,
                        LongEpochDistributedSampler)
 from src.train.early_stop import EarlyStopper
 from src.train.cli import parse_args
+from src.train.ckpt import save_checkpoint, prune_checkpoints, drain_ckpt
 
 # In-process GPU eval 路径已停用（2026-09-17）。
 # 它由 `--auto-eval` 门控，而**全仓 0 个配置把它设为 true**（70 个显式 false）。
@@ -82,90 +83,8 @@ def update_ema(ema_model, model, decay):
         else:
             ema_buffer.copy_(source_buffer)
 
-def _state_to_cpu(obj):
-    """Recursively move tensors in a (possibly nested) state dict to CPU.
-
-    opt.state_dict() nests dicts two levels deep (state -> param_idx -> tensors)
-    and lists (param_groups), so a flat .detach().cpu() pass is not enough.
-    """
-    if isinstance(obj, torch.Tensor):
-        # ★ 2026-09-17: `.cpu()` 对**已在 CPU 的张量是 no-op**（返回同一 storage），
-        #   只有 GPU->CPU 才拷贝。异步存盘（后台线程序列化）时，若与训练共享
-        #   storage 就会被改坏 —— 典型是 optimizer 的 step 计数器（CPU 标量）。
-        #   `copy=True` 保证两种情况都真的复制，且都只复制一次。
-        return obj.detach().to("cpu", copy=True)
-    if isinstance(obj, dict):
-        return {k: _state_to_cpu(v) for k, v in obj.items()}
-    if isinstance(obj, list):
-        return [_state_to_cpu(v) for v in obj]
-    return obj
-
-
-class _AsyncCkptWriter:
-    """后台线程写 ckpt —— 主进程把**已搬到 CPU 的状态**交给它后立刻继续训练。
-
-    动机（见 docs/system/70 §7.5）: `torch.save` 592MB 在训练循环里**同步**执行，
-    单卡时 GPU 全程停摆等写盘。状态搬到 CPU 后（~0.5s，必须同步），
-    序列化 + 落盘（~2s）完全可以与训练重叠。
-
-    RAM 代价: 每个在途 ckpt 持有 ~592MB CPU 张量。保存间隔 ~22 分钟、写盘 ~2s，
-    所以实际上永远只有 1 个在途。`max_pending` 兜底防积压。
-
-    ⚠ 前提: 交给它的状态必须**不与训练共享 storage**（见 `_state_to_cpu` 的 copy=True）。
-    """
-
-    def __init__(self, max_pending=2):
-        import queue
-        import threading
-        self._q = queue.Queue(maxsize=max_pending)
-        self._thread = None
-        self._errors = []
-        self._lock = threading.Lock()
-        self._n_done = 0
-
-    def _run(self):
-        while True:
-            item = self._q.get()
-            if item is None:
-                self._q.task_done()
-                return
-            checkpoint, path = item
-            try:
-                torch.save(checkpoint, path)
-                open(path + ".done", "w").close()
-                with self._lock:
-                    self._n_done += 1
-            except Exception as e:                            # noqa: BLE001
-                with self._lock:
-                    self._errors.append((path, repr(e)))
-            finally:
-                del checkpoint                                # 尽早释放 RAM
-                self._q.task_done()
-
-    def submit(self, checkpoint, path):
-        """异步入队。队列满时**同步等待**（宁可慢也不丢 ckpt）。"""
-        if self._thread is None or not self._thread.is_alive():
-            import threading
-            self._thread = threading.Thread(target=self._run, daemon=False,
-                                            name="ckpt-writer")
-            self._thread.start()
-        self._q.put((checkpoint, path))
-
-    def drain(self, timeout=None):
-        """等待全部写完并停掉线程。训练结束 / 异常退出前必须调用。"""
-        self._q.join()
-        if self._thread is not None and self._thread.is_alive():
-            self._q.put(None)
-            self._thread.join(timeout=timeout)
-        with self._lock:
-            errs = list(self._errors)
-        if errs:
-            print(f"[ckpt] ⚠ {len(errs)} 个 ckpt 写盘失败: {errs[:3]}")
-        return self._n_done, errs
-
-
-_CKPT_WRITER = _AsyncCkptWriter()
-
+# ckpt 相关实现已移到 src/train/ckpt.py（state_to_cpu / AsyncCkptWriter /
+# save_checkpoint / prune_checkpoints / drain_ckpt）
 
 def cleanup():
     dist.destroy_process_group()
@@ -1564,49 +1483,11 @@ def main(args):
 
                 if _save_ckpt and train_steps > 0:
                     if rank == 0:
-                        model_to_save = model.module if hasattr(model, 'module') else model
-                        # 始终保存完整 state_dict（不做 delta-only）。
-                        delta = model_to_save.state_dict()
-                        # Move tensors to CPU before serialize so torch.save never
-                        # allocates extra GPU memory (avoids save-time VRAM spikes).
-                        delta = _state_to_cpu(delta)
-                        _opt_cpu = _state_to_cpu(opt.state_dict())
-                        checkpoint = {
-                            "delta": delta,
-                            "opt": _opt_cpu,
-                            "args": args,
-                            "train_steps": train_steps,
-                        }
-                        if ema_model is not None:
-                            checkpoint["ema"] = _state_to_cpu(ema_model.state_dict())
-                        if scheduler is not None:
-                            checkpoint["scheduler"] = scheduler.state_dict()
-                        checkpoint_path = f"{checkpoint_dir}/{train_steps:07d}.pt"
-                        # ★ 2026-09-17: 同步 torch.save -> **后台线程写**。
-                        #   上面 _state_to_cpu 已把状态搬到 CPU（必须同步，~0.5s），
-                        #   剩下的序列化+落盘（~2s）与训练重叠。状态是独立副本
-                        #   （_state_to_cpu 里 copy=True），后台写不会读到被改的数据。
-                        _CKPT_WRITER.submit(checkpoint, checkpoint_path)
-                        logger.info(f"[ckpt] queued {checkpoint_path} "
-                                    f"(async write, {len(_CKPT_WRITER._q.queue)} in flight)")
-
-                        # Rotation: keep only the most recent ckpt_keep checkpoints
-                        # (and their eval dirs) to bound disk usage on long runs.
-                        ckpt_keep = int(getattr(args, 'ckpt_keep', 0))
-                        if ckpt_keep > 0:
-                            import shutil as _sh
-                            _pts = sorted(glob(f"{checkpoint_dir}/*.pt"))
-                            for _old in _pts[:-ckpt_keep]:
-                                _base = os.path.basename(_old)[:-3]
-                                os.remove(_old)
-                                for _suf in (".done",):
-                                    if os.path.exists(_old + _suf):
-                                        os.remove(_old + _suf)
-                                _eval_dir = f"{checkpoint_dir}/eval_{_base}"
-                                if os.path.isdir(_eval_dir):
-                                    _sh.rmtree(_eval_dir, ignore_errors=True)
-                            if len(_pts) > ckpt_keep:
-                                logger.info(f"[ckpt-keep] pruned {len(_pts) - ckpt_keep} old checkpoint(s), keeping {ckpt_keep}")
+                        # 组装(同步搬 CPU) + 异步入队 + 轮转，实现见 src/train/ckpt.py
+                        save_checkpoint(model, opt, ema_model, scheduler, args,
+                                        train_steps, checkpoint_dir, logger)
+                        prune_checkpoints(checkpoint_dir,
+                                          int(getattr(args, 'ckpt_keep', 0)), logger)
 
                         # ── 真·in-mem eval (可选 config 模式): 暂停 stepping, 用常驻
                         # EMA 模型同卡采样+decode+指标一次算完, PNG 落盘, 无 daemon。
@@ -1715,12 +1596,9 @@ def main(args):
             dist.barrier()
 
     model.eval()
-    # ★ 2026-09-17: 等后台写盘收尾 —— 否则最后一个 ckpt 可能还没落盘进程就退了。
-    #   drain 会 join 队列并停掉写线程，同时报告任何写盘失败。
+    # 等后台写盘收尾 —— 否则最后一个 ckpt 可能还没落盘进程就退了。
     if dist.get_rank() == 0:
-        _n, _errs = _CKPT_WRITER.drain(timeout=600)
-        logger.info(f"[ckpt] async writer drained: {_n} 个已落盘"
-                    + (f", **{len(_errs)} 个失败**: {_errs[:3]}" if _errs else ""))
+        drain_ckpt(logger, timeout=600)
     logger.info("Done!")
     cleanup()
 
