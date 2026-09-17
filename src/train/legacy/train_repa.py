@@ -12,7 +12,7 @@ train_repa.py — REPA 联合微调 (pipeline 阶段C, 在 skel-ctrl 收敛后�
     * loss_repa : 主模型 block-8 中间特征对齐 DINOv2 语义特征 (冻结 teacher)
 
 用法:
-  python src/train/train_repa.py \\
+  python src/train/legacy/train_repa.py \\
       --config src/train/configs/s32_repa_finetune.json \\
       --main-ckpt <S30 base ckpt> --ctrl-ckpt <s31 ckpt>
 """
@@ -37,8 +37,8 @@ import numpy as np
 from src.model import DiT_2Cond_models
 from src.loss import create_diffusion_or_flow, flow_kwargs_from, REPALoss
 from src.utils import MCCDLatentDataset
-from src.model.controlnet import ControlNetDiT, load_main_model
-from src.eval.in_process_ctrl_eval import prepare_ctrl_eval_cache, run_ctrl_pair_eval
+from src.model.legacy.controlnet import ControlNetDiT, load_main_model
+from src.eval.legacy.in_process_ctrl_eval import prepare_ctrl_eval_cache, run_ctrl_pair_eval
 
 if sys.platform == 'win32':
     sys.stdout.reconfigure(encoding="utf-8")

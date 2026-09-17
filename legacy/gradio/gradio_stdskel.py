@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
-"""gradio_stdskel.py — std-skel-g DiT (当前最佳 c41x_cos_e) 极简 gradio 前端.
+"""legacy/gradio/gradio_stdskel.py — std-skel-g DiT (当前最佳 c41x_cos_e) 极简 gradio 前端.
 
 CPU 推理, base conda env (gradio 3.50.2, torch 1.13). xattn 需要的
 F.scaled_dot_product_attention 在 torch<2.0 缺失, 这里补一个等价 shim.
 
 用法:
-  /opt/conda/bin/python gradio_stdskel.py --device cpu --share
+  /opt/conda/bin/python legacy/gradio/gradio_stdskel.py --device cpu --share
 """
 import os
 os.environ.setdefault("XFORMERS_DISABLED", "1")

@@ -11,7 +11,7 @@ ckpt = sys.argv[1]
 torch.manual_seed(0)
 device = "cpu"
 
-from src.model.controlnet import load_main_model, ControlNetDiT
+from src.model.legacy.controlnet import load_main_model, ControlNetDiT
 from src.loss import create_diffusion_or_flow, flow_kwargs_from, REPALoss
 
 args = SimpleNamespace(

@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""gradio_fame_local.py — fame 书法生成前端 (本地 GPU, share=True 公网).
+"""legacy/gradio/gradio_fame_local.py — fame 书法生成前端 (本地 GPU, share=True 公网).
 
 逻辑:
   * 骨架 PS 可选 1px / 3px, 分别加载对应 ControlNet ckpt (双 ctrl 常驻)
@@ -65,7 +65,7 @@ ap.add_argument("--model", default="s21",
 args = ap.parse_args()
 
 import gradio as gr
-from src.model.controlnet import load_main_model, ControlNetDiT
+from src.model.legacy.controlnet import load_main_model, ControlNetDiT
 from src.model import DiT_2Cond_models
 from src.eval.inference import build_diffusion, sample_latents, load_eval_vae
 

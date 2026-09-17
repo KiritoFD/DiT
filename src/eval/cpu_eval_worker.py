@@ -34,9 +34,10 @@ def main():
     ap.add_argument("--vae-batch", type=int, default=24)
     ap.add_argument("--n", type=int, default=0)
     ap.add_argument("--part-tag", required=True, help="part 标识 (p0/p1)")
-    ap.add_argument("--mode", choices=["ctrl_pair", "pretrain_g"], default="ctrl_pair",
-                    help="ctrl_pair: ControlNetDiT 双臂; pretrain_g: 裸主模型 g 条件单臂"
-                         " (train.py ckpt)")
+    ap.add_argument("--mode", choices=["pretrain_g", "ctrl_pair"], default="pretrain_g",
+                    help="pretrain_g: 裸主模型 g 条件单臂 (train.py ckpt) —— **当前主线**;\n"
+                         "ctrl_pair: ControlNetDiT 双臂 —— **已废弃**（ControlNet 线于 2026-09-17\n"
+                         "  归档到 src/model/legacy/）。仍可跑，但需要该 legacy 模块在位。")
     ap.add_argument("--g-source", choices=["gt_skel", "std_glyph"], default="gt_skel",
                     help="g 条件来源: gt_skel=该样本 GT 实例骨架 (默认, 与训练/历史"
                          " ctrl 臂协议一致); std_glyph=标准字形库 (部署态零样本)")
@@ -47,7 +48,9 @@ def main():
     dev = torch.device("cpu")
     t0 = time.time()
 
-    from src.model.controlnet import load_main_model, ControlNetDiT
+    # ⚠ ControlNet 已归档：只在真的走 ctrl_pair 时才导入，
+    #   免得 pretrain_g（主线）被一条废弃依赖链拖住。
+    from src.model.legacy.controlnet import load_main_model, ControlNetDiT
     from src.model import DiT_2Cond_models
     from src.eval.inference import (make_eval_cache, load_eval_vae, decode_and_save,
                                     compute_metrics)
@@ -77,6 +80,9 @@ def main():
     if args.mode == "pretrain_g":
         from src.utils import get_glyph_lookup_v2
         return _run_pretrain_g(args, ck, a, arch, common, t0)
+    import warnings
+    warnings.warn("[cpu_eval_worker] --mode ctrl_pair 走的是**已废弃**的 ControlNet 双臂路径"
+                  "（ControlNet 线已归档）。主线请用 --mode pretrain_g。", stacklevel=2)
     main_ckpt = a.get("main_ckpt", "")
     if main_sd:
         # 联训 ckpt 自含 main.*: 先建目标架构 (有 base 路径则加载后再灌, 双保险)

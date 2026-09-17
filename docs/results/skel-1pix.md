@@ -2,7 +2,7 @@
 
 > 更新时间：2026-09-02
 > 本文件记录 **skel-ctrl 1px 实验线** 的所有 checkpoint 位置、已有评测数据、关键结论与已知问题。
-> 配套训练代码：`src/train/train_controlnet.py`；评测：`src/eval/eval_ctrl_metrics_daemon.py` + `src/eval/inference.py`。
+> 配套训练代码：`src/train/train_controlnet.py`；评测：`src/eval/legacy/eval_ctrl_metrics_daemon.py` + `src/eval/inference.py`。
 > **独立 ckpt 评测**：`src/eval/eval_ctrl_ckpt.py`（GPU 采样 + 图片全盘落盘 + CPU 指标，支持任意 ckpt / 数据目录传入）。
 
 ## 1. 实验线图谱（base → ctrl）
@@ -137,7 +137,7 @@ assets/results/s31_ctrl_gt_skel_1px/20260901-135832-s31-ctrl-gt-skel-1px/checkpo
 ## 4e. s32b 强 REPA（w=0.3, L2 8&11）启动
 
 **代码升级（支持更强 REPA + 更全指标）**：
-- `src/model/controlnet.py`：forward 支持 `return_intermediate_layers`（多层捕获，注入前）
+- `src/model/legacy/controlnet.py`：forward 支持 `return_intermediate_layers`（多层捕获，注入前）
 - `src/loss/losses.py`：REPALoss 支持共享 teacher（多层只加载一次 DINOv2）+ 多层输入 tuple
 - `src/train/train_repa.py`：`--repa-layers "8,11"` 多层 REPA；多层各配一个 proj
 - `src/eval/eval_ctrl_ckpt.py`：支持从 REPA ckpt 的 `main.*` 覆盖主模型（评 REPA 对主模型改动）

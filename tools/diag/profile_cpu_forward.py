@@ -48,7 +48,7 @@ print(f"  mlp down (8192,1536)@(1536,384): {tf3:.2f} TFLOPS", flush=True)
 del X, Wq, Wm, G
 
 print("\n== S2 单次 forward 分解 (ctrl wrapper, 32 行 = 16样本 CFG 拼批) ==", flush=True)
-from src.model.controlnet import load_main_model, ControlNetDiT
+from src.model.legacy.controlnet import load_main_model, ControlNetDiT
 ARCH = dict(norm_type="rms", mlp_type="swiglu", qk_norm=True, rope=True,
             rope_theta=100.0, attn_impl="sdpa")
 COMMON = dict(device=torch.device("cpu"), num_calligraphers=1013,

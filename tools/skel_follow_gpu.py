@@ -97,7 +97,7 @@ def main():
         model.load_state_dict(_strip(d.get("ema") or d.get("model") or d), strict=False)
         model.eval()
     else:  # v8e
-        from src.model.controlnet import load_main_model, ControlNetDiT
+        from src.model.legacy.controlnet import load_main_model, ControlNetDiT
         main = load_main_model(
             ckpt_path="assets/results/v8_3stage/A_main_final.pt", device=dev,
             num_calligraphers=1013, num_characters=35130,

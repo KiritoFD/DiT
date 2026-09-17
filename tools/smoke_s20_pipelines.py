@@ -185,7 +185,7 @@ print(f"    (差异小说明两者一致；未训练模型上不代表质量差�
 
 # ---------- 5. ControlNet 管线 ----------
 print("\n[5] ControlNet 管线")
-from src.model.controlnet import ControlNetDiT
+from src.model.legacy.controlnet import ControlNetDiT
 torch.manual_seed(0)
 main_m = DiT_2Cond_models[cfg["model"]](
     input_size=32, num_calligraphers=cfg["num_calligraphers"],

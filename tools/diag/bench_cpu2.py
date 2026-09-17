@@ -16,7 +16,7 @@ import torch
 torch.set_num_threads(NT)
 print(f"threads={NT} batch={BATCH}", flush=True)
 
-from src.model.controlnet import load_main_model, ControlNetDiT
+from src.model.legacy.controlnet import load_main_model, ControlNetDiT
 from src.eval.inference import make_eval_cache, load_eval_vae
 from src.eval.cpu_sampler import heun_sample_cpu
 

@@ -95,7 +95,7 @@ v1 是 v2 的子集且已废弃，却仍被 dataset 引用。建议**让 v1 代�
 _check_*.py  _probe_*.py  _debug_*.py  _diag_*.py  _dump_*.py  _inspect_*.py
 _verify_*.py _stats_*.py  _launch_*.sh
 _archive/  _sync_work/  _gt_cache/
-fame_meta.json  data/skel/skel_bank_std.npz  data/skel/skel_bank_train.npz  gradio_fame_local.py
+fame_meta.json  data/skel/skel_bank_std.npz  data/skel/skel_bank_train.npz  legacy/gradio/gradio_fame_local.py
 data/skel/final_skel_latents_fame/          ← 数据集目录出现在仓库根
 ```
 

@@ -40,7 +40,7 @@
 
 | 脚本 | 用途 |
 |---|---|
-| `gradio_fame_local.py`（根目录另有一份运行副本） | fame 书法生成 Gradio（本地 GPU，share 公网） |
+| `legacy/gradio/gradio_fame_local.py`（根目录另有一份运行副本） | fame 书法生成 Gradio（本地 GPU，share 公网） |
 
 ## src/eval/ — 常驻服务（非 tools）
 

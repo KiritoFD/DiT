@@ -57,7 +57,7 @@ v8a_s30_base (预训练 132.5k, fame 数据)
 | eval daemon | 按系列手工启动（路径 bug 3 次）→ **universal_metrics_daemon.py**（递归扫描 + supervisor 自动重启） |
 | ckpt 管理 | ckpt_keep=0 全量堆积 → **best-2 收敛策略**（cleanup_old_experiments.py，两轮释放 ~200G） |
 | 极性处理 | cleaner 内特调（不可靠）→ **数据层独立翻转 pass** + 人工标注兜底 |
-| 前端 | flask_app → **gradio_fame_local.py**（参数滑块 + MCCD GT 对照 + ZERO-SHOT 标注） |
+| 前端 | flask_app → **legacy/gradio/gradio_fame_local.py**（参数滑块 + MCCD GT 对照 + ZERO-SHOT 标注） |
 | 训练 resume | `--resume` + `max_steps` 可扩（cosine 按 new max_steps 重算） |
 
 ### 坑清单（已修复，防复发）

@@ -197,7 +197,7 @@ ok(f"learn_sigma=True 时 loss 形状仍为 {tuple(terms2['loss'].shape)} (后 C
 
 # --------------------------------------------------------- 4. ControlNet
 section("4. ControlNet")
-from src.model.controlnet import ControlNetDiT, ControlConditionEncoder, ZeroAdaLNInjection
+from src.model.legacy.controlnet import ControlNetDiT, ControlConditionEncoder, ZeroAdaLNInjection
 
 torch.manual_seed(0)
 main = DiT_2Cond_models["DiT-2Cond-S/2"](learn_sigma=False, **kw)

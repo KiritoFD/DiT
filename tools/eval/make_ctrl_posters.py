@@ -21,7 +21,7 @@ os.chdir(ROOT)
 sys.path.insert(0, ROOT)
 sys.stdout.reconfigure(encoding="utf-8")
 
-from src.model.controlnet import load_main_model, ControlNetDiT
+from src.model.legacy.controlnet import load_main_model, ControlNetDiT
 from src.eval.inference import (
     build_diffusion, sample_latents, load_eval_vae, make_eval_cache, _ssim, _mse,
 )

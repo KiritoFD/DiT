@@ -32,7 +32,7 @@ if _ROOT not in sys.path:
 if os.path.join(_ROOT, "src") not in sys.path:
     sys.path.insert(0, os.path.join(_ROOT, "src"))
 
-from src.model.controlnet import load_main_model, ControlNetDiT
+from src.model.legacy.controlnet import load_main_model, ControlNetDiT
 from src.loss.flow_matching import FlowMatching
 from src.utils.glyph_latent_v2 import get_glyph_lookup_v2
 

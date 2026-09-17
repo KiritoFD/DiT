@@ -27,7 +27,7 @@ from PIL import Image
 
 from src.model import DiT_2Cond_models
 from src.loss import create_diffusion
-from src.model.controlnet import ControlNetDiT, load_main_model
+from src.model.legacy.controlnet import ControlNetDiT, load_main_model
 
 if sys.platform == 'win32':
     sys.stdout.reconfigure(encoding="utf-8")

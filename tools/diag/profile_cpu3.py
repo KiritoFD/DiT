@@ -35,7 +35,7 @@ print(f"  fresh-alloc mm: {dt_fresh*1000:.1f} ms | out= 复用: {dt_out*1000:.1f
       f"(分配开销占比 {(dt_fresh-dt_out)/dt_fresh*100:.0f}%)", flush=True)
 
 print("\n== T2 attn_impl sdpa vs eager ==", flush=True)
-from src.model.controlnet import load_main_model, ControlNetDiT
+from src.model.legacy.controlnet import load_main_model, ControlNetDiT
 ARCH = dict(norm_type="rms", mlp_type="swiglu", qk_norm=True, rope=True,
             rope_theta=100.0, attn_impl="sdpa")
 COMMON = dict(device=torch.device("cpu"), num_calligraphers=1013,

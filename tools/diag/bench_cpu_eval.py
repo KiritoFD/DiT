@@ -19,7 +19,7 @@ except Exception:
     pass
 print(f"threads={NT} torch={torch.__version__} phys_parallelism ok", flush=True)
 
-from src.model.controlnet import load_main_model, ControlNetDiT
+from src.model.legacy.controlnet import load_main_model, ControlNetDiT
 from src.eval.inference import make_eval_cache, sample_latents, load_eval_vae
 from src.loss import create_diffusion_or_flow
 

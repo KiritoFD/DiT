@@ -109,14 +109,14 @@ def main():
     cfg = json.load(open(cfgp, encoding="utf-8"))
     cfg["main_ckpt"] = main_ckpt
     json.dump(cfg, open(cfgp, "w", encoding="utf-8"), ensure_ascii=False, indent=2)
-    launch([PY, "-m", "src.train.train_controlnet", "--config", cfgp,
+    launch([PY, "-m", "src.train.legacy.train_controlnet", "--config", cfgp,
             "--attn-impl", "eager"], "/tmp/fame_ctrl.log")
     log("controlnet launched (watchdog early-stop, eval cfg=0.7)")
 
     # ---- 4) ctrl watchdog ----
     sys.path.insert(0, ".")
     import torch
-    from src.model.controlnet import load_main_model, ControlNetDiT
+    from src.model.legacy.controlnet import load_main_model, ControlNetDiT
     from src.eval.inference import (
         build_diffusion, sample_latents, load_eval_vae, make_eval_cache, _ssim)
     dev = torch.device("cuda")

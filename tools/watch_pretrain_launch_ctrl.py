@@ -82,7 +82,7 @@ def main():
         log("ctrl already running -> skip launch")
     else:
         prev = sorted(glob.glob("assets/results/ctrl_fame_v2/*/checkpoints/*.pt"))
-        cmd = [PY, "-m", "src.train.train_controlnet", "--config", cfgp,
+        cmd = [PY, "-m", "src.train.legacy.train_controlnet", "--config", cfgp,
                "--attn-impl", "eager"]
         if prev:
             cmd += ["--resume", prev[-1]]

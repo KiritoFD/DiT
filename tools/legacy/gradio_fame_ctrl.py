@@ -53,7 +53,7 @@ args = p.parse_args()
 
 import torch
 from diffusers.models import AutoencoderKL
-from src.model.controlnet import load_main_model, ControlNetDiT
+from src.model.legacy.controlnet import load_main_model, ControlNetDiT
 from src.eval.inference import build_diffusion, load_eval_vae
 
 dev = torch.device("cuda")

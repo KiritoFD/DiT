@@ -22,7 +22,7 @@ os.chdir(ROOT)
 sys.path.insert(0, ROOT)
 sys.stdout.reconfigure(encoding="utf-8")
 
-from src.model.controlnet import load_main_model, ControlNetDiT
+from src.model.legacy.controlnet import load_main_model, ControlNetDiT
 from src.eval.inference import build_diffusion, sample_latents, _ssim, _mse
 
 RESULTS_SERIES = "assets/results/s20_ctrl_skel_flow_v2"

@@ -81,7 +81,7 @@ def main():
         cond_key = "g"
     else:
         # 两阶段最优 v8e: ControlNetDiT(v8a base) + ctrl ckpt; char 条件传 null 行
-        from src.model.controlnet import load_main_model, ControlNetDiT
+        from src.model.legacy.controlnet import load_main_model, ControlNetDiT
         main = load_main_model(
             ckpt_path="assets/results/v8_3stage/A_main_final.pt", device=dev,
             num_calligraphers=1013, num_characters=35130,

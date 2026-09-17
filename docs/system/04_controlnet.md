@@ -1,6 +1,6 @@
 # ControlNet 骨架结构控制
 
-> 对应源码：`src/model/controlnet.py`，训练入口 `src/train/train_controlnet.py`，配置 `src/train/configs/ctrl_skel_s18_flow.json`，评测 `src/eval/inference.py` + `src/eval/eval_ctrl_metrics_daemon.py`。
+> 对应源码：`src/model/legacy/controlnet.py`，训练入口 `src/train/train_controlnet.py`，配置 `src/train/configs/ctrl_skel_s18_flow.json`，评测 `src/eval/inference.py` + `src/eval/legacy/eval_ctrl_metrics_daemon.py`。
 
 ## 1. 设计：冻结主模型 + 逐层 zero-init 注入
 
@@ -27,7 +27,7 @@
 | **A. warm-start（默认/推荐）** | `train_ctrl_only=true` + `main_ckpt` | 冻结主模型，只训练 `ctrl_encoder` + `out_projs` |
 | **B. from-scratch** | `train_ctrl_only=false` | 主模型 + ctrl 一起从零训练；可选 `pretrained` 只载入 body（滤掉条件头） |
 
-`load_main_model(...)`（`src/model/controlnet.py` 顶部有 `import os` —— 重构时曾因缺这个 import 报 NameError，已修复）：
+`load_main_model(...)`（`src/model/legacy/controlnet.py` 顶部有 `import os` —— 重构时曾因缺这个 import 报 NameError，已修复）：
 
 ```python
 model = DiT_2Cond_models[model_name](num_calligraphers=..., num_characters=...,

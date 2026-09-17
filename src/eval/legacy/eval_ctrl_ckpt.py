@@ -32,7 +32,7 @@ _src = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", "src
 if _src not in sys.path:
     sys.path.insert(0, _src)
 
-from src.model.controlnet import ControlNetDiT, load_main_model
+from src.model.legacy.controlnet import ControlNetDiT, load_main_model
 from src.eval.inference import (
     make_eval_cache, sample_latents, decode_and_save,
     compute_metrics, load_eval_vae, build_diffusion,

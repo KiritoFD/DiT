@@ -50,7 +50,7 @@ def log(msg):
 # ---------------------------------------------------------------------------
 def build_main_model(device="cpu", from_scratch=False, main_ckpt=None):
     """构建主模型. from_scratch=True 时不加载 195k (随机初始化, 等待 ckpt 覆盖)."""
-    from src.model.controlnet import load_main_model
+    from src.model.legacy.controlnet import load_main_model
     ckpt_path = None if from_scratch else (main_ckpt or DEFAULT_MAIN_CKPT)
     model = load_main_model(
         model_name="DiT-2Cond-S/2", ckpt_path=ckpt_path, device=device,
@@ -63,7 +63,7 @@ def build_main_model(device="cpu", from_scratch=False, main_ckpt=None):
 
 
 def build_ctrl(main_model, device="cpu", train_ctrl_only=True):
-    from src.model.controlnet import ControlNetDiT
+    from src.model.legacy.controlnet import ControlNetDiT
     ctrl = ControlNetDiT(main_model, cond_in_channels=1, train_ctrl_only=train_ctrl_only).to(device)
     ctrl.eval()
     return ctrl

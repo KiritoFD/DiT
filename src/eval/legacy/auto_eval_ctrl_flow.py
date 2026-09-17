@@ -249,7 +249,7 @@ def main():
     results_dir = os.path.abspath(args.results_dir)
     os.makedirs(results_dir, exist_ok=True)
 
-    from src.model.controlnet import ControlNetDiT, load_main_model
+    from src.model.legacy.controlnet import ControlNetDiT, load_main_model
     ckpt_path = args.main_ckpt or DEFAULT_MAIN_CKPT
     log(f"[init] loading main model {ckpt_path}")
     main_model = load_main_model(

@@ -31,7 +31,7 @@ echo "[A] main ckpt: $A_CKPT" >> $LOG
 
 # ---- B: s31-v8 skel-ctrl (config v8b, early_stop 已固化) ----
 echo "========== [B] $(date '+%F %T') s31-v8 skel-ctrl (config v8b) ==========" >> $LOG
-$PY src/train/train_controlnet.py \
+$PY src/train/legacy/train_controlnet.py \
     --config src/train/configs/v8b_s31_ctrl.json \
     --main-ckpt "$A_CKPT" \
     > /tmp/v8b_s31_ctrl.log 2>&1
@@ -61,7 +61,7 @@ echo "[B] ctrl ckpt: $B_CKPT (ssim best)" >> $LOG
 
 # ---- C: REPA 强化 (config v8c; 只传两个 ckpt 路径) ----
 echo "========== [C] $(date '+%F %T') s32-v8 REPA 强化 (config v8c) ==========" >> $LOG
-$PY src/train/train_repa.py \
+$PY src/train/legacy/train_repa.py \
     --config src/train/configs/v8c_s32_repa.json \
     --main-ckpt "$A_CKPT" \
     --ctrl-ckpt "$B_CKPT" \

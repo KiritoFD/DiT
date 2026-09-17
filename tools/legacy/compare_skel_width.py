@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """compare_skel_width.py — 1px vs 3px skel ControlNet 同 seed 对比推理.
 
-复用 gradio_fame_local.py 的 pipeline (s21 main + ControlNetDiT + VAE + flow):
+复用 legacy/gradio/gradio_fame_local.py 的 pipeline (s21 main + ControlNetDiT + VAE + flow):
   * 每个样例: GT | 1px ctrl 生成 | 3px ctrl 生成 并排输出
   * 条件域严格匹配训练分布: 1px ctrl 喂 1px 骨架 latent, 3px ctrl 喂 3px 骨架 latent
   * 同 seed 同 cfg, 唯一变量 = 骨架线宽 (训练数据)
@@ -35,14 +35,14 @@ ap.add_argument("--ctrl-1px", default="_sync_work/ckpts/ctrl_1px_0050000.pt")
 ap.add_argument("--ctrl-3px", default="_sync_work/ckpts/ctrl_3px_0050000.pt")
 args = ap.parse_args()
 
-from src.model.controlnet import load_main_model, ControlNetDiT
+from src.model.legacy.controlnet import load_main_model, ControlNetDiT
 from src.eval.inference import build_diffusion, sample_latents, load_eval_vae
 
 dev = torch.device("cuda")
 SCRIPT_ID = {"楷": 0, "行": 3, "隶": 4, "草": 2, "篆": 1, "六体": 5, "其他": 0}
 NUM_CHARACTERS = 7026
 
-# ---- 与 gradio_fame_local.py 一致的条件映射 ----
+# ---- 与 legacy/gradio/gradio_fame_local.py 一致的条件映射 ----
 rows = list(csv.DictReader(open("5script/train_fame.csv", encoding="utf-8")))
 CALLIG_ID = {}
 CHAR_IDS = {}

@@ -8,7 +8,7 @@ NT = int(sys.argv[1]) if len(sys.argv) > 1 else 32
 import torch
 torch.set_num_threads(NT)
 
-from src.model.controlnet import load_main_model, ControlNetDiT
+from src.model.legacy.controlnet import load_main_model, ControlNetDiT
 ARCH = dict(norm_type="rms", mlp_type="swiglu", qk_norm=True, rope=True,
             rope_theta=100.0, attn_impl="sdpa")
 COMMON = dict(device=torch.device("cpu"), num_calligraphers=1013,

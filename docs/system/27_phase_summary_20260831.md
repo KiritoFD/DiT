@@ -27,11 +27,11 @@
 | 文件 | 改动 |
 |---|---|
 | `src/model/dit.py` | 新增 `use_std_dino_char_embedder` / `std_dino_table_path` / `chars_per_script` 开关；`initialize_weights` 对 StdDino 跳过表重初始化（冻结）。 |
-| `src/model/controlnet.py` | `load_main_model` 支持 std_dino 主模型加载。 |
+| `src/model/legacy/controlnet.py` | `load_main_model` 支持 std_dino 主模型加载。 |
 | `src/train/train.py` | 新增 `--use-std-dino-char-embedder` / `--std-dino-table-path` / `--use-ot`；DINO init 跳过 std_dino；`opt.zero_grad(set_to_none=True)`。 |
 | `src/train/train_controlnet.py` | 新增 std_dino 参数透传。 |
 | `src/utils/latent_dataset.py` | 清洗数据相关（img_id 解析等）。 |
-| `gradio_fame_local.py`、`s27_ctrl_data/skel/std_skel.json` | 推理/配置微调。 |
+| `legacy/gradio/gradio_fame_local.py`、`s27_ctrl_data/skel/std_skel.json` | 推理/配置微调。 |
 
 ---
 

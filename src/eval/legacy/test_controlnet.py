@@ -22,7 +22,7 @@ import torch.nn as nn
 import numpy as np
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from src.model.controlnet import ControlNetDiT, ControlConditionEncoder, DiTBlockSimple
+from src.model.legacy.controlnet import ControlNetDiT, ControlConditionEncoder, DiTBlockSimple
 
 from src.model import DiT_2Cond_models
 

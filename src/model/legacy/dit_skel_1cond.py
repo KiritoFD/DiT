@@ -19,8 +19,8 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from . import modules as M
-from .dit import TimestepEmbedder, LabelEmbedder
+from .. import modules as M
+from ..dit import TimestepEmbedder, LabelEmbedder
 try:
     from .patchembed import PatchEmbed
 except Exception:

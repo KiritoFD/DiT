@@ -81,7 +81,7 @@ def forward_with_cfg(self, x, t, y_callig, y_char, cfg_scale=4.0, g=None):
 ## 4. 工厂与加载
 
 - `DiT_2Cond_models["DiT-2Cond-S/2"]` 等工厂字典；`src/model/__init__.py` 统一再导出，旧 `from models import DiT_2Cond_models` 仍可用。
-- `load_main_model(...)`（在 `src/model/controlnet.py`）：以构建参数重建主模型 + 加载 ckpt（优先取 `ema`，缺省回退 `delta`/裸 state_dict），`strict=False` 并打印 missing/unexpected —— 这是 ControlNet warm-start 的装配入口。
+- `load_main_model(...)`（在 `src/model/legacy/controlnet.py`）：以构建参数重建主模型 + 加载 ckpt（优先取 `ema`，缺省回退 `delta`/裸 state_dict），`strict=False` 并打印 missing/unexpected —— 这是 ControlNet warm-start 的装配入口。
 
 ## 5. 与 3cond 的差异
 

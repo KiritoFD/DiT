@@ -26,7 +26,7 @@ ROOT = os.path.join(_HERE, "..")
 sys.path.insert(0, ROOT)
 sys.stdout.reconfigure(encoding="utf-8")
 
-from src.model.controlnet import load_main_model
+from src.model.legacy.controlnet import load_main_model
 from src.eval.inference import (
     build_diffusion, sample_latents, decode_and_save, compute_metrics,
     load_eval_vae, _ssim,

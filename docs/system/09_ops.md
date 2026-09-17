@@ -49,7 +49,7 @@ ssh 4090 "cd /root/Workspace/xy/DiT && nohup /opt/conda/bin/python train.py --co
 ssh 4090 "cd /root/Workspace/xy/DiT && nohup /opt/conda/bin/python src/eval/eval_metrics_daemon.py /root/Workspace/xy/DiT/assets/results/s19_midclean_s_flow > /tmp/eval_metrics_daemon_s19.log 2>&1 &"
 
 # 起 CPU 指标 daemon（ControlNet eval 需要）：
-ssh 4090 "cd /root/Workspace/xy/DiT && nohup /opt/conda/bin/python src/eval/eval_ctrl_metrics_daemon.py > /tmp/eval_ctrl_daemon.log 2>&1 &"
+ssh 4090 "cd /root/Workspace/xy/DiT && nohup /opt/conda/bin/python src/eval/legacy/eval_ctrl_metrics_daemon.py > /tmp/eval_ctrl_daemon.log 2>&1 &"
 
 # 注意：
 # - daemon 会扫描 series 下**所有** run 目录的 eval_pending_*.json，积压会串行处理
@@ -85,7 +85,7 @@ scp -r src 4090:/root/Workspace/xy/DiT/
 | flow 训练用 randint 取 t | loss 看似收敛但学到垃圾，skelIoU≈0.04 | 统一 `diffusion.sample_t()`（`02_diffusion.md` §4） |
 | PowerShell 引号毁内联命令 | 远程执行报语法错 / 中文乱码 | scp .py 再执行；避免 python -c |
 | Get-Content/Set-Content 毁 UTF-8 | eval 脚本 py_compile 报 U+E511/U+20AC | 从 git 恢复源文件；只用 Python 处理文本 |
-| `load_main_model` 缺 `import os` | 重构后 NameError: name 'os' | src/model/controlnet.py 顶部补 import（已修） |
+| `load_main_model` 缺 `import os` | 重构后 NameError: name 'os' | src/model/legacy/controlnet.py 顶部补 import（已修） |
 | pending marker 缺 `step_tag` | ctrl daemon 找不到评测目录 | `write_pending_metrics_marker` 必须写 `step_tag`（已修） |
 | 根 launcher 调 `main()` 缺 args | TypeError | 统一走 `main_from_cli()`（已修） |
 | `diffusion` shim 缺 `_extract_into_tensor` | import * 不带下划线符号 | shim 显式补一行（已修） |

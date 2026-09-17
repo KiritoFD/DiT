@@ -3,14 +3,14 @@
 train_skel_1cond.py — 无 char 条件的骨架引导生成训练 (DiT-1CondSkel)。
 
 独立入口 (不影响 train.py/train_controlnet.py):
-  * 模型: src/model/dit_skel_1cond.py 的 DiT-1CondSkel (输入=img+skel concat, 条件=callig)
+  * 模型: src/model/legacy/dit_skel_1cond.py 的 DiT-1CondSkel (输入=img+skel concat, 条件=callig)
   * 数据: train_fame_clean_v8.csv, 需要 image latent + skel latent 两种 shards
   * loss: Flow Matching (logit_normal t, OT) + 可选 REPA (公共 src.loss.repa)
   * eval: 统一 eval_facade (同进程指标+落盘)
   * 早停: ssim (eval_auto_*)
 
 用法:
-  python src/train/train_skel_1cond.py --config src/train/configs/v10_skel1cond.json
+  python src/train/legacy/train_skel_1cond.py --config src/train/configs/v10_skel1cond.json
 """
 import os, sys, json, math, time, glob, datetime
 sys.stdout.reconfigure(encoding="utf-8", errors="replace")
@@ -22,7 +22,7 @@ from torch.optim.lr_scheduler import LambdaLR
 
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 sys.path.insert(0, ROOT)
-from src.model.dit_skel_1cond import DiT_1CondSkel
+from src.model.legacy.dit_skel_1cond import DiT_1CondSkel
 from src.loss import create_diffusion_or_flow, flow_kwargs_from
 from src.eval.eval_facade import build_eval_cache, eval_run
 from src.utils.logger import get_logger  # 若无则退化

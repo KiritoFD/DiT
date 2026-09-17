@@ -18,7 +18,7 @@ ROOT = "/root/Workspace/xy/DiT"
 os.chdir(ROOT)
 sys.path.insert(0, ROOT)
 sys.stdout.reconfigure(encoding="utf-8")
-from src.model.controlnet import load_main_model, ControlNetDiT
+from src.model.legacy.controlnet import load_main_model, ControlNetDiT
 from src.eval.inference import make_eval_cache
 from src.loss import create_diffusion_or_flow
 

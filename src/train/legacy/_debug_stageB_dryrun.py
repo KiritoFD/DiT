@@ -3,7 +3,7 @@
 import sys
 sys.path.insert(0, "/root/Workspace/xy/DiT")
 import torch
-from src.model.controlnet import load_main_model, ControlNetDiT
+from src.model.legacy.controlnet import load_main_model, ControlNetDiT
 
 ckpt = sys.argv[1]
 main = load_main_model(

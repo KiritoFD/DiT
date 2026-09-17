@@ -18,7 +18,7 @@
   数据（远程）           │              模型 / 训练（远程 GPU）           │
  ┌──────────────┐       │ ┌─────────────────────────────────────────┐ │
  │ MCCD 原始 329k │       │ │ src/model/dit.py    DiT_2Cond (S/2)      │ │
- │  GB2312 清洗  │       │ │ src/model/controlnet.py  ControlNetDiT    │ │
+ │  GB2312 清洗  │       │ │ src/model/legacy/controlnet.py  ControlNetDiT    │ │
  │  23.6k 原样本 │       │ └─────────────────────────────────────────┘ │
  │  增广→118.8k  │       │ ┌─────────────────────────────────────────┐ │
  │  VAE→latent  │       │ │ src/loss/             FlowMatching /     │ │

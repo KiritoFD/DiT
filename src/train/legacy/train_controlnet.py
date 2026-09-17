@@ -24,7 +24,7 @@ INFRA 设计:
   - 不加载 VAE (latent mode) → 省 ~500MB
 
 用法:
-  python -m src.train.train_controlnet --config src/train/configs/ctrl_skel_s19_flow.json
+  python -m src.train.legacy.train_controlnet --config src/train/configs/ctrl_skel_s19_flow.json
 """
 import os
 import sys
@@ -48,7 +48,7 @@ import numpy as np
 from src.model import DiT_2Cond_models
 from src.loss import create_diffusion_or_flow, flow_kwargs_from
 from src.utils import MCCDLatentDataset
-from src.model.controlnet import ControlNetDiT, load_main_model, _strip_compile_prefix
+from src.model.legacy.controlnet import ControlNetDiT, load_main_model, _strip_compile_prefix
 # (eval 统一走 src.eval.eval_facade)
 
 if sys.platform == 'win32':

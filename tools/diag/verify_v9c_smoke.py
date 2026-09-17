@@ -91,7 +91,7 @@ check("注入权重离开零点 (梯度到达)", any((v != 0).any().item() for v
       f"{len(inj)} 个 injection proj 张量")
 
 # ---- 重载 + 条件通路前向 (CPU) ----
-from src.model.controlnet import load_main_model, ControlNetDiT
+from src.model.legacy.controlnet import load_main_model, ControlNetDiT
 main = load_main_model(
     "DiT-2Cond-S/2", V9A, device="cpu", num_calligraphers=1013, num_characters=35130,
     condition_fusion="factorized_add", callig_embed_dim=128, char_embed_dim=384,

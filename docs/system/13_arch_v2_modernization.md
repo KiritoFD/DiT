@@ -1,6 +1,6 @@
 # v2 架构现代化改造（2026-08-29）
 
-> 对应代码：`src/model/modules.py`、`src/model/dit.py`、`src/model/controlnet.py`、
+> 对应代码：`src/model/modules.py`、`src/model/dit.py`、`src/model/legacy/controlnet.py`、
 > `src/loss/flow_matching.py`、`src/train/train.py`、`src/train/train_controlnet.py`
 >
 > 背景与动机：[10_diagnosis_20260828.md](10_diagnosis_20260828.md)（问题分析）

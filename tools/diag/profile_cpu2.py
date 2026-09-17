@@ -35,7 +35,7 @@ dt = bench(lambda: B4 @ B4, 8)
 print(f"  {NT}t square(4096^3):              {dt*1000:.0f} ms = {2*4096**3/dt/1e12:.2f} TFLOPS", flush=True)
 
 print("\n== S2' 干净单 forward 分布 ==", flush=True)
-from src.model.controlnet import load_main_model, ControlNetDiT
+from src.model.legacy.controlnet import load_main_model, ControlNetDiT
 ARCH = dict(norm_type="rms", mlp_type="swiglu", qk_norm=True, rope=True,
             rope_theta=100.0, attn_impl="sdpa")
 COMMON = dict(device=torch.device("cpu"), num_calligraphers=1013,

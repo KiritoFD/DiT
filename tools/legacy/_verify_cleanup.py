@@ -38,8 +38,8 @@ print("=" * 70)
 check("import src.model", lambda: importlib.import_module("src.model"))
 check("import src", lambda: importlib.import_module("src"))
 check("import src.model.dit", lambda: importlib.import_module("src.model.dit"))
-check("import src.model.controlnet",
-      lambda: importlib.import_module("src.model.controlnet"))
+check("import src.model.legacy.controlnet",
+      lambda: importlib.import_module("src.model.legacy.controlnet"))
 check("import src.model.modules", lambda: importlib.import_module("src.model.modules"))
 
 print("\n" + "=" * 70)
