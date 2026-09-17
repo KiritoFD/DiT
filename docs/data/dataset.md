@@ -4,6 +4,10 @@
 > 本文档以远程服务器 `/root/Workspace/xy/DiT/` 为权威路径，本地仓库仅保留只读脚本与文档。
 > 编码/验证命令详见 [tools/vae/DATA_PIPELINE.md](../../tools/vae/DATA_PIPELINE.md)。
 
+> ⚠ **新数据接入前必读**：[gt_denoise_and_std_scale.md](gt_denoise_and_std_scale.md)
+> —— GT 去噪（散点/纹理/反色 + 描满修复）与**条件侧尺度对齐**（std 骨架长边归一到 230）。
+> 这两步是**数据侧的核心预处理规范**，新增任何数据源都必须走一遍。
+
 ---
 
 ## 1. 原始数据 (Raw Data)

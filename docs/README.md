@@ -31,7 +31,8 @@ docs/
 ├── training/
 │   └── training.md                     # 训练管线（旧版）
 ├── data/
-│   └── dataset.md                      # 数据集与 VAE（旧版）
+│   ├── dataset.md                      # 数据集与 VAE（旧版）
+│   └── gt_denoise_and_std_scale.md     # ★ GT 去噪 + 条件侧尺度对齐（核心规范）
 ├── eval/
 │   └── evaluation.md                   # 评测流程（旧版）
 ├── experiments/
