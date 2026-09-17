@@ -1259,7 +1259,10 @@ def main(args):
                         _ch_w = torch.ones(x_latent.shape[1], device=device)
                         for _gi, _w in enumerate(_aux_w_list):
                             _ch_w[4 + 4 * _gi: 8 + 4 * _gi] = _w
-                        if rank == 0:
+                        # ⚠ 只打一次 —— 这段在**每步**的数据循环里, 无条件 logger.info
+                        #   会把日志刷爆 (实测 35.7k 步 -> 3.8MB, 全是重复的 [aux] 行)。
+                        if rank == 0 and not getattr(args, "_aux_logged", False):
+                            args._aux_logged = True
                             logger.info(f"[aux] {len(_aux_dirs)} 组 aux, 权重 {_aux_w_list} "
                                         f"-> in_channels={x_latent.shape[1]}, "
                                         f"image_channels={getattr(args, 'image_channels', None) or getattr(args, 'latent_channels', 4)}")
