@@ -40,7 +40,8 @@ class MCCDLatentDataset(Dataset):
     def __init__(self, csv_file, latent_shards_dir, img_root,
                  image_size=256, is_train=False, preload=False, load_image=True,
                  num_preload_workers=16, use_glyph_cond=False, skel_latent_shards_dir=None,
-                 callig_id_map=None, aux_latent_shards_dirs=None):
+                 callig_id_map=None, aux_latent_shards_dirs=None,
+                 inst_skel_shards_dir=None):
         self.samples = []
         with open(csv_file, 'r', encoding='utf-8') as f:
             for row in csv.DictReader(f):
@@ -105,6 +106,29 @@ class MCCDLatentDataset(Dataset):
                     self._skel_id_to_shard[int(iid)] = (sp, j)
                 d.close()
 
+        # [inst-skel 2026-09-16] 实例骨架 latent shards —— 结构 loss 的 **target** 通道。
+        # 与 g 通路 (skel_latent/skel_as_glyph_cond) **完全解耦**: g 是"标准字形"条件,
+        # inst_skel 是"这个书家写的这个字"的 GT 结构。doc 54 实测: 喂 GT 实例骨架
+        # strict 0.7326 vs 标准骨架 0.5680 (+0.16) —— 缺的从来不是结构, 是实例形态。
+        # ⚠ 若 w_latent_skel>0 而本目录未配置, train.py 会显式拒绝启动 (不做静默退化)。
+        self.inst_skel_shards_dir = inst_skel_shards_dir
+        self._inst_id_to_shard = {}
+        if self.inst_skel_shards_dir:
+            _in_shards = sorted(glob.glob(
+                os.path.join(self.inst_skel_shards_dir, "shard_*.npz")))
+            if not _in_shards:
+                raise FileNotFoundError(
+                    f"No inst-skel latent shards in {self.inst_skel_shards_dir}")
+            _probe3 = np.load(_in_shards[0])
+            self.inst_skel_channels = int(_probe3["latents"].shape[1])
+            self.inst_skel_spatial = int(_probe3["latents"].shape[2])
+            _probe3.close()
+            for sp in _in_shards:
+                d = np.load(sp)
+                for j, iid in enumerate(d["img_ids"]):
+                    self._inst_id_to_shard[int(iid)] = (sp, j)
+                d.close()
+
         self.is_train = is_train
         self.preload = preload
         # ── aux latent 通道 (moyi 式辅助任务: 与图像 latent 一起作为扩散目标) ──
@@ -132,6 +156,7 @@ class MCCDLatentDataset(Dataset):
         self._latents = None
         self._imgs = None
         self._skel_latents = None
+        self._inst_skel_latents = None
         self._aux_latents = None
         if preload:
             self._preload_all(num_preload_workers)
@@ -217,6 +242,24 @@ class MCCDLatentDataset(Dataset):
             print(f"[preload] skel latents {n:,} loaded in {time.time() - t0:.1f}s "
                   f"({self._skel_latents.nbytes / 1024 ** 3:.1f}G)")
 
+        # --- inst-skel latent shards (结构 loss target) ---
+        if self._inst_id_to_shard:
+            self._inst_skel_latents = np.empty(
+                (n, self.inst_skel_channels, self.inst_skel_spatial,
+                 self.inst_skel_spatial), dtype=np.float32)
+            by_in = defaultdict(list)
+            for i, iid in enumerate(ids):
+                sp, j = self._inst_id_to_shard[iid]
+                by_in[sp].append((i, j))
+            for sp, items in by_in.items():
+                d = np.load(sp)
+                lat = d["latents"]
+                for i, j in items:
+                    self._inst_skel_latents[i] = lat[j]
+                d.close()
+            print(f"[preload] inst-skel latents {n:,} loaded in {time.time() - t0:.1f}s "
+                  f"({self._inst_skel_latents.nbytes / 1024 ** 3:.1f}G)")
+
         # --- aux latents (moyi 式辅助目标通道) ---
         if self._aux_id_to_shard:
             self._aux_latents = []
@@ -239,6 +282,7 @@ class MCCDLatentDataset(Dataset):
         total = (self._latents.nbytes
                  + (self._imgs.nbytes if self._imgs is not None else 0)
                  + (self._skel_latents.nbytes if self._skel_latents is not None else 0)
+                 + (self._inst_skel_latents.nbytes if self._inst_skel_latents is not None else 0)
                  + (sum(a.nbytes for a in self._aux_latents)
                     if self._aux_latents is not None else 0))
         print(f"[preload] ALL preloaded in {time.time() - t0:.1f}s, "
@@ -301,6 +345,9 @@ class MCCDLatentDataset(Dataset):
             skel_lat = torch.empty(0)
             if self._skel_latents is not None:
                 skel_lat = torch.from_numpy(self._skel_latents[idx])
+            inst_skel = torch.empty(0)
+            if self._inst_skel_latents is not None:
+                inst_skel = torch.from_numpy(self._inst_skel_latents[idx])
             aux_t = (torch.cat([torch.from_numpy(a[idx]) for a in self._aux_latents], 0)
                      if self._aux_latents else torch.empty(0))
         else:
@@ -326,6 +373,17 @@ class MCCDLatentDataset(Dataset):
                     raise KeyError(f"skel latent not found for img_id={img_id}") from exc
                 with np.load(sp) as shard:
                     skel_lat = torch.from_numpy(
+                        np.array(shard["latents"][j], copy=True)).float()
+
+            # inst-skel latent (结构 loss target) -> (C,32,32) float32
+            inst_skel = torch.empty(0)
+            if self._inst_id_to_shard:
+                try:
+                    sp, j = self._inst_id_to_shard[img_id]
+                except KeyError as exc:
+                    raise KeyError(f"inst skel latent not found for img_id={img_id}") from exc
+                with np.load(sp) as shard:
+                    inst_skel = torch.from_numpy(
                         np.array(shard["latents"][j], copy=True)).float()
 
             # aux latents (moyi 式辅助目标通道) -> (K*C,32,32)
@@ -360,6 +418,7 @@ class MCCDLatentDataset(Dataset):
             'canny': torch.empty(0),
             'skeleton': torch.empty(0),
             'skel_latent': skel_lat,
+            'inst_skel': inst_skel,
             'aux_latents': aux_t,
             'y_callig': torch.tensor(
                 _map_callig(int(row['calligrapher_id']), self._callig_map), dtype=torch.long),

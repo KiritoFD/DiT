@@ -122,8 +122,20 @@ def sample_latents(model, diffusion, noise, conds, cfg_scale, batch, device,
     # sampler 只做 model(x, t, **kwargs) 转发, plain forward 收到 cfg_scale 会
     # 直接 TypeError (base 通道崩溃), ctrl 通道则静默吞掉 → CFG 从未生效。
     if cfg_scale and cfg_scale > 0:
+        # [2026-09-17] 双轴 CFG: 由**模型属性**驱动, 避免改 sample_latents 签名。
+        #   cfg_glyph_scale 为 None -> 走经典 2 路 (向后兼容)
+        #   非 None -> forward_with_cfg 内部委托给 forward_with_2axis_cfg
+        #   ⚠ 仅在训练时 glyph_drop_prob>0 的 ckpt 上才有意义
+        #     (g=0 必须是训练见过的条件, 否则内容轴未训练)
+        _cg = getattr(model, "cfg_glyph_scale", None)
+        _wi = float(getattr(model, "cfg_w_inter", 0.0) or 0.0)
+
         def model_fn(x, t, **kw):
-            return model.forward_with_cfg(x, t, cfg_scale=cfg_scale, **kw)
+            extra = {}
+            if _cg is not None:
+                extra["cfg_glyph"] = float(_cg)
+                extra["w_inter"] = _wi
+            return model.forward_with_cfg(x, t, cfg_scale=cfg_scale, **extra, **kw)
     else:
         model_fn = model
     for i in range(0, n, batch):

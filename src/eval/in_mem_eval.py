@@ -40,6 +40,59 @@ _DIFF = None
 _CMAP = None
 _WHITE_LAT_CACHE = {}       # 白底 latent (aux_zero_white 时 decode 前加回)
 
+# ── LPIPS ─────────────────────────────────────────────────────────────────
+# [v12+] 此前 summary/batch CSV 里 lpips_mean / lpips 两列**声明了但从来没算过**
+# (写的一直是空串)。ssim 对"大面积白底匹配"不敏感, 会把"字形没生成出来"的
+# 墨团判成不低的分 (doc59 §0 实测: 4ch 与 12ch 线 ssim 接近但图像完全不同)。
+# LPIPS 对结构与细节敏感, 正是用来区分"容量够不够"与"ssim 饱和"的工具
+# (doc62 §3)。实现照搬 auto_eval_ctrl.py 的可用版本, **跑在 CPU** ——
+# in-mem eval 与训练同进程同卡, 走 CPU 可避免任何显存争用。
+_LPIPS_FN = None
+_LPIPS_LOADED = False
+
+
+def _get_lpips():
+    """惰性加载 LPIPS(vgg) 到 CPU。不可用则返回 None (指标留空, 不致命)。"""
+    global _LPIPS_FN, _LPIPS_LOADED
+    if _LPIPS_LOADED:
+        return _LPIPS_FN
+    _LPIPS_LOADED = True
+    try:
+        import lpips
+        _LPIPS_FN = lpips.LPIPS(net="vgg", verbose=False)
+        _LPIPS_FN.eval()
+        for p in _LPIPS_FN.parameters():
+            p.requires_grad_(False)
+        print("[in-mem-eval] LPIPS(vgg) loaded on CPU")
+    except Exception as _e:                                    # noqa: BLE001
+        print(f"[in-mem-eval] LPIPS unavailable ({_e!r}); lpips 列将留空")
+        _LPIPS_FN = None
+    return _LPIPS_FN
+
+
+def _lpips_per_sample(pred_np, gt_np, enabled=True):
+    """pred_np/gt_np: (N,H,W,3) float32 [0,1] -> list[float] 或 None。
+
+    转成 LPIPS 要求的 (N,3,H,W) [-1,1] 后一次批量 forward。
+    """
+    if not enabled:
+        return None
+    fn = _get_lpips()
+    if fn is None:
+        return None
+    try:
+        p = torch.from_numpy(np.ascontiguousarray(pred_np)).permute(0, 3, 1, 2).float()
+        g = torch.from_numpy(np.ascontiguousarray(gt_np)).permute(0, 3, 1, 2).float()
+        p = (p * 2.0 - 1.0).clamp(-1, 1)
+        g = (g * 2.0 - 1.0).clamp(-1, 1)
+        with torch.no_grad():
+            d = fn(p, g)
+        d = d.reshape(-1).cpu().numpy().astype(float)
+        return [float(x) for x in d]
+    except Exception as _e:                                    # noqa: BLE001
+        print(f"[in-mem-eval] LPIPS forward failed ({_e!r}); lpips 列将留空")
+        return None
+
 
 def _get_vae(device, vae_path="data/pretrained/sd-vae-ft-ema"):
     global _VAE
@@ -425,18 +478,27 @@ def run_in_mem_eval(model, args, step, device, results_dir, sets=None,
                 ssims.append(_ssim(pred_np[i], gt_np[i]))
             ssim = np.array(ssims)
             mse = float(np.mean(mses))
+            # LPIPS (v12+): 默认开启, 可用 --in-mem-eval-lpips 0 关闭。
+            # ssim 会被大面积白底匹配骗过 (doc59), LPIPS 对结构细节敏感。
+            _lp = _lpips_per_sample(
+                pred_np, gt_np,
+                enabled=bool(getattr(args, "in_mem_eval_lpips", True)))
+            _lp_mean = f"{float(np.mean(_lp)):.5f}" if _lp else ""
+            _lp_txt = f" lpips={float(np.mean(_lp)):.4f}" if _lp else " lpips=NA"
             q10, q25, q50, q75, q90 = np.percentile(ssim, [10, 25, 50, 75, 90])
             w_sum.writerow([exp, step, name, n, f"{ssim.mean():.4f}",
                             f"{q10:.4f}", f"{q25:.4f}", f"{q50:.4f}",
-                            f"{q75:.4f}", f"{q90:.4f}", f"{mse:.5f}", ""])
+                            f"{q75:.4f}", f"{q90:.4f}", f"{mse:.5f}", _lp_mean])
             for i in range(n):
                 w_raw.writerow([exp, step, name, i, "", "", "",
-                                f"{mses[i]:.5f}", f"{ssims[i]:.4f}", ""])
+                                f"{mses[i]:.5f}", f"{ssims[i]:.4f}",
+                                (f"{_lp[i]:.5f}" if _lp else "")])
             f_sum.flush()
             f_raw.flush()
             out[name] = float(ssim.mean())
             logger(f"[in-mem-eval] step={step} set={name} n={n} "
-                   f"ssim={ssim.mean():.4f} (med={q50:.4f}) mse={mse:.5f} "
+                   f"ssim={ssim.mean():.4f} (med={q50:.4f}) mse={mse:.5f}"
+                   f"{_lp_txt} "
                    f"sample={t_s:.0f}s total={time.time()-t0:.0f}s")
             # 自动 poster: 全量重画该 set 所有 step (秒级, 覆盖旧文件)
             try:

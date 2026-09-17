@@ -222,12 +222,20 @@ class ZeroCrossAttention(nn.Module):
     环境: cu121 torch>=2.0, 直接用 F.scaled_dot_product_attention。
     """
 
-    def __init__(self, d_model, num_heads, grid_size=16):
+    def __init__(self, d_model, num_heads, grid_size=16, q_pos=False):
         super().__init__()
         assert d_model % num_heads == 0
         self.num_heads = num_heads
         self.head_dim = d_model // num_heads
         grid_size = int(round(grid_size))
+        # ⚠ `q_pos` (2026-09-17 新增, 默认 False = 旧行为, 保持 ckpt 兼容):
+        #   原实现**只给 K/V 加位置, Q 没有**。而 rope=True 时 x 的残差流不加绝对位置
+        #   (位置只进 attention 内部的 q/k), 所以 Q 是"无位置"的 ->
+        #   所谓"空间寻址"退化成**内容寻址**: 每个 x token 只能靠内容相似度去猜该看哪个
+        #   骨架 token, 无法可靠锁定同网格位置。这与本类 docstring 声称的
+        #   "2D 绑定靠 g 网格与 x 网格相同 + 固定 sincos 位置嵌入保证"**不符**。
+        #   打开 q_pos 后 Q 也加同一份 sincos, "2D 绑定"才真正成立。
+        self.q_pos = bool(q_pos)
         self.norm_x = nn.LayerNorm(d_model)
         self.norm_c = nn.LayerNorm(d_model)
         self.q_proj = nn.Linear(d_model, d_model)
@@ -247,7 +255,11 @@ class ZeroCrossAttention(nn.Module):
     def _inject(self, x, context):
         B, N, D = x.shape
         Nc = context.shape[1]
-        q = self.q_proj(self.norm_x(x)).view(B, N, self.num_heads, self.head_dim).transpose(1, 2)
+        if self.q_pos and N <= self.ctx_pos.shape[1]:
+            q_in = x + self.ctx_pos[:, :N]
+        else:
+            q_in = x
+        q = self.q_proj(self.norm_x(q_in)).view(B, N, self.num_heads, self.head_dim).transpose(1, 2)
         k = self.k_proj(self.norm_c(context + self.ctx_pos[:, :Nc])) \
             .view(B, Nc, self.num_heads, self.head_dim).transpose(1, 2)
         v = self.v_proj(self.norm_c(context + self.ctx_pos[:, :Nc])) \
@@ -377,6 +389,24 @@ class DiT_2Cond(nn.Module):
         condition_fusion="legacy",
         callig_embed_dim=None,
         char_embed_dim=None,
+        # ---- g(标准字形) 的**向量**因子 (v12) ----
+        # 让 g 以"全局内容向量"的身份进入条件向量 c, 而不是只走 token-add / 逐层注入。
+        #
+        # 动机 (两个):
+        #  1) ref(Moyun) 的条件融合是 cat([callig, font, char]) -> Linear(3h->h),
+        #     即**特征维拼接多个向量因子**。我们只有一个向量因子(callig), 直接照搬
+        #     会退化成单层 Linear (与 factorized_add 等价, 参数量实测完全相同)。
+        #     把 g 池化成向量作为第二个操作数, concat 才真正非退化。
+        #  2) 补一个真实的洞: 现在 c = t_emb + callig_proj(e_callig), **adaLN 调制
+        #     分支从来看不到内容** —— 每个 block 的全局 scale/shift/gate 都不知道
+        #     在写哪个字。g 只经 token-add(输入层) 与 ZeroAdaLNInjection(4 层) 进入。
+        #
+        # 两种融合方式共用同一组操作数 {e_callig, e_glyph_vec}, 便于做纯融合方式的对照:
+        #   factorized_add: 各自投影到 hidden 后按可学习标量相加
+        #   factorized_cat: 拼接后经一个联合 Linear (ref 式)
+        glyph_vec_cond=False,
+        glyph_vec_dim=128,
+        glyph_vec_pool="mean",   # "mean" | "max"  (对 g_tok 的 256 个 token 做池化)
         cond_drop_all_prob=0.05,
         cond_drop_one_prob=0.0,
         cond_drop_which_glyph_prob=0.5,
@@ -393,6 +423,10 @@ class DiT_2Cond(nn.Module):
         # 显存：每层约 +150MB（batch=192 时），12 层约 +1.8G，注意 OOM。
         glyph_inject_layers=0,
         glyph_inject_mode="adaln",
+        # [2026-09-17] xattn 的 Q 是否也加 sincos 位置嵌入。默认 False = 旧行为。
+        # 旧实现只给 K/V 加位置, 而 rope=True 时 x 残差流不加绝对位置 -> Q 无位置,
+        # "空间寻址"退化成"内容寻址"。打开后 Q/K/V 都带位置, 2D 绑定才成立。
+        xattn_q_pos=False,
         glyph_in_channels=4,   # g 骨架 latent 的通道数 (aux 目标通道不改变它)
         # 标准字形条件的训练期随机丢弃概率。0 = 不丢弃。
         # 作用见 forward() 中的注释：防门控 + 模拟草/篆无标准字形的真实缺失。
@@ -402,6 +436,16 @@ class DiT_2Cond(nn.Module):
         # 动机(fame3 诊断)：std-g 下 g 注入作用仅 ~2.7%(GT-g 10.4%)、glyph_scale
         # 梯度近零 —— 除 glyph_drop 外, 单层编码器可能提取不出足够结构特征。
         glyph_embedder_depth=0,
+        # [v12+] glyph_embedder 的 3x3 卷积用 **depthwise-separable** 实现。
+        #
+        # 动机 (FLOP 实测, _review/flop_profile.py):
+        #   glyph_embedder_depth=2 的两层满秩 3x3 conv 在 h=384 上各需
+        #   16*16*384*384*9 = 339.7M MACs, 合计 680M = **全模型 9.7% 的 FLOPs**。
+        #   而 depthwise-separable 同感受野只需 384*9 + 384*384 = 150.9K/位置
+        #   -> 38.6M, 即 **8.8x 更便宜** (节省约 8.6% 总 FLOPs)。
+        #   标准 MobileNet 式分解, 感受野/表达能力基本等价。
+        # 默认 False = 保持原满秩实现, 不改变任何已有 ckpt 的行为。
+        glyph_embedder_sep=False,
         char_proj_mode="full",
         callig_proj_mode="linear",   # 42 号实验: "mlp" 两层 MLP 补 callig 容量
         callig_scale_init=1.0,       # 42 号实验: callig_scale 初值 (1.5 增强风格权重)
@@ -472,9 +516,33 @@ class DiT_2Cond(nn.Module):
         self.x_embedder = M.PatchEmbed(input_size, patch_size, in_channels, hidden_size, bias=True)
         self.t_embedder = TimestepEmbedder(hidden_size)
 
-        if condition_fusion == "factorized_add":
+        # g 向量因子: 仅在 factorized_add / factorized_cat 下可用。先给默认值,
+        # 保证 legacy / xl_highdim 分支下这些属性也存在 (forward 里按 glyph_vec_cond 守卫)。
+        self.glyph_vec_cond = bool(glyph_vec_cond)
+        self.glyph_vec_pool = str(glyph_vec_pool)
+        self.glyph_vec_proj = None
+        self.glyph_vec_out = None
+        self.glyph_vec_scale = None
+
+        # ⚠ 这些属性此前**只在 factorized_add 分支里赋值**, 而 forward() 在
+        #   `use_glyph_cond and g is not None` 时会无条件访问 self.callig_style_ca
+        #   → condition_fusion="legacy"(默认值!) + w_glyph_cond=1 会直接 AttributeError。
+        #   这里统一给默认值, 使任何 fusion 组合都安全。
+        self.callig_style_ca = None
+        self.callig_basis = None
+        self.callig_spatial_net = None
+        self.style_proj = None
+        self.style_role = None
+        self.ctx_pos_g = None
+
+        if condition_fusion in ("factorized_add", "factorized_cat"):
             # 二因子可组合条件（V3-A）：calligrapher（风格）× glyph（内容=script×char 合并类）。
-            # 每个因子独立低维 embedding + 独立投影后相加，未见的 (callig, glyph) 组合
+            # 每个因子独立低维 embedding。
+            #
+            # 两种融合方式（v12 起可选，见下方 cond_fusion 处说明）：
+            #   factorized_add: 各因子**独立投影**后按可学习标量相加
+            #   factorized_cat: 各因子 embedding **拼接**后经一个联合 Linear 投影（ref/Moyun 式）
+            # 未见的 (callig, glyph) 组合
             # 由两个各自训练充分的边际 score 组合而成，而不是靠一整张联合表 memorization。
             callig_embed_dim = callig_embed_dim or hidden_size
             char_embed_dim = char_embed_dim or hidden_size
@@ -563,7 +631,56 @@ class DiT_2Cond(nn.Module):
             self.callig_scale = nn.Parameter(torch.tensor(float(callig_scale_init)))
             if self.use_char_cond:
                 self.char_scale = nn.Parameter(torch.tensor(1.0))
-            self.cond_fusion = None
+            # ---- g 的向量因子: 池化 g_tok -> 低维向量 (见 __init__ 参数处说明) ----
+            # 与 callig 一起构成 concat 的两个操作数 (或 add 的两个加数)。
+            if self.glyph_vec_cond:
+                # g_tok 的 256 个 token 各是 hidden 维 -> 池化后投影到 glyph_vec_dim
+                self.glyph_vec_proj = nn.Sequential(
+                    nn.LayerNorm(hidden_size),
+                    nn.Linear(hidden_size, int(glyph_vec_dim)),
+                )
+            else:
+                self.glyph_vec_proj = None
+            if condition_fusion == "factorized_cat":
+                # ---- concat 融合 (ref/Moyun LabelEmbedder 式, v12) ----
+                # 所有向量因子的 embedding **拼接**后, 经**一个**联合 Linear 投影到 hidden。
+                #
+                # 与 factorized_add 的区别:
+                #   add: 各因子独立投影到 hidden 后相加 -> 因子间交互只能靠后续 adaLN 间接产生
+                #   cat: Linear 一次性看到全部因子 -> 能直接建模因子间交互,
+                #        表达力严格更强 (ref 即此做法: concat(3张表) -> Linear(3h -> h))
+                #
+                # 操作数集合 (两者一致, 便于做纯融合方式的对照):
+                #   e_callig (callig_embed_dim)  [+ e_char 若 use_char_cond]
+                #   e_glyph_vec (glyph_vec_dim)  若 glyph_vec_cond
+                # ⚠ 若两个操作数都没有(callig 之外无因子且 glyph_vec_cond=False),
+                #   cat 会退化成单层 Linear, 与 factorized_add 等价 —— 参数量完全相同。
+                _cat_dim = callig_embed_dim + (char_embed_dim if self.use_char_cond else 0)
+                if self.glyph_vec_cond:
+                    _cat_dim += int(glyph_vec_dim)
+                self.cond_fusion = nn.Sequential(
+                    nn.LayerNorm(_cat_dim),
+                    nn.Linear(_cat_dim, hidden_size),
+                )
+                # 置 None 而非保留: 避免 DDP 出现"未参与前向的参数"报错
+                # (callig_proj/char_proj/scale 在 cat 模式下不再使用)。
+                self.callig_proj = None
+                self.char_proj = None
+                self.callig_scale = None
+                self.char_scale = None
+            else:
+                self.cond_fusion = None
+                if self.glyph_vec_cond:
+                    # add 模式: glyph 向量单独投影到 hidden, 配一个可学习标量,
+                    # 与 callig 分支对称 (两者操作数集合与 cat 模式完全相同)。
+                    self.glyph_vec_out = nn.Sequential(
+                        nn.LayerNorm(int(glyph_vec_dim)),
+                        nn.Linear(int(glyph_vec_dim), hidden_size),
+                    )
+                    self.glyph_vec_scale = nn.Parameter(torch.tensor(1.0))
+                else:
+                    self.glyph_vec_out = None
+                    self.glyph_vec_scale = None
             # callig 风格 cross-attention: 书家化骨架的正确形态 (见 CalligStyleCrossAttn)
             if callig_style_attn:
                 self.callig_style_ca = CalligStyleCrossAttn(
@@ -677,14 +794,30 @@ class DiT_2Cond(nn.Module):
         # 逐层注入（glyph_inject_layers>0 时启用）：见下方说明
         self.glyph_inject_layers = int(glyph_inject_layers)
         self.glyph_inject_mode = str(glyph_inject_mode)
+        self.xattn_q_pos = bool(xattn_q_pos)
         self.glyph_injections = None
         # 训练期随机丢弃标准字形条件的概率（见 forward 中注释）
         self.glyph_drop_prob = float(glyph_drop_prob)
         self.glyph_embedder_depth = int(glyph_embedder_depth)
+        self.glyph_embedder_sep = bool(glyph_embedder_sep)
         if self.use_glyph_cond:
             ps_ = self.x_embedder.patch_size[0] if not isinstance(self.x_embedder.patch_size, int) else self.x_embedder.patch_size
             if self.glyph_embedder_depth <= 0:
                 self.glyph_embedder = nn.Conv2d(glyph_in_channels, hidden_size, kernel_size=ps_, stride=ps_, bias=False)
+            elif self.glyph_embedder_sep:
+                # [v12+] depthwise-separable 版: 同感受野/同通道数, 但把空间混合与
+                # 通道混合拆开 -> 3x3 那层的代价从 h*h*9 降到 h*9 + h*h (约 8.8x)。
+                # 见 __init__ 参数 glyph_embedder_sep 处说明与 FLOP 实测。
+                _layers = [nn.Conv2d(glyph_in_channels, hidden_size,
+                                     kernel_size=ps_, stride=ps_, bias=False)]
+                for _ in range(self.glyph_embedder_depth):
+                    _layers.append(nn.SiLU())
+                    _layers.append(nn.Conv2d(hidden_size, hidden_size, kernel_size=3,
+                                             stride=1, padding=1, bias=False,
+                                             groups=hidden_size))          # depthwise
+                    _layers.append(nn.Conv2d(hidden_size, hidden_size,
+                                             kernel_size=1, bias=False))   # pointwise
+                self.glyph_embedder = nn.Sequential(*_layers)
             else:
                 # 增强编码器: 降采样 Conv + depth 层 SiLU+Conv(3x3 保分辨率),
                 # 提升 std 骨架 latent 的结构特征提取能力(fame3 诊断: g 注入作用仅 ~2.7%)。
@@ -729,7 +862,8 @@ class DiT_2Cond(nn.Module):
                     else:
                         self.glyph_injections = nn.ModuleList([
                             ZeroCrossAttention(hidden_size, num_heads=num_heads,
-                                               grid_size=self.x_embedder.num_patches ** 0.5)
+                                               grid_size=self.x_embedder.num_patches ** 0.5,
+                                               q_pos=bool(xattn_q_pos))
                             for _ in self.glyph_inject_at
                         ])
                 else:
@@ -894,7 +1028,15 @@ class DiT_2Cond(nn.Module):
         #  的 adaLN 是 null 向量而骨架通路仍带真实风格 -> uncond 分支被污染)
         callig_drop = None
         char_drop = None
-        if (self.condition_fusion in ("factorized_add", "xl_highdim")
+        # ⚠ 这个元组必须与**所有会读 `y_callig_in` / `char_drop` 的融合分支**一一对应。
+        #   2026-09-17 修: 原先漏了 "factorized_cat" —— 该分支在下方同样复用
+        #   `y_callig_in` / `char_drop`, 但因不在元组里, 整个 drop 块被跳过 ->
+        #   `callig_drop is None` -> `y_callig_in = y_callig` -> **训练全程零条件 dropout**,
+        #   null token 从未出现, `null_embed` 停在随机初始化。
+        #   后果: 推理时 `forward_with_cfg` 的 uncond 半用的是**未训练**的 null 向量,
+        #   `cfg=0.7` 实际是在往一个随机方向插值, 而不是真正的 CFG。
+        #   不报错、loss 正常下降 —— 又一例静默失效。**新增 fusion 分支时必须回来加。**
+        if (self.condition_fusion in ("factorized_add", "factorized_cat", "xl_highdim")
                 and self.training
                 and (self.cond_drop_all_prob > 0 or self.cond_drop_one_prob > 0)):
             r = torch.rand(y_callig.shape[0], device=y_callig.device)
@@ -941,6 +1083,23 @@ class DiT_2Cond(nn.Module):
                 # 之后**把被丢弃样本的 g_tok 重新置零, 保持 drop 分支纯净。
                 g_tok = g_tok * keep.view(-1, 1, 1).to(g_tok.dtype)
             x = x + self.glyph_scale * g_tok
+
+        # ── g 的全局内容向量 (进入条件向量 c) ────────────────────────────────
+        # 把 g_tok 的 256 个 token 池化成一个向量, 作为 concat/add 的第二个操作数。
+        # 池化源用**已做 drop 掩码后**的 g_tok, 保证 drop-g 样本的该向量也为零
+        # (与"该样本没有 g 条件"的语义一致)。
+        e_glyph_vec = None
+        if self.glyph_vec_cond:
+            if g_tok is not None:
+                _pooled = (g_tok.amax(dim=1) if self.glyph_vec_pool == "max"
+                           else g_tok.mean(dim=1))
+            else:
+                # 完全没有 g 时走零向量 —— 仍经过 proj, 保证 DDP 下该分支参数
+                # 参与前向 (否则报 "parameters that didn't receive grad")。
+                _pooled = torch.zeros(x.shape[0], self.x_embedder.hidden_size,
+                                      device=x.device, dtype=x.dtype)
+            e_glyph_vec = self.glyph_vec_proj(_pooled)
+
         t_emb = self.t_embedder(t)               # (N, D)
 
         if self.condition_fusion == "factorized_add":
@@ -966,6 +1125,23 @@ class DiT_2Cond(nn.Module):
                 # 可学习幅度平衡：见 __init__ 处注释（DINO 区分度被书家分支淹没的实测）。
                 y_emb = (self.callig_scale * self.callig_proj(e_callig)
                          + self.char_scale * self.char_proj(e_char)) / math.sqrt(2.0)
+            if self.glyph_vec_cond and e_glyph_vec is not None:
+                # g 向量因子: 与 callig 分支对称的"独立投影 + 可学习标量"加数。
+                # 操作数集合与 factorized_cat 完全一致 -> 两种融合方式可直接对照。
+                y_emb = y_emb + self.glyph_vec_scale * self.glyph_vec_out(e_glyph_vec)
+        elif self.condition_fusion == "factorized_cat":
+            # ref(Moyun) 式 concat 融合: 各向量因子 embedding 拼接 -> 联合 LN+Linear。
+            # 见 __init__ 处说明。操作数 = {e_callig [, e_char] [, e_glyph_vec]}。
+            # drop mask 同样复用 forward 顶部算好的那份 (y_callig_in / char_drop)。
+            e_callig = self.y_callig_embedder(y_callig_in, False)
+            _parts = [e_callig]
+            if self.use_char_cond:
+                if self.training and char_drop is not None:
+                    y_char = torch.where(char_drop, self.y_char_embedder.num_classes, y_char)
+                _parts.append(self.y_char_embedder(y_char, False))
+            if self.glyph_vec_cond and e_glyph_vec is not None:
+                _parts.append(e_glyph_vec)
+            y_emb = self.cond_fusion(torch.cat(_parts, dim=-1))
         elif self.condition_fusion == "xl_highdim":
             # XL 高维条件：与 factorized_add 相同的 4-way 可控 mask（CFG 需要 uncond 维度）。
             # drop mask 已在 forward 顶部计算 (与骨架风格注入共享同一份)。
@@ -1067,7 +1243,24 @@ class DiT_2Cond(nn.Module):
             return x, intermediate_feats
         return x
 
-    def forward_with_cfg(self, x, t, y_callig, y_char, cfg_scale=4.0, g=None):
+    def forward_with_cfg(self, x, t, y_callig, y_char, cfg_scale=4.0, g=None,
+                         cfg_glyph=None, w_inter=0.0):
+        """经典 2 路 CFG（默认），或委托给双轴 CFG。
+
+        ★ 2026-09-17: 增加 `cfg_glyph` 参数。给了就走 `forward_with_2axis_cfg`
+          （风格轴 × 内容轴各自独立），否则保持原有 2 路行为（**向后兼容**）。
+
+        ⚠ 默认 2 路路径里 `g2 = cat([g, g])` —— **两半给同一个 g**，
+          所以任何"只由 g 驱动"的通路（xattn / glyph_embedder）在
+          `eps_cond − eps_uncond` 里**完全抵消，对 CFG 贡献恒为 0**。
+          这是有意的（"CFG 只强化 callig 风格"），但会让组件结论失真：
+          **xattn 这类通路在 cfg 引导下天然被绕过**（doc54 的 "xattn strict≈0" 即此）。
+          要做内容轴引导必须走 `forward_with_2axis_cfg`，且训练时 `glyph_drop_prob > 0`。
+        """
+        if cfg_glyph is not None:
+            return self.forward_with_2axis_cfg(
+                x, t, y_callig, y_char,
+                cfg_callig=cfg_scale, cfg_glyph=cfg_glyph, w_inter=w_inter, g=g)
         # Duplicate every sample: first copy conditional, second copy unconditional.
         original_bs = x.shape[0]
         x = torch.cat([x, x], dim=0)
@@ -1096,44 +1289,61 @@ class DiT_2Cond(nn.Module):
 
     def forward_with_2axis_cfg(self, x, t, y_callig, y_char,
                                cfg_callig=2.0, cfg_glyph=4.0, w_inter=0.0, g=None):
-        """
-        2-Axis Classifier-Free Guidance (style score + glyph content score + interaction score).
-        Runs 4 parallel passes batched together along batch dimension:
-          1. full     : (y_callig, y_char)        -> eps_full
-          2. callig   : (y_callig, null_char)     -> eps_callig
-          3. glyph    : (null_callig, y_char)     -> eps_glyph
-          4. uncond   : (null_callig, null_char)  -> eps_uncond
+        """双轴 CFG: 风格轴(书家) × 内容轴(骨架 g) 各自独立强度。
 
-        Möbius / Product-of-Experts composition:
-          eps_guided = eps_uncond
-                     + cfg_glyph  * (eps_glyph - eps_uncond)
-                     + cfg_callig * (eps_callig - eps_uncond)
-                     + w_inter    * (eps_full - eps_glyph - eps_callig + eps_uncond)
+        ★ 2026-09-17 修正。**旧实现是错的**（且零调用者，是死代码）:
+          它把 "glyph 轴" 定义在 **`y_char`**（字符 ID）上, 并且
+          `g4 = cat([g, g, g, g])` —— **g 在 4 个 pass 里完全相同**。
+          后果: ① 对 `no_char_cond=True` 的架构(内容来自 g), glyph 轴是 **no-op**;
+                ② g 在 `eps_cond − eps_uncond` 里**仍然完全抵消**,
+                   所以 xattn / glyph_embedder 这类"只由 g 驱动"的通路对 CFG 贡献恒为 0。
+          现在 glyph 轴改为**变化 g 本身**（置零 = "无骨架"分支）。
+
+        4 个 pass 沿 batch 维拼成一次 forward:
+          1. full    : (y_callig, g)     -> eps_full     两个条件都有
+          2. style   : (y_callig, g=0)   -> eps_style    只有书家(风格), 无内容
+          3. content : (null,     g)     -> eps_content  只有骨架(内容), 无风格
+          4. uncond  : (null,     g=0)   -> eps_uncond   都没有
+
+        Möbius / Product-of-Experts 组合:
+          eps = eps_uncond
+              + cfg_glyph  * (eps_content - eps_uncond)                 内容轴
+              + cfg_callig * (eps_style   - eps_uncond)                 风格轴
+              + w_inter    * (eps_full - eps_content - eps_style + eps_uncond)  交互项
+
+        ⚠ **前提**: `g=0` 必须是模型训练时见过的条件 —— 即 `glyph_drop_prob > 0`。
+          该 drop 的实现是 `g = g * keep`（整张样本置零），注释里明确写着
+          "与 CFG 兼容: 丢弃时该样本等价于 uncond-g 分支"。
+          若 `glyph_drop_prob == 0`，content 轴同样**未训练**，本函数会给出
+          误导性结果（与 callig null 行是同一类问题）。
         """
         B = x.shape[0]
         x4 = torch.cat([x, x, x, x], dim=0)
         t4 = torch.cat([t, t, t, t], dim=0)
 
         null_c = torch.full_like(y_callig, self.y_callig_embedder.num_classes)
-        null_g = torch.full_like(y_char, self.y_char_embedder.num_classes)
-
         yc4 = torch.cat([y_callig, y_callig, null_c, null_c], dim=0)
-        yg4 = torch.cat([y_char, null_g, y_char, null_g], dim=0)
+        # char 通路保持不变（我们 no_char_cond=True，该值被 forward 忽略）
+        yg4 = torch.cat([y_char, y_char, y_char, y_char], dim=0)
 
-        g4 = torch.cat([g, g, g, g], dim=0) if g is not None else None
+        if g is not None:
+            zero_g = torch.zeros_like(g)
+            g4 = torch.cat([g, zero_g, g, zero_g], dim=0)
+        else:
+            g4 = None
 
         model_out = self.forward(x4, t4, yc4, yg4, g=g4)
         if isinstance(model_out, tuple):
             model_out = model_out[0]
 
         eps4, rest4 = model_out[:, :self.image_channels], model_out[:, self.image_channels:]
-        eps_full, eps_callig, eps_glyph, eps_uncond = torch.split(eps4, B, dim=0)
+        eps_full, eps_style, eps_content, eps_uncond = torch.split(eps4, B, dim=0)
 
         eps_guided = (
             eps_uncond
-            + cfg_glyph * (eps_glyph - eps_uncond)
-            + cfg_callig * (eps_callig - eps_uncond)
-            + w_inter * (eps_full - eps_glyph - eps_callig + eps_uncond)
+            + cfg_glyph * (eps_content - eps_uncond)
+            + cfg_callig * (eps_style - eps_uncond)
+            + w_inter * (eps_full - eps_content - eps_style + eps_uncond)
         )
 
         rest = rest4[:B]
@@ -1142,10 +1352,32 @@ class DiT_2Cond(nn.Module):
 
 
 
+def DiT_2Cond_M_2(**kwargs):
+    # M (between S and Sp): h=432, d=12, heads=6 (~42M). 2026-09-12 用户裁定:
+    # S/2 (384, 30M) seen 天花板 ~0.52 偏低; Sp/2 (512, 59M) 可达 0.67-0.76。
+    # 取中间容量点验证 "容量-质量" 曲线。
+    return DiT_2Cond(depth=12, hidden_size=432, patch_size=2, num_heads=6, **kwargs)
+
+
+def DiT_2Cond_S320_2(**kwargs):
+    # [v12+] 缩**宽度**探针: h=320, d=12, heads=5 (head_dim 64, 与 S/2 同)。
+    # 动机见 docs/system/62_param_budget_derivation.md:
+    #   - 渲染任务本质是"浅"的, 但 h=384 对 4 通道 latent 是 96x 扩张
+    #   - FLOPs ~ d*h^2 = 12*320^2 = 0.549x M/2 (S/2 是 0.790x)
+    #   - 保持 head_dim=64 与 S/2 一致, 使"宽度"成为唯一变量
+    return DiT_2Cond(depth=12, hidden_size=320, patch_size=2, num_heads=5, **kwargs)
+
+
 def DiT_2Cond_XS_2(**kwargs):
     # 更小变体：depth=8, hidden=384, 6 头, patch=2。参数约 20M（-35% vs S/2 的 30M），
     # 适合小数据量（3top30 仅 3.8 万图）防过拟合；transformer 层从 12→8。
     return DiT_2Cond(depth=8, hidden_size=384, patch_size=2, num_heads=6, **kwargs)
+
+
+def DiT_2Cond_XS6_2(**kwargs):
+    # [v12+] 更深一档的缩深度探针: d=6, h=384, 6 头。FLOPs 0.401x M/2。
+    # 与 XS/2 组成 depth {12,8,6} 的阶梯, 用于定位"深度下界"。
+    return DiT_2Cond(depth=6, hidden_size=384, patch_size=2, num_heads=6, **kwargs)
 
 def DiT_2Cond_WS_2(**kwargs):
     # 宽体变体：类别多时加宽 hidden 而非加深 depth。depth=8, hidden=768, 12 头。
@@ -1191,8 +1423,10 @@ def DiT_2Cond_B_4(**kwargs):
 # 二者均已废弃；删掉后本文件不再依赖 timm。
 DiT_2Cond_models = {
     'DiT-2Cond-XS/2': DiT_2Cond_XS_2,
+    'DiT-2Cond-XS6/2': DiT_2Cond_XS6_2,
     'DiT-2Cond-WS/2': DiT_2Cond_WS_2,
     'DiT-2Cond-S/2': DiT_2Cond_S_2,
+    'DiT-2Cond-S320/2': DiT_2Cond_S320_2,
     'DiT-2Cond-M/2': DiT_2Cond_M_2,
     'DiT-2Cond-Sp/2': DiT_2Cond_Sp_2,
     'DiT-2Cond-S/4': DiT_2Cond_S_4,

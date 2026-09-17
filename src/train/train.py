@@ -5,6 +5,9 @@ import torch.nn as nn
 import torch.nn.functional as F
 torch.backends.cuda.matmul.allow_tf32 = True
 torch.backends.cudnn.allow_tf32 = True
+# [OPTIM-FUSED 2026-09-16] 让 cuDNN 为 (固定的) glyph_embedder conv
+# 选最快算法; 形状固定, 一次性 autotune 成本可忽略。
+torch.backends.cudnn.benchmark = True
 import torch.distributed as dist
 from torch.nn.parallel import DistributedDataParallel as DDP
 from torch.utils.data import DataLoader
@@ -32,7 +35,8 @@ from src.utils import MCCDDataset
 from src.utils import MCCDLatentDataset
 from src.loss import REPALoss
 from torch.utils.checkpoint import checkpoint as grad_ckpt
-from src.utils import DistributedFactorBalancedSampler
+from src.utils import (DistributedFactorBalancedSampler,
+                       LongEpochDistributedSampler)
 
 # In-process GPU eval (bf16 sampling → VAE decode → save PNGs).
 # Metrics computed by eval_ctrl_metrics_daemon.py (CPU, separate process).
@@ -236,6 +240,24 @@ def main(args):
                 logger.warning(f"[ids] ids_char_map_csv not found ({_ids_csv!r}), "
                                f"assuming char_id == Unicode codepoint")
 
+        # ── 通道一致性断言 (2026-09-17) ────────────────────────────────────
+        # 12ch 下三个数必须自洽, 否则要么在 x_embedder 处炸, 要么**静默错位**
+        # (aux 通道与权重分组对不上)。此前没有任何校验。
+        _aux_dirs_chk = [s for s in
+                         str(getattr(args, 'aux_latent_shards_dirs', '') or '').split(',')
+                         if s.strip()]
+        _n_aux_chk = len(_aux_dirs_chk)
+        _lat_ch = int(getattr(args, 'latent_channels', 4))
+        _img_ch = (args.image_channels
+                   if getattr(args, 'image_channels', None) is not None else _lat_ch)
+        _in_ch = _lat_ch + 4 * _n_aux_chk
+        assert _img_ch == _lat_ch, (
+            f"image_channels({_img_ch}) 必须等于 latent_channels({_lat_ch}) —— "
+            f"它是 **CFG 作用域**, 不能跟着 aux 一起放大, 否则 aux 通道被异分布的"
+            f"同一 cfg_scale 放大 -> 采样轨迹跑飞 (doc59 §1.3 '墨团' 根因)。")
+        logger.info(f"[channels] latent={_lat_ch}  aux 组={_n_aux_chk}  "
+                    f"in_channels={_in_ch}  image_channels(CFG 作用域)={_img_ch}")
+
         model = DiT_2Cond_models[args.model](
             input_size=latent_size,
             num_calligraphers=args.num_calligraphers,
@@ -245,6 +267,11 @@ def main(args):
             condition_fusion=args.condition_fusion,
             callig_embed_dim=args.callig_embed_dim,
             char_embed_dim=args.char_embed_dim,
+            # g 的全局内容向量因子 (v12): 池化 g_tok -> 向量, 与 callig 一起做 concat/add。
+            # 让 adaLN 调制分支第一次能看到"在写哪个字"。
+            glyph_vec_cond=getattr(args, 'glyph_vec_cond', False),
+            glyph_vec_dim=int(getattr(args, 'glyph_vec_dim', 128)),
+            glyph_vec_pool=getattr(args, 'glyph_vec_pool', 'mean'),
             cond_drop_all_prob=args.cond_drop_all_prob,
             cond_drop_one_prob=args.cond_drop_one_prob,
             cond_drop_which_glyph_prob=getattr(args, 'cond_drop_which_glyph_prob', 0.5),
@@ -255,7 +282,10 @@ def main(args):
             glyph_drop_prob=getattr(args, 'glyph_drop_prob', 0.0),
             glyph_inject_layers=getattr(args, 'glyph_inject_layers', 0),
             glyph_inject_mode=getattr(args, 'glyph_inject_mode', 'adaln'),
+            xattn_q_pos=getattr(args, 'xattn_q_pos', False),
             glyph_embedder_depth=getattr(args, 'glyph_embedder_depth', 0),
+            # [v12+] glyph_embedder 的 3x3 conv 用 depthwise-separable (省约 8.6% 总 FLOPs)
+            glyph_embedder_sep=getattr(args, 'glyph_embedder_sep', False),
             style_token_n=getattr(args, 'style_token_n', 0),
             style_role_init=getattr(args, 'style_role_init', 0.02),
             glyph_in_channels=4,
@@ -283,8 +313,35 @@ def main(args):
             rope=_rope,
             rope_theta=getattr(args, 'rope_theta', 100.0),
             attn_impl=getattr(args, 'attn_impl', 'sdpa'),
-            image_channels=getattr(args, 'latent_channels', 4),
+            # image_channels = **CFG 作用域**(只对图像 latent 通道做引导, 不引导 aux
+            #   结构通道)。与 latent_channels(图像 latent 通道数) 在 12ch 下不同:
+            #   latent_channels=4, in_channels=4+4*len(aux)=12, 而 image_channels 必须
+            #   保持 4 —— 否则 CFG 会放大分布不同的 aux 通道, 采样轨迹跑飞
+            #   (doc59 §1.3 "墨团"根因)。显式 --image-channels 优先。
+            image_channels=(args.image_channels
+                            if getattr(args, 'image_channels', None) is not None
+                            else getattr(args, 'latent_channels', 4)),
         )
+        # ── 双轴 CFG 的推理期开关 (2026-09-17) ─────────────────────────────
+        # 挂在**模型属性**上, 让 src/eval/inference.sample_latents 不必改签名即可透传。
+        #   cfg_glyph_scale = None -> 经典 2 路 CFG (向后兼容)
+        #   非 None                -> forward_with_cfg 委托给 forward_with_2axis_cfg
+        # ⚠ 只在训练时 glyph_drop_prob > 0 的 ckpt 上有意义 —— g=0 必须是训练见过的
+        #   条件, 否则"内容轴"同样未训练, 会给出误导性结果(与 callig null 行同理)。
+        model.cfg_glyph_scale = (None if getattr(args, 'cfg_glyph_scale', None) is None
+                                 else float(args.cfg_glyph_scale))
+        model.cfg_w_inter = float(getattr(args, 'cfg_w_inter', 0.0) or 0.0)
+        if model.cfg_glyph_scale is not None:
+            if float(getattr(args, 'glyph_drop_prob', 0.0) or 0.0) <= 0.0:
+                logger.warning(
+                    "[cfg-2axis] cfg_glyph_scale 已设置, 但 glyph_drop_prob=0 -> "
+                    "**内容轴 (g=0) 在训练中从未出现过**, 双轴 CFG 的 content 轴无效。"
+                    "要么把 glyph_drop_prob 设为 >0 重训, 要么别用双轴。")
+            else:
+                logger.info(f"[cfg-2axis] 双轴 CFG 已启用: cfg_callig=eval_cfg, "
+                            f"cfg_glyph={model.cfg_glyph_scale}, w_inter={model.cfg_w_inter} "
+                            f"(glyph_drop_prob={getattr(args,'glyph_drop_prob',0.0)})")
+
         logger.info(f"Building 2-Cond model: {args.model} "
                     f"(learn_sigma={_learn_sigma}, diffusion_type={_diffusion_type}, "
                     f"arch={getattr(args, 'norm_type', 'rms')}/"
@@ -575,6 +632,16 @@ def main(args):
             logger.warning("[compile] torch %s 不支持 torch.compile，忽略 --compile",
                            torch.__version__)
         else:
+            # [INFRA 2026-09-16] pattern_matcher guard
+            # torch 2.1.2 的 inductor pattern_matcher 在整图 replacement 路径上有一个
+            # 无 visited 集保护的指数级递归 (torch/_inductor/pattern_matcher.py:652-655
+            # percolate_tags 自递归), 整图编译时把编译卡死: 实测 >30min 无任何输出,
+            # faulthandler 栈为上万层同一函数。关闭后同一张图 ~65s 编完, 实测 step
+            # 时间无损失 (181.1ms vs 181.2ms)。如需恢复 pattern 融合: DIT_PATTERN_MATCHER=1
+            if os.environ.get("DIT_PATTERN_MATCHER", "0") != "1":
+                from torch._inductor import config as _ind_cfg
+                _ind_cfg.pattern_matcher = False
+                logger.info("[compile] pattern_matcher=False (规避 torch 2.1.2 percolate_tags 递归爆炸)")
             logger.info(f"[compile] torch.compile(mode={_compile_mode}) 注入（DDP 之前）...")
             model = torch.compile(model, mode=_compile_mode)
     ema_model = None
@@ -682,6 +749,56 @@ def main(args):
                     f"w={args.w_repa}, warmup={getattr(args, 'repa_warmup', 0)}, "
                     f"cache={'yes' if _feature_cache is not None else 'no'})")
 
+    # ---- 实例骨架结构 loss: 冻结 probe (新增可训练参数 0) ----
+    # 形态对比见 latent_structure.LatentSkelStructureLoss 的 docstring。
+    # target = batch['skel_latent'], **必须指向实例骨架**; 若指到标准字形就是纯重复 g, 必败。
+    _skel_struct_loss_fn = None
+    _SKEL_STRUCT_WARNED = False
+    if getattr(args, 'w_latent_skel', 0.0) > 0:
+        # ⚠ 硬拦截: target 绝不能是标准字形骨架。
+        # 当前数据集只暴露 `skel_latent`(来自 skel_latent_shards_dir)。v12 该目录是
+        # **shards_std** 且 skel_as_glyph_cond=True -> batch['skel_latent'] 就是 g 本身。
+        # 拿它当结构 target = 纯重复条件信号 = doc60 §6 那条纪律的翻版, 必败且静默
+        # (loss 会正常下降, 因为预测 g 很容易)。故显式拒绝启动, 不给人跑废一整轮的机会。
+        if getattr(args, 'w_latent_skel', 0.0) > 0 and not (
+                getattr(args, 'inst_skel_shards_dir', '') or '').strip():
+            # ⚠ 硬拦截升级 (2026-09-16): v12 的 skel_latent_shards_dir 是 **shards_std**
+            # 且 skel_as_glyph_cond=True -> batch['skel_latent'] 就是 g 本身。拿它当结构
+            # target = 纯重复条件信号 = 必败且静默 (loss 会正常下降, 因为预测 g 很容易)。
+            # 现在 target 必须来自独立的 batch['inst_skel'](实例骨架, GT 图派生, 与 g 解耦),
+            # 故要求显式配置 --inst-skel-shards-dir。不给人跑废一整轮的机会。
+            raise ValueError(
+                "--w-latent-skel>0 需要 --inst-skel-shards-dir 指向**实例骨架** latent shards "
+                "(GT 图 -> skeletonize -> 3px 膨胀 -> VAE encode, 由 "
+                "tools/build_skel_latents.py 生成; 与条件 g 完全解耦)。\n"
+                "注意: skel_latent_shards_dir=shards_std + skel_as_glyph_cond=True 时 "
+                "batch['skel_latent'] 就是 g 本身, 不能当结构 target。\n"
+                "先跑 _sync_work/inst_skel_pipeline.sh (stage1 建 shards + stage2 训 probe)。")
+
+        _pcfg = getattr(args, 'latent_skel_probe', '') or ''
+        if not _pcfg or not os.path.exists(_pcfg):
+            raise ValueError(
+                f"--w-latent-skel > 0 需要 --latent-skel-probe 指向训好的 probe ckpt, "
+                f"当前={_pcfg!r}。用 tools/train_latent_skel_probe.py 训练。")
+        from src.train.latent_structure import LatentSkelProbe, LatentSkelStructureLoss
+        _pck = torch.load(_pcfg, map_location="cpu", weights_only=False)
+        _pargs = _pck.get("args", {}) if isinstance(_pck, dict) else {}
+        _probe = LatentSkelProbe(
+            in_channels=int(_pargs.get("in_channels", 4)),
+            out_channels=int(_pargs.get("out_channels", 4)),
+            width=int(_pargs.get("width", 64)),
+            depth=int(_pargs.get("depth", 3)))
+        _psd = _pck.get("model", _pck)
+        _missing, _unexp = _probe.load_state_dict(_psd, strict=False)
+        if _missing or _unexp:
+            raise ValueError(f"probe ckpt 不匹配: missing={_missing} unexpected={_unexp}")
+        _probe.to(device).eval().requires_grad_(False)
+        _skel_struct_loss_fn = LatentSkelStructureLoss(
+            probe=_probe, max_t=float(getattr(args, 'latent_skel_max_t', 0.3)))
+        logger.info(f"[skel-struct] enabled: w={args.w_latent_skel}, probe={_pcfg}, "
+                    f"max_t={_skel_struct_loss_fn.max_t}, metrics={_pck.get('metrics', {})}, "
+                    f"trainable_params_added=0 (probe frozen)")
+
     trainable_params_list = [p for p in model.parameters() if p.requires_grad]
     if repa_loss_fn is not None:
         trainable_params_list.extend(repa_loss_fn.trainable_params())
@@ -702,7 +819,15 @@ def main(args):
             adamw_lr=_adamw_lr, adamw_weight_decay=_adamw_wd)
         logger.info(f"[optim] Muon: 矩阵组 lr={_muon_lr} (NS正交) / 向量+embedding组 AdamW lr={_adamw_lr} wd={_adamw_wd}")
     else:
-        opt = torch.optim.AdamW(trainable_params_list, lr=args.lr, weight_decay=args.weight_decay)
+        # [OPTIM-FUSED 2026-09-16] AdamW fused (单内核多张量更新, 省 elementwise 带宽)。
+        # 守卫: 仅 CUDA 且 torch 支持 fused 时启用, 否则退回默认实现。
+        _fused = bool(torch.cuda.is_available()) and float(torch.__version__[:3]) >= 2.0
+        try:
+            opt = torch.optim.AdamW(trainable_params_list, lr=args.lr,
+                                    weight_decay=args.weight_decay, fused=_fused)
+        except TypeError:
+            opt = torch.optim.AdamW(trainable_params_list, lr=args.lr, weight_decay=args.weight_decay)
+            _fused = False
         logger.info(f"[optim] AdamW lr={args.lr} wd={args.weight_decay}")
 
     # Restore optimizer state + step counter for full resume. If --resume-lr is given,
@@ -721,19 +846,35 @@ def main(args):
             for _pg in opt.param_groups:
                 _pg["lr"] = args.resume_lr
             logger.info(f"[resume-full] Overrode LR -> {args.resume_lr}")
-        # Recover the step counter. `args` (saved Namespace) has no train_steps field,
-        # so prefer the checkpoint filename (e.g. 0010000.pt -> 10000); fall back to a
-        # stored args.train_steps if present.
+        # Recover the step counter, 优先级:
+        #   1) ckpt **顶层** "train_steps"  —— 唯一权威: 存盘时由真实步数写入(见下方
+        #      checkpoint["train_steps"]), 与文件名无关, 任何文件名的 ckpt 都对。
+        #      [2026-09-16] 此前**从未被读取**, 只靠文件名数字推测 -> 跨阶段备份用的
+        #      无时间戳名字会被解析错, 例: "v12_S2_cat_last.pt" 的 digits=['12','2']
+        #      -> resume_start_step=2 -> LR 退回 warmup 起点(≈6.7e-8, 看着像卡死),
+        #      且 ckpt 从 0001000.pt 重新编号会**覆盖历史 ckpt**。
+        #   2) 文件名末尾数字 (0055000.pt -> 55000), 兼容旧 ckpt (无顶层字段)。
+        #   3) 保存的 args.train_steps —— 兜底 (历史 comment 认为该字段不存在)。
         import re as _re
+        _top_steps = _resume_full_ckpt.get("train_steps", None)
         _fname = os.path.basename(str(args.resume_full))
         _digits = _re.findall(r"\d+", _fname)
-        if _digits:
-            resume_start_step = int(_digits[-1])
-            logger.info(f"[resume-full] Inferred start step={resume_start_step} from filename {_fname}")
         _ckpt_args = _resume_full_ckpt.get("args", None)
-        if _ckpt_args is not None and getattr(_ckpt_args, "train_steps", None) is not None:
-            resume_start_step = int(_ckpt_args.train_steps)
-            logger.info(f"[resume-full] Resuming from train_steps={resume_start_step}")
+        _args_steps = (getattr(_ckpt_args, "train_steps", None)
+                       if _ckpt_args is not None else None)
+        _src = None
+        if _top_steps is not None:
+            resume_start_step, _src = int(_top_steps), "ckpt 顶层 train_steps"
+        elif _digits:
+            resume_start_step, _src = int(_digits[-1]), f"文件名 {_fname}"
+        elif _args_steps is not None:
+            resume_start_step, _src = int(_args_steps), "保存的 args.train_steps"
+        if _src is not None:
+            logger.info(f"[resume-full] start step={resume_start_step} (来源: {_src})")
+            if _digits and int(_digits[-1]) != resume_start_step:
+                logger.warning(
+                    f"[resume-full] 文件名数字 {_digits[-1]} != 真实步数 "
+                    f"{resume_start_step} —— 已按真实步数走 (文件名仅供人看, 不可信)")
 
     # bf16 training: run the model in bf16 autocast (no loss scaling needed — bf16 has
     # the same exponent range as fp32, so it does not overflow like fp16 AMP). VAE and
@@ -752,6 +893,9 @@ def main(args):
                                     skel_latent_shards_dir=(args.skel_latent_shards_dir
                                                             if getattr(args, 'skel_as_glyph_cond', False)
                                                             else None),
+                                    inst_skel_shards_dir=(getattr(args, 'inst_skel_shards_dir', '') or None
+                                                          if getattr(args, 'w_latent_skel', 0.0) > 0
+                                                          else None),
                                     callig_id_map=getattr(args, '_callig_map', None),
                                     aux_latent_shards_dirs=[s for s in str(getattr(args, 'aux_latent_shards_dirs', '') or '').split(',') if s])
         logger.info("Using latent-cached dataset (skip on-the-fly VAE encode)."
@@ -762,6 +906,18 @@ def main(args):
             logger.info(f"[aux] target=12ch+ dirs={_aux_dirs} per-group weights={_aw}")
     else:
         dataset = MCCDDataset(csv_file=args.data_csv, root_dir=args.data_dir, image_size=args.image_size)
+    # [2026-09-16] epoch 长度 = **固定步数**(而不是"数据集一遍")。
+    # 起因: 原先 epoch = len(dataset)//batch = 119 步(~21s), 每 119 步 DataLoader
+    # 就要重建一次迭代器; 而 ckpt + in-mem eval 落在 train_steps % ckpt_every 上,
+    # 两者互不对齐 -> iterator reset 成为一份**独立**代价, Steps/Sec 出现规律锯齿。
+    # 现在把 epoch 拉到与 ckpt_every 等长: reset 点恰好落在 ckpt+eval 上, 代价被吸收,
+    # epoch 退化为"存盘/评测的刻度"。默认 0 = 自动取 ckpt_every; 显式设 0 且
+    # ckpt_every=0 时退回旧行为(epoch = 数据集一遍)。
+    _epoch_steps = int(getattr(args, 'epoch_steps', 0) or 0)
+    if _epoch_steps < 0:
+        _epoch_steps = 0          # 显式退回旧行为(epoch = 数据集一遍)
+    if _epoch_steps == 0 and int(getattr(args, 'ckpt_every', 0) or 0) > 0:
+        _epoch_steps = int(args.ckpt_every)
     if args.sampler == "factor_balanced":
         sampler = DistributedFactorBalancedSampler(
             dataset, num_replicas=dist.get_world_size(), rank=rank, seed=args.global_seed,
@@ -771,13 +927,36 @@ def main(args):
                     f"(char_alpha={args.balance_char_alpha}, "
                     f"callig_alpha={args.balance_callig_alpha})")
     else:
-        sampler = DistributedSampler(
-            dataset,
-            num_replicas=dist.get_world_size(),
-            rank=rank,
-            shuffle=True,
-            seed=args.global_seed
-        )
+        if _epoch_steps > 0:
+            sampler = LongEpochDistributedSampler(
+                dataset,
+                steps_per_epoch=_epoch_steps,
+                batch_size=int(args.global_batch_size // dist.get_world_size()),
+                num_replicas=dist.get_world_size(),
+                rank=rank,
+                seed=args.global_seed,
+            )
+            _samples_per_epoch = (_epoch_steps
+                                  * (args.global_batch_size // dist.get_world_size())
+                                  * dist.get_world_size())
+            logger.info(
+                f"[sampler] LongEpoch: epoch = {_epoch_steps} 步 "
+                f"(= {_samples_per_epoch:,} 样本 = 数据集的 "
+                f"{_samples_per_epoch / max(len(dataset), 1):.1f} 倍); "
+                f"迭代器每 {_epoch_steps} 步 reset 一次, 与 ckpt_every 对齐。")
+            if resume_start_step > 0:
+                _inner = sampler.inner_epoch_for_step(resume_start_step)
+                sampler.set_start_inner_epoch(_inner)
+                logger.info(f"[sampler] resume 数据流对齐: step {resume_start_step} "
+                            f"-> 已消耗 {_inner} 个 randperm 份, 从第 {_inner} 份继续")
+        else:
+            sampler = DistributedSampler(
+                dataset,
+                num_replicas=dist.get_world_size(),
+                rank=rank,
+                shuffle=True,
+                seed=args.global_seed
+            )
     loader = DataLoader(
         dataset,
         batch_size=int(args.global_batch_size // dist.get_world_size()),
@@ -790,8 +969,21 @@ def main(args):
         prefetch_factor=4 if args.num_workers > 0 else None,
     )
     logger.info(f"Dataset contains {len(dataset):,} images")
+    if (args.sampler == "random" and _epoch_steps > 0
+            and len(loader) != _epoch_steps):
+        logger.warning(f"[sampler] len(loader)={len(loader)} != epoch_steps={_epoch_steps}"
+                       f" (整除性/drop_last?) —— epoch 与 ckpt 可能错位")
+    _epochs_needed = args.epochs
+    if _epoch_steps > 0 and args.max_steps > 0:
+        # epoch 已退化为 ckpt 刻度: 只需跑到 max_steps 所需的份数
+        _epochs_needed = min(args.epochs, -(-args.max_steps // _epoch_steps))
 
-    total_planned_steps = args.max_steps if args.max_steps > 0 else args.epochs * len(loader)
+    if args.max_steps > 0:
+        total_planned_steps = args.max_steps
+    elif _epoch_steps > 0:
+        total_planned_steps = _epochs_needed * len(loader)
+    else:
+        total_planned_steps = args.epochs * len(loader)
     if getattr(args, 'fresh_scheduler', False) and _resume_full_ckpt is not None and args.max_steps > 0:
         # 调度器按绝对步数(从 step 0)计算: resume 点落在 cosine 中段, 不是从头 warm restart
         total_planned_steps = args.max_steps
@@ -837,6 +1029,7 @@ def main(args):
     running_repa = 0
     running_x0lat = 0
     running_std_mid = 0
+    running_skel = 0
     running_c12_img = 0
     running_c12_canny = 0
     running_c12_skel = 0
@@ -1008,10 +1201,16 @@ def main(args):
         else:
             logger.warning(f"[auto-eval] eval_csv not found ({_eval_csv!r}); auto-eval disabled")
 
-    for epoch in range(args.epochs):
+    for epoch in range(_epochs_needed):
         sampler.set_epoch(epoch)
         if rank == 0:
-            logger.info(f"Beginning epoch {epoch}...")
+            # [2026-09-16] epoch 已退化为"ckpt/eval 刻度"(见 --epoch-steps), 且续训时
+            # 外层 epoch 计数器从 0 重新开始 -> 直接乘 epoch 会算错区间号(盯着日志判断
+            # 进度时会误判)。这里用**真实已训步数**算, 续训后依旧正确。
+            _span = (f" (steps {resume_start_step + epoch * _epoch_steps + 1}"
+                     f"-{resume_start_step + (epoch + 1) * _epoch_steps})"
+                     if _epoch_steps > 0 else "")
+            logger.info(f"Begin epoch {epoch}{_span} — ckpt+eval 落点...")
         
         try:
             for batch_idx, batch in enumerate(loader):
@@ -1030,18 +1229,40 @@ def main(args):
                         x_latent = torch.cat([x_latent, _aux.to(device).float()], dim=1)
                         # per-group aux 权重 (与 aux_latent_shards_dirs 同序): e.g. "0.3,0.8"
                         # -> canny 4ch ×0.3, skel 4ch ×0.8。空则回退单一 aux_loss_weight。
+                        # ⚠ 2026-09-17: 原先"没给权重就静默回退到等权"是个**危险默认** ——
+                        #   等权正是 doc54/60 判定"已证有害"的配置(aux 吃掉 ~51% final-layer
+                        #   梯度, patch_embed 上 aux 梯度是 img 的 2.6x)。"忘了写一行"
+                        #   就掉进已知有害的坑且不报错。现在: **配了 aux 就必须显式给权重**,
+                        #   否则直接拒绝启动。
+                        _aux_dirs = [s for s in
+                                     str(getattr(args, 'aux_latent_shards_dirs', '') or '').split(',')
+                                     if s.strip()]
                         _aux_w_list = [float(s) for s in
                                        str(getattr(args, 'aux_loss_weights', '') or '').split(',')
                                        if s.strip()]
-                        if _aux_w_list:
-                            _ch_w = torch.ones(x_latent.shape[1], device=device)
-                            for _gi, _w in enumerate(_aux_w_list):
-                                _ch_w[4 + 4 * _gi: 8 + 4 * _gi] = _w
-                        else:
+                        if not _aux_w_list:
                             _w_aux = float(getattr(args, 'aux_loss_weight', 1.0))
-                            if _w_aux != 1.0:
-                                _ch_w = torch.ones(x_latent.shape[1], device=device)
-                                _ch_w[4:] = _w_aux
+                            if _w_aux == 1.0:
+                                raise ValueError(
+                                    f"启用了 {len(_aux_dirs)} 个 aux latent 目录, 但既没给 "
+                                    f"--aux-loss-weights 也没把 --aux-loss-weight 设成非 1.0 "
+                                    f"-> 会退化成**等权**, 而等权已被证明有害"
+                                    f"(aux 吃 ~51% final-layer 梯度, doc54/60)。\n"
+                                    f"请显式指定, 例如 --aux-loss-weights "
+                                    f"{','.join(['0.3'] * len(_aux_dirs))}。")
+                            _aux_w_list = [_w_aux] * len(_aux_dirs)
+                        if len(_aux_w_list) != len(_aux_dirs):
+                            raise ValueError(
+                                f"--aux-loss-weights 给了 {len(_aux_w_list)} 个值 "
+                                f"({_aux_w_list}), 但 --aux-latent-shards-dirs 有 "
+                                f"{len(_aux_dirs)} 个目录 -> 通道分组会错位。")
+                        _ch_w = torch.ones(x_latent.shape[1], device=device)
+                        for _gi, _w in enumerate(_aux_w_list):
+                            _ch_w[4 + 4 * _gi: 8 + 4 * _gi] = _w
+                        if rank == 0:
+                            logger.info(f"[aux] {len(_aux_dirs)} 组 aux, 权重 {_aux_w_list} "
+                                        f"-> in_channels={x_latent.shape[1]}, "
+                                        f"image_channels={getattr(args, 'image_channels', None) or getattr(args, 'latent_channels', 4)}")
                     x = batch.get('image', None)
                     x = x.to(device) if x is not None else None
                 else:
@@ -1099,7 +1320,8 @@ def main(args):
                 # **静默失效** —— 不报错、loss 正常下降、但从未生效。w_std_mid 正是
                 # 「把去噪中段预测的 x0 拉向标准字形 latent」的预训练改进项。
                 # gaussian_diffusion 不接受该参数，故用 try/except 兼容。
-                _need_x0 = (getattr(args, 'w_std_mid', 0.0) > 0)
+                _need_x0 = (getattr(args, 'w_std_mid', 0.0) > 0
+                            or getattr(args, 'w_latent_skel', 0.0) > 0)
                 with torch.autocast("cuda", dtype=torch.bfloat16):
                     if _need_x0:
                         try:
@@ -1117,6 +1339,7 @@ def main(args):
 
                 loss_repa = torch.tensor(0.0, device=device)
                 loss_x0lat = torch.tensor(0.0, device=device)
+                loss_skel_struct = torch.tensor(0.0, device=device)
 
                 # === INFRA FIX: pred_xstart from training_losses carries the ENTIRE DiT
                 # forward graph (every block's activations are kept alive because the
@@ -1131,7 +1354,8 @@ def main(args):
                 # for a differentiable struct loss (t<=max_t). For t>500 steps, detach
                 # immediately so the full graph is freed at the next zero_grad. We also
                 # break the reference in loss_dict so no stale graph survives the loop.
-                _need_x0_grad = (getattr(args, 'w_std_mid', 0.0) > 0)
+                _need_x0_grad = (getattr(args, 'w_std_mid', 0.0) > 0
+                                 or getattr(args, 'w_latent_skel', 0.0) > 0)
                 pred_xstart_latent = loss_dict.get("pred_xstart", None)
                 if pred_xstart_latent is not None and not _need_x0_grad:
                     # No struct loss this run at all — drop the graph immediately.
@@ -1176,9 +1400,33 @@ def main(args):
                     loss_repa = repa_loss_fn(intermediate_feats, x, step=train_steps,
                                              img_ids=_img_ids)
 
+                # ---- 实例骨架结构 loss (辅助, 冻结 probe, 零可训练参数) ----
+                # 见 latent_structure.LatentSkelStructureLoss 的 docstring:
+                # 与 12ch 的区别是"不在扩散目标里" —— 4ch 主干 / CFG 作用域 / 推理成本
+                # 全部不受影响, 新增可训练参数 0(当前主要矛盾是过拟合, 这是决定性优势)。
+                # target = batch['skel_latent'] **必须是实例骨架**; 若指到标准字形就是纯重复 g。
+                if _skel_struct_loss_fn is not None and pred_xstart_latent is not None:
+                    # [inst-skel 2026-09-16] target 现在读 **inst_skel**(实例骨架, GT 图派生),
+                    # 与条件 g (skel_latent=shards_std) 解耦。不再读 skel_latent。
+                    _sk = batch.get('inst_skel', None)
+                    if _sk is None or _sk.numel() == 0:
+                        if not _SKEL_STRUCT_WARNED:
+                            _SKEL_STRUCT_WARNED = True
+                            logger.warning(
+                                "[skel-struct] w_latent_skel>0 但 batch['inst_skel'] 为空 "
+                                "(需配置 --inst-skel-shards-dir 指向实例骨架 shards) "
+                                "-> 本项静默失效。这类静默失效已踩过多次, 故只在首次告警。")
+                        loss_skel_struct = torch.tensor(0.0, device=device)
+                    else:
+                        loss_skel_struct = _skel_struct_loss_fn(
+                            pred_xstart_latent,
+                            _sk.to(device, non_blocking=True).float(),
+                            t.to(device))
+
                 loss = (loss_diff
                         + loss_repa  # 统一 REPA: w × (1 - cos) 已在 RepaModule.forward 内含 warmup
-                        + getattr(args, 'w_std_mid', 0.0) * loss_std_mid)
+                        + getattr(args, 'w_std_mid', 0.0) * loss_std_mid
+                        + getattr(args, 'w_latent_skel', 0.0) * loss_skel_struct)
 
                 opt.zero_grad(set_to_none=True)  # INFRA: set_to_none 释放梯度tensor, 比 zero_() 快且省内存
                 # Capture scalar values into plain Python floats BEFORE we del the
@@ -1188,6 +1436,7 @@ def main(args):
                 _v_diff = loss_diff.item()
                 _v_repa = loss_repa.item()
                 _v_stdmid = loss_std_mid.item()
+                _v_skel = loss_skel_struct.item()
 
                 # ── ref 12ch 联合目标: 逐通道 MSE 拆成 image/canny/skel 三组 (日志用) ──
                 # 目标 x = cat(image(4), *aux(4)); 等权时 Diff 即三组均值。这里把
@@ -1232,13 +1481,14 @@ def main(args):
                 # The graph built by training_losses (DiT forward + pred_xstart) must be
                 # freed BEFORE the next forward, otherwise peak = diff_graph + aux_graph.
                 del loss, loss_dict, loss_diff, pred_xstart_latent
-                del loss_repa, loss_std_mid, loss_x0lat
+                del loss_repa, loss_std_mid, loss_x0lat, loss_skel_struct
 
                 if _v_loss:
                     running_loss += _v_loss
                     running_diff += _v_diff
                     running_repa += _v_repa
                     running_std_mid += _v_stdmid
+                    running_skel += _v_skel
                     running_c12_img += _v_c12i
                     running_c12_canny += _v_c12c
                     running_c12_skel += _v_c12s
@@ -1275,6 +1525,7 @@ def main(args):
                     avg_c12i = running_c12_img / divisor
                     avg_c12c = running_c12_canny / divisor
                     avg_c12s = running_c12_skel / divisor
+                    avg_skel = running_skel / divisor
 
                     if rank == 0:
                         wr = args.w_repa
@@ -1284,6 +1535,8 @@ def main(args):
                             f"(step={train_steps:07d}) Diff: {avg_d:.4f} | "
                             f"c12[img={avg_c12i:.4f} canny={avg_c12c:.4f} skel={avg_c12s:.4f}] | "
                             f"REPA(w={wr:.2f}): {avg_r:.4f} | "
+                            + (f"SkelStruct(w={args.w_latent_skel:.3f}): {avg_skel:.4f} | "
+                               if getattr(args, 'w_latent_skel', 0.0) > 0 else "") +
                             f"LR: {opt.param_groups[0]['lr']:.2e} | {ema_log}"
                             f"Steps/Sec: {steps_per_sec:.2f} | "
                             f"Mem: {torch.cuda.memory_reserved() / 1024 ** 3:.2f}G/"
@@ -1334,7 +1587,7 @@ def main(args):
                     
                     running_loss = running_diff = 0
                     running_repa = running_x0lat = 0
-                    running_std_mid = 0
+                    running_std_mid = running_skel = 0
                     running_c12_img = running_c12_canny = running_c12_skel = 0
                     log_steps = 0
                     start_time = time()
@@ -1522,12 +1775,24 @@ def main_from_cli(argv=None):
     parser.add_argument("--cond-mode", type=str, choices=["2cond", "3cond"], default="2cond",
                         help="Conditioning mode: 2cond (callig+char) or 3cond (callig+script+char).")
     parser.add_argument("--condition-fusion", type=str,
-                        choices=["legacy", "factorized_add", "xl_highdim"], default="legacy",
+                        choices=["legacy", "factorized_add", "factorized_cat", "xl_highdim"],
+                        default="legacy",
                         help="Cond fusion: legacy joint MLP | factorized_add (low-dim additive) | "
+                             "factorized_cat (v12: 各向量因子 embedding 拼接后联合投影, ref/Moyun 式) | "
                              "xl_highdim (high-dim, XL-aligned, preserves pretrained adaLN).")
     parser.add_argument("--callig-embed-dim", type=int, default=None)
     parser.add_argument("--script-embed-dim", type=int, default=None)
     parser.add_argument("--char-embed-dim", type=int, default=None)
+    parser.add_argument("--glyph-vec-cond", type=_str_to_bool, default=False,
+                        help="v12: 把 g(标准字形) 池化成全局内容向量, 作为条件向量 c 的"
+                             "第二个操作数。仅 factorized_add / factorized_cat 下生效。"
+                             "作用: 让 adaLN 调制分支第一次能看到内容"
+                             "(原先 c = t_emb + callig_proj, 完全不知道在写哪个字);"
+                             "同时让 factorized_cat 不再退化成单层 Linear。")
+    parser.add_argument("--glyph-vec-dim", type=int, default=128,
+                        help="g 全局内容向量的维度 (concat/add 的第二个操作数)")
+    parser.add_argument("--glyph-vec-pool", type=str, choices=["mean", "max"],
+                        default="mean", help="g_tok 256 个 token 的池化方式")
     parser.add_argument("--char-dino-embeddings", type=str, default=None,
                         help="Path to glyph-level DINO embeddings npy (N, dim) used to init "
                              "y_char_embedder rows via glyph_id = script_id*7026+character_id. "
@@ -1622,6 +1887,23 @@ def main_from_cli(argv=None):
     parser.add_argument("--glyph-inject-mode", choices=["adaln", "xattn"], default="adaln",
                         help="g 逐层注入方式: adaln=ZeroAdaLN 固定位置调制 (旧默认), "
                              "xattn=ZeroCrossAttention 空间寻址 (GlyphDraw 式, 新 ckpt 专用)")
+    parser.add_argument("--cfg-glyph-scale", type=float, default=None, dest="cfg_glyph_scale",
+                        help="[2026-09-17] 双轴 CFG 的**内容轴**(骨架 g)引导强度。\n"
+                             "默认 None = 经典 2 路 CFG(只引导书家风格)。\n"
+                             "非 None 时走 forward_with_2axis_cfg: 4 个 pass 分别\n"
+                             "  full / style(y_callig, g=0) / content(null, g) / uncond(null, g=0)\n"
+                             "⚠ **前提: 训练时 glyph_drop_prob > 0** —— g=0 必须是训练见过的\n"
+                             "  条件, 否则内容轴未训练(与 callig null 行同一类问题)。\n"
+                             "⚠ 4× NFE。")
+    parser.add_argument("--cfg-w-inter", type=float, default=0.0, dest="cfg_w_inter",
+                        help="双轴 CFG 的交互项权重 (full - content - style + uncond)。默认 0。")
+    parser.add_argument("--xattn-q-pos", type=_str_to_bool, default=False, dest="xattn_q_pos",
+                        help="[2026-09-17] xattn 的 **Q 是否也加 sincos 位置嵌入**。\n"
+                             "默认 False = 旧行为(只给 K/V 加位置)。\n"
+                             "⚠ 旧实现下 Q 无位置, 而 rope=True 时 x 残差流不加绝对位置\n"
+                             "-> '空间寻址'退化成'内容寻址', 与 ZeroCrossAttention 的\n"
+                             "docstring 声称的 2D 绑定保证不符。打开后 Q/K/V 都带位置。\n"
+                             "建议与旧实现做 A/B (同预算、跑到平台)。")
     parser.add_argument("--style-token-n", type=int, default=0,
                         help="风格 token 数 (0=关闭): >0 时每层注入 context = "
                              "[书家化骨架(+2D位置); 风格token(+可学习role)], "
@@ -1747,6 +2029,13 @@ def main_from_cli(argv=None):
                         help="Tempered inverse character-frequency exponent.")
     parser.add_argument("--balance-callig-alpha", type=float, default=0.25,
                         help="Tempered inverse calligrapher-frequency exponent.")
+    # [2026-09-16] epoch 长度(步)。0 = 自动取 ckpt_every(推荐): epoch 与存盘/评测
+    # 刻度重合, DataLoader 迭代器 reset 的代价被 ckpt+eval 吸收, 不再每 119 步抖一次。
+    # 负值 = 强制退回旧行为(epoch = 数据集一遍)。
+    parser.add_argument("--epoch-steps", type=int, default=0, dest="epoch_steps",
+                        help="每个 epoch 的**步数**(每 rank)。0=自动=ckpt_every; "
+                             "-1=退回旧行为(epoch=数据集一遍)。见 "
+                             "src/utils/samplers.py:LongEpochDistributedSampler。")
     parser.add_argument("--use-ema", type=_str_to_bool, default=False,
                         help="Maintain and evaluate a full-model exponential moving average.")
     parser.add_argument("--ema-decay", type=float, default=0.9999)
@@ -1760,6 +2049,12 @@ def main_from_cli(argv=None):
     parser.add_argument("--vae-path", type=str, default="data/pretrained/sd-vae-ft-ema", help="Local path to VAE weights")
     parser.add_argument("--vae-downscale", type=int, default=8, help="VAE spatial downsample factor (8=f8 sd-vae, 4=f4 kl-f4)")
     parser.add_argument("--latent-channels", type=int, default=4, help="VAE latent channel count (4=sd-vae, 3=kl-f4)")
+    parser.add_argument("--image-channels", type=int, default=None,
+                        help="CFG 作用域: 只对这些通道做 classifier-free guidance, 其余通道"
+                             "(aux 结构通道) 保持 cond 分支原值。默认 None = 取 --latent-channels。"
+                             "⚠ 12ch 下必须保持 4: aux 分布与 image 不同, 若被同一 cfg_scale "
+                             "放大, 采样轨迹会跑飞 (doc59 §1.3 '墨团'根因)。"
+                             "此键此前未注册 -> config 里写 image_channels 会被静默丢弃。")
     parser.add_argument("--vae-in-channels", type=int, default=3, help="VAE input image channels (3=RGB, 1=grayscale)")
     parser.add_argument("--vae-out-channels", type=int, default=3, help="VAE output image channels (3=RGB, 1=grayscale)")
     parser.add_argument("--vae-scaling-factor", type=float, default=0.18215, help="VAE latent scaling factor")
@@ -1824,7 +2119,9 @@ def main_from_cli(argv=None):
                         help="Initial glyph_scale (standard-glyph token-add strength).")
     parser.add_argument("--no-char-cond", type=_str_to_bool, default=False,
                         help="v10b: 移除 char 向量条件 (skel-g 即字条件, 因子分解=callig+skel)."
-                             " 仅支持 condition_fusion=factorized_add.")
+                             " 支持 factorized_add / factorized_cat。"
+                             " 注意: 开启后向量因子只剩 callig 一个, factorized_cat 会退化为"
+                             " 单层 Linear (与 factorized_add 等价), 见 dit.py 注释。")
     parser.add_argument("--skel-as-glyph-cond", type=_str_to_bool, default=False,
                         help="v10a: 用实例 skel latent (skel_latent_shards_dir) 走 g 通路"
                              " (use_glyph_cond 注入), 替代标准字形库——skel latent 即字条件, 从头预训练.")
@@ -1837,6 +2134,14 @@ def main_from_cli(argv=None):
     parser.add_argument("--glyph-embedder-depth", type=int, default=0,
                         help="g 编码器增强深度 (0=单层 Conv 现状; >0=降采样 Conv + N 层 "
                              "(SiLU+Conv3x3) 残形增强 std 骨架特征, 治 std-skel g 通路不激活).")
+    # [v12+] FLOP 实测: depth=2 的两层满秩 3x3 conv 占全模型 9.7%。
+    # depthwise-separable 同感受野只需 1/8.8 的代价 (省约 8.6% 总 FLOPs)。
+    # ⚠ 这是**架构替换**, 理论上低风险(输入是近二值细线, 信息量极低), 但**未经验证**,
+    #   必须 A/B 确认不伤质量 —— 不要因为"看起来等价"就直接切。
+    parser.add_argument("--glyph-embedder-sep", type=_str_to_bool, default=False,
+                        dest="glyph_embedder_sep",
+                        help="g 编码器的 3x3 conv 用 depthwise-separable 实现 "
+                             "(省 ~8.6%% 总 FLOPs, 需 A/B 验证质量)。")
     parser.add_argument("--glyph-init-mix", type=float, default=0.0,
                         help="HYBRID 初始点 alpha∈[0,1]: xT=alpha*randn+(1-alpha)*std字形latent。"
                              "0=纯噪声(现状); (0,1)=混合; 默认 0 保持当前行为, 收敛后按需设 e.g.0.6。"
@@ -1845,6 +2150,24 @@ def main_from_cli(argv=None):
                         help="MIDSTEP_STD 权重: 在中间噪声水平 sqrt(alpha_cumprod)∈[alo,ahi] 时,"
                              "额外监督 模型预测 clean latent 逼近标准字形 latent g, 让字形中段锚定。"
                              "需 w-glyph-cond 开启。权重明显小于主 loss(如 0.1~0.5), 防抹掉风格。0=关。")
+    parser.add_argument("--w-latent-skel", type=float, default=0.0, dest="w_latent_skel",
+                        help="实例骨架结构 loss 权重(辅助项, 建议 0.02~0.1, 绝不等权)。\n"
+                             "用**冻结**的小 probe 把 pred_xstart 映射成实例骨架 latent, 与 GT\n"
+                             "skel_latent 做 MSE; 只在 t<=--latent-skel-max-t 生效。\n"
+                             "与 12ch 的本质区别: 不在扩散目标里 -> 4ch 主干/CFG 作用域/推理成本\n"
+                             "全不受影响, 且**新增可训练参数 0**(probe 冻结)。0=关。")
+    parser.add_argument("--latent-skel-probe", type=str, default="", dest="latent_skel_probe",
+                        help="冻结 probe ckpt 路径 (LatentSkelProbe: 4ch img latent -> "
+                             "4ch 实例骨架 latent)。由 tools/train_latent_skel_probe.py 训练。")
+    parser.add_argument("--inst-skel-shards-dir", type=str, default="", dest="inst_skel_shards_dir",
+                        help="**实例骨架** latent shards 目录 (结构 loss 的 target)。由 GT 图派生 "
+                             "(tools/build_skel_latents.py), 与条件 g (skel_latent_shards_dir="
+                             "shards_std) 完全解耦。w_latent_skel>0 时必填, 否则拒绝启动。")
+    parser.add_argument("--latent-skel-max-t", type=float, default=0.3, dest="latent_skel_max_t",
+                        help="结构 loss 的 t 门控上界。**flow 下 t in [0,1] 且 t=0 是干净端**\n"
+                             "(flow_matching.py:14), 故 0.3 = 只监督最干净的 30%% 时刻。\n"
+                             "⚠ 必须 float: 照抄 DDPM 的 500 会被 int() 截成 0 -> 门控恒假\n"
+                             "-> loss 静默恒为 0 (静默失效惯犯)。")
     parser.add_argument("--std-mid-alo", type=float, default=0.35,
                         help="中间噪声带下界(sqrt_alpha_cumprod), 默认 0.35。")
     parser.add_argument("--std-mid-ahi", type=float, default=0.75,
@@ -1858,6 +2181,13 @@ def main_from_cli(argv=None):
                              "built by tools/build_dino_cache.py). Hits skip the per-step DINO "
                              "forward (+15~20% throughput, -1.5GB VRAM); misses fall back to the "
                              "teacher forward (lazy-loaded). Empty = disabled (teacher every step).")
+    # [v12 修复] 该键此前**未注册为 argparse 参数**, 代码里用
+    #   getattr(args, "repa_layers", "") 读取 -> config JSON 里的值被**静默丢弃**,
+    #   实际永远走 train.py 的硬编码兜底 `or (8,)`。v11/v12 恰好都想要 8 所以没暴露,
+    #   但想改 REPA 层位时改了不生效。默认 "8" 与旧兜底**行为完全一致**。
+    parser.add_argument("--repa-layers", type=str, default="8",
+                        help="REPA 对齐的中间层, 单层 '8' 或多层 '8,11'。"
+                             "⚠ 此键曾未注册导致 config 值被静默丢弃 (doc56/59 同类坑)。")
     parser.add_argument("--eval-skel-latent-shards-dir", type=str, default="",
                         dest="eval_skel_latent_shards_dir",
                         help="评测专用的标准字形(g) latent 目录。⚠ 必须与训练侧的 "
@@ -1882,6 +2212,13 @@ def main_from_cli(argv=None):
                         dest="in_mem_eval_save_samples",
                         help="Save generated + GT PNGs to eval_samples_ctrl/step{N}/{set}/ "
                              "during --in-mem-eval (poster/sanity use).")
+    # [v12+] LPIPS 此前是"声明了但从没算过"的空列。ssim 会被大面积白底匹配骗过
+    # (doc59: 墨团也能拿 0.48), LPIPS 对结构细节敏感 —— 是区分"容量够不够"与
+    # "ssim 饱和"的关键指标 (doc62 §3)。跑在 CPU, 不与训练争显存。
+    parser.add_argument("--in-mem-eval-lpips", type=_str_to_bool, default=True,
+                        dest="in_mem_eval_lpips",
+                        help="计算 LPIPS(vgg, CPU) 并写入 summary/batch CSV 的 lpips 列。"
+                             "不可用时自动留空且不影响评测。")
     parser.add_argument("--eval-self-cond", type=_str_to_bool, default=False, dest="eval_self_cond",
                         help="Two-pass self-conditioning sampling in --in-mem-eval "
                              "(pass-1 predicted skel channels fed back as g for pass-2).")
