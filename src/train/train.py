@@ -1127,24 +1127,28 @@ def main(args):
         
         try:
             for batch_idx, batch in enumerate(loader):
-                y_callig = batch['y_callig'].to(device)
-                y_char = batch['y_char'].to(device)
+                # ★ non_blocking=True: DataLoader 已开 pin_memory=True，但**必须显式传**
+                #   这个参数才会走异步拷贝；否则即使源在 pinned 内存里也是同步拷贝，
+                #   主机线程会被阻塞（图像单批 ~283MB，实测代价可观）。见 docs/system/70 §8.6。
+                y_callig = batch['y_callig'].to(device, non_blocking=True)
+                y_char = batch['y_char'].to(device, non_blocking=True)
                 if cond_mode == "3cond":
-                    y_script = batch['y_script'].to(device)
+                    y_script = batch['y_script'].to(device, non_blocking=True)
 
                 # 注意: `_ch_w` 与 aux 权重已在**循环外**解析好（见 resolve_aux_channel_weights），
                 # 这里不再重算，也不要把它重置为 None。
                 if 'latent' in batch:
                     # Latent-cached training: latent pre-encoded (scaled by vae_scaling_factor).
-                    x_latent = batch['latent'].to(device)
+                    x_latent = batch['latent'].to(device, non_blocking=True)
                     # moyi 式辅助目标通道: aux latents (skel/canny) 与图像 latent 拼成扩散目标
                     _aux = batch.get('aux_latents', None)
                     if _aux is not None and _aux.numel() > 0:
-                        x_latent = torch.cat([x_latent, _aux.to(device).float()], dim=1)
+                        x_latent = torch.cat(
+                            [x_latent, _aux.to(device, non_blocking=True).float()], dim=1)
                     x = batch.get('image', None)
-                    x = x.to(device) if x is not None else None
+                    x = x.to(device, non_blocking=True) if x is not None else None
                 else:
-                    x = batch['image'].to(device)
+                    x = batch['image'].to(device, non_blocking=True)
                     # VAE encode stays in fp32 for numerical stability (VAE is sensitive to low precision).
                     with torch.no_grad(), torch.autocast("cuda", dtype=torch.float32):
                         x_latent = vae.encode(x).latent_dist.sample().mul_(_vae_sf)
@@ -1159,11 +1163,12 @@ def main(args):
                     model_kwargs = dict(y_callig=y_callig, y_char=y_char)
                 # 标准字形条件 g(甲2 token-add): batch 由 dataset 提供, None=禁用对应项
                 if getattr(args, 'w_glyph_cond', False) and 'g' in batch and batch['g'].numel() > 0:
-                    model_kwargs['g'] = batch['g'].to(device)   # (N,4,32,32)
+                    model_kwargs['g'] = batch['g'].to(device, non_blocking=True)  # (N,4,32,32)
                 elif getattr(args, 'skel_as_glyph_cond', False) and 'skel_latent' in batch \
                         and batch['skel_latent'].numel() > 0:
                     # v10a: 实例 skel latent 即字条件 (与 ControlNet 的 cond 同源不同路)
-                    model_kwargs['g'] = batch['skel_latent'].to(device).float()
+                    model_kwargs['g'] = batch['skel_latent'].to(
+                        device, non_blocking=True).float()
 
                 # ── 条件噪声增强 (Condition Noise Augmentation) ───────────
                 # 标准骨架 g 是固定的印刷体 latent (cos=0.902 to GT)。加噪声迫使
