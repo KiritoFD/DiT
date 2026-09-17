@@ -1149,6 +1149,9 @@ def main(args):
                     x = x.to(device, non_blocking=True) if x is not None else None
                 else:
                     x = batch['image'].to(device, non_blocking=True)
+                    # dataset 现在给的是 uint8（省 H2D 流量），VAE 需要 [-1,1] float
+                    if x.dtype == torch.uint8:
+                        x = x.float().div_(255.0).mul_(2.0).sub_(1.0)
                     # VAE encode stays in fp32 for numerical stability (VAE is sensitive to low precision).
                     with torch.no_grad(), torch.autocast("cuda", dtype=torch.float32):
                         x_latent = vae.encode(x).latent_dist.sample().mul_(_vae_sf)

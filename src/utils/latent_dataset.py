@@ -371,8 +371,14 @@ class MCCDLatentDataset(Dataset):
             latent = torch.from_numpy(self._latents[idx])
             img_t = torch.empty(0)
             if self.load_image and self._imgs is not None:
-                a = self._imgs[idx].astype(np.float32) / 255.0 * 2.0 - 1.0
-                img_t = torch.from_numpy(a).permute(2, 0, 1)
+                # ★ 2026-09-17: 直接返回 **uint8**，不再在 CPU 上转 float32。
+                #   原来这里做 astype(float32) + `/255*2-1`，把一个 196KB 的 uint8
+                #   放大成 786KB 的 float32 —— 每批 360 张就是 **283MB 的 H2D 拷贝**
+                #   （占全部 H2D 流量的 83%），而且 CPU 侧还要多做 3 遍全数组运算。
+                #   现在只传 uint8（71MB），归一化在 GPU 上做（REPALoss._to_image）。
+                #   ⚠ 消费方必须能处理 uint8 —— 目前只有 REPALoss 与 train.py 的
+                #     非 latent 分支读 `batch['image']`，两处都已加归一化。
+                img_t = torch.from_numpy(self._imgs[idx]).permute(2, 0, 1)
             skel_lat = torch.empty(0)
             if self._skel_latents is not None:
                 skel_lat = torch.from_numpy(self._skel_latents[idx])
@@ -393,7 +399,8 @@ class MCCDLatentDataset(Dataset):
                     full = os.path.join(self.img_root, f"{img_id}.png")
                 with Image.open(full) as im:
                     img = im.convert('RGB')
-                img_t = (torch.from_numpy(np.asarray(img, dtype=np.float32) / 255.0).permute(2, 0, 1) * 2.0 - 1.0)
+                # 同样返回 uint8（见 preload 分支的说明）
+                img_t = torch.from_numpy(np.asarray(img, dtype=np.uint8)).permute(2, 0, 1)
 
             # skel latent (latent 条件) -> (C,32,32) float32
             skel_lat = torch.empty(0)

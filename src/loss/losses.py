@@ -224,11 +224,24 @@ class REPALoss(nn.Module):
         x_224 = F.interpolate(x_norm, size=(224, 224), mode='bicubic', align_corners=False)
         return self.teacher.forward_features(x_224).float()  # (B, 256, teacher_dim)
 
+    @staticmethod
+    def _to_image(x):
+        """把 ``batch['image']`` 归一化到 teacher 要的 [-1, 1] float。
+
+        ★ 2026-09-17: dataset 现在直接返回 **uint8**（省 4× 的 H2D 流量，见
+        latent_dataset 里的说明），归一化挪到这里 —— 而且**惰性**：
+        DINO 缓存全命中时根本不会调到本函数，那 283MB 的图连 GPU 都不需要上。
+        """
+        if x.dtype == torch.uint8:
+            return x.float().div_(255.0).mul_(2.0).sub_(1.0)
+        return x
+
     def forward(self, student_feats, x_0, img_ids=None):
         """
         student_feats: (B, num_patches, student_dim) e.g. (B, 256, 384)，
             或 list/tuple 多个这样的张量 (REPA-L2 多层对齐, 共享一次 teacher 前向)。
-        x_0: (B, 3, 256, 256) original image in [-1, 1]
+        x_0: (B, 3, 256, 256)。**uint8(0..255) 或已归一化的 float [-1,1] 都接受**，
+            前者会被 `_to_image` 归一化（推荐：省 H2D 流量）。
         img_ids: (B,) 样本 id (dataset 提供) — 配合 feature_cache 查表免 teacher 前向。
         """
         teacher_feats = None
@@ -240,14 +253,15 @@ class REPALoss(nn.Module):
                 self.teacher.eval()
                 with torch.no_grad():
                     _m = torch.as_tensor(missing, device=x_0.device, dtype=torch.long)
-                    feats_cache[_m] = self._teacher_forward(x_0[_m])
+                    # 只有 miss 的行才需要真图 -> 归一化也只对这几行做
+                    feats_cache[_m] = self._teacher_forward(self._to_image(x_0[_m]))
             teacher_feats = feats_cache
         else:
             if self.teacher is None:
                 self.ensure_teacher()
             self.teacher.eval()
             with torch.no_grad():
-                teacher_feats = self._teacher_forward(x_0)
+                teacher_feats = self._teacher_forward(self._to_image(x_0))
 
         def _one(sf):
             # Project student features (upcast fp16 -> fp32 before matmul)
