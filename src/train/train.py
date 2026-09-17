@@ -1073,15 +1073,19 @@ def main(args):
 
     train_steps = resume_start_step
     log_steps = 0
-    running_loss = 0
-    running_diff = 0
-    running_repa = 0
-    running_x0lat = 0
-    running_std_mid = 0
-    running_skel = 0
-    running_c12_img = 0
-    running_c12_canny = 0
-    running_c12_skel = 0
+    # ★ 2026-09-17: 累加器从 Python float 改成 **GPU 0-dim 张量**。
+    #   原来每步 `.item()` 取标量再累加 = 每步多次全 GPU 同步（且都在 backward 之前，
+    #   打断 CPU run-ahead）。现在每步只做一次张量加法（不出 GPU），
+    #   标量化推迟到日志步（每 log_every 步一次）。
+    #   dtype=float64: 原来累加的是 Python float（float64）。用 float32 累加 log_every
+    #   个值会累积舍入（实测 5 项就差 2.2e-8），虽然显示到 4 位看不出来，但没必要改语义。
+    #   0-dim 张量用 float64 无任何成本。
+    running_loss = torch.zeros((), device=device, dtype=torch.float64)
+    running_diff = torch.zeros((), device=device, dtype=torch.float64)
+    running_repa = torch.zeros((), device=device, dtype=torch.float64)
+    running_std_mid = torch.zeros((), device=device, dtype=torch.float64)
+    running_skel = torch.zeros((), device=device, dtype=torch.float64)
+    _acc_c12 = None          # (C,) 逐通道 MSE 累加，日志步再拆成 image/canny/skel
     nan_steps = 0
     current_ema_decay = args.ema_decay
     start_time = time()
@@ -1303,33 +1307,17 @@ def main(args):
                         + getattr(args, 'w_latent_skel', 0.0) * loss_skel_struct)
 
                 opt.zero_grad(set_to_none=True)  # INFRA: set_to_none 释放梯度tensor, 比 zero_() 快且省内存
-                # Capture scalar values into plain Python floats BEFORE we del the
-                # tensors. This lets the autograd graph be freed immediately while the
-                # running accumulators (pure floats) survive for logging.
-                _v_loss = loss.item() if torch.isfinite(loss) else 0.0
-                _v_diff = loss_diff.item()
-                _v_repa = loss_repa.item()
-                _v_stdmid = loss_std_mid.item()
-                _v_skel = loss_skel_struct.item()
 
-                # ── ref 12ch 联合目标: 逐通道 MSE 拆成 image/canny/skel 三组 (日志用) ──
-                # 目标 x = cat(image(4), *aux(4)); 等权时 Diff 即三组均值。这里把
-                # 原始逐通道 MSE 分组打印, 以便直接看到 canny/skel 通道在被优化。
-                _v_c12i = _v_c12c = _v_c12s = 0.0
-                _mse_ch = loss_dict.get("mse_ch", None) if isinstance(loss_dict, dict) else None
-                if _mse_ch is not None and _mse_ch.shape[1] > 4:
-                    _cm = _mse_ch.mean(dim=0)
-                    _v_c12i = float(_cm[:4].mean())
-                    _aux_names = aux_dirs_of(args)
-                    for _gi, _nm in enumerate(_aux_names):
-                        _gm = float(_cm[4 + 4 * _gi: 8 + 4 * _gi].mean())
-                        if 'canny' in _nm:
-                            _v_c12c = _gm
-                        elif 'skel' in _nm:
-                            _v_c12s = _gm
+                # ★ 2026-09-17: 这里**不再**逐项 `.item()`。
+                #   原来每步有 5 个 `.item()` + `isfinite` 的 bool 判断 + `_cm.mean()` 取标量
+                #   = **7 次全 GPU 同步**，而且全在 `loss.backward()` 之前 —— 每次同步都会
+                #   打断 CPU 的 run-ahead（CPU 无法提前把后续 kernel 入队），形成流水线气泡。
+                #   现在只保留 NaN guard 必需的 1 次同步（`isfinite` 是"要不要 skip 这一步"
+                #   的决策，躲不掉），其余全部改成**在 GPU 上累加**，只在日志步取一次标量。
+                _finite = bool(torch.isfinite(loss))
 
                 # NaN guard: skip the step if loss is not finite (e.g. a bad sample).
-                if torch.isfinite(loss):
+                if _finite:
                     loss.backward()
                     torch.nn.utils.clip_grad_norm_(trainable_params_list, max_norm=1.0)
                     opt.step()
@@ -1347,27 +1335,33 @@ def main(args):
                 else:
                     nan_steps += 1
                     if rank == 0:
+                        # 这里必须取标量（要打出来），但只在**出问题时**才发生 -> 不在热路径
                         logger.warning(
                             f"Step {train_steps} skipped: non-finite loss "
-                            f"(diff={_v_diff:.4f}). Accumulated skips: {nan_steps}"
+                            f"(diff={float(loss_diff):.4f}). Accumulated skips: {nan_steps}"
                         )
                 # === INFRA: release the autograd graph every step, finite or not.
                 # The graph built by training_losses (DiT forward + pred_xstart) must be
                 # freed BEFORE the next forward, otherwise peak = diff_graph + aux_graph.
+                # ★ 累加器只留 `.detach()`（仍是 GPU 张量，不触发同步），
+                #   标量化推迟到日志步。见上面 `_finite` 处的说明。
+                if _finite:
+                    running_loss = running_loss + loss.detach()
+                    running_diff = running_diff + loss_diff.detach()
+                    running_repa = running_repa + loss_repa.detach()
+                    running_std_mid = running_std_mid + loss_std_mid.detach()
+                    running_skel = running_skel + loss_skel_struct.detach()
+                    # c12 逐通道拆解也改成 GPU 侧累加 (C,) 向量，日志步再分组
+                    _mse_ch = loss_dict.get("mse_ch", None) if isinstance(loss_dict, dict) else None
+                    if _mse_ch is not None and _mse_ch.shape[1] > 4:
+                        _cm = _mse_ch.mean(dim=0).detach()
+                        _acc_c12 = _cm if _acc_c12 is None else (_acc_c12 + _cm)
+                    log_steps += 1
+
                 del loss, loss_dict, loss_diff, pred_xstart_latent
                 del loss_repa, loss_std_mid, loss_x0lat, loss_skel_struct
+                _mse_ch = None
 
-                if _v_loss:
-                    running_loss += _v_loss
-                    running_diff += _v_diff
-                    running_repa += _v_repa
-                    running_std_mid += _v_stdmid
-                    running_skel += _v_skel
-                    running_c12_img += _v_c12i
-                    running_c12_canny += _v_c12c
-                    running_c12_skel += _v_c12s
-                    running_x0lat += 0
-                    log_steps += 1
                 train_steps += 1
                 
                 if train_steps % args.log_every == 0:
@@ -1377,10 +1371,11 @@ def main(args):
                     divisor = max(log_steps, 1)
                     steps_per_sec = log_steps / max(end_time - start_time, 1e-9)
                     
-                    avg_l = torch.tensor(running_loss / divisor, device=device)
-                    avg_d = torch.tensor(running_diff / divisor, device=device)
-                    avg_r = torch.tensor(running_repa / divisor, device=device)
-                    avg_std_mid = torch.tensor(running_std_mid / divisor, device=device)
+                    # 累加器已是 GPU 张量 -> 除法仍在 GPU；**只在这一次**取标量
+                    avg_l = running_loss / divisor
+                    avg_d = running_diff / divisor
+                    avg_r = running_repa / divisor
+                    avg_std_mid = running_std_mid / divisor
                     world_size = dist.get_world_size()
                     if world_size > 1:
                         dist.all_reduce(avg_l, op=dist.ReduceOp.SUM)
@@ -1394,12 +1389,20 @@ def main(args):
                         avg_l, avg_d = avg_l.item(), avg_d.item()
                         avg_r = avg_r.item()
                         avg_std_mid = avg_std_mid.item()
-                    
-                    # ref 12ch 分组 loss (逐通道 MSE, 等权目标下直接反映结构通道)
-                    avg_c12i = running_c12_img / divisor
-                    avg_c12c = running_c12_canny / divisor
-                    avg_c12s = running_c12_skel / divisor
-                    avg_skel = running_skel / divisor
+
+                    # ref 12ch 分组 loss: 从累加的 (C,) 向量里拆出 image/canny/skel 三组。
+                    # 等权目标下 Diff 即三组均值, 分组打印便于直接看到结构通道在被优化。
+                    avg_skel = (running_skel / divisor).item()
+                    avg_c12i = avg_c12c = avg_c12s = 0.0
+                    if _acc_c12 is not None:
+                        _cm = (_acc_c12 / divisor)
+                        avg_c12i = float(_cm[:4].mean())
+                        for _gi, _nm in enumerate(_aux_dirs):
+                            _gm = float(_cm[4 + 4 * _gi: 8 + 4 * _gi].mean())
+                            if 'canny' in _nm:
+                                avg_c12c = _gm
+                            elif 'skel' in _nm:
+                                avg_c12s = _gm
 
                     if rank == 0:
                         wr = args.w_repa
@@ -1459,10 +1462,13 @@ def main(args):
                                 + " ".join(f"{k}={v:.3f}" for k, v in sorted(_gn.items()))
                                 + _gate)
                     
-                    running_loss = running_diff = 0
-                    running_repa = running_x0lat = 0
-                    running_std_mid = running_skel = 0
-                    running_c12_img = running_c12_canny = running_c12_skel = 0
+                    # 重置累加器（GPU 张量用 zero_ 原地清，避免重新分配）
+                    running_loss.zero_()
+                    running_diff.zero_()
+                    running_repa.zero_()
+                    running_std_mid.zero_()
+                    running_skel.zero_()
+                    _acc_c12 = None
                     log_steps = 0
                     start_time = time()
 
