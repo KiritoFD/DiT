@@ -617,15 +617,51 @@ Steps/Sec，再决定是否切档。注意 `max-autotune` 首次编译很慢（�
 | **启动 preload** | 28,569 样本 **27s**（其中图片解码 22s）。8 小时里占 0.09%；50k 数据集约 48s。**不值得优化** |
 | **诊断 grad-norm** | 每 1000 步才跑一次 |
 
+### 8.6 ★★ 通读后发现的最大一项：H2D 拷贝**没用 `non_blocking`**
+
+`DataLoader` 一直配着 `pin_memory=True`（train.py:1015），但每步的 `.to(device)`
+**全都没传 `non_blocking=True`** —— 按 PyTorch 语义，**即使源在 pinned 内存里，
+不传这个参数就是同步拷贝**，主机线程会被阻塞直到传输完成。**pin_memory 完全白开了。**
+
+**每步传输量（batch 360）**：
+
+| 张量 | 大小 |
+|---|---|
+| **图像 `x`** 360×3×256×256×4B（float32） | **≈ 283 MB** |
+| latent / skel_latent / aux × 2 | 各 ≈ 17.7 MB |
+| `g` / `y_callig` / `y_char` | 小 |
+| **合计** | **≈ 340 MB / 步**（图像占 83%） |
+
+同步拷贝意味着主机每步被阻塞 ~340MB / ~20GB/s ≈ **17 ms**，且与 GPU 计算**不重叠**。
+
+**改动**：9 处 per-step `.to(device)` 全部加 `non_blocking=True`。
+**安全性**：源非 pinned 时 PyTorch 自动退回同步 —— **无副作用**。
+（`.float()` 跟在其后不会引入额外同步：预加载数组本就是 float32，`.float()` 是 no-op。）
+
+### 8.7 通读后补充的其它项
+
+| # | 位置 | 问题 | 处置 |
+|---|---|---|---|
+| B | `dit.py` forward | `_inj = {blk: k for ...}` **每 forward 重建 dict**，只依赖 `glyph_inject_at` | ✅ 已移到 `__init__` 预计算为 `_inj_map` |
+| C | `latent_dataset.__getitem__` | 返回 `canny` / `skeleton` 两个**恒空** key | 保留（只有 legacy 脚本读，成本可忽略） |
+| D | `latent_dataset` + `REPALoss` | 图像在 **CPU 上转 float32** 再传 → 283 MB/步。可改传 **uint8（71 MB）** 在 GPU 归一化，省 ~212 MB/步 ≈ 10 ms | **建议项**，需改 REPA 的 `x_0` 约定（跨模块），收益 4% |
+| E | `REPALoss` | `sf.float()` 把 (B,256,384) 升 fp32 ≈ 141 MB/layer | 保留（fp32 精度是刻意的，代价 ~0.05ms） |
+| F | `training_losses` | `terms["mse_ch"]` 每步 2 次归约，仅日志用 | 保留（改 GPU 累加后必须每步算） |
+| G | `flow_matching` | `model_output.float()` / `v_target.float()` 每步升 fp32 | 保留（精度需要，代价可忽略） |
+
 ### 8.5 建议顺序
 
-| 顺序 | 动作 | 预期 | 风险 |
-|---|---|---|---|
-| 1 | **8.2 循环不变量外提** | 小 | **零**（纯搬运） |
-| 2 | **8.1 把 `.item()` 移到日志步** | 几个百分点（气泡） | 低（需保留 NaN guard） |
-| 3 | 8.3 `compile_mode` A/B | 未知，可能 10%+ | 中（编译时间 / cudagraph 兼容） |
+| 顺序 | 动作 | 预期 | 风险 | 状态 |
+|---|---|---|---|---|
+| 1 | **8.6 H2D 加 `non_blocking=True`** | 最大（340 MB/步同步→异步） | **零** | ✅ 已做 |
+| 2 | **8.2 循环不变量外提** | 小 | **零** | ✅ 已做 |
+| 3 | **8.1 `.item()` 移到日志步** | 几个百分点（气泡） | 低 | ✅ 已做 |
+| 4 | **8.7B `_inj_map` 预计算** | 极小 | **零** | ✅ 已做 |
+| 5 | 8.7D 图像改 uint8 传输 | ~10 ms/步（4%） | 中（跨模块改 `x_0` 约定） | 待定 |
+| 6 | 8.3 `compile_mode` A/B | 未知，可能 10%+ | 中（编译时间 / cudagraph） | 待定 |
 
-**建议先做 1+2**（都是纯代码搬运，不改语义），然后用一次 500 步的 Steps/Sec A/B 看效果。
+**1-4 已落地**（都是纯代码搬运或加一个参数，不改语义）。
+**验证方式**：跑一次 500 步对比 Steps/Sec（12ch 基线 263 ms/步）。
 
 ## 附：未做的事
 
