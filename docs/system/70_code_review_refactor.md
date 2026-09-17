@@ -337,6 +337,93 @@ scheduler(996-1021) / 早停(1040-1164) / eval cache(1168-1202) / **训练循环
 | preload 10GB 图像的浪费（§2.3） | **用户裁定 RAM 充足，preload 可接受** → 不做 |
 | `_step_ssim_txt` 每 step 重读整个 summary CSV（O(steps²)） | 影响小（summary 行数 = step 数），留作后续 |
 
+## 7. eval 与 epoch 对齐带来的优化机会（2026-09-17）
+
+### 7.1 现状结构（实测，来自 12ch 运行日志）
+
+| 项 | 实测值 |
+|---|---|
+| 硬件 | **1 张 RTX 4090，单卡（world_size=1）** |
+| **eval 频率** | 每 **5000** 步 —— 恰等于 `epoch_steps`，**正好一个 epoch 一次** |
+| ckpt 频率 | 每 **2500** 步（= eval 的 2 倍） |
+| eval 耗时 | **39~49 s / 次** |
+| eval 跑在哪个 rank | **只在 rank 0**（单卡时即唯一 GPU） |
+| eval 输出 PNG | **0 张**（`in_mem_eval_save_samples` 已关）✓ |
+| ckpt 大小 | **592 MB / 个** → 40 次 = **23 GB / 100k 步** |
+| 跑满 100k 的 eval 总耗时 | 40 × 42 s = **28 分钟**（GPU 全被采样占用，训练停摆） |
+| eval 失败处理 | `try/except Exception: logger.warning(...)` → **被吞掉** |
+
+### 7.2 对齐带来的四个具体便利
+
+#### (a) eval 可退化成 epoch 钩子 —— 实现简化 + 失败处理集中
+既然**只**发生在 epoch 边界，就不需要在 1600 行的训练循环体里做
+`train_steps % gpu_eval_every == 0` 判断。更重要的是**失败处理能集中在一处**，
+而不是埋在循环里被 `try/except` 静默吞掉（§1.3 同类问题）。
+
+#### (b) ★ train-only 模式是「等价」的 —— 因为 **eval 点 ⊂ ckpt 点**
+- `ckpt_every=2500` **整除** `epoch_steps=5000` → 每个 eval 点都有 ckpt
+- 实测核对：eval 步 `{1000..5000, 10000, 15000, 20000, 25000, ...}` **全部**有对应 `.pt` ✓
+- `ckpt_keep=None` → 全保留
+
+**→ 事后批量 eval 不丢任何评测点，与在线 eval 完全等价。**
+
+这是"能这么干"的**前提**，而对齐正好保证了它。
+反例：若 `ckpt_every=3000` 而 eval 每 5000，则 15000 有 eval 但无 ckpt → 推迟模式直接不可用。
+
+#### (c) ★ 批量 eval 的 GPU 利用率
+| | 现在（inline） | 批量（deferred） |
+|---|---|---|
+| 作业数 | 40 次独立 job | 1 次 |
+| 每次样本数 | 60（batch 60） | 2400（batch 240） |
+| GPU 占用 | **严重欠载**（37M 小模型 + batch 60） | 接近饱和 |
+
+叠加本轮已做的 `heun_batch=False`（−23.6%）。
+
+#### (d) 训练期不再有 28 分钟的 GPU 空转
+那 28 分钟现在给的是「batch 60 的采样」，效率极低；推迟后这段时间训练继续推进。
+
+### 7.3 ★ 关键：这个模式**几乎不用写新代码**
+
+`src/eval/batch_eval.py` **已经就是**"遍历 `results_dir` 下所有 ckpt 批量评测"：
+
+- 逐 ckpt：GPU heun 采样 → VAE decode → 逐样本 MSE / SSIM / LPIPS
+- 支持 `--include-steps` 选步、`--force` 重跑
+- 输出**幂等追加**的 `eval_stdskel_batch.csv` + `eval_stdskel_summary.csv`（含 P10/Q1/med/Q3/P90）
+- 本轮已修好（切 `model_io` + `strict=True`，见 §6）
+
+**→ deferred 模式 = 关掉 `in_mem_eval` + 训练后跑 `batch_eval.py`。**
+
+### 7.4 建议加的两个开关
+
+1. **`--eval-mode {inline,deferred}`**
+   - `inline`：现状
+   - `deferred`：训练循环只存 ckpt 不 eval；训练后批量跑
+   - ⚠ **启动时加一致性断言**：`deferred` 且 `ckpt_every % epoch_steps != 0`
+     → 报警"会有 eval 点没有 ckpt，推迟模式不等价"
+
+2. **`batch_eval.py --dit-batch` 默认 50 → 240**（与 `in_mem_eval_batch` 对齐）
+   默认 50 是欠载的，直接吃掉 (c) 的收益。
+
+### 7.5 IO 侧剩余堵点（实测）
+
+| 项 | 量 | 评价 |
+|---|---|---|
+| **ckpt 同步写** | 592 MB × 40 = **23 GB / run** | ⚠ `torch.save` 在训练循环里**同步**执行。单卡时 GPU 停摆等写盘。状态**已经**被 `_state_to_cpu` 搬到 CPU → 可**改后台线程写**，把停顿从"写盘时间"降到"CPU 拷贝时间" |
+| ckpt 密度 | 2500（eval 的 2 倍） | 若只关心 eval 点，可降到 5000 → **省一半写盘（23→11.5 GB）和一半停顿**；代价是 loss 曲线回看粒度变粗 |
+| eval PNG | 0 张 | ✓ 已关 |
+| preload | 一次性 10 GB | 用户裁定可接受 |
+| 磁盘 | 1.3 T 空闲 | ✓ |
+
+### 7.6 结论
+
+**对齐是"能用推迟模式"的必要条件，而不是偶然。** 具体建议：
+
+1. 加 `--eval-mode deferred`（**复用现成的 `batch_eval.py`，代码量很小**）
+2. 启动时断言 `ckpt_every % epoch_steps == 0`
+3. `batch_eval.py --dit-batch` 默认提到 240
+4. ckpt 写盘改异步（独立小改动，收益 ~40-80 s/run + 去掉 GPU 停顿）
+5. ckpt 密度按需从 2500 降到 5000
+
 ## 附：未做的事
 
 - **未做系统性 profile**（按要求）。§2 的结论来自**代码推理 + 定点微基准**，
