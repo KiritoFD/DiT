@@ -588,7 +588,8 @@ def main(args):
     #      否则 strict=False 会静默跳过形状不匹配的 3 个张量。
     if getattr(args, 'expand_from_4ch', None):
         import torch as _torch
-        from src.utils.channel_expand import expand_ckpt_4ch_to_12ch
+        from src.utils.channel_expand import (expand_ckpt_4ch_to_12ch,
+                                              materialize_lazy_params)
         _ec = _torch.load(args.expand_from_4ch, map_location="cpu", weights_only=False)
         _n_aux = len(aux_dirs_of(args))
         if _n_aux == 0:
@@ -596,6 +597,10 @@ def main(args):
                 "[expand-4ch] 需要 --aux-latent-shards-dirs（否则目标仍是 4ch，无需扩展）")
         _ec = expand_ckpt_4ch_to_12ch(_ec, _n_aux)
         _esd = _ec.get("delta", _ec.get("model", _ec))
+        # 先把 ckpt 里的懒参数（null_embed）补出来，否则会被静默丢弃
+        _lazy = materialize_lazy_params(model, _esd)
+        if _lazy:
+            logger.info(f"[expand-4ch] 补出懒参数: {_lazy}")
         _emiss, _eunexp = model.load_state_dict(_esd, strict=False)
         logger.info(
             f"[expand-4ch] {args.expand_from_4ch} -> in_channels="
@@ -622,9 +627,21 @@ def main(args):
         # torch.compile 存盘键带 _orig_mod. 前缀 —— 不剥离则全部 missing, 模型静默随机重启
         _sd = {(k[len("_orig_mod."):] if k.startswith("_orig_mod.") else k): v
                for k, v in _sd.items()}
+        # 先把 ckpt 里的懒参数（null_embed）补出来，否则会被静默丢弃
+        _lazy = materialize_lazy_params(model, _sd)
+        if _lazy:
+            logger.info(f"[resume-full] 补出懒参数: {_lazy}")
         missing, unexpected = model.load_state_dict(_sd, strict=False)
         logger.info(f"[resume-full] Loaded weights from {args.resume_full} "
                     f"(missing={len(missing)}, unexpected={len(unexpected)}).")
+        # ★ 护栏: 若仍有 null_embed 落在 unexpected 里，说明加载顺序错了 ——
+        #   不报错的话 CFG 的 null 向量会被静默重新随机化（loss 照降，但 CFG 变味）。
+        _lost_null = [k for k in unexpected if k.endswith(".null_embed")]
+        if _lost_null:
+            logger.error(
+                f"[resume-full] ✗ {_lost_null} 未被加载 —— 这些是懒参数，"
+                f"必须在 load_state_dict **之前**创建（见 materialize_lazy_params）。"
+                f"CFG 的 null 向量会因此被重新随机化。")
 
     # ---- freeze / trainable policy --------------------------------------------
     # Two regimes:

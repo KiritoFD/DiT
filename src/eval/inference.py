@@ -29,6 +29,8 @@ from src.utils.latent_dataset import extract_img_id
 
 # img_id 提取失败只警告一次（避免 237 行刷屏）
 _ID_WARNED = [False]
+# 书家 raw id 不在 callig_id_map 里的（一次跑收集全，最后统一报错，见 make_eval_cache）
+_MISS_CALIG = []
 
 
 # ── VAE: 进程内单例 (GPU 推理进程复用) ──────────────────────────────────────
@@ -480,7 +482,17 @@ def make_eval_cache(eval_csv, img_root, skel_root, image_size, n,
         # 书家词表收紧: raw id -> 连续索引 (与训练数据层同一张映射表, 见 callig_map.py)
         _cid = int(row["calligrapher_id"])
         if callig_id_map is not None:
-            _cid = callig_id_map.get(_cid, _cid)
+            # ⚠ 原来是 `callig_id_map.get(_cid, _cid)` —— **不在词表里就退回原始 id**。
+            #   两个后果，都是静默的：
+            #     ① 原始 id >= 表大小 -> CUDA 索引越界（v13 在 step5000 就这么崩的：
+            #        eval 集里有 5 个书家（39/346/401/483/806）不在 50k 的 45 人词表里，
+            #        退回原始 id 806 -> y_callig_embedder(806) 而表只有 46 行）
+            #     ② 原始 id < 表大小 -> **静默用错书家**，不报错、指标照出
+            #   现在改成显式报错并列出所有越界 id，一次就能看全要修哪些行。
+            if _cid not in callig_id_map:
+                _MISS_CALIG.append(_cid)
+                continue
+            _cid = callig_id_map[_cid]
         conds.append((_cid, int(row.get("glyph_id", row.get("character_id", 0)))))
         # ★ 2026-09-17: img_id 走统一提取（显式列优先 + 正则锚定结尾 + 失败报错）。
         #   原来 `re.search(r"(\d+)\.png", p)` 未锚定、且失败静默给 None ->

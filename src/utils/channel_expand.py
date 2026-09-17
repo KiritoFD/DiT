@@ -88,6 +88,49 @@ def expand_state_dict_4ch_to_12ch(
     return out, expanded
 
 
+def materialize_lazy_params(model, sd: Dict[str, torch.Tensor]) -> List[str]:
+    """把 **ckpt 里有、但模型还没创建**的懒加载参数补出来，再返回补了哪些。
+
+    ## 为什么需要
+    `LabelEmbedder.null_embed` 是**懒创建**的（`dit.py` 里初始为 `None`，
+    只有 `freeze_table()` 被调用才变成 `nn.Parameter`）。
+    于是加载顺序**必须是** `freeze_table()` -> `load_state_dict()`：
+
+        freeze_table() -> load    ✓ null_embed 存在，ckpt 的值正确灌入
+        load -> freeze_table()    ✗ load 时模型没这个键 -> ckpt 的值被**静默丢弃**
+                                    -> 随后 freeze_table() 从随机权重里复制
+                                    -> **CFG 的 null 向量被重新随机化**
+
+    后者不报错、loss 正常下降，但 CFG uncond 分支整个变味 —— 典型的静默失效。
+    实测：顺序 A `missing=0 unexpected=0` 且值一致；顺序 B `unexpected=1` 且值不一致。
+
+    本函数在 load **之前**调用，把 ckpt 里出现、模型里还没有的懒参数按 ckpt 的
+    形状建出来，从而**无论调用顺序如何都不会丢**。
+
+    返回补出来的键名列表（用于日志；空列表 = 没有懒参数需要补）。
+    """
+    import torch.nn as nn
+    model_keys = set(model.state_dict().keys())
+    added = []
+    for k, v in sd.items():
+        if k in model_keys or not k.endswith(".null_embed"):
+            continue
+        # 只处理形如 `<prefix>.null_embed` 的懒参数
+        prefix = k[: -len(".null_embed")]
+        mod = model
+        ok = True
+        for part in prefix.split("."):
+            if not hasattr(mod, part):
+                ok = False
+                break
+            mod = getattr(mod, part)
+        if not ok or getattr(mod, "null_embed", "MISSING") != None:  # noqa: E711
+            continue
+        mod.null_embed = nn.Parameter(v.detach().clone().to(v.dtype))
+        added.append(k)
+    return added
+
+
 def expand_ckpt_4ch_to_12ch(ckpt: dict, n_aux_groups: int,
                             keys=("delta", "model", "ema")) -> dict:
     """就地扩展 ckpt dict 里的若干子 state_dict，返回新的 dict。
