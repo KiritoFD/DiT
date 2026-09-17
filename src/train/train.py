@@ -1,21 +1,24 @@
 import os
 os.environ["XFORMERS_DISABLED"] = "1"
 
-# ── 分配器空洞治理（2026-09-17）────────────────────────────────────────────
-# ⚠ 必须在 `import torch` **之前** —— PyTorch 在首次 CUDA 分配时读这个变量。
+# ── 分配器策略（2026-09-17）────────────────────────────────────────────────
+# ⚠ 必须在 `import torch` **之前**设置（PyTorch 在首次 CUDA 分配时读这个变量）。
 #
-# 问题：`torch.compile` 在 warmup 期间把 allocator 的**高水位**顶到远超真实活跃需求。
-#   实测 xattn @ batch240：活跃 **14.42G** / 高水位 **20.51G** → 空洞 **6.09G（42%）**。
-#   而"能否上更大 batch"取决于**高水位**而不是活跃需求 ——
-#   batch360 的活跃需求（61.5MB×360 ≈ 22.2G）其实装得下，高水位（~31G）装不下 → OOM。
+# **默认不设**，原因见下。
 #
-# 修法：`expandable_segments` 让 allocator 用可扩展段管理显存，空闲段会**归还驱动**，
-#   不再为"以后可能复用"而整块囤积 —— 直接压低高水位。
+# 曾经的尝试：`expandable_segments:True` —— 让 allocator 把空闲段**归还驱动**，
+#   以压低 `torch.compile` warmup 顶起来的高水位（实测 batch240 高水位 20.51G
+#   而活跃只需 14.42G）。
+# **为什么又关掉**：它让 `memory_reserved()` **每步都在变**（段被反复归还/重申请），
+#   日志里的 `Mem:` 一直在波动，非常难读，也干扰"哪一步真的变慢了"这类判断。
+#   而 v12 的同类配置（4ch/adaLN4/batch360）**不带它也能跑**（峰值 22.76G < 24.5G），
+#   说明它不是必需的。
 #
-# 想关掉：`PYTORCH_CUDA_ALLOC_CONF=`（置空）或改成别的策略（如
-#   `garbage_collection_threshold:0.8`）。用 setdefault 就是为了留这个后门。
-os.environ.setdefault("PYTORCH_CUDA_ALLOC_CONF", "expandable_segments:True")
-
+# 需要时显式打开即可（不改代码、不影响默认行为）：
+#   PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True python src/train/train.py ...
+#
+# 注意：**这里故意不设置该变量**。设成空字符串 PyTorch 会解析报错；
+# 设成别的值又等于强加默认。保持"不碰"才是真正的默认行为。
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
