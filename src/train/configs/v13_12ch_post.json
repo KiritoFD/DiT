@@ -36,7 +36,7 @@
   "compile": true,
   "compile_mode": "default",
   "epochs": 100000,
-  "max_steps": 30000,
+  "max_steps": 150000,
   "lr": 2e-05,
   "warmup_steps": 500,
   "min_lr_ratio": 0.1,
