@@ -40,6 +40,7 @@ from src.utils import (DistributedFactorBalancedSampler,
 from src.train.early_stop import EarlyStopper
 from src.train.cli import parse_args
 from src.train.ckpt import save_checkpoint, prune_checkpoints, drain_ckpt
+from src.eval.in_mem_eval import maybe_run_in_training
 
 # ── in-process GPU eval 路径已删除（2026-09-17）────────────────────────────
 # 它由 `--auto-eval` 门控，而**全仓 0 个配置把它设为 true**（70 个显式 false）。
@@ -1455,30 +1456,13 @@ def main(args):
                         prune_checkpoints(checkpoint_dir,
                                           int(getattr(args, 'ckpt_keep', 0)), logger)
 
-                        # ── 真·in-mem eval (可选 config 模式): 暂停 stepping, 用常驻
-                        # EMA 模型同卡采样+decode+指标一次算完, PNG 落盘, 无 daemon。
-                        # 显存: 训练 17G + eval ~2G ≈ 19.5G < 24G; 默认关。
-                        if (_EVAL_INLINE and getattr(args, 'in_mem_eval', False)
-                                and _save_ckpt):
-                            try:
-                                from src.eval.in_mem_eval import run_in_mem_eval
-                                _em = (ema_model if ema_model is not None
-                                       else (model.module if hasattr(model, 'module') else model))
-                                _em.eval()
-                                _im_t0 = time()
-                                _im_res = run_in_mem_eval(
-                                    _em, args, train_steps, device,
-                                    results_dir=str(getattr(args, 'results_dir', '')
-                                                    or os.path.dirname(os.path.dirname(checkpoint_dir))))
-                                logger.info(
-                                    f"[in-mem-eval] step {train_steps} done in {time()-_im_t0:.0f}s: "
-                                    + " | ".join(f"{k} ssim={v:.4f}" for k, v in _im_res.items()))
-                            except Exception as _ie:
-                                logger.warning(f"[in-mem-eval] step {train_steps} FAILED: {_ie}",
-                                               exc_info=True)
-
-                        # in-process GPU eval 已停用（实现见 src/eval/legacy/in_process_eval.py）。
-                        # 当前在训评测走上面的 --in-mem-eval 分支。
+                        # 在训评测：是否该跑 / 用哪份权重 / 计时 / 报错 全在 eval 模块里。
+                        # 失败只 warning 不中断训练（评测不该把训练带崩）。
+                        # 另有已停用的 in-process GPU eval 路径，见 src/eval/legacy/。
+                        maybe_run_in_training(
+                            args, ema_model, model, train_steps, device,
+                            checkpoint_dir, logger, is_eval_step=_save_ckpt,
+                            inline=_EVAL_INLINE)
 
                 if args.max_steps > 0 and train_steps >= args.max_steps:
                     logger.info(f"Reached max_steps={args.max_steps}; stopping cleanly.")

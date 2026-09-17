@@ -550,3 +550,42 @@ def run_in_mem_eval(model, args, step, device, results_dir, sets=None,
         f_raw.close()
         torch.cuda.empty_cache()
     return out
+
+
+def maybe_run_in_training(args, ema_model, model, train_steps, device,
+                          checkpoint_dir, logger, is_eval_step, inline=True):
+    """训练循环里的在训评测入口 —— 把"是否该跑 / 用哪份权重 / 计时 / 报错"都收在这里。
+
+    train.py 侧只需一行调用：
+
+        from src.eval.in_mem_eval import maybe_run_in_training
+        maybe_run_in_training(args, ema_model, model, train_steps, device,
+                              checkpoint_dir, logger, is_eval_step=_save_ckpt,
+                              inline=_EVAL_INLINE)
+
+    行为（与原内联实现完全一致）：
+      * 只有 `inline and --in-mem-eval and is_eval_step` 才跑
+      * 优先用常驻 EMA 权重（与 ckpt 落盘的是同一份），没有 EMA 就用裸模型
+      * 显存：训练 ~17G + eval ~2G ≈ 19.5G < 24G
+      * **失败只 warning 不中断训练**（评测不该把训练带崩），但会打完整 traceback
+    返回 results dict，未跑则返回 None。
+    """
+    if not (inline and getattr(args, "in_mem_eval", False) and is_eval_step):
+        return None
+    import time
+    _em = (ema_model if ema_model is not None
+           else (model.module if hasattr(model, "module") else model))
+    _em.eval()
+    t0 = time.time()
+    try:
+        res = run_in_mem_eval(
+            _em, args, train_steps, device,
+            results_dir=str(getattr(args, "results_dir", "")
+                            or os.path.dirname(os.path.dirname(checkpoint_dir))))
+        logger.info(
+            f"[in-mem-eval] step {train_steps} done in {time.time() - t0:.0f}s: "
+            + " | ".join(f"{k} ssim={v:.4f}" for k, v in res.items()))
+        return res
+    except Exception as e:                                    # noqa: BLE001
+        logger.warning(f"[in-mem-eval] step {train_steps} FAILED: {e}", exc_info=True)
+        return None
