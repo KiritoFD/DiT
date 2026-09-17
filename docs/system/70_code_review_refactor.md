@@ -423,7 +423,54 @@ scheduler(996-1021) / 早停(1040-1164) / eval cache(1168-1202) / **训练循环
 | 24 | **`batch_eval.py --dit-batch` 50 → 240** | 默认 50 在 4090 上欠载，会把批量补跑的全部收益吃掉 |
 | 25 | **ckpt 写盘改异步** | `_AsyncCkptWriter`：后台线程序列化 + 落盘，主进程交完 CPU 状态立刻继续训练；`drain()` 在训练结束/退出前 join 并报告失败 |
 | 26 | **`_state_to_cpu` 强制拷贝** | 原 `obj.detach().cpu()` 对**已在 CPU 的张量是 no-op**（共享 storage）→ 异步写会读到被训练改坏的数据。改 `.to("cpu", copy=True)`，两种情况都真复制且只复制一次 |
-| 27 | **存盘节奏统一到 epoch 边界** | 原三段 `if/elif`（前 5000 步每 1000、之后按 `ckpt_every`，实测落在 1000..5000 + 7500/12500/...，**与 eval 的 5000 边界错开**）→ 统一为 `train_steps % min(ckpt_every, epoch_steps) == 0`。顺带**去掉开头 1000/2000/3000/4000 四次存盘**（每次 592 MB） |
+| 27 | **存盘节奏统一到 epoch 边界** | 原三段 `if/elif`（前 5000 步每 1000、之后按 `ckpt_every`，实测落在 1000..5000 + 7500/12500/...，**与 eval 的 5000 边界错开**）→ 统一为 `train_steps % _epoch_steps == 0`。顺带**去掉开头 1000/2000/3000/4000 四次存盘**（每次 592 MB） |
+| 28 | ★ **`epoch_steps` 与 `ckpt_every` 合并为一个刻度** | 见 §7.8 |
+
+### 7.8 ★ 合并刻度：`epoch_steps` + `ckpt_every` → 单参数
+
+**动机**：`min(ckpt_every, epoch_steps)` 拼"实际周期"、deferred 还要断言"ckpt 周期整除
+eval 周期"、`epoch_steps==0` 的兜底链 —— 这些都是**支持两者取不同值**带来的复杂度。
+但两者**语义上本就是同一个东西**（"tick"），实测也从未取过不同值。
+
+**迁移安全性核查**（全仓 121 个配置）：
+
+| | 数量 |
+|---|---|
+| 用 `ckpt_every` | **121** |
+| 两者都配且**相等** | 6 |
+| 两者都配且**不等** | **0** |
+| 只配 `epoch_steps` | **0** |
+
+→ **保留 `ckpt_every` 作为唯一参数，零配置迁移**；`epoch_steps` 降级为兼容别名
+（配了就**必须相等**，不等直接拒绝启动）。
+
+**合并后删掉的复杂度**：
+
+| 删掉 | 原因 |
+|---|---|
+| `min(ckpt_every, epoch_steps)` 拼实际周期 | 只剩一个数，没有 min |
+| deferred 的"ckpt 周期整除 eval 周期"断言（20 行） | eval 点 == 存盘点，**恒成立** |
+| `epoch_steps==0` 的兜底链（3 行） | 唯一来源就是 `ckpt_every` |
+| 存盘条件三段 `if/elif` | → `train_steps % _epoch_steps == 0` |
+
+**现在的核心就 6 行**：
+
+```python
+_epoch_steps = int(getattr(args, 'ckpt_every', 0) or 0)   # 唯一刻度
+_es_alias = int(getattr(args, 'epoch_steps', 0) or 0)     # 兼容别名
+if _es_alias > 0:
+    if _epoch_steps == 0:
+        _epoch_steps = _es_alias
+    elif _es_alias != _epoch_steps:
+        raise SystemExit("...两者已合并为同一刻度，不再支持取不同值...")
+if _epoch_steps < 0:
+    _epoch_steps = 0
+```
+
+**`ckpt_every` 一个参数定义三件事**：
+① 每多少步存 ckpt ② epoch 长度（迭代器 reset 点）③ 评测点
+
+**验证**：8 组组合逐一核对（`5000/0→5000`、`5000/3000→拒绝`、`0/5000→5000`、`0/0→0`…）✓
 
 **验证**：
 - `_state_to_cpu` 对 CPU 张量确实产生独立副本（`data_ptr` 不同，改原张量不影响副本）✓

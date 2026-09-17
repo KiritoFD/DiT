@@ -986,49 +986,38 @@ def main(args):
             logger.info(f"[aux] target=12ch+ dirs={_aux_dirs} per-group weights={_aw}")
     else:
         dataset = MCCDDataset(csv_file=args.data_csv, root_dir=args.data_dir, image_size=args.image_size)
-    # [2026-09-16] epoch 长度 = **固定步数**(而不是"数据集一遍")。
-    # 起因: 原先 epoch = len(dataset)//batch = 119 步(~21s), 每 119 步 DataLoader
-    # 就要重建一次迭代器; 而 ckpt + in-mem eval 落在 train_steps % ckpt_every 上,
-    # 两者互不对齐 -> iterator reset 成为一份**独立**代价, Steps/Sec 出现规律锯齿。
-    # 现在把 epoch 拉到与 ckpt_every 等长: reset 点恰好落在 ckpt+eval 上, 代价被吸收,
-    # epoch 退化为"存盘/评测的刻度"。默认 0 = 自动取 ckpt_every; 显式设 0 且
-    # ckpt_every=0 时退回旧行为(epoch = 数据集一遍)。
-    _epoch_steps = int(getattr(args, 'epoch_steps', 0) or 0)
+    # ── 单一刻度: ckpt_every 同时定义 epoch 长度 / 存盘点 / 评测点 ──────────
+    # [2026-09-16] epoch 长度 = **固定步数**（而不是"数据集一遍"）。
+    #   起因: 原先 epoch = len(dataset)//batch = 119 步(~21s)，每 119 步 DataLoader
+    #   就要重建一次迭代器；而 ckpt + eval 落在 train_steps % ckpt_every 上，
+    #   两者互不对齐 -> iterator reset 成为一份**独立**代价，Steps/Sec 出现规律锯齿。
+    #
+    # ★ 2026-09-17 合并: 原先 `epoch_steps` 与 `ckpt_every` 是两个独立参数，
+    #   训练循环里还要用 `min()` 拼出"实际存盘周期"，deferred eval 还得再断言
+    #   一次"ckpt 周期整除 eval 周期"。既然**语义上它们本就该相等**（都是"tick"），
+    #   干脆合并成一个 —— 于是：
+    #     · 存盘条件退化成 `train_steps % _epoch_steps == 0`（一行）
+    #     · eval 点 == 存盘点 == epoch 边界，**恒成立**，无需任何断言
+    #     · deferred eval 的前置条件自动满足
+    #   实测: 121 个配置用 ckpt_every、6 个两者都配且**全部相等**、0 个只配 epoch_steps
+    #   -> 保留 ckpt_every 作为唯一参数，**零配置迁移**。
+    #   `epoch_steps` 降级为**兼容别名**: 配了就必须与 ckpt_every 相等，否则拒绝启动。
+    _epoch_steps = int(getattr(args, 'ckpt_every', 0) or 0)
+    _es_alias = int(getattr(args, 'epoch_steps', 0) or 0)
+    if _es_alias > 0:
+        if _epoch_steps == 0:
+            _epoch_steps = _es_alias          # 只配了 epoch_steps 的旧配置
+        elif _es_alias != _epoch_steps:
+            raise SystemExit(
+                f"[epoch] epoch_steps={_es_alias} 与 ckpt_every={_epoch_steps} 不一致。\n"
+                f"  两者已合并为**同一个刻度**（epoch 长度 = 存盘周期 = 评测周期），\n"
+                f"  不再支持取不同值。请只保留 ckpt_every，或让两者相等。")
     if _epoch_steps < 0:
-        _epoch_steps = 0          # 显式退回旧行为(epoch = 数据集一遍)
-    if _epoch_steps == 0 and int(getattr(args, 'ckpt_every', 0) or 0) > 0:
-        _epoch_steps = int(args.ckpt_every)
+        _epoch_steps = 0                      # 显式退回旧行为(epoch = 数据集一遍)
+    # ckpt_every = 0 -> 不存盘, 且 epoch 退回"数据集一遍"(旧行为)
 
-    # ── deferred eval 的一致性护栏（doc70 §7.2b）────────────────────────────
-    # deferred 模式的前提是"**每个 eval 点都有 ckpt**"。成立条件是 ckpt 周期
-    # 整除 eval 周期（eval 落在 epoch 边界上）。不满足就会有评测点永远拿不到
-    # ckpt -> 事后补跑**静默丢点**，而且是在训练跑完之后才发现。
-    # 这里在启动时就算清楚，不满足直接拒绝。
-    if str(getattr(args, 'eval_mode', 'inline')) == "deferred":
-        _ep = _epoch_steps or int(getattr(args, 'ckpt_every', 0) or 0)
-        _ck = int(getattr(args, 'ckpt_every', 0) or 0)
-        if _ep <= 0 or _ck <= 0:
-            raise SystemExit(
-                "[eval-mode] deferred 需要显式且 >0 的 epoch_steps 与 ckpt_every "
-                f"(当前 epoch_steps={_ep}, ckpt_every={_ck}) —— 否则无法保证 eval 点都有 ckpt。")
-        # ⚠ 判据要用**实际存盘周期** _period = min(ckpt_every, epoch_steps)，
-        #   而不是裸的 ckpt_every。训练循环里的存盘条件是
-        #   `train_steps % min(ckpt_every, epoch_steps) == 0`（见 §7 的简化）。
-        #   ck > ep 时实际周期被压到 ep -> 每个 eval 点天然都有 ckpt，是安全的；
-        #   直接拿 ck 判会**误报**。
-        _period_chk = min(_ck, _ep)
-        if _ep % _period_chk != 0:
-            raise SystemExit(
-                f"[eval-mode] deferred 不可用: epoch_steps={_ep} 不是实际存盘周期 "
-                f"{_period_chk}(=min(ckpt_every={_ck}, epoch_steps={_ep})) 的整数倍。\n"
-                f"  eval 落在 epoch 边界({_ep} 的倍数)，而 ckpt 每 {_period_chk} 步存一次；\n"
-                f"  这会导致部分 eval 点**没有对应 ckpt** -> 事后补跑会静默丢评测点。\n"
-                f"  修法: 让 ckpt_every 整除 epoch_steps（例如两者都设 5000），"
-                f"或改回 --eval-mode inline。")
-        logger.info(f"[eval-mode] deferred: 训练中不 eval，训练后用 "
-                    f"`python -m src.eval.batch_eval --results-dir <dir> --sets ...` 补跑 "
-                    f"(eval 每 {_ep} 步 x ckpt 每 {_ck} 步 -> 全覆盖)")
-    # deferred 模式下这两块整段跳过（见 --eval-mode 的 help）
+    # deferred 模式下两处 eval 块整段跳过（见 --eval-mode 的 help）。
+    # 注: 不再需要"ckpt 周期整除 eval 周期"的护栏 —— 合并刻度后该条件**恒成立**。
     _EVAL_INLINE = str(getattr(args, 'eval_mode', 'inline')) == "inline"
     if args.sampler == "factor_balanced":
         sampler = DistributedFactorBalancedSampler(
@@ -1708,16 +1697,10 @@ def main(args):
                 # ★ 2026-09-17 简化: 原来三段 if/elif 拼出"前 5000 步每 1000 存一次、
                 #   之后按 ckpt_every 存"的混合节奏（ckpt_every=5000 时实际落在
                 #   1000..5000 + 7500/12500/... —— 与 eval 的 5000 边界**错开**）。
-                #   现在统一成 **按 epoch 边界存**：train_steps % epoch_steps == 0。
-                #   好处（doc70 §7）:
-                #     ① ckpt 点 == eval 点 == epoch 边界，三者重合，逻辑只剩一行
-                #     ② 每个 eval 点都必有 ckpt -> 可安全使用 --eval-mode deferred
-                #     ③ 省掉开头 1000/2000/3000/4000 四次存盘（每次 592MB）
-                #   若 ckpt_every 显式配了更小的值，仍尊重它（取两者较小者）。
-                _ck = int(getattr(args, 'ckpt_every', 0) or 0)
-                _ep = int(getattr(args, 'epoch_steps', 0) or 0)
-                _period = min([x for x in (_ck, _ep) if x > 0], default=0)
-                _save_ckpt = _period > 0 and train_steps % _period == 0
+                #   现在 epoch 长度 / 存盘点 / 评测点已合并为同一个刻度
+                #   （见上面的 `_epoch_steps`），存盘条件就是一行。
+                #   顺带省掉开头 1000/2000/3000/4000 四次存盘（每次 592MB）。
+                _save_ckpt = _epoch_steps > 0 and train_steps % _epoch_steps == 0
 
                 if _save_ckpt and train_steps > 0:
                     if rank == 0:
@@ -1853,7 +1836,7 @@ def main(args):
 
                 if (getattr(args, 'early_stop', False)
                         and train_steps >= int(getattr(args, 'early_stop_min_steps', 0))
-                        and args.ckpt_every > 0
+                        and _epoch_steps > 0            # 已合并: 就是 ckpt_every
                         and train_steps % _es_check_every == 0
                         and rank == 0
                         and _early_stop_check()):
@@ -2167,9 +2150,13 @@ def main_from_cli(argv=None):
     # 刻度重合, DataLoader 迭代器 reset 的代价被 ckpt+eval 吸收, 不再每 119 步抖一次。
     # 负值 = 强制退回旧行为(epoch = 数据集一遍)。
     parser.add_argument("--epoch-steps", type=int, default=0, dest="epoch_steps",
-                        help="每个 epoch 的**步数**(每 rank)。0=自动=ckpt_every; "
-                             "-1=退回旧行为(epoch=数据集一遍)。见 "
-                             "src/utils/samplers.py:LongEpochDistributedSampler。")
+                        help="**已合并到 --ckpt-every（兼容别名，不再单独生效）**。\n"
+                             "两者语义上本就是同一个刻度: epoch 长度 = 存盘周期 = 评测周期。\n"
+                             "配了就**必须与 ckpt_every 相等**，不等直接拒绝启动；\n"
+                             "只配这一个（ckpt_every 缺省）时会被采纳。\n"
+                             "合并的好处: 存盘条件退化成一行, eval 点 == 存盘点恒成立,\n"
+                             "deferred eval 的前置条件自动满足, 不再需要任何断言。\n"
+                             "见 src/utils/samplers.py:LongEpochDistributedSampler。")
     parser.add_argument("--use-ema", type=_str_to_bool, default=False,
                         help="Maintain and evaluate a full-model exponential moving average.")
     parser.add_argument("--ema-decay", type=float, default=0.9999)
@@ -2217,7 +2204,14 @@ def main_from_cli(argv=None):
                              "Pair with freeze_char_table=false and --resume-full from a trained ckpt.")
     parser.add_argument("--num-workers", type=int, default=4)
     parser.add_argument("--log-every", type=int, default=50)
-    parser.add_argument("--ckpt-every", type=int, default=10_000)
+    parser.add_argument("--ckpt-every", type=int, default=10_000,
+                        help="**唯一刻度**（2026-09-17 合并 epoch_steps 后）:\n"
+                             "  ① 每多少步存一次 ckpt\n"
+                             "  ② epoch 长度（DataLoader 迭代器 reset 点）\n"
+                             "  ③ 评测点（in-mem / in-process eval 都挂在这个点上）\n"
+                             "三者重合的意义: reset 代价被存盘+评测吸收（不再有独立锯齿），\n"
+                             "且每个评测点必有 ckpt -> 可用 --eval-mode deferred。\n"
+                             "0 = 不存盘, 且 epoch 退回\"数据集一遍\"的旧行为。")
     parser.add_argument("--ckpt-keep", type=int, default=0,
                         help="Keep only the N most recent checkpoints (0 = keep all). "
                              "Old checkpoints and their eval_* dirs are pruned after each save.")
