@@ -338,7 +338,7 @@ def main():
         noise = th.cat(noises, 0)                          # (K, C, H, W)
         g_stack = _G.repeat(args.k, 1, 1, 1)               # 同条件, 重复 K 次
         if args.device == "cpu":
-            from src.eval.cpu_sampler import heun_sample_cpu
+            from src.utils.cpu_sampler import heun_sample_cpu
             lat = heun_sample_cpu(model, noise, cond * args.k, args.cfg,
                                   batch=args.batch, skel=g_stack,
                                   steps=args.steps, shift=float(a.get("shift", 1.0)),
@@ -393,7 +393,7 @@ def main():
     #   >> 1  风格条件有效
     #   ≈ 1   风格条件被噪声淹没(或根本没起作用) -> **假风格控制**
     if args.inter_char > 0:
-        from src.eval.cpu_sampler import heun_sample_cpu
+        from src.utils.cpu_sampler import heun_sample_cpu
         rows_csv = list(csv.DictReader(open(args.inter_csv, encoding="utf-8")))
         by_char = {}
         for r in rows_csv:

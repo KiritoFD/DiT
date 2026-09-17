@@ -12,7 +12,7 @@ import time
 import torch as th
 
 sys.path.insert(0, "/root/Workspace/xy/DiT")
-import src.eval.gpu_ablate_eval as G
+import src.eval.legacy.gpu_ablate_eval as G
 
 
 def main():

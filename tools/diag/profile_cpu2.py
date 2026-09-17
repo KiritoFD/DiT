@@ -79,7 +79,7 @@ for k in rows:
     print(f"    {k.key[:56]:56s} {k.self_cpu_time_total/1e3:7.1f} ms", flush=True)
 
 print("\n== S3' 逐 stage Heun vs heun_batch (16样本臂, 3 NFE) ==", flush=True)
-from src.eval.cpu_sampler import heun_sample_cpu
+from src.utils.cpu_sampler import heun_sample_cpu
 from src.loss import create_diffusion_or_flow
 noise = torch.randn(16, 4, 32, 32)
 conds = [(1, 100)] * 16

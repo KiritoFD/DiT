@@ -19,7 +19,7 @@ RESULTS_DIR="5script/results/s20_midcommon_s_flow_v2"
 TAG="s20"
 
 # daemon 在 src/eval/ 下（run_flow_full.sh 里写的是仓库根，路径是错的）
-DAEMON="src/eval/eval_metrics_daemon.py"
+DAEMON="src/eval/legacy/eval_metrics_daemon.py"
 
 mkdir -p "$RESULTS_DIR"
 

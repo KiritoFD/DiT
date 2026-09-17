@@ -18,7 +18,7 @@ print(f"threads={NT} batch={BATCH}", flush=True)
 
 from src.model.legacy.controlnet import load_main_model, ControlNetDiT
 from src.eval.inference import make_eval_cache, load_eval_vae
-from src.eval.cpu_sampler import heun_sample_cpu
+from src.utils.cpu_sampler import heun_sample_cpu
 
 ARCH = dict(norm_type="rms", mlp_type="swiglu", qk_norm=True, rope=True,
             rope_theta=100.0, attn_impl="sdpa")

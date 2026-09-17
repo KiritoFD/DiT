@@ -115,7 +115,7 @@ class FlowMatching:
         #     分开:    第1次 B->2B, 第2次 B ->2B  = 每步 4B 行
         #   即 batched 第 2 次里的 v1_ 是 f(x,t_i) 的**重算**(第1次已算过),
         #   纯浪费。B=8 还是小 batch(对拼批有利), 真实 eval B=240 差距应更接近 50%。
-        #   佐证: src/eval/cpu_sampler.py:8 的注释自己写了 "6B 行" ——
+        #   佐证: src/utils/cpu_sampler.py:8 的注释自己写了 "6B 行" ——
         #         CPU 侧已主动避开, GPU 侧没有。
         #   注: 两个分支**语义等价**(eval 无随机性, DiT 无 batch 依赖算子),
         #       只是 batched 更慢; 保留开关以便将来小 batch 场景复用。
