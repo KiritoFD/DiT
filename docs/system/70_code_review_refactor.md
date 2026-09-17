@@ -539,6 +539,94 @@ python -m src.eval.batch_eval --results-dir assets/results/<exp> \
     --sets seen:assets/eval_seen_v10.csv:10 strict:assets/eval_fame3_strict_clean_v9.csv:50
 ```
 
+## 8. 新一轮 infra 排查（2026-09-17，代码整理干净后）
+
+**方法**：代码阅读 + FLOPs/带宽算术推断。**未做 profile** —— 下面的量级都是估算，
+落地前建议用 `torch.profiler` 或简单的 Steps/Sec A/B 验证。
+
+### 8.0 先确定训练步有没有余量
+
+12ch 实测 **263 ms/步**（batch 360，S/2 36.5M，seq 256）。
+
+| 口径 | FLOPs/步 | @165 TFLOPS 峰值 | 实测反推 |
+|---|---|---|---|
+| naive `2NT×3`（N=全部 36.5M） | 20.2 TFLOPs | 122 ms | **47% 峰值** |
+| matmul-only（扣除 ~14M 嵌入表） | ~12 TFLOPs | 74 ms | ~28% 峰值 |
+
+→ **不是纯 compute-bound，有真实余量**。但小模型 + 短序列（256 token）本身就是低 MFU 场景，
+所以下面只列**代码层面可动的**，不去追那部分固有损耗。
+
+### 8.1 ★ 每步 5~7 次 GPU 同步，且全在 `backward()` 之前
+
+`train.py` 每步：
+
+```python
+_v_loss  = loss.item() if torch.isfinite(loss) else 0.0   # ① isfinite 的 bool 判断 = 同步
+                                                          # ② .item() = 同步
+_v_diff  = loss_diff.item()          # ③
+_v_repa  = loss_repa.item()          # ④
+_v_stdmid= loss_std_mid.item()       # ⑤
+_v_skel  = loss_skel_struct.item()   # ⑥
+_v_c12i  = float(_cm[:4].mean())     # ⑦  GPU 归约 + 取标量
+...
+loss.backward()                       # ← 这 7 次同步都在它**之前**
+```
+
+**为什么是延迟问题**：每个 `.item()` 都是**全 GPU 同步**（等所有已入队 kernel 跑完）。
+更关键的是它**打断了 CPU 的 run-ahead** —— 正常情况下 CPU 会提前把后面几十个 kernel 入队，
+让 GPU 永不空转；这 7 次同步让 CPU 每步都要停下来等，形成**流水线气泡**。
+
+**修法**：per-step 只保留 NaN guard 必需的 `isfinite`（这个同步躲不掉，但它是"要不要 skip 这一步"的决策，必须有）。
+其余累加改成**GPU 侧累加**（`running_loss += loss.detach()`），只在 `log_every` 那一步 `.item()` 一次；
+c12 拆解（`_cm[:4].mean()`）同样只在日志步算。
+
+### 8.2 ★ 循环不变量每步重做
+
+```python
+_aux_dirs   = aux_dirs_of(args)                       # 每步解析
+_aux_w_list = [float(s) for s in str(args.aux_loss_weights).split(',') ...]  # 每步解析字符串
+if not _aux_w_list: ... 3 处校验 ...                   # 每步校验
+_ch_w = torch.ones(x_latent.shape[1], device=device)   # ★ 每步在 GPU 上分配
+for _gi, _w in enumerate(_aux_w_list):
+    _ch_w[4+4*_gi : 8+4*_gi] = _w                      # ★ 每次切片赋值 = 一次 kernel launch
+```
+
+全部与 step 无关。**修法**：全部提到循环外（`_ch_w` 分配一次、校验一次）。
+
+量级：~1 次 GPU 分配 + ~2 次微小 kernel launch/步 —— 比 8.1 小，但**零风险**。
+
+### 8.3 `compile_mode: default` 可能偏保守（建议 A/B，不要盲改）
+
+`torch.compile(model, mode="default")` 是最温和档。本仓库 `vae_fast.py` 自己都用
+`max-autotune-no-cudagraphs`，说明这条经验是有的。
+
+小模型 + 短序列（256 token）对 kernel 配置尤其敏感。**建议**：同 ckpt 续跑 500 步对比
+Steps/Sec，再决定是否切档。注意 `max-autotune` 首次编译很慢（分钟级），且 cudagraphs
+对动态 shape 不友好。
+
+### 8.4 已排除的（查过，不是瓶颈）
+
+| 项 | 为什么不是 |
+|---|---|
+| **DataLoader IPC** | `num_workers=8` + `preload`，但 PyTorch 传张量走**共享内存**（只传句柄），不是管道拷贝。~300MB/批**不会**被复制 |
+| **ckpt 写盘** | 已改异步（§7.6） |
+| **eval** | 已改 `--eval-mode deferred`（§7.6） |
+| **grad clip** | `clip_grad_norm_` 2 次全参数遍历 ≈ 146MB×2 @1TB/s ≈ 0.3ms/步，可忽略 |
+| **EMA** | 已是"间隔更新 + `decay^N`"，数学等价且省 N-1 次带宽往返 |
+| **`_interp` 的临时张量** | 17.7MB×2/步，可忽略 |
+| **启动 preload** | 28,569 样本 **27s**（其中图片解码 22s）。8 小时里占 0.09%；50k 数据集约 48s。**不值得优化** |
+| **诊断 grad-norm** | 每 1000 步才跑一次 |
+
+### 8.5 建议顺序
+
+| 顺序 | 动作 | 预期 | 风险 |
+|---|---|---|---|
+| 1 | **8.2 循环不变量外提** | 小 | **零**（纯搬运） |
+| 2 | **8.1 把 `.item()` 移到日志步** | 几个百分点（气泡） | 低（需保留 NaN guard） |
+| 3 | 8.3 `compile_mode` A/B | 未知，可能 10%+ | 中（编译时间 / cudagraph 兼容） |
+
+**建议先做 1+2**（都是纯代码搬运，不改语义），然后用一次 500 步的 Steps/Sec A/B 看效果。
+
 ## 附：未做的事
 
 - **未做系统性 profile**（按要求）。§2 的结论来自**代码推理 + 定点微基准**，
