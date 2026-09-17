@@ -426,6 +426,50 @@ scheduler(996-1021) / 早停(1040-1164) / eval cache(1168-1202) / **训练循环
 | 27 | **存盘节奏统一到 epoch 边界** | 原三段 `if/elif`（前 5000 步每 1000、之后按 `ckpt_every`，实测落在 1000..5000 + 7500/12500/...，**与 eval 的 5000 边界错开**）→ 统一为 `train_steps % _epoch_steps == 0`。顺带**去掉开头 1000/2000/3000/4000 四次存盘**（每次 592 MB） |
 | 28 | ★ **`epoch_steps` 与 `ckpt_every` 合并为一个刻度** | 见 §7.8 |
 
+### 7.9 train.py 拆分：早停独立成模块
+
+`train.py` 2262 → **2274 行**（净变化小，但早停的 130 行闭包从主函数里挪走了）。
+
+| 项 | 说明 |
+|---|---|
+| 新文件 | **`src/train/early_stop.py`（201 行）** —— `EarlyStopper` 类 |
+| train.py 侧 | `_stopper = EarlyStopper(args, checkpoint_dir, logger)` + `_stopper.check()`，**6 行** |
+| 收益 | 早停状态机（best/stale/combo/min_delta/去重）从 `main()` 的闭包里独立出来，可单测 |
+
+#### ★ 拆分时发现并修掉一个静默 bug：eval 文件按**字符串**排序
+
+原实现：
+
+```python
+ev_files = sorted(glob(os.path.join(checkpoint_dir, "eval_auto_*.json")))
+last_ev = ev_files[-1]          # ← 不是最新那一次！
+```
+
+文件名是**原始步数**（`eval_auto_95000.json` / `eval_auto_100000.json`），
+字符串序下 `'9' > '1'` → **95000 排在 100000 之后**。
+
+实测：
+
+```
+字符串序最后一个: eval_auto_95000.json
+数值序最新:       eval_auto_100000.json   ← 正确
+```
+
+**后果**：跨过 10 万步后早停一直读**旧文件**，`stale` 计数与 `best` 全部失真 ——
+而且**不报错**，只是判据永远滞后。（本仓库 early_stop 默认关，所以没暴露过。）
+
+**修法**：`_latest_eval_file()` 按**数值**取最大 step。
+
+#### 过时注释清理
+
+| 清掉 | 原因 |
+|---|---|
+| 加载顺序注释里的 "inject LoRA" | LoRA 已于 2026-08-31 删除（`src/model/lora.py` 不存在） |
+| "full resume works for both LoRA and ..." | 同上 |
+| 存盘注释里的 "LoRA 的 delta-only 保存已随 ... 删除" | 同上 |
+| `auto_eval_cpu（独立 CPU 进程）` | 该文件已归档到 `src/eval/legacy/` |
+| `latent_structure.LatentSkelStructureLoss` ×2 | 路径已从 `src/utils/` 移到 **`src/train/`** |
+
 ### 7.8 ★ 合并刻度：`epoch_steps` + `ckpt_every` → 单参数
 
 **动机**：`min(ckpt_every, epoch_steps)` 拼"实际周期"、deferred 还要断言"ckpt 周期整除

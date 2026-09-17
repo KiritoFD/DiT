@@ -37,6 +37,7 @@ from src.loss import REPALoss
 from torch.utils.checkpoint import checkpoint as grad_ckpt
 from src.utils import (DistributedFactorBalancedSampler,
                        LongEpochDistributedSampler)
+from src.train.early_stop import EarlyStopper
 
 # In-process GPU eval (bf16 sampling → VAE decode → save PNGs).
 # Metrics computed by eval_ctrl_metrics_daemon.py (CPU, separate process).
@@ -253,7 +254,7 @@ def main(args):
         experiment_dir = f"{args.results_dir}/{_ts}-{_name}"
         checkpoint_dir = f"{experiment_dir}/checkpoints"
         os.makedirs(checkpoint_dir, exist_ok=True)
-        # 供 auto_eval_cpu（独立 CPU 进程）定位当前活动实验的 ckpt 目录。
+        # 供外部 CPU 评测进程定位当前活动实验的 ckpt 目录。
         with open(f"{args.results_dir}/_active_ckpt_dir.txt", "w", encoding="utf-8") as _m:
             _m.write(checkpoint_dir + "\n")
         # log.txt lives inside this experiment dir (created first), never overwritten.
@@ -573,9 +574,8 @@ def main(args):
         logger.warning(f"[dino-init] char_dino_embeddings/index not found "
                        f"({_dino_emb_path!r}, {_dino_idx_path!r}) — y_char_embedder stays random init.")
 
-    # Load order (fixed): pretrained body -> reset cond head -> inject LoRA -> load delta.
-    # The checkpoint `delta` contains only the "changed" part (LoRA + condition head +
-    # adaLN/final_layer), so the frozen pretrained body is ALWAYS loaded from disk first.
+    # 加载顺序(固定): 预训练主干 -> 重置条件调制层 -> 加载 delta。
+    # ckpt 里的 `delta` 是**完整** state_dict（LoRA 的 delta-only 保存已于 2026-08-31 删除）。
     _resume_full_ckpt = None
 
     # 1) pretrained body (shared, not stored per-ckpt)
@@ -616,7 +616,7 @@ def main(args):
                     "transformer engine, drop ImageNet class-condition coupling).")
 
 
-    # 3) full resume works for both LoRA and full-from-scratch checkpoints.
+    # 3) 完整 resume（从零训练与续跑共用同一条路径）。
     if getattr(args, 'resume_full', None) is not None:
         import torch as _torch
         _rf = _torch.load(args.resume_full, map_location="cpu", weights_only=False)
@@ -830,7 +830,7 @@ def main(args):
                     f"cache={'yes' if _feature_cache is not None else 'no'})")
 
     # ---- 实例骨架结构 loss: 冻结 probe (新增可训练参数 0) ----
-    # 形态对比见 latent_structure.LatentSkelStructureLoss 的 docstring。
+    # 形态对比见 src/train/latent_structure.py:LatentSkelStructureLoss 的 docstring。
     # target = batch['skel_latent'], **必须指向实例骨架**; 若指到标准字形就是纯重复 g, 必败。
     _skel_struct_loss_fn = None
     _SKEL_STRUCT_WARNED = False
@@ -1138,131 +1138,11 @@ def main(args):
     current_ema_decay = args.ema_decay
     start_time = time()
 
-    # ---- 早停状态 (基于 CPU eval 的 eval_auto_*.json mse/ssim/skel_iou) ----
-    early_stop_best = None      # 最佳 metric 值 (ssim 越大越好 / mse 越小越好)
-    early_stop_stale = 0        # 连续未改善的 eval 次数
-    early_stop_last_eval_step = -1
+    # ---- 早停 (实现见 src/train/early_stop.py) ----
+    # 判据来自 ckpt 目录下评测写出的 eval_auto_<step>.json。
+    _stopper = EarlyStopper(args, checkpoint_dir, logger)
     early_stop_stopped = False
-    _es_metric = getattr(args, 'early_stop_metric', 'ssim')
-    _es_better = ((lambda a, b: a > b) if _es_metric in ('ssim', 'combo', 'ssim_lpips')
-                  else (lambda a, b: a < b))
-    _es_higher_better = _es_metric in ('ssim', 'combo', 'ssim_lpips')
-    # min_delta：只有超过 best ± min_delta 才算"真改善"。
-    # 默认阈值按各指标的经验噪声量级选取（ssim/skel_iou 都是 0~1 量级，
-    # mse 的量级随数据分布变化，默认不设阈值，需要时再显式配置）。
-    _es_delta = {
-        'ssim': float(getattr(args, 'early_stop_min_delta', 0.002)),
-        'skel_iou': float(getattr(args, 'early_stop_min_delta_iou', 0.005)),
-        'lpips': float(getattr(args, 'early_stop_min_delta_lpips', 0.003)),
-        'mse': float(getattr(args, 'early_stop_min_delta_mse', 0.0)),
-    }
-    logger.info(f"[early-stop] metric={_es_metric}, patience="
-                f"{getattr(args, 'early_stop_patience', 5)}, min_delta={_es_delta}")
-    # 多指标组合（双保险）: 各自追踪 best/stale, **全部** stale 才停。
-    # 用 (key, higher_better) 描述，因此天然支持方向混合
-    #   - 'combo'      : ssim↑ + skel_iou↑   (skel_iou 已被证实不敏感，不推荐)
-    #   - 'ssim_lpips' : ssim↑ + lpips↓      (推荐：像素结构 + 感知距离互补)
-    _ES_SPECS = {
-        'combo': (('ssim', True), ('skel_iou', True)),
-        'ssim_lpips': (('ssim', True), ('lpips', False)),
-    }
-    _es_spec = _ES_SPECS.get(_es_metric)
-    _es_combo_best = {k: None for k, _ in (_es_spec or ())}
-    _es_combo_stale = {k: 0 for k, _ in (_es_spec or ())}
-    _es_check_every = int(getattr(args, 'early_stop_check_every', 0))
-    if _es_check_every <= 0:
-        _es_check_every = max(int(getattr(args, 'ckpt_every', 5000)) // 2, 1000)
-
-    def _early_stop_check(force=False):
-        """读 ckpt 目录最新 eval_auto json, 更新 best/stale; 达到 patience 返回 True 表示停。
-        combo 模式: ssim 和 skel_iou 都要连续 stale >= patience 才停 (双保险)。"""
-        nonlocal early_stop_best, early_stop_stale, early_stop_last_eval_step
-        if not getattr(args, 'early_stop', False):
-            return False
-        ev_files = sorted(glob(os.path.join(checkpoint_dir, "eval_auto_*.json")))
-        if not ev_files:
-            return False
-        last_ev = ev_files[-1]
-        ev_step = int(os.path.basename(last_ev).replace("eval_auto_", "").replace(".json", ""))
-        if ev_step <= early_stop_last_eval_step:
-            return False
-        early_stop_last_eval_step = ev_step
-        try:
-            with open(last_ev, "r", encoding="utf-8") as _f:
-                d = json.load(_f)
-            m, s = d.get("mse"), d.get("ssim")
-            k = d.get("skel_iou")
-            lp = d.get("lpips")
-            if _es_metric == 'ssim_lpips':
-                # lpips 是"越低越好"，这里取负号统一成"越大越好"，
-                # 从而复用下面 (key, higher_better=True) 的通用比较逻辑。
-                val = (float(s), -float(lp)) if s is not None and lp is not None else None
-            elif _es_metric == 'combo':
-                val = (float(s), float(k)) if s is not None and k is not None else None
-            elif _es_metric == 'ssim':
-                val = float(s) if s is not None else None
-            else:
-                val = float(m) if m is not None else None
-        except Exception:
-            return False
-        if val is None:
-            return False
-
-        if _es_spec is not None:
-            # 双保险: 每个指标各自追踪新鲜度 (任一刚创新高则整体 stale 清零)
-            # min_delta: 只有超过 best + min_delta 才算"真改善"，否则指标噪声
-            # （ssim 在 256² 二值字形上对笔画粗细/亚像素位移极敏感）会不停
-            # 重置 stale 计数器，让早停实际上由噪声驱动。
-            #
-            # 注意 val 里的 lpips 已取负号，故下面对 y_v 的显示要还原。
-            improved = False
-            for (key, _hi), v in zip(_es_spec, val):
-                b = _es_combo_best[key]
-                dlt = _es_delta.get(key, 0.0)
-                if b is None or v > b + dlt:
-                    _es_combo_best[key] = v
-                    _es_combo_stale[key] = 0
-                    improved = True
-                else:
-                    _es_combo_stale[key] += 1
-            # 显示：把取过负号的还原成原值
-            shown = ", ".join(
-                f"{k}={(-v if k == 'lpips' else v):.4f}" for (k, _), v in zip(_es_spec, val))
-            best_shown = ", ".join(
-                f"best_{k}={(-_es_combo_best[k] if k == 'lpips' else _es_combo_best[k]):.4f}"
-                for k, _ in _es_spec)
-            if improved:
-                early_stop_stale = 0
-                logger.info(f"[early-stop] eval step {ev_step}: {_es_metric} {shown} "
-                            f"-> NEW BEST ({best_shown})")
-            else:
-                early_stop_stale += 1
-                logger.info(f"[early-stop] eval step {ev_step}: {_es_metric} {shown} "
-                            f"({best_shown}, stale {early_stop_stale}/"
-                            f"{args.early_stop_patience})")
-                if early_stop_stale >= int(getattr(args, 'early_stop_patience', 5)):
-                    logger.info(f"[early-stop] {_es_metric} no improvement for "
-                                f"{early_stop_stale} evals; early stopping.")
-                    return True
-            return False
-
-        _es_d = _es_delta.get(_es_metric, 0.0)
-        if early_stop_best is None or (
-                (val > early_stop_best + _es_d) if _es_higher_better else
-                (val < early_stop_best - _es_d)):
-            early_stop_best = val
-            early_stop_stale = 0
-            logger.info(f"[early-stop] eval step {ev_step}: {_es_metric}={val:.4f} (new best)")
-        else:
-            early_stop_stale += 1
-            logger.info(f"[early-stop] eval step {ev_step}: {_es_metric}={val:.4f} "
-                        f"(best {early_stop_best:.4f}, stale {early_stop_stale}/"
-                        f"{args.early_stop_patience})")
-            if early_stop_stale >= int(getattr(args, 'early_stop_patience', 5)):
-                logger.info(f"[early-stop] {_es_metric} no improvement for "
-                            f"{early_stop_stale} evals; early stopping.")
-                return True
-        return False
+    _es_check_every = _stopper.check_every
 
     logger.info(f"Training for {args.epochs} epochs...")
 
@@ -1503,7 +1383,7 @@ def main(args):
                                              img_ids=_img_ids)
 
                 # ---- 实例骨架结构 loss (辅助, 冻结 probe, 零可训练参数) ----
-                # 见 latent_structure.LatentSkelStructureLoss 的 docstring:
+                # 见 src/train/latent_structure.py:LatentSkelStructureLoss 的 docstring:
                 # 与 12ch 的区别是"不在扩散目标里" —— 4ch 主干 / CFG 作用域 / 推理成本
                 # 全部不受影响, 新增可训练参数 0(当前主要矛盾是过拟合, 这是决定性优势)。
                 # target = batch['skel_latent'] **必须是实例骨架**; 若指到标准字形就是纯重复 g。
@@ -1705,8 +1585,7 @@ def main(args):
                 if _save_ckpt and train_steps > 0:
                     if rank == 0:
                         model_to_save = model.module if hasattr(model, 'module') else model
-                        # 始终保存完整 state_dict（LoRA 的 delta-only 保存已随
-                        # src/model/lora.py 于 2026-08-31 删除）。
+                        # 始终保存完整 state_dict（不做 delta-only）。
                         delta = model_to_save.state_dict()
                         # Move tensors to CPU before serialize so torch.save never
                         # allocates extra GPU memory (avoids save-time VRAM spikes).
@@ -1834,12 +1713,10 @@ def main(args):
                     logger.info(f"Reached max_steps={args.max_steps}; stopping cleanly.")
                     break
 
-                if (getattr(args, 'early_stop', False)
-                        and train_steps >= int(getattr(args, 'early_stop_min_steps', 0))
-                        and _epoch_steps > 0            # 已合并: 就是 ckpt_every
+                if (train_steps >= int(getattr(args, 'early_stop_min_steps', 0))
                         and train_steps % _es_check_every == 0
                         and rank == 0
-                        and _early_stop_check()):
+                        and _stopper.check()):      # 内部已判 early_stop 开关
                     early_stop_stopped = True
                     break
         except Exception as e:
