@@ -41,12 +41,11 @@ from src.train.early_stop import EarlyStopper
 from src.train.cli import parse_args
 from src.train.ckpt import save_checkpoint, prune_checkpoints, drain_ckpt
 
-# In-process GPU eval 路径已停用（2026-09-17）。
+# ── in-process GPU eval 路径已删除（2026-09-17）────────────────────────────
 # 它由 `--auto-eval` 门控，而**全仓 0 个配置把它设为 true**（70 个显式 false）。
-# 实现已归档到 src/eval/legacy/in_process_eval.py；当前在训评测统一走
-# `--in-mem-eval`（src/eval/in_mem_eval.py）。
-# 置 False 后下面所有 `_HAS_IN_PROCESS_EVAL` 分支都是死代码，不再执行。
-_HAS_IN_PROCESS_EVAL = False
+# 实现归档到 src/eval/legacy/in_process_eval.py。
+# 当前在训评测统一走 `--in-mem-eval`（src/eval/in_mem_eval.py），
+# 事后批量补跑走 `--eval-mode deferred` + `python -m src.eval.batch_eval`。
 
 
 
@@ -1045,41 +1044,8 @@ def main(args):
 
     logger.info(f"Training for {args.epochs} epochs...")
 
-    # ── In-process GPU eval setup ──────────────────────────────────────────────
-    _eval_cache = None
-    _eval_show5_cache = None
-    _eval_seen5_cache = None
-    if _HAS_IN_PROCESS_EVAL and getattr(args, 'auto_eval', False) and rank == 0:
-        _eval_csv = getattr(args, 'eval_csv', None)
-        if _eval_csv and os.path.exists(_eval_csv):
-            _eval_n = int(getattr(args, 'eval_n', 100))
-            _vae_ds = int(getattr(args, 'vae_downscale', 4))
-            _vae_lc = int(getattr(args, 'latent_channels', 4))
-            _vae_sf = float(getattr(args, 'vae_scaling_factor', 0.18215))
-            _img_root = getattr(args, 'img_root', '') or getattr(args, 'data_dir', '') or ''
-            # 训练侧若启用标准字形条件，eval 必须同步喂 g，否则条件域不匹配：
-            # 模型训练时依赖 g，eval 却拿到全零 → 表现为「该条件无效」的假象。
-            _use_glyph = bool(getattr(args, 'use_glyph_cond', False))
-            if bool(getattr(args, 'w_glyph_cond', False)) and not _use_glyph:
-                _use_glyph = True       # w_glyph_cond 是同一个条件的别名
-            if _use_glyph:
-                logger.info("[glyph-cond] eval 侧同步启用标准字形条件 g")
-            _eval_cache = prepare_eval_cache(
-                _eval_csv, _img_root, args.image_size, _eval_n,
-                _vae_ds, _vae_lc, _vae_sf, use_glyph_cond=_use_glyph)
-            _show5_csv = getattr(args, 'show5_csv', None)
-            if _show5_csv and os.path.exists(_show5_csv):
-                _eval_show5_cache = prepare_small_cache(
-                    _show5_csv, _img_root, args.image_size, _vae_ds, _vae_lc)
-            _seen5_csv = getattr(args, 'seen5_csv', None)
-            if _seen5_csv and os.path.exists(_seen5_csv):
-                _eval_seen5_cache = prepare_small_cache(
-                    _seen5_csv, _img_root, args.image_size, _vae_ds, _vae_lc)
-            logger.info(f"[auto-eval] cache ready: eval_n={_eval_n}, "
-                        f"show5={'yes' if _eval_show5_cache else 'no'}, "
-                        f"seen5={'yes' if _eval_seen5_cache else 'no'}")
-        else:
-            logger.warning(f"[auto-eval] eval_csv not found ({_eval_csv!r}); auto-eval disabled")
+    # in-process GPU eval 已停用（见文件顶部 `_HAS_IN_PROCESS_EVAL` 的说明）。
+    # 当前在训评测走 `--in-mem-eval`，实现与缓存都在 src/eval/in_mem_eval.py。
 
     for epoch in range(_epochs_needed):
         sampler.set_epoch(epoch)
@@ -1511,64 +1477,8 @@ def main(args):
                                 logger.warning(f"[in-mem-eval] step {train_steps} FAILED: {_ie}",
                                                exc_info=True)
 
-                        # ── In-process GPU eval: bf16 DDIM → VAE decode → save PNGs ──
-                        # GPU-only (~40s for 455 imgs at batch=48). CPU metrics
-                        # computed by eval_metrics_daemon.py (separate process).
-                        if (_EVAL_INLINE and _HAS_IN_PROCESS_EVAL
-                                and _eval_cache is not None
-                                and ema_model is not None
-                                and _save_ckpt):
-                            try:
-                                _eval_bs = int(getattr(args, 'eval_batch', 240))
-                                _eval_vae_bs = int(getattr(args, 'eval_vae_batch', 32))
-                                _eval_steps = int(getattr(args, 'eval_steps', 50))
-                                _eval_cfg = float(getattr(args, 'eval_cfg', 4.0))
-                                _eval_t0 = time()
-                                # Swap to EMA weights for eval.
-                                # 注意：必须用 try/finally 保证任何异常路径都能把训练权重
-                                # 还回去。旧实现只在 except 里调了 model.train()，
-                                # 一旦 eval 抛异常，训练会从 EMA 权重继续跑，而 Adam 的
-                                # 一/二阶矩仍对应旧权重 —— 静默的 training corruption。
-                                _orig_sd = {k: v.clone() for k, v in model.state_dict().items()}
-                                try:
-                                    _m = model.module if hasattr(model, 'module') else model
-                                    _m.load_state_dict(ema_model.state_dict(), strict=False)
-                                    model.eval()
-
-                                    run_gpu_eval(
-                                        _m, args, _eval_cache, train_steps,
-                                        checkpoint_dir, device,
-                                        dit_batch=_eval_bs,
-                                        vae_batch=_eval_vae_bs,
-                                        ddim_steps=_eval_steps,
-                                        cfg_scale=_eval_cfg)
-
-                                    if _eval_show5_cache is not None:
-                                        run_show5(_m, args, _eval_show5_cache, train_steps,
-                                                 checkpoint_dir, device,
-                                                 ddim_steps=_eval_steps, cfg_scale=_eval_cfg,
-                                                 tag="show5")
-                                    if _eval_seen5_cache is not None:
-                                        run_show5(_m, args, _eval_seen5_cache, train_steps,
-                                                 checkpoint_dir, device,
-                                                 ddim_steps=_eval_steps, cfg_scale=_eval_cfg,
-                                                 tag="seen5")
-
-                                    logger.info(
-                                        f"[auto-eval] step {train_steps} eval done in "
-                                        f"{time()-_eval_t0:.1f}s (GPU inference + PNG save; "
-                                        f"metrics by CPU daemon)")
-                                finally:
-                                    # 无论成功/失败/异常，都无条件恢复训练权重并释放备份，
-                                    # 否则 eval 失败会静默污染后续训练，且显存持续泄漏。
-                                    _m2 = model.module if hasattr(model, 'module') else model
-                                    _m2.load_state_dict(_orig_sd, strict=False)
-                                    model.train()
-                                    del _orig_sd
-                                    torch.cuda.empty_cache()
-                            except Exception as _ee:
-                                logger.warning(f"[auto-eval] step {train_steps} FAILED: {_ee}",
-                                               exc_info=True)
+                        # in-process GPU eval 已停用（实现见 src/eval/legacy/in_process_eval.py）。
+                        # 当前在训评测走上面的 --in-mem-eval 分支。
 
                 if args.max_steps > 0 and train_steps >= args.max_steps:
                     logger.info(f"Reached max_steps={args.max_steps}; stopping cleanly.")
