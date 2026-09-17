@@ -583,8 +583,38 @@ def main(args):
                     "transformer engine, drop ImageNet class-condition coupling).")
 
 
+    # 2.5) 4ch -> 12ch 通道扩展（12ch 后训练）。
+    #      ⚠ 必须在 --resume-full **之前**跑，且这里载入的权重优先 ——
+    #      否则 strict=False 会静默跳过形状不匹配的 3 个张量。
+    if getattr(args, 'expand_from_4ch', None):
+        import torch as _torch
+        from src.utils.channel_expand import expand_ckpt_4ch_to_12ch
+        _ec = _torch.load(args.expand_from_4ch, map_location="cpu", weights_only=False)
+        _n_aux = len(aux_dirs_of(args))
+        if _n_aux == 0:
+            raise SystemExit(
+                "[expand-4ch] 需要 --aux-latent-shards-dirs（否则目标仍是 4ch，无需扩展）")
+        _ec = expand_ckpt_4ch_to_12ch(_ec, _n_aux)
+        _esd = _ec.get("delta", _ec.get("model", _ec))
+        _emiss, _eunexp = model.load_state_dict(_esd, strict=False)
+        logger.info(
+            f"[expand-4ch] {args.expand_from_4ch} -> in_channels="
+            f"{4 + 4 * _n_aux} (aux 组={_n_aux})；"
+            f"扩展张量 {_ec.get('_expand_report', {})}；"
+            f"missing={len(_emiss)} unexpected={len(_eunexp)}")
+        if _emiss or _eunexp:
+            # 扩展后仍有缺失/多余 = 说明 4ch 与 12ch 的差异不止那 3 个张量，
+            # 或前缀剥离不对 —— 这种必须报出来，不能静默继续。
+            logger.warning(f"[expand-4ch] 扩展后仍有 missing={_emiss[:6]} "
+                           f"unexpected={_eunexp[:6]} —— 请核对")
+        # 优化器状态与参数形状绑定，不复用（expand_ckpt 已 pop 掉 opt）
+        _resume_full_ckpt = None
+        if getattr(args, 'resume_full', None):
+            logger.warning("[expand-4ch] 已忽略 --resume-full 的模型权重（通道扩展优先）")
+
     # 3) 完整 resume（从零训练与续跑共用同一条路径）。
-    if getattr(args, 'resume_full', None) is not None:
+    if (getattr(args, 'resume_full', None) is not None
+            and not getattr(args, 'expand_from_4ch', None)):
         import torch as _torch
         _rf = _torch.load(args.resume_full, map_location="cpu", weights_only=False)
         _resume_full_ckpt = _rf

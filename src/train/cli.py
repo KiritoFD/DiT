@@ -515,6 +515,15 @@ def build_parser():
                              "warmup 期间 allocator 囤积的显存空洞。0 = 关闭。"
                              "实测可回收 ~6G（高水位 20.51G -> 14.42G），"
                              "是把 batch 从 240 提到 360 的前提。")
+    # ── 4ch -> 12ch 后训练（2026-09-17）───────────────────────────────────
+    # 用 4ch 预训练的 ckpt 起 12ch 训练。**不能用 --resume-full** ——
+    # 它走 strict=False，形状不匹配的 3 个张量会被静默跳过、停在随机初始化。
+    # 这里显式做通道扩展：预训练权重拷进前 4 通道/行，新通道**零初始化**。
+    # 实测逐位无损（第 0 步 12ch 模型在前 4 通道上输出与 4ch 完全相同）。
+    parser.add_argument("--expand-from-4ch", type=str, default="", dest="expand_from_4ch",
+                        help="4ch 预训练 ckpt 路径。设了就做通道扩展（4 -> 4+4*n_aux），"
+                             "并**忽略 --resume-full 的模型权重**（优化器状态也不复用，"
+                             "因为与参数形状绑定）。见 src/utils/channel_expand.py。")
     parser.add_argument("--repa-cache-dir", type=str, default="", dest="repa_cache_dir",
                         help="Dir with pre-extracted DINOv2 teacher features (feats.f16 + ids.npy, "
                              "built by tools/build_dino_cache.py). Hits skip the per-step DINO "
