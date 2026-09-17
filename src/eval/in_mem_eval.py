@@ -49,11 +49,23 @@ _WHITE_LAT_CACHE = {}       # 白底 latent (aux_zero_white 时 decode 前加回
 # in-mem eval 与训练同进程同卡, 走 CPU 可避免任何显存争用。
 _LPIPS_FN = None
 _LPIPS_LOADED = False
+# ★ 2026-09-17: 记录**为什么**不可用，并在 summary 里醒目打印。
+#   原行为: 失败只 print 一行 `lpips 列将留空`，然后 summary 里该列就是空的 ——
+#   在几百行日志里极易漏看，而 LPIPS 正是用来区分"容量够不够"与"ssim 饱和"的
+#   关键指标（doc62 §3）。**静默缺失等于丢掉了本次实验的主要结论依据。**
+_LPIPS_FAIL_REASON = None
+
+
+def lpips_status():
+    """返回 LPIPS 的可用性描述（供 summary 打印）。"""
+    if _LPIPS_FN is not None:
+        return "ok"
+    return f"UNAVAILABLE ({_LPIPS_FAIL_REASON})" if _LPIPS_FAIL_REASON else "not-requested"
 
 
 def _get_lpips():
-    """惰性加载 LPIPS(vgg) 到 CPU。不可用则返回 None (指标留空, 不致命)。"""
-    global _LPIPS_FN, _LPIPS_LOADED
+    """惰性加载 LPIPS(vgg) 到 CPU。不可用返回 None，但**原因会被记录并醒目上报**。"""
+    global _LPIPS_FN, _LPIPS_LOADED, _LPIPS_FAIL_REASON
     if _LPIPS_LOADED:
         return _LPIPS_FN
     _LPIPS_LOADED = True
@@ -65,8 +77,16 @@ def _get_lpips():
             p.requires_grad_(False)
         print("[in-mem-eval] LPIPS(vgg) loaded on CPU")
     except Exception as _e:                                    # noqa: BLE001
-        print(f"[in-mem-eval] LPIPS unavailable ({_e!r}); lpips 列将留空")
+        import traceback
+        _LPIPS_FAIL_REASON = f"{type(_e).__name__}: {_e}"
         _LPIPS_FN = None
+        print("=" * 70)
+        print(f"[in-mem-eval] ⚠⚠ LPIPS 不可用 —— **lpips 列将全部为空**")
+        print(f"    原因: {_LPIPS_FAIL_REASON}")
+        print(f"    修法: pip install lpips  (或用 --in-mem-eval-lpips 0 显式关闭)")
+        print(f"    影响: 本次实验将**无法判断容量是否饱和**(ssim 会饱和, LPIPS 不会)")
+        print("=" * 70)
+        traceback.print_exc()
     return _LPIPS_FN
 
 
@@ -102,10 +122,28 @@ def _get_vae(device, vae_path="data/pretrained/sd-vae-ft-ema"):
 
 
 def _get_callig_map(path):
+    """加载书家 id 映射表。
+
+    ★ 2026-09-17: 原来 `if path and os.path.exists(path)` —— **路径不存在就静默返回 None**，
+    调用方拿到 None 后不映射也不报错 -> 评测用**原始 id** 查书家表，
+    与训练侧（用映射后的连续索引）**不是同一张表** -> 书家条件静默错位，
+    而 ssim 照样算得出来（见 docs/system/70 §1.3）。
+
+    现在: 配了路径但不存在 -> **直接抛错**；没配 -> 返回 None（合法，走原始 id）。
+    """
     global _CMAP
-    if _CMAP is None and path and os.path.exists(path):
-        from src.utils.callig_map import load_callig_id_map
-        _CMAP, _ = load_callig_id_map(path)
+    if _CMAP is not None:
+        return _CMAP
+    if not path:
+        return None
+    if not os.path.exists(path):
+        raise FileNotFoundError(
+            f"callig_id_map 配了但不存在: {path!r}。\n"
+            f"  若继续跑, 评测会用**原始书家 id** 而训练用的是映射后的连续索引 -> "
+            f"书家条件静默错位。请修正路径, 或显式清空 callig_id_map 表示走原始 id。")
+    from src.utils.callig_map import load_callig_id_map
+    _CMAP, _ = load_callig_id_map(path)
+    print(f"[in-mem-eval] callig_id_map loaded: {path}")
     return _CMAP
 
 

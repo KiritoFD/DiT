@@ -348,66 +348,25 @@ def decode_and_save(vae, latents, scaling_factor, out_dir, tag, conds=None,
     return n_saved
 
 
-# ── CPU 指标 (从图片 PNG 计算, 与 eval_ctrl_metrics_daemon 约定一致) ────────
+# ── CPU 指标 ────────────────────────────────────────────────────────────────
+# ★ 2026-09-17: 实现已统一到 src/eval/metrics.py（仓库里曾有 14 份 SSIM / 8 份
+#   skel_iou / 4 份 MSE 的复制粘贴，且 win 与输入约定不一致 -> 数字不可比）。
+#   这里保留 `_mse` / `_ssim` / `_skel_iou` 三个名字做**向后兼容的再导出**，
+#   所有既有调用点无需改动。口径与历史主评测路径完全一致（win=11 高斯窗）。
+from src.eval.metrics import mse as _mse_impl, ssim as _ssim_impl, \
+    skel_iou as _skel_iou_impl
+
+
 def _mse(pred, gt):
-    return float(np.mean((pred - gt) ** 2)) * 4.0
+    return _mse_impl(pred, gt)
 
 
 def _ssim(pred, gt, win=11, data_range=1.0, sigma=1.5):
-    from scipy.ndimage import correlate1d
-    radius = win // 2
-    x_k = np.arange(-radius, radius + 1, dtype=np.float64)
-    k1d = np.exp(-(x_k ** 2) / (2 * sigma ** 2))
-    k1d /= k1d.sum()
-    c1 = (0.01 * data_range) ** 2
-    c2 = (0.03 * data_range) ** 2
-    ssims = []
-    for ch in range(pred.shape[2]):
-        x = pred[:, :, ch].astype(np.float64)
-        y = gt[:, :, ch].astype(np.float64)
-        def _g(img):
-            return correlate1d(correlate1d(img, k1d, axis=0, mode='reflect'),
-                               k1d, axis=1, mode='reflect')
-        mu_x = _g(x); mu_y = _g(y)
-        mu_x2, mu_y2, mu_xy = mu_x ** 2, mu_y ** 2, mu_x * mu_y
-        sx2 = _g(x * x) - mu_x2
-        sy2 = _g(y * y) - mu_y2
-        sxy = _g(x * y) - mu_xy
-        ssim_map = ((2 * mu_xy + c1) * (2 * sxy + c2)) / \
-                   ((mu_x2 + mu_y2 + c1) * (sx2 + sy2 + c2))
-        ssims.append(ssim_map.mean())
-    return float(np.mean(ssims))
+    return _ssim_impl(pred, gt, win=win, data_range=data_range, sigma=sigma)
 
 
 def _skel_iou(pred, gt, thresh=0.5):
-    try:
-        from skimage.morphology import skeletonize
-    except ImportError:
-        from scipy.ndimage import binary_erosion, generate_binary_structure
-        def skeletonize(binary):
-            skel = np.zeros_like(binary)
-            img = binary.copy()
-            struct = generate_binary_structure(2, 2)
-            while img.any():
-                eroded = binary_erosion(img, structure=struct)
-                skel |= img & ~eroded
-                img = eroded
-            return skel
-    # 兼容单张 (H,W,3) 与 batch (N,H,W,3) 两种输入
-    if pred.ndim == 3:
-        pred = pred[None]
-        gt = gt[None]
-    g1 = pred.mean(axis=3); g2 = gt.mean(axis=3)
-    b1 = g1 < thresh; b2 = g2 < thresh
-    inter_sum = union_sum = 0.0
-    for k in range(pred.shape[0]):
-        if not b1[k].any() and not b2[k].any():
-            inter_sum += 1.0; union_sum += 1.0; continue
-        if not b1[k].any() or not b2[k].any():
-            union_sum += 1.0; continue
-        s1 = skeletonize(b1[k]); s2 = skeletonize(b2[k])
-        inter_sum += float((s1 & s2).sum()); union_sum += float((s1 | s2).sum())
-    return inter_sum / union_sum if union_sum > 0 else 1.0
+    return _skel_iou_impl(pred, gt, thresh=thresh)
 
 
 _lpips_fn = None
@@ -547,8 +506,22 @@ def make_eval_cache(eval_csv, img_root, skel_root, image_size, n,
     g = torch.Generator().manual_seed(0)
     noise = torch.randn(n, latent_channels, latent_spatial, latent_spatial, generator=g)
     if skels_latent is not None and missing_skel:
-        print(f"[eval-cache] WARNING: {missing_skel}/{n} samples missing skel latent in "
-              f"{skel_latent_shards_dir} -> g=ZERO (字条件失效! 检查 shard 覆盖)", flush=True)
+        # ★ 2026-09-17: 从"只打一行 WARNING 继续跑"改为**启动即失败**。
+        #   原行为的问题（doc68 §2.2 实际踩过）: shard 目录配错 -> strict 命中 0/237
+        #   -> g 全零 -> 字条件完全失效，但评测**照跑不误**，指标看着正常。
+        #   早失败 10 秒，胜过跑完 50 步再发现。
+        _rate = missing_skel / max(n, 1)
+        msg = (f"[eval-cache] ✗ {missing_skel}/{n} ({_rate*100:.1f}%) 样本在 "
+               f"{skel_latent_shards_dir!r} 里找不到 skel latent -> 这些样本 g=ZERO"
+               f"（字条件失效）")
+        if _rate > 0.02:
+            raise RuntimeError(
+                msg + "\n  覆盖率 <98% 说明 shard 目录配错了（常见：把训练 shard 当成 "
+                      "eval shard，或 eval csv 的 id 与 shard 不是同一套）。\n"
+                      "  修法: 为 eval csv 单独建 shards（见 config 的 "
+                      "eval_skel_latent_shards_dir），或确认 id 一致。\n"
+                      "  若确实要容忍少量缺失，请显式降低阈值——不要静默继续。")
+        print(msg + "  (比例低, 继续)", flush=True)
     return {"gts": gts, "conds": conds, "noise": noise, "skels": skels,
             "skels_latent": skels_latent, "missing_skel": missing_skel,
             "n": n, "latent_channels": latent_channels,

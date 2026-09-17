@@ -63,6 +63,17 @@ def _coerce(value, template, target_type=None):
     return str(value)
 
 
+def aux_dirs_of(args):
+    """解析 ``--aux-latent-shards-dirs``（逗号分隔）—— **唯一入口**。
+
+    原来这段表达式在 train.py 里重复了 6 次（247/293/900/903/1238/1452），
+    每处都自己 split + strip + 过滤空串。任何一处写法漂移都会让
+    "aux 通道数" 与 "aux 权重分组" 对不上 -> 静默错位（见 docs/system/70 §3.3）。
+    """
+    return [x for x in str(getattr(args, "aux_latent_shards_dirs", "") or "").split(",")
+            if x.strip()]
+
+
 def _str_to_bool(value):
     """Single-arg bool parser for argparse type=."""
     if isinstance(value, bool):
@@ -243,9 +254,7 @@ def main(args):
         # ── 通道一致性断言 (2026-09-17) ────────────────────────────────────
         # 12ch 下三个数必须自洽, 否则要么在 x_embedder 处炸, 要么**静默错位**
         # (aux 通道与权重分组对不上)。此前没有任何校验。
-        _aux_dirs_chk = [s for s in
-                         str(getattr(args, 'aux_latent_shards_dirs', '') or '').split(',')
-                         if s.strip()]
+        _aux_dirs_chk = aux_dirs_of(args)
         _n_aux_chk = len(_aux_dirs_chk)
         _lat_ch = int(getattr(args, 'latent_channels', 4))
         _img_ch = (args.image_channels
@@ -290,7 +299,7 @@ def main(args):
             style_role_init=getattr(args, 'style_role_init', 0.02),
             glyph_in_channels=4,
             in_channels=(getattr(args, 'latent_channels', 4)
-                         + 4 * len([s for s in str(getattr(args, 'aux_latent_shards_dirs', '') or '').split(',') if s])),
+                         + 4 * len(aux_dirs_of(args))),
             char_proj_mode=getattr(args, 'char_proj_mode', 'full'),
             callig_proj_mode=getattr(args, 'callig_proj_mode', 'linear'),
             callig_scale_init=float(getattr(args, 'callig_scale_init', 1.0)),
@@ -897,10 +906,10 @@ def main(args):
                                                           if getattr(args, 'w_latent_skel', 0.0) > 0
                                                           else None),
                                     callig_id_map=getattr(args, '_callig_map', None),
-                                    aux_latent_shards_dirs=[s for s in str(getattr(args, 'aux_latent_shards_dirs', '') or '').split(',') if s])
+                                    aux_latent_shards_dirs=aux_dirs_of(args))
         logger.info("Using latent-cached dataset (skip on-the-fly VAE encode)."
                     + (" preload=ON" if getattr(args, 'preload', False) else ""))
-        _aux_dirs = [s for s in str(getattr(args, 'aux_latent_shards_dirs', '') or '').split(',') if s]
+        _aux_dirs = aux_dirs_of(args)
         if _aux_dirs:
             _aw = getattr(args, 'aux_loss_weights', '') or getattr(args, 'aux_loss_weight', 1.0)
             logger.info(f"[aux] target=12ch+ dirs={_aux_dirs} per-group weights={_aw}")
@@ -1234,9 +1243,7 @@ def main(args):
                         #   梯度, patch_embed 上 aux 梯度是 img 的 2.6x)。"忘了写一行"
                         #   就掉进已知有害的坑且不报错。现在: **配了 aux 就必须显式给权重**,
                         #   否则直接拒绝启动。
-                        _aux_dirs = [s for s in
-                                     str(getattr(args, 'aux_latent_shards_dirs', '') or '').split(',')
-                                     if s.strip()]
+                        _aux_dirs = aux_dirs_of(args)
                         _aux_w_list = [float(s) for s in
                                        str(getattr(args, 'aux_loss_weights', '') or '').split(',')
                                        if s.strip()]
@@ -1449,7 +1456,7 @@ def main(args):
                 if _mse_ch is not None and _mse_ch.shape[1] > 4:
                     _cm = _mse_ch.mean(dim=0)
                     _v_c12i = float(_cm[:4].mean())
-                    _aux_names = [s for s in str(getattr(args, 'aux_latent_shards_dirs', '') or '').split(',') if s]
+                    _aux_names = aux_dirs_of(args)
                     for _gi, _nm in enumerate(_aux_names):
                         _gm = float(_cm[4 + 4 * _gi: 8 + 4 * _gi].mean())
                         if 'canny' in _nm:

@@ -309,14 +309,33 @@ scheduler(996-1021) / 早停(1040-1164) / eval cache(1168-1202) / **训练循环
 **端到端验证**：`tools/cfg_sweep.py` 在 v12 100k 上跑通 ——
 `model loaded strict=True OK` → 采样 → `seen_ssim=0.6945`（20 步）。
 
+### 第二轮（eval 收束 + infra 堵点）
+
+| # | 项 | 状态 | 验证 |
+|---|---|---|---|
+| 13 | **新建 `src/eval/metrics.py`** —— 指标唯一实现 | ✅ | `mse` / `ssim`（gauss+box 双口径）/ `ssim_torch` / `skel_iou` / `get_lpips` |
+| 14 | `inference._mse/_ssim/_skel_iou` 改为**再导出**（向后兼容） | ✅ | **数值逐位一致**（`一致=True`，误差 <1e-12） |
+| 15 | `posters._ssim` / `gpu_ablate_eval.ssim_np` 委托到 `metrics` | ✅ | 用 `window="box"` **保住原口径**，box 窗实测逐位一致 |
+| 16 | `ssim_torch` 的 padding 从 zero 改为 **reflect** | ✅ | 与 numpy 版差从 **3.2e-3 → 3.8e-5**（纯 float32/64） |
+| 17 | **`in_mem_eval` LPIPS 不可用改醒目上报** | ✅ | 原来只 print 一行易漏看；现打 6 行框 + traceback + `lpips_status()` 供 summary 用 |
+| 18 | **`_get_callig_map` 路径不存在 → 抛错** | ✅ | 原来静默返回 None → 书家条件静默错位 |
+| 19 | **eval shards 覆盖率 <98% → 启动即失败** | ✅ | 原来只打 WARNING 后继续跑 `g=ZERO`（doc68 §2.2 实际踩过） |
+| 20 | **采样循环两处重复构造提到循环外** | ✅ | `th.full((B,), t)` → `ts[i].expand(B)`；`_tile_kwargs` 移出循环 |
+| 21 | **`aux_dirs_of(args)` 统一 aux 解析** | ✅ | train.py 里 6 处重复表达式 → 1 个函数 |
+
+**第二轮端到端验证**：`seen_ssim=0.6945` —— **与重构前逐位相同**，
+确认"14 份 SSIM 收束为 1 份"没有改变任何数值。采样重构后
+`heun_batch` True/False 的 `max|diff| = 0.000e+00`（逐位相同）。
+
 ### 未做（明确记录）
 
 | 项 | 原因 |
 |---|---|
 | 剩余 ~80 处 `strict=False` | 多数在 `tools/` / legacy，且**部分是合法的部分加载**（resume / 只灌 backbone）。已提供 `model_io.check_state_dict()` 作为迁移路径，但**不做批量替换**（风险大于收益） |
 | `train.py` 拆 main() + Config dataclass（§4.1/§4.2） | 风险最高，且当前 12ch 训练正依赖它 → 等 v13 跑起来再做 |
-| `src/eval/metrics.py` 抽公共指标（§3.2） | 涉及 14 处 SSIM 等，改动面大；建议与"eval 子系统整理"合并做 |
-| preload 10GB 图像的浪费（§2.3） | 需要先验证 DINO 缓存对 50k 的覆盖率，等 encoding 完成 |
+| `eval_auto.py` 的 torch 批版 `_ssim` 切到 `ssim_torch` | 该文件是 legacy 路径（仅被 `auto_eval_cpu.py` 当库用），等它一起归档时再处理 |
+| preload 10GB 图像的浪费（§2.3） | **用户裁定 RAM 充足，preload 可接受** → 不做 |
+| `_step_ssim_txt` 每 step 重读整个 summary CSV（O(steps²)） | 影响小（summary 行数 = step 数），留作后续 |
 
 ## 附：未做的事
 

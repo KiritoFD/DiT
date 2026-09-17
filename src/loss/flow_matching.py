@@ -358,35 +358,42 @@ class FlowMatching:
         x = x_T
         use_heun = (self.sampler == "heun")
 
+        # ★ 2026-09-17: 两处"每步重复构造"提到循环外。
+        #   ① t_batch: 原来每步 th.full((B,), float(t_i)) —— 每步一次 host->device 同步
+        #      的标量读取 + 一次分配。改成 ts[i].expand(B)（0-dim 视图，零拷贝）。
+        #   ② kw_cat: _tile_kwargs 的结果**与 i 无关**（只是把 B 维的 y_callig/y_char/
+        #      cond/g 复制成 2B），原来在 heun_batch 分支里每步重算一次 —— 每步都在
+        #      分配并拷贝 cond/g 这些 (B, ...) 张量。移到循环外算一次即可。
+        _kw_cat = None
+        if use_heun and self.heun_batch:
+            _kw_cat = self._tile_kwargs(model_kwargs, B)
+
         for i in range(steps):
             t_i = ts[i]
             t_next = ts[i + 1]
             dt = (t_next - t_i)                      # 负数：从 t=1 走向 t=0
+            t_batch = ts[i].expand(B)
 
             if use_heun and self.heun_batch:
                 # 把两个 RK stage 沿 batch 维拼成一次 forward（更好摊销 kernel
                 # launch 与显存带宽）。model 对 batch 维无状态，因此语义等价。
                 # 关键：model_kwargs 里的 y_callig/y_char/cond/g 也必须一起复制，
                 # 否则 CFG wrapper 的 "x.shape[0] == y.shape[0]" 假设会被打破。
-                t_batch = th.full((B,), float(t_i), device=device)
                 v1 = self._v(model, x, t_batch, model_kwargs, C)
                 x_euler = x + dt * v1
-                t2 = th.full((B,), float(t_next), device=device)
+                t2 = ts[i + 1].expand(B)
                 x_cat = th.cat([x, x_euler], dim=0)
                 t_cat = th.cat([t_batch, t2], dim=0)
-                kw_cat = self._tile_kwargs(model_kwargs, B)
-                v_cat = self._v(model, x_cat, t_cat, kw_cat, C)
+                v_cat = self._v(model, x_cat, t_cat, _kw_cat, C)
                 v1_, v2 = th.split(v_cat, B, dim=0)
                 x = x + dt * 0.5 * (v1_ + v2)
             elif use_heun:
-                t_batch = th.full((B,), float(t_i), device=device)
                 v1 = self._v(model, x, t_batch, model_kwargs, C)
                 x_euler = x + dt * v1
-                t2 = th.full((B,), float(t_next), device=device)
+                t2 = ts[i + 1].expand(B)
                 v2 = self._v(model, x_euler, t2, model_kwargs, C)
                 x = x + dt * 0.5 * (v1 + v2)
             else:
-                t_batch = th.full((B,), float(t_i), device=device)
                 v = self._v(model, x, t_batch, model_kwargs, C)
                 x = x + dt * v
 

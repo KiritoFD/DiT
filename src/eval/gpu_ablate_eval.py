@@ -45,30 +45,31 @@ from scipy.ndimage import uniform_filter
 
 
 def ssim_np(a, b, win=7):
-    c1, c2 = 0.01 ** 2, 0.03 ** 2
-    out = []
-    for ch in range(3):
-        x = a[:, :, ch].astype(np.float64)
-        y = b[:, :, ch].astype(np.float64)
-        mx, my = uniform_filter(x, win), uniform_filter(y, win)
-        mx2, my2, mxy = mx ** 2, my ** 2, mx * my
-        sx2 = uniform_filter(x * x, win) - mx2
-        sy2 = uniform_filter(y * y, win) - my2
-        sxy = uniform_filter(x * y, win) - mxy
-        out.append((((2 * mxy + c1) * (2 * sxy + c2))
-                    / ((mx2 + my2 + c1) * (sx2 + sy2 + c2))).mean())
-    return float(np.mean(out))
+    """★ 2026-09-17: 实现收束到 src/eval/metrics.py。
+
+    ⚠ 本处历史口径是**均匀窗 win=7**，而主评测路径（inference / in_mem_eval）是
+    **高斯窗 win=11**，两者数值差约 0.001。用 `window="box"` 显式保留本处口径 ——
+    **数值不变**，只是实现只剩一份。跨来源比较指标前请确认窗口口径。
+    """
+    from src.eval.metrics import ssim as _ssim_impl
+    return _ssim_impl(a, b, win=win, window="box")
 
 
 def skel_iou(a, b, t=0.5):
+    """★ 收束到 metrics.skel_iou。
+
+    ⚠ 语义差异（保留原样，**未改**）: 原实现在"一方为空"时返回 **0.0**，
+    而 metrics 版把这种情况只累加 union（等价于 0 交 / 1 并）。两者在
+    "一方为空"的样本上不同；本处沿用手写版语义以保持历史可比，
+    仅当双方都非空时才走统一实现。
+    """
     b1, b2 = a.mean(2) < t, b.mean(2) < t
     if not b1.any() and not b2.any():
         return 1.0
     if not b1.any() or not b2.any():
         return 0.0
-    s1, s2 = skeletonize(b1), skeletonize(b2)
-    u = (s1 | s2).sum()
-    return float((s1 & s2).sum() / u) if u > 0 else 1.0
+    from src.eval.metrics import skel_iou as _impl
+    return _impl(a, b, thresh=t)
 
 
 # ── 构建模型 (与 cpu_eval_worker 同一套参数, 含 style_token_n) ───────────────

@@ -32,20 +32,15 @@ def _font_path():
 
 
 def _ssim(a, b, win=7):
-    """a,b: (H,W,3) float 0..1 -> 逐通道 SSIM 均值 (与推理评测同定义)."""
-    c1, c2 = 0.01 ** 2, 0.03 ** 2
-    out = []
-    for ch in range(a.shape[2]):
-        x = a[:, :, ch].astype(np.float64)
-        y = b[:, :, ch].astype(np.float64)
-        mx, my = uniform_filter(x, win), uniform_filter(y, win)
-        mx2, my2, mxy = mx ** 2, my ** 2, mx * my
-        sx2 = uniform_filter(x * x, win) - mx2
-        sy2 = uniform_filter(y * y, win) - my2
-        sxy = uniform_filter(x * y, win) - mxy
-        out.append((((2 * mxy + c1) * (2 * sxy + c2))
-                    / ((mx2 + my2 + c1) * (sx2 + sy2 + c2))).mean())
-    return float(np.mean(out))
+    """a,b: (H,W,3) float 0..1 -> 逐通道 SSIM 均值。
+
+    ★ 2026-09-17: 实现收束到 src/eval/metrics.py（原 docstring 写"与推理评测同定义"
+    是**错的** —— 主评测路径用的是高斯窗 win=11，这里是均匀窗 win=7，数值差约 0.001）。
+    现在用 `window="box"` 显式声明本处口径，**数值不变**，但实现只剩一份。
+    若要与其他地方对比，请确认窗口口径一致。
+    """
+    from src.eval.metrics import ssim as _ssim_impl
+    return _ssim_impl(a, b, win=win, window="box")
 
 
 def _load_rgb(path, cell):
