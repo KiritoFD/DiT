@@ -505,6 +505,10 @@ def build_parser():
     #   后果: 决定能否上更大 batch 的是**高水位**而不是活跃需求 ——
     #   batch360 的活跃需求(22.2G)其实装得下，但高水位(~31G)装不下 -> OOM。
     # 修法: warmup 结束后调一次 `torch.cuda.empty_cache()`，把空洞还给驱动。
+    parser.add_argument("--alloc-debug", action="store_true", dest="alloc_debug",
+                        help="在 warmup 的 [alloc] 点额外转储按尺寸分桶的分配统计 + "
+                             "torch.cuda.memory_summary()，用来定位显存空洞里到底是什么"
+                             "（很多小块 = 碎片/内核工作区；几个巨块 = 某个大张量）。")
     parser.add_argument("--empty-cache-after-warmup", type=int, default=50,
                         dest="empty_cache_after_warmup",
                         help="在第 N 步之后调一次 torch.cuda.empty_cache()，回收 torch.compile "

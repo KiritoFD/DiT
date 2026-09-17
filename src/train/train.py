@@ -1413,14 +1413,30 @@ def main(args):
                 # 成本: 前 N 步每步多一次 device sync(~1-5ms)，一次性 ~0.2s，可忽略。
                 if _empty_cache_at > 0 and train_steps <= _empty_cache_at:
                     _r0 = torch.cuda.memory_reserved() / 2 ** 30
+                    _a0 = torch.cuda.memory_allocated() / 2 ** 30
                     torch.cuda.empty_cache()
                     if rank == 0 and (train_steps == _empty_cache_at
                                       or train_steps in (1, 10, 25)):
                         logger.info(
                             f"[alloc] step {train_steps} warmup empty_cache: reserved "
                             f"{_r0:.2f}G -> {torch.cuda.memory_reserved() / 2 ** 30:.2f}G | "
-                            f"活跃 {torch.cuda.memory_allocated() / 2 ** 30:.2f}G | "
-                            f"高水位 {torch.cuda.max_memory_reserved() / 2 ** 30:.2f}G")
+                            f"活跃 {_a0:.2f}G -> "
+                            f"{torch.cuda.memory_allocated() / 2 ** 30:.2f}G | "
+                            f"高水位 {torch.cuda.max_memory_reserved() / 2 ** 30:.2f}G | "
+                            f"空洞 {_r0 - _a0:.2f}G")
+                        # ★ 空洞 = reserved - allocated（allocator 缓存住、但没有任何
+                        #   活张量在用的块）。要弄清"是谁把它顶上去的"，光看总量不够 ——
+                        #   把按**尺寸分桶**的分配统计打出来，就能看出是"很多个小块"还是
+                        #   "几个巨块"：前者是碎片/内核工作区，后者是某个大张量。
+                        if getattr(args, "alloc_debug", False):
+                            _st = torch.cuda.memory_stats()
+                            _big = {k: v for k, v in _st.items()
+                                    if "allocated_bytes" in k or "segment" in k
+                                    or "num_" in k}
+                            logger.info("[alloc] 尺寸分桶: " + " ".join(
+                                f"{k}={v}" for k, v in sorted(_big.items())))
+                            logger.info("[alloc] memory_summary:\n"
+                                        + torch.cuda.memory_summary())
 
                 if train_steps % args.log_every == 0:
                     torch.cuda.synchronize()
