@@ -796,6 +796,9 @@ class DiT_2Cond(nn.Module):
         self.glyph_inject_mode = str(glyph_inject_mode)
         self.xattn_q_pos = bool(xattn_q_pos)
         self.glyph_injections = None
+        # "block 下标 -> 注入器下标" 映射（glyph_inject_layers>0 时在下面填充）。
+        # 放在 forward 外面是因为它是**循环不变量**，原来每步重建一个 dict。
+        self._inj_map = {}
         # 训练期随机丢弃标准字形条件的概率（见 forward 中注释）
         self.glyph_drop_prob = float(glyph_drop_prob)
         self.glyph_embedder_depth = int(glyph_embedder_depth)
@@ -848,6 +851,10 @@ class DiT_2Cond(nn.Module):
                 # 均匀分布在 depth 层中
                 self.glyph_inject_at = sorted(
                     set(int(round((i + 1) * depth / n_inj)) - 1 for i in range(n_inj)))
+                # ★ 2026-09-17: 预计算 "block 下标 -> 注入器下标" 映射。
+                #   原来在 forward 里每步重建这个 dict（`{blk: k for ...}`）——
+                #   它是**循环不变量**（只依赖 glyph_inject_at），没必要每步做。
+                self._inj_map = {blk: k for k, blk in enumerate(self.glyph_inject_at)}
                 # glyph_inject_mode: "adaln" = ZeroAdaLNInjection (固定 1:1 位置调制,
                 # 旧 ckpt 兼容默认); "xattn" = ZeroCrossAttention (空间寻址注入,
                 # GlyphDraw/IP-Adapter 式内容+风格解耦, 2026-09-08)
@@ -1171,9 +1178,10 @@ class DiT_2Cond(nn.Module):
         _repa_single = None
         if return_intermediate_layer is not None:
             _repa_single = int(return_intermediate_layer)
+        # 预计算好的映射（__init__ 里建），不再每步重建
         _inj = {}
         if self.glyph_injections is not None and g_tok is not None:
-            _inj = {blk: k for k, blk in enumerate(self.glyph_inject_at)}
+            _inj = self._inj_map
 
         # ── 逐层注入的 context ───────────────────────────────────────────────
         # 默认 = 骨架 token(GlyphStyleCrossAttn 模式下位置在下面显式加)。
