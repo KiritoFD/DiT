@@ -1148,6 +1148,18 @@ class DiT_2Cond(nn.Module):
                 _parts.append(self.y_char_embedder(y_char, False))
             if self.glyph_vec_cond and e_glyph_vec is not None:
                 _parts.append(e_glyph_vec)
+            # ★ 2026-09-17: 批次不一致时 `torch.cat` 只会抛
+            #   "Sizes of tensors must match except in dimension 1"
+            #   —— 完全看不出是哪个条件通路、各自多少，极难定位。
+            #   这里显式检查并报出每个操作数的 batch，把模糊错误变成可诊断的。
+            _bs = [int(p.shape[0]) for p in _parts]
+            if len(set(_bs)) != 1:
+                raise RuntimeError(
+                    f"[factorized_cat] 条件操作数 batch 不一致: {_bs} "
+                    f"(x batch={int(x.shape[0])}, g_tok="
+                    f"{None if g_tok is None else int(g_tok.shape[0])}, "
+                    f"y_callig={int(y_callig_in.shape[0])})。"
+                    f" 通常是 CFG 路径里 x 被复制成 2B 但某个条件通路没跟上。")
             y_emb = self.cond_fusion(torch.cat(_parts, dim=-1))
         elif self.condition_fusion == "xl_highdim":
             # XL 高维条件：与 factorized_add 相同的 4-way 可控 mask（CFG 需要 uncond 维度）。
@@ -1271,6 +1283,17 @@ class DiT_2Cond(nn.Module):
                 cfg_callig=cfg_scale, cfg_glyph=cfg_glyph, w_inter=w_inter, g=g)
         # Duplicate every sample: first copy conditional, second copy unconditional.
         original_bs = x.shape[0]
+        # ★ 2026-09-17 诊断: 入口处各张量的 batch 必须一致，否则复制后仍不一致，
+        #   最终在 factorized_cat 的 cat 里报一个看不出原因的 size 错。
+        _in_bs = {"x": int(x.shape[0]), "t": int(t.shape[0]),
+                  "y_callig": int(y_callig.shape[0]), "y_char": int(y_char.shape[0])}
+        if g is not None:
+            _in_bs["g"] = int(g.shape[0])
+        if len(set(_in_bs.values())) != 1:
+            raise RuntimeError(
+                f"[forward_with_cfg] 入口 batch 不一致: {_in_bs}。"
+                f" 复制成 2B 后仍会不一致 -> 后面 cat 会报模糊的 size 错。"
+                f" 调用方（sample_latents 等）必须给同一段切片。")
         x = torch.cat([x, x], dim=0)
         t = torch.cat([t, t], dim=0)
         y_callig = torch.cat([y_callig, y_callig], dim=0)

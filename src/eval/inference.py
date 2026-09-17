@@ -29,8 +29,6 @@ from src.utils.latent_dataset import extract_img_id
 
 # img_id 提取失败只警告一次（避免 237 行刷屏）
 _ID_WARNED = [False]
-# 书家 raw id 不在 callig_id_map 里的（一次跑收集全，最后统一报错，见 make_eval_cache）
-_MISS_CALIG = []
 
 
 # ── VAE: 进程内单例 (GPU 推理进程复用) ──────────────────────────────────────
@@ -451,6 +449,24 @@ def make_eval_cache(eval_csv, img_root, skel_root, image_size, n,
     if n > len(rows):
         n = len(rows)
     rows = rows[:n]
+    # ★ 2026-09-17: 书家词表校验**必须放在循环之前**。
+    #   原来是在循环里 `continue` 掉不在词表里的行 —— 但 `gts`/`skels`/
+    #   `skels_latent`/`noise` 都按 `n` 定长，而 `conds` 是循环里 append 的，
+    #   跳过一行就少一个 -> `conds` 比 `noise` 短 -> 采样时 batch 不匹配
+    #   （实测 x=16 而 y_callig=15，最后在 factorized_cat 的 cat 里报一个
+    #    完全看不出原因的 size 错）。
+    #   先全量校验：既一次报出所有越界 id，又保证 conds 与数组严格对齐。
+    if callig_id_map is not None:
+        _miss = sorted({int(r["calligrapher_id"]) for r in rows
+                        if int(r["calligrapher_id"]) not in callig_id_map})
+        if _miss:
+            raise RuntimeError(
+                f"[eval-cache] ✗ {eval_csv} 里有 {len(_miss)} 个书家不在 "
+                f"callig_id_map 中: {_miss}\n"
+                f"  这些行无法映射到模型的书家表（表大小 {len(callig_id_map)}），"
+                f"硬跑会退回原始 id -> 索引越界或用错书家（都是静默的）。\n"
+                f"  修法: 换一份只含词表内书家的 eval csv，或把词表补全。\n"
+                f"  参考 tools/split_eval_from_50k.py（从训练集切 eval，书家必然在表内）。")
     transform = T.Compose([
         T.Resize((image_size, image_size), interpolation=T.InterpolationMode.BICUBIC),
         T.ToTensor(),
@@ -488,10 +504,7 @@ def make_eval_cache(eval_csv, img_root, skel_root, image_size, n,
             #        eval 集里有 5 个书家（39/346/401/483/806）不在 50k 的 45 人词表里，
             #        退回原始 id 806 -> y_callig_embedder(806) 而表只有 46 行）
             #     ② 原始 id < 表大小 -> **静默用错书家**，不报错、指标照出
-            #   现在改成显式报错并列出所有越界 id，一次就能看全要修哪些行。
-            if _cid not in callig_id_map:
-                _MISS_CALIG.append(_cid)
-                continue
+            #   越界行已在**循环之前**全量校验并报错（见本函数开头），这里直接查表。
             _cid = callig_id_map[_cid]
         conds.append((_cid, int(row.get("glyph_id", row.get("character_id", 0)))))
         # ★ 2026-09-17: img_id 走统一提取（显式列优先 + 正则锚定结尾 + 失败报错）。
