@@ -61,6 +61,55 @@ def aux_dirs_of(args):
             if x.strip()]
 
 
+def resolve_aux_channel_weights(args):
+    """解析 aux 通道权重 —— **循环不变量，只在训练开始前调一次**。
+
+    返回 ``(aux_dirs, weights)``；无 aux 时返回 ``([], [])``。
+
+    ⚠ 2026-09-17: 这段（字符串解析 + 3 处校验）原来放在**每步**的数据分支里，
+    每步重做一次；``_ch_w`` 更是在每步在 GPU 上重新分配 + 切片赋值
+    （每次切片赋值 = 一次 kernel launch）。全是与 step 无关的工作。
+
+    校验规则（保持原样，别放宽）：
+      * 配了 aux 就**必须显式给权重** —— 静默回退到"等权"是已知有害配置
+        （等权时 aux 吃掉 ~51% final-layer 梯度，patch_embed 上 aux 梯度是 img 的 2.6x，
+         见 doc54/60）。"忘了写一行"就会掉进这个坑且不报错。
+      * 权重个数必须与目录个数一致，否则通道分组错位。
+    """
+    aux_dirs = aux_dirs_of(args)
+    if not aux_dirs:
+        return [], []
+    weights = [float(s) for s in
+               str(getattr(args, "aux_loss_weights", "") or "").split(",") if s.strip()]
+    if not weights:
+        w_aux = float(getattr(args, "aux_loss_weight", 1.0))
+        if w_aux == 1.0:
+            raise ValueError(
+                f"启用了 {len(aux_dirs)} 个 aux latent 目录, 但既没给 "
+                f"--aux-loss-weights 也没把 --aux-loss-weight 设成非 1.0 "
+                f"-> 会退化成**等权**, 而等权已被证明有害"
+                f"(aux 吃 ~51% final-layer 梯度, doc54/60)。\n"
+                f"请显式指定, 例如 --aux-loss-weights "
+                f"{','.join(['0.3'] * len(aux_dirs))}。")
+        weights = [w_aux] * len(aux_dirs)
+    if len(weights) != len(aux_dirs):
+        raise ValueError(
+            f"--aux-loss-weights 给了 {len(weights)} 个值 "
+            f"({weights}), 但 --aux-latent-shards-dirs 有 "
+            f"{len(aux_dirs)} 个目录 -> 通道分组会错位。")
+    return aux_dirs, weights
+
+
+def build_aux_channel_weights(aux_dirs, weights, latent_channels, device):
+    """构造逐通道 loss 权重向量 (C+4K,)，img 通道恒为 1。**循环外调一次。**
+
+    形状与 ``torch.cat([latent(4), aux(4*K)], dim=1)`` 的目标一致。
+    """
+    n_ch = int(latent_channels) + 4 * len(aux_dirs)
+    ch_w = torch.ones(n_ch, device=device)
+    for gi, w in enumerate(weights):
+        ch_w[4 + 4 * gi: 8 + 4 * gi] = w
+    return ch_w
 
 
 def requires_grad(model, flag=True):
@@ -1048,6 +1097,19 @@ def main(args):
     # in-process GPU eval 已停用（见文件顶部 `_HAS_IN_PROCESS_EVAL` 的说明）。
     # 当前在训评测走 `--in-mem-eval`，实现与缓存都在 src/eval/in_mem_eval.py。
 
+    # ── aux 通道权重：循环不变量，只解析/构造一次 ──────────────────────────
+    # 原来这段（字符串解析 + 3 处校验 + _ch_w 的 GPU 分配与切片赋值）在**每步**的
+    # 数据分支里重做一次，纯属浪费（切片赋值还是 kernel launch）。
+    # 校验在这里 fail-fast：配了 aux 却没给权重就直接拒绝启动。
+    _aux_dirs, _aux_w_list = resolve_aux_channel_weights(args)
+    _ch_w = None
+    if _aux_dirs:
+        _ch_w = build_aux_channel_weights(
+            _aux_dirs, _aux_w_list, int(getattr(args, 'latent_channels', 4)), device)
+        logger.info(f"[aux] {len(_aux_dirs)} 组 aux, 权重 {_aux_w_list} "
+                    f"-> in_channels={_ch_w.numel()}, "
+                    f"image_channels={getattr(args, 'image_channels', None) or getattr(args, 'latent_channels', 4)}")
+
     for epoch in range(_epochs_needed):
         sampler.set_epoch(epoch)
         if rank == 0:
@@ -1066,51 +1128,15 @@ def main(args):
                 if cond_mode == "3cond":
                     y_script = batch['y_script'].to(device)
 
-                _ch_w = None
+                # 注意: `_ch_w` 与 aux 权重已在**循环外**解析好（见 resolve_aux_channel_weights），
+                # 这里不再重算，也不要把它重置为 None。
                 if 'latent' in batch:
                     # Latent-cached training: latent pre-encoded (scaled by vae_scaling_factor).
                     x_latent = batch['latent'].to(device)
-                    # moyi 式辅助目标通道: aux latents (skel/canny) 与图像 latent 拼接成扩散目标
+                    # moyi 式辅助目标通道: aux latents (skel/canny) 与图像 latent 拼成扩散目标
                     _aux = batch.get('aux_latents', None)
                     if _aux is not None and _aux.numel() > 0:
                         x_latent = torch.cat([x_latent, _aux.to(device).float()], dim=1)
-                        # per-group aux 权重 (与 aux_latent_shards_dirs 同序): e.g. "0.3,0.8"
-                        # -> canny 4ch ×0.3, skel 4ch ×0.8。空则回退单一 aux_loss_weight。
-                        # ⚠ 2026-09-17: 原先"没给权重就静默回退到等权"是个**危险默认** ——
-                        #   等权正是 doc54/60 判定"已证有害"的配置(aux 吃掉 ~51% final-layer
-                        #   梯度, patch_embed 上 aux 梯度是 img 的 2.6x)。"忘了写一行"
-                        #   就掉进已知有害的坑且不报错。现在: **配了 aux 就必须显式给权重**,
-                        #   否则直接拒绝启动。
-                        _aux_dirs = aux_dirs_of(args)
-                        _aux_w_list = [float(s) for s in
-                                       str(getattr(args, 'aux_loss_weights', '') or '').split(',')
-                                       if s.strip()]
-                        if not _aux_w_list:
-                            _w_aux = float(getattr(args, 'aux_loss_weight', 1.0))
-                            if _w_aux == 1.0:
-                                raise ValueError(
-                                    f"启用了 {len(_aux_dirs)} 个 aux latent 目录, 但既没给 "
-                                    f"--aux-loss-weights 也没把 --aux-loss-weight 设成非 1.0 "
-                                    f"-> 会退化成**等权**, 而等权已被证明有害"
-                                    f"(aux 吃 ~51% final-layer 梯度, doc54/60)。\n"
-                                    f"请显式指定, 例如 --aux-loss-weights "
-                                    f"{','.join(['0.3'] * len(_aux_dirs))}。")
-                            _aux_w_list = [_w_aux] * len(_aux_dirs)
-                        if len(_aux_w_list) != len(_aux_dirs):
-                            raise ValueError(
-                                f"--aux-loss-weights 给了 {len(_aux_w_list)} 个值 "
-                                f"({_aux_w_list}), 但 --aux-latent-shards-dirs 有 "
-                                f"{len(_aux_dirs)} 个目录 -> 通道分组会错位。")
-                        _ch_w = torch.ones(x_latent.shape[1], device=device)
-                        for _gi, _w in enumerate(_aux_w_list):
-                            _ch_w[4 + 4 * _gi: 8 + 4 * _gi] = _w
-                        # ⚠ 只打一次 —— 这段在**每步**的数据循环里, 无条件 logger.info
-                        #   会把日志刷爆 (实测 35.7k 步 -> 3.8MB, 全是重复的 [aux] 行)。
-                        if rank == 0 and not getattr(args, "_aux_logged", False):
-                            args._aux_logged = True
-                            logger.info(f"[aux] {len(_aux_dirs)} 组 aux, 权重 {_aux_w_list} "
-                                        f"-> in_channels={x_latent.shape[1]}, "
-                                        f"image_channels={getattr(args, 'image_channels', None) or getattr(args, 'latent_channels', 4)}")
                     x = batch.get('image', None)
                     x = x.to(device) if x is not None else None
                 else:
