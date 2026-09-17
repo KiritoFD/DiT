@@ -66,7 +66,7 @@
   "data_csv": "assets/train_fame-kxl-tj-px60.csv",
   "preload": true,
   "preload_workers": 16,
-  "global_batch_size": 260,
+  "global_batch_size": 360,
   "use_checkpoint": false,
   "no_char_cond": true,
   "freeze_callig_table": true,
@@ -80,5 +80,6 @@
   "eval_skel_latent_shards_dir": "data/fame-kxl-tj-px60/shards_std_eval",
   "glyph_vec_cond": true,
   "glyph_vec_dim": 128,
-  "glyph_vec_pool": "mean"
+  "glyph_vec_pool": "mean",
+  "xattn_q_pos": true
 }

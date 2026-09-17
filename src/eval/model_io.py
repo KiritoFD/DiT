@@ -88,6 +88,11 @@ def build_model_from_args(a, device, **overrides):
         glyph_drop_prob=gf("glyph_drop_prob", 0.0),
         glyph_inject_layers=gi("glyph_inject_layers", 0),
         glyph_inject_mode=g("glyph_inject_mode", "adaln"),
+        # ★ 2026-09-17: `xattn_q_pos` 是**纯行为开关，不改变任何参数形状**
+        #   （只决定 Q 是否加 sincos 位置）。漏传它 -> `strict=True` **抓不到**
+        #   -> 评测静默用 q_pos=False 的行为去评一个 q_pos=True 训出来的模型。
+        #   这是"形状一致但行为不同"的静默失效，必须在这里显式接上。
+        xattn_q_pos=bool(g("xattn_q_pos", False)),
         glyph_embedder_depth=gi("glyph_embedder_depth", 0),
         glyph_embedder_sep=bool(g("glyph_embedder_sep", False)),
         style_token_n=gi("style_token_n", 0),
