@@ -40,15 +40,12 @@ from src.utils import (DistributedFactorBalancedSampler,
 from src.train.early_stop import EarlyStopper
 from src.train.cli import parse_args
 
-# In-process GPU eval (bf16 sampling → VAE decode → save PNGs).
-# Metrics computed by eval_ctrl_metrics_daemon.py (CPU, separate process).
-try:
-    from src.eval.in_process_eval import (
-        prepare_eval_cache, run_gpu_eval, prepare_small_cache, run_show5,
-    )
-    _HAS_IN_PROCESS_EVAL = True
-except ImportError:
-    _HAS_IN_PROCESS_EVAL = False
+# In-process GPU eval 路径已停用（2026-09-17）。
+# 它由 `--auto-eval` 门控，而**全仓 0 个配置把它设为 true**（70 个显式 false）。
+# 实现已归档到 src/eval/legacy/in_process_eval.py；当前在训评测统一走
+# `--in-mem-eval`（src/eval/in_mem_eval.py）。
+# 置 False 后下面所有 `_HAS_IN_PROCESS_EVAL` 分支都是死代码，不再执行。
+_HAS_IN_PROCESS_EVAL = False
 
 
 
