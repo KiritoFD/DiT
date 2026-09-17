@@ -106,7 +106,19 @@ class FlowMatching:
 
     def __init__(self, num_steps=50, sigma_min=1e-4, use_ot=False,
                  t_sampler="logit_normal", t_mean=0.0, t_std=1.0,
-                 shift=1.0, sampler="heun", heun_batch=True, ot_chunks=1):
+                 shift=1.0, sampler="heun", heun_batch=False, ot_chunks=1):
+        # ★ 2026-09-17: heun_batch 默认 True -> **False**。
+        #   实测 (S/2 36.55M, B=8, heun 20 步, fp16): True 45.16 ms/步 vs
+        #   False 36.53 ms/步 -> **batched 慢 23.6%**。
+        #   机制: _v 调的是 CFG wrapper, 每次评估都被 CFG 再翻倍 ——
+        #     batched: 第1次 B->2B, 第2次 2B->4B  = 每步 6B 行
+        #     分开:    第1次 B->2B, 第2次 B ->2B  = 每步 4B 行
+        #   即 batched 第 2 次里的 v1_ 是 f(x,t_i) 的**重算**(第1次已算过),
+        #   纯浪费。B=8 还是小 batch(对拼批有利), 真实 eval B=240 差距应更接近 50%。
+        #   佐证: src/eval/cpu_sampler.py:8 的注释自己写了 "6B 行" ——
+        #         CPU 侧已主动避开, GPU 侧没有。
+        #   注: 两个分支**语义等价**(eval 无随机性, DiT 无 batch 依赖算子),
+        #       只是 batched 更慢; 保留开关以便将来小 batch 场景复用。
         self.num_timesteps = int(num_steps)
         self.sigma_min = sigma_min
         self.use_ot = bool(use_ot)

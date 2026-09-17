@@ -82,7 +82,8 @@ def build_model(a, ck, device):
     if a.get("freeze_callig_table"):
         model.y_callig_embedder.freeze_table()
     sd = _strip(ck.get("ema") or ck.get("model") or ck)
-    miss, unexp = model.load_state_dict(sd, strict=False)
+    # ★ strict=True: strict=False 会让形状不匹配的层静默用随机权重
+    model.load_state_dict(sd, strict=True)
     assert not unexp, f"unexpected keys={sorted(unexp)[:8]}"
     return model.to(device).eval(), in_ch
 
@@ -146,8 +147,8 @@ def main():
         step = int(re.findall(r"(\d+)", os.path.basename(p))[-1])
         ck = torch.load(p, map_location="cpu", weights_only=False)
         sd = _strip(ck.get("ema") or ck.get("model") or ck)
-        miss, unexp = model.load_state_dict(sd, strict=False)
-        assert not unexp, f"step={step} unexpected={sorted(unexp)[:6]}"
+        # ★ strict=True: strict=False 会让形状不匹配的层静默用随机权重
+        model.load_state_dict(sd, strict=True)
         t0 = time.time()
         res = run_in_mem_eval(model, ns, step, dev, args.results_dir)
         print(f"[rerun] step={step} done in {time.time()-t0:.0f}s -> "

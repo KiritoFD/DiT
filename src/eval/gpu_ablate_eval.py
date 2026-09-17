@@ -73,37 +73,17 @@ def skel_iou(a, b, t=0.5):
 
 # ── 构建模型 (与 cpu_eval_worker 同一套参数, 含 style_token_n) ───────────────
 def build_model(a, device):
-    from src.model import DiT_2Cond_models
-    arch = dict(norm_type=a.get("norm_type", "rms"),
-                mlp_type=a.get("mlp_type", "swiglu"),
-                qk_norm=bool(a.get("qk_norm", 1)),
-                rope=bool(a.get("rope", 1)),
-                rope_theta=float(a.get("rope_theta", 100.0)),
-                attn_impl=a.get("attn_impl", "sdpa"))
-    m = DiT_2Cond_models[a["model"]](
-        num_calligraphers=int(a.get("num_calligraphers", 1013)),
-        num_characters=int(a.get("num_characters") or 35130),
-        condition_fusion=a.get("condition_fusion", "factorized_add"),
-        callig_embed_dim=int(a.get("callig_embed_dim", 128)),
-        char_embed_dim=int(a.get("char_embed_dim") or 384),
-        char_proj_mode=(a.get("char_proj_mode") or "mlp"),
-        freeze_char_table=bool((a.get("freeze_char_table") or False)),
-        cond_drop_all_prob=0.0, cond_drop_one_prob=0.0,
-        cond_drop_which_glyph_prob=0.5,
-        use_checkpoint=False, learn_sigma=False,
-        use_glyph_cond=bool(a.get("skel_as_glyph_cond") or a.get("w_glyph_cond")),
-        use_char_cond=not bool(a.get("no_char_cond", False)),
-        glyph_scale_init=float(a.get("glyph_scale_init", 0.4)),
-        glyph_drop_prob=0.0,
-        glyph_embedder_depth=int(a.get("glyph_embedder_depth", 0)),
-        glyph_inject_layers=int(a.get("glyph_inject_layers", 0)),
-        in_channels=(int(a.get("latent_channels", 4))
-                     + 4 * len([s for s in str(a.get("aux_latent_shards_dirs", "") or "").split(",") if s])),
-        image_channels=int(a.get("latent_channels", 4)),
-        **arch)
-    if a.get("freeze_callig_table"):
-        m.y_callig_embedder.freeze_table()
-    return m.to(device).eval()
+    """已统一到 src/eval/model_io.py（2026-09-17）。
+
+    原实现硬编码 cond_drop_all_prob=0.0 / glyph_drop_prob=0.0、
+    image_channels 取 latent_channels（忽略 ckpt 的 a["image_channels"]）、
+    缺 glyph_vec_cond / glyph_embedder_sep / style_token_n 等字段，
+    而加载用 strict=False -> 形状不匹配静默用随机权重（见 docs/system/70 §1.1）。
+    """
+    from src.eval.model_io import build_model_from_args, apply_post_construction
+    m = build_model_from_args(a, device)
+    apply_post_construction(m, a, verbose=False)
+    return m
 
 
 def strip(sd):
@@ -219,7 +199,8 @@ def main():
     a = vars(na) if isinstance(na, argparse.Namespace) else (na or {})
     model = build_model(a, dev)
     sd = strip(ck.get("ema") or ck.get("model") or ck)
-    miss, unexp = model.load_state_dict(sd, strict=False)
+    # ★ strict=True: 原来 strict=False 只断言 unexp==0, **missing 被静默忽略**
+    model.load_state_dict(sd, strict=True)
     log(f"load: missing={len(miss)} unexpected={len(unexp)}")
     del ck
     # 关键参数回显

@@ -289,6 +289,35 @@ scheduler(996-1021) / 早停(1040-1164) / eval cache(1168-1202) / **训练循环
 
 ---
 
+## 6. 已完成（2026-09-17 当天）
+
+| # | 项 | 状态 | 验证 |
+|---|---|---|---|
+| 1 | **`heun_batch` 默认 `True` → `False`** | ✅ | 微基准 45.16→36.53 ms/步 |
+| 2 | **`latent_dataset` 热路径加 `mmap_mode="r"`** | ✅ | 4 处（latent/skel/inst/aux） |
+| 3 | **`dit.py` 2 路 CFG 去掉白做的 `cat`** | ✅ | `cat([half_eps, half_eps])`→`cat([half_eps, rest[:B]])` |
+| 4 | **新建 `src/eval/model_io.py`** | ✅ | `build_model_from_args` / `apply_post_construction` / `load_model_from_ckpt` / `check_state_dict`；**实测加载 v12 ckpt strict=True 通过**（params 36,550,545） |
+| 5 | **`batch_eval.py` 切到 model_io + `strict=True`** | ✅ | 285→265 行；原来是 `strict=False` + **只断言 `unexpected==0`**，missing 全被忽略 |
+| 6 | **`cpu_eval_worker.py` 两处切到 model_io + `strict=True`** | ✅ | 含 ControlNet 联训分支 |
+| 7 | **`gpu_ablate_eval.py` `build_model` 委托 model_io + `strict=True`** | ✅ | |
+| 8 | **`tools/{rerun_eval_wz,eval_sweep_12ch}.py` 改 `strict=True`** | ✅ | 让它们**失败即报错**而不是静默 |
+| 9 | **`tools/cfg_sweep.py` 收敛为薄封装** | ✅ | 去掉了重复的构造 + 加载块 |
+| 10 | **9 个死 eval 文件移入 `src/eval/legacy/`** | ✅ | 约 2,700 行；附 README 说明理由；2 个 legacy shim 路径已同步 |
+| 11 | **`img_id` 统一提取 `extract_img_id()`** | ✅ | 显式列优先 + 正则**锚定结尾** + 失败抛明确错误；实测 HCSU 中文名从"AttributeError 崩"变为"明确报错" |
+| 12 | **`inference.make_eval_cache` 用统一提取 + mmap** | ✅ | 失败只警告一次（不刷屏） |
+
+**端到端验证**：`tools/cfg_sweep.py` 在 v12 100k 上跑通 ——
+`model loaded strict=True OK` → 采样 → `seen_ssim=0.6945`（20 步）。
+
+### 未做（明确记录）
+
+| 项 | 原因 |
+|---|---|
+| 剩余 ~80 处 `strict=False` | 多数在 `tools/` / legacy，且**部分是合法的部分加载**（resume / 只灌 backbone）。已提供 `model_io.check_state_dict()` 作为迁移路径，但**不做批量替换**（风险大于收益） |
+| `train.py` 拆 main() + Config dataclass（§4.1/§4.2） | 风险最高，且当前 12ch 训练正依赖它 → 等 v13 跑起来再做 |
+| `src/eval/metrics.py` 抽公共指标（§3.2） | 涉及 14 处 SSIM 等，改动面大；建议与"eval 子系统整理"合并做 |
+| preload 10GB 图像的浪费（§2.3） | 需要先验证 DINO 缓存对 50k 的覆盖率，等 encoding 完成 |
+
 ## 附：未做的事
 
 - **未做系统性 profile**（按要求）。§2 的结论来自**代码推理 + 定点微基准**，

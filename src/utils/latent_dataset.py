@@ -11,6 +11,36 @@ from PIL import Image
 from .callig_map import map_callig_id as _map_callig
 
 
+# ── img_id 提取（唯一入口）─────────────────────────────────────────────────
+# 背景: shard 查表（latent / skel / inst / aux 全部）都以 img_id 为键，而历史上
+# img_id 是从**文件名正则**推出来的（`re.search(r"(\d+)\.png", image_path)`）。
+# 这有两个隐患（见 docs/system/70 §1.2）：
+#   1. 文件名不是 `<数字>.png`（如 HCSU 的 `克.png`）-> None -> AttributeError 崩
+#   2. 路径里出现别的数字 -> 取到错的 id -> **静默查到错位的 latent**
+# 现在改为: **显式列优先**，正则只作回退且**锚定结尾**，失败时抛明确错误。
+_ID_COLUMNS = ("img_id", "old_50k_id")
+
+
+def extract_img_id(row, where=""):
+    """从一行 CSV（dict）取 img_id。显式列优先，回退文件名正则（锚定 ``.png`` 结尾）。"""
+    for col in _ID_COLUMNS:
+        v = row.get(col)
+        if v is not None and str(v).strip() != "":
+            try:
+                return int(v)
+            except (TypeError, ValueError):
+                pass
+    p = str(row.get("image_path", "") or "")
+    m = re.search(r"(\d+)\.png$", p)          # ★ 锚定结尾, 避免路径里的其它数字
+    if m is None:
+        raise ValueError(
+            f"无法从 {p!r} 提取 img_id"
+            + (f" ({where})" if where else "")
+            + f"：CSV 里没有 {'/'.join(_ID_COLUMNS)} 列，且文件名不是 `<数字>.png`。"
+              " 请给 CSV 加显式 img_id 列 —— 靠文件名约定查 shard 在改名后会**静默错位**")
+    return int(m.group(1))
+
+
 def _load_one(task):
     """Module-level worker for preload: read one PNG as uint8 array."""
     i, path, mode, *shape = task
@@ -174,7 +204,11 @@ class MCCDLatentDataset(Dataset):
             shard_path, offset = self._id_to_shard[int(img_id)]
         except KeyError as exc:
             raise KeyError(f"latent not found for img_id={img_id}") from exc
-        with np.load(shard_path) as shard:
+        # ★ 2026-09-17: 加 mmap_mode="r" —— 原来不带 mmap 会**解压整个 shard**
+        #   只为取一行 (一个 shard 常有上千条 latent)。带 mmap 后只读需要的 slice。
+        #   preload=True 时走不到这条路, 但关掉 preload / 数据大到放不下时,
+        #   不带 mmap 就是每步把整个 shard 解压 N 次。
+        with np.load(shard_path, mmap_mode="r") as shard:
             latent = np.array(shard["latents"][offset], copy=True)
         return torch.from_numpy(latent)
 
@@ -184,7 +218,7 @@ class MCCDLatentDataset(Dataset):
         from collections import defaultdict
         t0 = time.time()
         n = len(self.samples)
-        ids = [int(re.search(r"(\d+)\.png", r["image_path"]).group(1)) for r in self.samples]
+        ids = [extract_img_id(r, where="preload") for r in self.samples]
 
         # --- latents: group by shard, load each shard once, scatter into RAM ---
         self._latents = np.empty((n, self.latent_channels, self.latent_spatial, self.latent_spatial), dtype=np.float32)
@@ -330,11 +364,8 @@ class MCCDLatentDataset(Dataset):
     def __getitem__(self, idx):
         row = self.samples[idx]
 
-        # img_id: 全局唯一样本键 (REPA DINO 特征缓存查表用)
-        _m = re.search(r"(\d+)\.png", row['image_path'])
-        if not _m:
-            raise ValueError(f"Cannot parse img_id from {row['image_path']}")
-        img_id = int(_m.group(1))
+        # img_id: 全局唯一样本键 (shard 查表 / REPA DINO 特征缓存查表用)
+        img_id = extract_img_id(row, where=f"__getitem__[{idx}]")
 
         if self.preload:
             latent = torch.from_numpy(self._latents[idx])
@@ -371,7 +402,7 @@ class MCCDLatentDataset(Dataset):
                     sp, j = self._skel_id_to_shard[img_id]
                 except KeyError as exc:
                     raise KeyError(f"skel latent not found for img_id={img_id}") from exc
-                with np.load(sp) as shard:
+                with np.load(sp, mmap_mode="r") as shard:   # ★ mmap: 别解压整个 shard
                     skel_lat = torch.from_numpy(
                         np.array(shard["latents"][j], copy=True)).float()
 
@@ -382,7 +413,7 @@ class MCCDLatentDataset(Dataset):
                     sp, j = self._inst_id_to_shard[img_id]
                 except KeyError as exc:
                     raise KeyError(f"inst skel latent not found for img_id={img_id}") from exc
-                with np.load(sp) as shard:
+                with np.load(sp, mmap_mode="r") as shard:   # ★ mmap
                     inst_skel = torch.from_numpy(
                         np.array(shard["latents"][j], copy=True)).float()
 
@@ -390,7 +421,7 @@ class MCCDLatentDataset(Dataset):
             _aux_parts = []
             for _mp in self._aux_id_to_shard:
                 _sp, _j = _mp[img_id]
-                with np.load(_sp) as _shard:
+                with np.load(_sp, mmap_mode="r") as _shard:   # ★ mmap
                     _aux_parts.append(torch.from_numpy(
                         np.array(_shard["latents"][_j], copy=True)).float())
             aux_t = torch.cat(_aux_parts, 0) if _aux_parts else torch.empty(0)

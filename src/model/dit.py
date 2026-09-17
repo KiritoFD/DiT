@@ -1283,9 +1283,15 @@ class DiT_2Cond(nn.Module):
         eps, rest = model_out[:, :self.image_channels], model_out[:, self.image_channels:]
         cond_eps, uncond_eps = torch.split(eps, original_bs, dim=0)
         half_eps = uncond_eps + cfg_scale * (cond_eps - uncond_eps)
-        eps = torch.cat([half_eps, half_eps], dim=0)
-        out = torch.cat([eps, rest], dim=1)
-        return out[:original_bs]
+        # ★ 2026-09-17: 原来写的是
+        #     eps = torch.cat([half_eps, half_eps], dim=0)   # 白做一次 2B 分配
+        #     out = torch.cat([eps, rest], dim=1)
+        #     return out[:original_bs]                        # 又把后一半丢掉
+        #   即先复制一份再截断 —— 纯浪费一次 2B×image_channels 的分配与拷贝。
+        #   直接用 cond 那半的 rest(aux 通道取条件分支的值), 形状即 (B, C+rest)。
+        #   语义完全一致 (返回行 = 前 original_bs 行)。
+        out = torch.cat([half_eps, rest[:original_bs]], dim=1)
+        return out
 
     def forward_with_2axis_cfg(self, x, t, y_callig, y_char,
                                cfg_callig=2.0, cfg_glyph=4.0, w_inter=0.0, g=None):

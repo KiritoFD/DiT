@@ -83,20 +83,12 @@ def main():
         if main_ckpt and os.path.isfile(main_ckpt):
             main_model = load_main_model(ckpt_path=main_ckpt, **common)
         else:
-            main_model = DiT_2Cond_models[common["model_name"]](
-                num_calligraphers=common["num_calligraphers"],
-                num_characters=common["num_characters"],
-                condition_fusion=common["condition_fusion"],
-                callig_embed_dim=common["callig_embed_dim"],
-                char_embed_dim=common["char_embed_dim"],
-                char_proj_mode=common["char_proj_mode"],
-                cond_drop_all_prob=0.05, cond_drop_one_prob=0.25,
-                cond_drop_which_glyph_prob=0.5, use_checkpoint=False,
-                learn_sigma=False, **arch)
-        miss, unexp = main_model.load_state_dict(main_sd, strict=False)
-        assert len(unexp) == 0, f"main weights unexpected={len(unexp)}"
-        if main_ckpt and os.path.isfile(main_ckpt) and len(miss) > 0:
-            raise RuntimeError(f"main weights missing={len(miss)} (arch mismatch?)")
+            # ★ 2026-09-17: 统一到 model_io（原来手抄参数 + 硬编码 cond_drop_*=0.05/0.25）
+            from src.eval.model_io import build_model_from_args
+            main_model = build_model_from_args(a, dev)
+        # ★ strict=True: 原来 strict=False 且只在 main_ckpt 存在时才检查 missing，
+        #   从 ckpt 直建时形状不匹配会**静默用随机权重**（见 docs/system/70 §1.1）
+        main_model.load_state_dict(main_sd, strict=True)
     else:
         if not main_ckpt or not os.path.isfile(main_ckpt):
             raise RuntimeError(f"ctrl-only ckpt 但 main_ckpt 无效: {main_ckpt!r}")
@@ -163,36 +155,16 @@ def _run_pretrain_g(args, ck, a, arch, common, t0):
     from src.eval.inference import make_eval_cache, load_eval_vae, decode_and_save, compute_metrics
     from src.eval.cpu_sampler import heun_sample_cpu
     dev = torch.device("cpu")
-    use_g = bool(a.get("w_glyph_cond", False) or a.get("skel_as_glyph_cond", False))
-    model = DiT_2Cond_models[common["model_name"]](
-        num_calligraphers=common["num_calligraphers"],
-        num_characters=common["num_characters"],
-        condition_fusion=common["condition_fusion"],
-        callig_embed_dim=common["callig_embed_dim"],
-        char_embed_dim=common["char_embed_dim"],
-        char_proj_mode=common["char_proj_mode"],
-        freeze_char_table=common["freeze_char_table"],
-        cond_drop_all_prob=0.05, cond_drop_one_prob=0.25,
-        cond_drop_which_glyph_prob=0.5, use_checkpoint=False, learn_sigma=False,
-        use_glyph_cond=use_g,
-        use_char_cond=not bool(a.get("no_char_cond", False)),
-        use_std_dino_char_embedder=bool(a.get("use_std_dino_char_embedder", False)),
-        std_dino_table_path=a.get("std_dino_table_path"),
-        glyph_scale_init=float(a.get("glyph_scale_init", 0.4)),
-        glyph_drop_prob=float(a.get("glyph_drop_prob", 0.0)),
-        glyph_embedder_depth=int(a.get("glyph_embedder_depth", 0)),
-        glyph_inject_layers=int(a.get("glyph_inject_layers", 0)),
-        callig_style_attn=bool(a.get("callig_style_attn", False)),
-        callig_n_style=int(a.get("callig_n_style", 8)),
-        glyph_inject_mode=a.get("glyph_inject_mode", "adaln"), **arch)
-    # 冻结书家表会把 null token 拆成独立 Parameter (y_callig_embedder.null_embed),
-    # ckpt 里带着这个键 —— eval 构建必须复现冻结结构, 否则 unexp=1 assert 崩
-    if a.get("freeze_callig_table"):
-        m_ye = model.y_callig_embedder
-        m_ye.freeze_table()
+    # ★ 2026-09-17: 整段"手抄构造参数"已删除，统一到 src/eval/model_io.py。
+    #   原实现硬编码 cond_drop_*=0.05/0.25、缺 glyph_vec_cond/glyph_embedder_sep/
+    #   style_token_n 等字段，且加载用 strict=False + 只断言 unexpected==0
+    #   -> **missing 被静默忽略**，形状不匹配的层保持随机初始化。
+    #   （见 docs/system/70 §1.1）
+    from src.eval.model_io import build_model_from_args, apply_post_construction
+    model = build_model_from_args(a, dev)
+    apply_post_construction(model, a, verbose=False)
     sd = _strip(ck.get("ema") or ck.get("model") or ck)
-    miss, unexp = model.load_state_dict(sd, strict=False)
-    assert len(unexp) == 0, f"main weights unexpected={len(unexp)}"
+    model.load_state_dict(sd, strict=True)
     model.eval()
 
     csv = a.get("gpu_eval_csv") or a.get("eval_csv") or a.get("data_csv")

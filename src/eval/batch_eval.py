@@ -84,58 +84,27 @@ def main():
     from src.eval.inference import (make_eval_cache, load_eval_vae, sample_latents,
                                     sample_latents_self_cond,
                                     _mse, _ssim, build_diffusion)
-
     ck0 = torch.load(cks[0], map_location="cpu", weights_only=False)
     a = ck0.get("args", {})
     if not isinstance(a, dict):
         import argparse as _ap
         a = vars(a) if isinstance(a, _ap.Namespace) else {}
-    arch = dict(norm_type=a.get("norm_type", "rms"), mlp_type=a.get("mlp_type", "swiglu"),
-                qk_norm=bool(a.get("qk_norm", 1)), rope=bool(a.get("rope", 1)),
-                rope_theta=float(a.get("rope_theta", 100.0)),
-                attn_impl=a.get("attn_impl", "sdpa"))
-    # IDS 组件码本: 若 ckpt 用了 IDS, 需要复现 char_id->char 映射
-    _ids_c2c = None
-    if a.get("use_ids_char_embedder"):
-        _ic = a.get("ids_char_map_csv")
-        if _ic and os.path.isfile(_ic):
-            from src.model.ids_embedder import build_char_id_map_from_csv
-            _ids_c2c = build_char_id_map_from_csv(_ic)
-    model = DiT_2Cond_models[a.get("model", "DiT-2Cond-S/2")](
-        num_calligraphers=int(a.get("num_calligraphers") or 1013),
-        num_characters=int(a.get("num_characters") or 35130),
-        condition_fusion=a.get("condition_fusion", "factorized_add"),
-        callig_embed_dim=int(a.get("callig_embed_dim") or 128),
-        char_embed_dim=int(a.get("char_embed_dim") or 384),
-        char_proj_mode=(a.get("char_proj_mode") or "mlp"),
-        freeze_char_table=bool(a.get("freeze_char_table", False)),
-        cond_drop_all_prob=0.05, cond_drop_one_prob=0.25,
-        cond_drop_which_glyph_prob=0.5, use_checkpoint=False, learn_sigma=False,
-        use_glyph_cond=True, use_char_cond=not bool(a.get("no_char_cond", False)),
-        glyph_scale_init=float(a.get("glyph_scale_init") or 0.4),
-        glyph_drop_prob=0.0,
-        glyph_embedder_depth=int(a.get("glyph_embedder_depth") or 0),
-        glyph_inject_layers=int(a.get("glyph_inject_layers") or 0),
-        callig_style_attn=bool(a.get("callig_style_attn", False)) and not args.disable_callig_style,
-        callig_n_style=int(a.get("callig_n_style") or 8),
-        callig_spatial=bool(a.get("callig_spatial", False)),
-        callig_spatial_rank=int(a.get("callig_spatial_rank") or 64),
-        style_token_n=int(a.get("style_token_n") or 0),
-        style_role_init=float(a.get("style_role_init") or 0.02),
-        glyph_in_channels=4,
-        in_channels=(int(a.get("latent_channels") or 4)
-                     + 4 * len([s for s in str(a.get("aux_latent_shards_dirs") or "").split(",") if s])),
-        image_channels=int(a.get("latent_channels") or 4),
-        use_ids_char_embedder=bool(a.get("use_ids_char_embedder", False)),
-        ids_file=a.get("ids_file"),
-        char_id_to_char=_ids_c2c,
-        use_std_dino_char_embedder=bool(a.get("use_std_dino_char_embedder", False)),
-        std_dino_table_path=a.get("std_dino_table_path"),
-        chars_per_script=int(a.get("chars_per_script") or 7026),
-        glyph_inject_mode=a.get("glyph_inject_mode", "adaln"), **arch).to(dev).eval()
-    # 冻结书家表: 复现 null_embed 独立参数结构 (与 ckpt state_dict 对齐)
-    if a.get("freeze_callig_table"):
-        model.y_callig_embedder.freeze_table()
+    # ★ 2026-09-17: 整段"手抄构造参数"已删除，统一到 src/eval/model_io.py。
+    #   原实现的问题（见 docs/system/70 §1.1）：
+    #     - 硬编码 cond_drop_all_prob=0.05 / cond_drop_one_prob=0.25（不取 ckpt 的值）
+    #     - 硬编码 use_glyph_cond=True
+    #     - 缺 glyph_vec_cond / glyph_vec_dim / glyph_vec_pool / glyph_embedder_sep
+    #       -> v12(factorized_cat + glyph_vec_cond) 的 cond_fusion 形状对不上
+    #     - image_channels 取 latent_channels，忽略 ckpt 的 a["image_channels"]
+    #   而加载只用 strict=False + 断言 unexpected==0 —— **missing 被完全忽略**，
+    #   形状不匹配的层静默保持随机初始化。
+    from src.eval.model_io import build_model_from_args, apply_post_construction
+    _ov = {}
+    if args.disable_callig_style:
+        _ov["callig_style_attn"] = False
+    model = build_model_from_args(a, dev, **_ov)
+    apply_post_construction(model, a, verbose=False)
+    _warned_strict = False
     vae = load_eval_vae(dev, "data/pretrained/sd-vae-ft-ema")
     diff = build_diffusion(args.steps, "flow")
     shards = args.skel_shards or a.get("skel_latent_shards_dir") or "data/skel/std_skel1_latents_fame3_v8"
@@ -204,8 +173,19 @@ def main():
             # 消融模式: 丢弃 ckpt 里的 callig_style 系键 (模块已被禁用), 其余照常
             sd = {k: v for k, v in sd.items()
                   if "callig_style" not in k and "callig_basis" not in k}
-        miss, unexp = model.load_state_dict(sd, strict=False)
-        assert len(unexp) == 0, f"step{step} unexpected={len(unexp)[:3] if unexp else 0}"
+        # ★ 2026-09-17: strict=False -> **strict=True**。
+        #   原写法只断言 `unexpected == 0`，**`missing` 被完全忽略** ——
+        #   形状不匹配的层会静默保持随机初始化，指标照样算得出来但全是错的。
+        #   消融模式（disable_callig_style）已在构造侧用 overrides 关掉该模块，
+        #   并在此剪掉对应的 ckpt 键，两边一致 -> strict 仍能通过。
+        try:
+            model.load_state_dict(sd, strict=True)
+        except RuntimeError as _e:
+            if not _warned_strict:
+                print(f"[batch] ✗ strict 加载失败 (step{step}) —— 说明构造参数与 ckpt 不一致，"
+                      f"请用 src/eval/model_io.py 补字段，**不要退回 strict=False**:\n{_e}")
+                _warned_strict = True
+            raise
 
         for name in todo:
             S = sets[name]

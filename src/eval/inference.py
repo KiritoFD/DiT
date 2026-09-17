@@ -25,6 +25,10 @@ from PIL import Image
 import torchvision.transforms as T
 
 from src.loss import create_diffusion_or_flow
+from src.utils.latent_dataset import extract_img_id
+
+# img_id 提取失败只警告一次（避免 237 行刷屏）
+_ID_WARNED = [False]
 
 
 # ── VAE: 进程内单例 (GPU 推理进程复用) ──────────────────────────────────────
@@ -519,12 +523,20 @@ def make_eval_cache(eval_csv, img_root, skel_root, image_size, n,
         if callig_id_map is not None:
             _cid = callig_id_map.get(_cid, _cid)
         conds.append((_cid, int(row.get("glyph_id", row.get("character_id", 0)))))
-        m = re.search(r"(\d+)\.png", p)
-        img_id = int(m.group(1)) if m else None
+        # ★ 2026-09-17: img_id 走统一提取（显式列优先 + 正则锚定结尾 + 失败报错）。
+        #   原来 `re.search(r"(\d+)\.png", p)` 未锚定、且失败静默给 None ->
+        #   非数字文件名会静默不查 skel（g=ZERO）而不是报错（见 docs/system/70 §1.2）。
+        try:
+            img_id = extract_img_id(row, where="eval_cache")
+        except ValueError as _e:
+            if not _ID_WARNED[0]:
+                print(f"[eval-cache] ⚠ {_e}")
+                _ID_WARNED[0] = True
+            img_id = None
         if img_id is not None and skels_latent is not None:
             if img_id in skel_id_to_shard:
                 sp, j = skel_id_to_shard[img_id]
-                with np.load(sp) as d:
+                with np.load(sp, mmap_mode="r") as d:      # ★ mmap: 别解压整个 shard
                     skels_latent[i] = torch.from_numpy(np.array(d["latents"][j], copy=True)).float()
             else:
                 missing_skel += 1

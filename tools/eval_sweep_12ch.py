@@ -87,7 +87,8 @@ def build_model(ck):
     if a.get("freeze_callig_table"):
         model.y_callig_embedder.freeze_table()
     sd = strip(ck.get("ema") or ck.get("delta"))
-    miss, unexp = model.load_state_dict(sd, strict=False)
+    # ★ strict=True: strict=False 会让形状不匹配的层静默用随机权重
+    model.load_state_dict(sd, strict=True)
     assert len(unexp) == 0, f"unexpected {list(unexp)[:4]}"
     return model, a
 
