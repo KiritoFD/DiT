@@ -1,5 +1,21 @@
 import os
 os.environ["XFORMERS_DISABLED"] = "1"
+
+# ── 分配器空洞治理（2026-09-17）────────────────────────────────────────────
+# ⚠ 必须在 `import torch` **之前** —— PyTorch 在首次 CUDA 分配时读这个变量。
+#
+# 问题：`torch.compile` 在 warmup 期间把 allocator 的**高水位**顶到远超真实活跃需求。
+#   实测 xattn @ batch240：活跃 **14.42G** / 高水位 **20.51G** → 空洞 **6.09G（42%）**。
+#   而"能否上更大 batch"取决于**高水位**而不是活跃需求 ——
+#   batch360 的活跃需求（61.5MB×360 ≈ 22.2G）其实装得下，高水位（~31G）装不下 → OOM。
+#
+# 修法：`expandable_segments` 让 allocator 用可扩展段管理显存，空闲段会**归还驱动**，
+#   不再为"以后可能复用"而整块囤积 —— 直接压低高水位。
+#
+# 想关掉：`PYTORCH_CUDA_ALLOC_CONF=`（置空）或改成别的策略（如
+#   `garbage_collection_threshold:0.8`）。用 setdefault 就是为了留这个后门。
+os.environ.setdefault("PYTORCH_CUDA_ALLOC_CONF", "expandable_segments:True")
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -1086,6 +1102,8 @@ def main(args):
     running_std_mid = torch.zeros((), device=device, dtype=torch.float64)
     running_skel = torch.zeros((), device=device, dtype=torch.float64)
     _acc_c12 = None          # (C,) 逐通道 MSE 累加，日志步再拆成 image/canny/skel
+    # torch.compile warmup 结束后回收显存空洞（见 cli.py --empty-cache-after-warmup）
+    _empty_cache_at = int(getattr(args, "empty_cache_after_warmup", 0) or 0)
     nan_steps = 0
     current_ema_decay = args.ema_decay
     start_time = time()
@@ -1371,7 +1389,26 @@ def main(args):
                 _mse_ch = None
 
                 train_steps += 1
-                
+
+                # ★ 回收 torch.compile 的显存空洞（见 cli.py --empty-cache-after-warmup 的说明）
+                #
+                # ⚠ 必须在 warmup **期间每一步**都回收，不能只在结束后调一次：
+                #   空洞是在前几十步里逐步累积的，而 batch 撑爆时 OOM 就发生在
+                #   **warmup 期间**（实测 batch360 挂在 empty_strided_cuda((360,256,1024))）。
+                #   结束后再回收，峰值已经过去了，救不了 OOM。
+                #   每步调一次 empty_cache() 把高水位钉在当前步的活跃需求上。
+                # 成本: 前 N 步每步多一次 device sync(~1-5ms)，一次性 ~0.2s，可忽略。
+                if _empty_cache_at > 0 and train_steps <= _empty_cache_at:
+                    _r0 = torch.cuda.memory_reserved() / 2 ** 30
+                    torch.cuda.empty_cache()
+                    if rank == 0 and (train_steps == _empty_cache_at
+                                      or train_steps in (1, 10, 25)):
+                        logger.info(
+                            f"[alloc] step {train_steps} warmup empty_cache: reserved "
+                            f"{_r0:.2f}G -> {torch.cuda.memory_reserved() / 2 ** 30:.2f}G | "
+                            f"活跃 {torch.cuda.memory_allocated() / 2 ** 30:.2f}G | "
+                            f"高水位 {torch.cuda.max_memory_reserved() / 2 ** 30:.2f}G")
+
                 if train_steps % args.log_every == 0:
                     torch.cuda.synchronize()
                     end_time = time()

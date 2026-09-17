@@ -498,6 +498,19 @@ def build_parser():
     parser.add_argument("--repa-teacher-ckpt", type=str, default="",
                         help="Local path to DINOv2 teacher weights (ModelScope safetensors). "
                              "Empty = auto-detect data/pretrained/dinov2_vits14_pretrain.safetensors or $DINO_WEIGHTS.")
+    # ── 显存"空洞"回收（2026-09-17）────────────────────────────────────────
+    # 背景: `torch.compile` 在前几十步会把 allocator 的高水位顶到远超真实活跃需求
+    #   （实测 xattn @ batch240: 活跃 14.42G, 高水位 20.51G, **空洞 6.09G / 42%**）。
+    #   这个空洞一直白占着，直到某个 `empty_cache()` 才还给驱动。
+    #   后果: 决定能否上更大 batch 的是**高水位**而不是活跃需求 ——
+    #   batch360 的活跃需求(22.2G)其实装得下，但高水位(~31G)装不下 -> OOM。
+    # 修法: warmup 结束后调一次 `torch.cuda.empty_cache()`，把空洞还给驱动。
+    parser.add_argument("--empty-cache-after-warmup", type=int, default=50,
+                        dest="empty_cache_after_warmup",
+                        help="在第 N 步之后调一次 torch.cuda.empty_cache()，回收 torch.compile "
+                             "warmup 期间 allocator 囤积的显存空洞。0 = 关闭。"
+                             "实测可回收 ~6G（高水位 20.51G -> 14.42G），"
+                             "是把 batch 从 240 提到 360 的前提。")
     parser.add_argument("--repa-cache-dir", type=str, default="", dest="repa_cache_dir",
                         help="Dir with pre-extracted DINOv2 teacher features (feats.f16 + ids.npy, "
                              "built by tools/build_dino_cache.py). Hits skip the per-step DINO "
