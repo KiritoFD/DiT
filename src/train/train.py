@@ -1132,6 +1132,19 @@ def main(args):
                     f"-> in_channels={_ch_w.numel()}, "
                     f"image_channels={getattr(args, 'image_channels', None) or getattr(args, 'latent_channels', 4)}")
 
+    # ── 训练循环前的显存基线（2026-09-17）─────────────────────────────────
+    # 用来回答"torch.compile 到底占了多少"。之后每步的 [alloc] 行可以与之对比，
+    # 定位 6G 空洞是在哪一步、由什么累积起来的。
+    # 已知: xattn@240 的 reserved 从 step50 起就是 20.51G，而 eval 的 empty_cache()
+    #   能把它降到 14.42G -> 说明有 6.09G 是**缓存但未被使用**的。
+    # 但"是谁在 warmup 期间分配了这 6G"**尚未查明**（`mode=default` 不做 Triton
+    #   autotune，所以不是 autotune 缓冲 —— 我之前的说法是错的）。
+    if rank == 0:
+        logger.info(
+            f"[alloc] 循环前基线: reserved {torch.cuda.memory_reserved() / 2 ** 30:.2f}G | "
+            f"活跃 {torch.cuda.memory_allocated() / 2 ** 30:.2f}G | "
+            f"高水位 {torch.cuda.max_memory_reserved() / 2 ** 30:.2f}G")
+
     for epoch in range(_epochs_needed):
         sampler.set_epoch(epoch)
         if rank == 0:
