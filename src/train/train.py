@@ -669,6 +669,8 @@ def main(args):
         missing, unexpected = model.load_state_dict(_sd, strict=False)
         logger.info(f"[resume-full] Loaded weights from {args.resume_full} "
                     f"(missing={len(missing)}, unexpected={len(unexpected)}).")
+        # 供后面的冻结策略用：ckpt 里**没有**的权重 = 新模块，必须可训
+        _resume_missing = set(missing)
         # ★ 护栏: 若仍有 null_embed 落在 unexpected 里，说明加载顺序错了 ——
         #   不报错的话 CFG 的 null 向量会被静默重新随机化（loss 照降，但 CFG 变味）。
         _lost_null = [k for k in unexpected if k.endswith(".null_embed")]
@@ -691,18 +693,34 @@ def main(args):
     _train_only_style = bool(getattr(args, 'train_only_style', False))
     if _train_only_style:
         requires_grad(model, False)
-        _n_tr, _tot = 0, 0
+        # ⚠ 只训 callig_style_ca 是**不够的**（实测踩过）：
+        #   把 glyph_inject_mode 从 adaln 改成 xattn 会换掉整条注入路径，
+        #   ckpt 里这 53 个权重是**全新随机初始化**的。若只放开 callig_style_ca，
+        #   这些新模块就永远训不了 -> 字形条件彻底坏掉 -> Diff 从 0.20 炸到 1.73。
+        #   正确语义：**只训练 ckpt 里没有的新模块**（主干仍然全冻）。
+        _miss = set(locals().get('_resume_missing', set()) or set())
+        _n_tr, _tot, _n_new = 0, 0, 0
         for _nm, _p in model.named_parameters():
             _tot += _p.numel()
             if ('callig_style_ca' in _nm or 'style_role' in _nm):
                 _p.requires_grad = True
                 _n_tr += _p.numel()
+            elif _nm in _miss:
+                _p.requires_grad = True
+                _n_tr += _p.numel()
+                _n_new += 1
         if _n_tr == 0:
             raise SystemExit(
-                "[train-only-style] 匹配不到任何风格模块参数 —— "
+                "[train-only-style] 匹配不到任何可训参数 —— "
                 "检查是否设了 --style-token-n > 0（否则模型里没有 callig_style_ca）")
-        logger.info(f"[train-only-style] 冻结主干，只训风格模块: "
-                    f"{_n_tr:,} / {_tot:,} 参数可训 ({_n_tr/_tot*100:.2f}%)")
+        logger.info(f"[train-only-style] 冻结主干，只训【新】模块: "
+                    f"{_n_tr:,} / {_tot:,} 参数可训 ({_n_tr/_tot*100:.2f}%)，"
+                    f"其中 ckpt 缺失的新张量 {_n_new} 个")
+        if _n_new > 0:
+            logger.warning(
+                f"[train-only-style] ⚠ 有 {_n_new} 个张量在 ckpt 里不存在（换了架构），"
+                f"它们从随机初始化开始训 —— 因此 **step0 不等于原 ckpt**，"
+                f"需要足够的步数让新路径收敛后再比较指标")
     _has_pretrained = args.pretrained is not None
     if _has_pretrained:
         requires_grad(model, False)
