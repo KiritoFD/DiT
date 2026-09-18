@@ -714,6 +714,13 @@ class DiT_2Cond(nn.Module):
                     torch.randn(self.n_style_token, hidden_size)
                     * float(style_role_init))
                 _pe = get_2d_sincos_pos_embed(hidden_size, 16)
+                # ⚠ 上面"默认安全值"那段已经把 ctx_pos_g 设成了普通属性 (None)，
+                #   而 register_buffer 对**已存在的属性名**会抛
+                #   KeyError: "attribute 'ctx_pos_g' already exists"。
+                #   必须先删掉再注册。（实测踩到：说明 xattn + style_token_n>0
+                #   这条路径历史上从未成功跑过 —— 所有 run 都是 adaln + style_token_n=0）
+                if "ctx_pos_g" in self.__dict__:
+                    del self.__dict__["ctx_pos_g"]
                 self.register_buffer(
                     "ctx_pos_g", torch.from_numpy(_pe).float().unsqueeze(0),
                     persistent=False)

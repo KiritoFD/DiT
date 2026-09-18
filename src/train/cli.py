@@ -396,6 +396,17 @@ def build_parser():
                              "Any metric change is then directly attributable to the char condition, "
                              "which is how we test whether the frozen DINO glyph table is the bottleneck. "
                              "Pair with freeze_char_table=false and --resume-full from a trained ckpt.")
+    parser.add_argument("--train-only-style", action="store_true", dest="train_only_style",
+                        help="DIAGNOSTIC: freeze the whole backbone, train ONLY the style module "
+                             "(`callig_style_ca`: style_proj / q,k,v,out_proj / norms) plus any "
+                             "`style_role` embedding.\n"
+                             "动机 (2026-09-18): 实测书家间 strict 差异与训练样本数**负相关** "
+                             "(r=-0.62)，样本多的书家(如苏轼 3131 张)风格跨度大，而书家条件目前是"
+                             "**一个预训练且冻结的 128 维向量** —— 装不下多模态风格。\n"
+                             "风格模块是 **zero-init(out_proj)**，所以 step0 的输出**恒等于**已训好的 "
+                             "ckpt，任何 metric 变化都可直接归因于新增的风格容量 —— 这是干净的受控实验。\n"
+                             "配 `--style-token-n 16~64` + `--glyph-inject-mode xattn` + "
+                             "`--resume-full <已训 ckpt>` 使用。")
     parser.add_argument("--num-workers", type=int, default=4)
     parser.add_argument("--log-every", type=int, default=50)
     parser.add_argument("--ckpt-every", type=int, default=10_000,

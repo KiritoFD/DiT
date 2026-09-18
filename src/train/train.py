@@ -685,6 +685,24 @@ def main(args):
     #      adaLN is reset to std=0.02 by `reset_cond_head`, so it MUST be trainable
     #      (`train_cond_head=true`), otherwise the model is stuck on random modulation.
     #   2) from-scratch (pretrained=None): keep all params trainable.
+    #   3) [2026-09-18] --train-only-style: 冻结**全部**主干，只训风格模块。
+    #      风格模块 CalligStyleCrossAttn 的 out_proj 是 zero-init，
+    #      所以 step0 输出**恒等于**已训好的 ckpt -> 任何 metric 变化都可归因于新增风格容量。
+    _train_only_style = bool(getattr(args, 'train_only_style', False))
+    if _train_only_style:
+        requires_grad(model, False)
+        _n_tr, _tot = 0, 0
+        for _nm, _p in model.named_parameters():
+            _tot += _p.numel()
+            if ('callig_style_ca' in _nm or 'style_role' in _nm):
+                _p.requires_grad = True
+                _n_tr += _p.numel()
+        if _n_tr == 0:
+            raise SystemExit(
+                "[train-only-style] 匹配不到任何风格模块参数 —— "
+                "检查是否设了 --style-token-n > 0（否则模型里没有 callig_style_ca）")
+        logger.info(f"[train-only-style] 冻结主干，只训风格模块: "
+                    f"{_n_tr:,} / {_tot:,} 参数可训 ({_n_tr/_tot*100:.2f}%)")
     _has_pretrained = args.pretrained is not None
     if _has_pretrained:
         requires_grad(model, False)
