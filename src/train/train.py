@@ -1212,10 +1212,12 @@ def main(args):
             _m = ema_model if ema_model is not None else model
             _m.eval()
             try:
+                # ⚠ run_in_mem_eval 的 logger 形参要的是**可调用对象**（默认 print），
+                #   传 Logger 实例会 TypeError: 'Logger' object is not callable。
                 _res = run_in_mem_eval(
                     _m, args, _ev_step, device,
                     os.path.join(checkpoint_dir, "..", "eval_only"),
-                    logger=logger)
+                    logger=logger.info)
                 logger.info(f"[eval-only] 完成: {_res}")
             except Exception as _e:
                 logger.error(f"[eval-only] 失败: {type(_e).__name__}: {_e}")
