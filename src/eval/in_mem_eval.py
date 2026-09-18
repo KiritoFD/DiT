@@ -195,19 +195,36 @@ def _poster_skeleton(img):
     return Image.fromarray(np.where(sk, 0, 255).astype(np.uint8)).convert("RGB")
 
 
-def save_input_g(results_dir, set_name, skels_latent, vae, sf):
-    """标准字输入 (g 条件) 落盘: eval_samples_ctrl/{set}_input_g/g{i}.png (幂等)。"""
+def save_input_g(results_dir, set_name, skels_latent, vae, sf, batch=16):
+    """标准字输入 (g 条件) 落盘: eval_samples_ctrl/{set}_input_g/g{i}.png (幂等)。
+
+    ⚠ **必须分批 decode**。原实现是
+
+        dec = vae.decode(skels_latent / sf).sample      # 一次全解
+
+    strict 集有 250 张，一次性 decode 的中间激活要 7.81 GiB，而训练常驻 20.25 GiB
+    -> `CUDA out of memory`（实测踩过；该异常被上层 try 吞掉，只打一行
+    `input-g save failed`，**poster 里悄悄少一整行图**，不报错）。
+    主路径（预测图 decode）一直是按 vae_batch 分批的，这里照做即可。
+    """
     out_dir = os.path.join(results_dir, "eval_samples_ctrl", f"{set_name}_input_g")
     os.makedirs(out_dir, exist_ok=True)
     n = skels_latent.shape[0]
     if all(os.path.exists(os.path.join(out_dir, f"g{i}.png")) for i in range(n)):
         return out_dir
-    with torch.autocast("cuda", dtype=torch.bfloat16):
-        dec = vae.decode(skels_latent.to(next(vae.parameters()).device) / sf).sample
-    dec = ((dec.float().clamp(-1, 1) + 1) / 2).cpu().numpy().transpose(0, 2, 3, 1)
     from PIL import Image as _Img
-    for i in range(n):
-        _Img.fromarray((dec[i] * 255).astype(np.uint8)).save(os.path.join(out_dir, f"g{i}.png"))
+    dev = next(vae.parameters()).device
+    bs = max(1, int(batch))
+    for i in range(0, n, bs):
+        j = min(i + bs, n)
+        with torch.autocast("cuda", dtype=torch.bfloat16):
+            dec = vae.decode(skels_latent[i:j].to(dev) / sf).sample
+        dec = ((dec.float().clamp(-1, 1) + 1) / 2).cpu().numpy().transpose(0, 2, 3, 1)
+        for k in range(j - i):
+            _Img.fromarray((dec[k] * 255).astype(np.uint8)).save(
+                os.path.join(out_dir, f"g{i + k}.png"))
+        del dec
+        torch.cuda.empty_cache()
     return out_dir
 
 
@@ -506,9 +523,17 @@ def run_in_mem_eval(model, args, step, device, results_dir, sets=None,
                 # 标准字输入 (g 条件) 落盘 (poster 第 1 行, 跨 step 复用, 幂等)
                 if cache.get("skels_latent") is not None:
                     try:
-                        save_input_g(results_dir, name, cache["skels_latent"], vae, sf)
+                        save_input_g(results_dir, name, cache["skels_latent"], vae, sf,
+                                     batch=vae_batch)
                     except Exception as _se:
-                        logger(f"[in-mem-eval] input-g save failed: {_se!r}")
+                        # ★ 2026-09-18: 加 traceback。原来只打一行 repr，
+                        #   OOM 被吞掉后只看到 "input-g save failed: OutOfMemoryError(...)"，
+                        #   不知道是哪一步、也不知道 poster 会少一整行图。
+                        import traceback as _tb
+                        logger(f"[in-mem-eval] ✗ input-g save failed "
+                               f"({type(_se).__name__}): {_se}\n"
+                               f"{_tb.format_exc()}\n"
+                               f"  -> poster 第 1 行（标准字输入）会缺失，但**指标不受影响**")
 
             ssims, mses = [], []
             for i in range(n):
