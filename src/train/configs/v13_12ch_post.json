@@ -57,7 +57,7 @@
   "gpu_eval_every": 2500,
   "auto_eval": false,
   "in_mem_eval": true,
-  "in_mem_eval_sets": "seen:assets/eval_v13_seen.csv:20,strict:assets/eval_v13_strict.csv:50",
+  "in_mem_eval_sets": "seen:assets/eval_v13_seen.csv:20,strict:assets/eval_v13_strict.csv:250",
   "eval_self_cond": false,
   "eval_blend_alpha": 0.5,
   "eval_csv": "assets/eval_v13_seen.csv",

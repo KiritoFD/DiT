@@ -58,6 +58,13 @@ from src.utils import (DistributedFactorBalancedSampler,
                        LongEpochDistributedSampler)
 from src.train.early_stop import EarlyStopper
 from src.train.cli import parse_args
+# ★ 模块级导入，**不要**写成函数内的局部 import：
+#   Python 里函数内任何位置的 import 都会把该名字变成**局部变量**，
+#   于是"只在 --expand-from-4ch 分支里 import"会让 --resume-full 分支
+#   引用到未绑定的名字 -> UnboundLocalError（实测踩过：
+#   `local variable 'materialize_lazy_params' referenced before assignment`）。
+from src.utils.channel_expand import (expand_ckpt_4ch_to_12ch,
+                                      materialize_lazy_params)
 from src.train.ckpt import save_checkpoint, prune_checkpoints, drain_ckpt
 from src.eval.in_mem_eval import maybe_run_in_training
 
@@ -588,8 +595,6 @@ def main(args):
     #      否则 strict=False 会静默跳过形状不匹配的 3 个张量。
     if getattr(args, 'expand_from_4ch', None):
         import torch as _torch
-        from src.utils.channel_expand import (expand_ckpt_4ch_to_12ch,
-                                              materialize_lazy_params)
         _ec = _torch.load(args.expand_from_4ch, map_location="cpu", weights_only=False)
         _n_aux = len(aux_dirs_of(args))
         if _n_aux == 0:
