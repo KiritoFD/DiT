@@ -499,14 +499,21 @@ def main():
         os.unlink(_tf.name)
         log(f"[inter] 采样完成 {len(inter_imgs)} 张 inter + {len(intra_imgs)} 张匹配 intra")
         inter_c, inter_h = [], []
+        # ★ 2026-09-18: 原来只留聚合均值，**逐对数据被丢弃** -> 无法做"按书家拆开"的分析
+        #   （例如"该书家的风格条件有多强" vs "该书家的 strict ssim" 的散点，
+        #    用来区分瓶颈在『数据』还是『条件机制』）。
+        #   现在把逐对 + 逐书家聚合都落盘。
+        _pairs = []          # (kind, callig_x, glyph_x, callig_y, glyph_y, ssim)
         for x in range(len(inter_imgs)):
             for y in range(x + 1, len(inter_imgs)):
                 (cx, gx), (cy, gy) = inter_meta[x], inter_meta[y]
                 s = ssim_np(inter_imgs[x], inter_imgs[y])
                 if cx == cy and gx != gy:
                     inter_c.append(s)          # 同字换书家
+                    _pairs.append(("callig", cx, gx, cy, gy, s))
                 if gx == gy and cx != cy:
                     inter_h.append(s)          # 同书家换字
+                    _pairs.append(("char", cx, gx, cy, gy, s))
         # intra 参考值: 优先用本轮; --skip-intra 时从 --intra-from 的 summary json 读
         if rows:
             m_intra = float(np.mean([r["div_ssim"] for r in rows]))
@@ -532,6 +539,38 @@ def main():
         log(f"[inter] intra={m_intra:.4f} inter_callig={d_c:.4f} inter_char={d_h:.4f} "
             f"ratio_style={summ['ratio_style']} ratio_char={summ['ratio_char']}")
         log("  判读: ratio >> 1 条件有效; ratio ≈ 1 条件被噪声淹没(假风格控制)")
+
+        # ── 落盘：逐对 + 逐书家聚合（★ 2026-09-18 新增）──────────────────
+        # 用途：把「某书家的风格条件有多强」与「该书的 strict ssim」对齐画散点，
+        #       区分瓶颈在『数据不足』还是『条件机制没生效』。
+        _pc = f"assets/diversity_inter_pairs_{tag}.csv"
+        with open(_pc, "w", newline="", encoding="utf-8") as _f:
+            _w = csv.writer(_f)
+            _w.writerow(["kind", "callig_a", "glyph_a", "callig_b", "glyph_b",
+                         "ssim", "diff"])
+            for k, ca, ga, cb, gb, s in _pairs:
+                _w.writerow([k, ca, ga, cb, gb, round(float(s), 6),
+                             round(1.0 - float(s), 6)])
+        log(f"  written {_pc}  ({len(_pairs)} 对)")
+
+        # 逐书家聚合：对每个书家，取"固定字、换书家"里**涉及该书的**那几对的 1-SSIM
+        # （该书家作为 a 或 b 都算），再对字求平均。
+        from collections import defaultdict as _dd
+        _by_cal = _dd(list)
+        for k, ca, ga, cb, gb, s in _pairs:
+            if k != "callig":
+                continue
+            _by_cal[ca].append(1.0 - float(s))
+            _by_cal[cb].append(1.0 - float(s))
+        _cc = f"assets/diversity_inter_by_callig_{tag}.csv"
+        with open(_cc, "w", newline="", encoding="utf-8") as _f:
+            _w = csv.writer(_f)
+            _w.writerow(["callig", "n_pairs", "mean_diff_style"])
+            for c in sorted(_by_cal, key=lambda z: -float(np.mean(_by_cal[z]))):
+                v = _by_cal[c]
+                _w.writerow([c, len(v), round(float(np.mean(v)), 6)])
+        log(f"  written {_cc}  ({len(_by_cal)} 个书家)")
+
         if not inter_imgs:
             log("  WARN: inter_imgs 为空 -> 跳过 inter 海报")
             h, w = poster_rows[0][0].shape[:2]
