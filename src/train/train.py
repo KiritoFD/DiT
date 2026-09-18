@@ -145,18 +145,48 @@ def requires_grad(model, flag=True):
 
 @torch.no_grad()
 def update_ema(ema_model, model, decay):
-    """Update a full-precision model EMA, including floating-point buffers."""
-    source = model.module if hasattr(model, "module") else model
-    source_params = dict(source.named_parameters())
-    for name, ema_param in ema_model.named_parameters():
-        ema_param.mul_(decay).add_(source_params[name].detach(), alpha=1.0 - decay)
-    source_buffers = dict(source.named_buffers())
-    for name, ema_buffer in ema_model.named_buffers():
-        source_buffer = source_buffers[name].detach()
-        if torch.is_floating_point(ema_buffer):
-            ema_buffer.mul_(decay).add_(source_buffer, alpha=1.0 - decay)
-        else:
-            ema_buffer.copy_(source_buffer)
+    """Update a full-precision model EMA, including floating-point buffers.
+
+    [INFRA 2026-09-18] 原版对每个参数单独 `mul_().add_()`，并在**每次调用**重建
+    named_parameters / named_buffers 两个 dict —— `ema_interval` 默认 1 时这是每步
+    几百个小 kernel + Python 遍历/建表开销（其他地方都在抠 launch 与同步，这处是漏网）。
+    现在：
+      * 首次调用把 (ema_tensor, src_tensor) 配对**缓存**到 ema_model 上 —— 参数张量对象
+        由优化器就地更新、跨步稳定（detach 与原参数共享 storage，始终读到最新值），故可安全缓存，
+        之后零建表；
+      * 归一后用 `torch._foreach_mul_/add_` 批处理成极少的 multi-tensor kernel。
+    数值口径与原实现一致（同样的 decay / 1-decay、浮点 buffer 做 decay、整型 buffer 做 copy）。
+    """
+    pairs = getattr(ema_model, "_ema_pairs", None)
+    if pairs is None:
+        source = model.module if hasattr(model, "module") else model
+        source_params = dict(source.named_parameters())
+        source_buffers = dict(source.named_buffers())
+        ema_p, src_p = [], []
+        for name, ep in ema_model.named_parameters():
+            sp = source_params.get(name)
+            if sp is not None:
+                ema_p.append(ep); src_p.append(sp.detach())
+        ema_fb, src_fb, ema_cb, src_cb = [], [], [], []
+        for name, eb in ema_model.named_buffers():
+            sb = source_buffers.get(name)
+            if sb is None:
+                continue
+            if torch.is_floating_point(eb):
+                ema_fb.append(eb); src_fb.append(sb.detach())
+            else:
+                ema_cb.append(eb); src_cb.append(sb)
+        pairs = (ema_p, src_p, ema_fb, src_fb, ema_cb, src_cb)
+        ema_model._ema_pairs = pairs
+    ema_p, src_p, ema_fb, src_fb, ema_cb, src_cb = pairs
+    if ema_p:
+        torch._foreach_mul_(ema_p, decay)
+        torch._foreach_add_(ema_p, src_p, alpha=1.0 - decay)
+    if ema_fb:
+        torch._foreach_mul_(ema_fb, decay)
+        torch._foreach_add_(ema_fb, src_fb, alpha=1.0 - decay)
+    for eb, sb in zip(ema_cb, src_cb):
+        eb.copy_(sb)
 
 # ckpt 相关实现已移到 src/train/ckpt.py（state_to_cpu / AsyncCkptWriter /
 # save_checkpoint / prune_checkpoints / drain_ckpt）
@@ -1077,6 +1107,13 @@ def main(args):
                 shuffle=True,
                 seed=args.global_seed
             )
+    # [INFRA 2026-09-18 实测校正] 曾以为 "preload 下数据已在内存, num_workers 只剩 IPC
+    #   开销, 应强制 0" —— **错**。4090 上合成基准 (_review/bench_dataloader_preload.py,
+    #   batch=360 / uint8 图像, 复现 preload 返回形态): preload 下 workers 反而更快 ——
+    #   num_workers 0→68ms/批, 4→40ms, 8→24ms。原因: __getitem__+default_collate 要对每批
+    #   360 样本各做一次 from_numpy 切片 + stack 拷贝 + pin(~71MB/批), workers 把这份
+    #   collate **并行化**并与 pin 线程重叠, 收益远超 IPC。故**保留配置的 num_workers**,
+    #   不再对 preload 强制 0。
     loader = DataLoader(
         dataset,
         batch_size=int(args.global_batch_size // dist.get_world_size()),
@@ -1431,17 +1468,20 @@ def main(args):
 
                 opt.zero_grad(set_to_none=True)  # INFRA: set_to_none 释放梯度tensor, 比 zero_() 快且省内存
 
-                # ★ 2026-09-17: 这里**不再**逐项 `.item()`。
-                #   原来每步有 5 个 `.item()` + `isfinite` 的 bool 判断 + `_cm.mean()` 取标量
-                #   = **7 次全 GPU 同步**，而且全在 `loss.backward()` 之前 —— 每次同步都会
-                #   打断 CPU 的 run-ahead（CPU 无法提前把后续 kernel 入队），形成流水线气泡。
-                #   现在只保留 NaN guard 必需的 1 次同步（`isfinite` 是"要不要 skip 这一步"
-                #   的决策，躲不掉），其余全部改成**在 GPU 上累加**，只在日志步取一次标量。
+                # ★ 2026-09-17: 这里**不再**逐项 `.item()`（原来 7 次全 GPU 同步 -> 现在 1 次）。
+                # ★ 2026-09-18: 把 `loss.backward()` 提前到 finiteness 同步**之前**。
+                #   `bool(isfinite(loss))` 是一次全设备同步；原先放在 backward 前，会让 CPU
+                #   在 forward 尾端停住 —— GPU 跑完 forward 后只能干等 CPU 重新入队 backward,
+                #   形成 forward→backward 之间的流水线气泡。而 backward 本身**不需要** skip 决策
+                #   （NaN loss 反传只产生 NaN 梯度, 不碰参数），真正必须同步的只有 `opt.step()`。
+                #   故先无脑 backward, 再读 `_finite`, 让 forward+backward 在 GPU 上连跑。
+                #   代价: 极少数 NaN 步白跑一次 backward —— 可忽略（且 NaN 梯度会在下一轮顶部
+                #   `opt.zero_grad(set_to_none=True)` 被清掉, 不会污染 clip/step）。
+                loss.backward()
                 _finite = bool(torch.isfinite(loss))
 
-                # NaN guard: skip the step if loss is not finite (e.g. a bad sample).
+                # NaN guard: skip clip/step/ema/accumulate if loss is not finite (e.g. a bad sample).
                 if _finite:
-                    loss.backward()
                     torch.nn.utils.clip_grad_norm_(trainable_params_list, max_norm=1.0)
                     opt.step()
                     if scheduler is not None:
@@ -1456,6 +1496,8 @@ def main(args):
                             current_ema_decay = args.ema_decay
                         update_ema(ema_model, model, current_ema_decay ** max(1, int(getattr(args, 'ema_interval', 1))))
                 else:
+                    # 已 backward -> .grad 里留下 NaN，但**不** clip/step/ema -> 参数不被污染；
+                    # 这些 NaN 梯度由下一轮顶部的 zero_grad(set_to_none=True) 释放。
                     nan_steps += 1
                     if rank == 0:
                         # 这里必须取标量（要打出来），但只在**出问题时**才发生 -> 不在热路径
