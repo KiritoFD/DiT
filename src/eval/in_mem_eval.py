@@ -440,7 +440,7 @@ def run_in_mem_eval(model, args, step, device, results_dir, sets=None,
                         "ssim_med", "ssim_q3", "ssim_p90", "mse_mean", "lpips_mean"])
     if new_raw:
         w_raw.writerow(["exp", "step", "set", "idx", "img_id", "char", "script",
-                        "mse", "ssim", "lpips"])
+                        "calligrapher", "mse", "ssim", "lpips"])
     exp = os.path.basename(results_dir.rstrip("/"))
     out = {}
 
@@ -450,6 +450,14 @@ def run_in_mem_eval(model, args, step, device, results_dir, sets=None,
                 continue
             cache = _get_cache(csvp, n, img_root, shards, args)
             n = cache["n"]
+            # ★ 2026-09-18: 读源 csv 行，用于把 img_id/char/script/**calligrapher**
+            #   写进逐样本 CSV。原来这几列全是空串，导致无法把"每个书家的 strict ssim"
+            #   与"该书家的风格条件强度"对齐做散点（区分瓶颈在数据还是条件机制）。
+            _src = []
+            try:
+                _src = list(csv.DictReader(open(csvp, encoding="utf-8")))[:n]
+            except Exception:
+                _src = []
             t0 = time.time()
             if use_self_cond:
                 lat = sample_latents_self_cond(
@@ -553,7 +561,12 @@ def run_in_mem_eval(model, args, step, device, results_dir, sets=None,
                             f"{q10:.4f}", f"{q25:.4f}", f"{q50:.4f}",
                             f"{q75:.4f}", f"{q90:.4f}", f"{mse:.5f}", _lp_mean])
             for i in range(n):
-                w_raw.writerow([exp, step, name, i, "", "", "",
+                _s = _src[i] if i < len(_src) else {}
+                w_raw.writerow([exp, step, name, i,
+                                _s.get("image_path", ""),
+                                _s.get("character", ""),
+                                _s.get("script", ""),
+                                _s.get("calligrapher", ""),
                                 f"{mses[i]:.5f}", f"{ssims[i]:.4f}",
                                 (f"{_lp[i]:.5f}" if _lp else "")])
             f_sum.flush()

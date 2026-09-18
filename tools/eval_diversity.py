@@ -503,17 +503,20 @@ def main():
         #   （例如"该书家的风格条件有多强" vs "该书家的 strict ssim" 的散点，
         #    用来区分瓶颈在『数据』还是『条件机制』）。
         #   现在把逐对 + 逐书家聚合都落盘。
-        _pairs = []          # (kind, callig_x, glyph_x, callig_y, glyph_y, ssim)
+        # ⚠ 元组顺序是 (character, calligrapher)（见 inter_meta 构造处），
+        #   **不是** (callig, glyph)。第一次实现时把变量名写反，导致按书家聚合
+        #   实际按"字"聚合了（输出里出现 爲/為/東/有…）。下面用具名变量避免再错。
+        _pairs = []          # (kind, char_x, cal_x, char_y, cal_y, ssim)
         for x in range(len(inter_imgs)):
             for y in range(x + 1, len(inter_imgs)):
-                (cx, gx), (cy, gy) = inter_meta[x], inter_meta[y]
+                (chx, cax), (chy, cay) = inter_meta[x], inter_meta[y]
                 s = ssim_np(inter_imgs[x], inter_imgs[y])
-                if cx == cy and gx != gy:
+                if chx == chy and cax != cay:
                     inter_c.append(s)          # 同字换书家
-                    _pairs.append(("callig", cx, gx, cy, gy, s))
-                if gx == gy and cx != cy:
+                    _pairs.append(("callig", chx, cax, chy, cay, s))
+                if cax == cay and chx != chy:
                     inter_h.append(s)          # 同书家换字
-                    _pairs.append(("char", cx, gx, cy, gy, s))
+                    _pairs.append(("char", chx, cax, chy, cay, s))
         # intra 参考值: 优先用本轮; --skip-intra 时从 --intra-from 的 summary json 读
         if rows:
             m_intra = float(np.mean([r["div_ssim"] for r in rows]))
@@ -546,10 +549,10 @@ def main():
         _pc = f"assets/diversity_inter_pairs_{tag}.csv"
         with open(_pc, "w", newline="", encoding="utf-8") as _f:
             _w = csv.writer(_f)
-            _w.writerow(["kind", "callig_a", "glyph_a", "callig_b", "glyph_b",
+            _w.writerow(["kind", "char_a", "callig_a", "char_b", "callig_b",
                          "ssim", "diff"])
-            for k, ca, ga, cb, gb, s in _pairs:
-                _w.writerow([k, ca, ga, cb, gb, round(float(s), 6),
+            for k, cha, caa, chb, cab, s in _pairs:
+                _w.writerow([k, cha, caa, chb, cab, round(float(s), 6),
                              round(1.0 - float(s), 6)])
         log(f"  written {_pc}  ({len(_pairs)} 对)")
 
@@ -557,11 +560,11 @@ def main():
         # （该书家作为 a 或 b 都算），再对字求平均。
         from collections import defaultdict as _dd
         _by_cal = _dd(list)
-        for k, ca, ga, cb, gb, s in _pairs:
+        for k, cha, caa, chb, cab, s in _pairs:
             if k != "callig":
                 continue
-            _by_cal[ca].append(1.0 - float(s))
-            _by_cal[cb].append(1.0 - float(s))
+            _by_cal[caa].append(1.0 - float(s))
+            _by_cal[cab].append(1.0 - float(s))
         _cc = f"assets/diversity_inter_by_callig_{tag}.csv"
         with open(_cc, "w", newline="", encoding="utf-8") as _f:
             _w = csv.writer(_f)
