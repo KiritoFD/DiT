@@ -524,6 +524,14 @@ def build_parser():
                         help="4ch 预训练 ckpt 路径。设了就做通道扩展（4 -> 4+4*n_aux），"
                              "并**忽略 --resume-full 的模型权重**（优化器状态也不复用，"
                              "因为与参数形状绑定）。见 src/utils/channel_expand.py。")
+    # ── 纯评测模式（2026-09-18）───────────────────────────────────────────
+    # 加载 ckpt（配合 --resume-full）-> 跑一次 in-mem eval -> 退出。**不进训练循环**。
+    # 用途：给某个已有 ckpt 单独评测，不污染 step 计数 / LR 调度 / optimizer。
+    # ⚠ 不加这个开关时，想评 ckpt 只能 resume 再跑几千步等 epoch 落点 ——
+    #   那会真的训练若干步，不是"评这个 ckpt"。
+    parser.add_argument("--eval-only", action="store_true", dest="eval_only",
+                        help="只评测不训练：加载 --resume-full 的 ckpt，跑一次 "
+                             "in-mem eval 后退出。")
     parser.add_argument("--repa-cache-dir", type=str, default="", dest="repa_cache_dir",
                         help="Dir with pre-extracted DINOv2 teacher features (feats.f16 + ids.npy, "
                              "built by tools/build_dino_cache.py). Hits skip the per-step DINO "

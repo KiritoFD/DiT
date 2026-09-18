@@ -66,7 +66,7 @@ from src.train.cli import parse_args
 from src.utils.channel_expand import (expand_ckpt_4ch_to_12ch,
                                       materialize_lazy_params)
 from src.train.ckpt import save_checkpoint, prune_checkpoints, drain_ckpt
-from src.eval.in_mem_eval import maybe_run_in_training
+from src.eval.in_mem_eval import maybe_run_in_training, run_in_mem_eval
 
 # ── in-process GPU eval 路径已删除（2026-09-17）────────────────────────────
 # 它由 `--auto-eval` 门控，而**全仓 0 个配置把它设为 true**（70 个显式 false）。
@@ -1199,6 +1199,33 @@ def main(args):
             f"[alloc] 循环前基线: reserved {torch.cuda.memory_reserved() / 2 ** 30:.2f}G | "
             f"活跃 {torch.cuda.memory_allocated() / 2 ** 30:.2f}G | "
             f"高水位 {torch.cuda.max_memory_reserved() / 2 ** 30:.2f}G")
+
+    # ── 纯评测模式：加载 ckpt -> 评一次 -> 退出，**不进训练循环** ──────────
+    # 与"resume 再跑几千步等 epoch 落点"的区别：这里一步都不训，
+    # 不污染 step 计数 / LR 调度 / optimizer / EMA。
+    if getattr(args, 'eval_only', False):
+        if rank == 0:
+            _ev_step = int(train_steps)
+            logger.info(f"[eval-only] 只评测不训练：step={_ev_step}, "
+                        f"权重={'ema' if ema_model is not None else 'model'}, "
+                        f"sets={getattr(args, 'in_mem_eval_sets', '')!r}")
+            _m = ema_model if ema_model is not None else model
+            _m.eval()
+            try:
+                _res = run_in_mem_eval(
+                    _m, args, _ev_step, device,
+                    os.path.join(checkpoint_dir, "..", "eval_only"),
+                    logger=logger)
+                logger.info(f"[eval-only] 完成: {_res}")
+            except Exception as _e:
+                logger.error(f"[eval-only] 失败: {type(_e).__name__}: {_e}")
+                import traceback as _tb
+                logger.error(_tb.format_exc())
+                raise
+        if dist.is_initialized():
+            dist.barrier()
+        logger.info("[eval-only] 退出")
+        return
 
     for epoch in range(_epochs_needed):
         sampler.set_epoch(epoch)
