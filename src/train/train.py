@@ -765,13 +765,25 @@ def main(args):
                 f"请设 --num-calligraphers > 预训练书家数")
         requires_grad(model, False)
         _tbl.requires_grad_(True)
-        # ⚠ requires_grad 是**逐张量**的，不能只放开某几行。
-        #   所以整表放开 + 用 grad hook 把旧行梯度清零。
+        # ⚠ 两个坑（都实测踩过）:
+        #   1) requires_grad 是**逐张量**的，不能只放开某几行 -> 整表放开 +
+        #      用 grad hook 把旧行梯度清零。
+        #   2) 表的**最后一行是 CFG null 行**，不能当成新书家训！新行范围是
+        #      [_n_old, _n_all-1)，不是 [_n_old, _n_all)。
+        #   3) hook 里的 mask 必须在**同一 device**（grad 在 cuda，mask 默认 cpu
+        #      -> RuntimeError: Expected all tensors to be on the same device）
         _mask = torch.zeros_like(_tbl)
-        _mask[_n_old:_n_all] = 1.0
-        _tbl.register_hook(lambda g: g * _mask)
+        _mask[_n_old:_n_all - 1] = 1.0
+        # ⚠⚠ 必须在 hook **内部**把 mask 搬到 grad 的 device。
+        #   建 mask 时模型还在 CPU（冻结策略跑在 .to(device) 之前），
+        #   写死 device 会导致 backward 时报
+        #   "Expected all tensors to be on the same device, cuda:0 and cpu!"
+        #   （这个坑连踩两次：先建在默认 cpu，再改成 _tbl.device，都不行）
+        _tbl.register_hook(lambda g: g * _mask.to(g.device))
         logger.info(f"[train-only-new-callig] 冻结主干，只训书家表新增行 "
-                    f"[{_n_old}:{_n_all}) -> {(_n_all - _n_old) * _tbl.shape[1]} 参数")
+                    f"[{_n_old}:{_n_all - 1}) -> "
+                    f"{(_n_all - 1 - _n_old) * _tbl.shape[1]} 参数"
+                    f"（末行 {_n_all - 1} 是 CFG null 行，已排除）")
 
     _train_only_style = bool(getattr(args, 'train_only_style', False))
     if _train_only_style:
