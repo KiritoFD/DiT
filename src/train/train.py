@@ -498,9 +498,22 @@ def main(args):
                 #   新行用**已有书家的均值**初始化 —— 从"平均书家"出发，
                 #   比随机初始化(分布外)收敛快得多。这是 few-shot 成败的关键之一。
                 if _n_emb > _n_pre:
-                    _init = str(getattr(args, "init_new_callig", "mean"))
-                    if _init == "mean":
+                    _init = str(getattr(args, "init_new_callig", "mean_scaled"))
+                    if _init in ("mean", "mean_scaled"):
                         _base = _emb.float().mean(0)
+                        # ⚠⚠ 关键修正: 各行近似正交时, **均值向量的范数会远小于单个行**
+                        #    (实测: 各行范数 med=11.0, 而均值向量范数只有 2.06)。
+                        #    直接用均值初始化 -> 新行比典型书家小 5 倍 -> 起点就在分布外,
+                        #    主干(冻结)根本用不了这么小的条件向量。
+                        #    所以保留均值**方向**, 但把范数拉回典型书家的量级。
+                        if _init == "mean_scaled":
+                            _nrm = _emb.float().norm(dim=1)
+                            _tgt = float(_nrm.median())
+                            _cur = float(_base.norm())
+                            if _cur > 1e-8 and _tgt > 0:
+                                _base = _base * (_tgt / _cur)
+                            logger.info(f"[callig-emb] mean_scaled: 均值范数 {_cur:.3f} "
+                                        f"-> 目标(各行中位数) {_tgt:.3f}")
                     elif _init == "zeros":
                         _base = torch.zeros(_dim)
                     else:                       # random: 保持默认初始化
@@ -508,6 +521,9 @@ def main(args):
                     if _base is not None:
                         _w[_n_pre:_n_emb].copy_(_base.expand(_n_emb - _n_pre, -1))
                     logger.info(f"[callig-emb] 新增 {_n_emb - _n_pre} 个书家行, "
+                                f"初始化={_init}, 范数={float(_base.norm()):.3f}"
+                                if _base is not None else
+                                f"[callig-emb] 新增 {_n_emb - _n_pre} 个书家行, "
                                 f"初始化={_init}")
             logger.info(f"[callig-emb] 加载预训练书家表 {_cep}: {_emb.shape}, "
                         f"null 行保持随机")
