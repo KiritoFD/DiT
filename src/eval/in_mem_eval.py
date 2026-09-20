@@ -147,6 +147,31 @@ def _get_callig_map(path):
     return _CMAP
 
 
+_CSMAP = None
+
+
+def _get_callig_script_map(path):
+    """(书家×书体) 联合风格词表加载(缓存单例)。没配 -> None(走单书家词表/原始 id)。
+
+    与 _get_callig_map 同理: 配了路径但不存在 -> 直接报错(否则评测用单书家表
+    而训练用 pair 表 -> 风格条件静默错位, ssim 照样算得出)。
+    """
+    global _CSMAP
+    if _CSMAP is not None:
+        return _CSMAP
+    if not path:
+        return None
+    if not os.path.exists(path):
+        raise FileNotFoundError(
+            f"callig_script_map 配了但不存在: {path!r}。若继续跑, 评测会用单书家词表 "
+            f"而训练用的是 (书家,书体) pair -> 风格条件静默错位。")
+    from src.utils.callig_script_map import load_callig_script_map
+    _CSMAP = load_callig_script_map(path)
+    print(f"[in-mem-eval] callig_script_map loaded: {path} "
+          f"({_CSMAP['num_pairs']} pairs)")
+    return _CSMAP
+
+
 def _get_cache(csv_path, n, img_root, shards, args):
     """eval cache 跨 step 复用 (同一 set 每 2500 步重算一次无意义)。"""
     ck = (csv_path, n)
@@ -156,7 +181,8 @@ def _get_cache(csv_path, n, img_root, shards, args):
             csv_path, img_root, None, 256, n, 8,
             int(getattr(args, "latent_channels", 4)), sf,
             skel_latent_shards_dir=shards,
-            callig_id_map=_get_callig_map(getattr(args, "callig_id_map", None)))
+            callig_id_map=_get_callig_map(getattr(args, "callig_id_map", None)),
+            callig_script_map=_get_callig_script_map(getattr(args, "callig_script_map", None)))
     return _CACHES[ck]
 
 

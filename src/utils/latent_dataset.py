@@ -9,6 +9,7 @@ from torch.utils.data import Dataset
 from PIL import Image
 
 from .callig_map import map_callig_id as _map_callig
+from .callig_script_map import map_callig_script as _map_callig_script
 
 
 # ── img_id 提取（唯一入口）─────────────────────────────────────────────────
@@ -71,13 +72,16 @@ class MCCDLatentDataset(Dataset):
                  image_size=256, is_train=False, preload=False, load_image=True,
                  num_preload_workers=16, use_glyph_cond=False, skel_latent_shards_dir=None,
                  callig_id_map=None, aux_latent_shards_dirs=None,
-                 inst_skel_shards_dir=None):
+                 inst_skel_shards_dir=None, callig_script_map=None):
         self.samples = []
         with open(csv_file, 'r', encoding='utf-8') as f:
             for row in csv.DictReader(f):
                 self.samples.append(row)
         # 书家词表收紧: 稀疏 raw calligrapher_id -> 连续索引 (见 callig_map.py)
         self._callig_map = callig_id_map
+        # (书家×书体) 联合风格词表 (见 callig_script_map.py)。非 None 时 y_callig
+        # 改查 pair_id(0..86), 让同一书家的不同书体各得一个风格向量。
+        self._callig_script_map = callig_script_map
         self.use_glyph_cond = bool(use_glyph_cond)
         if self.use_glyph_cond:
             # 标准字形 latent 查询(懒加载, 全局单例), 训练/推理一致
@@ -459,7 +463,11 @@ class MCCDLatentDataset(Dataset):
             'inst_skel': inst_skel,
             'aux_latents': aux_t,
             'y_callig': torch.tensor(
-                _map_callig(int(row['calligrapher_id']), self._callig_map), dtype=torch.long),
+                (_map_callig_script(int(row['calligrapher_id']), int(row['script_id']),
+                                    self._callig_script_map)
+                 if self._callig_script_map is not None
+                 else _map_callig(int(row['calligrapher_id']), self._callig_map)),
+                dtype=torch.long),
             'y_script': torch.tensor(int(row['script_id']), dtype=torch.long),
             'y_char': torch.tensor(
                 int(row.get('glyph_id', row['character_id'])), dtype=torch.long),

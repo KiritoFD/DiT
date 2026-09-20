@@ -49,6 +49,9 @@ def main():
             t = torch.from_numpy(g).float()[None, None].repeat(3, 1, 1)
             t = F.interpolate(t[None], size=(DINO_SIZE, DINO_SIZE), mode="bicubic",
                               align_corners=False)[0]
+            # ★ 2026-09-19 修: 同 extract_dino_cls_50k.py —— cv2 灰度 0..255, 缺 /255
+            #   会让 ImageNet-norm 后输入幅度 ~1e3, ViT attention 饱和, CLS 全行恒定
+            t = t / 255.0
             return t
         except Exception:
             return torch.zeros(3, DINO_SIZE, DINO_SIZE)

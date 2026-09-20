@@ -70,8 +70,6 @@ def main():
             glyph_scale_init=float(a.get("glyph_scale_init", 0.4)),
             glyph_embedder_depth=int(a.get("glyph_embedder_depth", 0)),
             glyph_inject_layers=int(a.get("glyph_inject_layers", 0)),
-            callig_style_attn=bool(a.get("callig_style_attn", False)),
-            callig_n_style=int(a.get("callig_n_style", 8)),
             glyph_inject_mode=a.get("glyph_inject_mode", "adaln"), **arch).to(dev)
         model.load_state_dict(_strip(d.get("ema") or d.get("model") or d), strict=False)
         model.eval()

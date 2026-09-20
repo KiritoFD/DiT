@@ -438,7 +438,8 @@ def compute_metrics(dec_dir, gt_dir, tag_prefix, n, use_lpips=True, idx_range=No
 # ── eval 条件缓存 (GT 图 + conds + skel + 固定 noise) ───────────────────────
 def make_eval_cache(eval_csv, img_root, skel_root, image_size, n,
                     vae_downscale, latent_channels, scaling_factor,
-                    skel_latent_shards_dir=None, callig_id_map=None):
+                    skel_latent_shards_dir=None, callig_id_map=None,
+                    callig_script_map=None):
     """Pre-load N eval samples: GT images + conditions + skels + fixed noise (CPU).
 
     skel 条件: 优先从 skel_latent_shards_dir 加载 VAE latent (N,4,32,32);
@@ -467,6 +468,16 @@ def make_eval_cache(eval_csv, img_root, skel_root, image_size, n,
                 f"硬跑会退回原始 id -> 索引越界或用错书家（都是静默的）。\n"
                 f"  修法: 换一份只含词表内书家的 eval csv，或把词表补全。\n"
                 f"  参考 tools/split_eval_from_50k.py（从训练集切 eval，书家必然在表内）。")
+    # (书家×书体) 联合风格词表: 设了则 y_callig 用 pair_id。循环前校验每行 pair 可映射
+    # (未见 pair 会回退到该书家默认 pair, 不报错但会告警 —— 避免静默用错风格)。
+    if callig_script_map is not None:
+        _pm = callig_script_map["pair_map"]
+        _miss_pair = sorted({f"{int(r['calligrapher_id'])}:{int(r['script_id'])}"
+                             for r in rows
+                             if f"{int(r['calligrapher_id'])}:{int(r['script_id'])}" not in _pm})
+        if _miss_pair:
+            print(f"[eval-cache] ⚠ {len(_miss_pair)} 个 (书家,书体) 对不在词表, "
+                  f"将回退到该书家默认 pair: {_miss_pair[:10]}")
     transform = T.Compose([
         T.Resize((image_size, image_size), interpolation=T.InterpolationMode.BICUBIC),
         T.ToTensor(),
@@ -497,7 +508,12 @@ def make_eval_cache(eval_csv, img_root, skel_root, image_size, n,
         gts[i] = transform(Image.open(p).convert("RGB"))
         # 书家词表收紧: raw id -> 连续索引 (与训练数据层同一张映射表, 见 callig_map.py)
         _cid = int(row["calligrapher_id"])
-        if callig_id_map is not None:
+        if callig_script_map is not None:
+            # (书家×书体) 联合风格词表: y_callig = pair_id (与训练数据层同一张表)
+            from src.utils.callig_script_map import map_callig_script
+            _cid = map_callig_script(int(row["calligrapher_id"]),
+                                     int(row["script_id"]), callig_script_map)
+        elif callig_id_map is not None:
             # ⚠ 原来是 `callig_id_map.get(_cid, _cid)` —— **不在词表里就退回原始 id**。
             #   两个后果，都是静默的：
             #     ① 原始 id >= 表大小 -> CUDA 索引越界（v13 在 step5000 就这么崩的：

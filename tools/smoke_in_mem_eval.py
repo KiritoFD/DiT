@@ -37,8 +37,6 @@ model = DiT_2Cond_models[a.get("model", "DiT-2Cond-S/2")](
     glyph_scale_init=float(a.get("glyph_scale_init") or 0.4), glyph_drop_prob=0.0,
     glyph_embedder_depth=int(a.get("glyph_embedder_depth") or 0),
     glyph_inject_layers=int(a.get("glyph_inject_layers") or 0),
-    callig_style_attn=bool(a.get("callig_style_attn", False)),
-    callig_n_style=int(a.get("callig_n_style") or 8),
     callig_spatial=bool(a.get("callig_spatial", False)),
     callig_spatial_rank=int(a.get("callig_spatial_rank") or 64),
     style_token_n=int(a.get("style_token_n") or 0),

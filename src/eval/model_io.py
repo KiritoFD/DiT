@@ -102,8 +102,10 @@ def build_model_from_args(a, device, **overrides):
         char_proj_mode=g("char_proj_mode", "full"),
         callig_proj_mode=g("callig_proj_mode", "linear"),
         callig_scale_init=gf("callig_scale_init", 1.0),
-        callig_style_attn=bool(g("callig_style_attn", False)),
-        callig_n_style=gi("callig_n_style", 8),
+        # v15 多模态风格: >0 时 y_callig_embedder = MultiStyleEmbedder((B,K,D) 查表)
+        callig_multi_style_k=gi("callig_multi_style_k", 0),
+        callig_style_ca=bool(g("callig_style_ca", False)),
+        style_ctx_every_layer=bool(g("style_ctx_every_layer", False)),
         callig_spatial=bool(g("callig_spatial", False)),
         callig_spatial_rank=gi("callig_spatial_rank", 64),
         freeze_char_table=bool(g("freeze_char_table", False)),
@@ -150,11 +152,20 @@ def apply_post_construction(model, a, verbose=True):
         _d = torch.load(_cep, map_location="cpu", weights_only=False)
         _emb = _d["embedding"] if isinstance(_d, dict) else _d
         _w = model.y_callig_embedder.embedding_table.weight
-        assert _emb.shape == (_w.shape[0] - 1, _w.shape[1]), (
-            f"预训练书家表形状 {tuple(_emb.shape)} != 模型表 {tuple(_w.shape)} 去掉 null 行。"
-            f" 检查 num_calligraphers / callig_emb_pretrained 是否配套")
-        with torch.no_grad():
-            _w[:_emb.shape[0]].copy_(_emb.float())
+        from src.model.dit import MultiStyleEmbedder
+        if isinstance(model.y_callig_embedder, MultiStyleEmbedder):
+            # v15: 表 (N, K*D) 不含 null 行, 全表覆盖; null_embed 独立参数保持随机
+            assert _emb.shape == tuple(_w.shape), (
+                f"预训练多模态风格表 {tuple(_emb.shape)} != 模型表 {tuple(_w.shape)}。"
+                f" 检查 num_calligraphers / callig_multi_style_k / callig_emb_pretrained 是否配套")
+            with torch.no_grad():
+                _w.copy_(_emb.float())
+        else:
+            assert _emb.shape == (_w.shape[0] - 1, _w.shape[1]), (
+                f"预训练书家表形状 {tuple(_emb.shape)} != 模型表 {tuple(_w.shape)} 去掉 null 行。"
+                f" 检查 num_calligraphers / callig_emb_pretrained 是否配套")
+            with torch.no_grad():
+                _w[:_emb.shape[0]].copy_(_emb.float())
         del _d
         if verbose:
             print(f"[model_io] callig 预训练表已加载: {tuple(_emb.shape)}")

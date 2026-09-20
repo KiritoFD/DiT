@@ -47,8 +47,6 @@ def main():
     ap.add_argument("--vae-batch", type=int, default=25)
     ap.add_argument("--include-steps", type=str, default="",
                     help="逗号分隔 step 列表 (空=全部); 如 180000,200000,250000")
-    ap.add_argument("--disable-callig-style", action="store_true",
-                    help="强制 callig_style_attn=False 建模 (消融: 风格注入对指标的贡献)")
     ap.add_argument("--device", default="cuda", choices=["cuda", "cpu"],
                     help="in-mem eval 设备 (cuda=GPU, cpu=CPU)")
     ap.add_argument("--ckpt-override", default="",
@@ -102,10 +100,7 @@ def main():
     #   而加载只用 strict=False + 断言 unexpected==0 —— **missing 被完全忽略**，
     #   形状不匹配的层静默保持随机初始化。
     from src.eval.model_io import build_model_from_args, apply_post_construction
-    _ov = {}
-    if args.disable_callig_style:
-        _ov["callig_style_attn"] = False
-    model = build_model_from_args(a, dev, **_ov)
+    model = build_model_from_args(a, dev)
     apply_post_construction(model, a, verbose=False)
     _warned_strict = False
     vae = load_eval_vae(dev, "data/pretrained/sd-vae-ft-ema")

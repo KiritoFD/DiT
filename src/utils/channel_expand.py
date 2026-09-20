@@ -88,6 +88,29 @@ def expand_state_dict_4ch_to_12ch(
     return out, expanded
 
 
+def drop_shape_mismatched(model, sd: Dict[str, torch.Tensor]) -> List[str]:
+    """从 ckpt state_dict 里**剔除与模型形状不匹配的键**，返回被剔除的键名。
+
+    ## 为什么需要
+
+    ``load_state_dict(strict=False)`` 只容忍 missing/unexpected **键**，
+    遇到形状不匹配会直接 RuntimeError —— 而"换了条件头形状的架构演进式 resume"
+    （如 v15 把书家表从 (87,128) 换成 (87, K*384)、cond_fusion 输入 256→512）
+    恰恰希望：**形状对得上的全部加载，对不上的视为新模块重新初始化并保持可训**。
+
+    剔除而不是硬崩：调用方必须把返回的键并入 resume 的 missing 集合，
+    让 `--train-only-style` 等冻结策略把它们当作"ckpt 里没有的新模块"放开
+    （否则新模块被冻死在随机初始化上 —— train-only-style 的历史教训）。
+    """
+    model_sd = model.state_dict()
+    dropped = []
+    for k in list(sd.keys()):
+        if k in model_sd and tuple(model_sd[k].shape) != tuple(sd[k].shape):
+            dropped.append(k)
+            del sd[k]
+    return dropped
+
+
 def materialize_lazy_params(model, sd: Dict[str, torch.Tensor]) -> List[str]:
     """把 **ckpt 里有、但模型还没创建**的懒加载参数补出来，再返回补了哪些。
 

@@ -63,8 +63,10 @@ from src.train.cli import parse_args
 #   于是"只在 --expand-from-4ch 分支里 import"会让 --resume-full 分支
 #   引用到未绑定的名字 -> UnboundLocalError（实测踩过：
 #   `local variable 'materialize_lazy_params' referenced before assignment`）。
-from src.utils.channel_expand import (expand_ckpt_4ch_to_12ch,
+from src.utils.channel_expand import (drop_shape_mismatched,
+                                      expand_ckpt_4ch_to_12ch,
                                       materialize_lazy_params)
+from src.model.dit import MultiStyleEmbedder
 from src.train.ckpt import save_checkpoint, prune_checkpoints, drain_ckpt
 from src.eval.in_mem_eval import maybe_run_in_training, run_in_mem_eval
 
@@ -229,6 +231,25 @@ def main(args):
               f"num_calligraphers {args.num_calligraphers} -> {_n}", flush=True)
         args.num_calligraphers = _n
 
+    # ── (书家×书体) 联合风格词表 (2026-09-18): 设了就把"书家类"细化为 pair ──
+    # 动机见 src/utils/callig_script_map.py 与 docs/system/73: 单向量装不下多书体风格
+    # (ratio_style=1.18, r=-0.62)。num_calligraphers 改为 pair 数(87), 模型/预训练表
+    # 加载/冻结逻辑全部复用(只是看到 87 类) -> 干净的标签级单变量改动。
+    args._callig_script_map = None
+    if getattr(args, "callig_script_map", ""):
+        from src.utils.callig_script_map import load_callig_script_map
+        _csm_path = args.callig_script_map
+        if not os.path.isabs(_csm_path) and not os.path.exists(_csm_path):
+            _csm_path = os.path.join("/root/Workspace/xy/DiT", _csm_path)
+        _csmap = load_callig_script_map(_csm_path)
+        args._callig_script_map = _csmap
+        args.callig_script_map = _csm_path
+        args.num_calligraphers = int(_csmap["num_pairs"])
+        print(f"[callig-script-map] 加载 {_csm_path}: num_calligraphers -> "
+              f"{args.num_calligraphers} (书家×书体 pair; 原书家 "
+              f"{_csmap['num_calligraphers']}, sparse {len(_csmap.get('sparse_pairs', []))} 对)",
+              flush=True)
+
     if 'LOCAL_RANK' not in os.environ:
         os.environ['LOCAL_RANK'] = '0'
         os.environ['RANK'] = '0'
@@ -379,8 +400,10 @@ def main(args):
             char_proj_mode=getattr(args, 'char_proj_mode', 'full'),
             callig_proj_mode=getattr(args, 'callig_proj_mode', 'linear'),
             callig_scale_init=float(getattr(args, 'callig_scale_init', 1.0)),
-            callig_style_attn=getattr(args, 'callig_style_attn', False),
-            callig_n_style=getattr(args, 'callig_n_style', 8),
+            # v15 多模态风格: >0 时 y_callig_embedder 换 MultiStyleEmbedder(K token 查表)
+            callig_multi_style_k=int(getattr(args, 'callig_multi_style_k', 0)),
+            callig_style_ca=bool(getattr(args, 'callig_style_ca', False)),
+            style_ctx_every_layer=bool(getattr(args, 'style_ctx_every_layer', False)),
             callig_spatial=getattr(args, 'callig_spatial', False),
             callig_spatial_rank=int(getattr(args, 'callig_spatial_rank', 64)),
             freeze_char_table=getattr(args, 'freeze_char_table', False),
@@ -454,12 +477,41 @@ def main(args):
         _d = torch.load(_cep, map_location="cpu", weights_only=False)
         _emb = _d["embedding"] if isinstance(_d, dict) else _d
         _w = model.y_callig_embedder.embedding_table.weight
-        assert _emb.shape == (_w.shape[0] - 1, _w.shape[1]), \
-            f"预训练书家表形状 {_emb.shape} != 表 {tuple(_w.shape)} - null 行"
-        with torch.no_grad():
-            _w[:_emb.shape[0]].copy_(_emb.float())
-        logger.info(f"[callig-emb] 加载预训练书家表 {_cep}: {_emb.shape}, "
-                    f"null 行保持随机")
+        if isinstance(model.y_callig_embedder, MultiStyleEmbedder):
+            # v15: 表 (N, K*D) 不含 null 行, 全表覆盖; null_embed 独立参数保持随机
+            assert _emb.shape == tuple(_w.shape), \
+                f"预训练多模态风格表 {_emb.shape} != 表 {tuple(_w.shape)}"
+            with torch.no_grad():
+                _w.copy_(_emb.float())
+            logger.info(f"[callig-emb] 加载预训练多模态风格表 {_cep}: {_emb.shape} "
+                        f"(K={model.y_callig_embedder.k_clusters}), null_embed 保持随机")
+        else:
+            _n_pre, _dim = _emb.shape
+            _n_emb = _w.shape[0] - 1          # 表行数(不含 null 行)
+            if _n_pre > _n_emb or _dim != _w.shape[1]:
+                raise SystemExit(
+                    f"[callig-emb] 预训练书家表形状 {_emb.shape} 与表 "
+                    f"{tuple(_w.shape)}(-null) 不兼容")
+            with torch.no_grad():
+                _w[:_n_pre].copy_(_emb.float())
+                # ★ [2026-09-20] few-shot 新增书家: 表扩了但预训练表没那么大。
+                #   新行用**已有书家的均值**初始化 —— 从"平均书家"出发，
+                #   比随机初始化(分布外)收敛快得多。这是 few-shot 成败的关键之一。
+                if _n_emb > _n_pre:
+                    _init = str(getattr(args, "init_new_callig", "mean"))
+                    if _init == "mean":
+                        _base = _emb.float().mean(0)
+                    elif _init == "zeros":
+                        _base = torch.zeros(_dim)
+                    else:                       # random: 保持默认初始化
+                        _base = None
+                    if _base is not None:
+                        _w[_n_pre:_n_emb].copy_(_base.expand(_n_emb - _n_pre, -1))
+                    logger.info(f"[callig-emb] 新增 {_n_emb - _n_pre} 个书家行, "
+                                f"初始化={_init}")
+            logger.info(f"[callig-emb] 加载预训练书家表 {_cep}: {_emb.shape}, "
+                        f"null 行保持随机")
+            _pretrained_n_callig = _n_pre      # 供 --train-only-new-callig 用
     if getattr(args, "freeze_callig_table", False):
         assert getattr(args, "callig_emb_pretrained", ""), \
             "freeze_callig_table 需要先 --callig-emb-pretrained (否则冻结随机表)"
@@ -666,11 +718,20 @@ def main(args):
         _lazy = materialize_lazy_params(model, _sd)
         if _lazy:
             logger.info(f"[resume-full] 补出懒参数: {_lazy}")
+        # 架构演进式 resume（如 v15 换条件头形状）: 形状对不上的键剔除并视为新模块
+        # （strict=False 遇形状不匹配会 RuntimeError; 剔除后由冻结策略保持可训）
+        _shape_dropped = drop_shape_mismatched(model, _sd)
+        if _shape_dropped:
+            logger.warning(
+                f"[resume-full] {len(_shape_dropped)} 个键形状不匹配, 已剔除"
+                f"(重新初始化, 须保持可训): {sorted(_shape_dropped)[:8]} ...")
         missing, unexpected = model.load_state_dict(_sd, strict=False)
         logger.info(f"[resume-full] Loaded weights from {args.resume_full} "
-                    f"(missing={len(missing)}, unexpected={len(unexpected)}).")
+                    f"(missing={len(missing)}, unexpected={len(unexpected)}, "
+                    f"shape_dropped={len(_shape_dropped)}).")
         # 供后面的冻结策略用：ckpt 里**没有**的权重 = 新模块，必须可训
-        _resume_missing = set(missing)
+        # （含形状失配被剔除的键 —— 它们同样从随机初始化开始）
+        _resume_missing = set(missing) | set(_shape_dropped)
         # ★ 护栏: 若仍有 null_embed 落在 unexpected 里，说明加载顺序错了 ——
         #   不报错的话 CFG 的 null 向量会被静默重新随机化（loss 照降，但 CFG 变味）。
         _lost_null = [k for k in unexpected if k.endswith(".null_embed")]
@@ -690,6 +751,28 @@ def main(args):
     #   3) [2026-09-18] --train-only-style: 冻结**全部**主干，只训风格模块。
     #      风格模块 CalligStyleCrossAttn 的 out_proj 是 zero-init，
     #      所以 step0 输出**恒等于**已训好的 ckpt -> 任何 metric 变化都可归因于新增风格容量。
+    #   4) [2026-09-20] --train-only-new-callig: few-shot 新书家。
+    #      冻结全部，**只让书家表的【新行】**更新（旧行梯度用 hook 清零），
+    #      保证已训好的 45 个书家表示不漂移。新增行数 = 表行数-1 - 预训练行数。
+    _train_only_new_callig = bool(getattr(args, 'train_only_new_callig', False))
+    if _train_only_new_callig:
+        _tbl = model.y_callig_embedder.embedding_table.weight
+        _n_all = _tbl.shape[0]
+        _n_old = int(locals().get('_pretrained_n_callig', _n_all - 1))
+        if _n_old >= _n_all:
+            raise SystemExit(
+                f"[train-only-new-callig] 表没有新增行（预训练 {_n_old} / 表 {_n_all}）—— "
+                f"请设 --num-calligraphers > 预训练书家数")
+        requires_grad(model, False)
+        _tbl.requires_grad_(True)
+        # ⚠ requires_grad 是**逐张量**的，不能只放开某几行。
+        #   所以整表放开 + 用 grad hook 把旧行梯度清零。
+        _mask = torch.zeros_like(_tbl)
+        _mask[_n_old:_n_all] = 1.0
+        _tbl.register_hook(lambda g: g * _mask)
+        logger.info(f"[train-only-new-callig] 冻结主干，只训书家表新增行 "
+                    f"[{_n_old}:{_n_all}) -> {(_n_all - _n_old) * _tbl.shape[1]} 参数")
+
     _train_only_style = bool(getattr(args, 'train_only_style', False))
     if _train_only_style:
         requires_grad(model, False)
@@ -700,9 +783,17 @@ def main(args):
         #   正确语义：**只训练 ckpt 里没有的新模块**（主干仍然全冻）。
         _miss = set(locals().get('_resume_missing', set()) or set())
         _n_tr, _tot, _n_new = 0, 0, 0
+        # v15 多模态风格: 风格链 = 查表(+null) + 书家化骨架 CA + 条件融合层,
+        # 连同 ckpt 缺失的新张量全部放开; 其余主干(x_embedder/blocks/t_embedder/
+        # glyph_embedder/glyph_vec_proj/glyph_scale)保持冻结。
+        _multi_style = isinstance(getattr(model, 'y_callig_embedder', None),
+                                  MultiStyleEmbedder)
         for _nm, _p in model.named_parameters():
             _tot += _p.numel()
-            if ('callig_style_ca' in _nm or 'style_role' in _nm):
+            if ('callig_style_ca' in _nm or 'style_role' in _nm
+                    or (_multi_style and ('y_callig_embedder' in _nm
+                                          or 'cond_fusion' in _nm
+                                          or 'callig_scale' in _nm))):
                 _p.requires_grad = True
                 _n_tr += _p.numel()
             elif _nm in _miss:
@@ -712,7 +803,8 @@ def main(args):
         if _n_tr == 0:
             raise SystemExit(
                 "[train-only-style] 匹配不到任何可训参数 —— "
-                "检查是否设了 --style-token-n > 0（否则模型里没有 callig_style_ca）")
+                "检查是否设了 --style-token-n > 0 或 --callig-multi-style-k > 0"
+                "（否则模型里没有风格模块）")
         logger.info(f"[train-only-style] 冻结主干，只训【新】模块: "
                     f"{_n_tr:,} / {_tot:,} 参数可训 ({_n_tr/_tot*100:.2f}%)，"
                     f"其中 ckpt 缺失的新张量 {_n_new} 个")
@@ -721,6 +813,79 @@ def main(args):
                 f"[train-only-style] ⚠ 有 {_n_new} 个张量在 ckpt 里不存在（换了架构），"
                 f"它们从随机初始化开始训 —— 因此 **step0 不等于原 ckpt**，"
                 f"需要足够的步数让新路径收敛后再比较指标")
+
+    # ── Stage 3: 冻主干、只微调书家风格表 + 锚定正则 (2026-09-18) ──────────────
+    # 动机: 端到端训表会塌缩(cos 0.323); styletok 实测"冻主干只训风格参数"若无护栏会
+    # 漂移/记忆 -> strict 掉头。这里 (a) 只放开书家表本体(+null), (b) 加"锚到预训练表"的
+    # L2 正则, 让它能朝渲染需要特化但不许漂回塌缩。判据用 ratio_style, 不用 strict ssim。
+    _train_only_callig_table = bool(getattr(args, 'train_only_callig_table', False))
+    if _train_only_callig_table:
+        requires_grad(model, False)
+        _n_tr = 0
+        for _nm, _p in model.named_parameters():
+            _is_table = ('y_callig_embedder.embedding_table' in _nm
+                         or 'y_callig_embedder.null_embed' in _nm)
+            _is_proj = (getattr(args, 'style_tune_proj', False)
+                        and ('callig_proj' in _nm or 'cond_fusion' in _nm
+                             or 'callig_scale' in _nm))
+            if _is_table or _is_proj:
+                _p.requires_grad = True
+                _n_tr += _p.numel()
+        if _n_tr == 0:
+            raise SystemExit("[train-only-callig-table] 没匹配到可训参数 "
+                             "(模型是否有 y_callig_embedder?)")
+        logger.info(f"[train-only-callig-table] 冻结主干, 只训书家风格表: {_n_tr:,} 参数可训")
+
+    # 锚定正则的目标表(Stage 3 / v15 用): 当前风格参数 vs 预训练的 L2, 防塌缩/防漂。
+    # 参数张量对象跨步稳定(优化器就地更新), 故循环前取一次引用即可。
+    # mode="row" : 锚每行表向量本身 (v14 stage3 口径, target = 预训练表 embedding)
+    # mode="mean": 锚 K token 的 mean pooling (v15 口径, target = pair 级 DINO 质心
+    #              'pair_mean') —— 允许 K 个 token 各自分化, 只约束其均值不漂离
+    #              该 pair 的真实风格中心, 防止 K=4 聚类在训练中重新塌缩。
+    _style_anchor_w = float(getattr(args, 'style_anchor_weight', 0.0) or 0.0)
+    _style_anchor_mode = str(getattr(args, 'style_anchor_mode', 'row') or 'row')
+    _style_table_param = None
+    _style_anchor_target = None
+    _style_anchor_k = 1
+    if _style_anchor_w > 0:
+        _raw = model.module if hasattr(model, "module") else model
+        _raw = getattr(_raw, "_orig_mod", _raw)
+        _style_table_param = _raw.y_callig_embedder.embedding_table.weight
+        _style_anchor_k = int(getattr(_raw.y_callig_embedder, 'k_clusters', 1))
+        _cep = getattr(args, "callig_emb_pretrained", "") or ""
+        if _cep:
+            if not os.path.isabs(_cep) and not os.path.exists(_cep):
+                _cep = os.path.join("/root/Workspace/xy/DiT", _cep)
+            _d = torch.load(_cep, map_location="cpu", weights_only=False)
+            if _style_anchor_mode == "mean":
+                _tgt = _d.get("pair_mean")
+                if _tgt is None:
+                    raise SystemExit(
+                        "[style-anchor] mode=mean 需要 pt 文件里有 'pair_mean' "
+                        "(87, D) —— 用 tools/build_multistyle_k4.py 重新生成")
+                _tgt = _tgt.float()
+            else:
+                _tgt = (_d["embedding"] if isinstance(_d, dict) else _d).float()
+            _style_anchor_target = _tgt.to(device)
+            del _d
+            if rank == 0:
+                logger.info(f"[style-anchor] λ={_style_anchor_w} mode={_style_anchor_mode} "
+                            f"锚到预训练目标 {tuple(_tgt.shape)} ({_cep})")
+        elif rank == 0:
+            logger.warning("[style-anchor] style_anchor_weight>0 但无 callig_emb_pretrained, 锚定不生效")
+    # ★ 2026-09-19: --fresh-scheduler 时**同时把步数计数器归零**。
+    #   否则 stage2 传过来的 train_steps (如 160000) 会:
+    #   1) 与 max_steps=40000 比较 -> 160000 >= 40000 -> 立即退出
+    #   2) 通过 _step_offset 把 LR 调度推到 cosine 末端 -> LR = min_ratio * base (≈3e-6)
+    #   "fresh scheduler" 的正确语义 = **当新训练开始**:
+    #   权重来自 ckpt, 但步数/LR/scheduler 全部归零。
+    #   这里提前归零 (在 scheduler 构建*之前*), 使 _step_offset 也为 0。
+    if (getattr(args, 'fresh_scheduler', False)
+            and _resume_full_ckpt is not None and resume_start_step > 0):
+        logger.info(f"[resume-full] fresh-scheduler: 步数计数器归零 "
+                    f"(原 {resume_start_step} -> 0), max_steps={args.max_steps} 从 0 起算")
+        resume_start_step = 0
+
     _has_pretrained = args.pretrained is not None
     if _has_pretrained:
         requires_grad(model, False)
@@ -816,7 +981,14 @@ def main(args):
         if _resume_full_ckpt is not None and _resume_full_ckpt.get("ema") is not None:
             # strict=False: 模型新增模块 (如 callig_spatial) 在旧 ckpt EMA 里没有 keys;
             # 这些 keys 会走 _LRScheduler 式的缺省初始化路径, 由 copy.deepcopy(model) 保持零初始化.
-            _ema_miss, _ema_unexp = ema_model.load_state_dict(_resume_full_ckpt["ema"], strict=False)
+            # ★ 2026-09-19: 形状失配的键先剔除 (strict=False 只容忍 key 差异,
+            #   容忍不了形状差异 —— v15 换条件头形状在这里崩过一次)。
+            _ema_sd = _resume_full_ckpt["ema"]
+            _ema_dropped = drop_shape_mismatched(ema_model, _ema_sd)
+            if _ema_dropped:
+                logger.info(f"[EMA] {len(_ema_dropped)} 个键形状失配, 剔除"
+                            f"(EMA 侧保持模型当前初始化): {sorted(_ema_dropped)[:6]} ...")
+            _ema_miss, _ema_unexp = ema_model.load_state_dict(_ema_sd, strict=False)
             if _ema_miss:
                 logger.info(f"[EMA] missing (new modules, kept init): {sorted(set(k.split('.')[0] for k in _ema_miss))[:8]}")
             logger.info("[EMA] restored EMA weights from checkpoint")
@@ -1062,6 +1234,7 @@ def main(args):
                                                           if getattr(args, 'w_latent_skel', 0.0) > 0
                                                           else None),
                                     callig_id_map=getattr(args, '_callig_map', None),
+                                    callig_script_map=getattr(args, '_callig_script_map', None),
                                     aux_latent_shards_dirs=aux_dirs_of(args))
         logger.info("Using latent-cached dataset (skip on-the-fly VAE encode)."
                     + (" preload=ON" if getattr(args, 'preload', False) else ""))
@@ -1212,6 +1385,18 @@ def main(args):
                         f"{opt.param_groups[0]['lr']:.2e} (old scheduler state ignored)")
         logger.info(f"[LR] cosine schedule: warmup={warmup_steps}, "
                     f"total={total_planned_steps}, min_ratio={args.min_lr_ratio}")
+
+    # ★ 2026-09-19: --fresh-scheduler 时**同时把步数计数器归零**。
+    #   否则 stage2 传过来的 train_steps (如 160000) 会:
+    #   1) 与 max_steps=40000 比较 -> 160000 >= 40000 -> 立即退出
+    #   2) 通过 _step_offset 把 LR 调度推到 cosine 末端 -> LR = min_ratio * base (≈3e-6)
+    #   "fresh scheduler" 的正确语义 = **当新训练开始**:
+    #   权重来自 ckpt, 但步数/LR/scheduler 全部归零。
+    if (getattr(args, 'fresh_scheduler', False)
+            and _resume_full_ckpt is not None):
+        logger.info(f"[resume-full] fresh-scheduler: 步数计数器归零 "
+                    f"(原 {resume_start_step} -> 0), max_steps={args.max_steps} 从 0 起算")
+        resume_start_step = 0
 
     model.train()
 
@@ -1501,6 +1686,16 @@ def main(args):
                         + loss_repa  # 统一 REPA: w × (1 - cos) 已在 RepaModule.forward 内含 warmup
                         + getattr(args, 'w_std_mid', 0.0) * loss_std_mid
                         + getattr(args, 'w_latent_skel', 0.0) * loss_skel_struct)
+                # Stage 3 / v15 锚定正则: 把书家风格参数拉向预训练目标, 防"冻主干
+                # 只训风格"时塌缩/漂移 (styletok 实测无护栏则 strict 掉头)。
+                # λ 由 --style-anchor-weight 控制, 口径由 --style-anchor-mode 决定。
+                if _style_anchor_w > 0 and _style_table_param is not None \
+                        and _style_anchor_target is not None:
+                    _Ecur = _style_table_param[:_style_anchor_target.shape[0]]
+                    if _style_anchor_mode == "mean":
+                        _Ecur = _Ecur.view(_style_anchor_target.shape[0],
+                                           _style_anchor_k, -1).mean(dim=1)
+                    loss = loss + _style_anchor_w * ((_Ecur - _style_anchor_target) ** 2).mean()
 
                 opt.zero_grad(set_to_none=True)  # INFRA: set_to_none 释放梯度tensor, 比 zero_() 快且省内存
 

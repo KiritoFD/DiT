@@ -165,6 +165,11 @@ def build_parser():
                         help="干净书家词表映射 json 路径 (raw calligrapher_id -> 0..N-1)。"
                              "设置后 num_calligraphers 自动收紧为词表长度, 数据层查表映射。"
                              "见 tools/build_callig_map.py。空=保持现状(稀疏 id 直通)。")
+    parser.add_argument("--callig-script-map", default="", dest="callig_script_map",
+                        help="(书家×书体) 联合风格词表 json (见 src/utils/callig_script_map.py)。"
+                             "设置后 num_calligraphers 自动改为 pair 数(如 87), 数据层 y_callig 查 "
+                             "(calligrapher_id, script_id)->pair_id, 让同一书家不同书体各得一个风格向量。"
+                             "与 --callig-id-map 二选一(本项优先)。空=保持单书家词表。")
     parser.add_argument("--callig-emb-pretrained", default="",
                         help="对比预训练的书家 embedding (.pt, 含 'embedding' (N,dim))。"
                              "加载到 y_callig_embedder 表前 N 行, 配合 --freeze-callig-table")
@@ -189,12 +194,21 @@ def build_parser():
                         help="白底归零: 训练目标已减去白底 latent (见 tools/rebuild_latents_wz.py), "
                              "评测/推理 decode 前**必须加回**, 否则 latent 的零向量会被 VAE 解成"
                              "灰黄棕色 (实测 RGB≈[129,110,89]) -> 整图发黄、更负处发黑。")
-    parser.add_argument("--callig-style-attn", action="store_true",
-                        help="callig 风格 cross-attention(书家化骨架正确形态): 书家向量 -> N_style 个 "
-                             "style token, 骨架 token 内容寻址聚合风格, 产生'书家x字x位置'交互(结体差异)。"
-                             "zero-init 可 resume。")
-    parser.add_argument("--callig-n-style", type=int, default=8,
-                        help="callig style token 数量 (配合 --callig-style-attn)")
+    parser.add_argument("--callig-multi-style-k", type=int, default=0, dest="callig_multi_style_k",
+                        help="[v15] 多模态风格: 每类 (书家×书体 pair) K 个 style token。"
+                             ">0 时 y_callig_embedder 换成 MultiStyleEmbedder (查表 (B,K,D), "
+                             "DINO K-Means 质心初始化, 见 tools/build_multistyle_k4.py), "
+                             "并构建 CalligStyleCrossAttn 书家化骨架; adaLN 分支用 K token "
+                             "mean pooling。动机: 单冻结 128 维向量装不下多模态风格 "
+                             "(r(样本数, strict)=-0.62, docs/919 §3)。配 --callig-embed-dim 384。")
+    parser.add_argument("--callig-style-ca", action="store_true", dest="callig_style_ca",
+                        help="[v15b] 配合 --callig-multi-style-k: 构建 CalligStyleCrossAttn "
+                             "书家化骨架 (Q=骨架 token+2D 位置, K/V=K 个风格 token, zero-init)。"
+                             "v15a(纯池化)不设; v15c 用 --style-ctx-every-layer。")
+    parser.add_argument("--style-ctx-every-layer", action="store_true", dest="style_ctx_every_layer",
+                        help="[v15c] 配合 --callig-multi-style-k: K 个风格 token 拼进每层 "
+                             "xattn 注入的 context (风格在每层、每个空间位置可直接寻址)。"
+                             "需要 --glyph-inject-mode xattn 且 --glyph-inject-layers > 0。")
     parser.add_argument("--glyph-inject-mode", choices=["adaln", "xattn"], default="adaln",
                         help="g 逐层注入方式: adaln=ZeroAdaLN 固定位置调制 (旧默认), "
                              "xattn=ZeroCrossAttention 空间寻址 (GlyphDraw 式, 新 ckpt 专用)")
@@ -227,6 +241,23 @@ def build_parser():
     parser.add_argument("--freeze-callig-table", action="store_true",
                         help="冻结书家表 [0,N) 行 (CFG null token 仍可训练)。"
                              "需先 --callig-emb-pretrained, 否则冻结随机初始化无意义")
+    parser.add_argument("--train-only-callig-table", action="store_true", dest="train_only_callig_table",
+                        help="Stage 3 诊断/微调: 冻结整个主干, 只训书家风格表 "
+                             "(y_callig_embedder.embedding_table + CFG null token)。"
+                             "配 --style-anchor-weight 防塌缩, --resume-full 已训 ckpt。")
+    parser.add_argument("--style-tune-proj", action="store_true", dest="style_tune_proj",
+                        help="配合 --train-only-callig-table: 额外放开 callig_proj/cond_fusion/callig_scale "
+                             "(让投影层也适配微调后的表)。默认只训表本体。")
+    parser.add_argument("--style-anchor-weight", type=float, default=0.0, dest="style_anchor_weight",
+                        help="Stage 3 / v15 锚定正则 λ: 把风格参数拉向预训练目标, "
+                             "防'冻主干只训风格'时塌缩/漂移(styletok 实测无护栏则 strict 掉头)。"
+                             "mode=row 锚表行本身, mode=mean 锚 K token 的 mean pooling。"
+                             "需 --callig-emb-pretrained 提供锚定目标。建议 1e-3~1e-2, 0=关闭。")
+    parser.add_argument("--style-anchor-mode", choices=["row", "mean"], default="row",
+                        dest="style_anchor_mode",
+                        help="锚定口径: row=锚 embedding_table 每行 (v14 stage3, 目标=预训练表); "
+                             "mean=锚 K token mean pooling (v15, 目标=pt 文件里的 'pair_mean' "
+                             "pair 级 DINO 质心) —— 允许 K token 各自分化, 只约束均值不漂。")
     parser.add_argument("--num-characters", type=int, default=7765)
     parser.add_argument("--epochs", type=int, default=1400)
     parser.add_argument("--max-steps", type=int, default=0,
@@ -407,6 +438,19 @@ def build_parser():
                              "ckpt，任何 metric 变化都可直接归因于新增的风格容量 —— 这是干净的受控实验。\n"
                              "配 `--style-token-n 16~64` + `--glyph-inject-mode xattn` + "
                              "`--resume-full <已训 ckpt>` 使用。")
+    parser.add_argument("--train-only-new-callig", action="store_true",
+                        dest="train_only_new_callig",
+                        help="[2026-09-20] FEW-SHOT: 冻结全部，**只训书家表的【新增行】**。\n"
+                             "旧行梯度用 grad hook 清零（requires_grad 是逐张量的，"
+                             "无法只放开某几行），保证已训好的书家表示不漂移。\n"
+                             "用法: --num-calligraphers 46（> 预训练的 45）"
+                             " + --resume-full <已训 ckpt> + 本开关。\n"
+                             "新行初始化默认用**已有书家的均值**（--init-new-callig）。")
+    parser.add_argument("--init-new-callig", default="mean",
+                        choices=["mean", "zeros", "random"], dest="init_new_callig",
+                        help="few-shot 新增书家行的初始化方式。\n"
+                             "mean(默认)=已有书家向量的均值 -> 从'平均书家'出发，"
+                             "在分布内、收敛快；random=保持默认随机初始化(分布外)。")
     parser.add_argument("--num-workers", type=int, default=4)
     parser.add_argument("--log-every", type=int, default=50)
     parser.add_argument("--ckpt-every", type=int, default=10_000,

@@ -74,8 +74,6 @@ def build_model(a, ck, device):
         glyph_drop_prob=float(a.get("glyph_drop_prob", 0.0)),
         glyph_embedder_depth=int(a.get("glyph_embedder_depth", 0)),
         glyph_inject_layers=int(a.get("glyph_inject_layers", 0)),
-        callig_style_attn=bool(a.get("callig_style_attn", False)),
-        callig_n_style=int(a.get("callig_n_style", 8)),
         style_token_n=int(a.get("style_token_n", 0)),
         style_role_init=float(a.get("style_role_init", 0.02)),
         glyph_inject_mode=a.get("glyph_inject_mode", "adaln"), **arch)

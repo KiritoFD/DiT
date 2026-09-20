@@ -117,7 +117,7 @@ _ARG_DEFAULTS = {
     "callig_embed_dim": 128, "char_embed_dim": 384,
     "rope_theta": 100.0, "glyph_scale_init": 0.4,
     "glyph_embedder_depth": 0, "glyph_inject_layers": 0,
-    "callig_n_style": 8, "style_token_n": 0, "style_role_init": 0.02,
+    "style_token_n": 0, "style_role_init": 0.02,
     "shift": 1.0, "vae_scaling_factor": 0.18215, "latent_channels": 4,
 }
 
@@ -155,8 +155,6 @@ def build_model(a, device, in_channels=4):
         glyph_drop_prob=0.0,
         glyph_embedder_depth=int(a.get("glyph_embedder_depth", 0)),
         glyph_inject_layers=int(a.get("glyph_inject_layers", 0)),
-        callig_style_attn=bool(a.get("callig_style_attn", False)),
-        callig_n_style=int(a.get("callig_n_style", 8)),
         style_token_n=int(a.get("style_token_n", 0)),
         style_role_init=float(a.get("style_role_init", 0.02)),
         glyph_inject_mode=a.get("glyph_inject_mode", "adaln"),
@@ -170,6 +168,8 @@ def build_model(a, device, in_channels=4):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--ckpt", required=True)
+    ap.add_argument("--callig-script-map", default="", dest="callig_script_map",
+                    help="(书家×书体) 联合风格词表 json; 设了则 y_callig 用 pair_id(与训练一致)")
     ap.add_argument("--n-cond", type=int, default=8, help="取多少个条件")
     ap.add_argument("--k", type=int, default=4, help="每条件生成几张 (不同噪声)")
     ap.add_argument("--steps", type=int, default=50)
@@ -288,6 +288,16 @@ def main():
                 break
         if cmap is None:
             log(f"WARN: callig_id_map not found, tried={cands}")
+    # (书家×书体) 联合风格词表: 设了则 y_callig 走 pair_id(与训练/in-mem-eval 一致)
+    csm = None
+    if getattr(args, "callig_script_map", ""):
+        from src.utils.callig_script_map import (
+            load_callig_script_map, map_callig_script as _map_callig_script)
+        _csm_p = args.callig_script_map
+        if not os.path.isabs(_csm_p) and not os.path.exists(_csm_p):
+            _csm_p = os.path.join(ROOT, _csm_p)
+        csm = load_callig_script_map(_csm_p)
+        log(f"callig_script_map: {_csm_p} ({csm['num_pairs']} pairs)")
     n_cond = args.n_cond
     img_root = args.img_root or None
     # shards 目录迁移后多位于 data/skel/ 下; ckpt args 里的裸名字需要补前缀,
@@ -303,7 +313,8 @@ def main():
     cache = make_eval_cache(csvp, img_root, None, 256, n_cond, 8, 4,
                             float(a.get("vae_scaling_factor", 0.18215)),
                             skel_latent_shards_dir=shards,
-                            callig_id_map=cmap)
+                            callig_id_map=cmap,
+                            callig_script_map=csm)
     # 越界兜底: 书家 id 必须 < num_classes, 否则 embedding 索引越界直接崩
     n_cls = int(model.y_callig_embedder.num_classes)
     conds_all, n_over = [], 0
@@ -440,7 +451,8 @@ def main():
         inter_cache = make_eval_cache(_tf.name, img_root, None, 256, len(sel), 8, 4,
                                       float(a.get("vae_scaling_factor", 0.18215)),
                                       skel_latent_shards_dir=_ishards,
-                                      callig_id_map=cmap)
+                                      callig_id_map=cmap,
+                                      callig_script_map=csm)
         i_gts = inter_cache["gts"]
         i_gs = inter_cache["skels_latent"]
         _nz = int((i_gs.abs().sum(dim=(1, 2, 3)) == 0).sum()) if i_gs is not None else -1
@@ -458,9 +470,12 @@ def main():
             # ★ 必须走词表映射! CSV 里的 calligrapher_id 是**原始 id**(49~9001),
             #   而模型 num_classes=52 -> 不映射就全部越界 -> 兜底成 null
             #   -> 4 个书家输出像素级相同, inter_callig 假性为 0(实测踩过)。
-            cid = int(r["calligrapher_id"])
-            if cmap:
-                cid = int(cmap.get(cid, cid))
+            if csm is not None:
+                cid = _map_callig_script(int(r["calligrapher_id"]), int(r["script_id"]), csm)
+            else:
+                cid = int(r["calligrapher_id"])
+                if cmap:
+                    cid = int(cmap.get(cid, cid))
             _cid_raw = cid
             cid = cid if 0 <= cid < n_cls else n_cls
             if _cid_raw >= n_cls:
@@ -485,9 +500,12 @@ def main():
             for i, r in enumerate(sel):
                 if i >= i_gts.shape[0]:
                     continue
-                cid = int(r["calligrapher_id"])
-                if cmap:
-                    cid = int(cmap.get(cid, cid))
+                if csm is not None:
+                    cid = _map_callig_script(int(r["calligrapher_id"]), int(r["script_id"]), csm)
+                else:
+                    cid = int(r["calligrapher_id"])
+                    if cmap:
+                        cid = int(cmap.get(cid, cid))
                 cid = cid if 0 <= cid < n_cls else n_cls
                 gg = i_gs[i:i + 1].float() if i_gs is not None else None
                 noise = th.randn(1, lc, ls, ls, generator=th.Generator().manual_seed(9999 + i))
