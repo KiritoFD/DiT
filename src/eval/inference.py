@@ -493,12 +493,16 @@ def make_eval_cache(eval_csv, img_root, skel_root, image_size, n,
 
     # 预建 skel latent shard 索引 (id -> (shard_path, offset))
     skel_id_to_shard = {}
+    skel_names = {}
     if skel_latent_shards_dir:
         import glob as _glob
         for sp in sorted(_glob.glob(os.path.join(skel_latent_shards_dir, "shard_*.npz"))):
             with np.load(sp) as d:
+                _has_names = "names" in d
                 for j, iid in enumerate(d["img_ids"]):
                     skel_id_to_shard[int(iid)] = (sp, j)
+                    if _has_names:
+                        skel_names[int(iid)] = str(d["names"][j])
 
     missing_skel = 0
     for i, row in enumerate(rows):
@@ -533,6 +537,17 @@ def make_eval_cache(eval_csv, img_root, skel_root, image_size, n,
                 print(f"[eval-cache] ⚠ {_e}")
                 _ID_WARNED[0] = True
             img_id = None
+        if img_id is not None and skel_names:
+            # 与 latent_dataset 同一套内容绑定校验: shard 里的 names 必须等于本行的骨架图名。
+            # 没有这道闸，小数据集(如 few-shot)指向大库时会号段撞车 —— 查得到骨架但是
+            # 别的字的，评测照样出分，只是分全是错的（2026-09-21 实测作废一整轮实验）。
+            _want = os.path.basename(row.get("std_path") or p)
+            _got = skel_names.get(int(img_id))
+            if _got and _want and _got != _want:
+                raise ValueError(
+                    f"[eval-cache] skel latent 与 CSV 对不上: img_id={img_id} "
+                    f"需要 {_want} 但 shard 里是 {_got} —— "
+                    f"检查 eval_skel_latent_shards_dir 是否指向本评测集自己的 shard")
         if img_id is not None and skels_latent is not None:
             if img_id in skel_id_to_shard:
                 sp, j = skel_id_to_shard[img_id]

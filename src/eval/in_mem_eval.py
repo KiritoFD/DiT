@@ -473,6 +473,9 @@ def run_in_mem_eval(model, args, step, device, results_dir, sets=None,
     try:
         for name, csvp, n in sets:
             if (step, name) in done:
+                print(f"[in-mem-eval] ⚠ step={step} set={name} 已记录在 {sum_path} 里"
+                      f" -> 跳过。同一 results_dir 按 (step,set) 去重，**换数据重跑**时"
+                      f"整轮评测会这样静默跳过；重跑请换一个新的 results_dir。")
                 continue
             cache = _get_cache(csvp, n, img_root, shards, args)
             n = cache["n"]

@@ -446,11 +446,18 @@ def build_parser():
                              "用法: --num-calligraphers 46（> 预训练的 45）"
                              " + --resume-full <已训 ckpt> + 本开关。\n"
                              "新行初始化默认用**已有书家的均值**（--init-new-callig）。")
-    parser.add_argument("--init-new-callig", default="mean",
-                        choices=["mean", "zeros", "random"], dest="init_new_callig",
+    parser.add_argument("--init-new-callig", default="mean_scaled",
+                        choices=["mean_scaled", "mean", "zeros", "random", "row_pt"],
+                        dest="init_new_callig",
                         help="few-shot 新增书家行的初始化方式。\n"
                              "mean(默认)=已有书家向量的均值 -> 从'平均书家'出发，"
-                             "在分布内、收敛快；random=保持默认随机初始化(分布外)。")
+                             "在分布内、收敛快；random=保持默认随机初始化(分布外)。\n"
+                             "row_pt=用 --new-callig-pt 给的向量（v15 该给按建表同款\n"
+                             "  构造算出的 DINO K-Means 质心行 —— 主干读的就是这种向量，\n"
+                             "  零梯度即可检验'条件容量装不装得下全新书家'）。")
+    parser.add_argument("--new-callig-pt", default="", dest="new_callig_pt",
+                        help="--init-new-callig row_pt 的向量文件: dict{embedding|"
+                             "centroids|row} 或裸张量 (n_new,K*D)/(K,D)/(D,)。")
     parser.add_argument("--num-workers", type=int, default=4)
     parser.add_argument("--log-every", type=int, default=50)
     parser.add_argument("--ckpt-every", type=int, default=10_000,

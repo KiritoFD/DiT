@@ -145,6 +145,40 @@ def requires_grad(model, flag=True):
         p.requires_grad = flag
 
 
+def _load_new_callig_row(path, dim, n_new):
+    """few-shot 新行初始化向量来自外部文件 (--new-callig-pt)。
+
+    为什么需要: 表里每一行**不是**任意向量 —— v15 每行是该 (书家×书体) 全部样本
+    DINOv2 CLS 特征 K-Means 的 K 个质心 (tools/build_multistyle_k4.py)，主干学到的
+    是"读这种质心"。所以问"风格条件能不能装下全新书家"时，**应当先按同一套构造
+    方式把新书家的质心直接写进表**（零梯度），而不是先验地猜"均值向量"(mean_scaled)。
+    支持 dict{embedding|centroids|row} 或裸张量 (n_new,dim)/(K,D)/(dim,)。
+    """
+    path = str(path or "")
+    if not path:
+        raise SystemExit("[callig-emb] --init-new-callig row_pt 需要 --new-callig-pt <path>")
+    if not os.path.isabs(path) and not os.path.exists(path):
+        path = os.path.join("/root/Workspace/xy/DiT", path)
+    d = torch.load(path, map_location="cpu", weights_only=False)
+    if isinstance(d, dict):
+        for k in ("embedding", "centroids", "row"):
+            if k in d:
+                d = d[k]
+                break
+    t = torch.as_tensor(d, dtype=torch.float32)
+    if t.ndim == 3:                       # (n_new, K, D)
+        t = t.reshape(t.shape[0], -1)
+    elif t.ndim == 1:
+        t = t.unsqueeze(0)
+    if t.ndim != 2 or t.shape[-1] != int(dim):
+        raise SystemExit(f"[callig-emb] --new-callig-pt {tuple(t.shape)} 与表最后一维 "
+                         f"{dim} 不符 (多 token 请先 flatten 成 (n_new, K*D))")
+    if t.shape[0] != int(n_new):
+        raise SystemExit(f"[callig-emb] --new-callig-pt 有 {t.shape[0]} 行, "
+                         f"但表只新增 {n_new} 行")
+    return t
+
+
 @torch.no_grad()
 def update_ema(ema_model, model, decay):
     """Update a full-precision model EMA, including floating-point buffers.
@@ -479,12 +513,39 @@ def main(args):
         _w = model.y_callig_embedder.embedding_table.weight
         if isinstance(model.y_callig_embedder, MultiStyleEmbedder):
             # v15: 表 (N, K*D) 不含 null 行, 全表覆盖; null_embed 独立参数保持随机
-            assert _emb.shape == tuple(_w.shape), \
-                f"预训练多模态风格表 {_emb.shape} != 表 {tuple(_w.shape)}"
+            _pn, _pd = _emb.shape
+            if _pn > _w.shape[0] or _pd != _w.shape[1]:
+                raise SystemExit(
+                    f"[callig-emb] 预训练多模态风格表 {_emb.shape} 与表 "
+                    f"{tuple(_w.shape)} 不兼容")
             with torch.no_grad():
-                _w.copy_(_emb.float())
+                _w[:_pn].copy_(_emb.float())
+                # ★ [2026-09-20] few-shot 新增 (书家x书体) 对: 表扩了但预训练表没那么大。
+                #   新行用已有各行的均值(保留方向+拉到典型范数) —— v15 每行是
+                #   K*D=1536 维(4 个子风格 x 384)，比 v13 的 128 维容量大得多，
+                #   正好用来验证"更多风格容量能否捕获新书家"。
+                if _w.shape[0] > _pn:
+                    _init = str(getattr(args, "init_new_callig", "mean_scaled"))
+                    _n_new = _w.shape[0] - _pn
+                    if _init == "row_pt":
+                        _rows = _load_new_callig_row(
+                            getattr(args, "new_callig_pt", ""), _w.shape[1], _n_new)
+                    else:
+                        _base = _emb.float().mean(0)
+                        if _init == "mean_scaled":
+                            _n0 = _emb.float().norm(dim=1)
+                            _tgt = float(_n0.median()); _cur = float(_base.norm())
+                            if _cur > 1e-8 and _tgt > 0:
+                                _base = _base * (_tgt / _cur)
+                            logger.info(f"[callig-emb] v15 mean_scaled: {_cur:.3f} -> {_tgt:.3f}")
+                        _rows = _base.expand(_n_new, -1)
+                    _w[_pn:].copy_(_rows)
+                    logger.info(f"[callig-emb] 新增 {_n_new} 个(书家x书体)行, "
+                                f"初始化={_init}, 范数="
+                                f"{[round(float(x), 3) for x in _w[_pn:].norm(dim=1)]}")
             logger.info(f"[callig-emb] 加载预训练多模态风格表 {_cep}: {_emb.shape} "
                         f"(K={model.y_callig_embedder.k_clusters}), null_embed 保持随机")
+            _pretrained_n_callig = _pn
         else:
             _n_pre, _dim = _emb.shape
             _n_emb = _w.shape[0] - 1          # 表行数(不含 null 行)
@@ -499,7 +560,13 @@ def main(args):
                 #   比随机初始化(分布外)收敛快得多。这是 few-shot 成败的关键之一。
                 if _n_emb > _n_pre:
                     _init = str(getattr(args, "init_new_callig", "mean_scaled"))
-                    if _init in ("mean", "mean_scaled"):
+                    if _init == "row_pt":
+                        _w[_n_pre:_n_emb].copy_(_load_new_callig_row(
+                            getattr(args, "new_callig_pt", ""), _dim, _n_emb - _n_pre))
+                        logger.info(f"[callig-emb] 新增 {_n_emb - _n_pre} 个书家行, "
+                                    f"初始化=row_pt(--new-callig-pt)")
+                        _base = None
+                    elif _init in ("mean", "mean_scaled"):
                         _base = _emb.float().mean(0)
                         # ⚠⚠ 关键修正: 各行近似正交时, **均值向量的范数会远小于单个行**
                         #    (实测: 各行范数 med=11.0, 而均值向量范数只有 2.06)。
@@ -736,6 +803,33 @@ def main(args):
             logger.info(f"[resume-full] 补出懒参数: {_lazy}")
         # 架构演进式 resume（如 v15 换条件头形状）: 形状对不上的键剔除并视为新模块
         # （strict=False 遇形状不匹配会 RuntimeError; 剔除后由冻结策略保持可训）
+        # ★ [2026-09-21] 例外: **书家风格表扩行**。few-shot 把表从 87 行扩到 88 行,
+        #   若走下面的 shape guard, 整张**已训好**的风格表会被当成"形状不匹配的新模块"
+        #   剔除 -> 模型只剩 --callig-emb-pretrained 那份 K-Means **step 0 初始质心**,
+        #   而主干是 150k 的。150k 的主干读 0 步的表 = 首尾不匹配,
+        #   之前所有 v15 few-shot 的 baseline 与训练数字全部因此作废。
+        #   正确语义: ckpt 的前 n 行逐行搬进模型表, 新增行保留 --init-new-callig 初值。
+        _tbl_key = "y_callig_embedder.embedding_table.weight"
+        if _sd.get(_tbl_key, None) is not None and _sd[_tbl_key].ndim == 2:
+            _mt = model.y_callig_embedder.embedding_table.weight
+            _ct = _sd[_tbl_key]
+            if _ct.shape[1] != _mt.shape[1]:
+                raise SystemExit(
+                    f"[resume-full] 风格表列数不符: ckpt {tuple(_ct.shape)} vs "
+                    f"模型 {tuple(_mt.shape)} —— 不是扩行, 是换维度, 请确认基模")
+            if _ct.shape[0] > _mt.shape[0]:
+                raise SystemExit(
+                    f"[resume-full] ckpt 表有 {_ct.shape[0]} 行 > 模型 {_mt.shape[0]} 行, "
+                    f"装不下 —— 检查 --num-calligraphers")
+            if _ct.shape[0] < _mt.shape[0]:
+                with torch.no_grad():
+                    _mt[:_ct.shape[0]].copy_(_ct.to(_mt.dtype))
+                logger.info(
+                    f"[resume-full] 风格表扩行: ckpt {tuple(_ct.shape)} -> 模型 "
+                    f"{tuple(_mt.shape)}，前 {_ct.shape[0]} 行=已训好的表，"
+                    f"新增行保留 init 值 (范数="
+                    f"{[round(float(x), 3) for x in _mt[_ct.shape[0]:].norm(dim=1)]})")
+                del _sd[_tbl_key]         # 已手工搬入, 不再交给 shape guard
         _shape_dropped = drop_shape_mismatched(model, _sd)
         if _shape_dropped:
             logger.warning(
@@ -775,31 +869,54 @@ def main(args):
         _tbl = model.y_callig_embedder.embedding_table.weight
         _n_all = _tbl.shape[0]
         _n_old = int(locals().get('_pretrained_n_callig', _n_all - 1))
-        if _n_old >= _n_all:
+        # 表布局有两种（[2026-09-20 bugfix]）:
+        #   LabelEmbedder(v13)      表 (N+1, D)   末行 = CFG null 行 -> 新行 [_n_old, _n_all-1)
+        #   MultiStyleEmbedder(v15) 表 (N, K*D)   **无 null 行**(null_embed 是独立参数)
+        #                           -> 新行 [_n_old, _n_all)
+        #   ⚠⚠ 旧代码写死 [_n_old, _n_all-1)，对 v15 恰好把**唯一的新行(=末行)**排除掉
+        #      -> 0 参数可训、训练完全空转（v15_fs 首轮 4 书家全部实测踩中:
+        #         "[87:87) -> 0 参数"，150100/150200 的 eval 与 baseline 完全同值）。
+        if isinstance(model.y_callig_embedder, MultiStyleEmbedder):
+            _n_new_end = _n_all
+        else:
+            _n_new_end = _n_all - 1
+        if _n_old >= _n_new_end:
             raise SystemExit(
-                f"[train-only-new-callig] 表没有新增行（预训练 {_n_old} / 表 {_n_all}）—— "
+                f"[train-only-new-callig] 表没有新增行（预训练 {_n_old} / 表 {_n_all}, "
+                f"新行范围 [{_n_old}:{_n_new_end})）—— "
                 f"请设 --num-calligraphers > 预训练书家数")
         requires_grad(model, False)
         _tbl.requires_grad_(True)
-        # ⚠ 两个坑（都实测踩过）:
+        # ⚠ 三个坑（都实测踩过）:
         #   1) requires_grad 是**逐张量**的，不能只放开某几行 -> 整表放开 +
         #      用 grad hook 把旧行梯度清零。
-        #   2) 表的**最后一行是 CFG null 行**，不能当成新书家训！新行范围是
-        #      [_n_old, _n_all-1)，不是 [_n_old, _n_all)。
+        #   2) 表末行: v13 是 CFG null 行（要排除）；v15 没有 null 行（见上面的分支）。
         #   3) hook 里的 mask 必须在**同一 device**（grad 在 cuda，mask 默认 cpu
         #      -> RuntimeError: Expected all tensors to be on the same device）
         _mask = torch.zeros_like(_tbl)
-        _mask[_n_old:_n_all - 1] = 1.0
+        _mask[_n_old:_n_new_end] = 1.0
         # ⚠⚠ 必须在 hook **内部**把 mask 搬到 grad 的 device。
         #   建 mask 时模型还在 CPU（冻结策略跑在 .to(device) 之前），
         #   写死 device 会导致 backward 时报
         #   "Expected all tensors to be on the same device, cuda:0 and cpu!"
         #   （这个坑连踩两次：先建在默认 cpu，再改成 _tbl.device，都不行）
         _tbl.register_hook(lambda g: g * _mask.to(g.device))
+        # ⚠⚠ [2026-09-21] AdamW 的 weight decay 是**解耦**的 (p -= lr·wd·p)，
+        #   不经过梯度 -> 上面的 grad hook **拦不住它**：被冻结的 87 行会每步缩小，
+        #   整张风格表连同主干一起退化，few-shot 表现为"越训越差"。
+        #   (lr=3e-3, wd=0.1 -> 每步 ×0.9997, 2000 步后只剩 0.55)
+        #   few-shot 只有 1536 个可训参数，WD 在这里没有任何收益 -> 归零。
+        if float(getattr(args, "weight_decay", 0.0) or 0.0) > 0:
+            logger.warning(f"[train-only-new-callig] weight_decay "
+                           f"{args.weight_decay} -> 0.0（解耦 WD 会绕过 grad hook，"
+                           f"把已训好的 {_n_old} 行风格向量一起衰减掉）")
+            args.weight_decay = 0.0
+        _is_mse = isinstance(model.y_callig_embedder, MultiStyleEmbedder)
         logger.info(f"[train-only-new-callig] 冻结主干，只训书家表新增行 "
-                    f"[{_n_old}:{_n_all - 1}) -> "
-                    f"{(_n_all - 1 - _n_old) * _tbl.shape[1]} 参数"
-                    f"（末行 {_n_all - 1} 是 CFG null 行，已排除）")
+                    f"[{_n_old}:{_n_new_end}) -> "
+                    f"{(_n_new_end - _n_old) * _tbl.shape[1]} 参数"
+                    + ("" if _is_mse else
+                       f"（末行 {_n_all - 1} 是 CFG null 行，已排除）"))
 
     _train_only_style = bool(getattr(args, 'train_only_style', False))
     if _train_only_style:
@@ -901,18 +1018,10 @@ def main(args):
                             f"锚到预训练目标 {tuple(_tgt.shape)} ({_cep})")
         elif rank == 0:
             logger.warning("[style-anchor] style_anchor_weight>0 但无 callig_emb_pretrained, 锚定不生效")
-    # ★ 2026-09-19: --fresh-scheduler 时**同时把步数计数器归零**。
-    #   否则 stage2 传过来的 train_steps (如 160000) 会:
-    #   1) 与 max_steps=40000 比较 -> 160000 >= 40000 -> 立即退出
-    #   2) 通过 _step_offset 把 LR 调度推到 cosine 末端 -> LR = min_ratio * base (≈3e-6)
-    #   "fresh scheduler" 的正确语义 = **当新训练开始**:
-    #   权重来自 ckpt, 但步数/LR/scheduler 全部归零。
-    #   这里提前归零 (在 scheduler 构建*之前*), 使 _step_offset 也为 0。
-    if (getattr(args, 'fresh_scheduler', False)
-            and _resume_full_ckpt is not None and resume_start_step > 0):
-        logger.info(f"[resume-full] fresh-scheduler: 步数计数器归零 "
-                    f"(原 {resume_start_step} -> 0), max_steps={args.max_steps} 从 0 起算")
-        resume_start_step = 0
+    # ★ [2026-09-21] 原先这里有一段"提前把步数计数器归零"的代码（2026-09-19 加的），
+    #   但它引用的 resume_start_step 要到 optim 之后才定义 —— 一跑就是
+    #   UnboundLocalError，所以 --fresh-scheduler 这个开关**从来没被真正跑通过**。
+    #   归零逻辑已统一挪到下面恢复块里（那里在 scheduler 构建之前，语义相同）。
 
     _has_pretrained = args.pretrained is not None
     if _has_pretrained:
@@ -1197,8 +1306,17 @@ def main(args):
 
     # Restore optimizer state + step counter for full resume. If --resume-lr is given,
     # override the LR so we can test whether a smaller LR avoids the NaN.
+    # ★ [2026-09-21] --fresh-scheduler: 只训**与预训练参数不重合**的新模块（典型: few-shot
+    #   往书家表里加的第 88 行）。此时旧优化器状态对新参数毫无意义，而旧步数计数器会把
+    #   新 LR 调度推到旧 cosine 的尾部（甚至 max_steps 比较直接判"已完成"退出）。
+    #   所以这条路径下**不恢复优化器状态、步数计数器保持 0**，LR 按 max_steps 从 step 0
+    #   走完整条调度（few-shot 的"和预训练一样有衰减"就该这么来）。
     resume_start_step = 0
-    if _resume_full_ckpt is not None:
+    if _resume_full_ckpt is not None and getattr(args, 'fresh_scheduler', False):
+        logger.info("[resume-full] fresh-scheduler: 不恢复优化器状态、步数计数器保持 0 "
+                    f"(LR 按 max_steps={args.max_steps} 从 step 0 重新调度; "
+                    f"ckpt 里原步数 {_resume_full_ckpt.get('train_steps', '?')} 已忽略)")
+    elif _resume_full_ckpt is not None:
         _opt_sd = _resume_full_ckpt.get("opt", None)
         if _opt_sd is not None:
             try:

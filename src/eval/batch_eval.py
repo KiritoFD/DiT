@@ -58,6 +58,10 @@ def main():
                     help="落盘 g{i}/gt{i}.png 到 eval_samples_ctrl/ (供 poster)")
     ap.add_argument("--self-cond", action="store_true", default=False,
                     help="启用两遍自条件采样 (Self-Conditioning)")
+    ap.add_argument("--disable-callig-style", action="store_true", default=False,
+                    help="消融模式: 剪掉 ckpt 里的 callig_style 系键 (构造侧需配套 overrides)。"
+                         "★ 2026-09-21 补定义: 代码在 line~170 一直读这个属性但 argparse "
+                         "从未定义过它 —— batch_eval 之前一跑就 AttributeError。")
     ap.add_argument("--blend-alpha", type=float, default=0.0,
                     help="自条件骨架混合系数 (0=纯预测骨架, 0.5=各半)")
     ap.add_argument("--force", action="store_true", default=False,

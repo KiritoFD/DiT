@@ -121,6 +121,8 @@ class MCCDLatentDataset(Dataset):
             for j, iid in enumerate(d["img_ids"]):
                 self._id_to_shard[int(iid)] = (sp, j)
             d.close()
+        self._img_names = self._load_shard_names(shards)
+        self._check_shard_names(self._img_names, "image_path", "img latent")
 
         # skel 条件: 优先 VAE latent shards (ControlNet latent 条件), 否则 PNG
         self._skel_id_to_shard = {}
@@ -139,6 +141,16 @@ class MCCDLatentDataset(Dataset):
                 for j, iid in enumerate(d["img_ids"]):
                     self._skel_id_to_shard[int(iid)] = (sp, j)
                 d.close()
+            self._skel_names = self._load_shard_names(_sk_shards)
+            self._check_shard_names(self._skel_names, "std_path", "skel(g)")
+            if not self._skel_names and len(self._skel_id_to_shard) > \
+                    10 * max(1, len(self.samples)):
+                print(f"[skel-guard] ⚠ {self.skel_latent_shards_dir} 覆盖 "
+                      f"{len(self._skel_id_to_shard):,} 个 id, 而本数据集只有 "
+                      f"{len(self.samples)} 行, 且 shard 无 names 无法校验内容 —— "
+                      f"若本数据集的 img_id 是**自建的小号段**, 这里查到的骨架很可能"
+                      f"属于别的字 (2026-09-21 few-shot 就是这么静默废掉一整轮实验的)。"
+                      f"自建 latent 时把 names(源图名)一起写进 npz 即可硬校验。")
 
         # [inst-skel 2026-09-16] 实例骨架 latent shards —— 结构 loss 的 **target** 通道。
         # 与 g 通路 (skel_latent/skel_as_glyph_cond) **完全解耦**: g 是"标准字形"条件,
@@ -197,6 +209,48 @@ class MCCDLatentDataset(Dataset):
 
     def __len__(self):
         return len(self.samples)
+
+    @staticmethod
+    def _load_shard_names(shards):
+        """读 shard 里可选的 ``names`` 数组 -> {img_id: 生成该 latent 时用的图名}。
+
+        任何一个 shard 缺 names 就整体放弃校验 (返回 {}), 避免半套映射造成误报。
+        """
+        names = {}
+        for sp in shards:
+            d = np.load(sp)
+            try:
+                if "names" not in d:
+                    return {}
+                for j, iid in enumerate(d["img_ids"]):
+                    names[int(iid)] = str(d["names"][j])
+            finally:
+                d.close()
+        return names
+
+    def _check_shard_names(self, names, col, what):
+        """latent 内容绑定校验: shard 记录的图名必须等于 CSV 该 img_id 那一行的图名。
+
+        存在的理由: shard 查表**只认 img_id**。若一个小数据集(如 few-shot 的 0..149)
+        指向一个大库(50k 的 shards_std), 号段重叠 -> 查得到但是**别的字**的骨架,
+        全程无报错、loss 只是不降。names 由编码脚本写入, 这里逐行比对。
+        """
+        if not names:
+            return
+        bad = []
+        for r in self.samples:
+            iid = int(extract_img_id(r, where="names-check"))
+            want = os.path.basename((r.get(col) or r.get("image_path") or ""))
+            got = names.get(iid)
+            if got is not None and want and got != want:
+                bad.append((iid, want, got))
+        if bad:
+            ex = "; ".join(f"img_id={i} 需要 {w} 但 shard 里是 {g}"
+                           for i, w, g in bad[:5])
+            raise ValueError(
+                f"[{what}] latent 内容与 CSV 对不上 ({len(bad)}/{len(self.samples)} 行): "
+                f"{ex}\n  → 条件/目标张冠李戴, 训练与评测结论全部作废。检查 "
+                f"latent_shards_dir / skel_latent_shards_dir 是否指向了本数据集自己的 shard。")
 
     def _get_latent(self, img_id):
         """Load one latent for the non-preload path.
