@@ -155,3 +155,10 @@ _review/*
 # ---- 备份文件不入库 ----
 *.bak
 *.bak_*
+
+# 商业字体（版权原因不入库，需要时从 Windows Fonts 拷贝）
+_fonts/
+
+# 大模型/虚拟环境（体积原因不入库）
+_models/
+_venv_qwenvl/
