@@ -558,8 +558,21 @@ class DiT_2Cond(nn.Module):
         rope_theta=100.0,
         attn_impl="sdpa",       # "sdpa" | "eager"
         image_channels=None,    # CFG 只作用于 image latent 通道; None 时退回 in_channels (向后兼容)
+        # ★ [2026-09-21] 旧 ckpt args 兼容: v13 里叫 callig_style_attn，后来改名为
+        #   callig_style_ca。gradio/评测脚本直接把 ckpt args 展平成 kwargs 传进来，
+        #   不兼容会 TypeError: unexpected keyword argument 'callig_style_attn'。
+        #   这里收下旧名并映射到新名（旧 ckpt 该值均为 False，行为与默认一致）。
+        callig_style_attn=None,
+        **_legacy_kwargs,       # 其余历史改名/废弃参数: 收下并告警，不要静默崩
     ):
         super().__init__()
+        if callig_style_attn is not None and not callig_style_ca:
+            callig_style_ca = bool(callig_style_attn)
+        if _legacy_kwargs:
+            import warnings
+            warnings.warn(
+                f"[DiT_2Cond] 忽略 {len(_legacy_kwargs)} 个未知/已改名的构造参数: "
+                f"{sorted(_legacy_kwargs)} （多为历史 ckpt 的旧字段，确认无影响）")
         self.learn_sigma = learn_sigma
         self.use_checkpoint = use_checkpoint
         self.in_channels = in_channels
