@@ -1,0 +1,38 @@
+{
+  "ckpt": "0150000.pt",
+  "tag": "20260919-223715-v15a-multistyle-k4-pool",
+  "ckpt_top_keys": [
+    "args",
+    "delta",
+    "ema",
+    "opt",
+    "scheduler",
+    "train_steps"
+  ],
+  "train_steps": 150000,
+  "num_calligraphers_cfg": 87,
+  "callig_embed_dim": 384,
+  "weights": {
+    "y_callig_embedder.embedding_table.weight": {
+      "shape": [
+        87,
+        1536
+      ],
+      "is_proj_guess": false,
+      "row_norm_mean": 1.2624064683914185,
+      "row_norm_std": 0.14306750893592834,
+      "row_norm_min": 1.0105830430984497,
+      "row_norm_max": 1.6151083707809448,
+      "eff_rank_90": 57,
+      "dead_rows": 0,
+      "cos_mean": 0.24213500320911407,
+      "cos_std": 0.07811032235622406,
+      "cos_p05": 0.1073831096291542,
+      "cos_p95": 0.36857661604881287,
+      "cos_min": -0.0298785213381052,
+      "n_alive": 87,
+      "n_unique_rows": 87
+    }
+  },
+  "verdicts": []
+}

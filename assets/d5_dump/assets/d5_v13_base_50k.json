@@ -1,0 +1,40 @@
+{
+  "ckpt": "0155000.pt",
+  "tag": "20260917-211905-v13-base-50k",
+  "ckpt_top_keys": [
+    "args",
+    "delta",
+    "ema",
+    "opt",
+    "scheduler",
+    "train_steps"
+  ],
+  "train_steps": 155000,
+  "num_calligraphers_cfg": 45,
+  "callig_embed_dim": 128,
+  "weights": {
+    "y_callig_embedder.embedding_table.weight": {
+      "shape": [
+        46,
+        128
+      ],
+      "is_proj_guess": false,
+      "row_norm_mean": 8.714547157287598,
+      "row_norm_std": 4.799168586730957,
+      "row_norm_min": 0.20681248605251312,
+      "row_norm_max": 13.067914009094238,
+      "eff_rank_90": 26,
+      "dead_rows": 0,
+      "cos_mean": 0.019579041749238968,
+      "cos_std": 0.08828086405992508,
+      "cos_p05": -0.12130845189094544,
+      "cos_p95": 0.16673240512609477,
+      "cos_min": -0.24868851900100708,
+      "n_alive": 46,
+      "n_unique_rows": 46
+    }
+  },
+  "verdicts": [
+    "y_callig_embedder.embedding_table.weight: 范数极不均 (0.2068..13.0679) -> 少数行主导"
+  ]
+}
