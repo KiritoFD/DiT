@@ -64,7 +64,7 @@ def _str_to_bool(value):
     return str(value).strip().lower() in ("1", "true", "yes", "y", "on")
 
 
-def build_parser():
+def build_parser(argv=None):
     """只构建 parser（不读 config、不解析）。"""
     parser = argparse.ArgumentParser()
     parser.add_argument("--data-csv", type=str, default="train.csv",
@@ -92,7 +92,10 @@ def build_parser():
                              "factorized_cat (v12: 各向量因子 embedding 拼接后联合投影, ref/Moyun 式) | "
                              "xl_highdim (high-dim, XL-aligned, preserves pretrained adaLN).")
     parser.add_argument("--callig-embed-dim", type=int, default=None)
-    parser.add_argument("--script-embed-dim", type=int, default=None)
+    parser.add_argument("--script-embed-dim", type=int, default=None,
+                        help="script 因子维度。3cond 模式为 script 嵌入维度; "
+                             "**S2 模式 (--hier-style>0) 为书体层 E_script 的维度**, "
+                             "None -> 取 64 (只有 3 类, 不需要大)。")
     parser.add_argument("--char-embed-dim", type=int, default=None)
     parser.add_argument("--glyph-vec-cond", type=_str_to_bool, default=False,
                         help="v12: 把 g(标准字形) 池化成全局内容向量, 作为条件向量 c 的"
@@ -156,7 +159,12 @@ def build_parser():
                         help="drop-one 时选择 drop callig (→glyph-only, 学字符内容分) 的概率; "
                              "书家维度样本充足, 字符维度才是难点, 建议 >0.5. 0.5=均匀.")
     parser.add_argument("--num-scripts", type=int, default=12,
-                        help="Number of script classes (only used in 3cond mode).")
+                        help="书体词表大小。\n"
+                             "  * 3cond 模式: script 条件的类别数 (已废弃)\n"
+                             "  * **S2 模式 (--hier-style>0): E_script 的行数**。\n"
+                             "    数据里 script_id ∈ {0:楷, 3:行, 4:隶} 且**直接当索引用**,\n"
+                             "    所以必须 >= max(script_id)+1 = 5。默认 12 有富余, 无害\n"
+                             "    (未用到的行拿不到梯度)。")
     parser.add_argument("--use-checkpoint", type=_str_to_bool, default=False,
                         help="Enable gradient checkpointing on DiT blocks (cuts activation memory).")
     parser.add_argument("--image-size", type=int, choices=[256, 512], default=256)
@@ -212,6 +220,88 @@ def build_parser():
     parser.add_argument("--glyph-inject-mode", choices=["adaln", "xattn"], default="adaln",
                         help="g 逐层注入方式: adaln=ZeroAdaLN 固定位置调制 (旧默认), "
                              "xattn=ZeroCrossAttention 空间寻址 (GlyphDraw 式, 新 ckpt 专用)")
+    # ── S2 (2026-09-22): 三层语义分解 + 局部风格-骨架引导 ──────────────────────
+    # 设计文档: docs/922/20_style_encoding.md / 30_injection.md / 50_implementation.md
+    # 全部默认关闭 = 与旧 ckpt 逐位等价。
+    parser.add_argument("--hier-style", type=int, default=0, dest="hier_style",
+                        help="[S2] >0 启用三层语义分解:\n"
+                             "  e_style  = 书家主效应(既有表) + α · E_pair[pair]\n"
+                             "  e_script = E_script[script]\n"
+                             "书家主效应**复用既有 y_callig_embedder**(SupCon 加载 / null 行 /\n"
+                             "冻结 / few-shot 新增行 四套机制全沿用), StyleHierarchy 只新增\n"
+                             "pair 残差与书体两层。\n"
+                             "⚠ 启用后 --num-calligraphers 应填**书家数(45)**, pair 数填\n"
+                             "  --num-pairs(87); y_callig 用**书家连续索引**(y_callig_raw)。")
+    parser.add_argument("--num-pairs", type=int, default=0, dest="num_pairs",
+                        help="[S2] (书家×书体) pair 词表大小 (87)。0 -> 退化成 num_calligraphers。")
+    parser.add_argument("--pair-residual", type=int, default=1, dest="pair_residual",
+                        help="[S2] 1(默认)=启用 pair 交互残差; 0=冻结 α 并置 0。\n"
+                             "0 用来做**参数个数完全相同**的消融（'只加书体层' vs '只加残差'）。\n"
+                             "⚠ ∂L/∂α 在 E_pair zero-init 时为 0 -> α 有**一步延迟**（非死锁）。")
+    parser.add_argument("--pair-init", choices=["zero", "normal"], default="zero",
+                        help="[S2] E_pair 初始化。zero(默认) = 残差语义, step0 退化为纯主效应,\n"
+                             "可安全 resume; 稀疏 pair(15 个 <50 样本)学不动时自动回退。")
+    parser.add_argument("--script-film", action="store_true", dest="script_film",
+                        help="[S2 通路 B1] 书体 FiLM on g_tok: γ/β = Linear(E_script), zero-init。\n"
+                             "书体是**结构轴**, 与 g 同域 (g 本就按书体渲染), 因此走调制骨架\n"
+                             "而不是进 adaLN (避免'同一信号喂两遍' = 12ch 失败的教训)。\n"
+                             "需要 --hier-style > 0。")
+    parser.add_argument("--spatial-film-rank", type=int, default=0, dest="spatial_film_rank",
+                        help="[S2 通路 B2, Phase 1] 逐位置局部 FiLM 的低秩 rank (0=关闭)。\n"
+                             "γ_i,β_i = f(e_cond, g_tok_i, pos_i) —— 每个 token 不同。\n"
+                             "比 cross-attn 便宜约 5 倍, 用来先验证'局部性有没有用'。\n"
+                             "建议 64。")
+    parser.add_argument("--local-ca-layers", type=int, default=0, dest="local_ca_layers",
+                        help="[S2 通路 B3, Phase 2] 局部风格-骨架 cross-attn adapter 的层数。\n"
+                             "Q=x 或 g_tok(带 pos), K/V=**局部骨架**(带 pos), style 通过 FiLM\n"
+                             "调制 Q/K; out_proj zero-init。\n"
+                             "⚠ 建议 **2 层起步**, 不要 12 层全插 (v15c 每层插成本 +33% 且最差)。")
+    parser.add_argument("--local-ca-at", type=str, default=None, dest="local_ca_at",
+                        help="[S2] 显式指定 adapter 插在哪些 block, 如 '2,6'。优先于均匀分布。")
+    parser.add_argument("--local-ca-heads", type=int, default=4, dest="local_ca_heads",
+                        help="[S2] adapter 的注意力头数 (默认 4)。")
+    parser.add_argument("--local-ca-rank", type=int, default=64, dest="local_ca_rank",
+                        help="[S2] style→Q/K 的 FiLM 瓶颈维度 (默认 64)。")
+    parser.add_argument("--local-ca-q", choices=["g", "x"], default="g", dest="local_ca_q",
+                        help="[S2] adapter 的 Query 来源:\n"
+                             "  g = 先按风格重组骨架再注入主干 (更安全/可回退, 默认)\n"
+                             "  x = 主干 block 之间做'画布向骨架询问' (更标准, 但改动更深)")
+    parser.add_argument("--local-ca-window", type=int, default=0, dest="local_ca_window",
+                        help="[S2] adapter 的窗口注意力大小 (0=全局 256-token)。\n"
+                             "3 或 5 = 每个位置只看局部邻域, 更像'局部书写指引',\n"
+                             "也更不容易退化成全局平均。")
+    parser.add_argument("--style-ln", type=_str_to_bool, default=False, dest="style_ln",
+                        help="[922/80 改动 1] 风格分支过**独立 LayerNorm** 再进 y_emb。\n"
+                             "实测(D1): c = t_emb + y_emb 而 t_emb≈29–49 / y_emb≈16–23,\n"
+                             "y_emb/c 只有 0.34–0.77 且与 T2 强正相关(v13 0.77 最好/\n"
+                             "v15c 0.34 最差, dmod 0.65 -> 0.05 差 13 倍)。\n"
+                             "独立 LN 抹平 e_callig 的范数失衡(D5 实测 0.21…13.07, 63 倍)。\n"
+                             "⚠ 默认 False = 不建参数, 与旧 ckpt 逐位等价。")
+    parser.add_argument("--style-gain-init", type=float, default=1.0, dest="style_gain_init",
+                        help="[922/80 改动 1] 风格分支的**可学习**初始增益(默认 1.0=关闭)。\n"
+                             "adaLN_modulation[-1] 是 zero-init, 此时 ∂L/∂y_emb ∝ ‖c‖,\n"
+                             "y_emb 越小起步梯度越小 -> 越训越弱(自我锁死, v15c 即此终点)。\n"
+                             "让 y_emb 起步就与 t_emb 同量级可打破死锁。\n"
+                             "**推荐传负数(如 -1)走自动标定**, 见 --style-y-over-t-init。")
+    parser.add_argument("--style-y-over-t-init", type=float, default=1.0,
+                        dest="style_y_over_t_init",
+                        help="[922/80 改动 1] 自动标定时的**目标** ‖y_emb‖/‖t_emb‖(默认 1.0)。\n"
+                             "为什么必须自动标定: LN 输出范数 ≈ sqrt(hidden)=19.6, 而\n"
+                             "t_embedder 输出只有 ~0.89 -> gain=1.0 已让 y/t=21.6,\n"
+                             "gain=2.5 更是 53 倍, 直接把 t 条件盖掉 -> 训练崩。\n"
+                             "实际初值反解: style_gain = target * ‖t_emb‖ / ‖LN(e_callig)‖。\n"
+                             "配合 --style-gain-init -1 使用; 上限建议 ≤ 3(用 strict\n"
+                             "SSIM ≥ 0.56 守门)。")
+    parser.add_argument("--style-ada-rank", type=int, default=0, dest="style_ada_rank",
+                        help="[922/80 改动 2] adaLN 的**风格专用 low-rank 支路**维度。\n"
+                             "改动 1 解决幅度, 本改动解决'风格与 t 共用同一个\n"
+                             "adaLN_modulation 矩阵'。\n"
+                             "  mod = adaLN(c) + W_up·LN(e_callig)\n"
+                             "两条路相 + (不是替换), 主干梯度路径完全不变;\n"
+                             "W_up zero-init -> step 0 恒等, 可在旧 ckpt 上 resume。\n"
+                             "S/2 (D=384, 12 层+final): rank=64 -> +2.1M (+6.4%);\n"
+                             "rank=32 -> +1.1M (+3.2%)。\n"
+                             "0 = 关闭 = 与旧 ckpt **逐位等价**。")
     parser.add_argument("--cfg-glyph-scale", type=float, default=None, dest="cfg_glyph_scale",
                         help="[2026-09-17] 双轴 CFG 的**内容轴**(骨架 g)引导强度。\n"
                              "默认 None = 经典 2 路 CFG(只引导书家风格)。\n"
@@ -531,9 +621,9 @@ def build_parser():
                              "0=纯噪声(现状); (0,1)=混合; 默认 0 保持当前行为, 收敛后按需设 e.g.0.6。"
                              "见 HYBRID_INIT_PLAN.md。")
     parser.add_argument("--w-std-mid", type=float, default=0.0,
-                        help="MIDSTEP_STD 权重: 在中间噪声水平 sqrt(alpha_cumprod)∈[alo,ahi] 时,"
-                             "额外监督 模型预测 clean latent 逼近标准字形 latent g, 让字形中段锚定。"
-                             "需 w-glyph-cond 开启。权重明显小于主 loss(如 0.1~0.5), 防抹掉风格。0=关。")
+                        help="MIDSTEP_STD 权重 (实现已抽到 src/loss/structure_mid.py: MidStructureLoss):"
+                             " 中程噪声把 x0_pred 拉向**粗化后的 target**(blur GT / dilate skel),"
+                             " 在低通子空间+通道归一后比较。建议 0.01~0.03。需 glyph 条件。0=关。")
     parser.add_argument("--w-latent-skel", type=float, default=0.0, dest="w_latent_skel",
                         help="实例骨架结构 loss 权重(辅助项, 建议 0.02~0.1, 绝不等权)。\n"
                              "用**冻结**的小 probe 把 pred_xstart 映射成实例骨架 latent, 与 GT\n"
@@ -556,6 +646,21 @@ def build_parser():
                         help="中间噪声带下界(sqrt_alpha_cumprod), 默认 0.35。")
     parser.add_argument("--std-mid-ahi", type=float, default=0.75,
                         help="中间噪声带上界(sqrt_alpha_cumprod), 默认 0.75。")
+    parser.add_argument("--std-mid-carrier", type=str, default="blur_gt",
+                        choices=["blur_gt", "dilate_skel", "both"], dest="std_mid_carrier",
+                        help="中程结构 loss 的 target 载体: blur_gt=对 GT 图像 latent 做 σ(t)"
+                             " 高斯模糊(首选, 无需额外数据); dilate_skel=对骨架 g 做 k(t) 膨胀;"
+                             " both=两者平均。")
+    parser.add_argument("--std-mid-calib-json", type=str, default="", dest="std_mid_calib_json",
+                        help="calibrate_mid_structure.py 产出的 σ(t)/k(t) 校准 json。为空则用"
+                             "默认线性 σ=σ_slope·t, k=k_slope·t。")
+    parser.add_argument("--std-mid-lp", type=int, default=2, dest="std_mid_lp",
+                        help="低通因子: LP(z)=interp(avgpool(z,lp),lp)。2≈pixel 8px 低通"
+                             "(默认), 吸收硬边 vs 灰晕锐度残差 -> k/σ 不敏感。1=关闭低通。")
+    parser.add_argument("--std-mid-sigma-slope", type=float, default=4.0, dest="std_mid_sigma_slope",
+                        help="无校准 json 时默认 σ(t)=slope·t (latent px), 上限 3。")
+    parser.add_argument("--std-mid-k-slope", type=float, default=2.0, dest="std_mid_k_slope",
+                        help="无校准 json 时默认 k(t)=slope·t (latent px), 上限 2。")
     parser.add_argument("--w-repa", type=float, default=0.0, help="Weight for Representation Alignment (REPA) Loss (0 = disabled, default)")
     parser.add_argument("--repa-teacher-ckpt", type=str, default="",
                         help="Local path to DINOv2 teacher weights (ModelScope safetensors). "
@@ -666,7 +771,12 @@ def build_parser():
 
     # Apply config-file defaults first, then CLI overrides.
     config_defaults = {}
-    cfg_path = parser.parse_known_args()[0].config
+    # ⚠ 必须把 argv 透传下去。原来写的是 `parse_known_args()`（不带参数）——
+    #   它会去读 **sys.argv**，于是只有"真的从命令行启动"时才拿得到 --config；
+    #   任何程序化调用 `parse_args(['--config', p])`（测试 / 脚本 / notebook /
+    #   sweep 生成器）都会静默拿到 cfg_path="config.json" -> **config 一个字段都不生效**，
+    #   全部退回代码默认值，且不报任何错。本项目已多次栽在"静默失效"上，故显式修掉。
+    cfg_path = parser.parse_known_args(argv)[0].config
     if cfg_path and os.path.isfile(cfg_path):
         with open(cfg_path, "r", encoding="utf-8") as f:
             config_defaults = json.load(f)
@@ -686,19 +796,8 @@ def parse_args(argv=None):
 
     优先级: **CLI > config 文件 > 代码默认值**。
     """
-    parser = build_parser()
-
-    config_defaults = {}
-    cfg_path = parser.parse_known_args()[0].config
-    if cfg_path and os.path.isfile(cfg_path):
-        with open(cfg_path, "r", encoding="utf-8") as f:
-            config_defaults = json.load(f)
-    for action in parser._actions:
-        if action.dest in ("help", "config"):
-            continue
-        if action.dest in config_defaults:
-            # config supplies a value: use it as default and drop "required"
-            action.default = _coerce(config_defaults[action.dest], action.default, action.type)
-            action.required = False
-
+    # build_parser(argv) 已含 config 合并（优先级 CLI > config > 代码默认值）。
+    # 原来这里把合并逻辑**又抄了一遍**（且同样漏传 argv）—— 现在只调一次，
+    # 避免两处实现漂移（本项目已有"两处实现不一致"的历史教训）。
+    parser = build_parser(argv)
     return parser.parse_args(argv)

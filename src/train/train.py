@@ -434,12 +434,38 @@ def main(args):
             char_proj_mode=getattr(args, 'char_proj_mode', 'full'),
             callig_proj_mode=getattr(args, 'callig_proj_mode', 'linear'),
             callig_scale_init=float(getattr(args, 'callig_scale_init', 1.0)),
+            # ---- 922/80 改动 1: 风格分支独立 LN + 独立增益 ----
+            # 默认 (False, 1.0) = 不建任何参数 -> 与旧 ckpt 逐位等价。
+            style_ln=bool(getattr(args, 'style_ln', False)),
+            style_gain_init=float(getattr(args, 'style_gain_init', 1.0)),
+            # gain 自动标定目标 y/t；配合 --style-gain-init -1 使用
+            style_y_over_t_init=float(getattr(args, 'style_y_over_t_init', 1.0)),
+            # ---- 922/80 改动 2: adaLN 风格专用 low-rank 支路 ----
+            # 0 = 关闭（逐位兼容旧 ckpt）; 推荐 64（+2.1M, +6.4%）
+            style_ada_rank=int(getattr(args, 'style_ada_rank', 0)),
             # v15 多模态风格: >0 时 y_callig_embedder 换 MultiStyleEmbedder(K token 查表)
             callig_multi_style_k=int(getattr(args, 'callig_multi_style_k', 0)),
             callig_style_ca=bool(getattr(args, 'callig_style_ca', False)),
             style_ctx_every_layer=bool(getattr(args, 'style_ctx_every_layer', False)),
             callig_spatial=getattr(args, 'callig_spatial', False),
             callig_spatial_rank=int(getattr(args, 'callig_spatial_rank', 64)),
+            # ---- S2 (2026-09-22): 三层语义分解 + 局部风格-骨架引导 ----
+            hier_style=int(getattr(args, 'hier_style', 0)),
+            num_pairs=int(getattr(args, 'num_pairs', 0)),
+            num_scripts=int(getattr(args, 'num_scripts', 12) or 12),
+            # ⚠ --script-embed-dim 的历史默认是 None（3cond 时由别处兜底），
+            #   S2 需要具体维度 -> None 时取 64。直接 int(None) 会 TypeError。
+            script_embed_dim=int(getattr(args, 'script_embed_dim', None) or 64),
+            pair_init=str(getattr(args, 'pair_init', 'zero')),
+            pair_residual=int(getattr(args, 'pair_residual', 1)),
+            script_film=bool(getattr(args, 'script_film', False)),
+            spatial_film_rank=int(getattr(args, 'spatial_film_rank', 0)),
+            local_ca_layers=int(getattr(args, 'local_ca_layers', 0)),
+            local_ca_heads=int(getattr(args, 'local_ca_heads', 4)),
+            local_ca_rank=int(getattr(args, 'local_ca_rank', 64)),
+            local_ca_q=str(getattr(args, 'local_ca_q', 'g')),
+            local_ca_window=int(getattr(args, 'local_ca_window', 0)),
+            local_ca_at=getattr(args, 'local_ca_at', None),
             freeze_char_table=getattr(args, 'freeze_char_table', False),
             # ---- IDS 组件码本字嵌入 ----
             use_ids_char_embedder=getattr(args, 'use_ids_char_embedder', False),
@@ -473,6 +499,37 @@ def main(args):
         model.cfg_glyph_scale = (None if getattr(args, 'cfg_glyph_scale', None) is None
                                  else float(args.cfg_glyph_scale))
         model.cfg_w_inter = float(getattr(args, 'cfg_w_inter', 0.0) or 0.0)
+
+        # ── S2 启动自检 (2026-09-22) ────────────────────────────────────────
+        # 为什么必须打这行: 本项目反复栽在"配置没生效但一声不吭"上
+        #   (drop-guard 漏 factorized_cat / batch_eval 把 args 转 dict /
+        #    parse_known_args 漏传 argv ...)。S2 有 8 个开关, 更该显式自报家门。
+        _s2_on = (int(getattr(model, 'hier_style', 0)) > 0
+                  or getattr(model, 'spatial_film', None) is not None
+                  or getattr(model, 'local_ca', None) is not None)
+        if _s2_on:
+            _n_new = sum(p.numel() for n, p in model.named_parameters()
+                         if n.startswith(("style_hier.", "script_film.",
+                                          "spatial_film.", "local_ca.")))
+            _n_all = sum(p.numel() for p in model.parameters())
+            logger.info(
+                f"[hier-style] 三层语义分解已启用: num_pairs={getattr(model.style_hier, 'num_pairs', 0)} "
+                f"num_scripts={getattr(model.style_hier, 'num_scripts', 0)} "
+                f"script_dim={getattr(model, 'script_embed_dim', 0)} "
+                f"pair_residual={getattr(getattr(model, 'style_hier', None), 'pair_residual', '-')} "
+                f"| 通路: script_film={model.script_film is not None} "
+                f"spatial_film={'rank' + str(getattr(args, 'spatial_film_rank', 0)) if model.spatial_film is not None else False} "
+                f"local_ca={0 if model.local_ca is None else len(model.local_ca)}"
+                f"@{getattr(model, 'local_ca_at', [])}(q={getattr(model, 'local_ca_q', '-')},"
+                f"win={getattr(args, 'local_ca_window', 0)}) "
+                f"| 新增参数={_n_new/1e3:.1f}K / 总 {_n_all/1e6:.3f}M ({_n_new/_n_all*100:.2f}%)")
+            if model.style_hier is not None and getattr(model.style_hier, 'pair_residual', 1) == 0:
+                logger.info("[hier-style] pair_residual=0 -> α 冻结为 0（'只加书体层'的同参数消融）")
+            if getattr(model, 'local_ca', None) is not None and int(getattr(args, 'local_ca_layers', 0)) > 0:
+                logger.info("[hier-style] 注意: 所有 S2 新模块都是 zero-init, "
+                            "step0 与旧路径**逐位相等** -> 可直接 resume 做单变量 A/B。")
+        else:
+            logger.info("[hier-style] 未启用（hier_style=0 且无局部通路）—— 走 v13/v15 旧路径")
         if model.cfg_glyph_scale is not None:
             if float(getattr(args, 'glyph_drop_prob', 0.0) or 0.0) <= 0.0:
                 logger.warning(
@@ -1273,6 +1330,30 @@ def main(args):
                     f"max_t={_skel_struct_loss_fn.max_t}, metrics={_pck.get('metrics', {})}, "
                     f"trainable_params_added=0 (probe frozen)")
 
+    # ---- 中程结构 aux loss (独立模块 src/loss/structure_mid.py, 替代旧内联 std_mid) ----
+    # 旧内联: MSE(x0_pred, 细骨架 g) —— 与中程"软墨迹"形态冲突。新模块: 载体粗化
+    # (blur GT / dilate skel, σ(t)/k(t) 由 calibrate_mid_structure.py 校准) + 低通子空间
+    # + 通道归一 -> k/σ 不敏感。默认 w_std_mid=0 关闭, 零破坏。
+    _mid_struct_loss = None
+    if getattr(args, 'w_std_mid', 0.0) > 0:
+        from src.loss.structure_mid import MidStructureLoss, TSchedule
+        _sched = TSchedule.from_json(
+            getattr(args, 'std_mid_calib_json', '') or '',
+            sigma_slope=float(getattr(args, 'std_mid_sigma_slope', 4.0)),
+            k_slope=float(getattr(args, 'std_mid_k_slope', 2.0)))
+        _mid_struct_loss = MidStructureLoss(
+            carrier=getattr(args, 'std_mid_carrier', 'blur_gt'),
+            alo=float(getattr(args, 'std_mid_alo', 0.35)),
+            ahi=float(getattr(args, 'std_mid_ahi', 0.75)),
+            lp_factor=int(getattr(args, 'std_mid_lp', 2)),
+            sigma_sched=_sched,
+            latent_channels=int(getattr(args, 'latent_channels', 4)))
+        if rank == 0:
+            logger.info(f"[std_mid] MidStructureLoss carrier={_mid_struct_loss.carrier} "
+                        f"window a_t∈[{_mid_struct_loss.alo},{_mid_struct_loss.ahi}] "
+                        f"lp={_mid_struct_loss.lp_factor} "
+                        f"calib={getattr(args, 'std_mid_calib_json', '') or '(默认线性σ/k)'}")
+
     trainable_params_list = [p for p in model.parameters() if p.requires_grad]
     if repa_loss_fn is not None:
         trainable_params_list.extend(repa_loss_fn.trainable_params())
@@ -1683,6 +1764,13 @@ def main(args):
                     model_kwargs = dict(y_callig=y_callig, y_script=y_script, y_char=y_char)
                 else:
                     model_kwargs = dict(y_callig=y_callig, y_char=y_char)
+                # ── S2: 三层语义分解的三个 id（数据集始终提供，模型按需消费）──
+                # hier_style=0 时 forward 会忽略它们，零副作用。
+                if int(getattr(args, 'hier_style', 0)) > 0:
+                    model_kwargs['y_callig_raw'] = batch['y_callig_raw'].to(
+                        device, non_blocking=True)
+                    model_kwargs['y_pair'] = batch['y_pair'].to(device, non_blocking=True)
+                    model_kwargs['y_script'] = batch['y_script'].to(device, non_blocking=True)
                 # 标准字形条件 g(甲2 token-add): batch 由 dataset 提供, None=禁用对应项
                 if getattr(args, 'w_glyph_cond', False) and 'g' in batch and batch['g'].numel() > 0:
                     model_kwargs['g'] = batch['g'].to(device, non_blocking=True)  # (N,4,32,32)
@@ -1769,33 +1857,17 @@ def main(args):
                 # the graph alive after we exit this step.
                 loss_dict.pop("pred_xstart", None)
 
-                # ---- MIDSTEP_STD: 中间噪声水平, 让去噪结果 x0_pred 逼近标准字形 latent g。
-                # 主损失从 GT x0 学报内容+风格; 此项在 sqrt(alpha_cumprod)∈[alo,ahi] 的中段噪声,
-                # 额外把模型预测的 clean latent 拉向标准字形 latent g, 使字形结构在去噪中段被锚定。
-                # 权重须明显小于主 loss, 避免抹掉书家风格。仅当使用 glyph 条件时生效。采样端不变。
+                # ---- MIDSTEP_STD (已抽到 src/loss/structure_mid.py: MidStructureLoss) ----
+                # 旧内联是 MSE(x0_pred, 细骨架 g), 与中程软墨迹形态冲突 -> 换成
+                # 载体粗化 + 低通子空间 + 通道归一。gt=GT图像latent(现成), skel=g。
                 loss_std_mid = torch.tensor(0.0, device=device)
-                if (getattr(args, 'w_std_mid', 0.0) > 0
-                        and pred_xstart_latent is not None
-                        and model_kwargs.get('g') is not None):
-                    # "sqrt_alpha" 的定义随扩散形式而变:
-                    #   ddpm: sqrt_alphas_cumprod[t] (整数步索引)
-                    #   flow: x_t=(1-t)x0+t·noise, 等效 sqrt_alpha = 1-t (浮点 t)
-                    # FlowMatching 没有 sqrt_alphas_cumprod 属性 —— 直接
-                    # diffusion.sqrt_alphas_cumprod[t] 会在 flow 下 AttributeError
-                    # (且浮点 t 不能做数组索引)。
-                    _sq = getattr(diffusion, "sqrt_alphas_cumprod", None)
-                    if _sq is not None:
-                        _a_t = torch.as_tensor(_sq, device=device)[t]    # (N,)
-                    else:
-                        _a_t = (1.0 - t.float()).to(device)              # flow: 等效 sqrt_alpha
-                    _alo = float(getattr(args, 'std_mid_alo', 0.35))
-                    _ahi = float(getattr(args, 'std_mid_ahi', 0.75))
-                    _mid = (_a_t >= _alo) & (_a_t <= _ahi)  # (N,) bool: 中间噪声水平子集
-                    if bool(_mid.any()):
-                        _g = model_kwargs['g'].float()      # (N,4,32,32) 标准字形 latent
-                        _p = pred_xstart_latent.float()
-                        # 归一化到该子集作均值 (不按全 batch, 排除无监督噪声步)
-                        loss_std_mid = ((_p[_mid] - _g[_mid]) ** 2).mean()
+                if (_mid_struct_loss is not None
+                        and pred_xstart_latent is not None):
+                    _lc = int(getattr(args, 'latent_channels', 4))
+                    _gt = x_latent[:, :_lc]
+                    _gsk = model_kwargs.get('g', None)
+                    loss_std_mid = _mid_struct_loss(
+                        pred_xstart_latent, _gt, _gsk, t.to(device))
 
                 intermediate_feats = loss_dict.get("intermediate_feats", None)
                 if x is not None and intermediate_feats is not None and repa_loss_fn is not None and args.w_repa > 0:

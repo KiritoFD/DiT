@@ -333,7 +333,9 @@ def main():
     log(f"conds={n_eff} k={args.k} steps={args.steps} cfg={args.cfg}"
         + ("  (--skip-intra: 跳过 intra 阶段)" if args.skip_intra else ""))
 
-    vae = load_eval_vae(dev, "data/pretrained/sd-vae-ft-ema")
+    # vae 固定放 cpu: heun_gpu 返回 cpu lat, vae 若在 cuda 会设备不匹配崩
+    # (decode ~96 张很便宜, 瓶颈在扩散采样而非 decode)。
+    vae = load_eval_vae("cpu", "data/pretrained/sd-vae-ft-ema")
     sf = float(a.get("vae_scaling_factor", 0.18215))
 
     rows, poster_rows = [], []
@@ -486,9 +488,13 @@ def main():
             #   若每样本换噪声, 测到的是"噪声方差 + 条件效应", ratio 会虚高(实测踩过)。
             _sd = 4242 if args.inter_fixed_noise else (7000 + i)
             noise = th.randn(1, lc, ls, ls, generator=th.Generator().manual_seed(_sd))
-            lat = heun_sample_cpu(model, noise, cond, args.cfg, batch=args.batch,
-                                  skel=gg, steps=args.steps,
-                                  shift=float(a.get("shift", 1.0)), cond_key="g")
+            if args.device == "cpu":
+                lat = heun_sample_cpu(model, noise, cond, args.cfg, batch=args.batch,
+                                      skel=gg, steps=args.steps,
+                                      shift=float(a.get("shift", 1.0)), cond_key="g")
+            else:
+                lat = heun_gpu(model, noise, cond, args.cfg, args.steps,
+                               float(a.get("shift", 1.0)), dev, g=gg)
             dec = vae.decode((lat[:, :lc].float() / sf)).sample.float().cpu()
             inter_imgs.append(((dec[0].clamp(-1, 1) + 1) / 2).numpy().transpose(1, 2, 0))
             inter_meta.append((r["character"], r["calligrapher"]))
@@ -509,9 +515,13 @@ def main():
                 cid = cid if 0 <= cid < n_cls else n_cls
                 gg = i_gs[i:i + 1].float() if i_gs is not None else None
                 noise = th.randn(1, lc, ls, ls, generator=th.Generator().manual_seed(9999 + i))
-                lat = heun_sample_cpu(model, noise, [(cid, int(r["glyph_id"]))], args.cfg,
-                                      batch=args.batch, skel=gg, steps=args.steps,
-                                      shift=float(a.get("shift", 1.0)), cond_key="g")
+                if args.device == "cpu":
+                    lat = heun_sample_cpu(model, noise, [(cid, int(r["glyph_id"]))], args.cfg,
+                                          batch=args.batch, skel=gg, steps=args.steps,
+                                          shift=float(a.get("shift", 1.0)), cond_key="g")
+                else:
+                    lat = heun_gpu(model, noise, [(cid, int(r["glyph_id"]))], args.cfg,
+                                   args.steps, float(a.get("shift", 1.0)), dev, g=gg)
                 dec = vae.decode((lat[:, :lc].float() / sf)).sample.float().cpu()
                 intra_imgs.append(((dec[0].clamp(-1, 1) + 1) / 2).numpy().transpose(1, 2, 0))
         os.unlink(_tf.name)

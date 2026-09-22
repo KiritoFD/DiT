@@ -218,12 +218,14 @@ def main():
                     model, diff, cache["noise"], cache["conds"],
                     args.cfg, args.dit_batch, dev,
                     skel=cache["skels_latent"], seed=0,
-                    blend_alpha=args.blend_alpha)
+                    blend_alpha=args.blend_alpha,
+                    hier_conds=cache.get("hier_conds"))
             else:
                 lat = sample_latents(
                     model, diff, cache["noise"], cache["conds"],
                     args.cfg, args.dit_batch, dev,
-                    skel=cache["skels_latent"], seed=0)
+                    skel=cache["skels_latent"], seed=0,
+                    hier_conds=cache.get("hier_conds"))
             t_s = time.time() - t0
             # decode in memory (bf16 autocast: 共 GPU 训练时省一半激活显存)
             gts = (cache["gts"].to(dev) + 1) / 2

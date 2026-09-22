@@ -102,10 +102,39 @@ def build_model_from_args(a, device, **overrides):
         char_proj_mode=g("char_proj_mode", "full"),
         callig_proj_mode=g("callig_proj_mode", "linear"),
         callig_scale_init=gf("callig_scale_init", 1.0),
+        # ---- 922/80 改动 1: 风格分支独立 LN + 独立增益 ----
+        # ⚠ 缺这两行会让评测构造出"没有 style_ln_mod/style_gain"的模型 ->
+        #   这两个权重变 unexpected key -> 静默走旧通路、D1/D3 指标全错。
+        style_ln=bool(g("style_ln", False)),
+        style_gain_init=gf("style_gain_init", 1.0),
+        # 只影响"未传 style_gain_init 时的自动标定"，对已存 ckpt 无影响
+        # （ckpt 里 style_gain 是实际值，直接 load_state_dict 覆盖）。
+        style_y_over_t_init=gf("style_y_over_t_init", 1.0),
+        # 922/80 改动 2: 缺这行会让评测构造出没有 style_ada_* 的模型 ->
+        # 这些权重变 unexpected key -> 静默走旧通路、指标全错。
+        style_ada_rank=gi("style_ada_rank", 0),
         # v15 多模态风格: >0 时 y_callig_embedder = MultiStyleEmbedder((B,K,D) 查表)
         callig_multi_style_k=gi("callig_multi_style_k", 0),
         callig_style_ca=bool(g("callig_style_ca", False)),
         style_ctx_every_layer=bool(g("style_ctx_every_layer", False)),
+        # ---- S2 (2026-09-22): 三层语义分解 + 局部风格-骨架引导 ----
+        # ⚠ 缺这些字段会让独立评测构造出"没有 S2 模块"的模型 ->
+        #   所有 S2 权重变成 unexpected key -> 评测静默走旧路径、指标全错。
+        #   （同类事故: batch_eval 把 ckpt args 转 dict -> 架构参数全被忽略。）
+        hier_style=gi("hier_style", 0),
+        num_pairs=gi("num_pairs", 0),
+        num_scripts=gi("num_scripts", 12),
+        script_embed_dim=gi("script_embed_dim", None),
+        pair_init=str(g("pair_init", "zero")),
+        pair_residual=gi("pair_residual", 1),
+        script_film=bool(g("script_film", False)),
+        spatial_film_rank=gi("spatial_film_rank", 0),
+        local_ca_layers=gi("local_ca_layers", 0),
+        local_ca_heads=gi("local_ca_heads", 4),
+        local_ca_rank=gi("local_ca_rank", 64),
+        local_ca_q=str(g("local_ca_q", "g")),
+        local_ca_window=gi("local_ca_window", 0),
+        local_ca_at=g("local_ca_at", None),
         callig_spatial=bool(g("callig_spatial", False)),
         callig_spatial_rank=gi("callig_spatial_rank", 64),
         freeze_char_table=bool(g("freeze_char_table", False)),

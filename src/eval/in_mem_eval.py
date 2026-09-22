@@ -463,10 +463,12 @@ def run_in_mem_eval(model, args, step, device, results_dir, sets=None,
     w_raw = csv.writer(f_raw)
     if new_sum:
         w_sum.writerow(["exp", "step", "set", "n", "ssim_mean", "ssim_p10", "ssim_q1",
-                        "ssim_med", "ssim_q3", "ssim_p90", "mse_mean", "lpips_mean"])
+                        "ssim_med", "ssim_q3", "ssim_p90", "mse_mean", "lpips_mean",
+                        "ink_ssim_mean", "ink_iou_mean", "skel_iou_mean"])
     if new_raw:
         w_raw.writerow(["exp", "step", "set", "idx", "img_id", "char", "script",
-                        "calligrapher", "mse", "ssim", "lpips"])
+                        "calligrapher", "mse", "ssim", "lpips",
+                        "ink_ssim", "ink_iou", "skel_iou"])
     exp = os.path.basename(results_dir.rstrip("/"))
     out = {}
 
@@ -492,12 +494,14 @@ def run_in_mem_eval(model, args, step, device, results_dir, sets=None,
                 lat = sample_latents_self_cond(
                     model, _DIFF, cache["noise"], cache["conds"],
                     cfg_scale, dit_batch, device,
-                    skel=cache["skels_latent"], seed=0, blend_alpha=blend_alpha)
+                    skel=cache["skels_latent"], seed=0, blend_alpha=blend_alpha,
+                    hier_conds=cache.get("hier_conds"))
             else:
                 lat = sample_latents(
                     model, _DIFF, cache["noise"], cache["conds"],
                     cfg_scale, dit_batch, device,
-                    skel=cache["skels_latent"], seed=0)
+                    skel=cache["skels_latent"], seed=0,
+                    hier_conds=cache.get("hier_conds"))
             t_s = time.time() - t0
 
             vae = _get_vae(device)
@@ -573,11 +577,30 @@ def run_in_mem_eval(model, args, step, device, results_dir, sets=None,
                                f"  -> poster 第 1 行（标准字输入）会缺失，但**指标不受影响**")
 
             ssims, mses = [], []
+            # ★ 墨迹域指标：全图 SSIM 被 ~90% 白底严重抬高（实测 0.5745 vs 墨迹框 0.3161）。
+            #   对齐 tools/batch_eval 的口径：ink_ssim / ink_iou / skel_iou 才是
+            #   "字写得对不对" 的真实反映。
+            _inks, _inkious, _skels = [], [], []
+            try:
+                from src.eval.metrics_ink import ink_ssim as _ink_ssim, ink_iou as _ink_iou
+                from src.eval.metrics import skel_iou as _skel_iou
+                _has_ink = True
+            except Exception as _e:
+                logger(f"[in-mem-eval] ⚠ 墨迹指标不可用 ({_e!r})，ink 列将留空")
+                _has_ink = False
             for i in range(n):
                 mses.append(_mse(pred_np[i], gt_np[i]))
                 ssims.append(_ssim(pred_np[i], gt_np[i]))
+                if _has_ink:
+                    _inks.append(_ink_ssim(pred_np[i], gt_np[i]))
+                    _inkious.append(_ink_iou(pred_np[i], gt_np[i]))
+                    _skels.append(_skel_iou(pred_np[i], gt_np[i], thresh=0.5))
             ssim = np.array(ssims)
             mse = float(np.mean(mses))
+            _ink_ssim_mean = f"{float(np.mean(_inks)):.5f}" if _inks else ""
+            _ink_iou_mean = f"{float(np.mean(_inkious)):.5f}" if _inkious else ""
+            _skel_iou_mean = f"{float(np.mean(_skels)):.5f}" if _skels else ""
+            _ink_txt = (f" ink_ssim={float(np.mean(_inks)):.4f}" if _inks else "")
             # LPIPS (v12+): 默认开启, 可用 --in-mem-eval-lpips 0 关闭。
             # ssim 会被大面积白底匹配骗过 (doc59), LPIPS 对结构细节敏感。
             _lp = _lpips_per_sample(
@@ -588,7 +611,8 @@ def run_in_mem_eval(model, args, step, device, results_dir, sets=None,
             q10, q25, q50, q75, q90 = np.percentile(ssim, [10, 25, 50, 75, 90])
             w_sum.writerow([exp, step, name, n, f"{ssim.mean():.4f}",
                             f"{q10:.4f}", f"{q25:.4f}", f"{q50:.4f}",
-                            f"{q75:.4f}", f"{q90:.4f}", f"{mse:.5f}", _lp_mean])
+                            f"{q75:.4f}", f"{q90:.4f}", f"{mse:.5f}", _lp_mean,
+                            _ink_ssim_mean, _ink_iou_mean, _skel_iou_mean])
             for i in range(n):
                 _s = _src[i] if i < len(_src) else {}
                 w_raw.writerow([exp, step, name, i,
@@ -597,13 +621,16 @@ def run_in_mem_eval(model, args, step, device, results_dir, sets=None,
                                 _s.get("script", ""),
                                 _s.get("calligrapher", ""),
                                 f"{mses[i]:.5f}", f"{ssims[i]:.4f}",
-                                (f"{_lp[i]:.5f}" if _lp else "")])
+                                (f"{_lp[i]:.5f}" if _lp else ""),
+                                (f"{_inks[i]:.5f}" if _inks else ""),
+                                (f"{_inkious[i]:.5f}" if _inkious else ""),
+                                (f"{_skels[i]:.5f}" if _skels else "")])
             f_sum.flush()
             f_raw.flush()
             out[name] = float(ssim.mean())
             logger(f"[in-mem-eval] step={step} set={name} n={n} "
                    f"ssim={ssim.mean():.4f} (med={q50:.4f}) mse={mse:.5f}"
-                   f"{_lp_txt} "
+                   f"{_lp_txt}{_ink_txt} "
                    f"sample={t_s:.0f}s total={time.time()-t0:.0f}s")
             # 自动 poster: 全量重画该 set 所有 step (秒级, 覆盖旧文件)
             try:

@@ -14,6 +14,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 import numpy as np
 import math
+import logging
 from torch.utils.checkpoint import checkpoint
 
 # 现代化组件（RMSNorm / SwiGLU / 2D-RoPE / QK-Norm / SDPA / PatchEmbed / DiTBlock / FinalLayer）
@@ -23,6 +24,8 @@ from torch.utils.checkpoint import checkpoint
 # timm 的 PatchEmbed/Attention/Mlp。2026-08-31 清理时一并删除 —— 它们已废弃，
 # 且删除后本文件不再依赖 timm（少一个重量级依赖）。
 from . import modules as M
+
+log = logging.getLogger(__name__)
 
 
 def modulate(x, shift, scale):
@@ -435,6 +438,335 @@ class CalligStyleCrossAttn(nn.Module):
         return g_tok + self.out_proj(out)
 
 
+#################################################################################
+#      S2 (2026-09-22): 三层语义分解 + 局部风格-骨架引导                          #
+#################################################################################
+#
+# 设计文档: docs/922/20_style_encoding.md (表怎么分级) + docs/922/30_injection.md
+#           (adaLN vs cross-attn) + docs/922/50_implementation.md (落地说明)
+#
+# 一句话: 全局笔法继续走 adaLN；局部书写引导由**新增的轻量通路**承担。
+#         这里**不替换** adaLN，也不再用"假风格 token"当 K/V。
+#################################################################################
+
+
+class StyleHierarchy(nn.Module):
+    """S2 的层级部分：pair 交互残差 + 书体层（书家主效应复用既有表）。
+
+    ## 为什么书家主效应不新建一张表
+
+    既有的 ``y_callig_embedder``（LabelEmbedder / MultiStyleEmbedder）已经承载了
+    四套机制，全部复用可以零风险：
+
+      * SupCon 预训练加载（``--callig-emb-pretrained``）
+      * CFG null 行语义（``label == num_classes``）
+      * 冻结（``freeze_table()``）
+      * few-shot 新增行（``--train-only-new-callig`` / ``--init-new-callig``）
+        ← **这一条最关键**：S2 的卖点之一就是"新书家只学 128 维主效应行"，
+          复用后该机制直接可用，不用重写。
+
+    所以本模块只负责**新增的两层**：
+
+    .. code-block:: text
+
+        e_style  = e_callig(主效应) + α · E_pair[pair]     α init 0.1，可学习
+        e_script = E_script[script]
+
+    ## 残差为什么能"自动回退"
+
+    ``E_pair`` **zero-init** 且 ``α`` 很小：训练初期 pair 项恒为 0，
+    模型等价于"纯书家主效应"（= 已验证的 v13 配方的超集），可安全 resume。
+    稀疏 pair（数据里 15 个 <50 样本，min=1）梯度微弱 → 残差学不动 →
+    **自动退化为主效应兜底**，不需要任何硬编码回退逻辑。
+
+    ## drop 语义
+
+    callig 被 4-way dropout 丢弃时，pair 项**整项置零**（不是换成 null 行），
+    于是 ``e_style = null_callig + 0`` —— uncond 分支保持纯净。
+    """
+
+    def __init__(self, num_pairs, num_scripts, style_dim, script_dim=64,
+                 pair_init="zero", pair_residual=1):
+        super().__init__()
+        self.num_pairs = int(num_pairs)
+        self.num_scripts = int(num_scripts)
+        self.style_dim = int(style_dim)
+        self.script_dim = int(script_dim)
+        self._pair_init = str(pair_init)
+        self.E_pair = nn.Embedding(self.num_pairs, self.style_dim)
+        self.E_script = nn.Embedding(self.num_scripts, self.script_dim)
+        # null(书体) 行：script 缺失/被 drop 时用（当前 4-way drop 不丢 script，
+        # 但为 CFG 与未来扩展保留）。
+        self.null_script = nn.Parameter(torch.zeros(self.script_dim))
+        # α 是残差门控。0.1 起步：让主效应先站稳，再逐步放开交互项。
+        self.alpha = nn.Parameter(torch.tensor(0.1))
+        # pair_residual=0 -> 冻结 α 且置 0：残差恒为 0，等价于"只有书体层"。
+        # 用来做**参数个数完全相同**的消融（S2-a），避免"加没加这一层"说不清。
+        # ⚠ 注意 ∂L/∂α = ∂L/∂e_style · E_pair 在 E_pair zero-init 时为 0 ->
+        #   α 的梯度有**一步延迟**（第一步只更新 E_pair，第二步起 α 才动）。
+        #   这不是死锁，但设计上要知道。
+        self.pair_residual = int(pair_residual)
+        if self.pair_residual == 0:
+            with torch.no_grad():
+                self.alpha.zero_()
+            self.alpha.requires_grad_(False)
+        nn.init.normal_(self.E_script.weight, std=0.02)
+        if str(pair_init) == "zero":
+            nn.init.zeros_(self.E_pair.weight)
+        else:
+            nn.init.normal_(self.E_pair.weight, std=0.02)
+
+    def forward(self, e_callig, pair_id, script_id, callig_drop=None):
+        """返回 ``(e_style, e_script)``。
+
+        ``pair_id`` / ``script_id`` 可为 None（数据集没给）→ 对应项按"缺失"处理。
+        """
+        B = e_callig.shape[0]
+        dev, dt = e_callig.device, e_callig.dtype
+
+        if pair_id is None:
+            e_pair = torch.zeros_like(e_callig)
+        else:
+            pair_id = pair_id.to(dev)
+            _bad = pair_id >= self.num_pairs
+            if callig_drop is not None:
+                _bad = _bad | callig_drop.to(dev).to(torch.bool)
+            _safe = pair_id.clamp(0, self.num_pairs - 1)
+            e_pair = self.E_pair(_safe).to(dt)
+            e_pair = torch.where(_bad.unsqueeze(-1), torch.zeros_like(e_pair), e_pair)
+
+        e_style = e_callig + self.alpha.to(dt) * e_pair
+
+        if script_id is None:
+            e_script = self.null_script.to(dt).unsqueeze(0).expand(B, -1)
+        else:
+            script_id = script_id.to(dev)
+            _bad_s = script_id >= self.num_scripts
+            _safe_s = script_id.clamp(0, self.num_scripts - 1)
+            e_script = self.E_script(_safe_s).to(dt)
+            e_script = torch.where(
+                _bad_s.unsqueeze(-1),
+                self.null_script.to(dt).unsqueeze(0).expand_as(e_script),
+                e_script)
+        return e_style, e_script
+
+
+class ScriptGlyphFiLM(nn.Module):
+    """通路 B1：书体 FiLM on ``g_tok``（结构轴）。
+
+    书体（楷/行/隶）是**结构**语义，与 ``g`` 同域 —— ``g`` 本身就是按书体渲染的
+    标准骨架，两者冗余度高。所以书体**不进 adaLN**（那会变成"同一个信号喂两遍"，
+    12ch 失败的教训），而是去**调制骨架**。
+
+    ``zero-init`` → step 0 时 ``γ=β=0`` → 恒等映射，可从任何已训 ckpt 安全续跑。
+
+    ⚠ **加性 β 必须乘 keep**：``g_tok`` 在 glyph_drop 时会先被置零表示"无骨架"，
+    若此时再加上非零 β，被丢弃的样本会重新获得条件信号 → **uncond 分支被污染**。
+    乘性 γ 不受影响（``0*(1+γ)=0``）。
+    """
+
+    def __init__(self, script_dim, d_model):
+        super().__init__()
+        self.film = nn.Linear(int(script_dim), 2 * int(d_model))
+        nn.init.zeros_(self.film.weight)
+        nn.init.zeros_(self.film.bias)
+
+    def forward(self, g_tok, e_script, keep=None):
+        gamma, beta = self.film(e_script).chunk(2, dim=-1)
+        gamma = gamma.to(g_tok.dtype).unsqueeze(1)
+        beta = beta.to(g_tok.dtype).unsqueeze(1)
+        if keep is not None:
+            beta = beta * keep.view(-1, 1, 1).to(g_tok.dtype)
+        return g_tok * (1 + gamma) + beta
+
+
+class SpatialStyleFiLM(nn.Module):
+    """通路 B2（Phase 1，比 cross-attn 便宜）：**逐位置**的局部 FiLM。
+
+    .. code-block:: text
+
+        γ_i, β_i = f( e_cond, g_tok_i, pos_i )
+        g_tok_i' = g_tok_i · (1 + γ_i) + β_i · keep
+
+    与 :class:`ScriptGlyphFiLM` 的区别：那里的 γ/β 对**所有 token 相同**（全局），
+    这里**每个 token 不同**（局部）—— 已经能表达
+    "同一风格下不同局部位置有不同处理" / "不同风格下同一局部位置有不同处理"。
+
+    成本远低于 cross-attn：256 个 token × ~106K 参数（D=384, rank=64）
+    ≈ 27M MACs/样本，约为全模型 FLOPs 的 1%。
+
+    为什么先做它再做 cross-attn：如果局部性有效但 FiLM 就够了，就不必付
+    attention 的钱；只有 FiLM 明显不够时才升级到 :class:`LocalStyleGlyphAdapter`。
+    """
+
+    def __init__(self, cond_dim, d_model, rank=64):
+        super().__init__()
+        self.d_model = int(d_model)
+        # 输入 = [e_cond; g_tok_i; pos_i]
+        self.net = nn.Sequential(
+            nn.Linear(int(cond_dim) + 2 * int(d_model), int(rank)),
+            nn.SiLU(),
+            nn.Linear(int(rank), 2 * int(d_model)),
+        )
+        nn.init.zeros_(self.net[-1].weight)
+        nn.init.zeros_(self.net[-1].bias)
+
+    def forward(self, g_tok, e_cond, pos, keep=None):
+        B, N, D = g_tok.shape
+        if int(e_cond.shape[0]) != B:
+            raise RuntimeError(
+                f"[SpatialStyleFiLM] batch 不一致: g_tok={B} vs e_cond="
+                f"{int(e_cond.shape[0])}（通常是 CFG 复制 2B 时条件没跟上）")
+        _cond = e_cond.to(g_tok.dtype).unsqueeze(1).expand(B, N, -1)
+        _pos = pos.to(g_tok.dtype)
+        if _pos.shape[1] != N:
+            raise ValueError(
+                f"[SpatialStyleFiLM] pos token 数 {_pos.shape[1]} != g_tok {N}")
+        z = torch.cat([_cond, g_tok, _pos.expand(B, N, -1)], dim=-1)
+        gamma, beta = self.net(z).chunk(2, dim=-1)
+        if keep is not None:
+            beta = beta * keep.view(-1, 1, 1).to(g_tok.dtype)
+        return g_tok * (1 + gamma) + beta
+
+
+class LocalStyleGlyphAdapter(nn.Module):
+    """通路 B3（Phase 2）：**局部风格-骨架** cross-attention adapter。
+
+    ## 与两个历史方案的本质区别
+
+    旧 ``CalligStyleCrossAttn``（v15b）::
+
+        Q = 骨架 token,  K/V = K 个**风格 token**
+
+    → K 个风格 token 间余弦 **0.884**（几乎共线），"多模态"是假的，
+      attention 没有可寻址的内容，最后退化成昂贵的全局调制（实测只值 +0.0016）。
+
+    旧 ``style_ctx_every_layer``（v15c）::
+
+        K token 拼进**每层** xattn context，成本 +33%，独立口径**最差**。
+
+    本模块::
+
+        Q = x 或 g_tok（**带位置**）
+        K/V = **局部骨架 token**（**带位置**）        ← 空间证据是真的
+        style 通过 FiLM 调制 Q/K                      ← 风格决定"看哪里"
+
+    → 风格**不作为被查询对象**，而是**改变注意力分布**。
+      不再依赖 K 个假风格 token。
+
+    ## 语义
+
+    | 书体/书家 | 关注的局部位置 |
+    |---|---|
+    | 隶书 | 横向笔画末端、波磔位置 |
+    | 楷书 | 起收笔的方整、结构均衡 |
+    | 行书 | 转折、牵丝、粗细变化 |
+
+    ## 三个必须遵守的工程约束
+
+    1. **Q 必须有位置编码**（旧 ZeroCrossAttention 只给 K/V 加 → 空间寻址退化成
+       内容寻址）。这里 Q/K 都加同一份 2D sincos。
+    2. **out_proj 与 style_qk 末层 zero-init** → step 0 恒等，可安全 resume。
+    3. **输出必须乘 keep**（glyph_drop 的样本骨架是零，但 attention 会从
+       这些 token 里聚合出非零值 → 污染 uncond 分支）。
+
+    ⚠ 实现修正：风格 γ/β 的形状是 ``(B, D)``，而 q/k 是 ``(B, H, N, hd)``。
+    直接 ``view(B,1,1,D)`` 广播会在 ``D vs hd`` 上失配（早前的参考实现有此 bug）。
+    必须 reshape 成 ``(B, H, 1, hd)``。
+    """
+
+    def __init__(self, d_model, cond_dim, num_heads=4, rank=64, window=0,
+                 grid_size=16):
+        super().__init__()
+        d_model = int(d_model)
+        assert d_model % int(num_heads) == 0, "d_model 必须被 num_heads 整除"
+        self.num_heads = int(num_heads)
+        self.head_dim = d_model // self.num_heads
+        self.d_model = d_model
+        grid_size = int(round(grid_size))
+        self.grid_size = grid_size
+
+        self.cond_norm = nn.LayerNorm(int(cond_dim))
+        self.norm_q = nn.LayerNorm(d_model)
+        self.norm_kv = nn.LayerNorm(d_model)
+        self.q_proj = nn.Linear(d_model, d_model)
+        self.k_proj = nn.Linear(d_model, d_model)
+        self.v_proj = nn.Linear(d_model, d_model)
+        # 风格 → Q/K 的 γ/β（4 组：γ_q, β_q, γ_k, β_k）
+        self.style_qk = nn.Sequential(
+            nn.Linear(int(cond_dim), int(rank)),
+            nn.SiLU(),
+            nn.Linear(int(rank), 4 * d_model),
+        )
+        self.out_proj = nn.Linear(d_model, d_model)
+        nn.init.zeros_(self.out_proj.weight)
+        nn.init.zeros_(self.out_proj.bias)
+        nn.init.zeros_(self.style_qk[-1].weight)
+        nn.init.zeros_(self.style_qk[-1].bias)
+
+        # 窗口注意力（可选）：每个位置只看局部邻域，更像"局部书写指引"，
+        # 也更不容易退化成全局平均。window=0 → 全局 256-token attention。
+        self.window = int(window)
+        if self.window > 0:
+            N = grid_size * grid_size
+            idx = torch.arange(N)
+            r, c = idx // grid_size, idx % grid_size
+            half = self.window // 2
+            m = ((r.unsqueeze(1) - r.unsqueeze(0)).abs() <= half) & \
+                ((c.unsqueeze(1) - c.unsqueeze(0)).abs() <= half)
+            # 对角线恒为 True，保证没有全 False 的行（否则 softmax 出 NaN）
+            m = m | torch.eye(N, dtype=torch.bool)
+            # ⚠ 与 ctx_pos_g 同一个坑：register_buffer 对**已存在的属性名**会抛
+            #   KeyError: "attribute already exists"。所以不能先写 self.win_mask = None。
+            if "win_mask" in self.__dict__:
+                del self.__dict__["win_mask"]
+            self.register_buffer("win_mask", m.unsqueeze(0).unsqueeze(0),
+                                 persistent=False)
+        else:
+            self.win_mask = None
+
+    def forward(self, q_src, g_tok, e_cond, pos, keep=None):
+        """q_src: (B,N,D) 查询源（x 或 g_tok）; g_tok: (B,N,D) 骨架证据。"""
+        B, N, D = q_src.shape
+        Nc = g_tok.shape[1]
+        H, hd = self.num_heads, self.head_dim
+        # ★ 显式 batch 校验：本项目历史上多次因"某个条件通路没跟上 2B"而在
+        #   cat/view 处报一个看不出原因的形状错（见 factorized_cat 处的同类注释）。
+        _bs = {"q_src": B, "g_tok": int(g_tok.shape[0]), "e_cond": int(e_cond.shape[0])}
+        if len(set(_bs.values())) != 1:
+            raise RuntimeError(
+                f"[LocalStyleGlyphAdapter] batch 不一致: {_bs}。"
+                f" 通常是 CFG 路径里 x 被复制成 2B 但条件没跟上。")
+
+        q_in = self.norm_q(q_src + pos.to(q_src.dtype))
+        kv_in = self.norm_kv(g_tok + pos.to(g_tok.dtype))
+
+        q = self.q_proj(q_in).view(B, N, H, hd).transpose(1, 2)          # (B,H,N,hd)
+        k = self.k_proj(kv_in).view(B, Nc, H, hd).transpose(1, 2)        # (B,H,Nc,hd)
+        v = self.v_proj(kv_in).view(B, Nc, H, hd).transpose(1, 2)
+
+        gq, bq, gk, bk = self.style_qk(self.cond_norm(e_cond)).chunk(4, dim=-1)
+        # ⚠ (B,D) -> (B,H,1,hd) 才能与 (B,H,N,hd) 正确广播
+        gq = gq.view(B, H, hd).unsqueeze(2).to(q.dtype)
+        bq = bq.view(B, H, hd).unsqueeze(2).to(q.dtype)
+        gk = gk.view(B, H, hd).unsqueeze(2).to(k.dtype)
+        bk = bk.view(B, H, hd).unsqueeze(2).to(k.dtype)
+        q = q * (1 + gq) + bq
+        k = k * (1 + gk) + bk
+
+        scores = torch.matmul(q, k.transpose(-2, -1)) * (hd ** -0.5)     # (B,H,N,Nc)
+        if self.win_mask is not None and Nc == self.win_mask.shape[-1]:
+            scores = scores.masked_fill(~self.win_mask.to(torch.bool),
+                                        torch.finfo(scores.dtype).min)
+        attn = torch.softmax(scores, dim=-1)
+        out = torch.matmul(attn, v)
+        out = out.transpose(1, 2).reshape(B, N, D)
+        out = self.out_proj(out)
+        if keep is not None:
+            out = out * keep.view(-1, 1, 1).to(out.dtype)
+        return q_src + out
+
+
 class DiT_2Cond(nn.Module):
     """
     Diffusion model with a Transformer backbone conditioned on 2 discrete labels:
@@ -520,6 +852,64 @@ class DiT_2Cond(nn.Module):
         char_proj_mode="full",
         callig_proj_mode="linear",   # 42 号实验: "mlp" 两层 MLP 补 callig 容量
         callig_scale_init=1.0,       # 42 号实验: callig_scale 初值 (1.5 增强风格权重)
+        # ---- 922/80 改动 1: 风格分支独立 LN + 独立增益（治"adaLN 饿着"）----
+        #
+        # 实测动机（D1，7 个 ckpt）:
+        #   c = t_emb + y_emb, 而 t_emb ≈ 29–49, y_emb ≈ 16–23
+        #   -> y_emb/c 只有 0.34–0.77，且与 T2 强正相关（v13 0.77 最好 / v15c 0.34 最差）
+        #   adaLN 的 dmod 从 0.65（v13）掉到 0.0499（v15c, 1/13）
+        #
+        # 两个病因:
+        #   (a) **共享投影 + 加性混合** -> 梯度被 t_emb 主导，y_emb 只贡献小扰动
+        #   (b) **zero-init 死锁** -> adaLN_modulation[-1] 零初始化时
+        #       ∂L/∂y_emb ∝ ∂mod/∂c ∝ ‖c‖，y_emb 越小起步梯度越小 -> 越训越弱
+        #
+        # 修法:
+        #   style_ln=True   : 风格分支过独立 LayerNorm -> 抹平 e_callig 的范数失衡
+        #                     （D5 实测 v13 系表范数 0.21…13.07，失衡 63 倍）
+        #   style_gain_init : 显式放大风格分支初值，让 y_emb 起步就与 t_emb 同量级，
+        #                     从而 ∂mod/∂c 变大 -> 打破 (b) 的死锁
+        #
+        # ⚠ **不要手动猜 gain 的值**：LN 的输出范数 ≈ sqrt(hidden)=19.6，而
+        #    t_embedder 输出只有 ~0.89（实测 S/2）。gain=1.0 就已经让 y/t=21.6，
+        #    gain=2.5 更是 53 倍 -> 直接把 t 条件盖掉，训练崩。
+        #    所以 gain 的实际初值由 ``style_y_over_t_init`` **反解**：
+        #        style_gain = style_y_over_t_init * ‖t_emb‖ / ‖LN(e_callig)‖
+        #    换 hidden / 换 embedder 都会自动适配，不需要重猜魔法数。
+        #    传 style_gain_init=None 也走同一条自动标定路径（更推荐）。
+        #
+        # ⚠ 自动标定后 y/t ≈ 1.0，即两支**同量级**、谁都不淹没谁；
+        #    上限仍建议 y/t ≤ 3（再高会让模型分不清加噪程度 -> 字形崩）。
+        #    用 strict SSIM ≥ 0.56 守门（见 docs/922/80_injection_redesign.md §3）。
+        # ⚠ 默认 (False, 1.0) = 与旧 ckpt **逐位等价**，不破坏任何历史 run。
+        style_ln=False,
+        style_gain_init=1.0,
+        style_y_over_t_init=1.0,
+        # ---- 922/80 改动 2: adaLN 的**风格专用 low-rank 支路** ----
+        #
+        # 改动 1 解决"风格幅度太弱"，但**没解决**"风格与时间步共用同一个
+        # adaLN_modulation 矩阵"这件事。D1 实测：v14_s2 明明用了三层表、
+        # e_callig 区分度也好，dmod 仍只有 v13 的 1/13 —— 因为
+        #   ∂L/∂y_emb = ∂mod/∂c · ∂c/∂y_emb
+        # 里 ∂mod/∂c 是**同一个** W（被 t 的梯度主导），风格只是加数上的一点扰动。
+        #
+        # 本改动给风格一条**完全独立**的低秩通路：
+        #   mod = adaLN(c)          <- 主干（t 主导，含全部旧语义）
+        #       + W_up · LN(e_callig)  <- 新增，独立参数、独立梯度
+        # 两者相 ``+``（不是串联），所以：
+        #   ✓ 主干梯度路径完全不变（不会像"替换 adaLN"那样破坏已收敛的时序建模）
+        #   ✓ W_up zero-init -> step 0 恒等，可在旧 ckpt 上 resume 继续训
+        #   ✓ 风格拿到**自己的** W_up，不再和 t 抢同一个矩阵
+        #
+        # 参数量（S/2, D=384, r=64, 12 层 + final）：每层
+        #   LN(769) + down(384*64=24576, 无 bias) + up(64*6*384=147456 + 384)
+        #   = 173185 -> 12 层 + final 的 2D 版 = 约 **2.1M（+6.4%）**
+        # r=32 则约 1.1M（+3.2%）。rank=0 = 关闭 = 逐位兼容旧 ckpt。
+        #
+        # ⚠ 本改动与改动 1 正交，可单独开也可同开。若同开，建议先确认改动 1
+        #   的 5k 步判据（dmod ≥ 0.3）是否达标 —— 达标则本改动可缓，
+        #   未达标（说明共享矩阵确实是瓶颈）则本改动是主力。
+        style_ada_rank=0,
         # ---- 多模态风格 (v15): 每类 K 个 style token + 三种注入方式矩阵 ----
         # >0 时 y_callig_embedder 换成 MultiStyleEmbedder（查表 (B,K,D)，DINO
         # K-Means 质心初始化），token dim = callig_embed_dim（None 则 = hidden）。
@@ -531,6 +921,32 @@ class DiT_2Cond(nn.Module):
         callig_multi_style_k=0,
         callig_style_ca=False,
         style_ctx_every_layer=False,
+        # ---- S2 (2026-09-22): 三层语义分解 + 局部风格-骨架引导 ----
+        # 全部默认关闭 = 与旧 ckpt **逐位等价**，不破坏任何历史 run。
+        # 设计见 docs/922/20_style_encoding.md 与 30_injection.md。
+        #
+        # hier_style>0 时:
+        #   e_style  = y_callig_embedder(书家主效应) + α · E_pair[pair]
+        #   e_script = E_script[script]
+        #   书家主效应**复用既有表**（SupCon 加载 / null 行 / 冻结 / few-shot 新增行
+        #   四套机制全部沿用），StyleHierarchy 只新增 pair 残差与书体两层。
+        hier_style=0,
+        num_pairs=0,            # pair 词表大小；0 -> 退化成 num_calligraphers
+        num_scripts=8,          # 书体词表大小（数据里 script_id ∈ {0,3,4}，故取 8 留余量）
+        script_embed_dim=64,
+        pair_init="zero",       # "zero"（残差语义，推荐）| "normal"
+        pair_residual=1,        # 0 = 冻结 α 并置 0（"只加书体层"的同参数消融）
+        # 通路 B1：书体 FiLM on g_tok（结构轴，全局 γ/β）
+        script_film=False,
+        # 通路 B2：逐位置局部 FiLM（Phase 1，比 cross-attn 便宜 ~5x）
+        spatial_film_rank=0,
+        # 通路 B3：局部风格-骨架 cross-attn adapter（Phase 2）
+        local_ca_layers=0,      # 插入的 block 数（建议 2，不要 12）
+        local_ca_heads=4,
+        local_ca_rank=64,
+        local_ca_q="g",         # "g" = 先风格化骨架（更安全，推荐）｜"x" = 主干侧（更标准）
+        local_ca_window=0,      # >0 用窗口注意力（3/5 建议），0 = 全局 256-token
+        local_ca_at=None,       # 显式 block 下标，如 "2,6"；优先于均匀分布
         # ---- 外挂 callig_spatial (已证伪死重, 保留为可配置开关以复评历史 ckpt) ----
         callig_spatial=False,
         callig_spatial_rank=64,
@@ -738,6 +1154,39 @@ class DiT_2Cond(nn.Module):
             self.callig_scale = nn.Parameter(torch.tensor(float(callig_scale_init)))
             if self.use_char_cond:
                 self.char_scale = nn.Parameter(torch.tensor(1.0))
+            # ---- 922/80 改动 1: 风格分支的独立 LN + 独立增益 ----
+            # style_gain 与 callig_scale 是**两个不同的标量**，语义分工：
+            #   callig_scale : 旧通路，乘在 callig_proj 输出上（保持历史行为不动）
+            #   style_gain   : 新通路，乘在"独立 LN 之后的风格向量"上
+            # 两者都启用时 y_emb = ... + style_gain * LN(callig_proj(e_callig))，
+            # 即原先的 callig_scale 项保留，风格分支额外加一份 —— 因为
+            # use_char_cond=False 时 callig_scale 是 y_emb 的唯一来源，
+            # 直接改写它会让新旧配置无法逐位对齐。
+            self._style_ln_on = bool(style_ln)
+            self._style_gain_init = float(style_gain_init)
+            # 目标 ‖y_emb‖ / ‖t_emb‖（只在 style_gain_init 传 None/负数 时用于自动标定）。
+            # 默认 1.0：两支同量级，谁都不淹没谁。
+            self.style_y_over_t_init = float(style_y_over_t_init)
+            if self._style_ln_on or self._style_gain_init != 1.0:
+                self.style_ln_mod = nn.LayerNorm(hidden_size)
+                self.style_gain = nn.Parameter(torch.tensor(self._style_gain_init))
+                # e_callig 的维度**因 fusion 而异**，不能写死：
+                #   factorized_add/cat : callig_embed_dim（实测 128）
+                #   xl_highdim         : d_c = max(callig_embed_dim, hidden//3)（实测 384）
+                # 所以这里按"已知的 eager 值"建，并在 forward 里做**懒校验**：
+                # 若实际维度不符，就用真实维度重建一次（见 _style_out）。
+                # 这样不必在 __init__ 里枚举所有 fusion 的维度规则。
+                _sd = int(callig_embed_dim or hidden_size)
+                self._style_in_dim_hint = _sd
+                if _sd != int(hidden_size):
+                    self.style_in_proj = nn.Linear(_sd, hidden_size)
+                else:
+                    self.style_in_proj = nn.Identity()
+            else:
+                # 完全关闭时**不建任何参数** -> state_dict 与旧 ckpt 逐位相同
+                self.style_ln_mod = None
+                self.style_gain = None
+                self.style_in_proj = None
             # ---- g 的向量因子: 池化 g_tok -> 低维向量 (见 __init__ 参数处说明) ----
             # 与 callig 一起构成 concat 的两个操作数 (或 add 的两个加数)。
             if self.glyph_vec_cond:
@@ -882,6 +1331,22 @@ class DiT_2Cond(nn.Module):
             )
             self.y_scale = nn.Parameter(torch.tensor(0.05))  # y_emb 初始 norm~1.0，可学习放大
             self._y_scale_enabled = True
+            # ---- 922/80 改动 1：xl_highdim 也建一套（e_callig 维度 = d_c）----
+            # ⚠ 这一支的 e_callig 维度是 d_c = max(callig_embed_dim, hidden//3)，
+            #   **不等于** callig_embed_dim -> style_in_proj 必然存在。
+            #   历史缺口：本支原先没有 style_gain，改动 1 在此完全无效。
+            self._style_ln_on = bool(style_ln)
+            self._style_gain_init = float(style_gain_init)
+            self.style_y_over_t_init = float(style_y_over_t_init)
+            if self._style_ln_on or self._style_gain_init != 1.0:
+                self.style_ln_mod = nn.LayerNorm(hidden_size)
+                self.style_gain = nn.Parameter(torch.tensor(self._style_gain_init))
+                self._style_in_dim_hint = int(d_c)
+                self.style_in_proj = nn.Linear(int(d_c), hidden_size)
+            else:
+                self.style_ln_mod = None
+                self.style_gain = None
+                self.style_in_proj = None
         else:
             self.y_callig_embedder = LabelEmbedder(num_calligraphers, hidden_size, class_dropout_prob)
             self.y_char_embedder = LabelEmbedder(num_characters, hidden_size, class_dropout_prob)
@@ -895,14 +1360,25 @@ class DiT_2Cond(nn.Module):
         num_patches = self.x_embedder.num_patches
         self.pos_embed = nn.Parameter(torch.zeros(1, num_patches, hidden_size), requires_grad=False)
 
+        # ---- 922/80 改动 2: 风格专用 low-rank adaLN 支路 ----
+        # >0 时每个 block / final_layer 多一条 (LN -> Linear(D,r) -> Linear(r,6D)) 旁路，
+        # 把 e_callig 直接喂给调制量，**不经过** c = t_emb + y_emb 的共享矩阵。
+        # zero-init -> step 0 恒等；rank=0 时不建任何参数 -> 与旧 ckpt 逐位等价。
+        self.style_ada_rank = int(style_ada_rank)
+        # 支路的输入是**原始 e_callig**，其维度 = callig_embed_dim（常 != hidden）
+        _style_in_dim = int(callig_embed_dim or hidden_size)
+
         self.blocks = nn.ModuleList([
             M.DiTBlock(hidden_size, num_heads, mlp_ratio=mlp_ratio,
                        norm_type=norm_type, mlp_type=mlp_type, qk_norm=qk_norm,
-                       attn_impl=attn_impl)
+                       attn_impl=attn_impl, style_ada_rank=self.style_ada_rank,
+                       style_in_dim=_style_in_dim)
             for _ in range(depth)
         ])
         self.final_layer = M.FinalLayer(hidden_size, patch_size, self.out_channels,
-                                        norm_type=norm_type)
+                                        norm_type=norm_type,
+                                        style_ada_rank=self.style_ada_rank,
+                                        style_in_dim=_style_in_dim)
 
         # ---- 2D axial RoPE 缓存 ----
         # persistent=False：不写进 state_dict，避免任何 ckpt key 变化。
@@ -1022,6 +1498,77 @@ class DiT_2Cond(nn.Module):
                         ZeroAdaLNInjection(hidden_size, mode="modulate")
                         for _ in self.glyph_inject_at
                     ])
+
+        # ── S2：三层语义分解 + 局部风格-骨架引导（2026-09-22）─────────────────
+        # 全部默认 None/0 = 与旧 ckpt 逐位等价。
+        _grid = int(round(self.x_embedder.num_patches ** 0.5))
+        _d_style = int(callig_embed_dim or hidden_size)
+        self.hier_style = int(hier_style)
+        # ⚠ --script-embed-dim 的历史默认是 None（3cond 时由别处兜底），
+        #   独立评测端会原样透传 None -> int(None) TypeError。这里兜底为 64。
+        self.script_embed_dim = int(script_embed_dim or 64)
+        # 局部通路的 e_cond 维度 = [e_style; e_script]
+        self.cond_dim = _d_style + (self.script_embed_dim if self.hier_style > 0 else 0)
+
+        self.style_hier = None
+        self.script_film = None
+        self.spatial_film = None
+        self.local_ca = None
+        self._local_ca_map = {}
+        self.local_ca_q = str(local_ca_q)
+
+        if self.hier_style > 0:
+            _n_pair = int(num_pairs) if int(num_pairs) > 0 else int(num_calligraphers)
+            self.style_hier = StyleHierarchy(
+                num_pairs=_n_pair, num_scripts=int(num_scripts),
+                style_dim=_d_style, script_dim=self.script_embed_dim,
+                pair_init=str(pair_init), pair_residual=int(pair_residual))
+            if bool(script_film):
+                self.script_film = ScriptGlyphFiLM(self.script_embed_dim, hidden_size)
+
+        if int(spatial_film_rank) > 0:
+            self.spatial_film = SpatialStyleFiLM(
+                self.cond_dim, hidden_size, rank=int(spatial_film_rank))
+
+        # 局部通路的位置编码：x 与 g_tok 同为 grid×grid，共用一份 sincos。
+        # ⚠ 必须 **spatial_film 或 local_ca 任一开启** 就注册 —— 否则
+        #   "只开 spatial_film_rank 不开 local_ca_layers"（配置 s2d_spfilm）
+        #   会在 forward 里 AttributeError: local_pos。
+        if int(spatial_film_rank) > 0 or int(local_ca_layers) > 0:
+            # ⚠ 用独立名字 local_pos，避开 ctx_pos_g 的"属性已存在"register_buffer 坑
+            _pe = get_2d_sincos_pos_embed(hidden_size, _grid)
+            if "local_pos" in self.__dict__:
+                del self.__dict__["local_pos"]
+            self.register_buffer("local_pos",
+                                 torch.from_numpy(_pe).float().unsqueeze(0),
+                                 persistent=False)
+        else:
+            self.local_pos = None
+
+        if int(local_ca_layers) > 0:
+            n_lc = min(int(local_ca_layers), depth)
+            if local_ca_at:
+                _at = sorted({int(v) for v in str(local_ca_at).split(",")
+                              if str(v).strip() != ""})
+                _at = [i for i in _at if 0 <= i < depth]
+                if not _at:
+                    raise ValueError(f"--local-ca-at 解析为空或越界: {local_ca_at!r}")
+            else:
+                # 均匀分布在 depth 层里（与 glyph_inject_at 同规则）
+                _at = sorted(set(int(round((i + 1) * depth / n_lc)) - 1
+                                 for i in range(n_lc)))
+            self._local_ca_map = {blk: k for k, blk in enumerate(_at)}
+            self.local_ca_at = _at
+            self.local_ca = nn.ModuleList([
+                LocalStyleGlyphAdapter(
+                    hidden_size, self.cond_dim,
+                    num_heads=int(local_ca_heads), rank=int(local_ca_rank),
+                    window=int(local_ca_window), grid_size=_grid)
+                for _ in _at
+            ])
+        else:
+            self.local_ca_at = []
+
         self.initialize_weights()
         if self.freeze_char_table and hasattr(self, "y_char_embedder"):
             # 冻结 char 表：DINO 预填充后不再训练（省 35130×384≈13.5M 训练参数），
@@ -1131,6 +1678,48 @@ class DiT_2Cond(nn.Module):
             nn.init.zeros_(self.callig_style_ca.out_proj.weight)
             nn.init.zeros_(self.callig_style_ca.out_proj.bias)
 
+        # ── S2 新模块：同样必须恢复 zero-init（_basic_init 会把它们 xavier 掉）──
+        if getattr(self, "script_film", None) is not None:
+            nn.init.zeros_(self.script_film.film.weight)
+            nn.init.zeros_(self.script_film.film.bias)
+        if getattr(self, "spatial_film", None) is not None:
+            nn.init.zeros_(self.spatial_film.net[-1].weight)
+            nn.init.zeros_(self.spatial_film.net[-1].bias)
+        if getattr(self, "local_ca", None) is not None:
+            for _lc in self.local_ca:
+                nn.init.zeros_(_lc.out_proj.weight)
+                nn.init.zeros_(_lc.out_proj.bias)
+                nn.init.zeros_(_lc.style_qk[-1].weight)
+                nn.init.zeros_(_lc.style_qk[-1].bias)
+        # pair 残差表保持 zero-init（残差语义：step 0 退化为纯主效应）
+        if getattr(self, "style_hier", None) is not None and str(
+                getattr(self.style_hier, "_pair_init", "zero")) == "zero":
+            nn.init.zeros_(self.style_hier.E_pair.weight)
+
+        # ── 922/80 改动 2：风格专用 adaLN 支路的 W_up 必须**重新初始化** ──
+        # ⚠ 极易漏：`_basic_init` 对**所有** nn.Linear 做 xavier_uniform_，
+        #   会把 DiTBlock/FinalLayer.__init__ 里刚设好的初值**整片冲掉**。
+        #   （同样的坑此前已在 script_film / spatial_film / local_ca 上踩过。）
+        #
+        # ⚠⚠ 这里**不能**用 zeros_：W_up=0 会让 ∂L/∂W_up ≡ 0（见 T5 实测），
+        #    支路永远学不动。必须用 M.STYLE_ADA_INIT_STD 的小随机初值，
+        #    让梯度从头就 ∝ ‖W_up‖ ≠ 0。
+        if getattr(self, "style_ada_rank", 0) > 0:
+            for _m in list(self.blocks) + [self.final_layer]:
+                if getattr(_m, "style_ada_up", None) is not None:
+                    _m._style_ada_init_up(_m.style_ada_up)
+
+        # ── 922/80 改动 1：style_gain 初值按实测范数**自动标定** ──
+        # 必须放在最后：依赖 t_embedder / y_callig_embedder / style_ln_mod 都已建好。
+        # 传 style_gain_init=None（或负数）走自动标定，否则用显式值。
+        if getattr(self, "style_gain", None) is not None:
+            _gi = getattr(self, "_style_gain_init", 1.0)
+            if _gi is None or float(_gi) < 0:
+                self._init_style_gain()
+            else:
+                with torch.no_grad():
+                    self.style_gain.fill_(float(_gi))
+
     def unpatchify(self, x):
         c = self.out_channels
         p = self.x_embedder.patch_size[0]
@@ -1141,8 +1730,111 @@ class DiT_2Cond(nn.Module):
         imgs = x.reshape(shape=(x.shape[0], c, h * p, h * p))
         return imgs
 
+    def _style_out(self, e_callig):
+        """风格分支的一次"纯前向"：e_callig -> hidden（不做任何幅度缩放）。
+
+        拆出来是为了让 ``_init_style_gain`` 能在 ``__init__`` 末尾用**同一段代码**
+        探测未训练时的输出范数，避免两处实现漂移。
+        """
+        _s = e_callig.to(self.style_ln_mod.weight.dtype)
+        _hid = int(self.style_ln_mod.normalized_shape[0])
+        _d_in = int(_s.shape[-1])
+        _p = getattr(self, "style_in_proj", None)
+        # ★ 懒适配：`e_callig` 的维度因 fusion 而异（见 __init__ 注释），
+        #   构造期无法可靠预知，只能在第一次前向时按真实维度校正。
+        #   三种情况都要处理：
+        #     a) 没建投影（_p is None）且 d_in != hidden -> 建
+        #     b) 是 Identity（callig_embed_dim == hidden 时才这样建）
+        #        但实际 d_in != hidden -> 改成真投影
+        #     c) 是 Linear 但 in_features != d_in -> 重建
+        if _p is None or isinstance(_p, nn.Identity):
+            _cur = None if _p is None else _hid
+        else:
+            _cur = int(_p.in_features)
+        if _cur != _d_in:
+            _new = nn.Linear(_d_in, _hid).to(_s.device, _s.dtype)
+            log.info("[style_branch] style_in_proj 懒重建: %d -> %d (原 %s)",
+                     _d_in, _hid, "None" if _p is None else
+                     ("Identity/%d" % _hid if _cur is not None else "?"))
+            self.style_in_proj = _new
+            _p = _new
+        if _p is not None:
+            _s = _p(_s)
+        return self.style_ln_mod(_s)
+
+    def _init_style_gain(self):
+        """922/80 改动 1 的核心：**自动标定** ``style_gain`` 的初值。
+
+        为什么需要标定（实测量化，S/2 / hidden=384 / callig_embed_dim=128）::
+
+            style_ln_mod 输出范数 = 19.13   (≈ sqrt(384)=19.60, LN 的必然结果)
+            t_embedder   输出范数 =  0.886  (每维 std 0.045)
+
+        即 **LN 的输出是 ``t_emb`` 的 21.6 倍**。如果 ``style_gain`` 取 1.0 甚至 2.5
+        （初版设计），``c = t_emb + y_emb`` 会被风格项**反向**淹没（``y/t`` 冲到 53），
+        从一个极端走到另一个极端 —— 训练一开始就把时序信息盖掉，flow matching
+        的 ``t`` 条件失效。这不是"注入太弱"，是"注入过冲"。
+
+        所以初值由**目标比例**反解::
+
+            style_gain = target_y_over_t * ‖t_emb‖ / ‖style_out‖
+
+        好处：换 hidden_size / 换 embedder 结构时自动适配，不需要重新猜魔法数；
+        且 ``style_gain`` 仍是 ``nn.Parameter``，训练中可自由上下调整。
+        """
+        if getattr(self, "style_gain", None) is None:
+            return
+        _tgt = float(getattr(self, "style_y_over_t_init", 1.0))
+        _dev = self.style_gain.device
+        _dt = self.style_gain.dtype
+        with torch.no_grad():
+            # 用足够多的时间步/书家采样，避免单个样本的偶然性
+            _tt = torch.rand(64, device=_dev) * 1000.0
+            t_emb = self.t_embedder(_tt)
+            _n_t = float(t_emb.norm(dim=-1).mean().item())
+            _nc = max(int(getattr(self, "num_calligraphers", 2)), 2)
+            _cc = torch.randint(0, _nc, (64,), device=_dev)
+            # callig_dropout=True 会混入 null 条件，探测时用 False 拿纯风格向量
+            e = self.y_callig_embedder(_cc, False)
+            s = self._style_out(e)
+            _n_s = float(s.norm(dim=-1).mean().item())
+        _g = _tgt * _n_t / max(_n_s, 1e-8)
+        with torch.no_grad():
+            self.style_gain.copy_(torch.tensor(_g, device=_dev, dtype=_dt))
+        self._style_gain_calib = (_n_t, _n_s, _g)
+        log.info("[style_branch] gain 自动标定: ‖t_emb‖=%.3f ‖style_out‖=%.3f "
+                 "target_y/t=%.2f -> style_gain=%.4f", _n_t, _n_s, _tgt, _g)
+
+    def _style_branch(self, e_callig, y_emb):
+        """922/80 改动 1：把风格向量经独立 LN + 独立增益**加**进 y_emb。
+
+        动机（见 ``__init__`` 的 ``style_ln`` / ``style_gain_init`` 注释）：
+        ``c = t_emb + y_emb`` 里 ``y_emb`` 只占 0.34–0.77，adaLN 共享投影后
+        梯度被 ``t_emb`` 主导，且 zero-init 起步梯度 ∝ ``‖c‖`` -> 越弱越锁死。
+        独立 LN 抹平 ``e_callig`` 的范数失衡（D5 实测 63 倍），
+        独立增益把 ``y_emb`` 的起步幅度抬到与 ``t_emb`` 同量级，打破死锁。
+
+        增益初值不硬编码，由 ``_init_style_gain`` 按实测范数标定
+        （否则 LN 输出 19.1 vs t_emb 0.89 会直接过冲 21 倍）。
+
+        返回**新的** y_emb（不改原张量，避免 in-place 影响 autograd 图）。
+        未启用时（``style_ln_mod is None``）直接返回原值 —— 与旧 ckpt 逐位等价。
+
+        ⚠ **`factorized_cat` / `xl_highdim` 模式下 `callig_proj` 是 None**
+        （`__init__` 里显式置 None 以避免 DDP "参数未参与前向"报错，
+        那些模式走 `cond_fusion` 自己融合）。所以这里**不能依赖 `callig_proj`**，
+        改为用恒等 + LN：LN 后接一个 1x1 Linear 与"先 proj 再 LN"在表达能力上
+        等价（都是逐样本的仿射+线性组合），且**不引入对现有投影的依赖**。
+        这样三种 fusion 模式行为一致。
+        """
+        if getattr(self, "style_ln_mod", None) is None:
+            return y_emb
+        _s = self._style_out(e_callig)
+        return y_emb + self.style_gain.to(y_emb.dtype) * _s.to(y_emb.dtype)
+
     def forward(self, x, t, y_callig, y_char, return_intermediate_layer=None,
-                return_intermediate_layers=None, g=None):
+                return_intermediate_layers=None, g=None,
+                y_script=None, y_callig_raw=None, y_pair=None):
         """
         Forward pass of DiT_2Cond.
         x: (N, C, H, W) noisy latents
@@ -1151,6 +1843,11 @@ class DiT_2Cond(nn.Module):
         g: (N, C, H, W) 标准字形 latent(与 x 同空间), 甲2 token-add 条件; None=不使用
         return_intermediate_layer: int block index (e.g. 8) whose patch features to return for REPA.
                                    When set, returns (output, intermediate_feats) as a tuple.
+
+        S2 新增条件（全部可选，None = 该层缺失 / 走旧路径）:
+        y_script:     (N,) 书体 id（楷/行/隶）→ E_script
+        y_callig_raw: (N,) 书家**连续索引**（不是 pair id）→ 主效应表
+        y_pair:       (N,) (书家×书体) pair id → E_pair 残差
         """
         # ── 标准字形条件的随机丢弃（仅训练时）────────────────────────────
         #
@@ -1209,11 +1906,36 @@ class DiT_2Cond(nn.Module):
         if self.callig_multi_style_k > 0:
             style_tokens = self.y_callig_embedder(y_callig_in, False)
 
+        # ── S2：三层语义分解 ─────────────────────────────────────────────────
+        #   e_style  = 书家主效应(既有表) + α · E_pair[pair]
+        #   e_script = E_script[script]
+        # 主效应表用 **y_callig_raw（书家连续索引）**，pair 残差用 **y_pair**。
+        # ⚠ 两者不是同一个 id：v14/v15 里 y_callig 装的是 pair_id(87)，
+        #    hier 模式下主效应表只有 45 行，必须用 raw，否则越界/串书家。
+        e_style = None
+        e_script = None
+        if self.style_hier is not None:
+            _base_ids = y_callig_raw if y_callig_raw is not None else y_callig
+            _base_in = (torch.where(callig_drop, self.y_callig_embedder.num_classes,
+                                    _base_ids)
+                        if callig_drop is not None else _base_ids)
+            _base = self.y_callig_embedder(_base_in, False)
+            e_style, e_script = self.style_hier(_base, y_pair, y_script, callig_drop)
+
         def _e_callig():
-            """adaLN 融合的书家向量因子：多模态 = K token mean pooling, 其余 = 查表。"""
+            """adaLN 融合的书家向量因子：S2 = 主效应+残差；多模态 = K token mean。"""
+            if e_style is not None:
+                return e_style                       # (N, D_style)
             if style_tokens is not None:
                 return style_tokens.mean(dim=1)      # (N, D)
             return self.y_callig_embedder(y_callig_in, False)
+
+        def _e_cond():
+            """局部通路的条件向量 = [e_style ; e_script]（无 hier 时退化为 e_style）。"""
+            _s = _e_callig()
+            if e_script is None:
+                return _s
+            return torch.cat([_s, e_script], dim=-1)
 
         x = self.x_embedder(x)  # (N, T, D)
         g_tok = None            # 标准字形 token；未启用时保持 None（逐层注入会检查）
@@ -1238,6 +1960,18 @@ class DiT_2Cond(nn.Module):
                 e_c_sp = self.y_callig_embedder(y_callig_in, False)
                 _coef = self.callig_spatial_net(e_c_sp)                    # (N, r)
                 g_tok = g_tok + torch.einsum("nr,rpd->npd", _coef, self.callig_basis)
+            # ── S2 通路 B1：书体 FiLM（结构轴，全局 γ/β）────────────────────
+            if self.script_film is not None and e_script is not None:
+                g_tok = self.script_film(g_tok, e_script, keep)
+            # ── S2 通路 B2：逐位置局部 FiLM（Phase 1）───────────────────────
+            if self.spatial_film is not None:
+                g_tok = self.spatial_film(g_tok, _e_cond(), self.local_pos, keep)
+            # ── S2 通路 B3：局部风格-骨架 cross-attn（q="g" 时在条件侧堆叠）──
+            # 语义："先按风格重组骨架，再注入主干"。比 q="x" 更安全、可回退。
+            if self.local_ca is not None and g_tok is not None and self.local_ca_q == "g":
+                _cond = _e_cond()
+                for _lc in self.local_ca:
+                    g_tok = _lc(g_tok, g_tok, _cond, self.local_pos, keep)
             if keep is not None:
                 # ⚠ 丢弃语义保护: style 注入会给零骨架加非零风格输出, 会把
                 # "uncond-g 分支"(drop 的样本)重新变成有条件 —— 必须**在风格调制
@@ -1278,6 +2012,7 @@ class DiT_2Cond(nn.Module):
                 # v10b: 单向量因子 (callig), drop_all/drop_one 同义 —— 丢 callig = uncond 向量
                 e_callig = _e_callig()
                 y_emb = self.callig_scale * self.callig_proj(e_callig)
+                y_emb = self._style_branch(e_callig, y_emb)
             else:
                 if self.training and char_drop is not None:
                     y_char = torch.where(char_drop, self.y_char_embedder.num_classes, y_char)
@@ -1286,6 +2021,7 @@ class DiT_2Cond(nn.Module):
                 # 可学习幅度平衡：见 __init__ 处注释（DINO 区分度被书家分支淹没的实测）。
                 y_emb = (self.callig_scale * self.callig_proj(e_callig)
                          + self.char_scale * self.char_proj(e_char)) / math.sqrt(2.0)
+                y_emb = self._style_branch(e_callig, y_emb)
             if self.glyph_vec_cond and e_glyph_vec is not None:
                 # g 向量因子: 与 callig 分支对称的"独立投影 + 可学习标量"加数。
                 # 操作数集合与 factorized_cat 完全一致 -> 两种融合方式可直接对照。
@@ -1315,6 +2051,12 @@ class DiT_2Cond(nn.Module):
                     f"y_callig={int(y_callig_in.shape[0])})。"
                     f" 通常是 CFG 路径里 x 被复制成 2B 但某个条件通路没跟上。")
             y_emb = self.cond_fusion(torch.cat(_parts, dim=-1))
+            # ★ 2026-09-23 修复：改动 1 的 _style_branch 原先**只接在
+            #   factorized_add 上**，而 v13/v15/v17 全部用 factorized_cat
+            #   -> 改动 1 在这条真实路径上完全是**死代码**（无参数、无梯度、
+            #      _style_branch 的返回值被丢弃）。必须在 cat 分支同样接上。
+            #   注意 e_callig 就是 _parts[0]，直接用即可。
+            y_emb = self._style_branch(e_callig, y_emb)
         elif self.condition_fusion == "xl_highdim":
             # XL 高维条件：与 factorized_add 相同的 4-way 可控 mask（CFG 需要 uncond 维度）。
             # drop mask 已在 forward 顶部计算 (与骨架风格注入共享同一份)。
@@ -1323,12 +2065,25 @@ class DiT_2Cond(nn.Module):
             e_callig = _e_callig()
             e_char = self.y_char_embedder(y_char, False)
             y_emb = self.cond_fusion(torch.cat([e_callig, e_char], dim=-1)) * self.y_scale
+            y_emb = self._style_branch(e_callig, y_emb)   # 922/80 改动 1 接线
         else:
             e_callig = self.y_callig_embedder(y_callig, self.training)
             e_char = self.y_char_embedder(y_char, self.training)
             y_concat = torch.cat([e_callig, e_char], dim=-1)
             y_emb = self.cond_fusion(y_concat)
+            y_emb = self._style_branch(e_callig, y_emb)   # 922/80 改动 1 接线
         c = t_emb + y_emb                        # (N, D)
+
+        # ---- 922/80 改动 2: 风格专用支路的输入 ----
+        # 直接喂**原始** e_callig（不是 y_emb），理由：
+        #   e_callig 是"纯风格"信号，不含 t、不含 char/glyph 产物；
+        #   若喂 y_emb 则又走回共享混合的旧问题（其中 t 间接进入不了，但
+        #   char/glyph 会串味，且 factorized_cat 下 y_emb 已被投影混合）。
+        # 用独立 LN 归一化，范数失衡（D5 实测 63 倍）不会直接传到 W_up。
+        # zero-init -> 关闭时 c_style 不参与任何计算（也不建参数）。
+        c_style = None
+        if getattr(self, "style_ada_rank", 0) > 0:
+            c_style = e_callig
 
         rope = (self.rope_cos, self.rope_sin) if self.rope else None
 
@@ -1372,22 +2127,40 @@ class DiT_2Cond(nn.Module):
             # 骨架 token 加 2D sincos 位置(空间对应), 风格 token 用可学习 role
             inject_ctx = torch.cat([g_tok + self.ctx_pos_g[:, :_Ng], _style], dim=1)
 
+        # ── S2 通路 B3（q="x"）：局部风格-骨架 adapter 插在**主干 block 之间** ──
+        # 语义："去噪中的画布，在风格条件下向局部骨架询问书写证据"。
+        # 比 q="g" 更标准，但改动更深入主干、成本略高。默认走 q="g"。
+        _lc_map = {}
+        _e_cond_local = None
+        if (self.local_ca is not None and self.local_ca_q == "x"
+                and g_tok is not None):
+            _lc_map = self._local_ca_map
+            _e_cond_local = _e_cond()
+
         if self.use_checkpoint:
             for i, block in enumerate(self.blocks):
                 if _repa_layers is not None and i in _repa_layers:
-                    x = block(x, c, rope=rope)
+                    x = block(x, c, rope=rope, c_style=c_style)
                     intermediate_feats[i] = x
                 elif _repa_single is not None and i == _repa_single:
                     # Run this single block eagerly so its output can be captured for REPA.
-                    x = block(x, c, rope=rope)
+                    x = block(x, c, rope=rope, c_style=c_style)
                     intermediate_feats = x
                 else:
-                    x = checkpoint(lambda *a: block(*a, rope=rope), x, c, use_reentrant=False)
+                    # ⚠ lambda 必须显式收 rope/c_style：默认参数在**定义时**绑定，
+                    #   避免循环变量 i / block 变化后闭包捕获错对象。
+                    x = checkpoint(
+                        lambda _x, _c, _rope=rope, _b=block, _cs=c_style:
+                            _b(_x, _c, rope=_rope, c_style=_cs),
+                        x, c, use_reentrant=False)
                 if i in _inj:
                     x = self.glyph_injections[_inj[i]](x, inject_ctx)
+                if i in _lc_map:
+                    x = self.local_ca[_lc_map[i]](x, g_tok, _e_cond_local,
+                                                  self.local_pos, keep)
         else:
             for i, block in enumerate(self.blocks):
-                x = block(x, c, rope=rope)
+                x = block(x, c, rope=rope, c_style=c_style)
                 if _repa_layers is not None and i in _repa_layers:
                     intermediate_feats[i] = x
                 elif _repa_single is not None and i == _repa_single:
@@ -1399,6 +2172,9 @@ class DiT_2Cond(nn.Module):
                     # x = x + glyph_scale * g_tok（glyph_scale=0.4 非零）
                     # 已提供直通梯度，故 glyph_embedder 从 step 0 即可学习。
                     x = self.glyph_injections[_inj[i]](x, inject_ctx)
+                if i in _lc_map:
+                    x = self.local_ca[_lc_map[i]](x, g_tok, _e_cond_local,
+                                                  self.local_pos, keep)
 
         # 骨架头：从 final_layer 前的 block 输出特征并行解码 latent 骨架 (N,1,32,32)
         skel_pred = None
@@ -1413,7 +2189,7 @@ class DiT_2Cond(nn.Module):
             skel5 = torch.einsum('nhwpqc->nchpwq', skel5)
             skel_pred = skel5.reshape(B_, 1, h_ * p_, h_ * p_)
 
-        x = self.final_layer(x, c)
+        x = self.final_layer(x, c, c_style=c_style)
         x = self.unpatchify(x)
         if self.skel_head_enabled and skel_pred is not None:
             # 返回 (主输出, skel_pred)；gaussian_diffusion.training_losses 会把第二元素
@@ -1426,8 +2202,12 @@ class DiT_2Cond(nn.Module):
         return x
 
     def forward_with_cfg(self, x, t, y_callig, y_char, cfg_scale=4.0, g=None,
-                         cfg_glyph=None, w_inter=0.0):
+                         cfg_glyph=None, w_inter=0.0,
+                         y_script=None, y_callig_raw=None, y_pair=None):
         """经典 2 路 CFG（默认），或委托给双轴 CFG。
+
+        S2: ``y_script`` / ``y_callig_raw`` / ``y_pair`` 需与 ``y_callig`` 一起复制，
+        否则 hier 分支会拿到错误长度的条件（batch 不一致）。
 
         ★ 2026-09-17: 增加 `cfg_glyph` 参数。给了就走 `forward_with_2axis_cfg`
           （风格轴 × 内容轴各自独立），否则保持原有 2 路行为（**向后兼容**）。
@@ -1469,7 +2249,19 @@ class DiT_2Cond(nn.Module):
             y_char_combined = y_char    # v10b: char 因子不存在, 值被 forward 忽略
         # 标准字形条件 g 始终全给(两半都用真实 g): 字形内容是正条件, CFG 只强化 callig 风格
         g2 = torch.cat([g, g], dim=0) if g is not None else None
-        model_out = self.forward(x, t, y_callig_combined, y_char_combined, g=g2)
+        # S2: 三个新条件都要跟着复制成 2B，且**风格轴必须做 uncond 半置 null**。
+        #   y_script     -> 两半都给真实书体（结构轴，与 g 同源；与 g2=cat([g,g]) 一致）
+        #   y_callig_raw -> [real, null]  ← 不置 null 的话 uncond 半仍带真书家，CFG 直接失效
+        #   y_pair       -> [real, null]  ← 同上；且 pair>=num_pairs 时残差自动为 0
+        _dup = lambda v: torch.cat([v, v], dim=0) if v is not None else None
+        _null_callig = self.y_callig_embedder.num_classes
+        _null_pair = self.style_hier.num_pairs if self.style_hier is not None else 0
+        _comb = lambda v, nv: (torch.cat(
+            [v, torch.full_like(v, int(nv))], dim=0) if v is not None else None)
+        model_out = self.forward(x, t, y_callig_combined, y_char_combined, g=g2,
+                                 y_script=_dup(y_script),
+                                 y_callig_raw=_comb(y_callig_raw, _null_callig),
+                                 y_pair=_comb(y_pair, _null_pair))
         if isinstance(model_out, tuple):
             model_out = model_out[0]  # skel_head 启用时 forward 返回 (主输出, skel_pred)，CFG 只取主输出
         # Apply CFG only on image latent channels (eps subspace), not canny/skel structure channels.
@@ -1487,7 +2279,8 @@ class DiT_2Cond(nn.Module):
         return out
 
     def forward_with_2axis_cfg(self, x, t, y_callig, y_char,
-                               cfg_callig=2.0, cfg_glyph=4.0, w_inter=0.0, g=None):
+                               cfg_callig=2.0, cfg_glyph=4.0, w_inter=0.0, g=None,
+                               y_script=None, y_callig_raw=None, y_pair=None):
         """双轴 CFG: 风格轴(书家) × 内容轴(骨架 g) 各自独立强度。
 
         ★ 2026-09-17 修正。**旧实现是错的**（且零调用者，是死代码）:
@@ -1524,6 +2317,24 @@ class DiT_2Cond(nn.Module):
         yc4 = torch.cat([y_callig, y_callig, null_c, null_c], dim=0)
         # char 通路保持不变（我们 no_char_cond=True，该值被 forward 忽略）
         yg4 = torch.cat([y_char, y_char, y_char, y_char], dim=0)
+        # S2: 风格轴的两个新条件同样按 [real, real, null, null] 拼 4 份。
+        # 书体属于结构轴 -> 4 份都给真实值（与 g 同一处理）。
+        _null_callig = self.y_callig_embedder.num_classes
+        _null_pair = self.style_hier.num_pairs if self.style_hier is not None else 0
+        if y_script is not None:
+            ys4 = torch.cat([y_script] * 4, dim=0)
+        else:
+            ys4 = None
+        if y_callig_raw is not None:
+            _nr = torch.full_like(y_callig_raw, int(_null_callig))
+            ycr4 = torch.cat([y_callig_raw, y_callig_raw, _nr, _nr], dim=0)
+        else:
+            ycr4 = None
+        if y_pair is not None:
+            _np = torch.full_like(y_pair, int(_null_pair))
+            yp4 = torch.cat([y_pair, y_pair, _np, _np], dim=0)
+        else:
+            yp4 = None
 
         if g is not None:
             zero_g = torch.zeros_like(g)
@@ -1531,7 +2342,8 @@ class DiT_2Cond(nn.Module):
         else:
             g4 = None
 
-        model_out = self.forward(x4, t4, yc4, yg4, g=g4)
+        model_out = self.forward(x4, t4, yc4, yg4, g=g4,
+                                 y_script=ys4, y_callig_raw=ycr4, y_pair=yp4)
         if isinstance(model_out, tuple):
             model_out = model_out[0]
 

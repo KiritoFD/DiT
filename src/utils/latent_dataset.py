@@ -491,6 +491,18 @@ class MCCDLatentDataset(Dataset):
                         np.array(_shard["latents"][_j], copy=True)).float())
             aux_t = torch.cat(_aux_parts, 0) if _aux_parts else torch.empty(0)
 
+        # ── S2: 书家连续索引 / pair 索引（与主效应表、残差表一一对应）──────────
+        _raw_cid = int(row['calligrapher_id'])
+        _csm = self._callig_script_map
+        if isinstance(_csm, dict) and _csm.get('callig_map'):
+            # callig_script_map.json 自带 45 人连续索引，优先用它（三端一致）
+            _cm = _csm['callig_map']
+            callig_idx = int(_cm.get(str(_raw_cid), _cm.get(_raw_cid, _raw_cid)))
+        else:
+            callig_idx = int(_map_callig(_raw_cid, self._callig_map))
+        pair_idx = (int(_map_callig_script(_raw_cid, int(row['script_id']), _csm))
+                    if _csm is not None else callig_idx)
+
         # 标准字形 latent g(甲2): 按 (script_id, char) 查标准字形 latent; 缺失给零(保 collate 一致)
         if self._glookup is not None:
             script_id = int(row['script_id'])
@@ -522,6 +534,14 @@ class MCCDLatentDataset(Dataset):
                  if self._callig_script_map is not None
                  else _map_callig(int(row['calligrapher_id']), self._callig_map)),
                 dtype=torch.long),
+            # ── S2 (2026-09-22): 三层语义分解需要**三个正交 id** ──────────────
+            #   y_callig_raw = 书家**连续索引** (0..n_callig-1)  -> 主效应表 E_callig
+            #   y_pair       = (书家×书体) pair 索引 (0..n_pair-1) -> 残差表 E_pair
+            #   y_script     = 书体 id                            -> E_script
+            # ⚠ 不能拿 y_callig 当主效应索引: 设了 callig_script_map 时它装的是
+            #   **pair_id(87)**, 而 hier 模式下主效应表只有 45 行 -> 越界/串书家。
+            'y_callig_raw': torch.tensor(callig_idx, dtype=torch.long),
+            'y_pair': torch.tensor(pair_idx, dtype=torch.long),
             'y_script': torch.tensor(int(row['script_id']), dtype=torch.long),
             'y_char': torch.tensor(
                 int(row.get('glyph_id', row['character_id'])), dtype=torch.long),

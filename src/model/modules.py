@@ -24,11 +24,14 @@
    （如 ControlNet 的 ``DiTBlockSimple``）继续按 ``block(x, c)`` 调用不会炸。
 """
 
+import logging
 import math
 
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+
+log = logging.getLogger(__name__)
 
 _SDPA = getattr(F, "scaled_dot_product_attention", None)   # torch >= 2.0
 
@@ -335,15 +338,97 @@ def modulate(x, shift, scale):
     return x * (1 + scale.unsqueeze(1)) + shift.unsqueeze(1)
 
 
-class DiTBlock(nn.Module):
+# --------------------------------------------------------------------------- #
+# 922/80 改动 2：风格 adaLN 支路的初始化
+# --------------------------------------------------------------------------- #
+STYLE_ADA_INIT_STD = 0.002
+
+
+class StyleAdaBranchInitMixin:
+    """给风格 adaLN 支路的 ``W_up`` 一个**极小但非零**的初值。
+
+    为什么不 zero-init（这一点很反直觉，但实测确凿）::
+
+        W_up = 0  =>  Δmod ≡ 0  =>  ∂L/∂W_up = δ_up ⊗ z_down ≡ 0
+                                 （因为 δ_up = ∂L/∂mod 要乘 W_up^T）
+
+    实测（_sync_work/test_style_ada.py T5）：W_up 全零时其梯度**恰好为 0**，
+    且**打开主干 gate 也救不回来** —— 参数永远不动，支路完全废掉。
+    这与 docs/922/80 诊断的"zero-init 死锁"是同一个数学：
+
+        ∂L/∂y_emb ∝ ∂mod/∂c ∝ ‖c‖      (改动 1 的病)
+        ∂L/∂W_up  ∝ ‖W_up‖ = 0          (本处，更彻底：直接为 0)
+
+    为什么取 0.002（S/2, D=384, r=64 实测标定）::
+
+        LN 后 z_down 的 per-dim std ≈ 1.23
+        未训练时主干 adaLN(c) 恒为 0（adaLN-Zero）
+        取 std=0.002 -> 支路输出 rms ≈ 0.020
+        恰好与 DiT 自身 final_layer 的 ``std=0.02`` 主初始化同量级
+
+    即"支路第一版输出"与"模型第一天输出"量级一致 —— 既不淹没主干，
+    也保证梯度从一开始就能流进 W_down / style_ada_in。
+
+    ⚠ 不要调大到 0.02 以上：支路输出会到 0.2+，在主干还全是 0 的时候
+      反而**成为主干本身**，训练前几步会被风格主导（另一个极端）。
+    """
+
+    @staticmethod
+    def _style_ada_init_up(up):
+        nn.init.normal_(up.weight, std=STYLE_ADA_INIT_STD)
+        nn.init.zeros_(up.bias)
+
+    def _style_ada_apply_in(self, c_style):
+        """把风格向量投影到 hidden_size，必要时**就地重建**投影层。
+
+        为什么需要懒适配（2026-09-23 真实事故）::
+
+            构造期只知道 ``callig_embed_dim``（128）这一个候选维度，
+            但 ``e_callig`` 在**运行时**的维度由若干开关共同决定：
+
+              * 普通路径            -> y_callig_embedder 输出，= callig_embed_dim
+              * ``hier_style`` 打开 -> ``e_style``（S2 三层分解的输出），= D_style
+              * 多模态 style_tokens -> mean(dim=1)，= D
+              * ``xl_highdim``      -> d_c（= hidden_size，384）
+
+            构造期无法可靠预知，于是 ``style_ada_in`` 建的 ``Linear(128, 384)``
+            在 xl_highdim 下直接
+            ``RuntimeError: mat1 and mat2 shapes cannot be multiplied (2x384 and 128x384)``。
+
+        修法：检测 ``in_features`` 与实际不符就地重建（只发生一次，日志可见）。
+        与 ``DiT_2Cond._style_out`` 里对 ``style_in_proj`` 的处理同源，
+        保证改动 1 / 改动 2 两条通路的适配策略一致。
+        """
+        _p = self.style_ada_in
+        if _p is None or isinstance(_p, nn.Identity):
+            return c_style
+        if int(_p.in_features) != int(c_style.shape[-1]):
+            _hidden = int(_p.out_features)
+            _new = nn.Linear(int(c_style.shape[-1]), _hidden).to(
+                c_style.device, _p.weight.dtype)
+            log.info("[style_ada] style_ada_in 懒重建: %d -> %d (原 %d)",
+                     int(c_style.shape[-1]), _hidden, int(_p.in_features))
+            self.style_ada_in = _new
+            _p = _new
+        return _p(c_style)
+
+
+class DiTBlock(nn.Module, StyleAdaBranchInitMixin):
     """adaLN-Zero DiT block，归一化/FFN/注意力均可切换。
 
     forward 的 ``rope`` 是**可选**参数，保持与原调用 ``block(x, c)`` 兼容。
+
+    2026-09-23 (docs/922/80 改动 2)：新增可选 ``c_style`` 旁路。
+    ``c = t_emb + y_emb`` 里 y_emb 是**加数**，与 t 共用同一个
+    ``adaLN_modulation`` 矩阵 —— 梯度上风格被时间步主导（D1 实测 v15c
+    dmod 只有 v13 的 1/13）。给风格一条**独立低秩支路**，两条支路相 ``+``
+    且新支路 zero-init，可回退。见 ``DiTStyleBranchMixin`` 的说明。
     """
 
     def __init__(self, hidden_size, num_heads, mlp_ratio=4.0,
                  norm_type="rms", mlp_type="swiglu", qk_norm=True,
-                 attn_impl="sdpa", **block_kwargs):
+                 attn_impl="sdpa", style_ada_rank=0, style_in_dim=0,
+                 **block_kwargs):
         super().__init__()
         self.norm1 = build_norm(norm_type, hidden_size)
         self.attn = Attention(hidden_size, num_heads=num_heads, qkv_bias=True,
@@ -354,10 +439,38 @@ class DiTBlock(nn.Module):
             nn.SiLU(),
             nn.Linear(hidden_size, 6 * hidden_size, bias=True),
         )
+        # ---- 922/80 改动 2：风格专用低秩 adaLN 支路（默认关闭，不建参数）----
+        self._style_ada_rank = int(style_ada_rank)
+        if self._style_ada_rank > 0:
+            r = self._style_ada_rank
+            # ⚠ 风格向量 e_callig 的维度 = callig_embed_dim（实测 128），
+            #    **不等于 hidden_size（384）**。必须先投影到 hidden，
+            #    否则 LN 报 "expected input with shape [*, 384], but got [2, 128]"。
+            self.style_ada_in = (
+                nn.Linear(int(style_in_dim), hidden_size)
+                if int(style_in_dim) != int(hidden_size) else nn.Identity())
+            self.style_ada_down = nn.Sequential(
+                nn.LayerNorm(hidden_size),
+                nn.Linear(hidden_size, r, bias=False),
+            )
+            self.style_ada_up = nn.Linear(r, 6 * hidden_size, bias=True)
+            self._style_ada_init_up(self.style_ada_up)
+        else:
+            self.style_ada_in = None
+            self.style_ada_down = None
+            self.style_ada_up = None
 
-    def forward(self, x, c, rope=None):
+    def _mod6(self, c, c_style=None):
+        """6 路调制量 = 主干支路(c) + 风格支路(c_style)。"""
+        m = self.adaLN_modulation(c)
+        if self.style_ada_up is not None and c_style is not None:
+            m = m + self.style_ada_up(
+                self.style_ada_down(self._style_ada_apply_in(c_style)))
+        return m
+
+    def forward(self, x, c, rope=None, c_style=None):
         shift_msa, scale_msa, gate_msa, shift_mlp, scale_mlp, gate_mlp = \
-            self.adaLN_modulation(c).chunk(6, dim=1)
+            self._mod6(c, c_style).chunk(6, dim=1)
         x = x + gate_msa.unsqueeze(1) * self.attn(modulate(self.norm1(x), shift_msa, scale_msa),
                                                   rope=rope)
         x = x + gate_mlp.unsqueeze(1) * self.mlp(modulate(self.norm2(x), shift_mlp, scale_mlp))
@@ -367,8 +480,9 @@ class DiTBlock(nn.Module):
 # --------------------------------------------------------------------------- #
 # FinalLayer
 # --------------------------------------------------------------------------- #
-class FinalLayer(nn.Module):
-    def __init__(self, hidden_size, patch_size, out_channels, norm_type="rms"):
+class FinalLayer(nn.Module, StyleAdaBranchInitMixin):
+    def __init__(self, hidden_size, patch_size, out_channels, norm_type="rms",
+                 style_ada_rank=0, style_in_dim=0):
         super().__init__()
         self.norm_final = build_norm(norm_type, hidden_size)
         self.linear = nn.Linear(hidden_size, patch_size * patch_size * out_channels, bias=True)
@@ -376,9 +490,33 @@ class FinalLayer(nn.Module):
             nn.SiLU(),
             nn.Linear(hidden_size, 2 * hidden_size, bias=True),
         )
+        # ---- 922/80 改动 2：风格支路同样接到 final_layer（出口也必须吃风格）----
+        self._style_ada_rank = int(style_ada_rank)
+        if self._style_ada_rank > 0:
+            r = self._style_ada_rank
+            self.style_ada_in = (
+                nn.Linear(int(style_in_dim), hidden_size)
+                if int(style_in_dim) != int(hidden_size) else nn.Identity())
+            self.style_ada_down = nn.Sequential(
+                nn.LayerNorm(hidden_size),
+                nn.Linear(hidden_size, r, bias=False),
+            )
+            self.style_ada_up = nn.Linear(r, 2 * hidden_size, bias=True)
+            self._style_ada_init_up(self.style_ada_up)
+        else:
+            self.style_ada_in = None
+            self.style_ada_down = None
+            self.style_ada_up = None
 
-    def forward(self, x, c):
-        shift, scale = self.adaLN_modulation(c).chunk(2, dim=1)
+    def _mod2(self, c, c_style=None):
+        m = self.adaLN_modulation(c)
+        if self.style_ada_up is not None and c_style is not None:
+            m = m + self.style_ada_up(
+                self.style_ada_down(self._style_ada_apply_in(c_style)))
+        return m
+
+    def forward(self, x, c, c_style=None):
+        shift, scale = self._mod2(c, c_style).chunk(2, dim=1)
         x = modulate(self.norm_final(x), shift, scale)
         return self.linear(x)
 

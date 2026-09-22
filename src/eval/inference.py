@@ -104,7 +104,7 @@ def build_diffusion(steps, diffusion_type="ddpm", flow_kwargs=None):
 # ── 采样 (GPU, bf16) → latents on CPU ───────────────────────────────────────
 @torch.no_grad()
 def sample_latents(model, diffusion, noise, conds, cfg_scale, batch, device,
-                   skel=None, seed=0):
+                   skel=None, seed=0, hier_conds=None):
     """Run diffusion sampling (DDIM for ddpm / Euler for flow) → CPU latents.
 
     model       : callable(x, t, y_callig, y_char, cfg_scale=..., cond=...) —
@@ -148,6 +148,12 @@ def sample_latents(model, diffusion, noise, conds, cfg_scale, batch, device,
         yc = torch.tensor([c[0] for c in conds[i:j]], device=device, dtype=torch.long)
         yh = torch.tensor([c[1] for c in conds[i:j]], device=device, dtype=torch.long)
         mk = dict(y_callig=yc, y_char=yh)
+        # ── S2 三层语义分解的三个 id（None = 模型走旧路径，零副作用）──────────
+        if hier_conds is not None:
+            _hraw, _hpair, _hscript = hier_conds
+            mk['y_callig_raw'] = torch.tensor(_hraw[i:j], device=device, dtype=torch.long)
+            mk['y_pair'] = torch.tensor(_hpair[i:j], device=device, dtype=torch.long)
+            mk['y_script'] = torch.tensor(_hscript[i:j], device=device, dtype=torch.long)
         if skel is not None:
             # g 条件模型 (train.py use_glyph_cond/skel_as_glyph_cond 预训练) 走 'g' 键;
             # ControlNetDiT 包装走 'cond' 键 —— 按模型类型自动路由
@@ -187,6 +193,7 @@ def sample_latents(model, diffusion, noise, conds, cfg_scale, batch, device,
 def sample_latents_self_cond(
     model, diffusion, noise, conds, cfg_scale, batch, device,
     skel=None, seed=0,
+    hier_conds=None,
     # ── self-cond 参数 ──
     skel_ch_start=8, skel_ch_end=12,
     first_pass_steps=None,
@@ -214,7 +221,8 @@ def sample_latents_self_cond(
     model_ch = int(getattr(_main, 'in_channels', 4))
     if model_ch <= 4 or skel is None or blend_alpha >= 1.0:
         return sample_latents(model, diffusion, noise, conds, cfg_scale,
-                              batch, device, skel=skel, seed=seed)
+                              batch, device, skel=skel, seed=seed,
+                              hier_conds=hier_conds)
 
     # ── Pass 1: 用标准骨架采样，得到书家风格化骨架预测 ──
     if first_pass_steps is not None and first_pass_steps != diffusion.num_timesteps:
@@ -229,7 +237,8 @@ def sample_latents_self_cond(
         diff1 = diffusion
 
     x0_pass1 = sample_latents(model, diff1, noise, conds, cfg_scale,
-                              batch, device, skel=skel, seed=seed)
+                              batch, device, skel=skel, seed=seed,
+                              hier_conds=hier_conds)
 
     # 提取预测骨架 (pass-1 的 skel 通道)
     if x0_pass1.shape[1] <= skel_ch_start:
@@ -244,7 +253,8 @@ def sample_latents_self_cond(
 
     # ── Pass 2: 用风格化骨架作为条件重新采样 ──
     x0_pass2 = sample_latents(model, diffusion, noise, conds, cfg_scale,
-                              batch, device, skel=predicted_skel, seed=seed)
+                              batch, device, skel=predicted_skel, seed=seed,
+                              hier_conds=hier_conds)
     return x0_pass2
 
 
@@ -486,6 +496,8 @@ def make_eval_cache(eval_csv, img_root, skel_root, image_size, n,
     latent_spatial = image_size // vae_downscale
     gts = torch.zeros(n, 3, image_size, image_size, dtype=torch.float32)
     conds = []
+    # S2: 与 conds 平行的三个 id 列表（书家主效应 / pair 残差 / 书体）
+    raw_conds, pair_conds, script_conds = [], [], []
     skels = torch.zeros(n, 1, image_size, image_size, dtype=torch.float32)
     skels_latent = torch.zeros(
         n, latent_channels, latent_spatial, latent_spatial, dtype=torch.float32) \
@@ -527,6 +539,23 @@ def make_eval_cache(eval_csv, img_root, skel_root, image_size, n,
             #   越界行已在**循环之前**全量校验并报错（见本函数开头），这里直接查表。
             _cid = callig_id_map[_cid]
         conds.append((_cid, int(row.get("glyph_id", row.get("character_id", 0)))))
+        # ── S2: 主效应 / pair / 书体 三个 id（与训练数据层**同一套映射**）────
+        # ⚠ y_callig 在设了 callig_script_map 时装的是 **pair_id(87)**，
+        #   hier 模式下主效应表只有 45 行，必须用 callig_raw，否则越界/串书家。
+        _raw_cid = int(row["calligrapher_id"])
+        if callig_script_map is not None:
+            _cm = callig_script_map.get("callig_map") or {}
+            _raw_idx = int(_cm.get(str(_raw_cid), _cm.get(_raw_cid, _raw_cid)))
+            _pair_idx = int(_cid)
+        elif callig_id_map is not None:
+            _raw_idx = int(callig_id_map[_raw_cid])
+            _pair_idx = _raw_idx
+        else:
+            _raw_idx = _raw_cid
+            _pair_idx = _raw_cid
+        raw_conds.append(_raw_idx)
+        pair_conds.append(_pair_idx)
+        script_conds.append(int(row.get("script_id", 0)))
         # ★ 2026-09-17: img_id 走统一提取（显式列优先 + 正则锚定结尾 + 失败报错）。
         #   原来 `re.search(r"(\d+)\.png", p)` 未锚定、且失败静默给 None ->
         #   非数字文件名会静默不查 skel（g=ZERO）而不是报错（见 docs/system/70 §1.2）。
@@ -579,6 +608,7 @@ def make_eval_cache(eval_csv, img_root, skel_root, image_size, n,
                       "  若确实要容忍少量缺失，请显式降低阈值——不要静默继续。")
         print(msg + "  (比例低, 继续)", flush=True)
     return {"gts": gts, "conds": conds, "noise": noise, "skels": skels,
+            "hier_conds": (raw_conds, pair_conds, script_conds),
             "skels_latent": skels_latent, "missing_skel": missing_skel,
             "n": n, "latent_channels": latent_channels,
             "latent_spatial": latent_spatial, "scaling_factor": scaling_factor,
@@ -609,7 +639,8 @@ def run_pair_eval(model, vae, diffusion, cache, device, step, checkpoint_dir,
     skel_cond = skels_latent if skels_latent is not None else skels
     skel_arg = skel_cond if with_skel else None
     latents = sample_latents(model, diffusion, noise_all, conds, cfg_scale,
-                             dit_batch, device, skel=skel_arg, seed=0)
+                             dit_batch, device, skel=skel_arg, seed=0,
+                             hier_conds=cache.get("hier_conds"))
     n_saved = decode_and_save(vae, latents, sf, out_dir, tag,
                               gts=gts_all, skels=skel_cond if with_skel else None,
                               vae_batch=vae_batch)

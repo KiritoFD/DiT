@@ -20,6 +20,8 @@
 
 from .dit import (
     TimestepEmbedder, LabelEmbedder,
+    # S2 (2026-09-22): 三层语义分解 + 局部风格-骨架引导
+    StyleHierarchy, ScriptGlyphFiLM, SpatialStyleFiLM, LocalStyleGlyphAdapter,
     DiT_2Cond,
     DiT_2Cond_models,
     DiT_2Cond_XS_2, DiT_2Cond_WS_2, DiT_2Cond_S_2, DiT_2Cond_S_4,
@@ -46,6 +48,7 @@ from .modules import (
 
 __all__ = [
     "TimestepEmbedder", "LabelEmbedder",
+    "StyleHierarchy", "ScriptGlyphFiLM", "SpatialStyleFiLM", "LocalStyleGlyphAdapter",
     "DiT_2Cond", "DiT_2Cond_models",
     "DiT_2Cond_XS_2", "DiT_2Cond_WS_2", "DiT_2Cond_S_2", "DiT_2Cond_S_4",
     "DiT_2Cond_S_8", "DiT_2Cond_B_2", "DiT_2Cond_B_4",
