@@ -177,10 +177,12 @@ def main():
     w_raw = csv.writer(f_raw)
     if new_sum:
         w_sum.writerow(["exp", "step", "set", "n", "ssim_mean", "ssim_p10", "ssim_q1",
-                        "ssim_med", "ssim_q3", "ssim_p90", "mse_mean", "lpips_mean"])
+                        "ssim_med", "ssim_q3", "ssim_p90", "mse_mean", "lpips_mean",
+                        "ink_ssim_mean", "ink_iou_mean", "skel_iou_mean"])
     if new_raw:
         w_raw.writerow(["exp", "step", "set", "idx", "img_id", "char", "script",
-                        "mse", "ssim", "lpips"])
+                        "mse", "ssim", "lpips",
+                        "ink_ssim", "ink_iou", "skel_iou"])
 
     for ck in cks:
         step = int(os.path.basename(ck).split(".")[0])
@@ -250,9 +252,25 @@ def main():
                         os.path.join(_sd, f"gt{i}.png"))
                 print(f"[batch] step{step} {name}: saved {n} samples -> {_sub}/", flush=True)
             ssims, mses, lp_list = [], [], []
+            # ★ 新增墨迹域指标：全图 SSIM 被 ~90% 白底严重抬高
+            #   （实测「升」vs「陞」两个字完全不同，全图 SSIM 0.5745
+            #     而墨迹框 SSIM 只有 0.3161、骨架 IoU 只有 0.0211）
+            #   -> 这三个才是"字写得对不对"的真实反映
+            inks, inkious, skels = [], [], []
+            try:
+                from src.eval.metrics_ink import ink_ssim as _ink_ssim, ink_iou as _ink_iou
+                from src.eval.metrics import skel_iou as _skel_iou
+                _has_ink = True
+            except Exception as _e:
+                print(f"[batch] ⚠ 墨迹指标不可用 ({_e})，只出旧指标")
+                _has_ink = False
             for i in range(n):
                 mses.append(_mse(pred_np[i], gt_np[i]))
                 ssims.append(_ssim(pred_np[i], gt_np[i]))
+                if _has_ink:
+                    inks.append(_ink_ssim(pred_np[i], gt_np[i]))
+                    inkious.append(_ink_iou(pred_np[i], gt_np[i]))
+                    skels.append(_skel_iou(pred_np[i], gt_np[i], thresh=0.5))
                 if lpips_fn is not None:
                     p = torch.from_numpy(pred_np[i].transpose(2, 0, 1)[None] * 2 - 1).to(dev)
                     g = torch.from_numpy(gt_np[i].transpose(2, 0, 1)[None] * 2 - 1).to(dev)
@@ -265,12 +283,18 @@ def main():
             for i in range(n):
                 w_raw.writerow([exp, step, name, i, iid_s[i], ch_s[i], scr_s[i],
                                 round(mses[i], 6), round(ssims[i], 6),
-                                round(lp_list[i], 6) if lp_list else ""])
+                                round(lp_list[i], 6) if lp_list else "",
+                                round(inks[i], 6) if inks else "",
+                                round(inkious[i], 6) if inkious else "",
+                                round(skels[i], 6) if skels else ""])
             w_sum.writerow([exp, step, name, n, round(float(ssim.mean()), 6),
                             round(float(q10), 6), round(float(q25), 6),
                             round(float(q50), 6), round(float(q75), 6),
                             round(float(q90), 6), round(float(np.mean(mses)), 6),
-                            round(float(np.mean(lp_list)), 6) if lp_list else ""])
+                            round(float(np.mean(lp_list)), 6) if lp_list else "",
+                            round(float(np.mean(inks)), 6) if inks else "",
+                            round(float(np.mean(inkious)), 6) if inkious else "",
+                            round(float(np.mean(skels)), 6) if skels else ""])
             f_sum.flush(); f_raw.flush()
             print(f"[batch] step{step} {name}: ssim={ssim.mean():.4f} "
                   f"P10={q10:.4f} med={q50:.4f} Q3={q75:.4f} ({t_s:.0f}s)", flush=True)
