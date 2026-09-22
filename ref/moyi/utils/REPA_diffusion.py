@@ -170,12 +170,21 @@ class GaussianDiffusion:
         for i, t in enumerate(ts):
             tb = t.expand(shape[0])
             if cfg_scale > 1.0 and hasattr(model, "forward_with_cfg"):
-                eps = model.forward_with_cfg(x, tb, cfg_scale, **model_kwargs)
+                # ⚠ Moyun 的签名是 forward_with_cfg(x, t, y, stroke, cfg_scale)
+                #   —— cfg_scale 在**最后**，不能当第 3 个位置参数传
+                # ⚠ 而且它返回 **(2B, 2C)**（内部 cat([half,half])），必须取前一半
+                #   否则 (2B,12) 与 (B,12) 的 x 算不了（会静默广播错或报维度错）
+                eps_full = model.forward_with_cfg(
+                    x, tb, model_kwargs.get("y"), model_kwargs.get("stroke"),
+                    cfg_scale)
+                eps_full = eps_full[: x.shape[0]]
             else:
                 out = model(x, tb, **model_kwargs)
-                eps = out[0] if isinstance(out, (tuple, list)) else out
+                eps_full = out[0] if isinstance(out, (tuple, list)) else out
             if self.learn_sigma:
-                eps, _ = eps.chunk(2, dim=1)
+                eps, _ = eps_full.chunk(2, dim=1)
+            else:
+                eps = eps_full
             a = self._extract(self.alphas_cumprod, tb, x.shape)
             x0 = ((x - (1 - a).sqrt() * eps) / a.sqrt()).clamp(-4, 4)
             if i + 1 < len(ts):
