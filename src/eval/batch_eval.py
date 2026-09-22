@@ -90,10 +90,28 @@ def main():
                                     sample_latents_self_cond,
                                     _mse, _ssim, build_diffusion)
     ck0 = torch.load(cks[0], map_location="cpu", weights_only=False)
-    a = ck0.get("args", {})
-    if not isinstance(a, dict):
-        import argparse as _ap
-        a = vars(a) if isinstance(a, _ap.Namespace) else {}
+    # ★★ [2026-09-22 bugfix] 原写法把 a 强制转成 **dict**，但下游
+    #   build_model_from_args / apply_post_construction 都用  ——
+    #   dict 没有属性 -> **ckpt 的架构/开关参数全部被忽略、静默走默认值**！
+    #   后果: (1) freeze_callig_table 取不到 -> 不调 freeze_table() -> ckpt 里的
+    #            y_callig_embedder.null_embed 变成 unexpected key -> strict 加载失败
+    #         (2) cond_drop_* / glyph_vec_cond / image_channels 等全用默认
+    #            -> 独立 eval 与训练内 eval 口径不一致（实测差 0.126）
+    #   修法: 统一转成 Namespace（与 src/eval/model_io.load_model_from_ckpt 一致）
+    # ⚠ 下游**两种访问都有**: build_model_from_args/apply_post_construction 用
+    #   getattr(a, k, d)，而其它地方用 a.get(k, d)。Namespace 没有 .get，
+    #   纯 dict 没有属性 —— 所以需要一个两者都支持的容器。
+    class _AttrDict(dict):
+        def __getattr__(self, k):
+            try:
+                return self[k]
+            except KeyError:
+                raise AttributeError(k)
+
+    _raw = ck0.get("args", {})
+    if hasattr(_raw, "__dict__"):
+        _raw = vars(_raw)
+    a = _AttrDict(_raw if isinstance(_raw, dict) else {})
     # ★ 2026-09-17: 整段"手抄构造参数"已删除，统一到 src/eval/model_io.py。
     #   原实现的问题（见 docs/system/70 §1.1）：
     #     - 硬编码 cond_drop_all_prob=0.05 / cond_drop_one_prob=0.25（不取 ckpt 的值）
