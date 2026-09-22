@@ -43,6 +43,8 @@ ap.add_argument("--batch", type=int, default=64)
 ap.add_argument("--device", default="cuda")
 ap.add_argument("--max-new", type=int, default=24)
 ap.add_argument("--limit", type=int, default=0)
+ap.add_argument("--sample-every", type=int, default=0,
+                help=">1 时按 idx 均匀抽样（每隔 N 条取 1 条），用于分区评估")
 ap.add_argument("--out", default="assets/stage2_review.csv")
 ap.add_argument("--only-suspicious", type=int, default=1)
 a = ap.parse_args()
@@ -97,7 +99,12 @@ else:
     todo = [i for i in range(len(rows)) if i in s1]
 if a.limit:
     todo = todo[:a.limit]
-print(f"  待复核: {len(todo)} 条", flush=True)
+# 分区抽样：按 idx 均匀取（分层），用于看不同区段的行为差异
+if a.sample_every and a.sample_every > 1:
+    todo = todo[::a.sample_every]
+print(f"  待复核: {len(todo)} 条"
+      + (f"（每 {a.sample_every} 条取 1）" if a.sample_every > 1 else ""),
+      flush=True)
 
 done = set()
 if os.path.exists(a.out):
