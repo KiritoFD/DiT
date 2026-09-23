@@ -72,7 +72,8 @@ class MCCDLatentDataset(Dataset):
                  image_size=256, is_train=False, preload=False, load_image=True,
                  num_preload_workers=16, use_glyph_cond=False, skel_latent_shards_dir=None,
                  callig_id_map=None, aux_latent_shards_dirs=None,
-                 inst_skel_shards_dir=None, callig_script_map=None):
+                 inst_skel_shards_dir=None, callig_script_map=None,
+                 skel_png_dirs=None, gt_blur_png_dirs=None, mid_png_size=256):
         self.samples = []
         with open(csv_file, 'r', encoding='utf-8') as f:
             for row in csv.DictReader(f):
@@ -177,6 +178,29 @@ class MCCDLatentDataset(Dataset):
 
         self.is_train = is_train
         self.preload = preload
+
+        # ── ★ 中程载体 PNG 目录 (纯 CPU 预建, 未经 VAE encode) ─────────────────
+        # 用途: structure_mid 的 dilate_skel(k) / blur_gt(σ) 载体。
+        # 为什么是 PNG 而非 latent: encode 需要 GPU, 训练占卡时做不了。
+        # 故先落 PNG (tools/prepare_mid_carriers.py), 需要时再 encode 成 shards。
+        # ★ 这里是**运行时 PNG 解码**路径, 只在 loss 真用到时读 (lazy), 不影响
+        #   主通路 preload。若日后 encode 成 shards, 直接改传 shards 即可。
+        #   skel_png_dirs: {w: '<dir>'}    每宽度一个目录, 文件名 <img_id>.png
+        #   gt_blur_png_dirs: {'s1p5': '<dir>'} 每 σ 一个目录
+        self.skel_png_dirs = dict(skel_png_dirs or {})
+        self.gt_blur_png_dirs = dict(gt_blur_png_dirs or {})
+        self.mid_png_size = int(mid_png_size)
+        # ★ 固定 key 顺序 (张量 K 维的语义靠它): skel 按宽度升序, 再 blur 按 σ 升序
+        self._mid_skel_keys = sorted(self.skel_png_dirs, key=lambda x: float(x))
+        self._mid_blur_keys = sorted(
+            self.gt_blur_png_dirs, key=lambda s: float(s[1:].replace("p", ".")))
+        self.mid_keys = ([f"skel_w{k}" for k in self._mid_skel_keys]
+                         + [f"blur_{k}" for k in self._mid_blur_keys])
+        for _k, _d in list(self.skel_png_dirs.items()) + list(self.gt_blur_png_dirs.items()):
+            if _d and not os.path.isdir(_d):
+                raise FileNotFoundError(f"[mid-png] 目录不存在: {_k} -> {_d}")
+        if self.mid_keys:
+            print(f"[mid-png] {len(self.mid_keys)} 个载体: {self.mid_keys}")
         # ── aux latent 通道 (moyi 式辅助任务: 与图像 latent 一起作为扩散目标) ──
         # 每个 dir 一个 (N,4,32,32) shard 集 (keyed by img_id); 训练目标 x = cat(image, *aux)
         self.aux_latent_shards_dirs = list(aux_latent_shards_dirs or [])
@@ -491,6 +515,36 @@ class MCCDLatentDataset(Dataset):
                         np.array(_shard["latents"][_j], copy=True)).float())
             aux_t = torch.cat(_aux_parts, 0) if _aux_parts else torch.empty(0)
 
+        # ── ★ 中程载体 PNG (纯 CPU 预建, 未经 encode) ─────────────────────────
+        # 只在需要时解码 (loss 读取后自行 encode 或用 pixel 域近似)。
+        # ★ 用**单个定长张量** (K,256,256) uint8, 不用 list/dict:
+        #   default_collate 对 list[str] 会**转置** (按元素而非按样本分组),
+        #   对不等长/含 str 的结构行为不可预期 —— 踩过。定长张量 collate 后
+        #   是 (N,K,256,256), 语义明确、零歧义。
+        #   K = len(skel_png_dirs)+len(gt_blur_png_dirs), 顺序见 mid_keys (在 forward
+        #   的 batch 上读不到 key, 故 key 顺序由 __init__ 固定并暴露为 self.mid_keys)。
+        #   ★ img_id 是 int (如 0), 而预建 PNG 是 6 位补零命名 (000000.png)。
+        #     直接 f"{img_id}.png" -> "0.png" 查不到, 会被静默当成缺失填零 ——
+        #     loss 照常下降但载体从未生效, 极难察觉。故逐个候选名试。
+        def _mid_load(_dir):
+            for _n in ("%06d.png" % img_id, "%d.png" % img_id):
+                _p = os.path.join(_dir, _n)
+                if os.path.isfile(_p):
+                    with Image.open(_p) as _im:
+                        # copy=True: PIL 的 np.asarray 是只读视图, 直接 from_numpy
+                        # 会触发 UserWarning 且下游若原地改会 UB。
+                        return torch.from_numpy(
+                            np.asarray(_im.convert("L"), dtype=np.uint8).copy())
+            self._mid_miss = getattr(self, "_mid_miss", 0) + 1
+            return torch.zeros(
+                self.mid_png_size, self.mid_png_size, dtype=torch.uint8)
+
+        _mt = [_mid_load(self.skel_png_dirs[_w]) for _w in self._mid_skel_keys]
+        _mt += [_mid_load(self.gt_blur_png_dirs[_s]) for _s in self._mid_blur_keys]
+        mid_t = (torch.stack(_mt, 0) if _mt
+                 else torch.zeros(0, self.mid_png_size, self.mid_png_size,
+                                  dtype=torch.uint8))
+
         # ── S2: 书家连续索引 / pair 索引（与主效应表、残差表一一对应）──────────
         _raw_cid = int(row['calligrapher_id'])
         _csm = self._callig_script_map
@@ -528,6 +582,7 @@ class MCCDLatentDataset(Dataset):
             'skel_latent': skel_lat,
             'inst_skel': inst_skel,
             'aux_latents': aux_t,
+            'mid_png': mid_t,
             'y_callig': torch.tensor(
                 (_map_callig_script(int(row['calligrapher_id']), int(row['script_id']),
                                     self._callig_script_map)
