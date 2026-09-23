@@ -654,13 +654,31 @@ def build_parser(argv=None):
     parser.add_argument("--std-mid-calib-json", type=str, default="", dest="std_mid_calib_json",
                         help="calibrate_mid_structure.py 产出的 σ(t)/k(t) 校准 json。为空则用"
                              "默认线性 σ=σ_slope·t, k=k_slope·t。")
+    parser.add_argument("--std-mid-png-root", type=str, default="", dest="std_mid_png_root",
+                        help="★ 中程载体 **预建 PNG** 根目录 (推荐)。由 "
+                             "tools/prepare_mid_carriers.py 纯 CPU 生成, 约定布局:\n"
+                             "  <root>/w{3,5,7,9,11}/<img_id>.png       (多宽度骨架膨胀)\n"
+                             "  <root>/blur/s{0p5,1,1p5,2,2p5,3,4}/<img_id>.png (高斯模糊 GT)\n"
+                             "给了就走 png 通路: 训练时只做 8x 下采样对齐 latent 网格,"
+                             " **不需要 VAE encode 这些载体** (省 GPU)。\n"
+                             "空 = 走 latent 域实时算子 (blur2d/latent_dilate)。")
+    parser.add_argument("--std-mid-png-widths", type=str, default="3,5,7,9,11",
+                        dest="std_mid_png_widths",
+                        help="png 通路使用的骨架宽度档 (逗号分隔, 单位 pixel)。")
+    parser.add_argument("--std-mid-png-sigmas", type=str, default="0.5,1,1.5,2,2.5,3,4",
+                        dest="std_mid_png_sigmas",
+                        help="png 通路使用的高斯 σ 档 (逗号分隔, 单位 pixel)。")
     parser.add_argument("--std-mid-lp", type=int, default=2, dest="std_mid_lp",
                         help="低通因子: LP(z)=interp(avgpool(z,lp),lp)。2≈pixel 8px 低通"
                              "(默认), 吸收硬边 vs 灰晕锐度残差 -> k/σ 不敏感。1=关闭低通。")
     parser.add_argument("--std-mid-sigma-slope", type=float, default=4.0, dest="std_mid_sigma_slope",
-                        help="无校准 json 时默认 σ(t)=slope·t (latent px), 上限 3。")
+                        help="σ(t)=slope·t (latent px), 上限 3。⚠ 仅 latent 通路用;"
+                             " 走 --std-mid-png-root 时默认改由 TSchedule.for_png 决定"
+                             " (0.5/上限0.55), 因为预建 σ 档只有 0.5~4**像素**.")
     parser.add_argument("--std-mid-k-slope", type=float, default=2.0, dest="std_mid_k_slope",
-                        help="无校准 json 时默认 k(t)=slope·t (latent px), 上限 2。")
+                        help="k(t)=slope·t (latent px), 上限 2。⚠ 仅 latent 通路用;"
+                             " 走 --std-mid-png-root 时默认改由 TSchedule.for_png 决定"
+                             " (0.8/上限1.0), 否则会瞬间饱和在最大档, 多档预建作废.")
     parser.add_argument("--w-repa", type=float, default=0.0, help="Weight for Representation Alignment (REPA) Loss (0 = disabled, default)")
     parser.add_argument("--repa-teacher-ckpt", type=str, default="",
                         help="Local path to DINOv2 teacher weights (ModelScope safetensors). "
