@@ -75,17 +75,7 @@ def latent_dilate(z, k):
 
 
 class TSchedule:
-    """σ(t)/k(t) 调度: 从校准 json 线性插值; 无 json 时用默认线性 (随 t 增大)。
-
-    ⚠ σ/k 的**单位与语义随载体通路而变**, 两条通路不能共用一套默认值:
-      · **latent 域** (`_target`, 走 blur2d / latent_dilate):
-        k 是 max-pool 半径, 单位 latent cell, 量级 0~2。默认 slope=2.0 / cap=2.0。
-      · **pixel 域** (`_target_png`, 从预建 PNG 选档):
-        k 用来在 {3,5,7,9,11}px 五档里挑最近档, 换算后 k_px=k*8 要落在 1~5。
-        若沿用 slope=2.0 -> t=0.35 就 k_px=5.6 冲顶, **前 4 档永不可达**,
-        多宽度预建形同虚设。故 png 通路用 slope=0.8 / cap=1.0
-        (t=0.75 才到 k_px=4.8≈最大档, 窗口内五档都能出现)。
-    """
+    """σ(t)/k(t) 调度: 从校准 json 线性插值; 无 json 时用默认线性 (随 t 增大)。"""
 
     def __init__(self, grid_t=None, grid_sigma=None, grid_k=None,
                  sigma_slope=4.0, k_slope=2.0, sigma_cap=3.0, k_cap=2.0):
@@ -98,27 +88,6 @@ class TSchedule:
             self.interp = False
         self.sigma_slope, self.k_slope = sigma_slope, k_slope
         self.sigma_cap, self.k_cap = sigma_cap, k_cap
-
-    @classmethod
-    def for_png(cls, grid_t=None, grid_sigma=None, grid_k=None,
-                sigma_slope=0.5, k_slope=0.8, sigma_cap=0.55, k_cap=1.0):
-        """png 通路默认调度 —— 刻度**对齐预建档位**, 保证窗口内各档都能被选到。
-
-        预建档位 (pixel 域, 见 tools/prepare_mid_carriers.py):
-          w  ∈ {3,5,7,9,11}          -> pixel 半径 (w-1)/2 ∈ {1,2,3,4,5}
-          σ  ∈ {0.5,1,1.5,2,2.5,3,4} -> pixel σ
-        latent 域换算 (downscale=8):
-          k_lat  ∈ {0.125,0.25,0.375,0.5,0.625}
-          σ_lat  ∈ {0.0625,0.125,0.1875,0.25,0.3125,0.375,0.5}
-        故:
-          k_slope=0.8 / k_cap=1.0     -> t=0.75 时 k_lat=0.6 ≈ 最大档
-          σ_slope=0.5 / σ_cap=0.55    -> t=0.75 时 σ_lat=0.375 ≈ 最大档
-        ★ 沿用 latent 域默认 (σ_slope=4/cap=3, k_slope=2/cap=2) 会瞬间冲顶,
-          只剩最大档可选, 预建的多档位**静默作废**。
-        """
-        return cls(grid_t=grid_t, grid_sigma=grid_sigma, grid_k=grid_k,
-                   sigma_slope=sigma_slope, k_slope=k_slope,
-                   sigma_cap=sigma_cap, k_cap=k_cap)
 
     @classmethod
     def from_json(cls, path, **kw):
@@ -153,122 +122,16 @@ class MidStructureLoss:
 
     carrier: 'blur_gt' | 'dilate_skel' | 'both'。
     window: 在 a_t=1-t ∈ [alo,ahi] 的中程噪声段生效 (与旧内联口径一致)。
-
-    ── ★ png_carriers 模式 (纯 CPU 预建, 不占 GPU / 不跑 VAE encode) ──────────
-    本类有两条 target 来源:
-      (a) **latent 域实时算子** (原路径): 传 gt_lat / skel_lat, 内部 blur2d / latent_dilate。
-      (b) **pixel 域预建 PNG** (新路径): 传 png，形状 (N,K,256,256) uint8, 由
-          tools/prepare_mid_carriers.py 预先算好, 训练时只做 8x 下采样对齐 latent 网格。
-    路径 (b) 的意义: 训练时**不需要** VAE encode 这些载体 (省 GPU), 且
-    skeletonize / 精确宽度膨胀只在 CPU 侧算一次 (latent_dilate 的 max-pool 只是近似)。
-    几何: PNG 256x256 -> latent 32x32, 恰好 8x。一个 8x8 像素块对应一个 latent cell。
-    下采样用 **area mean** (与 VAE encoder 的首层卷积感受野同量级), 再按需 min/max:
-      - skel (白底黑线) 用 **min**: 块内只要有一像素是墨就认墨 -> 保住细线,
-        等价于"先腐蚀背景"; 用 mean 会把 1px 细线摊薄成灰 -> 与骨架语义不符。
-      - blur_gt 已是连续灰度, 用 **mean**。
     """
 
     def __init__(self, carrier="blur_gt", alo=0.35, ahi=0.75, lp_factor=2,
-                 sigma_sched=None, w_of_t=None, latent_channels=4,
-                 png_keys=None, png_downscale=8):
+                 sigma_sched=None, w_of_t=None, latent_channels=4):
         self.carrier = carrier
         self.alo, self.ahi = float(alo), float(ahi)
         self.lp_factor = int(lp_factor)
-        # png 通路: png_keys 是 dataset.mid_keys 的子序列, 决定从 (N,K,H,W) 里选哪几个
-        self.png_keys = list(png_keys) if png_keys else None
-        self.png_downscale = int(png_downscale)
-        # ★ 两条通路的 σ/k 默认刻度不同 (见 TSchedule docstring) —— 给 png_keys
-        #   却沿用 latent 域的 k_slope=2.0 会让 k 早早饱和在最大档。
-        #   未显式给 sigma_sched 时, 按通路自动选合适默认。
-        if sigma_sched is None:
-            sigma_sched = (TSchedule.for_png() if self.png_keys else TSchedule())
-        self.sigma_sched = sigma_sched
+        self.sigma_sched = sigma_sched or TSchedule()
         self.w_of_t = w_of_t          # 可选 callable(t)->(N,) 权重; None=窗口内 1
         self.latent_channels = int(latent_channels)
-
-    # ── png -> latent 网格 (无参数, 不跑 VAE) ────────────────────────────────
-    def _png_to_grid(self, png_u8, sel=None):
-        """(N,K,256,256) uint8 -> (N,|sel|,32,32) float, 归一到 [0,1] 灰度。
-
-        sel: 要处理的 column 下标 (None=全部)。**只算需要的列** —— 传 sel 后
-             中间张量按 |sel|/K 缩小 (12 档里 skel 只要 5 档, blur 只要 7 档)。
-
-        ★ **只算 area mean**, 不算 min-pool:
-          (a) 语义: min-pool 只记"块内有没有墨"(presence), **丢掉粗细信息** ——
-              实测 2px 与 10px 竖线在 8x 下采样后 min-pool 都是同一批格子。
-              而 area mean 的灰度 ∝ 块内墨占比 ∝ 局部线宽, 正好保住多宽度的意义。
-          (b) 显存: 全量算 avg+min 两份会让中间张量翻倍 (batch=240 实测 1675 MiB);
-              只留 avg 且只算需要的列 -> 921 MiB -> 更少。
-        """
-        f = self.png_downscale
-        if sel is not None:
-            # 用 index_select 而不是切片: sel 是"类 3,4,5.."这类不连续下标与否都适用
-            png_u8 = png_u8.index_select(1, torch.as_tensor(
-                sel, device=png_u8.device, dtype=torch.long))
-        n, k, h, w = png_u8.shape
-        # ★ 先 reshape 再转 float: 比先转 float 再 reshape 少一份大张量
-        x = png_u8.reshape(n * k, 1, h, w).float()
-        x.div_(255.0)                              # 白底=1, 墨=0 (PNG 是 L 模式)
-        avg = F.avg_pool2d(x, kernel_size=f, stride=f)
-        return avg.reshape(n, k, *avg.shape[-2:])
-
-    def _target_png(self, png, t):
-        """从预建 PNG 取载体 target。png: (N,K,256,256) uint8; 返回 (N,C,32,32)。
-
-        ★ 只对**本 carrier 用到的档位**做 8x 下采样 (见 _png_to_grid 的 sel),
-          避免把 12 档全量展开成 float 中间张量。
-        """
-        keys = self.png_keys
-        if keys is None:
-            return None
-
-        want_skel = self.carrier in ("dilate_skel", "both")
-        want_blur = self.carrier in ("blur_gt", "both")
-        sel = [i for i, k in enumerate(keys)
-               if (want_skel and k.startswith("skel_w"))
-               or (want_blur and k.startswith("blur_s"))]
-        if not sel:
-            return None
-        avg = self._png_to_grid(png, sel=sel)
-        pos = {g: j for j, g in enumerate(sel)}    # 全局 column -> avg 里的位置
-
-        def _bucket_idx(glob_sel, values_px, want_px):
-            """在 glob_sel 这些全局档里选与 want_px 最接近的 -> (N,) avg 内下标。"""
-            v = torch.tensor(values_px, device=t.device)
-            d = (want_px[:, None] - v[None, :]).abs()
-            pick = d.argmin(dim=1)
-            loc = [pos[g] for g in glob_sel]
-            return torch.tensor(loc, device=t.device)[pick]
-
-        def _gather(src, idx):
-            return src.gather(
-                1, idx.view(-1, 1, 1, 1).expand(-1, 1, *src.shape[-2:]))
-
-        parts = []
-        if want_skel:
-            glob = [i for i, k in enumerate(keys) if k.startswith("skel_w")]
-            if glob:
-                k_t = self.sigma_sched.k_of(t)                 # (N,) **latent** px 半径
-                # ★ 单位统一: k(t) latent px -> pixel 半径 (×8), 与预建 (w-1)/2 同域。
-                #   不统一会静默饱和在最大档 (前几档永不可达)。
-                k_px = k_t * self.png_downscale
-                ws = [float(keys[i][len("skel_w"):]) for i in glob]  # pixel 笔宽
-                idx = _bucket_idx(glob, [(w - 1.0) / 2.0 for w in ws], k_px)
-                # 灰度 = 块内墨占比 ∝ 局部线宽, 保住粗细
-                parts.append(_gather(avg, idx))
-        if want_blur:
-            glob = [i for i, k in enumerate(keys) if k.startswith("blur_s")]
-            if glob:
-                sig_t = self.sigma_sched.sigma_of(t)            # (N,) latent px σ
-                sig_px = sig_t * self.png_downscale             # -> pixel σ 同域
-                sigs = [float(keys[i][len("blur_s"):].replace("p", ".")) for i in glob]
-                idx = _bucket_idx(glob, sigs, sig_px)
-                parts.append(_gather(avg, idx))
-        if not parts:
-            return None
-        out = parts[0] if len(parts) == 1 else 0.5 * (parts[0] + parts[1])
-        # PNG 是单通道灰度; 复制到 latent_channels 以对齐 pred 的通道数
-        return out.expand(-1, self.latent_channels, -1, -1)
 
     def _target(self, gt_lat, skel_lat, t):
         """按载体构造粗化 target (与 pred 同通道数, 无梯度)。"""
@@ -292,14 +155,8 @@ class MidStructureLoss:
             return 0.5 * (tgt_parts[0] + tgt_parts[1])
         return tgt_parts[0] if tgt_parts else None
 
-    def __call__(self, pred_xstart, gt_lat, skel_lat, t, png=None):
-        """pred_xstart: (N,C,32,32) 带梯度; gt_lat: GT 图像 latent; skel_lat: 细骨架 latent; t: (N,) flow t。
-
-        png: 可选 (N,K,256,256) uint8 —— 预建载体 PNG。给了就走 png 通路 (省 GPU/免 encode),
-             key 顺序须与 self.png_keys 一致 (即 dataset.mid_keys 的子序列)。
-        ★ png 通路的下采样与 target 选择**不需要**梯度, 故整段 no_grad;
-          pred_xstart 那侧仍带梯度正常回传。
-        """
+    def __call__(self, pred_xstart, gt_lat, skel_lat, t):
+        """pred_xstart: (N,C,32,32) 带梯度; gt_lat: GT 图像 latent; skel_lat: 细骨架 latent; t: (N,) flow t。"""
         zero = pred_xstart.sum() * 0.0
         if pred_xstart is None or t is None:
             return zero
@@ -307,12 +164,7 @@ class MidStructureLoss:
         active = (a_t >= self.alo) & (a_t <= self.ahi)
         if not bool(active.any()):
             return zero
-        tgt = None
-        if png is not None and self.png_keys:
-            with torch.no_grad():
-                tgt = self._target_png(png, t)
-        if tgt is None:                             # 回退到 latent 域实时算子
-            tgt = self._target(gt_lat, skel_lat, t)
+        tgt = self._target(gt_lat, skel_lat, t)
         if tgt is None:
             return zero
         p = pred_xstart[:, :self.latent_channels].float()

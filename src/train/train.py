@@ -89,43 +89,6 @@ def aux_dirs_of(args):
             if x.strip()]
 
 
-def mid_png_dirs_of(args):
-    """解析 ``--std-mid-png-root`` -> (skel_png_dirs, gt_blur_png_dirs, keys)。
-
-    目录约定 (与 tools/prepare_mid_carriers.py 的产出一致):
-        <root>/w{3,5,7,9,11}/<img_id>.png
-        <root>/blur/s{0p5,1,1p5,2,2p5,3,4}/<img_id>.png
-
-    ★ keys 必须与 dataset.mid_keys 的构造顺序**完全一致** —— loss 侧靠它把
-      (N,K,256,256) 张量里的第 k 个切片对回档位。两处顺序漂移会静默错配档位
-      (σ/k 选到错的档, loss 照常下降), 故这里统一在一处生成。
-    """
-    root = (getattr(args, "std_mid_png_root", "") or "").strip()
-    if not root:
-        return None, None, None
-    widths = [x.strip() for x in
-              str(getattr(args, "std_mid_png_widths", "3,5,7,9,11") or "").split(",")
-              if x.strip()]
-    sigmas = [x.strip() for x in
-              str(getattr(args, "std_mid_png_sigmas", "0.5,1,1.5,2,2.5,3,4") or "").split(",")
-              if x.strip()]
-    skel_dirs = {w: os.path.join(root, "w%s" % w) for w in widths}
-    blur_dirs = {"s" + _stag(s): os.path.join(root, "blur", "s" + _stag(s))
-                 for s in sigmas}
-    keys = (["skel_w%s" % w for w in sorted(widths, key=float)]
-            + ["blur_s" + _stag(s) for s in sorted(sigmas, key=float)])
-    return skel_dirs, blur_dirs, keys
-
-
-def _stag(sigma):
-    """σ 目录名: 1.0 -> 's1' / 1.5 -> 's1p5' (与 prepare_mid_carriers.py 同规则)。
-
-    ★ 不能用 replace('.','') —— 1.0 会变成 's10', 与 10.0 混淆。
-    """
-    s = ("%g" % float(sigma))
-    return s.replace(".", "p").replace("-", "m")
-
-
 def resolve_aux_channel_weights(args):
     """解析 aux 通道权重 —— **循环不变量，只在训练开始前调一次**。
 
@@ -1369,59 +1332,27 @@ def main(args):
 
     # ---- 中程结构 aux loss (独立模块 src/loss/structure_mid.py, 替代旧内联 std_mid) ----
     # 旧内联: MSE(x0_pred, 细骨架 g) —— 与中程"软墨迹"形态冲突。新模块: 载体粗化
-    # (blur GT / dilate skel) + 低通子空间 + 通道归一 -> k/σ 不敏感。默认关闭, 零破坏。
-    #
-    # 两条 target 来源 (见 structure_mid.py docstring):
-    #   (a) latent 域实时算子: 传 gt_lat/skel_lat, 内部 blur2d/latent_dilate。σ/k 默认
-    #       用 latent 刻度 (slope 4/2, cap 3/2)。
-    #   (b) **pixel 域预建 PNG** (推荐, --std-mid-png-root): PNG 由
-    #       tools/prepare_mid_carriers.py 纯 CPU 预建, 训练时只做 8x 下采样对齐,
-    #       **不需要 VAE encode 这些载体** (省 GPU), 且 skeletonize / 精确宽度膨胀
-    #       只在 CPU 侧算一次 (latent_dilate 的 max-pool 只是近似)。
-    #       σ/k 刻度自动切到 for_png (对齐预建档位, 否则会静默饱和在最大档)。
+    # (blur GT / dilate skel, σ(t)/k(t) 由 calibrate_mid_structure.py 校准) + 低通子空间
+    # + 通道归一 -> k/σ 不敏感。默认 w_std_mid=0 关闭, 零破坏。
     _mid_struct_loss = None
-    _mid_png_root = (getattr(args, 'std_mid_png_root', '') or '').strip()
-    _mid_skel_dirs, _mid_blur_dirs, _mid_png_keys = (None, None, None)
-    if _mid_png_root:
-        _mid_skel_dirs, _mid_blur_dirs, _mid_png_keys = mid_png_dirs_of(args)
     if getattr(args, 'w_std_mid', 0.0) > 0:
         from src.loss.structure_mid import MidStructureLoss, TSchedule
-        if _mid_png_root:
-            # png 通路的 σ/k 默认刻度与 latent 域**不同**, 除非用户显式配了
-            # --std-mid-calib-json (校准过的), 否则用 for_png 而不是裸 TSchedule。
-            _calib = getattr(args, 'std_mid_calib_json', '') or ''
-            if _calib and os.path.exists(_calib):
-                _sched = TSchedule.from_json(_calib)
-            else:
-                _sched = TSchedule.for_png(
-                    sigma_slope=float(getattr(args, 'std_mid_sigma_slope', 0.5)),
-                    k_slope=float(getattr(args, 'std_mid_k_slope', 0.8)))
-        else:
-            _sched = TSchedule.from_json(
-                getattr(args, 'std_mid_calib_json', '') or '',
-                sigma_slope=float(getattr(args, 'std_mid_sigma_slope', 4.0)),
-                k_slope=float(getattr(args, 'std_mid_k_slope', 2.0)))
+        _sched = TSchedule.from_json(
+            getattr(args, 'std_mid_calib_json', '') or '',
+            sigma_slope=float(getattr(args, 'std_mid_sigma_slope', 4.0)),
+            k_slope=float(getattr(args, 'std_mid_k_slope', 2.0)))
         _mid_struct_loss = MidStructureLoss(
             carrier=getattr(args, 'std_mid_carrier', 'blur_gt'),
             alo=float(getattr(args, 'std_mid_alo', 0.35)),
             ahi=float(getattr(args, 'std_mid_ahi', 0.75)),
             lp_factor=int(getattr(args, 'std_mid_lp', 2)),
             sigma_sched=_sched,
-            png_keys=_mid_png_keys,
-            png_downscale=int(getattr(args, 'vae_downscale', 8)),
             latent_channels=int(getattr(args, 'latent_channels', 4)))
         if rank == 0:
             logger.info(f"[std_mid] MidStructureLoss carrier={_mid_struct_loss.carrier} "
                         f"window a_t∈[{_mid_struct_loss.alo},{_mid_struct_loss.ahi}] "
                         f"lp={_mid_struct_loss.lp_factor} "
-                        f"target={'PNG(' + str(len(_mid_png_keys)) + '档, 免encode) @' + _mid_png_root if _mid_png_keys else 'latent实时算子'}")
-            logger.info(f"[std_mid] σ/k 刻度: σ_slope={_mid_struct_loss.sigma_sched.sigma_slope} "
-                        f"σ_cap={_mid_struct_loss.sigma_sched.sigma_cap} "
-                        f"k_slope={_mid_struct_loss.sigma_sched.k_slope} "
-                        f"k_cap={_mid_struct_loss.sigma_sched.k_cap} "
-                        f"calib={getattr(args, 'std_mid_calib_json', '') or '(默认)'}")
-            if _mid_png_keys:
-                logger.info(f"[std_mid] png keys = {_mid_png_keys}")
+                        f"calib={getattr(args, 'std_mid_calib_json', '') or '(默认线性σ/k)'}")
 
     trainable_params_list = [p for p in model.parameters() if p.requires_grad]
     if repa_loss_fn is not None:
@@ -1531,13 +1462,6 @@ def main(args):
                                                           else None),
                                     callig_id_map=getattr(args, '_callig_map', None),
                                     callig_script_map=getattr(args, '_callig_script_map', None),
-                                    # ★ 中程载体 PNG (纯 CPU 预建, 训练时只做 8x 下采样,
-                                    #   **不跑 VAE encode** -> 不占 GPU)。只在需要时挂载,
-                                    #   否则 dataset 不会去开这些目录。
-                                    skel_png_dirs=(_mid_skel_dirs
-                                                   if _mid_png_root else None),
-                                    gt_blur_png_dirs=(_mid_blur_dirs
-                                                      if _mid_png_root else None),
                                     aux_latent_shards_dirs=aux_dirs_of(args))
         logger.info("Using latent-cached dataset (skip on-the-fly VAE encode)."
                     + (" preload=ON" if getattr(args, 'preload', False) else ""))
@@ -1942,15 +1866,8 @@ def main(args):
                     _lc = int(getattr(args, 'latent_channels', 4))
                     _gt = x_latent[:, :_lc]
                     _gsk = model_kwargs.get('g', None)
-                    # ★ png 通路: batch['mid_png'] 是 (N,K,256,256) uint8, 走 CPU->GPU
-                    #   的非阻塞拷贝; loss 内部只做 8x 下采样 (无 VAE, 无额外可训练参数)。
-                    _mid_png = (batch.get('mid_png', None) if _mid_png_keys else None)
-                    if _mid_png is not None and _mid_png.numel():
-                        _mid_png = _mid_png.to(device, non_blocking=True)
-                    else:
-                        _mid_png = None
                     loss_std_mid = _mid_struct_loss(
-                        pred_xstart_latent, _gt, _gsk, t.to(device), png=_mid_png)
+                        pred_xstart_latent, _gt, _gsk, t.to(device))
 
                 intermediate_feats = loss_dict.get("intermediate_feats", None)
                 if x is not None and intermediate_feats is not None and repa_loss_fn is not None and args.w_repa > 0:
