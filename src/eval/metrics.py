@@ -130,6 +130,51 @@ def _skeletonize(binary):
         return skel
 
 
+def frag_ratio(pred, gt, thresh=0.5):
+    """笔画破碎比 = 生成墨迹的连通块数 / 真迹的连通块数。
+
+    1 左右是正常。明显大于 1 说明一笔被切成了几段。
+    不用骨架 IoU: 骨架 IoU 对 1 像素的错位就掉到接近 0, 测的是位置不是断笔。
+    8 邻域。两边都没有墨时返回 1。
+    """
+    from scipy.ndimage import label
+    if pred.ndim == 3:
+        pred, gt = pred[None], gt[None]
+    struct = np.ones((3, 3), dtype=int)
+    acc = []
+    for k in range(pred.shape[0]):
+        bp = pred[k].mean(axis=2) < thresh
+        bg = gt[k].mean(axis=2) < thresh
+        _, np_ = label(bp, structure=struct)
+        _, ng_ = label(bg, structure=struct)
+        acc.append(np_ / ng_ if ng_ > 0 else (1.0 if np_ == 0 else float(np_)))
+    return float(np.mean(acc)) if acc else 1.0
+
+
+def hole_ratio(img, thresh=0.5):
+    """笔画内部的白点占比。
+
+    墨迹取灰度均值 < thresh。填充只能补上四周被墨包住的洞,
+    连通到笔画外面的缺口补不上, 所以断笔不计入。
+    占比 = 洞像素 / 补全后的笔画面积。没有墨时返回 0。
+    """
+    from scipy.ndimage import binary_fill_holes
+    if img.ndim == 2:
+        img = img[..., None]
+    if img.ndim == 3:
+        img = img[None]
+    acc = []
+    for k in range(img.shape[0]):
+        ink = img[k].mean(axis=2) < thresh
+        if not ink.any():
+            acc.append(0.0)
+            continue
+        filled = binary_fill_holes(ink)
+        holes = filled & ~ink
+        acc.append(float(holes.sum()) / float(filled.sum()))
+    return float(np.mean(acc)) if acc else 0.0
+
+
 def skel_iou(pred, gt, thresh=0.5):
     """(H,W,C) 或 (N,H,W,C) float -> float。骨架 IoU（不是掩码 IoU）。"""
     if pred.ndim == 3:

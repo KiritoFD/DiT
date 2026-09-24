@@ -267,7 +267,161 @@ def _steps_scan(results_dir, sub):
     return steps
 
 
-def render_poster(results_dir, set_name, out=None, cell=224, gap=6):
+import time as _time  # noqa: E402  (poster 计时用)
+
+_TRAIN_REF_CACHE = {}
+_font_cache = {}
+
+
+def _train_ref_rows(train_csv, eval_csv, n_ev):
+    """为每一列找两行训练集参照: [同书家·异字, 同字·异书家]。
+
+    同书家优先同书体（结体习惯更可比）；同字取不同书家（看结构有多少种写法）。
+    返回 None 表示不可用（调用方就少画这两行，不影响原 poster）。
+    """
+    key = (train_csv, eval_csv, n_ev)
+    if key in _TRAIN_REF_CACHE:
+        return _TRAIN_REF_CACHE[key]
+
+    def _rows(p, n=0):
+        if not (p and os.path.exists(p)):
+            return []
+        with open(p, encoding="utf-8") as f:
+            r = list(csv.DictReader(f))
+        return r[:n] if n else r
+
+    ev = _rows(eval_csv, n_ev)
+    tr = _rows(train_csv)
+    if not ev or not tr:
+        _TRAIN_REF_CACHE[key] = None
+        return None
+    by_cal, by_char = {}, {}
+    for r in tr:
+        cid, sid = str(r.get("calligrapher_id", "")), str(r.get("script_id", ""))
+        by_cal.setdefault((cid, sid), []).append(r)
+        by_cal.setdefault(("*", cid), []).append(r)
+        by_char.setdefault(str(r.get("character", "")), []).append(r)
+
+    def _img(r):
+        p = (r or {}).get("image_path", "")
+        if not p:
+            return None
+        if not os.path.isabs(p):
+            p = os.path.join(os.getcwd(), p)
+        return p if os.path.exists(p) else None
+
+    out = [[], []]
+    for i, r in enumerate(ev):
+        ch, cid, sid = (r.get("character"), r.get("calligrapher_id"),
+                        r.get("script_id"))
+        c1 = None
+        for k in [(str(cid), str(sid)), ("*", str(cid))]:
+            cand = [x for x in by_cal.get(k, [])
+                    if str(x.get("character", "")) != str(ch)]
+            if cand:
+                c1 = cand[i % len(cand)]
+                break
+        cand2 = [x for x in by_char.get(str(ch), [])
+                 if str(x.get("calligrapher_id", "")) != str(cid)]
+        out[0].append(_img(c1))
+        out[1].append(_img(cand2[i % len(cand2)]) if cand2 else None)
+    _TRAIN_REF_CACHE[key] = out
+    return out
+
+
+_TRAIN_NN_CACHE = {}
+
+
+def _train_nn_row(train_csv, eval_csv, n_ev, gen_dir, max_cand=12):
+    """训练集里**同字**、与生成图 SSIM 最高的那张 GT。
+
+    返回 (paths, ssims, matched) 三个长度 n_ev 的列表；不可用时 None。
+      paths   : 命中那张 GT 的路径（没命中为 None）
+      ssims   : 对应 SSIM（用主评测口径 metrics.ssim, 高斯窗 win=11）
+      matched : 命中行的 (character, calligrapher) 便于核对
+    同字候选太多时按等间隔抽 max_cand 张（保证可复现）。
+    """
+    key = (train_csv, eval_csv, n_ev, gen_dir, max_cand)
+    if key in _TRAIN_NN_CACHE:
+        return _TRAIN_NN_CACHE[key]
+    if not (train_csv and eval_csv and gen_dir and os.path.isdir(gen_dir)):
+        _TRAIN_NN_CACHE[key] = None
+        return None
+
+    def _rows(p, n=0):
+        if not (p and os.path.exists(p)):
+            return []
+        with open(p, encoding="utf-8") as f:
+            r = list(csv.DictReader(f))
+        return r[:n] if n else r
+
+    ev, tr = _rows(eval_csv, n_ev), _rows(train_csv)
+    if not ev or not tr:
+        _TRAIN_NN_CACHE[key] = None
+        return None
+
+    import numpy as _np
+    from PIL import Image as _I
+    from src.eval.metrics import ssim as _ssim_fn
+
+    by_char = {}
+    for r in tr:
+        by_char.setdefault(str(r.get("character", "")), []).append(r)
+
+    def _abs(p):
+        if not p:
+            return None
+        if not os.path.isabs(p):
+            p = os.path.join(os.getcwd(), p)
+        return p if os.path.exists(p) else None
+
+    def _one(i, r):
+        """一列: 载生成图 + 同字候选 -> 取 SSIM 最高那张。"""
+        gp = os.path.join(gen_dir, f"g{i}.png")
+        if not os.path.exists(gp):
+            return None, float("nan"), None
+        with _I.open(gp) as _f:
+            g = _np.asarray(_f.convert("RGB"), dtype=_np.float32) / 255.0
+        cands = by_char.get(str(r.get("character", "")), [])
+        if len(cands) > max_cand:
+            _st = len(cands) / max_cand
+            cands = [cands[int(k * _st)] for k in range(max_cand)]
+        best, bs, bm = None, -2.0, None
+        for c in cands:
+            cp = _abs(c.get("image_path", ""))
+            if not cp:
+                continue
+            with _I.open(cp) as _f:
+                t = _np.asarray(_f.convert("RGB"), dtype=_np.float32) / 255.0
+            if t.shape != g.shape:
+                continue
+            s = float(_ssim_fn(g, t))
+            if s > bs:
+                bs, best = s, cp
+                bm = (c.get("character", ""), c.get("calligrapher", ""))
+        return best, (bs if best else float("nan")), bm
+
+    # ★ 多线程: 列与列独立, 且 SSIM 底层是 scipy 卷积(释放 GIL) -> 线程有真实加速。
+    #   不用多进程: 本函数在**训练进程内**被调用, 进程里有 CUDA, fork 有风险。
+    import concurrent.futures as _cf
+    _nw = int(os.environ.get("DIT_POSTER_NN_WORKERS", "16"))
+    _nw = max(1, min(_nw, len(ev)))
+    _t0 = _time.time()
+    if _nw > 1:
+        with _cf.ThreadPoolExecutor(max_workers=_nw) as _ex:
+            _res = list(_ex.map(lambda _ir: _one(*_ir), enumerate(ev)))
+    else:
+        _res = [_one(i, r) for i, r in enumerate(ev)]
+    paths = [x[0] for x in _res]
+    ssims = [x[1] for x in _res]
+    matched = [x[2] for x in _res]
+    print(f"[poster] 同字最近邻 {len(ev)} 列, {_nw} 线程, {_time.time() - _t0:.1f}s", flush=True)
+    _TRAIN_NN_CACHE[key] = (paths, ssims, matched)
+    return _TRAIN_NN_CACHE[key]
+
+
+def render_poster(results_dir, set_name, out=None, cell=224, gap=6,
+                  train_csv=None, eval_csv=None, n_eval=None):
     """自动 poster (每 set 两张):
 
     主图 posters/{set}_poster.png:
@@ -294,20 +448,32 @@ def render_poster(results_dir, set_name, out=None, cell=224, gap=6):
         return _Img.new("RGB", (cell, cell), bg)
 
     font = _load_font(r"/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", max(14, cell // 8))
+    font_small = _font_cache.get(cell) or _load_font(
+        r"/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", max(9, cell // 7))
+    _font_cache[cell] = font_small
     font_big = _load_font(r"/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", max(28, cell // 3))
     label_h = max(40, cell // 4)
     hdr_h = 56
 
     # ── 主图: input 行 + 每 step gen 行 + GT 行 ──────────────────────────
+    _ref = _train_ref_rows(train_csv, eval_csv, n_eval) if train_csv else None
+    # ★ 同字最近邻: 用**最新 step** 的生成图
+    _nn = (_train_nn_row(train_csv, eval_csv, n_eval, steps[-1][1])
+           if (train_csv and steps) else None)
     W = cell * n_max + gap * 2
-    n_rows = len(steps) + 1 + (1 if has_input else 0)
+    n_rows = (len(steps) + 1 + (1 if has_input else 0) + (2 if _ref else 0)
+              + (1 if _nn else 0))
     H = hdr_h + gap + n_rows * (label_h + cell + gap) + gap + 30
     canvas = _Img.new("RGB", (W, H), (15, 17, 22))
     draw = ImageDraw.Draw(canvas)
     y = gap
     draw.rectangle([0, y, W, y + hdr_h], fill=(0, 0, 0))
-    draw.text((gap, y + 12), f"{set_name} (n={n_max}) — input g / per-ckpt gen / GT",
-              font=font, fill=(255, 200, 120))
+    _t = f"{set_name} (n={n_max}) — input g / per-ckpt gen / GT"
+    if _ref:
+        _t += " / 训练集类似条件 GT"
+    if _nn:
+        _t += " / 同字最像"
+    draw.text((gap, y + 12), _t, font=font, fill=(255, 200, 120))
     y += hdr_h + gap
     if has_input:
         draw.text((gap, y + 8), "input (标准字 g)", font=font_big, fill=(120, 220, 255))
@@ -328,6 +494,61 @@ def render_poster(results_dir, set_name, out=None, cell=224, gap=6):
     gt_dir = steps[-1][1]
     for i in range(n_max):
         canvas.paste(_cell(os.path.join(gt_dir, f"gt{i}.png"), (50, 50, 50)), (gap + i * cell, y))
+    y += cell + gap
+    # ★ 训练集「类似条件」参照两行 —— 用来区分"不会这个字的结构"还是"不会这个书家的笔法"
+    if _ref:
+        for _lbl, _paths in zip(("训练集·同书家异字", "训练集·同字异书家"), _ref):
+            draw.text((gap, y + 8), _lbl, font=font_big, fill=(170, 255, 170))
+            y += label_h
+            for i in range(n_max):
+                _pth = _paths[i] if i < len(_paths) else None
+                canvas.paste(_cell(_pth, (25, 25, 25)), (gap + i * cell, y))
+            y += cell + gap
+    # ★ 训练集「同字最像」一行: 格子角上标出 SSIM
+    if _nn:
+        _pnn, _snn, _mnn = _nn
+        _v = [s for s in _snn if s == s]
+        _mean = (sum(_v) / len(_v)) if _v else float("nan")
+        draw.text((gap, y + 8),
+                  f"训练集·同字最像 (SSIM 均值={_mean:.4f}, n={len(_v)})",
+                  font=font_big, fill=(255, 220, 120))
+        y += label_h
+        _tag_h = max(12, cell // 5)
+        for i in range(n_max):
+            _pth = _pnn[i] if i < len(_pnn) else None
+            canvas.paste(_cell(_pth, (25, 25, 25)), (gap + i * cell, y))
+            _s = _snn[i] if i < len(_snn) else float("nan")
+            if _s == _s:
+                _txt = f"{_s:.2f}"
+                draw.rectangle([gap + i * cell, y, gap + i * cell + 6 * len(_txt), y + _tag_h],
+                               fill=(0, 0, 0))
+                draw.text((gap + i * cell + 2, y + 1), _txt, font=font_small,
+                          fill=(255, 220, 120))
+        y += cell + gap
+        # 数值单独落 CSV（poster 上只是角标, 不方便抄）
+        try:
+            _cp = os.path.join(results_dir, "posters",
+                               f"{set_name}_train_samechar_nn.csv")
+            os.makedirs(os.path.dirname(_cp), exist_ok=True)
+            _ev_rows = []
+            if eval_csv and os.path.exists(eval_csv):
+                with open(eval_csv, encoding="utf-8") as _f:
+                    _ev_rows = list(csv.DictReader(_f))[:n_eval]
+            with open(_cp, "w", newline="", encoding="utf-8") as _f:
+                _w = csv.writer(_f)
+                _w.writerow(["idx", "eval_char", "eval_calligrapher",
+                             "nn_ssim", "nn_char", "nn_calligrapher", "nn_image_path"])
+                for i in range(n_max):
+                    _r = _ev_rows[i] if i < len(_ev_rows) else {}
+                    _m = _mnn[i] if i < len(_mnn) else None
+                    _w.writerow([i, _r.get("character", ""), _r.get("calligrapher", ""),
+                                 (f"{_snn[i]:.5f}" if i < len(_snn) and _snn[i] == _snn[i] else ""),
+                                 (_m[0] if _m else ""), (_m[1] if _m else ""),
+                                 (_pnn[i] or "") if i < len(_pnn) else ""])
+            print(f"[poster] 同字最像 SSIM 已落盘: {_cp}")
+        except Exception as _ce:
+            print(f"[poster] 同字最像 CSV 落盘失败: {_ce!r}")
+
     out = out or os.path.join(results_dir, "posters", f"{set_name}_poster.png")
     os.makedirs(os.path.dirname(out), exist_ok=True)
     canvas.save(out)
@@ -396,12 +617,24 @@ def render_poster(results_dir, set_name, out=None, cell=224, gap=6):
     return out
 
 
+# ⚠ 系统里**没有** /usr/share/fonts/truetype/ 也没有任何 CJK 字体，
+#   原实现恒回退 ImageFont.load_default() -> poster 的中文标签全是方块/空白。
+#   项目自带 _fonts/ 有中文字体，优先用它们。
+_FONT_CANDIDATES = (
+    "_fonts/msyh.ttc", "_fonts/Deng.ttf", "_fonts/STSONG.TTF",
+    "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
+    "/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc",
+)
+
+
 def _load_font(fp, size):
     from PIL import ImageFont
-    try:
-        return ImageFont.truetype(fp, size)
-    except Exception:
-        return ImageFont.load_default()
+    for c in [fp] + [x for x in _FONT_CANDIDATES if x != fp]:
+        try:
+            return ImageFont.truetype(c, size)
+        except Exception:
+            continue
+    return ImageFont.load_default()
 
 
 def _step_ssim_txt(results_dir, step, set_name):
@@ -464,11 +697,13 @@ def run_in_mem_eval(model, args, step, device, results_dir, sets=None,
     if new_sum:
         w_sum.writerow(["exp", "step", "set", "n", "ssim_mean", "ssim_p10", "ssim_q1",
                         "ssim_med", "ssim_q3", "ssim_p90", "mse_mean", "lpips_mean",
-                        "ink_ssim_mean", "ink_iou_mean", "skel_iou_mean"])
+                        "ink_ssim_mean", "ink_iou_mean", "skel_iou_mean",
+                        "frag_ratio", "hole_pred", "hole_gt"])
     if new_raw:
         w_raw.writerow(["exp", "step", "set", "idx", "img_id", "char", "script",
                         "calligrapher", "mse", "ssim", "lpips",
-                        "ink_ssim", "ink_iou", "skel_iou"])
+                        "ink_ssim", "ink_iou", "skel_iou",
+                        "frag_ratio", "hole_pred", "hole_gt"])
     exp = os.path.basename(results_dir.rstrip("/"))
     out = {}
 
@@ -580,10 +815,13 @@ def run_in_mem_eval(model, args, step, device, results_dir, sets=None,
             # ★ 墨迹域指标：全图 SSIM 被 ~90% 白底严重抬高（实测 0.5745 vs 墨迹框 0.3161）。
             #   对齐 tools/batch_eval 的口径：ink_ssim / ink_iou / skel_iou 才是
             #   "字写得对不对" 的真实反映。
-            _inks, _inkious, _skels = [], [], []
+            _inks, _inkious, _skels, _frags = [], [], [], []
+            _holes_p, _holes_g = [], []
             try:
                 from src.eval.metrics_ink import ink_ssim as _ink_ssim, ink_iou as _ink_iou
-                from src.eval.metrics import skel_iou as _skel_iou
+                from src.eval.metrics import (skel_iou as _skel_iou,
+                                              frag_ratio as _frag_ratio,
+                                              hole_ratio as _hole_ratio)
                 _has_ink = True
             except Exception as _e:
                 logger(f"[in-mem-eval] ⚠ 墨迹指标不可用 ({_e!r})，ink 列将留空")
@@ -595,12 +833,21 @@ def run_in_mem_eval(model, args, step, device, results_dir, sets=None,
                     _inks.append(_ink_ssim(pred_np[i], gt_np[i]))
                     _inkious.append(_ink_iou(pred_np[i], gt_np[i]))
                     _skels.append(_skel_iou(pred_np[i], gt_np[i], thresh=0.5))
+                    _frags.append(_frag_ratio(pred_np[i], gt_np[i], thresh=0.5))
+                    _holes_p.append(_hole_ratio(pred_np[i], thresh=0.5))
+                    _holes_g.append(_hole_ratio(gt_np[i], thresh=0.5))
             ssim = np.array(ssims)
             mse = float(np.mean(mses))
             _ink_ssim_mean = f"{float(np.mean(_inks)):.5f}" if _inks else ""
             _ink_iou_mean = f"{float(np.mean(_inkious)):.5f}" if _inkious else ""
             _skel_iou_mean = f"{float(np.mean(_skels)):.5f}" if _skels else ""
+            _frag_mean = f"{float(np.mean(_frags)):.4f}" if _frags else ""
+            _hole_p_mean = f"{float(np.mean(_holes_p)):.4f}" if _holes_p else ""
+            _hole_g_mean = f"{float(np.mean(_holes_g)):.4f}" if _holes_g else ""
             _ink_txt = (f" ink_ssim={float(np.mean(_inks)):.4f}" if _inks else "")
+            _frag_txt = (f" frag={float(np.mean(_frags)):.3f}" if _frags else "")
+            _hole_txt = (f" hole={float(np.mean(_holes_p)):.3f}"
+                         f"/{float(np.mean(_holes_g)):.3f}" if _holes_p else "")
             # LPIPS (v12+): 默认开启, 可用 --in-mem-eval-lpips 0 关闭。
             # ssim 会被大面积白底匹配骗过 (doc59), LPIPS 对结构细节敏感。
             _lp = _lpips_per_sample(
@@ -612,7 +859,8 @@ def run_in_mem_eval(model, args, step, device, results_dir, sets=None,
             w_sum.writerow([exp, step, name, n, f"{ssim.mean():.4f}",
                             f"{q10:.4f}", f"{q25:.4f}", f"{q50:.4f}",
                             f"{q75:.4f}", f"{q90:.4f}", f"{mse:.5f}", _lp_mean,
-                            _ink_ssim_mean, _ink_iou_mean, _skel_iou_mean])
+                            _ink_ssim_mean, _ink_iou_mean, _skel_iou_mean, _frag_mean,
+                            _hole_p_mean, _hole_g_mean])
             for i in range(n):
                 _s = _src[i] if i < len(_src) else {}
                 w_raw.writerow([exp, step, name, i,
@@ -624,17 +872,25 @@ def run_in_mem_eval(model, args, step, device, results_dir, sets=None,
                                 (f"{_lp[i]:.5f}" if _lp else ""),
                                 (f"{_inks[i]:.5f}" if _inks else ""),
                                 (f"{_inkious[i]:.5f}" if _inkious else ""),
-                                (f"{_skels[i]:.5f}" if _skels else "")])
+                                (f"{_skels[i]:.5f}" if _skels else ""),
+                                (f"{_frags[i]:.4f}" if _frags else ""),
+                                (f"{_holes_p[i]:.4f}" if _holes_p else ""),
+                                (f"{_holes_g[i]:.4f}" if _holes_g else "")])
             f_sum.flush()
             f_raw.flush()
-            out[name] = float(ssim.mean())
+            out[name] = {"ssim": float(ssim.mean()),
+                         "ink_ssim": float(np.mean(_inks)) if _inks else None,
+                         "frag": float(np.mean(_frags)) if _frags else None,
+                         "hole": float(np.mean(_holes_p)) if _holes_p else None}
             logger(f"[in-mem-eval] step={step} set={name} n={n} "
                    f"ssim={ssim.mean():.4f} (med={q50:.4f}) mse={mse:.5f}"
-                   f"{_lp_txt}{_ink_txt} "
+                   f"{_lp_txt}{_ink_txt}{_frag_txt}{_hole_txt} "
                    f"sample={t_s:.0f}s total={time.time()-t0:.0f}s")
             # 自动 poster: 全量重画该 set 所有 step (秒级, 覆盖旧文件)
             try:
-                _p = render_poster(results_dir, name)
+                _p = render_poster(results_dir, name,
+                                   train_csv=getattr(args, "data_csv", None),
+                                   eval_csv=csvp, n_eval=n)
                 if _p:
                     logger(f"[in-mem-eval] poster updated: {_p}")
             except Exception as _pe:
@@ -644,6 +900,20 @@ def run_in_mem_eval(model, args, step, device, results_dir, sets=None,
         f_raw.close()
         torch.cuda.empty_cache()
     return out
+
+
+def _fmt_eval(name, v):
+    """汇总行。缺指标时打印 NA, 不让格式化把整次评测打成失败。"""
+    if not isinstance(v, dict):
+        return f"{name} ssim={v:.4f}"
+
+    def n(x, spec):
+        return "NA" if x is None else format(x, spec)
+
+    return (f"{name} ssim={n(v.get('ssim'), '.4f')} "
+            f"ink={n(v.get('ink_ssim'), '.4f')} "
+            f"frag={n(v.get('frag'), '.3f')} "
+            f"hole={n(v.get('hole'), '.3f')}")
 
 
 def maybe_run_in_training(args, ema_model, model, train_steps, device,
@@ -678,7 +948,7 @@ def maybe_run_in_training(args, ema_model, model, train_steps, device,
                             or os.path.dirname(os.path.dirname(checkpoint_dir))))
         logger.info(
             f"[in-mem-eval] step {train_steps} done in {time.time() - t0:.0f}s: "
-            + " | ".join(f"{k} ssim={v:.4f}" for k, v in res.items()))
+            + " | ".join(_fmt_eval(k, v) for k, v in res.items()))
         return res
     except Exception as e:                                    # noqa: BLE001
         logger.warning(f"[in-mem-eval] step {train_steps} FAILED: {e}", exc_info=True)

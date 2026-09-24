@@ -165,6 +165,36 @@ def main():
     # ── 幂等: 读已有 summary, 跳过已完成的 (step,set) ────────────────────
     sum_path = f"{args.results_dir}/eval_stdskel_summary.csv"
     raw_path = f"{args.results_dir}/eval_stdskel_batch.csv"
+    SUM_HEADER = ["exp", "step", "set", "n", "ssim_mean", "ssim_p10", "ssim_q1",
+                  "ssim_med", "ssim_q3", "ssim_p90", "mse_mean", "lpips_mean",
+                  "ink_ssim_mean", "ink_iou_mean", "skel_iou_mean",
+                  "frag_mean", "hole_pred_mean", "hole_gt_mean"]
+    RAW_HEADER = ["exp", "step", "set", "idx", "img_id", "char", "script",
+                  "mse", "ssim", "lpips",
+                  "ink_ssim", "ink_iou", "skel_iou",
+                  "frag_ratio", "hole_pred", "hole_gt"]
+
+    # ★ 2026-09-24: 表头版本守卫。
+    #   加了 frag/hole 三列后, 若对**旧表头**的文件直接 append, 新行会多 3 列 ->
+    #   列错位且**不报错**(这正是本文件历史上踩过的"漏改 header -> verdict 全为 0")。
+    #   所以: 表头不匹配就改名备份、从新表头重开。旧数据不丢, 但不再追加。
+    for _p, _want in ((sum_path, SUM_HEADER), (raw_path, RAW_HEADER)):
+        if not os.path.exists(_p):
+            continue
+        try:
+            with open(_p, encoding="utf-8") as _f:
+                _got = next(csv.reader(_f), [])
+        except StopIteration:
+            _got = []
+        if _got != _want:
+            _bak = _p + ".bak_oldcols"
+            if os.path.exists(_bak):
+                _bak = _p + f".bak_oldcols.{int(os.path.getmtime(_p))}"
+            os.rename(_p, _bak)
+            print(f"[batch] ⚠ 表头不匹配({len(_got)} vs {len(_want)} 列) -> "
+                  f"旧文件备份为 {os.path.basename(_bak)}, 重开新表")
+            done = set()          # 旧表的"已完成"记录不再可信, 全部重评
+
     done = set()
     if os.path.exists(sum_path):
         for r in csv.DictReader(open(sum_path, encoding="utf-8")):
@@ -176,13 +206,9 @@ def main():
     w_sum = csv.writer(f_sum)
     w_raw = csv.writer(f_raw)
     if new_sum:
-        w_sum.writerow(["exp", "step", "set", "n", "ssim_mean", "ssim_p10", "ssim_q1",
-                        "ssim_med", "ssim_q3", "ssim_p90", "mse_mean", "lpips_mean",
-                        "ink_ssim_mean", "ink_iou_mean", "skel_iou_mean"])
+        w_sum.writerow(SUM_HEADER)
     if new_raw:
-        w_raw.writerow(["exp", "step", "set", "idx", "img_id", "char", "script",
-                        "mse", "ssim", "lpips",
-                        "ink_ssim", "ink_iou", "skel_iou"])
+        w_raw.writerow(RAW_HEADER)
 
     for ck in cks:
         step = int(os.path.basename(ck).split(".")[0])
@@ -259,9 +285,16 @@ def main():
             #     而墨迹框 SSIM 只有 0.3161、骨架 IoU 只有 0.0211）
             #   -> 这三个才是"字写得对不对"的真实反映
             inks, inkious, skels = [], [], []
+            # frag_ratio = 断笔比（生成墨迹连通块数 / 真迹连通块数, 1 左右正常）。
+            # ★ 这是"骨架条件到底有没有被用上"的主判据之一 —— 之前只有 in_mem_eval
+            #   算它, 离线 batch_eval 没有 -> E0/E1/gate 这些历史 run 全都**没有 baseline**。
+            #   2026-09-24 补上, 以便回溯评旧 ckpt。
+            frags, holes_p, holes_g = [], [], []
             try:
                 from src.eval.metrics_ink import ink_ssim as _ink_ssim, ink_iou as _ink_iou
-                from src.eval.metrics import skel_iou as _skel_iou
+                from src.eval.metrics import (skel_iou as _skel_iou,
+                                              frag_ratio as _frag_ratio,
+                                              hole_ratio as _hole_ratio)
                 _has_ink = True
             except Exception as _e:
                 print(f"[batch] ⚠ 墨迹指标不可用 ({_e})，只出旧指标")
@@ -273,6 +306,9 @@ def main():
                     inks.append(_ink_ssim(pred_np[i], gt_np[i]))
                     inkious.append(_ink_iou(pred_np[i], gt_np[i]))
                     skels.append(_skel_iou(pred_np[i], gt_np[i], thresh=0.5))
+                    frags.append(_frag_ratio(pred_np[i], gt_np[i], thresh=0.5))
+                    holes_p.append(_hole_ratio(pred_np[i], thresh=0.5))
+                    holes_g.append(_hole_ratio(gt_np[i], thresh=0.5))
                 if lpips_fn is not None:
                     p = torch.from_numpy(pred_np[i].transpose(2, 0, 1)[None] * 2 - 1).to(dev)
                     g = torch.from_numpy(gt_np[i].transpose(2, 0, 1)[None] * 2 - 1).to(dev)
@@ -288,7 +324,10 @@ def main():
                                 round(lp_list[i], 6) if lp_list else "",
                                 round(inks[i], 6) if inks else "",
                                 round(inkious[i], 6) if inkious else "",
-                                round(skels[i], 6) if skels else ""])
+                                round(skels[i], 6) if skels else "",
+                                round(frags[i], 6) if frags else "",
+                                round(holes_p[i], 6) if holes_p else "",
+                                round(holes_g[i], 6) if holes_g else ""])
             w_sum.writerow([exp, step, name, n, round(float(ssim.mean()), 6),
                             round(float(q10), 6), round(float(q25), 6),
                             round(float(q50), 6), round(float(q75), 6),
@@ -296,10 +335,18 @@ def main():
                             round(float(np.mean(lp_list)), 6) if lp_list else "",
                             round(float(np.mean(inks)), 6) if inks else "",
                             round(float(np.mean(inkious)), 6) if inkious else "",
-                            round(float(np.mean(skels)), 6) if skels else ""])
+                            round(float(np.mean(skels)), 6) if skels else "",
+                            round(float(np.mean(frags)), 6) if frags else "",
+                            round(float(np.mean(holes_p)), 6) if holes_p else "",
+                            round(float(np.mean(holes_g)), 6) if holes_g else ""])
             f_sum.flush(); f_raw.flush()
+            _extra = (f"frag={np.mean(frags):.3f} "
+                      f"ink={np.mean(inks):.4f} "
+                      f"hole(p/g)={np.mean(holes_p):.4f}/{np.mean(holes_g):.4f} "
+                      if frags else "")
             print(f"[batch] step{step} {name}: ssim={ssim.mean():.4f} "
-                  f"P10={q10:.4f} med={q50:.4f} Q3={q75:.4f} ({t_s:.0f}s)", flush=True)
+                  f"P10={q10:.4f} med={q50:.4f} Q3={q75:.4f} "
+                  f"{_extra}({t_s:.0f}s)", flush=True)
     f_sum.close(); f_raw.close()
     if dev.type == "cuda":
         print(f"[batch] peak GPU mem = {torch.cuda.max_memory_allocated() / 1024**3:.2f}G "
