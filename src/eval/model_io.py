@@ -85,6 +85,11 @@ def build_model_from_args(a, device, **overrides):
                             or g("skel_as_glyph_cond", False)),
         use_char_cond=not bool(g("no_char_cond", False)),
         glyph_scale_init=gf("glyph_scale_init", 0.4),
+        # 改变第一层卷积的输入通道。漏传会按 4 通道建模型, 8 通道权重对不上。
+        glyph_concat_input=bool(g("glyph_concat_input", False)),
+        # 只改前向、不改参数形状。漏传则评测全程全强度, strict=True 抓不到。
+        glyph_gate_t=gf("glyph_gate_t", 0.0),
+        glyph_gate_floor=gf("glyph_gate_floor", 0.35),
         glyph_drop_prob=gf("glyph_drop_prob", 0.0),
         glyph_inject_layers=gi("glyph_inject_layers", 0),
         glyph_inject_mode=g("glyph_inject_mode", "adaln"),
@@ -129,12 +134,17 @@ def build_model_from_args(a, device, **overrides):
         pair_residual=gi("pair_residual", 1),
         script_film=bool(g("script_film", False)),
         spatial_film_rank=gi("spatial_film_rank", 0),
+        # 缺这行会让评测构造出没有 lowrank_spatial 的模型, 权重变
+        # unexpected key, 静默走旧通路, 指标和 baseline 逐位相同。
+        lowrank_spatial_rank=gi("lowrank_spatial_rank", 0),
         local_ca_layers=gi("local_ca_layers", 0),
         local_ca_heads=gi("local_ca_heads", 4),
         local_ca_rank=gi("local_ca_rank", 64),
         local_ca_q=str(g("local_ca_q", "g")),
         local_ca_window=gi("local_ca_window", 0),
         local_ca_at=g("local_ca_at", None),
+        # ★ 必须透传: 否则 load_model_from_ckpt 的自动判定白做, 旧 ckpt 仍会 strict 失败。
+        local_ca_impl=str(g("local_ca_impl", "glyph_query")),
         callig_spatial=bool(g("callig_spatial", False)),
         callig_spatial_rank=gi("callig_spatial_rank", 64),
         freeze_char_table=bool(g("freeze_char_table", False)),
@@ -184,17 +194,24 @@ def apply_post_construction(model, a, verbose=True):
         from src.model.dit import MultiStyleEmbedder
         if isinstance(model.y_callig_embedder, MultiStyleEmbedder):
             # v15: 表 (N, K*D) 不含 null 行, 全表覆盖; null_embed 独立参数保持随机
-            assert _emb.shape == tuple(_w.shape), (
-                f"预训练多模态风格表 {tuple(_emb.shape)} != 模型表 {tuple(_w.shape)}。"
-                f" 检查 num_calligraphers / callig_multi_style_k / callig_emb_pretrained 是否配套")
-            with torch.no_grad():
-                _w.copy_(_emb.float())
+            if tuple(_emb.shape) == tuple(_w.shape):
+                with torch.no_grad():
+                    _w.copy_(_emb.float())
+            elif verbose:
+                # 加载已训 ckpt 时预训练表本就多余(随后 load_state_dict 会用 ckpt 训练后的
+                # 表覆盖)。形状不匹配 -> 警告+跳过, 不再硬 assert (否则 v17 等 87-pair 模型
+                # 因 ckpt 内嵌了旧的 45 表路径而无法 eval/探针)。
+                print(f"[model_io] ⚠ 预训练多模态表 {tuple(_emb.shape)} != 模型表 "
+                      f"{tuple(_w.shape)} -> 跳过灌表(以 ckpt 权重为准)。若这是**从头**训练"
+                      f"请检查 num_calligraphers/callig_multi_style_k/callig_emb_pretrained 配套。")
         else:
-            assert _emb.shape == (_w.shape[0] - 1, _w.shape[1]), (
-                f"预训练书家表形状 {tuple(_emb.shape)} != 模型表 {tuple(_w.shape)} 去掉 null 行。"
-                f" 检查 num_calligraphers / callig_emb_pretrained 是否配套")
-            with torch.no_grad():
-                _w[:_emb.shape[0]].copy_(_emb.float())
+            if tuple(_emb.shape) == (_w.shape[0] - 1, _w.shape[1]):
+                with torch.no_grad():
+                    _w[:_emb.shape[0]].copy_(_emb.float())
+            elif verbose:
+                print(f"[model_io] ⚠ 预训练书家表 {tuple(_emb.shape)} != 模型表 "
+                      f"{tuple(_w.shape)} 去掉 null 行 -> 跳过灌表(以 ckpt 权重为准)。若这是"
+                      f"**从头**训练请检查 num_calligraphers/callig_emb_pretrained 配套。")
         del _d
         if verbose:
             print(f"[model_io] callig 预训练表已加载: {tuple(_emb.shape)}")
@@ -278,6 +295,22 @@ def load_model_from_ckpt(ckpt_path, device="cuda", use_ema=True, verbose=True,
     sd = ck["ema"] if _use_ema else ck["model"]
     if verbose:
         print(f"[model_io] weights from {'ema' if _use_ema else 'model'}")
+
+    # ★ 兼容旧 ckpt: local_ca 有两代实现，state_dict 键不同。**以 state_dict 为准**
+    #   自动判定 —— 否则旧 ckpt 在 strict=True 下直接 RuntimeError 加载失败。
+    #   旧: local_ca.N.{cond_norm, style_qk.*, res_logit, q/k/v/out_proj}
+    #   新: local_ca.N.{style_to_q, style_to_k, out_log_scale, q/k/v/out_proj}
+    _lc_keys = [k for k in sd.keys() if ".local_ca." in k]
+    if _lc_keys:
+        _legacy = any((".style_qk." in k or ".cond_norm." in k
+                       or k.endswith(".res_logit")) for k in _lc_keys)
+        try:
+            a.local_ca_impl = "legacy" if _legacy else "glyph_query"
+        except Exception:
+            pass
+        if verbose:
+            print(f"[model_io] local_ca_impl = {getattr(a, 'local_ca_impl', '?')} "
+                  f"(按 state_dict 键自动判定, {len(_lc_keys)} 个 local_ca 键)")
 
     model = build_model_from_args(a, device, **(model_overrides or {}))
     apply_post_construction(model, a, verbose=verbose)

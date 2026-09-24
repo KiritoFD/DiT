@@ -11,6 +11,7 @@
 
 import torch
 import torch.nn as nn
+from .glyph_query import GlyphQuery
 import torch.nn.functional as F
 import numpy as np
 import math
@@ -629,6 +630,96 @@ class SpatialStyleFiLM(nn.Module):
         return g_tok * (1 + gamma) + beta
 
 
+class LowRankSpatialStyleFiLM(nn.Module):
+    """低秩逐位置风格 × 几何乘法, 作用在 ``g_tok`` 上。
+
+    .. code-block:: text
+
+        s        = P · e_style              (r,)    只看书家
+        q_i      = Q · g_tok_i              (r,)    只看这个格子的几何
+        u_i      = s ⊙ q_i                          乘积项, 两边缺一不可
+        γ_i, β_i = MLP(u_i, pos_i)
+        g_tok_i' = g_tok_i · (1 + γ_i) + β_i · keep
+
+    与 :class:`SpatialStyleFiLM` 的差别: 那里把 ``(e_style, g_tok_i, pos)``
+    拼接后交给线性层, 线性层**可以**学出乘法, 但没有被逼着做, 容量会花在
+    旁路上。这里乘法写死, 同一个书家在不同格子上 ``q_i`` 不同, ``u_i`` 就不同。
+
+    不加辅助损失, 不加 GT 实例骨架。主干始终吃 ``g_tok'``, 全局 adaLN 不动。
+
+    初始化不能照搬 zero-init。``SpatialStyleFiLM`` 的最后一层全零时,
+    ``∂L/∂net[-1] ≡ 0``, 而且这个零会穿过 ``u_i`` 传到 ``P`` 和 ``Q``,
+    整条支路一步都不会动 (与 style_ada 的 W_up=0 是同一个数学)。
+    所以最后一层用 ``std=0.002``: 第 0 步输出量级约 0.02, 与 DiT final
+    layer 的初始化同级, 既不淹没已训好的主干, 梯度也从第一步就非零。
+
+    ``β`` 必须乘 ``keep``。glyph_drop 时 ``g_tok`` 是 0, 乘性 γ 自然消失,
+    不加这句的话 β 会把丢弃样本重新灌成有条件, CFG 的 unconditional 分支被污染。
+    """
+
+    def __init__(self, style_dim, d_model, rank=32):
+        super().__init__()
+        self.rank = int(rank)
+        self.d_model = int(d_model)
+        self.P = nn.Linear(int(style_dim), self.rank, bias=False)
+        self.Q = nn.Linear(int(d_model), self.rank, bias=False)
+        self.film_net = nn.Sequential(
+            nn.Linear(self.rank + int(d_model), self.rank),
+            nn.SiLU(),
+            nn.Linear(self.rank, 2 * int(d_model)),
+        )
+        # 把风格化后的 token 解码回 VAE latent。一个 token 管 2×2 个 latent 像素,
+        # 所以输出 4×4=16 维, 再排成 (4,32,32)。只在单独训头时用, 主干前向不调用。
+        self.to_latent = nn.Linear(int(d_model), 4 * 2 * 2)
+        self.reset_output()
+
+    def reset_output(self):
+        """最后一层小随机, 其余保持构造时的默认初始化。
+
+        ``DiT_2Cond.initialize_weights`` 里的 ``_basic_init`` 会把所有 Linear
+        重新 xavier 一遍, 所以这里必须能被再调一次。
+        """
+        nn.init.normal_(self.film_net[-1].weight, std=0.002)
+        nn.init.zeros_(self.film_net[-1].bias)
+
+    def forward(self, g_tok, e_style, pos, keep=None):
+        B, N, D = g_tok.shape
+        if int(e_style.shape[0]) != B:
+            raise RuntimeError(
+                f"[LowRankSpatialStyleFiLM] batch 不一致: g_tok={B} vs e_style="
+                f"{int(e_style.shape[0])} (通常是 CFG 把 x 复制成 2B 但条件没跟上)")
+        if int(e_style.shape[-1]) != self.P.in_features:
+            raise RuntimeError(
+                f"[LowRankSpatialStyleFiLM] e_style 维度 {int(e_style.shape[-1])} "
+                f"!= 构造时的 {self.P.in_features}")
+        if pos.shape[1] != N:
+            raise ValueError(
+                f"[LowRankSpatialStyleFiLM] pos token 数 {pos.shape[1]} != g_tok {N}")
+        s = self.P(e_style.to(g_tok.dtype))                       # (B, r)
+        q = self.Q(g_tok)                                         # (B, N, r)
+        u = s.unsqueeze(1) * q                                    # (B, N, r)
+        z = torch.cat([u, pos.to(g_tok.dtype).expand(B, N, -1)], dim=-1)
+        gamma, beta = self.film_net(z).chunk(2, dim=-1)
+        if keep is not None:
+            beta = beta * keep.to(g_tok.dtype).view(-1, 1, 1)
+        self._last_styled = g_tok * (1 + gamma) + beta
+        out = self._last_styled
+        if keep is not None:
+            # 乘性 γ 在 g_tok=0 时自然消失, 但 β 是加性的。keep=0 的样本
+            # 必须整行归零, 否则丢弃的骨架条件被重新灌回来, CFG 的
+            # unconditional 分支不再是无条件。
+            out = out * keep.to(g_tok.dtype).view(-1, 1, 1)
+        return out
+
+    def decode_latent(self):
+        """forward 之后调用, 把风格化 token 还原成 (B,4,32,32) latent。"""
+        h = self._last_styled
+        B, N, _ = h.shape
+        grid = int(round(N ** 0.5))
+        pix = self.to_latent(h).view(B, grid, grid, 2, 2, 4)
+        return pix.permute(0, 5, 1, 3, 2, 4).contiguous().view(B, 4, grid * 2, grid * 2)
+
+
 class LocalStyleGlyphAdapter(nn.Module):
     """通路 B3（Phase 2）：**局部风格-骨架** cross-attention adapter。
 
@@ -703,6 +794,10 @@ class LocalStyleGlyphAdapter(nn.Module):
         nn.init.zeros_(self.out_proj.bias)
         nn.init.zeros_(self.style_qk[-1].weight)
         nn.init.zeros_(self.style_qk[-1].bias)
+        # sigmoid(0)=0.5, 乘 cap 0.2 = 初值 0.1。硬顶 0.2,
+        # 防止 out_proj 一离开 0 就把残差流改掉六成。
+        self.res_cap = 0.2
+        self.res_logit = nn.Parameter(torch.zeros(()))
 
         # 窗口注意力（可选）：每个位置只看局部邻域，更像"局部书写指引"，
         # 也更不容易退化成全局平均。window=0 → 全局 256-token attention。
@@ -751,8 +846,10 @@ class LocalStyleGlyphAdapter(nn.Module):
         bq = bq.view(B, H, hd).unsqueeze(2).to(q.dtype)
         gk = gk.view(B, H, hd).unsqueeze(2).to(k.dtype)
         bk = bk.view(B, H, hd).unsqueeze(2).to(k.dtype)
-        q = q * (1 + gq) + bq
-        k = k * (1 + gk) + bk
+        # 风格缩放夹在 [-1, 1]。不夹的话, 窗口里只有约 25 个 token,
+        # logits 在训练早期就会把 softmax 打溢出。
+        q = q * (1 + gq.clamp(-1, 1)) + bq.clamp(-1, 1)
+        k = k * (1 + gk.clamp(-1, 1)) + bk.clamp(-1, 1)
 
         scores = torch.matmul(q, k.transpose(-2, -1)) * (hd ** -0.5)     # (B,H,N,Nc)
         if self.win_mask is not None and Nc == self.win_mask.shape[-1]:
@@ -762,9 +859,10 @@ class LocalStyleGlyphAdapter(nn.Module):
         out = torch.matmul(attn, v)
         out = out.transpose(1, 2).reshape(B, N, D)
         out = self.out_proj(out)
+        # 固定 0.1, 不再用可学习门。可学习门在 800 步时仍把残差改掉一半。
         if keep is not None:
             out = out * keep.view(-1, 1, 1).to(out.dtype)
-        return q_src + out
+        return q_src + 0.1 * out
 
 
 class DiT_2Cond(nn.Module):
@@ -816,6 +914,14 @@ class DiT_2Cond(nn.Module):
         skel_head_enabled=False,
         use_glyph_cond=False,
         glyph_scale_init=0.4,
+        # 骨架拼进第一层卷积, 而不是加到 token 残差上。
+        # 新增的 4 个输入通道用 0 初始化, 第 0 步等于不加骨架。
+        glyph_concat_input=False,
+        # 骨架条件的时间门。0 = 关闭, 三路骨架条件全程全强度, 与旧 ckpt 逐位等价。
+        # >0 时 t 低于这个值, 输入残差、逐层注入、池化进 adaLN 的三路一起
+        # 线性收到 glyph_gate_floor。velocity 目标不变。
+        glyph_gate_t=0.0,
+        glyph_gate_floor=0.35,
         # v10b: 去掉 char 向量条件 (skel-g 即字条件时的干净因子分解: 结构=skel, 风格=callig)。
         # False 时不建 y_char_embedder/char_proj/char_scale, 4-way 退化为 callig 单向量因子
         # (drop_all/drop_one 都丢 callig); forward 仍接受 y_char 形参但忽略 (接口零破坏)。
@@ -940,6 +1046,10 @@ class DiT_2Cond(nn.Module):
         script_film=False,
         # 通路 B2：逐位置局部 FiLM（Phase 1，比 cross-attn 便宜 ~5x）
         spatial_film_rank=0,
+        # 低秩逐位置风格×几何乘法。0 = 关闭, 与旧 ckpt 逐位等价。
+        # 与 spatial_film 不同: 乘法写死 (s ⊙ q_i), 输出层用 std=0.002
+        # 而不是全零 (全零会让 P/Q 的梯度也是 0, 支路永远不动)。
+        lowrank_spatial_rank=0,
         # 通路 B3：局部风格-骨架 cross-attn adapter（Phase 2）
         local_ca_layers=0,      # 插入的 block 数（建议 2，不要 12）
         local_ca_heads=4,
@@ -947,6 +1057,11 @@ class DiT_2Cond(nn.Module):
         local_ca_q="g",         # "g" = 先风格化骨架（更安全，推荐）｜"x" = 主干侧（更标准）
         local_ca_window=0,      # >0 用窗口注意力（3/5 建议），0 = 全局 256-token
         local_ca_at=None,       # 显式 block 下标，如 "2,6"；优先于均匀分布
+        # local_ca 的实现代次：
+        #   "glyph_query" = QK-RMSNorm + 可学习 LayerScale 版（当前默认）
+        #   "legacy"      = 旧 LocalStyleGlyphAdapter（无 QK-Norm，风格乘在 Q/K 上）
+        # 评测端会**按 state_dict 键自动判定**，不必手填（见 model_io）。
+        local_ca_impl="glyph_query",
         # ---- 外挂 callig_spatial (已证伪死重, 保留为可配置开关以复评历史 ckpt) ----
         callig_spatial=False,
         callig_spatial_rank=64,
@@ -1009,6 +1124,9 @@ class DiT_2Cond(nn.Module):
         self.skel_head_enabled = bool(skel_head_enabled)
         self.use_glyph_cond = bool(use_glyph_cond)
         self.glyph_scale_init = float(glyph_scale_init)
+        self.glyph_concat_input = bool(glyph_concat_input)
+        self.glyph_gate_t = float(glyph_gate_t)
+        self.glyph_gate_floor = float(glyph_gate_floor)
         self.use_char_cond = bool(use_char_cond)
         self.char_proj_mode = char_proj_mode
         self.freeze_char_table = bool(freeze_char_table)
@@ -1018,7 +1136,10 @@ class DiT_2Cond(nn.Module):
             raise ValueError("cond_drop_all_prob + cond_drop_one_prob must be <= 1")
 
         # 用 modules 版（自带 RMSNorm/SwiGLU/RoPE/QK-Norm），不再依赖 timm。
-        self.x_embedder = M.PatchEmbed(input_size, patch_size, in_channels, hidden_size, bias=True)
+        # glyph_concat_input 时第一层多看 4 个骨架通道。输出通道不变,
+        # 否则 velocity 的形状和损失对不上。
+        _in_ch = int(in_channels) + (4 if self.glyph_concat_input else 0)
+        self.x_embedder = M.PatchEmbed(input_size, patch_size, _in_ch, hidden_size, bias=True)
         self.t_embedder = TimestepEmbedder(hidden_size)
 
         # g 向量因子: 仅在 factorized_add / factorized_cat 下可用。先给默认值,
@@ -1513,6 +1634,7 @@ class DiT_2Cond(nn.Module):
         self.style_hier = None
         self.script_film = None
         self.spatial_film = None
+        self.lowrank_spatial = None
         self.local_ca = None
         self._local_ca_map = {}
         self.local_ca_q = str(local_ca_q)
@@ -1530,11 +1652,18 @@ class DiT_2Cond(nn.Module):
             self.spatial_film = SpatialStyleFiLM(
                 self.cond_dim, hidden_size, rank=int(spatial_film_rank))
 
+        if int(lowrank_spatial_rank) > 0:
+            # 风格侧只用 e_callig (callig_embed_dim), 不拼书体。
+            # 书体已经烘进 g 本身, 再乘一次是同一个信号喂两遍。
+            self.lowrank_spatial = LowRankSpatialStyleFiLM(
+                _d_style, hidden_size, rank=int(lowrank_spatial_rank))
+
         # 局部通路的位置编码：x 与 g_tok 同为 grid×grid，共用一份 sincos。
-        # ⚠ 必须 **spatial_film 或 local_ca 任一开启** 就注册 —— 否则
+        # ⚠ 必须 **任一局部通路开启** 就注册 —— 否则
         #   "只开 spatial_film_rank 不开 local_ca_layers"（配置 s2d_spfilm）
         #   会在 forward 里 AttributeError: local_pos。
-        if int(spatial_film_rank) > 0 or int(local_ca_layers) > 0:
+        if (int(spatial_film_rank) > 0 or int(local_ca_layers) > 0
+                or int(lowrank_spatial_rank) > 0):
             # ⚠ 用独立名字 local_pos，避开 ctx_pos_g 的"属性已存在"register_buffer 坑
             _pe = get_2d_sincos_pos_embed(hidden_size, _grid)
             if "local_pos" in self.__dict__:
@@ -1559,8 +1688,10 @@ class DiT_2Cond(nn.Module):
                                  for i in range(n_lc)))
             self._local_ca_map = {blk: k for k, blk in enumerate(_at)}
             self.local_ca_at = _at
+            _lc_cls = (LocalStyleGlyphAdapter
+                       if str(local_ca_impl).lower() == "legacy" else GlyphQuery)
             self.local_ca = nn.ModuleList([
-                LocalStyleGlyphAdapter(
+                _lc_cls(
                     hidden_size, self.cond_dim,
                     num_heads=int(local_ca_heads), rank=int(local_ca_rank),
                     window=int(local_ca_window), grid_size=_grid)
@@ -1613,6 +1744,11 @@ class DiT_2Cond(nn.Module):
         w = self.x_embedder.proj.weight.data
         nn.init.xavier_uniform_(w.view([w.shape[0], -1]))
         nn.init.constant_(self.x_embedder.proj.bias, 0)
+        if self.glyph_concat_input:
+            # 后 4 个输入通道是骨架。置 0, 第 0 步骨架对输出没有贡献。
+            c0 = w.shape[1] - 4
+            if c0 > 0:
+                w[:, c0:].zero_()
 
         nn.init.normal_(self.y_callig_embedder.embedding_table.weight, std=0.02)
         # v10b: use_char_cond=False 时 char 侧整体不存在
@@ -1685,12 +1821,19 @@ class DiT_2Cond(nn.Module):
         if getattr(self, "spatial_film", None) is not None:
             nn.init.zeros_(self.spatial_film.net[-1].weight)
             nn.init.zeros_(self.spatial_film.net[-1].bias)
+        if getattr(self, "lowrank_spatial", None) is not None:
+            # 不能 zeros_: 全零会让 u_i 的下游梯度为 0, P/Q 一步不动。
+            self.lowrank_spatial.reset_output()
         if getattr(self, "local_ca", None) is not None:
             for _lc in self.local_ca:
-                nn.init.zeros_(_lc.out_proj.weight)
-                nn.init.zeros_(_lc.out_proj.bias)
-                nn.init.zeros_(_lc.style_qk[-1].weight)
-                nn.init.zeros_(_lc.style_qk[-1].bias)
+                # _basic_init 会把新模块的 Linear 重新 xavier 掉, 限幅初始值必须再设一次。
+                if hasattr(_lc, "reset"):
+                    _lc.reset()          # GlyphQuery
+                else:                    # legacy LocalStyleGlyphAdapter: 它自己那套
+                    nn.init.zeros_(_lc.out_proj.weight)
+                    nn.init.zeros_(_lc.out_proj.bias)
+                    nn.init.zeros_(_lc.style_qk[-1].weight)
+                    nn.init.zeros_(_lc.style_qk[-1].bias)
         # pair 残差表保持 zero-init（残差语义：step 0 退化为纯主效应）
         if getattr(self, "style_hier", None) is not None and str(
                 getattr(self.style_hier, "_pair_init", "zero")) == "zero":
@@ -1937,7 +2080,24 @@ class DiT_2Cond(nn.Module):
                 return _s
             return torch.cat([_s, e_script], dim=-1)
 
-        x = self.x_embedder(x)  # (N, T, D)
+        if self.glyph_concat_input:
+            # g 在上面的 drop 里已经被整样本置零。拼在图像后面,
+            # 第一层卷积的后 4 个通道初始为 0, 第 0 步等于没有骨架。
+            g_in = torch.zeros_like(x) if g is None else g
+            x = self.x_embedder(torch.cat([x, g_in], dim=1))
+        else:
+            x = self.x_embedder(x)  # (N, T, D)
+        # 时间门: 训练和采样传进来的 t 都乘过 TIME_SCALE=1000, 这里除回来。
+        # 阶梯, 不是斜坡。t≥glyph_gate_t 时为 1; 低于它时三路骨架条件
+        # 直接锁在 glyph_gate_floor。斜坡会让 t=0.1 仍有 0.36, 等于没关。
+        _gate = None
+        if self.glyph_gate_t > 0 and self.use_glyph_cond:
+            _tf = (t.float().flatten() / 1000.0).clamp(0, 1)
+            _w = torch.where(
+                _tf >= self.glyph_gate_t,
+                torch.ones_like(_tf),
+                torch.full_like(_tf, self.glyph_gate_floor))
+            _gate = _w.to(x.dtype).view(-1, 1, 1)
         g_tok = None            # 标准字形 token；未启用时保持 None（逐层注入会检查）
         if self.rope:
             # 位置信息由 RoPE 在 attention 内部注入，不再加到残差流上。
@@ -1963,6 +2123,11 @@ class DiT_2Cond(nn.Module):
             # ── S2 通路 B1：书体 FiLM（结构轴，全局 γ/β）────────────────────
             if self.script_film is not None and e_script is not None:
                 g_tok = self.script_film(g_tok, e_script, keep)
+            # ── 低秩逐位置风格×几何乘法 ─────────────────────────────────────
+            # 用纯 e_callig, 不用拼了书体的 _e_cond(): 书体已在 g 里。
+            # 放在 script_film 之后、spatial_film 之前, 三者互不覆盖。
+            if self.lowrank_spatial is not None:
+                g_tok = self.lowrank_spatial(g_tok, _e_callig(), self.local_pos, keep)
             # ── S2 通路 B2：逐位置局部 FiLM（Phase 1）───────────────────────
             if self.spatial_film is not None:
                 g_tok = self.spatial_film(g_tok, _e_cond(), self.local_pos, keep)
@@ -1977,7 +2142,9 @@ class DiT_2Cond(nn.Module):
                 # "uncond-g 分支"(drop 的样本)重新变成有条件 —— 必须**在风格调制
                 # 之后**把被丢弃样本的 g_tok 重新置零, 保持 drop 分支纯净。
                 g_tok = g_tok * keep.view(-1, 1, 1).to(g_tok.dtype)
-            x = x + self.glyph_scale * g_tok
+            if not self.glyph_concat_input:
+                # 拼接模式不再把骨架加到残差上。g_tok 仍留给交叉注意力当 K/V。
+                x = x + self.glyph_scale * (_gate * g_tok if _gate is not None else g_tok)
 
         # ── g 的全局内容向量 (进入条件向量 c) ────────────────────────────────
         # 把 g_tok 的 256 个 token 池化成一个向量, 作为 concat/add 的第二个操作数。
@@ -1985,6 +2152,10 @@ class DiT_2Cond(nn.Module):
         # (与"该样本没有 g 条件"的语义一致)。
         e_glyph_vec = None
         if self.glyph_vec_cond:
+            if _gate is not None and g_tok is not None:
+                # 池化进 adaLN 的那一路也要乘, 否则只弱了输入残差, 条件向量里
+                # 的骨架还是全强度。
+                g_tok = _gate * g_tok
             if g_tok is not None:
                 _pooled = (g_tok.amax(dim=1) if self.glyph_vec_pool == "max"
                            else g_tok.mean(dim=1))
@@ -2109,6 +2280,10 @@ class DiT_2Cond(nn.Module):
         # style_token_n>0 时拼接风格 token: 让**每一层**的 attention 都能直接
         # 看到书家风格, 而不是只通过"书家化骨架"间接进入(会被深层稀释)。
         # 每个 x 位置(query)因此可同时寻址: 局部字形(空间对应) + 书家风格。
+        # 逐层注入是第三路, 不经过 glyph_scale。g_tok 在上面已经乘过门
+        # (开了 glyph_vec_cond 时); 没开时在这里乘, 避免这一路漏掉。
+        if _gate is not None and not self.glyph_vec_cond and g_tok is not None:
+            g_tok = _gate * g_tok
         inject_ctx = g_tok
         if (getattr(self, "style_ctx_every_layer", False)
                 and g_tok is not None and style_tokens is not None):

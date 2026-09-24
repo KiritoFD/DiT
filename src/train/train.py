@@ -419,6 +419,9 @@ def main(args):
                             or getattr(args, 'skel_as_glyph_cond', False)),
             use_char_cond=not getattr(args, 'no_char_cond', False),
             glyph_scale_init=getattr(args, 'glyph_scale_init', 0.4),
+            glyph_concat_input=bool(getattr(args, 'glyph_concat_input', False)),
+            glyph_gate_t=float(getattr(args, 'glyph_gate_t', 0.0)),
+            glyph_gate_floor=float(getattr(args, 'glyph_gate_floor', 0.35)),
             glyph_drop_prob=getattr(args, 'glyph_drop_prob', 0.0),
             glyph_inject_layers=getattr(args, 'glyph_inject_layers', 0),
             glyph_inject_mode=getattr(args, 'glyph_inject_mode', 'adaln'),
@@ -460,12 +463,15 @@ def main(args):
             pair_residual=int(getattr(args, 'pair_residual', 1)),
             script_film=bool(getattr(args, 'script_film', False)),
             spatial_film_rank=int(getattr(args, 'spatial_film_rank', 0)),
+            lowrank_spatial_rank=int(getattr(args, 'lowrank_spatial_rank', 0)),
             local_ca_layers=int(getattr(args, 'local_ca_layers', 0)),
             local_ca_heads=int(getattr(args, 'local_ca_heads', 4)),
             local_ca_rank=int(getattr(args, 'local_ca_rank', 64)),
             local_ca_q=str(getattr(args, 'local_ca_q', 'g')),
             local_ca_window=int(getattr(args, 'local_ca_window', 0)),
             local_ca_at=getattr(args, 'local_ca_at', None),
+            # 实现代次: glyph_query(默认) / legacy。评测端不用管(按 state_dict 自动判定)。
+            local_ca_impl=str(getattr(args, 'local_ca_impl', 'glyph_query')),
             freeze_char_table=getattr(args, 'freeze_char_table', False),
             # ---- IDS 组件码本字嵌入 ----
             use_ids_char_embedder=getattr(args, 'use_ids_char_embedder', False),
@@ -506,11 +512,13 @@ def main(args):
         #    parse_known_args 漏传 argv ...)。S2 有 8 个开关, 更该显式自报家门。
         _s2_on = (int(getattr(model, 'hier_style', 0)) > 0
                   or getattr(model, 'spatial_film', None) is not None
+                  or getattr(model, 'lowrank_spatial', None) is not None
                   or getattr(model, 'local_ca', None) is not None)
         if _s2_on:
             _n_new = sum(p.numel() for n, p in model.named_parameters()
                          if n.startswith(("style_hier.", "script_film.",
-                                          "spatial_film.", "local_ca.")))
+                                          "spatial_film.", "lowrank_spatial.",
+                                          "local_ca.")))
             _n_all = sum(p.numel() for p in model.parameters())
             logger.info(
                 f"[hier-style] 三层语义分解已启用: num_pairs={getattr(model.style_hier, 'num_pairs', 0)} "
@@ -518,6 +526,8 @@ def main(args):
                 f"script_dim={getattr(model, 'script_embed_dim', 0)} "
                 f"pair_residual={getattr(getattr(model, 'style_hier', None), 'pair_residual', '-')} "
                 f"| 通路: script_film={model.script_film is not None} "
+                f"lowrank_spatial={'rank' + str(getattr(args, 'lowrank_spatial_rank', 0)) if model.lowrank_spatial is not None else False} "
+                f"glyph_gate={getattr(args, 'glyph_gate_t', 0)}->{getattr(args, 'glyph_gate_floor', 0.35)} "
                 f"spatial_film={'rank' + str(getattr(args, 'spatial_film_rank', 0)) if model.spatial_film is not None else False} "
                 f"local_ca={0 if model.local_ca is None else len(model.local_ca)}"
                 f"@{getattr(model, 'local_ca_at', [])}(q={getattr(model, 'local_ca_q', '-')},"
@@ -1457,9 +1467,18 @@ def main(args):
                                     skel_latent_shards_dir=(args.skel_latent_shards_dir
                                                             if getattr(args, 'skel_as_glyph_cond', False)
                                                             else None),
-                                    inst_skel_shards_dir=(getattr(args, 'inst_skel_shards_dir', '') or None
-                                                          if getattr(args, 'w_latent_skel', 0.0) > 0
-                                                          else None),
+                                    # ★ 条件增强: 多个骨架几何变体目录（逗号分隔）。
+                                    #   第一个必须是未扰动的原始条件。训练时每样本每步随机选一个。
+                                    skel_latent_shards_dirs=(
+                                        [d.strip() for d in str(
+                                            getattr(args, 'skel_latent_shards_dirs', '') or ''
+                                        ).split(',') if d.strip()]
+                                        if getattr(args, 'skel_as_glyph_cond', False) else None),
+                                    inst_skel_shards_dir=(
+                                        (getattr(args, 'inst_skel_shards_dir', '') or None)
+                                        if (getattr(args, 'w_latent_skel', 0.0) > 0
+                                            or getattr(args, 'w_std_mid', 0.0) > 0)
+                                        else None),
                                     callig_id_map=getattr(args, '_callig_map', None),
                                     callig_script_map=getattr(args, '_callig_script_map', None),
                                     aux_latent_shards_dirs=aux_dirs_of(args))
@@ -1865,9 +1884,20 @@ def main(args):
                         and pred_xstart_latent is not None):
                     _lc = int(getattr(args, 'latent_channels', 4))
                     _gt = x_latent[:, :_lc]
-                    _gsk = model_kwargs.get('g', None)
-                    loss_std_mid = _mid_struct_loss(
-                        pred_xstart_latent, _gt, _gsk, t.to(device))
+                    # 膨胀后的 GT 实例骨架 (20px)。不用标准骨架 g, 那是条件本身。
+                    _gsk = batch.get('inst_skel', None)
+                    if _gsk is None or _gsk.numel() == 0:
+                        if not getattr(_mid_struct_loss, "_empty_warned", False):
+                            _mid_struct_loss._empty_warned = True
+                            logger.warning(
+                                "[std_mid] batch['inst_skel'] 为空, 中程监督未生效。"
+                                "需要 --inst-skel-shards-dir 指向膨胀后的 GT 骨架。")
+                        loss_std_mid = torch.tensor(0.0, device=device)
+                    else:
+                        loss_std_mid = _mid_struct_loss(
+                            pred_xstart_latent, _gt,
+                            _gsk.to(device, non_blocking=True).float(),
+                            t.to(device))
 
                 intermediate_feats = loss_dict.get("intermediate_feats", None)
                 if x is not None and intermediate_feats is not None and repa_loss_fn is not None and args.w_repa > 0:
@@ -2059,8 +2089,9 @@ def main(args):
                                    if ema_model is not None else "")
                         logger.info(
                             f"(step={train_steps:07d}) Diff: {avg_d:.4f} | "
-                            f"c12[img={avg_c12i:.4f} canny={avg_c12c:.4f} skel={avg_c12s:.4f}] | "
                             f"REPA(w={wr:.2f}): {avg_r:.4f} | "
+                            + (f"StdMid(w={args.w_std_mid:.3f}): {avg_std_mid:.4f} | "
+                               if getattr(args, 'w_std_mid', 0.0) > 0 else "")
                             + (f"SkelStruct(w={args.w_latent_skel:.3f}): {avg_skel:.4f} | "
                                if getattr(args, 'w_latent_skel', 0.0) > 0 else "") +
                             f"LR: {opt.param_groups[0]['lr']:.2e} | {ema_log}"

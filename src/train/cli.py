@@ -246,6 +246,17 @@ def build_parser(argv=None):
                              "书体是**结构轴**, 与 g 同域 (g 本就按书体渲染), 因此走调制骨架\n"
                              "而不是进 adaLN (避免'同一信号喂两遍' = 12ch 失败的教训)。\n"
                              "需要 --hier-style > 0。")
+    parser.add_argument("--lowrank-spatial-rank", type=int, default=0,
+                        dest="lowrank_spatial_rank",
+                        help="低秩逐位置风格×几何乘法的秩 (0=关闭, 与旧 ckpt 逐位等价)。\n"
+                             "s=P·e_style, q_i=Q·g_tok_i, u_i=s⊙q_i, 再出逐位置 γ/β。\n"
+                             "只改 g_tok, 不动主干和全局 adaLN, 不加辅助损失。\n"
+                             "输出层 std=0.002 而不是全零: 全零会让 P/Q 梯度也是 0。\n"
+                             "β 乘 glyph_drop 的 keep, 否则丢弃样本被重新注入条件。")
+    parser.add_argument("--glyph-concat-input", type=_str_to_bool, default=False,
+                        dest="glyph_concat_input",
+                        help="骨架拼进第一层卷积的后 4 个通道, 不再加到 token 残差上。\n"
+                             "新增通道 0 初始化, 第 0 步等于没有骨架。丢弃仍走 glyph_drop_prob。")
     parser.add_argument("--spatial-film-rank", type=int, default=0, dest="spatial_film_rank",
                         help="[S2 通路 B2, Phase 1] 逐位置局部 FiLM 的低秩 rank (0=关闭)。\n"
                              "γ_i,β_i = f(e_cond, g_tok_i, pos_i) —— 每个 token 不同。\n"
@@ -258,6 +269,13 @@ def build_parser(argv=None):
                              "⚠ 建议 **2 层起步**, 不要 12 层全插 (v15c 每层插成本 +33% 且最差)。")
     parser.add_argument("--local-ca-at", type=str, default=None, dest="local_ca_at",
                         help="[S2] 显式指定 adapter 插在哪些 block, 如 '2,6'。优先于均匀分布。")
+    parser.add_argument("--local-ca-impl", choices=["glyph_query", "legacy"],
+                        default="glyph_query", dest="local_ca_impl",
+                        help="[S2] local_ca 的实现代次。\n"
+                             "  glyph_query = QK-RMSNorm + 可学习 LayerScale（当前默认；实测风格放大\n"
+                             "                10000x 时 logit 仍只有 2.25，关掉归一化会爆到 1e7）\n"
+                             "  legacy      = 旧 LocalStyleGlyphAdapter（无 QK-Norm）\n"
+                             "⚠ 评测端不用填这个 —— model_io 会按 state_dict 键自动判定。")
     parser.add_argument("--local-ca-heads", type=int, default=4, dest="local_ca_heads",
                         help="[S2] adapter 的注意力头数 (默认 4)。")
     parser.add_argument("--local-ca-rank", type=int, default=64, dest="local_ca_rank",
@@ -270,6 +288,13 @@ def build_parser(argv=None):
                         help="[S2] adapter 的窗口注意力大小 (0=全局 256-token)。\n"
                              "3 或 5 = 每个位置只看局部邻域, 更像'局部书写指引',\n"
                              "也更不容易退化成全局平均。")
+    parser.add_argument("--glyph-gate-t", type=float, default=0.0, dest="glyph_gate_t",
+                        help="骨架时间门的转折点, flow t 的口径 (0=关闭, 与旧行为逐位等价)。\n"
+                             "阶梯: t 高于它时三路骨架条件全强度; 低于它时直接锁在 --glyph-gate-floor。\n"
+                             "三路 = 输入残差、逐层注入、池化进 adaLN。velocity 目标不变。")
+    parser.add_argument("--glyph-gate-floor", type=float, default=0.35, dest="glyph_gate_floor",
+                        help="时间门在 t=0 的强度。0.35 是 E0 训完的 glyph_scale; "
+                             "0.15 是极端实验, 不是默认。")
     parser.add_argument("--style-ln", type=_str_to_bool, default=False, dest="style_ln",
                         help="[922/80 改动 1] 风格分支过**独立 LayerNorm** 再进 y_emb。\n"
                              "实测(D1): c = t_emb + y_emb 而 t_emb≈29–49 / y_emb≈16–23,\n"
@@ -603,6 +628,20 @@ def build_parser(argv=None):
                         help="实例 skel latent shards (--skel-as-glyph-cond 时必填)")
     parser.add_argument("--glyph-drop-prob", type=float, default=0.0,
                         help="g 条件训练期随机丢弃概率 (skel 模式建议 0.1, 保无 g 生成能力)")
+    parser.add_argument("--skel-latent-shards-dirs", type=str, default="",
+                        dest="skel_latent_shards_dirs",
+                        help="条件增强: 多个骨架几何变体目录（逗号分隔）。第一个必须是"
+                             "未扰动的原始条件。训练时每样本每步随机选一个，避免对单一几何过拟合。"
+                             "几何扰动（弹性/仿射/区域丢弃）必须离线预编码成 shards。")
+    parser.add_argument("--glyph-noise-scale", type=float, default=0.0,
+                        dest="glyph_noise_scale",
+                        help="条件噪声增强: 潜空间高斯噪声幅度 (0=关)。需与 --glyph-noise-prob 同时 >0 才生效; 对称 +/- , 不改变条件分布均值。")
+    parser.add_argument("--glyph-noise-prob", type=float, default=0.0,
+                        dest="glyph_noise_prob",
+                        help="条件噪声增强: 施加噪声的样本比例 (0=关)。")
+    parser.add_argument("--glyph-patch-drop", type=float, default=0.0,
+                        dest="glyph_patch_drop",
+                        help="局部随机 Mask (Cutout 式): 逐 latent patch 的丢弃概率 (0=关)。1 个 latent patch = 8x8 像素。")
     parser.add_argument("--glyph-inject-layers", type=int, default=0,
                         help="g 逐层注入层数 (0=仅输入层 token-add, s23 既有行为)")
     parser.add_argument("--glyph-embedder-depth", type=int, default=0,

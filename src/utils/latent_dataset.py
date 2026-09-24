@@ -71,6 +71,7 @@ class MCCDLatentDataset(Dataset):
     def __init__(self, csv_file, latent_shards_dir, img_root,
                  image_size=256, is_train=False, preload=False, load_image=True,
                  num_preload_workers=16, use_glyph_cond=False, skel_latent_shards_dir=None,
+                 skel_latent_shards_dirs=None,
                  callig_id_map=None, aux_latent_shards_dirs=None,
                  inst_skel_shards_dir=None, callig_script_map=None):
         self.samples = []
@@ -102,6 +103,9 @@ class MCCDLatentDataset(Dataset):
         self.latent_shards_dir = latent_shards_dir
         self.img_root = img_root
         self.skel_latent_shards_dir = skel_latent_shards_dir
+        # ★ 条件增强: 多个骨架几何变体目录。训练时**每个样本每步随机选一个**。
+        #   几何扰动离线预编码（像素域做，保真），选择在线随机（否则对单一几何过拟合）。
+        self.skel_latent_shards_dirs = [d for d in (skel_latent_shards_dirs or []) if d]
         self.image_size = image_size
         self.load_image = load_image
 
@@ -126,23 +130,33 @@ class MCCDLatentDataset(Dataset):
 
         # skel 条件: 优先 VAE latent shards (ControlNet latent 条件), 否则 PNG
         self._skel_id_to_shard = {}
-        if self.skel_latent_shards_dir:
-            _sk_shards = sorted(glob.glob(
-                os.path.join(self.skel_latent_shards_dir, "shard_*.npz")))
-            if not _sk_shards:
-                raise FileNotFoundError(
-                    f"No skel latent shards in {self.skel_latent_shards_dir}")
-            _probe2 = np.load(_sk_shards[0])
-            self.skel_latent_channels = int(_probe2["latents"].shape[1])
-            self.skel_latent_spatial = int(_probe2["latents"].shape[2])
-            _probe2.close()
-            for sp in _sk_shards:
-                d = np.load(sp)
-                for j, iid in enumerate(d["img_ids"]):
-                    self._skel_id_to_shard[int(iid)] = (sp, j)
-                d.close()
-            self._skel_names = self._load_shard_names(_sk_shards)
-            self._check_shard_names(self._skel_names, "std_path", "skel(g)")
+        # ★ 条件增强: 支持多个变体目录。变体 0 = 原始（未扰动）条件，务必放第一个。
+        self._skel_dirs = list(self.skel_latent_shards_dirs) or (
+            [self.skel_latent_shards_dir] if self.skel_latent_shards_dir else [])
+        self._skel_id_to_shard_list = []
+        if self._skel_dirs:
+            for _di, _sd in enumerate(self._skel_dirs):
+                _sk_shards = sorted(glob.glob(os.path.join(_sd, "shard_*.npz")))
+                if not _sk_shards:
+                    raise FileNotFoundError(f"No skel latent shards in {_sd}")
+                _probe2 = np.load(_sk_shards[0])
+                self.skel_latent_channels = int(_probe2["latents"].shape[1])
+                self.skel_latent_spatial = int(_probe2["latents"].shape[2])
+                _probe2.close()
+                _m = {}
+                for sp in _sk_shards:
+                    d = np.load(sp)
+                    for j, iid in enumerate(d["img_ids"]):
+                        _m[int(iid)] = (sp, j)
+                    d.close()
+                self._skel_id_to_shard_list.append(_m)
+                if _di == 0:
+                    self._skel_id_to_shard = _m          # 兼容既有单目录逻辑
+                    self._skel_names = self._load_shard_names(_sk_shards)
+                    self._check_shard_names(self._skel_names, "std_path", "skel(g)")
+            if len(self._skel_dirs) > 1:
+                print(f"[skel-aug] 载入 {len(self._skel_dirs)} 个骨架变体目录，"
+                      f"训练时每样本每步随机选一个: {[os.path.basename(d) for d in self._skel_dirs]}")
             if not self._skel_names and len(self._skel_id_to_shard) > \
                     10 * max(1, len(self.samples)):
                 print(f"[skel-guard] ⚠ {self.skel_latent_shards_dir} 覆盖 "
@@ -202,6 +216,7 @@ class MCCDLatentDataset(Dataset):
         self._latents = None
         self._imgs = None
         self._skel_latents = None
+        self._skel_latents_list = []
         self._inst_skel_latents = None
         self._aux_latents = None
         if preload:
@@ -318,21 +333,31 @@ class MCCDLatentDataset(Dataset):
 
         # --- skel latent shards (latent 条件) ---
         if self._skel_id_to_shard:
-            self._skel_latents = np.empty(
-                (n, self.skel_latent_channels, self.skel_latent_spatial,
-                 self.skel_latent_spatial), dtype=np.float32)
-            by_sk = defaultdict(list)
-            for i, iid in enumerate(ids):
-                sp, j = self._skel_id_to_shard[iid]
-                by_sk[sp].append((i, j))
-            for sp, items in by_sk.items():
-                d = np.load(sp)
-                lat = d["latents"]
-                for i, j in items:
-                    self._skel_latents[i] = lat[j]
-                d.close()
-            print(f"[preload] skel latents {n:,} loaded in {time.time() - t0:.1f}s "
-                  f"({self._skel_latents.nbytes / 1024 ** 3:.1f}G)")
+            self._skel_latents_list = []
+            for _di, _m in enumerate(self._skel_id_to_shard_list):
+                _arr = np.empty(
+                    (n, self.skel_latent_channels, self.skel_latent_spatial,
+                     self.skel_latent_spatial), dtype=np.float32)
+                by_sk = defaultdict(list)
+                for i, iid in enumerate(ids):
+                    if iid in _m:
+                        sp, j = _m[iid]
+                        by_sk[sp].append((i, j))
+                _miss = n - sum(len(v) for v in by_sk.values())
+                if _miss:
+                    print(f"[preload] ⚠ 变体{_di} 有 {_miss} 个 id 在 shard 里找不到 "
+                          f"-> 这些样本的 g 会是全 0")
+                for sp, items in by_sk.items():
+                    d = np.load(sp)
+                    lat = d["latents"]
+                    for i, j in items:
+                        _arr[i] = lat[j]
+                    d.close()
+                self._skel_latents_list.append(_arr)
+            self._skel_latents = self._skel_latents_list[0]   # 兼容既有单目录读取
+            _tot = sum(x.nbytes for x in self._skel_latents_list)
+            print(f"[preload] skel latents {n:,} x {len(self._skel_latents_list)} 变体 "
+                  f"loaded in {time.time() - t0:.1f}s ({_tot / 1024 ** 3:.1f}G)")
 
         # --- inst-skel latent shards (结构 loss target) ---
         if self._inst_id_to_shard:
@@ -373,7 +398,7 @@ class MCCDLatentDataset(Dataset):
 
         total = (self._latents.nbytes
                  + (self._imgs.nbytes if self._imgs is not None else 0)
-                 + (self._skel_latents.nbytes if self._skel_latents is not None else 0)
+                 + sum(x.nbytes for x in getattr(self, "_skel_latents_list", []))
                  + (self._inst_skel_latents.nbytes if self._inst_skel_latents is not None else 0)
                  + (sum(a.nbytes for a in self._aux_latents)
                     if self._aux_latents is not None else 0))
@@ -439,7 +464,13 @@ class MCCDLatentDataset(Dataset):
                 img_t = torch.from_numpy(self._imgs[idx]).permute(2, 0, 1)
             skel_lat = torch.empty(0)
             if self._skel_latents is not None:
-                skel_lat = torch.from_numpy(self._skel_latents[idx])
+                _ls = getattr(self, '_skel_latents_list', None)
+                if _ls and len(_ls) > 1:
+                    # ★ 条件增强: 每样本每步随机选一个几何变体
+                    _k = int(np.random.randint(len(_ls)))
+                    skel_lat = torch.from_numpy(_ls[_k][idx])
+                else:
+                    skel_lat = torch.from_numpy(self._skel_latents[idx])
             inst_skel = torch.empty(0)
             if self._inst_skel_latents is not None:
                 inst_skel = torch.from_numpy(self._inst_skel_latents[idx])
