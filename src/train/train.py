@@ -472,6 +472,12 @@ def main(args):
             local_ca_at=getattr(args, 'local_ca_at', None),
             # 实现代次: glyph_query(默认) / legacy。评测端不用管(按 state_dict 自动判定)。
             local_ca_impl=str(getattr(args, 'local_ca_impl', 'glyph_query')),
+            # ★ 必须透传: 否则模型建出来没有 deform_skel -> 形变与中间监督静默失效。
+            #   (冒烟测试的 [deform] 告警就是这么抓到的; 与 local_ca_impl 漏透传同源。)
+            deform_skel=int(getattr(args, 'deform_skel', 0)),
+            deform_width=int(getattr(args, 'deform_width', 64)),
+            deform_max_off=float(getattr(args, 'deform_max_off', 3.0)),
+            deform_coarse=int(getattr(args, 'deform_coarse', 8)),
             freeze_char_table=getattr(args, 'freeze_char_table', False),
             # ---- IDS 组件码本字嵌入 ----
             use_ids_char_embedder=getattr(args, 'use_ids_char_embedder', False),
@@ -1490,10 +1496,14 @@ def main(args):
                                             getattr(args, 'skel_latent_shards_dirs', '') or ''
                                         ).split(',') if d.strip()]
                                         if getattr(args, 'skel_as_glyph_cond', False) else None),
+                                    # ⚠ 这里必须把 w_deform_skel 也算进去: 否则开了形变监督
+                                    #   但 w_latent_skel/w_std_mid 都为 0 时, batch['inst_skel']
+                                    #   根本不会被加载 -> 中间监督静默失效(本项目反复踩的接线缺口)。
                                     inst_skel_shards_dir=(
                                         (getattr(args, 'inst_skel_shards_dir', '') or None)
                                         if (getattr(args, 'w_latent_skel', 0.0) > 0
-                                            or getattr(args, 'w_std_mid', 0.0) > 0)
+                                            or getattr(args, 'w_std_mid', 0.0) > 0
+                                            or getattr(args, 'w_deform_skel', 0.0) > 0)
                                         else None),
                                     callig_id_map=getattr(args, '_callig_map', None),
                                     callig_script_map=getattr(args, '_callig_script_map', None),
@@ -1962,6 +1972,48 @@ def main(args):
                             pred_xstart_latent, _yp, t.to(device))
                         loss = loss + getattr(args, 'w_style_rank', 0.0) * loss_style_rank
 
+                # ---- DeformSkel 中间监督: 形变后的骨架应逼近**该书家的 GT 骨架** ----
+                # 这是本项目第一个"自带稠密监督"的风格干预: 目标数据(实例骨架)现成,
+                # 且 step0 时 g'=g_std != g_gt -> 立刻有梯度, 不像其它风格模块那样学不动。
+                loss_deform = torch.tensor(0.0, device=device)
+                _DEFORM_EMA = globals().setdefault('_DEFORM_EMA', {'loss': None, 'off': None})
+                if getattr(args, 'w_deform_skel', 0.0) > 0:
+                    _dm = getattr(model, 'deform_skel', None)
+                    if _dm is None:
+                        if not globals().get('_WARNED_DEFORM', False):
+                            globals()['_WARNED_DEFORM'] = True
+                            logger.warning("[deform] w_deform_skel>0 但模型没有 deform_skel "
+                                           "-> 本项静默失效(已踩过多次, 故只首次告警)")
+                    elif getattr(_dm, 'last_out', None) is None:
+                        if not globals().get('_WARNED_DEFORM2', False):
+                            globals()['_WARNED_DEFORM2'] = True
+                            logger.warning("[deform] deform_skel.last_out 为空 -> 形变没被调用"
+                                           "(compile 下属性写入可能被吞) -> 本项静默失效")
+                    else:
+                        _gsk = batch.get('inst_skel', None)
+                        if _gsk is None:
+                            if not globals().get('_WARNED_DEFORM3', False):
+                                globals()['_WARNED_DEFORM3'] = True
+                                logger.warning("[deform] batch['inst_skel'] 为空 "
+                                               "(需 --inst-skel-shards-dir 指向 GT 骨架) "
+                                               "-> 中间监督静默失效")
+                        else:
+                            _g2 = _dm.last_out
+                            _tgt = _gsk.to(device, non_blocking=True).float()
+                            if _g2.shape == _tgt.shape:
+                                loss_deform = (_g2 - _tgt).pow(2).mean()
+                                loss = loss + getattr(args, 'w_deform_skel', 0.0) * loss_deform
+                                _v = float(loss_deform.detach())
+                                _DEFORM_EMA['loss'] = (_v if _DEFORM_EMA['loss'] is None else 0.9 * _DEFORM_EMA['loss'] + 0.1 * _v)
+                                _os = _dm.offset_stats()
+                                if _os:
+                                    _DEFORM_EMA['off'] = (_os['mean_abs'] if _DEFORM_EMA['off'] is None else 0.9 * _DEFORM_EMA['off'] + 0.1 * _os['mean_abs'])
+                            else:
+                                if not globals().get('_WARNED_DEFORM4', False):
+                                    globals()['_WARNED_DEFORM4'] = True
+                                    logger.warning(f"[deform] 形状不匹配 g'={tuple(_g2.shape)} "
+                                                   f"target={tuple(_tgt.shape)} -> 跳过")
+
                 # Stage 3 / v15 锚定正则: 把书家风格参数拉向预训练目标, 防"冻主干
                 # 只训风格"时塌缩/漂移 (styletok 实测无护栏则 strict 掉头)。
                 # λ 由 --style-anchor-weight 控制, 口径由 --style-anchor-mode 决定。
@@ -2120,6 +2172,10 @@ def main(args):
                             f"REPA(w={wr:.2f}): {avg_r:.4f} | "
                             + (f"StdMid(w={args.w_std_mid:.3f}): {avg_std_mid:.4f} | "
                                if getattr(args, 'w_std_mid', 0.0) > 0 else "")
+                            + (f"Deform(w={args.w_deform_skel:.2f}): "
+                               f"{(globals().get('_DEFORM_EMA') or {}).get('loss') or 0.0:.4f} "
+                               f"off={((globals().get('_DEFORM_EMA') or {}).get('off') or 0.0):.4f} | "
+                               if getattr(args, 'w_deform_skel', 0.0) > 0 else "")
                             + (f"SkelStruct(w={args.w_latent_skel:.3f}): {avg_skel:.4f} | "
                                if getattr(args, 'w_latent_skel', 0.0) > 0 else "") +
                             f"LR: {opt.param_groups[0]['lr']:.2e} | {ema_log}"

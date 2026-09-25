@@ -628,6 +628,18 @@ def build_parser(argv=None):
                         help="实例 skel latent shards (--skel-as-glyph-cond 时必填)")
     parser.add_argument("--glyph-drop-prob", type=float, default=0.0,
                         help="g 条件训练期随机丢弃概率 (skel 模式建议 0.1, 保无 g 生成能力)")
+    parser.add_argument("--w-deform-skel", type=float, default=0.0,
+                        dest="w_deform_skel",
+                        help="DeformSkel 中间监督权重: 形变后的骨架应逼近该书家的 GT 骨架。"
+                             "需同时开 --deform-skel 1 且 --inst-skel-shards-dir 指向 GT 骨架.")
+    parser.add_argument("--deform-skel", type=int, default=0, dest="deform_skel",
+                        help="启用 DeformSkel(用书家风格形变标准骨架). 默认关.")
+    parser.add_argument("--deform-width", type=int, default=64, dest="deform_width")
+    parser.add_argument("--deform-max-off", type=float, default=3.0,
+                        dest="deform_max_off",
+                        help="偏移场限幅(latent 像素); 32 网格下 1px ~ 8 图像px")
+    parser.add_argument("--deform-coarse", type=int, default=8, dest="deform_coarse",
+                        help="在低分辨率上预测偏移再上采样 -> 偏移场平滑")
     parser.add_argument("--skel-latent-shards-dirs", type=str, default="",
                         dest="skel_latent_shards_dirs",
                         help="条件增强: 多个骨架几何变体目录（逗号分隔）。第一个必须是"

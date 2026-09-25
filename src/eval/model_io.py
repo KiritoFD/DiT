@@ -145,6 +145,10 @@ def build_model_from_args(a, device, **overrides):
         local_ca_at=g("local_ca_at", None),
         # ★ 必须透传: 否则 load_model_from_ckpt 的自动判定白做, 旧 ckpt 仍会 strict 失败。
         local_ca_impl=str(g("local_ca_impl", "glyph_query")),
+        deform_skel=gi("deform_skel", 0),
+        deform_width=gi("deform_width", 64),
+        deform_max_off=gf("deform_max_off", 3.0),
+        deform_coarse=gi("deform_coarse", 8),
         callig_spatial=bool(g("callig_spatial", False)),
         callig_spatial_rank=gi("callig_spatial_rank", 64),
         freeze_char_table=bool(g("freeze_char_table", False)),
