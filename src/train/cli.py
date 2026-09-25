@@ -640,6 +640,10 @@ def build_parser(argv=None):
     parser.add_argument("--deform-max-off", type=float, default=3.0,
                         dest="deform_max_off",
                         help="偏移场限幅(latent 像素); 32 网格下 1px ~ 8 图像px")
+    parser.add_argument("--deform-trainable", type=int, default=1, dest="deform_trainable",
+                        help="形变头是否参与训练(默认 1=解冻). 0=冻结(此时更该直接预算成 shards)")
+    parser.add_argument("--deform-lr-scale", type=float, default=0.1, dest="deform_lr_scale",
+                        help="形变头 lr = 主 lr x 此系数(默认 0.1). 它已预训练好, 用主 lr 会破坏它")
     parser.add_argument("--deform-ckpt", type=str, default="", dest="deform_ckpt",
                         help="离线训好的形变头权重(tools/train_deform_standalone.py 产出)。风格源必须一致(callig_emb_pretrained_50k.pt)。")
     parser.add_argument("--deform-residual", type=int, default=0, dest="residual",

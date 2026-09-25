@@ -1421,6 +1421,31 @@ def main(args):
             _fused = False
         logger.info(f"[optim] AdamW lr={args.lr} wd={args.weight_decay}")
 
+    # ★ 形变头单独一组 lr（v18-skelnet）。
+    #   为什么单独一组: 它是在**另一个目标**(aux_skel3)上预训练好的, 已经在一个好状态;
+    #   扩散 loss 对它是"扰动信号"而非有用信号 -> 用主 lr 会在头几百步破坏它。
+    #   LambdaLR 按各组的**初始 lr** 等比缩放 -> 单独设初值即可自动跟随 cosine。
+    if getattr(model, "deform_skel", None) is not None:
+        _dtr = bool(int(getattr(args, "deform_trainable", 1)))
+        for _p in model.deform_skel.parameters():
+            _p.requires_grad_(_dtr)
+        if _dtr:
+            _scale = float(getattr(args, "deform_lr_scale", 0.1))
+            _did = {id(p) for p in model.deform_skel.parameters()}
+            _pg0 = opt.param_groups[0]
+            _rest = [p for p in _pg0["params"] if id(p) not in _did]
+            _dm = [p for p in _pg0["params"] if id(p) in _did]
+            if _dm:
+                _pg0["params"] = _rest
+                _new = {k: v for k, v in _pg0.items() if k != "params"}
+                _new["params"] = _dm
+                _new["lr"] = args.lr * _scale
+                opt.add_param_group(_new)
+                logger.info(f"[optim] deform_skel 单独一组: lr={args.lr * _scale:.2e} "
+                            f"({_scale}x 主 lr), {sum(p.numel() for p in _dm):,} 参数")
+        else:
+            logger.info("[optim] deform_skel **冻结**（--deform-trainable 0）")
+
     # Restore optimizer state + step counter for full resume. If --resume-lr is given,
     # override the LR so we can test whether a smaller LR avoids the NaN.
     # ★ [2026-09-21] --fresh-scheduler: 只训**与预训练参数不重合**的新模块（典型: few-shot
