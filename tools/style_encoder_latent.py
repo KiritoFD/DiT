@@ -46,6 +46,12 @@ ap.add_argument('--kneg', type=int, default=8)
 ap.add_argument('--use-nce', type=int, default=1)
 ap.add_argument('--nce-w', type=float, default=1.0)
 ap.add_argument('--lr', type=float, default=8e-4)
+ap.add_argument('--ch', type=int, default=96, help='首层通道数(容量)')
+ap.add_argument('--drop', type=float, default=0.0, help='embedding dropout')
+ap.add_argument('--noise', type=float, default=0.0, help='latent 输入加噪(数据增强)')
+ap.add_argument('--wd', type=float, default=0.02)
+# ⚠ 对比实验必须分开存: 第二版曾把更好的大模型权重覆盖掉。
+ap.add_argument('--out', type=str, default='assets/style_enc_latent.pt')
 ap.add_argument('--eval-every', type=int, default=2000)
 a = ap.parse_args()
 
@@ -104,7 +110,7 @@ print('[2] 按字 test %d (字 %d 个) / 随机 test %d / 训练 %d'
 
 class Enc(nn.Module):
     """(4,32,32) -> 256 维归一化 embedding + 45 类 logits"""
-    def __init__(self, nc=len(CALLS), d=256, ch=96):
+    def __init__(self, nc=len(CALLS), d=256, ch=96, drop=0.0):
         super().__init__()
         self.body = nn.Sequential(
             nn.Conv2d(4, ch, 3, 1, 1), nn.GELU(), nn.GroupNorm(8, ch),
@@ -113,18 +119,19 @@ class Enc(nn.Module):
             nn.Conv2d(ch * 4, ch * 4, 3, 1, 1), nn.GELU(), nn.GroupNorm(16, ch * 4),
             nn.AdaptiveAvgPool2d(1))
         self.head = nn.Linear(ch * 4, d)
+        self.drop = nn.Dropout(drop)
         self.clf = nn.Linear(d, nc)
 
     def emb(self, x):
-        return F.normalize(self.head(self.body(x).flatten(1)), dim=-1)
+        return F.normalize(self.head(self.drop(self.body(x).flatten(1))), dim=-1)
 
     def forward(self, x):
         z = self.emb(x)
         return z, self.clf(z)
 
 
-model = Enc().to(DEV)
-opt = torch.optim.AdamW(model.parameters(), lr=a.lr, weight_decay=0.02)
+model = Enc(ch=a.ch, drop=a.drop).to(DEV)
+opt = torch.optim.AdamW(model.parameters(), lr=a.lr, weight_decay=a.wd)
 sched = torch.optim.lr_scheduler.CosineAnnealingLR(opt, T_max=a.steps)
 print('[2] 参数 %s' % format(sum(p.numel() for p in model.parameters()), ','), flush=True)
 
@@ -206,6 +213,8 @@ t0 = time.time()
 for step in range(a.steps):
     bi = np.random.randint(0, len(TRX), a.batch)
     x = TRX[bi]
+    if a.noise > 0:      # latent 输入加噪 = 最便宜的数据增强，专为对抗过拟合
+        x = x + a.noise * torch.randn_like(x)
     z, lg = model(x)
     loss = F.cross_entropy(lg, torch.from_numpy(TRC[bi]).to(DEV))
     if a.use_nce:

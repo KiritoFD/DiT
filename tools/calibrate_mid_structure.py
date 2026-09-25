@@ -61,13 +61,13 @@ def main():
                    ("char_embed_dim", 384), ("condition_fusion", "factorized_cat")):
         if getattr(_ns, _k, None) is None:
             setattr(_ns, _k, _v)
-    _n_aux = max(0, (in_ch - int(_ns.latent_channels)) // 4)
-    if _n_aux:
-        _ns.aux_latent_shards_dirs = ",".join(["x"] * _n_aux)
-    model = _cfs.build_model_from_args(_ns, dev)
-    model.load_state_dict(sd, strict=True)
-    model.eval()
-    print(f"[model] {a.ckpt}  in_ch={in_ch}  loaded strict=True")
+    # ★ 改用项目自带的 load_model_from_ckpt —— 手搓 build+load_state_dict 会在
+    #   strict=True 下报 "Unexpected key(s): y_callig_embedder.null_embed",
+    #   因为该 key 只在 freeze_callig_table=True (freeze_table()) 时才存在。
+    #   model_io 已处理: torch.compile 的 `_orig_mod.` 前缀 + freeze_table + strict 护栏。
+    from src.eval.model_io import load_model_from_ckpt
+    model, _ns = load_model_from_ckpt(a.ckpt, device=dev, use_ema=True, verbose=True)
+    print(f"[model] {a.ckpt}  in_ch={in_ch}  loaded via src.eval.model_io (strict=True)")
 
     # 数据: 用 MCCDLatentDataset 取 N 条 (latent + g + y_callig + y_char)
     from src.utils.latent_dataset import MCCDLatentDataset

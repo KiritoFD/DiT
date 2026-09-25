@@ -64,15 +64,32 @@ def _dilate3(binary):
     return binary_dilation(binary, structure=se, iterations=3)
 
 
-def process_one(img_path, skel1_path, skel3_path):
-    """读 GT 图 → 二值(笔画=暗) → 1px 骨架 → 3px 膨胀 → 存 白底黑线 PNG."""
+def _thicken(binary, width):
+    """1px 骨架 -> **精确** width 像素宽的粗骨架。
+
+    为什么不用 _dilate3 的迭代膨胀: 8-邻域膨胀 n 次得到的宽度是 ~2n+1 且随
+    局部走向变化 (斜线比直线粗), 无法精确对准目标宽度。EDT 半径法给出的是
+    欧氏意义上的等宽笔画带, 与目标宽度严格一致, 且只需一次变换 (更快)。
+
+    用法: distance_transform_edt(~binary) 给每个**背景**像素到最近骨架像素的
+    欧氏距离; 保留 d <= (width-1)/2 即得总宽 ≈ width 的带。
+    """
+    if width <= 1:
+        return binary
+    from scipy.ndimage import distance_transform_edt
+    d = distance_transform_edt(~binary)
+    return d <= (float(width) - 1.0) / 2.0
+
+
+def process_one(img_path, skel1_path, skel3_path, width=3):
+    """读 GT 图 → 二值(笔画=暗) → 1px 骨架 → width px 加粗 → 存 白底黑线 PNG."""
     global _SKEL
     if _SKEL is None:
         _SKEL = _skel_impl()
     img = np.asarray(Image.open(img_path).convert("L"))
     binary = img < 127  # 白底黑字: 暗像素 = 笔画
     skel1 = _SKEL(binary)
-    skel3 = _dilate3(skel1)
+    skel3 = _thicken(skel1, width)
     # 存为 白底黑线 (线=0, 底=255): 与 GT 书法图同极性, VAE 空间对齐
     arr3 = np.where(skel3, 0, 255).astype(np.uint8)
     Image.fromarray(arr3, mode="L").save(skel3_path)
@@ -84,7 +101,16 @@ def process_one(img_path, skel1_path, skel3_path):
 # ---------------------------------------------------------------------------
 # Phase 1/2: 多进程 提取+dilate 存 PNG (跳过已存在)
 # ---------------------------------------------------------------------------
-def build_pngs(csv_file, img_root, skel1_dir, skel3_dir, workers):
+def build_pngs(csv_file, img_root, skel1_dir, skel3_dir, workers, width=3,
+               id_width=0):
+    """id_width: 文件名补零位数。0=不补零(历史 fame 数据集), 6=000000.png(50k 数据集)。
+
+    ⚠ 这个坑踩过: 50k 的 image_path 是 `data/50k/imgs/000000.png` (6 位补零),
+    而这里原本拼 f"{iid}.png" -> "0.png" 打不开 -> 静默全零/FileNotFound。
+    """
+    def _name(iid):
+        return f"{iid:0{id_width}d}.png" if id_width > 0 else f"{iid}.png"
+
     os.makedirs(skel1_dir, exist_ok=True)
     os.makedirs(skel3_dir, exist_ok=True)
     ids = []
@@ -98,11 +124,11 @@ def build_pngs(csv_file, img_root, skel1_dir, skel3_dir, workers):
 
     todo = []
     for iid in ids:
-        sk3 = os.path.join(skel3_dir, f"{iid}.png")
+        sk3 = os.path.join(skel3_dir, _name(iid))
         if os.path.exists(sk3):
             continue
-        todo.append((os.path.join(img_root, f"{iid}.png"),
-                     os.path.join(skel1_dir, f"{iid}.png"), sk3))
+        todo.append((os.path.join(img_root, _name(iid)),
+                     os.path.join(skel1_dir, _name(iid)), sk3, width))
     print(f"[skel] todo: {len(todo)} / {len(ids)} (skip existing)", flush=True)
 
     import multiprocessing as mp
@@ -120,7 +146,10 @@ def build_pngs(csv_file, img_root, skel1_dir, skel3_dir, workers):
 # ---------------------------------------------------------------------------
 # Phase 3: VAE encode → latent shards (跳过已完成 shard)
 # ---------------------------------------------------------------------------
-def build_latents(ids, skel3_dir, latent_out, vae_path, shard_size=5000, scaling=0.18215):
+def build_latents(ids, skel3_dir, latent_out, vae_path, shard_size=5000, scaling=0.18215,
+                  id_width=0):
+    def _name(iid):
+        return f"{iid:0{id_width}d}.png" if id_width > 0 else f"{iid}.png"
     import torch
     from diffusers.models import AutoencoderKL
 
@@ -167,7 +196,7 @@ def build_latents(ids, skel3_dir, latent_out, vae_path, shard_size=5000, scaling
 
     with torch.no_grad():
         for iid in todo_ids:
-            a = np.asarray(Image.open(os.path.join(skel3_dir, f"{iid}.png")).convert("L"))
+            a = np.asarray(Image.open(os.path.join(skel3_dir, _name(iid))).convert("L"))
             batch.append((iid, a))
             n_done += 1
             if len(batch) >= 64:
@@ -185,19 +214,28 @@ def main():
     ap.add_argument("--skel1-dir", default="data/skel/final_skel1")
     ap.add_argument("--skel3-dir", default="data/skel/final_skel3")
     ap.add_argument("--latent-out", default="data/skel/final_skel_latents_mid_clean")
-    ap.add_argument("--vae-path", default="data/pretrained/sd-vae-ft-ema")
+    ap.add_argument("--vae-path",
+                    default="data/pretrained/pretrained_models/sd-vae-ft-ema")
     ap.add_argument("--workers", type=int, default=32)
     ap.add_argument("--latent-src", default="3px", choices=["1px", "3px"],
                     help="编码哪一套骨架进 latent。1px = 细骨架(1px PNG), "
                          "3px = 膨胀后(默认, 与历史 ControlNet 一致)。"
                          "PNG 阶段两套都会生成, 这里只选 latent 的输入源。")
+    # ★ 骨架加粗宽度 (像素)。默认 3 = 历史行为 (迭代膨胀的近似宽度)。
+    #   中程结构载体实测最优 = 20px (两条独立证据:
+    #     ① probe_coarse_skel.py 的 latent 残差扫描在 20px 取到最小值;
+    #     ② mid_skel_iou.py 统计 GT 真实笔画宽度中位数 = 19.4px)。
+    ap.add_argument("--dilate-width", type=int, default=3, dest="dilate_width")
+    ap.add_argument("--id-width", type=int, default=0, dest="id_width",
+                    help="文件名补零位数: 6=000000.png (50k 数据集), 0=不补零 (fame)")
     args = ap.parse_args()
 
     t_all = time.time()
-    ids = build_pngs(args.csv, args.img_root, args.skel1_dir, args.skel3_dir, args.workers)
+    ids = build_pngs(args.csv, args.img_root, args.skel1_dir, args.skel3_dir,
+                     args.workers, args.dilate_width, args.id_width)
     src_dir = args.skel1_dir if args.latent_src == "1px" else args.skel3_dir
     print(f"[skel] latent-src = {args.latent_src} -> {src_dir}", flush=True)
-    build_latents(ids, src_dir, args.latent_out, args.vae_path)
+    build_latents(ids, src_dir, args.latent_out, args.vae_path, id_width=args.id_width)
     print(f"[skel] ALL DONE in {time.time()-t_all:.0f}s", flush=True)
 
 
