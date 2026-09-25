@@ -147,6 +147,7 @@ def build_model_from_args(a, device, **overrides):
         local_ca_impl=str(g("local_ca_impl", "glyph_query")),
         deform_skel=gi("deform_skel", 0),
         deform_width=gi("deform_width", 64),
+        deform_grid=gi("deform_grid", 32),
         deform_max_off=gf("deform_max_off", 3.0),
         deform_coarse=gi("deform_coarse", 8),
         residual=gi("residual", 0),

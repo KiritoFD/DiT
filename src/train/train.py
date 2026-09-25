@@ -476,6 +476,7 @@ def main(args):
             #   (冒烟测试的 [deform] 告警就是这么抓到的; 与 local_ca_impl 漏透传同源。)
             deform_skel=int(getattr(args, 'deform_skel', 0)),
             deform_width=int(getattr(args, 'deform_width', 64)),
+            deform_grid=int(getattr(args, 'deform_grid', 32)),
             deform_max_off=float(getattr(args, 'deform_max_off', 3.0)),
             deform_coarse=int(getattr(args, 'deform_coarse', 8)),
             residual=int(getattr(args, 'residual', 0)),

@@ -635,6 +635,8 @@ def build_parser(argv=None):
     parser.add_argument("--deform-skel", type=int, default=0, dest="deform_skel",
                         help="启用 DeformSkel(用书家风格形变标准骨架). 默认关.")
     parser.add_argument("--deform-width", type=int, default=64, dest="deform_width")
+    parser.add_argument("--deform-grid", type=int, default=32, dest="deform_grid",
+                        help="骨架 latent 的空间尺寸(默认 32); 不是 token 网格")
     parser.add_argument("--deform-max-off", type=float, default=3.0,
                         dest="deform_max_off",
                         help="偏移场限幅(latent 像素); 32 网格下 1px ~ 8 图像px")

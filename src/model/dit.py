@@ -1068,6 +1068,10 @@ class DiT_2Cond(nn.Module):
         #   是本项目里唯一自带梯度的风格干预。默认关。
         deform_skel=0, deform_width=64, deform_max_off=3.0,
         deform_coarse=8, deform_style_ch=32, residual=0, res_cap=1.0,
+        # ⚠ 形变作用在**骨架 latent** (4,32,32) 上, 不是 token 网格!
+        #   模型里的 _grid 是 token 网格(16 = 32/patch2), 拿它建形变模块会形状不符
+        #   (style_off 会建成 2x16x16 而不是 2x32x32) -> 载入离线权重报 size mismatch。
+        deform_grid=32,
         # 离线训好的形变头权重（tools/train_deform_standalone.py 产出）。
         # ⚠ 风格源必须一致: 那个脚本用的是 callig_emb_pretrained_50k.pt（冻结），
         #   与这里 _e_callig() 同源 -> 否则风格输入分布不符, 头会失效。
@@ -1717,7 +1721,7 @@ class DiT_2Cond(nn.Module):
         if int(deform_skel) > 0:
             from .deform_skel import DeformSkel
             self.deform_skel = DeformSkel(
-                cond_dim=self.cond_dim, ch=4, grid=_grid,
+                cond_dim=self.cond_dim, ch=4, grid=int(deform_grid),
                 style_ch=int(deform_style_ch), width=int(deform_width),
                 max_off=float(deform_max_off), coarse=int(deform_coarse),
                 residual=int(residual), res_cap=float(res_cap))
