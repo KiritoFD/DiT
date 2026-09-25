@@ -1290,6 +1290,22 @@ def main(args):
                     f"w={args.w_repa}, warmup={getattr(args, 'repa_warmup', 0)}, "
                     f"cache={'yes' if _feature_cache is not None else 'no'})")
 
+    # ---- 冻结风格排序头 loss (2026-09-25 冒烟): 全冻结, added=0 ----
+    # loss = 1 - cos(f(pred_xstart), centroid[y_pair]); 只在 t∈[t_min,t_max] 生效。
+    _style_rank_loss_fn = None
+    if getattr(args, 'w_style_rank', 0.0) > 0:
+        import importlib
+        _srm = importlib.import_module('src.loss.style_rank_module')
+        _style_rank_loss_fn = _srm.StyleRankLoss(
+            ckpt=getattr(args, 'style_rank_ckpt', 'assets/style_enc_latent.pt'),
+            cent_npy=getattr(args, 'style_rank_cent', 'assets/rank_cent87.npy'),
+            t_min=float(getattr(args, 'style_rank_t_min', 0.05)),
+            t_max=float(getattr(args, 'style_rank_t_max', 0.25)))
+        _style_rank_loss_fn.to(device)
+        logger.info("[style-rank] enabled: w=%.4f t=[%.2f,%.2f] cent=%s added=0"
+                    % (args.w_style_rank, _style_rank_loss_fn.t_min,
+                       _style_rank_loss_fn.t_max, tuple(_style_rank_loss_fn.cent.shape)))
+
     # ---- 实例骨架结构 loss: 冻结 probe (新增可训练参数 0) ----
     # 形态对比见 src/train/latent_structure.py:LatentSkelStructureLoss 的 docstring。
     # target = batch['skel_latent'], **必须指向实例骨架**; 若指到标准字形就是纯重复 g, 必败。
@@ -1833,7 +1849,8 @@ def main(args):
                 # 「把去噪中段预测的 x0 拉向标准字形 latent」的预训练改进项。
                 # gaussian_diffusion 不接受该参数，故用 try/except 兼容。
                 _need_x0 = (getattr(args, 'w_std_mid', 0.0) > 0
-                            or getattr(args, 'w_latent_skel', 0.0) > 0)
+                            or getattr(args, 'w_latent_skel', 0.0) > 0
+                            or getattr(args, 'w_style_rank', 0.0) > 0)
                 with torch.autocast("cuda", dtype=torch.bfloat16):
                     if _need_x0:
                         try:
@@ -1867,7 +1884,8 @@ def main(args):
                 # immediately so the full graph is freed at the next zero_grad. We also
                 # break the reference in loss_dict so no stale graph survives the loop.
                 _need_x0_grad = (getattr(args, 'w_std_mid', 0.0) > 0
-                                 or getattr(args, 'w_latent_skel', 0.0) > 0)
+                                 or getattr(args, 'w_latent_skel', 0.0) > 0
+                                 or getattr(args, 'w_style_rank', 0.0) > 0)
                 pred_xstart_latent = loss_dict.get("pred_xstart", None)
                 if pred_xstart_latent is not None and not _need_x0_grad:
                     # No struct loss this run at all — drop the graph immediately.
@@ -1934,6 +1952,16 @@ def main(args):
                         + loss_repa  # 统一 REPA: w × (1 - cos) 已在 RepaModule.forward 内含 warmup
                         + getattr(args, 'w_std_mid', 0.0) * loss_std_mid
                         + getattr(args, 'w_latent_skel', 0.0) * loss_skel_struct)
+
+                # ---- style-rank loss (t 门控在模块内) ----
+                loss_style_rank = torch.tensor(0.0, device=device)
+                if _style_rank_loss_fn is not None and getattr(args, 'w_style_rank', 0.0) > 0:
+                    if pred_xstart_latent is not None:
+                        _yp = batch['y_pair'].to(device, non_blocking=True)
+                        loss_style_rank, _n_style_rank = _style_rank_loss_fn(
+                            pred_xstart_latent, _yp, t.to(device))
+                        loss = loss + getattr(args, 'w_style_rank', 0.0) * loss_style_rank
+
                 # Stage 3 / v15 锚定正则: 把书家风格参数拉向预训练目标, 防"冻主干
                 # 只训风格"时塌缩/漂移 (styletok 实测无护栏则 strict 掉头)。
                 # λ 由 --style-anchor-weight 控制, 口径由 --style-anchor-mode 决定。

@@ -663,6 +663,15 @@ def build_parser(argv=None):
                         help="MIDSTEP_STD 权重 (实现已抽到 src/loss/structure_mid.py: MidStructureLoss):"
                              " 中程噪声把 x0_pred 拉向**粗化后的 target**(blur GT / dilate skel),"
                              " 在低通子空间+通道归一后比较。建议 0.01~0.03。需 glyph 条件。0=关。")
+    parser.add_argument("--w-style-rank", type=float, default=0.0, dest="w_style_rank",
+                        help="frozen style-ranker loss (1-cos(f(pred_x0), pair centroid)), "
+                             "active only inside t-gate. smoke: 0.005. 0=off.")
+    parser.add_argument("--style-rank-ckpt", type=str, default="assets/style_enc_latent.pt",
+                        dest="style_rank_ckpt")
+    parser.add_argument("--style-rank-cent", type=str, default="assets/rank_cent87.npy",
+                        dest="style_rank_cent")
+    parser.add_argument("--style-rank-t-min", type=float, default=0.05, dest="style_rank_t_min")
+    parser.add_argument("--style-rank-t-max", type=float, default=0.25, dest="style_rank_t_max")
     parser.add_argument("--w-latent-skel", type=float, default=0.0, dest="w_latent_skel",
                         help="实例骨架结构 loss 权重(辅助项, 建议 0.02~0.1, 绝不等权)。\n"
                              "用**冻结**的小 probe 把 pred_xstart 映射成实例骨架 latent, 与 GT\n"
