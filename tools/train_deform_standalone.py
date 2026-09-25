@@ -53,6 +53,10 @@ ap.add_argument('--out', default='assets/deform_skel_standalone.pt')
 ap.add_argument('--eval-every', type=int, default=1000)
 ap.add_argument('--residual', type=int, default=0, help='1=形变+加性残差')
 ap.add_argument('--style-dim', type=int, default=128, dest='style_dim')
+ap.add_argument('--style-emb', default='assets/callig_emb_pretrained_50k.pt',
+                dest='style_emb',
+                help='用**模型同一张**预训练书家表(冻结); 否则离线训的风格输入与'
+                     '线上 _e_callig() 对不上, 训好的头接进去会失效')
 ap.add_argument('--width', type=int, default=64)
 ap.add_argument('--max-off', type=float, default=3.0, dest='max_off')
 ap.add_argument('--res-cap', type=float, default=1.0, dest='res_cap')
@@ -116,10 +120,15 @@ print(f'\n[2] 基线 MSE(g_std, g_gt) = {base_mse:.5f}   <- 形变要打败的�
 
 model = DeformSkel(cond_dim=a.style_dim, ch=4, grid=32, residual=a.residual,
                    width=a.width, max_off=a.max_off, res_cap=a.res_cap).to(DEV)
-style = nn.Embedding(NCAL, a.style_dim).to(DEV)
-nn.init.normal_(style.weight, std=0.05)
-opt = torch.optim.AdamW(list(model.parameters()) + list(style.parameters()),
-                        lr=a.lr, weight_decay=0.01)
+# ★ 风格源必须与模型 _e_callig() 一致: 那就是 callig_emb_pretrained_50k.pt 的行。
+#   用自己学的 embedding 会导致"离线训好的头接进模型后风格输入分布不一致"而失效。
+_emb = torch.load(a.style_emb, map_location='cpu', weights_only=False)
+_tab = _emb['embedding'] if isinstance(_emb, dict) else _emb
+_tab = _tab.float()
+assert _tab.shape[0] == NCAL, _tab.shape
+print(f'[2] 用预训练书家表 {a.style_emb} {tuple(_tab.shape)} (冻结)', flush=True)
+style = nn.Embedding.from_pretrained(_tab, freeze=True).to(DEV)
+opt = torch.optim.AdamW(model.parameters(), lr=a.lr, weight_decay=0.01)
 sched = torch.optim.lr_scheduler.CosineAnnealingLR(opt, T_max=a.steps)
 print(f'[2] 形变模块参数 {sum(p.numel() for p in model.parameters()):,}  '
       f'(含风格底图 {sum(p.numel() for p in model.style_off.parameters()):,})', flush=True)
@@ -218,5 +227,5 @@ print('=== 判读 ===')
 print('  闭合率: >60% = 形变确实把 g_std 拉近该书家的写法')
 print('  style-follow: 50% = 与随机无异(风格没驱动); >75% = 同一个 skel 对不同书家产出了对应 skel')
 print('  off 的"风格底图"那一项: >0 说明风格专属的全局形变在起作用')
-torch.save(dict(deform=model.state_dict(), style=style.state_dict()), a.out)
+torch.save(dict(deform=model.state_dict(), style_emb=a.style_emb), a.out)
 print('  已存', a.out, flush=True)

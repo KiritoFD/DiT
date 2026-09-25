@@ -478,6 +478,9 @@ def main(args):
             deform_width=int(getattr(args, 'deform_width', 64)),
             deform_max_off=float(getattr(args, 'deform_max_off', 3.0)),
             deform_coarse=int(getattr(args, 'deform_coarse', 8)),
+            residual=int(getattr(args, 'residual', 0)),
+            res_cap=float(getattr(args, 'res_cap', 1.0)),
+            deform_ckpt=str(getattr(args, 'deform_ckpt', '') or ''),
             freeze_char_table=getattr(args, 'freeze_char_table', False),
             # ---- IDS 组件码本字嵌入 ----
             use_ids_char_embedder=getattr(args, 'use_ids_char_embedder', False),

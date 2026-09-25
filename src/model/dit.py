@@ -1062,6 +1062,16 @@ class DiT_2Cond(nn.Module):
         #   "legacy"      = 旧 LocalStyleGlyphAdapter（无 QK-Norm，风格乘在 Q/K 上）
         # 评测端会**按 state_dict 键自动判定**，不必手填（见 model_io）。
         local_ca_impl="glyph_query",
+        # ── DeformSkel: 用书家风格把标准骨架形变成该书家的习惯间架 ──
+        #   g 实测是**跨书家共享的规范字形**(43.5% 的字只有 1 张 std),
+        #   而目标是该书家写的那个字 -> "把 g 形变到更接近目标"直接降低重建 loss,
+        #   是本项目里唯一自带梯度的风格干预。默认关。
+        deform_skel=0, deform_width=64, deform_max_off=3.0,
+        deform_coarse=8, deform_style_ch=32, residual=0, res_cap=1.0,
+        # 离线训好的形变头权重（tools/train_deform_standalone.py 产出）。
+        # ⚠ 风格源必须一致: 那个脚本用的是 callig_emb_pretrained_50k.pt（冻结），
+        #   与这里 _e_callig() 同源 -> 否则风格输入分布不符, 头会失效。
+        deform_ckpt="",
         # ---- 外挂 callig_spatial (已证伪死重, 保留为可配置开关以复评历史 ckpt) ----
         callig_spatial=False,
         callig_spatial_rank=64,
@@ -1700,6 +1710,31 @@ class DiT_2Cond(nn.Module):
         else:
             self.local_ca_at = []
 
+        # ── DeformSkel ────────────────────────────────────────────────
+        # ⚠ _basic_init 只重置 nn.Linear、**不碰 Conv2d** -> out 的 zero-init 天然保住,
+        #   不需要像 GlyphQuery 那样在 initialize_weights 之后再 reset 一次。
+        self.deform_skel = None
+        if int(deform_skel) > 0:
+            from .deform_skel import DeformSkel
+            self.deform_skel = DeformSkel(
+                cond_dim=self.cond_dim, ch=4, grid=_grid,
+                style_ch=int(deform_style_ch), width=int(deform_width),
+                max_off=float(deform_max_off), coarse=int(deform_coarse),
+                residual=int(residual), res_cap=float(res_cap))
+            if str(deform_ckpt):
+                import os as _os
+                _sd = torch.load(deform_ckpt, map_location="cpu", weights_only=False)
+                _sd = _sd.get("deform", _sd) if isinstance(_sd, dict) else _sd
+                _miss, _unexp = self.deform_skel.load_state_dict(_sd, strict=False)
+                print(f"[deform] 已载入离线权重 {deform_ckpt} "
+                      f"(missing={len(_miss)}, unexpected={len(_unexp)})")
+                if _miss or _unexp:
+                    print(f"[deform] ⚠ 键不匹配: missing={list(_miss)[:4]} "
+                          f"unexpected={list(_unexp)[:4]} -> 形变头可能没真正载入")
+            print(f"[deform] enabled: width={int(deform_width)} "
+                  f"max_off={float(deform_max_off)} coarse={int(deform_coarse)} "
+                  f"params={sum(p.numel() for p in self.deform_skel.parameters()):,}")
+
         self.initialize_weights()
         if self.freeze_char_table and hasattr(self, "y_char_embedder"):
             # 冻结 char 表：DINO 预填充后不再训练（省 35130×384≈13.5M 训练参数），
@@ -2105,6 +2140,10 @@ class DiT_2Cond(nn.Module):
             pass
         else:
             x = x + self.pos_embed
+        # ★ 形变标准骨架: g -> g'(书家习惯间架)。必须放在 g_tok 之前,
+        #   这样 concat / adaLN 注入 / local_ca 三条通路都用同一个 g'。
+        if getattr(self, "deform_skel", None) is not None and g is not None:
+            g = self.deform_skel(g, _e_callig())
         if self.use_glyph_cond and self.glyph_embedder is not None and g is not None:
             # 独立 glyph_embedder 把标准字形 latent 编成 (N, D, 16, 16) -> flat tokens (N,256,D)
             g_tok = self.glyph_embedder(g).flatten(2).transpose(1, 2)  # (N,256,D)

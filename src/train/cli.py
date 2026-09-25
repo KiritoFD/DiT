@@ -638,6 +638,12 @@ def build_parser(argv=None):
     parser.add_argument("--deform-max-off", type=float, default=3.0,
                         dest="deform_max_off",
                         help="偏移场限幅(latent 像素); 32 网格下 1px ~ 8 图像px")
+    parser.add_argument("--deform-ckpt", type=str, default="", dest="deform_ckpt",
+                        help="离线训好的形变头权重(tools/train_deform_standalone.py 产出)。风格源必须一致(callig_emb_pretrained_50k.pt)。")
+    parser.add_argument("--deform-residual", type=int, default=0, dest="residual",
+                        help="1=形变+加性残差(补笔画粗细/墨色). 实测闭合 36%%->53%%, "
+                             "style-follow 63%%->97%%.")
+    parser.add_argument("--deform-res-cap", type=float, default=1.0, dest="res_cap")
     parser.add_argument("--deform-coarse", type=int, default=8, dest="deform_coarse",
                         help="在低分辨率上预测偏移再上采样 -> 偏移场平滑")
     parser.add_argument("--skel-latent-shards-dirs", type=str, default="",

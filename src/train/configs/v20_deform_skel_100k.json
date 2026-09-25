@@ -1,5 +1,5 @@
 {
-  "_comment": "DeformSkel: 用书家风格把标准骨架 g 形变成该书家的习惯间架, 出口接中间监督。\n为什么这个不一样: 实测 g 是**跨书家共享的规范字形**(43.5% 的字只有 1 张 std),\n  而目标是该书家写的那个字 -> \"把 g 形变到更接近目标\"**直接降低重建 loss**,\n  是唯一自带梯度的风格干预; 再加出口的稠密中间监督(逼近该书家 GT 骨架)。\n形变 = 小 U-Net 输出 2 通道偏移场 + grid_sample(拓扑由 g 保证, 不会凭空造字)。\nzero-init -> step0 恒等形变, 可安全 resume 做单变量 A/B。\n其余全部照抄 E0: 无扰动/无 concat/无 local_ca/无风格模块。max_steps=100k。",
+  "_comment": "DeformSkel（离线训好后接入）: 用书家风格把标准骨架形变成该书家的习惯间架。\n  离线训练器 tools/train_deform_standalone.py，实测 闭合率 52.7% / style-follow 97.2%。\n  ⚠ 风格源必须一致: 离线用 callig_emb_pretrained_50k.pt(冻结)，与 _e_callig() 同源。\n  形变 = U-Net 输出偏移场 + grid_sample(拓扑由 g 保证) + 加性残差(补笔画粗细/墨色)。\n  形变头【冻结】—— 做干净的单变量检验\n  其余全部照抄 E0: 无扰动/无 concat/无 local_ca/无其它风格模块。max_steps=100k。",
   "experiment_name": "v20-deform-skel-100k",
   "results_dir": "assets/results/v20_deform_skel_100k",
   "model": "DiT-2Cond-S/2",
@@ -92,9 +92,12 @@
   "pair_residual": 0,
   "script_film": false,
   "deform_skel": 1,
-  "deform_width": 64,
-  "deform_max_off": 3.0,
+  "deform_ckpt": "assets/deform_skel_v5.pt",
+  "deform_width": 96,
+  "deform_max_off": 6.0,
   "deform_coarse": 8,
+  "residual": 1,
+  "res_cap": 2.0,
   "w_deform_skel": 1.0,
   "inst_skel_shards_dir": "data/50k/shards_aux_skel3"
 }
