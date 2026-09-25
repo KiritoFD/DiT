@@ -79,6 +79,8 @@
 > **全量运行超级编年史专论已发布**：  
 > 包含自 2026 年 8 月以来全部 **10 个历史纪元、74 组完整运行、所有 437 次代码提交演进、全部中间点检查点 Eval 评测轨迹**的超级详细实验日志，请参阅专论：  
 > 📖 **[00. 全量实验超级编年史 (Exhaustive Experiment Chronicle)](file:///g:/GitHub/DiT/docs/04_experiments/00_exhaustive_experiment_chronicle.md)**
+> 
+> 📖 **[05. 阶段性洞察与数学理论框架 (Stage Insight & Mathematical Theory)](file:///g:/GitHub/DiT/docs/04_experiments/05_stage_insight_theory.md)**：包含双通道机制、梯度正交性证明及下阶段演进原则。
 
 ### 2.0 全局实验演化与泛化诊断全景
 
