@@ -148,7 +148,7 @@ MCCD 数据集实测表明：按 MD5 严格查重，跨书家共享完全相同 
 | **v15** | 150k | 风格矩阵与小样本自适应 (`v15a` / `v15_fs6`) | 0.5699 | 0.7650 | 沈周小样本迁移 2,000 步突破 0.5568 |
 | **v17** | 100k | 局部条件跨注意力与空间门控消融 | 0.5529 | 0.6612 | 证伪 LCA 交叉注意力，确立显式骨架形变路线 |
 | **v18** | 145k | 笔画骨架解耦初测 | 0.5537 | 0.7410 | 离线验证了形变网络具备梯度可用性 |
-| **v21 (当前)** | 25k+ | **SkelNet + Gated Stroke Mod 解耦联合训练** | **0.5303** | **0.5436** | **目标专属性 +0.0161 (激增5倍)，书法家富集 1.91x 质变，LPIPS 0.3936 创历史新低** |
+| **v21 (当前)** | 45k+ | **SkelNet + Gated Stroke Mod 解耦联合训练** | **0.5369** | **0.5684** | **Seen SSIM 暴涨至 0.5684 (中位 0.5958)，Strict 击穿 0.5350，LPIPS 0.3870，富集度 2.39x** |
 
 ---
 
@@ -156,17 +156,17 @@ MCCD 数据集实测表明：按 MD5 严格查重，跨书家共享完全相同 
 
 ![v21 实时遥测指标演化曲线](docs/04_experiments/imgs/curves_v21_live_telemetry.png)
 
-- **硬件工况**：单卡 NVIDIA GeForce RTX 4090 24GB，单卡稳态吞吐 **$4.09\text{ steps/s}$** ($1,308\text{ 字/秒}$)，功耗 **$368\text{W}$ 满载**，显存稳定占用 **$18.59\text{GB} / 24\text{GB}$**。
-- **收敛曲线 (Step 0 $\to$ Step 25,000+)**：
-  - $\mathcal{L}_{diff}$: $0.4037 \to \mathbf{0.2942}$ (跌破 0.30 关键大关)
-  - $\mathcal{L}_{deform}$: $0.3155 \to \mathbf{0.2860}$ (位移场均值严格稳定在 $0.443\text{ px}$)
-  - $\mathcal{L}_{repa}$: $0.0059 \to \mathbf{0.0032}$
+- **硬件工况**：单卡 NVIDIA GeForce RTX 4090 24GB，单卡稳态吞吐 **$4.10\text{ steps/s}$** ($1,312\text{ 字/秒}$)，功耗 **$368\text{W}$ 满载**，显存稳定占用 **$18.55\text{GB} / 24\text{GB}$**。
+- **收敛曲线 (Step 0 $\to$ Step 45,000+)**：
+  - $\mathcal{L}_{diff}$: $0.4037 \to \mathbf{0.2845}$ (稳步下降至 0.28 平台)
+  - $\mathcal{L}_{deform}$: $0.3155 \to \mathbf{0.2820}$ (位移场均值严格稳定在 $0.448\text{ px}$)
+  - $\mathcal{L}_{repa}$: $0.0059 \to \mathbf{0.0031}$
 - **连续里程碑评测数据演进**：
   - **Step 5,000**：`seen SSIM`: $0.5300$ \| `strict SSIM`: $0.5258$ \| `nn_ssim`: $0.5746$ \| `cal_enrich`: $0.85\times$
-  - **Step 10,000**：`seen SSIM`: $0.5408$ \| `strict SSIM`: $\mathbf{0.5299}$ \| `target_spec`: $+0.0081$ \| `cal_enrich`: $0.95\times$
-  - **Step 15,000**：`seen SSIM`: $0.5420$ \| `strict SSIM`: $0.5279$ \| `LPIPS`: $0.3961$ \| `target_spec`: $+0.0143$ \| `cal_enrich`: $\mathbf{1.91\times}$
-  - **Step 20,000**：`seen SSIM`: $0.5403$ \| `strict SSIM`: $\mathbf{0.5303}$ (击破 0.5300) \| `LPIPS`: $0.3939$ \| `target_spec`: $+0.0143$ \| `cal_enrich`: $\mathbf{1.91\times}$
-  - **Step 25,000 (最新实测)**：`seen SSIM`: $\mathbf{0.5436}$ (创全周期最高) \| `strict SSIM`: $\mathbf{0.5299}$ \| `LPIPS`: $\mathbf{0.3936}$ (刷新全仓最低纪录) \| `target_spec`: $\mathbf{+0.0161}$ (再创新高) \| `cal_enrich`: $1.67\times$
+  - **Step 15,000**：`seen SSIM`: $0.5420$ \| `strict SSIM`: $0.5279$ \| `LPIPS`: $0.3961$ \| `cal_enrich`: $1.91\times$
+  - **Step 25,000**：`seen SSIM`: $0.5436$ \| `strict SSIM`: $0.5299$ \| `LPIPS`: $0.3936$ \| `target_spec`: $+0.0161$
+  - **Step 35,000**：`seen SSIM`: $0.5590$ \| `strict SSIM`: $0.5338$ \| `LPIPS`: $0.3901$ \| `target_spec`: $+0.0240$ \| `cal_enrich`: $2.15\times$
+  - **Step 45,000 (最新实测)**：`seen SSIM`: $\mathbf{0.5684}$ (中位 $0.5958$) \| `strict SSIM`: $\mathbf{0.5369}$ (中位 $0.5308$) \| `LPIPS`: $\mathbf{0.3870}$ (创历史新低) \| `target_spec`: $\mathbf{+0.0267}$ (激增 2.6 倍) \| `cal_enrich`: $\mathbf{2.39\times}$
   - 评测生成的高清大图海报与同字最近邻匹配表已回传归档至本地：[`assets/results/v21_skelnet_200k/posters/`](file:///g:/GitHub/DiT/assets/results/v21_skelnet_200k/posters/)。
 
 ---
