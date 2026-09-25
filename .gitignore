@@ -58,7 +58,13 @@ skel_bank*.npz
 _gt_cache/
 
 # ---- 训练/评测产物 ----
-results/
+/results/
+assets/results/*
+!assets/results/v21_skelnet_200k/
+!assets/results/v21_skelnet_200k/**
+assets/results/**/checkpoints/
+assets/results/**/*.pt
+assets/results/**/*.pt.done
 eval_samples*/
 eval_imgs_*/
 eval_pics/
@@ -82,6 +88,7 @@ _smoke_data/
 # ---- 日志 / 运行态 ----
 *.log
 *.err
+!logs/v21_skelnet_200k.log
 __pycache__/
 *.pyc
 .vscode/

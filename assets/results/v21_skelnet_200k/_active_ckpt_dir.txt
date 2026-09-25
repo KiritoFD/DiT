@@ -1,0 +1,1 @@
+assets/results/v21_skelnet_200k/20260926-005749-v21-skelnet-200k/checkpoints
