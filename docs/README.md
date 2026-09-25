@@ -24,10 +24,11 @@
 - **[03. 基础设施极致优化](file:///g:/GitHub/DiT/docs/03_training/03_infra_optimization.md)**：PyTorch Inductor 全算子融合编译、SDPA 零展开注意力、异步非阻塞 CPU 检查点落盘、单卡 RTX 4090 达到 **$4.09\text{ steps/s}$ ($1,308\text{ 字/秒}$)** 硬件压榨经验。
 
 ### 第四支柱：实验评测与证伪记录 ([`docs/04_experiments/`](file:///g:/GitHub/DiT/docs/04_experiments/))
+- **[00. 全周期全量实验超详编年史 (74 组实验全量档案)](file:///g:/GitHub/DiT/docs/04_experiments/00_exhaustive_experiment_chronicle.md)**：包含 74 组实验全部参数、逐 checkpoint 轨迹表（SSIM/MSE/LPIPS/专属性/富集度）与 5 大里程碑图表。
 - **[01. 历史全实验权威总天梯榜](file:///g:/GitHub/DiT/docs/04_experiments/01_master_leaderboard.md)**：75+ 组历史实验全量排位，Strict SSIM、Seen SSIM、LPIPS、专属性全景横评。
 - **[02. 低资源书法家小样本自适应](file:///g:/GitHub/DiT/docs/04_experiments/02_fewshot_adaptation.md)**：沈周、伊秉绶、傅山 100 样本快速迁移实验，`row_pt` 先验初始化完胜 `mean_scaled`，2000 步极速达峰（SSIM 0.5568）。
 - **[03. 证伪注册表与失败方向归档](file:///g:/GitHub/DiT/docs/04_experiments/03_falsification_registry.md)**：严谨证伪的 8 大技术死胡同（LCA交叉注意力、多Token风格、全层密集注入、骨架VAE、高权REPA等）与数学机理分析。
-- **[04. 旗舰运行 v21_skelnet 实时遥测报告](file:///g:/GitHub/DiT/docs/04_experiments/04_v21_skelnet_telemetry.md)**：200k 旗舰长跑实时跟踪，记录 Step 5k, 10k, 15k 里程碑，目标专属性 $+0.0143$ 与同字富集度 $1.91\times$ 的质变突破。
+- **[04. 旗舰运行 v21_skelnet 实时遥测报告](file:///g:/GitHub/DiT/docs/04_experiments/04_v21_skelnet_telemetry.md)**：200k 旗舰长跑实时跟踪，记录 Step 5k, 10k, 15k, 20k, 25k 里程碑，目标专属性突破 $+0.0161$。
 
 ---
 

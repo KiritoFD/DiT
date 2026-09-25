@@ -1,0 +1,2624 @@
+[
+  {
+    "hash": "7f3a36a",
+    "full_hash": "7f3a36ab5e6e0cfa9c59377b06b270d716e08707",
+    "date": "2022-12-16 15:22:24 -0800",
+    "msg": "Initial commit"
+  },
+  {
+    "hash": "f21c505",
+    "full_hash": "f21c505b53e0192d30fd5fe774e2557cf461af44",
+    "date": "2022-12-19 20:29:20 -0500",
+    "msg": "Update model usage"
+  },
+  {
+    "hash": "ff6dcac",
+    "full_hash": "ff6dcac87e7505f622be534162ba73a5ce122444",
+    "date": "2022-12-19 20:50:33 -0500",
+    "msg": "Add arXiv links"
+  },
+  {
+    "hash": "35e7066",
+    "full_hash": "35e7066ee5ce58ee792b0ee023490897d160b06e",
+    "date": "2022-12-19 22:08:11 -0500",
+    "msg": "Update Colab"
+  },
+  {
+    "hash": "39cc506",
+    "full_hash": "39cc506776770ac18153d90ac15342ef1ab4008c",
+    "date": "2022-12-19 23:16:14 -0500",
+    "msg": "Update README"
+  },
+  {
+    "hash": "17939cb",
+    "full_hash": "17939cbadf9874c7609de387f8be39eb73578a29",
+    "date": "2022-12-20 02:07:06 -0500",
+    "msg": "Update Colab"
+  },
+  {
+    "hash": "d795307",
+    "full_hash": "d7953073e383bddf69fe8cd2d1810d88cca9536c",
+    "date": "2022-12-21 18:14:04 -0500",
+    "msg": "Add HuggingFace demo"
+  },
+  {
+    "hash": "38eb5ba",
+    "full_hash": "38eb5ba2c94f17f0e47e0708142e0c9456f16359",
+    "date": "2022-12-21 21:26:59 -0500",
+    "msg": "Update links"
+  },
+  {
+    "hash": "9347863",
+    "full_hash": "934786308a5f46ed502a64579b7e6c5814d42f4a",
+    "date": "2022-12-21 18:28:11 -0800",
+    "msg": "Update HuggingFace Space links"
+  },
+  {
+    "hash": "4dd77fa",
+    "full_hash": "4dd77fa65602ce60631de99e7879f56c6264c548",
+    "date": "2022-12-21 18:29:13 -0800",
+    "msg": "Update links in run_DiT"
+  },
+  {
+    "hash": "7cde968",
+    "full_hash": "7cde9687728894bcbc95048fe43dda4b9c2ecb6e",
+    "date": "2022-12-24 00:31:11 +0900",
+    "msg": "Update README.md"
+  },
+  {
+    "hash": "4805a08",
+    "full_hash": "4805a086ea317d1e687d5b7b28bd8c21b3673604",
+    "date": "2022-12-23 11:14:46 -0800",
+    "msg": "Merge pull request #6 from eltociear/patch-1"
+  },
+  {
+    "hash": "5e416aa",
+    "full_hash": "5e416aa3922726502bac974dc7e829d2556e7c49",
+    "date": "2022-12-24 15:42:34 -0500",
+    "msg": "Update pos embed dtype and docs"
+  },
+  {
+    "hash": "2190584",
+    "full_hash": "2190584129e9841e26be17065324dbb6094b4b93",
+    "date": "2022-12-24 15:42:46 -0500",
+    "msg": "Merge branch 'main' of github.com:facebookresearch/DiT"
+  },
+  {
+    "hash": "f40bc8d",
+    "full_hash": "f40bc8d5e005e250296114642ca20983a87ef776",
+    "date": "2022-12-24 16:13:13 -0500",
+    "msg": "Update model docs"
+  },
+  {
+    "hash": "e0e6995",
+    "full_hash": "e0e6995d598ea6dbc48ca4d95b0297ba63ba025b",
+    "date": "2023-01-18 22:39:05 -0800",
+    "msg": "Update cfg docs in models.py"
+  },
+  {
+    "hash": "5ea6729",
+    "full_hash": "5ea672984c991f67f1eb1ac9cf42536f5a62cd8c",
+    "date": "2023-01-18 22:58:23 -0800",
+    "msg": "Add diffusers link to README"
+  },
+  {
+    "hash": "93d510a",
+    "full_hash": "93d510aeca2ba0781cfa4150d9229fc9b3bf16fb",
+    "date": "2023-01-18 23:30:21 -0800",
+    "msg": "Update README"
+  },
+  {
+    "hash": "4961bcb",
+    "full_hash": "4961bcb01370bc5a552909b2f4c1b0f096e3f79e",
+    "date": "2023-02-07 23:17:27 -0800",
+    "msg": "Add training script"
+  },
+  {
+    "hash": "7f57fa4",
+    "full_hash": "7f57fa4e191a89dcb5179dd067fa54bfe5c7430e",
+    "date": "2023-02-10 02:38:51 -0800",
+    "msg": "Add logger to train.py"
+  },
+  {
+    "hash": "c9f545c",
+    "full_hash": "c9f545c56d212c32e73c57746550e3a30af897a4",
+    "date": "2023-02-11 21:33:38 -0800",
+    "msg": "Fix patchify bias init"
+  },
+  {
+    "hash": "70b9f00",
+    "full_hash": "70b9f00ce936697eabdcf2c4d176b107c334bff9",
+    "date": "2023-02-21 21:11:43 -0800",
+    "msg": "Update train.py, add PyTorch results to README"
+  },
+  {
+    "hash": "58fe9c2",
+    "full_hash": "58fe9c286baa9fcd2d08278a57b178b0650c3eff",
+    "date": "2023-02-21 23:51:21 -0800",
+    "msg": "Enable TF32 for massive training and sampling speedups on Ampere GPUs (A100s etc.)"
+  },
+  {
+    "hash": "796c29e",
+    "full_hash": "796c29e532f47bba17c5b9c5eb39b9354b8b7c64",
+    "date": "2023-02-24 02:02:08 -0800",
+    "msg": "Add sampling script for evaluation metrics"
+  },
+  {
+    "hash": "ed81ce2",
+    "full_hash": "ed81ce2229091fd4ecc9a223645f95cf379d582b",
+    "date": "2023-06-02 12:01:00 -0400",
+    "msg": "Update README.md"
+  },
+  {
+    "hash": "46d8130",
+    "full_hash": "46d8130ebc79c1e386144a51ddd47c3e33294406",
+    "date": "2026-08-12 21:20:59 +0800",
+    "msg": "Fix NaN training: disable gradient checkpointing; add staged pure-diff phase"
+  },
+  {
+    "hash": "798d1e8",
+    "full_hash": "798d1e82855a3126ab1662f711dd6364ff187009",
+    "date": "2026-08-12 23:03:26 +0800",
+    "msg": "Archive current 2Cond LoRA code + overfit scripts before reverting to 3Cond overfit path"
+  },
+  {
+    "hash": "78a657d",
+    "full_hash": "78a657db495c7379890bff108b693f1336304bea",
+    "date": "2026-08-12 23:06:24 +0800",
+    "msg": "Reproduce successful 3Cond overfit: diff 0.0005 (vs 2Cond 0.06 floor). Root cause = removed canny/skel structural loss + lr 3e-3 + reinit adaLN"
+  },
+  {
+    "hash": "3254346",
+    "full_hash": "32543465e02b1fd6c33b3c3686efd0de84331862",
+    "date": "2026-08-12 23:16:23 +0800",
+    "msg": "Full 3Cond training: add cond-mode to train.py, enable canny/skel structural loss, eval+pull scripts, automation"
+  },
+  {
+    "hash": "5a98a91",
+    "full_hash": "5a98a91d0be4a2101d0bb18b6b959f760bc29f16",
+    "date": "2026-08-13 17:01:18 +0800",
+    "msg": "fix: trainable adaLN, bf16 training, store only delta in ckpt"
+  },
+  {
+    "hash": "84b6aa6",
+    "full_hash": "84b6aa6c07e8fbae502252a02bcb2d24d14f2c60",
+    "date": "2026-08-14 23:44:01 +0800",
+    "msg": "feat: 3Cond 容量扫掠实验 + 冻结策略重构 + 显存优化 + 模块化文档"
+  },
+  {
+    "hash": "49ce661",
+    "full_hash": "49ce6617424f6607259935dd7677a32603eb4bf9",
+    "date": "2026-08-16 16:32:02 +0800",
+    "msg": "feat: V3B 标准字形(楷/隶)条件 + 监控面板缩放平移"
+  },
+  {
+    "hash": "989b87d",
+    "full_hash": "989b87da603ed80bf83ae07641cf34e9146f5362",
+    "date": "2026-08-16 16:37:57 +0800",
+    "msg": "feat(dash): 横向滚动条 + X 轴缩放平移 + Y 轴自适应可见区间"
+  },
+  {
+    "hash": "f58c5a0",
+    "full_hash": "f58c5a072e0b96a285ef5dacb8ed343c1065696f",
+    "date": "2026-08-16 16:41:58 +0800",
+    "msg": "feat(dash): 横向双滑块精确选 X 区间起止 + HYBRID 混合初始点方案"
+  },
+  {
+    "hash": "0174e0a",
+    "full_hash": "0174e0ad66242cb46efbdd4f1a040547fd3a2736",
+    "date": "2026-08-16 17:02:42 +0800",
+    "msg": "fix(dash-data): eval 指标 mse/ssim 前向填充, 修复前端抓不到评估指标"
+  },
+  {
+    "hash": "6dd5465",
+    "full_hash": "6dd5465a8402d236dc17f5cd6102bd5afc840d7c",
+    "date": "2026-08-16 18:36:46 +0800",
+    "msg": "feat(train): MIDSTEP_STD 标准字形作为去噪中线目标 + v3c 配置"
+  },
+  {
+    "hash": "884ebea",
+    "full_hash": "884ebea010b605533568da20540084db9dbee2da",
+    "date": "2026-08-16 18:43:03 +0800",
+    "msg": "docs: MIDSTEP_STD v3c 方案文档 + 同步前端重写"
+  },
+  {
+    "hash": "5cdeb7d",
+    "full_hash": "5cdeb7d24e2f6c43cfeef4ce89222faab39bc9a4",
+    "date": "2026-08-16 18:52:12 +0800",
+    "msg": "chore: 提交正式源码 + 忽略 >100MB/可再生成大文件"
+  },
+  {
+    "hash": "e05ef50",
+    "full_hash": "e05ef5058051c4ed5895c018ca6f6b374e49dce6",
+    "date": "2026-08-16 19:00:37 +0800",
+    "msg": "fix(dash): 监控面板定向到当前 v3c 训练(而非 v3b)"
+  },
+  {
+    "hash": "8147bd8",
+    "full_hash": "8147bd85238662e7e4a8b7494fded9f53beca986",
+    "date": "2026-08-16 19:33:59 +0800",
+    "msg": "feat: S尺寸从头预训练 + 简化监控拉取解析绑定到当前训练"
+  },
+  {
+    "hash": "642e87e",
+    "full_hash": "642e87e978f76b7ad1279adbdb3d92e065f8da83",
+    "date": "2026-08-16 20:09:51 +0800",
+    "msg": "feat: 纯二因子从头预训练 S(无GT泄露/无标准字形锚定) + 海报自动更新"
+  },
+  {
+    "hash": "e8555bf",
+    "full_hash": "e8555bf0a8db2cdd3973887882e05ea5338e95c3",
+    "date": "2026-08-16 20:28:36 +0800",
+    "msg": "fix(dash): 海报按实验隔离+增量追加+旧实验归档静态留存"
+  },
+  {
+    "hash": "61f1fea",
+    "full_hash": "61f1fea88fd45f1625dd5611883735cb4e910913",
+    "date": "2026-08-16 21:49:01 +0800",
+    "msg": "feat(cfg): 5书体(楷篆草行隶)大batch S 预训练配置 + eval/展示分离"
+  },
+  {
+    "hash": "1779cc1",
+    "full_hash": "1779cc1c7cad91953231545ec8c531bf9d4f0964",
+    "date": "2026-08-16 22:03:46 +0800",
+    "msg": "feat(cfg): 5书体 top60 书家训练集 + eval100/展示5"
+  },
+  {
+    "hash": "3ee109f",
+    "full_hash": "3ee109fbdc9f5b476e1deab57d7aeb982529d262",
+    "date": "2026-08-16 22:08:43 +0800",
+    "msg": "feat(cfg): 5书体 top30 书家数据集 train_top30 + eval100/show5"
+  },
+  {
+    "hash": "079ecbb",
+    "full_hash": "079ecbb3c0744d9a15e89e4229fb3e3a014ecbed",
+    "date": "2026-08-17 11:49:33 +0800",
+    "msg": "feat(struct-post50k): 从 ckpt50000 resume + 开启canny/skel结构loss + batch12"
+  },
+  {
+    "hash": "c639660",
+    "full_hash": "c63966043e11884ce192e22f6049de4e48a1acd3",
+    "date": "2026-08-17 11:57:27 +0800",
+    "msg": "fix(dash): 前端 loss 显示 struct 用 canny/skel(去mid), 解析出 canny/skel"
+  },
+  {
+    "hash": "5b9c1dd",
+    "full_hash": "5b9c1dded7708eb1f781168293fea8a1283d5321",
+    "date": "2026-08-17 15:22:48 +0800",
+    "msg": "feat(src): 核心代码整理到src/(copy不干扰运行) + B模型训练配置"
+  },
+  {
+    "hash": "cd5084a",
+    "full_hash": "cd5084a4ea87ce83547b1895d8b7323a669d02a1",
+    "date": "2026-08-17 15:30:46 +0800",
+    "msg": "docs: CPU定量实验 - latent canny/skel 监督 = pixel 等价"
+  },
+  {
+    "hash": "83ffbbf",
+    "full_hash": "83ffbbf3d197e51dae7b5b8995f2bb39c652b117",
+    "date": "2026-08-17 16:26:46 +0800",
+    "msg": "feat(B-latent-struct): 启动 B模型+latent canny结构loss, 监控切换"
+  },
+  {
+    "hash": "d8a83e3",
+    "full_hash": "d8a83e3153f33bef6b91d7ea4623ab33101288e9",
+    "date": "2026-08-19 13:18:21 +0800",
+    "msg": "feat(showcase): 统一展示脚本 make_showcase + dashboard 加最新 Eval 快照面板, 旧图按 run 编号归档"
+  },
+  {
+    "hash": "9dd3144",
+    "full_hash": "9dd31447bc680de75dc70679a1bbc3bfba5131cf",
+    "date": "2026-08-19 13:23:18 +0800",
+    "msg": "fix(showcase): 海报补 seen5 列(show5|seen5 10样本) + 布局调换(海报上/最新快照下)"
+  },
+  {
+    "hash": "1e0be2b",
+    "full_hash": "1e0be2b11b060956d820391056605168662029ce",
+    "date": "2026-08-19 13:27:36 +0800",
+    "msg": "fix(dash): pull_monitor 合并 CPU eval 的 eval_auto_*.json 到 mse/ssim"
+  },
+  {
+    "hash": "79e94d4",
+    "full_hash": "79e94d4ed00617d14ae4463dd5e71bfb22edf3a4",
+    "date": "2026-08-19 15:18:54 +0800",
+    "msg": "feat(showcase): make_showcase 后台服务(--loop)自动同步展示图, 实验切换才归档旧图"
+  },
+  {
+    "hash": "b510a3c",
+    "full_hash": "b510a3c451b049ae0c9622d7dc3fbd0e9db170ad",
+    "date": "2026-08-19 16:10:18 +0800",
+    "msg": "feat(showcase): 海报每行标注 step+MSE/SSIM + GT行标注来源step; make_showcase 拉 eval_auto json"
+  },
+  {
+    "hash": "de4da75",
+    "full_hash": "de4da751d8688df4d900f2ab122dbbed0e8af823",
+    "date": "2026-08-21 13:22:42 +0800",
+    "msg": "feat(src): train.py 对齐远程运行版 — pixel结构损失 + CPU eval 早停"
+  },
+  {
+    "hash": "dffac3a",
+    "full_hash": "dffac3a9061dd95954e7c110b5d06e40b28b6333",
+    "date": "2026-08-21 13:23:44 +0800",
+    "msg": "feat(s6): 同步 top6 实验配置与串行启动脚本"
+  },
+  {
+    "hash": "ecf3d5e",
+    "full_hash": "ecf3d5e707058a8fdb26461320467f06894df4fc",
+    "date": "2026-08-21 13:25:09 +0800",
+    "msg": "chore(ops): 同步远程运维/环境脚本与本地启动、隧道工具"
+  },
+  {
+    "hash": "fea2d96",
+    "full_hash": "fea2d96dd7896806f9394ce89814adaa3dfa80cb",
+    "date": "2026-08-21 13:26:11 +0800",
+    "msg": "feat(exp): 同步历史实验配置 (s2/s5/v3a/v3b/v3c) + 更新 train_full_3cond"
+  },
+  {
+    "hash": "8f0d425",
+    "full_hash": "8f0d42528418028e31c20715344ffb81d3e8f46c",
+    "date": "2026-08-21 13:26:49 +0800",
+    "msg": "fix(tools): 提交 pull_log/make_eval_poster 累积改进 + 训练文档更新"
+  },
+  {
+    "hash": "73aa874",
+    "full_hash": "73aa8743054b7759a9232fab283df6dec86048df",
+    "date": "2026-08-21 13:30:32 +0800",
+    "msg": "feat(src): struct 损失权重爬升 + fresh-scheduler 微调支持"
+  },
+  {
+    "hash": "b87d66a",
+    "full_hash": "b87d66ad62057298b7ae338159e0a128fa88e2ae",
+    "date": "2026-08-21 14:04:19 +0800",
+    "msg": "feat(s7): 结构损失爬升微调双实验配置 + 串行启动脚本"
+  },
+  {
+    "hash": "7cd67f8",
+    "full_hash": "7cd67f88ac215d2f1fd4527a3d00fd29fc069901",
+    "date": "2026-08-21 14:23:18 +0800",
+    "msg": "fix(s7): 启动脚本改用 /opt/conda/bin/python 绝对路径"
+  },
+  {
+    "hash": "c8f87dd",
+    "full_hash": "c8f87dd80b1b6999f27e979f4abf140ff138252a",
+    "date": "2026-08-21 17:32:52 +0800",
+    "msg": "docs(s6): top6 阶段总结报告 — 结构损失副作用分析 + 双海报"
+  },
+  {
+    "hash": "b02b488",
+    "full_hash": "b02b488873eca40e561625aa05dc126a32eba2e8",
+    "date": "2026-08-21 19:07:36 +0800",
+    "msg": "feat(eval): 大测试集本地GPU额外评测 — eval500 确认结构损失副作用"
+  },
+  {
+    "hash": "fa581f8",
+    "full_hash": "fa581f8426f9984305e6f54abc5bc8b17fba3ed3",
+    "date": "2026-08-21 20:03:04 +0800",
+    "msg": "docs(s6): 补充真 held-out 评测 — unseen255 确认结论 + 报告三层指标"
+  },
+  {
+    "hash": "b75785c",
+    "full_hash": "b75785c7ed4ebd4834e8839588f9e4f2fbf3f5d2",
+    "date": "2026-08-21 21:12:13 +0800",
+    "msg": "fix(struct-loss): 修复3个致命缺陷 — 结构损失不再反向毁图"
+  },
+  {
+    "hash": "07acac6",
+    "full_hash": "07acac6d7d4d31065e4d4d3c337d33acd17a629f",
+    "date": "2026-08-21 21:25:38 +0800",
+    "msg": "fix(struct-v2): EdgeGradientLoss 需要 GT 原图 — v2 模式强制数据集加载图像"
+  },
+  {
+    "hash": "73b35c4",
+    "full_hash": "73b35c477b201e9c779c49bec60f31ff03c7dccc",
+    "date": "2026-08-21 21:26:52 +0800",
+    "msg": "chore(cleanup): 代码整理 — 一次性脚本归入 scratch/, 根目录镜像对齐 src/, 数据产物入库规则"
+  },
+  {
+    "hash": "1b99dae",
+    "full_hash": "1b99dae999533c0dc37eb7938654cd0014098692",
+    "date": "2026-08-21 21:27:06 +0800",
+    "msg": "chore(cleanup): 根目录镜像与 src/ 对齐 + 移除已迁入 scratch/ 的 update_config 脚本"
+  },
+  {
+    "hash": "895aba0",
+    "full_hash": "895aba0593f3bead2d1b3e8ac54e10b2869d6b34",
+    "date": "2026-08-21 23:28:42 +0800",
+    "msg": "refactor(struct-loss): 删除旧版 SobelCannyLoss/SkeletonLoss 与 use-struct-loss-v2 参数, 统一 EdgeGradientLoss+SkeletonLoss(recall-only); 新增 s9 skel-only 配置"
+  },
+  {
+    "hash": "c4fb43d",
+    "full_hash": "c4fb43d465bb320bfb8d947d223588a11098e93e",
+    "date": "2026-08-22 11:51:43 +0800",
+    "msg": "feat(pixel-diff): 新增像素域 DiT 训练 src/train_pixel.py (无 VAE, patch8/256px, S 模型) + tools/auto_eval_pixel.py CPU 评估进程 (轮询 ckpt 采样 eval100) + exp_px_s_scratch.json 预训练配置 (batch24)"
+  },
+  {
+    "hash": "6412c37",
+    "full_hash": "6412c370d5104e0f5cb9c63d87fa81ef3cf7b6a2",
+    "date": "2026-08-22 17:33:27 +0800",
+    "msg": "struct-decoder: GPU train skel/canny (3px, 329k, PixelShuffle, IoU 0.887/0.970) + gradient health eval + pixel diffusion (train_pixel.py + auto_eval_pixel.py)"
+  },
+  {
+    "hash": "59b343a",
+    "full_hash": "59b343a1c941577e343868e4ac180794428c82a2",
+    "date": "2026-08-22 19:21:28 +0800",
+    "msg": "controlnet: skel-conditioned latent DiT (train+sample), struct-decoder gradient checkpointing, latent struct loss integration (w=0.01)"
+  },
+  {
+    "hash": "2814dca",
+    "full_hash": "2814dcace241b2f9cd183669ddcf0ca985d935a9",
+    "date": "2026-08-23 09:18:17 +0800",
+    "msg": "feat: ControlNet for latent calligraphy DiT + from-scratch top30 training"
+  },
+  {
+    "hash": "ea7115e",
+    "full_hash": "ea7115e6e4bc5908d74a9c453a64146dd1f44957",
+    "date": "2026-08-23 09:51:37 +0800",
+    "msg": "feat: ctrl dashboard builder + pull monitor with retry"
+  },
+  {
+    "hash": "a44f2b4",
+    "full_hash": "a44f2b4affb76b03c45203fe9bb51ff9c80620c8",
+    "date": "2026-08-23 09:55:56 +0800",
+    "msg": "chore: sync root mirror to src/, update README"
+  },
+  {
+    "hash": "4ac3363",
+    "full_hash": "4ac3363e03fb78b71304d35157b4c37943b2a9c2",
+    "date": "2026-08-23 10:01:09 +0800",
+    "msg": "chore: deep cleanup — archive 82 legacy scripts, streamline tools/"
+  },
+  {
+    "hash": "a87f2b2",
+    "full_hash": "a87f2b2103878086dce748ecf5fa9a03092a4b3e",
+    "date": "2026-08-23 10:10:50 +0800",
+    "msg": "chore: reorganize repo — configs/, archive/, docs/legacy/, clean root"
+  },
+  {
+    "hash": "b9ce454",
+    "full_hash": "b9ce4549d828a894e59306da713da5e1b252a7b6",
+    "date": "2026-08-23 10:11:40 +0800",
+    "msg": "docs: README — reflect reorganized repo structure"
+  },
+  {
+    "hash": "5b8858a",
+    "full_hash": "5b8858a0ab38348a805921c3dd34dd51c89ad5fa",
+    "date": "2026-08-23 12:30:28 +0800",
+    "msg": "feat: VAE tools — kl-f4 convert + eval + train (f4/1ch/grayscale)"
+  },
+  {
+    "hash": "94476be",
+    "full_hash": "94476be28718687f4009cbd39fa5cf918a9615d2",
+    "date": "2026-08-23 14:07:39 +0800",
+    "msg": "feat: VAE benchmark — kl-f4 全面领先 sd-vae-ft-ema"
+  },
+  {
+    "hash": "78cb2cd",
+    "full_hash": "78cb2cda54150cc4541cc87fae2a9c837f87fbd3",
+    "date": "2026-08-23 15:29:36 +0800",
+    "msg": "feat: kl-f4 VAE full pipeline — code adapt + encode + verify"
+  },
+  {
+    "hash": "11f514d",
+    "full_hash": "11f514d22251f6d48b725f9d70760e1fdadad8bd",
+    "date": "2026-08-23 16:21:14 +0800",
+    "msg": "fix: train.py root mirror — vae_downscale + latent_channels + scaling_factor"
+  },
+  {
+    "hash": "bc0027b",
+    "full_hash": "bc0027b64342dd2e21b09ad9b2aecd8cbb1b135b",
+    "date": "2026-08-23 16:43:05 +0800",
+    "msg": "config: max_steps=600k, ema on, early_stop min=60k; update VAE docs"
+  },
+  {
+    "hash": "fbdb67d",
+    "full_hash": "fbdb67daab9ed3cb1eb5a21c1cf8cd0f123c48e9",
+    "date": "2026-08-23 16:55:11 +0800",
+    "msg": "docs: restructure into topic-based hierarchy (model/training/data/eval/experiments)"
+  },
+  {
+    "hash": "7c49ddd",
+    "full_hash": "7c49ddd4cac06a95c7d904f3578a32cb7273bae1",
+    "date": "2026-08-23 19:13:32 +0800",
+    "msg": "tools: rewrite pull_monitor.py — single-SSH collect, clean poster pipeline"
+  },
+  {
+    "hash": "316131c",
+    "full_hash": "316131ce4053b81b48881b995521052098d4af7f",
+    "date": "2026-08-23 19:19:16 +0800",
+    "msg": "fix: pull_monitor scp -r nested dir flattening + cleanup"
+  },
+  {
+    "hash": "c604cfe",
+    "full_hash": "c604cfe8ec16aa1f4b85acbd51e471b446599359",
+    "date": "2026-08-23 21:21:23 +0800",
+    "msg": "rewrite auto_eval_cpu.py: spawn+ProcessPoolExecutor, CPU affinity, dynamic task queue"
+  },
+  {
+    "hash": "399b08a",
+    "full_hash": "399b08adf1df8eedf61e70746ed692f0ae356d52",
+    "date": "2026-08-23 21:36:43 +0800",
+    "msg": "fix eval display: align eval points to step not time, remove forward-fill"
+  },
+  {
+    "hash": "49b450f",
+    "full_hash": "49b450fed2c54ace37937e3c0bc7f6cf12aac06a",
+    "date": "2026-08-23 22:05:35 +0800",
+    "msg": "clean top30 dataset: remove vague labels (others/墨迹/唐), keep 碑刻/篆刻"
+  },
+  {
+    "hash": "dc512eb",
+    "full_hash": "dc512eb66c52d722656523101112428f1b828775",
+    "date": "2026-08-23 22:30:38 +0800",
+    "msg": "DINO embedding experiment: validate char-level visual similarity"
+  },
+  {
+    "hash": "c8fa9e0",
+    "full_hash": "c8fa9e04e372bd31f499a2f37e8f147655ba6c9f",
+    "date": "2026-08-25 12:10:24 +0800",
+    "msg": "refactor tools layout + ControlNet S6 v2 experiment infra"
+  },
+  {
+    "hash": "40241af",
+    "full_hash": "40241af3f9485fe45da80f51cb29ec992638f48c",
+    "date": "2026-08-25 13:55:10 +0800",
+    "msg": "fix SSIM window: Gaussian (σ=1.5, matches eval_auto.py) instead of uniform_filter"
+  },
+  {
+    "hash": "156a3a9",
+    "full_hash": "156a3a9250de6854c05f2ab1be3b3877ef1574a7",
+    "date": "2026-08-25 15:10:07 +0800",
+    "msg": "results.csv: unified Gaussian SSIM across all experiments + analysis scripts"
+  },
+  {
+    "hash": "9ca4714",
+    "full_hash": "9ca47145c97ff7d32ac9912108ef91e6ba31e4fc",
+    "date": "2026-08-25 16:30:24 +0800",
+    "msg": "results.csv: add ctrl s6_v2 eval through 27.5k (peak ctrl SSIM 0.8144 @22.5k)"
+  },
+  {
+    "hash": "84e3dc2",
+    "full_hash": "84e3dc2aed3e046eab6a352290f7d39acebcf3c1",
+    "date": "2026-08-25 16:56:05 +0800",
+    "msg": "CFG sweep on ctrl s6_v2 @15k: cfg=1.7 optimal (ctrl_ssim 0.8237)"
+  },
+  {
+    "hash": "cfbc33f",
+    "full_hash": "cfbc33f8b9f0fc5f208aa6e37e40969a8a191f4f",
+    "date": "2026-08-25 17:48:31 +0800",
+    "msg": "s12: 3-top30 (楷行隶 no碑刻) + DINO768 f8 S/2 base pretrain; early-stop combo (ssim+skel_iou dual-gate)"
+  },
+  {
+    "hash": "300be26",
+    "full_hash": "300be26598f6f4507884bea5c60666cc9583f014",
+    "date": "2026-08-25 18:09:03 +0800",
+    "msg": "s12: DINO 768->384 PCA (98.2% var), batch 224, no gradient checkpoint (20.6G VRAM, 3.48 sps)"
+  },
+  {
+    "hash": "c9e3ae4",
+    "full_hash": "c9e3ae4dcb128a1a1ccb05da7b506110bbfb67a7",
+    "date": "2026-08-25 23:18:00 +0800",
+    "msg": "feat: Flow Matching switch (diffusion_type=ddpm|flow) + code cleanup"
+  },
+  {
+    "hash": "a793925",
+    "full_hash": "a7939253c15664d80f144b853870a46edeaabd89",
+    "date": "2026-08-26 00:37:12 +0800",
+    "msg": "feat: glyph classifier (9401-class) on VAE latents — residual CNN, 9.59M, top-1 26%/top-5 50%"
+  },
+  {
+    "hash": "d3fa7b3",
+    "full_hash": "d3fa7b3f529c1e3a703405aa9a9f195ce7b8d924",
+    "date": "2026-08-26 02:08:13 +0800",
+    "msg": "feat: pixel glyph classifier + char-level latent classifier"
+  },
+  {
+    "hash": "782b8f3",
+    "full_hash": "782b8f3be4d8164672322f0acaa01e6a02c2b58d",
+    "date": "2026-08-26 02:54:22 +0800",
+    "msg": "feat: pixel64 classifiers — glyph top-1 34.5%, char top-1 52.9%"
+  },
+  {
+    "hash": "dc6eb35",
+    "full_hash": "dc6eb350b45aa513ca8a1a2dcc2bd4d1ca3957cb",
+    "date": "2026-08-26 08:39:38 +0800",
+    "msg": "feat: pixel classifier v2 with aug+mixup — top-1 65.0% top-5 84.4% (char)"
+  },
+  {
+    "hash": "f807159",
+    "full_hash": "f80715944ec33eafd0c19c10870e73975cac4a59",
+    "date": "2026-08-26 08:51:59 +0800",
+    "msg": "feat: eval_all_classifiers.py — unified comparison table"
+  },
+  {
+    "hash": "c42d23b",
+    "full_hash": "c42d23bc251250c5cf971f5e15588e8f4f83aae9",
+    "date": "2026-08-26 09:58:41 +0800",
+    "msg": "fix: 远程 s12 过拟合根因修复 — s13: 减参+去proj+DINO直通+eval500"
+  },
+  {
+    "hash": "d5f7dac",
+    "full_hash": "d5f7dac188f2dbf1f807ba4366dcfc0f9b957fde",
+    "date": "2026-08-26 10:24:05 +0800",
+    "msg": "fix: eval500 用 train 的 per-script character_id 编码 (146 个越界样本剔除)"
+  },
+  {
+    "hash": "c72c34c",
+    "full_hash": "c72c34c1133e02602f32b2038718904ca44292f8",
+    "date": "2026-08-26 10:40:43 +0800",
+    "msg": "fix: eval500 彻底修复 id 编码 + 按用户标准重建"
+  },
+  {
+    "hash": "48b1074",
+    "full_hash": "48b107410367a67730da4669c1c1b706fa43b08b",
+    "date": "2026-08-28 13:13:23 +0800",
+    "msg": "wip: pre-refactor snapshot before remote code sync (2026-08-28)"
+  },
+  {
+    "hash": "4f1743a",
+    "full_hash": "4f1743a0a9116a0dbb451714f0bd52dc076f3ddd",
+    "date": "2026-08-28 13:53:27 +0800",
+    "msg": "refactor: 核心代码分层重构 src/{model,loss,train,eval,utils} + 根目录 shim 兼容层"
+  },
+  {
+    "hash": "4fcb879",
+    "full_hash": "4fcb879ec394721c84fcb724f5e20b89aab6a1fc",
+    "date": "2026-08-28 14:39:03 +0800",
+    "msg": "feat: 统一 eval/inference 核心 + 4-way dropout 配比可配置 + mid-clean 数据集 + s19 预训练配置"
+  },
+  {
+    "hash": "2c7c59d",
+    "full_hash": "2c7c59d30bf318a0f45ebf2a20199528dca2da5a",
+    "date": "2026-08-28 15:17:30 +0800",
+    "msg": "docs: 完整实现文档 docs/system/（分层/扩散统一/4-way dropout/ControlNet/mid-clean/训练/评测/运维/实验）+ 清理 _verify_midclean.py"
+  },
+  {
+    "hash": "5c0a406",
+    "full_hash": "5c0a406f7ae50f48d69621cbf8ba86da671b3b57",
+    "date": "2026-08-28 15:23:45 +0800",
+    "msg": "docs: 修正运维文档 daemon 启动（绝对路径）+ 更新 s19 运行状态/存盘节奏"
+  },
+  {
+    "hash": "2eb2562",
+    "full_hash": "2eb256209a61a117a6ceb4c38db85dd073dccd41",
+    "date": "2026-08-28 16:44:14 +0800",
+    "msg": "tools: 新增 print_eval_trend.py 监控 eval_auto 指标趋势"
+  },
+  {
+    "hash": "b1e5ead",
+    "full_hash": "b1e5eadbedd3812cd421b92ff0a391a8f2a56aa5",
+    "date": "2026-08-29 02:52:07 +0800",
+    "msg": "feat(model): 楠ㄥ共鐜颁唬鍖栫粍浠跺簱 + DiT_2Cond v2 + ControlNet 閲嶅啓"
+  },
+  {
+    "hash": "af0839d",
+    "full_hash": "af0839d953412184f1c3fdf586881465d77b2100",
+    "date": "2026-08-29 02:52:16 +0800",
+    "msg": "feat(loss): flow 姹傝В鍣ㄤ粠 Euler 鎹㈡垚 Heun + logit-normal t 閲囨牱 + timestep shift"
+  },
+  {
+    "hash": "21a7fdb",
+    "full_hash": "21a7fdbcfe35724cad113e7138b7ed8f10907dfc",
+    "date": "2026-08-29 02:52:28 +0800",
+    "msg": "fix(train): 淇?3 澶勪細闈欓粯姹℃煋璁粌鐨勯棶棰?+ 鏃╁仠鏀归€?+ DINO 娉ㄥ叆淇"
+  },
+  {
+    "hash": "7f0047a",
+    "full_hash": "7f0047a0a603a0a41125363abcda3328f8b06fe3",
+    "date": "2026-08-29 02:53:46 +0800",
+    "msg": "feat(eval/utils): eval 共用 flow 配置 + glyph_latent_v2 导入"
+  },
+  {
+    "hash": "d12afa0",
+    "full_hash": "d12afa0d0ebec58cd0580bf496c697e41ce25f93",
+    "date": "2026-08-29 02:54:06 +0800",
+    "msg": "test(tools): v2 架构回归测试 + DINO 诊断/选型/监控/冒烟工具"
+  },
+  {
+    "hash": "ec1b674",
+    "full_hash": "ec1b674464317be23ef0939966e6fe3712e450ca",
+    "date": "2026-08-29 02:54:30 +0800",
+    "msg": "config: s20 预训练/ControlNet 配置 + 启动脚本 + 数据构建工具"
+  },
+  {
+    "hash": "e16cac6",
+    "full_hash": "e16cac6732035e4122297673c44de12afa0649a4",
+    "date": "2026-08-29 02:55:52 +0800",
+    "msg": "docs: v2 架构现代化文档 + 更新总览索引与速查表"
+  },
+  {
+    "hash": "9844b8f",
+    "full_hash": "9844b8faad31b07c397419b4d0b1e19df648ecb7",
+    "date": "2026-08-30 18:13:15 +0800",
+    "msg": "probe: DINO glyph 琛ㄥ垽鍒姏鎺㈡祴 + s22 鍙瀛?embedding 璇婃柇瀹為獙"
+  },
+  {
+    "hash": "abd9b2d",
+    "full_hash": "abd9b2d1092865040f13fb278f58fccd1844d9d1",
+    "date": "2026-08-30 18:15:49 +0800",
+    "msg": "docs: add visual inspection grid and conclusion to glyph condition probe"
+  },
+  {
+    "hash": "0011b97",
+    "full_hash": "0011b972180d011a9af5b601cb154769c266ffad",
+    "date": "2026-08-30 18:31:39 +0800",
+    "msg": "review: codebase 梳理 + s22 首个结果（只训字 embedding 无益）"
+  },
+  {
+    "hash": "8073054",
+    "full_hash": "807305409a2e5438794cb193a087672e4bb5e1d7",
+    "date": "2026-08-30 19:22:52 +0800",
+    "msg": "整理: 仓库/模型/实验全景文档 + 7 个结构化 CSV"
+  },
+  {
+    "hash": "8802e8f",
+    "full_hash": "8802e8fcbe61999f99e60a41bfcab1f0621c5276",
+    "date": "2026-08-31 01:20:41 +0800",
+    "msg": "cleanup: 删除 XL/LoRA/3Cond 死代码，只保留 S/2 ControlNet 主干"
+  },
+  {
+    "hash": "2a4df04",
+    "full_hash": "2a4df0466b489d0f71ddf67f149dbce1af8c323b",
+    "date": "2026-08-31 01:22:19 +0800",
+    "msg": "docs: 模型设计分析与改进方案（含梯度实证）"
+  },
+  {
+    "hash": "2508e87",
+    "full_hash": "2508e87cd5fbd0c72c191daad29702b1f405f4f8",
+    "date": "2026-08-31 01:43:01 +0800",
+    "msg": "diagnose: cfg<1 鏆撮湶鐨勬潯浠惰川閲忛棶棰?+ 淇 flow 涓?pred_xstart 闈欓粯澶辨晥"
+  },
+  {
+    "hash": "a11c7dc",
+    "full_hash": "a11c7dc6aba95ef27967fd385661d7f10a4833af",
+    "date": "2026-08-31 02:09:53 +0800",
+    "msg": "diagnose: DINO CLS 信号诊断 + 幅度修正实现 + 决策文档"
+  },
+  {
+    "hash": "772e4a0",
+    "full_hash": "772e4a0ad4f23389ed22ba15a5f151727fb468e8",
+    "date": "2026-08-31 12:37:01 +0800",
+    "msg": "1-pix"
+  },
+  {
+    "hash": "15c8ddb",
+    "full_hash": "15c8ddb32be575789e59eacd53ee521262c9fef9",
+    "date": "2026-08-31 20:56:21 +0800",
+    "msg": "feat: 标准字形 DINO char/glyph embedding 零参数直通 + 数据清洗 + ControlNet 1px GT skel 管线"
+  },
+  {
+    "hash": "6f93acc",
+    "full_hash": "6f93acc3ad3e714507518d4ac1eeea80c6b1e05d",
+    "date": "2026-09-01 20:58:37 +0800",
+    "msg": "skel-ctrl + REPA 强化: 修复 eval skel latent bug, 新增独立 ckpt 评测与视觉质量指标"
+  },
+  {
+    "hash": "6939c99",
+    "full_hash": "6939c99e84a82399b370ccff2821d26f62fcb6a2",
+    "date": "2026-09-01 21:54:36 +0800",
+    "msg": "视觉质量指标: ink_purity 改为标准 Otsu 分离度, 记录 s32b 训练前后指标对比"
+  },
+  {
+    "hash": "9c0dc3b",
+    "full_hash": "9c0dc3bd37e6ed2f320360ac3af2a137486db2bf",
+    "date": "2026-09-02 00:45:42 +0800",
+    "msg": "train_repa: 支持 --resume 续训; 新增 24h 串行链 configs (s32c 长收敛 / s32d 超强REPA)"
+  },
+  {
+    "hash": "153656a",
+    "full_hash": "153656a70ed2763c82b8e2dd7bbdd0de40cf5f2b",
+    "date": "2026-09-02 03:15:25 +0800",
+    "msg": "docs+tools: 数据清洗管线文档(v7算法/极性规范/验收指标) + 去噪探测与全量扫描工具 + fame 1px/REPA 配置"
+  },
+  {
+    "hash": "14638f5",
+    "full_hash": "14638f56a26f6c474751253c92cadc2ca95b3869",
+    "date": "2026-09-02 11:21:39 +0800",
+    "msg": "docs(results)+tools: s32c 长收敛/s32d 超强REPA 评测+数据清洗v7质量评估(值得重预训练) + 多进程CPU encode v9(分阶段幂等)"
+  },
+  {
+    "hash": "6436976",
+    "full_hash": "64369767d6fc702ef68c8b017da823ef258ccaee",
+    "date": "2026-09-02 12:09:11 +0800",
+    "msg": "v8 新资产集: GPU encode (img/skel3/skel1 21050变更图, 不覆盖旧文件, 写入 fame_clean_v8.npz + *_v8 shards) + 三段训练链 (A base / B skel-ctrl / C REPA) + train_controlnet 支持 B段早期REPA挂载"
+  },
+  {
+    "hash": "de95843",
+    "full_hash": "de958433739c96ba4635b019c6ca47604ee328dd",
+    "date": "2026-09-02 12:29:03 +0800",
+    "msg": "tools: v8 数据管线探针与冒烟脚本 (目录约定/GT一致性/latent匹配/数据集加载验证)"
+  },
+  {
+    "hash": "1ef28a1",
+    "full_hash": "1ef28a1c53c1ce49e1b6505c18545418679f836f",
+    "date": "2026-09-02 12:58:16 +0800",
+    "msg": "OT 优化: ot_chunks 分块匈牙利(config可配, 384batch 13ms->4ms 无质量损失) + ot_chunks 参数透传; v8a base 固化 batch432+compile+OT-chunks4 (实测 1737img/s, 21.2G显存, 100%GPU); runner export TORCHINDUCTOR_CACHE_DIR 持久化compile缓存"
+  },
+  {
+    "hash": "34b147a",
+    "full_hash": "34b147a2c9683a6c728f4703a92c52db31a267f5",
+    "date": "2026-09-02 19:30:04 +0800",
+    "msg": "docs: 鏁版嵁娓呮礂瀹炴祴(鏂规B)涓庨璁粌杩涘睍(base/skel/repa) dashboard+grid"
+  },
+  {
+    "hash": "c27db05",
+    "full_hash": "c27db05e12a2c4f0db652ba2e82ae2934e8c23bb",
+    "date": "2026-09-02 19:38:39 +0800",
+    "msg": "tools: grid鍥惧姞璇︾粏涓枃鏍囨敞(澶у瓧鍙?骞舵妸GT绉诲埌搴曢儴"
+  },
+  {
+    "hash": "f0d533d",
+    "full_hash": "f0d533de4ad49c3b244ac49ebef74a3ab5318ed3",
+    "date": "2026-09-02 20:00:52 +0800",
+    "msg": "backup: 浠?090鎷夊彇鏁版嵁娓呮礂鑴氭湰銆乫ame绱㈠紩涓庤缁?璇勬祴鍒掑垎csv"
+  },
+  {
+    "hash": "91cb52e",
+    "full_hash": "91cb52e176c916f2e50a4c9eb4d6dfc88c5370a8",
+    "date": "2026-09-02 20:22:06 +0800",
+    "msg": "v8总结: 时间线/有效性 markdown + 基模grid对比图 + eval汇总CSV + chartjs dashboard"
+  },
+  {
+    "hash": "3410387",
+    "full_hash": "3410387feb1adc4ea3ebf3b514f0dbaa40bc2790",
+    "date": "2026-09-02 20:36:27 +0800",
+    "msg": "v8完整时间线: 模型/infra(环境切换cu121/torch2/compile/OT/encode演进)/数据(清洗v1-v7+v8资产集) + 有效性分级 + grid图引用"
+  },
+  {
+    "hash": "16666a9",
+    "full_hash": "16666a9fd7f804fd9f4949092f975d159c823c16",
+    "date": "2026-09-02 20:39:44 +0800",
+    "msg": "v8-summary: 补充08-15前早期实验(V1/V2/compositional/s2-s18逐项) + 14条关键转折点; infra环境切换已含(cu121/torch2/compile/OT/encode演进)"
+  },
+  {
+    "hash": "0bffd78",
+    "full_hash": "0bffd7895820468b3b9e41fc92111371873a5a9b",
+    "date": "2026-09-02 20:41:54 +0800",
+    "msg": "v8-summary infra勘误+补全: torch2实为py3.11.13无torch(非py3.10.8), base才是py3.10.8; 工具链补commit佐证(kl-f4/DINO/flow/OT/compile); 新增config infra参数时间变化表"
+  },
+  {
+    "hash": "7031d2e",
+    "full_hash": "7031d2e92aa5af7a4cfb7a2b60bba7a14b961c7c",
+    "date": "2026-09-02 20:49:43 +0800",
+    "msg": "docs: v8-summary 澧炲己瑙嗚浣愯瘉(鍏ㄩ摼璺痝rid涓枃鏍囨敞+base缁刧rid+璇勬祴鏇茬嚎)"
+  },
+  {
+    "hash": "3bcee2d",
+    "full_hash": "3bcee2d4b340acf27ffb8ee814279e0b87809c88",
+    "date": "2026-09-02 23:52:47 +0800",
+    "msg": "fix(v8-chain): chain break A->B - fixed-path ckpt (A_main_final.pt), TERM=xterm tmux, no sed CRLF; add remote.md ops manual; update v8-summary §1/§3.4"
+  },
+  {
+    "hash": "61a24d3",
+    "full_hash": "61a24d32d0296ed0d2b203300d74233c3cbe3ded",
+    "date": "2026-09-03 00:02:02 +0800",
+    "msg": "docs: 阶段总结(有效改动/剩余问题/下一步) + 1px 训练轨迹图 + 结论总览图"
+  },
+  {
+    "hash": "c2e15d3",
+    "full_hash": "c2e15d333a5612ea8a0b204df418d1dbbe1bd9d8",
+    "date": "2026-09-03 00:33:37 +0800",
+    "msg": "eval: 通用 metrics daemon(递归扫描/双格式分发/flock单例) + supervisor 自动拉起脚本"
+  },
+  {
+    "hash": "f54005b",
+    "full_hash": "f54005bd4fceec0d8b999d89a73edca3ba8b967e",
+    "date": "2026-09-03 00:39:10 +0800",
+    "msg": "docs: V8 3-stage 现状 + 全实验汇总表(224 runs); daemon 自动化落位"
+  },
+  {
+    "hash": "525d6e8",
+    "full_hash": "525d6e819584346d4053f888bbf6b0d1a51550b5",
+    "date": "2026-09-03 01:05:49 +0800",
+    "msg": "docs: 目录约定更新(1px/极性/清理第二轮53G)+V8B取代1px的状态修正"
+  },
+  {
+    "hash": "4857784",
+    "full_hash": "4857784f84068a7b74469951d6023303cfb2ee91",
+    "date": "2026-09-03 01:10:32 +0800",
+    "msg": "docs: 数据目录文档修正(fame.npz/旧skel已删标注, v8目录补全, fame_clean已删)"
+  },
+  {
+    "hash": "f812de6",
+    "full_hash": "f812de6178309915fada644646ebd787347de3c2",
+    "date": "2026-09-03 01:15:12 +0800",
+    "msg": "docs: 14 目录约定表补全 v8 目录 + 删除标注 + fame-ctrl 数据污染精确说明 + skel_bank 未同步备注"
+  },
+  {
+    "hash": "1fae06d",
+    "full_hash": "1fae06d047231e43cb5b65ba94f1b1c3ac2f2a74",
+    "date": "2026-09-03 01:29:13 +0800",
+    "msg": "tools: 脚本分层重组(data/eval/clean/serve/legacy) + README 地图; 一次性脚本归档 legacy/"
+  },
+  {
+    "hash": "c47463f",
+    "full_hash": "c47463f012cd7ce980858b4a30b7861af81ee4f1",
+    "date": "2026-09-03 01:37:55 +0800",
+    "msg": "docs: 深度分层文档(数据层16/训练层17/模型层18/评测层19/理解综合20) + tools/README 脚本地图"
+  },
+  {
+    "hash": "b33a3c1",
+    "full_hash": "b33a3c1abaf6a05d94f02a866ff72005142f653a",
+    "date": "2026-09-03 02:56:29 +0800",
+    "msg": "eval: master_results 汇总(122 runs × 25 cols, 全代际/全口径/含V8B轨迹) + 树状构建脚本"
+  },
+  {
+    "hash": "913298e",
+    "full_hash": "913298ed046ff0786aedae51223b7458e5f78e06",
+    "date": "2026-09-03 03:10:45 +0800",
+    "msg": "gradio: 加手绘骨架画板(Sketchpad→skeletonize→dilate3px→VAE encode→ControlNet条件)"
+  },
+  {
+    "hash": "8a8629e",
+    "full_hash": "8a8629e0c0db9ad5e1c1f1c5abaedb34e97ec610",
+    "date": "2026-09-03 11:33:51 +0800",
+    "msg": "eval(v8-chain): same-protocol reeval vs old s32c - v8c 0.7674>v8b 0.7641>s32c 0.7425 (old 0.8204 was cross-protocol inflation); add noise metrics table; base freeze is design (train_ctrl_only)"
+  },
+  {
+    "hash": "8151543",
+    "full_hash": "8151543f5a260691e26116c0dd92530555332b22",
+    "date": "2026-09-03 11:41:18 +0800",
+    "msg": "feat(posttrain): 5 new configs (v8d unfreeze-main / v8e repa-strong w0.5 / v8f repa-deep layers8,11,15 / v8g repa-short 10k / v8h repa-early w0.2); add --unfreeze-main/--main-lr to train_controlnet (2 param groups, EMA-safe)"
+  },
+  {
+    "hash": "cb0fcc3",
+    "full_hash": "cb0fcc37a0c997277f8b4e715fb760348af2d98f",
+    "date": "2026-09-03 11:55:48 +0800",
+    "msg": "fix(unfreeze-main): use id() set for param group split, avoid tensor bool ambiguity"
+  },
+  {
+    "hash": "ab59ab0",
+    "full_hash": "ab59ab047085b93391b7f1f3fc2fc9eeb0844629",
+    "date": "2026-09-03 12:01:45 +0800",
+    "msg": "feat(posttrain): v8g -> repa-lrlow (lr 3e-5 vs 1e-4) LR sweep; remove v8g_short; chain v8d->v8h->v8e->v8f->v8g running"
+  },
+  {
+    "hash": "012f3f2",
+    "full_hash": "012f3f2a128bbbed6706cb818d2a5d7c44f6b4ce",
+    "date": "2026-09-03 12:02:08 +0800",
+    "msg": "docs(results): full fixed-protocol reeval table (10 models + noise), posttrain chain v8d-h status"
+  },
+  {
+    "hash": "1b30e62",
+    "full_hash": "1b30e6278f9689738d5b829e727eb052e3f86dc6",
+    "date": "2026-09-03 19:36:50 +0800",
+    "msg": "docs(results): v8d(unfreeze) ctrl 0.7624 +base0.5543, v8h(repa-early) ctrl 0.7651 base intact; chain v8e running"
+  },
+  {
+    "hash": "a4a8bea",
+    "full_hash": "a4a8bea132e33542ba0a35d8745a32f812440674",
+    "date": "2026-09-03 19:47:03 +0800",
+    "msg": "feat(posttrain): add v8i (unfreeze-main + repa-early combo, max 100k); resize v8e 80k / v8f 60k / v8g 100k (low-LR needs long training; early_stop decides actual stop)"
+  },
+  {
+    "hash": "0c5a41a",
+    "full_hash": "0c5a41a18170723280f202737980090f838c8b6a",
+    "date": "2026-09-03 19:47:15 +0800",
+    "msg": "docs(results): v8i combo added, max_steps resized (80k/60k/100k), chain v3 running"
+  },
+  {
+    "hash": "d128fa9",
+    "full_hash": "d128fa92cbb0cf67e386db9ceef4056893def1ff",
+    "date": "2026-09-04 01:26:11 +0800",
+    "msg": "fix(train): never delete ckpts at runtime (keep-all; was losing best weights via ckpt_keep); train_controlnet saves main weights when unfreeze_main (was dropping trained base); eval samples already persisted per step"
+  },
+  {
+    "hash": "7b34ebf",
+    "full_hash": "7b34ebff84586462c1aa0214eee7061776441921",
+    "date": "2026-09-04 01:39:20 +0800",
+    "msg": "feat(posttrain): v8i hyperparam grid a/c/d (w0.1+l1e-5 / layer6 / w0.3+l5e-5); chain v8ia->v8ic->v8id->v8e->v8f->v8g"
+  },
+  {
+    "hash": "d480216",
+    "full_hash": "d4802169cdf8e00591ceab0a89735fa26a6d5f96",
+    "date": "2026-09-04 16:40:52 +0800",
+    "msg": "docs(results): v8i grid (layer6 best 0.7664, main_lr cap 5e-5), v8e new ctrl SOTA 0.7761 (w0.5 strong repa), base-drop acceptable conclusion"
+  },
+  {
+    "hash": "3b0bc28",
+    "full_hash": "3b0bc285d5ea8a670c501b0c67689c087f26ec8a",
+    "date": "2026-09-04 16:51:16 +0800",
+    "msg": "feat(optim): Muon optimizer (polar-decomp SVD orth + AdamW mixed, auto group by dim); passed orth/conv/shape/state tests"
+  },
+  {
+    "hash": "5656de0",
+    "full_hash": "5656de07902f49562a28aa7c14556ff3449af9ce",
+    "date": "2026-09-04 17:35:25 +0800",
+    "msg": "docs(results): base model quality framework §6.5 - char discriminability 1.97% top-1 (DINO appearance-based not structural), per-script centering +39% verified, ln_only direct disproven (s28 -8.2%), why base differs"
+  },
+  {
+    "hash": "514b3aa",
+    "full_hash": "514b3aa7a7bf2198e22af093fde3a96336814cdc",
+    "date": "2026-09-04 18:09:36 +0800",
+    "msg": "docs(results): §6.5b systematic falsification of DINO embedding enhancement (skel-DINO cos 0.96 fail, real-image retrieval raw 1.2% ceiling, centering 0.40%<raw, unfrozen table s22 -1%), v8a recipe is optimal under DINO bottleneck"
+  },
+  {
+    "hash": "430c78c",
+    "full_hash": "430c78cbc00c0033ef786bd9603dded8a00dfef4",
+    "date": "2026-09-04 18:23:29 +0800",
+    "msg": "docs(results): §6.5c skel latent discriminability - VAE better than DINO (space topology, rank 630 vs 36) but cannot be char cond (sample-level GT leak, 0% prototype retr, redundant with ctrl input); DINO patch pending"
+  },
+  {
+    "hash": "a11b94a",
+    "full_hash": "a11b94ae30abc9128fd01a1c813baed6858134a7",
+    "date": "2026-09-04 20:27:35 +0800",
+    "msg": "docs(analysis): char-embedding-dino.md - systematic falsification + decisive fix: sample-pair test shows contrastive-finetune feasible (same-callig pos 0.82 vs neg 0.60, +0.22 sep 95%); skel rejected as char cond (2nd-stage input); correct use of DINO = intra-char contrastive"
+  },
+  {
+    "hash": "61f6302",
+    "full_hash": "61f6302d97382996064527a08ee5001aeee331a7",
+    "date": "2026-09-04 22:05:36 +0800",
+    "msg": "analysis: 100-char signal finale - all prototype-retrieval fail (DINO/patch/skel all 0%, negative sep), sample-pair contrastive is only viable; v8e ctrl SOTA 0.7761 confirmed (same-protocol); train_repa early_stop added (config pending)"
+  },
+  {
+    "hash": "2e0fe46",
+    "full_hash": "2e0fe46d72f4276d23de20df74d61ab7b8936900",
+    "date": "2026-09-04 22:09:17 +0800",
+    "msg": "analysis: rigorous DINO signal remeasure - center-l2 boosts sep 5x (SNR 0.10), content-vs-style decomposition: content +0.229 vs style drift +0.209 (SNR 1.09); retrieval 0% is physical (overlapping dists); correct use = contrastive to compress style; skel excluded per user"
+  },
+  {
+    "hash": "d6cebe9",
+    "full_hash": "d6cebe907fe901bb975aabf4daf230a2a7e60e78",
+    "date": "2026-09-04 22:10:37 +0800",
+    "msg": "analysis: patch vs CLS same-sample SNR - patch no better (patch-mean SNR 2.1 via noise-avg illusion, content +0.068 weakest; perpatch-align 1.54 no spatial bonus); DINO appearance-driven either way; contrastive training is the only lever"
+  },
+  {
+    "hash": "da8ac97",
+    "full_hash": "da8ac97b1906e743da461dda50451ada3f708386",
+    "date": "2026-09-04 22:14:56 +0800",
+    "msg": "analysis: v8e attribution - w0.5 + longer window (peak 12.5k->22.5k, ctrl 0.7675->0.7761); no-early-stop is sole flaw (base collapse after peak, fixed by early_stop code); contrastive finetune design (offline InfoNCE same-callig pos pairs -> frozen table, architecture-compatible)"
+  },
+  {
+    "hash": "df66fa5",
+    "full_hash": "df66fa5e32bef2011469fe3de7e8c0af54d27e8e",
+    "date": "2026-09-04 22:23:38 +0800",
+    "msg": "analysis: contrastive finetune v1+v2 both fail (retrieval 0%, sep -0.19 worse than raw) - DINO content SNR 1.09 is hard ceiling, batch-specific overfit, margin too small; DINO-processing paths all closed"
+  },
+  {
+    "hash": "29a0fea",
+    "full_hash": "29a0fea24b7df27752fd70a57d011a90d733f55e",
+    "date": "2026-09-04 23:20:50 +0800",
+    "msg": "trial(muon): FAILED - 2k/5k smoke AdamW always ahead (5k tail 0.385 vs 0.404, cold-start 19M spike); code archived; train.py --optimizer muon/adamw + --muon-lr added"
+  },
+  {
+    "hash": "61929b9",
+    "full_hash": "61929b92e551e93afd1b711103da7883397bfb4a",
+    "date": "2026-09-04 23:33:39 +0800",
+    "msg": "fix(train): REMOVE w_repa from flow-disabled list (REPA is t-independent, works in flow per train_repa SOTA v8c/v8e); add v9a repa-pretrain config (w_repa 0.1 full-run) + smoke; smoke verified REPA loads (VAE+teacher) and loss runs (raw 0.27)"
+  },
+  {
+    "hash": "ed1f56b",
+    "full_hash": "ed1f56bc9c32ab6c9e1b59a51a9b4d6981108dec",
+    "date": "2026-09-05 00:15:09 +0800",
+    "msg": "refactor(infra): unified REPA (src/loss/repa.py RepaModule: multi-layer+warmup, shared teacher, used identically in base train.py & ctrl train_controlnet) + unified in-mem eval facade (src/eval/eval_facade.py: GPU/CPU sample -> same-proc metrics -> drop PNGs -> eval_auto_*, VAE lazily loaded/released, no daemon) + model multi-layer intermediate capture + fix VAE OOM (w_repa no longer forces VAE residence in latent mode)"
+  },
+  {
+    "hash": "4e4e4b2",
+    "full_hash": "4e4e4b23f2c20823a6040366d628c60745d61bdc",
+    "date": "2026-09-05 00:51:15 +0800",
+    "msg": "align v9b to v8e recipe (w0.5 layers 8,11 lr1e-4 batch128 warmup200) + multi-layer repa-early support; doc v9 2-stage early-stop confirmed (v8e 22.5k peak lesson); A base REPA verified"
+  },
+  {
+    "hash": "fabbd20",
+    "full_hash": "fabbd205a48bf6e60d6e64fd0cab729ec404ebf6",
+    "date": "2026-09-05 12:03:24 +0800",
+    "msg": "feat(skel1cond): DiT-1CondSkel (no char cond, skel-latent concat input 8ch, callig-only adaLN, CFG skel/callig dropout, REPA multi-layer iface) + train_skel_1cond.py (FlowMatching+OT, unified eval_facade) + v10a S/2 & v10b S/1 configs; smoke passed on cu121 (loss 3.76)"
+  },
+  {
+    "hash": "0a22dc9",
+    "full_hash": "0a22dc9853839e008b978f3db67a0bb1f7505e93",
+    "date": "2026-09-05 12:48:04 +0800",
+    "msg": "docs: base model 性质分析——预训练应以条件响应度/多样性/特征丰富度为目标,非SSIM only"
+  },
+  {
+    "hash": "617d3fb",
+    "full_hash": "617d3fb9c39f522d03dd4c87d8ddcc7e9e3c92d3",
+    "date": "2026-09-06 01:13:42 +0800",
+    "msg": "feat: v10a skel-latent-as-char-condition from-scratch pretrain + CPU eval daemon"
+  },
+  {
+    "hash": "3414c81",
+    "full_hash": "3414c81b006c29baf09ce3ac287dd73536073100",
+    "date": "2026-09-06 01:14:15 +0800",
+    "msg": "chore: 同步实际运行版本 (ctrl_fame_v2 配置/train_repa v8e 实跑版) + master builder 接入 v89 序列源"
+  },
+  {
+    "hash": "70f1efd",
+    "full_hash": "70f1efdfc59321854a76bfa38b48b2f9fe039123",
+    "date": "2026-09-06 04:50:57 +0800",
+    "msg": "fix: pretrain_g 评测 g 来源改为 GT 实例骨架 (条件域与训练一致, 可比历史 ctrl 臂); std_glyph 降为 --g-source 可选"
+  },
+  {
+    "hash": "b4adb67",
+    "full_hash": "b4adb675797f6fd7e539b720a807dd68796c7d21",
+    "date": "2026-09-06 05:14:02 +0800",
+    "msg": "feat: use_char_cond 开关 (v10b 两因子极简: callig+skel-g, char 向量条件移除 -13.8M)"
+  },
+  {
+    "hash": "90a3267",
+    "full_hash": "90a3267704c752f2e6014a642840adbaba47ee5e",
+    "date": "2026-09-06 18:02:06 +0800",
+    "msg": "data: v10a 完整 GT 协议评测曲线入册 (40 点, best 0.8476@127.5k); collect 加 v10a/v10b 系列"
+  },
+  {
+    "hash": "a4cdc67",
+    "full_hash": "a4cdc67e01e3d5ed871fcb87c71abaa8e10d9aa3",
+    "date": "2026-09-06 19:51:03 +0800",
+    "msg": "feat: 新字手绘遵循度测试 (字库新字→v10b 生成→输出骨架化 vs 输入骨架 IoU)"
+  },
+  {
+    "hash": "b6b31c0",
+    "full_hash": "b6b31c080ce624abdabf79cc1972d0b75e51360f",
+    "date": "2026-09-06 20:58:15 +0800",
+    "msg": "docs: 36 号文档 (v10b 无char两因子 + 新字遵循度对比 0.554 vs 0.194); v8e 对比分支 + rc 未绑定修复"
+  },
+  {
+    "hash": "b056875",
+    "full_hash": "b0568756821dd3d6f431210e4aef96c1333c7706",
+    "date": "2026-09-06 21:42:57 +0800",
+    "msg": "docs: 37 数据布局与归档 (data/ 75G 8类归档, data_path.json 活跃清单, 根目录脚本整理)"
+  },
+  {
+    "hash": "741c22b",
+    "full_hash": "741c22b2c0db4d47accecd83d08d59f5f7308414",
+    "date": "2026-09-06 22:00:49 +0800",
+    "msg": "docs: 37 追加 results 整理 (532G→195G) 与 v10b 性能"
+  },
+  {
+    "hash": "48f10c6",
+    "full_hash": "48f10c6c07e84467d05b59343abb4cee00d83685",
+    "date": "2026-09-07 01:28:11 +0800",
+    "msg": "fix(v10b): resume-full strip _orig_mod prefix (compile-saved keys); inference route g-cond model to 'g' key vs ControlNet 'cond'; cpu_eval_worker use_char_cond honors no_char_cond"
+  },
+  {
+    "hash": "079e5b4",
+    "full_hash": "079e5b48ee51c9a16c9eaaa76e1ef49985dce420",
+    "date": "2026-09-07 03:05:19 +0800",
+    "msg": "eval: GPU 系统性 skel 遵循矩阵 (n=30, 6轮) — v10b 67.5k-85k 平台 0.576-0.570, v10a 0.541, v8e 0.201 (2.8x); 定型两阶段新字失灵为结构性; 修 CPU 版同款 ckpt 匹配 bug"
+  },
+  {
+    "hash": "e0cf6bc",
+    "full_hash": "e0cf6bc90a4eb04348b75c8066a21aa9e6574620",
+    "date": "2026-09-07 03:15:18 +0800",
+    "msg": "fix(eval): skel 遵循协议修正 — 有 char 因子模型必须 y_char=num_classes (null) 而非随机 id=0; 正确开集协议下 v10a 0.578 ≈ v10b 0.570 (差 0.008 噪声带内), 推翻旧结论 'v10b 略优 v10a 0.541'; drop char 对 skel 遵循无提升; v8e 0.212 结构性失灵不变; char-null 矩阵 3 轮 n=30 入册"
+  },
+  {
+    "hash": "7eadf5c",
+    "full_hash": "7eadf5c270fde2664b7ff0f21375db8e9b59b3f2",
+    "date": "2026-09-07 03:23:06 +0800",
+    "msg": "docs: 38 号文档 — drop-char 之谜解开 (v10a char 因子是随机表非 DINO; 85k vs 135k 不公平比较; 遵循度两模型同源) + 提升方向 A/B/C (v10b resume 135k 补净代价 / 遵循度杠杆 / REPA w0.5); 归档矩阵与探针脚本"
+  },
+  {
+    "hash": "a8317ce",
+    "full_hash": "a8317ce6b385e0dbcd1b64d5c53cd564ab30ad63",
+    "date": "2026-09-07 03:30:51 +0800",
+    "msg": "feat: v10a-dino — 冻结标准字形 DINO char 表 (StdDinoCharEmbedder + ln_only 直通), 与 v10a 唯一变量; fix: freeze_char_table 遇 char_table buffer (DINO) 走 IDS 类分支不崩; CPU 冒烟全过 (32.64M 参数, DINO 表冻结, fwd/CFG/bwd/REPA 中间层)"
+  },
+  {
+    "hash": "dae8a7c",
+    "full_hash": "dae8a7c780105e8c4d3412f84c8f1d3c4c462ae2",
+    "date": "2026-09-07 03:35:00 +0800",
+    "msg": "chore: v10a-dino 启动/冒烟脚本归档 (gitignore 强加)"
+  },
+  {
+    "hash": "167d950",
+    "full_hash": "167d9504b3ec54d780980c362322a96768742bc7",
+    "date": "2026-09-07 12:00:10 +0800",
+    "msg": "eval: v10a-dino 全量 GPU 评测 (35点) + 三臂对比 — 冻结 DINO char 表系统性低于随机可训练表 (中段 -0.012~-0.014, 尾段 -0.002~-0.004); DINO 表作为训练条件净负, 只留下推理开集查表价值; v10b 无 char 仍最优; 新工具 gpu_eval_pretrain_g.py (35点~20min); worker DINO 透传修复"
+  },
+  {
+    "hash": "67c8633",
+    "full_hash": "67c8633a7409733b8b8dab1a93e9b3fe36d1085c",
+    "date": "2026-09-07 12:03:32 +0800",
+    "msg": "docs: 40 号文档 — v10b 调优实验方案 A-D (续训补净代价 / REPA 强化 v8e 配方 / 深层骨架注入+scale / 3px 骨架数据); 方案 C 前提已核实 (glyph_injections 已实现), D 需先造 3px shard"
+  },
+  {
+    "hash": "2a22734",
+    "full_hash": "2a22734d8160238611bc5ddd4ad6184d94765e9b",
+    "date": "2026-09-07 12:34:13 +0800",
+    "msg": "debug: v10b 梯度诊断 (85000.pt, 4batch) — 发现 REPA 劫持 (梯度占比 158%, loss 数值比 0.70, 余弦vsMSE量纲错配) + callig 链弱梯度 (rel 0.0013 低6倍); g 注入生效 10%; 新工具 debug_v10b_gradients.py; 41号文档"
+  },
+  {
+    "hash": "adb6f64",
+    "full_hash": "adb6f648a6d5026f9377c45582157479a5d734a0",
+    "date": "2026-09-07 12:35:49 +0800",
+    "msg": "docs: 42 号文档 — 基于梯度诊断的 4 个改进实验 (REPA 权重校准 w0.02 / callig 链增强 / REPA 关闭对照 / REPA 浅层化); 三角对照定 REPA 真实价值"
+  },
+  {
+    "hash": "35ec32f",
+    "full_hash": "35ec32f8be6f67599c09763253386e695306417f",
+    "date": "2026-09-07 13:00:49 +0800",
+    "msg": "feat: v10b 5 实验串行链 — repa(0.5,8,11) / inject(4层,scale0.6) / callig(dim256+MLP+scale1.5) / norepa / shallow(2,4,w0.05); dit.py 加 callig_proj_mode+callig_scale_init; 冒烟全过; chain 已远程启动 (v10brepa 训练中, daemon 已切换)"
+  },
+  {
+    "hash": "b724418",
+    "full_hash": "b72441877f639c7209760b160061c6f6a7012a7b",
+    "date": "2026-09-07 13:14:42 +0800",
+    "msg": "docs: 43 号文档 — v10b 五实验串行链 (B/C + callig/norepa/shallow) 设计、chain 机制、eval 保障与运行状态 (v10brepa step2550, eval step1000 已出)"
+  },
+  {
+    "hash": "9dc3dc3",
+    "full_hash": "9dc3dc350fd76f88661ceed8668c3a0e95917fa8",
+    "date": "2026-09-07 21:58:02 +0800",
+    "msg": "feat: fame3 std-skel g 通路诊断 + glyph_embedder_depth 开关 + d01/变体 config + 状态查看"
+  },
+  {
+    "hash": "bc659d0",
+    "full_hash": "bc659d0281701967134c6e93f4dcc686cd4440f5",
+    "date": "2026-09-09 03:12:44 +0800",
+    "msg": "docs: 44 号文档 — std skel + Sp 模型阶段补录 (fame3 数据/std 骨架条件 gap 0.90/欠拟合诊断->Sp h512/xattn 12层注入/41 书家冻结表; c41x 0.6216@105k 仍升, S/2 系全部平台 0.61-0.62 容量瓶颈确认)"
+  },
+  {
+    "hash": "0ec546e",
+    "full_hash": "0ec546e40bf48940f3f51ddf212c55834b3d14c9",
+    "date": "2026-09-10 15:22:43 +0800",
+    "msg": "feat+docs: 风格 token 每层注入 (GlyphStyleCrossAttn) + n in {16,32,64} 容量扫描链 + 45/46/47 号文档"
+  },
+  {
+    "hash": "bb22057",
+    "full_hash": "bb22057db99a2b56038e6f664bf5edf2e6413ffb",
+    "date": "2026-09-10 17:14:57 +0800",
+    "msg": "chore: 清理死字段/孤儿 config — c41*/sty* 剥离 no_char_cond=true 下不生效的 char 字段, callig_spatial 字段全清 (外挂已删), 删除 v10b{repa_strong,norepa,shallow_repa} (43 号设计全仓库无结果)"
+  },
+  {
+    "hash": "8f0bf3f",
+    "full_hash": "8f0bf3fa67cfcd3abecaab8ede926e2b183bbd0a",
+    "date": "2026-09-10 17:15:01 +0800",
+    "msg": "feat(eval): 推理时消融工具 gpu_ablate_eval + E4a strict 集 CFG 复核脚本 (n=237, 分批 decode) + worker 透传 style_token_n/style_role_init (漏传致 eval 全崩修复)"
+  },
+  {
+    "hash": "87684fe",
+    "full_hash": "87684fe95b6b8c46c230f1913913846400019284",
+    "date": "2026-09-10 17:15:05 +0800",
+    "msg": "docs: 48 号 — GPU 推理时消融实测 (四通路全必需, D1 输入层 token-add/D2 撤回) + CFG 口径修正 (峰值 ~2.0, skel_iou +58%) + 可删清单 + 下阶段优先级"
+  },
+  {
+    "hash": "8e72f02",
+    "full_hash": "8e72f021655eb1deca857d422b633871c3122f95",
+    "date": "2026-09-10 17:26:47 +0800",
+    "msg": "feat+docs: E4a/E4b 实测 — CFG 修正只作用于 seen (strict 不受救, 精确 iou 恒~0.016); c41x 新口径下未平台 (0.826/0.352 仍升); c41x_scratch 被杀后 resume 12.5k; P1 消融 config 就绪 (l0/l4/norepa/nodrop, eval_cfg=2.0) + 49 号文档"
+  },
+  {
+    "hash": "11b4e9c",
+    "full_hash": "11b4e9c09eea0c9166fff442c1976523bfb76193",
+    "date": "2026-09-10 17:28:56 +0800",
+    "msg": "fix(eval): F4 陈旧 lock 自动清理 (>45min) + part 残留清理 (防止失败评测误判成功/永久跳过) + F5 unexpected 明细崩溃前打印; 实测清掉被杀 run 留下的 0010000.lock"
+  },
+  {
+    "hash": "420c51e",
+    "full_hash": "420c51ec762b9901f2969d25a345c5368d34f656",
+    "date": "2026-09-10 17:51:07 +0800",
+    "msg": "fix(eval): D3 清理后 ckpt args 中惰性字段为 None 导致 int(None) 崩溃 — 四处构建器 None-safe 默认值; 补 style_token_n/style_role_init 透传 (skel_follow/eval_batch); sty scan configs (16/32/64 from scratch, sty32=60k/4h cosine)"
+  },
+  {
+    "hash": "556ebce",
+    "full_hash": "556ebcec41e8e9fd2a1c12ecbe83327509529378",
+    "date": "2026-09-10 19:01:44 +0800",
+    "msg": "feat(eval): poster 生成器 — 每 step: seen 全拼 1 张 + strict 前50 每10个1张(5张); 总集: seen/strict 各1张(每行=ckpt+ssim, 末行=GT); daemon 评测完成后自动生成 (posters/ 目录)"
+  },
+  {
+    "hash": "b20d8ce",
+    "full_hash": "b20d8ce623a0b209d992d6079c2b28f31ec8cd79",
+    "date": "2026-09-10 19:31:54 +0800",
+    "msg": "feat(eval): eval_ctl.sh — daemon tmux 托管控制器 (start/stop/restart/status, 单实例, 活 worker 保护, 陈旧 lock 清理, 稳定日志软链) + worker 采样进度日志 (chunk 级, 不再静默30分钟); 启动脚本改用 eval_ctl"
+  },
+  {
+    "hash": "ea2fc5c",
+    "full_hash": "ea2fc5c67b691dbbc289c45a1b99f2386e95bb82",
+    "date": "2026-09-10 22:41:37 +0800",
+    "msg": "docs: 50 号演进复盘 — 从已删除的 XL/3Cond 到风格 token (6 纪元/设计变化/里程碑数字), 7 个里程碑 eval poster 生成并入库 (docs/system/imgs/retro/), 早期海报与轨迹图一并编入; posters.py 补 seen/strict csv 覆盖 (老 run 样本标签对齐)"
+  },
+  {
+    "hash": "daa4145",
+    "full_hash": "daa41459e83f255087af26ace93f84f84fba4109",
+    "date": "2026-09-10 22:41:57 +0800",
+    "msg": "config: sty32 -- max_steps 60k->230k (从 47500 resume, 剩 182.5k 步 ~12h ETA, 绝对步数 cosine)"
+  },
+  {
+    "hash": "40a8a2f",
+    "full_hash": "40a8a2f7f444d24e3fb674634d53512276080f2a",
+    "date": "2026-09-10 22:52:18 +0800",
+    "msg": "fix(train): fresh-scheduler base lr 显式取 config/--resume-lr (原 LambdaLR 拿 ckpt 恢复的旧 lr 当 base, 从旧曲线尾部续衰减 — 12h 重启实测 8.2e-6 vs 应为 4.2e-5); sty32 max_steps 250k (72.5k resume, ~12h ETA)"
+  },
+  {
+    "hash": "d8f3bca",
+    "full_hash": "d8f3bcac0fe1ab4fe4d47ccbd7e41f5387e88676",
+    "date": "2026-09-10 23:41:45 +0800",
+    "msg": "docs: 50 号复盘全面版 — 45 张里程碑 poster 全量入库 (17 run: v10a/v10adino/v10b系 d01/deep/mid/sp2/repa/c41x系/cos系/sty16/sty32 + sty32 live 总集), 早期 s 系 fig1-7/cfg 扫描海报编入; posters.py 加 --prefix 防跨实验撞名"
+  },
+  {
+    "hash": "3870300",
+    "full_hash": "3870300891c98f068d09d12ed4630225bddbc9fa",
+    "date": "2026-09-10 23:44:39 +0800",
+    "msg": "docs: 50 号详解版 — 补 LR 改动全史(3 代调度器+3 个 base 修复+解析估算)/g 注入方式 6 代演进/当前 attention 逐行实现(GlyphStyleCrossAttn+drop 语义修复)/失败尝试全集(架构/条件/调度/评测 4 类 20+ 条)"
+  },
+  {
+    "hash": "b8e15de",
+    "full_hash": "b8e15de965dd46c353e67702434fa5e41015b9dc",
+    "date": "2026-09-10 23:45:19 +0800",
+    "msg": "docs: 50 号修正两处图片路径 (step 位数)"
+  },
+  {
+    "hash": "dbbd48e",
+    "full_hash": "dbbd48e817f9e3198e1cbc2956214d3d50b0a7b0",
+    "date": "2026-09-10 23:50:25 +0800",
+    "msg": "docs: 50 号改时间线详解版 — 全部改动(T0-T9)按时间顺序: 注入方式三次改动完整演进 (adaLN4层→xattn12层→外挂→风格token每层注入), T8 详述最后一次注入怎么改+局部化调制机理(逐位置逐层注意力/字形条件/每层重寻址), LR 三个base修复/增强/CFG/失败全部入线; 文末保留 attention 速查+失败汇总+口径附件"
+  },
+  {
+    "hash": "07adeac",
+    "full_hash": "07adeacd3afbad7be3dcf4898086a7c722c54b3a",
+    "date": "2026-09-10 23:50:45 +0800",
+    "msg": "docs: 50 号修正 v10b_skelonly 图片路径"
+  },
+  {
+    "hash": "6c6c3d1",
+    "full_hash": "6c6c3d18099144e2ba80933f69fd632027ce2182",
+    "date": "2026-09-11 00:48:33 +0800",
+    "msg": "docs: 50 号补齐所有 strict 对照 — 13 个只放 seen 的里程碑 run 批量生成 strict50 样本(前50, 同协议 cfg)并出 poster, 每张 seen 后插入对应 strict p0 (cos_e 按已证无损口径剥离旧外挂键); v10a 改用 127.5k(135k ckpt 已清理); 共 110 张 poster, 57 图引用全部有效"
+  },
+  {
+    "hash": "1ddf505",
+    "full_hash": "1ddf505cb5763d489225f420f914ecdfcfb3c9f4",
+    "date": "2026-09-11 07:45:31 +0800",
+    "msg": "docs: 50 号更新最新实验 poster — sty32 @202k/250k (seen 0.669@197.5k 后期陡涨 / strict 0.5518@190k 缓升), 刷新 live 总集(seen+strict)+ 197.5k seen + 190k strict(5张), 替换旧 80k/70k 参照"
+  },
+  {
+    "hash": "b4574e0",
+    "full_hash": "b4574e029898c259bb500e782f490a5f3f262aa5",
+    "date": "2026-09-11 07:46:34 +0800",
+    "msg": "feat(posters): strict poster 优先读 strict50/ 子目录 (后补的 strict50 样本), 回退 strict/"
+  },
+  {
+    "hash": "8649a1b",
+    "full_hash": "8649a1bd785461bfbb8b10c0188a77dee0cf7f18",
+    "date": "2026-09-11 07:56:53 +0800",
+    "msg": "config+docs: Sp/2 过拟合处置 — sty32_s (S/2 32.7M, 同样式token配方, 200k cosine, 从零) 已启动; 50 号加 T10 (seen 0.669 陡涨 vs strict 0.552 平台 -> 判过拟合, 唯一变量骨干尺寸)"
+  },
+  {
+    "hash": "a8085e4",
+    "full_hash": "a8085e4711014ea3c16cbe408c38fbbd0063fd23",
+    "date": "2026-09-11 13:08:12 +0800",
+    "msg": "refactor(model): 删除无效模块 — CalligStyleCrossAttn(v2 输入端风格, 已被风格token取代)/skel_head(w=0 从未启用)/xl_highdim+legacy fusion(仅 factorized_add)/IDS+DINO char embedder(已证负); train.py 与 eval 构建器同步清理接线, 两个废弃 smoke 测试删除. 冒烟: S/2+style_token_n=32 构建 43.98M, 加载在跑 ckpt miss=0/unexp=0, fwd/bwd OK"
+  },
+  {
+    "hash": "7691037",
+    "full_hash": "76910374baabb9ab989d7af0409e2509695d1fb6",
+    "date": "2026-09-11 13:44:10 +0800",
+    "msg": "feat(aux): moyi 式辅助目标通道 — 训练目标 x=cat(image(4), skel(4), canny(4))=12ch 全部加噪算 MSE (aux 为 GT 实例结构 latent, 非条件), 推理只用前 4 通道; dataset 支持 aux_latent_shards_dirs, 采样器自动扩噪声/解码切片, eval 构建器推导 in_channels, glyph_embedder 通道与目标解耦(glyph_in_channels); 新增 tools/data/build_aux_latents_fame_e.py (skeleton+Canny->VAE latent shards) 与下次实验 config; 冒烟通过(dataset 12ch/前向反向/CFG/CPU采样12ch->解码4ch)"
+  },
+  {
+    "hash": "97e40ca",
+    "full_hash": "97e40cabd16dfb9d04fe5e151a12833aeee67cbc",
+    "date": "2026-09-11 14:36:23 +0800",
+    "msg": "feat(train): aux 目标通道接线 — in_channels=4+4*n_aux, dataset 传 aux_latent_shards_dirs, 训练目标 cat(image, *aux), --aux-latent-shards-dirs 开关 (漏提交补齐; 已实测 in_channels=12 / aux 各 1.7G 加载 / 5.54 sps)"
+  },
+  {
+    "hash": "29e1a0b",
+    "full_hash": "29e1a0bee624baee18903778f8af0d58caea6434",
+    "date": "2026-09-11 14:36:46 +0800",
+    "msg": "perf(aux-build): enable TF32 (encode 提速, batch 64 下 ~185 img/s)"
+  },
+  {
+    "hash": "cabf89c",
+    "full_hash": "cabf89c439fb3dd17ba07f8401a96ab27bd71d8c",
+    "date": "2026-09-11 15:19:08 +0800",
+    "msg": "config(aux): batch 128->192 (显存 14.5G->21.2G 占满), 实测 compute-bound 吞吐不变(709 samples/s) -> max_steps 200k->133k 保持 ~10h ETA"
+  },
+  {
+    "hash": "5dd1ace",
+    "full_hash": "5dd1ace90198e78cd961a5d9443fed2aaee2054e",
+    "date": "2026-09-11 18:15:55 +0800",
+    "msg": "feat+config(aux): per-channel 加权 loss (图像 w=1, aux w=w_aux -> 在 12ch mean 上等价于 aux 降权, 图像梯度权重不变) + aux_loss_weight 配置; aux run 改 xattn 12->4 层 (显存 21.2G->16.8G, 吞吐 708->783 samples/s, +11%)"
+  },
+  {
+    "hash": "cec0a1f",
+    "full_hash": "cec0a1f0e1b701fb16647ec84543dd39783a2265",
+    "date": "2026-09-11 18:52:59 +0800",
+    "msg": "docs/assets: 50 号复盘导出 (docx/html/pdf) + 参考代码 ref/moyi + 参考论文 net1.pdf 入库"
+  },
+  {
+    "hash": "bcc2eed",
+    "full_hash": "bcc2eeda22e4c9b75569155f8b5b2d0a31bd49c8",
+    "date": "2026-09-11 19:11:10 +0800",
+    "msg": "docs: 51 号 — moyi aux 结构通道逐行核对与对齐 (确认: 预测 skel/canny VAE latent 拼接 12ch 目标 + latent MSE, 推理全通道噪声采样只取 4ch; 列 5 处差异: loss权重/DDPM-vs-flow/learn_sigma/骨架条件/缺失的 utils/diffusion.py); aux loss 权重回 1.0 对齐 ref; 新增结构图生成工具"
+  },
+  {
+    "hash": "403cdfb",
+    "full_hash": "403cdfb3c9a3b58e93f88c5748197411bd6253a3",
+    "date": "2026-09-11 19:34:49 +0800",
+    "msg": "refactor(model): 删除 xattn/风格token (训练期增量≈0, doc50/51 证据), 注入回归干净 adaLN (输入 token-add + ZeroAdaLNInjection, ref 同族); 同步清理 train/eval 接线与 aux config; 新增 52 号 — ref 主模型设计精读/优点/对齐清单 (极简主干+adaLN-Zero+结构进目标+字体label+门控×1.2)"
+  },
+  {
+    "hash": "acb0d7f",
+    "full_hash": "acb0d7fc96af76a28d92317d241814d59f593b3b",
+    "date": "2026-09-11 20:17:26 +0800",
+    "msg": "feat(eval): GPU in-mem eval 开关 (--device cuda|cpu + --ckpt-override + 峰值显存打印); 修复 aux 通道噪声填充非确定性 (固定 seed, 否则同 ckpt ssim 抖动 ~0.02); 实测定 batch: strict n=237 GPU 30s vs CPU 30min, dit16/vae8 仅 2.6G (可与训练并存); aux 梯度 debug 工具 (final层 aux/img 梯度比 1.14 -> w_aux=0.15); batch 256/max_steps 100k"
+  },
+  {
+    "hash": "f820717",
+    "full_hash": "f8207174accd8cba993a0e08e671e9da6667a5c8",
+    "date": "2026-09-11 20:39:01 +0800",
+    "msg": "feat(eval): GPU in-mem 评测循环替代 CPU daemon — 与训练并发 (seen dit16/vae8 3s/2.2G; strict dit8/vae4 76s/1.7G; 独立时 28s), --save-samples 落盘供 poster, 自动写 eval_auto_<step>.json + 刷新 poster; 已切换 tmux gpueval_aux"
+  },
+  {
+    "hash": "b36319d",
+    "full_hash": "b36319d7c6e6e51675a924b3f69a05e3899e535b",
+    "date": "2026-09-12 00:25:20 +0800",
+    "msg": "refactor: 架构选项全部恢复为可配置开关以支持历史 ckpt 复评 — callig_spatial(低秩 64 x (64,256,512))/xattn/style token/CalligStyle/skel_head/xl_highdim/DINO/IDS (从 0ec546e 恢复) + 保留 aux 通道、w_aux、skel/canny loss 日志; eval_stdskel_batch 全 kwargs + None-safe + 12ch 解码切片 + --device/--ckpt-override/--save-samples; 新增 reeval_strict.py (全 ckpt GPU strict 重评)"
+  },
+  {
+    "hash": "846eb0a",
+    "full_hash": "846eb0af8fe262355c4dc01c6337a65fc1f88718",
+    "date": "2026-09-12 01:27:20 +0800",
+    "msg": "fix(train): flow 下不再禁用 w_latent_skel/canny (它们是基于 pred_xstart 的 latent 结构 loss, 非 DDPM 专属; 历史 bug: 被静默置0, 结构 loss 从未生效); 新增 cos_e_struct config — 从 c41x_cos_e@390k (strict 0.5676 最佳) resume + skel/canny loss (0.1/0.1, probe, struct_fame_e 像素图); 实测生效: skel_loss=2.96/canny_loss=0.35 已入日志"
+  },
+  {
+    "hash": "4661527",
+    "full_hash": "466152775f5034fa26058423b1cadda5323f5197",
+    "date": "2026-09-12 03:12:29 +0800",
+    "msg": "config: v11_struct-loss 系列 (skel=0.02 降5倍, canny=0.1) — 从 c41x_cos_e@390k resume + latent 结构 loss; 实测 enabled skeleton=0.02/canny=0.1, 日志 skel_loss/canny_loss 正常; GPU eval loop (seen 2.5k / strict 10k) 已挂"
+  },
+  {
+    "hash": "5cd2aaf",
+    "full_hash": "5cd2aafee195533fc177b5a122d0d670300e2f73",
+    "date": "2026-09-12 04:31:37 +0800",
+    "msg": "fix(struct-loss): flow 下 latent_struct_max_t 门控 500->0.3 —— 原门控为 DDPM(t∈0..1000)设计, flow t∈[0,1] 使 t<=500 恒真, 结构 loss 在全部(含 pred_x0 全糊的高噪声)步生效 -> loss 不降且拖累 strict(实测 strict@400k=0.5624 vs 基线 0.5676); max_timestep/int->float 防 flow 阈值被截 0; 修后 skel_loss 5.4->1.4, canny_loss 0.26->0.03"
+  },
+  {
+    "hash": "b921484",
+    "full_hash": "b9214841d12e640b02ed653cc5ebbced3b8f68ce",
+    "date": "2026-09-12 12:17:46 +0800",
+    "msg": "config: v11_pretrain_S2 从头预训练 (无 resume) — Sp/2 59M -> S/2 30M 防过拟合 (113k 数据下 Sp strict 0.5675 平, seen 见顶回落); batch 128->256 (显存 17.3G, 余量 ~4G); LR 5e-5->1e-4 (随 batch 线性), warmup 3000, max_steps 300k (token 76.8M > 原 51.2M); 架构干净版 adaLN 注入 (xattn/style/callig_spatial 归因约0 全关), 保留 41 冻结表+REPA0.03+std-skel-g; 结构 loss 关闭; eval seen 2.5k/strict 10k cfg0.7"
+  },
+  {
+    "hash": "ee83e57",
+    "full_hash": "ee83e579bbe1ff961a32bac999a789b436c2bac6",
+    "date": "2026-09-12 13:15:40 +0800",
+    "msg": "refactor: 删除 pixel/image 的 skel/canny 监督整条链路, 换纯 latent (ref/moyi 12ch)"
+  },
+  {
+    "hash": "762f70a",
+    "full_hash": "762f70afc83d3d66865136b4559c6a5f8d27de55",
+    "date": "2026-09-12 17:37:27 +0800",
+    "msg": "config: v11_pretrain_S2_v8_aux02 — 非增强 clean_v8(28,385) 从头预训练 S/2 12ch; aux_loss_weight 1.0->0.2 (梯度debug: 等权时结构通道吃 ~51% 梯度); aux latents 新 encode (aux_canny/skel_latents_v8); eval 改 GPU in-mem (seen 每 ckpt/strict 每 10k)"
+  },
+  {
+    "hash": "244cc45",
+    "full_hash": "244cc45270245fc6098c4a235bc33f999b4b7166",
+    "date": "2026-09-12 18:22:48 +0800",
+    "msg": "feat(gradio): 新增 std-skel-g 前端 gradio_stdskel.py (CPU, base env; xattn 的 sdpa shim; 从 ckpt args 建模型 + 去 _orig_mod. 前缀; g=标准字形骨架 latent bank; --smoke 自检). 实测 c41x_cos_e@390k 生成 阜/于右任/楷 正确, CPU 50步 34s; --share 卡在 frpc 二进制下载 (远端 HF CDN 不通)"
+  },
+  {
+    "hash": "e0ccb25",
+    "full_hash": "e0ccb252eba508944bb73eccd9702dbb1844f1ca",
+    "date": "2026-09-12 23:43:52 +0800",
+    "msg": "feat: M/2 容量档 (h432,d12,heads6 ~49M) + per-group aux 权重 (--aux-loss-weights) + config v11_pretrain_M432_v8_auxc03s08; 启动打印 [aux] weights 防静默失效"
+  },
+  {
+    "hash": "6f8a4eb",
+    "full_hash": "6f8a4eb0c363971494200742cb189043e3bba0ee",
+    "date": "2026-09-13 13:19:07 +0800",
+    "msg": "fix(eval): strict 评测 g=0 静默失效 —— make_eval_cache 查不到 skel latent 时静默给零(模型无字条件, strict 假性崩塌); 加 missing_skel 计数+WARNING; eval_stdskel_batch 加 --skel-shards 覆盖; 新增 train+eval 并集 shard 构建 (std_skel3_latents_fame_evalext) 使 eval id 全覆盖"
+  },
+  {
+    "hash": "05d48e7",
+    "full_hash": "05d48e768ab4bc86f877a82ca5b7406ea59a4238",
+    "date": "2026-09-13 13:45:44 +0800",
+    "msg": "feat(simplify+data): (1) 对称增强 v4 (每图 ±同幅 dilate/erode, 均值不变; 变体用唯一数值 id; 85155 行) + 通用 image-latent builder; (2) dataset 支持 csv image_path 混合目录 (变体+REPA); (3) aux builder 支持 csv 路径/dilate; (4) config v11_pretrain_M432_adaln4_sym: adaLN 注入 12->4 (省 3M 参数/~17% 算力), REPA 0.03 恢复, sym 数据, 保留 12ch; 旧代码备份 branch/tag legacy-pre-simplify-20260913"
+  },
+  {
+    "hash": "083133c",
+    "full_hash": "083133cc96be542073c92d6fd8ed3dba0355b9fa",
+    "date": "2026-09-13 14:32:02 +0800",
+    "msg": "fix(eval): gpu_eval_loop 评测期间 SIGSTOP 训练/结束 SIGCONT (不再并发抢 SM); 训练 batch 256->192 留 ~7G 显存给暂停期 eval (SIGSTOP 不释放显存, 否则独立 eval 进程 OOM); 实测训练 3.71 sps (更快), eval 峰值 2.27G dit16/vae8"
+  },
+  {
+    "hash": "c8cd108",
+    "full_hash": "c8cd108cdf26d2805bd94a3d5f176418cfbcf90e",
+    "date": "2026-09-13 15:00:18 +0800",
+    "msg": "chore(repo): 本地仓库整理 — 根目录 191 个散落文件归档到 legacy/{dit_core,configs,scripts,data}; _sync_work/_ot_scratch 的 120 个临时脚本归入 scripts/{ops,debug,build}; .gitignore 重写 (大资产/latent/结果全部排除); 新增 REPO_MAP.md + 分层 README; 删除 nul) 垃圾"
+  },
+  {
+    "hash": "ade9407",
+    "full_hash": "ade940715fb44ba0ba2950d84b3fabe37b9b3d17",
+    "date": "2026-09-13 15:04:21 +0800",
+    "msg": "docs: 远端资产/结果清单入库 (ASSETS.md + results MANIFEST.md 快照); 远端: 29 个 dead run 归档到 results/_archive, junk 归入 _archive_junk, 生成清单"
+  },
+  {
+    "hash": "421a66f",
+    "full_hash": "421a66fd931571b55625cc191a2ee323b7871b52",
+    "date": "2026-09-13 15:58:26 +0800",
+    "msg": "chore: 目录 5script -> assets (与远端一致); 全局引用重写 (代码/配置/CSV image_path/文档); .gitignore 同步"
+  },
+  {
+    "hash": "839cd6d",
+    "full_hash": "839cd6d0318c22305513260ec4b28fb82d028d35",
+    "date": "2026-09-13 16:20:57 +0800",
+    "msg": "refactor(wheels): src/data/vae_io.py 统一 VAE 轮子 (并行解码/bf16/CPU 模式, encode bs128=19.8G, decode bf16-64=15.7G) + eval 收敛 src/eval/{batch_eval,loop}.py + tools 薄 wrapper; .gitignore 大目录改根锚定避免误伤 src/data"
+  },
+  {
+    "hash": "637ba81",
+    "full_hash": "637ba81e3603dc9038fa4796d6d789c11d9c0bfb",
+    "date": "2026-09-13 16:21:45 +0800",
+    "msg": "docs: 阶段总结 (53) — 状态/结论/资产布局/轮子实测 batch/SE 问题清单/模型问题清单/下一步"
+  },
+  {
+    "hash": "23f1d0f",
+    "full_hash": "23f1d0f79fdd11204ab7b30865a924b660973aa1",
+    "date": "2026-09-13 16:53:16 +0800",
+    "msg": "refactor(data): 根目录数据资产统一到 data/{latents,skel,aux,imgs,struct,pretrained} (远端已迁移+引用重写 542 文件/48万处); 新增 tools/registry.py 统一登记历史 config+结果 (assets/registry/, 102 configs+38 runs) 并在 train.py/loop.py 接入自动快照; docs/54 全结果+insights"
+  },
+  {
+    "hash": "96ab7ff",
+    "full_hash": "96ab7ff67f853b76ae95bfb99c9dbf04bd3f4791",
+    "date": "2026-09-13 18:26:18 +0800",
+    "msg": "feat(eval,train): 实现 12ch 自条件采样 (Self-Conditioning) 与骨架条件噪声增强 + 评估工具 + 系统文档 55"
+  },
+  {
+    "hash": "ccb2411",
+    "full_hash": "ccb24119c182b6bd991e24c45b85a070b2b8eb84",
+    "date": "2026-09-13 18:27:50 +0800",
+    "msg": "fix(eval): 在 eval_self_cond.py 中支持从 image_path 解析 img_id"
+  },
+  {
+    "hash": "b125bf3",
+    "full_hash": "b125bf32a7ad0dafd97f9977737bca2d978b0dcb",
+    "date": "2026-09-13 18:28:57 +0800",
+    "msg": "feat(eval): 正式加入 sample_latents_self_cond 到 src/eval/inference.py"
+  },
+  {
+    "hash": "3268355",
+    "full_hash": "3268355efca51407e7b3ab031080889b7b8db0d0",
+    "date": "2026-09-13 18:30:09 +0800",
+    "msg": "fix(eval): 正确使用 load_callig_id_map 与 freeze_callig_table"
+  },
+  {
+    "hash": "7b01f51",
+    "full_hash": "7b01f51ebee6ee2f84ea67346fb97c5f1f044001",
+    "date": "2026-09-13 18:31:24 +0800",
+    "msg": "fix(eval): 在 eval_self_cond.py 中统一使用 make_eval_cache 加载 shard 缓存"
+  },
+  {
+    "hash": "11f0ad3",
+    "full_hash": "11f0ad3ff541c1a23ed9dc70f5ccecc234a8961a",
+    "date": "2026-09-13 18:33:59 +0800",
+    "msg": "feat(eval): 在 batch_eval.py 中集成 --self-cond 与 --blend-alpha 评测支持"
+  },
+  {
+    "hash": "5821e11",
+    "full_hash": "5821e111ea11295239b33d16f0f637b1c9da6585",
+    "date": "2026-09-13 18:34:43 +0800",
+    "msg": "feat(eval): batch_eval 支持 --force 重新评测"
+  },
+  {
+    "hash": "8a4395f",
+    "full_hash": "8a4395fc634193af4856983ddea570611f3a588a",
+    "date": "2026-09-13 18:40:47 +0800",
+    "msg": "feat(train,eval): 支持 400k 条件噪声增强训练 + 双轨 (origin/self-cond) 评测与专用对比记录"
+  },
+  {
+    "hash": "03f1328",
+    "full_hash": "03f132862e69be3486efcf85f1417dbd44bae5a0",
+    "date": "2026-09-13 18:51:56 +0800",
+    "msg": "Sync remote artifacts: docs, configs, registry, eval metrics, code patches"
+  },
+  {
+    "hash": "5427dbe",
+    "full_hash": "5427dbefe90ddd4ef6ef59ab7199d5aa0567a4fa",
+    "date": "2026-09-13 19:45:44 +0800",
+    "msg": "feat(repa): offline DINOv2 teacher feature cache + lazy teacher; EMA interval update; compile-mode max-autotune option"
+  },
+  {
+    "hash": "826f6fa",
+    "full_hash": "826f6fae4f19b252860d1fba531cba4a5272d30d",
+    "date": "2026-09-13 20:35:43 +0800",
+    "msg": "feat(eval): true in-mem eval in training process (opt-in): EMA sampling + decode + metrics + PNG save, no daemon"
+  },
+  {
+    "hash": "ed3dff1",
+    "full_hash": "ed3dff1314e4cdda5d47b001118e4d174ef44c4d",
+    "date": "2026-09-13 21:51:25 +0800",
+    "msg": "feat(eval): auto poster per eval step (gen|canny|skel|gt rows, all steps, auto-overwritten); enable in_mem_eval in noise400k config"
+  },
+  {
+    "hash": "c3550ed",
+    "full_hash": "c3550ede6c33dceece3cfdaa454d2f0a29916f21",
+    "date": "2026-09-13 22:22:54 +0800",
+    "msg": "feat(data): build fame-tj-kxl dataset (kai/xing/li) — fame sym_full + Calli-Tongji with matched v4 symmetric stroke-width aug, 11 new calligraphers (id map 52), new char-id segment, strict-leak exclusion"
+  },
+  {
+    "hash": "c0a3440",
+    "full_hash": "c0a34402af34c8bb68b13c582c6c1e4f6227302c",
+    "date": "2026-09-13 22:38:00 +0800",
+    "msg": "feat(data): fame-tj-kxl CPU encode pipeline — std_skel1_latents --device cpu single-thread, sequential runner for skel/aux/image latents (tongji 8976 rows)"
+  },
+  {
+    "hash": "308d80c",
+    "full_hash": "308d80c676f7dd8192c37774285e8f04a8296fda",
+    "date": "2026-09-13 23:33:31 +0800",
+    "msg": "feat(data): base no-aug dataset (fame3 originals + tongji originals, 31,377 rows, 52 calligraphers); UniCalli gated-repo download attempt"
+  },
+  {
+    "hash": "ac79e8d",
+    "full_hash": "ac79e8d8cc40b9eda161f97aec166ca3bfcc4e88",
+    "date": "2026-09-13 23:56:35 +0800",
+    "msg": "feat(data): base v2 = fame3 + tongji + UniCalli (58,509 rows, 90 calligraphers); UniCalli bbox crop pipeline (27,253 chars, 144s)"
+  },
+  {
+    "hash": "5be58e0",
+    "full_hash": "5be58e0fef3a78d4d6c3ba745073976e251c5eeb",
+    "date": "2026-09-14 14:37:26 +0800",
+    "msg": "feat: fame-tj-uc base data line launch (55) — Sp/2 + new SupCon calligrapher table (52x128), no-noise-aug; noise400k falsified (seen -0.048, strict plateau 0.4869); base encode GPU pipeline + in-mem eval + polarity fix"
+  },
+  {
+    "hash": "2758081",
+    "full_hash": "2758081f4c28e6ea342f87c55963fe23da37a6ba",
+    "date": "2026-09-14 20:31:43 +0800",
+    "msg": "fix(data+eval): 白底归零 + canny 极性统一 + ref 对齐; 复盘 3 个静默缺陷 (E1/E2/E3)"
+  },
+  {
+    "hash": "5925c97",
+    "full_hash": "5925c9750a5155e67293e5096cbc5f96c1e73025",
+    "date": "2026-09-14 21:24:04 +0800",
+    "msg": "fix(eval): 白底归零的 decode 加回 —— aux_zero_white 未注册致全部生成图发黄/发黑"
+  },
+  {
+    "hash": "78c0d7a",
+    "full_hash": "78c0d7a71817c69ff7b379360da1af4ddfafec79",
+    "date": "2026-09-14 21:47:46 +0800",
+    "msg": "fix(eval/poster): struct 图补 std/GT 参照行 + 展示模型预测的 aux 通道; 统一白底黑线"
+  },
+  {
+    "hash": "4889eed",
+    "full_hash": "4889eed26055f2095cf2e3c945ec53e6c6957b15",
+    "date": "2026-09-14 23:33:16 +0800",
+    "msg": "fix(eval): maybe_add_white 支持多通道 aux 白底加回(8ch/12ch) + 模型-ref 深度对照文档"
+  },
+  {
+    "hash": "cf6deb4",
+    "full_hash": "cf6deb4b9abfabb4dda73b3d7de035f4bc6e49a1",
+    "date": "2026-09-14 23:45:36 +0800",
+    "msg": "fix(model+data): CFG 只作用于 image latent 通道 + canny PNG 极性统一白底黑线"
+  },
+  {
+    "hash": "9732030",
+    "full_hash": "9732030c46b35b1f36fb860cd3da917830ee469d",
+    "date": "2026-09-15 01:51:46 +0800",
+    "msg": "fix(eval): maybe_add_white 多通道按组加回 (repeat(n,1,1)) —— 修 eval 全线 FAILED"
+  },
+  {
+    "hash": "b01a4e9",
+    "full_hash": "b01a4e9ff5cf38c3a7daa1d3b83227c0db72d4b1",
+    "date": "2026-09-15 02:54:11 +0800",
+    "msg": "feat(data+config): 158K 全对称增强数据的完整配套资产 + 原版配方(v10b 0.5680)预训练配置"
+  },
+  {
+    "hash": "9645078",
+    "full_hash": "9645078d435bbd91142f450d7a1a1c4e2af26a94",
+    "date": "2026-09-15 03:17:19 +0800",
+    "msg": "docs: 59 号复盘 —— 12ch 辅助目标与白底归零(wz)为什么放弃, 回到 4ch 原版配方"
+  },
+  {
+    "hash": "a23b54e",
+    "full_hash": "a23b54e664eca66896a4369ecf176175ec4d1c5f",
+    "date": "2026-09-15 03:28:02 +0800",
+    "msg": "docs: 60 号 —— 按证据强度分级, 明确哪些组件'根本没用', 并修正我两处错误判断"
+  },
+  {
+    "hash": "4b294e7",
+    "full_hash": "4b294e74c12fab9f5702219f67ba60db1afbda49",
+    "date": "2026-09-15 03:56:26 +0800",
+    "msg": "fix(eval): strict 集 g 全零导致 std 行发黄 + 指标失真 —— eval 侧改用独立的 std skel 目录"
+  },
+  {
+    "hash": "b37d29f",
+    "full_hash": "b37d29f843df9c5b5acbfe43fd6679b7680109cd",
+    "date": "2026-09-15 12:06:51 +0800",
+    "msg": "fix(data): aug_base_sym.py 的 uid 双重叠加 bug (4892 个 uid 冲突 / 8584 行错图) + dino cache 重复修复 + sym2 从头配置"
+  },
+  {
+    "hash": "5deb3ee",
+    "full_hash": "5deb3eef5983a5b409a1ea844143c3b0a341a424",
+    "date": "2026-09-17 13:07:04 +0800",
+    "msg": "feat(data+eval): HCSU 数据集接入 + 输出多样性判定 + 双轴 CFG 实现 + 4 处实现修复"
+  },
+  {
+    "hash": "a93a9a2",
+    "full_hash": "a93a9a29edf3d7c695274079fe5f07f187ec620d",
+    "date": "2026-09-17 13:40:51 +0800",
+    "msg": "fix(train): [aux] 日志只在首步打一次 —— 我把它放在了每步的数据循环里"
+  },
+  {
+    "hash": "4ec0d37",
+    "full_hash": "4ec0d370e2849f832ca87bd0f8e071f123cd1a36",
+    "date": "2026-09-17 14:00:23 +0800",
+    "msg": "feat(data): GT 质量筛查 + 强力清洗 -> train_merged_clean.csv (52,457 张 / 47 书家)"
+  },
+  {
+    "hash": "a1630fd",
+    "full_hash": "a1630fd3ade8cb40ea0cfea5bc760ca51ff631ae",
+    "date": "2026-09-17 14:09:57 +0800",
+    "msg": "feat(data): 二次清洗 + 「描满」修复 -> data/50k/ (51,036 张 / 45 书家 / 5,833 字)"
+  },
+  {
+    "hash": "d849092",
+    "full_hash": "d8490926956e571a7be56223ca3c318f3f6d67f0",
+    "date": "2026-09-17 14:21:28 +0800",
+    "msg": "fix(data): std 骨架尺度归一化 —— 长边 172 -> 230, 与 GT 匹配 (比值 0.993)"
+  },
+  {
+    "hash": "7d8b80b",
+    "full_hash": "7d8b80bae8d639d864b65c04113b98004173e642",
+    "date": "2026-09-17 14:24:00 +0800",
+    "msg": "docs(data): 新增「GT 去噪 + 条件侧尺度对齐」规范 (docs/data/gt_denoise_and_std_scale.md)"
+  },
+  {
+    "hash": "66833a4",
+    "full_hash": "66833a4c2214d722085bb83c517f7dafb1883c7f",
+    "date": "2026-09-17 14:44:53 +0800",
+    "msg": "docs: 70 号代码审查 —— 冗余/性能/正确性三档 (纯代码阅读 + 定点微基准)"
+  },
+  {
+    "hash": "74f5afa",
+    "full_hash": "74f5afab0963f86145d0d41134d1e4a38dbc123a",
+    "date": "2026-09-17 15:11:14 +0800",
+    "msg": "refactor(eval+infra): 统一模型重建入口 + 消除静默失效 + 性能修复 (docs/system/70 落地)"
+  },
+  {
+    "hash": "220f24c",
+    "full_hash": "220f24c06f3df0448f2ed48cb5357c4c02133e2f",
+    "date": "2026-09-17 15:11:42 +0800",
+    "msg": "docs(memory): 记录 70 号重构的落地结果与未做项"
+  },
+  {
+    "hash": "686c38a",
+    "full_hash": "686c38a7b314b85cfb2275ce76b7392acc2e6c61",
+    "date": "2026-09-17 15:21:37 +0800",
+    "msg": "refactor(eval): 指标收束为唯一实现 + 三处静默失效改 fail-fast + 采样循环去重复"
+  },
+  {
+    "hash": "0b2abc0",
+    "full_hash": "0b2abc0bc151086efce62547d1d7914317100adc",
+    "date": "2026-09-17 15:22:06 +0800",
+    "msg": "docs(memory): 记录第二轮 eval 收束 + infra 堵点"
+  },
+  {
+    "hash": "e029fc9",
+    "full_hash": "e029fc93ed21d9fcea09faa5af10cdbafcf4bab9",
+    "date": "2026-09-17 15:28:42 +0800",
+    "msg": "docs: 70 号新增 §7 —— eval 与 epoch 对齐带来的优化机会（实测数据）"
+  },
+  {
+    "hash": "38e62d4",
+    "full_hash": "38e62d4791b342f6f5267c45070fafe2913b1be9",
+    "date": "2026-09-17 15:28:54 +0800",
+    "msg": "docs(memory): 记录 eval/epoch 对齐带来的优化机会分析"
+  },
+  {
+    "hash": "0bb3484",
+    "full_hash": "0bb348428e33920ecbc02c1e8eafb730a79d22cf",
+    "date": "2026-09-17 15:35:04 +0800",
+    "msg": "feat(train): --eval-mode deferred + 异步 ckpt 写盘 + 存盘节奏对齐 epoch (doc70 §7 落地)"
+  },
+  {
+    "hash": "fab3174",
+    "full_hash": "fab3174abfe8d0bb122b761cb3addbf14e509817",
+    "date": "2026-09-17 15:35:17 +0800",
+    "msg": "docs(memory): 记录 deferred eval + 异步存盘落地"
+  },
+  {
+    "hash": "704e7ed",
+    "full_hash": "704e7ed9a7899b3fa86a6b7b9b7a7544e7b36cca",
+    "date": "2026-09-17 15:39:25 +0800",
+    "msg": "refactor(train): epoch_steps 与 ckpt_every 合并为单一刻度 —— 删掉一堆为\"两者可不等\"而存在的复杂度"
+  },
+  {
+    "hash": "eae66a6",
+    "full_hash": "eae66a68eaf7e1384bb2b0c3f35255ef7cda23a4",
+    "date": "2026-09-17 15:39:42 +0800",
+    "msg": "docs(memory): 记录 epoch_steps/ckpt_every 合并"
+  },
+  {
+    "hash": "479bfcb",
+    "full_hash": "479bfcb37278f553b4a89a7fe4edbb7e31f9d884",
+    "date": "2026-09-17 15:43:50 +0800",
+    "msg": "refactor(train): 早停抽成 src/train/early_stop.py + 清理过时注释"
+  },
+  {
+    "hash": "e8789d8",
+    "full_hash": "e8789d86b6722d029da1f4e743a03ff65770db82",
+    "date": "2026-09-17 15:44:03 +0800",
+    "msg": "docs(memory): 记录早停拆分与排序 bug 修复"
+  },
+  {
+    "hash": "f88f7b6",
+    "full_hash": "f88f7b644a8e4cb6bf22e87e82c014c0112df512",
+    "date": "2026-09-17 15:51:51 +0800",
+    "msg": "refactor(train+model): argparse 抽成 cli.py + ControlNet 线整体归档 + train/eval 目录整理"
+  },
+  {
+    "hash": "bd89b10",
+    "full_hash": "bd89b10309c862f61f285e01a151dadf4d78463e",
+    "date": "2026-09-17 15:52:06 +0800",
+    "msg": "docs(memory): 记录 argparse 抽离与 ControlNet 归档"
+  },
+  {
+    "hash": "f138188",
+    "full_hash": "f138188b273cbbff44dcf7c2ab90e0475b0c9d78",
+    "date": "2026-09-17 16:02:24 +0800",
+    "msg": "refactor(eval): src/eval 收敛到核心文件 + VAE 等挪到 utils"
+  },
+  {
+    "hash": "bbbd326",
+    "full_hash": "bbbd3269c387e6732f58cc0301e7582d373ac65b",
+    "date": "2026-09-17 16:03:43 +0800",
+    "msg": "docs(memory): 记录工作区被清空的事故与恢复方式"
+  },
+  {
+    "hash": "1d90915",
+    "full_hash": "1d90915713dcb5c8db549bd613f51632ebb5c720",
+    "date": "2026-09-17 16:04:37 +0800",
+    "msg": "chore(eval): 删除重复的 std_dino_embedder.py（与 src/model/ 逐字节相同）"
+  },
+  {
+    "hash": "8b74560",
+    "full_hash": "8b7456036d4323e6182670a56f9a9a0eedbe1767",
+    "date": "2026-09-17 16:05:21 +0800",
+    "msg": "refactor(eval): in_process_eval 归档，src/eval 收敛到 5 个核心文件"
+  },
+  {
+    "hash": "c6edbf9",
+    "full_hash": "c6edbf94a8ca87c0dc8b2485426e9eac3558e547",
+    "date": "2026-09-17 16:06:01 +0800",
+    "msg": "feat(train): 新增 src/train/ckpt.py —— ckpt 组装/异步落盘/轮转 独立成模块"
+  },
+  {
+    "hash": "81609cc",
+    "full_hash": "81609ccdcd53cf373a9710ab113b3d603ffce523",
+    "date": "2026-09-17 16:07:46 +0800",
+    "msg": "refactor(train): 存盘逻辑改用 src/train/ckpt.py"
+  },
+  {
+    "hash": "f304d73",
+    "full_hash": "f304d73c6b76d64c7ef72654647ca9a8f2727bfb",
+    "date": "2026-09-17 16:09:35 +0800",
+    "msg": "refactor(train): 删除死掉的 in-process eval 路径（93 行）"
+  },
+  {
+    "hash": "83bcfc1",
+    "full_hash": "83bcfc1132fd016155d0253edda19be5bc43beea",
+    "date": "2026-09-17 16:18:49 +0800",
+    "msg": "refactor(train): main() 的在训评测改为调用 eval 模块"
+  },
+  {
+    "hash": "a71b42c",
+    "full_hash": "a71b42cddf3231db13143afdfe7afb9cda901a18",
+    "date": "2026-09-17 16:19:45 +0800",
+    "msg": "docs(eval): 更新 src/eval/legacy/README —— 按停用理由分类归档清单"
+  },
+  {
+    "hash": "e187bdd",
+    "full_hash": "e187bdde77fef9ddfb4cc9d8fcb19dcb4385b38c",
+    "date": "2026-09-17 16:20:01 +0800",
+    "msg": "docs(memory): 记录 eval 目录收敛 / ckpt.py / eval 外提"
+  },
+  {
+    "hash": "b9fd390",
+    "full_hash": "b9fd390a4bff29ea78a37301a76e03909fc092a0",
+    "date": "2026-09-17 16:25:17 +0800",
+    "msg": "docs: 70 号新增 §8 —— 新一轮 infra 排查（同步点/循环不变量/compile 档位）"
+  },
+  {
+    "hash": "c6f8fe1",
+    "full_hash": "c6f8fe1fdb5da00592fe211194d140db24fd63ac",
+    "date": "2026-09-17 16:30:21 +0800",
+    "msg": "perf(train): aux 通道权重改为循环不变量（原来每步重算）"
+  },
+  {
+    "hash": "444a59c",
+    "full_hash": "444a59c0d582bb4f6037421bd6852aea523ee2b2",
+    "date": "2026-09-17 16:55:09 +0800",
+    "msg": "perf(train): 消除每步 7 次 GPU 同步（.item() 移到日志步）"
+  },
+  {
+    "hash": "d69b05c",
+    "full_hash": "d69b05c4bbb5658373188cfafe4f45b727fe31df",
+    "date": "2026-09-17 16:57:19 +0800",
+    "msg": "perf(train): H2D 拷贝改用 non_blocking=True（pin_memory 之前完全白开）"
+  },
+  {
+    "hash": "3201716",
+    "full_hash": "3201716545fbdbb429693c22e42498855d39b0fe",
+    "date": "2026-09-17 16:59:31 +0800",
+    "msg": "perf(model): dit.py 预计算 _inj_map（原来每 forward 重建一个 dict）"
+  },
+  {
+    "hash": "607b9af",
+    "full_hash": "607b9af9a07177fc20587aa0108146b39e9510f7",
+    "date": "2026-09-17 16:59:59 +0800",
+    "msg": "docs: 70 号 §8 补齐通读结果（H2D non_blocking / _inj_map / 4 项已落地）"
+  },
+  {
+    "hash": "cfdacf7",
+    "full_hash": "cfdacf773ce751c5e2a1ef6592637b2b88b0c900",
+    "date": "2026-09-17 17:00:13 +0800",
+    "msg": "docs(memory): 记录 §8 性能排查与 4 项落地"
+  },
+  {
+    "hash": "38a7797",
+    "full_hash": "38a779723777db79066468a8d92f979897212211",
+    "date": "2026-09-17 17:07:15 +0800",
+    "msg": "perf(data): 图像改传 uint8，归一化挪到 GPU（H2D 省 75%）"
+  },
+  {
+    "hash": "634f4cd",
+    "full_hash": "634f4cd57bcbbf30e617b46f4b1e7e467f9a9ad6",
+    "date": "2026-09-17 17:10:43 +0800",
+    "msg": "docs(memory): 记录 D 落地 + 12ch vs v12(4ch) 对照结果"
+  },
+  {
+    "hash": "d9abc3a",
+    "full_hash": "d9abc3ae8bda2e13c3e6aaf6547610a3668c265c",
+    "date": "2026-09-17 17:16:46 +0800",
+    "msg": "feat(tools): 4ch->12ch 通道扩展（已验证无损）+ 可行性验证脚本"
+  },
+  {
+    "hash": "cd1bd18",
+    "full_hash": "cd1bd183c94bf140247d26cad34f9beb1748e244",
+    "date": "2026-09-17 17:17:10 +0800",
+    "msg": "docs(memory): 记录 4ch->12ch 无损扩展验证与判断"
+  },
+  {
+    "hash": "bee34a2",
+    "full_hash": "bee34a2948ce11c9f6318f607109090661cd4b32",
+    "date": "2026-09-17 17:29:56 +0800",
+    "msg": "docs(memory): 停 12ch + xattn 历史核查（发现两处会让实验无效的缺陷）"
+  },
+  {
+    "hash": "77363a8",
+    "full_hash": "77363a8d8fa69da529b97600f677de5a64ac232f",
+    "date": "2026-09-17 17:37:27 +0800",
+    "msg": "fix(xattn): 修掉两个会让实验无效的缺陷 + model_io 补 xattn_q_pos"
+  },
+  {
+    "hash": "7738bab",
+    "full_hash": "7738babc3ce48137d2babf0c4eb7631d1d328122",
+    "date": "2026-09-17 17:49:02 +0800",
+    "msg": "docs(memory): xattn 修复+启动记录（含两次假阴性教训与 OOM 根因）"
+  },
+  {
+    "hash": "36bbd90",
+    "full_hash": "36bbd90ba2c408a4cbac35558f5c5089238feebe",
+    "date": "2026-09-17 17:50:07 +0800",
+    "msg": "config(xattn): batch 240 + max_steps 400000（同样本数 + 近同 LR 的对照）"
+  },
+  {
+    "hash": "ff7d036",
+    "full_hash": "ff7d0369419c2be0e579e89b28e823be4f8dac73",
+    "date": "2026-09-17 18:33:34 +0800",
+    "msg": "perf(infra): 从代码消灭显存空洞（torch.compile warmup 囤积的 6G）"
+  },
+  {
+    "hash": "3c464f2",
+    "full_hash": "3c464f23221adfe09aa90837fb2da69704767ddf",
+    "date": "2026-09-17 18:33:47 +0800",
+    "msg": "docs(memory): 记录显存空洞修复 + 编码/DINO 缓存的排除结论"
+  },
+  {
+    "hash": "dcdb672",
+    "full_hash": "dcdb672e71aa0fb4182ca4176b6707c4ebea67fa",
+    "date": "2026-09-17 18:47:43 +0800",
+    "msg": "debug(infra): 加循环前显存基线日志（定位 6G 空洞的来源）"
+  },
+  {
+    "hash": "d169552",
+    "full_hash": "d1695523e98056b8800e10c8138b99ff41e8fa54",
+    "date": "2026-09-17 19:12:56 +0800",
+    "msg": "debug(infra): 加 --alloc-debug（尺寸分桶 + memory_summary）定位空洞成分"
+  },
+  {
+    "hash": "40da0e5",
+    "full_hash": "40da0e52381fca3aa1dd93c710a35253eb3c7612",
+    "date": "2026-09-17 19:13:06 +0800",
+    "msg": "docs(memory): 记录 6G 空洞未查明 + 探针失败教训 + alloc-debug 方案"
+  },
+  {
+    "hash": "cbe7513",
+    "full_hash": "cbe751307e1293a60a0e1c4b73f51a499e34b17f",
+    "date": "2026-09-17 19:25:25 +0800",
+    "msg": "feat(v13): 新 50k 数据集的 base 配置 + 启动脚本 + 书家资产工具"
+  },
+  {
+    "hash": "ab4489f",
+    "full_hash": "ab4489fcf977db88d2f516ff3993786d2f517ca0",
+    "date": "2026-09-17 19:35:47 +0800",
+    "msg": "docs(memory): 查明空洞真相（激活峰值缓存）+ 修复被证明有效 + v13 base 已启动"
+  },
+  {
+    "hash": "f402612",
+    "full_hash": "f402612438903562b03d7b88465987db3cad6ea6",
+    "date": "2026-09-17 19:40:52 +0800",
+    "msg": "config(v13): max_steps 400000 -> 200000"
+  },
+  {
+    "hash": "3b2220d",
+    "full_hash": "3b2220dc7eaa8247ebabba992ad073c68a2e5281",
+    "date": "2026-09-17 19:47:59 +0800",
+    "msg": "revert(infra): 关掉显存抖动源（empty_cache + expandable_segments）"
+  },
+  {
+    "hash": "7f5614b",
+    "full_hash": "7f5614be578835698c9d89763944eb51dfe1140d",
+    "date": "2026-09-17 19:48:11 +0800",
+    "msg": "docs(memory): 记录显存抖动回退 + CRLF 静默失败教训"
+  },
+  {
+    "hash": "af0ad2b",
+    "full_hash": "af0ad2bdf72ce6a41b7bd29a7c324970391994c0",
+    "date": "2026-09-17 19:51:14 +0800",
+    "msg": "feat(12ch-post): 4ch->12ch 后训练代码 + 配置"
+  },
+  {
+    "hash": "8455cda",
+    "full_hash": "8455cda7c8f59a0a95b9cc412453927f151cdb72",
+    "date": "2026-09-17 19:51:39 +0800",
+    "msg": "docs(71): infra 深挖总结 —— 显存/同步/H2D/数据 id 到底是怎么回事"
+  },
+  {
+    "hash": "90e8535",
+    "full_hash": "90e85359e8c1fbb9b116ac34af0b181a9099fd6a",
+    "date": "2026-09-17 19:51:52 +0800",
+    "msg": "docs(memory): 记录 12ch 后训练代码 + infra 总结"
+  },
+  {
+    "hash": "46693df",
+    "full_hash": "46693df97dc4272909342dce7c1c32f95d7a5a08",
+    "date": "2026-09-17 20:30:25 +0800",
+    "msg": "fix(infra): 显式报错替代静默 fallback + null_embed 懒参数护栏 + 50k 全套数据/评测工具"
+  },
+  {
+    "hash": "7566ff9",
+    "full_hash": "7566ff95190648528f0dd66b20536c31d74c02fb",
+    "date": "2026-09-17 20:41:01 +0800",
+    "msg": "docs(memory): 记录 v13 崩溃根因/null_embed 护栏/aux 重做/冒烟测试结果"
+  },
+  {
+    "hash": "ad5fe07",
+    "full_hash": "ad5fe075dacaf088d1115072e4bef5a888036045",
+    "date": "2026-09-17 21:03:31 +0800",
+    "msg": "fix(eval): 词表校验提到循环前 + 12ch 配置同步 + 两处可诊断断言"
+  },
+  {
+    "hash": "7bed985",
+    "full_hash": "7bed98584117f7ac316c9e6dba45033f9dac0e3c",
+    "date": "2026-09-17 21:03:46 +0800",
+    "msg": "docs(memory): 两个测试全通过 + continue 对齐 bug 教训 + 编译缓存澄清"
+  },
+  {
+    "hash": "d4c989f",
+    "full_hash": "d4c989f39c6b6c128e7a7b267773f46648e02fdf",
+    "date": "2026-09-17 21:21:32 +0800",
+    "msg": "config(v13-12ch): max_steps 150k + 记录显存实测"
+  },
+  {
+    "hash": "a0e4f39",
+    "full_hash": "a0e4f396c4f2cdf96f698b7829224138977b0e2c",
+    "date": "2026-09-18 07:58:49 +0800",
+    "msg": "docs(memory): v13 进度报告 + seen/strict 分叉诊断"
+  },
+  {
+    "hash": "02c015a",
+    "full_hash": "02c015aa8019210b9c671cf7f9cf6fcbd38edfd8",
+    "date": "2026-09-18 08:03:50 +0800",
+    "msg": "fix(train): channel_expand 改成模块级导入"
+  },
+  {
+    "hash": "a301389",
+    "full_hash": "a30138976834cb6dedd0e2f66d3f7346be152d28",
+    "date": "2026-09-18 08:11:07 +0800",
+    "msg": "feat(eval): 加 --eval-only（加载 ckpt -> 评测 -> 退出，不进训练循环）"
+  },
+  {
+    "hash": "708ffb5",
+    "full_hash": "708ffb59d77ce3192c71a6963d6602b0e3540ce1",
+    "date": "2026-09-18 08:19:21 +0800",
+    "msg": "docs(memory): 155k ckpt 全量评测结果 + --eval-only 的两个坑"
+  },
+  {
+    "hash": "d4ef84f",
+    "full_hash": "d4ef84f424813ff899a4cb908e84d0a70050ac1f",
+    "date": "2026-09-18 08:27:22 +0800",
+    "msg": "docs(memory): 12ch 后训练已启动（从 155k ckpt 扩展），ETA ~10.1h"
+  },
+  {
+    "hash": "06fefa5",
+    "full_hash": "06fefa590798a5723b68c749bc6d42ac293805c8",
+    "date": "2026-09-18 08:40:23 +0800",
+    "msg": "docs(memory): 12ch 首次 eval —— aux 未损害 img 质量（strict 0.5703->0.5699）"
+  },
+  {
+    "hash": "d032f11",
+    "full_hash": "d032f1151244d402507e5c6ff15877d8e607c496",
+    "date": "2026-09-18 09:03:38 +0800",
+    "msg": "docs(memory): 12ch eval 轨迹（step 7500: seen 0.7746 / strict 0.5705，均不低于 base）"
+  },
+  {
+    "hash": "2cd2d11",
+    "full_hash": "2cd2d11d5fd36fd5f821f0298b884f04bfaa4ad9",
+    "date": "2026-09-18 09:14:10 +0800",
+    "msg": "fix(eval): save_input_g 分批 decode，修评测保存标准字图时的 OOM"
+  },
+  {
+    "hash": "7cfa8d9",
+    "full_hash": "7cfa8d99c630aec60b34d3ee742342454e0e4fd1",
+    "date": "2026-09-18 09:33:14 +0800",
+    "msg": "docs(memory): 记录 save_input_g OOM 修复 + 12ch eval 轨迹到 step 12500"
+  },
+  {
+    "hash": "6301ecf",
+    "full_hash": "6301ecf6c7d99933134888bf4081b1dcfade37a6",
+    "date": "2026-09-18 09:50:49 +0800",
+    "msg": "docs(72): seen 高 / strict 低的归因分析 —— 不是过拟合，也不主要是稀疏"
+  },
+  {
+    "hash": "be60156",
+    "full_hash": "be601569f03bb32c57de086c64678d4e8e3ef7d9",
+    "date": "2026-09-18 09:51:03 +0800",
+    "msg": "docs(memory): 记录 seen/strict 归因分析 + 方法论教训（必须放大看）"
+  },
+  {
+    "hash": "e14ffb3",
+    "full_hash": "e14ffb3601b72835779473fa723165d0a4b9fd76",
+    "date": "2026-09-18 10:18:02 +0800",
+    "msg": "config(v13): 加 weight_decay=0.1 对照配置（依据 On Memorization in Diffusion Models 实测）"
+  },
+  {
+    "hash": "8513c58",
+    "full_hash": "8513c5881edae1fcb566efddbcf37e29b7e04176",
+    "date": "2026-09-18 10:22:25 +0800",
+    "msg": "docs(memory): 记忆文献调研 + 12ch 结论（strict 没动）+ wd=0.1 已启动"
+  },
+  {
+    "hash": "8679c70",
+    "full_hash": "8679c7062014f9b8b69b420d4e8931d747f4784a",
+    "date": "2026-09-18 10:29:08 +0800",
+    "msg": "docs+fix: 记录产物路径 + 修 wd01 写错目录的坑"
+  },
+  {
+    "hash": "039b89e",
+    "full_hash": "039b89eb43d0eff73d0785e9781489fb382cbae7",
+    "date": "2026-09-18 12:08:21 +0800",
+    "msg": "docs(73): 逐条核实「seen高/strict低」诊断报告"
+  },
+  {
+    "hash": "15512c4",
+    "full_hash": "15512c447afb70ec629c4c995e34d59e1fddd4ba",
+    "date": "2026-09-18 12:08:41 +0800",
+    "msg": "docs(memory): 核实结论 + 数据字段不一致 + 同一根因两面"
+  },
+  {
+    "hash": "a81869a",
+    "full_hash": "a81869ad4a9fe9bb1f66628f209f242e38cccf90",
+    "date": "2026-09-18 12:18:05 +0800",
+    "msg": "docs(memory): 多样性实验（callig A/B）已在 CPU 上启动"
+  },
+  {
+    "hash": "2fb3c74",
+    "full_hash": "2fb3c74310b6e0e47dd92e6f247ab7a7184d11e0",
+    "date": "2026-09-18 13:11:30 +0800",
+    "msg": "feat(diversity): 落盘逐对 + 逐书家数据，支持'数据 vs 机制'散点分析"
+  },
+  {
+    "hash": "7a3ad26",
+    "full_hash": "7a3ad26a56a636b4673d2d62712731e04bb28b69",
+    "date": "2026-09-18 17:25:03 +0800",
+    "msg": "feat+fix: 逐书家散点 —— 发现 strict 差异由'风格多模态'而非数据量解释"
+  },
+  {
+    "hash": "c55f1d7",
+    "full_hash": "c55f1d72ff119a88053c2c287d2574efdb7f8584",
+    "date": "2026-09-18 17:27:47 +0800",
+    "msg": "docs(memory): 根因定位 —— 书家条件是一个「预训练+冻结」的 128 维向量"
+  },
+  {
+    "hash": "ddee277",
+    "full_hash": "ddee27789a7a22a90c4a77eb0b9be1db5411f0c4",
+    "date": "2026-09-18 18:09:16 +0800",
+    "msg": "feat: --train-only-style（冻结主干只训风格模块）+ 修 xattn 路径两个 bug"
+  },
+  {
+    "hash": "bf0e172",
+    "full_hash": "bf0e1724d77c31541c97c442aac2ac086b59e666",
+    "date": "2026-09-18 18:32:29 +0800",
+    "msg": "fix: --train-only-style 改成'只训 ckpt 缺失的新模块'"
+  },
+  {
+    "hash": "af8fe8b",
+    "full_hash": "af8fe8ba3067a899b0f16221553a5b14ebbe5f2e",
+    "date": "2026-09-18 21:09:49 +0800",
+    "msg": "result: 风格模块实验失败（strict 峰值 +0.0008 后跌到 -0.0208），已停并续跑 wd01"
+  },
+  {
+    "hash": "7bdc859",
+    "full_hash": "7bdc8595fae242e1f22fbf633b9b917750fe0570",
+    "date": "2026-09-20 18:11:02 +0800",
+    "msg": "feat: few-shot 新书家实验全部实现（等 v15 跑完执行）"
+  },
+  {
+    "hash": "f028ea4",
+    "full_hash": "f028ea45630e791be3e7b41e09f8f1091bec40b0",
+    "date": "2026-09-20 19:08:59 +0800",
+    "msg": "fewshot: 4 书家实验启动（怀素/伊秉绶/徐渭/沈周，覆盖草隶草行）"
+  },
+  {
+    "hash": "535694c",
+    "full_hash": "535694cc8720b2ce8be5cb48bb43dca0f8aa01e3",
+    "date": "2026-09-20 20:44:20 +0800",
+    "msg": "result: few-shot 训练新书家 embedding 让结果变差（负面结果）"
+  },
+  {
+    "hash": "6001218",
+    "full_hash": "600121868858c74ee173c0d93ee9c17ba41ad76c",
+    "date": "2026-09-20 21:45:56 +0800",
+    "msg": "result: few-shot 结论 —— 单向量学不了新书家（4书家 x 2种K 验证）"
+  },
+  {
+    "hash": "bc134a3",
+    "full_hash": "bc134a34cac8cc714be3f100c39fde2ceaf90425",
+    "date": "2026-09-21 13:37:59 +0800",
+    "msg": "feat: SupCon 重训 v15 多风格表（余弦 0.860 -> 0.0019）+ 修 train-only-new-callig 的 mask bug"
+  },
+  {
+    "hash": "ac2b08a",
+    "full_hash": "ac2b08ae02d8ce4c91c54afa124ad6f1c019ec80",
+    "date": "2026-09-21 13:44:35 +0800",
+    "msg": "prep: few-shot pipeline 就绪（4书家数据+配置+脚本），等 v15b+SupCon"
+  },
+  {
+    "hash": "7c2f15a",
+    "full_hash": "7c2f15a3a70e52e656fdf1224caeeb05a095138b",
+    "date": "2026-09-21 14:00:02 +0800",
+    "msg": "fix: gradio 指向最好的 ckpt(v13 base 155k) + 修两个加载 bug"
+  },
+  {
+    "hash": "3c8f243",
+    "full_hash": "3c8f2435d1e61781628670945b0043032d0a9ce6",
+    "date": "2026-09-21 14:13:58 +0800",
+    "msg": "fix: gradio 的 g 条件库(bank)路径写错 -> 所有字都报'不在库存'"
+  },
+  {
+    "hash": "3b421e3",
+    "full_hash": "3b421e363d75e19bd1ed68898e725ffcbc40bb21",
+    "date": "2026-09-21 14:27:42 +0800",
+    "msg": "feat: gradio 加 ckpt 切换功能 + 动态标题"
+  },
+  {
+    "hash": "354a656",
+    "full_hash": "354a6567b417ffb2c3c34979922d26adeb86da47",
+    "date": "2026-09-21 14:33:15 +0800",
+    "msg": "fix: gradio 切换 ckpt 后报'未知书家'（3 个 bug）"
+  },
+  {
+    "hash": "e59bff1",
+    "full_hash": "e59bff1bebb108bd31b10487f25891fbb38cf730",
+    "date": "2026-09-21 14:45:16 +0800",
+    "msg": "fix: gradio 用 v8 bank 导致出图奇怪 -> 从 v13 自己的 shards_std 重构 bank"
+  },
+  {
+    "hash": "1db67d3",
+    "full_hash": "1db67d3f661ed88fd05b266f653f8e342f9c0759",
+    "date": "2026-09-21 14:45:55 +0800",
+    "msg": "docs(memory): gradio 全套修复记录（bank 版本+书家解析+标题硬编码）"
+  },
+  {
+    "hash": "4c192a7",
+    "full_hash": "4c192a7d33a09051ec282de7a216023f4ee21543",
+    "date": "2026-09-21 14:59:56 +0800",
+    "msg": "fix: bank 字符映射错位 -> 用 std_path 提取 img_id"
+  },
+  {
+    "hash": "7ba9805",
+    "full_hash": "7ba98051b0fc0d1b19b46c17c6728072a1cfe968",
+    "date": "2026-09-21 15:05:52 +0800",
+    "msg": "feat: gradio 加 GT 展示 + 默认书家换成学得最好的"
+  },
+  {
+    "hash": "717616e",
+    "full_hash": "717616e292710fc0b7d22714eb8ef23e56dae948",
+    "date": "2026-09-21 15:21:22 +0800",
+    "msg": "feat: gradio 单字+历史累积+GT在下+回车生成"
+  },
+  {
+    "hash": "18fd925",
+    "full_hash": "18fd9257af33fdad49c523578b2ff5944b84e673",
+    "date": "2026-09-21 15:25:18 +0800",
+    "msg": "docs(memory): 记录当前 gradio 最终链接 + share 链接会变的坑"
+  },
+  {
+    "hash": "6cae484",
+    "full_hash": "6cae4844b9bd2a0e7a20ab07c703ad3984683135",
+    "date": "2026-09-21 23:29:18 +0800",
+    "msg": "data: 简繁错配清洗 —— 双模型交叉验证确认 752 条(1.48%) 并修复字表"
+  },
+  {
+    "hash": "c616668",
+    "full_hash": "c6166689d6e9fd6a406e490815dd300bd49e344d",
+    "date": "2026-09-21 23:29:40 +0800",
+    "msg": "feat: moyun 复现 —— 补完缺失模块 + 按代码原版 DDPM + 冒烟通过"
+  },
+  {
+    "hash": "3f67bbf",
+    "full_hash": "3f67bbf14f0af6972a3b02315246f3bc325414e9",
+    "date": "2026-09-22 10:18:20 +0800",
+    "msg": "feat: 新评估指标 OCR字准率+KID —— 暴露 ssim 的盲区"
+  },
+  {
+    "hash": "15df161",
+    "full_hash": "15df161dcc78fd1fd36e3e7018baa27cb4f87bfc",
+    "date": "2026-09-22 10:45:35 +0800",
+    "msg": "fix(严重): batch_eval 把 ckpt args 强制转成 dict -> 所有架构参数被静默忽略"
+  },
+  {
+    "hash": "35dac38",
+    "full_hash": "35dac389e07df6a99d12e6831b312d40e24092e9",
+    "date": "2026-09-22 10:51:08 +0800",
+    "msg": "docs(memory): 记录 batch_eval 的 dict bug（v13 seen 0.5697->0.7590）"
+  },
+  {
+    "hash": "1c2828e",
+    "full_hash": "1c2828e1b598d014ddf0d323cf5fcfddf6c9d359",
+    "date": "2026-09-22 12:10:08 +0800",
+    "msg": "feat: moyun 评测 + poster（CPU）"
+  },
+  {
+    "hash": "253f7b4",
+    "full_hash": "253f7b4b639cab127d7c3f8a4cfae8bc7fb79eef",
+    "date": "2026-09-22 16:34:41 +0800",
+    "msg": "feat: 字标注错配检测 —— PP-OCRv4 最有效 + VLM 上下文锚点"
+  },
+  {
+    "hash": "7d2d89e",
+    "full_hash": "7d2d89e4a3d3cea630350035d9ae210f7700ba8a",
+    "date": "2026-09-22 17:06:04 +0800",
+    "msg": "feat: PaddleOCR-VL-1.6 字准率 0.70/0.5060 —— 四个 OCR 模型对比完成"
+  },
+  {
+    "hash": "9c2e050",
+    "full_hash": "9c2e050ac07f922b705d38ffa94df9021c69697f",
+    "date": "2026-09-22 18:17:47 +0800",
+    "msg": "feat: 两阶段洗数据流程 —— PaddleOCR-VL 全量 + Qwen3-VL 锚点复核"
+  },
+  {
+    "hash": "f156dc2",
+    "full_hash": "f156dc290e3b7931146b1e756bc062a1ac46a6c2",
+    "date": "2026-09-22 18:29:28 +0800",
+    "msg": "fix: strict 里错标的「升」改成「陞」—— csv + std g + shards 三处同步"
+  },
+  {
+    "hash": "08a787c",
+    "full_hash": "08a787c9b2d0a58aa934f0b348e5562589eef746",
+    "date": "2026-09-22 18:40:34 +0800",
+    "msg": "docs: 发现 SSIM 被白底严重抬高 —— 全图 0.6124 vs 墨迹框 0.3553"
+  },
+  {
+    "hash": "dceb4b4",
+    "full_hash": "dceb4b46cf0a3add3cfb43c0e50938da0dee93cf",
+    "date": "2026-09-22 18:46:56 +0800",
+    "msg": "feat: 墨迹域指标（ink_ssim / ink_iou / skel_iou）—— 修正 SSIM 被白底抬高的问题"
+  },
+  {
+    "hash": "fb77329",
+    "full_hash": "fb773298790f240f176a2dd36dde1d1674490b1a",
+    "date": "2026-09-22 19:12:35 +0800",
+    "msg": "feat: 把 229 条异体字标注改成通行字 —— 训练集多些通行字"
+  },
+  {
+    "hash": "7245c5f",
+    "full_hash": "7245c5ff48b9f09b1d46d4e1893c866f66874313",
+    "date": "2026-09-22 19:13:14 +0800",
+    "msg": "docs: memory 记录墨迹指标 + 229 条换通行字"
+  },
+  {
+    "hash": "53b8fd0",
+    "full_hash": "53b8fd08ed1ac570fbf13782bf42c70738d41e94",
+    "date": "2026-09-22 19:18:08 +0800",
+    "msg": "docs: 历史改动评估（五维度）—— 数据/模型/loss/注入/风格编码"
+  },
+  {
+    "hash": "102468d",
+    "full_hash": "102468dbba31758ea1d88a8fccc4d3c50cb4ffdf",
+    "date": "2026-09-23 01:19:59 +0800",
+    "msg": "feat(style): 注入机制改造 — LN 自动标定 + 风格专用低秩 adaLN 支路"
+  },
+  {
+    "hash": "a2272d7",
+    "full_hash": "a2272d7b5027f35c562fa40e1b323eb69f2e43f0",
+    "date": "2026-09-23 01:20:14 +0800",
+    "msg": "docs/tools: 诊断结果与结构 loss 工具"
+  },
+  {
+    "hash": "23bf4c5",
+    "full_hash": "23bf4c5bf6be3353ded2962d0ce1d80de7ca6b0a",
+    "date": "2026-09-23 01:31:42 +0800",
+    "msg": "docs(archive): 归档 _archive/ 实验记录（删除前存档）+ 磁盘清理"
+  },
+  {
+    "hash": "c86a031",
+    "full_hash": "c86a0316b0d16beaf975ef6fef3991c87b72014a",
+    "date": "2026-09-23 01:53:35 +0800",
+    "msg": "docs(rescue): 抢救 20260913 旧备份的记录数据 + 磁盘清理第二轮"
+  },
+  {
+    "hash": "645110c",
+    "full_hash": "645110cea7761564224c5e2f804f1ec475b98dfb",
+    "date": "2026-09-23 11:24:14 +0800",
+    "msg": "feat(mid): CPU 预建中程载体 PNG + dataset 通路 (不占 GPU)"
+  },
+  {
+    "hash": "140c684",
+    "full_hash": "140c684fd957903a14bccf92c119646e73dbe6b9",
+    "date": "2026-09-23 11:24:39 +0800",
+    "msg": "docs(memory): 记录中程载体 PNG 预建 + dataset 通路 + 两个静默失效坑"
+  },
+  {
+    "hash": "7ff372c",
+    "full_hash": "7ff372c7a035f29e854c198ffc5a0f2b34898172",
+    "date": "2026-09-23 11:33:11 +0800",
+    "msg": "feat(mid): 中程结构 loss 接入预建 PNG 通路 (免 VAE encode, 省显存)"
+  },
+  {
+    "hash": "0350df0",
+    "full_hash": "0350df040a75b56491403071e80c9a886acf82e8",
+    "date": "2026-09-23 11:38:02 +0800",
+    "msg": "revert(mid): 删除 PNG 下采样路线 —— 改回训练前 GPU encode 存 shards"
+  },
+  {
+    "hash": "9ef0e45",
+    "full_hash": "9ef0e45331ded60e580b672bed793c4487906b5d",
+    "date": "2026-09-23 11:38:30 +0800",
+    "msg": "docs(memory): PNG 路线废弃裁决 + 阶段一训练快照与风格注入有效性分析"
+  },
+  {
+    "hash": "95ae491",
+    "full_hash": "95ae491277f87537dfa2d620357f9fc28a35fc85",
+    "date": "2026-09-25 00:42:59 +0800",
+    "msg": "feat(eval): 同字最近邻指标 + poster 三行参照 + 中文标签/多线程"
+  },
+  {
+    "hash": "e34bd32",
+    "full_hash": "e34bd323c39085796b629df135f71c8277bd6226",
+    "date": "2026-09-25 00:43:16 +0800",
+    "msg": "feat(model): GlyphQuery 骨架查询层 + 条件增强接线 + 多骨架变体目录"
+  },
+  {
+    "hash": "31a6713",
+    "full_hash": "31a671340e15642ebf4156714fa7e9020a171e21",
+    "date": "2026-09-25 00:43:28 +0800",
+    "msg": "docs: 数据修复接线 / 条件增强 / 断笔比 baseline / 同字最近邻诊断"
+  },
+  {
+    "hash": "b071d4a",
+    "full_hash": "b071d4a724be0ef0059c06968641e6fca7fe4cb0",
+    "date": "2026-09-25 01:03:27 +0800",
+    "msg": "fix(docs): 撤回「E0 最好」的结论 —— 单点比较是假象"
+  },
+  {
+    "hash": "ae548c7",
+    "full_hash": "ae548c721db10734c39092d9fa2eb68389f45af6",
+    "date": "2026-09-25 01:15:17 +0800",
+    "msg": "feat(eval)+docs: 同字最近邻指标接进常规 eval + E1 复查 + 风格监督设计"
+  },
+  {
+    "hash": "de34813",
+    "full_hash": "de34813246408f9bddca8c53ccdf24ac730ae9f8",
+    "date": "2026-09-25 02:51:05 +0800",
+    "msg": "feat(style): 风格监督实测 —— 免训练信号 / 对比学习 / latent 编码器"
+  },
+  {
+    "hash": "8c89c01",
+    "full_hash": "8c89c0176830f75e9f6ea0c59b230e155b6a0770",
+    "date": "2026-09-25 03:06:56 +0800",
+    "msg": "docs(style): 编码器是良性过拟合；缩小+正则反而更差 -> 转 L_retrieve"
+  },
+  {
+    "hash": "1480cc4",
+    "full_hash": "1480cc4582aed322ed13dbdb6455598a73a4c2ad",
+    "date": "2026-09-25 13:17:20 +0800",
+    "msg": "feat(v18): 把 style-rank loss 从远端同步回本地 + 结果记录"
+  },
+  {
+    "hash": "bb896c2",
+    "full_hash": "bb896c24b959c37ac9240b17eb26d577af1da19c",
+    "date": "2026-09-25 16:55:54 +0800",
+    "msg": "feat(v19): 模块裁决 + GQ+E0 起跑；撤回 style-rank 结论"
+  },
+  {
+    "hash": "85a8b46",
+    "full_hash": "85a8b46ebad0fa2cf7456ab28d17bb6e1b1d733f",
+    "date": "2026-09-25 17:28:13 +0800",
+    "msg": "feat(diag): 书家条件 correct/shuffled/null 诊断 —— 找到真凶"
+  },
+  {
+    "hash": "21792b3",
+    "full_hash": "21792b3576b44b3d636ed4c5f96c9ebc58cbd5f1",
+    "date": "2026-09-25 18:05:59 +0800",
+    "msg": "feat(deform): DeformSkel 骨架形变模块 —— 本项目第一个真在用书家条件的模块"
+  },
+  {
+    "hash": "a28b8c3",
+    "full_hash": "a28b8c3431580fc870631818098f48fff4fe85c8",
+    "date": "2026-09-25 18:24:09 +0800",
+    "msg": "feat(deform): 打通\"离线训好 -> 接进扩散\"的完整链路"
+  },
+  {
+    "hash": "34d7580",
+    "full_hash": "34d75804f3d8374019a6aa2d655aba3a0c683698",
+    "date": "2026-09-25 18:59:32 +0800",
+    "msg": "fix(deform): deform_grid 必须用骨架 latent 的 32，不是 token 网格 16"
+  },
+  {
+    "hash": "3dccd34",
+    "full_hash": "3dccd343733fb269d12899512adb834a1783407d",
+    "date": "2026-09-25 18:59:44 +0800",
+    "msg": "test(deform): 把端到端集成验证脚本收进 tools/（_sync_work 被 gitignore）"
+  },
+  {
+    "hash": "d035069",
+    "full_hash": "d035069535b25f001ce1ad2e2dd6f64bb6721a8e",
+    "date": "2026-09-25 19:52:12 +0800",
+    "msg": "fix(deform): 条件被 drop 时跳过形变 + 中间监督按掩码平均"
+  },
+  {
+    "hash": "f613342",
+    "full_hash": "f613342c1b19a528d04160ce1f3774625fe74830",
+    "date": "2026-09-25 20:10:40 +0800",
+    "msg": "feat(v18-skelnet): 骨架形变网解冻训练 + 单独 lr 组"
+  },
+  {
+    "hash": "11b3eee",
+    "full_hash": "11b3eee948654a9961c6f108a8c80112f46106ee",
+    "date": "2026-09-25 22:01:47 +0800",
+    "msg": "docs(skelnet): SkelNet 骨架形变网完整文档 + 不可约下界诊断"
+  },
+  {
+    "hash": "66186c8",
+    "full_hash": "66186c8d828700844eaf7913d3a6ba43fe6d9e7d",
+    "date": "2026-09-25 23:30:34 +0800",
+    "msg": "perf(deform): 修掉 NCHW upsample_bilinear2d 病态慢核(训练 1.39x); 并确认主模型不受影响"
+  },
+  {
+    "hash": "68ce730",
+    "full_hash": "68ce7303499541316cf764cdc666aa99853ad707",
+    "date": "2026-09-26 01:40:25 +0800",
+    "msg": "feat(style): verify dual-channel injection, add gradient probe and doc 97"
+  },
+  {
+    "hash": "776ec90",
+    "full_hash": "776ec903dc273c2ca43bf0b094c85991a2f52369",
+    "date": "2026-09-26 01:56:03 +0800",
+    "msg": "feat(repo): privatize repository, overhaul README into Master Omnibus hub, and pull v21 experimental assets"
+  },
+  {
+    "hash": "c3d0d21",
+    "full_hash": "c3d0d2108f5400f89cdc288efa730a6154eb1d81",
+    "date": "2026-09-26 01:57:45 +0800",
+    "msg": "docs(readme): streamline Master Omnibus into architecture + comprehensive empirical records"
+  },
+  {
+    "hash": "87eae8d",
+    "full_hash": "87eae8d7cbfe35f1584699b9def8ad228c9e5207",
+    "date": "2026-09-26 01:58:09 +0800",
+    "msg": "docs: track 90_style_injection_summary, 91_glyph_query, and 75_style_rank_loss"
+  },
+  {
+    "hash": "e064242",
+    "full_hash": "e0642420d34bd42be978b9fad492e636a7d6f268",
+    "date": "2026-09-26 02:15:26 +0800",
+    "msg": "docs: complete 10h archaeological consolidation, doc streamlining & Step 15k telemetry"
+  },
+  {
+    "hash": "7d21e80",
+    "full_hash": "7d21e80bdf95c84b9cf29e30dee349167caaf36d",
+    "date": "2026-09-26 02:17:29 +0800",
+    "msg": "docs: link Falsification Registry directly to active docs & technical archives"
+  }
+]

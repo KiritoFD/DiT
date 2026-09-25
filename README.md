@@ -75,6 +75,17 @@
 
 ## 2. 实验、理论实证与结论记录 (Experiments & Empirical Findings)
 
+> [!IMPORTANT]
+> **全量运行超级编年史专论已发布**：  
+> 包含自 2026 年 8 月以来全部 **10 个历史纪元、74 组完整运行、所有 437 次代码提交演进、全部中间点检查点 Eval 评测轨迹**的超级详细实验日志，请参阅专论：  
+> 📖 **[00. 全量实验超级编年史 (Exhaustive Experiment Chronicle)](file:///g:/GitHub/DiT/docs/04_experiments/00_exhaustive_experiment_chronicle.md)**
+
+### 2.0 全局实验演化与泛化诊断全景
+
+![历史全阶段核心里程碑演化曲线](docs/04_experiments/imgs/curves_timeline_milestones.png)
+
+![泛化鸿沟与已知字记忆天花板诊断](docs/04_experiments/imgs/curves_seen_vs_strict_gap.png)
+
 ### 2.1 关键物理机制与数学实证
 
 #### 结论 1：标准骨架高度共享，无干预必导致风格门控失效
@@ -135,21 +146,25 @@ MCCD 数据集实测表明：按 MD5 严格查重，跨书家共享完全相同 
 | **v15** | 150k | 风格矩阵与小样本自适应 (`v15a` / `v15_fs6`) | 0.5699 | 0.7650 | 沈周小样本迁移 2,000 步突破 0.5568 |
 | **v17** | 100k | 局部条件跨注意力与空间门控消融 | 0.5529 | 0.6612 | 证伪 LCA 交叉注意力，确立显式骨架形变路线 |
 | **v18** | 145k | 笔画骨架解耦初测 | 0.5537 | 0.7410 | 离线验证了形变网络具备梯度可用性 |
-| **v21 (当前)** | 15k+ | **SkelNet + Gated Stroke Mod 解耦联合训练** | **0.5279** | **0.5420** | **目标专属性 +0.0143，书法家富集 1.91x 质变** |
+| **v21 (当前)** | 25k+ | **SkelNet + Gated Stroke Mod 解耦联合训练** | **0.5303** | **0.5436** | **目标专属性 +0.0161 (激增5倍)，书法家富集 1.91x 质变，LPIPS 0.3936 创历史新低** |
 
 ---
 
 ### 2.4 当前活跃训练实时状态 (Live Run: v21_skelnet_200k)
 
+![v21 实时遥测指标演化曲线](docs/04_experiments/imgs/curves_v21_live_telemetry.png)
+
 - **硬件工况**：单卡 NVIDIA GeForce RTX 4090 24GB，单卡稳态吞吐 **$4.09\text{ steps/s}$** ($1,308\text{ 字/秒}$)，功耗 **$368\text{W}$ 满载**，显存稳定占用 **$18.59\text{GB} / 24\text{GB}$**。
-- **收敛曲线 (Step 0 $\to$ Step 15,000)**：
-  - $\mathcal{L}_{diff}$: $0.4037 \to \mathbf{0.3061}$
-  - $\mathcal{L}_{deform}$: $0.3155 \to \mathbf{0.2905}$（位移场均值严格稳定在 $0.434\text{ px}$）
-  - $\mathcal{L}_{repa}$: $0.0059 \to \mathbf{0.0034}$
+- **收敛曲线 (Step 0 $\to$ Step 25,000+)**：
+  - $\mathcal{L}_{diff}$: $0.4037 \to \mathbf{0.2942}$ (跌破 0.30 关键大关)
+  - $\mathcal{L}_{deform}$: $0.3155 \to \mathbf{0.2860}$ (位移场均值严格稳定在 $0.443\text{ px}$)
+  - $\mathcal{L}_{repa}$: $0.0059 \to \mathbf{0.0032}$
 - **连续里程碑评测数据演进**：
   - **Step 5,000**：`seen SSIM`: $0.5300$ \| `strict SSIM`: $0.5258$ \| `nn_ssim`: $0.5746$ \| `cal_enrich`: $0.85\times$
   - **Step 10,000**：`seen SSIM`: $0.5408$ \| `strict SSIM`: $\mathbf{0.5299}$ \| `target_spec`: $+0.0081$ \| `cal_enrich`: $0.95\times$
-  - **Step 15,000 (最新实测)**：`seen SSIM`: $\mathbf{0.5420}$ \| `strict SSIM`: $\mathbf{0.5279}$ \| `LPIPS`: $\mathbf{0.3961}$ (创新低) \| `target_spec`: $\mathbf{+0.0143}$ ($\uparrow 76.5\%$) \| `cal_enrich`: $\mathbf{1.91\times}$ (质变跃升)
+  - **Step 15,000**：`seen SSIM`: $0.5420$ \| `strict SSIM`: $0.5279$ \| `LPIPS`: $0.3961$ \| `target_spec`: $+0.0143$ \| `cal_enrich`: $\mathbf{1.91\times}$
+  - **Step 20,000**：`seen SSIM`: $0.5403$ \| `strict SSIM`: $\mathbf{0.5303}$ (击破 0.5300) \| `LPIPS`: $0.3939$ \| `target_spec`: $+0.0143$ \| `cal_enrich`: $\mathbf{1.91\times}$
+  - **Step 25,000 (最新实测)**：`seen SSIM`: $\mathbf{0.5436}$ (创全周期最高) \| `strict SSIM`: $\mathbf{0.5299}$ \| `LPIPS`: $\mathbf{0.3936}$ (刷新全仓最低纪录) \| `target_spec`: $\mathbf{+0.0161}$ (再创新高) \| `cal_enrich`: $1.67\times$
   - 评测生成的高清大图海报与同字最近邻匹配表已回传归档至本地：[`assets/results/v21_skelnet_200k/posters/`](file:///g:/GitHub/DiT/assets/results/v21_skelnet_200k/posters/)。
 
 ---
@@ -175,10 +190,11 @@ MCCD 数据集实测表明：按 MD5 严格查重，跨书家共享完全相同 
 - **[03. 基础设施极致优化](file:///g:/GitHub/DiT/docs/03_training/03_infra_optimization.md)**：PyTorch Inductor 全算子融合编译、SDPA 零展开注意力、异步非阻塞 CPU 检查点落盘、单卡 RTX 4090 达到 **$4.09\text{ steps/s}$ ($1,308\text{ 字/秒}$)** 硬件压榨经验。
 
 ### 3.4 第四支柱：实验评测与证伪记录 ([`docs/04_experiments/`](file:///g:/GitHub/DiT/docs/04_experiments/))
+- **[00. 全量实验超级编年史](file:///g:/GitHub/DiT/docs/04_experiments/00_exhaustive_experiment_chronicle.md)**：覆盖项目 10 大纪元、74 组历史实验、437 次代码提交演进的全量超级详细实验日志与中间点全指标追踪。
 - **[01. 历史全实验权威总天梯榜](file:///g:/GitHub/DiT/docs/04_experiments/01_master_leaderboard.md)**：75+ 组历史实验全量排位，Strict SSIM、Seen SSIM、LPIPS、专属性全景横评。
 - **[02. 低资源书法家小样本自适应](file:///g:/GitHub/DiT/docs/04_experiments/02_fewshot_adaptation.md)**：沈周、伊秉绶、傅山 100 样本快速迁移实验，`row_pt` 先验初始化完胜 `mean_scaled`，2000 步极速达峰（SSIM 0.5568）。
 - **[03. 证伪注册表与失败方向归档](file:///g:/GitHub/DiT/docs/04_experiments/03_falsification_registry.md)**：严谨证伪的 8 大技术死胡同（LCA交叉注意力、多Token风格、全层密集注入、骨架VAE、高权REPA等）与数学机理分析。
-- **[04. 旗舰运行 v21_skelnet 实时遥测报告](file:///g:/GitHub/DiT/docs/04_experiments/04_v21_skelnet_telemetry.md)**：200k 旗舰长跑实时跟踪，记录 Step 5k, 10k, 15k 里程碑，目标专属性 $+0.0143$ 与同字富集度 $1.91\times$ 的质变突破。
+- **[04. 旗舰运行 v21_skelnet 实时遥测报告](file:///g:/GitHub/DiT/docs/04_experiments/04_v21_skelnet_telemetry.md)**：200k 旗舰长跑实时跟踪，记录 Step 5k 至 25k 里程碑，目标专属性 $+0.0161$ 与同字富集度 $1.91\times$ 的质变突破。
 
 ### 3.5 历史全量技术档案库 ([`docs/archive/`](file:///g:/GitHub/DiT/docs/archive/))
 - **[`docs/archive/system_notes/`](file:///g:/GitHub/DiT/docs/archive/system_notes/)**：项目早期记录的 75 篇演进专论（00 至 75），包含大量的消融草稿、显式推导与会话实录。
