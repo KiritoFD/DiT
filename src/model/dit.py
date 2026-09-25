@@ -2147,7 +2147,25 @@ class DiT_2Cond(nn.Module):
         # ★ 形变标准骨架: g -> g'(书家习惯间架)。必须放在 g_tok 之前,
         #   这样 concat / adaLN 注入 / local_ca 三条通路都用同一个 g'。
         if getattr(self, "deform_skel", None) is not None and g is not None:
-            g = self.deform_skel(g, _e_callig())
+            _g2 = self.deform_skel(g, _e_callig())
+            # ⚠ 条件被 drop 的样本（CFG uncond 分支）拿到的是 **null 风格向量** ->
+            #   形变头会产出垃圾骨架, 等于往条件里注入噪声。
+            #   实测: 10% 条件丢弃时 Deform loss 从离线的 0.167 涨到 0.37
+            #   (0.9*0.167 + 0.1*2.0 ≈ 0.35, 吻合) —— 正是这个原因。
+            #   -> 对丢弃样本**跳过形变**, 保持原骨架。
+            # ⚠ 模型上**没有** num_calligraphers 属性（只是构造形参）——
+            #   用 getattr(...,0) 会拿到 0, 让这段修复变成空操作。
+            #   null 索引的真值在 y_callig_embedder.num_classes。
+            _ncal = int(getattr(getattr(self, "y_callig_embedder", None),
+                                "num_classes", 0))
+            if _ncal > 0:
+                _kept = (y_callig_in < _ncal)
+                if not bool(_kept.all()):
+                    g = torch.where(_kept.view(-1, 1, 1, 1), _g2, g)
+                else:
+                    g = _g2
+            else:
+                g = _g2
         if self.use_glyph_cond and self.glyph_embedder is not None and g is not None:
             # 独立 glyph_embedder 把标准字形 latent 编成 (N, D, 16, 16) -> flat tokens (N,256,D)
             g_tok = self.glyph_embedder(g).flatten(2).transpose(1, 2)  # (N,256,D)

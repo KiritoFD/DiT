@@ -116,6 +116,7 @@ class DeformSkel(nn.Module):
         self.register_buffer('base_grid',
                              torch.stack([gx, gy], -1).unsqueeze(0), persistent=False)
         self.last_out = None
+        self.last_mask = None   # 哪些样本真的做了形变
         self.last_off = None
         self.last_off_style = None
         self.last_res = None

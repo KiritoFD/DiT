@@ -2004,7 +2004,17 @@ def main(args):
                         else:
                             _g2 = _dm.last_out
                             _tgt = _gsk.to(device, non_blocking=True).float()
-                            if _g2.shape == _tgt.shape:
+                            # ★ 只在"真的做了形变"的样本上算: 条件被 drop 的样本用的是
+                            #   null 风格向量, 形变头产出的是垃圾, 不该进监督。
+                            #   (第一版只改前向没改 loss, 实测 loss 一模一样 0.3687)
+                            _m = getattr(_dm, 'last_mask', None)
+                            if _m is not None and not bool(_m.all()):
+                                if bool(_m.any()):
+                                    _g2 = _g2[_m]
+                                    _tgt = _tgt[_m]
+                                else:
+                                    _g2 = None
+                            if _g2 is not None and _g2.shape == _tgt.shape:
                                 loss_deform = (_g2 - _tgt).pow(2).mean()
                                 loss = loss + getattr(args, 'w_deform_skel', 0.0) * loss_deform
                                 _v = float(loss_deform.detach())
