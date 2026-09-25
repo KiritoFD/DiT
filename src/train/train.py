@@ -481,6 +481,10 @@ def main(args):
             deform_coarse=int(getattr(args, 'deform_coarse', 8)),
             residual=int(getattr(args, 'residual', 0)),
             res_cap=float(getattr(args, 'res_cap', 1.0)),
+            stroke_mod=int(getattr(args, 'stroke_mod', 0)),
+            stroke_cap=float(getattr(args, 'stroke_cap', 1.0)),
+            gate_radius=float(getattr(args, 'gate_radius', 0.25)),
+            deform_dt_ch=int(getattr(args, 'deform_dt_ch', 0)),
             deform_ckpt=str(getattr(args, 'deform_ckpt', '') or ''),
             freeze_char_table=getattr(args, 'freeze_char_table', False),
             # ---- IDS 组件码本字嵌入 ----

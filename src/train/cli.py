@@ -649,9 +649,14 @@ def build_parser(argv=None):
     parser.add_argument("--deform-residual", type=int, default=0, dest="residual",
                         help="1=形变+加性残差(补笔画粗细/墨色). 实测闭合 36%%->53%%, "
                              "style-follow 63%%->97%%.")
-    parser.add_argument("--deform-res-cap", type=float, default=1.0, dest="res_cap")
     parser.add_argument("--deform-coarse", type=int, default=8, dest="deform_coarse",
                         help="在低分辨率上预测偏移再上采样 -> 偏移场平滑")
+    parser.add_argument("--stroke-mod", type=int, default=0, dest="stroke_mod",
+                        help="启用 DeformSkel 受控笔画乘性缩放(门控调粗细, 空白背景不造墨). 默认 0=关.")
+    parser.add_argument("--stroke-cap", type=float, default=1.0, dest="stroke_cap")
+    parser.add_argument("--gate-radius", type=float, default=0.25, dest="gate_radius")
+    parser.add_argument("--deform-dt-ch", type=int, default=0, dest="deform_dt_ch",
+                        help="DeformSkel 距离场通道数(v10 为 1). 默认 0")
     parser.add_argument("--skel-latent-shards-dirs", type=str, default="",
                         dest="skel_latent_shards_dirs",
                         help="条件增强: 多个骨架几何变体目录（逗号分隔）。第一个必须是"

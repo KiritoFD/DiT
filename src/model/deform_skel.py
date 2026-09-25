@@ -97,7 +97,8 @@ class _FiLM(nn.Module):
 class DeformSkel(nn.Module):
     def __init__(self, cond_dim=128, ch=4, grid=32, style_ch=32,
                  width=64, max_off=3.0, coarse=8, residual=0, res_cap=1.0,
-                 blur=0, blur_sigma=1.5, dt_ch=0, affine=1, ckpt=0):
+                 blur=0, blur_sigma=1.5, dt_ch=0, affine=1, ckpt=0,
+                 stroke_mod=0, stroke_cap=1.0, gate_radius=0.25):
         super().__init__()
         self.grid = int(grid)
         self.coarse = int(coarse)
@@ -148,6 +149,24 @@ class DeformSkel(nn.Module):
         self.style_off = nn.Linear(int(cond_dim), 2 * self.grid * self.grid)
         # ★ 路径 5: 风格专属**全分辨率残差**（补上"形变改不了的"笔画粗细/墨色）
         self.style_res = nn.Linear(int(cond_dim), ch * self.grid * self.grid)             if bool(residual) else None
+
+        # ★ 路径 6: 受控笔画调制（Stroke Modulation）
+        #   解决纯几何形变改不了粗细（墨量比 0.04）且避免自由残差在空白处凭空画线（作弊）。
+        #   调制量被骨架笔画的局部邻域严格截断（gate），空白背景处严格为 0，绝对不破坏拓扑。
+        self.use_stroke_mod = bool(stroke_mod)
+        self.stroke_cap = float(stroke_cap)
+        self.gate_radius = float(gate_radius)
+        if self.use_stroke_mod:
+            self.stroke_conv = nn.Conv2d(w, ch, 1)
+            self.stroke_style = nn.Linear(int(cond_dim), ch * self.grid * self.grid)
+            nn.init.zeros_(self.stroke_conv.weight)
+            nn.init.zeros_(self.stroke_conv.bias)
+            nn.init.zeros_(self.stroke_style.weight)
+            nn.init.zeros_(self.stroke_style.bias)
+        else:
+            self.stroke_conv = None
+            self.stroke_style = None
+
         for m in (self.out, self.style_off):
             nn.init.zeros_(m.weight)
             nn.init.zeros_(m.bias)
@@ -167,6 +186,7 @@ class DeformSkel(nn.Module):
         self.last_off = None
         self.last_off_style = None
         self.last_res = None
+        self.last_stroke_mod = None
 
     def forward(self, g, style, dt=None):
         """g: (N,4,H,W) 标准骨架 latent；style: (N,cond_dim) 书家风格。返回 g' 同形状。"""
@@ -177,10 +197,17 @@ class DeformSkel(nn.Module):
         s = self.style_proj(st)[..., None, None].expand(-1, -1, self.grid, self.grid)
         _parts = [g.float()]
         if self.dt_ch:
-            # 距离场: 由外部算好传入 (对 g_std 是固定量, 可离线预计算)。
-            # 作用: 骨架 latent 很稀疏, 全图大部分位置没有梯度信号;
-            #       距离场把"离骨架多远"铺满全图 -> U-Net 有了空间导航信号。
-            assert dt is not None, 'dt_ch>0 但没传 dt'
+            if dt is None:
+                # 在线自动极速距离场: 骨架在 GPU 上的多级膨胀距离近似
+                _mag = g.abs().mean(dim=1, keepdim=True)
+                _med = _mag.view(_mag.shape[0], -1).median(dim=1)[0].view(-1, 1, 1, 1)
+                _mask = (_mag <= _med).float()
+                _cur = _mask
+                _dt = torch.zeros_like(_mask)
+                for _i in range(1, 16):
+                    _cur = F.max_pool2d(_cur, kernel_size=3, stride=1, padding=1)
+                    _dt = torch.where((_dt == 0) & (_cur > 0) & (_mask == 0), float(_i), _dt)
+                dt = _dt / 15.0
             _parts.append(dt.to(g.dtype))
         if self.blur:
             # 高斯模糊: 用 separable conv 实现, 无参数、可微、对 batch 广播
@@ -237,6 +264,29 @@ class DeformSkel(nn.Module):
             r = torch.tanh(r / max(self.res_cap, 1e-6)) * self.res_cap
             g2 = g2 + r
             self.last_res = r.detach()
+
+        # ★ 受控笔画调制: 只在笔画局部邻域内增强/调粗细, 空白背景处 gate 严格为 0 (防作弊/防虚假笔画)
+        if self.use_stroke_mod and self.stroke_conv is not None:
+            if dt is not None:
+                # 距离场采样到形变后坐标
+                dt_w = F.grid_sample(dt.float(), grid, mode='bilinear',
+                                     padding_mode='border', align_corners=False)
+                gate = torch.clamp(1.0 - dt_w / max(self.gate_radius, 1e-4), min=0.0, max=1.0)
+            else:
+                # 备用: 无外部 dt 时按局部幅值软门控
+                _mag = g2.abs().mean(dim=1, keepdim=True)
+                gate = torch.clamp(_mag / 0.5, min=0.0, max=1.0)
+
+            mod_u = self.stroke_conv(u)
+            if self.coarse > 0 and self.coarse < self.grid:
+                mod_u = _up(mod_u, (self.grid, self.grid))
+            mod_s = self.stroke_style(st).view(n, c, self.grid, self.grid)
+            mod = torch.tanh((mod_u + mod_s) / max(self.stroke_cap, 1e-6)) * self.stroke_cap
+            g2 = g2 + gate * mod
+            self.last_stroke_mod = (gate * mod).detach()
+        else:
+            self.last_stroke_mod = None
+
         self.last_out = g2
         self.last_off = off.detach()
         self.last_off_style = off_s.detach()
@@ -282,6 +332,10 @@ class DeformSkel(nn.Module):
             r = self.last_res.float()
             d['tv_res'] = ((r[..., :, 1:] - r[..., :, :-1]).pow(2).mean()
                            + (r[..., 1:, :] - r[..., :-1, :]).pow(2).mean())
+        if getattr(self, 'last_stroke_mod', None) is not None:
+            sm = self.last_stroke_mod.float()
+            d['tv_stroke'] = ((sm[..., :, 1:] - sm[..., :, :-1]).pow(2).mean()
+                              + (sm[..., 1:, :] - sm[..., :-1, :]).pow(2).mean())
         return d
 
     def offset_stats(self):
@@ -295,4 +349,6 @@ class DeformSkel(nn.Module):
                  style_part=float(os_.abs().mean()) if os_ is not None else 0.0)
         if getattr(self, 'last_res', None) is not None:
             d['res'] = float(self.last_res.abs().mean())
+        if getattr(self, 'last_stroke_mod', None) is not None:
+            d['stroke_mod'] = float(self.last_stroke_mod.abs().mean())
         return d
