@@ -106,16 +106,18 @@ MCCD 数据集实测表明：按 MD5 严格查重，跨书家共享完全相同 
 
 ### 2.2 证伪清单 (Falsification Registry：已实测排除的 8 大死胡同)
 
-| 路线方案 | 实测证据 / 失败指标 | 机理归因与教训 | 归档文档 |
+> 详见专论：**[03. 证伪注册表与失败方向归档](file:///g:/GitHub/DiT/docs/04_experiments/03_falsification_registry.md)**
+
+| 路线方案 | 实测证据 / 失败指标 | 机理归因与教训 | 原始技术专论归档 |
 | :--- | :--- | :--- | :--- |
-| **暴力扩张模型容量** (27M $\to$ 67M) | strict SSIM 全部停滞在 0.51~0.57，容量翻倍无任何收益 | 任务瓶颈在于“风格条件有效性”而非主干容量 | `docs/system/54` |
-| **过度削减容量** (S/2 $\to$ XS/2 depth 8) | strict SSIM 跌落 $0.026$ (0.5603 $\to$ 0.5337)，LPIPS 变差 | Transformer 层数低于 12 会伤害基本去噪拟合 | `docs/system/62` |
-| **12 通道多通道扩散** (aux 轮廓/骨架) | strict SSIM 仅 0.4993（比基线低 $0.06$） | 辅助通道分布异构，CFG 采样引导时多通道轨迹发散跑飞 | `docs/system/59` |
-| **条件高斯噪声增强** (noise400k) | seen 暴跌 $-0.048$，strict 平台仅 0.4869 | 破坏了骨架条件像素级的高频几何空间确定性 | `docs/system/55` |
-| **离散字符 ID 条件** (char_id) | 闭集严重，字典外字生成完全崩溃 | 无法支持书法万级生僻字/异体字的开集泛化 | `docs/system/60` |
-| **无监督/弱监督端到端形变** | 风格跟随率退化至随机水平 ($\approx 50\%$) | 扩散 Loss 梯度与骨架几何严格正交，无自发几何引导 | `docs/922/96` |
-| **未截断的全局笔画残差** | 背景白底大面积造墨污染、出现漂浮噪点 | 笔画粗细调节必须受前景距离变换场严格半径截断 | `docs/922/96` |
-| **未对齐特征的 SupCon 风格表** | 风格可控比仅 1.2~2.5，与随机初始化无异 | 早期特征提取脚本存在尺寸不一致 bug，表征从未有效收敛 | `docs/919/10` |
+| **暴力扩张模型容量** (27M $\to$ 67M) | strict SSIM 全部停滞在 0.51~0.57，容量翻倍无任何收益 | 任务瓶颈在于“风格条件有效性”而非主干容量 | [`54_results_and_insights.md`](file:///g:/GitHub/DiT/docs/archive/system_notes/54_results_and_insights_20260913.md) |
+| **过度削减容量** (S/2 $\to$ XS/2 depth 8) | strict SSIM 跌落 $0.026$ (0.5603 $\to$ 0.5337)，LPIPS 变差 | Transformer 层数低于 12 会伤害基本去噪拟合 | [`62_param_budget_derivation.md`](file:///g:/GitHub/DiT/docs/archive/system_notes/62_param_budget_derivation.md) |
+| **12 通道多通道扩散** (aux 轮廓/骨架) | strict SSIM 仅 0.4993（比基线低 $0.06$） | 辅助通道分布异构，CFG 采样引导时多通道轨迹发散跑飞 | [`59_12ch_retrospective.md`](file:///g:/GitHub/DiT/docs/archive/system_notes/59_12ch_and_white_zero_retrospective.md) |
+| **条件高斯噪声增强** (noise400k) | seen 暴跌 $-0.048$，strict 平台仅 0.4869 | 破坏了骨架条件像素级的高频几何空间确定性 | [`55_self_conditioning.md`](file:///g:/GitHub/DiT/docs/archive/system_notes/55_self_conditioning_and_noise_aug.md) |
+| **离散字符 ID 条件** (char_id) | 闭集严重，字典外字生成完全崩溃 | 无法支持书法万级生僻字/异体字的开集泛化 | [`60_what_is_useless.md`](file:///g:/GitHub/DiT/docs/archive/system_notes/60_what_is_actually_useless.md) |
+| **无监督/弱监督端到端形变** | 风格跟随率退化至随机水平 ($\approx 50\%$) | 扩散 Loss 梯度与骨架几何严格正交，无自发几何引导 | [`96_skelnet.md`](file:///g:/GitHub/DiT/docs/archive/phase_922/96_skelnet.md) |
+| **未截断的全局笔画残差** | 背景白底大面积造墨污染、出现漂浮噪点 | 笔画粗细调节必须受前景距离变换场严格半径截断 | [`96_skelnet.md`](file:///g:/GitHub/DiT/docs/archive/phase_922/96_skelnet.md) |
+| **未对齐特征的 SupCon 风格表** | 风格可控比仅 1.2~2.5，与随机初始化无异 | 早期特征提取脚本存在尺寸不一致 bug，表征从未有效收敛 | [`10_data.md`](file:///g:/GitHub/DiT/docs/archive/phase_919/10_data.md) |
 
 ---
 
