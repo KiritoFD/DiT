@@ -1,0 +1,38 @@
+[[34m2026-09-12 02:58:53[0m] Experiment directory created at 5script/results/v10b_stdskel_fame3_c41x_cos_e_struct_sk002/20260912-025853-v10b-stdskel-fame3-c41x-cos-e-struct-sk002
+[[34m2026-09-12 02:58:54[0m] Building 2-Cond model: DiT-2Cond-Sp/2 (learn_sigma=False, diffusion_type=flow, arch=rms/swiglu/qknorm=True/rope=True, attn=sdpa)
+[[34m2026-09-12 02:58:54[0m] Building 2-Cond model: DiT-2Cond-Sp/2 (callig=41, glyph/char=7765, fusion=factorized_add, dims=128/None, dropout=all:0.05, one:0.05, skel_head=False, glyph_cond=True, glyph_scale_init=0.6, char_proj_mode=full, freeze_char_table=False)
+[[34m2026-09-12 02:58:54[0m] [callig-emb] 加载预训练书家表 5script/callig_emb_pretrained.pt: torch.Size([41, 128]), null 行保持随机
+[[34m2026-09-12 02:58:54[0m] [callig-emb] 书家表已冻结 [0,N), CFG null token 保持可训练
+[[34m2026-09-12 02:58:54[0m] [dino-init] char_dino_embeddings/index not found (None, None) — y_char_embedder stays random init.
+[[34m2026-09-12 02:58:55[0m] [resume-full] Loaded weights from /root/Workspace/xy/DiT/5script/results/v10b_stdskel_fame3_c41x_cos_e/20260909-193018-v10b-stdskel-fame3-c41x-cos-e/checkpoints/0390000.pt (missing=0, unexpected=5).
+[[34m2026-09-12 02:58:55[0m] Trainable Parameters: 75,834,258
+[[34m2026-09-12 02:58:55[0m] Frozen Parameters: 136,448 (trainable ratio: 99.82%)
+[[34m2026-09-12 02:58:55[0m] [compile] torch.compile(mode=default) 注入（DDP 之前）...
+[[34m2026-09-12 02:58:57[0m] [EMA] restored EMA weights from checkpoint
+[[34m2026-09-12 02:58:57[0m] [EMA] enabled with decay=0.9999
+[[34m2026-09-12 02:58:57[0m] [flow] FlowMatching(steps=50, sampler=heun, nfe=100, t_sampler=logit_normal(mean=0.0,std=1.0), shift=1.0, use_ot=False)
+[[34m2026-09-12 02:58:57[0m] [flow] Flow-Matching enabled (velocity target, Euler ODE sampling, t in [0,1])
+[[34m2026-09-12 02:58:57[0m] [infra] VAE skipped (latent-only mode, no pixel struct/REPA) -> saves ~500MB VRAM
+[[34m2026-09-12 02:58:57[0m] [struct] EdgeGradientLoss (gradient-profile, no per-image norm) + SkeletonLoss (recall-only, no off-skel penalization)
+[[34m2026-09-12 02:58:57[0m] [latent-structure] frozen probe=5script/results/latent_struct_probe.pt metrics={'canny_iou': 0.8173483610153198, 'skeleton_iou': 0.445909708738327, 'canny_accuracy': 0.9812255501747131, 'skeleton_accuracy': 0.9878954887390137, 'epoch': 44, 'train_loss': 0.359541692420056, 'seconds': 1.54911208152771, 'peak_vram_gib': 0.572265625}
+[[34m2026-09-12 02:58:57[0m] [latent-structure] enabled: canny=0.1, skeleton=0.02, max_t=500
+[[34m2026-09-12 02:58:57[0m] Initializing unified REPA (Teacher: dinov2_vits14, Student Dim: 512, layers=(8,), w=0.03, warmup=0)
+[[34m2026-09-12 02:58:57[0m] [optim] AdamW lr=5e-05 wd=0.02
+[[34m2026-09-12 02:58:57[0m] [resume-full] Failed to restore optimizer state: loaded state dict contains a parameter group that doesn't match the size of optimizer's group
+[[34m2026-09-12 02:58:57[0m] [resume-full] Inferred start step=390000 from filename 0390000.pt
+[[34m2026-09-12 02:58:57[0m] [infra] VAE skipped (latent-only mode, no pixel struct/REPA) -> saves ~500MB VRAM
+[[34m2026-09-12 03:01:16[0m] Using latent-cached dataset (skip on-the-fly VAE encode). preload=ON
+[[34m2026-09-12 03:01:16[0m] Dataset contains 113,540 images
+[[34m2026-09-12 03:01:16[0m] [LR] fresh-scheduler: cosine computed from absolute step 0 (total 500000); resume at 390000 -> LR starts mid-decay at 2.04e-01 (base)
+[[34m2026-09-12 03:01:16[0m] [LR] fresh-scheduler: starting from base lr 1.02e-05 (old scheduler state ignored)
+[[34m2026-09-12 03:01:16[0m] [LR] cosine schedule: warmup=3000, total=500000, min_ratio=0.1
+[[34m2026-09-12 03:01:16[0m] [early-stop] metric=ssim, patience=5, min_delta={'ssim': 0.002, 'skel_iou': 0.005, 'lpips': 0.003, 'mse': 0.0}
+[[34m2026-09-12 03:01:16[0m] Training for 100000 epochs...
+[[34m2026-09-12 03:01:16[0m] Beginning epoch 0...
+[[34m2026-09-12 03:02:31[0m] (step=0390050) Diff: 0.1505 | REPA(w=0.03): 0.0275 | skel_loss(w=0.020): 6.5702 | canny_loss(w=0.100): 0.2774 | LR: 1.02e-05 | EMA: 0.999900 | Steps/Sec: 0.67 | Mem: 20.03G/20.03G
+[[34m2026-09-12 03:02:43[0m] (step=0390100) Diff: 0.1465 | REPA(w=0.03): 0.0239 | skel_loss(w=0.020): 6.3162 | canny_loss(w=0.100): 0.2694 | LR: 1.02e-05 | EMA: 0.999900 | Steps/Sec: 4.13 | Mem: 20.09G/20.09G
+[[34m2026-09-12 03:02:56[0m] (step=0390150) Diff: 0.1482 | REPA(w=0.03): 0.0206 | skel_loss(w=0.020): 6.2480 | canny_loss(w=0.100): 0.2711 | LR: 1.02e-05 | EMA: 0.999900 | Steps/Sec: 3.92 | Mem: 20.09G/20.09G
+[[34m2026-09-12 03:03:08[0m] (step=0390200) Diff: 0.1463 | REPA(w=0.03): 0.0179 | skel_loss(w=0.020): 6.1722 | canny_loss(w=0.100): 0.2685 | LR: 1.02e-05 | EMA: 0.999900 | Steps/Sec: 4.11 | Mem: 20.09G/20.09G
+[[34m2026-09-12 03:03:20[0m] (step=0390250) Diff: 0.1445 | REPA(w=0.03): 0.0157 | skel_loss(w=0.020): 6.1350 | canny_loss(w=0.100): 0.2641 | LR: 1.02e-05 | EMA: 0.999900 | Steps/Sec: 4.11 | Mem: 20.09G/20.09G
+[[34m2026-09-12 03:03:32[0m] (step=0390300) Diff: 0.1434 | REPA(w=0.03): 0.0141 | skel_loss(w=0.020): 6.0999 | canny_loss(w=0.100): 0.2642 | LR: 1.02e-05 | EMA: 0.999900 | Steps/Sec: 4.10 | Mem: 20.09G/20.09G
+[[34m2026-09-12 03:03:44[0m] (step=0390350) Diff: 0.1432 | REPA(w=0.03): 0.0129 | skel_loss(w=0.020): 6.0517 | canny_loss(w=0.100): 0.2659 | LR: 1.02e-05 | EMA: 0.999900 | Steps/Sec: 4.10 | Mem: 20.09G/20.09G

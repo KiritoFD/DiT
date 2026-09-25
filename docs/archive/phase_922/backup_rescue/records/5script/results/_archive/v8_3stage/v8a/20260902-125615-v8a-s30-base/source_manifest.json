@@ -1,0 +1,15 @@
+{
+  "created_at": "2026-09-02T12:56:15.122005",
+  "hostname": "7a9405e8fb76",
+  "python": "3.10.18 (main, Jun  5 2025, 13:14:17) [GCC 11.2.0]",
+  "torch": "2.1.2+cu121",
+  "cuda": "12.1",
+  "sha256": {
+    "models.py": "bb5efb0562c1046d3b86f5d73e6c27e84ef5bc3da86ea31fa5872f094ababdf2",
+    "train.py": "3a68cc54b1c8383075ec903664f53a758345837b27e7558d8395494ad361ca4f",
+    "losses.py": "09304104dca1a906aa91d5d97c6eb1c5095ceabedc6bd876250de1ab7d484346",
+    "latent_dataset.py": "b8cafc0bebf0780d652f3d5add51bf221e60e3460522eb14798f7cda85a90a3e",
+    "latent_structure.py": "ab427f80925f3277e51fbee4ca0cd175a0120adc58a441e5782527b433e7303a",
+    "samplers.py": "15a1e6a1f67a8ed4b0a5fe13fb24c00c4802af06c78f3fb0292b431d4c21fbf0"
+  }
+}

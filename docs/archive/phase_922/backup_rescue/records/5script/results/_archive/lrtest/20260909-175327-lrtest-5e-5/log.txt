@@ -1,0 +1,6 @@
+[[34m2026-09-09 17:53:27[0m] Experiment directory created at 5script/results/lrtest/20260909-175327-lrtest-5e-5
+[[34m2026-09-09 17:53:31[0m] Building 2-Cond model: DiT-2Cond-Sp/2 (learn_sigma=False, diffusion_type=flow, arch=rms/swiglu/qknorm=True/rope=True, attn=sdpa)
+[[34m2026-09-09 17:53:31[0m] Building 2-Cond model: DiT-2Cond-Sp/2 (callig=41, glyph/char=35130, fusion=factorized_add, dims=128/384, dropout=all:0.05, one:0.05, skel_head=False, glyph_cond=True, glyph_scale_init=0.6, char_proj_mode=mlp, freeze_char_table=False)
+[[34m2026-09-09 17:53:31[0m] [callig-emb] 加载预训练书家表 5script/callig_emb_pretrained.pt: torch.Size([41, 128]), null 行保持随机
+[[34m2026-09-09 17:53:31[0m] [callig-emb] 书家表已冻结 [0,N), CFG null token 保持可训练
+[[34m2026-09-09 17:53:31[0m] [dino-init] char_dino_embeddings/index not found (None, None) — y_char_embedder stays random init.

@@ -1,0 +1,39 @@
+{
+  "main_ckpt": "5script/results/s30_dino_char_strong_pretrain/20260901-052520-s30-dino-char-strong-pretrain/checkpoints/0132500.pt",
+  "ctrl_ckpt": "",
+  "eval_csv": "5script/eval_fame_strict_clean_v8.csv",
+  "skel_latent_dir": "final_skel_latents_fame_1px_v8",
+  "n": 100,
+  "cfg": 0.7,
+  "steps": 50,
+  "base": {
+    "n": 100,
+    "mse_mean": 0.9866943004727363,
+    "mse_std": 0.2793121162468962,
+    "mse_q25": 0.825139194726944,
+    "mse_q50": 0.980622410774231,
+    "mse_q75": 1.1609444916248322,
+    "ssim_mean": 0.49343363027644066,
+    "ssim_std": 0.10772949528341372,
+    "skel_iou_mean": 0.014431384373620695,
+    "skel_iou_std": 0.015023675665469942,
+    "lpips_mean": 0.441926808655262
+  },
+  "ctrl": {
+    "n": 100,
+    "mse_mean": 1.0879554906487465,
+    "mse_std": 0.2832609839829485,
+    "mse_q25": 0.9384687095880508,
+    "mse_q50": 1.0800970792770386,
+    "mse_q75": 1.278365045785904,
+    "ssim_mean": 0.42939192870396026,
+    "ssim_std": 0.11355546516176532,
+    "skel_iou_mean": 0.012063028437389206,
+    "skel_iou_std": 0.006117960037893122,
+    "lpips_mean": 0.4810029536485672
+  },
+  "delta_mse": 0.10126119017601021,
+  "delta_ssim": -0.0640417015724804,
+  "delta_skel_iou": -0.002368355936231489,
+  "delta_lpips": 0.039076144993305195
+}

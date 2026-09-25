@@ -1,0 +1,10 @@
+{
+  "created_at": "2026-09-12T04:23:17.236475",
+  "hostname": "7a9405e8fb76",
+  "python": "3.10.18 (main, Jun  5 2025, 13:14:17) [GCC 11.2.0]",
+  "torch": "2.1.2+cu121",
+  "cuda": "12.1",
+  "sha256": {
+    "probe:assets/results/latent_struct_probe.pt": "8f1f5683d73c55525572afdf02bdabd90356a279dd038abc1a70c03de59d8d77"
+  }
+}

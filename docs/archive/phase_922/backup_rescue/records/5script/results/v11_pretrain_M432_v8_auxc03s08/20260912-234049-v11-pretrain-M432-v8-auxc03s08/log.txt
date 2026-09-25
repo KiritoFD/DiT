@@ -1,0 +1,1004 @@
+[[34m2026-09-12 23:40:49[0m] Experiment directory created at assets/results/v11_pretrain_M432_v8_auxc03s08/20260912-234049-v11-pretrain-M432-v8-auxc03s08
+[[34m2026-09-12 23:40:50[0m] Building 2-Cond model: DiT-2Cond-M/2 (learn_sigma=False, diffusion_type=flow, arch=rms/swiglu/qknorm=True/rope=True, attn=sdpa)
+[[34m2026-09-12 23:40:50[0m] Building 2-Cond model: DiT-2Cond-M/2 (callig=41, glyph/char=7765, fusion=factorized_add, dims=128/None, dropout=all:0.05, one:0.05, glyph_cond=True, glyph_scale_init=0.6, char_proj_mode=full, freeze_char_table=False)
+[[34m2026-09-12 23:40:50[0m] [callig-emb] 加载预训练书家表 assets/callig_emb_pretrained.pt: torch.Size([41, 128]), null 行保持随机
+[[34m2026-09-12 23:40:50[0m] [callig-emb] 书家表已冻结 [0,N), CFG null token 保持可训练
+[[34m2026-09-12 23:40:50[0m] [dino-init] char_dino_embeddings/index not found (None, None) — y_char_embedder stays random init.
+[[34m2026-09-12 23:40:50[0m] [cond-head] reset adaLN/final_layer to std=0.02 (retain task-agnostic transformer engine, drop ImageNet class-condition coupling).
+[[34m2026-09-12 23:40:50[0m] Trainable Parameters: 48,990,098
+[[34m2026-09-12 23:40:50[0m] Frozen Parameters: 115,968 (trainable ratio: 99.76%)
+[[34m2026-09-12 23:40:50[0m] [compile] torch.compile(mode=default) 注入（DDP 之前）...
+[[34m2026-09-12 23:40:51[0m] [EMA] enabled with decay=0.9999
+[[34m2026-09-12 23:40:51[0m] [flow] FlowMatching(steps=50, sampler=heun, nfe=100, t_sampler=logit_normal(mean=0.0,std=1.0), shift=1.0, use_ot=False)
+[[34m2026-09-12 23:40:51[0m] [flow] Flow-Matching enabled (velocity target, Euler ODE sampling, t in [0,1])
+[[34m2026-09-12 23:40:51[0m] [infra] VAE skipped (latent-only mode) -> saves ~500MB VRAM
+[[34m2026-09-12 23:40:51[0m] [optim] AdamW lr=0.0001 wd=0.02
+[[34m2026-09-12 23:40:54[0m] Using latent-cached dataset (skip on-the-fly VAE encode). preload=ON
+[[34m2026-09-12 23:40:54[0m] [aux] target=12ch+ dirs=['aux_canny_latents_v8', 'aux_skel_latents_v8'] per-group weights=0.3,0.8
+[[34m2026-09-12 23:40:54[0m] Dataset contains 28,385 images
+[[34m2026-09-12 23:40:54[0m] [LR] cosine schedule: warmup=3000, total=250000, min_ratio=0.1
+[[34m2026-09-12 23:40:54[0m] [early-stop] metric=ssim, patience=5, min_delta={'ssim': 0.002, 'skel_iou': 0.005, 'lpips': 0.003, 'mse': 0.0}
+[[34m2026-09-12 23:40:54[0m] Training for 100000 epochs...
+[[34m2026-09-12 23:40:54[0m] Beginning epoch 0...
+[[34m2026-09-12 23:41:49[0m] (step=0000050) Diff: 1.7325 | c12[img=2.4913 canny=2.5177 skel=2.4386] | REPA(w=0.00): 0.0000 | LR: 1.70e-06 | EMA: 0.847458 | Steps/Sec: 0.91 | Mem: 18.96G/18.96G
+[[34m2026-09-12 23:42:00[0m] (step=0000100) Diff: 1.4137 | c12[img=2.1374 canny=2.2028 skel=1.8036] | REPA(w=0.00): 0.0000 | LR: 3.37e-06 | EMA: 0.917431 | Steps/Sec: 4.30 | Mem: 18.96G/18.96G
+[[34m2026-09-12 23:42:03[0m] Beginning epoch 1...
+[[34m2026-09-12 23:42:12[0m] (step=0000150) Diff: 1.0879 | c12[img=1.7983 canny=1.4794 skel=1.2769] | REPA(w=0.00): 0.0000 | LR: 5.03e-06 | EMA: 0.943396 | Steps/Sec: 4.29 | Mem: 18.96G/18.96G
+[[34m2026-09-12 23:42:24[0m] (step=0000200) Diff: 0.9843 | c12[img=1.5850 canny=1.3510 skel=1.2033] | REPA(w=0.00): 0.0000 | LR: 6.70e-06 | EMA: 0.956938 | Steps/Sec: 4.29 | Mem: 18.96G/18.96G
+[[34m2026-09-12 23:42:28[0m] Beginning epoch 2...
+[[34m2026-09-12 23:42:35[0m] (step=0000250) Diff: 0.9070 | c12[img=1.4279 canny=1.3171 skel=1.1224] | REPA(w=0.00): 0.0000 | LR: 8.37e-06 | EMA: 0.965251 | Steps/Sec: 4.29 | Mem: 18.98G/18.98G
+[[34m2026-09-12 23:42:47[0m] (step=0000300) Diff: 0.8189 | c12[img=1.2800 canny=1.2655 skel=0.9963] | REPA(w=0.00): 0.0000 | LR: 1.00e-05 | EMA: 0.970874 | Steps/Sec: 4.29 | Mem: 18.98G/18.98G
+[[34m2026-09-12 23:42:54[0m] Beginning epoch 3...
+[[34m2026-09-12 23:42:59[0m] (step=0000350) Diff: 0.7104 | c12[img=1.1194 canny=1.1897 skel=0.8185] | REPA(w=0.00): 0.0000 | LR: 1.17e-05 | EMA: 0.974930 | Steps/Sec: 4.28 | Mem: 18.98G/18.98G
+[[34m2026-09-12 23:43:10[0m] (step=0000400) Diff: 0.6145 | c12[img=0.9914 canny=1.0784 skel=0.6606] | REPA(w=0.00): 0.0000 | LR: 1.34e-05 | EMA: 0.977995 | Steps/Sec: 4.29 | Mem: 18.98G/18.98G
+[[34m2026-09-12 23:43:20[0m] Beginning epoch 4...
+[[34m2026-09-12 23:43:22[0m] (step=0000450) Diff: 0.5484 | c12[img=0.8995 canny=0.9549 skel=0.5740] | REPA(w=0.00): 0.0000 | LR: 1.50e-05 | EMA: 0.980392 | Steps/Sec: 4.26 | Mem: 19.12G/19.12G
+[[34m2026-09-12 23:43:34[0m] (step=0000500) Diff: 0.5066 | c12[img=0.8415 canny=0.8489 skel=0.5296] | REPA(w=0.00): 0.0000 | LR: 1.67e-05 | EMA: 0.982318 | Steps/Sec: 4.29 | Mem: 19.12G/19.12G
+[[34m2026-09-12 23:43:45[0m] (step=0000550) Diff: 0.4784 | c12[img=0.7953 canny=0.7814 skel=0.5070] | REPA(w=0.00): 0.0000 | LR: 1.84e-05 | EMA: 0.983900 | Steps/Sec: 4.30 | Mem: 19.12G/19.12G
+[[34m2026-09-12 23:43:45[0m] Beginning epoch 5...
+[[34m2026-09-12 23:43:57[0m] (step=0000600) Diff: 0.4588 | c12[img=0.7599 canny=0.7386 skel=0.4936] | REPA(w=0.00): 0.0000 | LR: 2.00e-05 | EMA: 0.985222 | Steps/Sec: 4.25 | Mem: 19.12G/19.12G
+[[34m2026-09-12 23:44:09[0m] (step=0000650) Diff: 0.4387 | c12[img=0.7252 canny=0.7004 skel=0.4759] | REPA(w=0.00): 0.0000 | LR: 2.17e-05 | EMA: 0.986343 | Steps/Sec: 4.30 | Mem: 19.12G/19.12G
+[[34m2026-09-12 23:44:11[0m] Beginning epoch 6...
+[[34m2026-09-12 23:44:21[0m] (step=0000700) Diff: 0.4206 | c12[img=0.6914 canny=0.6678 skel=0.4626] | REPA(w=0.00): 0.0000 | LR: 2.34e-05 | EMA: 0.987306 | Steps/Sec: 4.29 | Mem: 19.12G/19.12G
+[[34m2026-09-12 23:44:32[0m] (step=0000750) Diff: 0.4047 | c12[img=0.6626 canny=0.6405 skel=0.4493] | REPA(w=0.00): 0.0000 | LR: 2.50e-05 | EMA: 0.988142 | Steps/Sec: 4.30 | Mem: 19.12G/19.12G
+[[34m2026-09-12 23:44:37[0m] Beginning epoch 7...
+[[34m2026-09-12 23:44:44[0m] (step=0000800) Diff: 0.3921 | c12[img=0.6376 canny=0.6212 skel=0.4405] | REPA(w=0.00): 0.0000 | LR: 2.67e-05 | EMA: 0.988875 | Steps/Sec: 4.30 | Mem: 19.12G/19.12G
+[[34m2026-09-12 23:44:55[0m] (step=0000850) Diff: 0.3807 | c12[img=0.6207 canny=0.5999 skel=0.4267] | REPA(w=0.00): 0.0000 | LR: 2.84e-05 | EMA: 0.989523 | Steps/Sec: 4.30 | Mem: 19.12G/19.12G
+[[34m2026-09-12 23:45:02[0m] Beginning epoch 8...
+[[34m2026-09-12 23:45:07[0m] (step=0000900) Diff: 0.3718 | c12[img=0.6059 canny=0.5844 skel=0.4178] | REPA(w=0.00): 0.0000 | LR: 3.00e-05 | EMA: 0.990099 | Steps/Sec: 4.27 | Mem: 19.12G/19.12G
+[[34m2026-09-12 23:45:19[0m] (step=0000950) Diff: 0.3605 | c12[img=0.5864 canny=0.5696 skel=0.4053] | REPA(w=0.00): 0.0000 | LR: 3.17e-05 | EMA: 0.990615 | Steps/Sec: 4.29 | Mem: 19.12G/19.12G
+[[34m2026-09-12 23:45:28[0m] Beginning epoch 9...
+[[34m2026-09-12 23:45:30[0m] (step=0001000) Diff: 0.3556 | c12[img=0.5780 canny=0.5589 skel=0.4015] | REPA(w=0.00): 0.0000 | LR: 3.34e-05 | EMA: 0.991080 | Steps/Sec: 4.28 | Mem: 19.12G/19.12G
+[[34m2026-09-12 23:45:30[0m] (step=0001000) [diag] grad-norm: blocks=0.716 callig_chain=0.049 glyph_embedder=0.246 inj_out_proj=0.531 other=0.378
+[[34m2026-09-12 23:45:32[0m] Saved checkpoint to assets/results/v11_pretrain_M432_v8_auxc03s08/20260912-234049-v11-pretrain-M432-v8-auxc03s08/checkpoints/0001000.pt
+[[34m2026-09-12 23:45:44[0m] (step=0001050) Diff: 0.3478 | c12[img=0.5658 canny=0.5478 skel=0.3916] | REPA(w=0.00): 0.0000 | LR: 3.50e-05 | EMA: 0.991501 | Steps/Sec: 3.81 | Mem: 19.12G/19.12G
+[[34m2026-09-12 23:45:55[0m] (step=0001100) Diff: 0.3377 | c12[img=0.5498 canny=0.5316 skel=0.3799] | REPA(w=0.00): 0.0000 | LR: 3.67e-05 | EMA: 0.991885 | Steps/Sec: 4.27 | Mem: 19.12G/19.12G
+[[34m2026-09-12 23:45:55[0m] Beginning epoch 10...
+[[34m2026-09-12 23:46:07[0m] (step=0001150) Diff: 0.3325 | c12[img=0.5410 canny=0.5233 skel=0.3745] | REPA(w=0.00): 0.0000 | LR: 3.84e-05 | EMA: 0.992235 | Steps/Sec: 4.22 | Mem: 19.12G/19.12G
+[[34m2026-09-12 23:46:19[0m] (step=0001200) Diff: 0.3260 | c12[img=0.5288 canny=0.5138 skel=0.3690] | REPA(w=0.00): 0.0000 | LR: 4.00e-05 | EMA: 0.992556 | Steps/Sec: 4.29 | Mem: 19.12G/19.12G
+[[34m2026-09-12 23:46:21[0m] Beginning epoch 11...
+[[34m2026-09-12 23:46:31[0m] (step=0001250) Diff: 0.3211 | c12[img=0.5231 canny=0.5026 skel=0.3619] | REPA(w=0.00): 0.0000 | LR: 4.17e-05 | EMA: 0.992851 | Steps/Sec: 4.26 | Mem: 19.12G/19.12G
+[[34m2026-09-12 23:46:42[0m] (step=0001300) Diff: 0.3154 | c12[img=0.5133 canny=0.4950 skel=0.3555] | REPA(w=0.00): 0.0000 | LR: 4.34e-05 | EMA: 0.993125 | Steps/Sec: 4.29 | Mem: 19.12G/19.12G
+[[34m2026-09-12 23:46:47[0m] Beginning epoch 12...
+[[34m2026-09-12 23:46:54[0m] (step=0001350) Diff: 0.3118 | c12[img=0.5082 canny=0.4865 skel=0.3516] | REPA(w=0.00): 0.0000 | LR: 4.50e-05 | EMA: 0.993377 | Steps/Sec: 4.28 | Mem: 19.12G/19.12G
+[[34m2026-09-12 23:47:06[0m] (step=0001400) Diff: 0.3067 | c12[img=0.4994 canny=0.4795 skel=0.3461] | REPA(w=0.00): 0.0000 | LR: 4.67e-05 | EMA: 0.993612 | Steps/Sec: 4.29 | Mem: 19.12G/19.12G
+[[34m2026-09-12 23:47:12[0m] Beginning epoch 13...
+[[34m2026-09-12 23:47:17[0m] (step=0001450) Diff: 0.3025 | c12[img=0.4924 canny=0.4727 skel=0.3415] | REPA(w=0.00): 0.0000 | LR: 4.84e-05 | EMA: 0.993831 | Steps/Sec: 4.30 | Mem: 19.12G/19.12G
+[[34m2026-09-12 23:47:29[0m] (step=0001500) Diff: 0.3028 | c12[img=0.4949 canny=0.4692 skel=0.3408] | REPA(w=0.00): 0.0000 | LR: 5.00e-05 | EMA: 0.994036 | Steps/Sec: 4.30 | Mem: 19.12G/19.12G
+[[34m2026-09-12 23:47:38[0m] Beginning epoch 14...
+[[34m2026-09-12 23:47:41[0m] (step=0001550) Diff: 0.2951 | c12[img=0.4834 canny=0.4582 skel=0.3304] | REPA(w=0.00): 0.0000 | LR: 5.17e-05 | EMA: 0.994227 | Steps/Sec: 4.20 | Mem: 19.12G/19.12G
+[[34m2026-09-12 23:47:52[0m] (step=0001600) Diff: 0.2908 | c12[img=0.4773 canny=0.4504 skel=0.3250] | REPA(w=0.00): 0.0000 | LR: 5.34e-05 | EMA: 0.994406 | Steps/Sec: 4.30 | Mem: 19.12G/19.12G
+[[34m2026-09-12 23:48:04[0m] (step=0001650) Diff: 0.2881 | c12[img=0.4724 canny=0.4459 skel=0.3229] | REPA(w=0.00): 0.0000 | LR: 5.50e-05 | EMA: 0.994575 | Steps/Sec: 4.30 | Mem: 19.12G/19.12G
+[[34m2026-09-12 23:48:04[0m] Beginning epoch 15...
+[[34m2026-09-12 23:48:16[0m] (step=0001700) Diff: 0.2853 | c12[img=0.4678 canny=0.4417 skel=0.3194] | REPA(w=0.00): 0.0000 | LR: 5.67e-05 | EMA: 0.994734 | Steps/Sec: 4.22 | Mem: 19.12G/19.12G
+[[34m2026-09-12 23:48:27[0m] (step=0001750) Diff: 0.2812 | c12[img=0.4620 canny=0.4344 skel=0.3142] | REPA(w=0.00): 0.0000 | LR: 5.84e-05 | EMA: 0.994883 | Steps/Sec: 4.30 | Mem: 19.12G/19.12G
+[[34m2026-09-12 23:48:30[0m] Beginning epoch 16...
+[[34m2026-09-12 23:48:39[0m] (step=0001800) Diff: 0.2774 | c12[img=0.4562 canny=0.4271 skel=0.3098] | REPA(w=0.00): 0.0000 | LR: 6.00e-05 | EMA: 0.995025 | Steps/Sec: 4.29 | Mem: 19.12G/19.12G
+[[34m2026-09-12 23:48:51[0m] (step=0001850) Diff: 0.2755 | c12[img=0.4533 canny=0.4239 skel=0.3076] | REPA(w=0.00): 0.0000 | LR: 6.17e-05 | EMA: 0.995159 | Steps/Sec: 4.29 | Mem: 19.12G/19.12G
+[[34m2026-09-12 23:48:55[0m] Beginning epoch 17...
+[[34m2026-09-12 23:49:02[0m] (step=0001900) Diff: 0.2719 | c12[img=0.4489 canny=0.4181 skel=0.3016] | REPA(w=0.00): 0.0000 | LR: 6.34e-05 | EMA: 0.995285 | Steps/Sec: 4.29 | Mem: 19.12G/19.12G
+[[34m2026-09-12 23:49:14[0m] (step=0001950) Diff: 0.2699 | c12[img=0.4460 canny=0.4170 skel=0.2981] | REPA(w=0.00): 0.0000 | LR: 6.50e-05 | EMA: 0.995406 | Steps/Sec: 4.29 | Mem: 19.12G/19.12G
+[[34m2026-09-12 23:49:21[0m] Beginning epoch 18...
+[[34m2026-09-12 23:49:26[0m] (step=0002000) Diff: 0.2671 | c12[img=0.4415 canny=0.4108 skel=0.2957] | REPA(w=0.00): 0.0000 | LR: 6.67e-05 | EMA: 0.995520 | Steps/Sec: 4.28 | Mem: 19.12G/19.12G
+[[34m2026-09-12 23:49:26[0m] (step=0002000) [diag] grad-norm: blocks=0.494 callig_chain=0.028 glyph_embedder=0.118 inj_out_proj=0.203 other=0.311
+[[34m2026-09-12 23:49:27[0m] Saved checkpoint to assets/results/v11_pretrain_M432_v8_auxc03s08/20260912-234049-v11-pretrain-M432-v8-auxc03s08/checkpoints/0002000.pt
+[[34m2026-09-12 23:49:39[0m] (step=0002050) Diff: 0.2631 | c12[img=0.4352 canny=0.4034 skel=0.2913] | REPA(w=0.00): 0.0000 | LR: 6.84e-05 | EMA: 0.995629 | Steps/Sec: 3.85 | Mem: 19.12G/19.12G
+[[34m2026-09-12 23:49:48[0m] Beginning epoch 19...
+[[34m2026-09-12 23:49:50[0m] (step=0002100) Diff: 0.2630 | c12[img=0.4354 canny=0.4031 skel=0.2909] | REPA(w=0.00): 0.0000 | LR: 7.00e-05 | EMA: 0.995733 | Steps/Sec: 4.29 | Mem: 19.12G/19.12G
+[[34m2026-09-12 23:50:03[0m] (step=0002150) Diff: 0.2601 | c12[img=0.4304 canny=0.3990 skel=0.2877] | REPA(w=0.00): 0.0000 | LR: 7.17e-05 | EMA: 0.995831 | Steps/Sec: 3.99 | Mem: 19.12G/19.12G
+[[34m2026-09-12 23:50:16[0m] (step=0002200) Diff: 0.2567 | c12[img=0.4245 canny=0.3934 skel=0.2845] | REPA(w=0.00): 0.0000 | LR: 7.34e-05 | EMA: 0.995926 | Steps/Sec: 3.82 | Mem: 19.12G/19.12G
+[[34m2026-09-12 23:50:16[0m] Beginning epoch 20...
+[[34m2026-09-12 23:50:28[0m] (step=0002250) Diff: 0.2554 | c12[img=0.4227 canny=0.3925 skel=0.2822] | REPA(w=0.00): 0.0000 | LR: 7.50e-05 | EMA: 0.996016 | Steps/Sec: 4.21 | Mem: 19.12G/19.12G
+[[34m2026-09-12 23:50:40[0m] (step=0002300) Diff: 0.2535 | c12[img=0.4214 canny=0.3871 skel=0.2788] | REPA(w=0.00): 0.0000 | LR: 7.67e-05 | EMA: 0.996102 | Steps/Sec: 4.29 | Mem: 19.12G/19.12G
+[[34m2026-09-12 23:50:42[0m] Beginning epoch 21...
+[[34m2026-09-12 23:50:51[0m] (step=0002350) Diff: 0.2516 | c12[img=0.4185 canny=0.3840 skel=0.2763] | REPA(w=0.00): 0.0000 | LR: 7.84e-05 | EMA: 0.996185 | Steps/Sec: 4.28 | Mem: 19.12G/19.12G
+[[34m2026-09-12 23:51:03[0m] (step=0002400) Diff: 0.2489 | c12[img=0.4143 canny=0.3806 skel=0.2729] | REPA(w=0.00): 0.0000 | LR: 8.00e-05 | EMA: 0.996264 | Steps/Sec: 4.29 | Mem: 19.12G/19.12G
+[[34m2026-09-12 23:51:07[0m] Beginning epoch 22...
+[[34m2026-09-12 23:51:15[0m] (step=0002450) Diff: 0.2475 | c12[img=0.4123 canny=0.3768 skel=0.2715] | REPA(w=0.00): 0.0000 | LR: 8.17e-05 | EMA: 0.996340 | Steps/Sec: 4.28 | Mem: 19.12G/19.12G
+[[34m2026-09-12 23:51:26[0m] (step=0002500) Diff: 0.2458 | c12[img=0.4104 canny=0.3740 skel=0.2686] | REPA(w=0.00): 0.0000 | LR: 8.34e-05 | EMA: 0.996413 | Steps/Sec: 4.30 | Mem: 19.12G/19.12G
+[[34m2026-09-12 23:51:33[0m] Beginning epoch 23...
+[[34m2026-09-12 23:51:38[0m] (step=0002550) Diff: 0.2446 | c12[img=0.4081 canny=0.3734 skel=0.2671] | REPA(w=0.00): 0.0000 | LR: 8.50e-05 | EMA: 0.996483 | Steps/Sec: 4.30 | Mem: 19.12G/19.12G
+[[34m2026-09-12 23:51:49[0m] (step=0002600) Diff: 0.2430 | c12[img=0.4061 canny=0.3704 skel=0.2647] | REPA(w=0.00): 0.0000 | LR: 8.67e-05 | EMA: 0.996550 | Steps/Sec: 4.30 | Mem: 19.12G/19.12G
+[[34m2026-09-12 23:51:59[0m] Beginning epoch 24...
+[[34m2026-09-12 23:52:01[0m] (step=0002650) Diff: 0.2422 | c12[img=0.4056 canny=0.3674 skel=0.2636] | REPA(w=0.00): 0.0000 | LR: 8.84e-05 | EMA: 0.996615 | Steps/Sec: 4.29 | Mem: 19.12G/19.12G
+[[34m2026-09-12 23:52:13[0m] (step=0002700) Diff: 0.2396 | c12[img=0.4012 canny=0.3633 skel=0.2609] | REPA(w=0.00): 0.0000 | LR: 9.00e-05 | EMA: 0.996678 | Steps/Sec: 4.29 | Mem: 19.12G/19.12G
+[[34m2026-09-12 23:52:24[0m] (step=0002750) Diff: 0.2401 | c12[img=0.4029 canny=0.3635 skel=0.2604] | REPA(w=0.00): 0.0000 | LR: 9.17e-05 | EMA: 0.996738 | Steps/Sec: 4.30 | Mem: 19.12G/19.12G
+[[34m2026-09-12 23:52:24[0m] Beginning epoch 25...
+[[34m2026-09-12 23:52:36[0m] (step=0002800) Diff: 0.2371 | c12[img=0.3974 canny=0.3601 skel=0.2574] | REPA(w=0.00): 0.0000 | LR: 9.34e-05 | EMA: 0.996796 | Steps/Sec: 4.25 | Mem: 19.12G/19.12G
+[[34m2026-09-12 23:52:48[0m] (step=0002850) Diff: 0.2358 | c12[img=0.3959 canny=0.3579 skel=0.2551] | REPA(w=0.00): 0.0000 | LR: 9.50e-05 | EMA: 0.996852 | Steps/Sec: 4.30 | Mem: 19.12G/19.12G
+[[34m2026-09-12 23:52:50[0m] Beginning epoch 26...
+[[34m2026-09-12 23:52:59[0m] (step=0002900) Diff: 0.2333 | c12[img=0.3912 canny=0.3545 skel=0.2530] | REPA(w=0.00): 0.0000 | LR: 9.67e-05 | EMA: 0.996906 | Steps/Sec: 4.30 | Mem: 19.12G/19.12G
+[[34m2026-09-12 23:53:11[0m] (step=0002950) Diff: 0.2328 | c12[img=0.3904 canny=0.3529 skel=0.2527] | REPA(w=0.00): 0.0000 | LR: 9.84e-05 | EMA: 0.996958 | Steps/Sec: 4.31 | Mem: 19.12G/19.12G
+[[34m2026-09-12 23:53:16[0m] Beginning epoch 27...
+[[34m2026-09-12 23:53:23[0m] (step=0003000) Diff: 0.2320 | c12[img=0.3896 canny=0.3513 skel=0.2512] | REPA(w=0.00): 0.0000 | LR: 1.00e-04 | EMA: 0.997009 | Steps/Sec: 4.27 | Mem: 19.12G/19.12G
+[[34m2026-09-12 23:53:23[0m] (step=0003000) [diag] grad-norm: blocks=0.305 callig_chain=0.018 glyph_embedder=0.047 inj_out_proj=0.075 other=0.272
+[[34m2026-09-12 23:53:24[0m] Saved checkpoint to assets/results/v11_pretrain_M432_v8_auxc03s08/20260912-234049-v11-pretrain-M432-v8-auxc03s08/checkpoints/0003000.pt
+[[34m2026-09-12 23:53:35[0m] (step=0003050) Diff: 0.2306 | c12[img=0.3882 canny=0.3494 skel=0.2483] | REPA(w=0.00): 0.0000 | LR: 1.00e-04 | EMA: 0.997058 | Steps/Sec: 3.96 | Mem: 19.12G/19.12G
+[[34m2026-09-12 23:53:42[0m] Beginning epoch 28...
+[[34m2026-09-12 23:53:48[0m] (step=0003100) Diff: 0.2276 | c12[img=0.3835 canny=0.3444 skel=0.2449] | REPA(w=0.00): 0.0000 | LR: 1.00e-04 | EMA: 0.997105 | Steps/Sec: 4.05 | Mem: 19.12G/19.12G
+[[34m2026-09-12 23:54:01[0m] (step=0003150) Diff: 0.2279 | c12[img=0.3838 canny=0.3440 skel=0.2461] | REPA(w=0.00): 0.0000 | LR: 1.00e-04 | EMA: 0.997151 | Steps/Sec: 3.74 | Mem: 19.12G/19.12G
+[[34m2026-09-12 23:54:10[0m] Beginning epoch 29...
+[[34m2026-09-12 23:54:13[0m] (step=0003200) Diff: 0.2263 | c12[img=0.3827 canny=0.3409 skel=0.2423] | REPA(w=0.00): 0.0000 | LR: 1.00e-04 | EMA: 0.997195 | Steps/Sec: 4.29 | Mem: 19.12G/19.12G
+[[34m2026-09-12 23:54:24[0m] (step=0003250) Diff: 0.2256 | c12[img=0.3809 canny=0.3404 skel=0.2421] | REPA(w=0.00): 0.0000 | LR: 1.00e-04 | EMA: 0.997238 | Steps/Sec: 4.30 | Mem: 19.12G/19.12G
+[[34m2026-09-12 23:54:36[0m] (step=0003300) Diff: 0.2240 | c12[img=0.3788 canny=0.3390 skel=0.2395] | REPA(w=0.00): 0.0000 | LR: 1.00e-04 | EMA: 0.997280 | Steps/Sec: 4.29 | Mem: 19.12G/19.12G
+[[34m2026-09-12 23:54:36[0m] Beginning epoch 30...
+[[34m2026-09-12 23:54:48[0m] (step=0003350) Diff: 0.2237 | c12[img=0.3779 canny=0.3381 skel=0.2396] | REPA(w=0.00): 0.0000 | LR: 1.00e-04 | EMA: 0.997321 | Steps/Sec: 4.26 | Mem: 19.12G/19.12G
+[[34m2026-09-12 23:55:00[0m] (step=0003400) Diff: 0.2225 | c12[img=0.3771 canny=0.3352 skel=0.2373] | REPA(w=0.00): 0.0000 | LR: 1.00e-04 | EMA: 0.997360 | Steps/Sec: 4.20 | Mem: 19.12G/19.12G
+[[34m2026-09-12 23:55:02[0m] Beginning epoch 31...
+[[34m2026-09-12 23:55:11[0m] (step=0003450) Diff: 0.2217 | c12[img=0.3751 canny=0.3345 skel=0.2371] | REPA(w=0.00): 0.0000 | LR: 1.00e-04 | EMA: 0.997398 | Steps/Sec: 4.28 | Mem: 19.12G/19.12G
+[[34m2026-09-12 23:55:23[0m] (step=0003500) Diff: 0.2198 | c12[img=0.3719 canny=0.3329 skel=0.2345] | REPA(w=0.00): 0.0000 | LR: 1.00e-04 | EMA: 0.997435 | Steps/Sec: 4.29 | Mem: 19.12G/19.12G
+[[34m2026-09-12 23:55:28[0m] Beginning epoch 32...
+[[34m2026-09-12 23:55:35[0m] (step=0003550) Diff: 0.2182 | c12[img=0.3695 canny=0.3299 skel=0.2326] | REPA(w=0.00): 0.0000 | LR: 1.00e-04 | EMA: 0.997471 | Steps/Sec: 4.29 | Mem: 19.12G/19.12G
+[[34m2026-09-12 23:55:46[0m] (step=0003600) Diff: 0.2181 | c12[img=0.3701 canny=0.3284 skel=0.2320] | REPA(w=0.00): 0.0000 | LR: 1.00e-04 | EMA: 0.997506 | Steps/Sec: 4.30 | Mem: 19.12G/19.12G
+[[34m2026-09-12 23:55:53[0m] Beginning epoch 33...
+[[34m2026-09-12 23:55:58[0m] (step=0003650) Diff: 0.2169 | c12[img=0.3675 canny=0.3277 skel=0.2313] | REPA(w=0.00): 0.0000 | LR: 1.00e-04 | EMA: 0.997540 | Steps/Sec: 4.26 | Mem: 19.12G/19.12G
+[[34m2026-09-12 23:56:10[0m] (step=0003700) Diff: 0.2177 | c12[img=0.3698 canny=0.3281 skel=0.2310] | REPA(w=0.00): 0.0000 | LR: 1.00e-04 | EMA: 0.997573 | Steps/Sec: 4.30 | Mem: 19.12G/19.12G
+[[34m2026-09-12 23:56:19[0m] Beginning epoch 34...
+[[34m2026-09-12 23:56:22[0m] (step=0003750) Diff: 0.2147 | c12[img=0.3643 canny=0.3243 skel=0.2281] | REPA(w=0.00): 0.0000 | LR: 1.00e-04 | EMA: 0.997606 | Steps/Sec: 4.22 | Mem: 19.12G/19.12G
+[[34m2026-09-12 23:56:33[0m] (step=0003800) Diff: 0.2150 | c12[img=0.3651 canny=0.3248 skel=0.2282] | REPA(w=0.00): 0.0000 | LR: 1.00e-04 | EMA: 0.997637 | Steps/Sec: 4.29 | Mem: 19.12G/19.12G
+[[34m2026-09-12 23:56:45[0m] (step=0003850) Diff: 0.2155 | c12[img=0.3661 canny=0.3249 skel=0.2289] | REPA(w=0.00): 0.0000 | LR: 1.00e-04 | EMA: 0.997668 | Steps/Sec: 4.29 | Mem: 19.12G/19.12G
+[[34m2026-09-12 23:56:45[0m] Beginning epoch 35...
+[[34m2026-09-12 23:56:57[0m] (step=0003900) Diff: 0.2145 | c12[img=0.3652 canny=0.3228 skel=0.2269] | REPA(w=0.00): 0.0000 | LR: 1.00e-04 | EMA: 0.997698 | Steps/Sec: 4.24 | Mem: 19.12G/19.12G
+[[34m2026-09-12 23:57:08[0m] (step=0003950) Diff: 0.2133 | c12[img=0.3622 canny=0.3216 skel=0.2264] | REPA(w=0.00): 0.0000 | LR: 1.00e-04 | EMA: 0.997727 | Steps/Sec: 4.29 | Mem: 19.12G/19.12G
+[[34m2026-09-12 23:57:11[0m] Beginning epoch 36...
+[[34m2026-09-12 23:57:20[0m] (step=0004000) Diff: 0.2126 | c12[img=0.3613 canny=0.3209 skel=0.2252] | REPA(w=0.00): 0.0000 | LR: 1.00e-04 | EMA: 0.997755 | Steps/Sec: 4.28 | Mem: 19.12G/19.12G
+[[34m2026-09-12 23:57:20[0m] (step=0004000) [diag] grad-norm: blocks=0.257 callig_chain=0.015 glyph_embedder=0.047 inj_out_proj=0.053 other=0.236
+[[34m2026-09-12 23:57:21[0m] Saved checkpoint to assets/results/v11_pretrain_M432_v8_auxc03s08/20260912-234049-v11-pretrain-M432-v8-auxc03s08/checkpoints/0004000.pt
+[[34m2026-09-12 23:57:33[0m] (step=0004050) Diff: 0.2123 | c12[img=0.3613 canny=0.3197 skel=0.2246] | REPA(w=0.00): 0.0000 | LR: 1.00e-04 | EMA: 0.997783 | Steps/Sec: 3.72 | Mem: 19.12G/19.12G
+[[34m2026-09-12 23:57:40[0m] Beginning epoch 37...
+[[34m2026-09-12 23:57:47[0m] (step=0004100) Diff: 0.2102 | c12[img=0.3575 canny=0.3171 skel=0.2226] | REPA(w=0.00): 0.0000 | LR: 1.00e-04 | EMA: 0.997810 | Steps/Sec: 3.76 | Mem: 19.12G/19.12G
+[[34m2026-09-12 23:57:58[0m] (step=0004150) Diff: 0.2098 | c12[img=0.3572 canny=0.3162 skel=0.2216] | REPA(w=0.00): 0.0000 | LR: 1.00e-04 | EMA: 0.997836 | Steps/Sec: 4.29 | Mem: 19.12G/19.12G
+[[34m2026-09-12 23:58:05[0m] Beginning epoch 38...
+[[34m2026-09-12 23:58:10[0m] (step=0004200) Diff: 0.2107 | c12[img=0.3590 canny=0.3185 skel=0.2219] | REPA(w=0.00): 0.0000 | LR: 1.00e-04 | EMA: 0.997862 | Steps/Sec: 4.29 | Mem: 19.12G/19.12G
+[[34m2026-09-12 23:58:22[0m] (step=0004250) Diff: 0.2092 | c12[img=0.3564 canny=0.3156 skel=0.2205] | REPA(w=0.00): 0.0000 | LR: 1.00e-04 | EMA: 0.997887 | Steps/Sec: 4.29 | Mem: 19.12G/19.12G
+[[34m2026-09-12 23:58:31[0m] Beginning epoch 39...
+[[34m2026-09-12 23:58:33[0m] (step=0004300) Diff: 0.2102 | c12[img=0.3590 canny=0.3154 skel=0.2210] | REPA(w=0.00): 0.0000 | LR: 1.00e-04 | EMA: 0.997911 | Steps/Sec: 4.28 | Mem: 19.12G/19.12G
+[[34m2026-09-12 23:58:45[0m] (step=0004350) Diff: 0.2081 | c12[img=0.3557 canny=0.3127 skel=0.2184] | REPA(w=0.00): 0.0000 | LR: 1.00e-04 | EMA: 0.997935 | Steps/Sec: 4.28 | Mem: 19.12G/19.12G
+[[34m2026-09-12 23:58:57[0m] (step=0004400) Diff: 0.2075 | c12[img=0.3542 canny=0.3121 skel=0.2184] | REPA(w=0.00): 0.0000 | LR: 1.00e-04 | EMA: 0.997959 | Steps/Sec: 4.29 | Mem: 19.12G/19.12G
+[[34m2026-09-12 23:58:57[0m] Beginning epoch 40...
+[[34m2026-09-12 23:59:09[0m] (step=0004450) Diff: 0.2058 | c12[img=0.3516 canny=0.3102 skel=0.2162] | REPA(w=0.00): 0.0000 | LR: 1.00e-04 | EMA: 0.997982 | Steps/Sec: 4.24 | Mem: 19.12G/19.12G
+[[34m2026-09-12 23:59:20[0m] (step=0004500) Diff: 0.2053 | c12[img=0.3500 canny=0.3101 skel=0.2159] | REPA(w=0.00): 0.0000 | LR: 1.00e-04 | EMA: 0.998004 | Steps/Sec: 4.29 | Mem: 19.12G/19.12G
+[[34m2026-09-12 23:59:22[0m] Beginning epoch 41...
+[[34m2026-09-12 23:59:32[0m] (step=0004550) Diff: 0.2053 | c12[img=0.3513 canny=0.3088 skel=0.2149] | REPA(w=0.00): 0.0000 | LR: 1.00e-04 | EMA: 0.998026 | Steps/Sec: 4.28 | Mem: 19.12G/19.12G
+[[34m2026-09-12 23:59:44[0m] (step=0004600) Diff: 0.2047 | c12[img=0.3502 canny=0.3080 skel=0.2145] | REPA(w=0.00): 0.0000 | LR: 1.00e-04 | EMA: 0.998047 | Steps/Sec: 4.29 | Mem: 19.12G/19.12G
+[[34m2026-09-12 23:59:48[0m] Beginning epoch 42...
+[[34m2026-09-12 23:59:55[0m] (step=0004650) Diff: 0.2048 | c12[img=0.3504 canny=0.3084 skel=0.2144] | REPA(w=0.00): 0.0000 | LR: 1.00e-04 | EMA: 0.998068 | Steps/Sec: 4.27 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:00:07[0m] (step=0004700) Diff: 0.2031 | c12[img=0.3474 canny=0.3062 skel=0.2125] | REPA(w=0.00): 0.0000 | LR: 1.00e-04 | EMA: 0.998089 | Steps/Sec: 4.29 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:00:14[0m] Beginning epoch 43...
+[[34m2026-09-13 00:00:19[0m] (step=0004750) Diff: 0.2039 | c12[img=0.3488 canny=0.3068 skel=0.2138] | REPA(w=0.00): 0.0000 | LR: 1.00e-04 | EMA: 0.998109 | Steps/Sec: 4.29 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:00:30[0m] (step=0004800) Diff: 0.2033 | c12[img=0.3475 canny=0.3064 skel=0.2131] | REPA(w=0.00): 0.0000 | LR: 1.00e-04 | EMA: 0.998129 | Steps/Sec: 4.29 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:00:39[0m] Beginning epoch 44...
+[[34m2026-09-13 00:00:42[0m] (step=0004850) Diff: 0.2020 | c12[img=0.3457 canny=0.3039 skel=0.2114] | REPA(w=0.00): 0.0000 | LR: 1.00e-04 | EMA: 0.998148 | Steps/Sec: 4.29 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:00:54[0m] (step=0004900) Diff: 0.2016 | c12[img=0.3454 canny=0.3032 skel=0.2107] | REPA(w=0.00): 0.0000 | LR: 1.00e-04 | EMA: 0.998167 | Steps/Sec: 4.29 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:01:05[0m] (step=0004950) Diff: 0.2011 | c12[img=0.3448 canny=0.3029 skel=0.2094] | REPA(w=0.00): 0.0000 | LR: 1.00e-04 | EMA: 0.998185 | Steps/Sec: 4.30 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:01:05[0m] Beginning epoch 45...
+[[34m2026-09-13 00:01:17[0m] (step=0005000) Diff: 0.2013 | c12[img=0.3453 canny=0.3028 skel=0.2098] | REPA(w=0.00): 0.0000 | LR: 1.00e-04 | EMA: 0.998203 | Steps/Sec: 4.25 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:01:17[0m] (step=0005000) [diag] grad-norm: blocks=0.298 callig_chain=0.014 glyph_embedder=0.047 inj_out_proj=0.051 other=0.261
+[[34m2026-09-13 00:01:18[0m] Saved checkpoint to assets/results/v11_pretrain_M432_v8_auxc03s08/20260912-234049-v11-pretrain-M432-v8-auxc03s08/checkpoints/0005000.pt
+[[34m2026-09-13 00:01:30[0m] (step=0005050) Diff: 0.2005 | c12[img=0.3435 canny=0.3016 skel=0.2096] | REPA(w=0.00): 0.0000 | LR: 1.00e-04 | EMA: 0.998221 | Steps/Sec: 3.88 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:01:32[0m] Beginning epoch 46...
+[[34m2026-09-13 00:01:41[0m] (step=0005100) Diff: 0.1999 | c12[img=0.3423 canny=0.3011 skel=0.2089] | REPA(w=0.00): 0.0000 | LR: 1.00e-04 | EMA: 0.998238 | Steps/Sec: 4.29 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:01:55[0m] (step=0005150) Diff: 0.1987 | c12[img=0.3401 canny=0.2998 skel=0.2075] | REPA(w=0.00): 0.0000 | LR: 1.00e-04 | EMA: 0.998255 | Steps/Sec: 3.60 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:02:00[0m] Beginning epoch 47...
+[[34m2026-09-13 00:02:07[0m] (step=0005200) Diff: 0.1994 | c12[img=0.3415 canny=0.3003 skel=0.2080] | REPA(w=0.00): 0.0000 | LR: 1.00e-04 | EMA: 0.998272 | Steps/Sec: 4.28 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:02:19[0m] (step=0005250) Diff: 0.1980 | c12[img=0.3394 canny=0.2986 skel=0.2062] | REPA(w=0.00): 0.0000 | LR: 1.00e-04 | EMA: 0.998289 | Steps/Sec: 4.29 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:02:26[0m] Beginning epoch 48...
+[[34m2026-09-13 00:02:31[0m] (step=0005300) Diff: 0.1970 | c12[img=0.3376 canny=0.2973 skel=0.2052] | REPA(w=0.00): 0.0000 | LR: 1.00e-04 | EMA: 0.998305 | Steps/Sec: 4.20 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:02:42[0m] (step=0005350) Diff: 0.1980 | c12[img=0.3403 canny=0.2980 skel=0.2055] | REPA(w=0.00): 0.0000 | LR: 1.00e-04 | EMA: 0.998321 | Steps/Sec: 4.29 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:02:51[0m] Beginning epoch 49...
+[[34m2026-09-13 00:02:54[0m] (step=0005400) Diff: 0.1974 | c12[img=0.3385 canny=0.2973 skel=0.2055] | REPA(w=0.00): 0.0000 | LR: 1.00e-04 | EMA: 0.998336 | Steps/Sec: 4.29 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:03:06[0m] (step=0005450) Diff: 0.1968 | c12[img=0.3380 canny=0.2958 skel=0.2047] | REPA(w=0.00): 0.0000 | LR: 1.00e-04 | EMA: 0.998351 | Steps/Sec: 4.29 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:03:17[0m] (step=0005500) Diff: 0.1957 | c12[img=0.3365 canny=0.2946 skel=0.2030] | REPA(w=0.00): 0.0000 | LR: 1.00e-04 | EMA: 0.998366 | Steps/Sec: 4.30 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:03:17[0m] Beginning epoch 50...
+[[34m2026-09-13 00:03:29[0m] (step=0005550) Diff: 0.1954 | c12[img=0.3350 canny=0.2954 skel=0.2034] | REPA(w=0.00): 0.0000 | LR: 1.00e-04 | EMA: 0.998381 | Steps/Sec: 4.25 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:03:41[0m] (step=0005600) Diff: 0.1961 | c12[img=0.3366 canny=0.2957 skel=0.2037] | REPA(w=0.00): 0.0000 | LR: 1.00e-04 | EMA: 0.998395 | Steps/Sec: 4.30 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:03:43[0m] Beginning epoch 51...
+[[34m2026-09-13 00:03:52[0m] (step=0005650) Diff: 0.1956 | c12[img=0.3357 canny=0.2947 skel=0.2034] | REPA(w=0.00): 0.0000 | LR: 1.00e-04 | EMA: 0.998410 | Steps/Sec: 4.29 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:04:04[0m] (step=0005700) Diff: 0.1956 | c12[img=0.3369 canny=0.2932 skel=0.2024] | REPA(w=0.00): 0.0000 | LR: 1.00e-04 | EMA: 0.998424 | Steps/Sec: 4.30 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:04:08[0m] Beginning epoch 52...
+[[34m2026-09-13 00:04:16[0m] (step=0005750) Diff: 0.1946 | c12[img=0.3350 canny=0.2927 skel=0.2012] | REPA(w=0.00): 0.0000 | LR: 1.00e-04 | EMA: 0.998437 | Steps/Sec: 4.29 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:04:27[0m] (step=0005800) Diff: 0.1944 | c12[img=0.3342 canny=0.2925 skel=0.2015] | REPA(w=0.00): 0.0000 | LR: 1.00e-04 | EMA: 0.998451 | Steps/Sec: 4.30 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:04:34[0m] Beginning epoch 53...
+[[34m2026-09-13 00:04:39[0m] (step=0005850) Diff: 0.1932 | c12[img=0.3322 canny=0.2908 skel=0.2002] | REPA(w=0.00): 0.0000 | LR: 1.00e-04 | EMA: 0.998464 | Steps/Sec: 4.29 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:04:50[0m] (step=0005900) Diff: 0.1927 | c12[img=0.3319 canny=0.2899 skel=0.1989] | REPA(w=0.00): 0.0000 | LR: 1.00e-04 | EMA: 0.998477 | Steps/Sec: 4.30 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:05:00[0m] Beginning epoch 54...
+[[34m2026-09-13 00:05:02[0m] (step=0005950) Diff: 0.1933 | c12[img=0.3323 canny=0.2915 skel=0.2002] | REPA(w=0.00): 0.0000 | LR: 1.00e-04 | EMA: 0.998490 | Steps/Sec: 4.29 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:05:14[0m] (step=0006000) Diff: 0.1908 | c12[img=0.3277 canny=0.2878 skel=0.1979] | REPA(w=0.00): 0.0000 | LR: 1.00e-04 | EMA: 0.998502 | Steps/Sec: 4.30 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:05:14[0m] (step=0006000) [diag] grad-norm: blocks=0.213 callig_chain=0.012 glyph_embedder=0.044 inj_out_proj=0.037 other=0.218
+[[34m2026-09-13 00:05:25[0m] (step=0006050) Diff: 0.1930 | c12[img=0.3325 canny=0.2900 skel=0.1994] | REPA(w=0.00): 0.0000 | LR: 1.00e-04 | EMA: 0.998515 | Steps/Sec: 4.30 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:05:25[0m] Beginning epoch 55...
+[[34m2026-09-13 00:05:37[0m] (step=0006100) Diff: 0.1929 | c12[img=0.3323 canny=0.2899 skel=0.1993] | REPA(w=0.00): 0.0000 | LR: 1.00e-04 | EMA: 0.998527 | Steps/Sec: 4.26 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:05:49[0m] (step=0006150) Diff: 0.1917 | c12[img=0.3301 canny=0.2886 skel=0.1981] | REPA(w=0.00): 0.0000 | LR: 1.00e-04 | EMA: 0.998539 | Steps/Sec: 4.30 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:05:51[0m] Beginning epoch 56...
+[[34m2026-09-13 00:06:00[0m] (step=0006200) Diff: 0.1921 | c12[img=0.3306 canny=0.2896 skel=0.1985] | REPA(w=0.00): 0.0000 | LR: 1.00e-04 | EMA: 0.998550 | Steps/Sec: 4.27 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:06:12[0m] (step=0006250) Diff: 0.1906 | c12[img=0.3285 canny=0.2867 skel=0.1967] | REPA(w=0.00): 0.0000 | LR: 1.00e-04 | EMA: 0.998562 | Steps/Sec: 4.30 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:06:17[0m] Beginning epoch 57...
+[[34m2026-09-13 00:06:24[0m] (step=0006300) Diff: 0.1896 | c12[img=0.3268 canny=0.2851 skel=0.1954] | REPA(w=0.00): 0.0000 | LR: 1.00e-04 | EMA: 0.998573 | Steps/Sec: 4.29 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:06:35[0m] (step=0006350) Diff: 0.1908 | c12[img=0.3286 canny=0.2867 skel=0.1973] | REPA(w=0.00): 0.0000 | LR: 1.00e-04 | EMA: 0.998585 | Steps/Sec: 4.30 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:06:42[0m] Beginning epoch 58...
+[[34m2026-09-13 00:06:47[0m] (step=0006400) Diff: 0.1901 | c12[img=0.3278 canny=0.2860 skel=0.1958] | REPA(w=0.00): 0.0000 | LR: 1.00e-04 | EMA: 0.998596 | Steps/Sec: 4.30 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:06:59[0m] (step=0006450) Diff: 0.1895 | c12[img=0.3263 canny=0.2858 skel=0.1958] | REPA(w=0.00): 0.0000 | LR: 1.00e-04 | EMA: 0.998607 | Steps/Sec: 4.30 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:07:08[0m] Beginning epoch 59...
+[[34m2026-09-13 00:07:10[0m] (step=0006500) Diff: 0.1899 | c12[img=0.3273 canny=0.2862 skel=0.1958] | REPA(w=0.00): 0.0000 | LR: 1.00e-04 | EMA: 0.998617 | Steps/Sec: 4.30 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:07:22[0m] (step=0006550) Diff: 0.1893 | c12[img=0.3274 canny=0.2842 skel=0.1943] | REPA(w=0.00): 0.0000 | LR: 1.00e-04 | EMA: 0.998628 | Steps/Sec: 4.31 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:07:34[0m] (step=0006600) Diff: 0.1886 | c12[img=0.3251 canny=0.2837 skel=0.1943] | REPA(w=0.00): 0.0000 | LR: 1.00e-04 | EMA: 0.998638 | Steps/Sec: 4.31 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:07:34[0m] Beginning epoch 60...
+[[34m2026-09-13 00:07:45[0m] (step=0006650) Diff: 0.1881 | c12[img=0.3241 canny=0.2839 skel=0.1937] | REPA(w=0.00): 0.0000 | LR: 1.00e-04 | EMA: 0.998648 | Steps/Sec: 4.27 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:07:57[0m] (step=0006700) Diff: 0.1886 | c12[img=0.3258 canny=0.2835 skel=0.1939] | REPA(w=0.00): 0.0000 | LR: 1.00e-04 | EMA: 0.998659 | Steps/Sec: 4.31 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:07:59[0m] Beginning epoch 61...
+[[34m2026-09-13 00:08:08[0m] (step=0006750) Diff: 0.1874 | c12[img=0.3237 canny=0.2820 skel=0.1923] | REPA(w=0.00): 0.0000 | LR: 9.99e-05 | EMA: 0.998668 | Steps/Sec: 4.31 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:08:20[0m] (step=0006800) Diff: 0.1882 | c12[img=0.3241 canny=0.2839 skel=0.1942] | REPA(w=0.00): 0.0000 | LR: 9.99e-05 | EMA: 0.998678 | Steps/Sec: 4.31 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:08:25[0m] Beginning epoch 62...
+[[34m2026-09-13 00:08:32[0m] (step=0006850) Diff: 0.1876 | c12[img=0.3234 canny=0.2825 skel=0.1931] | REPA(w=0.00): 0.0000 | LR: 9.99e-05 | EMA: 0.998688 | Steps/Sec: 4.30 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:08:43[0m] (step=0006900) Diff: 0.1869 | c12[img=0.3228 canny=0.2809 skel=0.1920] | REPA(w=0.00): 0.0000 | LR: 9.99e-05 | EMA: 0.998697 | Steps/Sec: 4.30 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:08:50[0m] Beginning epoch 63...
+[[34m2026-09-13 00:08:55[0m] (step=0006950) Diff: 0.1873 | c12[img=0.3233 canny=0.2815 skel=0.1925] | REPA(w=0.00): 0.0000 | LR: 9.99e-05 | EMA: 0.998707 | Steps/Sec: 4.30 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:09:07[0m] (step=0007000) Diff: 0.1854 | c12[img=0.3199 canny=0.2798 skel=0.1907] | REPA(w=0.00): 0.0000 | LR: 9.99e-05 | EMA: 0.998716 | Steps/Sec: 4.30 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:09:07[0m] (step=0007000) [diag] grad-norm: blocks=0.200 callig_chain=0.011 glyph_embedder=0.039 inj_out_proj=0.028 other=0.159
+[[34m2026-09-13 00:09:16[0m] Beginning epoch 64...
+[[34m2026-09-13 00:09:18[0m] (step=0007050) Diff: 0.1869 | c12[img=0.3233 canny=0.2807 skel=0.1915] | REPA(w=0.00): 0.0000 | LR: 9.99e-05 | EMA: 0.998725 | Steps/Sec: 4.30 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:09:30[0m] (step=0007100) Diff: 0.1847 | c12[img=0.3192 canny=0.2781 skel=0.1891] | REPA(w=0.00): 0.0000 | LR: 9.99e-05 | EMA: 0.998734 | Steps/Sec: 4.31 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:09:41[0m] (step=0007150) Diff: 0.1857 | c12[img=0.3205 canny=0.2796 skel=0.1909] | REPA(w=0.00): 0.0000 | LR: 9.99e-05 | EMA: 0.998743 | Steps/Sec: 4.31 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:09:41[0m] Beginning epoch 65...
+[[34m2026-09-13 00:09:53[0m] (step=0007200) Diff: 0.1850 | c12[img=0.3196 canny=0.2789 skel=0.1897] | REPA(w=0.00): 0.0000 | LR: 9.99e-05 | EMA: 0.998752 | Steps/Sec: 4.27 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:10:05[0m] (step=0007250) Diff: 0.1846 | c12[img=0.3191 canny=0.2776 skel=0.1890] | REPA(w=0.00): 0.0000 | LR: 9.99e-05 | EMA: 0.998760 | Steps/Sec: 4.30 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:10:07[0m] Beginning epoch 66...
+[[34m2026-09-13 00:10:17[0m] (step=0007300) Diff: 0.1841 | c12[img=0.3187 canny=0.2767 skel=0.1882] | REPA(w=0.00): 0.0000 | LR: 9.99e-05 | EMA: 0.998769 | Steps/Sec: 4.21 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:10:28[0m] (step=0007350) Diff: 0.1855 | c12[img=0.3209 canny=0.2786 skel=0.1901] | REPA(w=0.00): 0.0000 | LR: 9.99e-05 | EMA: 0.998777 | Steps/Sec: 4.30 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:10:33[0m] Beginning epoch 67...
+[[34m2026-09-13 00:10:40[0m] (step=0007400) Diff: 0.1851 | c12[img=0.3208 canny=0.2776 skel=0.1890] | REPA(w=0.00): 0.0000 | LR: 9.99e-05 | EMA: 0.998785 | Steps/Sec: 4.31 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:10:51[0m] (step=0007450) Diff: 0.1836 | c12[img=0.3176 canny=0.2763 skel=0.1878] | REPA(w=0.00): 0.0000 | LR: 9.99e-05 | EMA: 0.998793 | Steps/Sec: 4.30 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:10:58[0m] Beginning epoch 68...
+[[34m2026-09-13 00:11:03[0m] (step=0007500) Diff: 0.1839 | c12[img=0.3184 canny=0.2765 skel=0.1880] | REPA(w=0.00): 0.0000 | LR: 9.99e-05 | EMA: 0.998801 | Steps/Sec: 4.27 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:11:04[0m] Saved checkpoint to assets/results/v11_pretrain_M432_v8_auxc03s08/20260912-234049-v11-pretrain-M432-v8-auxc03s08/checkpoints/0007500.pt
+[[34m2026-09-13 00:11:16[0m] (step=0007550) Diff: 0.1845 | c12[img=0.3192 canny=0.2769 skel=0.1890] | REPA(w=0.00): 0.0000 | LR: 9.99e-05 | EMA: 0.998809 | Steps/Sec: 3.89 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:11:25[0m] Beginning epoch 69...
+[[34m2026-09-13 00:11:28[0m] (step=0007600) Diff: 0.1840 | c12[img=0.3188 canny=0.2758 skel=0.1879] | REPA(w=0.00): 0.0000 | LR: 9.99e-05 | EMA: 0.998817 | Steps/Sec: 4.29 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:11:42[0m] (step=0007650) Diff: 0.1839 | c12[img=0.3183 canny=0.2765 skel=0.1879] | REPA(w=0.00): 0.0000 | LR: 9.99e-05 | EMA: 0.998825 | Steps/Sec: 3.61 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:11:53[0m] (step=0007700) Diff: 0.1832 | c12[img=0.3174 canny=0.2750 skel=0.1870] | REPA(w=0.00): 0.0000 | LR: 9.99e-05 | EMA: 0.998833 | Steps/Sec: 4.30 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:11:53[0m] Beginning epoch 70...
+[[34m2026-09-13 00:12:05[0m] (step=0007750) Diff: 0.1820 | c12[img=0.3153 canny=0.2738 skel=0.1857] | REPA(w=0.00): 0.0000 | LR: 9.99e-05 | EMA: 0.998840 | Steps/Sec: 4.26 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:12:16[0m] (step=0007800) Diff: 0.1825 | c12[img=0.3163 canny=0.2741 skel=0.1861] | REPA(w=0.00): 0.0000 | LR: 9.99e-05 | EMA: 0.998847 | Steps/Sec: 4.30 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:12:19[0m] Beginning epoch 71...
+[[34m2026-09-13 00:12:28[0m] (step=0007850) Diff: 0.1831 | c12[img=0.3172 canny=0.2750 skel=0.1869] | REPA(w=0.00): 0.0000 | LR: 9.99e-05 | EMA: 0.998855 | Steps/Sec: 4.30 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:12:40[0m] (step=0007900) Diff: 0.1812 | c12[img=0.3136 canny=0.2725 skel=0.1852] | REPA(w=0.00): 0.0000 | LR: 9.99e-05 | EMA: 0.998862 | Steps/Sec: 4.30 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:12:44[0m] Beginning epoch 72...
+[[34m2026-09-13 00:12:51[0m] (step=0007950) Diff: 0.1814 | c12[img=0.3142 canny=0.2729 skel=0.1852] | REPA(w=0.00): 0.0000 | LR: 9.99e-05 | EMA: 0.998869 | Steps/Sec: 4.30 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:13:03[0m] (step=0008000) Diff: 0.1815 | c12[img=0.3146 canny=0.2727 skel=0.1852] | REPA(w=0.00): 0.0000 | LR: 9.99e-05 | EMA: 0.998876 | Steps/Sec: 4.30 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:13:03[0m] (step=0008000) [diag] grad-norm: blocks=0.154 callig_chain=0.011 glyph_embedder=0.045 inj_out_proj=0.025 other=0.153
+[[34m2026-09-13 00:13:10[0m] Beginning epoch 73...
+[[34m2026-09-13 00:13:15[0m] (step=0008050) Diff: 0.1812 | c12[img=0.3143 canny=0.2721 skel=0.1845] | REPA(w=0.00): 0.0000 | LR: 9.99e-05 | EMA: 0.998883 | Steps/Sec: 4.30 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:13:26[0m] (step=0008100) Diff: 0.1823 | c12[img=0.3159 canny=0.2741 skel=0.1859] | REPA(w=0.00): 0.0000 | LR: 9.99e-05 | EMA: 0.998890 | Steps/Sec: 4.30 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:13:35[0m] Beginning epoch 74...
+[[34m2026-09-13 00:13:38[0m] (step=0008150) Diff: 0.1814 | c12[img=0.3144 canny=0.2725 skel=0.1850] | REPA(w=0.00): 0.0000 | LR: 9.99e-05 | EMA: 0.998897 | Steps/Sec: 4.30 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:13:50[0m] (step=0008200) Diff: 0.1796 | c12[img=0.3113 canny=0.2703 skel=0.1830] | REPA(w=0.00): 0.0000 | LR: 9.99e-05 | EMA: 0.998904 | Steps/Sec: 4.30 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:14:01[0m] (step=0008250) Diff: 0.1806 | c12[img=0.3135 canny=0.2711 skel=0.1838] | REPA(w=0.00): 0.0000 | LR: 9.99e-05 | EMA: 0.998910 | Steps/Sec: 4.30 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:14:01[0m] Beginning epoch 75...
+[[34m2026-09-13 00:14:13[0m] (step=0008300) Diff: 0.1801 | c12[img=0.3124 canny=0.2706 skel=0.1832] | REPA(w=0.00): 0.0000 | LR: 9.99e-05 | EMA: 0.998917 | Steps/Sec: 4.26 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:14:25[0m] (step=0008350) Diff: 0.1806 | c12[img=0.3135 canny=0.2714 skel=0.1834] | REPA(w=0.00): 0.0000 | LR: 9.99e-05 | EMA: 0.998923 | Steps/Sec: 4.30 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:14:27[0m] Beginning epoch 76...
+[[34m2026-09-13 00:14:36[0m] (step=0008400) Diff: 0.1796 | c12[img=0.3121 canny=0.2695 skel=0.1822] | REPA(w=0.00): 0.0000 | LR: 9.99e-05 | EMA: 0.998930 | Steps/Sec: 4.30 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:14:48[0m] (step=0008450) Diff: 0.1788 | c12[img=0.3098 canny=0.2693 skel=0.1823] | REPA(w=0.00): 0.0000 | LR: 9.99e-05 | EMA: 0.998936 | Steps/Sec: 4.30 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:14:52[0m] Beginning epoch 77...
+[[34m2026-09-13 00:14:59[0m] (step=0008500) Diff: 0.1790 | c12[img=0.3109 canny=0.2688 skel=0.1817] | REPA(w=0.00): 0.0000 | LR: 9.99e-05 | EMA: 0.998942 | Steps/Sec: 4.28 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:15:11[0m] (step=0008550) Diff: 0.1782 | c12[img=0.3091 canny=0.2679 skel=0.1814] | REPA(w=0.00): 0.0000 | LR: 9.99e-05 | EMA: 0.998948 | Steps/Sec: 4.29 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:15:18[0m] Beginning epoch 78...
+[[34m2026-09-13 00:15:23[0m] (step=0008600) Diff: 0.1785 | c12[img=0.3094 canny=0.2689 skel=0.1817] | REPA(w=0.00): 0.0000 | LR: 9.99e-05 | EMA: 0.998955 | Steps/Sec: 4.29 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:15:34[0m] (step=0008650) Diff: 0.1787 | c12[img=0.3105 canny=0.2683 skel=0.1813] | REPA(w=0.00): 0.0000 | LR: 9.99e-05 | EMA: 0.998961 | Steps/Sec: 4.30 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:15:44[0m] Beginning epoch 79...
+[[34m2026-09-13 00:15:46[0m] (step=0008700) Diff: 0.1791 | c12[img=0.3109 canny=0.2690 skel=0.1820] | REPA(w=0.00): 0.0000 | LR: 9.99e-05 | EMA: 0.998967 | Steps/Sec: 4.30 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:15:58[0m] (step=0008750) Diff: 0.1785 | c12[img=0.3097 canny=0.2685 skel=0.1816] | REPA(w=0.00): 0.0000 | LR: 9.99e-05 | EMA: 0.998972 | Steps/Sec: 4.30 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:16:09[0m] (step=0008800) Diff: 0.1776 | c12[img=0.3076 canny=0.2679 skel=0.1809] | REPA(w=0.00): 0.0000 | LR: 9.99e-05 | EMA: 0.998978 | Steps/Sec: 4.30 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:16:09[0m] Beginning epoch 80...
+[[34m2026-09-13 00:16:21[0m] (step=0008850) Diff: 0.1782 | c12[img=0.3093 canny=0.2679 skel=0.1812] | REPA(w=0.00): 0.0000 | LR: 9.99e-05 | EMA: 0.998984 | Steps/Sec: 4.26 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:16:33[0m] (step=0008900) Diff: 0.1769 | c12[img=0.3078 canny=0.2655 skel=0.1790] | REPA(w=0.00): 0.0000 | LR: 9.99e-05 | EMA: 0.998990 | Steps/Sec: 4.30 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:16:35[0m] Beginning epoch 81...
+[[34m2026-09-13 00:16:44[0m] (step=0008950) Diff: 0.1780 | c12[img=0.3089 canny=0.2679 skel=0.1810] | REPA(w=0.00): 0.0000 | LR: 9.99e-05 | EMA: 0.998995 | Steps/Sec: 4.27 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:16:56[0m] (step=0009000) Diff: 0.1769 | c12[img=0.3081 canny=0.2654 skel=0.1789] | REPA(w=0.00): 0.0000 | LR: 9.99e-05 | EMA: 0.999001 | Steps/Sec: 4.30 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:16:56[0m] (step=0009000) [diag] grad-norm: blocks=0.135 callig_chain=0.008 glyph_embedder=0.017 inj_out_proj=0.022 other=0.144
+[[34m2026-09-13 00:17:01[0m] Beginning epoch 82...
+[[34m2026-09-13 00:17:08[0m] (step=0009050) Diff: 0.1764 | c12[img=0.3059 canny=0.2659 skel=0.1795] | REPA(w=0.00): 0.0000 | LR: 9.99e-05 | EMA: 0.999007 | Steps/Sec: 4.26 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:17:19[0m] (step=0009100) Diff: 0.1774 | c12[img=0.3087 canny=0.2662 skel=0.1796] | REPA(w=0.00): 0.0000 | LR: 9.99e-05 | EMA: 0.999012 | Steps/Sec: 4.30 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:17:26[0m] Beginning epoch 83...
+[[34m2026-09-13 00:17:31[0m] (step=0009150) Diff: 0.1768 | c12[img=0.3072 canny=0.2662 skel=0.1793] | REPA(w=0.00): 0.0000 | LR: 9.99e-05 | EMA: 0.999017 | Steps/Sec: 4.29 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:17:43[0m] (step=0009200) Diff: 0.1773 | c12[img=0.3084 canny=0.2663 skel=0.1796] | REPA(w=0.00): 0.0000 | LR: 9.99e-05 | EMA: 0.999023 | Steps/Sec: 4.20 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:17:52[0m] Beginning epoch 84...
+[[34m2026-09-13 00:17:55[0m] (step=0009250) Diff: 0.1772 | c12[img=0.3083 canny=0.2659 skel=0.1795] | REPA(w=0.00): 0.0000 | LR: 9.99e-05 | EMA: 0.999028 | Steps/Sec: 4.30 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:18:06[0m] (step=0009300) Diff: 0.1763 | c12[img=0.3062 canny=0.2651 skel=0.1790] | REPA(w=0.00): 0.0000 | LR: 9.99e-05 | EMA: 0.999033 | Steps/Sec: 4.29 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:18:18[0m] (step=0009350) Diff: 0.1764 | c12[img=0.3068 canny=0.2647 skel=0.1786] | REPA(w=0.00): 0.0000 | LR: 9.99e-05 | EMA: 0.999038 | Steps/Sec: 4.29 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:18:18[0m] Beginning epoch 85...
+[[34m2026-09-13 00:18:30[0m] (step=0009400) Diff: 0.1748 | c12[img=0.3037 canny=0.2629 skel=0.1772] | REPA(w=0.00): 0.0000 | LR: 9.99e-05 | EMA: 0.999043 | Steps/Sec: 4.25 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:18:41[0m] (step=0009450) Diff: 0.1759 | c12[img=0.3061 canny=0.2642 skel=0.1779] | REPA(w=0.00): 0.0000 | LR: 9.98e-05 | EMA: 0.999049 | Steps/Sec: 4.30 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:18:44[0m] Beginning epoch 86...
+[[34m2026-09-13 00:18:53[0m] (step=0009500) Diff: 0.1755 | c12[img=0.3057 canny=0.2635 skel=0.1773] | REPA(w=0.00): 0.0000 | LR: 9.98e-05 | EMA: 0.999054 | Steps/Sec: 4.29 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:19:05[0m] (step=0009550) Diff: 0.1762 | c12[img=0.3065 canny=0.2649 skel=0.1784] | REPA(w=0.00): 0.0000 | LR: 9.98e-05 | EMA: 0.999058 | Steps/Sec: 4.30 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:19:09[0m] Beginning epoch 87...
+[[34m2026-09-13 00:19:16[0m] (step=0009600) Diff: 0.1747 | c12[img=0.3037 canny=0.2629 skel=0.1769] | REPA(w=0.00): 0.0000 | LR: 9.98e-05 | EMA: 0.999063 | Steps/Sec: 4.30 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:19:28[0m] (step=0009650) Diff: 0.1744 | c12[img=0.3032 canny=0.2625 skel=0.1766] | REPA(w=0.00): 0.0000 | LR: 9.98e-05 | EMA: 0.999068 | Steps/Sec: 4.30 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:19:35[0m] Beginning epoch 88...
+[[34m2026-09-13 00:19:40[0m] (step=0009700) Diff: 0.1762 | c12[img=0.3068 canny=0.2639 skel=0.1782] | REPA(w=0.00): 0.0000 | LR: 9.98e-05 | EMA: 0.999073 | Steps/Sec: 4.29 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:19:51[0m] (step=0009750) Diff: 0.1744 | c12[img=0.3034 canny=0.2626 skel=0.1764] | REPA(w=0.00): 0.0000 | LR: 9.98e-05 | EMA: 0.999078 | Steps/Sec: 4.30 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:20:00[0m] Beginning epoch 89...
+[[34m2026-09-13 00:20:03[0m] (step=0009800) Diff: 0.1755 | c12[img=0.3058 canny=0.2630 skel=0.1773] | REPA(w=0.00): 0.0000 | LR: 9.98e-05 | EMA: 0.999082 | Steps/Sec: 4.29 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:20:15[0m] (step=0009850) Diff: 0.1740 | c12[img=0.3027 canny=0.2617 skel=0.1758] | REPA(w=0.00): 0.0000 | LR: 9.98e-05 | EMA: 0.999087 | Steps/Sec: 4.30 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:20:26[0m] (step=0009900) Diff: 0.1745 | c12[img=0.3038 canny=0.2621 skel=0.1762] | REPA(w=0.00): 0.0000 | LR: 9.98e-05 | EMA: 0.999092 | Steps/Sec: 4.30 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:20:26[0m] Beginning epoch 90...
+[[34m2026-09-13 00:20:38[0m] (step=0009950) Diff: 0.1736 | c12[img=0.3027 canny=0.2608 skel=0.1750] | REPA(w=0.00): 0.0000 | LR: 9.98e-05 | EMA: 0.999096 | Steps/Sec: 4.25 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:20:50[0m] (step=0010000) Diff: 0.1739 | c12[img=0.3028 canny=0.2612 skel=0.1757] | REPA(w=0.00): 0.0000 | LR: 9.98e-05 | EMA: 0.999101 | Steps/Sec: 4.30 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:20:50[0m] (step=0010000) [diag] grad-norm: blocks=0.110 callig_chain=0.007 glyph_embedder=0.040 inj_out_proj=0.017 other=0.111
+[[34m2026-09-13 00:20:51[0m] Saved checkpoint to assets/results/v11_pretrain_M432_v8_auxc03s08/20260912-234049-v11-pretrain-M432-v8-auxc03s08/checkpoints/0010000.pt
+[[34m2026-09-13 00:20:53[0m] Beginning epoch 91...
+[[34m2026-09-13 00:21:02[0m] (step=0010050) Diff: 0.1732 | c12[img=0.3017 canny=0.2605 skel=0.1749] | REPA(w=0.00): 0.0000 | LR: 9.98e-05 | EMA: 0.999105 | Steps/Sec: 3.89 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:21:14[0m] (step=0010100) Diff: 0.1729 | c12[img=0.3011 canny=0.2598 skel=0.1745] | REPA(w=0.00): 0.0000 | LR: 9.98e-05 | EMA: 0.999110 | Steps/Sec: 4.30 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:21:19[0m] Beginning epoch 92...
+[[34m2026-09-13 00:21:30[0m] (step=0010150) Diff: 0.1734 | c12[img=0.3018 canny=0.2606 skel=0.1754] | REPA(w=0.00): 0.0000 | LR: 9.98e-05 | EMA: 0.999114 | Steps/Sec: 3.10 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:21:52[0m] (step=0010200) Diff: 0.1731 | c12[img=0.3014 canny=0.2603 skel=0.1746] | REPA(w=0.00): 0.0000 | LR: 9.98e-05 | EMA: 0.999118 | Steps/Sec: 2.30 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:22:05[0m] Beginning epoch 93...
+[[34m2026-09-13 00:22:14[0m] (step=0010250) Diff: 0.1727 | c12[img=0.3007 canny=0.2601 skel=0.1743] | REPA(w=0.00): 0.0000 | LR: 9.98e-05 | EMA: 0.999123 | Steps/Sec: 2.30 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:22:35[0m] (step=0010300) Diff: 0.1726 | c12[img=0.3002 canny=0.2598 skel=0.1748] | REPA(w=0.00): 0.0000 | LR: 9.98e-05 | EMA: 0.999127 | Steps/Sec: 2.29 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:22:53[0m] Beginning epoch 94...
+[[34m2026-09-13 00:22:56[0m] (step=0010350) Diff: 0.1738 | c12[img=0.3031 canny=0.2607 skel=0.1751] | REPA(w=0.00): 0.0000 | LR: 9.98e-05 | EMA: 0.999131 | Steps/Sec: 2.40 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:23:08[0m] (step=0010400) Diff: 0.1725 | c12[img=0.3009 canny=0.2591 skel=0.1734] | REPA(w=0.00): 0.0000 | LR: 9.98e-05 | EMA: 0.999135 | Steps/Sec: 4.23 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:23:20[0m] (step=0010450) Diff: 0.1727 | c12[img=0.3012 canny=0.2593 skel=0.1740] | REPA(w=0.00): 0.0000 | LR: 9.98e-05 | EMA: 0.999139 | Steps/Sec: 4.30 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:23:20[0m] Beginning epoch 95...
+[[34m2026-09-13 00:23:31[0m] (step=0010500) Diff: 0.1721 | c12[img=0.2997 canny=0.2588 skel=0.1737] | REPA(w=0.00): 0.0000 | LR: 9.98e-05 | EMA: 0.999144 | Steps/Sec: 4.25 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:23:43[0m] (step=0010550) Diff: 0.1719 | c12[img=0.3000 canny=0.2577 skel=0.1729] | REPA(w=0.00): 0.0000 | LR: 9.98e-05 | EMA: 0.999148 | Steps/Sec: 4.30 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:23:45[0m] Beginning epoch 96...
+[[34m2026-09-13 00:23:55[0m] (step=0010600) Diff: 0.1717 | c12[img=0.2997 canny=0.2577 skel=0.1726] | REPA(w=0.00): 0.0000 | LR: 9.98e-05 | EMA: 0.999152 | Steps/Sec: 4.26 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:24:07[0m] (step=0010650) Diff: 0.1722 | c12[img=0.3000 canny=0.2591 skel=0.1735] | REPA(w=0.00): 0.0000 | LR: 9.98e-05 | EMA: 0.999156 | Steps/Sec: 4.29 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:24:11[0m] Beginning epoch 97...
+[[34m2026-09-13 00:24:18[0m] (step=0010700) Diff: 0.1724 | c12[img=0.3014 canny=0.2581 skel=0.1729] | REPA(w=0.00): 0.0000 | LR: 9.98e-05 | EMA: 0.999160 | Steps/Sec: 4.27 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:24:30[0m] (step=0010750) Diff: 0.1720 | c12[img=0.3006 canny=0.2576 skel=0.1727] | REPA(w=0.00): 0.0000 | LR: 9.98e-05 | EMA: 0.999163 | Steps/Sec: 4.29 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:24:37[0m] Beginning epoch 98...
+[[34m2026-09-13 00:24:42[0m] (step=0010800) Diff: 0.1718 | c12[img=0.2998 canny=0.2577 skel=0.1727] | REPA(w=0.00): 0.0000 | LR: 9.98e-05 | EMA: 0.999167 | Steps/Sec: 4.27 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:24:53[0m] (step=0010850) Diff: 0.1717 | c12[img=0.2999 canny=0.2576 skel=0.1725] | REPA(w=0.00): 0.0000 | LR: 9.98e-05 | EMA: 0.999171 | Steps/Sec: 4.29 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:25:02[0m] Beginning epoch 99...
+[[34m2026-09-13 00:25:05[0m] (step=0010900) Diff: 0.1706 | c12[img=0.2977 canny=0.2565 skel=0.1716] | REPA(w=0.00): 0.0000 | LR: 9.98e-05 | EMA: 0.999175 | Steps/Sec: 4.29 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:25:17[0m] (step=0010950) Diff: 0.1709 | c12[img=0.2982 canny=0.2568 skel=0.1718] | REPA(w=0.00): 0.0000 | LR: 9.98e-05 | EMA: 0.999179 | Steps/Sec: 4.29 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:25:28[0m] (step=0011000) Diff: 0.1699 | c12[img=0.2963 canny=0.2558 skel=0.1709] | REPA(w=0.00): 0.0000 | LR: 9.98e-05 | EMA: 0.999182 | Steps/Sec: 4.30 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:25:28[0m] (step=0011000) [diag] grad-norm: blocks=0.132 callig_chain=0.009 glyph_embedder=0.025 inj_out_proj=0.020 other=0.126
+[[34m2026-09-13 00:25:28[0m] Beginning epoch 100...
+[[34m2026-09-13 00:25:40[0m] (step=0011050) Diff: 0.1708 | c12[img=0.2979 canny=0.2566 skel=0.1717] | REPA(w=0.00): 0.0000 | LR: 9.98e-05 | EMA: 0.999186 | Steps/Sec: 4.25 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:25:52[0m] (step=0011100) Diff: 0.1704 | c12[img=0.2977 canny=0.2558 skel=0.1711] | REPA(w=0.00): 0.0000 | LR: 9.98e-05 | EMA: 0.999190 | Steps/Sec: 4.20 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:25:54[0m] Beginning epoch 101...
+[[34m2026-09-13 00:26:03[0m] (step=0011150) Diff: 0.1709 | c12[img=0.2985 canny=0.2565 skel=0.1718] | REPA(w=0.00): 0.0000 | LR: 9.98e-05 | EMA: 0.999193 | Steps/Sec: 4.29 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:26:15[0m] (step=0011200) Diff: 0.1705 | c12[img=0.2976 canny=0.2560 skel=0.1713] | REPA(w=0.00): 0.0000 | LR: 9.98e-05 | EMA: 0.999197 | Steps/Sec: 4.29 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:26:20[0m] Beginning epoch 102...
+[[34m2026-09-13 00:26:27[0m] (step=0011250) Diff: 0.1704 | c12[img=0.2979 canny=0.2556 skel=0.1708] | REPA(w=0.00): 0.0000 | LR: 9.98e-05 | EMA: 0.999201 | Steps/Sec: 4.27 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:26:38[0m] (step=0011300) Diff: 0.1704 | c12[img=0.2973 canny=0.2562 skel=0.1715] | REPA(w=0.00): 0.0000 | LR: 9.97e-05 | EMA: 0.999204 | Steps/Sec: 4.29 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:26:45[0m] Beginning epoch 103...
+[[34m2026-09-13 00:26:50[0m] (step=0011350) Diff: 0.1695 | c12[img=0.2963 canny=0.2543 skel=0.1701] | REPA(w=0.00): 0.0000 | LR: 9.97e-05 | EMA: 0.999208 | Steps/Sec: 4.27 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:27:02[0m] (step=0011400) Diff: 0.1701 | c12[img=0.2971 canny=0.2552 skel=0.1707] | REPA(w=0.00): 0.0000 | LR: 9.97e-05 | EMA: 0.999211 | Steps/Sec: 4.29 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:27:11[0m] Beginning epoch 104...
+[[34m2026-09-13 00:27:13[0m] (step=0011450) Diff: 0.1702 | c12[img=0.2968 canny=0.2560 skel=0.1713] | REPA(w=0.00): 0.0000 | LR: 9.97e-05 | EMA: 0.999215 | Steps/Sec: 4.30 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:27:25[0m] (step=0011500) Diff: 0.1698 | c12[img=0.2967 canny=0.2551 skel=0.1704] | REPA(w=0.00): 0.0000 | LR: 9.97e-05 | EMA: 0.999218 | Steps/Sec: 4.30 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:27:37[0m] (step=0011550) Diff: 0.1691 | c12[img=0.2955 canny=0.2536 skel=0.1695] | REPA(w=0.00): 0.0000 | LR: 9.97e-05 | EMA: 0.999221 | Steps/Sec: 4.30 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:27:37[0m] Beginning epoch 105...
+[[34m2026-09-13 00:27:49[0m] (step=0011600) Diff: 0.1690 | c12[img=0.2949 canny=0.2539 skel=0.1697] | REPA(w=0.00): 0.0000 | LR: 9.97e-05 | EMA: 0.999225 | Steps/Sec: 4.25 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:28:00[0m] (step=0011650) Diff: 0.1693 | c12[img=0.2955 canny=0.2548 skel=0.1700] | REPA(w=0.00): 0.0000 | LR: 9.97e-05 | EMA: 0.999228 | Steps/Sec: 4.29 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:28:02[0m] Beginning epoch 106...
+[[34m2026-09-13 00:28:12[0m] (step=0011700) Diff: 0.1691 | c12[img=0.2959 canny=0.2536 skel=0.1692] | REPA(w=0.00): 0.0000 | LR: 9.97e-05 | EMA: 0.999231 | Steps/Sec: 4.29 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:28:23[0m] (step=0011750) Diff: 0.1691 | c12[img=0.2958 canny=0.2537 skel=0.1694] | REPA(w=0.00): 0.0000 | LR: 9.97e-05 | EMA: 0.999235 | Steps/Sec: 4.29 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:28:28[0m] Beginning epoch 107...
+[[34m2026-09-13 00:28:35[0m] (step=0011800) Diff: 0.1679 | c12[img=0.2932 canny=0.2526 skel=0.1684] | REPA(w=0.00): 0.0000 | LR: 9.97e-05 | EMA: 0.999238 | Steps/Sec: 4.29 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:28:47[0m] (step=0011850) Diff: 0.1682 | c12[img=0.2936 canny=0.2530 skel=0.1690] | REPA(w=0.00): 0.0000 | LR: 9.97e-05 | EMA: 0.999241 | Steps/Sec: 4.29 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:28:54[0m] Beginning epoch 108...
+[[34m2026-09-13 00:28:58[0m] (step=0011900) Diff: 0.1678 | c12[img=0.2930 canny=0.2525 skel=0.1683] | REPA(w=0.00): 0.0000 | LR: 9.97e-05 | EMA: 0.999244 | Steps/Sec: 4.27 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:29:10[0m] (step=0011950) Diff: 0.1685 | c12[img=0.2946 canny=0.2531 skel=0.1689] | REPA(w=0.00): 0.0000 | LR: 9.97e-05 | EMA: 0.999247 | Steps/Sec: 4.29 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:29:19[0m] Beginning epoch 109...
+[[34m2026-09-13 00:29:22[0m] (step=0012000) Diff: 0.1675 | c12[img=0.2925 canny=0.2520 skel=0.1681] | REPA(w=0.00): 0.0000 | LR: 9.97e-05 | EMA: 0.999251 | Steps/Sec: 4.29 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:29:22[0m] (step=0012000) [diag] grad-norm: blocks=0.099 callig_chain=0.007 glyph_embedder=0.031 inj_out_proj=0.016 other=0.090
+[[34m2026-09-13 00:29:33[0m] (step=0012050) Diff: 0.1684 | c12[img=0.2948 canny=0.2527 skel=0.1684] | REPA(w=0.00): 0.0000 | LR: 9.97e-05 | EMA: 0.999254 | Steps/Sec: 4.29 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:29:45[0m] (step=0012100) Diff: 0.1674 | c12[img=0.2926 canny=0.2514 skel=0.1677] | REPA(w=0.00): 0.0000 | LR: 9.97e-05 | EMA: 0.999257 | Steps/Sec: 4.30 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:29:45[0m] Beginning epoch 110...
+[[34m2026-09-13 00:29:57[0m] (step=0012150) Diff: 0.1676 | c12[img=0.2933 canny=0.2513 skel=0.1677] | REPA(w=0.00): 0.0000 | LR: 9.97e-05 | EMA: 0.999260 | Steps/Sec: 4.25 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:30:08[0m] (step=0012200) Diff: 0.1676 | c12[img=0.2926 canny=0.2523 skel=0.1681] | REPA(w=0.00): 0.0000 | LR: 9.97e-05 | EMA: 0.999263 | Steps/Sec: 4.29 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:30:11[0m] Beginning epoch 111...
+[[34m2026-09-13 00:30:20[0m] (step=0012250) Diff: 0.1678 | c12[img=0.2936 canny=0.2520 skel=0.1678] | REPA(w=0.00): 0.0000 | LR: 9.97e-05 | EMA: 0.999266 | Steps/Sec: 4.28 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:30:32[0m] (step=0012300) Diff: 0.1685 | c12[img=0.2956 canny=0.2518 skel=0.1679] | REPA(w=0.00): 0.0000 | LR: 9.97e-05 | EMA: 0.999269 | Steps/Sec: 4.30 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:30:36[0m] Beginning epoch 112...
+[[34m2026-09-13 00:30:43[0m] (step=0012350) Diff: 0.1674 | c12[img=0.2931 canny=0.2511 skel=0.1673] | REPA(w=0.00): 0.0000 | LR: 9.97e-05 | EMA: 0.999272 | Steps/Sec: 4.29 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:30:55[0m] (step=0012400) Diff: 0.1668 | c12[img=0.2914 canny=0.2511 skel=0.1671] | REPA(w=0.00): 0.0000 | LR: 9.97e-05 | EMA: 0.999275 | Steps/Sec: 4.29 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:31:02[0m] Beginning epoch 113...
+[[34m2026-09-13 00:31:07[0m] (step=0012450) Diff: 0.1682 | c12[img=0.2947 canny=0.2518 skel=0.1679] | REPA(w=0.00): 0.0000 | LR: 9.97e-05 | EMA: 0.999278 | Steps/Sec: 4.29 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:31:18[0m] (step=0012500) Diff: 0.1672 | c12[img=0.2930 canny=0.2505 skel=0.1669] | REPA(w=0.00): 0.0000 | LR: 9.97e-05 | EMA: 0.999281 | Steps/Sec: 4.29 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:31:20[0m] Saved checkpoint to assets/results/v11_pretrain_M432_v8_auxc03s08/20260912-234049-v11-pretrain-M432-v8-auxc03s08/checkpoints/0012500.pt
+[[34m2026-09-13 00:31:29[0m] Beginning epoch 114...
+[[34m2026-09-13 00:31:31[0m] (step=0012550) Diff: 0.1671 | c12[img=0.2927 canny=0.2507 skel=0.1668] | REPA(w=0.00): 0.0000 | LR: 9.97e-05 | EMA: 0.999283 | Steps/Sec: 3.88 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:31:43[0m] (step=0012600) Diff: 0.1666 | c12[img=0.2920 canny=0.2499 skel=0.1662] | REPA(w=0.00): 0.0000 | LR: 9.97e-05 | EMA: 0.999286 | Steps/Sec: 4.29 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:31:57[0m] (step=0012650) Diff: 0.1660 | c12[img=0.2900 canny=0.2498 skel=0.1663] | REPA(w=0.00): 0.0000 | LR: 9.97e-05 | EMA: 0.999289 | Steps/Sec: 3.62 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:31:57[0m] Beginning epoch 115...
+[[34m2026-09-13 00:32:09[0m] (step=0012700) Diff: 0.1670 | c12[img=0.2925 canny=0.2501 skel=0.1667] | REPA(w=0.00): 0.0000 | LR: 9.97e-05 | EMA: 0.999292 | Steps/Sec: 4.23 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:32:20[0m] (step=0012750) Diff: 0.1669 | c12[img=0.2923 canny=0.2505 skel=0.1667] | REPA(w=0.00): 0.0000 | LR: 9.97e-05 | EMA: 0.999295 | Steps/Sec: 4.29 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:32:22[0m] Beginning epoch 116...
+[[34m2026-09-13 00:32:32[0m] (step=0012800) Diff: 0.1659 | c12[img=0.2909 canny=0.2489 skel=0.1653] | REPA(w=0.00): 0.0000 | LR: 9.97e-05 | EMA: 0.999297 | Steps/Sec: 4.29 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:32:44[0m] (step=0012850) Diff: 0.1675 | c12[img=0.2930 canny=0.2516 skel=0.1675] | REPA(w=0.00): 0.0000 | LR: 9.96e-05 | EMA: 0.999300 | Steps/Sec: 4.29 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:32:48[0m] Beginning epoch 117...
+[[34m2026-09-13 00:32:55[0m] (step=0012900) Diff: 0.1669 | c12[img=0.2925 canny=0.2502 skel=0.1665] | REPA(w=0.00): 0.0000 | LR: 9.96e-05 | EMA: 0.999303 | Steps/Sec: 4.30 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:33:07[0m] (step=0012950) Diff: 0.1665 | c12[img=0.2917 canny=0.2500 skel=0.1660] | REPA(w=0.00): 0.0000 | LR: 9.96e-05 | EMA: 0.999306 | Steps/Sec: 4.29 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:33:14[0m] Beginning epoch 118...
+[[34m2026-09-13 00:33:18[0m] (step=0013000) Diff: 0.1666 | c12[img=0.2917 canny=0.2497 skel=0.1664] | REPA(w=0.00): 0.0000 | LR: 9.96e-05 | EMA: 0.999308 | Steps/Sec: 4.29 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:33:18[0m] (step=0013000) [diag] grad-norm: blocks=0.114 callig_chain=0.007 glyph_embedder=0.017 inj_out_proj=0.019 other=0.117
+[[34m2026-09-13 00:33:30[0m] (step=0013050) Diff: 0.1661 | c12[img=0.2915 canny=0.2486 skel=0.1653] | REPA(w=0.00): 0.0000 | LR: 9.96e-05 | EMA: 0.999311 | Steps/Sec: 4.20 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:33:40[0m] Beginning epoch 119...
+[[34m2026-09-13 00:33:42[0m] (step=0013100) Diff: 0.1655 | c12[img=0.2895 canny=0.2489 skel=0.1652] | REPA(w=0.00): 0.0000 | LR: 9.96e-05 | EMA: 0.999313 | Steps/Sec: 4.29 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:33:54[0m] (step=0013150) Diff: 0.1646 | c12[img=0.2880 canny=0.2471 skel=0.1645] | REPA(w=0.00): 0.0000 | LR: 9.96e-05 | EMA: 0.999316 | Steps/Sec: 4.29 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:34:05[0m] (step=0013200) Diff: 0.1667 | c12[img=0.2924 canny=0.2498 skel=0.1659] | REPA(w=0.00): 0.0000 | LR: 9.96e-05 | EMA: 0.999319 | Steps/Sec: 4.29 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:34:05[0m] Beginning epoch 120...
+[[34m2026-09-13 00:34:17[0m] (step=0013250) Diff: 0.1657 | c12[img=0.2898 canny=0.2493 skel=0.1657] | REPA(w=0.00): 0.0000 | LR: 9.96e-05 | EMA: 0.999321 | Steps/Sec: 4.26 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:34:29[0m] (step=0013300) Diff: 0.1635 | c12[img=0.2861 canny=0.2462 skel=0.1634] | REPA(w=0.00): 0.0000 | LR: 9.96e-05 | EMA: 0.999324 | Steps/Sec: 4.29 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:34:31[0m] Beginning epoch 121...
+[[34m2026-09-13 00:34:40[0m] (step=0013350) Diff: 0.1654 | c12[img=0.2902 canny=0.2480 skel=0.1646] | REPA(w=0.00): 0.0000 | LR: 9.96e-05 | EMA: 0.999326 | Steps/Sec: 4.29 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:34:52[0m] (step=0013400) Diff: 0.1649 | c12[img=0.2890 canny=0.2475 skel=0.1643] | REPA(w=0.00): 0.0000 | LR: 9.96e-05 | EMA: 0.999329 | Steps/Sec: 4.29 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:34:57[0m] Beginning epoch 122...
+[[34m2026-09-13 00:35:04[0m] (step=0013450) Diff: 0.1632 | c12[img=0.2852 canny=0.2462 skel=0.1634] | REPA(w=0.00): 0.0000 | LR: 9.96e-05 | EMA: 0.999331 | Steps/Sec: 4.29 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:35:15[0m] (step=0013500) Diff: 0.1644 | c12[img=0.2875 canny=0.2475 skel=0.1642] | REPA(w=0.00): 0.0000 | LR: 9.96e-05 | EMA: 0.999334 | Steps/Sec: 4.29 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:35:22[0m] Beginning epoch 123...
+[[34m2026-09-13 00:35:27[0m] (step=0013550) Diff: 0.1642 | c12[img=0.2879 canny=0.2464 skel=0.1635] | REPA(w=0.00): 0.0000 | LR: 9.96e-05 | EMA: 0.999336 | Steps/Sec: 4.29 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:35:39[0m] (step=0013600) Diff: 0.1646 | c12[img=0.2888 canny=0.2470 skel=0.1638] | REPA(w=0.00): 0.0000 | LR: 9.96e-05 | EMA: 0.999339 | Steps/Sec: 4.29 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:35:48[0m] Beginning epoch 124...
+[[34m2026-09-13 00:35:50[0m] (step=0013650) Diff: 0.1644 | c12[img=0.2880 canny=0.2470 skel=0.1638] | REPA(w=0.00): 0.0000 | LR: 9.96e-05 | EMA: 0.999341 | Steps/Sec: 4.29 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:36:02[0m] (step=0013700) Diff: 0.1639 | c12[img=0.2877 canny=0.2460 skel=0.1628] | REPA(w=0.00): 0.0000 | LR: 9.96e-05 | EMA: 0.999343 | Steps/Sec: 4.29 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:36:14[0m] (step=0013750) Diff: 0.1644 | c12[img=0.2885 canny=0.2463 skel=0.1637] | REPA(w=0.00): 0.0000 | LR: 9.96e-05 | EMA: 0.999346 | Steps/Sec: 4.29 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:36:14[0m] Beginning epoch 125...
+[[34m2026-09-13 00:36:25[0m] (step=0013800) Diff: 0.1641 | c12[img=0.2875 canny=0.2464 skel=0.1637] | REPA(w=0.00): 0.0000 | LR: 9.96e-05 | EMA: 0.999348 | Steps/Sec: 4.26 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:36:37[0m] (step=0013850) Diff: 0.1641 | c12[img=0.2875 canny=0.2467 skel=0.1635] | REPA(w=0.00): 0.0000 | LR: 9.96e-05 | EMA: 0.999351 | Steps/Sec: 4.29 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:36:39[0m] Beginning epoch 126...
+[[34m2026-09-13 00:36:49[0m] (step=0013900) Diff: 0.1647 | c12[img=0.2891 canny=0.2468 skel=0.1637] | REPA(w=0.00): 0.0000 | LR: 9.96e-05 | EMA: 0.999353 | Steps/Sec: 4.29 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:37:00[0m] (step=0013950) Diff: 0.1641 | c12[img=0.2880 canny=0.2461 skel=0.1631] | REPA(w=0.00): 0.0000 | LR: 9.96e-05 | EMA: 0.999355 | Steps/Sec: 4.29 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:37:05[0m] Beginning epoch 127...
+[[34m2026-09-13 00:37:12[0m] (step=0014000) Diff: 0.1630 | c12[img=0.2853 canny=0.2455 skel=0.1624] | REPA(w=0.00): 0.0000 | LR: 9.96e-05 | EMA: 0.999358 | Steps/Sec: 4.27 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:37:12[0m] (step=0014000) [diag] grad-norm: blocks=0.096 callig_chain=0.007 glyph_embedder=0.016 inj_out_proj=0.016 other=0.088
+[[34m2026-09-13 00:37:24[0m] (step=0014050) Diff: 0.1632 | c12[img=0.2862 canny=0.2449 skel=0.1624] | REPA(w=0.00): 0.0000 | LR: 9.96e-05 | EMA: 0.999360 | Steps/Sec: 4.29 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:37:31[0m] Beginning epoch 128...
+[[34m2026-09-13 00:37:35[0m] (step=0014100) Diff: 0.1642 | c12[img=0.2884 canny=0.2461 skel=0.1631] | REPA(w=0.00): 0.0000 | LR: 9.96e-05 | EMA: 0.999362 | Steps/Sec: 4.26 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:37:47[0m] (step=0014150) Diff: 0.1637 | c12[img=0.2874 canny=0.2454 skel=0.1627] | REPA(w=0.00): 0.0000 | LR: 9.95e-05 | EMA: 0.999364 | Steps/Sec: 4.29 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:37:56[0m] Beginning epoch 129...
+[[34m2026-09-13 00:37:59[0m] (step=0014200) Diff: 0.1641 | c12[img=0.2885 canny=0.2453 skel=0.1628] | REPA(w=0.00): 0.0000 | LR: 9.95e-05 | EMA: 0.999367 | Steps/Sec: 4.26 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:38:11[0m] (step=0014250) Diff: 0.1627 | c12[img=0.2855 canny=0.2443 skel=0.1618] | REPA(w=0.00): 0.0000 | LR: 9.95e-05 | EMA: 0.999369 | Steps/Sec: 4.29 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:38:22[0m] (step=0014300) Diff: 0.1640 | c12[img=0.2875 canny=0.2463 skel=0.1633] | REPA(w=0.00): 0.0000 | LR: 9.95e-05 | EMA: 0.999371 | Steps/Sec: 4.29 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:38:22[0m] Beginning epoch 130...
+[[34m2026-09-13 00:38:34[0m] (step=0014350) Diff: 0.1633 | c12[img=0.2866 canny=0.2448 skel=0.1624] | REPA(w=0.00): 0.0000 | LR: 9.95e-05 | EMA: 0.999373 | Steps/Sec: 4.20 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:38:46[0m] (step=0014400) Diff: 0.1629 | c12[img=0.2855 canny=0.2447 skel=0.1621] | REPA(w=0.00): 0.0000 | LR: 9.95e-05 | EMA: 0.999375 | Steps/Sec: 4.29 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:38:48[0m] Beginning epoch 131...
+[[34m2026-09-13 00:38:57[0m] (step=0014450) Diff: 0.1622 | c12[img=0.2844 canny=0.2435 skel=0.1614] | REPA(w=0.00): 0.0000 | LR: 9.95e-05 | EMA: 0.999378 | Steps/Sec: 4.30 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:39:09[0m] (step=0014500) Diff: 0.1629 | c12[img=0.2860 canny=0.2442 skel=0.1617] | REPA(w=0.00): 0.0000 | LR: 9.95e-05 | EMA: 0.999380 | Steps/Sec: 4.30 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:39:14[0m] Beginning epoch 132...
+[[34m2026-09-13 00:39:21[0m] (step=0014550) Diff: 0.1622 | c12[img=0.2844 canny=0.2432 skel=0.1616] | REPA(w=0.00): 0.0000 | LR: 9.95e-05 | EMA: 0.999382 | Steps/Sec: 4.28 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:39:32[0m] (step=0014600) Diff: 0.1632 | c12[img=0.2868 canny=0.2443 skel=0.1620] | REPA(w=0.00): 0.0000 | LR: 9.95e-05 | EMA: 0.999384 | Steps/Sec: 4.30 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:39:39[0m] Beginning epoch 133...
+[[34m2026-09-13 00:39:44[0m] (step=0014650) Diff: 0.1624 | c12[img=0.2848 canny=0.2441 skel=0.1617] | REPA(w=0.00): 0.0000 | LR: 9.95e-05 | EMA: 0.999386 | Steps/Sec: 4.28 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:39:56[0m] (step=0014700) Diff: 0.1625 | c12[img=0.2856 canny=0.2434 skel=0.1612] | REPA(w=0.00): 0.0000 | LR: 9.95e-05 | EMA: 0.999388 | Steps/Sec: 4.30 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:40:05[0m] Beginning epoch 134...
+[[34m2026-09-13 00:40:07[0m] (step=0014750) Diff: 0.1625 | c12[img=0.2856 canny=0.2437 skel=0.1610] | REPA(w=0.00): 0.0000 | LR: 9.95e-05 | EMA: 0.999390 | Steps/Sec: 4.29 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:40:19[0m] (step=0014800) Diff: 0.1625 | c12[img=0.2856 canny=0.2436 skel=0.1610] | REPA(w=0.00): 0.0000 | LR: 9.95e-05 | EMA: 0.999392 | Steps/Sec: 4.30 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:40:31[0m] (step=0014850) Diff: 0.1614 | c12[img=0.2832 canny=0.2423 skel=0.1602] | REPA(w=0.00): 0.0000 | LR: 9.95e-05 | EMA: 0.999394 | Steps/Sec: 4.30 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:40:31[0m] Beginning epoch 135...
+[[34m2026-09-13 00:40:42[0m] (step=0014900) Diff: 0.1616 | c12[img=0.2838 canny=0.2425 skel=0.1602] | REPA(w=0.00): 0.0000 | LR: 9.95e-05 | EMA: 0.999396 | Steps/Sec: 4.22 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:40:54[0m] (step=0014950) Diff: 0.1617 | c12[img=0.2842 canny=0.2421 skel=0.1602] | REPA(w=0.00): 0.0000 | LR: 9.95e-05 | EMA: 0.999398 | Steps/Sec: 4.30 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:40:56[0m] Beginning epoch 136...
+[[34m2026-09-13 00:41:06[0m] (step=0015000) Diff: 0.1617 | c12[img=0.2841 canny=0.2424 skel=0.1604] | REPA(w=0.00): 0.0000 | LR: 9.95e-05 | EMA: 0.999400 | Steps/Sec: 4.18 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:41:06[0m] (step=0015000) [diag] grad-norm: blocks=0.090 callig_chain=0.006 glyph_embedder=0.020 inj_out_proj=0.015 other=0.099
+[[34m2026-09-13 00:41:07[0m] Saved checkpoint to assets/results/v11_pretrain_M432_v8_auxc03s08/20260912-234049-v11-pretrain-M432-v8-auxc03s08/checkpoints/0015000.pt
+[[34m2026-09-13 00:41:19[0m] (step=0015050) Diff: 0.1619 | c12[img=0.2849 canny=0.2418 skel=0.1602] | REPA(w=0.00): 0.0000 | LR: 9.95e-05 | EMA: 0.999402 | Steps/Sec: 3.89 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:41:23[0m] Beginning epoch 137...
+[[34m2026-09-13 00:41:31[0m] (step=0015100) Diff: 0.1620 | c12[img=0.2849 canny=0.2425 skel=0.1604] | REPA(w=0.00): 0.0000 | LR: 9.95e-05 | EMA: 0.999404 | Steps/Sec: 4.23 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:41:44[0m] (step=0015150) Diff: 0.1608 | c12[img=0.2823 canny=0.2416 skel=0.1598] | REPA(w=0.00): 0.0000 | LR: 9.95e-05 | EMA: 0.999406 | Steps/Sec: 3.63 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:41:51[0m] Beginning epoch 138...
+[[34m2026-09-13 00:41:56[0m] (step=0015200) Diff: 0.1614 | c12[img=0.2837 canny=0.2417 skel=0.1599] | REPA(w=0.00): 0.0000 | LR: 9.95e-05 | EMA: 0.999408 | Steps/Sec: 4.27 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:42:08[0m] (step=0015250) Diff: 0.1625 | c12[img=0.2856 canny=0.2435 skel=0.1610] | REPA(w=0.00): 0.0000 | LR: 9.95e-05 | EMA: 0.999410 | Steps/Sec: 4.28 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:42:17[0m] Beginning epoch 139...
+[[34m2026-09-13 00:42:19[0m] (step=0015300) Diff: 0.1611 | c12[img=0.2826 canny=0.2422 skel=0.1602] | REPA(w=0.00): 0.0000 | LR: 9.95e-05 | EMA: 0.999412 | Steps/Sec: 4.28 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:42:31[0m] (step=0015350) Diff: 0.1600 | c12[img=0.2810 canny=0.2405 skel=0.1585] | REPA(w=0.00): 0.0000 | LR: 9.94e-05 | EMA: 0.999414 | Steps/Sec: 4.29 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:42:43[0m] (step=0015400) Diff: 0.1616 | c12[img=0.2840 canny=0.2422 skel=0.1603] | REPA(w=0.00): 0.0000 | LR: 9.94e-05 | EMA: 0.999416 | Steps/Sec: 4.30 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:42:43[0m] Beginning epoch 140...
+[[34m2026-09-13 00:42:55[0m] (step=0015450) Diff: 0.1609 | c12[img=0.2832 canny=0.2407 skel=0.1590] | REPA(w=0.00): 0.0000 | LR: 9.94e-05 | EMA: 0.999418 | Steps/Sec: 4.25 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:43:06[0m] (step=0015500) Diff: 0.1609 | c12[img=0.2828 canny=0.2414 skel=0.1596] | REPA(w=0.00): 0.0000 | LR: 9.94e-05 | EMA: 0.999420 | Steps/Sec: 4.30 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:43:08[0m] Beginning epoch 141...
+[[34m2026-09-13 00:43:18[0m] (step=0015550) Diff: 0.1605 | c12[img=0.2824 canny=0.2406 skel=0.1588] | REPA(w=0.00): 0.0000 | LR: 9.94e-05 | EMA: 0.999422 | Steps/Sec: 4.30 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:43:29[0m] (step=0015600) Diff: 0.1617 | c12[img=0.2843 canny=0.2419 skel=0.1601] | REPA(w=0.00): 0.0000 | LR: 9.94e-05 | EMA: 0.999423 | Steps/Sec: 4.30 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:43:34[0m] Beginning epoch 142...
+[[34m2026-09-13 00:43:41[0m] (step=0015650) Diff: 0.1604 | c12[img=0.2820 canny=0.2405 skel=0.1588] | REPA(w=0.00): 0.0000 | LR: 9.94e-05 | EMA: 0.999425 | Steps/Sec: 4.27 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:43:53[0m] (step=0015700) Diff: 0.1608 | c12[img=0.2827 canny=0.2408 skel=0.1593] | REPA(w=0.00): 0.0000 | LR: 9.94e-05 | EMA: 0.999427 | Steps/Sec: 4.29 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:44:00[0m] Beginning epoch 143...
+[[34m2026-09-13 00:44:04[0m] (step=0015750) Diff: 0.1614 | c12[img=0.2844 canny=0.2409 skel=0.1593] | REPA(w=0.00): 0.0000 | LR: 9.94e-05 | EMA: 0.999429 | Steps/Sec: 4.30 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:44:16[0m] (step=0015800) Diff: 0.1599 | c12[img=0.2809 canny=0.2401 skel=0.1585] | REPA(w=0.00): 0.0000 | LR: 9.94e-05 | EMA: 0.999431 | Steps/Sec: 4.30 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:44:25[0m] Beginning epoch 144...
+[[34m2026-09-13 00:44:28[0m] (step=0015850) Diff: 0.1607 | c12[img=0.2827 canny=0.2406 skel=0.1590] | REPA(w=0.00): 0.0000 | LR: 9.94e-05 | EMA: 0.999432 | Steps/Sec: 4.20 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:44:40[0m] (step=0015900) Diff: 0.1600 | c12[img=0.2814 canny=0.2399 skel=0.1583] | REPA(w=0.00): 0.0000 | LR: 9.94e-05 | EMA: 0.999434 | Steps/Sec: 4.30 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:44:51[0m] (step=0015950) Diff: 0.1596 | c12[img=0.2804 canny=0.2397 skel=0.1580] | REPA(w=0.00): 0.0000 | LR: 9.94e-05 | EMA: 0.999436 | Steps/Sec: 4.30 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:44:51[0m] Beginning epoch 145...
+[[34m2026-09-13 00:45:03[0m] (step=0016000) Diff: 0.1599 | c12[img=0.2817 canny=0.2390 skel=0.1578] | REPA(w=0.00): 0.0000 | LR: 9.94e-05 | EMA: 0.999438 | Steps/Sec: 4.25 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:45:03[0m] (step=0016000) [diag] grad-norm: blocks=0.087 callig_chain=0.007 glyph_embedder=0.021 inj_out_proj=0.017 other=0.082
+[[34m2026-09-13 00:45:15[0m] (step=0016050) Diff: 0.1604 | c12[img=0.2822 canny=0.2401 skel=0.1587] | REPA(w=0.00): 0.0000 | LR: 9.94e-05 | EMA: 0.999440 | Steps/Sec: 4.30 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:45:17[0m] Beginning epoch 146...
+[[34m2026-09-13 00:45:26[0m] (step=0016100) Diff: 0.1594 | c12[img=0.2803 canny=0.2391 skel=0.1578] | REPA(w=0.00): 0.0000 | LR: 9.94e-05 | EMA: 0.999441 | Steps/Sec: 4.29 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:45:38[0m] (step=0016150) Diff: 0.1605 | c12[img=0.2826 canny=0.2403 skel=0.1585] | REPA(w=0.00): 0.0000 | LR: 9.94e-05 | EMA: 0.999443 | Steps/Sec: 4.30 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:45:42[0m] Beginning epoch 147...
+[[34m2026-09-13 00:45:50[0m] (step=0016200) Diff: 0.1598 | c12[img=0.2813 canny=0.2396 skel=0.1578] | REPA(w=0.00): 0.0000 | LR: 9.94e-05 | EMA: 0.999445 | Steps/Sec: 4.28 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:46:01[0m] (step=0016250) Diff: 0.1603 | c12[img=0.2819 canny=0.2400 skel=0.1587] | REPA(w=0.00): 0.0000 | LR: 9.94e-05 | EMA: 0.999446 | Steps/Sec: 4.30 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:46:08[0m] Beginning epoch 148...
+[[34m2026-09-13 00:46:13[0m] (step=0016300) Diff: 0.1595 | c12[img=0.2807 canny=0.2393 skel=0.1575] | REPA(w=0.00): 0.0000 | LR: 9.94e-05 | EMA: 0.999448 | Steps/Sec: 4.30 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:46:25[0m] (step=0016350) Diff: 0.1593 | c12[img=0.2800 canny=0.2389 skel=0.1577] | REPA(w=0.00): 0.0000 | LR: 9.94e-05 | EMA: 0.999450 | Steps/Sec: 4.30 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:46:34[0m] Beginning epoch 149...
+[[34m2026-09-13 00:46:36[0m] (step=0016400) Diff: 0.1593 | c12[img=0.2802 canny=0.2390 skel=0.1576] | REPA(w=0.00): 0.0000 | LR: 9.93e-05 | EMA: 0.999452 | Steps/Sec: 4.29 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:46:48[0m] (step=0016450) Diff: 0.1593 | c12[img=0.2802 canny=0.2388 skel=0.1575] | REPA(w=0.00): 0.0000 | LR: 9.93e-05 | EMA: 0.999453 | Steps/Sec: 4.30 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:46:59[0m] (step=0016500) Diff: 0.1592 | c12[img=0.2795 canny=0.2390 skel=0.1579] | REPA(w=0.00): 0.0000 | LR: 9.93e-05 | EMA: 0.999455 | Steps/Sec: 4.30 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:46:59[0m] Beginning epoch 150...
+[[34m2026-09-13 00:47:11[0m] (step=0016550) Diff: 0.1580 | c12[img=0.2774 canny=0.2376 skel=0.1568] | REPA(w=0.00): 0.0000 | LR: 9.93e-05 | EMA: 0.999456 | Steps/Sec: 4.26 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:47:23[0m] (step=0016600) Diff: 0.1600 | c12[img=0.2817 canny=0.2394 skel=0.1580] | REPA(w=0.00): 0.0000 | LR: 9.93e-05 | EMA: 0.999458 | Steps/Sec: 4.30 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:47:25[0m] Beginning epoch 151...
+[[34m2026-09-13 00:47:35[0m] (step=0016650) Diff: 0.1594 | c12[img=0.2809 canny=0.2385 skel=0.1572] | REPA(w=0.00): 0.0000 | LR: 9.93e-05 | EMA: 0.999460 | Steps/Sec: 4.29 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:47:46[0m] (step=0016700) Diff: 0.1589 | c12[img=0.2797 canny=0.2381 skel=0.1569] | REPA(w=0.00): 0.0000 | LR: 9.93e-05 | EMA: 0.999461 | Steps/Sec: 4.30 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:47:51[0m] Beginning epoch 152...
+[[34m2026-09-13 00:47:58[0m] (step=0016750) Diff: 0.1594 | c12[img=0.2806 canny=0.2390 skel=0.1574] | REPA(w=0.00): 0.0000 | LR: 9.93e-05 | EMA: 0.999463 | Steps/Sec: 4.27 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:48:09[0m] (step=0016800) Diff: 0.1584 | c12[img=0.2789 canny=0.2373 skel=0.1564] | REPA(w=0.00): 0.0000 | LR: 9.93e-05 | EMA: 0.999465 | Steps/Sec: 4.30 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:48:16[0m] Beginning epoch 153...
+[[34m2026-09-13 00:48:21[0m] (step=0016850) Diff: 0.1583 | c12[img=0.2787 canny=0.2375 skel=0.1562] | REPA(w=0.00): 0.0000 | LR: 9.93e-05 | EMA: 0.999466 | Steps/Sec: 4.24 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:48:33[0m] (step=0016900) Diff: 0.1581 | c12[img=0.2783 canny=0.2372 skel=0.1561] | REPA(w=0.00): 0.0000 | LR: 9.93e-05 | EMA: 0.999468 | Steps/Sec: 4.20 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:48:42[0m] Beginning epoch 154...
+[[34m2026-09-13 00:48:45[0m] (step=0016950) Diff: 0.1587 | c12[img=0.2791 canny=0.2380 skel=0.1571] | REPA(w=0.00): 0.0000 | LR: 9.93e-05 | EMA: 0.999469 | Steps/Sec: 4.26 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:48:57[0m] (step=0017000) Diff: 0.1586 | c12[img=0.2787 canny=0.2383 skel=0.1569] | REPA(w=0.00): 0.0000 | LR: 9.93e-05 | EMA: 0.999471 | Steps/Sec: 4.29 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:48:57[0m] (step=0017000) [diag] grad-norm: blocks=0.096 callig_chain=0.007 glyph_embedder=0.018 inj_out_proj=0.018 other=0.106
+[[34m2026-09-13 00:49:08[0m] (step=0017050) Diff: 0.1579 | c12[img=0.2779 canny=0.2367 skel=0.1558] | REPA(w=0.00): 0.0000 | LR: 9.93e-05 | EMA: 0.999472 | Steps/Sec: 4.30 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:49:08[0m] Beginning epoch 155...
+[[34m2026-09-13 00:49:20[0m] (step=0017100) Diff: 0.1580 | c12[img=0.2776 canny=0.2374 skel=0.1564] | REPA(w=0.00): 0.0000 | LR: 9.93e-05 | EMA: 0.999474 | Steps/Sec: 4.22 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:49:32[0m] (step=0017150) Diff: 0.1587 | c12[img=0.2799 canny=0.2375 skel=0.1564] | REPA(w=0.00): 0.0000 | LR: 9.93e-05 | EMA: 0.999475 | Steps/Sec: 4.29 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:49:34[0m] Beginning epoch 156...
+[[34m2026-09-13 00:49:43[0m] (step=0017200) Diff: 0.1569 | c12[img=0.2759 canny=0.2360 skel=0.1551] | REPA(w=0.00): 0.0000 | LR: 9.93e-05 | EMA: 0.999477 | Steps/Sec: 4.30 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:49:55[0m] (step=0017250) Diff: 0.1581 | c12[img=0.2781 canny=0.2372 skel=0.1562] | REPA(w=0.00): 0.0000 | LR: 9.93e-05 | EMA: 0.999479 | Steps/Sec: 4.30 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:49:59[0m] Beginning epoch 157...
+[[34m2026-09-13 00:50:07[0m] (step=0017300) Diff: 0.1584 | c12[img=0.2786 canny=0.2380 skel=0.1567] | REPA(w=0.00): 0.0000 | LR: 9.93e-05 | EMA: 0.999480 | Steps/Sec: 4.27 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:50:18[0m] (step=0017350) Diff: 0.1583 | c12[img=0.2797 canny=0.2364 skel=0.1555] | REPA(w=0.00): 0.0000 | LR: 9.93e-05 | EMA: 0.999482 | Steps/Sec: 4.29 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:50:25[0m] Beginning epoch 158...
+[[34m2026-09-13 00:50:30[0m] (step=0017400) Diff: 0.1576 | c12[img=0.2774 canny=0.2365 skel=0.1555] | REPA(w=0.00): 0.0000 | LR: 9.92e-05 | EMA: 0.999483 | Steps/Sec: 4.29 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:50:42[0m] (step=0017450) Diff: 0.1575 | c12[img=0.2771 canny=0.2366 skel=0.1554] | REPA(w=0.00): 0.0000 | LR: 9.92e-05 | EMA: 0.999485 | Steps/Sec: 4.29 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:50:51[0m] Beginning epoch 159...
+[[34m2026-09-13 00:50:53[0m] (step=0017500) Diff: 0.1578 | c12[img=0.2774 canny=0.2367 skel=0.1562] | REPA(w=0.00): 0.0000 | LR: 9.92e-05 | EMA: 0.999486 | Steps/Sec: 4.30 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:50:55[0m] Saved checkpoint to assets/results/v11_pretrain_M432_v8_auxc03s08/20260912-234049-v11-pretrain-M432-v8-auxc03s08/checkpoints/0017500.pt
+[[34m2026-09-13 00:51:06[0m] (step=0017550) Diff: 0.1572 | c12[img=0.2771 canny=0.2356 skel=0.1550] | REPA(w=0.00): 0.0000 | LR: 9.92e-05 | EMA: 0.999487 | Steps/Sec: 3.87 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:51:19[0m] (step=0017600) Diff: 0.1572 | c12[img=0.2769 canny=0.2357 skel=0.1550] | REPA(w=0.00): 0.0000 | LR: 9.92e-05 | EMA: 0.999489 | Steps/Sec: 3.91 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:51:19[0m] Beginning epoch 160...
+[[34m2026-09-13 00:51:32[0m] (step=0017650) Diff: 0.1577 | c12[img=0.2779 canny=0.2361 skel=0.1553] | REPA(w=0.00): 0.0000 | LR: 9.92e-05 | EMA: 0.999490 | Steps/Sec: 3.91 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:51:43[0m] (step=0017700) Diff: 0.1567 | c12[img=0.2758 canny=0.2350 skel=0.1548] | REPA(w=0.00): 0.0000 | LR: 9.92e-05 | EMA: 0.999492 | Steps/Sec: 4.28 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:51:46[0m] Beginning epoch 161...
+[[34m2026-09-13 00:51:55[0m] (step=0017750) Diff: 0.1588 | c12[img=0.2802 canny=0.2372 skel=0.1564] | REPA(w=0.00): 0.0000 | LR: 9.92e-05 | EMA: 0.999493 | Steps/Sec: 4.26 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:52:07[0m] (step=0017800) Diff: 0.1563 | c12[img=0.2751 canny=0.2348 skel=0.1542] | REPA(w=0.00): 0.0000 | LR: 9.92e-05 | EMA: 0.999495 | Steps/Sec: 4.28 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:52:11[0m] Beginning epoch 162...
+[[34m2026-09-13 00:52:19[0m] (step=0017850) Diff: 0.1576 | c12[img=0.2772 canny=0.2370 skel=0.1558] | REPA(w=0.00): 0.0000 | LR: 9.92e-05 | EMA: 0.999496 | Steps/Sec: 4.29 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:52:30[0m] (step=0017900) Diff: 0.1563 | c12[img=0.2747 canny=0.2350 skel=0.1544] | REPA(w=0.00): 0.0000 | LR: 9.92e-05 | EMA: 0.999497 | Steps/Sec: 4.29 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:52:37[0m] Beginning epoch 163...
+[[34m2026-09-13 00:52:42[0m] (step=0017950) Diff: 0.1571 | c12[img=0.2770 canny=0.2354 skel=0.1546] | REPA(w=0.00): 0.0000 | LR: 9.92e-05 | EMA: 0.999499 | Steps/Sec: 4.29 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:52:53[0m] (step=0018000) Diff: 0.1579 | c12[img=0.2787 canny=0.2360 skel=0.1552] | REPA(w=0.00): 0.0000 | LR: 9.92e-05 | EMA: 0.999500 | Steps/Sec: 4.30 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:52:53[0m] (step=0018000) [diag] grad-norm: blocks=0.077 callig_chain=0.006 glyph_embedder=0.019 inj_out_proj=0.014 other=0.077
+[[34m2026-09-13 00:53:03[0m] Beginning epoch 164...
+[[34m2026-09-13 00:53:05[0m] (step=0018050) Diff: 0.1570 | c12[img=0.2768 canny=0.2354 skel=0.1545] | REPA(w=0.00): 0.0000 | LR: 9.92e-05 | EMA: 0.999502 | Steps/Sec: 4.30 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:53:17[0m] (step=0018100) Diff: 0.1570 | c12[img=0.2763 canny=0.2356 skel=0.1550] | REPA(w=0.00): 0.0000 | LR: 9.92e-05 | EMA: 0.999503 | Steps/Sec: 4.30 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:53:28[0m] (step=0018150) Diff: 0.1562 | c12[img=0.2756 canny=0.2340 skel=0.1536] | REPA(w=0.00): 0.0000 | LR: 9.92e-05 | EMA: 0.999504 | Steps/Sec: 4.30 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:53:28[0m] Beginning epoch 165...
+[[34m2026-09-13 00:53:40[0m] (step=0018200) Diff: 0.1567 | c12[img=0.2761 canny=0.2349 skel=0.1543] | REPA(w=0.00): 0.0000 | LR: 9.92e-05 | EMA: 0.999506 | Steps/Sec: 4.23 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:53:52[0m] (step=0018250) Diff: 0.1579 | c12[img=0.2789 canny=0.2356 skel=0.1551] | REPA(w=0.00): 0.0000 | LR: 9.92e-05 | EMA: 0.999507 | Steps/Sec: 4.30 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:53:54[0m] Beginning epoch 166...
+[[34m2026-09-13 00:54:03[0m] (step=0018300) Diff: 0.1567 | c12[img=0.2768 canny=0.2340 skel=0.1540] | REPA(w=0.00): 0.0000 | LR: 9.92e-05 | EMA: 0.999508 | Steps/Sec: 4.30 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:54:15[0m] (step=0018350) Diff: 0.1566 | c12[img=0.2759 canny=0.2349 skel=0.1541] | REPA(w=0.00): 0.0000 | LR: 9.91e-05 | EMA: 0.999510 | Steps/Sec: 4.30 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:54:20[0m] Beginning epoch 167...
+[[34m2026-09-13 00:54:27[0m] (step=0018400) Diff: 0.1559 | c12[img=0.2747 canny=0.2341 skel=0.1534] | REPA(w=0.00): 0.0000 | LR: 9.91e-05 | EMA: 0.999511 | Steps/Sec: 4.30 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:54:38[0m] (step=0018450) Diff: 0.1569 | c12[img=0.2766 canny=0.2348 skel=0.1544] | REPA(w=0.00): 0.0000 | LR: 9.91e-05 | EMA: 0.999512 | Steps/Sec: 4.30 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:54:45[0m] Beginning epoch 168...
+[[34m2026-09-13 00:54:50[0m] (step=0018500) Diff: 0.1570 | c12[img=0.2768 canny=0.2352 skel=0.1545] | REPA(w=0.00): 0.0000 | LR: 9.91e-05 | EMA: 0.999514 | Steps/Sec: 4.30 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:55:02[0m] (step=0018550) Diff: 0.1561 | c12[img=0.2748 canny=0.2346 skel=0.1538] | REPA(w=0.00): 0.0000 | LR: 9.91e-05 | EMA: 0.999515 | Steps/Sec: 4.30 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:55:11[0m] Beginning epoch 169...
+[[34m2026-09-13 00:55:13[0m] (step=0018600) Diff: 0.1559 | c12[img=0.2746 canny=0.2336 skel=0.1538] | REPA(w=0.00): 0.0000 | LR: 9.91e-05 | EMA: 0.999516 | Steps/Sec: 4.30 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:55:25[0m] (step=0018650) Diff: 0.1558 | c12[img=0.2749 canny=0.2336 skel=0.1530] | REPA(w=0.00): 0.0000 | LR: 9.91e-05 | EMA: 0.999518 | Steps/Sec: 4.30 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:55:36[0m] (step=0018700) Diff: 0.1569 | c12[img=0.2766 canny=0.2350 skel=0.1545] | REPA(w=0.00): 0.0000 | LR: 9.91e-05 | EMA: 0.999519 | Steps/Sec: 4.30 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:55:36[0m] Beginning epoch 170...
+[[34m2026-09-13 00:55:48[0m] (step=0018750) Diff: 0.1558 | c12[img=0.2745 canny=0.2338 skel=0.1535] | REPA(w=0.00): 0.0000 | LR: 9.91e-05 | EMA: 0.999520 | Steps/Sec: 4.25 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:56:00[0m] (step=0018800) Diff: 0.1561 | c12[img=0.2754 canny=0.2336 skel=0.1536] | REPA(w=0.00): 0.0000 | LR: 9.91e-05 | EMA: 0.999522 | Steps/Sec: 4.22 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:56:02[0m] Beginning epoch 171...
+[[34m2026-09-13 00:56:12[0m] (step=0018850) Diff: 0.1554 | c12[img=0.2737 canny=0.2335 skel=0.1530] | REPA(w=0.00): 0.0000 | LR: 9.91e-05 | EMA: 0.999523 | Steps/Sec: 4.30 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:56:23[0m] (step=0018900) Diff: 0.1553 | c12[img=0.2738 canny=0.2327 skel=0.1528] | REPA(w=0.00): 0.0000 | LR: 9.91e-05 | EMA: 0.999524 | Steps/Sec: 4.30 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:56:28[0m] Beginning epoch 172...
+[[34m2026-09-13 00:56:35[0m] (step=0018950) Diff: 0.1556 | c12[img=0.2744 canny=0.2336 skel=0.1530] | REPA(w=0.00): 0.0000 | LR: 9.91e-05 | EMA: 0.999525 | Steps/Sec: 4.30 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:56:47[0m] (step=0019000) Diff: 0.1559 | c12[img=0.2750 canny=0.2336 skel=0.1535] | REPA(w=0.00): 0.0000 | LR: 9.91e-05 | EMA: 0.999527 | Steps/Sec: 4.30 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:56:47[0m] (step=0019000) [diag] grad-norm: blocks=0.072 callig_chain=0.006 glyph_embedder=0.019 inj_out_proj=0.014 other=0.068
+[[34m2026-09-13 00:56:53[0m] Beginning epoch 173...
+[[34m2026-09-13 00:56:58[0m] (step=0019050) Diff: 0.1561 | c12[img=0.2757 canny=0.2339 skel=0.1532] | REPA(w=0.00): 0.0000 | LR: 9.91e-05 | EMA: 0.999528 | Steps/Sec: 4.30 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:57:10[0m] (step=0019100) Diff: 0.1548 | c12[img=0.2733 canny=0.2319 skel=0.1520] | REPA(w=0.00): 0.0000 | LR: 9.91e-05 | EMA: 0.999529 | Steps/Sec: 4.30 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:57:19[0m] Beginning epoch 174...
+[[34m2026-09-13 00:57:21[0m] (step=0019150) Diff: 0.1555 | c12[img=0.2744 canny=0.2328 skel=0.1527] | REPA(w=0.00): 0.0000 | LR: 9.91e-05 | EMA: 0.999530 | Steps/Sec: 4.30 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:57:33[0m] (step=0019200) Diff: 0.1550 | c12[img=0.2733 canny=0.2326 skel=0.1525] | REPA(w=0.00): 0.0000 | LR: 9.90e-05 | EMA: 0.999531 | Steps/Sec: 4.30 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:57:45[0m] (step=0019250) Diff: 0.1552 | c12[img=0.2736 canny=0.2328 skel=0.1527] | REPA(w=0.00): 0.0000 | LR: 9.90e-05 | EMA: 0.999533 | Steps/Sec: 4.30 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:57:45[0m] Beginning epoch 175...
+[[34m2026-09-13 00:57:56[0m] (step=0019300) Diff: 0.1548 | c12[img=0.2729 canny=0.2324 skel=0.1522] | REPA(w=0.00): 0.0000 | LR: 9.90e-05 | EMA: 0.999534 | Steps/Sec: 4.28 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:58:08[0m] (step=0019350) Diff: 0.1549 | c12[img=0.2728 canny=0.2326 skel=0.1528] | REPA(w=0.00): 0.0000 | LR: 9.90e-05 | EMA: 0.999535 | Steps/Sec: 4.30 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:58:10[0m] Beginning epoch 176...
+[[34m2026-09-13 00:58:20[0m] (step=0019400) Diff: 0.1556 | c12[img=0.2749 canny=0.2324 skel=0.1527] | REPA(w=0.00): 0.0000 | LR: 9.90e-05 | EMA: 0.999536 | Steps/Sec: 4.30 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:58:31[0m] (step=0019450) Diff: 0.1551 | c12[img=0.2736 canny=0.2327 skel=0.1524] | REPA(w=0.00): 0.0000 | LR: 9.90e-05 | EMA: 0.999537 | Steps/Sec: 4.30 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:58:36[0m] Beginning epoch 177...
+[[34m2026-09-13 00:58:43[0m] (step=0019500) Diff: 0.1553 | c12[img=0.2741 canny=0.2327 skel=0.1524] | REPA(w=0.00): 0.0000 | LR: 9.90e-05 | EMA: 0.999539 | Steps/Sec: 4.30 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:58:54[0m] (step=0019550) Diff: 0.1544 | c12[img=0.2720 canny=0.2321 skel=0.1520] | REPA(w=0.00): 0.0000 | LR: 9.90e-05 | EMA: 0.999540 | Steps/Sec: 4.30 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:59:01[0m] Beginning epoch 178...
+[[34m2026-09-13 00:59:06[0m] (step=0019600) Diff: 0.1553 | c12[img=0.2738 canny=0.2328 skel=0.1529] | REPA(w=0.00): 0.0000 | LR: 9.90e-05 | EMA: 0.999541 | Steps/Sec: 4.30 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:59:18[0m] (step=0019650) Diff: 0.1541 | c12[img=0.2715 canny=0.2314 skel=0.1516] | REPA(w=0.00): 0.0000 | LR: 9.90e-05 | EMA: 0.999542 | Steps/Sec: 4.30 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:59:27[0m] Beginning epoch 179...
+[[34m2026-09-13 00:59:29[0m] (step=0019700) Diff: 0.1552 | c12[img=0.2739 canny=0.2325 skel=0.1523] | REPA(w=0.00): 0.0000 | LR: 9.90e-05 | EMA: 0.999543 | Steps/Sec: 4.30 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:59:41[0m] (step=0019750) Diff: 0.1555 | c12[img=0.2746 canny=0.2328 skel=0.1526] | REPA(w=0.00): 0.0000 | LR: 9.90e-05 | EMA: 0.999545 | Steps/Sec: 4.30 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:59:53[0m] (step=0019800) Diff: 0.1542 | c12[img=0.2720 canny=0.2314 skel=0.1513] | REPA(w=0.00): 0.0000 | LR: 9.90e-05 | EMA: 0.999546 | Steps/Sec: 4.30 | Mem: 19.12G/19.12G
+[[34m2026-09-13 00:59:53[0m] Beginning epoch 180...
+[[34m2026-09-13 01:00:04[0m] (step=0019850) Diff: 0.1546 | c12[img=0.2728 canny=0.2320 skel=0.1519] | REPA(w=0.00): 0.0000 | LR: 9.90e-05 | EMA: 0.999547 | Steps/Sec: 4.23 | Mem: 19.12G/19.12G
+[[34m2026-09-13 01:00:16[0m] (step=0019900) Diff: 0.1546 | c12[img=0.2730 canny=0.2316 skel=0.1518] | REPA(w=0.00): 0.0000 | LR: 9.90e-05 | EMA: 0.999548 | Steps/Sec: 4.31 | Mem: 19.12G/19.12G
+[[34m2026-09-13 01:00:18[0m] Beginning epoch 181...
+[[34m2026-09-13 01:00:28[0m] (step=0019950) Diff: 0.1538 | c12[img=0.2713 canny=0.2309 skel=0.1512] | REPA(w=0.00): 0.0000 | LR: 9.90e-05 | EMA: 0.999549 | Steps/Sec: 4.30 | Mem: 19.12G/19.12G
+[[34m2026-09-13 01:00:39[0m] (step=0020000) Diff: 0.1539 | c12[img=0.2718 canny=0.2306 skel=0.1510] | REPA(w=0.00): 0.0000 | LR: 9.90e-05 | EMA: 0.999550 | Steps/Sec: 4.30 | Mem: 19.12G/19.12G
+[[34m2026-09-13 01:00:39[0m] (step=0020000) [diag] grad-norm: blocks=0.069 callig_chain=0.006 glyph_embedder=0.012 inj_out_proj=0.013 other=0.064
+[[34m2026-09-13 01:00:40[0m] Saved checkpoint to assets/results/v11_pretrain_M432_v8_auxc03s08/20260912-234049-v11-pretrain-M432-v8-auxc03s08/checkpoints/0020000.pt
+[[34m2026-09-13 01:00:45[0m] Beginning epoch 182...
+[[34m2026-09-13 01:00:52[0m] (step=0020050) Diff: 0.1550 | c12[img=0.2740 canny=0.2318 skel=0.1519] | REPA(w=0.00): 0.0000 | LR: 9.89e-05 | EMA: 0.999551 | Steps/Sec: 3.90 | Mem: 19.12G/19.12G
+[[34m2026-09-13 01:01:04[0m] (step=0020100) Diff: 0.1541 | c12[img=0.2717 canny=0.2314 skel=0.1514] | REPA(w=0.00): 0.0000 | LR: 9.89e-05 | EMA: 0.999552 | Steps/Sec: 4.10 | Mem: 19.12G/19.12G
+[[34m2026-09-13 01:01:16[0m] Beginning epoch 183...
+[[34m2026-09-13 01:01:25[0m] (step=0020150) Diff: 0.1540 | c12[img=0.2715 canny=0.2315 skel=0.1512] | REPA(w=0.00): 0.0000 | LR: 9.89e-05 | EMA: 0.999554 | Steps/Sec: 2.45 | Mem: 19.12G/19.12G
+[[34m2026-09-13 01:01:46[0m] (step=0020200) Diff: 0.1535 | c12[img=0.2709 canny=0.2308 skel=0.1505] | REPA(w=0.00): 0.0000 | LR: 9.89e-05 | EMA: 0.999555 | Steps/Sec: 2.30 | Mem: 19.12G/19.12G
+[[34m2026-09-13 01:02:04[0m] Beginning epoch 184...
+[[34m2026-09-13 01:02:08[0m] (step=0020250) Diff: 0.1544 | c12[img=0.2725 canny=0.2314 skel=0.1518] | REPA(w=0.00): 0.0000 | LR: 9.89e-05 | EMA: 0.999556 | Steps/Sec: 2.30 | Mem: 19.12G/19.12G
+[[34m2026-09-13 01:02:30[0m] (step=0020300) Diff: 0.1546 | c12[img=0.2731 canny=0.2313 skel=0.1516] | REPA(w=0.00): 0.0000 | LR: 9.89e-05 | EMA: 0.999557 | Steps/Sec: 2.30 | Mem: 19.12G/19.12G
+[[34m2026-09-13 01:02:46[0m] (step=0020350) Diff: 0.1539 | c12[img=0.2719 canny=0.2307 skel=0.1508] | REPA(w=0.00): 0.0000 | LR: 9.89e-05 | EMA: 0.999558 | Steps/Sec: 3.13 | Mem: 19.12G/19.12G
+[[34m2026-09-13 01:02:46[0m] Beginning epoch 185...
+[[34m2026-09-13 01:02:58[0m] (step=0020400) Diff: 0.1541 | c12[img=0.2718 canny=0.2311 skel=0.1514] | REPA(w=0.00): 0.0000 | LR: 9.89e-05 | EMA: 0.999559 | Steps/Sec: 4.21 | Mem: 19.12G/19.12G
+[[34m2026-09-13 01:03:09[0m] (step=0020450) Diff: 0.1543 | c12[img=0.2728 canny=0.2312 skel=0.1511] | REPA(w=0.00): 0.0000 | LR: 9.89e-05 | EMA: 0.999560 | Steps/Sec: 4.31 | Mem: 19.12G/19.12G
+[[34m2026-09-13 01:03:12[0m] Beginning epoch 186...
+[[34m2026-09-13 01:03:21[0m] (step=0020500) Diff: 0.1537 | c12[img=0.2716 canny=0.2301 skel=0.1505] | REPA(w=0.00): 0.0000 | LR: 9.89e-05 | EMA: 0.999561 | Steps/Sec: 4.30 | Mem: 19.12G/19.12G
+[[34m2026-09-13 01:03:33[0m] (step=0020550) Diff: 0.1539 | c12[img=0.2717 canny=0.2309 skel=0.1511] | REPA(w=0.00): 0.0000 | LR: 9.89e-05 | EMA: 0.999562 | Steps/Sec: 4.30 | Mem: 19.12G/19.12G
+[[34m2026-09-13 01:03:37[0m] Beginning epoch 187...
+[[34m2026-09-13 01:03:44[0m] (step=0020600) Diff: 0.1535 | c12[img=0.2707 canny=0.2305 skel=0.1509] | REPA(w=0.00): 0.0000 | LR: 9.89e-05 | EMA: 0.999563 | Steps/Sec: 4.30 | Mem: 19.12G/19.12G
+[[34m2026-09-13 01:03:56[0m] (step=0020650) Diff: 0.1538 | c12[img=0.2712 canny=0.2307 skel=0.1511] | REPA(w=0.00): 0.0000 | LR: 9.89e-05 | EMA: 0.999564 | Steps/Sec: 4.30 | Mem: 19.12G/19.12G
+[[34m2026-09-13 01:04:03[0m] Beginning epoch 188...
+[[34m2026-09-13 01:04:08[0m] (step=0020700) Diff: 0.1536 | c12[img=0.2715 canny=0.2301 skel=0.1503] | REPA(w=0.00): 0.0000 | LR: 9.89e-05 | EMA: 0.999565 | Steps/Sec: 4.30 | Mem: 19.12G/19.12G
+[[34m2026-09-13 01:04:19[0m] (step=0020750) Diff: 0.1536 | c12[img=0.2715 canny=0.2298 skel=0.1504] | REPA(w=0.00): 0.0000 | LR: 9.89e-05 | EMA: 0.999566 | Steps/Sec: 4.20 | Mem: 19.12G/19.12G
+[[34m2026-09-13 01:04:29[0m] Beginning epoch 189...
+[[34m2026-09-13 01:04:31[0m] (step=0020800) Diff: 0.1524 | c12[img=0.2686 canny=0.2289 skel=0.1498] | REPA(w=0.00): 0.0000 | LR: 9.89e-05 | EMA: 0.999567 | Steps/Sec: 4.29 | Mem: 19.12G/19.12G
+[[34m2026-09-13 01:04:43[0m] (step=0020850) Diff: 0.1535 | c12[img=0.2712 canny=0.2299 skel=0.1505] | REPA(w=0.00): 0.0000 | LR: 9.88e-05 | EMA: 0.999569 | Steps/Sec: 4.29 | Mem: 19.12G/19.12G
+[[34m2026-09-13 01:04:54[0m] (step=0020900) Diff: 0.1531 | c12[img=0.2703 canny=0.2295 skel=0.1501] | REPA(w=0.00): 0.0000 | LR: 9.88e-05 | EMA: 0.999570 | Steps/Sec: 4.29 | Mem: 19.12G/19.12G
+[[34m2026-09-13 01:04:54[0m] Beginning epoch 190...
+[[34m2026-09-13 01:05:06[0m] (step=0020950) Diff: 0.1529 | c12[img=0.2707 canny=0.2287 skel=0.1494] | REPA(w=0.00): 0.0000 | LR: 9.88e-05 | EMA: 0.999571 | Steps/Sec: 4.24 | Mem: 19.12G/19.12G
+[[34m2026-09-13 01:05:18[0m] (step=0021000) Diff: 0.1530 | c12[img=0.2703 canny=0.2292 skel=0.1500] | REPA(w=0.00): 0.0000 | LR: 9.88e-05 | EMA: 0.999572 | Steps/Sec: 4.29 | Mem: 19.12G/19.12G
+[[34m2026-09-13 01:05:18[0m] (step=0021000) [diag] grad-norm: blocks=0.069 callig_chain=0.007 glyph_embedder=0.012 inj_out_proj=0.013 other=0.059
+[[34m2026-09-13 01:05:20[0m] Beginning epoch 191...
+[[34m2026-09-13 01:05:29[0m] (step=0021050) Diff: 0.1536 | c12[img=0.2717 canny=0.2296 skel=0.1502] | REPA(w=0.00): 0.0000 | LR: 9.88e-05 | EMA: 0.999573 | Steps/Sec: 4.29 | Mem: 19.12G/19.12G
+[[34m2026-09-13 01:05:41[0m] (step=0021100) Diff: 0.1527 | c12[img=0.2698 canny=0.2288 skel=0.1495] | REPA(w=0.00): 0.0000 | LR: 9.88e-05 | EMA: 0.999574 | Steps/Sec: 4.29 | Mem: 19.12G/19.12G
+[[34m2026-09-13 01:05:46[0m] Beginning epoch 192...
+[[34m2026-09-13 01:05:53[0m] (step=0021150) Diff: 0.1535 | c12[img=0.2713 canny=0.2296 skel=0.1503] | REPA(w=0.00): 0.0000 | LR: 9.88e-05 | EMA: 0.999575 | Steps/Sec: 4.27 | Mem: 19.12G/19.12G
+[[34m2026-09-13 01:06:04[0m] (step=0021200) Diff: 0.1538 | c12[img=0.2717 canny=0.2302 skel=0.1507] | REPA(w=0.00): 0.0000 | LR: 9.88e-05 | EMA: 0.999576 | Steps/Sec: 4.30 | Mem: 19.12G/19.12G
+[[34m2026-09-13 01:06:11[0m] Beginning epoch 193...
+[[34m2026-09-13 01:06:16[0m] (step=0021250) Diff: 0.1524 | c12[img=0.2689 canny=0.2290 skel=0.1496] | REPA(w=0.00): 0.0000 | LR: 9.88e-05 | EMA: 0.999577 | Steps/Sec: 4.29 | Mem: 19.12G/19.12G
+[[34m2026-09-13 01:06:28[0m] (step=0021300) Diff: 0.1527 | c12[img=0.2691 canny=0.2294 skel=0.1500] | REPA(w=0.00): 0.0000 | LR: 9.88e-05 | EMA: 0.999578 | Steps/Sec: 4.30 | Mem: 19.12G/19.12G
+[[34m2026-09-13 01:06:37[0m] Beginning epoch 194...
+[[34m2026-09-13 01:06:39[0m] (step=0021350) Diff: 0.1529 | c12[img=0.2702 canny=0.2293 skel=0.1498] | REPA(w=0.00): 0.0000 | LR: 9.88e-05 | EMA: 0.999579 | Steps/Sec: 4.30 | Mem: 19.12G/19.12G
+[[34m2026-09-13 01:06:51[0m] (step=0021400) Diff: 0.1536 | c12[img=0.2717 canny=0.2298 skel=0.1503] | REPA(w=0.00): 0.0000 | LR: 9.88e-05 | EMA: 0.999580 | Steps/Sec: 4.30 | Mem: 19.12G/19.12G
+[[34m2026-09-13 01:07:03[0m] (step=0021450) Diff: 0.1527 | c12[img=0.2698 canny=0.2286 skel=0.1494] | REPA(w=0.00): 0.0000 | LR: 9.88e-05 | EMA: 0.999581 | Steps/Sec: 4.30 | Mem: 19.12G/19.12G
+[[34m2026-09-13 01:07:03[0m] Beginning epoch 195...
+[[34m2026-09-13 01:07:14[0m] (step=0021500) Diff: 0.1523 | c12[img=0.2687 canny=0.2286 skel=0.1494] | REPA(w=0.00): 0.0000 | LR: 9.88e-05 | EMA: 0.999582 | Steps/Sec: 4.24 | Mem: 19.12G/19.12G
+[[34m2026-09-13 01:07:26[0m] (step=0021550) Diff: 0.1517 | c12[img=0.2676 canny=0.2283 skel=0.1489] | REPA(w=0.00): 0.0000 | LR: 9.88e-05 | EMA: 0.999583 | Steps/Sec: 4.30 | Mem: 19.12G/19.12G
+[[34m2026-09-13 01:07:28[0m] Beginning epoch 196...
+[[34m2026-09-13 01:07:38[0m] (step=0021600) Diff: 0.1526 | c12[img=0.2698 canny=0.2285 skel=0.1494] | REPA(w=0.00): 0.0000 | LR: 9.87e-05 | EMA: 0.999584 | Steps/Sec: 4.27 | Mem: 19.12G/19.12G
+[[34m2026-09-13 01:07:49[0m] (step=0021650) Diff: 0.1519 | c12[img=0.2679 canny=0.2283 skel=0.1493] | REPA(w=0.00): 0.0000 | LR: 9.87e-05 | EMA: 0.999584 | Steps/Sec: 4.30 | Mem: 19.12G/19.12G
+[[34m2026-09-13 01:07:54[0m] Beginning epoch 197...
+[[34m2026-09-13 01:08:01[0m] (step=0021700) Diff: 0.1522 | c12[img=0.2686 canny=0.2283 skel=0.1492] | REPA(w=0.00): 0.0000 | LR: 9.87e-05 | EMA: 0.999585 | Steps/Sec: 4.26 | Mem: 19.12G/19.12G
+[[34m2026-09-13 01:08:13[0m] (step=0021750) Diff: 0.1521 | c12[img=0.2688 canny=0.2282 skel=0.1489] | REPA(w=0.00): 0.0000 | LR: 9.87e-05 | EMA: 0.999586 | Steps/Sec: 4.29 | Mem: 19.12G/19.12G
+[[34m2026-09-13 01:08:20[0m] Beginning epoch 198...
+[[34m2026-09-13 01:08:24[0m] (step=0021800) Diff: 0.1523 | c12[img=0.2691 canny=0.2284 skel=0.1491] | REPA(w=0.00): 0.0000 | LR: 9.87e-05 | EMA: 0.999587 | Steps/Sec: 4.28 | Mem: 19.12G/19.12G
+[[34m2026-09-13 01:08:36[0m] (step=0021850) Diff: 0.1521 | c12[img=0.2691 canny=0.2279 skel=0.1487] | REPA(w=0.00): 0.0000 | LR: 9.87e-05 | EMA: 0.999588 | Steps/Sec: 4.29 | Mem: 19.12G/19.12G
+[[34m2026-09-13 01:08:45[0m] Beginning epoch 199...
+[[34m2026-09-13 01:08:48[0m] (step=0021900) Diff: 0.1522 | c12[img=0.2689 canny=0.2283 skel=0.1490] | REPA(w=0.00): 0.0000 | LR: 9.87e-05 | EMA: 0.999589 | Steps/Sec: 4.30 | Mem: 19.12G/19.12G
+[[34m2026-09-13 01:08:59[0m] (step=0021950) Diff: 0.1521 | c12[img=0.2690 canny=0.2278 skel=0.1487] | REPA(w=0.00): 0.0000 | LR: 9.87e-05 | EMA: 0.999590 | Steps/Sec: 4.29 | Mem: 19.12G/19.12G
+[[34m2026-09-13 01:09:11[0m] (step=0022000) Diff: 0.1514 | c12[img=0.2674 canny=0.2273 skel=0.1483] | REPA(w=0.00): 0.0000 | LR: 9.87e-05 | EMA: 0.999591 | Steps/Sec: 4.30 | Mem: 19.12G/19.12G
+[[34m2026-09-13 01:09:11[0m] (step=0022000) [diag] grad-norm: blocks=0.074 callig_chain=0.008 glyph_embedder=0.014 inj_out_proj=0.014 other=0.069
+[[34m2026-09-13 01:09:11[0m] Beginning epoch 200...
+[[34m2026-09-13 01:09:23[0m] (step=0022050) Diff: 0.1529 | c12[img=0.2704 canny=0.2289 skel=0.1494] | REPA(w=0.00): 0.0000 | LR: 9.87e-05 | EMA: 0.999592 | Steps/Sec: 4.25 | Mem: 19.12G/19.12G
+[[34m2026-09-13 01:09:34[0m] (step=0022100) Diff: 0.1521 | c12[img=0.2689 canny=0.2276 skel=0.1488] | REPA(w=0.00): 0.0000 | LR: 9.87e-05 | EMA: 0.999593 | Steps/Sec: 4.30 | Mem: 19.12G/19.12G
+[[34m2026-09-13 01:09:37[0m] Beginning epoch 201...
+[[34m2026-09-13 01:09:46[0m] (step=0022150) Diff: 0.1522 | c12[img=0.2688 canny=0.2285 skel=0.1493] | REPA(w=0.00): 0.0000 | LR: 9.87e-05 | EMA: 0.999594 | Steps/Sec: 4.29 | Mem: 19.12G/19.12G
+[[34m2026-09-13 01:09:58[0m] (step=0022200) Diff: 0.1522 | c12[img=0.2692 canny=0.2278 skel=0.1488] | REPA(w=0.00): 0.0000 | LR: 9.87e-05 | EMA: 0.999595 | Steps/Sec: 4.29 | Mem: 19.12G/19.12G
+[[34m2026-09-13 01:10:02[0m] Beginning epoch 202...
+[[34m2026-09-13 01:10:09[0m] (step=0022250) Diff: 0.1513 | c12[img=0.2677 canny=0.2267 skel=0.1476] | REPA(w=0.00): 0.0000 | LR: 9.87e-05 | EMA: 0.999596 | Steps/Sec: 4.29 | Mem: 19.12G/19.12G
+[[34m2026-09-13 01:10:21[0m] (step=0022300) Diff: 0.1508 | c12[img=0.2662 canny=0.2268 skel=0.1476] | REPA(w=0.00): 0.0000 | LR: 9.87e-05 | EMA: 0.999597 | Steps/Sec: 4.30 | Mem: 19.12G/19.12G
+[[34m2026-09-13 01:10:28[0m] Beginning epoch 203...
+[[34m2026-09-13 01:10:33[0m] (step=0022350) Diff: 0.1517 | c12[img=0.2679 canny=0.2275 skel=0.1487] | REPA(w=0.00): 0.0000 | LR: 9.86e-05 | EMA: 0.999597 | Steps/Sec: 4.29 | Mem: 19.12G/19.12G
+[[34m2026-09-13 01:10:44[0m] (step=0022400) Diff: 0.1517 | c12[img=0.2684 canny=0.2273 skel=0.1482] | REPA(w=0.00): 0.0000 | LR: 9.86e-05 | EMA: 0.999598 | Steps/Sec: 4.29 | Mem: 19.12G/19.12G
+[[34m2026-09-13 01:10:53[0m] Beginning epoch 204...
+[[34m2026-09-13 01:10:56[0m] (step=0022450) Diff: 0.1514 | c12[img=0.2679 canny=0.2268 skel=0.1477] | REPA(w=0.00): 0.0000 | LR: 9.86e-05 | EMA: 0.999599 | Steps/Sec: 4.29 | Mem: 19.12G/19.12G
+[[34m2026-09-13 01:11:08[0m] (step=0022500) Diff: 0.1512 | c12[img=0.2676 canny=0.2267 skel=0.1476] | REPA(w=0.00): 0.0000 | LR: 9.86e-05 | EMA: 0.999600 | Steps/Sec: 4.29 | Mem: 19.12G/19.12G
+[[34m2026-09-13 01:11:09[0m] Saved checkpoint to assets/results/v11_pretrain_M432_v8_auxc03s08/20260912-234049-v11-pretrain-M432-v8-auxc03s08/checkpoints/0022500.pt
+[[34m2026-09-13 01:11:20[0m] (step=0022550) Diff: 0.1514 | c12[img=0.2680 canny=0.2268 skel=0.1478] | REPA(w=0.00): 0.0000 | LR: 9.86e-05 | EMA: 0.999601 | Steps/Sec: 3.90 | Mem: 19.12G/19.12G
+[[34m2026-09-13 01:11:20[0m] Beginning epoch 205...
+[[34m2026-09-13 01:11:34[0m] (step=0022600) Diff: 0.1517 | c12[img=0.2680 canny=0.2277 skel=0.1483] | REPA(w=0.00): 0.0000 | LR: 9.86e-05 | EMA: 0.999602 | Steps/Sec: 3.64 | Mem: 19.12G/19.12G
+[[34m2026-09-13 01:11:46[0m] (step=0022650) Diff: 0.1508 | c12[img=0.2663 canny=0.2265 skel=0.1477] | REPA(w=0.00): 0.0000 | LR: 9.86e-05 | EMA: 0.999603 | Steps/Sec: 4.14 | Mem: 19.12G/19.12G
+[[34m2026-09-13 01:11:48[0m] Beginning epoch 206...
+[[34m2026-09-13 01:11:58[0m] (step=0022700) Diff: 0.1513 | c12[img=0.2678 canny=0.2265 skel=0.1478] | REPA(w=0.00): 0.0000 | LR: 9.86e-05 | EMA: 0.999604 | Steps/Sec: 4.30 | Mem: 19.12G/19.12G
+[[34m2026-09-13 01:12:09[0m] (step=0022750) Diff: 0.1517 | c12[img=0.2683 canny=0.2275 skel=0.1482] | REPA(w=0.00): 0.0000 | LR: 9.86e-05 | EMA: 0.999605 | Steps/Sec: 4.30 | Mem: 19.12G/19.12G
+[[34m2026-09-13 01:12:14[0m] Beginning epoch 207...
+[[34m2026-09-13 01:12:21[0m] (step=0022800) Diff: 0.1504 | c12[img=0.2656 canny=0.2258 skel=0.1473] | REPA(w=0.00): 0.0000 | LR: 9.86e-05 | EMA: 0.999605 | Steps/Sec: 4.30 | Mem: 19.12G/19.12G
+[[34m2026-09-13 01:12:33[0m] (step=0022850) Diff: 0.1505 | c12[img=0.2660 canny=0.2257 skel=0.1472] | REPA(w=0.00): 0.0000 | LR: 9.86e-05 | EMA: 0.999606 | Steps/Sec: 4.30 | Mem: 19.12G/19.12G
+[[34m2026-09-13 01:12:40[0m] Beginning epoch 208...
+[[34m2026-09-13 01:12:44[0m] (step=0022900) Diff: 0.1514 | c12[img=0.2677 canny=0.2271 skel=0.1481] | REPA(w=0.00): 0.0000 | LR: 9.86e-05 | EMA: 0.999607 | Steps/Sec: 4.27 | Mem: 19.12G/19.12G
+[[34m2026-09-13 01:12:56[0m] (step=0022950) Diff: 0.1508 | c12[img=0.2665 canny=0.2261 skel=0.1476] | REPA(w=0.00): 0.0000 | LR: 9.86e-05 | EMA: 0.999608 | Steps/Sec: 4.30 | Mem: 19.12G/19.12G
+[[34m2026-09-13 01:13:05[0m] Beginning epoch 209...
+[[34m2026-09-13 01:13:08[0m] (step=0023000) Diff: 0.1516 | c12[img=0.2680 canny=0.2276 skel=0.1482] | REPA(w=0.00): 0.0000 | LR: 9.86e-05 | EMA: 0.999609 | Steps/Sec: 4.30 | Mem: 19.12G/19.12G
+[[34m2026-09-13 01:13:08[0m] (step=0023000) [diag] grad-norm: blocks=0.061 callig_chain=0.006 glyph_embedder=0.010 inj_out_proj=0.012 other=0.071
+[[34m2026-09-13 01:13:19[0m] (step=0023050) Diff: 0.1506 | c12[img=0.2664 canny=0.2258 skel=0.1471] | REPA(w=0.00): 0.0000 | LR: 9.85e-05 | EMA: 0.999610 | Steps/Sec: 4.29 | Mem: 19.12G/19.12G
+[[34m2026-09-13 01:13:31[0m] (step=0023100) Diff: 0.1507 | c12[img=0.2660 canny=0.2264 skel=0.1476] | REPA(w=0.00): 0.0000 | LR: 9.85e-05 | EMA: 0.999611 | Steps/Sec: 4.30 | Mem: 19.12G/19.12G
+[[34m2026-09-13 01:13:31[0m] Beginning epoch 210...
+[[34m2026-09-13 01:13:43[0m] (step=0023150) Diff: 0.1506 | c12[img=0.2662 canny=0.2260 skel=0.1473] | REPA(w=0.00): 0.0000 | LR: 9.85e-05 | EMA: 0.999611 | Steps/Sec: 4.26 | Mem: 19.12G/19.12G
+[[34m2026-09-13 01:13:54[0m] (step=0023200) Diff: 0.1510 | c12[img=0.2672 canny=0.2262 skel=0.1475] | REPA(w=0.00): 0.0000 | LR: 9.85e-05 | EMA: 0.999612 | Steps/Sec: 4.30 | Mem: 19.12G/19.12G
+[[34m2026-09-13 01:13:57[0m] Beginning epoch 211...
+[[34m2026-09-13 01:14:06[0m] (step=0023250) Diff: 0.1511 | c12[img=0.2676 canny=0.2265 skel=0.1474] | REPA(w=0.00): 0.0000 | LR: 9.85e-05 | EMA: 0.999613 | Steps/Sec: 4.27 | Mem: 19.12G/19.12G
+[[34m2026-09-13 01:14:18[0m] (step=0023300) Diff: 0.1506 | c12[img=0.2667 canny=0.2256 skel=0.1469] | REPA(w=0.00): 0.0000 | LR: 9.85e-05 | EMA: 0.999614 | Steps/Sec: 4.30 | Mem: 19.12G/19.12G
+[[34m2026-09-13 01:14:22[0m] Beginning epoch 212...
+[[34m2026-09-13 01:14:29[0m] (step=0023350) Diff: 0.1505 | c12[img=0.2656 canny=0.2262 skel=0.1475] | REPA(w=0.00): 0.0000 | LR: 9.85e-05 | EMA: 0.999615 | Steps/Sec: 4.29 | Mem: 19.12G/19.12G
+[[34m2026-09-13 01:14:41[0m] (step=0023400) Diff: 0.1497 | c12[img=0.2645 canny=0.2250 skel=0.1464] | REPA(w=0.00): 0.0000 | LR: 9.85e-05 | EMA: 0.999616 | Steps/Sec: 4.29 | Mem: 19.12G/19.12G
+[[34m2026-09-13 01:14:48[0m] Beginning epoch 213...
+[[34m2026-09-13 01:14:53[0m] (step=0023450) Diff: 0.1488 | c12[img=0.2629 canny=0.2240 skel=0.1455] | REPA(w=0.00): 0.0000 | LR: 9.85e-05 | EMA: 0.999616 | Steps/Sec: 4.29 | Mem: 19.12G/19.12G
+[[34m2026-09-13 01:15:04[0m] (step=0023500) Diff: 0.1498 | c12[img=0.2645 canny=0.2253 skel=0.1466] | REPA(w=0.00): 0.0000 | LR: 9.85e-05 | EMA: 0.999617 | Steps/Sec: 4.29 | Mem: 19.12G/19.12G
+[[34m2026-09-13 01:15:14[0m] Beginning epoch 214...
+[[34m2026-09-13 01:15:16[0m] (step=0023550) Diff: 0.1504 | c12[img=0.2661 canny=0.2254 skel=0.1469] | REPA(w=0.00): 0.0000 | LR: 9.85e-05 | EMA: 0.999618 | Steps/Sec: 4.30 | Mem: 19.12G/19.12G
+[[34m2026-09-13 01:15:28[0m] (step=0023600) Diff: 0.1499 | c12[img=0.2651 canny=0.2247 skel=0.1464] | REPA(w=0.00): 0.0000 | LR: 9.85e-05 | EMA: 0.999619 | Steps/Sec: 4.29 | Mem: 19.12G/19.12G
+[[34m2026-09-13 01:15:39[0m] (step=0023650) Diff: 0.1510 | c12[img=0.2674 canny=0.2258 skel=0.1474] | REPA(w=0.00): 0.0000 | LR: 9.85e-05 | EMA: 0.999620 | Steps/Sec: 4.30 | Mem: 19.12G/19.12G
+[[34m2026-09-13 01:15:39[0m] Beginning epoch 215...
+[[34m2026-09-13 01:15:51[0m] (step=0023700) Diff: 0.1502 | c12[img=0.2654 canny=0.2256 skel=0.1470] | REPA(w=0.00): 0.0000 | LR: 9.84e-05 | EMA: 0.999620 | Steps/Sec: 4.24 | Mem: 19.12G/19.12G
+[[34m2026-09-13 01:16:03[0m] (step=0023750) Diff: 0.1504 | c12[img=0.2653 canny=0.2262 skel=0.1475] | REPA(w=0.00): 0.0000 | LR: 9.84e-05 | EMA: 0.999621 | Steps/Sec: 4.29 | Mem: 19.12G/19.12G
+[[34m2026-09-13 01:16:05[0m] Beginning epoch 216...
+[[34m2026-09-13 01:16:14[0m] (step=0023800) Diff: 0.1503 | c12[img=0.2656 canny=0.2257 skel=0.1471] | REPA(w=0.00): 0.0000 | LR: 9.84e-05 | EMA: 0.999622 | Steps/Sec: 4.29 | Mem: 19.12G/19.12G
+[[34m2026-09-13 01:16:26[0m] (step=0023850) Diff: 0.1502 | c12[img=0.2658 canny=0.2253 skel=0.1465] | REPA(w=0.00): 0.0000 | LR: 9.84e-05 | EMA: 0.999623 | Steps/Sec: 4.29 | Mem: 19.12G/19.12G
+[[34m2026-09-13 01:16:31[0m] Beginning epoch 217...
+[[34m2026-09-13 01:16:38[0m] (step=0023900) Diff: 0.1503 | c12[img=0.2658 canny=0.2253 skel=0.1467] | REPA(w=0.00): 0.0000 | LR: 9.84e-05 | EMA: 0.999624 | Steps/Sec: 4.29 | Mem: 19.12G/19.12G
+[[34m2026-09-13 01:16:49[0m] (step=0023950) Diff: 0.1498 | c12[img=0.2647 canny=0.2250 skel=0.1464] | REPA(w=0.00): 0.0000 | LR: 9.84e-05 | EMA: 0.999624 | Steps/Sec: 4.29 | Mem: 19.12G/19.12G
+[[34m2026-09-13 01:16:56[0m] Beginning epoch 218...
+[[34m2026-09-13 01:17:01[0m] (step=0024000) Diff: 0.1502 | c12[img=0.2655 canny=0.2254 skel=0.1467] | REPA(w=0.00): 0.0000 | LR: 9.84e-05 | EMA: 0.999625 | Steps/Sec: 4.27 | Mem: 19.12G/19.12G
+[[34m2026-09-13 01:17:01[0m] (step=0024000) [diag] grad-norm: blocks=0.063 callig_chain=0.005 glyph_embedder=0.013 inj_out_proj=0.013 other=0.068
+[[34m2026-09-13 01:17:13[0m] (step=0024050) Diff: 0.1494 | c12[img=0.2641 canny=0.2246 skel=0.1460] | REPA(w=0.00): 0.0000 | LR: 9.84e-05 | EMA: 0.999626 | Steps/Sec: 4.29 | Mem: 19.12G/19.12G
+[[34m2026-09-13 01:17:22[0m] Beginning epoch 219...
+[[34m2026-09-13 01:17:24[0m] (step=0024100) Diff: 0.1497 | c12[img=0.2647 canny=0.2245 skel=0.1462] | REPA(w=0.00): 0.0000 | LR: 9.84e-05 | EMA: 0.999627 | Steps/Sec: 4.29 | Mem: 19.12G/19.12G
+[[34m2026-09-13 01:17:36[0m] (step=0024150) Diff: 0.1503 | c12[img=0.2659 canny=0.2251 skel=0.1467] | REPA(w=0.00): 0.0000 | LR: 9.84e-05 | EMA: 0.999627 | Steps/Sec: 4.29 | Mem: 19.12G/19.12G
+[[34m2026-09-13 01:17:48[0m] (step=0024200) Diff: 0.1497 | c12[img=0.2648 canny=0.2245 skel=0.1462] | REPA(w=0.00): 0.0000 | LR: 9.84e-05 | EMA: 0.999628 | Steps/Sec: 4.30 | Mem: 19.12G/19.12G
+[[34m2026-09-13 01:17:48[0m] Beginning epoch 220...
+[[34m2026-09-13 01:17:59[0m] (step=0024250) Diff: 0.1495 | c12[img=0.2643 canny=0.2244 skel=0.1461] | REPA(w=0.00): 0.0000 | LR: 9.84e-05 | EMA: 0.999629 | Steps/Sec: 4.26 | Mem: 19.12G/19.12G
+[[34m2026-09-13 01:18:11[0m] (step=0024300) Diff: 0.1496 | c12[img=0.2644 canny=0.2244 skel=0.1462] | REPA(w=0.00): 0.0000 | LR: 9.84e-05 | EMA: 0.999630 | Steps/Sec: 4.30 | Mem: 19.12G/19.12G
+[[34m2026-09-13 01:18:13[0m] Beginning epoch 221...
+[[34m2026-09-13 01:18:23[0m] (step=0024350) Diff: 0.1483 | c12[img=0.2620 canny=0.2230 skel=0.1448] | REPA(w=0.00): 0.0000 | LR: 9.84e-05 | EMA: 0.999631 | Steps/Sec: 4.30 | Mem: 19.12G/19.12G
+[[34m2026-09-13 01:18:34[0m] (step=0024400) Diff: 0.1502 | c12[img=0.2660 canny=0.2250 skel=0.1465] | REPA(w=0.00): 0.0000 | LR: 9.83e-05 | EMA: 0.999631 | Steps/Sec: 4.30 | Mem: 19.12G/19.12G
+[[34m2026-09-13 01:18:39[0m] Beginning epoch 222...
+[[34m2026-09-13 01:18:46[0m] (step=0024450) Diff: 0.1496 | c12[img=0.2645 canny=0.2246 skel=0.1462] | REPA(w=0.00): 0.0000 | LR: 9.83e-05 | EMA: 0.999632 | Steps/Sec: 4.28 | Mem: 19.12G/19.12G
+[[34m2026-09-13 01:18:58[0m] (step=0024500) Diff: 0.1494 | c12[img=0.2640 canny=0.2245 skel=0.1461] | REPA(w=0.00): 0.0000 | LR: 9.83e-05 | EMA: 0.999633 | Steps/Sec: 4.30 | Mem: 19.12G/19.12G
+[[34m2026-09-13 01:19:04[0m] Beginning epoch 223...
+[[34m2026-09-13 01:19:09[0m] (step=0024550) Diff: 0.1502 | c12[img=0.2665 canny=0.2247 skel=0.1459] | REPA(w=0.00): 0.0000 | LR: 9.83e-05 | EMA: 0.999634 | Steps/Sec: 4.27 | Mem: 19.12G/19.12G
+[[34m2026-09-13 01:19:21[0m] (step=0024600) Diff: 0.1495 | c12[img=0.2641 canny=0.2246 skel=0.1464] | REPA(w=0.00): 0.0000 | LR: 9.83e-05 | EMA: 0.999634 | Steps/Sec: 4.19 | Mem: 19.12G/19.12G
+[[34m2026-09-13 01:19:30[0m] Beginning epoch 224...
+[[34m2026-09-13 01:19:33[0m] (step=0024650) Diff: 0.1488 | c12[img=0.2631 canny=0.2237 skel=0.1453] | REPA(w=0.00): 0.0000 | LR: 9.83e-05 | EMA: 0.999635 | Steps/Sec: 4.29 | Mem: 19.12G/19.12G
+[[34m2026-09-13 01:19:45[0m] (step=0024700) Diff: 0.1492 | c12[img=0.2642 canny=0.2241 skel=0.1453] | REPA(w=0.00): 0.0000 | LR: 9.83e-05 | EMA: 0.999636 | Steps/Sec: 4.29 | Mem: 19.12G/19.12G
+[[34m2026-09-13 01:19:56[0m] (step=0024750) Diff: 0.1487 | c12[img=0.2625 canny=0.2237 skel=0.1457] | REPA(w=0.00): 0.0000 | LR: 9.83e-05 | EMA: 0.999636 | Steps/Sec: 4.29 | Mem: 19.12G/19.12G
+[[34m2026-09-13 01:19:56[0m] Beginning epoch 225...
+[[34m2026-09-13 01:20:08[0m] (step=0024800) Diff: 0.1483 | c12[img=0.2621 canny=0.2230 skel=0.1450] | REPA(w=0.00): 0.0000 | LR: 9.83e-05 | EMA: 0.999637 | Steps/Sec: 4.25 | Mem: 19.12G/19.12G
+[[34m2026-09-13 01:20:20[0m] (step=0024850) Diff: 0.1498 | c12[img=0.2651 canny=0.2245 skel=0.1462] | REPA(w=0.00): 0.0000 | LR: 9.83e-05 | EMA: 0.999638 | Steps/Sec: 4.29 | Mem: 19.14G/19.14G
+[[34m2026-09-13 01:20:22[0m] Beginning epoch 226...
+[[34m2026-09-13 01:20:31[0m] (step=0024900) Diff: 0.1475 | c12[img=0.2606 canny=0.2221 skel=0.1440] | REPA(w=0.00): 0.0000 | LR: 9.83e-05 | EMA: 0.999639 | Steps/Sec: 4.29 | Mem: 19.14G/19.14G
+[[34m2026-09-13 01:20:43[0m] (step=0024950) Diff: 0.1494 | c12[img=0.2640 canny=0.2245 skel=0.1460] | REPA(w=0.00): 0.0000 | LR: 9.83e-05 | EMA: 0.999639 | Steps/Sec: 4.29 | Mem: 19.14G/19.14G
+[[34m2026-09-13 01:20:47[0m] Beginning epoch 227...
+[[34m2026-09-13 01:20:55[0m] (step=0025000) Diff: 0.1486 | c12[img=0.2632 canny=0.2230 skel=0.1447] | REPA(w=0.00): 0.0000 | LR: 9.82e-05 | EMA: 0.999640 | Steps/Sec: 4.29 | Mem: 19.14G/19.14G
+[[34m2026-09-13 01:20:55[0m] (step=0025000) [diag] grad-norm: blocks=0.055 callig_chain=0.005 glyph_embedder=0.011 inj_out_proj=0.011 other=0.049
+[[34m2026-09-13 01:20:56[0m] Saved checkpoint to assets/results/v11_pretrain_M432_v8_auxc03s08/20260912-234049-v11-pretrain-M432-v8-auxc03s08/checkpoints/0025000.pt
+[[34m2026-09-13 01:21:07[0m] (step=0025050) Diff: 0.1480 | c12[img=0.2614 canny=0.2227 skel=0.1447] | REPA(w=0.00): 0.0000 | LR: 9.82e-05 | EMA: 0.999641 | Steps/Sec: 3.89 | Mem: 19.14G/19.14G
+[[34m2026-09-13 01:21:14[0m] Beginning epoch 228...
+[[34m2026-09-13 01:21:21[0m] (step=0025100) Diff: 0.1489 | c12[img=0.2634 canny=0.2236 skel=0.1455] | REPA(w=0.00): 0.0000 | LR: 9.82e-05 | EMA: 0.999642 | Steps/Sec: 3.57 | Mem: 19.14G/19.14G
+[[34m2026-09-13 01:21:33[0m] (step=0025150) Diff: 0.1487 | c12[img=0.2631 canny=0.2231 skel=0.1453] | REPA(w=0.00): 0.0000 | LR: 9.82e-05 | EMA: 0.999642 | Steps/Sec: 4.29 | Mem: 19.14G/19.14G
+[[34m2026-09-13 01:21:42[0m] Beginning epoch 229...
+[[34m2026-09-13 01:21:45[0m] (step=0025200) Diff: 0.1483 | c12[img=0.2628 canny=0.2224 skel=0.1443] | REPA(w=0.00): 0.0000 | LR: 9.82e-05 | EMA: 0.999643 | Steps/Sec: 4.29 | Mem: 19.14G/19.14G
+[[34m2026-09-13 01:21:56[0m] (step=0025250) Diff: 0.1485 | c12[img=0.2628 canny=0.2229 skel=0.1449] | REPA(w=0.00): 0.0000 | LR: 9.82e-05 | EMA: 0.999644 | Steps/Sec: 4.29 | Mem: 19.14G/19.14G
+[[34m2026-09-13 01:22:08[0m] (step=0025300) Diff: 0.1493 | c12[img=0.2645 canny=0.2235 skel=0.1454] | REPA(w=0.00): 0.0000 | LR: 9.82e-05 | EMA: 0.999644 | Steps/Sec: 4.30 | Mem: 19.14G/19.14G
+[[34m2026-09-13 01:22:08[0m] Beginning epoch 230...
+[[34m2026-09-13 01:22:20[0m] (step=0025350) Diff: 0.1491 | c12[img=0.2640 canny=0.2232 skel=0.1452] | REPA(w=0.00): 0.0000 | LR: 9.82e-05 | EMA: 0.999645 | Steps/Sec: 4.23 | Mem: 19.14G/19.14G
+[[34m2026-09-13 01:22:32[0m] (step=0025400) Diff: 0.1484 | c12[img=0.2623 canny=0.2230 skel=0.1451] | REPA(w=0.00): 0.0000 | LR: 9.82e-05 | EMA: 0.999646 | Steps/Sec: 4.29 | Mem: 19.14G/19.14G
+[[34m2026-09-13 01:22:34[0m] Beginning epoch 231...
+[[34m2026-09-13 01:22:43[0m] (step=0025450) Diff: 0.1484 | c12[img=0.2630 canny=0.2226 skel=0.1444] | REPA(w=0.00): 0.0000 | LR: 9.82e-05 | EMA: 0.999646 | Steps/Sec: 4.26 | Mem: 19.14G/19.14G
+[[34m2026-09-13 01:22:55[0m] (step=0025500) Diff: 0.1497 | c12[img=0.2648 canny=0.2242 skel=0.1463] | REPA(w=0.00): 0.0000 | LR: 9.82e-05 | EMA: 0.999647 | Steps/Sec: 4.29 | Mem: 19.14G/19.14G
+[[34m2026-09-13 01:22:59[0m] Beginning epoch 232...
+[[34m2026-09-13 01:23:07[0m] (step=0025550) Diff: 0.1486 | c12[img=0.2627 canny=0.2232 skel=0.1450] | REPA(w=0.00): 0.0000 | LR: 9.82e-05 | EMA: 0.999648 | Steps/Sec: 4.29 | Mem: 19.14G/19.14G
+[[34m2026-09-13 01:23:18[0m] (step=0025600) Diff: 0.1474 | c12[img=0.2604 canny=0.2217 skel=0.1441] | REPA(w=0.00): 0.0000 | LR: 9.82e-05 | EMA: 0.999649 | Steps/Sec: 4.29 | Mem: 19.14G/19.14G
+[[34m2026-09-13 01:23:25[0m] Beginning epoch 233...
+[[34m2026-09-13 01:23:30[0m] (step=0025650) Diff: 0.1480 | c12[img=0.2614 canny=0.2227 skel=0.1448] | REPA(w=0.00): 0.0000 | LR: 9.81e-05 | EMA: 0.999649 | Steps/Sec: 4.22 | Mem: 19.14G/19.14G
+[[34m2026-09-13 01:23:42[0m] (step=0025700) Diff: 0.1483 | c12[img=0.2625 canny=0.2226 skel=0.1445] | REPA(w=0.00): 0.0000 | LR: 9.81e-05 | EMA: 0.999650 | Steps/Sec: 4.29 | Mem: 19.14G/19.14G
+[[34m2026-09-13 01:23:51[0m] Beginning epoch 234...
+[[34m2026-09-13 01:23:53[0m] (step=0025750) Diff: 0.1485 | c12[img=0.2628 canny=0.2226 skel=0.1448] | REPA(w=0.00): 0.0000 | LR: 9.81e-05 | EMA: 0.999651 | Steps/Sec: 4.29 | Mem: 19.14G/19.14G
+[[34m2026-09-13 01:24:05[0m] (step=0025800) Diff: 0.1484 | c12[img=0.2624 canny=0.2229 skel=0.1450] | REPA(w=0.00): 0.0000 | LR: 9.81e-05 | EMA: 0.999651 | Steps/Sec: 4.29 | Mem: 19.14G/19.14G
+[[34m2026-09-13 01:24:17[0m] (step=0025850) Diff: 0.1483 | c12[img=0.2630 canny=0.2221 skel=0.1443] | REPA(w=0.00): 0.0000 | LR: 9.81e-05 | EMA: 0.999652 | Steps/Sec: 4.29 | Mem: 19.14G/19.14G
+[[34m2026-09-13 01:24:17[0m] Beginning epoch 235...
+[[34m2026-09-13 01:24:28[0m] (step=0025900) Diff: 0.1488 | c12[img=0.2634 canny=0.2232 skel=0.1451] | REPA(w=0.00): 0.0000 | LR: 9.81e-05 | EMA: 0.999653 | Steps/Sec: 4.25 | Mem: 19.14G/19.14G
+[[34m2026-09-13 01:24:40[0m] (step=0025950) Diff: 0.1486 | c12[img=0.2633 canny=0.2226 skel=0.1446] | REPA(w=0.00): 0.0000 | LR: 9.81e-05 | EMA: 0.999653 | Steps/Sec: 4.29 | Mem: 19.14G/19.14G
+[[34m2026-09-13 01:24:42[0m] Beginning epoch 236...
+[[34m2026-09-13 01:24:52[0m] (step=0026000) Diff: 0.1476 | c12[img=0.2613 canny=0.2217 skel=0.1436] | REPA(w=0.00): 0.0000 | LR: 9.81e-05 | EMA: 0.999654 | Steps/Sec: 4.29 | Mem: 19.14G/19.14G
+[[34m2026-09-13 01:24:52[0m] (step=0026000) [diag] grad-norm: blocks=0.051 callig_chain=0.005 glyph_embedder=0.014 inj_out_proj=0.011 other=0.043
+[[34m2026-09-13 01:25:03[0m] (step=0026050) Diff: 0.1483 | c12[img=0.2624 canny=0.2226 skel=0.1447] | REPA(w=0.00): 0.0000 | LR: 9.81e-05 | EMA: 0.999655 | Steps/Sec: 4.29 | Mem: 19.14G/19.14G
+[[34m2026-09-13 01:25:08[0m] Beginning epoch 237...
+[[34m2026-09-13 01:25:15[0m] (step=0026100) Diff: 0.1480 | c12[img=0.2619 canny=0.2222 skel=0.1442] | REPA(w=0.00): 0.0000 | LR: 9.81e-05 | EMA: 0.999655 | Steps/Sec: 4.27 | Mem: 19.14G/19.14G
+[[34m2026-09-13 01:25:27[0m] (step=0026150) Diff: 0.1484 | c12[img=0.2625 canny=0.2231 skel=0.1448] | REPA(w=0.00): 0.0000 | LR: 9.81e-05 | EMA: 0.999656 | Steps/Sec: 4.29 | Mem: 19.14G/19.14G
+[[34m2026-09-13 01:25:34[0m] Beginning epoch 238...
+[[34m2026-09-13 01:25:39[0m] (step=0026200) Diff: 0.1480 | c12[img=0.2622 canny=0.2221 skel=0.1440] | REPA(w=0.00): 0.0000 | LR: 9.81e-05 | EMA: 0.999657 | Steps/Sec: 4.27 | Mem: 19.14G/19.14G
+[[34m2026-09-13 01:25:50[0m] (step=0026250) Diff: 0.1480 | c12[img=0.2619 canny=0.2224 skel=0.1444] | REPA(w=0.00): 0.0000 | LR: 9.80e-05 | EMA: 0.999657 | Steps/Sec: 4.29 | Mem: 19.14G/19.14G
+[[34m2026-09-13 01:25:59[0m] Beginning epoch 239...
+[[34m2026-09-13 01:26:02[0m] (step=0026300) Diff: 0.1480 | c12[img=0.2622 canny=0.2220 skel=0.1441] | REPA(w=0.00): 0.0000 | LR: 9.80e-05 | EMA: 0.999658 | Steps/Sec: 4.28 | Mem: 19.14G/19.14G
+[[34m2026-09-13 01:26:13[0m] (step=0026350) Diff: 0.1484 | c12[img=0.2631 canny=0.2220 skel=0.1443] | REPA(w=0.00): 0.0000 | LR: 9.80e-05 | EMA: 0.999659 | Steps/Sec: 4.29 | Mem: 19.14G/19.14G
+[[34m2026-09-13 01:26:25[0m] (step=0026400) Diff: 0.1479 | c12[img=0.2618 canny=0.2219 skel=0.1441] | REPA(w=0.00): 0.0000 | LR: 9.80e-05 | EMA: 0.999659 | Steps/Sec: 4.29 | Mem: 19.14G/19.14G
+[[34m2026-09-13 01:26:25[0m] Beginning epoch 240...
+[[34m2026-09-13 01:26:37[0m] (step=0026450) Diff: 0.1481 | c12[img=0.2620 canny=0.2224 skel=0.1444] | REPA(w=0.00): 0.0000 | LR: 9.80e-05 | EMA: 0.999660 | Steps/Sec: 4.23 | Mem: 19.14G/19.14G
+[[34m2026-09-13 01:26:49[0m] (step=0026500) Diff: 0.1486 | c12[img=0.2634 canny=0.2224 skel=0.1445] | REPA(w=0.00): 0.0000 | LR: 9.80e-05 | EMA: 0.999660 | Steps/Sec: 4.20 | Mem: 19.14G/19.14G
+[[34m2026-09-13 01:26:51[0m] Beginning epoch 241...
+[[34m2026-09-13 01:27:01[0m] (step=0026550) Diff: 0.1462 | c12[img=0.2580 canny=0.2203 skel=0.1430] | REPA(w=0.00): 0.0000 | LR: 9.80e-05 | EMA: 0.999661 | Steps/Sec: 4.28 | Mem: 19.14G/19.14G
+[[34m2026-09-13 01:27:12[0m] (step=0026600) Diff: 0.1478 | c12[img=0.2619 canny=0.2216 skel=0.1437] | REPA(w=0.00): 0.0000 | LR: 9.80e-05 | EMA: 0.999662 | Steps/Sec: 4.29 | Mem: 19.14G/19.14G
+[[34m2026-09-13 01:27:17[0m] Beginning epoch 242...
+[[34m2026-09-13 01:27:24[0m] (step=0026650) Diff: 0.1480 | c12[img=0.2618 canny=0.2220 skel=0.1444] | REPA(w=0.00): 0.0000 | LR: 9.80e-05 | EMA: 0.999662 | Steps/Sec: 4.27 | Mem: 19.14G/19.14G
+[[34m2026-09-13 01:27:36[0m] (step=0026700) Diff: 0.1471 | c12[img=0.2604 canny=0.2210 skel=0.1434] | REPA(w=0.00): 0.0000 | LR: 9.80e-05 | EMA: 0.999663 | Steps/Sec: 4.29 | Mem: 19.14G/19.14G
+[[34m2026-09-13 01:27:42[0m] Beginning epoch 243...
+[[34m2026-09-13 01:27:47[0m] (step=0026750) Diff: 0.1481 | c12[img=0.2622 canny=0.2224 skel=0.1442] | REPA(w=0.00): 0.0000 | LR: 9.80e-05 | EMA: 0.999664 | Steps/Sec: 4.27 | Mem: 19.14G/19.14G
+[[34m2026-09-13 01:27:59[0m] (step=0026800) Diff: 0.1473 | c12[img=0.2612 canny=0.2209 skel=0.1432] | REPA(w=0.00): 0.0000 | LR: 9.80e-05 | EMA: 0.999664 | Steps/Sec: 4.29 | Mem: 19.14G/19.14G
+[[34m2026-09-13 01:28:08[0m] Beginning epoch 244...
+[[34m2026-09-13 01:28:11[0m] (step=0026850) Diff: 0.1472 | c12[img=0.2603 canny=0.2213 skel=0.1436] | REPA(w=0.00): 0.0000 | LR: 9.79e-05 | EMA: 0.999665 | Steps/Sec: 4.29 | Mem: 19.14G/19.14G
+[[34m2026-09-13 01:28:22[0m] (step=0026900) Diff: 0.1476 | c12[img=0.2616 canny=0.2214 skel=0.1433] | REPA(w=0.00): 0.0000 | LR: 9.79e-05 | EMA: 0.999666 | Steps/Sec: 4.29 | Mem: 19.14G/19.14G
+[[34m2026-09-13 01:28:34[0m] (step=0026950) Diff: 0.1473 | c12[img=0.2607 canny=0.2211 skel=0.1437] | REPA(w=0.00): 0.0000 | LR: 9.79e-05 | EMA: 0.999666 | Steps/Sec: 4.30 | Mem: 19.14G/19.14G
+[[34m2026-09-13 01:28:34[0m] Beginning epoch 245...
+[[34m2026-09-13 01:28:46[0m] (step=0027000) Diff: 0.1475 | c12[img=0.2608 canny=0.2217 skel=0.1439] | REPA(w=0.00): 0.0000 | LR: 9.79e-05 | EMA: 0.999667 | Steps/Sec: 4.22 | Mem: 19.14G/19.14G
+[[34m2026-09-13 01:28:46[0m] (step=0027000) [diag] grad-norm: blocks=0.060 callig_chain=0.005 glyph_embedder=0.016 inj_out_proj=0.010 other=0.057
+[[34m2026-09-13 01:28:57[0m] (step=0027050) Diff: 0.1475 | c12[img=0.2613 canny=0.2212 skel=0.1435] | REPA(w=0.00): 0.0000 | LR: 9.79e-05 | EMA: 0.999667 | Steps/Sec: 4.29 | Mem: 19.14G/19.14G
+[[34m2026-09-13 01:29:00[0m] Beginning epoch 246...
+[[34m2026-09-13 01:29:09[0m] (step=0027100) Diff: 0.1469 | c12[img=0.2603 canny=0.2201 skel=0.1430] | REPA(w=0.00): 0.0000 | LR: 9.79e-05 | EMA: 0.999668 | Steps/Sec: 4.27 | Mem: 19.14G/19.14G
+[[34m2026-09-13 01:29:21[0m] (step=0027150) Diff: 0.1478 | c12[img=0.2618 canny=0.2216 skel=0.1439] | REPA(w=0.00): 0.0000 | LR: 9.79e-05 | EMA: 0.999669 | Steps/Sec: 4.29 | Mem: 19.14G/19.14G
+[[34m2026-09-13 01:29:25[0m] Beginning epoch 247...
+[[34m2026-09-13 01:29:32[0m] (step=0027200) Diff: 0.1472 | c12[img=0.2608 canny=0.2209 skel=0.1432] | REPA(w=0.00): 0.0000 | LR: 9.79e-05 | EMA: 0.999669 | Steps/Sec: 4.28 | Mem: 19.14G/19.14G
+[[34m2026-09-13 01:29:44[0m] (step=0027250) Diff: 0.1474 | c12[img=0.2608 canny=0.2210 skel=0.1437] | REPA(w=0.00): 0.0000 | LR: 9.79e-05 | EMA: 0.999670 | Steps/Sec: 4.28 | Mem: 19.14G/19.14G
+[[34m2026-09-13 01:29:51[0m] Beginning epoch 248...
+[[34m2026-09-13 01:29:56[0m] (step=0027300) Diff: 0.1471 | c12[img=0.2603 canny=0.2209 skel=0.1433] | REPA(w=0.00): 0.0000 | LR: 9.79e-05 | EMA: 0.999670 | Steps/Sec: 4.27 | Mem: 19.14G/19.14G
+[[34m2026-09-13 01:30:08[0m] (step=0027350) Diff: 0.1466 | c12[img=0.2594 canny=0.2205 skel=0.1429] | REPA(w=0.00): 0.0000 | LR: 9.79e-05 | EMA: 0.999671 | Steps/Sec: 4.29 | Mem: 19.14G/19.14G
+[[34m2026-09-13 01:30:17[0m] Beginning epoch 249...
+[[34m2026-09-13 01:30:19[0m] (step=0027400) Diff: 0.1464 | c12[img=0.2590 canny=0.2201 skel=0.1427] | REPA(w=0.00): 0.0000 | LR: 9.79e-05 | EMA: 0.999672 | Steps/Sec: 4.28 | Mem: 19.14G/19.14G
+[[34m2026-09-13 01:30:31[0m] (step=0027450) Diff: 0.1474 | c12[img=0.2610 canny=0.2212 skel=0.1435] | REPA(w=0.00): 0.0000 | LR: 9.78e-05 | EMA: 0.999672 | Steps/Sec: 4.29 | Mem: 19.14G/19.14G
+[[34m2026-09-13 01:30:42[0m] (step=0027500) Diff: 0.1464 | c12[img=0.2592 canny=0.2198 skel=0.1425] | REPA(w=0.00): 0.0000 | LR: 9.78e-05 | EMA: 0.999673 | Steps/Sec: 4.30 | Mem: 19.14G/19.14G
+[[34m2026-09-13 01:30:44[0m] Saved checkpoint to assets/results/v11_pretrain_M432_v8_auxc03s08/20260912-234049-v11-pretrain-M432-v8-auxc03s08/checkpoints/0027500.pt
+[[34m2026-09-13 01:30:44[0m] Beginning epoch 250...
+[[34m2026-09-13 01:30:55[0m] (step=0027550) Diff: 0.1465 | c12[img=0.2592 canny=0.2203 skel=0.1428] | REPA(w=0.00): 0.0000 | LR: 9.78e-05 | EMA: 0.999673 | Steps/Sec: 3.85 | Mem: 19.14G/19.14G
+[[34m2026-09-13 01:31:09[0m] (step=0027600) Diff: 0.1466 | c12[img=0.2597 canny=0.2199 skel=0.1425] | REPA(w=0.00): 0.0000 | LR: 9.78e-05 | EMA: 0.999674 | Steps/Sec: 3.61 | Mem: 19.14G/19.14G
+[[34m2026-09-13 01:31:12[0m] Beginning epoch 251...
+[[34m2026-09-13 01:31:21[0m] (step=0027650) Diff: 0.1467 | c12[img=0.2598 canny=0.2203 skel=0.1429] | REPA(w=0.00): 0.0000 | LR: 9.78e-05 | EMA: 0.999675 | Steps/Sec: 4.29 | Mem: 19.14G/19.14G
+[[34m2026-09-13 01:31:33[0m] (step=0027700) Diff: 0.1463 | c12[img=0.2594 canny=0.2195 skel=0.1421] | REPA(w=0.00): 0.0000 | LR: 9.78e-05 | EMA: 0.999675 | Steps/Sec: 4.29 | Mem: 19.14G/19.14G
+[[34m2026-09-13 01:31:37[0m] Beginning epoch 252...
+[[34m2026-09-13 01:31:44[0m] (step=0027750) Diff: 0.1466 | c12[img=0.2593 canny=0.2202 skel=0.1429] | REPA(w=0.00): 0.0000 | LR: 9.78e-05 | EMA: 0.999676 | Steps/Sec: 4.27 | Mem: 19.14G/19.14G
+[[34m2026-09-13 01:31:56[0m] (step=0027800) Diff: 0.1462 | c12[img=0.2589 canny=0.2197 skel=0.1423] | REPA(w=0.00): 0.0000 | LR: 9.78e-05 | EMA: 0.999676 | Steps/Sec: 4.29 | Mem: 19.14G/19.14G
+[[34m2026-09-13 01:32:03[0m] Beginning epoch 253...
+[[34m2026-09-13 01:32:08[0m] (step=0027850) Diff: 0.1466 | c12[img=0.2599 canny=0.2200 skel=0.1426] | REPA(w=0.00): 0.0000 | LR: 9.78e-05 | EMA: 0.999677 | Steps/Sec: 4.30 | Mem: 19.14G/19.14G
+[[34m2026-09-13 01:32:19[0m] (step=0027900) Diff: 0.1466 | c12[img=0.2597 canny=0.2199 skel=0.1426] | REPA(w=0.00): 0.0000 | LR: 9.78e-05 | EMA: 0.999678 | Steps/Sec: 4.29 | Mem: 19.14G/19.14G
+[[34m2026-09-13 01:32:29[0m] Beginning epoch 254...
+[[34m2026-09-13 01:32:31[0m] (step=0027950) Diff: 0.1474 | c12[img=0.2613 canny=0.2207 skel=0.1432] | REPA(w=0.00): 0.0000 | LR: 9.78e-05 | EMA: 0.999678 | Steps/Sec: 4.27 | Mem: 19.14G/19.14G
+[[34m2026-09-13 01:32:43[0m] (step=0028000) Diff: 0.1469 | c12[img=0.2603 canny=0.2203 skel=0.1429] | REPA(w=0.00): 0.0000 | LR: 9.77e-05 | EMA: 0.999679 | Steps/Sec: 4.29 | Mem: 19.14G/19.14G
+[[34m2026-09-13 01:32:43[0m] (step=0028000) [diag] grad-norm: blocks=0.063 callig_chain=0.006 glyph_embedder=0.010 inj_out_proj=0.012 other=0.055
+[[34m2026-09-13 01:32:54[0m] (step=0028050) Diff: 0.1469 | c12[img=0.2598 canny=0.2208 skel=0.1435] | REPA(w=0.00): 0.0000 | LR: 9.77e-05 | EMA: 0.999679 | Steps/Sec: 4.29 | Mem: 19.14G/19.14G
+[[34m2026-09-13 01:32:54[0m] Beginning epoch 255...
+[[34m2026-09-13 01:33:06[0m] (step=0028100) Diff: 0.1464 | c12[img=0.2587 canny=0.2203 skel=0.1428] | REPA(w=0.00): 0.0000 | LR: 9.77e-05 | EMA: 0.999680 | Steps/Sec: 4.22 | Mem: 19.14G/19.14G
+[[34m2026-09-13 01:33:18[0m] (step=0028150) Diff: 0.1463 | c12[img=0.2591 canny=0.2199 skel=0.1425] | REPA(w=0.00): 0.0000 | LR: 9.77e-05 | EMA: 0.999680 | Steps/Sec: 4.29 | Mem: 19.14G/19.14G
+[[34m2026-09-13 01:33:20[0m] Beginning epoch 256...
+[[34m2026-09-13 01:33:29[0m] (step=0028200) Diff: 0.1468 | c12[img=0.2603 canny=0.2201 skel=0.1426] | REPA(w=0.00): 0.0000 | LR: 9.77e-05 | EMA: 0.999681 | Steps/Sec: 4.28 | Mem: 19.14G/19.14G
+[[34m2026-09-13 01:33:41[0m] (step=0028250) Diff: 0.1469 | c12[img=0.2605 canny=0.2201 skel=0.1426] | REPA(w=0.00): 0.0000 | LR: 9.77e-05 | EMA: 0.999682 | Steps/Sec: 4.29 | Mem: 19.14G/19.14G
+[[34m2026-09-13 01:33:46[0m] Beginning epoch 257...
+[[34m2026-09-13 01:33:53[0m] (step=0028300) Diff: 0.1458 | c12[img=0.2579 canny=0.2190 skel=0.1422] | REPA(w=0.00): 0.0000 | LR: 9.77e-05 | EMA: 0.999682 | Steps/Sec: 4.29 | Mem: 19.14G/19.14G
+[[34m2026-09-13 01:34:04[0m] (step=0028350) Diff: 0.1462 | c12[img=0.2590 canny=0.2199 skel=0.1422] | REPA(w=0.00): 0.0000 | LR: 9.77e-05 | EMA: 0.999683 | Steps/Sec: 4.29 | Mem: 19.14G/19.14G
+[[34m2026-09-13 01:34:11[0m] Beginning epoch 258...
+[[34m2026-09-13 01:34:16[0m] (step=0028400) Diff: 0.1458 | c12[img=0.2582 canny=0.2191 skel=0.1419] | REPA(w=0.00): 0.0000 | LR: 9.77e-05 | EMA: 0.999683 | Steps/Sec: 4.19 | Mem: 19.14G/19.14G
+[[34m2026-09-13 01:34:28[0m] (step=0028450) Diff: 0.1459 | c12[img=0.2586 canny=0.2192 skel=0.1417] | REPA(w=0.00): 0.0000 | LR: 9.77e-05 | EMA: 0.999684 | Steps/Sec: 4.29 | Mem: 19.14G/19.14G
+[[34m2026-09-13 01:34:37[0m] Beginning epoch 259...
+[[34m2026-09-13 01:34:40[0m] (step=0028500) Diff: 0.1469 | c12[img=0.2605 canny=0.2201 skel=0.1428] | REPA(w=0.00): 0.0000 | LR: 9.77e-05 | EMA: 0.999684 | Steps/Sec: 4.29 | Mem: 19.14G/19.14G
+[[34m2026-09-13 01:34:51[0m] (step=0028550) Diff: 0.1458 | c12[img=0.2583 canny=0.2190 skel=0.1419] | REPA(w=0.00): 0.0000 | LR: 9.76e-05 | EMA: 0.999685 | Steps/Sec: 4.29 | Mem: 19.14G/19.14G
+[[34m2026-09-13 01:35:03[0m] (step=0028600) Diff: 0.1462 | c12[img=0.2592 canny=0.2194 skel=0.1420] | REPA(w=0.00): 0.0000 | LR: 9.76e-05 | EMA: 0.999685 | Steps/Sec: 4.30 | Mem: 19.14G/19.14G
+[[34m2026-09-13 01:35:03[0m] Beginning epoch 260...
+[[34m2026-09-13 01:35:15[0m] (step=0028650) Diff: 0.1461 | c12[img=0.2587 canny=0.2195 skel=0.1421] | REPA(w=0.00): 0.0000 | LR: 9.76e-05 | EMA: 0.999686 | Steps/Sec: 4.25 | Mem: 19.14G/19.14G
+[[34m2026-09-13 01:35:26[0m] (step=0028700) Diff: 0.1467 | c12[img=0.2602 canny=0.2199 skel=0.1424] | REPA(w=0.00): 0.0000 | LR: 9.76e-05 | EMA: 0.999687 | Steps/Sec: 4.30 | Mem: 19.14G/19.14G
+[[34m2026-09-13 01:35:29[0m] Beginning epoch 261...
+[[34m2026-09-13 01:35:39[0m] (step=0028750) Diff: 0.1466 | c12[img=0.2601 canny=0.2194 skel=0.1422] | REPA(w=0.00): 0.0000 | LR: 9.76e-05 | EMA: 0.999687 | Steps/Sec: 3.90 | Mem: 19.14G/19.14G
+[[34m2026-09-13 01:35:51[0m] (step=0028800) Diff: 0.1468 | c12[img=0.2604 canny=0.2199 skel=0.1426] | REPA(w=0.00): 0.0000 | LR: 9.76e-05 | EMA: 0.999688 | Steps/Sec: 4.29 | Mem: 19.14G/19.14G
+[[34m2026-09-13 01:35:55[0m] Beginning epoch 262...
+[[34m2026-09-13 01:36:02[0m] (step=0028850) Diff: 0.1451 | c12[img=0.2574 canny=0.2177 skel=0.1407] | REPA(w=0.00): 0.0000 | LR: 9.76e-05 | EMA: 0.999688 | Steps/Sec: 4.29 | Mem: 19.14G/19.14G
+[[34m2026-09-13 01:36:16[0m] (step=0028900) Diff: 0.1456 | c12[img=0.2576 canny=0.2191 skel=0.1419] | REPA(w=0.00): 0.0000 | LR: 9.76e-05 | EMA: 0.999689 | Steps/Sec: 3.82 | Mem: 19.14G/19.14G
+[[34m2026-09-13 01:36:22[0m] Beginning epoch 263...
+[[34m2026-09-13 01:36:27[0m] (step=0028950) Diff: 0.1459 | c12[img=0.2586 canny=0.2191 skel=0.1419] | REPA(w=0.00): 0.0000 | LR: 9.76e-05 | EMA: 0.999689 | Steps/Sec: 4.29 | Mem: 19.14G/19.14G
+[[34m2026-09-13 01:36:39[0m] (step=0029000) Diff: 0.1464 | c12[img=0.2596 canny=0.2194 skel=0.1421] | REPA(w=0.00): 0.0000 | LR: 9.76e-05 | EMA: 0.999690 | Steps/Sec: 4.29 | Mem: 19.14G/19.14G
+[[34m2026-09-13 01:36:39[0m] (step=0029000) [diag] grad-norm: blocks=0.054 callig_chain=0.006 glyph_embedder=0.013 inj_out_proj=0.011 other=0.053
+[[34m2026-09-13 01:36:48[0m] Beginning epoch 264...
+[[34m2026-09-13 01:36:51[0m] (step=0029050) Diff: 0.1461 | c12[img=0.2588 canny=0.2194 skel=0.1421] | REPA(w=0.00): 0.0000 | LR: 9.76e-05 | EMA: 0.999690 | Steps/Sec: 4.29 | Mem: 19.14G/19.14G
+[[34m2026-09-13 01:37:02[0m] (step=0029100) Diff: 0.1456 | c12[img=0.2579 canny=0.2187 skel=0.1417] | REPA(w=0.00): 0.0000 | LR: 9.75e-05 | EMA: 0.999691 | Steps/Sec: 4.29 | Mem: 19.14G/19.14G
+[[34m2026-09-13 01:37:14[0m] (step=0029150) Diff: 0.1468 | c12[img=0.2605 canny=0.2197 skel=0.1424] | REPA(w=0.00): 0.0000 | LR: 9.75e-05 | EMA: 0.999691 | Steps/Sec: 4.30 | Mem: 19.14G/19.14G
+[[34m2026-09-13 01:37:14[0m] Beginning epoch 265...
+[[34m2026-09-13 01:37:26[0m] (step=0029200) Diff: 0.1458 | c12[img=0.2582 canny=0.2191 skel=0.1420] | REPA(w=0.00): 0.0000 | LR: 9.75e-05 | EMA: 0.999692 | Steps/Sec: 4.24 | Mem: 19.14G/19.14G
+[[34m2026-09-13 01:37:37[0m] (step=0029250) Diff: 0.1460 | c12[img=0.2590 canny=0.2188 skel=0.1418] | REPA(w=0.00): 0.0000 | LR: 9.75e-05 | EMA: 0.999692 | Steps/Sec: 4.29 | Mem: 19.14G/19.14G
+[[34m2026-09-13 01:37:39[0m] Beginning epoch 266...
+[[34m2026-09-13 01:37:49[0m] (step=0029300) Diff: 0.1463 | c12[img=0.2596 canny=0.2192 skel=0.1418] | REPA(w=0.00): 0.0000 | LR: 9.75e-05 | EMA: 0.999693 | Steps/Sec: 4.28 | Mem: 19.14G/19.14G
+[[34m2026-09-13 01:38:01[0m] (step=0029350) Diff: 0.1459 | c12[img=0.2584 canny=0.2189 skel=0.1420] | REPA(w=0.00): 0.0000 | LR: 9.75e-05 | EMA: 0.999693 | Steps/Sec: 4.29 | Mem: 19.14G/19.14G
+[[34m2026-09-13 01:38:05[0m] Beginning epoch 267...
+[[34m2026-09-13 01:38:12[0m] (step=0029400) Diff: 0.1459 | c12[img=0.2583 canny=0.2190 skel=0.1420] | REPA(w=0.00): 0.0000 | LR: 9.75e-05 | EMA: 0.999694 | Steps/Sec: 4.29 | Mem: 19.14G/19.14G
+[[34m2026-09-13 01:38:24[0m] (step=0029450) Diff: 0.1451 | c12[img=0.2572 canny=0.2181 skel=0.1410] | REPA(w=0.00): 0.0000 | LR: 9.75e-05 | EMA: 0.999694 | Steps/Sec: 4.29 | Mem: 19.14G/19.14G
+[[34m2026-09-13 01:38:31[0m] Beginning epoch 268...
+[[34m2026-09-13 01:38:36[0m] (step=0029500) Diff: 0.1456 | c12[img=0.2585 canny=0.2182 skel=0.1410] | REPA(w=0.00): 0.0000 | LR: 9.75e-05 | EMA: 0.999695 | Steps/Sec: 4.27 | Mem: 19.14G/19.14G
+[[34m2026-09-13 01:38:47[0m] (step=0029550) Diff: 0.1452 | c12[img=0.2571 canny=0.2181 skel=0.1412] | REPA(w=0.00): 0.0000 | LR: 9.75e-05 | EMA: 0.999696 | Steps/Sec: 4.30 | Mem: 19.14G/19.14G
+[[34m2026-09-13 01:38:56[0m] Beginning epoch 269...
+[[34m2026-09-13 01:38:59[0m] (step=0029600) Diff: 0.1450 | c12[img=0.2568 canny=0.2179 skel=0.1411] | REPA(w=0.00): 0.0000 | LR: 9.74e-05 | EMA: 0.999696 | Steps/Sec: 4.30 | Mem: 19.14G/19.14G
+[[34m2026-09-13 01:39:10[0m] (step=0029650) Diff: 0.1451 | c12[img=0.2569 canny=0.2181 skel=0.1411] | REPA(w=0.00): 0.0000 | LR: 9.74e-05 | EMA: 0.999697 | Steps/Sec: 4.30 | Mem: 19.14G/19.14G
+[[34m2026-09-13 01:39:22[0m] (step=0029700) Diff: 0.1447 | c12[img=0.2563 canny=0.2176 skel=0.1407] | REPA(w=0.00): 0.0000 | LR: 9.74e-05 | EMA: 0.999697 | Steps/Sec: 4.30 | Mem: 19.14G/19.14G
+[[34m2026-09-13 01:39:22[0m] Beginning epoch 270...
+[[34m2026-09-13 01:39:34[0m] (step=0029750) Diff: 0.1454 | c12[img=0.2576 canny=0.2185 skel=0.1414] | REPA(w=0.00): 0.0000 | LR: 9.74e-05 | EMA: 0.999698 | Steps/Sec: 4.26 | Mem: 19.14G/19.14G
+[[34m2026-09-13 01:39:45[0m] (step=0029800) Diff: 0.1458 | c12[img=0.2584 canny=0.2188 skel=0.1418] | REPA(w=0.00): 0.0000 | LR: 9.74e-05 | EMA: 0.999698 | Steps/Sec: 4.30 | Mem: 19.14G/19.14G
+[[34m2026-09-13 01:39:48[0m] Beginning epoch 271...
+[[34m2026-09-13 01:39:57[0m] (step=0029850) Diff: 0.1445 | c12[img=0.2557 canny=0.2175 skel=0.1408] | REPA(w=0.00): 0.0000 | LR: 9.74e-05 | EMA: 0.999699 | Steps/Sec: 4.30 | Mem: 19.14G/19.14G
+[[34m2026-09-13 01:40:09[0m] (step=0029900) Diff: 0.1445 | c12[img=0.2563 canny=0.2170 skel=0.1402] | REPA(w=0.00): 0.0000 | LR: 9.74e-05 | EMA: 0.999699 | Steps/Sec: 4.30 | Mem: 19.14G/19.14G
+[[34m2026-09-13 01:40:13[0m] Beginning epoch 272...
+[[34m2026-09-13 01:40:20[0m] (step=0029950) Diff: 0.1443 | c12[img=0.2556 canny=0.2170 skel=0.1403] | REPA(w=0.00): 0.0000 | LR: 9.74e-05 | EMA: 0.999700 | Steps/Sec: 4.30 | Mem: 19.14G/19.14G
+[[34m2026-09-13 01:40:33[0m] (step=0030000) Diff: 0.1449 | c12[img=0.2565 canny=0.2178 skel=0.1410] | REPA(w=0.00): 0.0000 | LR: 9.74e-05 | EMA: 0.999700 | Steps/Sec: 3.82 | Mem: 19.14G/19.14G
+[[34m2026-09-13 01:40:33[0m] (step=0030000) [diag] grad-norm: blocks=0.057 callig_chain=0.007 glyph_embedder=0.014 inj_out_proj=0.012 other=0.068
+[[34m2026-09-13 01:40:35[0m] Saved checkpoint to assets/results/v11_pretrain_M432_v8_auxc03s08/20260912-234049-v11-pretrain-M432-v8-auxc03s08/checkpoints/0030000.pt
+[[34m2026-09-13 01:40:41[0m] Beginning epoch 273...
+[[34m2026-09-13 01:40:46[0m] (step=0030050) Diff: 0.1458 | c12[img=0.2585 canny=0.2187 skel=0.1415] | REPA(w=0.00): 0.0000 | LR: 9.74e-05 | EMA: 0.999701 | Steps/Sec: 3.87 | Mem: 19.14G/19.14G
+[[34m2026-09-13 01:41:05[0m] (step=0030100) Diff: 0.1449 | c12[img=0.2567 canny=0.2176 skel=0.1409] | REPA(w=0.00): 0.0000 | LR: 9.74e-05 | EMA: 0.999701 | Steps/Sec: 2.72 | Mem: 19.14G/19.14G
+[[34m2026-09-13 01:41:22[0m] Beginning epoch 274...
+[[34m2026-09-13 01:41:27[0m] (step=0030150) Diff: 0.1445 | c12[img=0.2562 canny=0.2168 skel=0.1402] | REPA(w=0.00): 0.0000 | LR: 9.73e-05 | EMA: 0.999702 | Steps/Sec: 2.26 | Mem: 19.14G/19.14G
+[[34m2026-09-13 01:41:49[0m] (step=0030200) Diff: 0.1443 | c12[img=0.2556 canny=0.2171 skel=0.1403] | REPA(w=0.00): 0.0000 | LR: 9.73e-05 | EMA: 0.999702 | Steps/Sec: 2.26 | Mem: 19.14G/19.14G
+[[34m2026-09-13 01:42:11[0m] (step=0030250) Diff: 0.1445 | c12[img=0.2559 canny=0.2174 skel=0.1406] | REPA(w=0.00): 0.0000 | LR: 9.73e-05 | EMA: 0.999703 | Steps/Sec: 2.26 | Mem: 19.14G/19.14G
+[[34m2026-09-13 01:42:11[0m] Beginning epoch 275...
+[[34m2026-09-13 01:42:32[0m] (step=0030300) Diff: 0.1455 | c12[img=0.2585 canny=0.2178 skel=0.1408] | REPA(w=0.00): 0.0000 | LR: 9.73e-05 | EMA: 0.999703 | Steps/Sec: 2.38 | Mem: 19.14G/19.14G
+[[34m2026-09-13 01:42:44[0m] (step=0030350) Diff: 0.1450 | c12[img=0.2572 canny=0.2173 skel=0.1407] | REPA(w=0.00): 0.0000 | LR: 9.73e-05 | EMA: 0.999704 | Steps/Sec: 4.13 | Mem: 19.14G/19.14G
+[[34m2026-09-13 01:42:46[0m] Beginning epoch 276...
+[[34m2026-09-13 01:42:56[0m] (step=0030400) Diff: 0.1449 | c12[img=0.2569 canny=0.2175 skel=0.1408] | REPA(w=0.00): 0.0000 | LR: 9.73e-05 | EMA: 0.999704 | Steps/Sec: 4.25 | Mem: 19.14G/19.14G
+[[34m2026-09-13 01:43:08[0m] (step=0030450) Diff: 0.1446 | c12[img=0.2566 canny=0.2172 skel=0.1400] | REPA(w=0.00): 0.0000 | LR: 9.73e-05 | EMA: 0.999705 | Steps/Sec: 4.30 | Mem: 19.14G/19.14G
+[[34m2026-09-13 01:43:12[0m] Beginning epoch 277...
+[[34m2026-09-13 01:43:19[0m] (step=0030500) Diff: 0.1451 | c12[img=0.2575 canny=0.2176 skel=0.1408] | REPA(w=0.00): 0.0000 | LR: 9.73e-05 | EMA: 0.999705 | Steps/Sec: 4.28 | Mem: 19.14G/19.14G
+[[34m2026-09-13 01:43:31[0m] (step=0030550) Diff: 0.1451 | c12[img=0.2571 canny=0.2178 skel=0.1409] | REPA(w=0.00): 0.0000 | LR: 9.73e-05 | EMA: 0.999705 | Steps/Sec: 4.24 | Mem: 19.14G/19.14G
+[[34m2026-09-13 01:43:38[0m] Beginning epoch 278...
+[[34m2026-09-13 01:43:43[0m] (step=0030600) Diff: 0.1453 | c12[img=0.2576 canny=0.2180 skel=0.1410] | REPA(w=0.00): 0.0000 | LR: 9.73e-05 | EMA: 0.999706 | Steps/Sec: 4.24 | Mem: 19.14G/19.14G
+[[34m2026-09-13 01:43:55[0m] (step=0030650) Diff: 0.1450 | c12[img=0.2569 canny=0.2176 skel=0.1409] | REPA(w=0.00): 0.0000 | LR: 9.72e-05 | EMA: 0.999706 | Steps/Sec: 4.25 | Mem: 19.14G/19.14G
+[[34m2026-09-13 01:44:04[0m] Beginning epoch 279...
+[[34m2026-09-13 01:44:06[0m] (step=0030700) Diff: 0.1441 | c12[img=0.2553 canny=0.2169 skel=0.1401] | REPA(w=0.00): 0.0000 | LR: 9.72e-05 | EMA: 0.999707 | Steps/Sec: 4.24 | Mem: 19.14G/19.14G
+[[34m2026-09-13 01:44:18[0m] (step=0030750) Diff: 0.1452 | c12[img=0.2574 canny=0.2179 skel=0.1410] | REPA(w=0.00): 0.0000 | LR: 9.72e-05 | EMA: 0.999707 | Steps/Sec: 4.23 | Mem: 19.14G/19.14G
+[[34m2026-09-13 01:44:30[0m] (step=0030800) Diff: 0.1453 | c12[img=0.2578 canny=0.2177 skel=0.1408] | REPA(w=0.00): 0.0000 | LR: 9.72e-05 | EMA: 0.999708 | Steps/Sec: 4.22 | Mem: 19.14G/19.14G
+[[34m2026-09-13 01:44:30[0m] Beginning epoch 280...
+[[34m2026-09-13 01:44:42[0m] (step=0030850) Diff: 0.1439 | c12[img=0.2549 canny=0.2164 skel=0.1400] | REPA(w=0.00): 0.0000 | LR: 9.72e-05 | EMA: 0.999708 | Steps/Sec: 4.23 | Mem: 19.14G/19.14G
+[[34m2026-09-13 01:44:54[0m] (step=0030900) Diff: 0.1451 | c12[img=0.2571 canny=0.2181 skel=0.1409] | REPA(w=0.00): 0.0000 | LR: 9.72e-05 | EMA: 0.999709 | Steps/Sec: 4.25 | Mem: 19.14G/19.14G
+[[34m2026-09-13 01:44:56[0m] Beginning epoch 281...
+[[34m2026-09-13 01:45:05[0m] (step=0030950) Diff: 0.1442 | c12[img=0.2556 canny=0.2168 skel=0.1399] | REPA(w=0.00): 0.0000 | LR: 9.72e-05 | EMA: 0.999709 | Steps/Sec: 4.24 | Mem: 19.14G/19.14G
+[[34m2026-09-13 01:45:17[0m] (step=0031000) Diff: 0.1440 | c12[img=0.2550 canny=0.2169 skel=0.1401] | REPA(w=0.00): 0.0000 | LR: 9.72e-05 | EMA: 0.999710 | Steps/Sec: 4.24 | Mem: 19.14G/19.14G
+[[34m2026-09-13 01:45:17[0m] (step=0031000) [diag] grad-norm: blocks=0.057 callig_chain=0.006 glyph_embedder=0.013 inj_out_proj=0.013 other=0.049
+[[34m2026-09-13 01:45:22[0m] Beginning epoch 282...
+[[34m2026-09-13 01:45:29[0m] (step=0031050) Diff: 0.1445 | c12[img=0.2561 canny=0.2173 skel=0.1404] | REPA(w=0.00): 0.0000 | LR: 9.72e-05 | EMA: 0.999710 | Steps/Sec: 4.23 | Mem: 19.14G/19.14G
+[[34m2026-09-13 01:45:41[0m] (step=0031100) Diff: 0.1448 | c12[img=0.2570 canny=0.2170 skel=0.1403] | REPA(w=0.00): 0.0000 | LR: 9.72e-05 | EMA: 0.999711 | Steps/Sec: 4.25 | Mem: 19.14G/19.14G
+[[34m2026-09-13 01:45:48[0m] Beginning epoch 283...
+[[34m2026-09-13 01:45:53[0m] (step=0031150) Diff: 0.1444 | c12[img=0.2563 canny=0.2167 skel=0.1401] | REPA(w=0.00): 0.0000 | LR: 9.71e-05 | EMA: 0.999711 | Steps/Sec: 4.23 | Mem: 19.14G/19.14G
+[[34m2026-09-13 01:46:04[0m] (step=0031200) Diff: 0.1447 | c12[img=0.2565 canny=0.2175 skel=0.1405] | REPA(w=0.00): 0.0000 | LR: 9.71e-05 | EMA: 0.999712 | Steps/Sec: 4.26 | Mem: 19.14G/19.14G
+[[34m2026-09-13 01:46:14[0m] Beginning epoch 284...
+[[34m2026-09-13 01:46:16[0m] (step=0031250) Diff: 0.1444 | c12[img=0.2562 canny=0.2166 skel=0.1400] | REPA(w=0.00): 0.0000 | LR: 9.71e-05 | EMA: 0.999712 | Steps/Sec: 4.25 | Mem: 19.14G/19.14G
+[[34m2026-09-13 01:46:28[0m] (step=0031300) Diff: 0.1448 | c12[img=0.2569 canny=0.2168 skel=0.1404] | REPA(w=0.00): 0.0000 | LR: 9.71e-05 | EMA: 0.999713 | Steps/Sec: 4.26 | Mem: 19.14G/19.14G
+[[34m2026-09-13 01:46:40[0m] (step=0031350) Diff: 0.1448 | c12[img=0.2569 canny=0.2172 skel=0.1403] | REPA(w=0.00): 0.0000 | LR: 9.71e-05 | EMA: 0.999713 | Steps/Sec: 4.26 | Mem: 19.14G/19.14G
+[[34m2026-09-13 01:46:40[0m] Beginning epoch 285...
+[[34m2026-09-13 01:46:52[0m] (step=0031400) Diff: 0.1439 | c12[img=0.2550 canny=0.2165 skel=0.1398] | REPA(w=0.00): 0.0000 | LR: 9.71e-05 | EMA: 0.999713 | Steps/Sec: 4.22 | Mem: 19.14G/19.14G
+[[34m2026-09-13 01:47:03[0m] (step=0031450) Diff: 0.1440 | c12[img=0.2555 canny=0.2162 skel=0.1397] | REPA(w=0.00): 0.0000 | LR: 9.71e-05 | EMA: 0.999714 | Steps/Sec: 4.25 | Mem: 19.14G/19.14G
+[[34m2026-09-13 01:47:06[0m] Beginning epoch 286...
+[[34m2026-09-13 01:47:15[0m] (step=0031500) Diff: 0.1446 | c12[img=0.2565 canny=0.2171 skel=0.1404] | REPA(w=0.00): 0.0000 | LR: 9.71e-05 | EMA: 0.999714 | Steps/Sec: 4.22 | Mem: 19.14G/19.14G
+[[34m2026-09-13 01:47:27[0m] (step=0031550) Diff: 0.1445 | c12[img=0.2562 canny=0.2170 skel=0.1402] | REPA(w=0.00): 0.0000 | LR: 9.71e-05 | EMA: 0.999715 | Steps/Sec: 4.23 | Mem: 19.14G/19.14G
+[[34m2026-09-13 01:47:32[0m] Beginning epoch 287...
+[[34m2026-09-13 01:47:39[0m] (step=0031600) Diff: 0.1434 | c12[img=0.2544 canny=0.2152 skel=0.1389] | REPA(w=0.00): 0.0000 | LR: 9.71e-05 | EMA: 0.999715 | Steps/Sec: 4.21 | Mem: 19.14G/19.14G
+[[34m2026-09-13 01:47:51[0m] (step=0031650) Diff: 0.1444 | c12[img=0.2560 canny=0.2167 skel=0.1402] | REPA(w=0.00): 0.0000 | LR: 9.70e-05 | EMA: 0.999716 | Steps/Sec: 4.23 | Mem: 19.14G/19.14G
+[[34m2026-09-13 01:47:58[0m] Beginning epoch 288...
+[[34m2026-09-13 01:48:03[0m] (step=0031700) Diff: 0.1442 | c12[img=0.2564 canny=0.2161 skel=0.1394] | REPA(w=0.00): 0.0000 | LR: 9.70e-05 | EMA: 0.999716 | Steps/Sec: 4.20 | Mem: 19.14G/19.14G
+[[34m2026-09-13 01:48:14[0m] (step=0031750) Diff: 0.1437 | c12[img=0.2548 canny=0.2158 skel=0.1396] | REPA(w=0.00): 0.0000 | LR: 9.70e-05 | EMA: 0.999717 | Steps/Sec: 4.24 | Mem: 19.14G/19.14G
+[[34m2026-09-13 01:48:24[0m] Beginning epoch 289...
+[[34m2026-09-13 01:48:26[0m] (step=0031800) Diff: 0.1436 | c12[img=0.2547 canny=0.2157 skel=0.1392] | REPA(w=0.00): 0.0000 | LR: 9.70e-05 | EMA: 0.999717 | Steps/Sec: 4.21 | Mem: 19.14G/19.14G
+[[34m2026-09-13 01:48:38[0m] (step=0031850) Diff: 0.1438 | c12[img=0.2546 canny=0.2163 skel=0.1397] | REPA(w=0.00): 0.0000 | LR: 9.70e-05 | EMA: 0.999718 | Steps/Sec: 4.25 | Mem: 19.14G/19.14G
+[[34m2026-09-13 01:48:50[0m] (step=0031900) Diff: 0.1432 | c12[img=0.2541 canny=0.2152 skel=0.1387] | REPA(w=0.00): 0.0000 | LR: 9.70e-05 | EMA: 0.999718 | Steps/Sec: 4.25 | Mem: 19.14G/19.14G
+[[34m2026-09-13 01:48:50[0m] Beginning epoch 290...
+[[34m2026-09-13 01:49:02[0m] (step=0031950) Diff: 0.1436 | c12[img=0.2545 canny=0.2158 skel=0.1394] | REPA(w=0.00): 0.0000 | LR: 9.70e-05 | EMA: 0.999718 | Steps/Sec: 4.21 | Mem: 19.14G/19.14G
+[[34m2026-09-13 01:49:13[0m] (step=0032000) Diff: 0.1432 | c12[img=0.2538 canny=0.2154 skel=0.1389] | REPA(w=0.00): 0.0000 | LR: 9.70e-05 | EMA: 0.999719 | Steps/Sec: 4.25 | Mem: 19.14G/19.14G
+[[34m2026-09-13 01:49:13[0m] (step=0032000) [diag] grad-norm: blocks=0.051 callig_chain=0.005 glyph_embedder=0.013 inj_out_proj=0.010 other=0.047
+[[34m2026-09-13 01:49:16[0m] Beginning epoch 291...
+[[34m2026-09-13 01:49:25[0m] (step=0032050) Diff: 0.1450 | c12[img=0.2575 canny=0.2172 skel=0.1403] | REPA(w=0.00): 0.0000 | LR: 9.70e-05 | EMA: 0.999719 | Steps/Sec: 4.26 | Mem: 19.14G/19.14G
+[[34m2026-09-13 01:49:37[0m] (step=0032100) Diff: 0.1428 | c12[img=0.2526 canny=0.2153 skel=0.1389] | REPA(w=0.00): 0.0000 | LR: 9.70e-05 | EMA: 0.999720 | Steps/Sec: 4.27 | Mem: 19.14G/19.14G
+[[34m2026-09-13 01:49:41[0m] Beginning epoch 292...
+[[34m2026-09-13 01:49:49[0m] (step=0032150) Diff: 0.1440 | c12[img=0.2553 canny=0.2163 skel=0.1398] | REPA(w=0.00): 0.0000 | LR: 9.69e-05 | EMA: 0.999720 | Steps/Sec: 4.23 | Mem: 19.14G/19.14G

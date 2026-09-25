@@ -1,0 +1,414 @@
+[[34m2026-09-12 03:04:48[0m] Experiment directory created at 5script/results/v11_struct-loss/20260912-030448-v11_struct-loss
+[[34m2026-09-12 03:04:49[0m] Building 2-Cond model: DiT-2Cond-Sp/2 (learn_sigma=False, diffusion_type=flow, arch=rms/swiglu/qknorm=True/rope=True, attn=sdpa)
+[[34m2026-09-12 03:04:49[0m] Building 2-Cond model: DiT-2Cond-Sp/2 (callig=41, glyph/char=7765, fusion=factorized_add, dims=128/None, dropout=all:0.05, one:0.05, skel_head=False, glyph_cond=True, glyph_scale_init=0.6, char_proj_mode=full, freeze_char_table=False)
+[[34m2026-09-12 03:04:49[0m] [callig-emb] 加载预训练书家表 5script/callig_emb_pretrained.pt: torch.Size([41, 128]), null 行保持随机
+[[34m2026-09-12 03:04:49[0m] [callig-emb] 书家表已冻结 [0,N), CFG null token 保持可训练
+[[34m2026-09-12 03:04:49[0m] [dino-init] char_dino_embeddings/index not found (None, None) — y_char_embedder stays random init.
+[[34m2026-09-12 03:04:50[0m] [resume-full] Loaded weights from /root/Workspace/xy/DiT/5script/results/v10b_stdskel_fame3_c41x_cos_e/20260909-193018-v10b-stdskel-fame3-c41x-cos-e/checkpoints/0390000.pt (missing=0, unexpected=5).
+[[34m2026-09-12 03:04:50[0m] Trainable Parameters: 75,834,258
+[[34m2026-09-12 03:04:50[0m] Frozen Parameters: 136,448 (trainable ratio: 99.82%)
+[[34m2026-09-12 03:04:50[0m] [compile] torch.compile(mode=default) 注入（DDP 之前）...
+[[34m2026-09-12 03:04:52[0m] [EMA] restored EMA weights from checkpoint
+[[34m2026-09-12 03:04:52[0m] [EMA] enabled with decay=0.9999
+[[34m2026-09-12 03:04:52[0m] [flow] FlowMatching(steps=50, sampler=heun, nfe=100, t_sampler=logit_normal(mean=0.0,std=1.0), shift=1.0, use_ot=False)
+[[34m2026-09-12 03:04:52[0m] [flow] Flow-Matching enabled (velocity target, Euler ODE sampling, t in [0,1])
+[[34m2026-09-12 03:04:52[0m] [infra] VAE skipped (latent-only mode, no pixel struct/REPA) -> saves ~500MB VRAM
+[[34m2026-09-12 03:04:52[0m] [struct] EdgeGradientLoss (gradient-profile, no per-image norm) + SkeletonLoss (recall-only, no off-skel penalization)
+[[34m2026-09-12 03:04:52[0m] [latent-structure] frozen probe=5script/results/latent_struct_probe.pt metrics={'canny_iou': 0.8173483610153198, 'skeleton_iou': 0.445909708738327, 'canny_accuracy': 0.9812255501747131, 'skeleton_accuracy': 0.9878954887390137, 'epoch': 44, 'train_loss': 0.359541692420056, 'seconds': 1.54911208152771, 'peak_vram_gib': 0.572265625}
+[[34m2026-09-12 03:04:52[0m] [latent-structure] enabled: canny=0.1, skeleton=0.02, max_t=500
+[[34m2026-09-12 03:04:53[0m] Initializing unified REPA (Teacher: dinov2_vits14, Student Dim: 512, layers=(8,), w=0.03, warmup=0)
+[[34m2026-09-12 03:04:53[0m] [optim] AdamW lr=5e-05 wd=0.02
+[[34m2026-09-12 03:04:53[0m] [resume-full] Failed to restore optimizer state: loaded state dict contains a parameter group that doesn't match the size of optimizer's group
+[[34m2026-09-12 03:04:53[0m] [resume-full] Inferred start step=390000 from filename 0390000.pt
+[[34m2026-09-12 03:04:53[0m] [infra] VAE skipped (latent-only mode, no pixel struct/REPA) -> saves ~500MB VRAM
+[[34m2026-09-12 03:07:01[0m] Using latent-cached dataset (skip on-the-fly VAE encode). preload=ON
+[[34m2026-09-12 03:07:01[0m] Dataset contains 113,540 images
+[[34m2026-09-12 03:07:01[0m] [LR] fresh-scheduler: cosine computed from absolute step 0 (total 500000); resume at 390000 -> LR starts mid-decay at 2.04e-01 (base)
+[[34m2026-09-12 03:07:01[0m] [LR] fresh-scheduler: starting from base lr 1.02e-05 (old scheduler state ignored)
+[[34m2026-09-12 03:07:01[0m] [LR] cosine schedule: warmup=3000, total=500000, min_ratio=0.1
+[[34m2026-09-12 03:07:01[0m] [early-stop] metric=ssim, patience=5, min_delta={'ssim': 0.002, 'skel_iou': 0.005, 'lpips': 0.003, 'mse': 0.0}
+[[34m2026-09-12 03:07:01[0m] Training for 100000 epochs...
+[[34m2026-09-12 03:07:01[0m] Beginning epoch 0...
+[[34m2026-09-12 03:08:15[0m] (step=0390050) Diff: 0.1505 | REPA(w=0.03): 0.0275 | skel_loss(w=0.020): 6.5702 | canny_loss(w=0.100): 0.2774 | LR: 1.02e-05 | EMA: 0.999900 | Steps/Sec: 0.67 | Mem: 20.03G/20.03G
+[[34m2026-09-12 03:08:27[0m] (step=0390100) Diff: 0.1465 | REPA(w=0.03): 0.0239 | skel_loss(w=0.020): 6.3163 | canny_loss(w=0.100): 0.2694 | LR: 1.02e-05 | EMA: 0.999900 | Steps/Sec: 4.11 | Mem: 20.09G/20.09G
+[[34m2026-09-12 03:08:40[0m] (step=0390150) Diff: 0.1482 | REPA(w=0.03): 0.0206 | skel_loss(w=0.020): 6.2482 | canny_loss(w=0.100): 0.2711 | LR: 1.02e-05 | EMA: 0.999900 | Steps/Sec: 4.10 | Mem: 20.09G/20.09G
+[[34m2026-09-12 03:08:52[0m] (step=0390200) Diff: 0.1463 | REPA(w=0.03): 0.0179 | skel_loss(w=0.020): 6.1722 | canny_loss(w=0.100): 0.2685 | LR: 1.02e-05 | EMA: 0.999900 | Steps/Sec: 3.90 | Mem: 20.09G/20.09G
+[[34m2026-09-12 03:09:05[0m] (step=0390250) Diff: 0.1445 | REPA(w=0.03): 0.0157 | skel_loss(w=0.020): 6.1350 | canny_loss(w=0.100): 0.2641 | LR: 1.02e-05 | EMA: 0.999900 | Steps/Sec: 4.09 | Mem: 20.09G/20.09G
+[[34m2026-09-12 03:09:17[0m] (step=0390300) Diff: 0.1434 | REPA(w=0.03): 0.0141 | skel_loss(w=0.020): 6.0998 | canny_loss(w=0.100): 0.2642 | LR: 1.02e-05 | EMA: 0.999900 | Steps/Sec: 4.10 | Mem: 20.09G/20.09G
+[[34m2026-09-12 03:09:29[0m] (step=0390350) Diff: 0.1432 | REPA(w=0.03): 0.0129 | skel_loss(w=0.020): 6.0518 | canny_loss(w=0.100): 0.2660 | LR: 1.02e-05 | EMA: 0.999900 | Steps/Sec: 4.10 | Mem: 20.09G/20.09G
+[[34m2026-09-12 03:09:41[0m] (step=0390400) Diff: 0.1435 | REPA(w=0.03): 0.0119 | skel_loss(w=0.020): 6.0508 | canny_loss(w=0.100): 0.2641 | LR: 1.02e-05 | EMA: 0.999900 | Steps/Sec: 4.10 | Mem: 20.09G/20.09G
+[[34m2026-09-12 03:09:53[0m] (step=0390450) Diff: 0.1437 | REPA(w=0.03): 0.0112 | skel_loss(w=0.020): 6.0163 | canny_loss(w=0.100): 0.2629 | LR: 1.02e-05 | EMA: 0.999900 | Steps/Sec: 4.10 | Mem: 20.09G/20.09G
+[[34m2026-09-12 03:10:06[0m] (step=0390500) Diff: 0.1418 | REPA(w=0.03): 0.0106 | skel_loss(w=0.020): 5.9825 | canny_loss(w=0.100): 0.2604 | LR: 1.02e-05 | EMA: 0.999900 | Steps/Sec: 4.10 | Mem: 20.09G/20.09G
+[[34m2026-09-12 03:10:18[0m] (step=0390550) Diff: 0.1393 | REPA(w=0.03): 0.0102 | skel_loss(w=0.020): 5.9673 | canny_loss(w=0.100): 0.2619 | LR: 1.02e-05 | EMA: 0.999900 | Steps/Sec: 4.09 | Mem: 20.09G/20.09G
+[[34m2026-09-12 03:10:30[0m] (step=0390600) Diff: 0.1438 | REPA(w=0.03): 0.0098 | skel_loss(w=0.020): 5.9612 | canny_loss(w=0.100): 0.2611 | LR: 1.02e-05 | EMA: 0.999900 | Steps/Sec: 4.10 | Mem: 20.09G/20.09G
+[[34m2026-09-12 03:10:42[0m] (step=0390650) Diff: 0.1444 | REPA(w=0.03): 0.0095 | skel_loss(w=0.020): 5.9358 | canny_loss(w=0.100): 0.2670 | LR: 1.02e-05 | EMA: 0.999900 | Steps/Sec: 4.10 | Mem: 20.09G/20.09G
+[[34m2026-09-12 03:10:55[0m] (step=0390700) Diff: 0.1440 | REPA(w=0.03): 0.0092 | skel_loss(w=0.020): 5.9358 | canny_loss(w=0.100): 0.2628 | LR: 1.02e-05 | EMA: 0.999900 | Steps/Sec: 4.08 | Mem: 20.09G/20.09G
+[[34m2026-09-12 03:11:07[0m] (step=0390750) Diff: 0.1442 | REPA(w=0.03): 0.0089 | skel_loss(w=0.020): 5.9258 | canny_loss(w=0.100): 0.2664 | LR: 1.02e-05 | EMA: 0.999900 | Steps/Sec: 4.09 | Mem: 20.09G/20.09G
+[[34m2026-09-12 03:11:19[0m] (step=0390800) Diff: 0.1421 | REPA(w=0.03): 0.0087 | skel_loss(w=0.020): 5.9256 | canny_loss(w=0.100): 0.2616 | LR: 1.02e-05 | EMA: 0.999900 | Steps/Sec: 4.06 | Mem: 20.09G/20.09G
+[[34m2026-09-12 03:11:31[0m] (step=0390850) Diff: 0.1417 | REPA(w=0.03): 0.0085 | skel_loss(w=0.020): 5.8876 | canny_loss(w=0.100): 0.2625 | LR: 1.01e-05 | EMA: 0.999900 | Steps/Sec: 4.11 | Mem: 20.09G/20.09G
+[[34m2026-09-12 03:11:40[0m] Beginning epoch 1...
+[[34m2026-09-12 03:11:44[0m] (step=0390900) Diff: 0.1430 | REPA(w=0.03): 0.0083 | skel_loss(w=0.020): 5.8921 | canny_loss(w=0.100): 0.2595 | LR: 1.01e-05 | EMA: 0.999900 | Steps/Sec: 3.96 | Mem: 20.09G/20.09G
+[[34m2026-09-12 03:11:56[0m] (step=0390950) Diff: 0.1415 | REPA(w=0.03): 0.0082 | skel_loss(w=0.020): 5.8575 | canny_loss(w=0.100): 0.2607 | LR: 1.01e-05 | EMA: 0.999900 | Steps/Sec: 4.10 | Mem: 20.09G/20.09G
+[[34m2026-09-12 03:12:08[0m] (step=0391000) Diff: 0.1421 | REPA(w=0.03): 0.0080 | skel_loss(w=0.020): 5.8623 | canny_loss(w=0.100): 0.2644 | LR: 1.01e-05 | EMA: 0.999900 | Steps/Sec: 4.10 | Mem: 20.09G/20.09G
+[[34m2026-09-12 03:12:08[0m] (step=0391000) [diag] grad-norm: blocks=0.233 callig_chain=0.027 glyph_embedder=0.094 inj_out_proj=0.120 other=0.081
+[[34m2026-09-12 03:12:20[0m] (step=0391050) Diff: 0.1407 | REPA(w=0.03): 0.0079 | skel_loss(w=0.020): 5.8375 | canny_loss(w=0.100): 0.2598 | LR: 1.01e-05 | EMA: 0.999900 | Steps/Sec: 4.09 | Mem: 20.09G/20.09G
+[[34m2026-09-12 03:12:33[0m] (step=0391100) Diff: 0.1402 | REPA(w=0.03): 0.0077 | skel_loss(w=0.020): 5.8402 | canny_loss(w=0.100): 0.2605 | LR: 1.01e-05 | EMA: 0.999900 | Steps/Sec: 4.09 | Mem: 20.09G/20.09G
+[[34m2026-09-12 03:12:45[0m] (step=0391150) Diff: 0.1425 | REPA(w=0.03): 0.0077 | skel_loss(w=0.020): 5.8389 | canny_loss(w=0.100): 0.2629 | LR: 1.01e-05 | EMA: 0.999900 | Steps/Sec: 4.09 | Mem: 20.09G/20.09G
+[[34m2026-09-12 03:12:57[0m] (step=0391200) Diff: 0.1424 | REPA(w=0.03): 0.0075 | skel_loss(w=0.020): 5.8491 | canny_loss(w=0.100): 0.2606 | LR: 1.01e-05 | EMA: 0.999900 | Steps/Sec: 4.10 | Mem: 20.09G/20.09G
+[[34m2026-09-12 03:13:09[0m] (step=0391250) Diff: 0.1403 | REPA(w=0.03): 0.0074 | skel_loss(w=0.020): 5.8193 | canny_loss(w=0.100): 0.2622 | LR: 1.01e-05 | EMA: 0.999900 | Steps/Sec: 4.08 | Mem: 20.09G/20.09G
+[[34m2026-09-12 03:13:22[0m] (step=0391300) Diff: 0.1418 | REPA(w=0.03): 0.0073 | skel_loss(w=0.020): 5.8291 | canny_loss(w=0.100): 0.2628 | LR: 1.01e-05 | EMA: 0.999900 | Steps/Sec: 3.96 | Mem: 20.09G/20.09G
+[[34m2026-09-12 03:13:34[0m] (step=0391350) Diff: 0.1414 | REPA(w=0.03): 0.0072 | skel_loss(w=0.020): 5.8240 | canny_loss(w=0.100): 0.2599 | LR: 1.01e-05 | EMA: 0.999900 | Steps/Sec: 4.10 | Mem: 20.09G/20.09G
+[[34m2026-09-12 03:13:46[0m] (step=0391400) Diff: 0.1427 | REPA(w=0.03): 0.0071 | skel_loss(w=0.020): 5.8087 | canny_loss(w=0.100): 0.2632 | LR: 1.01e-05 | EMA: 0.999900 | Steps/Sec: 4.08 | Mem: 20.09G/20.09G
+[[34m2026-09-12 03:13:59[0m] (step=0391450) Diff: 0.1426 | REPA(w=0.03): 0.0070 | skel_loss(w=0.020): 5.8087 | canny_loss(w=0.100): 0.2604 | LR: 1.01e-05 | EMA: 0.999900 | Steps/Sec: 4.10 | Mem: 20.09G/20.09G
+[[34m2026-09-12 03:14:11[0m] (step=0391500) Diff: 0.1420 | REPA(w=0.03): 0.0069 | skel_loss(w=0.020): 5.7826 | canny_loss(w=0.100): 0.2604 | LR: 1.01e-05 | EMA: 0.999900 | Steps/Sec: 4.04 | Mem: 20.09G/20.09G
+[[34m2026-09-12 03:14:23[0m] (step=0391550) Diff: 0.1413 | REPA(w=0.03): 0.0068 | skel_loss(w=0.020): 5.8101 | canny_loss(w=0.100): 0.2594 | LR: 1.01e-05 | EMA: 0.999900 | Steps/Sec: 4.09 | Mem: 20.09G/20.09G
+[[34m2026-09-12 03:14:35[0m] (step=0391600) Diff: 0.1396 | REPA(w=0.03): 0.0067 | skel_loss(w=0.020): 5.7807 | canny_loss(w=0.100): 0.2586 | LR: 1.01e-05 | EMA: 0.999900 | Steps/Sec: 4.11 | Mem: 20.09G/20.09G
+[[34m2026-09-12 03:14:48[0m] (step=0391650) Diff: 0.1388 | REPA(w=0.03): 0.0067 | skel_loss(w=0.020): 5.7687 | canny_loss(w=0.100): 0.2619 | LR: 1.01e-05 | EMA: 0.999900 | Steps/Sec: 4.10 | Mem: 20.09G/20.09G
+[[34m2026-09-12 03:15:00[0m] (step=0391700) Diff: 0.1406 | REPA(w=0.03): 0.0066 | skel_loss(w=0.020): 5.7766 | canny_loss(w=0.100): 0.2600 | LR: 1.01e-05 | EMA: 0.999900 | Steps/Sec: 4.07 | Mem: 20.09G/20.09G
+[[34m2026-09-12 03:15:12[0m] (step=0391750) Diff: 0.1410 | REPA(w=0.03): 0.0065 | skel_loss(w=0.020): 5.7845 | canny_loss(w=0.100): 0.2610 | LR: 1.01e-05 | EMA: 0.999900 | Steps/Sec: 4.06 | Mem: 20.09G/20.09G
+[[34m2026-09-12 03:15:18[0m] Beginning epoch 2...
+[[34m2026-09-12 03:15:25[0m] (step=0391800) Diff: 0.1407 | REPA(w=0.03): 0.0064 | skel_loss(w=0.020): 5.7554 | canny_loss(w=0.100): 0.2606 | LR: 1.01e-05 | EMA: 0.999900 | Steps/Sec: 3.88 | Mem: 20.09G/20.09G
+[[34m2026-09-12 03:15:37[0m] (step=0391850) Diff: 0.1387 | REPA(w=0.03): 0.0064 | skel_loss(w=0.020): 5.7572 | canny_loss(w=0.100): 0.2588 | LR: 1.01e-05 | EMA: 0.999900 | Steps/Sec: 4.10 | Mem: 20.09G/20.09G
+[[34m2026-09-12 03:15:50[0m] (step=0391900) Diff: 0.1393 | REPA(w=0.03): 0.0063 | skel_loss(w=0.020): 5.7360 | canny_loss(w=0.100): 0.2603 | LR: 1.01e-05 | EMA: 0.999900 | Steps/Sec: 4.07 | Mem: 20.09G/20.09G
+[[34m2026-09-12 03:16:02[0m] (step=0391950) Diff: 0.1412 | REPA(w=0.03): 0.0063 | skel_loss(w=0.020): 5.7307 | canny_loss(w=0.100): 0.2617 | LR: 1.00e-05 | EMA: 0.999900 | Steps/Sec: 4.10 | Mem: 20.09G/20.09G
+[[34m2026-09-12 03:16:14[0m] (step=0392000) Diff: 0.1380 | REPA(w=0.03): 0.0062 | skel_loss(w=0.020): 5.7355 | canny_loss(w=0.100): 0.2587 | LR: 1.00e-05 | EMA: 0.999900 | Steps/Sec: 4.10 | Mem: 20.09G/20.09G
+[[34m2026-09-12 03:16:14[0m] (step=0392000) [diag] grad-norm: blocks=0.174 callig_chain=0.022 glyph_embedder=0.075 inj_out_proj=0.092 other=0.089
+[[34m2026-09-12 03:16:26[0m] (step=0392050) Diff: 0.1409 | REPA(w=0.03): 0.0061 | skel_loss(w=0.020): 5.7095 | canny_loss(w=0.100): 0.2627 | LR: 1.00e-05 | EMA: 0.999900 | Steps/Sec: 4.08 | Mem: 20.09G/20.09G
+[[34m2026-09-12 03:16:39[0m] (step=0392100) Diff: 0.1422 | REPA(w=0.03): 0.0061 | skel_loss(w=0.020): 5.7238 | canny_loss(w=0.100): 0.2601 | LR: 1.00e-05 | EMA: 0.999900 | Steps/Sec: 4.07 | Mem: 20.09G/20.09G
+[[34m2026-09-12 03:16:51[0m] (step=0392150) Diff: 0.1392 | REPA(w=0.03): 0.0060 | skel_loss(w=0.020): 5.7332 | canny_loss(w=0.100): 0.2622 | LR: 1.00e-05 | EMA: 0.999900 | Steps/Sec: 4.06 | Mem: 20.09G/20.09G
+[[34m2026-09-12 03:17:03[0m] (step=0392200) Diff: 0.1425 | REPA(w=0.03): 0.0060 | skel_loss(w=0.020): 5.7061 | canny_loss(w=0.100): 0.2629 | LR: 1.00e-05 | EMA: 0.999900 | Steps/Sec: 4.05 | Mem: 20.09G/20.09G
+[[34m2026-09-12 03:17:16[0m] (step=0392250) Diff: 0.1396 | REPA(w=0.03): 0.0059 | skel_loss(w=0.020): 5.7234 | canny_loss(w=0.100): 0.2596 | LR: 1.00e-05 | EMA: 0.999900 | Steps/Sec: 4.08 | Mem: 20.09G/20.09G
+[[34m2026-09-12 03:17:28[0m] (step=0392300) Diff: 0.1425 | REPA(w=0.03): 0.0059 | skel_loss(w=0.020): 5.7139 | canny_loss(w=0.100): 0.2639 | LR: 1.00e-05 | EMA: 0.999900 | Steps/Sec: 4.10 | Mem: 20.09G/20.09G
+[[34m2026-09-12 03:17:40[0m] (step=0392350) Diff: 0.1379 | REPA(w=0.03): 0.0058 | skel_loss(w=0.020): 5.7085 | canny_loss(w=0.100): 0.2598 | LR: 1.00e-05 | EMA: 0.999900 | Steps/Sec: 3.96 | Mem: 20.09G/20.09G
+[[34m2026-09-12 03:17:53[0m] (step=0392400) Diff: 0.1399 | REPA(w=0.03): 0.0058 | skel_loss(w=0.020): 5.6676 | canny_loss(w=0.100): 0.2612 | LR: 1.00e-05 | EMA: 0.999900 | Steps/Sec: 4.10 | Mem: 20.09G/20.09G
+[[34m2026-09-12 03:18:05[0m] (step=0392450) Diff: 0.1423 | REPA(w=0.03): 0.0057 | skel_loss(w=0.020): 5.6942 | canny_loss(w=0.100): 0.2638 | LR: 1.00e-05 | EMA: 0.999900 | Steps/Sec: 4.09 | Mem: 20.09G/20.09G
+[[34m2026-09-12 03:18:17[0m] (step=0392500) Diff: 0.1409 | REPA(w=0.03): 0.0057 | skel_loss(w=0.020): 5.6959 | canny_loss(w=0.100): 0.2611 | LR: 1.00e-05 | EMA: 0.999900 | Steps/Sec: 4.04 | Mem: 20.09G/20.09G
+[[34m2026-09-12 03:18:20[0m] Saved checkpoint to 5script/results/v11_struct-loss/20260912-030448-v11_struct-loss/checkpoints/0392500.pt
+[[34m2026-09-12 03:18:32[0m] (step=0392550) Diff: 0.1411 | REPA(w=0.03): 0.0057 | skel_loss(w=0.020): 5.6756 | canny_loss(w=0.100): 0.2622 | LR: 9.99e-06 | EMA: 0.999900 | Steps/Sec: 3.39 | Mem: 20.09G/20.09G
+[[34m2026-09-12 03:18:44[0m] (step=0392600) Diff: 0.1415 | REPA(w=0.03): 0.0056 | skel_loss(w=0.020): 5.6952 | canny_loss(w=0.100): 0.2618 | LR: 9.99e-06 | EMA: 0.999900 | Steps/Sec: 4.10 | Mem: 20.09G/20.09G
+[[34m2026-09-12 03:18:59[0m] (step=0392650) Diff: 0.1393 | REPA(w=0.03): 0.0056 | skel_loss(w=0.020): 5.6875 | canny_loss(w=0.100): 0.2590 | LR: 9.98e-06 | EMA: 0.999900 | Steps/Sec: 3.33 | Mem: 20.09G/20.09G
+[[34m2026-09-12 03:19:02[0m] Beginning epoch 3...
+[[34m2026-09-12 03:19:12[0m] (step=0392700) Diff: 0.1395 | REPA(w=0.03): 0.0055 | skel_loss(w=0.020): 5.6833 | canny_loss(w=0.100): 0.2587 | LR: 9.98e-06 | EMA: 0.999900 | Steps/Sec: 3.80 | Mem: 20.09G/20.09G
+[[34m2026-09-12 03:19:24[0m] (step=0392750) Diff: 0.1388 | REPA(w=0.03): 0.0055 | skel_loss(w=0.020): 5.7075 | canny_loss(w=0.100): 0.2584 | LR: 9.98e-06 | EMA: 0.999900 | Steps/Sec: 4.09 | Mem: 20.09G/20.09G
+[[34m2026-09-12 03:19:37[0m] (step=0392800) Diff: 0.1404 | REPA(w=0.03): 0.0054 | skel_loss(w=0.020): 5.6615 | canny_loss(w=0.100): 0.2612 | LR: 9.97e-06 | EMA: 0.999900 | Steps/Sec: 4.05 | Mem: 20.09G/20.09G
+[[34m2026-09-12 03:19:52[0m] (step=0392850) Diff: 0.1420 | REPA(w=0.03): 0.0054 | skel_loss(w=0.020): 5.6705 | canny_loss(w=0.100): 0.2637 | LR: 9.97e-06 | EMA: 0.999900 | Steps/Sec: 3.34 | Mem: 20.09G/20.09G
+[[34m2026-09-12 03:20:04[0m] (step=0392900) Diff: 0.1407 | REPA(w=0.03): 0.0054 | skel_loss(w=0.020): 5.6674 | canny_loss(w=0.100): 0.2617 | LR: 9.96e-06 | EMA: 0.999900 | Steps/Sec: 4.05 | Mem: 20.09G/20.09G
+[[34m2026-09-12 03:20:16[0m] (step=0392950) Diff: 0.1420 | REPA(w=0.03): 0.0054 | skel_loss(w=0.020): 5.6665 | canny_loss(w=0.100): 0.2624 | LR: 9.96e-06 | EMA: 0.999900 | Steps/Sec: 4.07 | Mem: 20.09G/20.09G
+[[34m2026-09-12 03:20:31[0m] (step=0393000) Diff: 0.1423 | REPA(w=0.03): 0.0053 | skel_loss(w=0.020): 5.6991 | canny_loss(w=0.100): 0.2591 | LR: 9.95e-06 | EMA: 0.999900 | Steps/Sec: 3.34 | Mem: 20.09G/20.09G
+[[34m2026-09-12 03:20:31[0m] (step=0393000) [diag] grad-norm: blocks=0.187 callig_chain=0.024 glyph_embedder=0.083 inj_out_proj=0.095 other=0.070
+[[34m2026-09-12 03:20:44[0m] (step=0393050) Diff: 0.1421 | REPA(w=0.03): 0.0053 | skel_loss(w=0.020): 5.6543 | canny_loss(w=0.100): 0.2644 | LR: 9.95e-06 | EMA: 0.999900 | Steps/Sec: 4.11 | Mem: 20.09G/20.09G
+[[34m2026-09-12 03:20:56[0m] (step=0393100) Diff: 0.1396 | REPA(w=0.03): 0.0052 | skel_loss(w=0.020): 5.6500 | canny_loss(w=0.100): 0.2591 | LR: 9.94e-06 | EMA: 0.999900 | Steps/Sec: 4.09 | Mem: 20.09G/20.09G
+[[34m2026-09-12 03:21:08[0m] (step=0393150) Diff: 0.1404 | REPA(w=0.03): 0.0052 | skel_loss(w=0.020): 5.6510 | canny_loss(w=0.100): 0.2608 | LR: 9.94e-06 | EMA: 0.999900 | Steps/Sec: 4.07 | Mem: 20.09G/20.09G
+[[34m2026-09-12 03:21:23[0m] (step=0393200) Diff: 0.1388 | REPA(w=0.03): 0.0052 | skel_loss(w=0.020): 5.6418 | canny_loss(w=0.100): 0.2590 | LR: 9.94e-06 | EMA: 0.999900 | Steps/Sec: 3.41 | Mem: 20.09G/20.09G
+[[34m2026-09-12 03:21:35[0m] (step=0393250) Diff: 0.1398 | REPA(w=0.03): 0.0052 | skel_loss(w=0.020): 5.6437 | canny_loss(w=0.100): 0.2611 | LR: 9.93e-06 | EMA: 0.999900 | Steps/Sec: 4.08 | Mem: 20.09G/20.09G
+[[34m2026-09-12 03:21:47[0m] (step=0393300) Diff: 0.1445 | REPA(w=0.03): 0.0052 | skel_loss(w=0.020): 5.6570 | canny_loss(w=0.100): 0.2639 | LR: 9.93e-06 | EMA: 0.999900 | Steps/Sec: 4.08 | Mem: 20.09G/20.09G
+[[34m2026-09-12 03:22:03[0m] (step=0393350) Diff: 0.1406 | REPA(w=0.03): 0.0052 | skel_loss(w=0.020): 5.6298 | canny_loss(w=0.100): 0.2594 | LR: 9.92e-06 | EMA: 0.999900 | Steps/Sec: 3.24 | Mem: 20.09G/20.09G
+[[34m2026-09-12 03:22:15[0m] (step=0393400) Diff: 0.1380 | REPA(w=0.03): 0.0051 | skel_loss(w=0.020): 5.6483 | canny_loss(w=0.100): 0.2593 | LR: 9.92e-06 | EMA: 0.999900 | Steps/Sec: 4.11 | Mem: 20.09G/20.09G
+[[34m2026-09-12 03:22:27[0m] (step=0393450) Diff: 0.1402 | REPA(w=0.03): 0.0051 | skel_loss(w=0.020): 5.6316 | canny_loss(w=0.100): 0.2621 | LR: 9.91e-06 | EMA: 0.999900 | Steps/Sec: 4.07 | Mem: 20.09G/20.09G
+[[34m2026-09-12 03:22:41[0m] (step=0393500) Diff: 0.1418 | REPA(w=0.03): 0.0051 | skel_loss(w=0.020): 5.6541 | canny_loss(w=0.100): 0.2611 | LR: 9.91e-06 | EMA: 0.999900 | Steps/Sec: 3.72 | Mem: 20.09G/20.09G
+[[34m2026-09-12 03:22:54[0m] Beginning epoch 4...
+[[34m2026-09-12 03:22:55[0m] (step=0393550) Diff: 0.1412 | REPA(w=0.03): 0.0050 | skel_loss(w=0.020): 5.6308 | canny_loss(w=0.100): 0.2613 | LR: 9.90e-06 | EMA: 0.999900 | Steps/Sec: 3.45 | Mem: 20.09G/20.09G
+[[34m2026-09-12 03:23:07[0m] (step=0393600) Diff: 0.1420 | REPA(w=0.03): 0.0051 | skel_loss(w=0.020): 5.6096 | canny_loss(w=0.100): 0.2627 | LR: 9.90e-06 | EMA: 0.999900 | Steps/Sec: 4.09 | Mem: 20.09G/20.09G
+[[34m2026-09-12 03:23:20[0m] (step=0393650) Diff: 0.1395 | REPA(w=0.03): 0.0050 | skel_loss(w=0.020): 5.6305 | canny_loss(w=0.100): 0.2623 | LR: 9.90e-06 | EMA: 0.999900 | Steps/Sec: 4.07 | Mem: 20.09G/20.09G
+[[34m2026-09-12 03:23:35[0m] (step=0393700) Diff: 0.1388 | REPA(w=0.03): 0.0050 | skel_loss(w=0.020): 5.6063 | canny_loss(w=0.100): 0.2591 | LR: 9.89e-06 | EMA: 0.999900 | Steps/Sec: 3.31 | Mem: 20.09G/20.09G
+[[34m2026-09-12 03:23:47[0m] (step=0393750) Diff: 0.1390 | REPA(w=0.03): 0.0050 | skel_loss(w=0.020): 5.5971 | canny_loss(w=0.100): 0.2601 | LR: 9.89e-06 | EMA: 0.999900 | Steps/Sec: 4.07 | Mem: 20.09G/20.09G
+[[34m2026-09-12 03:23:59[0m] (step=0393800) Diff: 0.1411 | REPA(w=0.03): 0.0050 | skel_loss(w=0.020): 5.6118 | canny_loss(w=0.100): 0.2614 | LR: 9.88e-06 | EMA: 0.999900 | Steps/Sec: 4.10 | Mem: 20.09G/20.09G
+[[34m2026-09-12 03:24:14[0m] (step=0393850) Diff: 0.1408 | REPA(w=0.03): 0.0049 | skel_loss(w=0.020): 5.6131 | canny_loss(w=0.100): 0.2613 | LR: 9.88e-06 | EMA: 0.999900 | Steps/Sec: 3.34 | Mem: 20.09G/20.09G
+[[34m2026-09-12 03:24:26[0m] (step=0393900) Diff: 0.1396 | REPA(w=0.03): 0.0049 | skel_loss(w=0.020): 5.6071 | canny_loss(w=0.100): 0.2613 | LR: 9.87e-06 | EMA: 0.999900 | Steps/Sec: 4.07 | Mem: 20.09G/20.09G
+[[34m2026-09-12 03:24:39[0m] (step=0393950) Diff: 0.1406 | REPA(w=0.03): 0.0049 | skel_loss(w=0.020): 5.6172 | canny_loss(w=0.100): 0.2617 | LR: 9.87e-06 | EMA: 0.999900 | Steps/Sec: 4.09 | Mem: 20.09G/20.09G
+[[34m2026-09-12 03:24:51[0m] (step=0394000) Diff: 0.1417 | REPA(w=0.03): 0.0049 | skel_loss(w=0.020): 5.6157 | canny_loss(w=0.100): 0.2622 | LR: 9.86e-06 | EMA: 0.999900 | Steps/Sec: 4.07 | Mem: 20.09G/20.09G
+[[34m2026-09-12 03:24:51[0m] (step=0394000) [diag] grad-norm: blocks=0.187 callig_chain=0.023 glyph_embedder=0.079 inj_out_proj=0.090 other=0.071
+[[34m2026-09-12 03:25:06[0m] (step=0394050) Diff: 0.1421 | REPA(w=0.03): 0.0049 | skel_loss(w=0.020): 5.6398 | canny_loss(w=0.100): 0.2622 | LR: 9.86e-06 | EMA: 0.999900 | Steps/Sec: 3.35 | Mem: 20.09G/20.09G
+[[34m2026-09-12 03:25:18[0m] (step=0394100) Diff: 0.1410 | REPA(w=0.03): 0.0048 | skel_loss(w=0.020): 5.6107 | canny_loss(w=0.100): 0.2612 | LR: 9.86e-06 | EMA: 0.999900 | Steps/Sec: 4.05 | Mem: 20.09G/20.09G
+[[34m2026-09-12 03:25:31[0m] (step=0394150) Diff: 0.1422 | REPA(w=0.03): 0.0048 | skel_loss(w=0.020): 5.6172 | canny_loss(w=0.100): 0.2622 | LR: 9.85e-06 | EMA: 0.999900 | Steps/Sec: 4.04 | Mem: 20.09G/20.09G
+[[34m2026-09-12 03:25:46[0m] (step=0394200) Diff: 0.1416 | REPA(w=0.03): 0.0048 | skel_loss(w=0.020): 5.5892 | canny_loss(w=0.100): 0.2621 | LR: 9.85e-06 | EMA: 0.999900 | Steps/Sec: 3.33 | Mem: 20.09G/20.09G
+[[34m2026-09-12 03:25:58[0m] (step=0394250) Diff: 0.1425 | REPA(w=0.03): 0.0048 | skel_loss(w=0.020): 5.6025 | canny_loss(w=0.100): 0.2597 | LR: 9.84e-06 | EMA: 0.999900 | Steps/Sec: 4.10 | Mem: 20.09G/20.09G
+[[34m2026-09-12 03:26:10[0m] (step=0394300) Diff: 0.1407 | REPA(w=0.03): 0.0048 | skel_loss(w=0.020): 5.6049 | canny_loss(w=0.100): 0.2610 | LR: 9.84e-06 | EMA: 0.999900 | Steps/Sec: 4.08 | Mem: 20.09G/20.09G
+[[34m2026-09-12 03:26:22[0m] (step=0394350) Diff: 0.1408 | REPA(w=0.03): 0.0047 | skel_loss(w=0.020): 5.5888 | canny_loss(w=0.100): 0.2645 | LR: 9.83e-06 | EMA: 0.999900 | Steps/Sec: 4.05 | Mem: 20.09G/20.09G
+[[34m2026-09-12 03:26:37[0m] (step=0394400) Diff: 0.1401 | REPA(w=0.03): 0.0047 | skel_loss(w=0.020): 5.6117 | canny_loss(w=0.100): 0.2579 | LR: 9.83e-06 | EMA: 0.999900 | Steps/Sec: 3.36 | Mem: 20.09G/20.09G
+[[34m2026-09-12 03:26:46[0m] Beginning epoch 5...
+[[34m2026-09-12 03:26:51[0m] (step=0394450) Diff: 0.1396 | REPA(w=0.03): 0.0047 | skel_loss(w=0.020): 5.6189 | canny_loss(w=0.100): 0.2585 | LR: 9.82e-06 | EMA: 0.999900 | Steps/Sec: 3.70 | Mem: 20.09G/20.09G
+[[34m2026-09-12 03:27:03[0m] (step=0394500) Diff: 0.1383 | REPA(w=0.03): 0.0047 | skel_loss(w=0.020): 5.5847 | canny_loss(w=0.100): 0.2594 | LR: 9.82e-06 | EMA: 0.999900 | Steps/Sec: 4.12 | Mem: 20.09G/20.09G
+[[34m2026-09-12 03:27:18[0m] (step=0394550) Diff: 0.1401 | REPA(w=0.03): 0.0047 | skel_loss(w=0.020): 5.5834 | canny_loss(w=0.100): 0.2596 | LR: 9.82e-06 | EMA: 0.999900 | Steps/Sec: 3.34 | Mem: 20.09G/20.09G
+[[34m2026-09-12 03:27:30[0m] (step=0394600) Diff: 0.1426 | REPA(w=0.03): 0.0047 | skel_loss(w=0.020): 5.5798 | canny_loss(w=0.100): 0.2629 | LR: 9.81e-06 | EMA: 0.999900 | Steps/Sec: 4.08 | Mem: 20.09G/20.09G
+[[34m2026-09-12 03:27:42[0m] (step=0394650) Diff: 0.1398 | REPA(w=0.03): 0.0047 | skel_loss(w=0.020): 5.5637 | canny_loss(w=0.100): 0.2622 | LR: 9.81e-06 | EMA: 0.999900 | Steps/Sec: 4.11 | Mem: 20.09G/20.09G
+[[34m2026-09-12 03:27:56[0m] (step=0394700) Diff: 0.1396 | REPA(w=0.03): 0.0047 | skel_loss(w=0.020): 5.5824 | canny_loss(w=0.100): 0.2608 | LR: 9.80e-06 | EMA: 0.999900 | Steps/Sec: 3.66 | Mem: 20.09G/20.09G
+[[34m2026-09-12 03:28:09[0m] (step=0394750) Diff: 0.1397 | REPA(w=0.03): 0.0046 | skel_loss(w=0.020): 5.5875 | canny_loss(w=0.100): 0.2601 | LR: 9.80e-06 | EMA: 0.999900 | Steps/Sec: 3.74 | Mem: 20.09G/20.09G
+[[34m2026-09-12 03:28:22[0m] (step=0394800) Diff: 0.1398 | REPA(w=0.03): 0.0046 | skel_loss(w=0.020): 5.6099 | canny_loss(w=0.100): 0.2589 | LR: 9.79e-06 | EMA: 0.999900 | Steps/Sec: 4.12 | Mem: 20.09G/20.09G
+[[34m2026-09-12 03:28:34[0m] (step=0394850) Diff: 0.1424 | REPA(w=0.03): 0.0046 | skel_loss(w=0.020): 5.5995 | canny_loss(w=0.100): 0.2629 | LR: 9.79e-06 | EMA: 0.999900 | Steps/Sec: 4.08 | Mem: 20.09G/20.09G
+[[34m2026-09-12 03:28:49[0m] (step=0394900) Diff: 0.1385 | REPA(w=0.03): 0.0046 | skel_loss(w=0.020): 5.5514 | canny_loss(w=0.100): 0.2609 | LR: 9.79e-06 | EMA: 0.999900 | Steps/Sec: 3.33 | Mem: 20.09G/20.09G
+[[34m2026-09-12 03:29:01[0m] (step=0394950) Diff: 0.1386 | REPA(w=0.03): 0.0046 | skel_loss(w=0.020): 5.5978 | canny_loss(w=0.100): 0.2591 | LR: 9.78e-06 | EMA: 0.999900 | Steps/Sec: 4.11 | Mem: 20.09G/20.09G
+[[34m2026-09-12 03:29:13[0m] (step=0395000) Diff: 0.1401 | REPA(w=0.03): 0.0046 | skel_loss(w=0.020): 5.5772 | canny_loss(w=0.100): 0.2599 | LR: 9.78e-06 | EMA: 0.999900 | Steps/Sec: 4.09 | Mem: 20.09G/20.09G
+[[34m2026-09-12 03:29:13[0m] (step=0395000) [diag] grad-norm: blocks=0.231 callig_chain=0.031 glyph_embedder=0.122 inj_out_proj=0.133 other=0.086
+[[34m2026-09-12 03:29:16[0m] Saved checkpoint to 5script/results/v11_struct-loss/20260912-030448-v11_struct-loss/checkpoints/0395000.pt
+[[34m2026-09-12 03:29:31[0m] (step=0395050) Diff: 0.1427 | REPA(w=0.03): 0.0046 | skel_loss(w=0.020): 5.5803 | canny_loss(w=0.100): 0.2635 | LR: 9.77e-06 | EMA: 0.999900 | Steps/Sec: 2.85 | Mem: 20.09G/20.09G
+[[34m2026-09-12 03:29:43[0m] (step=0395100) Diff: 0.1424 | REPA(w=0.03): 0.0046 | skel_loss(w=0.020): 5.5695 | canny_loss(w=0.100): 0.2615 | LR: 9.77e-06 | EMA: 0.999900 | Steps/Sec: 4.11 | Mem: 20.09G/20.09G
+[[34m2026-09-12 03:29:55[0m] (step=0395150) Diff: 0.1434 | REPA(w=0.03): 0.0046 | skel_loss(w=0.020): 5.5543 | canny_loss(w=0.100): 0.2639 | LR: 9.76e-06 | EMA: 0.999900 | Steps/Sec: 4.11 | Mem: 20.09G/20.09G
+[[34m2026-09-12 03:30:07[0m] (step=0395200) Diff: 0.1391 | REPA(w=0.03): 0.0045 | skel_loss(w=0.020): 5.5650 | canny_loss(w=0.100): 0.2613 | LR: 9.76e-06 | EMA: 0.999900 | Steps/Sec: 4.07 | Mem: 20.09G/20.09G
+[[34m2026-09-12 03:30:22[0m] (step=0395250) Diff: 0.1401 | REPA(w=0.03): 0.0045 | skel_loss(w=0.020): 5.5748 | canny_loss(w=0.100): 0.2606 | LR: 9.75e-06 | EMA: 0.999900 | Steps/Sec: 3.36 | Mem: 20.09G/20.09G
+[[34m2026-09-12 03:30:35[0m] (step=0395300) Diff: 0.1384 | REPA(w=0.03): 0.0045 | skel_loss(w=0.020): 5.5546 | canny_loss(w=0.100): 0.2593 | LR: 9.75e-06 | EMA: 0.999900 | Steps/Sec: 4.11 | Mem: 20.09G/20.09G
+[[34m2026-09-12 03:30:40[0m] Beginning epoch 6...
+[[34m2026-09-12 03:30:48[0m] (step=0395350) Diff: 0.1404 | REPA(w=0.03): 0.0045 | skel_loss(w=0.020): 5.5587 | canny_loss(w=0.100): 0.2619 | LR: 9.75e-06 | EMA: 0.999900 | Steps/Sec: 3.82 | Mem: 20.09G/20.09G
+[[34m2026-09-12 03:31:02[0m] (step=0395400) Diff: 0.1396 | REPA(w=0.03): 0.0045 | skel_loss(w=0.020): 5.5582 | canny_loss(w=0.100): 0.2595 | LR: 9.74e-06 | EMA: 0.999900 | Steps/Sec: 3.38 | Mem: 20.09G/20.09G
+[[34m2026-09-12 03:31:15[0m] (step=0395450) Diff: 0.1434 | REPA(w=0.03): 0.0045 | skel_loss(w=0.020): 5.5585 | canny_loss(w=0.100): 0.2638 | LR: 9.74e-06 | EMA: 0.999900 | Steps/Sec: 4.10 | Mem: 20.09G/20.09G
+[[34m2026-09-12 03:31:27[0m] (step=0395500) Diff: 0.1409 | REPA(w=0.03): 0.0045 | skel_loss(w=0.020): 5.5619 | canny_loss(w=0.100): 0.2607 | LR: 9.73e-06 | EMA: 0.999900 | Steps/Sec: 3.97 | Mem: 20.09G/20.09G
+[[34m2026-09-12 03:31:41[0m] (step=0395550) Diff: 0.1403 | REPA(w=0.03): 0.0044 | skel_loss(w=0.020): 5.5369 | canny_loss(w=0.100): 0.2615 | LR: 9.73e-06 | EMA: 0.999900 | Steps/Sec: 3.51 | Mem: 20.09G/20.09G
+[[34m2026-09-12 03:31:54[0m] (step=0395600) Diff: 0.1405 | REPA(w=0.03): 0.0045 | skel_loss(w=0.020): 5.5480 | canny_loss(w=0.100): 0.2598 | LR: 9.72e-06 | EMA: 0.999900 | Steps/Sec: 3.87 | Mem: 20.09G/20.09G
+[[34m2026-09-12 03:32:07[0m] (step=0395650) Diff: 0.1389 | REPA(w=0.03): 0.0044 | skel_loss(w=0.020): 5.5622 | canny_loss(w=0.100): 0.2580 | LR: 9.72e-06 | EMA: 0.999900 | Steps/Sec: 4.10 | Mem: 20.09G/20.09G
+[[34m2026-09-12 03:32:19[0m] (step=0395700) Diff: 0.1406 | REPA(w=0.03): 0.0044 | skel_loss(w=0.020): 5.5538 | canny_loss(w=0.100): 0.2602 | LR: 9.72e-06 | EMA: 0.999900 | Steps/Sec: 4.09 | Mem: 20.09G/20.09G
+[[34m2026-09-12 03:32:34[0m] (step=0395750) Diff: 0.1409 | REPA(w=0.03): 0.0044 | skel_loss(w=0.020): 5.5538 | canny_loss(w=0.100): 0.2621 | LR: 9.71e-06 | EMA: 0.999900 | Steps/Sec: 3.39 | Mem: 20.09G/20.09G
+[[34m2026-09-12 03:32:46[0m] (step=0395800) Diff: 0.1404 | REPA(w=0.03): 0.0044 | skel_loss(w=0.020): 5.5258 | canny_loss(w=0.100): 0.2610 | LR: 9.71e-06 | EMA: 0.999900 | Steps/Sec: 4.10 | Mem: 20.09G/20.09G
+[[34m2026-09-12 03:32:58[0m] (step=0395850) Diff: 0.1398 | REPA(w=0.03): 0.0044 | skel_loss(w=0.020): 5.5574 | canny_loss(w=0.100): 0.2589 | LR: 9.70e-06 | EMA: 0.999900 | Steps/Sec: 4.10 | Mem: 20.09G/20.09G
+[[34m2026-09-12 03:33:13[0m] (step=0395900) Diff: 0.1394 | REPA(w=0.03): 0.0044 | skel_loss(w=0.020): 5.5351 | canny_loss(w=0.100): 0.2614 | LR: 9.70e-06 | EMA: 0.999900 | Steps/Sec: 3.38 | Mem: 20.09G/20.09G
+[[34m2026-09-12 03:33:25[0m] (step=0395950) Diff: 0.1418 | REPA(w=0.03): 0.0044 | skel_loss(w=0.020): 5.5685 | canny_loss(w=0.100): 0.2595 | LR: 9.69e-06 | EMA: 0.999900 | Steps/Sec: 4.10 | Mem: 20.09G/20.09G
+[[34m2026-09-12 03:33:37[0m] (step=0396000) Diff: 0.1395 | REPA(w=0.03): 0.0044 | skel_loss(w=0.020): 5.5740 | canny_loss(w=0.100): 0.2602 | LR: 9.69e-06 | EMA: 0.999900 | Steps/Sec: 4.08 | Mem: 20.09G/20.09G
+[[34m2026-09-12 03:33:37[0m] (step=0396000) [diag] grad-norm: blocks=0.180 callig_chain=0.024 glyph_embedder=0.076 inj_out_proj=0.094 other=0.075
+[[34m2026-09-12 03:33:50[0m] (step=0396050) Diff: 0.1405 | REPA(w=0.03): 0.0044 | skel_loss(w=0.020): 5.5394 | canny_loss(w=0.100): 0.2625 | LR: 9.68e-06 | EMA: 0.999900 | Steps/Sec: 4.05 | Mem: 20.09G/20.09G
+[[34m2026-09-12 03:34:04[0m] (step=0396100) Diff: 0.1441 | REPA(w=0.03): 0.0044 | skel_loss(w=0.020): 5.5471 | canny_loss(w=0.100): 0.2636 | LR: 9.68e-06 | EMA: 0.999900 | Steps/Sec: 3.40 | Mem: 20.09G/20.09G
+[[34m2026-09-12 03:34:17[0m] (step=0396150) Diff: 0.1394 | REPA(w=0.03): 0.0044 | skel_loss(w=0.020): 5.5487 | canny_loss(w=0.100): 0.2591 | LR: 9.68e-06 | EMA: 0.999900 | Steps/Sec: 4.08 | Mem: 20.09G/20.09G
+[[34m2026-09-12 03:34:29[0m] (step=0396200) Diff: 0.1389 | REPA(w=0.03): 0.0044 | skel_loss(w=0.020): 5.5354 | canny_loss(w=0.100): 0.2614 | LR: 9.67e-06 | EMA: 0.999900 | Steps/Sec: 4.09 | Mem: 20.09G/20.09G
+[[34m2026-09-12 03:34:31[0m] Beginning epoch 7...
+[[34m2026-09-12 03:34:45[0m] (step=0396250) Diff: 0.1424 | REPA(w=0.03): 0.0044 | skel_loss(w=0.020): 5.5603 | canny_loss(w=0.100): 0.2588 | LR: 9.67e-06 | EMA: 0.999900 | Steps/Sec: 3.17 | Mem: 20.09G/20.09G
+[[34m2026-09-12 03:34:57[0m] (step=0396300) Diff: 0.1400 | REPA(w=0.03): 0.0044 | skel_loss(w=0.020): 5.5236 | canny_loss(w=0.100): 0.2616 | LR: 9.66e-06 | EMA: 0.999900 | Steps/Sec: 4.09 | Mem: 20.09G/20.09G
+[[34m2026-09-12 03:35:09[0m] (step=0396350) Diff: 0.1421 | REPA(w=0.03): 0.0044 | skel_loss(w=0.020): 5.5232 | canny_loss(w=0.100): 0.2636 | LR: 9.66e-06 | EMA: 0.999900 | Steps/Sec: 4.07 | Mem: 20.09G/20.09G
+[[34m2026-09-12 03:35:21[0m] (step=0396400) Diff: 0.1406 | REPA(w=0.03): 0.0043 | skel_loss(w=0.020): 5.5010 | canny_loss(w=0.100): 0.2615 | LR: 9.65e-06 | EMA: 0.999900 | Steps/Sec: 4.06 | Mem: 20.09G/20.09G
+[[34m2026-09-12 03:35:36[0m] (step=0396450) Diff: 0.1422 | REPA(w=0.03): 0.0043 | skel_loss(w=0.020): 5.5055 | canny_loss(w=0.100): 0.2643 | LR: 9.65e-06 | EMA: 0.999900 | Steps/Sec: 3.42 | Mem: 20.09G/20.09G
+[[34m2026-09-12 03:35:48[0m] (step=0396500) Diff: 0.1386 | REPA(w=0.03): 0.0043 | skel_loss(w=0.020): 5.5085 | canny_loss(w=0.100): 0.2611 | LR: 9.65e-06 | EMA: 0.999900 | Steps/Sec: 4.07 | Mem: 20.09G/20.09G
+[[34m2026-09-12 03:36:01[0m] (step=0396550) Diff: 0.1374 | REPA(w=0.03): 0.0043 | skel_loss(w=0.020): 5.5094 | canny_loss(w=0.100): 0.2609 | LR: 9.64e-06 | EMA: 0.999900 | Steps/Sec: 4.08 | Mem: 20.09G/20.09G
+[[34m2026-09-12 03:36:16[0m] (step=0396600) Diff: 0.1414 | REPA(w=0.03): 0.0043 | skel_loss(w=0.020): 5.5190 | canny_loss(w=0.100): 0.2627 | LR: 9.64e-06 | EMA: 0.999900 | Steps/Sec: 3.29 | Mem: 20.09G/20.09G
+[[34m2026-09-12 03:36:28[0m] (step=0396650) Diff: 0.1430 | REPA(w=0.03): 0.0043 | skel_loss(w=0.020): 5.5334 | canny_loss(w=0.100): 0.2636 | LR: 9.63e-06 | EMA: 0.999900 | Steps/Sec: 4.09 | Mem: 20.09G/20.09G
+[[34m2026-09-12 03:36:40[0m] (step=0396700) Diff: 0.1392 | REPA(w=0.03): 0.0043 | skel_loss(w=0.020): 5.5307 | canny_loss(w=0.100): 0.2606 | LR: 9.63e-06 | EMA: 0.999900 | Steps/Sec: 4.05 | Mem: 20.11G/20.11G
+[[34m2026-09-12 03:36:54[0m] (step=0396750) Diff: 0.1400 | REPA(w=0.03): 0.0043 | skel_loss(w=0.020): 5.5272 | canny_loss(w=0.100): 0.2620 | LR: 9.62e-06 | EMA: 0.999900 | Steps/Sec: 3.54 | Mem: 20.11G/20.11G
+[[34m2026-09-12 03:37:08[0m] (step=0396800) Diff: 0.1395 | REPA(w=0.03): 0.0043 | skel_loss(w=0.020): 5.5066 | canny_loss(w=0.100): 0.2621 | LR: 9.62e-06 | EMA: 0.999900 | Steps/Sec: 3.81 | Mem: 20.11G/20.11G
+[[34m2026-09-12 03:37:20[0m] (step=0396850) Diff: 0.1386 | REPA(w=0.03): 0.0043 | skel_loss(w=0.020): 5.5094 | canny_loss(w=0.100): 0.2596 | LR: 9.62e-06 | EMA: 0.999900 | Steps/Sec: 4.11 | Mem: 20.11G/20.11G
+[[34m2026-09-12 03:37:32[0m] (step=0396900) Diff: 0.1398 | REPA(w=0.03): 0.0043 | skel_loss(w=0.020): 5.5239 | canny_loss(w=0.100): 0.2589 | LR: 9.61e-06 | EMA: 0.999900 | Steps/Sec: 4.10 | Mem: 20.11G/20.11G
+[[34m2026-09-12 03:37:47[0m] (step=0396950) Diff: 0.1382 | REPA(w=0.03): 0.0043 | skel_loss(w=0.020): 5.5095 | canny_loss(w=0.100): 0.2596 | LR: 9.61e-06 | EMA: 0.999900 | Steps/Sec: 3.33 | Mem: 20.11G/20.11G
+[[34m2026-09-12 03:37:59[0m] (step=0397000) Diff: 0.1393 | REPA(w=0.03): 0.0043 | skel_loss(w=0.020): 5.5256 | canny_loss(w=0.100): 0.2621 | LR: 9.60e-06 | EMA: 0.999900 | Steps/Sec: 4.08 | Mem: 20.11G/20.11G
+[[34m2026-09-12 03:37:59[0m] (step=0397000) [diag] grad-norm: blocks=0.208 callig_chain=0.026 glyph_embedder=0.101 inj_out_proj=0.111 other=0.068
+[[34m2026-09-12 03:38:11[0m] (step=0397050) Diff: 0.1388 | REPA(w=0.03): 0.0043 | skel_loss(w=0.020): 5.5203 | canny_loss(w=0.100): 0.2587 | LR: 9.60e-06 | EMA: 0.999900 | Steps/Sec: 4.11 | Mem: 20.11G/20.11G
+[[34m2026-09-12 03:38:24[0m] Beginning epoch 8...
+[[34m2026-09-12 03:38:26[0m] (step=0397100) Diff: 0.1408 | REPA(w=0.03): 0.0043 | skel_loss(w=0.020): 5.5071 | canny_loss(w=0.100): 0.2613 | LR: 9.59e-06 | EMA: 0.999900 | Steps/Sec: 3.35 | Mem: 20.11G/20.11G
+[[34m2026-09-12 03:38:39[0m] (step=0397150) Diff: 0.1397 | REPA(w=0.03): 0.0042 | skel_loss(w=0.020): 5.5074 | canny_loss(w=0.100): 0.2609 | LR: 9.59e-06 | EMA: 0.999900 | Steps/Sec: 4.07 | Mem: 20.11G/20.11G
+[[34m2026-09-12 03:38:51[0m] (step=0397200) Diff: 0.1374 | REPA(w=0.03): 0.0043 | skel_loss(w=0.020): 5.5166 | canny_loss(w=0.100): 0.2588 | LR: 9.59e-06 | EMA: 0.999900 | Steps/Sec: 4.09 | Mem: 20.11G/20.11G
+[[34m2026-09-12 03:39:03[0m] (step=0397250) Diff: 0.1401 | REPA(w=0.03): 0.0042 | skel_loss(w=0.020): 5.4963 | canny_loss(w=0.100): 0.2602 | LR: 9.58e-06 | EMA: 0.999900 | Steps/Sec: 4.08 | Mem: 20.11G/20.11G
+[[34m2026-09-12 03:39:18[0m] (step=0397300) Diff: 0.1398 | REPA(w=0.03): 0.0042 | skel_loss(w=0.020): 5.5024 | canny_loss(w=0.100): 0.2609 | LR: 9.58e-06 | EMA: 0.999900 | Steps/Sec: 3.34 | Mem: 20.11G/20.11G
+[[34m2026-09-12 03:39:30[0m] (step=0397350) Diff: 0.1405 | REPA(w=0.03): 0.0042 | skel_loss(w=0.020): 5.5191 | canny_loss(w=0.100): 0.2608 | LR: 9.57e-06 | EMA: 0.999900 | Steps/Sec: 4.10 | Mem: 20.11G/20.11G
+[[34m2026-09-12 03:39:42[0m] (step=0397400) Diff: 0.1387 | REPA(w=0.03): 0.0042 | skel_loss(w=0.020): 5.4863 | canny_loss(w=0.100): 0.2623 | LR: 9.57e-06 | EMA: 0.999900 | Steps/Sec: 4.10 | Mem: 20.11G/20.11G
+[[34m2026-09-12 03:39:57[0m] (step=0397450) Diff: 0.1375 | REPA(w=0.03): 0.0042 | skel_loss(w=0.020): 5.4965 | canny_loss(w=0.100): 0.2597 | LR: 9.56e-06 | EMA: 0.999900 | Steps/Sec: 3.33 | Mem: 20.11G/20.11G
+[[34m2026-09-12 03:40:10[0m] (step=0397500) Diff: 0.1402 | REPA(w=0.03): 0.0042 | skel_loss(w=0.020): 5.5078 | canny_loss(w=0.100): 0.2618 | LR: 9.56e-06 | EMA: 0.999900 | Steps/Sec: 4.07 | Mem: 20.11G/20.11G
+[[34m2026-09-12 03:40:13[0m] Saved checkpoint to 5script/results/v11_struct-loss/20260912-030448-v11_struct-loss/checkpoints/0397500.pt
+[[34m2026-09-12 03:40:25[0m] (step=0397550) Diff: 0.1378 | REPA(w=0.03): 0.0042 | skel_loss(w=0.020): 5.5085 | canny_loss(w=0.100): 0.2591 | LR: 9.56e-06 | EMA: 0.999900 | Steps/Sec: 3.31 | Mem: 20.11G/20.11G
+[[34m2026-09-12 03:40:38[0m] (step=0397600) Diff: 0.1399 | REPA(w=0.03): 0.0042 | skel_loss(w=0.020): 5.5094 | canny_loss(w=0.100): 0.2610 | LR: 9.55e-06 | EMA: 0.999900 | Steps/Sec: 3.67 | Mem: 20.11G/20.11G
+[[34m2026-09-12 03:40:52[0m] (step=0397650) Diff: 0.1399 | REPA(w=0.03): 0.0042 | skel_loss(w=0.020): 5.5335 | canny_loss(w=0.100): 0.2590 | LR: 9.55e-06 | EMA: 0.999900 | Steps/Sec: 3.71 | Mem: 20.11G/20.11G
+[[34m2026-09-12 03:41:04[0m] (step=0397700) Diff: 0.1405 | REPA(w=0.03): 0.0042 | skel_loss(w=0.020): 5.4917 | canny_loss(w=0.100): 0.2612 | LR: 9.54e-06 | EMA: 0.999900 | Steps/Sec: 4.10 | Mem: 20.11G/20.11G
+[[34m2026-09-12 03:41:16[0m] (step=0397750) Diff: 0.1403 | REPA(w=0.03): 0.0042 | skel_loss(w=0.020): 5.4955 | canny_loss(w=0.100): 0.2612 | LR: 9.54e-06 | EMA: 0.999900 | Steps/Sec: 4.10 | Mem: 20.11G/20.11G
+[[34m2026-09-12 03:41:31[0m] (step=0397800) Diff: 0.1410 | REPA(w=0.03): 0.0042 | skel_loss(w=0.020): 5.5165 | canny_loss(w=0.100): 0.2614 | LR: 9.53e-06 | EMA: 0.999900 | Steps/Sec: 3.34 | Mem: 20.11G/20.11G
+[[34m2026-09-12 03:41:44[0m] (step=0397850) Diff: 0.1400 | REPA(w=0.03): 0.0042 | skel_loss(w=0.020): 5.5203 | canny_loss(w=0.100): 0.2596 | LR: 9.53e-06 | EMA: 0.999900 | Steps/Sec: 4.09 | Mem: 20.11G/20.11G
+[[34m2026-09-12 03:41:56[0m] (step=0397900) Diff: 0.1401 | REPA(w=0.03): 0.0042 | skel_loss(w=0.020): 5.4862 | canny_loss(w=0.100): 0.2629 | LR: 9.53e-06 | EMA: 0.999900 | Steps/Sec: 4.09 | Mem: 20.11G/20.11G
+[[34m2026-09-12 03:42:11[0m] (step=0397950) Diff: 0.1385 | REPA(w=0.03): 0.0042 | skel_loss(w=0.020): 5.5027 | canny_loss(w=0.100): 0.2592 | LR: 9.52e-06 | EMA: 0.999900 | Steps/Sec: 3.36 | Mem: 20.11G/20.11G
+[[34m2026-09-12 03:42:19[0m] Beginning epoch 9...
+[[34m2026-09-12 03:42:24[0m] (step=0398000) Diff: 0.1394 | REPA(w=0.03): 0.0042 | skel_loss(w=0.020): 5.5026 | canny_loss(w=0.100): 0.2598 | LR: 9.52e-06 | EMA: 0.999900 | Steps/Sec: 3.84 | Mem: 20.11G/20.11G
+[[34m2026-09-12 03:42:24[0m] (step=0398000) [diag] grad-norm: blocks=0.192 callig_chain=0.032 glyph_embedder=0.094 inj_out_proj=0.106 other=0.085
+[[34m2026-09-12 03:42:36[0m] (step=0398050) Diff: 0.1399 | REPA(w=0.03): 0.0042 | skel_loss(w=0.020): 5.4825 | canny_loss(w=0.100): 0.2602 | LR: 9.51e-06 | EMA: 0.999900 | Steps/Sec: 4.09 | Mem: 20.11G/20.11G
+[[34m2026-09-12 03:42:48[0m] (step=0398100) Diff: 0.1419 | REPA(w=0.03): 0.0042 | skel_loss(w=0.020): 5.4774 | canny_loss(w=0.100): 0.2617 | LR: 9.51e-06 | EMA: 0.999900 | Steps/Sec: 4.07 | Mem: 20.11G/20.11G
+[[34m2026-09-12 03:43:03[0m] (step=0398150) Diff: 0.1408 | REPA(w=0.03): 0.0042 | skel_loss(w=0.020): 5.4956 | canny_loss(w=0.100): 0.2586 | LR: 9.50e-06 | EMA: 0.999900 | Steps/Sec: 3.35 | Mem: 20.11G/20.11G
+[[34m2026-09-12 03:43:15[0m] (step=0398200) Diff: 0.1392 | REPA(w=0.03): 0.0041 | skel_loss(w=0.020): 5.5055 | canny_loss(w=0.100): 0.2580 | LR: 9.50e-06 | EMA: 0.999900 | Steps/Sec: 4.09 | Mem: 20.11G/20.11G
+[[34m2026-09-12 03:43:28[0m] (step=0398250) Diff: 0.1404 | REPA(w=0.03): 0.0041 | skel_loss(w=0.020): 5.4971 | canny_loss(w=0.100): 0.2629 | LR: 9.50e-06 | EMA: 0.999900 | Steps/Sec: 4.09 | Mem: 20.11G/20.11G
+[[34m2026-09-12 03:43:43[0m] (step=0398300) Diff: 0.1418 | REPA(w=0.03): 0.0042 | skel_loss(w=0.020): 5.4745 | canny_loss(w=0.100): 0.2623 | LR: 9.49e-06 | EMA: 0.999900 | Steps/Sec: 3.34 | Mem: 20.11G/20.11G
+[[34m2026-09-12 03:43:55[0m] (step=0398350) Diff: 0.1396 | REPA(w=0.03): 0.0041 | skel_loss(w=0.020): 5.4801 | canny_loss(w=0.100): 0.2621 | LR: 9.49e-06 | EMA: 0.999900 | Steps/Sec: 4.08 | Mem: 20.11G/20.11G
+[[34m2026-09-12 03:44:07[0m] (step=0398400) Diff: 0.1401 | REPA(w=0.03): 0.0041 | skel_loss(w=0.020): 5.5031 | canny_loss(w=0.100): 0.2607 | LR: 9.48e-06 | EMA: 0.999900 | Steps/Sec: 4.09 | Mem: 20.11G/20.11G
+[[34m2026-09-12 03:44:19[0m] (step=0398450) Diff: 0.1391 | REPA(w=0.03): 0.0041 | skel_loss(w=0.020): 5.4802 | canny_loss(w=0.100): 0.2603 | LR: 9.48e-06 | EMA: 0.999900 | Steps/Sec: 4.08 | Mem: 20.11G/20.11G
+[[34m2026-09-12 03:44:34[0m] (step=0398500) Diff: 0.1424 | REPA(w=0.03): 0.0041 | skel_loss(w=0.020): 5.4883 | canny_loss(w=0.100): 0.2631 | LR: 9.47e-06 | EMA: 0.999900 | Steps/Sec: 3.34 | Mem: 20.11G/20.11G
+[[34m2026-09-12 03:44:46[0m] (step=0398550) Diff: 0.1449 | REPA(w=0.03): 0.0042 | skel_loss(w=0.020): 5.4848 | canny_loss(w=0.100): 0.2644 | LR: 9.47e-06 | EMA: 0.999900 | Steps/Sec: 4.10 | Mem: 20.11G/20.11G
+[[34m2026-09-12 03:44:59[0m] (step=0398600) Diff: 0.1419 | REPA(w=0.03): 0.0041 | skel_loss(w=0.020): 5.5043 | canny_loss(w=0.100): 0.2617 | LR: 9.47e-06 | EMA: 0.999900 | Steps/Sec: 4.11 | Mem: 20.11G/20.11G
+[[34m2026-09-12 03:45:14[0m] (step=0398650) Diff: 0.1378 | REPA(w=0.03): 0.0041 | skel_loss(w=0.020): 5.4855 | canny_loss(w=0.100): 0.2609 | LR: 9.46e-06 | EMA: 0.999900 | Steps/Sec: 3.34 | Mem: 20.11G/20.11G
+[[34m2026-09-12 03:45:26[0m] (step=0398700) Diff: 0.1374 | REPA(w=0.03): 0.0041 | skel_loss(w=0.020): 5.4928 | canny_loss(w=0.100): 0.2577 | LR: 9.46e-06 | EMA: 0.999900 | Steps/Sec: 3.90 | Mem: 20.11G/20.11G
+[[34m2026-09-12 03:45:39[0m] (step=0398750) Diff: 0.1396 | REPA(w=0.03): 0.0041 | skel_loss(w=0.020): 5.4692 | canny_loss(w=0.100): 0.2614 | LR: 9.45e-06 | EMA: 0.999900 | Steps/Sec: 4.10 | Mem: 20.11G/20.11G
+[[34m2026-09-12 03:45:51[0m] (step=0398800) Diff: 0.1387 | REPA(w=0.03): 0.0041 | skel_loss(w=0.020): 5.4563 | canny_loss(w=0.100): 0.2601 | LR: 9.45e-06 | EMA: 0.999900 | Steps/Sec: 4.06 | Mem: 20.11G/20.11G
+[[34m2026-09-12 03:46:06[0m] (step=0398850) Diff: 0.1412 | REPA(w=0.03): 0.0041 | skel_loss(w=0.020): 5.4984 | canny_loss(w=0.100): 0.2631 | LR: 9.44e-06 | EMA: 0.999900 | Steps/Sec: 3.36 | Mem: 20.11G/20.11G
+[[34m2026-09-12 03:46:11[0m] Beginning epoch 10...
+[[34m2026-09-12 03:46:19[0m] (step=0398900) Diff: 0.1401 | REPA(w=0.03): 0.0041 | skel_loss(w=0.020): 5.4791 | canny_loss(w=0.100): 0.2588 | LR: 9.44e-06 | EMA: 0.999900 | Steps/Sec: 3.77 | Mem: 20.11G/20.11G
+[[34m2026-09-12 03:46:31[0m] (step=0398950) Diff: 0.1396 | REPA(w=0.03): 0.0041 | skel_loss(w=0.020): 5.4776 | canny_loss(w=0.100): 0.2631 | LR: 9.44e-06 | EMA: 0.999900 | Steps/Sec: 4.10 | Mem: 20.11G/20.11G
+[[34m2026-09-12 03:46:46[0m] (step=0399000) Diff: 0.1399 | REPA(w=0.03): 0.0041 | skel_loss(w=0.020): 5.4876 | canny_loss(w=0.100): 0.2592 | LR: 9.43e-06 | EMA: 0.999900 | Steps/Sec: 3.34 | Mem: 20.11G/20.11G
+[[34m2026-09-12 03:46:46[0m] (step=0399000) [diag] grad-norm: blocks=0.180 callig_chain=0.022 glyph_embedder=0.075 inj_out_proj=0.094 other=0.070
+[[34m2026-09-12 03:46:58[0m] (step=0399050) Diff: 0.1410 | REPA(w=0.03): 0.0041 | skel_loss(w=0.020): 5.4992 | canny_loss(w=0.100): 0.2610 | LR: 9.43e-06 | EMA: 0.999900 | Steps/Sec: 4.10 | Mem: 20.11G/20.11G
+[[34m2026-09-12 03:47:11[0m] (step=0399100) Diff: 0.1395 | REPA(w=0.03): 0.0041 | skel_loss(w=0.020): 5.5007 | canny_loss(w=0.100): 0.2586 | LR: 9.42e-06 | EMA: 0.999900 | Steps/Sec: 4.10 | Mem: 20.11G/20.11G
+[[34m2026-09-12 03:47:25[0m] (step=0399150) Diff: 0.1390 | REPA(w=0.03): 0.0041 | skel_loss(w=0.020): 5.4775 | canny_loss(w=0.100): 0.2600 | LR: 9.42e-06 | EMA: 0.999900 | Steps/Sec: 3.58 | Mem: 20.11G/20.11G
+[[34m2026-09-12 03:47:38[0m] (step=0399200) Diff: 0.1390 | REPA(w=0.03): 0.0041 | skel_loss(w=0.020): 5.4496 | canny_loss(w=0.100): 0.2608 | LR: 9.41e-06 | EMA: 0.999900 | Steps/Sec: 3.85 | Mem: 20.11G/20.11G
+[[34m2026-09-12 03:47:50[0m] (step=0399250) Diff: 0.1426 | REPA(w=0.03): 0.0041 | skel_loss(w=0.020): 5.4562 | canny_loss(w=0.100): 0.2635 | LR: 9.41e-06 | EMA: 0.999900 | Steps/Sec: 4.10 | Mem: 20.11G/20.11G
+[[34m2026-09-12 03:48:02[0m] (step=0399300) Diff: 0.1413 | REPA(w=0.03): 0.0041 | skel_loss(w=0.020): 5.4858 | canny_loss(w=0.100): 0.2614 | LR: 9.41e-06 | EMA: 0.999900 | Steps/Sec: 4.08 | Mem: 20.11G/20.11G
+[[34m2026-09-12 03:48:17[0m] (step=0399350) Diff: 0.1397 | REPA(w=0.03): 0.0041 | skel_loss(w=0.020): 5.4556 | canny_loss(w=0.100): 0.2604 | LR: 9.40e-06 | EMA: 0.999900 | Steps/Sec: 3.35 | Mem: 20.11G/20.11G
+[[34m2026-09-12 03:48:29[0m] (step=0399400) Diff: 0.1397 | REPA(w=0.03): 0.0041 | skel_loss(w=0.020): 5.4620 | canny_loss(w=0.100): 0.2631 | LR: 9.40e-06 | EMA: 0.999900 | Steps/Sec: 4.12 | Mem: 20.11G/20.11G
+[[34m2026-09-12 03:48:41[0m] (step=0399450) Diff: 0.1385 | REPA(w=0.03): 0.0041 | skel_loss(w=0.020): 5.4851 | canny_loss(w=0.100): 0.2624 | LR: 9.39e-06 | EMA: 0.999900 | Steps/Sec: 4.10 | Mem: 20.11G/20.11G
+[[34m2026-09-12 03:48:56[0m] (step=0399500) Diff: 0.1408 | REPA(w=0.03): 0.0041 | skel_loss(w=0.020): 5.4784 | canny_loss(w=0.100): 0.2599 | LR: 9.39e-06 | EMA: 0.999900 | Steps/Sec: 3.33 | Mem: 20.11G/20.11G
+[[34m2026-09-12 03:49:09[0m] (step=0399550) Diff: 0.1428 | REPA(w=0.03): 0.0041 | skel_loss(w=0.020): 5.4818 | canny_loss(w=0.100): 0.2634 | LR: 9.39e-06 | EMA: 0.999900 | Steps/Sec: 4.10 | Mem: 20.11G/20.11G
+[[34m2026-09-12 03:49:21[0m] (step=0399600) Diff: 0.1416 | REPA(w=0.03): 0.0040 | skel_loss(w=0.020): 5.4844 | canny_loss(w=0.100): 0.2601 | LR: 9.38e-06 | EMA: 0.999900 | Steps/Sec: 4.09 | Mem: 20.11G/20.11G
+[[34m2026-09-12 03:49:33[0m] (step=0399650) Diff: 0.1431 | REPA(w=0.03): 0.0040 | skel_loss(w=0.020): 5.4839 | canny_loss(w=0.100): 0.2651 | LR: 9.38e-06 | EMA: 0.999900 | Steps/Sec: 4.05 | Mem: 20.11G/20.11G
+[[34m2026-09-12 03:49:48[0m] (step=0399700) Diff: 0.1434 | REPA(w=0.03): 0.0041 | skel_loss(w=0.020): 5.4762 | canny_loss(w=0.100): 0.2625 | LR: 9.37e-06 | EMA: 0.999900 | Steps/Sec: 3.35 | Mem: 20.11G/20.11G
+[[34m2026-09-12 03:50:01[0m] (step=0399750) Diff: 0.1392 | REPA(w=0.03): 0.0040 | skel_loss(w=0.020): 5.4746 | canny_loss(w=0.100): 0.2594 | LR: 9.37e-06 | EMA: 0.999900 | Steps/Sec: 3.98 | Mem: 20.11G/20.11G
+[[34m2026-09-12 03:50:02[0m] Beginning epoch 11...
+[[34m2026-09-12 03:50:14[0m] (step=0399800) Diff: 0.1385 | REPA(w=0.03): 0.0041 | skel_loss(w=0.020): 5.4587 | canny_loss(w=0.100): 0.2600 | LR: 9.36e-06 | EMA: 0.999900 | Steps/Sec: 3.74 | Mem: 20.11G/20.11G
+[[34m2026-09-12 03:50:29[0m] (step=0399850) Diff: 0.1382 | REPA(w=0.03): 0.0040 | skel_loss(w=0.020): 5.4529 | canny_loss(w=0.100): 0.2597 | LR: 9.36e-06 | EMA: 0.999900 | Steps/Sec: 3.34 | Mem: 20.11G/20.11G
+[[34m2026-09-12 03:50:41[0m] (step=0399900) Diff: 0.1410 | REPA(w=0.03): 0.0041 | skel_loss(w=0.020): 5.4575 | canny_loss(w=0.100): 0.2629 | LR: 9.36e-06 | EMA: 0.999900 | Steps/Sec: 4.09 | Mem: 20.11G/20.11G
+[[34m2026-09-12 03:50:54[0m] (step=0399950) Diff: 0.1390 | REPA(w=0.03): 0.0040 | skel_loss(w=0.020): 5.4573 | canny_loss(w=0.100): 0.2623 | LR: 9.35e-06 | EMA: 0.999900 | Steps/Sec: 4.06 | Mem: 20.11G/20.11G
+[[34m2026-09-12 03:51:06[0m] (step=0400000) Diff: 0.1400 | REPA(w=0.03): 0.0040 | skel_loss(w=0.020): 5.4699 | canny_loss(w=0.100): 0.2614 | LR: 9.35e-06 | EMA: 0.999900 | Steps/Sec: 4.07 | Mem: 20.11G/20.11G
+[[34m2026-09-12 03:51:06[0m] (step=0400000) [diag] grad-norm: blocks=0.294 callig_chain=0.037 glyph_embedder=0.162 inj_out_proj=0.172 other=0.118
+[[34m2026-09-12 03:51:08[0m] Saved checkpoint to 5script/results/v11_struct-loss/20260912-030448-v11_struct-loss/checkpoints/0400000.pt
+[[34m2026-09-12 03:51:21[0m] (step=0400050) Diff: 0.1395 | REPA(w=0.03): 0.0040 | skel_loss(w=0.020): 5.4869 | canny_loss(w=0.100): 0.2594 | LR: 9.34e-06 | EMA: 0.999900 | Steps/Sec: 3.24 | Mem: 20.11G/20.11G
+[[34m2026-09-12 03:51:34[0m] (step=0400100) Diff: 0.1375 | REPA(w=0.03): 0.0040 | skel_loss(w=0.020): 5.4775 | canny_loss(w=0.100): 0.2583 | LR: 9.34e-06 | EMA: 0.999900 | Steps/Sec: 4.06 | Mem: 20.11G/20.11G
+[[34m2026-09-12 03:51:46[0m] (step=0400150) Diff: 0.1377 | REPA(w=0.03): 0.0040 | skel_loss(w=0.020): 5.4334 | canny_loss(w=0.100): 0.2611 | LR: 9.33e-06 | EMA: 0.999900 | Steps/Sec: 4.10 | Mem: 20.11G/20.11G
+[[34m2026-09-12 03:52:04[0m] (step=0400200) Diff: 0.1390 | REPA(w=0.03): 0.0040 | skel_loss(w=0.020): 5.4573 | canny_loss(w=0.100): 0.2609 | LR: 9.33e-06 | EMA: 0.999900 | Steps/Sec: 2.76 | Mem: 20.11G/20.11G
+[[34m2026-09-12 03:52:28[0m] (step=0400250) Diff: 0.1388 | REPA(w=0.03): 0.0040 | skel_loss(w=0.020): 5.4523 | canny_loss(w=0.100): 0.2616 | LR: 9.33e-06 | EMA: 0.999900 | Steps/Sec: 2.06 | Mem: 20.11G/20.11G
+[[34m2026-09-12 03:52:52[0m] (step=0400300) Diff: 0.1394 | REPA(w=0.03): 0.0040 | skel_loss(w=0.020): 5.4641 | canny_loss(w=0.100): 0.2585 | LR: 9.32e-06 | EMA: 0.999900 | Steps/Sec: 2.06 | Mem: 20.11G/20.11G
+[[34m2026-09-12 03:53:17[0m] (step=0400350) Diff: 0.1371 | REPA(w=0.03): 0.0040 | skel_loss(w=0.020): 5.4473 | canny_loss(w=0.100): 0.2591 | LR: 9.32e-06 | EMA: 0.999900 | Steps/Sec: 2.07 | Mem: 20.11G/20.11G
+[[34m2026-09-12 03:53:41[0m] (step=0400400) Diff: 0.1401 | REPA(w=0.03): 0.0040 | skel_loss(w=0.020): 5.4617 | canny_loss(w=0.100): 0.2609 | LR: 9.31e-06 | EMA: 0.999900 | Steps/Sec: 2.06 | Mem: 20.11G/20.11G
+[[34m2026-09-12 03:54:05[0m] (step=0400450) Diff: 0.1416 | REPA(w=0.03): 0.0040 | skel_loss(w=0.020): 5.4914 | canny_loss(w=0.100): 0.2591 | LR: 9.31e-06 | EMA: 0.999900 | Steps/Sec: 2.08 | Mem: 20.11G/20.11G
+[[34m2026-09-12 03:54:17[0m] (step=0400500) Diff: 0.1391 | REPA(w=0.03): 0.0040 | skel_loss(w=0.020): 5.4822 | canny_loss(w=0.100): 0.2609 | LR: 9.31e-06 | EMA: 0.999900 | Steps/Sec: 4.01 | Mem: 20.11G/20.11G
+[[34m2026-09-12 03:54:32[0m] (step=0400550) Diff: 0.1413 | REPA(w=0.03): 0.0040 | skel_loss(w=0.020): 5.4620 | canny_loss(w=0.100): 0.2603 | LR: 9.30e-06 | EMA: 0.999900 | Steps/Sec: 3.33 | Mem: 20.11G/20.11G
+[[34m2026-09-12 03:54:45[0m] (step=0400600) Diff: 0.1433 | REPA(w=0.03): 0.0040 | skel_loss(w=0.020): 5.4607 | canny_loss(w=0.100): 0.2617 | LR: 9.30e-06 | EMA: 0.999900 | Steps/Sec: 4.07 | Mem: 20.11G/20.11G
+[[34m2026-09-12 03:54:56[0m] Beginning epoch 12...
+[[34m2026-09-12 03:54:58[0m] (step=0400650) Diff: 0.1377 | REPA(w=0.03): 0.0040 | skel_loss(w=0.020): 5.4326 | canny_loss(w=0.100): 0.2591 | LR: 9.29e-06 | EMA: 0.999900 | Steps/Sec: 3.85 | Mem: 20.11G/20.11G
+[[34m2026-09-12 03:55:10[0m] (step=0400700) Diff: 0.1415 | REPA(w=0.03): 0.0040 | skel_loss(w=0.020): 5.4570 | canny_loss(w=0.100): 0.2605 | LR: 9.29e-06 | EMA: 0.999900 | Steps/Sec: 4.07 | Mem: 20.11G/20.11G
+[[34m2026-09-12 03:55:25[0m] (step=0400750) Diff: 0.1378 | REPA(w=0.03): 0.0040 | skel_loss(w=0.020): 5.4623 | canny_loss(w=0.100): 0.2567 | LR: 9.28e-06 | EMA: 0.999900 | Steps/Sec: 3.35 | Mem: 20.11G/20.11G
+[[34m2026-09-12 03:55:37[0m] (step=0400800) Diff: 0.1419 | REPA(w=0.03): 0.0040 | skel_loss(w=0.020): 5.4452 | canny_loss(w=0.100): 0.2643 | LR: 9.28e-06 | EMA: 0.999900 | Steps/Sec: 4.09 | Mem: 20.11G/20.11G
+[[34m2026-09-12 03:55:49[0m] (step=0400850) Diff: 0.1390 | REPA(w=0.03): 0.0040 | skel_loss(w=0.020): 5.4769 | canny_loss(w=0.100): 0.2583 | LR: 9.28e-06 | EMA: 0.999900 | Steps/Sec: 4.10 | Mem: 20.11G/20.11G
+[[34m2026-09-12 03:56:04[0m] (step=0400900) Diff: 0.1399 | REPA(w=0.03): 0.0040 | skel_loss(w=0.020): 5.4521 | canny_loss(w=0.100): 0.2623 | LR: 9.27e-06 | EMA: 0.999900 | Steps/Sec: 3.35 | Mem: 20.11G/20.11G
+[[34m2026-09-12 03:56:16[0m] (step=0400950) Diff: 0.1386 | REPA(w=0.03): 0.0040 | skel_loss(w=0.020): 5.4139 | canny_loss(w=0.100): 0.2615 | LR: 9.27e-06 | EMA: 0.999900 | Steps/Sec: 4.11 | Mem: 20.11G/20.11G
+[[34m2026-09-12 03:56:29[0m] (step=0401000) Diff: 0.1406 | REPA(w=0.03): 0.0040 | skel_loss(w=0.020): 5.4559 | canny_loss(w=0.100): 0.2595 | LR: 9.26e-06 | EMA: 0.999900 | Steps/Sec: 4.11 | Mem: 20.11G/20.11G
+[[34m2026-09-12 03:56:29[0m] (step=0401000) [diag] grad-norm: blocks=0.206 callig_chain=0.026 glyph_embedder=0.089 inj_out_proj=0.105 other=0.083
+[[34m2026-09-12 03:56:41[0m] (step=0401050) Diff: 0.1407 | REPA(w=0.03): 0.0040 | skel_loss(w=0.020): 5.4587 | canny_loss(w=0.100): 0.2603 | LR: 9.26e-06 | EMA: 0.999900 | Steps/Sec: 4.06 | Mem: 20.11G/20.11G
+[[34m2026-09-12 03:56:56[0m] (step=0401100) Diff: 0.1428 | REPA(w=0.03): 0.0040 | skel_loss(w=0.020): 5.4536 | canny_loss(w=0.100): 0.2602 | LR: 9.26e-06 | EMA: 0.999900 | Steps/Sec: 3.36 | Mem: 20.11G/20.11G
+[[34m2026-09-12 03:57:08[0m] (step=0401150) Diff: 0.1372 | REPA(w=0.03): 0.0040 | skel_loss(w=0.020): 5.4486 | canny_loss(w=0.100): 0.2615 | LR: 9.25e-06 | EMA: 0.999900 | Steps/Sec: 4.11 | Mem: 20.11G/20.11G
+[[34m2026-09-12 03:57:20[0m] (step=0401200) Diff: 0.1417 | REPA(w=0.03): 0.0040 | skel_loss(w=0.020): 5.4620 | canny_loss(w=0.100): 0.2620 | LR: 9.25e-06 | EMA: 0.999900 | Steps/Sec: 4.07 | Mem: 20.11G/20.11G
+[[34m2026-09-12 03:57:35[0m] (step=0401250) Diff: 0.1374 | REPA(w=0.03): 0.0040 | skel_loss(w=0.020): 5.4544 | canny_loss(w=0.100): 0.2588 | LR: 9.24e-06 | EMA: 0.999900 | Steps/Sec: 3.38 | Mem: 20.11G/20.11G
+[[34m2026-09-12 03:57:47[0m] (step=0401300) Diff: 0.1412 | REPA(w=0.03): 0.0040 | skel_loss(w=0.020): 5.4569 | canny_loss(w=0.100): 0.2599 | LR: 9.24e-06 | EMA: 0.999900 | Steps/Sec: 4.09 | Mem: 20.11G/20.11G
+[[34m2026-09-12 03:58:00[0m] (step=0401350) Diff: 0.1405 | REPA(w=0.03): 0.0040 | skel_loss(w=0.020): 5.4351 | canny_loss(w=0.100): 0.2634 | LR: 9.23e-06 | EMA: 0.999900 | Steps/Sec: 4.05 | Mem: 20.11G/20.11G
+[[34m2026-09-12 03:58:12[0m] (step=0401400) Diff: 0.1404 | REPA(w=0.03): 0.0040 | skel_loss(w=0.020): 5.4456 | canny_loss(w=0.100): 0.2600 | LR: 9.23e-06 | EMA: 0.999900 | Steps/Sec: 4.08 | Mem: 20.11G/20.11G
+[[34m2026-09-12 03:58:27[0m] (step=0401450) Diff: 0.1392 | REPA(w=0.03): 0.0040 | skel_loss(w=0.020): 5.4348 | canny_loss(w=0.100): 0.2633 | LR: 9.23e-06 | EMA: 0.999900 | Steps/Sec: 3.36 | Mem: 20.11G/20.11G
+[[34m2026-09-12 03:58:39[0m] (step=0401500) Diff: 0.1405 | REPA(w=0.03): 0.0040 | skel_loss(w=0.020): 5.4348 | canny_loss(w=0.100): 0.2613 | LR: 9.22e-06 | EMA: 0.999900 | Steps/Sec: 4.10 | Mem: 20.11G/20.11G
+[[34m2026-09-12 03:58:46[0m] Beginning epoch 13...
+[[34m2026-09-12 03:58:52[0m] (step=0401550) Diff: 0.1387 | REPA(w=0.03): 0.0040 | skel_loss(w=0.020): 5.4329 | canny_loss(w=0.100): 0.2612 | LR: 9.22e-06 | EMA: 0.999900 | Steps/Sec: 3.96 | Mem: 20.11G/20.11G
+[[34m2026-09-12 03:59:06[0m] (step=0401600) Diff: 0.1393 | REPA(w=0.03): 0.0039 | skel_loss(w=0.020): 5.4626 | canny_loss(w=0.100): 0.2570 | LR: 9.21e-06 | EMA: 0.999900 | Steps/Sec: 3.39 | Mem: 20.11G/20.11G
+[[34m2026-09-12 03:59:19[0m] (step=0401650) Diff: 0.1381 | REPA(w=0.03): 0.0039 | skel_loss(w=0.020): 5.4469 | canny_loss(w=0.100): 0.2584 | LR: 9.21e-06 | EMA: 0.999900 | Steps/Sec: 4.09 | Mem: 20.11G/20.11G
+[[34m2026-09-12 03:59:31[0m] (step=0401700) Diff: 0.1401 | REPA(w=0.03): 0.0040 | skel_loss(w=0.020): 5.4436 | canny_loss(w=0.100): 0.2592 | LR: 9.21e-06 | EMA: 0.999900 | Steps/Sec: 4.08 | Mem: 20.11G/20.11G
+[[34m2026-09-12 03:59:44[0m] (step=0401750) Diff: 0.1406 | REPA(w=0.03): 0.0040 | skel_loss(w=0.020): 5.4175 | canny_loss(w=0.100): 0.2634 | LR: 9.20e-06 | EMA: 0.999900 | Steps/Sec: 3.78 | Mem: 20.11G/20.11G
+[[34m2026-09-12 03:59:58[0m] (step=0401800) Diff: 0.1409 | REPA(w=0.03): 0.0040 | skel_loss(w=0.020): 5.4288 | canny_loss(w=0.100): 0.2624 | LR: 9.20e-06 | EMA: 0.999900 | Steps/Sec: 3.65 | Mem: 20.11G/20.11G
+[[34m2026-09-12 04:00:10[0m] (step=0401850) Diff: 0.1377 | REPA(w=0.03): 0.0040 | skel_loss(w=0.020): 5.4420 | canny_loss(w=0.100): 0.2581 | LR: 9.19e-06 | EMA: 0.999900 | Steps/Sec: 4.11 | Mem: 20.11G/20.11G
+[[34m2026-09-12 04:00:22[0m] (step=0401900) Diff: 0.1407 | REPA(w=0.03): 0.0040 | skel_loss(w=0.020): 5.4389 | canny_loss(w=0.100): 0.2628 | LR: 9.19e-06 | EMA: 0.999900 | Steps/Sec: 4.08 | Mem: 20.11G/20.11G
+[[34m2026-09-12 04:00:37[0m] (step=0401950) Diff: 0.1401 | REPA(w=0.03): 0.0039 | skel_loss(w=0.020): 5.4416 | canny_loss(w=0.100): 0.2619 | LR: 9.18e-06 | EMA: 0.999900 | Steps/Sec: 3.39 | Mem: 20.11G/20.11G
+[[34m2026-09-12 04:00:49[0m] (step=0402000) Diff: 0.1386 | REPA(w=0.03): 0.0040 | skel_loss(w=0.020): 5.4374 | canny_loss(w=0.100): 0.2593 | LR: 9.18e-06 | EMA: 0.999900 | Steps/Sec: 4.10 | Mem: 20.11G/20.11G
+[[34m2026-09-12 04:00:49[0m] (step=0402000) [diag] grad-norm: blocks=0.158 callig_chain=0.020 glyph_embedder=0.065 inj_out_proj=0.081 other=0.074
+[[34m2026-09-12 04:01:01[0m] (step=0402050) Diff: 0.1399 | REPA(w=0.03): 0.0039 | skel_loss(w=0.020): 5.4464 | canny_loss(w=0.100): 0.2604 | LR: 9.18e-06 | EMA: 0.999900 | Steps/Sec: 4.09 | Mem: 20.11G/20.11G
+[[34m2026-09-12 04:01:16[0m] (step=0402100) Diff: 0.1423 | REPA(w=0.03): 0.0040 | skel_loss(w=0.020): 5.4388 | canny_loss(w=0.100): 0.2612 | LR: 9.17e-06 | EMA: 0.999900 | Steps/Sec: 3.45 | Mem: 20.11G/20.11G
+[[34m2026-09-12 04:01:28[0m] (step=0402150) Diff: 0.1389 | REPA(w=0.03): 0.0039 | skel_loss(w=0.020): 5.4345 | canny_loss(w=0.100): 0.2591 | LR: 9.17e-06 | EMA: 0.999900 | Steps/Sec: 3.99 | Mem: 20.11G/20.11G
+[[34m2026-09-12 04:01:41[0m] (step=0402200) Diff: 0.1399 | REPA(w=0.03): 0.0040 | skel_loss(w=0.020): 5.4533 | canny_loss(w=0.100): 0.2603 | LR: 9.16e-06 | EMA: 0.999900 | Steps/Sec: 4.07 | Mem: 20.11G/20.11G
+[[34m2026-09-12 04:01:53[0m] (step=0402250) Diff: 0.1411 | REPA(w=0.03): 0.0040 | skel_loss(w=0.020): 5.4917 | canny_loss(w=0.100): 0.2581 | LR: 9.16e-06 | EMA: 0.999900 | Steps/Sec: 4.09 | Mem: 20.11G/20.11G
+[[34m2026-09-12 04:02:08[0m] (step=0402300) Diff: 0.1388 | REPA(w=0.03): 0.0039 | skel_loss(w=0.020): 5.4159 | canny_loss(w=0.100): 0.2596 | LR: 9.16e-06 | EMA: 0.999900 | Steps/Sec: 3.34 | Mem: 20.11G/20.11G
+[[34m2026-09-12 04:02:20[0m] (step=0402350) Diff: 0.1395 | REPA(w=0.03): 0.0039 | skel_loss(w=0.020): 5.4628 | canny_loss(w=0.100): 0.2594 | LR: 9.15e-06 | EMA: 0.999900 | Steps/Sec: 4.08 | Mem: 20.11G/20.11G
+[[34m2026-09-12 04:02:32[0m] (step=0402400) Diff: 0.1402 | REPA(w=0.03): 0.0039 | skel_loss(w=0.020): 5.4255 | canny_loss(w=0.100): 0.2610 | LR: 9.15e-06 | EMA: 0.999900 | Steps/Sec: 4.11 | Mem: 20.11G/20.11G
+[[34m2026-09-12 04:02:37[0m] Beginning epoch 14...
+[[34m2026-09-12 04:02:48[0m] (step=0402450) Diff: 0.1388 | REPA(w=0.03): 0.0039 | skel_loss(w=0.020): 5.4378 | canny_loss(w=0.100): 0.2604 | LR: 9.14e-06 | EMA: 0.999900 | Steps/Sec: 3.17 | Mem: 20.11G/20.11G
+[[34m2026-09-12 04:03:00[0m] (step=0402500) Diff: 0.1413 | REPA(w=0.03): 0.0039 | skel_loss(w=0.020): 5.4424 | canny_loss(w=0.100): 0.2612 | LR: 9.14e-06 | EMA: 0.999900 | Steps/Sec: 4.05 | Mem: 20.11G/20.11G
+[[34m2026-09-12 04:03:03[0m] Saved checkpoint to 5script/results/v11_struct-loss/20260912-030448-v11_struct-loss/checkpoints/0402500.pt
+[[34m2026-09-12 04:03:15[0m] (step=0402550) Diff: 0.1417 | REPA(w=0.03): 0.0039 | skel_loss(w=0.020): 5.4419 | canny_loss(w=0.100): 0.2619 | LR: 9.14e-06 | EMA: 0.999900 | Steps/Sec: 3.48 | Mem: 20.11G/20.11G
+[[34m2026-09-12 04:03:28[0m] (step=0402600) Diff: 0.1397 | REPA(w=0.03): 0.0039 | skel_loss(w=0.020): 5.4476 | canny_loss(w=0.100): 0.2589 | LR: 9.13e-06 | EMA: 0.999900 | Steps/Sec: 3.89 | Mem: 20.11G/20.11G
+[[34m2026-09-12 04:03:42[0m] (step=0402650) Diff: 0.1377 | REPA(w=0.03): 0.0039 | skel_loss(w=0.020): 5.4334 | canny_loss(w=0.100): 0.2577 | LR: 9.13e-06 | EMA: 0.999900 | Steps/Sec: 3.48 | Mem: 20.11G/20.11G
+[[34m2026-09-12 04:03:55[0m] (step=0402700) Diff: 0.1408 | REPA(w=0.03): 0.0040 | skel_loss(w=0.020): 5.4255 | canny_loss(w=0.100): 0.2618 | LR: 9.12e-06 | EMA: 0.999900 | Steps/Sec: 3.99 | Mem: 20.11G/20.11G
+[[34m2026-09-12 04:04:07[0m] (step=0402750) Diff: 0.1412 | REPA(w=0.03): 0.0039 | skel_loss(w=0.020): 5.4315 | canny_loss(w=0.100): 0.2600 | LR: 9.12e-06 | EMA: 0.999900 | Steps/Sec: 4.11 | Mem: 20.11G/20.11G
+[[34m2026-09-12 04:04:21[0m] (step=0402800) Diff: 0.1361 | REPA(w=0.03): 0.0039 | skel_loss(w=0.020): 5.4097 | canny_loss(w=0.100): 0.2602 | LR: 9.11e-06 | EMA: 0.999900 | Steps/Sec: 3.40 | Mem: 20.11G/20.11G
+[[34m2026-09-12 04:04:34[0m] (step=0402850) Diff: 0.1353 | REPA(w=0.03): 0.0039 | skel_loss(w=0.020): 5.4209 | canny_loss(w=0.100): 0.2596 | LR: 9.11e-06 | EMA: 0.999900 | Steps/Sec: 4.11 | Mem: 20.11G/20.11G
+[[34m2026-09-12 04:04:46[0m] (step=0402900) Diff: 0.1380 | REPA(w=0.03): 0.0039 | skel_loss(w=0.020): 5.4196 | canny_loss(w=0.100): 0.2589 | LR: 9.11e-06 | EMA: 0.999900 | Steps/Sec: 4.12 | Mem: 20.11G/20.11G
+[[34m2026-09-12 04:05:00[0m] (step=0402950) Diff: 0.1429 | REPA(w=0.03): 0.0039 | skel_loss(w=0.020): 5.4460 | canny_loss(w=0.100): 0.2616 | LR: 9.10e-06 | EMA: 0.999900 | Steps/Sec: 3.61 | Mem: 20.11G/20.11G
+[[34m2026-09-12 04:05:13[0m] (step=0403000) Diff: 0.1400 | REPA(w=0.03): 0.0039 | skel_loss(w=0.020): 5.4418 | canny_loss(w=0.100): 0.2607 | LR: 9.10e-06 | EMA: 0.999900 | Steps/Sec: 3.77 | Mem: 20.11G/20.11G
+[[34m2026-09-12 04:05:13[0m] (step=0403000) [diag] grad-norm: blocks=0.214 callig_chain=0.024 glyph_embedder=0.112 inj_out_proj=0.112 other=0.082
+[[34m2026-09-12 04:05:25[0m] (step=0403050) Diff: 0.1373 | REPA(w=0.03): 0.0039 | skel_loss(w=0.020): 5.4136 | canny_loss(w=0.100): 0.2607 | LR: 9.09e-06 | EMA: 0.999900 | Steps/Sec: 4.09 | Mem: 20.11G/20.11G
+[[34m2026-09-12 04:05:37[0m] (step=0403100) Diff: 0.1397 | REPA(w=0.03): 0.0039 | skel_loss(w=0.020): 5.4326 | canny_loss(w=0.100): 0.2616 | LR: 9.09e-06 | EMA: 0.999900 | Steps/Sec: 4.09 | Mem: 20.11G/20.11G
+[[34m2026-09-12 04:05:52[0m] (step=0403150) Diff: 0.1386 | REPA(w=0.03): 0.0039 | skel_loss(w=0.020): 5.4346 | canny_loss(w=0.100): 0.2586 | LR: 9.09e-06 | EMA: 0.999900 | Steps/Sec: 3.35 | Mem: 20.11G/20.11G
+[[34m2026-09-12 04:06:04[0m] (step=0403200) Diff: 0.1389 | REPA(w=0.03): 0.0039 | skel_loss(w=0.020): 5.4153 | canny_loss(w=0.100): 0.2603 | LR: 9.08e-06 | EMA: 0.999900 | Steps/Sec: 4.11 | Mem: 20.11G/20.11G
+[[34m2026-09-12 04:06:17[0m] (step=0403250) Diff: 0.1412 | REPA(w=0.03): 0.0039 | skel_loss(w=0.020): 5.4220 | canny_loss(w=0.100): 0.2639 | LR: 9.08e-06 | EMA: 0.999900 | Steps/Sec: 4.10 | Mem: 20.11G/20.11G
+[[34m2026-09-12 04:06:31[0m] (step=0403300) Diff: 0.1411 | REPA(w=0.03): 0.0039 | skel_loss(w=0.020): 5.4171 | canny_loss(w=0.100): 0.2623 | LR: 9.07e-06 | EMA: 0.999900 | Steps/Sec: 3.55 | Mem: 20.11G/20.11G
+[[34m2026-09-12 04:06:33[0m] Beginning epoch 15...
+[[34m2026-09-12 04:06:45[0m] (step=0403350) Diff: 0.1378 | REPA(w=0.03): 0.0039 | skel_loss(w=0.020): 5.4294 | canny_loss(w=0.100): 0.2568 | LR: 9.07e-06 | EMA: 0.999900 | Steps/Sec: 3.64 | Mem: 20.11G/20.11G
+[[34m2026-09-12 04:06:57[0m] (step=0403400) Diff: 0.1379 | REPA(w=0.03): 0.0039 | skel_loss(w=0.020): 5.4283 | canny_loss(w=0.100): 0.2597 | LR: 9.07e-06 | EMA: 0.999900 | Steps/Sec: 4.09 | Mem: 20.11G/20.11G
+[[34m2026-09-12 04:07:09[0m] (step=0403450) Diff: 0.1378 | REPA(w=0.03): 0.0039 | skel_loss(w=0.020): 5.4222 | canny_loss(w=0.100): 0.2581 | LR: 9.06e-06 | EMA: 0.999900 | Steps/Sec: 4.07 | Mem: 20.11G/20.11G
+[[34m2026-09-12 04:07:24[0m] (step=0403500) Diff: 0.1419 | REPA(w=0.03): 0.0039 | skel_loss(w=0.020): 5.4190 | canny_loss(w=0.100): 0.2596 | LR: 9.06e-06 | EMA: 0.999900 | Steps/Sec: 3.35 | Mem: 20.11G/20.11G
+[[34m2026-09-12 04:07:36[0m] (step=0403550) Diff: 0.1385 | REPA(w=0.03): 0.0039 | skel_loss(w=0.020): 5.4215 | canny_loss(w=0.100): 0.2602 | LR: 9.05e-06 | EMA: 0.999900 | Steps/Sec: 4.10 | Mem: 20.11G/20.11G
+[[34m2026-09-12 04:07:48[0m] (step=0403600) Diff: 0.1376 | REPA(w=0.03): 0.0039 | skel_loss(w=0.020): 5.4552 | canny_loss(w=0.100): 0.2555 | LR: 9.05e-06 | EMA: 0.999900 | Steps/Sec: 4.09 | Mem: 20.11G/20.11G
+[[34m2026-09-12 04:08:03[0m] (step=0403650) Diff: 0.1430 | REPA(w=0.03): 0.0039 | skel_loss(w=0.020): 5.4362 | canny_loss(w=0.100): 0.2588 | LR: 9.05e-06 | EMA: 0.999900 | Steps/Sec: 3.35 | Mem: 20.11G/20.11G
+[[34m2026-09-12 04:08:16[0m] (step=0403700) Diff: 0.1373 | REPA(w=0.03): 0.0039 | skel_loss(w=0.020): 5.4241 | canny_loss(w=0.100): 0.2593 | LR: 9.04e-06 | EMA: 0.999900 | Steps/Sec: 4.11 | Mem: 20.11G/20.11G
+[[34m2026-09-12 04:08:28[0m] (step=0403750) Diff: 0.1408 | REPA(w=0.03): 0.0039 | skel_loss(w=0.020): 5.4195 | canny_loss(w=0.100): 0.2610 | LR: 9.04e-06 | EMA: 0.999900 | Steps/Sec: 3.98 | Mem: 20.11G/20.11G
+[[34m2026-09-12 04:08:40[0m] (step=0403800) Diff: 0.1410 | REPA(w=0.03): 0.0039 | skel_loss(w=0.020): 5.4244 | canny_loss(w=0.100): 0.2611 | LR: 9.03e-06 | EMA: 0.999900 | Steps/Sec: 4.08 | Mem: 20.11G/20.11G
+[[34m2026-09-12 04:08:55[0m] (step=0403850) Diff: 0.1401 | REPA(w=0.03): 0.0039 | skel_loss(w=0.020): 5.4112 | canny_loss(w=0.100): 0.2587 | LR: 9.03e-06 | EMA: 0.999900 | Steps/Sec: 3.41 | Mem: 20.11G/20.11G
+[[34m2026-09-12 04:09:07[0m] (step=0403900) Diff: 0.1390 | REPA(w=0.03): 0.0039 | skel_loss(w=0.020): 5.4100 | canny_loss(w=0.100): 0.2622 | LR: 9.03e-06 | EMA: 0.999900 | Steps/Sec: 4.11 | Mem: 20.11G/20.11G
+[[34m2026-09-12 04:09:19[0m] (step=0403950) Diff: 0.1388 | REPA(w=0.03): 0.0039 | skel_loss(w=0.020): 5.4126 | canny_loss(w=0.100): 0.2606 | LR: 9.02e-06 | EMA: 0.999900 | Steps/Sec: 4.11 | Mem: 20.11G/20.11G
+[[34m2026-09-12 04:09:34[0m] (step=0404000) Diff: 0.1415 | REPA(w=0.03): 0.0039 | skel_loss(w=0.020): 5.4191 | canny_loss(w=0.100): 0.2608 | LR: 9.02e-06 | EMA: 0.999900 | Steps/Sec: 3.32 | Mem: 20.11G/20.11G
+[[34m2026-09-12 04:09:34[0m] (step=0404000) [diag] grad-norm: blocks=0.167 callig_chain=0.020 glyph_embedder=0.076 inj_out_proj=0.088 other=0.068
+[[34m2026-09-12 04:09:47[0m] (step=0404050) Diff: 0.1402 | REPA(w=0.03): 0.0039 | skel_loss(w=0.020): 5.4350 | canny_loss(w=0.100): 0.2592 | LR: 9.01e-06 | EMA: 0.999900 | Steps/Sec: 4.10 | Mem: 20.11G/20.11G
+[[34m2026-09-12 04:09:59[0m] (step=0404100) Diff: 0.1391 | REPA(w=0.03): 0.0039 | skel_loss(w=0.020): 5.4223 | canny_loss(w=0.100): 0.2594 | LR: 9.01e-06 | EMA: 0.999900 | Steps/Sec: 4.08 | Mem: 20.11G/20.11G
+[[34m2026-09-12 04:10:11[0m] (step=0404150) Diff: 0.1409 | REPA(w=0.03): 0.0039 | skel_loss(w=0.020): 5.4165 | canny_loss(w=0.100): 0.2631 | LR: 9.00e-06 | EMA: 0.999900 | Steps/Sec: 4.08 | Mem: 20.11G/20.11G
+[[34m2026-09-12 04:10:24[0m] Beginning epoch 16...
+[[34m2026-09-12 04:10:27[0m] (step=0404200) Diff: 0.1407 | REPA(w=0.03): 0.0039 | skel_loss(w=0.020): 5.4147 | canny_loss(w=0.100): 0.2610 | LR: 9.00e-06 | EMA: 0.999900 | Steps/Sec: 3.24 | Mem: 20.11G/20.11G
+[[34m2026-09-12 04:10:39[0m] (step=0404250) Diff: 0.1388 | REPA(w=0.03): 0.0039 | skel_loss(w=0.020): 5.4117 | canny_loss(w=0.100): 0.2605 | LR: 9.00e-06 | EMA: 0.999900 | Steps/Sec: 4.11 | Mem: 20.11G/20.11G
+[[34m2026-09-12 04:10:51[0m] (step=0404300) Diff: 0.1402 | REPA(w=0.03): 0.0038 | skel_loss(w=0.020): 5.4140 | canny_loss(w=0.100): 0.2602 | LR: 8.99e-06 | EMA: 0.999900 | Steps/Sec: 4.09 | Mem: 20.11G/20.11G
+[[34m2026-09-12 04:11:06[0m] (step=0404350) Diff: 0.1371 | REPA(w=0.03): 0.0039 | skel_loss(w=0.020): 5.3877 | canny_loss(w=0.100): 0.2593 | LR: 8.99e-06 | EMA: 0.999900 | Steps/Sec: 3.33 | Mem: 20.11G/20.11G
+[[34m2026-09-12 04:11:18[0m] (step=0404400) Diff: 0.1391 | REPA(w=0.03): 0.0039 | skel_loss(w=0.020): 5.4162 | canny_loss(w=0.100): 0.2596 | LR: 8.98e-06 | EMA: 0.999900 | Steps/Sec: 4.09 | Mem: 20.11G/20.11G
+[[34m2026-09-12 04:11:31[0m] (step=0404450) Diff: 0.1402 | REPA(w=0.03): 0.0039 | skel_loss(w=0.020): 5.4219 | canny_loss(w=0.100): 0.2606 | LR: 8.98e-06 | EMA: 0.999900 | Steps/Sec: 4.05 | Mem: 20.11G/20.11G
+[[34m2026-09-12 04:11:43[0m] (step=0404500) Diff: 0.1381 | REPA(w=0.03): 0.0039 | skel_loss(w=0.020): 5.4219 | canny_loss(w=0.100): 0.2593 | LR: 8.98e-06 | EMA: 0.999900 | Steps/Sec: 3.92 | Mem: 20.11G/20.11G
+[[34m2026-09-12 04:11:58[0m] (step=0404550) Diff: 0.1398 | REPA(w=0.03): 0.0039 | skel_loss(w=0.020): 5.4246 | canny_loss(w=0.100): 0.2594 | LR: 8.97e-06 | EMA: 0.999900 | Steps/Sec: 3.52 | Mem: 20.11G/20.11G
+[[34m2026-09-12 04:12:10[0m] (step=0404600) Diff: 0.1360 | REPA(w=0.03): 0.0039 | skel_loss(w=0.020): 5.4116 | canny_loss(w=0.100): 0.2578 | LR: 8.97e-06 | EMA: 0.999900 | Steps/Sec: 4.09 | Mem: 20.11G/20.11G
+[[34m2026-09-12 04:12:22[0m] (step=0404650) Diff: 0.1411 | REPA(w=0.03): 0.0039 | skel_loss(w=0.020): 5.4195 | canny_loss(w=0.100): 0.2616 | LR: 8.96e-06 | EMA: 0.999900 | Steps/Sec: 4.10 | Mem: 20.11G/20.11G
+[[34m2026-09-12 04:12:37[0m] (step=0404700) Diff: 0.1405 | REPA(w=0.03): 0.0039 | skel_loss(w=0.020): 5.4147 | canny_loss(w=0.100): 0.2606 | LR: 8.96e-06 | EMA: 0.999900 | Steps/Sec: 3.33 | Mem: 20.11G/20.11G
+[[34m2026-09-12 04:12:50[0m] (step=0404750) Diff: 0.1400 | REPA(w=0.03): 0.0039 | skel_loss(w=0.020): 5.4120 | canny_loss(w=0.100): 0.2623 | LR: 8.96e-06 | EMA: 0.999900 | Steps/Sec: 3.90 | Mem: 20.11G/20.11G
+[[34m2026-09-12 04:13:02[0m] (step=0404800) Diff: 0.1381 | REPA(w=0.03): 0.0039 | skel_loss(w=0.020): 5.3976 | canny_loss(w=0.100): 0.2577 | LR: 8.95e-06 | EMA: 0.999900 | Steps/Sec: 4.11 | Mem: 20.11G/20.11G
+[[34m2026-09-12 04:13:16[0m] (step=0404850) Diff: 0.1382 | REPA(w=0.03): 0.0039 | skel_loss(w=0.020): 5.4148 | canny_loss(w=0.100): 0.2582 | LR: 8.95e-06 | EMA: 0.999900 | Steps/Sec: 3.53 | Mem: 20.11G/20.11G
+[[34m2026-09-12 04:13:29[0m] (step=0404900) Diff: 0.1415 | REPA(w=0.03): 0.0039 | skel_loss(w=0.020): 5.4227 | canny_loss(w=0.100): 0.2604 | LR: 8.94e-06 | EMA: 0.999900 | Steps/Sec: 3.85 | Mem: 20.11G/20.11G
+[[34m2026-09-12 04:13:41[0m] (step=0404950) Diff: 0.1390 | REPA(w=0.03): 0.0039 | skel_loss(w=0.020): 5.4041 | canny_loss(w=0.100): 0.2605 | LR: 8.94e-06 | EMA: 0.999900 | Steps/Sec: 4.10 | Mem: 20.11G/20.11G
+[[34m2026-09-12 04:13:54[0m] (step=0405000) Diff: 0.1387 | REPA(w=0.03): 0.0039 | skel_loss(w=0.020): 5.3941 | canny_loss(w=0.100): 0.2614 | LR: 8.94e-06 | EMA: 0.999900 | Steps/Sec: 4.10 | Mem: 20.11G/20.11G
+[[34m2026-09-12 04:13:54[0m] (step=0405000) [diag] grad-norm: blocks=0.216 callig_chain=0.025 glyph_embedder=0.109 inj_out_proj=0.109 other=0.083
+[[34m2026-09-12 04:13:56[0m] Saved checkpoint to 5script/results/v11_struct-loss/20260912-030448-v11_struct-loss/checkpoints/0405000.pt
+[[34m2026-09-12 04:14:11[0m] (step=0405050) Diff: 0.1415 | REPA(w=0.03): 0.0038 | skel_loss(w=0.020): 5.4173 | canny_loss(w=0.100): 0.2592 | LR: 8.93e-06 | EMA: 0.999900 | Steps/Sec: 2.93 | Mem: 20.11G/20.11G
+[[34m2026-09-12 04:14:18[0m] Beginning epoch 17...
+[[34m2026-09-12 04:14:24[0m] (step=0405100) Diff: 0.1403 | REPA(w=0.03): 0.0039 | skel_loss(w=0.020): 5.3844 | canny_loss(w=0.100): 0.2627 | LR: 8.93e-06 | EMA: 0.999900 | Steps/Sec: 3.78 | Mem: 20.11G/20.11G
+[[34m2026-09-12 04:14:36[0m] (step=0405150) Diff: 0.1395 | REPA(w=0.03): 0.0039 | skel_loss(w=0.020): 5.3934 | canny_loss(w=0.100): 0.2614 | LR: 8.92e-06 | EMA: 0.999900 | Steps/Sec: 4.10 | Mem: 20.11G/20.11G
+[[34m2026-09-12 04:14:51[0m] (step=0405200) Diff: 0.1402 | REPA(w=0.03): 0.0039 | skel_loss(w=0.020): 5.4018 | canny_loss(w=0.100): 0.2630 | LR: 8.92e-06 | EMA: 0.999900 | Steps/Sec: 3.34 | Mem: 20.11G/20.11G
+[[34m2026-09-12 04:15:03[0m] (step=0405250) Diff: 0.1400 | REPA(w=0.03): 0.0039 | skel_loss(w=0.020): 5.4151 | canny_loss(w=0.100): 0.2582 | LR: 8.92e-06 | EMA: 0.999900 | Steps/Sec: 4.06 | Mem: 20.11G/20.11G
+[[34m2026-09-12 04:15:16[0m] (step=0405300) Diff: 0.1387 | REPA(w=0.03): 0.0039 | skel_loss(w=0.020): 5.4057 | canny_loss(w=0.100): 0.2613 | LR: 8.91e-06 | EMA: 0.999900 | Steps/Sec: 4.10 | Mem: 20.11G/20.11G
+[[34m2026-09-12 04:15:28[0m] (step=0405350) Diff: 0.1396 | REPA(w=0.03): 0.0039 | skel_loss(w=0.020): 5.3997 | canny_loss(w=0.100): 0.2596 | LR: 8.91e-06 | EMA: 0.999900 | Steps/Sec: 3.94 | Mem: 20.11G/20.11G
+[[34m2026-09-12 04:15:42[0m] (step=0405400) Diff: 0.1376 | REPA(w=0.03): 0.0039 | skel_loss(w=0.020): 5.3899 | canny_loss(w=0.100): 0.2593 | LR: 8.90e-06 | EMA: 0.999900 | Steps/Sec: 3.50 | Mem: 20.11G/20.11G
+[[34m2026-09-12 04:15:55[0m] (step=0405450) Diff: 0.1378 | REPA(w=0.03): 0.0039 | skel_loss(w=0.020): 5.3926 | canny_loss(w=0.100): 0.2607 | LR: 8.90e-06 | EMA: 0.999900 | Steps/Sec: 4.07 | Mem: 20.11G/20.11G
+[[34m2026-09-12 04:16:07[0m] (step=0405500) Diff: 0.1400 | REPA(w=0.03): 0.0038 | skel_loss(w=0.020): 5.4099 | canny_loss(w=0.100): 0.2613 | LR: 8.90e-06 | EMA: 0.999900 | Steps/Sec: 4.10 | Mem: 20.11G/20.11G
+[[34m2026-09-12 04:16:22[0m] (step=0405550) Diff: 0.1413 | REPA(w=0.03): 0.0039 | skel_loss(w=0.020): 5.4113 | canny_loss(w=0.100): 0.2617 | LR: 8.89e-06 | EMA: 0.999900 | Steps/Sec: 3.37 | Mem: 20.11G/20.11G
+[[34m2026-09-12 04:16:34[0m] (step=0405600) Diff: 0.1398 | REPA(w=0.03): 0.0039 | skel_loss(w=0.020): 5.3928 | canny_loss(w=0.100): 0.2600 | LR: 8.89e-06 | EMA: 0.999900 | Steps/Sec: 4.07 | Mem: 20.11G/20.11G
+[[34m2026-09-12 04:16:46[0m] (step=0405650) Diff: 0.1388 | REPA(w=0.03): 0.0039 | skel_loss(w=0.020): 5.4052 | canny_loss(w=0.100): 0.2591 | LR: 8.88e-06 | EMA: 0.999900 | Steps/Sec: 4.10 | Mem: 20.11G/20.11G
+[[34m2026-09-12 04:17:01[0m] (step=0405700) Diff: 0.1377 | REPA(w=0.03): 0.0039 | skel_loss(w=0.020): 5.4084 | canny_loss(w=0.100): 0.2596 | LR: 8.88e-06 | EMA: 0.999900 | Steps/Sec: 3.47 | Mem: 20.11G/20.11G
+[[34m2026-09-12 04:17:13[0m] (step=0405750) Diff: 0.1390 | REPA(w=0.03): 0.0038 | skel_loss(w=0.020): 5.4197 | canny_loss(w=0.100): 0.2609 | LR: 8.88e-06 | EMA: 0.999900 | Steps/Sec: 3.93 | Mem: 20.11G/20.11G
+[[34m2026-09-12 04:17:26[0m] (step=0405800) Diff: 0.1418 | REPA(w=0.03): 0.0039 | skel_loss(w=0.020): 5.4026 | canny_loss(w=0.100): 0.2620 | LR: 8.87e-06 | EMA: 0.999900 | Steps/Sec: 4.07 | Mem: 20.11G/20.11G
+[[34m2026-09-12 04:17:38[0m] (step=0405850) Diff: 0.1410 | REPA(w=0.03): 0.0038 | skel_loss(w=0.020): 5.3902 | canny_loss(w=0.100): 0.2614 | LR: 8.87e-06 | EMA: 0.999900 | Steps/Sec: 4.09 | Mem: 20.11G/20.11G
+[[34m2026-09-12 04:17:53[0m] (step=0405900) Diff: 0.1399 | REPA(w=0.03): 0.0038 | skel_loss(w=0.020): 5.4087 | canny_loss(w=0.100): 0.2606 | LR: 8.86e-06 | EMA: 0.999900 | Steps/Sec: 3.38 | Mem: 20.11G/20.11G
+[[34m2026-09-12 04:18:05[0m] (step=0405950) Diff: 0.1393 | REPA(w=0.03): 0.0039 | skel_loss(w=0.020): 5.3867 | canny_loss(w=0.100): 0.2597 | LR: 8.86e-06 | EMA: 0.999900 | Steps/Sec: 4.09 | Mem: 20.11G/20.11G
+[[34m2026-09-12 04:18:09[0m] Beginning epoch 18...
+[[34m2026-09-12 04:18:18[0m] (step=0406000) Diff: 0.1390 | REPA(w=0.03): 0.0038 | skel_loss(w=0.020): 5.4040 | canny_loss(w=0.100): 0.2582 | LR: 8.86e-06 | EMA: 0.999900 | Steps/Sec: 3.80 | Mem: 20.11G/20.11G
+[[34m2026-09-12 04:18:18[0m] (step=0406000) [diag] grad-norm: blocks=0.202 callig_chain=0.027 glyph_embedder=0.087 inj_out_proj=0.101 other=0.093
+[[34m2026-09-12 04:18:33[0m] (step=0406050) Diff: 0.1410 | REPA(w=0.03): 0.0038 | skel_loss(w=0.020): 5.4193 | canny_loss(w=0.100): 0.2605 | LR: 8.85e-06 | EMA: 0.999900 | Steps/Sec: 3.39 | Mem: 20.11G/20.11G
+[[34m2026-09-12 04:18:45[0m] (step=0406100) Diff: 0.1384 | REPA(w=0.03): 0.0038 | skel_loss(w=0.020): 5.3918 | canny_loss(w=0.100): 0.2607 | LR: 8.85e-06 | EMA: 0.999900 | Steps/Sec: 4.09 | Mem: 20.11G/20.11G
+[[34m2026-09-12 04:18:57[0m] (step=0406150) Diff: 0.1398 | REPA(w=0.03): 0.0038 | skel_loss(w=0.020): 5.3920 | canny_loss(w=0.100): 0.2615 | LR: 8.84e-06 | EMA: 0.999900 | Steps/Sec: 4.10 | Mem: 20.11G/20.11G
+[[34m2026-09-12 04:19:10[0m] (step=0406200) Diff: 0.1414 | REPA(w=0.03): 0.0039 | skel_loss(w=0.020): 5.4091 | canny_loss(w=0.100): 0.2609 | LR: 8.84e-06 | EMA: 0.999900 | Steps/Sec: 4.06 | Mem: 20.11G/20.11G
+[[34m2026-09-12 04:19:25[0m] (step=0406250) Diff: 0.1388 | REPA(w=0.03): 0.0038 | skel_loss(w=0.020): 5.4100 | canny_loss(w=0.100): 0.2582 | LR: 8.84e-06 | EMA: 0.999900 | Steps/Sec: 3.25 | Mem: 20.11G/20.11G
+[[34m2026-09-12 04:19:38[0m] (step=0406300) Diff: 0.1366 | REPA(w=0.03): 0.0038 | skel_loss(w=0.020): 5.4215 | canny_loss(w=0.100): 0.2574 | LR: 8.83e-06 | EMA: 0.999900 | Steps/Sec: 3.77 | Mem: 20.11G/20.11G
+[[34m2026-09-12 04:19:53[0m] (step=0406350) Diff: 0.1384 | REPA(w=0.03): 0.0038 | skel_loss(w=0.020): 5.3844 | canny_loss(w=0.100): 0.2595 | LR: 8.83e-06 | EMA: 0.999900 | Steps/Sec: 3.29 | Mem: 20.11G/20.11G
+[[34m2026-09-12 04:20:09[0m] (step=0406400) Diff: 0.1377 | REPA(w=0.03): 0.0038 | skel_loss(w=0.020): 5.3865 | canny_loss(w=0.100): 0.2577 | LR: 8.82e-06 | EMA: 0.999900 | Steps/Sec: 3.31 | Mem: 20.11G/20.11G
+[[34m2026-09-12 04:20:24[0m] (step=0406450) Diff: 0.1385 | REPA(w=0.03): 0.0038 | skel_loss(w=0.020): 5.3752 | canny_loss(w=0.100): 0.2620 | LR: 8.82e-06 | EMA: 0.999900 | Steps/Sec: 3.31 | Mem: 20.11G/20.11G
+[[34m2026-09-12 04:20:39[0m] (step=0406500) Diff: 0.1400 | REPA(w=0.03): 0.0039 | skel_loss(w=0.020): 5.3806 | canny_loss(w=0.100): 0.2612 | LR: 8.82e-06 | EMA: 0.999900 | Steps/Sec: 3.35 | Mem: 20.11G/20.11G
+[[34m2026-09-12 04:20:51[0m] (step=0406550) Diff: 0.1392 | REPA(w=0.03): 0.0038 | skel_loss(w=0.020): 5.3887 | canny_loss(w=0.100): 0.2628 | LR: 8.81e-06 | EMA: 0.999900 | Steps/Sec: 4.02 | Mem: 20.11G/20.11G
+[[34m2026-09-12 04:21:03[0m] (step=0406600) Diff: 0.1391 | REPA(w=0.03): 0.0038 | skel_loss(w=0.020): 5.4137 | canny_loss(w=0.100): 0.2588 | LR: 8.81e-06 | EMA: 0.999900 | Steps/Sec: 4.10 | Mem: 20.11G/20.11G
+[[34m2026-09-12 04:21:16[0m] (step=0406650) Diff: 0.1397 | REPA(w=0.03): 0.0039 | skel_loss(w=0.020): 5.3807 | canny_loss(w=0.100): 0.2604 | LR: 8.80e-06 | EMA: 0.999900 | Steps/Sec: 4.05 | Mem: 20.11G/20.11G
+[[34m2026-09-12 04:21:28[0m] (step=0406700) Diff: 0.1382 | REPA(w=0.03): 0.0038 | skel_loss(w=0.020): 5.4008 | canny_loss(w=0.100): 0.2605 | LR: 8.80e-06 | EMA: 0.999900 | Steps/Sec: 4.10 | Mem: 20.11G/20.11G
+[[34m2026-09-12 04:21:40[0m] (step=0406750) Diff: 0.1383 | REPA(w=0.03): 0.0038 | skel_loss(w=0.020): 5.3606 | canny_loss(w=0.100): 0.2604 | LR: 8.80e-06 | EMA: 0.999900 | Steps/Sec: 3.98 | Mem: 20.11G/20.11G
+[[34m2026-09-12 04:21:53[0m] (step=0406800) Diff: 0.1416 | REPA(w=0.03): 0.0038 | skel_loss(w=0.020): 5.3781 | canny_loss(w=0.100): 0.2613 | LR: 8.79e-06 | EMA: 0.999900 | Steps/Sec: 4.06 | Mem: 20.11G/20.11G
+[[34m2026-09-12 04:22:05[0m] (step=0406850) Diff: 0.1405 | REPA(w=0.03): 0.0038 | skel_loss(w=0.020): 5.4242 | canny_loss(w=0.100): 0.2601 | LR: 8.79e-06 | EMA: 0.999900 | Steps/Sec: 4.07 | Mem: 20.11G/20.11G
+[[34m2026-09-12 04:22:06[0m] Beginning epoch 19...
+[[34m2026-09-12 04:22:18[0m] (step=0406900) Diff: 0.1362 | REPA(w=0.03): 0.0038 | skel_loss(w=0.020): 5.4144 | canny_loss(w=0.100): 0.2562 | LR: 8.79e-06 | EMA: 0.999900 | Steps/Sec: 3.96 | Mem: 20.11G/20.11G
+[[34m2026-09-12 04:22:30[0m] (step=0406950) Diff: 0.1382 | REPA(w=0.03): 0.0038 | skel_loss(w=0.020): 5.4001 | canny_loss(w=0.100): 0.2590 | LR: 8.78e-06 | EMA: 0.999900 | Steps/Sec: 4.10 | Mem: 20.11G/20.11G
+[[34m2026-09-12 04:22:42[0m] (step=0407000) Diff: 0.1400 | REPA(w=0.03): 0.0038 | skel_loss(w=0.020): 5.3784 | canny_loss(w=0.100): 0.2608 | LR: 8.78e-06 | EMA: 0.999900 | Steps/Sec: 4.05 | Mem: 20.11G/20.11G
+[[34m2026-09-12 04:22:42[0m] (step=0407000) [diag] grad-norm: blocks=0.190 callig_chain=0.024 glyph_embedder=0.075 inj_out_proj=0.092 other=0.085
+[[34m2026-09-12 04:22:54[0m] (step=0407050) Diff: 0.1380 | REPA(w=0.03): 0.0038 | skel_loss(w=0.020): 5.3850 | canny_loss(w=0.100): 0.2601 | LR: 8.77e-06 | EMA: 0.999900 | Steps/Sec: 4.09 | Mem: 20.11G/20.11G

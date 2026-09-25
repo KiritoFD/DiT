@@ -1,0 +1,60 @@
+[[34m2026-09-09 17:58:36[0m] Experiment directory created at 5script/results/lrtest/20260909-175836-lrtest-5e-6
+[[34m2026-09-09 17:58:40[0m] Building 2-Cond model: DiT-2Cond-Sp/2 (learn_sigma=False, diffusion_type=flow, arch=rms/swiglu/qknorm=True/rope=True, attn=sdpa)
+[[34m2026-09-09 17:58:40[0m] Building 2-Cond model: DiT-2Cond-Sp/2 (callig=41, glyph/char=35130, fusion=factorized_add, dims=128/384, dropout=all:0.05, one:0.05, skel_head=False, glyph_cond=True, glyph_scale_init=0.6, char_proj_mode=mlp, freeze_char_table=False)
+[[34m2026-09-09 17:58:40[0m] [callig-emb] 加载预训练书家表 5script/callig_emb_pretrained.pt: torch.Size([41, 128]), null 行保持随机
+[[34m2026-09-09 17:58:40[0m] [callig-emb] 书家表已冻结 [0,N), CFG null token 保持可训练
+[[34m2026-09-09 17:58:40[0m] [dino-init] char_dino_embeddings/index not found (None, None) — y_char_embedder stays random init.
+[[34m2026-09-09 17:58:41[0m] [resume-full] Loaded weights from /root/Workspace/xy/DiT/5script/results/v10b_stdskel_fame3_c41x_cos_e/20260909-173200-v10b-stdskel-fame3-c41x-cos-e/checkpoints/0175000.pt (missing=6, unexpected=0).
+[[34m2026-09-09 17:58:41[0m] Trainable Parameters: 344,665,234
+[[34m2026-09-09 17:58:41[0m] Frozen Parameters: 136,448 (trainable ratio: 99.96%)
+[[34m2026-09-09 17:58:42[0m] [compile] torch.compile(mode=default) 注入（DDP 之前）...
+[[34m2026-09-09 17:58:43[0m] [EMA] missing (new modules, kept init): ['_orig_mod']
+[[34m2026-09-09 17:58:43[0m] [EMA] restored EMA weights from checkpoint
+[[34m2026-09-09 17:58:43[0m] [EMA] enabled with decay=0.9999
+[[34m2026-09-09 17:58:43[0m] [flow] FlowMatching(steps=50, sampler=heun, nfe=100, t_sampler=logit_normal(mean=0.0,std=1.0), shift=1.0, use_ot=False)
+[[34m2026-09-09 17:58:43[0m] [flow] Flow-Matching enabled (velocity target, Euler ODE sampling, t in [0,1])
+[[34m2026-09-09 17:58:43[0m] [infra] VAE skipped (latent-only mode, no pixel struct/REPA) -> saves ~500MB VRAM
+[[34m2026-09-09 17:58:43[0m] [struct] EdgeGradientLoss (gradient-profile, no per-image norm) + SkeletonLoss (recall-only, no off-skel penalization)
+[[34m2026-09-09 17:58:44[0m] Initializing unified REPA (Teacher: dinov2_vits14, Student Dim: 512, layers=(8,), w=0.03, warmup=0)
+[[34m2026-09-09 17:58:44[0m] [optim] AdamW lr=5e-06 wd=0.02
+[[34m2026-09-09 17:58:44[0m] [resume-full] Failed to restore optimizer state: loaded state dict contains a parameter group that doesn't match the size of optimizer's group
+[[34m2026-09-09 17:58:44[0m] [resume-full] Overrode LR -> 5e-06
+[[34m2026-09-09 17:58:44[0m] [resume-full] Inferred start step=175000 from filename 0175000.pt
+[[34m2026-09-09 17:58:44[0m] [infra] VAE skipped (latent-only mode, no pixel struct/REPA) -> saves ~500MB VRAM
+[[34m2026-09-09 18:00:08[0m] Using latent-cached dataset (skip on-the-fly VAE encode). preload=ON
+[[34m2026-09-09 18:00:08[0m] Dataset contains 113,540 images
+[[34m2026-09-09 18:00:08[0m] [LR] fresh-scheduler: cosine computed from absolute step 0 (total 177000); resume at 175000 -> LR starts mid-decay at 1.00e-01 (base)
+[[34m2026-09-09 18:00:08[0m] [early-stop] metric=ssim, patience=5, min_delta={'ssim': 0.002, 'skel_iou': 0.005, 'lpips': 0.003, 'mse': 0.0}
+[[34m2026-09-09 18:00:08[0m] Training for 100000 epochs...
+[[34m2026-09-09 18:00:08[0m] Beginning epoch 0...
+[[34m2026-09-09 18:01:16[0m] Error during training loop: CUDA out of memory. Tried to allocate 96.00 MiB. GPU 0 has a total capacty of 23.52 GiB of which 36.00 MiB is free. Process 2195011 has 23.45 GiB memory in use. Of the allocated memory 22.46 GiB is allocated by PyTorch, and 514.59 MiB is reserved by PyTorch but unallocated. If reserved but unallocated memory is large try setting max_split_size_mb to avoid fragmentation.  See documentation for Memory Management and PYTORCH_CUDA_ALLOC_CONF
+[[34m2026-09-09 18:01:16[0m] Traceback (most recent call last):
+  File "/root/Workspace/xy/DiT/src/train/train.py", line 1390, in main
+    loss.backward()
+  File "/opt/conda/envs/cu121/lib/python3.10/site-packages/torch/_tensor.py", line 492, in backward
+    torch.autograd.backward(
+  File "/opt/conda/envs/cu121/lib/python3.10/site-packages/torch/autograd/__init__.py", line 251, in backward
+    Variable._execution_engine.run_backward(  # Calls into the C++ engine to run the backward pass
+  File "/opt/conda/envs/cu121/lib/python3.10/site-packages/torch/autograd/function.py", line 288, in apply
+    return user_fn(self, *args)
+  File "/opt/conda/envs/cu121/lib/python3.10/site-packages/torch/_functorch/aot_autograd.py", line 3232, in backward
+    out = call_compiled_backward()
+  File "/opt/conda/envs/cu121/lib/python3.10/site-packages/torch/_functorch/aot_autograd.py", line 3204, in call_compiled_backward
+    out = call_func_with_args(
+  File "/opt/conda/envs/cu121/lib/python3.10/site-packages/torch/_functorch/aot_autograd.py", line 1506, in call_func_with_args
+    out = normalize_as_list(f(args))
+  File "/opt/conda/envs/cu121/lib/python3.10/site-packages/torch/_dynamo/eval_frame.py", line 328, in _fn
+    return fn(*args, **kwargs)
+  File "/opt/conda/envs/cu121/lib/python3.10/site-packages/torch/_dynamo/external_utils.py", line 17, in inner
+    return fn(*args, **kwargs)
+  File "/opt/conda/envs/cu121/lib/python3.10/site-packages/torch/_inductor/codecache.py", line 374, in __call__
+    return self.get_current_callable()(inputs)
+  File "/opt/conda/envs/cu121/lib/python3.10/site-packages/torch/_inductor/compile_fx.py", line 628, in run
+    return model(new_inputs)
+  File "/opt/conda/envs/cu121/lib/python3.10/site-packages/torch/_inductor/codecache.py", line 401, in _run_from_cache
+    return compiled_graph.compiled_artifact(inputs)
+  File "/tmp/torchinductor_root/gd/cgdnswqpibr3rjlafi4l3gatym2mnpknb55kalvskpfxpdp6fndd.py", line 4617, in call
+    buf1183 = empty_strided((32768, 1536), (1536, 1), device='cuda', dtype=torch.bfloat16)
+torch.cuda.OutOfMemoryError: CUDA out of memory. Tried to allocate 96.00 MiB. GPU 0 has a total capacty of 23.52 GiB of which 36.00 MiB is free. Process 2195011 has 23.45 GiB memory in use. Of the allocated memory 22.46 GiB is allocated by PyTorch, and 514.59 MiB is reserved by PyTorch but unallocated. If reserved but unallocated memory is large try setting max_split_size_mb to avoid fragmentation.  See documentation for Memory Management and PYTORCH_CUDA_ALLOC_CONF
+
+[[34m2026-09-09 18:01:16[0m] Done!

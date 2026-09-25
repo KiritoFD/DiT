@@ -1,0 +1,36 @@
+[[34m2026-09-07 23:46:43[0m] Experiment directory created at 5script/results/v10b_stdskel_fame3_mid/20260907-234643-v10b-stdskel-fame3-mid
+[[34m2026-09-07 23:46:44[0m] Building 2-Cond model: DiT-2Cond-S/2 (learn_sigma=False, diffusion_type=flow, arch=rms/swiglu/qknorm=True/rope=True, attn=sdpa)
+[[34m2026-09-07 23:46:44[0m] Building 2-Cond model: DiT-2Cond-S/2 (callig=1013, glyph/char=35130, fusion=factorized_add, dims=128/384, dropout=all:0.05, one:0.3, skel_head=False, glyph_cond=True, glyph_scale_init=0.4, char_proj_mode=mlp, freeze_char_table=False)
+[[34m2026-09-07 23:46:44[0m] [dino-init] char_dino_embeddings/index not found (None, None) — y_char_embedder stays random init.
+[[34m2026-09-07 23:46:44[0m] [cond-head] reset adaLN/final_layer to std=0.02 (retain task-agnostic transformer engine, drop ImageNet class-condition coupling).
+[[34m2026-09-07 23:46:44[0m] Trainable Parameters: 32,638,738
+[[34m2026-09-07 23:46:44[0m] Frozen Parameters: 98,304 (trainable ratio: 99.70%)
+[[34m2026-09-07 23:46:44[0m] [compile] torch.compile(mode=default) 注入（DDP 之前）...
+[[34m2026-09-07 23:46:45[0m] [EMA] enabled with decay=0.9999
+[[34m2026-09-07 23:46:45[0m] [flow] FlowMatching(steps=50, sampler=heun, nfe=100, t_sampler=logit_normal(mean=0.0,std=1.0), shift=1.0, use_ot=False)
+[[34m2026-09-07 23:46:45[0m] [flow] disabled DDPM-only auxiliaries: w_std_mid
+[[34m2026-09-07 23:46:45[0m] [flow] Flow-Matching enabled (velocity target, Euler ODE sampling, t in [0,1])
+[[34m2026-09-07 23:46:45[0m] [infra] VAE skipped (latent-only mode, no pixel struct/REPA) -> saves ~500MB VRAM
+[[34m2026-09-07 23:46:45[0m] [struct] EdgeGradientLoss (gradient-profile, no per-image norm) + SkeletonLoss (recall-only, no off-skel penalization)
+[[34m2026-09-07 23:46:46[0m] Initializing unified REPA (Teacher: dinov2_vits14, Student Dim: 384, layers=(8,), w=0.1, warmup=0)
+[[34m2026-09-07 23:46:46[0m] [optim] AdamW lr=0.00015 wd=0.02
+[[34m2026-09-07 23:46:46[0m] [infra] VAE skipped (latent-only mode, no pixel struct/REPA) -> saves ~500MB VRAM
+[[34m2026-09-07 23:47:02[0m] Using latent-cached dataset (skip on-the-fly VAE encode). preload=ON
+[[34m2026-09-07 23:47:02[0m] Dataset contains 28,385 images
+[[34m2026-09-07 23:47:02[0m] [early-stop] metric=ssim, patience=5, min_delta={'ssim': 0.002, 'skel_iou': 0.005, 'lpips': 0.003, 'mse': 0.0}
+[[34m2026-09-07 23:47:02[0m] Training for 100000 epochs...
+[[34m2026-09-07 23:47:02[0m] Beginning epoch 0...
+[[34m2026-09-07 23:48:13[0m] (step=0000050) Total: 1.1978 | Diff: 1.1510 | Canny: raw 0.0000 x 0.05 = 0.0000 | Skel: raw 0.0000 x 0.05 = 0.0000 | LatC: raw 0.0000 x 0.000 = 0.0000 | LatS: raw 0.0000 x 0.000 = 0.0000 | LStrS: raw 0.0000 x 0.0 = 0.0000 | LStrC: raw 0.0000 x 0.0 = 0.0000 | REPA(含w): raw 0.0469 (w=0.10) = 0.0469 | SkelH: raw 0.0000 | StdMid: raw 0.0000 | LR: 1.50e-04 | EMA: 0.847458 | Steps/Sec: 0.71 | Mem: 20.13G/20.13G
+[[34m2026-09-07 23:48:26[0m] Beginning epoch 1...
+[[34m2026-09-07 23:48:32[0m] (step=0000100) Total: 0.7713 | Diff: 0.7422 | Canny: raw 0.0000 x 0.05 = 0.0000 | Skel: raw 0.0000 x 0.05 = 0.0000 | LatC: raw 0.0000 x 0.000 = 0.0000 | LatS: raw 0.0000 x 0.000 = 0.0000 | LStrS: raw 0.0000 x 0.0 = 0.0000 | LStrC: raw 0.0000 x 0.0 = 0.0000 | REPA(含w): raw 0.0291 (w=0.10) = 0.0291 | SkelH: raw 0.0000 | StdMid: raw 0.0000 | LR: 1.50e-04 | EMA: 0.917431 | Steps/Sec: 2.69 | Mem: 20.21G/20.21G
+[[34m2026-09-07 23:48:49[0m] (step=0000150) Total: 0.6594 | Diff: 0.6324 | Canny: raw 0.0000 x 0.05 = 0.0000 | Skel: raw 0.0000 x 0.05 = 0.0000 | LatC: raw 0.0000 x 0.000 = 0.0000 | LatS: raw 0.0000 x 0.000 = 0.0000 | LStrS: raw 0.0000 x 0.0 = 0.0000 | LStrC: raw 0.0000 x 0.0 = 0.0000 | REPA(含w): raw 0.0270 (w=0.10) = 0.0270 | SkelH: raw 0.0000 | StdMid: raw 0.0000 | LR: 1.50e-04 | EMA: 0.943396 | Steps/Sec: 2.83 | Mem: 20.27G/20.27G
+[[34m2026-09-07 23:48:59[0m] Beginning epoch 2...
+[[34m2026-09-07 23:49:08[0m] (step=0000200) Total: 0.5963 | Diff: 0.5702 | Canny: raw 0.0000 x 0.05 = 0.0000 | Skel: raw 0.0000 x 0.05 = 0.0000 | LatC: raw 0.0000 x 0.000 = 0.0000 | LatS: raw 0.0000 x 0.000 = 0.0000 | LStrS: raw 0.0000 x 0.0 = 0.0000 | LStrC: raw 0.0000 x 0.0 = 0.0000 | REPA(含w): raw 0.0261 (w=0.10) = 0.0261 | SkelH: raw 0.0000 | StdMid: raw 0.0000 | LR: 1.50e-04 | EMA: 0.956938 | Steps/Sec: 2.67 | Mem: 20.53G/20.53G
+[[34m2026-09-07 23:49:26[0m] (step=0000250) Total: 0.5589 | Diff: 0.5334 | Canny: raw 0.0000 x 0.05 = 0.0000 | Skel: raw 0.0000 x 0.05 = 0.0000 | LatC: raw 0.0000 x 0.000 = 0.0000 | LatS: raw 0.0000 x 0.000 = 0.0000 | LStrS: raw 0.0000 x 0.0 = 0.0000 | LStrC: raw 0.0000 x 0.0 = 0.0000 | REPA(含w): raw 0.0255 (w=0.10) = 0.0255 | SkelH: raw 0.0000 | StdMid: raw 0.0000 | LR: 1.50e-04 | EMA: 0.965251 | Steps/Sec: 2.82 | Mem: 20.53G/20.53G
+[[34m2026-09-07 23:49:31[0m] Beginning epoch 3...
+[[34m2026-09-07 23:49:45[0m] (step=0000300) Total: 0.5363 | Diff: 0.5114 | Canny: raw 0.0000 x 0.05 = 0.0000 | Skel: raw 0.0000 x 0.05 = 0.0000 | LatC: raw 0.0000 x 0.000 = 0.0000 | LatS: raw 0.0000 x 0.000 = 0.0000 | LStrS: raw 0.0000 x 0.0 = 0.0000 | LStrC: raw 0.0000 x 0.0 = 0.0000 | REPA(含w): raw 0.0248 (w=0.10) = 0.0248 | SkelH: raw 0.0000 | StdMid: raw 0.0000 | LR: 1.50e-04 | EMA: 0.970874 | Steps/Sec: 2.67 | Mem: 20.53G/20.53G
+[[34m2026-09-07 23:50:02[0m] (step=0000350) Total: 0.5179 | Diff: 0.4937 | Canny: raw 0.0000 x 0.05 = 0.0000 | Skel: raw 0.0000 x 0.05 = 0.0000 | LatC: raw 0.0000 x 0.000 = 0.0000 | LatS: raw 0.0000 x 0.000 = 0.0000 | LStrS: raw 0.0000 x 0.0 = 0.0000 | LStrC: raw 0.0000 x 0.0 = 0.0000 | REPA(含w): raw 0.0241 (w=0.10) = 0.0241 | SkelH: raw 0.0000 | StdMid: raw 0.0000 | LR: 1.50e-04 | EMA: 0.974930 | Steps/Sec: 2.83 | Mem: 20.53G/20.53G
+[[34m2026-09-07 23:50:03[0m] Beginning epoch 4...
+[[34m2026-09-07 23:50:21[0m] (step=0000400) Total: 0.5055 | Diff: 0.4821 | Canny: raw 0.0000 x 0.05 = 0.0000 | Skel: raw 0.0000 x 0.05 = 0.0000 | LatC: raw 0.0000 x 0.000 = 0.0000 | LatS: raw 0.0000 x 0.000 = 0.0000 | LStrS: raw 0.0000 x 0.0 = 0.0000 | LStrC: raw 0.0000 x 0.0 = 0.0000 | REPA(含w): raw 0.0234 (w=0.10) = 0.0234 | SkelH: raw 0.0000 | StdMid: raw 0.0000 | LR: 1.50e-04 | EMA: 0.977995 | Steps/Sec: 2.65 | Mem: 20.53G/20.53G
+[[34m2026-09-07 23:50:35[0m] Beginning epoch 5...
+[[34m2026-09-07 23:50:40[0m] (step=0000450) Total: 0.4966 | Diff: 0.4738 | Canny: raw 0.0000 x 0.05 = 0.0000 | Skel: raw 0.0000 x 0.05 = 0.0000 | LatC: raw 0.0000 x 0.000 = 0.0000 | LatS: raw 0.0000 x 0.000 = 0.0000 | LStrS: raw 0.0000 x 0.0 = 0.0000 | LStrC: raw 0.0000 x 0.0 = 0.0000 | REPA(含w): raw 0.0227 (w=0.10) = 0.0227 | SkelH: raw 0.0000 | StdMid: raw 0.0000 | LR: 1.50e-04 | EMA: 0.980392 | Steps/Sec: 2.65 | Mem: 20.53G/20.53G

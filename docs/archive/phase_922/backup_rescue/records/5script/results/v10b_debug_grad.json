@@ -1,0 +1,81 @@
+{
+  "n_batches": 4,
+  "w_repa": 0.1,
+  "repa_layers": "",
+  "g_out_diff": 0.10384,
+  "x_embedder": {
+    "grad_norm": 0.1041,
+    "rel_update": 0.024146
+  },
+  "t_embedder": {
+    "grad_norm": 0.0412,
+    "rel_update": 0.004271
+  },
+  "callig_chain": {
+    "grad_norm": 0.0216,
+    "rel_update": 0.001341
+  },
+  "glyph_embedder": {
+    "grad_norm": 0.0735,
+    "rel_update": 0.007552
+  },
+  "final_layer": {
+    "grad_norm": 0.0667,
+    "rel_update": 0.002919
+  },
+  "block00": {
+    "grad_norm": 0.081,
+    "rel_update": 0.001392
+  },
+  "block01": {
+    "grad_norm": 0.0628,
+    "rel_update": 0.001008
+  },
+  "block02": {
+    "grad_norm": 0.0608,
+    "rel_update": 0.000932
+  },
+  "block03": {
+    "grad_norm": 0.0726,
+    "rel_update": 0.001107
+  },
+  "block04": {
+    "grad_norm": 0.0716,
+    "rel_update": 0.001085
+  },
+  "block05": {
+    "grad_norm": 0.0695,
+    "rel_update": 0.001045
+  },
+  "block06": {
+    "grad_norm": 0.0688,
+    "rel_update": 0.001036
+  },
+  "block07": {
+    "grad_norm": 0.0703,
+    "rel_update": 0.001068
+  },
+  "block08": {
+    "grad_norm": 0.0612,
+    "rel_update": 0.000897
+  },
+  "block09": {
+    "grad_norm": 0.0575,
+    "rel_update": 0.000834
+  },
+  "block10": {
+    "grad_norm": 0.0512,
+    "rel_update": 0.000718
+  },
+  "block11": {
+    "grad_norm": 0.0441,
+    "rel_update": 0.000608
+  },
+  "repa": {
+    "grad_norm": 0.342,
+    "rel_update": 0.021344
+  },
+  "repa_grad_share": 1.585,
+  "main_loss_mean": 0.13861,
+  "repa_loss_mean": 0.09647
+}

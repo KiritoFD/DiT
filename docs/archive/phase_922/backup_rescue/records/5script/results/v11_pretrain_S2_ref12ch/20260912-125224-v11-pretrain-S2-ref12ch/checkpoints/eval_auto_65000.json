@@ -1,0 +1,1 @@
+{"step": 65000, "elapsed_s": 13.5, "engine": "gpu_inmem_cuda", "ssim": 0.505875, "mse": 1.031702, "lpips": 0.455683}

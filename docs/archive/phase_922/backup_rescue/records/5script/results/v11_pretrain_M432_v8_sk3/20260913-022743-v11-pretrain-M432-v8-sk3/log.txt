@@ -1,0 +1,15 @@
+[[34m2026-09-13 02:27:43[0m] Experiment directory created at assets/results/v11_pretrain_M432_v8_sk3/20260913-022743-v11-pretrain-M432-v8-sk3
+[[34m2026-09-13 02:27:43[0m] Building 2-Cond model: DiT-2Cond-M/2 (learn_sigma=False, diffusion_type=flow, arch=rms/swiglu/qknorm=True/rope=True, attn=sdpa)
+[[34m2026-09-13 02:27:43[0m] Building 2-Cond model: DiT-2Cond-M/2 (callig=41, glyph/char=7765, fusion=factorized_add, dims=128/None, dropout=all:0.05, one:0.05, glyph_cond=True, glyph_scale_init=0.6, char_proj_mode=full, freeze_char_table=False)
+[[34m2026-09-13 02:27:43[0m] [callig-emb] 加载预训练书家表 assets/callig_emb_pretrained.pt: torch.Size([41, 128]), null 行保持随机
+[[34m2026-09-13 02:27:43[0m] [callig-emb] 书家表已冻结 [0,N), CFG null token 保持可训练
+[[34m2026-09-13 02:27:43[0m] [dino-init] char_dino_embeddings/index not found (None, None) — y_char_embedder stays random init.
+[[34m2026-09-13 02:27:44[0m] [cond-head] reset adaLN/final_layer to std=0.02 (retain task-agnostic transformer engine, drop ImageNet class-condition coupling).
+[[34m2026-09-13 02:27:44[0m] Trainable Parameters: 48,990,098
+[[34m2026-09-13 02:27:44[0m] Frozen Parameters: 115,968 (trainable ratio: 99.76%)
+[[34m2026-09-13 02:27:44[0m] [compile] torch.compile(mode=default) 注入（DDP 之前）...
+[[34m2026-09-13 02:27:45[0m] [EMA] enabled with decay=0.9999
+[[34m2026-09-13 02:27:45[0m] [flow] FlowMatching(steps=50, sampler=heun, nfe=100, t_sampler=logit_normal(mean=0.0,std=1.0), shift=1.0, use_ot=False)
+[[34m2026-09-13 02:27:45[0m] [flow] Flow-Matching enabled (velocity target, Euler ODE sampling, t in [0,1])
+[[34m2026-09-13 02:27:45[0m] [infra] VAE skipped (latent-only mode) -> saves ~500MB VRAM
+[[34m2026-09-13 02:27:45[0m] [optim] AdamW lr=0.0001 wd=0.02

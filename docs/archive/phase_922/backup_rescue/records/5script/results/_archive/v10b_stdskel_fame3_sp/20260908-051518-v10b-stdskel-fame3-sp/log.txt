@@ -1,0 +1,54 @@
+[[34m2026-09-08 05:15:18[0m] Experiment directory created at 5script/results/v10b_stdskel_fame3_sp/20260908-051518-v10b-stdskel-fame3-sp
+[[34m2026-09-08 05:15:19[0m] Building 2-Cond model: DiT-2Cond-Sp/2 (learn_sigma=False, diffusion_type=flow, arch=rms/swiglu/qknorm=True/rope=True, attn=sdpa)
+[[34m2026-09-08 05:15:19[0m] Building 2-Cond model: DiT-2Cond-Sp/2 (callig=1013, glyph/char=35130, fusion=factorized_add, dims=128/384, dropout=all:0.05, one:0.3, skel_head=False, glyph_cond=True, glyph_scale_init=0.6, char_proj_mode=mlp, freeze_char_table=False)
+[[34m2026-09-08 05:15:19[0m] [dino-init] char_dino_embeddings/index not found (None, None) — y_char_embedder stays random init.
+[[34m2026-09-08 05:15:19[0m] [cond-head] reset adaLN/final_layer to std=0.02 (retain task-agnostic transformer engine, drop ImageNet class-condition coupling).
+[[34m2026-09-08 05:15:19[0m] Trainable Parameters: 65,433,106
+[[34m2026-09-08 05:15:19[0m] Frozen Parameters: 131,072 (trainable ratio: 99.80%)
+[[34m2026-09-08 05:15:19[0m] [compile] torch.compile(mode=default) 注入（DDP 之前）...
+[[34m2026-09-08 05:15:20[0m] [EMA] enabled with decay=0.9999
+[[34m2026-09-08 05:15:20[0m] [flow] FlowMatching(steps=50, sampler=heun, nfe=100, t_sampler=logit_normal(mean=0.0,std=1.0), shift=1.0, use_ot=False)
+[[34m2026-09-08 05:15:20[0m] [flow] Flow-Matching enabled (velocity target, Euler ODE sampling, t in [0,1])
+[[34m2026-09-08 05:15:20[0m] [infra] VAE skipped (latent-only mode, no pixel struct/REPA) -> saves ~500MB VRAM
+[[34m2026-09-08 05:15:20[0m] [struct] EdgeGradientLoss (gradient-profile, no per-image norm) + SkeletonLoss (recall-only, no off-skel penalization)
+[[34m2026-09-08 05:15:20[0m] Initializing unified REPA (Teacher: dinov2_vits14, Student Dim: 384, layers=(8,), w=0.1, warmup=0)
+[[34m2026-09-08 05:15:20[0m] [optim] AdamW lr=0.00015 wd=0.02
+[[34m2026-09-08 05:15:20[0m] [infra] VAE skipped (latent-only mode, no pixel struct/REPA) -> saves ~500MB VRAM
+[[34m2026-09-08 05:15:38[0m] Using latent-cached dataset (skip on-the-fly VAE encode). preload=ON
+[[34m2026-09-08 05:15:38[0m] Dataset contains 28,385 images
+[[34m2026-09-08 05:15:38[0m] [early-stop] metric=ssim, patience=5, min_delta={'ssim': 0.002, 'skel_iou': 0.005, 'lpips': 0.003, 'mse': 0.0}
+[[34m2026-09-08 05:15:38[0m] Training for 100000 epochs...
+[[34m2026-09-08 05:15:38[0m] Beginning epoch 0...
+[[34m2026-09-08 05:16:14[0m] Error during training loop: mat1 and mat2 shapes cannot be multiplied (49152x512 and 384x384)
+[[34m2026-09-08 05:16:14[0m] Traceback (most recent call last):
+  File "/root/Workspace/xy/DiT/src/train/train.py", line 1286, in main
+    loss_repa = repa_loss_fn(intermediate_feats, x, step=train_steps)
+  File "/opt/conda/envs/cu121/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1518, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+  File "/opt/conda/envs/cu121/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1527, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/root/Workspace/xy/DiT/src/loss/repa.py", line 97, in forward
+    loss = self.losses[0](feats, img) if len(self.losses) == 1 else \
+  File "/opt/conda/envs/cu121/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1518, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+  File "/opt/conda/envs/cu121/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1527, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/root/Workspace/xy/DiT/src/loss/losses.py", line 346, in forward
+    return _one(student_feats)
+  File "/root/Workspace/xy/DiT/src/loss/losses.py", line 337, in _one
+    p = self.proj(sf.float())  # (B, 256, teacher_dim)
+  File "/opt/conda/envs/cu121/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1518, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+  File "/opt/conda/envs/cu121/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1527, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/opt/conda/envs/cu121/lib/python3.10/site-packages/torch/nn/modules/container.py", line 215, in forward
+    input = module(input)
+  File "/opt/conda/envs/cu121/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1518, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+  File "/opt/conda/envs/cu121/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1527, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/opt/conda/envs/cu121/lib/python3.10/site-packages/torch/nn/modules/linear.py", line 114, in forward
+    return F.linear(input, self.weight, self.bias)
+RuntimeError: mat1 and mat2 shapes cannot be multiplied (49152x512 and 384x384)
+
+[[34m2026-09-08 05:16:14[0m] Done!

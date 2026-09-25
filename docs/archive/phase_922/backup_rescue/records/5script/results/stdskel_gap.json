@@ -1,0 +1,21 @@
+{
+  "n": 3000,
+  "cos(A=std_skel, B=GT_skel)": {
+    "mean": 0.9017,
+    "median": 0.9034
+  },
+  "cos(A=std_skel, C=GT_target)": {
+    "mean": 0.593,
+    "median": 0.6
+  },
+  "cos(B=GT_skel,  C=GT_target)": {
+    "mean": 0.6261,
+    "median": 0.6293
+  },
+  "|std_skel|": 79.7646,
+  "|GT_skel|": 77.1927,
+  "|GT_target|": 74.1264,
+  "|A-B|_nmse": 0.1967,
+  "|A-C|_nmse": 0.814,
+  "|B-C|_nmse": 0.7478
+}

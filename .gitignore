@@ -102,8 +102,8 @@ _sync_work/
 _diag/
 _zs/
 legacy/misc/
-archive/
-_archive/
+/archive/
+/_archive/
 
 # ---- 根目录散落的可视化/临时 ----
 /*.png
@@ -145,10 +145,10 @@ tools/evaluation/current_train.log
 tools/evaluation/poster_*.png
 tools/evaluation/train_dashboard.html
 
-# ---- docs 里保留 png 海报 (旧规则) ----
-!docs/s6_report/**/*.png
-!docs/s6_report/**/*.json
-!docs/system/imgs/**
+# ---- docs 里保留 png 海报与技术图表 ----
+!docs/**/*.png
+!docs/**/*.json
+!docs/**/*.jpg
 
 # ---- 工具 session 记录 / 大图海报 (不入库) ----
 session-*.md

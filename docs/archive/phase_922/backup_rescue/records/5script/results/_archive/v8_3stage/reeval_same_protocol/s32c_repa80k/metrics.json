@@ -1,0 +1,39 @@
+{
+  "main_ckpt": "5script/results/s32c_chain/20260902-004653-s32c-repa-longconv/checkpoints/0080000.pt",
+  "ctrl_ckpt": "5script/results/s32c_chain/20260902-004653-s32c-repa-longconv/checkpoints/0080000.pt",
+  "eval_csv": "5script/eval_fame_strict_clean_v8.csv",
+  "skel_latent_dir": "final_skel_latents_fame_1px_v8",
+  "n": 100,
+  "cfg": 0.7,
+  "steps": 50,
+  "base": {
+    "n": 100,
+    "mse_mean": 0.9537113776803017,
+    "mse_std": 0.2419215245263091,
+    "mse_q25": 0.7800753563642502,
+    "mse_q50": 0.956328272819519,
+    "mse_q75": 1.0957621335983276,
+    "ssim_mean": 0.22884661498591113,
+    "ssim_std": 0.05900894741297855,
+    "skel_iou_mean": 0.01383422448804653,
+    "skel_iou_std": 0.005090716303692044,
+    "lpips_mean": 0.6601499474048614
+  },
+  "ctrl": {
+    "n": 100,
+    "mse_mean": 0.13659953076392412,
+    "mse_std": 0.056233149870272385,
+    "mse_q25": 0.09503147564828396,
+    "mse_q50": 0.12806358933448792,
+    "mse_q75": 0.17137791588902473,
+    "ssim_mean": 0.7424999517914253,
+    "ssim_std": 0.10016464746582712,
+    "skel_iou_mean": 0.4390150561987995,
+    "skel_iou_std": 0.08547925305049446,
+    "lpips_mean": 0.23327757760882378
+  },
+  "delta_mse": -0.8171118469163776,
+  "delta_ssim": 0.5136533368055141,
+  "delta_skel_iou": 0.42518083171075294,
+  "delta_lpips": -0.42687236979603765
+}

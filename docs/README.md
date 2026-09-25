@@ -1,63 +1,41 @@
-# DiT-MCCD 文档索引
+# Callig-DiT (马良) 研发全景文档索引
 
-> 本目录是项目文档的统一入口。按主题组织，每个子目录覆盖一个领域。
+> **马良 (Callig-DiT)**：基于显式拓扑解耦与最优传输流匹配的高保真汉字书法生成大模型。
+> 本文档中心为全项目的技术规范、实验结论、数据集流转与工程实现的总索引。
 
-## ⭐ 当前实现文档（authoritative，2026-08-28 重构后）
+---
 
-**`docs/system/`** 是当前代码的唯一权威说明，与代码一一对应，读它即可：
+## 📚 核心文档四大支柱 (Four Core Pillars)
 
-| 文档 | 内容 |
-|---|---|
-| [system/00_README.md](system/00_README.md) | 总览、管线图、核心事实速查、阅读顺序 |
-| [system/01_code_layout.md](system/01_code_layout.md) | `src/{model,loss,train,eval,utils}` 分层、根 shim 兼容层、tools/ 边界 |
-| [system/02_diffusion.md](system/02_diffusion.md) | 统一时间步设计（flow/ddpm 语义表）、**历史 bug 复盘**、`sample_t` 铁律 |
-| [system/03_model.md](system/03_model.md) | DiT_2Cond 结构、**4-way 条件 dropout**、CFG、DINO 字符表 |
-| [system/04_controlnet.md](system/04_controlnet.md) | ControlNet 骨架分支、zero-init warm-start、两种训练模式 |
-| [system/05_dataset.md](system/05_dataset.md) | mid-clean 增广流水线（Phase A/B/C）、latent shards、数据事实 |
-| [system/06_training.md](system/06_training.md) | train.py / train_controlnet.py、优化器/EMA、**配置字段全解**、resolved_config |
-| [system/07_eval.md](system/07_eval.md) | 评测体系：inference 唯一核心 + 薄壳 + CPU daemon、指标约定、基线对比 |
-| [system/08_experiments.md](system/08_experiments.md) | 实验史、关键决策、当前运行状态（s19 mid-clean 预训练中） |
-| [system/09_ops.md](system/09_ops.md) | 远程部署、SSH 运维、GPU 纪律、踩坑清单 |
+### 第一支柱：核心模型与网络架构 ([`docs/01_architecture/`](file:///g:/GitHub/DiT/docs/01_architecture/))
+- **[01. 架构全景与系统边界](file:///g:/GitHub/DiT/docs/01_architecture/01_overview.md)**：系统三阶段流水线、数据契约、模块间职责与运行边界定义。
+- **[02. DiT-2Cond 主干模型](file:///g:/GitHub/DiT/docs/01_architecture/02_model.md)**：DiT-2Cond-S/2 参数规约、2D 旋转位置编码 (RoPE)、RMSNorm、SwiGLU 与 adaLN-Zero 机制。
+- **[03. SkelNet 拓扑可形变网络](file:///g:/GitHub/DiT/docs/01_architecture/03_skelnet.md)**：粗细双尺度控制网格 (TPS)、笔画宽度自适应调制、背景零造墨硬门控 ($r=0.25$) 与真值骨架中间监督。
+- **[04. 双通道风格注入与正交梯度](file:///g:/GitHub/DiT/docs/01_architecture/04_dual_channel.md)**：宏观排版与微观墨迹的双尺度解耦、梯度正交性实证数学证明 ($\cos \approx +0.0030$)、38x 方差失衡诊断与修复。
 
-## 历史资料（重构前，仅存档参考）
+### 第二支柱：数据集规范与数据流转 ([`docs/02_dataset/`](file:///g:/GitHub/DiT/docs/02_dataset/))
+- **[01. 50k 高保真书法数据集规约](file:///g:/GitHub/DiT/docs/02_dataset/01_dataset_spec.md)**：50,000 例字形清单、45 位书法家词表字典、Seen 重构集与 Strict 零样本外推评测集切分。
+- **[02. 数据清洗四阶隔离协议](file:///g:/GitHub/DiT/docs/02_dataset/02_cleaning_lineage.md)**：`_quarantine` v1-v4 清洗历史、反色极性判定、Canny 拓扑中心线细化、白底全零极性对齐 (White-Zero)。
+- **[03. 存储布局与内存预加载流水线](file:///g:/GitHub/DiT/docs/02_dataset/03_asset_layout.md)**：离线分片结构 (`shards_img`, `shards_std`, `shards_aux_skel3`)、零 I/O 内存预载 (RAM Preload)、DINOv2 表征缓存。
 
-> 以下文档描述 8 月中旬之前的代码与设计，**部分内容已过时**；与 `docs/system/` 冲突时以 system/ 为准。
+### 第三支柱：训练策略与基础设施优化 ([`docs/03_training/`](file:///g:/GitHub/DiT/docs/03_training/))
+- **[01. 最优传输流匹配理论](file:///g:/GitHub/DiT/docs/03_training/01_flow_matching.md)**：连续时间 OT-CFM 直线插值场、Logit-Normal 中段密度聚焦采样、Euler 与 Heun 高阶 ODE 数值求解器、无分类器引导 (CFG)。
+- **[02. 损失函数多任务协同与超参配方](file:///g:/GitHub/DiT/docs/03_training/02_loss_and_recipes.md)**：三任务联合损失 ($\mathcal{L}_{diff} + 0.03\mathcal{L}_{repa} + 1.0\mathcal{L}_{deform}$)、学习率余弦退火、EMA 影子权重更新、梯度裁剪。
+- **[03. 基础设施极致优化](file:///g:/GitHub/DiT/docs/03_training/03_infra_optimization.md)**：PyTorch Inductor 全算子融合编译、SDPA 零展开注意力、异步非阻塞 CPU 检查点落盘、单卡 RTX 4090 达到 **$4.09\text{ steps/s}$ ($1,308\text{ 字/秒}$)** 硬件压榨经验。
 
-```
-docs/
-├── model/                              # 模型架构（历史）
-│   ├── architecture.md                 # DiT 模型设计 (2Cond/3Cond, S/XL, f4/f8)
-│   └── CONTROLNET.md                   # ControlNet 骨架条件分支（旧版）
-├── training/
-│   └── training.md                     # 训练管线（旧版）
-├── data/
-│   ├── dataset.md                      # 数据集与 VAE（旧版）
-│   └── gt_denoise_and_std_scale.md     # ★ GT 去噪 + 条件侧尺度对齐（核心规范）
-├── eval/
-│   └── evaluation.md                   # 评测流程（旧版）
-├── experiments/
-│   └── experiment_log.md               # V1→S7 实验时间线
-├── design/
-│   └── 2026-08-15-sparse-compositional-calligraphy-dit.md
-├── HANDOVER_2026-08-15.md              # 交接文档（旧）
-├── s6_report/                          # S6 实验报告 (diff-only vs struct)
-│   └── REPORT.md / REPORT.pdf
-└── legacy/                             # 更早的文档
-    ├── DATASET.md, TRAINING.md, INFERENCE.md, ...
-```
+### 第四支柱：实验评测与证伪记录 ([`docs/04_experiments/`](file:///g:/GitHub/DiT/docs/04_experiments/))
+- **[01. 历史全实验权威总天梯榜](file:///g:/GitHub/DiT/docs/04_experiments/01_master_leaderboard.md)**：75+ 组历史实验全量排位，Strict SSIM、Seen SSIM、LPIPS、专属性全景横评。
+- **[02. 低资源书法家小样本自适应](file:///g:/GitHub/DiT/docs/04_experiments/02_fewshot_adaptation.md)**：沈周、伊秉绶、傅山 100 样本快速迁移实验，`row_pt` 先验初始化完胜 `mean_scaled`，2000 步极速达峰（SSIM 0.5568）。
+- **[03. 证伪注册表与失败方向归档](file:///g:/GitHub/DiT/docs/04_experiments/03_falsification_registry.md)**：严谨证伪的 8 大技术死胡同（LCA交叉注意力、多Token风格、全层密集注入、骨架VAE、高权REPA等）与数学机理分析。
+- **[04. 旗舰运行 v21_skelnet 实时遥测报告](file:///g:/GitHub/DiT/docs/04_experiments/04_v21_skelnet_telemetry.md)**：200k 旗舰长跑实时跟踪，记录 Step 5k, 10k, 15k 里程碑，目标专属性 $+0.0143$ 与同字富集度 $1.91\times$ 的质变突破。
 
-## 快速导航（历史）
+---
 
-| 你想了解… | 去哪里看 |
-|-------------|----------|
-| （新）整套系统的权威说明 | [system/00_README.md](system/00_README.md) |
-| （旧）模型架构、条件融合、VAE 集成 | [model/architecture.md](model/architecture.md) |
-| （旧）ControlNet 骨架引导 | [model/CONTROLNET.md](model/CONTROLNET.md) |
-| （旧）bf16/EMA/显存调优 | [training/training.md](training/training.md) |
-| （旧）数据集、latent 编码、VAE 对比 | [data/dataset.md](data/dataset.md) |
-| （旧）评测流程、auto_eval、早停 | [eval/evaluation.md](eval/evaluation.md) |
-| S6 结构损失对比报告 | [s6_report/REPORT.md](s6_report/REPORT.md) |
+## 🏛️ 历史档案与原始文献库 ([`docs/archive/`](file:///g:/GitHub/DiT/docs/archive/))
 
-## VAE 工具文档
-
-VAE 转换、编码、验证的完整流程文档在 `tools/vae/DATA_PIPELINE.md`，设计论证在 `tools/vae/README.md`。
+为了完整保留科研探索的真实心路历程，所有历史文档与原始记录均妥善归档：
+- **[`docs/archive/system_notes/`](file:///g:/GitHub/DiT/docs/archive/system_notes/)**：项目早期建立的 75 篇连续演进备忘录（00 至 75），包含大量的每日消融试验草稿、显式推导与会话实录。
+- **[`docs/archive/phase_919/`](file:///g:/GitHub/DiT/docs/archive/phase_919/)**：2026年9月19日阶段性重构快照文档集合。
+- **[`docs/archive/phase_922/`](file:///g:/GitHub/DiT/docs/archive/phase_922/)**：2026年9月22日注入机制重构专题研讨文档集合。
+- **[`docs/archive/legacy_reports/`](file:///g:/GitHub/DiT/docs/archive/legacy_reports/)**：早期的 S6 阶段评估报告、初版 ControlNet 设计草案与历史分析报告。
+- **[`docs/archive/txt_reports/`](file:///g:/GitHub/DiT/docs/archive/txt_reports/)**：远端与本地运行产生的数据集分布诊断、统计清洗输出原始 `.txt` 文本文件。

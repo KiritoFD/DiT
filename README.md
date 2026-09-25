@@ -119,60 +119,71 @@ MCCD 数据集实测表明：按 MD5 严格查重，跨书家共享完全相同 
 
 ---
 
-### 2.3 实验代际演进谱系 (Timeline: v1 ~ v21)
+### 2.3 实验代际演进谱系与权威天梯 (Timeline: v1 ~ v21)
 
-| 代际代号 | 核心架构特征 | 关键干预与超参 | strict SSIM / 结论 |
-| :--- | :--- | :--- | :--- |
-| **v1 ~ v3** | 像素空间基础 DiT | 离散字符 ID + 书家 ID | 早期概念验证，闭集受限 |
-| **v6 ~ v9** | 引入骨架潜变量条件 | 外部 ControlNet 架构 | 门控失效：网络恒等抄写骨架，风格被旁路 |
-| **v10** | 确立开集标准骨架 $g_{std}$ | 单向量因子，彻底剥离 char ID | 0.5108；首次实现生僻字开集渲染 |
-| **v11** | 现代化改造 + 12ch 探索 | RMSNorm, SwiGLU, RoPE, 12ch aux | 0.4993；证明 12ch 辅助目标失败，但现代骨干确立 |
-| **v12** | 骨架全局向量池化 | `glyph_vec_cond` (mean pooling) | 0.5603；主干首次在 adaLN 中感知全局字形拓扑 |
-| **v13** | 50k 清洗数据集基准 | 因子化拼接 `factorized_cat` | **0.5703**；确立像素级 SSIM 天花板 |
-| **v14** | 类别细分 (87 pair) | 书家×书体细分，风格表全量微调 | 0.5691；证明纯类别扩充无法解决单向量模态塌缩 |
-| **v15** | 多模态风格矩阵 | $K=4$ token 查表，DINO 质心初始化 | 建立多模态风格表达框架 |
-| **v17** | 局部条件跨注意力与门控 | 时间门控 `glyph_gate_t` | 验证局部结构与全局纹理的时序分工 |
-| **v18 ~ v20** | 骨架形变探索 | 引入可变形卷积，中间骨架初测 | 离线验证了形变网络具备梯度可用性 |
-| **v21 (当前)** | **SkelNet + Gated Stroke Mod** | **离线 95.3% 注入 + 小 lr 联合训练 + $w=1.0$ 稠密监督** | **Step 10,000: seen 0.5408 / strict 0.5299，稳步爬升** |
+| 代际代号 | 最佳步数 | 核心架构特征 | strict SSIM | seen SSIM | 核心结论 |
+| :--- | :---: | :--- | :---: | :---: | :--- |
+| **v1 ~ v3** | 20k | 像素空间基础 DiT + 离散字符 ID | ~0.4200 | ~0.4500 | 早期验证，受困于闭集受限 |
+| **v6 ~ v9** | 50k | 外部 ControlNet 架构 + 骨架拼接 | 0.5058 | 0.4961 | 门控失效：网络恒等抄写骨架，风格被旁路 |
+| **v10b** | 360k | 确立开集标准骨架 $g_{std}$ | 0.5680 | 0.7606 | 首次实现生僻字开集渲染，长跑奠定坚实基础 |
+| **v11** | 490k | 现代网络算子 (RMSNorm, SwiGLU, RoPE) | 0.5675 | 0.7685 | 确立现代流匹配底模，排除 12ch 多通道伪路线 |
+| **v12** | 95k | 骨架全局向量池化 `glyph_vec_cond` | 0.5603 | 0.7214 | 主干首次在 adaLN 中显式感知全局字形拓扑 |
+| **v13** | 170k | 50k 清洗数据集基准 (`v13_12ch_post` / `v13_styletok`) | **0.5713** | 0.7837 | 确立静态图像重构质量天花板 |
+| **v14** | 162.5k | 类别细分与阶段微调 (`v14_style87_s3`) | **0.5764** | 0.7698 | **历史纯风格重构最高峰值** |
+| **v15** | 150k | 风格矩阵与小样本自适应 (`v15a` / `v15_fs6`) | 0.5699 | 0.7650 | 沈周小样本迁移 2,000 步突破 0.5568 |
+| **v17** | 100k | 局部条件跨注意力与空间门控消融 | 0.5529 | 0.6612 | 证伪 LCA 交叉注意力，确立显式骨架形变路线 |
+| **v18** | 145k | 笔画骨架解耦初测 | 0.5537 | 0.7410 | 离线验证了形变网络具备梯度可用性 |
+| **v21 (当前)** | 15k+ | **SkelNet + Gated Stroke Mod 解耦联合训练** | **0.5279** | **0.5420** | **目标专属性 +0.0143，书法家富集 1.91x 质变** |
 
 ---
 
 ### 2.4 当前活跃训练实时状态 (Live Run: v21_skelnet_200k)
 
-- **硬件工况**：NVIDIA GeForce RTX 4090 24GB，单卡稳态吞吐 **$4.07\text{ steps/s}$**，功率 **$368\text{W}$**，显存稳定占用 **$18.65\text{GB}$**。
-- **收敛曲线**：
-  - Step 0 $\to$ Step 11,200+：
-    - $\mathcal{L}_{diff}$: $0.4037 \to \mathbf{0.3141}$
-    - $\mathcal{L}_{deform}$: $0.3155 \to \mathbf{0.2939}$（位移场均值稳定在 $0.422\text{ px}$）
-    - $\mathcal{L}_{repa}$: $0.0059 \to \mathbf{0.0036}$
-- **评测指标演进（每 5,000 步）**：
-  - **Step 5,000**：`seen SSIM`: $0.5300$ \| `strict SSIM`: $0.5258$ \| `nn_ssim`: $0.5746$
-  - **Step 10,000**：`seen SSIM`: $\mathbf{0.5408}$ ($\uparrow 0.0108$) \| `strict SSIM`: $\mathbf{0.5299}$ ($\uparrow 0.0041$) \| `target_spec`: $\mathbf{+0.0081}$
-  - 生成海报及最近邻比对数据已实时回传至本地：`assets/results/v21_skelnet_200k/posters/`。
+- **硬件工况**：单卡 NVIDIA GeForce RTX 4090 24GB，单卡稳态吞吐 **$4.09\text{ steps/s}$** ($1,308\text{ 字/秒}$)，功耗 **$368\text{W}$ 满载**，显存稳定占用 **$18.59\text{GB} / 24\text{GB}$**。
+- **收敛曲线 (Step 0 $\to$ Step 15,000)**：
+  - $\mathcal{L}_{diff}$: $0.4037 \to \mathbf{0.3061}$
+  - $\mathcal{L}_{deform}$: $0.3155 \to \mathbf{0.2905}$（位移场均值严格稳定在 $0.434\text{ px}$）
+  - $\mathcal{L}_{repa}$: $0.0059 \to \mathbf{0.0034}$
+- **连续里程碑评测数据演进**：
+  - **Step 5,000**：`seen SSIM`: $0.5300$ \| `strict SSIM`: $0.5258$ \| `nn_ssim`: $0.5746$ \| `cal_enrich`: $0.85\times$
+  - **Step 10,000**：`seen SSIM`: $0.5408$ \| `strict SSIM`: $\mathbf{0.5299}$ \| `target_spec`: $+0.0081$ \| `cal_enrich`: $0.95\times$
+  - **Step 15,000 (最新实测)**：`seen SSIM`: $\mathbf{0.5420}$ \| `strict SSIM`: $\mathbf{0.5279}$ \| `LPIPS`: $\mathbf{0.3961}$ (创新低) \| `target_spec`: $\mathbf{+0.0143}$ ($\uparrow 76.5\%$) \| `cal_enrich`: $\mathbf{1.91\times}$ (质变跃升)
+  - 评测生成的高清大图海报与同字最近邻匹配表已回传归档至本地：[`assets/results/v21_skelnet_200k/posters/`](file:///g:/GitHub/DiT/assets/results/v21_skelnet_200k/posters/)。
 
 ---
 
-## 3. 全局全量文档索引地图 (Documentation Sitemap)
+## 3. 全局技术文档四大支柱地图 (Documentation Sitemap)
 
-### 3.1 前沿技术决策与实验报告 (`docs/922/`)
-- [`97_dual_channel_analysis.md`](docs/922/97_dual_channel_analysis.md)：**【核心必读】** 双通道机制审计、Step 5000 探针量化数据、梯度正交性证明与方差瓶颈分析。
-- [`96_skelnet.md`](docs/922/96_skelnet.md)：SkelNet 骨架形变网完整原理、数据证据、门控笔画调制与对比学习设计。
-- [`95_module_decision.md`](docs/922/95_module_decision.md)：技术路线选型裁定与历史试错复盘。
-- [`94_style_supervision.md`](docs/922/94_style_supervision.md)：风格对比学习与难负例挖掘策略。
-- [`93_samechar_nn_diag.md`](docs/922/93_samechar_nn_diag.md)：同字最近邻诊断与字形特异性量化体系。
-- [`92_skel_condition_aug.md`](docs/922/92_skel_condition_aug.md)：骨架条件几何扰动增强实验记录。
-- [`90_style_injection_summary.md`](docs/922/90_style_injection_summary.md)：历代风格注入机制横向对比总结。
+项目文档中心已全面完成现代化重构，结构精简、论述深入，完整索引见 **[文档中心导航总纲](file:///g:/GitHub/DiT/docs/README.md)**：
 
-### 3.2 系统级全景快照 (`docs/919/`)
-- [`00_overview.md`](docs/919/00_overview.md)：任务定义、输入输出约定与结论清单总览。
-- [`10_data.md`](docs/919/10_data.md)：数据资产全谱（Fame / TJ / 50k_v2、分片缓存、清洗与评测集定义）。
-- [`20_model.md`](docs/919/20_model.md)：DiT-2Cond 核心模型拓扑、条件注入接口与证伪路线解释。
-- [`30_training.md`](docs/919/30_training.md)：训练超参配方、Flow Matching 采样器设计与历史实验链。
-- [`40_results.md`](docs/919/40_results.md)：评测总表、逐书家指标分布与书法质感分析。
-- [`50_infra.md`](docs/919/50_infra.md)：运行环境、算力设施、显存瓶颈、编译优化与运维排错手册。
+### 3.1 第一支柱：核心模型与网络架构 ([`docs/01_architecture/`](file:///g:/GitHub/DiT/docs/01_architecture/))
+- **[01. 架构全景与系统边界](file:///g:/GitHub/DiT/docs/01_architecture/01_overview.md)**：系统三阶段流水线、数据契约、模块间职责与运行边界定义。
+- **[02. DiT-2Cond 主干模型](file:///g:/GitHub/DiT/docs/01_architecture/02_model.md)**：DiT-2Cond-S/2 参数规约、2D RoPE 旋转位置编码、RMSNorm、SwiGLU 与 adaLN-Zero 机制。
+- **[03. SkelNet 拓扑可形变网络](file:///g:/GitHub/DiT/docs/01_architecture/03_skelnet.md)**：粗细双尺度控制网格 (TPS)、笔画宽度自适应调制、背景零造墨硬门控 ($r=0.25$) 与真值骨架中间监督。
+- **[04. 双通道风格注入与正交梯度](file:///g:/GitHub/DiT/docs/01_architecture/04_dual_channel.md)**：宏观排版与微观墨迹的双尺度解耦、梯度正交性实证数学证明 ($\cos \approx +0.0030$)、38x 方差失衡诊断与修复。
 
-### 3.3 历史演进专论 (`docs/system/`)
-- 包含从 `00` 到 `75` 篇系统演进专论，涵盖容量预算推导（`62`）、泛化本质分析（`72`）与风格排序显著性检验（`75`）。
+### 3.2 第二支柱：数据集规范与数据流转 ([`docs/02_dataset/`](file:///g:/GitHub/DiT/docs/02_dataset/))
+- **[01. 50k 高保真书法数据集规约](file:///g:/GitHub/DiT/docs/02_dataset/01_dataset_spec.md)**：50,000 例字形清单、45 位书法家词表字典、Seen 重构集与 Strict 零样本外推评测集切分。
+- **[02. 数据清洗四阶隔离协议](file:///g:/GitHub/DiT/docs/02_dataset/02_cleaning_lineage.md)**：`_quarantine` v1-v4 清洗历史、反色极性判定、Canny 拓扑中心线细化、白底全零极性对齐 (White-Zero)。
+- **[03. 存储布局与内存预加载流水线](file:///g:/GitHub/DiT/docs/02_dataset/03_asset_layout.md)**：离线分片结构 (`shards_img`, `shards_std`, `shards_aux_skel3`)、零 I/O 内存预载 (RAM Preload)、DINOv2 表征缓存。
+
+### 3.3 第三支柱：训练策略与基础设施优化 ([`docs/03_training/`](file:///g:/GitHub/DiT/docs/03_training/))
+- **[01. 最优传输流匹配理论](file:///g:/GitHub/DiT/docs/03_training/01_flow_matching.md)**：连续时间 OT-CFM 直线插值场、Logit-Normal 中段密度聚焦采样、Euler 与 Heun 高阶 ODE 数值求解器、无分类器引导 (CFG)。
+- **[02. 损失函数多任务协同与超参配方](file:///g:/GitHub/DiT/docs/03_training/02_loss_and_recipes.md)**：三任务联合损失 ($\mathcal{L}_{diff} + 0.03\mathcal{L}_{repa} + 1.0\mathcal{L}_{deform}$)、学习率余弦退火、EMA 影子权重更新、梯度裁剪。
+- **[03. 基础设施极致优化](file:///g:/GitHub/DiT/docs/03_training/03_infra_optimization.md)**：PyTorch Inductor 全算子融合编译、SDPA 零展开注意力、异步非阻塞 CPU 检查点落盘、单卡 RTX 4090 达到 **$4.09\text{ steps/s}$ ($1,308\text{ 字/秒}$)** 硬件压榨经验。
+
+### 3.4 第四支柱：实验评测与证伪记录 ([`docs/04_experiments/`](file:///g:/GitHub/DiT/docs/04_experiments/))
+- **[01. 历史全实验权威总天梯榜](file:///g:/GitHub/DiT/docs/04_experiments/01_master_leaderboard.md)**：75+ 组历史实验全量排位，Strict SSIM、Seen SSIM、LPIPS、专属性全景横评。
+- **[02. 低资源书法家小样本自适应](file:///g:/GitHub/DiT/docs/04_experiments/02_fewshot_adaptation.md)**：沈周、伊秉绶、傅山 100 样本快速迁移实验，`row_pt` 先验初始化完胜 `mean_scaled`，2000 步极速达峰（SSIM 0.5568）。
+- **[03. 证伪注册表与失败方向归档](file:///g:/GitHub/DiT/docs/04_experiments/03_falsification_registry.md)**：严谨证伪的 8 大技术死胡同（LCA交叉注意力、多Token风格、全层密集注入、骨架VAE、高权REPA等）与数学机理分析。
+- **[04. 旗舰运行 v21_skelnet 实时遥测报告](file:///g:/GitHub/DiT/docs/04_experiments/04_v21_skelnet_telemetry.md)**：200k 旗舰长跑实时跟踪，记录 Step 5k, 10k, 15k 里程碑，目标专属性 $+0.0143$ 与同字富集度 $1.91\times$ 的质变突破。
+
+### 3.5 历史全量技术档案库 ([`docs/archive/`](file:///g:/GitHub/DiT/docs/archive/))
+- **[`docs/archive/system_notes/`](file:///g:/GitHub/DiT/docs/archive/system_notes/)**：项目早期记录的 75 篇演进专论（00 至 75），包含大量的消融草稿、显式推导与会话实录。
+- **[`docs/archive/phase_919/`](file:///g:/GitHub/DiT/docs/archive/phase_919/)**：2026年9月19日阶段性重构快照。
+- **[`docs/archive/phase_922/`](file:///g:/GitHub/DiT/docs/archive/phase_922/)**：2026年9月22日注入机制重构专题研讨记录。
+- **[`docs/archive/legacy_reports/`](file:///g:/GitHub/DiT/docs/archive/legacy_reports/)**：早期 S6 阶段评估报告与历史分析。
+- **[`docs/archive/txt_reports/`](file:///g:/GitHub/DiT/docs/archive/txt_reports/)**：原始数据集清洗统计与诊断文本文件。
 
 ---
 

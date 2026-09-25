@@ -1,0 +1,31 @@
+{
+  "ckpt": "5script/results/v10b_stdskel_fame3/20260907-144350-v10b-stdskel-fame3/checkpoints/0057500.pt",
+  "step": 57500,
+  "skel_latent_shards_dir": "std_skel1_latents_fame3_v8",
+  "glyph_drop_prob": 0.25,
+  "glyph_inject_layers": 0,
+  "glyph_scale": 0.39233,
+  "glyph_scale_init": 0.4,
+  "g_coverage": "16/16",
+  "g_mean_abs": 1.04731,
+  "g_frac_nz": 1.0,
+  "g_out_diff": 0.02768,
+  "per_block_g_rel": [
+    0.04669,
+    0.03237,
+    0.02982,
+    0.02953,
+    0.02865,
+    0.0276,
+    0.02643,
+    0.02488,
+    0.02237,
+    0.02021,
+    0.01934,
+    0.01598
+  ],
+  "follow_n": 32,
+  "follow_iou1_mean": 0.0104,
+  "follow_iou3_mean": 0.1123,
+  "follow_iou3_median": 0.106
+}

@@ -1,0 +1,26 @@
+[[34m2026-09-06 05:43:43[0m] Experiment directory created at 5script/results/v10a_skel_cond_pretrain/20260906-054343-v10a-skel-cond-pretrain
+[[34m2026-09-06 05:43:44[0m] Building 2-Cond model: DiT-2Cond-S/2 (learn_sigma=False, diffusion_type=flow, arch=rms/swiglu/qknorm=True/rope=True, attn=sdpa)
+[[34m2026-09-06 05:43:44[0m] Building 2-Cond model: DiT-2Cond-S/2 (callig=1013, glyph/char=35130, fusion=factorized_add, dims=128/384, dropout=all:0.05, one:0.3, skel_head=False, glyph_cond=True, glyph_scale_init=0.4, char_proj_mode=mlp, freeze_char_table=False)
+[[34m2026-09-06 05:43:44[0m] [dino-init] char_dino_embeddings/index not found (None, None) — y_char_embedder stays random init.
+[[34m2026-09-06 05:43:44[0m] [resume-full] Loaded weights from 5script/results/v10a_skel_cond_pretrain/20260906-010643-v10a-skel-cond-pretrain/checkpoints/0022500.pt (missing=159, unexpected=159).
+[[34m2026-09-06 05:43:44[0m] Trainable Parameters: 46,425,491
+[[34m2026-09-06 05:43:44[0m] Frozen Parameters: 98,304 (trainable ratio: 99.79%)
+[[34m2026-09-06 05:43:44[0m] [compile] torch.compile(mode=default) 注入（DDP 之前）...
+[[34m2026-09-06 05:43:46[0m] [EMA] restored EMA weights from checkpoint
+[[34m2026-09-06 05:43:46[0m] [EMA] enabled with decay=0.9999
+[[34m2026-09-06 05:43:46[0m] [flow] FlowMatching(steps=50, sampler=heun, nfe=100, t_sampler=logit_normal(mean=0.0,std=1.0), shift=1.0, use_ot=False)
+[[34m2026-09-06 05:43:46[0m] [flow] Flow-Matching enabled (velocity target, Euler ODE sampling, t in [0,1])
+[[34m2026-09-06 05:43:46[0m] [infra] VAE skipped (latent-only mode, no pixel struct/REPA) -> saves ~500MB VRAM
+[[34m2026-09-06 05:43:46[0m] [struct] EdgeGradientLoss (gradient-profile, no per-image norm) + SkeletonLoss (recall-only, no off-skel penalization)
+[[34m2026-09-06 05:43:46[0m] Initializing unified REPA (Teacher: dinov2_vits14, Student Dim: 384, layers=(8,), w=0.1, warmup=0)
+[[34m2026-09-06 05:43:46[0m] [optim] AdamW lr=0.00015 wd=0.02
+[[34m2026-09-06 05:43:46[0m] [resume-full] Restored optimizer state.
+[[34m2026-09-06 05:43:46[0m] [resume-full] Inferred start step=22500 from filename 0022500.pt
+[[34m2026-09-06 05:43:46[0m] [infra] VAE skipped (latent-only mode, no pixel struct/REPA) -> saves ~500MB VRAM
+[[34m2026-09-06 05:44:21[0m] Using latent-cached dataset (skip on-the-fly VAE encode). preload=ON
+[[34m2026-09-06 05:44:21[0m] Dataset contains 51,321 images
+[[34m2026-09-06 05:44:21[0m] [early-stop] metric=ssim, patience=5, min_delta={'ssim': 0.002, 'skel_iou': 0.005, 'lpips': 0.003, 'mse': 0.0}
+[[34m2026-09-06 05:44:21[0m] Training for 100000 epochs...
+[[34m2026-09-06 05:44:21[0m] Beginning epoch 0...
+[[34m2026-09-06 05:45:23[0m] (step=0022550) Total: 1.0498 | Diff: 1.0125 | Canny: raw 0.0000 x 0.05 = 0.0000 | Skel: raw 0.0000 x 0.05 = 0.0000 | LatC: raw 0.0000 x 0.000 = 0.0000 | LatS: raw 0.0000 x 0.000 = 0.0000 | LStrS: raw 0.0000 x 0.0 = 0.0000 | LStrC: raw 0.0000 x 0.0 = 0.0000 | REPA(含w): raw 0.0373 (w=0.10) = 0.0373 | SkelH: raw 0.0000 | StdMid: raw 0.0000 | LR: 1.50e-04 | EMA: 0.999601 | Steps/Sec: 0.80 | Mem: 19.54G/19.54G
+[[34m2026-09-06 05:45:41[0m] (step=0022600) Total: 0.5299 | Diff: 0.5029 | Canny: raw 0.0000 x 0.05 = 0.0000 | Skel: raw 0.0000 x 0.05 = 0.0000 | LatC: raw 0.0000 x 0.000 = 0.0000 | LatS: raw 0.0000 x 0.000 = 0.0000 | LStrS: raw 0.0000 x 0.0 = 0.0000 | LStrC: raw 0.0000 x 0.0 = 0.0000 | REPA(含w): raw 0.0269 (w=0.10) = 0.0269 | SkelH: raw 0.0000 | StdMid: raw 0.0000 | LR: 1.50e-04 | EMA: 0.999602 | Steps/Sec: 2.83 | Mem: 19.54G/19.54G

@@ -1,0 +1,42 @@
+[[34m2026-09-09 17:26:18[0m] Experiment directory created at assets/results/v10b_stdskel_fame3_c41x_cos_e/20260909-172618-v10b-stdskel-fame3-c41x-cos-e
+[[34m2026-09-09 17:26:19[0m] Building 2-Cond model: DiT-2Cond-Sp/2 (learn_sigma=False, diffusion_type=flow, arch=rms/swiglu/qknorm=True/rope=True, attn=sdpa)
+[[34m2026-09-09 17:26:19[0m] Building 2-Cond model: DiT-2Cond-Sp/2 (callig=41, glyph/char=35130, fusion=factorized_add, dims=128/384, dropout=all:0.05, one:0.05, skel_head=False, glyph_cond=True, glyph_scale_init=0.6, char_proj_mode=mlp, freeze_char_table=False)
+[[34m2026-09-09 17:26:19[0m] [callig-emb] 加载预训练书家表 assets/callig_emb_pretrained.pt: torch.Size([41, 128]), null 行保持随机
+[[34m2026-09-09 17:26:19[0m] [callig-emb] 书家表已冻结 [0,N), CFG null token 保持可训练
+[[34m2026-09-09 17:26:19[0m] [dino-init] char_dino_embeddings/index not found (None, None) — y_char_embedder stays random init.
+[[34m2026-09-09 17:26:19[0m] [resume-full] Loaded weights from /root/Workspace/xy/DiT/assets/results/v10b_stdskel_fame3_c41x_cos/20260909-123903-v10b-stdskel-fame3-c41x/checkpoints/0172500.pt (missing=0, unexpected=0).
+[[34m2026-09-09 17:26:19[0m] Trainable Parameters: 75,834,258
+[[34m2026-09-09 17:26:19[0m] Frozen Parameters: 136,448 (trainable ratio: 99.82%)
+[[34m2026-09-09 17:26:20[0m] [compile] torch.compile(mode=default) 注入（DDP 之前）...
+[[34m2026-09-09 17:26:21[0m] [EMA] restored EMA weights from checkpoint
+[[34m2026-09-09 17:26:21[0m] [EMA] enabled with decay=0.9999
+[[34m2026-09-09 17:26:21[0m] [flow] FlowMatching(steps=50, sampler=heun, nfe=100, t_sampler=logit_normal(mean=0.0,std=1.0), shift=1.0, use_ot=False)
+[[34m2026-09-09 17:26:21[0m] [flow] Flow-Matching enabled (velocity target, Euler ODE sampling, t in [0,1])
+[[34m2026-09-09 17:26:21[0m] [infra] VAE skipped (latent-only mode, no pixel struct/REPA) -> saves ~500MB VRAM
+[[34m2026-09-09 17:26:21[0m] [struct] EdgeGradientLoss (gradient-profile, no per-image norm) + SkeletonLoss (recall-only, no off-skel penalization)
+[[34m2026-09-09 17:26:22[0m] Initializing unified REPA (Teacher: dinov2_vits14, Student Dim: 512, layers=(8,), w=0.03, warmup=0)
+[[34m2026-09-09 17:26:22[0m] [optim] AdamW lr=1.5e-05 wd=0.02
+[[34m2026-09-09 17:26:22[0m] [resume-full] Restored optimizer state.
+[[34m2026-09-09 17:26:22[0m] [resume-full] Inferred start step=172500 from filename 0172500.pt
+[[34m2026-09-09 17:26:22[0m] [infra] VAE skipped (latent-only mode, no pixel struct/REPA) -> saves ~500MB VRAM
+[[34m2026-09-09 17:28:24[0m] Using latent-cached dataset (skip on-the-fly VAE encode). preload=ON
+[[34m2026-09-09 17:28:24[0m] Dataset contains 113,540 images
+[[34m2026-09-09 17:28:24[0m] [LR] fresh-scheduler: cosine computed from absolute step 0 (total 300000); resume at 172500 -> LR starts mid-decay at 4.51e-01 (base)
+[[34m2026-09-09 17:28:24[0m] [LR] fresh-scheduler: starting from base lr 1.37e-05 (old scheduler state ignored)
+[[34m2026-09-09 17:28:24[0m] [LR] cosine schedule: warmup=3000, total=300000, min_ratio=0.1
+[[34m2026-09-09 17:28:24[0m] [early-stop] metric=ssim, patience=5, min_delta={'ssim': 0.002, 'skel_iou': 0.005, 'lpips': 0.003, 'mse': 0.0}
+[[34m2026-09-09 17:28:24[0m] Training for 100000 epochs...
+[[34m2026-09-09 17:28:24[0m] Beginning epoch 0...
+[[34m2026-09-09 17:29:37[0m] (step=0172550) Diff: 0.2591 | REPA(w=0.03): 0.0200 | LR: 1.37e-05 | EMA: 0.999900 | Steps/Sec: 0.68 | Mem: 19.91G/19.91G
+[[34m2026-09-09 17:29:49[0m] (step=0172600) Diff: 0.2250 | REPA(w=0.03): 0.0115 | LR: 1.37e-05 | EMA: 0.999900 | Steps/Sec: 4.25 | Mem: 20.00G/20.00G
+[[34m2026-09-09 17:30:00[0m] (step=0172650) Diff: 0.2213 | REPA(w=0.03): 0.0097 | LR: 1.37e-05 | EMA: 0.999900 | Steps/Sec: 4.26 | Mem: 20.00G/20.00G
+[[34m2026-09-09 17:30:12[0m] (step=0172700) Diff: 0.2182 | REPA(w=0.03): 0.0088 | LR: 1.37e-05 | EMA: 0.999900 | Steps/Sec: 4.25 | Mem: 20.00G/20.00G
+[[34m2026-09-09 17:30:25[0m] (step=0172750) Diff: 0.2141 | REPA(w=0.03): 0.0084 | LR: 1.37e-05 | EMA: 0.999900 | Steps/Sec: 3.98 | Mem: 20.00G/20.00G
+[[34m2026-09-09 17:30:36[0m] (step=0172800) Diff: 0.2116 | REPA(w=0.03): 0.0080 | LR: 1.37e-05 | EMA: 0.999900 | Steps/Sec: 4.25 | Mem: 20.00G/20.00G
+[[34m2026-09-09 17:30:48[0m] (step=0172850) Diff: 0.2102 | REPA(w=0.03): 0.0078 | LR: 1.37e-05 | EMA: 0.999900 | Steps/Sec: 4.24 | Mem: 20.00G/20.00G
+[[34m2026-09-09 17:31:00[0m] (step=0172900) Diff: 0.2089 | REPA(w=0.03): 0.0075 | LR: 1.37e-05 | EMA: 0.999900 | Steps/Sec: 4.24 | Mem: 20.00G/20.00G
+[[34m2026-09-09 17:31:12[0m] (step=0172950) Diff: 0.2077 | REPA(w=0.03): 0.0073 | LR: 1.37e-05 | EMA: 0.999900 | Steps/Sec: 4.24 | Mem: 20.00G/20.00G
+[[34m2026-09-09 17:31:24[0m] (step=0173000) Diff: 0.2052 | REPA(w=0.03): 0.0072 | LR: 1.37e-05 | EMA: 0.999900 | Steps/Sec: 4.24 | Mem: 20.00G/20.00G
+[[34m2026-09-09 17:31:24[0m] (step=0173000) [diag] grad-norm: blocks=0.122 callig_chain=0.023 glyph_embedder=0.048 inj_out_proj=0.058 other=0.060
+[[34m2026-09-09 17:31:35[0m] (step=0173050) Diff: 0.2012 | REPA(w=0.03): 0.0070 | LR: 1.36e-05 | EMA: 0.999900 | Steps/Sec: 4.26 | Mem: 20.00G/20.00G
+[[34m2026-09-09 17:31:47[0m] (step=0173100) Diff: 0.2058 | REPA(w=0.03): 0.0069 | LR: 1.36e-05 | EMA: 0.999900 | Steps/Sec: 4.25 | Mem: 20.00G/20.00G

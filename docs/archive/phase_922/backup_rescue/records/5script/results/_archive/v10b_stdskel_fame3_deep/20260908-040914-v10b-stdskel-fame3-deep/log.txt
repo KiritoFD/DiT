@@ -1,0 +1,21 @@
+[[34m2026-09-08 04:09:14[0m] Experiment directory created at 5script/results/v10b_stdskel_fame3_deep/20260908-040914-v10b-stdskel-fame3-deep
+[[34m2026-09-08 04:09:14[0m] Building 2-Cond model: DiT-2Cond-S/2 (learn_sigma=False, diffusion_type=flow, arch=rms/swiglu/qknorm=True/rope=True, attn=sdpa)
+[[34m2026-09-08 04:09:14[0m] Building 2-Cond model: DiT-2Cond-S/2 (callig=1013, glyph/char=35130, fusion=factorized_add, dims=128/384, dropout=all:0.05, one:0.3, skel_head=False, glyph_cond=True, glyph_scale_init=0.4, char_proj_mode=mlp, freeze_char_table=False)
+[[34m2026-09-08 04:09:14[0m] [dino-init] char_dino_embeddings/index not found (None, None) — y_char_embedder stays random init.
+[[34m2026-09-08 04:09:14[0m] [cond-head] reset adaLN/final_layer to std=0.02 (retain task-agnostic transformer engine, drop ImageNet class-condition coupling).
+[[34m2026-09-08 04:09:14[0m] Trainable Parameters: 35,292,946
+[[34m2026-09-08 04:09:14[0m] Frozen Parameters: 98,304 (trainable ratio: 99.72%)
+[[34m2026-09-08 04:09:14[0m] [compile] torch.compile(mode=default) 注入（DDP 之前）...
+[[34m2026-09-08 04:09:15[0m] [EMA] enabled with decay=0.9999
+[[34m2026-09-08 04:09:15[0m] [flow] FlowMatching(steps=50, sampler=heun, nfe=100, t_sampler=logit_normal(mean=0.0,std=1.0), shift=1.0, use_ot=False)
+[[34m2026-09-08 04:09:15[0m] [flow] Flow-Matching enabled (velocity target, Euler ODE sampling, t in [0,1])
+[[34m2026-09-08 04:09:15[0m] [infra] VAE skipped (latent-only mode, no pixel struct/REPA) -> saves ~500MB VRAM
+[[34m2026-09-08 04:09:15[0m] [struct] EdgeGradientLoss (gradient-profile, no per-image norm) + SkeletonLoss (recall-only, no off-skel penalization)
+[[34m2026-09-08 04:09:16[0m] Initializing unified REPA (Teacher: dinov2_vits14, Student Dim: 384, layers=(8,), w=0.1, warmup=0)
+[[34m2026-09-08 04:09:16[0m] [optim] AdamW lr=0.00015 wd=0.02
+[[34m2026-09-08 04:09:16[0m] [infra] VAE skipped (latent-only mode, no pixel struct/REPA) -> saves ~500MB VRAM
+[[34m2026-09-08 04:09:46[0m] Using latent-cached dataset (skip on-the-fly VAE encode). preload=ON
+[[34m2026-09-08 04:09:46[0m] Dataset contains 28,385 images
+[[34m2026-09-08 04:09:46[0m] [early-stop] metric=ssim, patience=5, min_delta={'ssim': 0.002, 'skel_iou': 0.005, 'lpips': 0.003, 'mse': 0.0}
+[[34m2026-09-08 04:09:46[0m] Training for 100000 epochs...
+[[34m2026-09-08 04:09:46[0m] Beginning epoch 0...

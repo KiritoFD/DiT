@@ -1,0 +1,2 @@
+exp,step,set,n,ssim_mean,ssim_p10,ssim_q1,ssim_med,ssim_q3,ssim_p90,mse_mean,lpips_mean
+v11_pretrain_S2,1000,seen,10,0.425391,0.366684,0.387618,0.418883,0.452516,0.504628,1.124197,0.550688

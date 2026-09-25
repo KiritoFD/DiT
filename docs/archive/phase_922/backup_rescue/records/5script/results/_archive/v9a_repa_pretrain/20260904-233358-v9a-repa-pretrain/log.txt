@@ -1,0 +1,56 @@
+[[34m2026-09-04 23:33:58[0m] Experiment directory created at 5script/results/v9a_repa_pretrain/20260904-233358-v9a-repa-pretrain
+[[34m2026-09-04 23:33:59[0m] Building 2-Cond model: DiT-2Cond-S/2 (learn_sigma=False, diffusion_type=flow, arch=rms/swiglu/qknorm=True/rope=True, attn=sdpa)
+[[34m2026-09-04 23:33:59[0m] Building 2-Cond model: DiT-2Cond-S/2 (callig=1013, glyph/char=35130, fusion=factorized_add, dims=128/384, dropout=all:0.05, one:0.3, skel_head=False, glyph_cond=False, glyph_scale_init=0.4, char_proj_mode=mlp, freeze_char_table=True)
+[[34m2026-09-04 23:33:59[0m] [dino-init] per-script centering applied (5 scripts) + L2 renormalized
+[[34m2026-09-04 23:33:59[0m] [dino-init] filled 14662 unknown rows (of 35130 classes) with the L2-normalized DINO mean vector (norm=1.0, was: frozen N(0,0.02) noise with ~0 cosine to all real glyphs); CFG null token (row 35130) untouched.
+[[34m2026-09-04 23:33:59[0m] [dino-init] injected 20468 glyph embeddings into y_char_embedder (20468 in vocab, 0 out-of-range), table=(35131, 384), L2-normalized DINO (glyph-averaged), char_proj_mode=mlp, freeze_char_table=True.
+[[34m2026-09-04 23:33:59[0m] [cond-head] reset adaLN/final_layer to std=0.02 (retain task-agnostic transformer engine, drop ImageNet class-condition coupling).
+[[34m2026-09-04 23:33:59[0m] Trainable Parameters: 32,929,427
+[[34m2026-09-04 23:33:59[0m] Frozen Parameters: 13,588,608 (trainable ratio: 70.79%)
+[[34m2026-09-04 23:33:59[0m] [compile] torch.compile(mode=default) 注入（DDP 之前）...
+[[34m2026-09-04 23:34:00[0m] [EMA] enabled with decay=0.9999
+[[34m2026-09-04 23:34:00[0m] [flow] FlowMatching(steps=50, sampler=heun, nfe=100, t_sampler=logit_normal(mean=0.0,std=1.0), shift=1.0, use_ot=False)
+[[34m2026-09-04 23:34:00[0m] [flow] Flow-Matching enabled (velocity target, Euler ODE sampling, t in [0,1])
+[[34m2026-09-04 23:34:00[0m] Loading VAE from local path: pretrained_models/sd-vae-ft-ema
+[[34m2026-09-04 23:34:00[0m] [struct] EdgeGradientLoss (gradient-profile, no per-image norm) + SkeletonLoss (recall-only, no off-skel penalization)
+[[34m2026-09-04 23:34:00[0m] Initializing REPA Loss (Teacher: dinov2_vits14, ckpt=pretrained_models/dinov2_vits14_pretrain.safetensors, Student Dim: 384)
+[[34m2026-09-04 23:34:01[0m] [optim] AdamW lr=0.00015 wd=0.02
+[[34m2026-09-04 23:34:37[0m] Using latent-cached dataset (skip on-the-fly VAE encode). preload=ON
+[[34m2026-09-04 23:34:37[0m] Using factor-balanced sampler: {'weight_min': 0.38741471886190604, 'weight_mean': 1.0, 'weight_max': 2.2482792543744057} (char_alpha=0.35, callig_alpha=0.15)
+[[34m2026-09-04 23:34:37[0m] Dataset contains 51,321 images
+[[34m2026-09-04 23:34:37[0m] [LR] cosine schedule: warmup=3000, total=150000, min_ratio=0.1
+[[34m2026-09-04 23:34:37[0m] [early-stop] metric=ssim_lpips, patience=5, min_delta={'ssim': 0.002, 'skel_iou': 0.005, 'lpips': 0.003, 'mse': 0.0}
+[[34m2026-09-04 23:34:37[0m] Training for 100000 epochs...
+[[34m2026-09-04 23:34:38[0m] [auto-eval] cache ready: eval_n=500, show5=no, seen5=no
+[[34m2026-09-04 23:34:38[0m] Beginning epoch 0...
+[[34m2026-09-04 23:35:47[0m] Error during training loop: CUDA out of memory. Tried to allocate 216.00 MiB. GPU 0 has a total capacty of 23.52 GiB of which 124.00 MiB is free. Process 1621446 has 23.34 GiB memory in use. Of the allocated memory 22.13 GiB is allocated by PyTorch, and 758.67 MiB is reserved by PyTorch but unallocated. If reserved but unallocated memory is large try setting max_split_size_mb to avoid fragmentation.  See documentation for Memory Management and PYTORCH_CUDA_ALLOC_CONF
+[[34m2026-09-04 23:35:47[0m] Traceback (most recent call last):
+  File "/root/Workspace/xy/DiT/src/train/train.py", line 1285, in main
+    loss.backward()
+  File "/opt/conda/envs/cu121/lib/python3.10/site-packages/torch/_tensor.py", line 492, in backward
+    torch.autograd.backward(
+  File "/opt/conda/envs/cu121/lib/python3.10/site-packages/torch/autograd/__init__.py", line 251, in backward
+    Variable._execution_engine.run_backward(  # Calls into the C++ engine to run the backward pass
+  File "/opt/conda/envs/cu121/lib/python3.10/site-packages/torch/autograd/function.py", line 288, in apply
+    return user_fn(self, *args)
+  File "/opt/conda/envs/cu121/lib/python3.10/site-packages/torch/_functorch/aot_autograd.py", line 3232, in backward
+    out = call_compiled_backward()
+  File "/opt/conda/envs/cu121/lib/python3.10/site-packages/torch/_functorch/aot_autograd.py", line 3204, in call_compiled_backward
+    out = call_func_with_args(
+  File "/opt/conda/envs/cu121/lib/python3.10/site-packages/torch/_functorch/aot_autograd.py", line 1506, in call_func_with_args
+    out = normalize_as_list(f(args))
+  File "/opt/conda/envs/cu121/lib/python3.10/site-packages/torch/_dynamo/eval_frame.py", line 328, in _fn
+    return fn(*args, **kwargs)
+  File "/opt/conda/envs/cu121/lib/python3.10/site-packages/torch/_dynamo/external_utils.py", line 17, in inner
+    return fn(*args, **kwargs)
+  File "/opt/conda/envs/cu121/lib/python3.10/site-packages/torch/_inductor/codecache.py", line 374, in __call__
+    return self.get_current_callable()(inputs)
+  File "/opt/conda/envs/cu121/lib/python3.10/site-packages/torch/_inductor/compile_fx.py", line 628, in run
+    return model(new_inputs)
+  File "/opt/conda/envs/cu121/lib/python3.10/site-packages/torch/_inductor/codecache.py", line 401, in _run_from_cache
+    return compiled_graph.compiled_artifact(inputs)
+  File "/root/.cache/torch/inductor/lm/clmtmyd5w5hapqsofnreh4ug2tdoxko2wqzkjl2agdb2samqo652.py", line 3538, in call
+    buf178 = empty_strided((432, 256, 1024), (262144, 1024, 1), device='cuda', dtype=torch.bfloat16)
+torch.cuda.OutOfMemoryError: CUDA out of memory. Tried to allocate 216.00 MiB. GPU 0 has a total capacty of 23.52 GiB of which 124.00 MiB is free. Process 1621446 has 23.34 GiB memory in use. Of the allocated memory 22.13 GiB is allocated by PyTorch, and 758.67 MiB is reserved by PyTorch but unallocated. If reserved but unallocated memory is large try setting max_split_size_mb to avoid fragmentation.  See documentation for Memory Management and PYTORCH_CUDA_ALLOC_CONF
+
+[[34m2026-09-04 23:35:47[0m] Done!

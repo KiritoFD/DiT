@@ -1,0 +1,75 @@
+[[34m2026-09-09 18:16:53[0m] Experiment directory created at 5script/results/lrtest/20260909-181653-lrtest-1.5e-5
+[[34m2026-09-09 18:16:54[0m] Building 2-Cond model: DiT-2Cond-Sp/2 (learn_sigma=False, diffusion_type=flow, arch=rms/swiglu/qknorm=True/rope=True, attn=sdpa)
+[[34m2026-09-09 18:16:54[0m] Building 2-Cond model: DiT-2Cond-Sp/2 (callig=41, glyph/char=35130, fusion=factorized_add, dims=128/384, dropout=all:0.05, one:0.05, skel_head=False, glyph_cond=True, glyph_scale_init=0.6, char_proj_mode=mlp, freeze_char_table=False)
+[[34m2026-09-09 18:16:54[0m] [callig-emb] 加载预训练书家表 5script/callig_emb_pretrained.pt: torch.Size([41, 128]), null 行保持随机
+[[34m2026-09-09 18:16:54[0m] [callig-emb] 书家表已冻结 [0,N), CFG null token 保持可训练
+[[34m2026-09-09 18:16:54[0m] [dino-init] char_dino_embeddings/index not found (None, None) — y_char_embedder stays random init.
+[[34m2026-09-09 18:16:54[0m] [resume-full] Loaded weights from /root/Workspace/xy/DiT/5script/results/v10b_stdskel_fame3_c41x_cos_e/20260909-173200-v10b-stdskel-fame3-c41x-cos-e/checkpoints/0175000.pt (missing=5, unexpected=0).
+[[34m2026-09-09 18:16:54[0m] Trainable Parameters: 84,231,378
+[[34m2026-09-09 18:16:54[0m] Frozen Parameters: 136,448 (trainable ratio: 99.84%)
+[[34m2026-09-09 18:16:55[0m] [compile] torch.compile(mode=default) 注入（DDP 之前）...
+[[34m2026-09-09 18:16:56[0m] [EMA] missing (new modules, kept init): ['_orig_mod']
+[[34m2026-09-09 18:16:56[0m] [EMA] restored EMA weights from checkpoint
+[[34m2026-09-09 18:16:56[0m] [EMA] enabled with decay=0.9999
+[[34m2026-09-09 18:16:56[0m] [flow] FlowMatching(steps=50, sampler=heun, nfe=100, t_sampler=logit_normal(mean=0.0,std=1.0), shift=1.0, use_ot=False)
+[[34m2026-09-09 18:16:56[0m] [flow] Flow-Matching enabled (velocity target, Euler ODE sampling, t in [0,1])
+[[34m2026-09-09 18:16:56[0m] [infra] VAE skipped (latent-only mode, no pixel struct/REPA) -> saves ~500MB VRAM
+[[34m2026-09-09 18:16:56[0m] [struct] EdgeGradientLoss (gradient-profile, no per-image norm) + SkeletonLoss (recall-only, no off-skel penalization)
+[[34m2026-09-09 18:16:57[0m] Initializing unified REPA (Teacher: dinov2_vits14, Student Dim: 512, layers=(8,), w=0.03, warmup=0)
+[[34m2026-09-09 18:16:57[0m] [optim] AdamW lr=1.5e-05 wd=0.02
+[[34m2026-09-09 18:16:57[0m] [resume-full] Failed to restore optimizer state: loaded state dict contains a parameter group that doesn't match the size of optimizer's group
+[[34m2026-09-09 18:16:57[0m] [resume-full] Overrode LR -> 1.5e-05
+[[34m2026-09-09 18:16:57[0m] [resume-full] Inferred start step=175000 from filename 0175000.pt
+[[34m2026-09-09 18:16:57[0m] [infra] VAE skipped (latent-only mode, no pixel struct/REPA) -> saves ~500MB VRAM
+[[34m2026-09-09 18:18:18[0m] Using latent-cached dataset (skip on-the-fly VAE encode). preload=ON
+[[34m2026-09-09 18:18:18[0m] Dataset contains 113,540 images
+[[34m2026-09-09 18:18:18[0m] [LR] fresh-scheduler: cosine computed from absolute step 0 (total 177000); resume at 175000 -> LR starts mid-decay at 1.00e-01 (base)
+[[34m2026-09-09 18:18:18[0m] [early-stop] metric=ssim, patience=5, min_delta={'ssim': 0.002, 'skel_iou': 0.005, 'lpips': 0.003, 'mse': 0.0}
+[[34m2026-09-09 18:18:18[0m] Training for 100000 epochs...
+[[34m2026-09-09 18:18:18[0m] Beginning epoch 0...
+[[34m2026-09-09 18:19:33[0m] (step=0175050) Diff: 0.1924 | REPA(w=0.03): 0.0281 | LR: 1.50e-05 | EMA: 0.999900 | Steps/Sec: 0.66 | Mem: 20.18G/20.18G
+[[34m2026-09-09 18:19:45[0m] (step=0175100) Diff: 0.1953 | REPA(w=0.03): 0.0225 | LR: 1.50e-05 | EMA: 0.999900 | Steps/Sec: 4.23 | Mem: 20.18G/20.18G
+[[34m2026-09-09 18:19:57[0m] (step=0175150) Diff: 0.1932 | REPA(w=0.03): 0.0180 | LR: 1.50e-05 | EMA: 0.999900 | Steps/Sec: 4.22 | Mem: 20.18G/20.18G
+[[34m2026-09-09 18:20:09[0m] (step=0175200) Diff: 0.1946 | REPA(w=0.03): 0.0148 | LR: 1.50e-05 | EMA: 0.999900 | Steps/Sec: 4.20 | Mem: 20.18G/20.18G
+[[34m2026-09-09 18:20:21[0m] (step=0175250) Diff: 0.1935 | REPA(w=0.03): 0.0128 | LR: 1.50e-05 | EMA: 0.999900 | Steps/Sec: 4.22 | Mem: 20.18G/20.18G
+[[34m2026-09-09 18:20:33[0m] (step=0175300) Diff: 0.1952 | REPA(w=0.03): 0.0114 | LR: 1.50e-05 | EMA: 0.999900 | Steps/Sec: 4.22 | Mem: 20.18G/20.18G
+[[34m2026-09-09 18:20:45[0m] (step=0175350) Diff: 0.1924 | REPA(w=0.03): 0.0106 | LR: 1.50e-05 | EMA: 0.999900 | Steps/Sec: 4.21 | Mem: 20.18G/20.18G
+[[34m2026-09-09 18:20:56[0m] (step=0175400) Diff: 0.1926 | REPA(w=0.03): 0.0099 | LR: 1.50e-05 | EMA: 0.999900 | Steps/Sec: 4.22 | Mem: 20.18G/20.18G
+[[34m2026-09-09 18:21:08[0m] (step=0175450) Diff: 0.1937 | REPA(w=0.03): 0.0094 | LR: 1.50e-05 | EMA: 0.999900 | Steps/Sec: 4.22 | Mem: 20.18G/20.18G
+[[34m2026-09-09 18:21:20[0m] (step=0175500) Diff: 0.1917 | REPA(w=0.03): 0.0090 | LR: 1.50e-05 | EMA: 0.999900 | Steps/Sec: 4.22 | Mem: 20.18G/20.18G
+[[34m2026-09-09 18:21:32[0m] (step=0175550) Diff: 0.1909 | REPA(w=0.03): 0.0086 | LR: 1.50e-05 | EMA: 0.999900 | Steps/Sec: 4.20 | Mem: 20.18G/20.18G
+[[34m2026-09-09 18:21:44[0m] (step=0175600) Diff: 0.1927 | REPA(w=0.03): 0.0084 | LR: 1.50e-05 | EMA: 0.999900 | Steps/Sec: 4.21 | Mem: 20.18G/20.18G
+[[34m2026-09-09 18:21:56[0m] (step=0175650) Diff: 0.1912 | REPA(w=0.03): 0.0082 | LR: 1.50e-05 | EMA: 0.999900 | Steps/Sec: 4.22 | Mem: 20.18G/20.18G
+[[34m2026-09-09 18:22:08[0m] (step=0175700) Diff: 0.1916 | REPA(w=0.03): 0.0079 | LR: 1.50e-05 | EMA: 0.999900 | Steps/Sec: 4.22 | Mem: 20.18G/20.18G
+[[34m2026-09-09 18:22:19[0m] (step=0175750) Diff: 0.1892 | REPA(w=0.03): 0.0077 | LR: 1.50e-05 | EMA: 0.999900 | Steps/Sec: 4.21 | Mem: 20.18G/20.18G
+[[34m2026-09-09 18:22:31[0m] (step=0175800) Diff: 0.1896 | REPA(w=0.03): 0.0076 | LR: 1.50e-05 | EMA: 0.999900 | Steps/Sec: 4.22 | Mem: 20.18G/20.18G
+[[34m2026-09-09 18:22:43[0m] (step=0175850) Diff: 0.1901 | REPA(w=0.03): 0.0074 | LR: 1.50e-05 | EMA: 0.999900 | Steps/Sec: 4.22 | Mem: 20.18G/20.18G
+[[34m2026-09-09 18:22:52[0m] Beginning epoch 1...
+[[34m2026-09-09 18:22:55[0m] (step=0175900) Diff: 0.1913 | REPA(w=0.03): 0.0073 | LR: 1.50e-05 | EMA: 0.999900 | Steps/Sec: 4.06 | Mem: 20.18G/20.18G
+[[34m2026-09-09 18:23:07[0m] (step=0175950) Diff: 0.1882 | REPA(w=0.03): 0.0071 | LR: 1.50e-05 | EMA: 0.999900 | Steps/Sec: 4.22 | Mem: 20.18G/20.18G
+[[34m2026-09-09 18:23:19[0m] (step=0176000) Diff: 0.1896 | REPA(w=0.03): 0.0070 | LR: 1.50e-05 | EMA: 0.999900 | Steps/Sec: 4.22 | Mem: 20.18G/20.18G
+[[34m2026-09-09 18:23:19[0m] (step=0176000) [diag] grad-norm: blocks=0.131 callig_chain=0.019 glyph_embedder=0.061 inj_out_proj=0.063 other=0.053
+[[34m2026-09-09 18:23:31[0m] (step=0176050) Diff: 0.1889 | REPA(w=0.03): 0.0069 | LR: 1.50e-05 | EMA: 0.999900 | Steps/Sec: 4.22 | Mem: 20.18G/20.18G
+[[34m2026-09-09 18:23:43[0m] (step=0176100) Diff: 0.1887 | REPA(w=0.03): 0.0068 | LR: 1.50e-05 | EMA: 0.999900 | Steps/Sec: 4.22 | Mem: 20.18G/20.18G
+[[34m2026-09-09 18:23:55[0m] (step=0176150) Diff: 0.1887 | REPA(w=0.03): 0.0067 | LR: 1.50e-05 | EMA: 0.999900 | Steps/Sec: 4.22 | Mem: 20.18G/20.18G
+[[34m2026-09-09 18:24:07[0m] (step=0176200) Diff: 0.1866 | REPA(w=0.03): 0.0065 | LR: 1.50e-05 | EMA: 0.999900 | Steps/Sec: 4.22 | Mem: 20.18G/20.18G
+[[34m2026-09-09 18:24:19[0m] (step=0176250) Diff: 0.1877 | REPA(w=0.03): 0.0064 | LR: 1.50e-05 | EMA: 0.999900 | Steps/Sec: 4.07 | Mem: 20.18G/20.18G
+[[34m2026-09-09 18:24:31[0m] (step=0176300) Diff: 0.1874 | REPA(w=0.03): 0.0063 | LR: 1.50e-05 | EMA: 0.999900 | Steps/Sec: 4.21 | Mem: 20.18G/20.18G
+[[34m2026-09-09 18:24:43[0m] (step=0176350) Diff: 0.1859 | REPA(w=0.03): 0.0063 | LR: 1.50e-05 | EMA: 0.999900 | Steps/Sec: 4.22 | Mem: 20.18G/20.18G
+[[34m2026-09-09 18:24:54[0m] (step=0176400) Diff: 0.1883 | REPA(w=0.03): 0.0062 | LR: 1.50e-05 | EMA: 0.999900 | Steps/Sec: 4.20 | Mem: 20.18G/20.18G
+[[34m2026-09-09 18:25:06[0m] (step=0176450) Diff: 0.1862 | REPA(w=0.03): 0.0061 | LR: 1.50e-05 | EMA: 0.999900 | Steps/Sec: 4.22 | Mem: 20.18G/20.18G
+[[34m2026-09-09 18:25:18[0m] (step=0176500) Diff: 0.1891 | REPA(w=0.03): 0.0060 | LR: 1.50e-05 | EMA: 0.999900 | Steps/Sec: 4.22 | Mem: 20.18G/20.18G
+[[34m2026-09-09 18:25:30[0m] (step=0176550) Diff: 0.1900 | REPA(w=0.03): 0.0059 | LR: 1.50e-05 | EMA: 0.999900 | Steps/Sec: 4.20 | Mem: 20.18G/20.18G
+[[34m2026-09-09 18:25:42[0m] (step=0176600) Diff: 0.1873 | REPA(w=0.03): 0.0059 | LR: 1.50e-05 | EMA: 0.999900 | Steps/Sec: 4.21 | Mem: 20.18G/20.18G
+[[34m2026-09-09 18:25:54[0m] (step=0176650) Diff: 0.1865 | REPA(w=0.03): 0.0058 | LR: 1.50e-05 | EMA: 0.999900 | Steps/Sec: 4.22 | Mem: 20.18G/20.18G
+[[34m2026-09-09 18:26:06[0m] (step=0176700) Diff: 0.1847 | REPA(w=0.03): 0.0057 | LR: 1.50e-05 | EMA: 0.999900 | Steps/Sec: 4.21 | Mem: 20.18G/20.18G
+[[34m2026-09-09 18:26:18[0m] (step=0176750) Diff: 0.1858 | REPA(w=0.03): 0.0057 | LR: 1.50e-05 | EMA: 0.999900 | Steps/Sec: 4.19 | Mem: 20.18G/20.18G
+[[34m2026-09-09 18:26:23[0m] Beginning epoch 2...
+[[34m2026-09-09 18:26:30[0m] (step=0176800) Diff: 0.1851 | REPA(w=0.03): 0.0056 | LR: 1.50e-05 | EMA: 0.999900 | Steps/Sec: 3.99 | Mem: 20.18G/20.18G
+[[34m2026-09-09 18:26:42[0m] (step=0176850) Diff: 0.1858 | REPA(w=0.03): 0.0056 | LR: 1.50e-05 | EMA: 0.999900 | Steps/Sec: 4.21 | Mem: 20.18G/20.18G
+[[34m2026-09-09 18:26:54[0m] (step=0176900) Diff: 0.1871 | REPA(w=0.03): 0.0055 | LR: 1.50e-05 | EMA: 0.999900 | Steps/Sec: 4.21 | Mem: 20.18G/20.18G
+[[34m2026-09-09 18:27:06[0m] (step=0176950) Diff: 0.1861 | REPA(w=0.03): 0.0055 | LR: 1.50e-05 | EMA: 0.999900 | Steps/Sec: 4.20 | Mem: 20.18G/20.18G
+[[34m2026-09-09 18:27:18[0m] (step=0177000) Diff: 0.1836 | REPA(w=0.03): 0.0055 | LR: 1.50e-05 | EMA: 0.999900 | Steps/Sec: 4.21 | Mem: 20.18G/20.18G
+[[34m2026-09-09 18:27:18[0m] (step=0177000) [diag] grad-norm: blocks=0.132 callig_chain=0.021 glyph_embedder=0.053 inj_out_proj=0.063 other=0.067
+[[34m2026-09-09 18:27:18[0m] Reached max_steps=177000; stopping cleanly.
+[[34m2026-09-09 18:27:18[0m] Done!
