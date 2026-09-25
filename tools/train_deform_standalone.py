@@ -50,6 +50,8 @@ ap.add_argument('--lr', type=float, default=1e-3)
 ap.add_argument('--std-dir', default='data/50k/shards_std_fixed')
 ap.add_argument('--gt-dir', default='data/50k/shards_aux_skel3')
 ap.add_argument('--out', default='assets/deform_skel_standalone.pt')
+ap.add_argument('--init', default='', help='从已有头的权重续训(不换网络)')
+ap.add_argument('--lr-min-ratio', type=float, default=0.1, dest='lr_min_ratio')
 ap.add_argument('--eval-every', type=int, default=1000)
 ap.add_argument('--residual', type=int, default=0, help='1=形变+加性残差')
 ap.add_argument('--style-dim', type=int, default=128, dest='style_dim')
@@ -120,6 +122,12 @@ print(f'\n[2] 基线 MSE(g_std, g_gt) = {base_mse:.5f}   <- 形变要打败的�
 
 model = DeformSkel(cond_dim=a.style_dim, ch=4, grid=32, residual=a.residual,
                    width=a.width, max_off=a.max_off, res_cap=a.res_cap).to(DEV)
+if a.init:
+    _sd = torch.load(a.init, map_location='cpu', weights_only=False)
+    _sd = _sd.get('deform', _sd)
+    _miss, _unexp = model.load_state_dict(_sd, strict=False)
+    print(f'[2] 续训: 从 {a.init} 载入 (missing={len(_miss)}, unexpected={len(_unexp)})',
+          flush=True)
 # ★ 风格源必须与模型 _e_callig() 一致: 那就是 callig_emb_pretrained_50k.pt 的行。
 #   用自己学的 embedding 会导致"离线训好的头接进模型后风格输入分布不一致"而失效。
 _emb = torch.load(a.style_emb, map_location='cpu', weights_only=False)
@@ -184,12 +192,19 @@ def evaluate(tag):
     g2s = model(G[vi], style(ysh))
     off = model.offset_stats() or {}
     fr, sg = style_follow()
+    # 不可约下界(同字同书家组内方差) —— 判"收敛没收敛"要看残差/下界, 而不是看残差绝对值。
+    # 实测下界 = 0.06505 (tools/diag_skelnet_floor.py), 闭合率天花板 = 87.1%。
+    _FLOOR = 0.06505
     print('  %-10s MSE=%.5f (基线 %.5f, 闭合 %5.1f%%) | correct %.5f / shuffled %.5f '
           '| 输出变化 %.4f | off %.4f (风格底图 %.4f) | **style-follow %.1f%%**'
           % (tag, mse, base_mse, 100 * (1 - mse / base_mse),
              float((g2 - T[vi]).pow(2).mean()), float((g2s - T[vi]).pow(2).mean()),
              float((g2 - g2s).abs().mean()), off.get('mean_abs', 0),
              off.get('style_part', 0), 100 * fr), flush=True)
+    # 判"收敛没收敛"要看 残差/下界，而不是残差绝对值。
+    # 下界 = 0.06505（同字同书家组内方差，tools/diag_skelnet_floor.py 实测），天花板 = 87.1%。
+    print('             -> 残差/下界 = %.2fx (1.0 = 信息论极限) | 闭合 %.1f%% / 天花板 87.1%%'
+          % (mse / 0.06505, 100 * (1 - mse / base_mse)), flush=True)
     model.train()
     return mse
 
