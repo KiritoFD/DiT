@@ -290,3 +290,147 @@ python -m src.train.train --config src/train/configs/v18_skelnet_100k.json
   - 关键观察量：`残差/下界`（现在 2.57×）是否下降
   - 若 20k 后仍在 2.5× 附近 → 说明**容量不够**，该加宽而不是加步数
 - **v18-skelnet**：解冻联合训练，已跑到 20k（Deform loss 0.4078 → 0.2362，头在被改善而非破坏）
+
+---
+
+## 10. ★ 显存实测（2026-09-25，纠正此前"4096 是上限"的错误结论）
+
+RTX 4090 24G（可用 23.52 GiB），**无梯度检查点**，含 TV/Jacobian 反向，每配置**独立进程**测峰值：
+
+| batch | width | 结果 | 峰值 |
+|---|---|---|---|
+| 4096 | 96 | **OOM** | 22.8 GiB |
+| 4096 | 80 | **OOM** | 22.6 GiB |
+| 4096 | 64 | **OOM** | 22.2 GiB |
+| 4096 | 48 | OK | 18.6 GiB |
+| 3072 | 96 | **OOM** | 22.5 GiB |
+| 2048 | 96 | OK | 18.2 GiB |
+
+**根因**：`d1` 在 **32×32 全分辨率 × 96ch** 下，**单个激活张量 = batch × 96 × 1024 × 4 B**，
+batch 4096 时就是 **1.61 GB/张**，而反向要保存 6–8 张
+（conv1 / gn1 / gelu1 / conv2 / gn2 / gelu2 + FiLM 的乘和加）→ **单 d1 就 ~10 GB**。
+前向 `no_grad` 单独就占 **12.3 GB**（batch 4096 / width 96）。
+
+**关键点：显存几乎只随 batch 线性、对 width 很不敏感**（96→48 只省 ~5 GB），
+因为大项是"保存下来的 32×32 激活张量数量 × batch"，width 只影响每张的大小。
+
+**两种"不换架构"的省显存手段均无效（已实测）**：
+- `nn.GELU(inplace=True)` → 峰值**一模一样**。原因：GELU 反向本来就能用**输出**算，省不掉保存量。
+- `bf16 autocast` → 无效。原因：GroupNorm / `torch.cat` 仍走 fp32，瓶颈不在 conv 的算力精度。
+
+**结论**：width 96 下 batch 4096 单次前向在 24G 上物理放不下。
+要 batch 4096 只有三条路：① 降 width（会丢 v5 的 U-Net 暖启动，只留 `style_off` 底图和全局仿射）；
+② 梯度累积 2×2048（**数学等价**，因为模型只用 GroupNorm，逐样本归一化）；
+③ 梯度检查点（**用户已明确禁止**）。
+
+**v9 最终采用**：单次前向 **batch 2048 / width 96 / ckpt 0**，实测 22.4 GiB 驻留、~0.50 s/step。
+> 注意 22.4 GiB 已贴到 23.5 GiB 上限，eval 时还要把 VAE 搬上 GPU，**有余量风险**。
+> 启动脚本里加了 `PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True` 降低碎片导致的假 OOM（纯分配器设置，不改训练语义）。
+
+### 顺带修掉的两个真 bug（`tools/train_deform_standalone.py`）
+
+1. **`img_loss()` 定义了但从未被调用** —— 训练循环里只有一行孤儿注释"★ 图像空间监督（关键项）"，
+   `--w-img` 是静默空操作。
+2. **`_to_gray` 被 `@torch.no_grad()` 包住** —— 即使调用，图像 loss 也 `requires_grad=False`，
+   **梯度根本回传不到模型**。已拆成 `_decode_gray(lat, grad=False)`：训练路 `grad=True`（走 `torch.enable_grad()`），
+   诊断/评估路仍 `no_grad`；并在 `--w-img>0` 时让 VAE **常驻 GPU**（否则每步来回搬 160MB 太慢）。
+
+---
+
+## 11. ★★ 训练速度排查：0.496 → 0.358 s/step（1.39×）
+
+### 症状
+v9 首跑 batch 2048 / width 96 只有 **0.496 s/step（2 步/s）**、功耗仅 **272 W**。
+对照：30M 的主网络能跑 4 steps/s —— 1.7M 的小 U-Net 反而更慢，明显不合理。
+
+### 定位（先测，不猜）
+1. **吞吐对 batch 完全线性**：batch 256/512/1024/2048 分别 4637/4231/4110/4140 samples/s。
+   → 排除了"kernel launch 开销"和"显存分配器压力"两个假设（若成立，小 batch 的 samples/s 会更低）。
+2. **算子级 profiler**（`torch.profiler`，10 步）：
+
+| 算子 | 占 CUDA | 备注 |
+|---|---|---|
+| `convolution_backward` | 33.7% | 真实计算 |
+| **`upsample_bilinear2d`** | **30.2%** | **40 次调用，平均 37.3 ms/次** |
+| `nchwToNhwcKernel` | 9.4% | cuDNN 为用 TF32 张量核做的布局转换，**700 次/10 步** |
+| conv forward (tf32 gemm) | ~10% | |
+| `NativeGroupNormBackward` | 5.3% | |
+
+### 根因：torch 2.5 的 **NCHW `upsample_bilinear2d` CUDA 核病态地慢**
+batch 2048 实测：
+
+| 形状 | bilinear(NCHW) | nearest | bilinear+channels_last | 固定核 convT |
+|---|---|---|---|---|
+| C=192, 8×8→16×16 | **97.03 ms** | 0.57 ms | 0.94 ms | 0.31 ms |
+| C=96, 16×16→32×32 | **49.62 ms** | 1.14 ms | 1.91 ms | 0.27 ms |
+| C=2, 8×8 | 0.61 ms | 0.01 ms | 0.43 ms | 0.02 ms |
+
+两次大通道上采样 = 97 + 50 = **147 ms/step**，与 profiler 的 149 ms/step 完全对上。
+换算：10 步输出 ~3G 个元素只用 1.49 s ≈ **2 G 元素/s**，连显存带宽的 2% 都不到。
+
+### 修复：`_up()` —— 转 channels_last 再插值（**语义完全不变**）
+```python
+def _up(x, size):
+    return F.interpolate(x.contiguous(memory_format=torch.channels_last),
+                         size=size, mode='bilinear', align_corners=False) \
+            .contiguous(memory_format=torch.contiguous_format)
+```
+同一个操作换布局会走另一条向量化核：**42× / 10× 更快**；数值一致到 **2.4e-07**（纯 float32 舍入，逐形状验证过）。
+`off_u` 的 32→8→32 那两次（C=2）本来就便宜，一并走 `_up` 保持一致。
+
+**结果**：494 → **353.5 ms/step**；`forward(no_grad)` 255 → **114.9 ms**；`upsample_bilinear2d` **从 profile 里彻底消失**。
+
+### 试过但**无效/更差**的（都已实测，别再走一遍）
+- **固定核 `conv_transpose2d` 替双线性**：快 78×，但**数值不等价**。
+  `align_corners=False` 的双线性权重是**位置相关**的（偶数位 0.75/0.25、奇数位 0.25/0.75），
+  均匀 stride-2 核复现不了；边界（首行/列 clamp）也不一致。相对误差 ~0.88，不可用。
+- **整模型 channels_last**：**420 ms，反而慢 0.84×**。因为风格是 `style_proj(st).expand(...)` 的
+  **跨步视图**，`torch.cat` 后布局退回 NCHW → 白付转换成本。只有 `_up` 这种**局部**转换才划算。
+- **`cudnn.allow_tf32=False`**：353.5 → 354.0 ms，**无变化**（`nchwToNhwc` 那 13% 并没省掉）。
+- **`GELU(inplace=True)`**：峰值与速度均无变化（GELU 反向本就能用输出算）。
+- **bf16 autocast**：无变化（GroupNorm / `cat` 仍走 fp32）。
+
+### 真实运行验证
+`step 500`：**248 s → 179 s**（0.496 → 0.358 s/step），功耗 **272 W → 400 W**，驻留 23.0 GiB。
+
+### 修复后的剩余瓶颈（下一步的线索）
+conv backward 48.6% / conv forward 16.3% / **nchwToNhwc 13.1%** / groupnorm 12% / gelu bwd 4.3%。
+> ★ **结构性浪费**：`coarse=8` 意味着 `off_u` 在 32×32 算完后立刻被降到 8×8 再升回 32×32，
+> 所以 U-Net 在 32×32 上的计算**信息上被丢掉了**。按 FLOPs 算，32×32 那几个卷积占
+> **54%**（u1 conv1 24.6% + d1 conv2 12.3% + u1 conv2 12.3% + d1 conv1 4.7%）。
+> 把 U-Net 直接做在低分辨率（输出 8×8 控制点网格）理论上能再快 ~2×，但会改动架构。
+
+---
+
+## 12. ★★ 主模型是否有同样的 upsample 问题？—— 结论：**没有**
+
+这个问题很关键：如果主模型也中招，整个训练吞吐都被拖累。逐条排查主训练路径：
+
+| 位置 | 调用 | 中招？ | 依据 |
+|---|---|---|---|
+| **DiT 主干** | 无任何 interpolate | **否** | 全库 grep：`src/model/` 下只有 `legacy/controlnet.py` 和 `std_dino_embedder.py` 有，主干干净 |
+| **VAE 解码** | `Upsample2D(interpolate=True)` ×3 | **否** | diffusers 实现用的是 **`mode="nearest"`**（`diffusers/models/upsampling.py:67/172/174`），nearest 走快核 |
+| **REPA (DINO teacher)** | `losses.py:224` bicubic 256→224 | **否** | ① C=3 小通道，实测 B=32 只 **0.13 ms**；② v18 配了 `repa_cache_dir="data/dino_cache/50k_v1"`，**缓存命中时根本不调用 teacher 前向** |
+| **MidStructureLoss** | `structure_mid.py:36` bilinear lowpass | **否（且默认关）** | C=4，实测 **0.09 ms**；`w_std_mid` 默认 0，只有 2 个配置开 |
+| **LatentSkelStructureLoss** | `latent_structure.py:162` | **否** | v18 的 `aux_loss_weight=0.0` |
+| `std_dino_embedder` | 1D `mode="linear"` | 否 | 1D、通道极少 |
+| `legacy/*`、`eval/*` | `auto_eval_ctrl*.py` 等 | 不在训练路径 | — |
+
+### 为什么主模型不中招
+这个病态核的触发条件是 **大通道数 × 小空间尺寸 × NCHW 上采样**。
+v9 正好是 **C=192/96 在 8×8/16×16 上放大**；主模型那几处要么**通道极少（3/4）**，
+要么是**大空间下采样**，要么直接是 **nearest**。
+
+### 实测（B=32；逐元素开销可线性外推）
+
+| 调用 | NCHW | channels_last |
+|---|---|---|
+| REPA bicubic 256→224 | **0.13 ms** | 0.23 ms（**反而慢 0.6×**）|
+| REPA bilinear 256→224 | 0.10 ms | 0.13 ms |
+| MidStructure lowpass (4,16,16)→(32,32) | 0.09 ms | — |
+
+外推到 B=320：REPA ≈ **1.3 ms**、MidStructure ≈ **0.9 ms**，相对主模型单步（~250 ms）可忽略。
+
+> ⚠ **不要把 `_up()` 套到主模型上**：主模型这些调用本来就不慢，换 channels_last
+> **反而更慢**（和"整模型 channels_last 慢 0.84×"同一个原因）。
+> `_up()` 只适用于 **大通道 × 小空间 × NCHW 放大** 这一种形状。

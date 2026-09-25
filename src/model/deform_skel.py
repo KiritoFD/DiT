@@ -44,6 +44,33 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 
+def _gauss_kernel(sigma, device, dtype):
+    r = max(1, int(3.0 * float(sigma)))
+    x = torch.arange(-r, r + 1, device=device, dtype=dtype)
+    k = torch.exp(-(x ** 2) / (2.0 * float(sigma) ** 2))
+    k = k / k.sum()
+    return (k[:, None] * k[None, :])[None, None]
+
+
+def _up(x, size):
+    """双线性重采样（放大/缩小都走这里）。
+
+    ★★ 为什么不能直接用 F.interpolate(NCHW)：torch 2.5 的 NCHW
+    `upsample_bilinear2d` CUDA 核在本机病态地慢 —— batch 2048 下
+      C=192, 8x8 ->16x16 : 97.0 ms
+      C=96, 16x16->32x32 : 49.5 ms
+    两次加起来 147 ms/step，占了整个训练步的 30%（算子级 profiler 实测）。
+    而同一个操作换成 channels_last 布局会走另一条向量化核：
+      C=192: 97.0 -> 2.3 ms (42x)
+      C=96 : 49.5 -> 4.8 ms (10x)
+    数值上两者一致到 2.4e-07（纯 float32 舍入，已逐形状验证）。
+    所以这里转布局 -> 插值 -> 转回来，**语义完全不变**，只是绕开慢核。
+    """
+    return F.interpolate(x.contiguous(memory_format=torch.channels_last),
+                         size=size, mode='bilinear', align_corners=False) \
+        .contiguous(memory_format=torch.contiguous_format)
+
+
 def _block(cin, cout, stride=1):
     return nn.Sequential(
         nn.Conv2d(cin, cout, 3, stride, 1), nn.GroupNorm(8, cout), nn.GELU(),
@@ -69,7 +96,8 @@ class _FiLM(nn.Module):
 
 class DeformSkel(nn.Module):
     def __init__(self, cond_dim=128, ch=4, grid=32, style_ch=32,
-                 width=64, max_off=3.0, coarse=8, residual=0, res_cap=1.0):
+                 width=64, max_off=3.0, coarse=8, residual=0, res_cap=1.0,
+                 blur=0, blur_sigma=1.5, dt_ch=0, affine=1, ckpt=0):
         super().__init__()
         self.grid = int(grid)
         self.coarse = int(coarse)
@@ -77,7 +105,18 @@ class DeformSkel(nn.Module):
         self.style_proj = nn.Linear(int(cond_dim), int(style_ch))
 
         w = int(width)
-        self.d1 = _block(ch + style_ch, w)          # grid
+        # ★ 输入加一路高斯模糊: 骨架 latent 很稀疏, U-Net 只看到细线时
+        #   感受野里几乎没有梯度信号。模糊一份拼进去 -> 全图都有梯度。
+        #   ⚠ 必须放在 d1 构造**之前**（res_cap 那一段在构造里更靠后, 放那儿会 UnboundLocalError）。
+        self.blur = int(blur)
+        self.blur_sigma = float(blur_sigma)
+        # ★ 梯度检查点: U-Net 在 32x32/width96 下激活占大头(batch 4096 就吃满 23G),
+        #   开了之后反向时重算前向 -> 激活内存降 2-3x, 代价是多算一遍(功耗反而上升)。
+        self.ckpt = int(ckpt)
+        self.dt_ch = int(dt_ch)
+        self.use_affine = int(affine)
+        _cin = ch + (ch if self.blur else 0) + self.dt_ch + style_ch
+        self.d1 = _block(_cin, w)                   # grid
         self.d2 = _block(w, w * 2, stride=2)        # grid/2
         self.d3 = _block(w * 2, w * 2, stride=2)    # grid/4
         self.mid = _block(w * 2, w * 2)
@@ -98,6 +137,14 @@ class DeformSkel(nn.Module):
         self.res_cap = float(res_cap)
         # ★ 路径 2: 风格专属**全分辨率**偏移底图（每个书家一张"习惯间架"）
         #   独立训练不受扩散稳定性约束 -> 风格可以激进注入, 不必压到 8x8 低分辨率。
+        # ★ 全局仿射: 书家风格 -> 2x3 矩阵, 先做一次全局缩放/拉伸/倾斜。
+        #   "全局仿射定大局, 局部 offset 定细节" —— 欧阳询整体瘦长、颜真卿方正外拓
+        #   这类整体倾向用 6 个参数就能表达, 不必让局部 U-Net 去硬凑。
+        #   zero-init -> 恒等仿射 (theta=[1,0,0;0,1,0])。
+        self.affine = nn.Linear(int(cond_dim), 6) if int(affine) else None
+        if self.affine is not None:
+            nn.init.zeros_(self.affine.weight)
+            nn.init.zeros_(self.affine.bias)
         self.style_off = nn.Linear(int(cond_dim), 2 * self.grid * self.grid)
         # ★ 路径 5: 风格专属**全分辨率残差**（补上"形变改不了的"笔画粗细/墨色）
         self.style_res = nn.Linear(int(cond_dim), ch * self.grid * self.grid)             if bool(residual) else None
@@ -121,42 +168,69 @@ class DeformSkel(nn.Module):
         self.last_off_style = None
         self.last_res = None
 
-    def forward(self, g, style):
+    def forward(self, g, style, dt=None):
         """g: (N,4,H,W) 标准骨架 latent；style: (N,cond_dim) 书家风格。返回 g' 同形状。"""
         n, c, h, w = g.shape
         if (h, w) != (self.grid, self.grid):
-            g = F.interpolate(g, size=(self.grid, self.grid), mode='bilinear',
-                              align_corners=False)
+            g = _up(g, (self.grid, self.grid))
         st = style.float()
         s = self.style_proj(st)[..., None, None].expand(-1, -1, self.grid, self.grid)
-        x0 = torch.cat([g.float(), s], 1)
+        _parts = [g.float()]
+        if self.dt_ch:
+            # 距离场: 由外部算好传入 (对 g_std 是固定量, 可离线预计算)。
+            # 作用: 骨架 latent 很稀疏, 全图大部分位置没有梯度信号;
+            #       距离场把"离骨架多远"铺满全图 -> U-Net 有了空间导航信号。
+            assert dt is not None, 'dt_ch>0 但没传 dt'
+            _parts.append(dt.to(g.dtype))
+        if self.blur:
+            # 高斯模糊: 用 separable conv 实现, 无参数、可微、对 batch 广播
+            _k = _gauss_kernel(self.blur_sigma, g.device, g.dtype)
+            _b = F.conv2d(F.pad(g.float(), (_k.shape[-1] // 2,) * 4, mode='replicate'),
+                          _k.expand(g.shape[1], 1, -1, -1), groups=g.shape[1])
+            _parts.append(_b)
+        _parts.append(s)
+        x0 = torch.cat(_parts, 1)
 
-        e1 = self.f1(self.d1(x0), st)
-        e2 = self.f2(self.d2(e1), st)
-        e3 = self.f3(self.d3(e2), st)
-        m = self.fm(self.mid(e3), st)
-        u = F.interpolate(m, size=e2.shape[-2:], mode='bilinear', align_corners=False)
+        if self.ckpt and self.training:
+            import torch.utils.checkpoint as _ck
+            def _c(mod, film, x):
+                return film(mod(x), st)
+            e1 = _ck.checkpoint(_c, self.d1, self.f1, x0, use_reentrant=False)
+            e2 = _ck.checkpoint(_c, self.d2, self.f2, e1, use_reentrant=False)
+            e3 = _ck.checkpoint(_c, self.d3, self.f3, e2, use_reentrant=False)
+            m = _ck.checkpoint(_c, self.mid, self.fm, e3, use_reentrant=False)
+        else:
+            e1 = self.f1(self.d1(x0), st)
+            e2 = self.f2(self.d2(e1), st)
+            e3 = self.f3(self.d3(e2), st)
+            m = self.fm(self.mid(e3), st)
+        u = _up(m, e2.shape[-2:])
         u = self.u2(torch.cat([u, e2], 1))
-        u = F.interpolate(u, size=e1.shape[-2:], mode='bilinear', align_corners=False)
+        u = _up(u, e1.shape[-2:])
         u = self.u1(torch.cat([u, e1], 1))
 
         off_u = self.out(u)                                    # (N,2,grid,grid)
         if self.coarse > 0 and self.coarse < self.grid:
-            off_u = F.interpolate(off_u, size=(self.coarse, self.coarse),
-                                  mode='bilinear', align_corners=False)
-            off_u = F.interpolate(off_u, size=(self.grid, self.grid),
-                                  mode='bilinear', align_corners=False)
+            off_u = _up(off_u, (self.coarse, self.coarse))
+            off_u = _up(off_u, (self.grid, self.grid))
         off_s = self.style_off(st).view(n, 2, self.grid, self.grid)   # 全分辨率
         off = torch.tanh((off_u + off_s) / max(self.max_off, 1e-6)) * self.max_off
 
         grid = self.base_grid + off.permute(0, 2, 3, 1) / (self.grid / 2.0)
+        if self.affine is not None:
+            # ★ 先全局仿射, 再局部形变: 两者都作用在采样网格上(纯坐标变换, 保证拓扑)
+            th = torch.tanh(self.affine(st)).view(-1, 2, 3)
+            th = th + torch.tensor([[[1.0, 0.0, 0.0], [0.0, 1.0, 0.0]]],
+                                   device=th.device, dtype=th.dtype)
+            # affine_grid 生成的是 (x_src, y_src) 采样坐标 -> 与 base_grid 同语义
+            g_a = F.affine_grid(th, (n, 1, self.grid, self.grid), align_corners=False)
+            grid = grid + (g_a - self.base_grid)
         g2 = F.grid_sample(g.float(), grid, mode='bilinear',
                            padding_mode='border', align_corners=False)
         if self.res is not None:
             r = self.res(u)
             if self.coarse > 0 and self.coarse < self.grid:
-                r = F.interpolate(r, size=(self.grid, self.grid), mode='bilinear',
-                                  align_corners=False)
+                r = _up(r, (self.grid, self.grid))
             if self.style_res is not None:
                 r = r + self.style_res(st).view(n, self.res.out_channels,
                                                 self.grid, self.grid)
@@ -167,6 +241,48 @@ class DeformSkel(nn.Module):
         self.last_off = off.detach()
         self.last_off_style = off_s.detach()
         return g2
+
+    def regularizers(self):
+        """TV 平滑 + Jacobian 折叠惩罚。都作用在**偏移场**上（纯几何量）。
+
+        TV:       相邻像素偏移差 -> 防止把一根横线扭成波浪线
+        Jacobian: det(I + ∇U) > 0 -> 防止空间折叠（笔画交叉处翻转）
+                  返回 relu(-det) 的均值, 0 = 无折叠
+        """
+        if getattr(self, 'last_off', None) is None:
+            return None
+        u = self.last_off.float()                       # (N,2,32,32)
+        du_dx = u[..., :, 1:] - u[..., :, :-1]
+        du_dy = u[..., 1:, :] - u[..., :-1, :]
+        tv = du_dx.pow(2).mean() + du_dy.pow(2).mean()
+        # Jacobian: J = I + ∇U, 2x2。U 是 2 通道 (Ux, Uy)。
+        #   a = ∂Ux/∂x, b = ∂Ux/∂y, c = ∂Uy/∂x, d = ∂Uy/∂y
+        #   det = (1+a)(1+d) - b*c
+        #   ⚠ 上一版把交叉项 b/c 直接写成 0 —— 那等于假设场是无旋的, 会漏掉真实折叠。
+        #     这里用有限差分补齐。
+        ux, uy = u[:, 0], u[:, 1]                       # (N,32,32)
+        ax = ux[:, :, 1:] - ux[:, :, :-1]               # ∂Ux/∂x
+        ay = ux[:, 1:, :] - ux[:, :-1, :]               # ∂Ux/∂y
+        cx = uy[:, :, 1:] - uy[:, :, :-1]               # ∂Uy/∂x
+        cy = uy[:, 1:, :] - uy[:, :-1, :]               # ∂Uy/∂y
+        a = ax[:, :-1, :]; d = cy[:, :, :-1]
+        b = ay[:, :, :-1]; c = cx[:, :-1, :]
+        det = (1.0 + a) * (1.0 + d) - b * c
+        fold = torch.relu(-det).mean()
+        d = dict(tv=tv, fold=fold, det_min=float(det.min()))
+        # ★ latent 空间正则（不需要 VAE）:
+        #   实测破碎的来源不是幅度(g' 的 |mean| 只比目标低 6%), 而是空间分布。
+        #   tv_out: 输出 latent 的梯度能量 —— 直接压"不该有的高频"
+        #   tv_res: 加性残差的梯度能量 —— 残差是"凭空写像素"的唯一入口
+        if self.last_out is not None:
+            o = self.last_out.float()
+            d['tv_out'] = ((o[..., :, 1:] - o[..., :, :-1]).pow(2).mean()
+                           + (o[..., 1:, :] - o[..., :-1, :]).pow(2).mean())
+        if getattr(self, 'last_res', None) is not None:
+            r = self.last_res.float()
+            d['tv_res'] = ((r[..., :, 1:] - r[..., :, :-1]).pow(2).mean()
+                           + (r[..., 1:, :] - r[..., :-1, :]).pow(2).mean())
+        return d
 
     def offset_stats(self):
         """诊断用：偏移场幅值。mean|off| ≈ 0 说明形变没学动（退化成恒等）。"""
