@@ -512,9 +512,18 @@ def make_eval_cache(eval_csv, img_root, skel_root, image_size, n,
             with np.load(sp) as d:
                 _has_names = "names" in d
                 for j, iid in enumerate(d["img_ids"]):
-                    skel_id_to_shard[int(iid)] = (sp, j)
+                    _iid = int(iid)
+                    if _iid in skel_id_to_shard:
+                        _prev_sp, _prev_j = skel_id_to_shard[_iid]
+                        raise ValueError(
+                            f"[eval-cache] ✗ 致命错误：检测到 ID 碰撞冲突！img_id={_iid}\n"
+                            f"  初次出现于: {_prev_sp} (offset {_prev_j})\n"
+                            f"  再次出现于: {sp} (offset {j})\n"
+                            f"  在分片聚合目录中混入重复号段会导致骨架条件静默错位篡改！"
+                        )
+                    skel_id_to_shard[_iid] = (sp, j)
                     if _has_names:
-                        skel_names[int(iid)] = str(d["names"][j])
+                        skel_names[_iid] = str(d["names"][j])
 
     missing_skel = 0
     for i, row in enumerate(rows):

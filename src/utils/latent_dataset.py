@@ -123,7 +123,15 @@ class MCCDLatentDataset(Dataset):
         for sp in shards:
             d = np.load(sp)
             for j, iid in enumerate(d["img_ids"]):
-                self._id_to_shard[int(iid)] = (sp, j)
+                _iid = int(iid)
+                if _iid in self._id_to_shard:
+                    _prev_sp, _prev_j = self._id_to_shard[_iid]
+                    raise ValueError(
+                        f"[dataset] ✗ 致命错误：目标图像 shards 检测到重复 ID！img_id={_iid}\n"
+                        f"  初次出现: {_prev_sp} (offset {_prev_j})\n"
+                        f"  重复冲突: {sp} (offset {j})"
+                    )
+                self._id_to_shard[_iid] = (sp, j)
             d.close()
         self._img_names = self._load_shard_names(shards)
         self._check_shard_names(self._img_names, "image_path", "img latent")
@@ -147,7 +155,15 @@ class MCCDLatentDataset(Dataset):
                 for sp in _sk_shards:
                     d = np.load(sp)
                     for j, iid in enumerate(d["img_ids"]):
-                        _m[int(iid)] = (sp, j)
+                        _iid = int(iid)
+                        if _iid in _m:
+                            _prev_sp, _prev_j = _m[_iid]
+                            raise ValueError(
+                                f"[dataset] ✗ 致命错误：骨架条件 shards 检测到重复 ID！img_id={_iid}\n"
+                                f"  初次出现: {_prev_sp} (offset {_prev_j})\n"
+                                f"  重复冲突: {sp} (offset {j})"
+                            )
+                        _m[_iid] = (sp, j)
                     d.close()
                 self._skel_id_to_shard_list.append(_m)
                 if _di == 0:

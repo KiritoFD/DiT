@@ -536,11 +536,6 @@ def render_poster(results_dir, set_name, out=None, cell=224, gap=6,
     input_dir = os.path.join(results_dir, "eval_samples_ctrl", f"{set_name}_input_g")
     has_input = os.path.isdir(input_dir) and bool(glob.glob(os.path.join(input_dir, "g*.png")))
 
-    def _cell(path, bg):
-        if path and os.path.exists(path):
-            return _Img.open(path).convert("RGB").resize((cell, cell), _Img.LANCZOS)
-        return _Img.new("RGB", (cell, cell), bg)
-
     font = _load_font(r"/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", max(14, cell // 8))
     font_small = _font_cache.get(cell) or _load_font(
         r"/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", max(9, cell // 7))
@@ -548,6 +543,23 @@ def render_poster(results_dir, set_name, out=None, cell=224, gap=6,
     font_big = _load_font(r"/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", max(28, cell // 3))
     label_h = max(40, cell // 4)
     hdr_h = 56
+
+    def _cell(path, bg, placeholder_label="N/A"):
+        if path and os.path.exists(path):
+            return _Img.open(path).convert("RGB").resize((cell, cell), _Img.LANCZOS)
+        img = _Img.new("RGB", (cell, cell), bg)
+        d = ImageDraw.Draw(img)
+        d.rectangle([1, 1, cell - 2, cell - 2], outline=(55, 60, 70), width=1)
+        d.line([(4, 4), (cell - 5, cell - 5)], fill=(45, 48, 55), width=1)
+        d.line([(4, cell - 5), (cell - 5, 4)], fill=(45, 48, 55), width=1)
+        lbl = placeholder_label or "N/A"
+        try:
+            bbox = font_small.getbbox(lbl)
+            tw, th = bbox[2] - bbox[0], bbox[3] - bbox[1]
+            d.text(((cell - tw) // 2, (cell - th) // 2), lbl, font=font_small, fill=(140, 145, 155))
+        except Exception:
+            pass
+        return img
 
     # ── 主图: input 行 + 每 step gen 行 + GT 行 ──────────────────────────
     _ref = _train_ref_rows(train_csv, eval_csv, n_eval) if train_csv else None
