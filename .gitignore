@@ -169,3 +169,6 @@ _fonts/
 # 大模型/虚拟环境（体积原因不入库）
 _models/
 _venv_qwenvl/
+tools/fonts/candidate_fonts/
+tools/fonts/google_fonts/
+
