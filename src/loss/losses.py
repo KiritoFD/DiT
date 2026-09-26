@@ -254,7 +254,7 @@ class REPALoss(nn.Module):
                 with torch.no_grad():
                     _m = torch.as_tensor(missing, device=x_0.device, dtype=torch.long)
                     # 只有 miss 的行才需要真图 -> 归一化也只对这几行做
-                    feats_cache[_m] = self._teacher_forward(self._to_image(x_0[_m]))
+                    feats_cache[_m] = self._teacher_forward(self._to_image(x_0[_m])).to(feats_cache.dtype)
             teacher_feats = feats_cache
         else:
             if self.teacher is None:
