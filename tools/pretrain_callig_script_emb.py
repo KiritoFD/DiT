@@ -55,10 +55,11 @@ def main():
     ap.add_argument("--w-sibling", type=float, default=0.3,
                     help="同书家异书体的弱正对权重(共享身份); 0=退化为纯 pair SupCon")
     ap.add_argument("--seed", type=int, default=0)
+    ap.add_argument("--device", default="cuda" if torch.cuda.is_available() else "cpu")
     args = ap.parse_args()
 
     torch.manual_seed(args.seed)
-    dev = torch.device("cuda")
+    dev = torch.device(args.device)
 
     M = json.load(open(args.map_json, encoding="utf-8"))
     pair_map = M["pair_map"]                      # "c:s" -> pair_id

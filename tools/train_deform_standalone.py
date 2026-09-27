@@ -113,13 +113,19 @@ ap.add_argument('--style-emb', default='assets/callig_emb_pretrained_50k.pt',
 ap.add_argument('--width', type=int, default=64)
 ap.add_argument('--max-off', type=float, default=3.0, dest='max_off')
 ap.add_argument('--res-cap', type=float, default=1.0, dest='res_cap')
+ap.add_argument('--csv', default='assets/train_50k_v2_fixed.csv', help='训练数据集 CSV')
 ap.add_argument('--follow-n', type=int, default=400, help='style-follow 测多少个字')
 a = ap.parse_args()
 
 DEV = 'cuda' if torch.cuda.is_available() else 'cpu'
 torch.manual_seed(0)
 np.random.seed(0)
-NCAL = 45
+
+# 加载风格表以确定 NCAL 槽位数
+_emb = torch.load(a.style_emb, map_location='cpu', weights_only=False)
+_tab = _emb['embedding'] if isinstance(_emb, dict) else _emb
+_tab = _tab.float()
+NCAL = _tab.shape[0]
 
 
 def load_bank(d):
@@ -139,7 +145,9 @@ B = load_bank(a.gt_dir)
 print(f'    g_std {len(A)} / g_gt {len(B)}', flush=True)
 
 C2I = {}
-rows = list(csv.DictReader(open('assets/train_50k_v2_fixed.csv', encoding='utf-8')))
+rows = list(csv.DictReader(open(a.csv, encoding='utf-8')))
+has_pair_id = 'pair_id' in rows[0] if rows else False
+
 for r in rows:
     C2I.setdefault(str(r.get('calligrapher', '')), len(C2I))
 rec = {}
@@ -149,9 +157,14 @@ for r in rows:
     except Exception:
         continue
     if i in A and i in B:
-        rec[i] = (C2I.get(str(r.get('calligrapher', '')), 0), str(r.get('character', '')))
+        if has_pair_id:
+            s_idx = int(r['pair_id'])
+        else:
+            s_idx = C2I.get(str(r.get('calligrapher', '')), 0)
+        rec[i] = (s_idx, str(r.get('character', '')))
 ids = sorted(rec)
-print(f'    有效 {len(ids)} 条, 书家 {len(C2I)} 个', flush=True)
+n_slots = len({v[0] for v in rec.values()})
+print(f'    有效 {len(ids)} 条, 风格槽位 {n_slots} 个 (总槽位 NCAL={NCAL})', flush=True)
 
 G = torch.from_numpy(np.stack([A[i] for i in ids])).to(DEV)
 T = torch.from_numpy(np.stack([B[i] for i in ids])).to(DEV)
@@ -214,12 +227,7 @@ if a.init:
     model.load_state_dict(_keep, strict=False)
     print(f'[2] 续训: 从 {a.init} 载入 {len(_keep)}/{len(_sd)} 个键'
           f'（跳过形状不符 {len(_skip)} 个: {_skip[:3]}）', flush=True)
-# ★ 风格源必须与模型 _e_callig() 一致: 那就是 callig_emb_pretrained_50k.pt 的行。
-#   用自己学的 embedding 会导致"离线训好的头接进模型后风格输入分布不一致"而失效。
-_emb = torch.load(a.style_emb, map_location='cpu', weights_only=False)
-_tab = _emb['embedding'] if isinstance(_emb, dict) else _emb
-_tab = _tab.float()
-assert _tab.shape[0] == NCAL, _tab.shape
+# ★ 风格源必须与模型 _e_callig() 一致
 print(f'[2] 用预训练书家表 {a.style_emb} {tuple(_tab.shape)} (冻结)', flush=True)
 style = nn.Embedding.from_pretrained(_tab, freeze=True).to(DEV)
 opt = torch.optim.AdamW(model.parameters(), lr=a.lr, weight_decay=0.01)
