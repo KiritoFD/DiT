@@ -888,6 +888,12 @@ class DiT_2Cond(nn.Module):
         learn_sigma=True,
         use_checkpoint=True,
         condition_fusion="legacy",
+        # ★ 融合前的归一化方式（仅 factorized_cat 生效）:
+        #   joint: 先 cat 再一个 LayerNorm(cat_dim) —— 历史实现
+        #   split: 各操作数**独立** LayerNorm 后再 cat —— 修复方差失衡
+        # 见 docs 97 §3: |e_glyph_vec|=60.9 vs |e_callig|=9.86(方差差 ~38x),
+        # joint 的 LN 分母被骨架信号支配 -> 风格振幅被稀释约 1/5。
+        cond_fusion_norm="joint",
         callig_embed_dim=None,
         char_embed_dim=None,
         # ---- g(标准字形) 的**向量**因子 (v12) ----
@@ -1134,6 +1140,9 @@ class DiT_2Cond(nn.Module):
         self.patch_size = patch_size
         self.num_heads = num_heads
         self.condition_fusion = condition_fusion
+        # 仅 cond_fusion_norm="split" 的 factorized_cat 分支会赋成 ModuleList;
+        # 其余分支保持 None, 使 forward 里的 `if self.cond_ln is not None` 永远安全。
+        self.cond_ln = None
         self.cond_drop_all_prob = float(cond_drop_all_prob)
         self.cond_drop_one_prob = float(cond_drop_one_prob)
         self.cond_drop_which_glyph_prob = float(cond_drop_which_glyph_prob)
@@ -1351,10 +1360,25 @@ class DiT_2Cond(nn.Module):
                 _cat_dim = callig_embed_dim + (char_embed_dim if self.use_char_cond else 0)
                 if self.glyph_vec_cond:
                     _cat_dim += int(glyph_vec_dim)
-                self.cond_fusion = nn.Sequential(
-                    nn.LayerNorm(_cat_dim),
-                    nn.Linear(_cat_dim, hidden_size),
-                )
+                # ★ 融合前归一化方式（docs 97 §3）:
+                #   joint: LayerNorm(全部 cat_dim) —— σ 被方差大的操作数支配
+                #   split: 各操作数独立 LayerNorm 后再 cat —— 抹平方差差异, 参数量不变
+                self.cond_fusion_norm = str(cond_fusion_norm)
+                if self.cond_fusion_norm == "split":
+                    _dims = [callig_embed_dim]
+                    if self.use_char_cond:
+                        _dims.append(char_embed_dim)
+                    if self.glyph_vec_cond:
+                        _dims.append(int(glyph_vec_dim))
+                    self.cond_ln = nn.ModuleList([nn.LayerNorm(d) for d in _dims])
+                    # Linear 的形状与 joint 版完全一致, 只是前面不再有联合 LN
+                    self.cond_fusion = nn.Linear(_cat_dim, hidden_size)
+                else:
+                    self.cond_ln = None
+                    self.cond_fusion = nn.Sequential(
+                        nn.LayerNorm(_cat_dim),
+                        nn.Linear(_cat_dim, hidden_size),
+                    )
                 # 置 None 而非保留: 避免 DDP 出现"未参与前向的参数"报错
                 # (callig_proj/char_proj/scale 在 cat 模式下不再使用)。
                 self.callig_proj = None
@@ -2286,6 +2310,17 @@ class DiT_2Cond(nn.Module):
                     f"{None if g_tok is None else int(g_tok.shape[0])}, "
                     f"y_callig={int(y_callig_in.shape[0])})。"
                     f" 通常是 CFG 路径里 x 被复制成 2B 但某个条件通路没跟上。")
+            if self.cond_ln is not None:
+                # ★ split 归一化: 各操作数**独立** LayerNorm 后再 cat (docs 97 §3)。
+                # 顺序必须与 __init__ 里 _dims 的构造顺序一致:
+                # [e_callig, (e_char), (e_glyph_vec)]
+                if len(_parts) != len(self.cond_ln):
+                    raise RuntimeError(
+                        f"[factorized_cat/split] 操作数个数 {len(_parts)} 与 "
+                        f"cond_ln 个数 {len(self.cond_ln)} 不一致 "
+                        f"(use_char_cond={self.use_char_cond}, "
+                        f"glyph_vec_cond={self.glyph_vec_cond})。")
+                _parts = [ln(p) for ln, p in zip(self.cond_ln, _parts)]
             y_emb = self.cond_fusion(torch.cat(_parts, dim=-1))
             # ★ 2026-09-23 修复：改动 1 的 _style_branch 原先**只接在
             #   factorized_add 上**，而 v13/v15/v17 全部用 factorized_cat

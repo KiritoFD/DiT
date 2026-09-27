@@ -405,6 +405,9 @@ def main(args):
             use_checkpoint=args.use_checkpoint,
             learn_sigma=_learn_sigma,
             condition_fusion=args.condition_fusion,
+            # ★ factorized_cat 融合前的归一化方式 (docs 97 §3 方差失衡修复)
+            #   joint=历史实现(联合 LN, 风格被稀释 ~1/5) / split=各操作数独立 LN
+            cond_fusion_norm=getattr(args, 'cond_fusion_norm', 'joint'),
             callig_embed_dim=args.callig_embed_dim,
             char_embed_dim=args.char_embed_dim,
             # g 的全局内容向量因子 (v12): 池化 g_tok -> 向量, 与 callig 一起做 concat/add。

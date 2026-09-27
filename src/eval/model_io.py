@@ -73,6 +73,9 @@ def build_model_from_args(a, device, **overrides):
         use_checkpoint=bool(g("use_checkpoint", False)),
         learn_sigma=bool(g("learn_sigma", False)),
         condition_fusion=g("condition_fusion"),
+        # ★ 必须与训练侧一致, 否则重建出的 cond_fusion 结构与 ckpt 不符,
+        #   split 模式下会静默丢掉 cond_ln / cond_fusion 的权重 (见本文件开头警告)。
+        cond_fusion_norm=g("cond_fusion_norm", "joint"),
         callig_embed_dim=gi("callig_embed_dim"),
         char_embed_dim=gi("char_embed_dim"),
         glyph_vec_cond=bool(g("glyph_vec_cond", False)),

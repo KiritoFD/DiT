@@ -40,9 +40,15 @@ sys.path.insert(0, ROOT)
 os.chdir(ROOT)
 
 
-def build_model_and_batch(config_path, ckpt_path=None, batch_size=16, device="cpu"):
+def build_model_and_batch(config_path, ckpt_path=None, batch_size=16, device="cpu",
+                          data_csv=None):
     with open(config_path, "r", encoding="utf-8") as f:
         cfg = json.load(f)
+    if data_csv:
+        # 老配置的 data_csv 可能指向已不存在的 CSV（如 v21 的 assets/train_50k_v2.csv
+        # 已被重组为 train_50k_v2_augmented_glyph15k.csv）-> 允许覆盖以便复跑老 ckpt。
+        print(f"[probe] data_csv 覆盖: {cfg.get('data_csv')} -> {data_csv}")
+        cfg["data_csv"] = data_csv
 
     from src.eval.model_io import load_model_from_ckpt
     from src.model.dit import DiT_2Cond_models
@@ -55,6 +61,19 @@ def build_model_and_batch(config_path, ckpt_path=None, batch_size=16, device="cp
         with open(cfg["callig_script_map"], "r", encoding="utf-8") as f:
             csmap = json.load(f)
     num_classes = len(csmap["pair_map"]) if (csmap and "pair_map" in csmap) else cfg.get("num_calligraphers", 45)
+
+    # ★ 书家 id 词表: train.py 会加载 callig_id_map 并传给 dataset
+    #   （train.py:256-266 载入 -> args._callig_map；train.py:1544 传给 MCCDLatentDataset）。
+    #   探针原来**两个都没传**，于是 latent_dataset.py:549 的 _map_callig 退回原始
+    #   calligrapher_id 当索引 -> 喂进 45 行的 y_callig_embedder 直接 IndexError。
+    cmap = None
+    if cfg.get("callig_id_map"):
+        try:
+            from src.utils.callig_map import load_callig_id_map
+            cmap, _ncal = load_callig_id_map(cfg["callig_id_map"])
+            print(f"[probe] 加载 callig_id_map {cfg['callig_id_map']} -> {_ncal} 个书家")
+        except Exception as _e:            # noqa: BLE001
+            print(f"[probe] callig_id_map 加载失败 ({_e!r}) -> 退回原始 id（可能越界）")
 
     if ckpt_path and os.path.exists(ckpt_path):
         print(f"[probe] Loading full trained model from ckpt: {ckpt_path}")
@@ -120,6 +139,7 @@ def build_model_and_batch(config_path, ckpt_path=None, batch_size=16, device="cp
         load_image=False,
         skel_latent_shards_dir=cfg["skel_latent_shards_dir"],
         inst_skel_shards_dir=cfg["inst_skel_shards_dir"],
+        callig_id_map=cmap,
         callig_script_map=csmap,
     )
 
@@ -136,13 +156,36 @@ def build_model_and_batch(config_path, ckpt_path=None, batch_size=16, device="cp
     return model, batch, fm, cfg
 
 
+def _fuse_cond(model, e_style, e_glyph_vec):
+    """按模型真实结构做 cond_fusion 融合。
+
+    ★ 探针是**手写 forward**，必须跟上层架构演进：
+      - `cond_fusion_norm="joint"`（历史）: `cond_fusion = Sequential(LayerNorm, Linear)`
+      - `cond_fusion_norm="split"`（v23）: `cond_ln` 是 ModuleList，`cond_fusion` 只是裸 Linear
+    原实现直接 `model.cond_fusion(cat)` —— 在 split 下**跳过了 cond_ln**，
+    等于把未归一化的拼接（glyph 方差大 38x）直接喂 Linear，前向是错的。
+    顺序必须与 `dit.py` __init__ 里 `_dims` 一致: [callig, (char), (glyph_vec)]。
+    """
+    parts = [e_style, e_glyph_vec]
+    cond_ln = getattr(model, "cond_ln", None)
+    if cond_ln is not None:
+        assert len(cond_ln) == len(parts), (
+            f"cond_ln 个数 {len(cond_ln)} != 操作数个数 {len(parts)}")
+        parts = [ln(p) for ln, p in zip(cond_ln, parts)]
+    return model.cond_fusion(torch.cat(parts, dim=-1))
+
+
 def run_probe(model, batch, fm, device="cpu"):
     print(f"\n{'='*70}\n[Probe 1] 信号双通道前向注入测量 (Forward Pass Analysis)\n{'='*70}")
 
     x0 = batch["latent"].to(device).float()
     g_std = batch["skel_latent"].to(device).float()
     g_inst = batch["inst_skel"].to(device).float()
-    y_callig = batch["y_callig"].to(device).long()
+    # ★ 必须用 y_callig_raw（书家**连续索引** 0..n_callig-1）去查主效应表。
+    #   y_callig 在设了 callig_script_map 时装的是 **pair_id**（可到 87），
+    #   直接喂只有 45 行的 y_callig_embedder 会 IndexError。
+    #   口径与 train.py:1851（显式传 y_callig_raw）和 dit.py:2128（fallback）一致。
+    y_callig = batch.get("y_callig_raw", batch["y_callig"]).to(device).long()
     y_char = batch.get("y_char", torch.zeros_like(y_callig)).to(device).long()
     B = x0.shape[0]
 
@@ -185,8 +228,7 @@ def run_probe(model, batch, fm, device="cpu"):
     print(f"  • 骨架全局池化向量 ||e_glyph_vec||: 平均范数 = {norm_eglyph:.4f}")
 
     # ── 通道 B: Diffusion 主干 adaLN 通路 ──
-    y_cat = torch.cat([e_dit, e_glyph_vec], dim=-1)  # (B, 256)
-    y_emb = model.cond_fusion(y_cat)                 # (B, 384)
+    y_emb = _fuse_cond(model, e_dit, e_glyph_vec)    # (B, 384)
     y_emb = model._style_branch(e_dit, y_emb)
 
     t_emb = model.t_embedder(t * 1000.0)             # (B, 384)
@@ -299,8 +341,7 @@ def run_probe(model, batch, fm, device="cpu"):
             gtok = model.glyph_embedder(g_d).flatten(2).transpose(1, 2)
             p = gtok.mean(dim=1)
             egv = model.glyph_vec_proj(p)
-            yc = torch.cat([edit, egv], dim=-1)
-            ye = model.cond_fusion(yc)
+            ye = _fuse_cond(model, edit, egv)
             ye = model._style_branch(edit, ye)
             cc = t_emb + ye
             xx = model.x_embedder(x_t)
@@ -317,8 +358,23 @@ def run_probe(model, batch, fm, device="cpu"):
 
     base_loss = eval_forward(e_skel, e_dit)
 
-    # 打乱索引 (roll 1)
-    perm = torch.roll(torch.arange(B), 1)
+    # ★ 打乱索引：必须保证换到的是**不同书家**。
+    #   原实现 `torch.roll(arange(B), 1)` + `DataLoader(shuffle=False)` 取的是 CSV 头部
+    #   连续行 —— 若 CSV 按书家分组，roll(1) 很可能换到**同一个书家**，
+    #   于是"风格打乱"其实没打乱，消融 Δ 假性为 0（docs/97 的 −0.17% 很可能就是这个假象）。
+    #   改成"每个 i 随机挑一个 y_callig_raw 不同的 j"，并打印实际换掉的比例。
+    _raw = y_callig.detach().cpu()
+    _gen = torch.Generator().manual_seed(0)
+    _perm = torch.arange(B)
+    for _i in range(B):
+        _cand = (_raw != _raw[_i]).nonzero(as_tuple=True)[0]
+        if _cand.numel() > 0:
+            _perm[_i] = int(_cand[torch.randint(_cand.numel(), (1,), generator=_gen).item()])
+    perm = _perm.to(device)
+    _chg = float((_raw[_perm] != _raw).float().mean())
+    print(f"  • 打乱检查: batch={B}, 批内书家数={int(_raw.unique().numel())}, "
+          f"实际换到不同书家的比例={_chg * 100:.1f}%"
+          f"{'   <-- 偏低! 消融 Δ 会被低估' if _chg < 0.9 else ''}")
     e_skel_perm = e_skel[perm]
     e_dit_perm = e_dit[perm]
 
@@ -356,7 +412,11 @@ if __name__ == "__main__":
     parser.add_argument("--ckpt", default="assets/results/v21_skelnet_200k/20260926-005749-v21-skelnet-200k/checkpoints/0005000.pt")
     parser.add_argument("--batch-size", type=int, default=16)
     parser.add_argument("--device", default="cpu")
+    parser.add_argument("--data-csv", default="", dest="data_csv",
+                        help="覆盖配置里的 data_csv（老配置可能指向已不存在的 CSV）")
     args = parser.parse_args()
 
-    model, batch, fm, cfg = build_model_and_batch(args.config, ckpt_path=args.ckpt, batch_size=args.batch_size, device=args.device)
+    model, batch, fm, cfg = build_model_and_batch(
+        args.config, ckpt_path=args.ckpt, batch_size=args.batch_size,
+        device=args.device, data_csv=(args.data_csv or None))
     run_probe(model, batch, fm, device=args.device)

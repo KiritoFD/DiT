@@ -91,6 +91,16 @@ def build_parser(argv=None):
                         help="Cond fusion: legacy joint MLP | factorized_add (low-dim additive) | "
                              "factorized_cat (v12: 各向量因子 embedding 拼接后联合投影, ref/Moyun 式) | "
                              "xl_highdim (high-dim, XL-aligned, preserves pretrained adaLN).")
+    parser.add_argument("--cond-fusion-norm", type=str, dest="cond_fusion_norm",
+                        choices=["joint", "split"], default="joint",
+                        help="★ factorized_cat 融合前的归一化方式（见 docs 97 §3 方差失衡）:\n"
+                             "joint (历史实现): 先 cat 再一个 LayerNorm(256)。LN 的 σ 跨全部 256 维\n"
+                             "  统计, 而 |e_glyph_vec|=60.9 vs |e_callig|=9.86(方差差 ~38x)\n"
+                             "  -> 分母被骨架信号支配, 风格振幅被稀释约 1/5。\n"
+                             "split (修复): 各操作数**独立** LayerNorm 后再 cat。抹平方差差异,\n"
+                             "  风格信号相对表达增益 ~5x, 参数量不变。\n"
+                             "⚠ 切到 split 会改变 state_dict 键(cond_fusion.0/1 -> cond_ln.N + cond_fusion),\n"
+                             "  老 ckpt 的 cond_fusion.* 会被判为形状/键不符而重新初始化。")
     parser.add_argument("--callig-embed-dim", type=int, default=None)
     parser.add_argument("--script-embed-dim", type=int, default=None,
                         help="script 因子维度。3cond 模式为 script 嵌入维度; "
