@@ -174,7 +174,7 @@ def _get_callig_script_map(path):
 
 def _get_cache(csv_path, n, img_root, shards, args):
     """eval cache 跨 step 复用 (同一 set 每 2500 步重算一次无意义)。"""
-    ck = (csv_path, n)
+    ck = (csv_path, n, shards)
     if ck not in _CACHES:
         sf = float(getattr(args, "vae_scaling_factor", 0.18215))
         _CACHES[ck] = make_eval_cache(
@@ -839,7 +839,13 @@ def run_in_mem_eval(model, args, step, device, results_dir, sets=None,
                       f" -> 跳过。同一 results_dir 按 (step,set) 去重，**换数据重跑**时"
                       f"整轮评测会这样静默跳过；重跑请换一个新的 results_dir。")
                 continue
-            cache = _get_cache(csvp, n, img_root, shards, args)
+            # ★ 2026-09-28: seen 集用训练集的 skel_latent_shards_dir，strict 集用 eval_skel_latent_shards_dir
+        if name in ("seen", "train", "g"):
+            set_shards = getattr(args, "skel_latent_shards_dir", "") or shards
+        else:
+            set_shards = (getattr(args, "eval_skel_latent_shards_dir", "") or ""
+                          or getattr(args, "skel_latent_shards_dir", "") or "")
+        cache = _get_cache(csvp, n, img_root, set_shards, args)
             n = cache["n"]
             # ★ 2026-09-18: 读源 csv 行，用于把 img_id/char/script/**calligrapher**
             #   写进逐样本 CSV。原来这几列全是空串，导致无法把"每个书家的 strict ssim"
