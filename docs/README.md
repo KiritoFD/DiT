@@ -19,6 +19,7 @@
 - **[03. 存储布局与内存预加载流水线](file:///g:/GitHub/DiT/docs/02_dataset/03_asset_layout.md)**：离线分片结构 (`shards_img`, `shards_std`, `shards_aux_skel3`)、零 I/O 内存预载 (RAM Preload)、DINOv2 表征缓存。
 - **[04. 原始数据源全景盘点与被丢弃样本挽救审计](file:///g:/GitHub/DiT/docs/02_dataset/04_raw_data_salvage_audit.md)**：HCSU (3.2万) 与 MCCD (9.2万) 底库流失样本系统性溯源，摸排 1.9 万张真实历史名家墨迹/碑帖可打捞清单。
 - **[05. 70k 全量训练集成分解构与数据合成方法论对比研判](file:///g:/GitHub/DiT/docs/02_dataset/05_70k_dataset_composition_and_synthesis_methodology.md)**：7.2 万全量训练集成分拆解（真迹 78.5% + 补丁 21.5%），两代合成方法（v22 vs glyph15k）横向对比，严谨证伪“引入标准字为书家”的设计误区。
+- **[06. Top 10 顶级书法家 23 黄金槽位专精数据集规约](file:///g:/GitHub/DiT/docs/02_dataset/06_top10_style23_dataset_spec.md)**：聚焦全库体量最大的前 10 位宗师（38,583 张），拆解为 23 个充沛风格槽位（平均 1,678 张/槽），设立双轨评测标准。
 
 ### 第三支柱：训练策略与基础设施优化 ([`docs/03_training/`](file:///g:/GitHub/DiT/docs/03_training/))
 - **[01. 最优传输流匹配理论](file:///g:/GitHub/DiT/docs/03_training/01_flow_matching.md)**：连续时间 OT-CFM 直线插值场、Logit-Normal 中段密度聚焦采样、Euler 与 Heun 高阶 ODE 数值求解器、无分类器引导 (CFG)。
