@@ -840,12 +840,12 @@ def run_in_mem_eval(model, args, step, device, results_dir, sets=None,
                       f"整轮评测会这样静默跳过；重跑请换一个新的 results_dir。")
                 continue
             # ★ 2026-09-28: seen 集用训练集的 skel_latent_shards_dir，strict 集用 eval_skel_latent_shards_dir
-        if name in ("seen", "train", "g"):
-            set_shards = getattr(args, "skel_latent_shards_dir", "") or shards
-        else:
-            set_shards = (getattr(args, "eval_skel_latent_shards_dir", "") or ""
-                          or getattr(args, "skel_latent_shards_dir", "") or "")
-        cache = _get_cache(csvp, n, img_root, set_shards, args)
+            if name in ("seen", "train", "g"):
+                set_shards = getattr(args, "skel_latent_shards_dir", "") or shards
+            else:
+                set_shards = (getattr(args, "eval_skel_latent_shards_dir", "") or ""
+                              or getattr(args, "skel_latent_shards_dir", "") or "")
+            cache = _get_cache(csvp, n, img_root, set_shards, args)
             n = cache["n"]
             # ★ 2026-09-18: 读源 csv 行，用于把 img_id/char/script/**calligrapher**
             #   写进逐样本 CSV。原来这几列全是空串，导致无法把"每个书家的 strict ssim"
