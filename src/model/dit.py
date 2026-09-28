@@ -1740,33 +1740,6 @@ class DiT_2Cond(nn.Module):
         else:
             self.local_ca_at = []
 
-        # ── DeformSkel ────────────────────────────────────────────────
-        # ⚠ _basic_init 只重置 nn.Linear、**不碰 Conv2d** -> out 的 zero-init 天然保住,
-        #   不需要像 GlyphQuery 那样在 initialize_weights 之后再 reset 一次。
-        self.deform_skel = None
-        if int(deform_skel) > 0:
-            from .deform_skel import DeformSkel
-            self.deform_skel = DeformSkel(
-                cond_dim=self.cond_dim, ch=4, grid=int(deform_grid),
-                style_ch=int(deform_style_ch), width=int(deform_width),
-                max_off=float(deform_max_off), coarse=int(deform_coarse),
-                residual=int(residual), res_cap=float(res_cap),
-                stroke_mod=int(stroke_mod), stroke_cap=float(stroke_cap),
-                gate_radius=float(gate_radius), dt_ch=int(deform_dt_ch))
-            if str(deform_ckpt):
-                import os as _os
-                _sd = torch.load(deform_ckpt, map_location="cpu", weights_only=False)
-                _sd = _sd.get("deform", _sd) if isinstance(_sd, dict) else _sd
-                _miss, _unexp = self.deform_skel.load_state_dict(_sd, strict=False)
-                print(f"[deform] 已载入离线权重 {deform_ckpt} "
-                      f"(missing={len(_miss)}, unexpected={len(_unexp)})")
-                if _miss or _unexp:
-                    print(f"[deform] ⚠ 键不匹配: missing={list(_miss)[:4]} "
-                          f"unexpected={list(_unexp)[:4]} -> 形变头可能没真正载入")
-            print(f"[deform] enabled: width={int(deform_width)} "
-                  f"max_off={float(deform_max_off)} coarse={int(deform_coarse)} "
-                  f"params={sum(p.numel() for p in self.deform_skel.parameters()):,}")
-
         self.initialize_weights()
         if self.freeze_char_table and hasattr(self, "y_char_embedder"):
             # 冻结 char 表：DINO 预填充后不再训练（省 35130×384≈13.5M 训练参数），
@@ -1797,9 +1770,40 @@ class DiT_2Cond(nn.Module):
         else:
             self._char_table_frozen = False
 
+        # ── DeformSkel ────────────────────────────────────────────────
+        # ★ 必须放在 initialize_weights() 之后构造与载入！
+        #   否则 _basic_init 会递归把 DeformSkel 内部的 nn.Linear 权重（style_proj、
+        #   affine、style_off、所有 FiLM 调制层）全部用 xavier_uniform 随机冲掉！
+        self.deform_skel = None
+        if int(deform_skel) > 0:
+            from .deform_skel import DeformSkel
+            self.deform_skel = DeformSkel(
+                cond_dim=self.cond_dim, ch=4, grid=int(deform_grid),
+                style_ch=int(deform_style_ch), width=int(deform_width),
+                max_off=float(deform_max_off), coarse=int(deform_coarse),
+                residual=int(residual), res_cap=float(res_cap),
+                stroke_mod=int(stroke_mod), stroke_cap=float(stroke_cap),
+                gate_radius=float(gate_radius), dt_ch=int(deform_dt_ch))
+            if str(deform_ckpt):
+                import os as _os
+                _sd = torch.load(deform_ckpt, map_location="cpu", weights_only=False)
+                _sd = _sd.get("deform", _sd) if isinstance(_sd, dict) else _sd
+                _miss, _unexp = self.deform_skel.load_state_dict(_sd, strict=False)
+                print(f"[deform] 已载入离线权重 {deform_ckpt} "
+                      f"(missing={len(_miss)}, unexpected={len(_unexp)})")
+                if _miss or _unexp:
+                    print(f"[deform] ⚠ 键不匹配: missing={list(_miss)[:4]} "
+                          f"unexpected={list(_unexp)[:4]} -> 形变头可能没真正载入")
+            print(f"[deform] enabled: width={int(deform_width)} "
+                  f"max_off={float(deform_max_off)} coarse={int(deform_coarse)} "
+                  f"params={sum(p.numel() for p in self.deform_skel.parameters()):,}")
+
     def initialize_weights(self):
         def _basic_init(module):
             if isinstance(module, nn.Linear):
+                # 严禁重置形变网络权重
+                if getattr(self, "deform_skel", None) is not None and any(module is m for m in self.deform_skel.modules()):
+                    return
                 torch.nn.init.xavier_uniform_(module.weight)
                 if module.bias is not None:
                     nn.init.constant_(module.bias, 0)
