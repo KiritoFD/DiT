@@ -1,0 +1,12 @@
+# Smoke overrides — pass AFTER cfg_top10.yaml:
+#   train_top10.py top10smoke cfg_top10.yaml cfg_smoke.yaml
+# sconf: later files override earlier ones.
+vae_pth: /root/Workspace/xy/DiT/baseline/VQ-Font/weight/VQ-VAE_top10_Parms_smoke.pth
+iter: 4
+print_freq: 2
+batch_size: 6        # style_contrastive_loss samples 5 negatives -> batch must be >= 6
+n_workers: 2
+cv_n_fonts: 1
+cv_n_unis: 2
+val_freq: 100000
+save_freq: 100000

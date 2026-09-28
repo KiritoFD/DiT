@@ -1,0 +1,37 @@
+# VQ-Font @ top10_style23, 256x256 (dataset resolution)
+use_half: False
+
+vae_pth: /root/Workspace/xy/DiT/baseline/VQ-Font/weight/VQ-VAE_top10_Parms.pth
+sim_npy: /root/Workspace/xy/DiT/baseline/VQ-Font/weight/char_sim_top10.npy
+sim_unis: /root/Workspace/xy/DiT/baseline/VQ-Font/weight/char_sim_top10_unis.json
+
+work_dir: /root/Workspace/xy/DiT/baseline/VQ-Font/work_dir
+data_path: /root/Workspace/xy/DiT/baseline/data/vqfont/lmdb/
+data_meta: /root/Workspace/xy/DiT/baseline/data/vqfont/meta/train.json
+all_content_json: /root/Workspace/xy/DiT/baseline/data/vqfont/meta/all_characters.json
+content_font: content_deng
+
+num_embeddings: 100    # codebook size (matches pretrain_vqvae.py)
+input_size: 256        # dataset resolution (paper used 128)
+num_heads: 8
+kshot: 3
+num_positive_samples: 2
+
+batch_size: 8
+n_workers: 12
+iter: 300000
+g_lr: 2e-4
+d_lr: 4e-4
+step_size: 10000
+gamma: 0.95
+overwrite: False
+adam_betas: [0.0, 0.9]
+seed: 2
+
+cv_n_unis: 8
+cv_n_fonts: 2
+
+print_freq: 1000
+val_freq: 10000
+save_freq: 10000
+tb_freq: 10000
