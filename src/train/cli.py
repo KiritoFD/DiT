@@ -667,6 +667,8 @@ def build_parser(argv=None):
     parser.add_argument("--gate-radius", type=float, default=0.25, dest="gate_radius")
     parser.add_argument("--deform-dt-ch", type=int, default=0, dest="deform_dt_ch",
                         help="DeformSkel 距离场通道数(v10 为 1). 默认 0")
+    parser.add_argument("--deform-topo", type=int, default=0, dest="deform_topo",
+                        help="启用 SkelNet-V2 离散拓扑增删 (剪刀与胶水双分支). 默认 0=关.")
     parser.add_argument("--skel-latent-shards-dirs", type=str, default="",
                         dest="skel_latent_shards_dirs",
                         help="条件增强: 多个骨架几何变体目录（逗号分隔）。第一个必须是"

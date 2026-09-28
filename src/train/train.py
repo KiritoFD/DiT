@@ -488,6 +488,7 @@ def main(args):
             stroke_cap=float(getattr(args, 'stroke_cap', 1.0)),
             gate_radius=float(getattr(args, 'gate_radius', 0.25)),
             deform_dt_ch=int(getattr(args, 'deform_dt_ch', 0)),
+            deform_topo=int(getattr(args, 'deform_topo', 0)),
             deform_ckpt=str(getattr(args, 'deform_ckpt', '') or ''),
             freeze_char_table=getattr(args, 'freeze_char_table', False),
             # ---- IDS 组件码本字嵌入 ----

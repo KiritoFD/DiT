@@ -98,7 +98,8 @@ class DeformSkel(nn.Module):
     def __init__(self, cond_dim=128, ch=4, grid=32, style_ch=32,
                  width=64, max_off=3.0, coarse=8, residual=0, res_cap=1.0,
                  blur=0, blur_sigma=1.5, dt_ch=0, affine=1, ckpt=0,
-                 stroke_mod=0, stroke_cap=1.0, gate_radius=0.25):
+                 stroke_mod=0, stroke_cap=1.0, gate_radius=0.25,
+                 topo_mode=0):
         super().__init__()
         self.grid = int(grid)
         self.coarse = int(coarse)
@@ -177,6 +178,27 @@ class DeformSkel(nn.Module):
             nn.init.zeros_(self.style_res.weight)
             nn.init.zeros_(self.style_res.bias)
 
+        # ★ 路径 7: 离散拓扑增删 (SkelNet-V2: 剪刀与胶水)
+        #   剪刀 (head_prune): 预测省笔/减画空间掩码 -> 向白底背景 z_bg 插值
+        #   胶水 (head_ligature): 预测牵丝/连带空间掩码 -> 沿墨迹 delta_ink 潜变量差分注入
+        self.use_topo = bool(topo_mode)
+        if self.use_topo:
+            self.head_prune = nn.Conv2d(w, 1, 3, padding=1)
+            self.head_ligature = nn.Conv2d(w, 1, 3, padding=1)
+            # 初始化黄金法则: 卷积核全零, bias = -5.0 -> sigmoid(-5.0) ≈ 0.0067 ≈ 0
+            # 保证 step 0 输出 100% 逐位等价于未加分支的旧模型
+            nn.init.zeros_(self.head_prune.weight)
+            nn.init.constant_(self.head_prune.bias, -5.0)
+            nn.init.zeros_(self.head_ligature.weight)
+            nn.init.constant_(self.head_ligature.bias, -5.0)
+            # SD VAE 下纯白背景 (255) 的潜变量均值: [2.18129, 1.42018, -0.00979, -1.14073]
+            self.register_buffer("z_bg", torch.tensor([2.18129, 1.42018, -0.00979, -1.14073]).view(1, 4, 1, 1))
+            # 墨迹 (black) 相对纯白背景的差分向量: [-3.16140, -4.00872, 1.12232, 2.44625]
+            self.register_buffer("delta_ink", torch.tensor([-3.16140, -4.00872, 1.12232, 2.44625]).view(1, 4, 1, 1))
+        else:
+            self.head_prune = None
+            self.head_ligature = None
+
         idx = (2.0 * (torch.arange(self.grid) + 0.5) / self.grid) - 1.0
         gy, gx = torch.meshgrid(idx, idx, indexing='ij')
         self.register_buffer('base_grid',
@@ -187,6 +209,8 @@ class DeformSkel(nn.Module):
         self.last_off_style = None
         self.last_res = None
         self.last_stroke_mod = None
+        self.last_mask_prune = None
+        self.last_mask_ligature = None
 
     def forward(self, g, style, dt=None):
         """g: (N,4,H,W) 标准骨架 latent；style: (N,cond_dim) 书家风格。返回 g' 同形状。"""
@@ -287,6 +311,22 @@ class DeformSkel(nn.Module):
         else:
             self.last_stroke_mod = None
 
+        # ★ 路径 7: 离散拓扑增删 (剪刀与胶水)
+        if self.use_topo and self.head_prune is not None:
+            m_prune = torch.sigmoid(self.head_prune(u))
+            m_lig = torch.sigmoid(self.head_ligature(u))
+            
+            # 剪刀向白底潜变量 z_bg 插值 (干净抹除指定笔画, 杜绝灰黄泥斑)
+            g2 = (1.0 - m_prune) * g2 + m_prune * self.z_bg
+            # 胶水向墨迹潜变量方向拉升 (生成真实黑色游丝连线)
+            g2 = g2 + m_lig * self.delta_ink
+            
+            self.last_mask_prune = m_prune
+            self.last_mask_ligature = m_lig
+        else:
+            self.last_mask_prune = None
+            self.last_mask_ligature = None
+
         self.last_out = g2
         self.last_off = off.detach()
         self.last_off_style = off_s.detach()
@@ -336,6 +376,10 @@ class DeformSkel(nn.Module):
             sm = self.last_stroke_mod.float()
             d['tv_stroke'] = ((sm[..., :, 1:] - sm[..., :, :-1]).pow(2).mean()
                               + (sm[..., 1:, :] - sm[..., :-1, :]).pow(2).mean())
+        if getattr(self, 'last_mask_prune', None) is not None:
+            d['l1_prune'] = self.last_mask_prune.mean()
+        if getattr(self, 'last_mask_ligature', None) is not None:
+            d['l1_lig'] = self.last_mask_ligature.mean()
         return d
 
     def offset_stats(self):

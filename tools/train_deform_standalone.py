@@ -115,6 +115,14 @@ ap.add_argument('--max-off', type=float, default=3.0, dest='max_off')
 ap.add_argument('--res-cap', type=float, default=1.0, dest='res_cap')
 ap.add_argument('--csv', default='assets/train_50k_v2_fixed.csv', help='训练数据集 CSV')
 ap.add_argument('--follow-n', type=int, default=400, help='style-follow 测多少个字')
+ap.add_argument('--topo-mode', type=int, default=0, dest='topo_mode',
+                help='1=开启 SkelNet-V2 离散拓扑增删 (剪刀与胶水双分支)')
+ap.add_argument('--w-prune-l1', type=float, default=0.05, dest='w_prune_l1',
+                help='剪刀省笔掩码的 L1 稀疏惩罚权重')
+ap.add_argument('--w-lig-l1', type=float, default=0.05, dest='w_lig_l1',
+                help='胶水牵丝掩码的 L1 稀疏惩罚权重')
+ap.add_argument('--freeze-base', type=int, default=0, dest='freeze_base',
+                help='1=冻结 U-Net 主干与连续形变头，只微调新增的剪刀与胶水头')
 a = ap.parse_args()
 
 DEV = 'cuda' if torch.cuda.is_available() else 'cpu'
@@ -213,7 +221,8 @@ model = DeformSkel(cond_dim=a.style_dim, ch=4, grid=32, residual=a.residual,
                    blur=a.blur, blur_sigma=a.blur_sigma,
                    dt_ch=a.dt_ch, affine=1, ckpt=a.ckpt,
                    stroke_mod=a.stroke_mod, stroke_cap=a.stroke_cap,
-                   gate_radius=a.gate_radius).to(DEV)
+                   gate_radius=a.gate_radius,
+                   topo_mode=a.topo_mode).to(DEV)
 if a.init:
     _sd = torch.load(a.init, map_location='cpu', weights_only=False)
     _sd = _sd.get('deform', _sd)
@@ -227,10 +236,16 @@ if a.init:
     model.load_state_dict(_keep, strict=False)
     print(f'[2] 续训: 从 {a.init} 载入 {len(_keep)}/{len(_sd)} 个键'
           f'（跳过形状不符 {len(_skip)} 个: {_skip[:3]}）', flush=True)
+
+if a.freeze_base:
+    print("[2] 冻结主干 U-Net 与连续形变头，只微调 head_prune 与 head_ligature")
+    for name, p in model.named_parameters():
+        if "head_prune" not in name and "head_ligature" not in name:
+            p.requires_grad = False
 # ★ 风格源必须与模型 _e_callig() 一致
 print(f'[2] 用预训练书家表 {a.style_emb} {tuple(_tab.shape)} (冻结)', flush=True)
 style = nn.Embedding.from_pretrained(_tab, freeze=True).to(DEV)
-opt = torch.optim.AdamW(model.parameters(), lr=a.lr, weight_decay=0.01)
+opt = torch.optim.AdamW([p for p in model.parameters() if p.requires_grad], lr=a.lr, weight_decay=0.01)
 sched = torch.optim.lr_scheduler.CosineAnnealingLR(opt, T_max=a.steps)
 print(f'[2] 形变模块参数 {sum(p.numel() for p in model.parameters()):,}  '
       f'(含风格底图 {sum(p.numel() for p in model.style_off.parameters()):,})', flush=True)
@@ -493,6 +508,11 @@ for step in range(a.steps):
         loss = loss + a.w_tv_out * _r.get('tv_out', 0.0) + a.w_tv_res * _r.get('tv_res', 0.0)
         if 'tv_stroke' in _r and a.w_tv_stroke > 0:
             loss = loss + a.w_tv_stroke * _r['tv_stroke']
+        if a.topo_mode:
+            if 'l1_prune' in _r and a.w_prune_l1 > 0:
+                loss = loss + a.w_prune_l1 * _r['l1_prune']
+            if 'l1_lig' in _r and a.w_lig_l1 > 0:
+                loss = loss + a.w_lig_l1 * _r['l1_lig']
     # ★ 图像空间监督: latent MSE 控制不住解码后的连通性(实测墨量 40%/28 段)。
     #   w_img>0 时才解码当前 batch 的前 img_batch 条, 走带梯度的 _decode_gray。
     if a.w_img > 0 and vae is not None:
