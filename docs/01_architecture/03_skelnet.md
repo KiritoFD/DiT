@@ -85,3 +85,10 @@ SkelNet 实现于 [`src/models/deform_skel.py`](file:///g:/GitHub/DiT/src/models
    \mathcal{L}_{deform} = \|S_{def} - S_{GT}\|_{1}
    $$
    权重固定为 $w_{deform}=1.0$。训练监控显示，平均骨架像素误差稳定在 $0.425 - 0.435\text{ 像素}$，兼具形变灵活性与拓扑稳定性。
+
+---
+
+## 4. 泛化实测、物理上限与下一代架构路线
+
+关于 SkelNet 在 Strict 严格未见集上的全量泛化评测数据、连续坐标形变数学上限与 GT 物理噪波理论分析，以及下一代“连续流场 + 离散拓扑增删双分支”架构增强路线图，请详见专题报告：
+👉 **[`docs/01_architecture/05_skelnet_generalization_limits_and_enhancement_roadmap.md`](05_skelnet_generalization_limits_and_enhancement_roadmap.md)**。
