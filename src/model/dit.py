@@ -1075,7 +1075,9 @@ class DiT_2Cond(nn.Module):
         deform_skel=0, deform_width=64, deform_max_off=3.0,
         deform_coarse=8, deform_style_ch=32, residual=0, res_cap=1.0,
         stroke_mod=0, stroke_cap=1.0, gate_radius=0.25,
-        deform_dt_ch=0, deform_topo=0,
+        deform_dt_ch=0, deform_topo=0, deform_warp_iters=1,
+        deform_film_mode="film", deform_style_tokens=0, deform_attn_heads=4,
+        deform_preserve_amp=0,
         # ⚠ 形变作用在**骨架 latent** (4,32,32) 上, 不是 token 网格!
         #   模型里的 _grid 是 token 网格(16 = 32/patch2), 拿它建形变模块会形状不符
         #   (style_off 会建成 2x16x16 而不是 2x32x32) -> 载入离线权重报 size mismatch。
@@ -1784,7 +1786,11 @@ class DiT_2Cond(nn.Module):
                 residual=int(residual), res_cap=float(res_cap),
                 stroke_mod=int(stroke_mod), stroke_cap=float(stroke_cap),
                 gate_radius=float(gate_radius), dt_ch=int(deform_dt_ch),
-                topo_mode=int(deform_topo))
+                topo_mode=int(deform_topo), warp_iters=int(deform_warp_iters),
+                film_mode=str(deform_film_mode),
+                style_tokens=int(deform_style_tokens),
+                attn_heads=int(deform_attn_heads),
+                preserve_amp=int(deform_preserve_amp))
             if str(deform_ckpt):
                 import os as _os
                 _sd = torch.load(deform_ckpt, map_location="cpu", weights_only=False)

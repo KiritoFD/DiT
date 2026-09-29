@@ -552,6 +552,14 @@ def build_parser(argv=None):
                              "Any metric change is then directly attributable to the char condition, "
                              "which is how we test whether the frozen DINO glyph table is the bottleneck. "
                              "Pair with freeze_char_table=false and --resume-full from a trained ckpt.")
+    parser.add_argument("--train-only-deform", action="store_true", dest="train_only_deform",
+                        help="[2026-09-29] 冻结**整个主干**, 只训形变头 SkelNet (model.deform_skel)。\n"
+                             "用途: 两阶段方案 —— ① 先用 GT 骨架当 g 训好一个模型并冻结;\n"
+                             "② 把 SkelNet 接到前面, 只训 SkelNet, 让它学会输出**该冻结模型\n"
+                             "吃得下的骨架**(即 GT 骨架空间)。\n"
+                             "与 v24 联合训练 (deform_trainable=1 且主干同训) 的区别: 主干不动,\n"
+                             "梯度只用于塑造 SkelNet, 不会把已训好的主干带偏。\n"
+                             "需配 --deform-skel 1 (+ --deform-ckpt 热启动)。")
     parser.add_argument("--train-only-style", action="store_true", dest="train_only_style",
                         help="DIAGNOSTIC: freeze the whole backbone, train ONLY the style module "
                              "(`callig_style_ca`: style_proj / q,k,v,out_proj / norms) plus any "
@@ -659,6 +667,12 @@ def build_parser(argv=None):
     parser.add_argument("--deform-residual", type=int, default=0, dest="residual",
                         help="1=形变+加性残差(补笔画粗细/墨色). 实测闭合 36%%->53%%, "
                              "style-follow 63%%->97%%.")
+    # ⚠ [2026-09-29] `res_cap` 此前**从未注册** -> train.py 的
+    #   `float(getattr(args,'res_cap',1.0))` 永远回退默认 1.0, config 里写 2.0 也无效。
+    #   这里补注册, 让它真正可配。
+    parser.add_argument("--deform-res-cap", type=float, default=1.0, dest="res_cap",
+                        help="加性残差的 tanh 上限 —— 直接限住'凭空加墨'的自由度"
+                             "(残差是过拟合/记忆训练字符的主要入口)")
     parser.add_argument("--deform-coarse", type=int, default=8, dest="deform_coarse",
                         help="在低分辨率上预测偏移再上采样 -> 偏移场平滑")
     parser.add_argument("--stroke-mod", type=int, default=0, dest="stroke_mod",
@@ -667,8 +681,49 @@ def build_parser(argv=None):
     parser.add_argument("--gate-radius", type=float, default=0.25, dest="gate_radius")
     parser.add_argument("--deform-dt-ch", type=int, default=0, dest="deform_dt_ch",
                         help="DeformSkel 距离场通道数(v10 为 1). 默认 0")
+    parser.add_argument("--deform-warp-iters", type=int, default=1,
+                        dest="deform_warp_iters",
+                        help="[2026-09-29] 级联「小 warp」步数。1=单次大 warp(旧行为, 默认);\n"
+                             ">1 时把总位移等分成 K 步依次重采样, 每步位移 = max_off/K,\n"
+                             "单步亚像素插值误差更小。动机: 单次大位移(max_off=6 ≈ 6 个\n"
+                             "latent 像素)的双线性重采样会把 1px 骨架线抹开 -> 解码发灰。\n"
+                             "⚠ 实验性: K 次重采样也会累加模糊, 是否更好必须实测; K=1 逐位等价旧行为。")
+    # ---- [2026-09-29] 形变头正则化 (此前**完全没接**, 是 v27 过拟合的根因) ----
+    # 口径与 tools/train_deform_standalone.py 一致。DeformSkel.regularizers() 早就提供
+    # 这些量, 但 train.py 从未调用 -> 4.1M 参数零正则直接拟合训练集。
+    parser.add_argument("--w-tv", type=float, default=0.0, dest="w_tv",
+                        help="偏移场 TV 平滑 (防把一根横线扭成波浪线)")
+    parser.add_argument("--w-fold", type=float, default=0.0, dest="w_fold",
+                        help="Jacobian 折叠惩罚 det(I+∇U)>0 (防笔画交叉处翻转)")
+    parser.add_argument("--w-tv-out", type=float, default=0.0, dest="w_tv_out",
+                        help="输出 latent 的梯度能量 —— 直接压'不该有的高频'")
+    parser.add_argument("--w-tv-res", type=float, default=0.0, dest="w_tv_res",
+                        help="加性残差的梯度能量 —— 残差是'凭空写像素'的唯一入口, 最该压")
+    parser.add_argument("--w-tv-stroke", type=float, default=0.0, dest="w_tv_stroke",
+                        help="笔画调制项的 TV")
+    parser.add_argument("--w-prune-l1", type=float, default=0.0, dest="w_prune_l1",
+                        help="剪刀(省笔)掩码的 L1 稀疏 —— 防'到处剪'")
+    parser.add_argument("--w-lig-l1", type=float, default=0.0, dest="w_lig_l1",
+                        help="胶水(牵丝)掩码的 L1 稀疏 —— 防'到处加墨'")
+    parser.add_argument("--deform-film-mode", type=str, default="film",
+                        choices=["film", "adaln"], dest="deform_film_mode",
+                        help="[2026-09-29] 风格调制方式。film=x·(1+γ)+β (旧行为);\n"
+                             "adaln=LN(x)·(1+γ)+β。旧 FiLM 不归一化 -> 调制效果取决于\n"
+                             "特征幅度, U-Net 各层幅度差异大 -> 风格信号在部分层被淹没。\n"
+                             "adaln 让调制与特征尺度解耦; to_gb 形状不变 -> 已训权重可原样载入。")
+    parser.add_argument("--deform-style-tokens", type=int, default=0,
+                        dest="deform_style_tokens",
+                        help="[2026-09-29] >0 时在 U-Net 瓶颈处插一个书家表 cross-attention:\n"
+                             "把风格向量展开成 K 个 token, 让每个骨架位置内容寻址聚合。\n"
+                             "补足单个 FiLM 向量装不下的「局部多模态风格」。out_proj zero-init\n"
+                             "-> step0 恒等, 不破坏 warm-start。")
+    parser.add_argument("--deform-attn-heads", type=int, default=4,
+                        dest="deform_attn_heads",
+                        help="上面那个 cross-attention 的头数")
     parser.add_argument("--deform-topo", type=int, default=0, dest="deform_topo",
                         help="启用 SkelNet-V2 离散拓扑增删 (剪刀与胶水双分支). 默认 0=关.")
+    parser.add_argument("--deform-preserve-amp", type=int, default=0, dest="deform_preserve_amp",
+                        help="启用 SkelNet 墨迹保幅校准 (Amplitude Calibration): 沿笔画法线恢复峰值能量, 根除网格采样导致的细线淡化断裂. 默认 0=关.")
     parser.add_argument("--skel-latent-shards-dirs", type=str, default="",
                         dest="skel_latent_shards_dirs",
                         help="条件增强: 多个骨架几何变体目录（逗号分隔）。第一个必须是"
@@ -680,6 +735,12 @@ def build_parser(argv=None):
     parser.add_argument("--glyph-noise-prob", type=float, default=0.0,
                         dest="glyph_noise_prob",
                         help="条件噪声增强: 施加噪声的样本比例 (0=关)。")
+    parser.add_argument("--glyph-deform-prob", type=float, default=0.0,
+                        dest="glyph_deform_prob",
+                        help="骨架几何随机变形增强: 施加随机几何形变(旋转/缩放/剪切/低频弹性)的样本比例 (0=关)。")
+    parser.add_argument("--glyph-deform-scale", type=float, default=1.0,
+                        dest="glyph_deform_scale",
+                        help="骨架几何随机变形增强幅度缩放因子(默认 1.0)。")
     parser.add_argument("--glyph-patch-drop", type=float, default=0.0,
                         dest="glyph_patch_drop",
                         help="局部随机 Mask (Cutout 式): 逐 latent patch 的丢弃概率 (0=关)。1 个 latent patch = 8x8 像素。")
@@ -808,6 +869,17 @@ def build_parser(argv=None):
                              "-> g 全零 -> VAE decode(0) 解出灰黄棕 [129,110,89] -> poster 首行发黄, "
                              "且 strict 指标完全失真(曾出现 strict 0.4837 > seen 0.4577 的反常)。"
                              "留空则退回 --skel-latent-shards-dir。")
+    # ---- 2026-09-29: 双口径评测 (GT 骨架 / SkelNet predskel) ----
+    # 评测时 set 名带 `_pred` 后缀 -> 走下面这两个目录; 不带后缀 -> 走上面那两个 (GT)。
+    # 两套各出一张 poster + 各写一行 eval_stdskel_summary.csv, 直接可比。
+    parser.add_argument("--skel-latent-shards-dir-pred", type=str, default="",
+                        dest="skel_latent_shards_dir_pred",
+                        help="pred 口径(seen 集)的骨架 latent 目录 = SkelNet 的 predskel。"
+                             "留空则 pred 集回退到 GT 目录(行为与旧版一致)。")
+    parser.add_argument("--eval-skel-latent-shards-dir-pred", type=str, default="",
+                        dest="eval_skel_latent_shards_dir_pred",
+                        help="pred 口径(strict 集)的骨架 latent 目录 = SkelNet 的 predskel。"
+                             "留空则 pred 集回退到 GT 目录(行为与旧版一致)。")
     parser.add_argument("--in-mem-eval", type=_str_to_bool, default=False, dest="in_mem_eval",
                         help="True in-mem eval inside the training process: at each ckpt point, "
                              "pause stepping, sample with the resident EMA model on the same GPU, "

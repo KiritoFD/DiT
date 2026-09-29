@@ -123,6 +123,8 @@ ap.add_argument('--w-lig-l1', type=float, default=0.05, dest='w_lig_l1',
                 help='胶水牵丝掩码的 L1 稀疏惩罚权重')
 ap.add_argument('--freeze-base', type=int, default=0, dest='freeze_base',
                 help='1=冻结 U-Net 主干与连续形变头，只微调新增的剪刀与胶水头')
+ap.add_argument('--preserve-amp', type=int, default=0, dest='preserve_amp',
+                help='1=开启墨迹保幅校准(Amplitude Calibration)')
 a = ap.parse_args()
 
 DEV = 'cuda' if torch.cuda.is_available() else 'cpu'
@@ -222,7 +224,8 @@ model = DeformSkel(cond_dim=a.style_dim, ch=4, grid=32, residual=a.residual,
                    dt_ch=a.dt_ch, affine=1, ckpt=a.ckpt,
                    stroke_mod=a.stroke_mod, stroke_cap=a.stroke_cap,
                    gate_radius=a.gate_radius,
-                   topo_mode=a.topo_mode).to(DEV)
+                   topo_mode=a.topo_mode,
+                   preserve_amp=a.preserve_amp).to(DEV)
 if a.init:
     _sd = torch.load(a.init, map_location='cpu', weights_only=False)
     _sd = _sd.get('deform', _sd)

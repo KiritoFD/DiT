@@ -78,19 +78,39 @@ def _block(cin, cout, stride=1):
 
 
 class _FiLM(nn.Module):
-    """风格 -> 逐层 (γ,β)。γ 以 1 为初值、β 以 0 为初值 -> step0 不改变特征。"""
+    """风格 -> 逐层 (γ,β)。γ 以 1 为初值、β 以 0 为初值 -> step0 不改变特征。
 
-    def __init__(self, cond_dim, n_ch):
+    mode:
+      "film"  : ``x·(1+γ) + β``            —— 旧行为（无归一化）
+      "adaln" : ``LN(x)·(1+γ) + β``        —— [2026-09-29] 归一化后再调制。
+        ⚠ 为什么加这个: 旧 FiLM **不归一化**, 调制效果取决于特征幅度; U-Net 浅层/深层
+          特征幅度差异大, 同一个 Linear 产出的 (γ,β) 不可能在所有层都合适 ->
+          **风格信号在部分层被淹没**。adaLN 让调制幅度与特征尺度解耦, 控制权完全
+          交给风格向量（DiT 的标准做法）。且与 CalligStyleCrossAttn 内部的 pre-norm 一致。
+        ⚠ 兼容: ``to_gb`` 的 Linear 形状不变 -> 已训 FiLM 权重**可原样载入**;
+          新增的 norm 权重是新参数(会 missing), 但主体 warm-start 保留。
+    """
+
+    def __init__(self, cond_dim, n_ch, mode="film"):
         super().__init__()
+        self.mode = str(mode)
         self.to_gb = nn.Linear(int(cond_dim), 2 * int(n_ch))
         nn.init.zeros_(self.to_gb.weight)
         nn.init.zeros_(self.to_gb.bias)
         self.n_ch = int(n_ch)
+        self.norm = nn.LayerNorm(int(n_ch)) if self.mode == "adaln" else None
 
     def forward(self, x, e):
         gb = self.to_gb(e)
         g, b = gb[:, :self.n_ch], gb[:, self.n_ch:]
         g = 1.0 + g
+        if self.norm is not None:
+            # ⚠ conv 特征是 (B,C,H,W), 末维是 W 不是 C —— nn.LayerNorm 默认按末维归一化
+            #   会报 "expected input with shape [*, C]"。必须 permute 成 (B,H,W,C) 再归一化,
+            #   即**逐空间位置、按通道维**做 LN。
+            _x = x.permute(0, 2, 3, 1)
+            _x = self.norm(_x)
+            x = _x.permute(0, 3, 1, 2)
         return x * g[..., None, None] + b[..., None, None]
 
 
@@ -99,9 +119,15 @@ class DeformSkel(nn.Module):
                  width=64, max_off=3.0, coarse=8, residual=0, res_cap=1.0,
                  blur=0, blur_sigma=1.5, dt_ch=0, affine=1, ckpt=0,
                  stroke_mod=0, stroke_cap=1.0, gate_radius=0.25,
-                 topo_mode=0):
+                 topo_mode=0, warp_iters=1,
+                 film_mode="film", style_tokens=0, attn_heads=4,
+                 preserve_amp=0):
         super().__init__()
         self.grid = int(grid)
+        self.preserve_amp = bool(preserve_amp)
+        # ★ 级联「小 warp」步数 (2026-09-29): 1=单次大 warp (旧行为, 默认);
+        #   >1 时把总位移等分成 K 步依次重采样, 每步位移更小。见 forward 里的说明。
+        self.warp_iters = max(1, int(warp_iters))
         self.coarse = int(coarse)
         self.max_off = float(max_off)
         self.style_proj = nn.Linear(int(cond_dim), int(style_ch))
@@ -125,10 +151,29 @@ class DeformSkel(nn.Module):
         self.u2 = _block(w * 2 + w * 2, w)
         self.u1 = _block(w + w, w)
         # ★ 路径 1: FiLM 逐层调制（风格强制进入）
-        self.f1 = _FiLM(cond_dim, w)
-        self.f2 = _FiLM(cond_dim, w * 2)
-        self.f3 = _FiLM(cond_dim, w * 2)
-        self.fm = _FiLM(cond_dim, w * 2)
+        #   film_mode="adaln" 时改为「归一化后再调制」(见 _FiLM 的说明)
+        self.f1 = _FiLM(cond_dim, w, mode=film_mode)
+        self.f2 = _FiLM(cond_dim, w * 2, mode=film_mode)
+        self.f3 = _FiLM(cond_dim, w * 2, mode=film_mode)
+        self.fm = _FiLM(cond_dim, w * 2, mode=film_mode)
+
+        # ★ [2026-09-29] 路径 1b: **书家表经 cross-attention 注入**（用户要求的新增通路）
+        #   动机: 单个 FiLM 向量只能做**全局**调制, 装不下"书家间架习惯"这种
+        #   **局部、多模态**的风格。这里把风格向量展开成 K 个 token, 让**每个骨架位置**
+        #   依自身内容+空间位置在 K 个 token 间做内容寻址聚合（与主模型 CalligStyleCrossAttn
+        #   同一套机制, 直接复用）。
+        #   位置: U-Net 瓶颈处 (grid/4 分辨率, w*2 通道) —— 最粗尺度、感受野最大,
+        #   适合表达"整体间架"级别的风格。
+        #   out_proj 是 zero-init -> **step0 恒等**, 不破坏 warm-start ✓
+        self.style_tokens = int(style_tokens)
+        self.attn = None
+        self.style_tok_proj = None
+        if self.style_tokens > 0:
+            from .dit import CalligStyleCrossAttn
+            _d = w * 2
+            _g = max(2, self.grid // 4)
+            self.style_tok_proj = nn.Linear(int(cond_dim), self.style_tokens * _d)
+            self.attn = CalligStyleCrossAttn(_d, num_heads=int(attn_heads), grid_size=_g)
         # ★ 路径 3: 内容自适应残差偏移
         self.out = nn.Conv2d(w, 2, 1)
         # ★ 路径 4（可选）: 加性残差。2D 形变只能移动像素, **改不了笔画粗细/墨色**,
@@ -178,6 +223,12 @@ class DeformSkel(nn.Module):
             nn.init.zeros_(self.style_res.weight)
             nn.init.zeros_(self.style_res.bias)
 
+        # 潜变量墨迹与背景物理基准向量:
+        # SD VAE 下纯白背景 (255) 的潜变量均值: [2.18129, 1.42018, -0.00979, -1.14073]
+        self.register_buffer("z_bg", torch.tensor([2.18129, 1.42018, -0.00979, -1.14073]).view(1, 4, 1, 1))
+        # 墨迹 (black) 相对纯白背景的差分向量: [-3.16140, -4.00872, 1.12232, 2.44625]
+        self.register_buffer("delta_ink", torch.tensor([-3.16140, -4.00872, 1.12232, 2.44625]).view(1, 4, 1, 1))
+
         # ★ 路径 7: 离散拓扑增删 (SkelNet-V2: 剪刀与胶水)
         #   剪刀 (head_prune): 预测省笔/减画空间掩码 -> 向白底背景 z_bg 插值
         #   胶水 (head_ligature): 预测牵丝/连带空间掩码 -> 沿墨迹 delta_ink 潜变量差分注入
@@ -191,10 +242,6 @@ class DeformSkel(nn.Module):
             nn.init.constant_(self.head_prune.bias, -5.0)
             nn.init.zeros_(self.head_ligature.weight)
             nn.init.constant_(self.head_ligature.bias, -5.0)
-            # SD VAE 下纯白背景 (255) 的潜变量均值: [2.18129, 1.42018, -0.00979, -1.14073]
-            self.register_buffer("z_bg", torch.tensor([2.18129, 1.42018, -0.00979, -1.14073]).view(1, 4, 1, 1))
-            # 墨迹 (black) 相对纯白背景的差分向量: [-3.16140, -4.00872, 1.12232, 2.44625]
-            self.register_buffer("delta_ink", torch.tensor([-3.16140, -4.00872, 1.12232, 2.44625]).view(1, 4, 1, 1))
         else:
             self.head_prune = None
             self.head_ligature = None
@@ -255,6 +302,15 @@ class DeformSkel(nn.Module):
             e2 = self.f2(self.d2(e1), st)
             e3 = self.f3(self.d3(e2), st)
             m = self.fm(self.mid(e3), st)
+        # ★ [2026-09-29] 书家表 cross-attention 注入 (瓶颈处, 最粗尺度)
+        #   Q = 瓶颈特征 token(+2D sincos 位置), K/V = K 个风格 token
+        #   out_proj zero-init -> step0 恒等, 不破坏 warm-start
+        if self.attn is not None:
+            _B, _C, _H, _W = m.shape
+            _q = m.flatten(2).transpose(1, 2)                      # (B, H*W, C)
+            _sty = self.style_tok_proj(st).view(_B, self.style_tokens, _C)
+            _q = self.attn(_q, _sty)                               # 残差 + zero-init
+            m = _q.transpose(1, 2).reshape(_B, _C, _H, _W)
         u = _up(m, e2.shape[-2:])
         u = self.u2(torch.cat([u, e2], 1))
         u = _up(u, e1.shape[-2:])
@@ -268,6 +324,7 @@ class DeformSkel(nn.Module):
         off = torch.tanh((off_u + off_s) / max(self.max_off, 1e-6)) * self.max_off
 
         grid = self.base_grid + off.permute(0, 2, 3, 1) / (self.grid / 2.0)
+        _d_aff = None
         if self.affine is not None:
             # ★ 先全局仿射, 再局部形变: 两者都作用在采样网格上(纯坐标变换, 保证拓扑)
             th = torch.tanh(self.affine(st)).view(-1, 2, 3)
@@ -275,9 +332,41 @@ class DeformSkel(nn.Module):
                                    device=th.device, dtype=th.dtype)
             # affine_grid 生成的是 (x_src, y_src) 采样坐标 -> 与 base_grid 同语义
             g_a = F.affine_grid(th, (n, 1, self.grid, self.grid), align_corners=False)
-            grid = grid + (g_a - self.base_grid)
-        g2 = F.grid_sample(g.float(), grid, mode='bilinear',
-                           padding_mode='border', align_corners=False)
+            _d_aff = g_a - self.base_grid
+            grid = grid + _d_aff
+        if self.warp_iters <= 1:
+            g2 = F.grid_sample(g.float(), grid, mode='bilinear',
+                               padding_mode='border', align_corners=False)
+        else:
+            # ★ 级联「小 warp」(2026-09-29): 把总位移等分成 K 步依次重采样。
+            #   动机: 单次大位移 (max_off=6 ≈ 6 个 latent 像素) 的双线性重采样会把
+            #   1px 宽的骨架线抹开 -> 解码发灰(实测 pred ink 只有 GT 的 1/4)。
+            #   拆成 K 步后**每步位移 = 总位移/K**, 单步的亚像素插值误差更小。
+            #   ⚠ 实验性开关: K 次重采样 = K 次双线性插值, 也会累加模糊, 是否更好必须实测。
+            #   **K=1 时与旧行为逐位一致**(默认), 不影响任何已有 ckpt。
+            _g = g.float()
+            _step_off = off.permute(0, 2, 3, 1) / (self.grid / 2.0) / float(self.warp_iters)
+            _step_aff = (None if _d_aff is None else _d_aff / float(self.warp_iters))
+            for _k in range(self.warp_iters):
+                _gk = self.base_grid + _step_off
+                if _step_aff is not None:
+                    _gk = _gk + _step_aff
+                _g = F.grid_sample(_g, _gk, mode='bilinear',
+                                   padding_mode='border', align_corners=False)
+            g2 = _g
+
+        # ★ 墨迹保幅校准 (Amplitude Calibration): 根除双线性采样导致的细线淡化与断裂
+        if self.preserve_amp:
+            _v = g.float() - self.z_bg
+            _energy = _v.norm(dim=1, keepdim=True)
+            _energy_peak = F.max_pool2d(_energy, kernel_size=3, stride=1, padding=1)
+            _energy_peak_w = F.grid_sample(_energy_peak, grid, mode='bilinear', padding_mode='border', align_corners=False)
+            _v_warped = g2 - self.z_bg
+            _v_energy = _v_warped.norm(dim=1, keepdim=True)
+            _scale = torch.clamp(_energy_peak_w / torch.clamp(_v_energy, min=1e-3), min=1.0, max=2.5)
+            _gate = torch.clamp((_v_energy - 0.5) / 1.0, min=0.0, max=1.0)
+            g2 = self.z_bg + _v_warped * (1.0 + _gate * (_scale - 1.0))
+
         if self.res is not None:
             r = self.res(u)
             if self.coarse > 0 and self.coarse < self.grid:

@@ -489,6 +489,11 @@ def main(args):
             gate_radius=float(getattr(args, 'gate_radius', 0.25)),
             deform_dt_ch=int(getattr(args, 'deform_dt_ch', 0)),
             deform_topo=int(getattr(args, 'deform_topo', 0)),
+            deform_warp_iters=int(getattr(args, 'deform_warp_iters', 1)),
+            deform_film_mode=str(getattr(args, 'deform_film_mode', 'film')),
+            deform_style_tokens=int(getattr(args, 'deform_style_tokens', 0)),
+            deform_attn_heads=int(getattr(args, 'deform_attn_heads', 4)),
+            deform_preserve_amp=int(getattr(args, 'deform_preserve_amp', 0)),
             deform_ckpt=str(getattr(args, 'deform_ckpt', '') or ''),
             freeze_char_table=getattr(args, 'freeze_char_table', False),
             # ---- IDS 组件码本字嵌入 ----
@@ -1002,6 +1007,33 @@ def main(args):
                     f"{(_n_new_end - _n_old) * _tbl.shape[1]} 参数"
                     + ("" if _is_mse else
                        f"（末行 {_n_all - 1} 是 CFG null 行，已排除）"))
+
+    # ── [2026-09-29] --train-only-deform: 冻结**整个主干**, 只训形变头 SkelNet ─────
+    # 两阶段方案的第 ② 步:
+    #   ① 先用 GT 骨架当 g 训好一个模型 (v26) 并冻结;
+    #   ② 把 SkelNet 接到前面 (g = SkelNet(std, style)), **只训 SkelNet**,
+    #      让它学会输出"该冻结模型吃得下"的骨架 —— 即被拉向 GT 骨架空间。
+    # 与 v24 联合训练 (deform_trainable=1 且主干也在训) 的区别: 主干完全不动,
+    #   梯度只用于塑造 SkelNet, 不会把已训好的主干带偏 (v24 实测 off 1.40→2.37 膨胀即反例)。
+    # ⚠ 必须放在优化器构建 (trainable_params_list = ... requires_grad) **之前** —— 本段
+    #   位于 freeze policy 区 (~L940-1170), 早于 L1401 的过滤, 所以顺序是对的。
+    _train_only_deform = bool(getattr(args, 'train_only_deform', False))
+    if _train_only_deform:
+        if getattr(model, 'deform_skel', None) is None:
+            raise SystemExit(
+                "[train-only-deform] 模型里没有 deform_skel —— 需要 --deform-skel 1, "
+                "并建议 --deform-ckpt 指向已训的 SkelNet 做热启动")
+        requires_grad(model, False)
+        _n_tr, _tot = 0, 0
+        for _p in model.deform_skel.parameters():
+            _p.requires_grad = True
+            _n_tr += _p.numel()
+        for _p in model.parameters():
+            _tot += _p.numel()
+        if _n_tr == 0:
+            raise SystemExit("[train-only-deform] deform_skel 没有参数可训")
+        logger.info(f"[train-only-deform] 冻结主干, 只训形变头 SkelNet: "
+                    f"{_n_tr:,} / {_tot:,} 参数可训 ({_n_tr / _tot * 100:.2f}%)")
 
     _train_only_style = bool(getattr(args, 'train_only_style', False))
     if _train_only_style:
@@ -1862,6 +1894,20 @@ def main(args):
                     model_kwargs['g'] = batch['skel_latent'].to(
                         device, non_blocking=True).float()
 
+                # ── 条件几何形变增强 (Condition Deformation Augmentation) ───────
+                _g_def_prob = float(getattr(args, 'glyph_deform_prob', 0.0))
+                if 'g' in model_kwargs and _g_def_prob > 0:
+                    from src.utils.deform_aug import random_skeleton_deformation
+                    _g_def_scale = float(getattr(args, 'glyph_deform_scale', 1.0))
+                    model_kwargs['g'] = random_skeleton_deformation(
+                        model_kwargs['g'], prob=_g_def_prob,
+                        max_rot_deg=5.0 * _g_def_scale,
+                        max_scale=0.08 * _g_def_scale,
+                        max_shear=0.06 * _g_def_scale,
+                        max_trans_px=1.5 * _g_def_scale,
+                        max_elastic_px=1.5 * _g_def_scale
+                    )
+
                 # ── 条件噪声增强 (Condition Noise Augmentation) ───────────
                 # 标准骨架 g 是固定的印刷体 latent (cos=0.902 to GT)。加噪声迫使
                 # 模型学会从「不完美的结构条件」中提取拓扑信息，避免对 g 精确数值过拟合。
@@ -1877,7 +1923,9 @@ def main(args):
                     if _gpd > 0:
                         _pmask = (torch.rand(_g.shape[0], 1, _g.shape[2], _g.shape[3],
                                              device=device) > _gpd).to(_g.dtype)
-                        _g = _g * _pmask
+                        from src.utils.deform_aug import Z_BG_VEC
+                        _z_bg = Z_BG_VEC.to(device=device, dtype=_g.dtype)
+                        _g = _g * _pmask + _z_bg * (1.0 - _pmask)
                     model_kwargs['g'] = _g
                 
                 # REPA: 请求多层中间特征 (统一 infra, 多层 dict / 单层兼容)
@@ -2060,6 +2108,45 @@ def main(args):
                                     globals()['_WARNED_DEFORM4'] = True
                                     logger.warning(f"[deform] 形状不匹配 g'={tuple(_g2.shape)} "
                                                    f"target={tuple(_tgt.shape)} -> 跳过")
+
+                # ★★ [2026-09-29] 形变头正则化 —— **此前完全没接, 是 v27 过拟合的根因** ★★
+                #   `DeformSkel.regularizers()` 早就提供了 TV(偏移场平滑) + Jacobian(防折叠)
+                #   + tv_out/tv_res(压输出与残差的高频) + l1_prune/l1_lig(topo 掩码稀疏),
+                #   但**主训练路径从未调用** —— grep 'regularizers' train.py 曾为空。
+                #   后果: v27 的 SkelNet 在「4.1M 参数 + 零正则 + weight_decay=0」下直接
+                #   拟合训练集, 实测 seen 全指标单调上升而 strict ssim 单调下降
+                #   (0.6069→0.5899→0.5850) = 明确过拟合。
+                #   尤其 residual/topo 是**无约束的加墨头**(warp 只能移动笔画、必然泛化;
+                #   残差/拓扑能在任意位置画任意墨 -> 能记住训练字符的骨架), 最需要正则。
+                #   口径与 tools/train_deform_standalone.py 完全一致。
+                _dm_reg = getattr(model, 'deform_skel', None)
+                if _dm_reg is not None and getattr(_dm_reg, 'last_off', None) is not None:
+                    _rr = _dm_reg.regularizers()
+                    if _rr is not None:
+                        _reg_used = {}
+                        for _rk, _rw in (
+                            ('tv', float(getattr(args, 'w_tv', 0.0) or 0.0)),
+                            ('fold', float(getattr(args, 'w_fold', 0.0) or 0.0)),
+                            ('tv_out', float(getattr(args, 'w_tv_out', 0.0) or 0.0)),
+                            ('tv_res', float(getattr(args, 'w_tv_res', 0.0) or 0.0)),
+                            ('tv_stroke', float(getattr(args, 'w_tv_stroke', 0.0) or 0.0)),
+                            ('l1_prune', float(getattr(args, 'w_prune_l1', 0.0) or 0.0)),
+                            ('l1_lig', float(getattr(args, 'w_lig_l1', 0.0) or 0.0)),
+                        ):
+                            if _rw > 0 and _rk in _rr:
+                                loss = loss + _rw * _rr[_rk]
+                                _reg_used[_rk] = (_rw, float(_rr[_rk].detach()))
+                        # 一次性回显: 确认正则化**真的接上了**(否则只是静默无效)
+                        if not globals().get('_REG_LOGGED', False):
+                            globals()['_REG_LOGGED'] = True
+                            if _reg_used:
+                                logger.info("[deform-reg] ✅ 已接入正则化: " + ", ".join(
+                                    f"{k}(w={v[0]:g}, val={v[1]:.4g})"
+                                    for k, v in _reg_used.items()))
+                            else:
+                                logger.warning(
+                                    "[deform-reg] ⚠ 形变正则化**全部为 0** -> 未生效! "
+                                    "检查 --w-tv/--w-fold/--w-tv-res/--w-prune-l1 等")
 
                 # Stage 3 / v15 锚定正则: 把书家风格参数拉向预训练目标, 防"冻主干
                 # 只训风格"时塌缩/漂移 (styletok 实测无护栏则 strict 掉头)。
