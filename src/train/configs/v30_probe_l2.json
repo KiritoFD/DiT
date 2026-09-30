@@ -100,7 +100,7 @@
   "deform_lr_scale": 1.0,
   "w_deform_skel": 1.0,
   "inst_skel_shards_dir": "data/top10_style23/shards_aux_skel3",
-  "deform_width": 128,
+  "deform_width": 96,
   "deform_max_off": 6.0,
   "deform_coarse": 8,
   "deform_grid": 32,
@@ -124,5 +124,8 @@
   "w_lig_l1": 0.03,
   "deform_style_tokens": 16,
   "deform_attn_heads": 4,
-  "deform_film_mode": "film"
+  "deform_film_mode": "film",
+  "w_latent_skel": 0.5,
+  "latent_skel_probe": "assets/structure_probes/latent_skel_probe_v1_mse/best.pt",
+  "latent_skel_max_t": 0.3
 }

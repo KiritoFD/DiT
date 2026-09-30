@@ -840,11 +840,25 @@ def run_in_mem_eval(model, args, step, device, results_dir, sets=None,
                       f"整轮评测会这样静默跳过；重跑请换一个新的 results_dir。")
                 continue
             # ★ 2026-09-28: seen 集用训练集的 skel_latent_shards_dir，strict 集用 eval_skel_latent_shards_dir
-            if name in ("seen", "train", "g"):
-                set_shards = getattr(args, "skel_latent_shards_dir", "") or shards
-            else:
-                set_shards = (getattr(args, "eval_skel_latent_shards_dir", "") or ""
-                              or getattr(args, "skel_latent_shards_dir", "") or "")
+            # ★ 2026-09-29: **双口径 (GT / predskel)**。set 名带 `_pred` 后缀时改用 pred 骨架目录:
+            #     seen_pred   -> skel_latent_shards_dir_pred      (SkelNet 的 predskel)
+            #     strict_pred -> eval_skel_latent_shards_dir_pred
+            #   未配置 pred 目录则**回退到 GT 目录**(行为与旧版逐位一致, 不会静默出错)。
+            #   poster 在下面按 set 名渲染, 因此两套口径自动各出一张海报。
+            _is_pred = name.endswith("_pred")
+            _base = name[:-5] if _is_pred else name
+            _seen_like = _base in ("seen", "train", "g")
+            _skey = (("skel_latent_shards_dir" if _seen_like
+                      else "eval_skel_latent_shards_dir")
+                     + ("_pred" if _is_pred else ""))
+            set_shards = getattr(args, _skey, "") or ""
+            if not set_shards:          # 未配 pred -> 回退 GT
+                set_shards = ((getattr(args, "skel_latent_shards_dir", "") or shards)
+                              if _seen_like else
+                              (getattr(args, "eval_skel_latent_shards_dir", "") or ""
+                               or getattr(args, "skel_latent_shards_dir", "") or ""))
+            if _is_pred:
+                print(f"[in-mem-eval] set={name} (pred 口径) skel={set_shards}")
             cache = _get_cache(csvp, n, img_root, set_shards, args)
             n = cache["n"]
             # ★ 2026-09-18: 读源 csv 行，用于把 img_id/char/script/**calligrapher**

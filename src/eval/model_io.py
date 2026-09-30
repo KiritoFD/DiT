@@ -159,6 +159,14 @@ def build_model_from_args(a, device, **overrides):
         stroke_cap=gf("stroke_cap", 1.0),
         gate_radius=gf("gate_radius", 0.25),
         deform_dt_ch=gi("deform_dt_ch", 0),
+        # ⚠ [2026-09-29] 原来**漏传 deform_topo** -> 事后评测(batch_eval)重建的模型
+        #   没有 head_prune/head_ligature, 拓扑增删路径静默失效, 评测口径与训练不一致。
+        deform_topo=gi("deform_topo", 0),
+        deform_warp_iters=gi("deform_warp_iters", 1),
+        deform_film_mode=str(g("deform_film_mode", "film")),
+        deform_style_tokens=gi("deform_style_tokens", 0),
+        deform_attn_heads=gi("deform_attn_heads", 4),
+        deform_preserve_amp=gi("deform_preserve_amp", 0),
         deform_ckpt=str(g("deform_ckpt", "") or ""),
         callig_spatial=bool(g("callig_spatial", False)),
         callig_spatial_rank=gi("callig_spatial_rank", 64),
