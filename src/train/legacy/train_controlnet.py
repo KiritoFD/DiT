@@ -103,6 +103,15 @@ def parse_args():
                     help="from-scratch: pretrained body ckpt (e.g. DiT-XL-2-256x256.pt)")
     ap.add_argument("--main-ckpt", default="",
                     help="warm-start: 已训练主模型 ckpt (train_ctrl_only=true 时用)")
+    ap.add_argument("--main-from-ckpt-args", dest="main_from_ckpt_args",
+                    action="store_true", default=True,
+                    help="(默认开) 用 main_ckpt 自带的 args 经 build_model_from_args 重建主模型。"
+                         "对 v25_stdskel 这类 glyph 条件 + no_char_cond + split LN 的 backbone "
+                         "**必须开**: 旧 load_main_model 不传 use_glyph_cond/use_char_cond/"
+                         "cond_fusion_norm, 会静默建出残缺模型。")
+    ap.add_argument("--no-main-from-ckpt-args", dest="main_from_ckpt_args",
+                    action="store_false",
+                    help="关掉上面那条, 退回旧 load_main_model 路径 (仅用于复现老 ckpt)")
     ap.add_argument("--train-ctrl-only", type=_str_to_bool, default=True,
                     help="True=warm-start(冻结主模型), False=from-scratch(主模型也训练)")
     ap.add_argument("--csv", default="assets/train_top6.csv")
@@ -331,22 +340,63 @@ def main():
             else:
                 logger.warning("[ids] ids_char_map_csv not found, assuming char_id==Unicode")
 
-        main_model = load_main_model(
-            model_name=args.model, ckpt_path=args.main_ckpt,
-            device=device, num_calligraphers=args.num_calligraphers, num_characters=args.num_characters,
-            condition_fusion=args.condition_fusion, callig_embed_dim=args.callig_embed_dim,
-            char_embed_dim=args.char_embed_dim, char_proj_mode=args.char_proj_mode,
-            freeze_char_table=args.freeze_char_table,
-            use_ids_char_embedder=getattr(args, 'use_ids_char_embedder', False),
-            ids_file=getattr(args, 'ids_file', '') or None,
-            char_id_to_char=_ids_char_id_to_char,
-            use_std_dino_char_embedder=getattr(args, 'use_std_dino_char_embedder', False),
-            std_dino_table_path=getattr(args, 'std_dino_table_path', '') or None,
-            cond_drop_all_prob=args.cond_drop_all_prob,
-            cond_drop_one_prob=args.cond_drop_one_prob,
-            cond_drop_which_glyph_prob=args.cond_drop_which_glyph_prob,
-            use_checkpoint=args.use_checkpoint,
-            learn_sigma=_learn_sigma, diffusion_type=args.diffusion_type, **_arch)
+        main_model = None
+        if getattr(args, "main_from_ckpt_args", True):
+            # ── 2026-09-29 新增: 用 **ckpt 自带的 args** 重建主模型 ───────────────
+            # 为什么: load_main_model() 是旧 harness, 只传 num_calligraphers /
+            #   condition_fusion / char_proj_mode / norm_type 等, **不传**
+            #   use_glyph_cond / use_char_cond / cond_fusion_norm ——
+            #   对 v25_stdskel 这类 (glyph 条件开 + no_char_cond=True + split LN)
+            #   的 backbone 会静默建出残缺模型:
+            #     · glyph_embedder / 4 个逐层注入器 不构建 -> v25 这些权重变 unexpected
+            #       被丢弃, 且 **g 完全不喂** (v25 训练时 glyph_drop_prob=0, 从未见过 g=0);
+            #     · char 条件路径被建出来 -> char 权重 missing, 静默随机初始化;
+            #     · cond_fusion_norm 默认 joint != v25 的 split -> 融合层形状不符被丢弃。
+            #   strict=False 下**一条错误都不报**, 指标全错。
+            #   build_model_from_args 是评测侧久经使用的构模器, 已支持全部当前开关。
+            from src.eval.model_io import build_model_from_args, apply_post_construction
+            _ck = torch.load(args.main_ckpt, map_location="cpu", weights_only=False)
+            _a = _ck.get("args") or {}
+            if not isinstance(_a, dict):
+                _a = vars(_a)
+            if not _a:
+                raise RuntimeError(
+                    f"[ctrl] {args.main_ckpt} 里没有 args, 无法重建主模型; "
+                    f"请改用 --no-main-from-ckpt-args 走旧 load_main_model 路径")
+            main_model = build_model_from_args(_a, device)
+            main_model = apply_post_construction(main_model, _a, verbose=False)
+            _sd = _ck.get("ema") or _ck.get("model") or _ck.get("delta") or _ck
+            _sd = _strip_compile_prefix(_sd)
+            _miss, _unexp = main_model.load_state_dict(_sd, strict=False)
+            logger.info(f"[load] ckpt-args 路径: missing={len(_miss)} "
+                        f"unexpected={len(_unexp)} (use_glyph_cond="
+                        f"{getattr(main_model,'use_glyph_cond',None)}, "
+                        f"cond_fusion_norm={_a.get('cond_fusion_norm')})")
+            # 护栏: 形状不符/缺失的层会保持随机初始化, 指标照样算得出来 -> 必须硬失败
+            if len(_miss) > 8 or len(_unexp) > 8:
+                raise RuntimeError(
+                    f"[ctrl] 主模型加载异常: missing={len(_miss)} "
+                    f"unexpected={len(_unexp)}\n  missing: {_miss[:8]}\n"
+                    f"  unexpected: {_unexp[:8]}\n"
+                    f"  -> backbone 会带随机层, 指标不可信。请检查 ckpt 与构模参数是否配套。")
+            del _ck
+        if main_model is None:
+            main_model = load_main_model(
+                model_name=args.model, ckpt_path=args.main_ckpt,
+                device=device, num_calligraphers=args.num_calligraphers, num_characters=args.num_characters,
+                condition_fusion=args.condition_fusion, callig_embed_dim=args.callig_embed_dim,
+                char_embed_dim=args.char_embed_dim, char_proj_mode=args.char_proj_mode,
+                freeze_char_table=args.freeze_char_table,
+                use_ids_char_embedder=getattr(args, 'use_ids_char_embedder', False),
+                ids_file=getattr(args, 'ids_file', '') or None,
+                char_id_to_char=_ids_char_id_to_char,
+                use_std_dino_char_embedder=getattr(args, 'use_std_dino_char_embedder', False),
+                std_dino_table_path=getattr(args, 'std_dino_table_path', '') or None,
+                cond_drop_all_prob=args.cond_drop_all_prob,
+                cond_drop_one_prob=args.cond_drop_one_prob,
+                cond_drop_which_glyph_prob=args.cond_drop_which_glyph_prob,
+                use_checkpoint=args.use_checkpoint,
+                learn_sigma=_learn_sigma, diffusion_type=args.diffusion_type, **_arch)
         main_model.eval()
         _frozen_intentional = {id(p) for p in main_model.parameters() if not p.requires_grad}
         ctrl = ControlNetDiT(main_model, cond_in_channels=args.skel_cond_channels,
