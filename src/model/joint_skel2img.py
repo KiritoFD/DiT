@@ -39,6 +39,18 @@ class JointSkel2Img(th.nn.Module):
         self.stage2 = stage2
         self.gen_steps = int(gen_steps)
         self.scale_gen_grad = bool(scale_gen_grad)
+        self._cached_g_key = None
+        self._cached_g_pred = None
+
+    def get_or_gen_skel(self, g, y, y_char=None):
+        """同一条采样轨迹内 (50 步扩散循环) g 与 y 不变，骨架条件只采一次，全程稳定保持不变！"""
+        key = (g.data_ptr(), y.data_ptr())
+        if self._cached_g_key == key and self._cached_g_pred is not None:
+            return self._cached_g_pred
+        g_pred = self.gen_sample(g, y, y_char=y_char)
+        self._cached_g_key = key
+        self._cached_g_pred = g_pred
+        return g_pred
 
     # ---- stage1 采样 (默认 no_grad; 训练侧传 grad=True) ----
     def gen_sample(self, g_std, y, y_char=None, steps=None, grad=False):
@@ -63,15 +75,14 @@ class JointSkel2Img(th.nn.Module):
     def forward(self, x, t, y_callig, y_char, g=None, **kw):
         if g is None:
             return self.stage2(x, t, y_callig, y_char, **kw)
-        g_pred = self.gen_sample(g, y_callig, y_char=y_char,
-                                 grad=self.scale_gen_grad and self.training)
+        g_pred = self.get_or_gen_skel(g, y_callig, y_char=y_char)
         return self.stage2(x, t, y_callig=y_callig, y_char=y_char, g=g_pred, **kw)
 
     def forward_with_cfg(self, x, t, y_callig, y_char, cfg_scale=1.0, g=None, **kw):
         """CFG 透传 stage2: g_pred 只采一次 (cfg 两半共享, 保证条件一致)."""
         if g is None or not cfg_scale or cfg_scale <= 0:
             return self.forward(x, t, y_callig, y_char, g=g, **kw)
-        g_pred = self.gen_sample(g, y_callig, y_char=y_char)
+        g_pred = self.get_or_gen_skel(g, y_callig, y_char=y_char)
         return self.stage2.forward_with_cfg(
             x, t, y_callig, y_char, cfg_scale=cfg_scale, g=g_pred, **kw)
 
