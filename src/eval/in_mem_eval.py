@@ -532,7 +532,14 @@ def render_poster(results_dir, set_name, out=None, cell=224, gap=6,
     if not steps:
         return None
     n_max = max(s[2] for s in steps)
-    cell = max(64, min(224, 1280 // max(n_max, 1)))
+    # ★ 2026-10-01 修复: 原实现 cell = 1280//n_max (20 列 -> 64px) 且用 LANCZOS 缩小,
+    #   1~2px 的骨架细线被邻域平均掉 -> poster 整行看起来"全白"(分数是在原生 256
+    #   上算的, 未受影响)。POSTER_CELL / POSTER_NMAX 允许出可判读的大图。
+    _cap = int(os.environ.get("POSTER_NMAX", "0"))
+    if _cap > 0:
+        n_max = min(n_max, _cap)
+    cell = int(os.environ.get("POSTER_CELL", "0")) or max(
+        64, min(224, 1280 // max(n_max, 1)))
     input_dir = os.path.join(results_dir, "eval_samples_ctrl", f"{set_name}_input_g")
     has_input = os.path.isdir(input_dir) and bool(glob.glob(os.path.join(input_dir, "g*.png")))
 

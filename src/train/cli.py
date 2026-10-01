@@ -729,6 +729,9 @@ def build_parser(argv=None):
                         help="条件增强: 多个骨架几何变体目录（逗号分隔）。第一个必须是"
                              "未扰动的原始条件。训练时每样本每步随机选一个，避免对单一几何过拟合。"
                              "几何扰动（弹性/仿射/区域丢弃）必须离线预编码成 shards。")
+    parser.add_argument("--skel-latent-shards-weights", type=str, default="",
+                        dest="skel_latent_shards_weights",
+                        help="多个骨架几何变体目录的随机采样权重 (逗号分隔，如 '0.75,0.25')。")
     parser.add_argument("--glyph-noise-scale", type=float, default=0.0,
                         dest="glyph_noise_scale",
                         help="条件噪声增强: 潜空间高斯噪声幅度 (0=关)。需与 --glyph-noise-prob 同时 >0 才生效; 对称 +/- , 不改变条件分布均值。")
@@ -744,6 +747,24 @@ def build_parser(argv=None):
     parser.add_argument("--glyph-patch-drop", type=float, default=0.0,
                         dest="glyph_patch_drop",
                         help="局部随机 Mask (Cutout 式): 逐 latent patch 的丢弃概率 (0=关)。1 个 latent patch = 8x8 像素。")
+    # ── 条件「整块抹白」增强 (2026-10-01) ──
+    # 与 --glyph-patch-drop 的区别: 后者是**逐格散点**, 只模拟"噪声点";
+    # 这里是**连续区域**抹成纯白背景 —— 模拟推理时真正出现的失效模式:
+    # stage1 预测骨架时**整段笔画没了/整块糊掉**。
+    parser.add_argument("--glyph-mask-prob", type=float, default=0.0,
+                        dest="glyph_mask_prob",
+                        help="连续区域抹白: 施加的样本比例 (0=关)。抹掉处填 Z_BG_VEC (纯白背景 latent)。")
+    parser.add_argument("--glyph-mask-size", type=int, default=4,
+                        dest="glyph_mask_size",
+                        help="方块边长 (**latent 格数**)。1 格 = 8px -> 默认 4 格 = 32x32 px。\n"
+                             "尺度按 2026-10-01 用户指定: 原图 32x32 px, 即 latent 3~4 格。")
+    parser.add_argument("--glyph-mask-jitter", type=int, default=1,
+                        dest="glyph_mask_jitter",
+                        help="边长随机 ± (默认 1 -> 3~5 格)。")
+    parser.add_argument("--glyph-mask-n", type=int, default=3,
+                        dest="glyph_mask_n",
+                        help="每条样本抹几块 (默认 3)。")
+
     parser.add_argument("--glyph-inject-layers", type=int, default=0,
                         help="g 逐层注入层数 (0=仅输入层 token-add, s23 既有行为)")
     parser.add_argument("--glyph-embedder-depth", type=int, default=0,

@@ -91,6 +91,13 @@ def main():
     ap.add_argument("--depth", type=int, default=6)
     ap.add_argument("--hidden", type=int, default=256)
     ap.add_argument("--heads", type=int, default=4)
+    ap.add_argument("--patch", type=int, default=2,
+                    help="★ 必须与训练的 --patch 一致 (patch=1 是主推升级)")
+    ap.add_argument("--noise-start", action="store_true",
+                    help="★ 噪声起步 + **g 当条件** (与主干同构)。训练时**没有**加 --bridge 的\n"
+                         "  模型必须用这个。默认(bridge)是 g 起步+hide-g, 两套采样不能混用。\n"
+                         "  背景: bridge 起步下 v=0 就等于照抄 g -> 模型被往照抄按 (K 臂实证);\n"
+                         "  噪声起步没有这条捷径, 实测 resAlign 更高 (E_inj6 0.5042 / B_w3 0.4933)。")
     ap.add_argument("--inject-layers", type=int, default=2)
     ap.add_argument("--sample-steps", type=int, default=50)
     ap.add_argument("--callig-map", default="assets/callig_script_id_map_top10.json")
@@ -115,7 +122,7 @@ def main():
     n_slots = int(csmap.get("num_pairs", 0) or 0)
     from src.model.dit import DiT_2Cond
     model = DiT_2Cond(
-        input_size=32, patch_size=2, in_channels=4,
+        input_size=32, patch_size=a.patch, in_channels=4,
         depth=a.depth, hidden_size=a.hidden, num_heads=a.heads,
         num_calligraphers=n_slots, num_characters=1,
         use_char_cond=False, use_glyph_cond=True, glyph_in_channels=4,
@@ -182,13 +189,14 @@ def main():
             if len(buf_g) >= B or k == len(rows) - 1:
                 g = th.from_numpy(np.stack(buf_g)).to(dev)
                 y = th.tensor(buf_y, dtype=th.long, device=dev)
-                z = g.clone()                                    # ★ g 起步
+                # ★ 起点: bridge=g(且不给网络看g) | 噪声起步=纯噪声(把 g 当条件传入)
+                z = th.randn_like(g) if a.noise_start else g.clone()
+                _gc = g if a.noise_start else th.zeros_like(g)
                 ts = th.linspace(1.0, 0.0, a.sample_steps + 1, device=dev)
                 for s_ in range(a.sample_steps):
                     out = model(z, th.full((z.shape[0],), float(ts[s_]) * TIME_SCALE,
                                            device=dev),
-                                y_callig=y, y_char=th.zeros_like(y),
-                                g=th.zeros_like(g))              # ★ hide-g
+                                y_callig=y, y_char=th.zeros_like(y), g=_gc)
                     if isinstance(out, tuple):
                         out = out[0]
                     z = z + (ts[s_ + 1] - ts[s_]) * out

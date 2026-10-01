@@ -878,7 +878,7 @@ def main(args):
             logger.warning("[expand-4ch] 已忽略 --resume-full 的模型权重（通道扩展优先）")
 
     # 3) 完整 resume（从零训练与续跑共用同一条路径）。
-    if (getattr(args, 'resume_full', None) is not None
+    if (bool(getattr(args, 'resume_full', None))
             and not getattr(args, 'expand_from_4ch', None)):
         import torch as _torch
         _rf = _torch.load(args.resume_full, map_location="cpu", weights_only=False)
@@ -1565,6 +1565,9 @@ def main(args):
                                             getattr(args, 'skel_latent_shards_dirs', '') or ''
                                         ).split(',') if d.strip()]
                                         if getattr(args, 'skel_as_glyph_cond', False) else None),
+                                    skel_latent_shards_weights=(
+                                        getattr(args, 'skel_latent_shards_weights', '') or None
+                                        if getattr(args, 'skel_as_glyph_cond', False) else None),
                                     # ⚠ 这里必须把 w_deform_skel 也算进去: 否则开了形变监督
                                     #   但 w_latent_skel/w_std_mid 都为 0 时, batch['inst_skel']
                                     #   根本不会被加载 -> 中间监督静默失效(本项目反复踩的接线缺口)。
@@ -1927,6 +1930,36 @@ def main(args):
                         _z_bg = Z_BG_VEC.to(device=device, dtype=_g.dtype)
                         _g = _g * _pmask + _z_bg * (1.0 - _pmask)
                     model_kwargs['g'] = _g
+
+                # ── 条件「整块抹白」增强 (2026-10-01) ──────────────────────
+                # 动机: 推理时喂给 stage2 的是 **stage1 预测出的骨架**, 它的失效模式
+                #   不是"加点噪", 而是**整段笔画没了 / 整块糊掉**。上面的逐格
+                #   patch_drop 只产生散点, 模拟不了"少一笔"; 这里按**连续区域**
+                #   抹成纯白背景 (Z_BG_VEC), 才对得上那个失效模式。
+                #   两种形状: 细长条(≈少了一笔) / 方块(≈一块糊掉)。
+                _gm_prob = float(getattr(args, 'glyph_mask_prob', 0.0))
+                if 'g' in model_kwargs and _gm_prob > 0:
+                    from src.utils.deform_aug import Z_BG_VEC
+                    _g = model_kwargs['g']
+                    _z_bg = Z_BG_VEC.to(device=device, dtype=_g.dtype)
+                    _B, _C, _H, _W = _g.shape
+                    _hit = torch.rand(_B, device=device) < _gm_prob
+                    # 尺度: 1 个 latent 格 = 8px, 默认 4 格 = 32x32 px (2026-10-01 指定)
+                    _sz = int(getattr(args, 'glyph_mask_size', 4))
+                    _jit = int(getattr(args, 'glyph_mask_jitter', 1))
+                    _nmax = int(getattr(args, 'glyph_mask_n', 3))
+                    _lo, _hi = max(2, _sz - _jit), max(2, _sz + _jit)
+                    _msk = torch.zeros(_B, 1, _H, _W, device=device, dtype=torch.bool)
+                    for _b in range(_B):
+                        if not bool(_hit[_b]):
+                            continue
+                        for _ in range(_nmax):
+                            _h = int(torch.randint(_lo, _hi + 1, (1,)).item())
+                            _w = int(torch.randint(_lo, _hi + 1, (1,)).item())
+                            _y = int(torch.randint(0, _H - _h + 1, (1,)).item())
+                            _x = int(torch.randint(0, _W - _w + 1, (1,)).item())
+                            _msk[_b, 0, _y:_y + _h, _x:_x + _w] = True
+                    model_kwargs['g'] = torch.where(_msk, _z_bg, _g)
                 
                 # REPA: 请求多层中间特征 (统一 infra, 多层 dict / 单层兼容)
                 if args.w_repa > 0 and repa_loss_fn is not None:

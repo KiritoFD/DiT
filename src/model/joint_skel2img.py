@@ -41,13 +41,15 @@ class JointSkel2Img(th.nn.Module):
         self.scale_gen_grad = bool(scale_gen_grad)
 
     # ---- stage1 采样 (默认 no_grad; 训练侧传 grad=True) ----
-    def gen_sample(self, g_std, y, steps=None, grad=False):
+    def gen_sample(self, g_std, y, y_char=None, steps=None, grad=False):
+        """stage1 条件式采样. y_char 必须传**真实 glyph_id** —— stage1 (v33) 是
+        train.py 训的带字条件模型, 传 zeros=错误字条件 (strict 未见组合上会崩)."""
         steps = self.gen_steps if steps is None else steps
         b = g_std.shape[0]
         dev = g_std.device
         z = th.randn(b, g_std.shape[1], g_std.shape[2], g_std.shape[3], device=dev)
         ts = th.linspace(1.0, 0.0, steps + 1, device=dev)
-        yc = th.zeros_like(y)
+        yc = y_char if y_char is not None else th.zeros(b, dtype=th.long, device=dev)
         ctx = th.enable_grad() if grad else th.no_grad()
         with ctx:
             for k in range(steps):
@@ -61,16 +63,15 @@ class JointSkel2Img(th.nn.Module):
     def forward(self, x, t, y_callig, y_char, g=None, **kw):
         if g is None:
             return self.stage2(x, t, y_callig, y_char, **kw)
-        y = y_callig
-        g_pred = self.gen_sample(g, y, grad=self.scale_gen_grad and self.training)
+        g_pred = self.gen_sample(g, y_callig, y_char=y_char,
+                                 grad=self.scale_gen_grad and self.training)
         return self.stage2(x, t, y_callig=y_callig, y_char=y_char, g=g_pred, **kw)
 
     def forward_with_cfg(self, x, t, y_callig, y_char, cfg_scale=1.0, g=None, **kw):
         """CFG 透传 stage2: g_pred 只采一次 (cfg 两半共享, 保证条件一致)."""
         if g is None or not cfg_scale or cfg_scale <= 0:
             return self.forward(x, t, y_callig, y_char, g=g, **kw)
-        y = y_callig
-        g_pred = self.gen_sample(g, y)
+        g_pred = self.gen_sample(g, y_callig, y_char=y_char)
         return self.stage2.forward_with_cfg(
             x, t, y_callig, y_char, cfg_scale=cfg_scale, g=g_pred, **kw)
 

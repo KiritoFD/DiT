@@ -58,6 +58,7 @@ skel_bank*.npz
 _gt_cache/
 
 # ---- 训练/评测产物 ----
+/exp/
 /results/
 assets/results/*
 !assets/results/v21_skelnet_200k/

@@ -171,9 +171,16 @@ def main():
         pdir_t = a.pred_strict or getattr(A, "eval_skel_latent_shards_dir_pred", "")
         if pdir_s and pdir_t and os.path.isdir(pdir_s) and os.path.isdir(pdir_t):
             print("\n=== predskel (当前 SkelNet 真实输出) ===", flush=True)
+            # ★ 修泄露 (2026-10-01): ckpt 里存的 eval_blend_alpha (实测=0.5) 会把
+            #   std 骨架混进 pred 条件 -> "predskel" 这一路评的其实是半个标准骨架
+            #   (std 源自 GT 字形), 好分数是泄露出来的。pred 口径必须评**纯生成骨架**。
+            _bak_blend = getattr(A, "eval_blend_alpha", None)
+            A.eval_blend_alpha = 1.0
             res = run_pass("predskel", {"seen_pred": pdir_s, "strict_pred": pdir_t},
                            [("seen_pred", SEEN[1], SEEN[2]),
                             ("strict_pred", STRICT[1], STRICT[2])], step=90001)
+            if _bak_blend is not None:
+                A.eval_blend_alpha = _bak_blend
             rows_out.append(("predskel", res))
         else:
             print(f"[calib] 跳过 predskel (目录缺失: {pdir_s} | {pdir_t})")

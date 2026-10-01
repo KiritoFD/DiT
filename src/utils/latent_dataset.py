@@ -71,7 +71,7 @@ class MCCDLatentDataset(Dataset):
     def __init__(self, csv_file, latent_shards_dir, img_root,
                  image_size=256, is_train=False, preload=False, load_image=True,
                  num_preload_workers=16, use_glyph_cond=False, skel_latent_shards_dir=None,
-                 skel_latent_shards_dirs=None,
+                 skel_latent_shards_dirs=None, skel_latent_shards_weights=None,
                  callig_id_map=None, aux_latent_shards_dirs=None,
                  inst_skel_shards_dir=None, callig_script_map=None):
         self.samples = []
@@ -106,6 +106,16 @@ class MCCDLatentDataset(Dataset):
         # ★ 条件增强: 多个骨架几何变体目录。训练时**每个样本每步随机选一个**。
         #   几何扰动离线预编码（像素域做，保真），选择在线随机（否则对单一几何过拟合）。
         self.skel_latent_shards_dirs = [d for d in (skel_latent_shards_dirs or []) if d]
+        self.skel_latent_shards_weights = None
+        if skel_latent_shards_weights:
+            if isinstance(skel_latent_shards_weights, str):
+                _ws = [float(x.strip()) for x in skel_latent_shards_weights.split(",") if x.strip()]
+            else:
+                _ws = list(skel_latent_shards_weights)
+            _s = sum(_ws)
+            if _s > 0:
+                self.skel_latent_shards_weights = [w / _s for w in _ws]
+                print(f"[skel-weights] 骨架条件加权采样生效: {self.skel_latent_shards_weights}")
         self.image_size = image_size
         self.load_image = load_image
 
@@ -482,8 +492,11 @@ class MCCDLatentDataset(Dataset):
             if self._skel_latents is not None:
                 _ls = getattr(self, '_skel_latents_list', None)
                 if _ls and len(_ls) > 1:
-                    # ★ 条件增强: 每样本每步随机选一个几何变体
-                    _k = int(np.random.randint(len(_ls)))
+                    # ★ 条件增强: 支持加权随机采样 (如 75% GT + 25% PredSkel)
+                    if getattr(self, "skel_latent_shards_weights", None) is not None and len(self.skel_latent_shards_weights) == len(_ls):
+                        _k = int(np.random.choice(len(_ls), p=self.skel_latent_shards_weights))
+                    else:
+                        _k = int(np.random.randint(len(_ls)))
                     skel_lat = torch.from_numpy(_ls[_k][idx])
                 else:
                     skel_lat = torch.from_numpy(self._skel_latents[idx])
@@ -510,8 +523,17 @@ class MCCDLatentDataset(Dataset):
             # skel latent (latent 条件) -> (C,32,32) float32
             skel_lat = torch.empty(0)
             if self._skel_id_to_shard:
+                _m_list = getattr(self, "_skel_id_to_shard_list", None)
+                if _m_list and len(_m_list) > 1:
+                    if getattr(self, "skel_latent_shards_weights", None) is not None and len(self.skel_latent_shards_weights) == len(_m_list):
+                        _k = int(np.random.choice(len(_m_list), p=self.skel_latent_shards_weights))
+                    else:
+                        _k = int(np.random.randint(len(_m_list)))
+                    _target_m = _m_list[_k]
+                else:
+                    _target_m = self._skel_id_to_shard
                 try:
-                    sp, j = self._skel_id_to_shard[img_id]
+                    sp, j = _target_m[img_id]
                 except KeyError as exc:
                     raise KeyError(f"skel latent not found for img_id={img_id}") from exc
                 with np.load(sp, mmap_mode="r") as shard:   # ★ mmap: 别解压整个 shard

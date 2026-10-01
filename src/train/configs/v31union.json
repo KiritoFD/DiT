@@ -1,0 +1,41 @@
+{
+  "_note": "v31union: stage1(v33@30k) x stage2(v32@50k, 冻结) 联合训练。用法: python -u tools/train_joint_v31union.py --config src/train/configs/v31union.json",
+  "_cond": "评测条件用干净标准骨架 data/50k_v2_glyph15k/shards_std (strict84 csv 84/84 命中); 原来的 predskel_std84_e2e 是脏数据已隔离",
+
+  "gen_ckpt": "assets/results/v33_stage1_xs/20261001-113156-v33-stage1-xs/checkpoints/0030000.pt",
+  "bak_ckpt": "assets/results/v32_stage2_img/20261001-062933-v32-stage2-img/checkpoints/0050000.pt",
+
+  "csv": "assets/train_top10_style23_minusval.csv",
+  "shards_img": "data/top10_style23/shards_img",
+  "shards_std": "data/top10_style23/shards_std",
+  "shards_gt": "data/top10_style23/shards_gtskel_w3",
+  "shards_std_eval": "data/50k_v2_glyph15k/shards_std",
+  "strict84_csv": "assets/eval_v13_strict84_aligned.csv",
+  "seen20_csv": "assets/eval_top10_seen_20.csv",
+
+  "results_dir": "assets/results/v31union",
+  "experiment_name": "v31union",
+
+  "batch": 24,
+  "gen_lr": 2e-05,
+  "max_steps": 40000,
+  "warmup": 1000,
+  "min_lr_ratio": 0.1,
+  "eval_every": 2500,
+  "ckpt_every": 2500,
+  "log_every": 50,
+
+  "gen_steps_train": 8,
+  "gen_steps_eval": 25,
+
+  "lam_skel_flow": 1.0,
+  "lam_skel_mse": 0.3,
+
+  "ema_decay": 0.9999,
+  "ema_interval": 4,
+
+  "glyph_mask_prob": 0.3,
+  "glyph_mask_size": 4,
+  "glyph_mask_jitter": 1,
+  "glyph_mask_n": 3
+}

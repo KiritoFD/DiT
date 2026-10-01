@@ -97,6 +97,10 @@ def main():
     ap.add_argument("--depth", type=int, default=6)
     ap.add_argument("--hidden", type=int, default=256)
     ap.add_argument("--heads", type=int, default=4)
+    ap.add_argument("--patch", type=int, default=2,
+                    help="★ 结构分辨率的死结: patch=2 把 32² latent 切成 16²=256 token,\n"
+                         "  而 3px 骨架在 latent 里只占 0.375 格 -> 细结构没有承载位置,\n"
+                         "  靠线性 unpatchify 还原不出来。**patch=1 (1024 token) 是主推升级**。")
     ap.add_argument("--inject-layers", type=int, default=2,
                     help="标准骨架的逐层注入层数 (条件必须强, 它是唯一的字身份来源)")
     ap.add_argument("--batch", type=int, default=128)
@@ -134,11 +138,43 @@ def main():
                          "    模型可代数解出 x0=(xt-t*g)/(1-t), 不用学形变就能把 loss 压到 ~0。\n"
                          "    实测: 带 g 时 flow 0.003 但 resAlign 一路转负 (-0.60), 采样发散。\n"
                          "  隐藏 g 后该捷径不成立, 字身份只能从输入流 xt 里读, 才是真学形变。")
+    # ── 损失改造 (2026-09-30): 治「幅度被 MSE 拉向均值 -> 解码漂白/丢笔画」──
+    #   机理: MSE 在 latent 域的最优解 = 回归到可能潜变量的**均值**, 而 VAE 的潜变量
+    #   平均 != 像素平均 -> 两个骨架 latent 取中值, 解码出来是淡影。实测证据:
+    #   resAlign 0.51(方向对) 但 LS 最优 β*=0.63<1(连 L2 都该缩小) /
+    #   解码墨量只有 GT 的 0.32~0.44x / 输出残差模长只有真残差的 ~0.78x。
+    ap.add_argument("--loss-whiten", action="store_true",
+                    help="★ 逐通道白化 MSE (权重 = 1/std): SD-VAE 各通道量级差很大, "
+                         "不白化则大方差通道(背景)独自支配 loss, 结构通道被淹没。")
+    ap.add_argument("--whiten-n", type=int, default=256,
+                    help="估计逐通道 std 用的样本数")
+    ap.add_argument("--dir-weight", type=float, default=0.0,
+                    help="★ 方向项权重: 1-cos(v_pred, 目标速度)。与 resAlign 判据同量, "
+                         "把容量花在'往哪走'而不是'走多远', 防止相消平均。")
+    ap.add_argument("--mag-weight", type=float, default=0.0,
+                    help="★ 模长项权重: (|v|-|u|)^2/|u|^2。直接治幅度收缩 —— "
+                         "这是漂白的直接原因, MSE 单独用会把它压到 0.78x。")
+    ap.add_argument("--loss-ramp", type=int, default=1000,
+                    help="方向/模长项从 0 线性升到满权重所用的步数 (初期先让 MSE 稳场)")
+    ap.add_argument("--width-guard", type=int, default=16,
+                    help="★ 启动时用 VAE 解码 N 条条件/目标, 比对**笔宽**; 错配直接拒跑。\n"
+                         "  事故 (2026-09-30): 条件 shards_std 是 3px, 目标是 gtskel_w7 7px\n"
+                         "  -> 模型被迫'一边形变一边加粗 2.3x' -> 输出宽度≈输入宽度(欠粗)。\n"
+                         "  0 = 关闭")
+    ap.add_argument("--width-tol", type=float, default=1.3,
+                    help="条件/目标 笔宽比的容差 (默认 1.3x); 超过即 FATAL")
     ap.add_argument("--eval-only", action="store_true",
                     help="只载入 --resume 指定的 ckpt 跑一次验证, 打印全部守门指标后退出。")
     ap.add_argument("--resume", default="", help="配合 --eval-only 的 ckpt 路径")
+    ap.add_argument("--overfit", type=int, default=0,
+                    help="★ 门槛测试: 只拟合前 N 条样本, 并在**同一批**上评测。\n"
+                         "  判据: 能否把解码容差 IoU(k=0) 从'什么都不做'的基线抬到 >0.3。\n"
+                         "  抬不上去 => 实现/架构级 bug; 抬得上去 => 泛化/数据问题。")
+    ap.add_argument("--iou-tols", default="0,1,2,3",
+                    help="容差 IoU 的膨胀半径 (px@256)")
     ap.add_argument("--smoke", action="store_true")
     a = ap.parse_args()
+    a.iou_tols = [int(x) for x in str(a.iou_tols).split(",") if x.strip() != ""]
 
     dev = a.device
 
@@ -178,10 +214,22 @@ def main():
                       for i in range(min(256, len(ds_tr)))) + 1
     log(f"[1] 风格槽位 {n_slots}")
 
+    # ── latent 白化权重 (逐通道 1/std, 均值归一到 1 以保持整体 loss 尺度) ──
+    whiten = None
+    if a.loss_whiten:
+        _rs = np.random.RandomState(0)
+        _idx = _rs.choice(len(ds_tr), min(a.whiten_n, len(ds_tr)), replace=False)
+        _A = th.stack([ds_tr[int(i)]["latent"].float() for i in _idx])
+        _sd = _A.reshape(_A.shape[0], _A.shape[1], -1).std(dim=(0, 2))
+        _w = 1.0 / _sd.clamp_min(1e-6)
+        whiten = (_w / _w.mean()).to(dev).view(1, -1, 1, 1)
+        log(f"[1b] latent 白化: 通道 std {[round(float(x), 4) for x in _sd]} -> "
+            f"权重 {[round(float(x), 3) for x in whiten.flatten()]}")
+
     # ── 模型 ─────────────────────────────────────────────────────────────
     from src.model.dit import DiT_2Cond
     model = DiT_2Cond(
-        input_size=32, patch_size=2, in_channels=4, out_channels=4,
+        input_size=32, patch_size=a.patch, in_channels=4, out_channels=4,
         depth=a.depth, hidden_size=a.hidden, num_heads=a.heads,
         num_calligraphers=n_slots, num_characters=1,
         use_char_cond=False, use_glyph_cond=True, glyph_in_channels=4,
@@ -284,18 +332,31 @@ def main():
         model.eval()
         ck = {k: v.detach().clone() for k, v in model.state_dict().items()}
         model.load_state_dict({k: v.to(dev) for k, v in ema.items()})
-        n = min(a.val_n, len(ds_va)) if ds_va is not None else 0
+        # ★ --overfit: 在**训练的那 N 条**上评测 (门槛测试); 否则按字符留出验证
+        ds_eval = ds_tr if a.overfit > 0 else ds_va
+        n = (min(a.overfit, len(ds_tr)) if a.overfit > 0
+             else (min(a.val_n, len(ds_va)) if ds_va is not None else 0))
         if n == 0:
             model.load_state_dict(ck)
             model.train()
             return {}
         from PIL import Image
+        from scipy.ndimage import binary_dilation as _bd
+        _st8 = np.ones((3, 3), bool)
+
+        def _tol_iou(p, t, k):
+            td = _bd(t, _st8, k) if k > 0 else t
+            u = (p | td).sum()
+            return float((p & td).sum()) / u if u else 0.0
+
         cls, idg = [], []
         inkp, inkg, cosgen, cosstd, resal = [], [], [], [], []
+        ious = {k: [] for k in a.iou_tols}       # 预测 vs GT骨架
+        ious_g = {k: [] for k in a.iou_tols}     # 输入 g vs GT骨架 ("什么都不做"基线)
         B = 32
         for s in range(0, n, B):
             end = min(s + B, n)
-            x0, g, y, ids = load_batch(ds_va, list(range(s, end)))
+            x0, g, y, ids = load_batch(ds_eval, list(range(s, end)))
             z = g.clone() if a.bridge else th.randn_like(x0)   # ★ 起点
             src = g if a.bridge else z.clone()                 # x0 参数化需要固定参考
             ts = th.linspace(1.0, 0.0, a.sample_steps + 1, device=dev)
@@ -314,6 +375,13 @@ def main():
             pr = (dec < 0).cpu().numpy()                          # 墨 = 暗 = <0
             gdec = vae.decode(g / 0.18215).sample.mean(1)
             st = (gdec < 0).cpu().numpy()                         # 输入标准骨架
+            # ★ GT 骨架 latent 的解码 = 我们要逼近的目标骨架像素
+            tdec = vae.decode(x0 / 0.18215).sample.mean(1)
+            tm = (tdec < 0).cpu().numpy()
+            for i in range(pr.shape[0]):
+                for _k in a.iou_tols:
+                    ious[_k].append(_tol_iou(pr[i], tm[i], _k))
+                    ious_g[_k].append(_tol_iou(st[i], tm[i], _k))
             for i in range(pr.shape[0]):
                 fp = os.path.join(a.gt_png_dir, f"{ids[i]:06d}.png")
                 if not os.path.exists(fp):
@@ -336,12 +404,47 @@ def main():
         model.train()
         out = {"clDice": float(np.mean(cls)) if cls else float("nan"),
                "idIoU": float(np.mean(idg)) if idg else float("nan")}
+        for _k in a.iou_tols:                      # iouK=预测, iouG=什么都不做
+            if ious[_k]:
+                out[f"iou{_k}"] = float(np.mean(ious[_k]))
+                out[f"iouG{_k}"] = float(np.mean(ious_g[_k]))
         if inkp:
             out["inkRatio"] = float(np.mean(inkp) / max(float(np.mean(inkg)), 1e-9))
             out["cosGen"] = float(np.mean(cosgen))
             out["cosStd"] = float(np.mean(cosstd))          # 照抄输入的 baseline
             out["resAlign"] = float(np.mean(resal))         # ★ 主判据
         return out
+
+    # ── ★ 配对守门 (2026-09-30 事故) ──
+    #   真正会"静默骗人"的错配是: **条件与目标不是同一个字**(命名空间/id 撞号/
+    #   分片错位)。判据用"同 id 容差 clDice vs 打乱后的错配对照" —— 同字必然显著高。
+    #   笔宽差只**报警不定死**: (3px 条件 -> 5px 目标) 是要模型多学"加粗", 合法。
+    #   (踩过: 第一版守门按"必须同宽"判死, 把正主 L/M 臂也挡了。)
+    if a.width_guard > 0:
+        if vae is None:
+            log("[2c] ⚠ 配对守门跳过 (未载入 VAE; --eval-every 0?)")
+        else:
+            _n = min(a.width_guard, len(ds_tr))
+            _x0c, _gc, _, _ = load_batch(ds_tr, list(range(_n)))
+            with th.no_grad():
+                _dc = (vae.decode(_gc / 0.18215).sample.mean(1) < 0).cpu().numpy()
+                _dt = (vae.decode(_x0c / 0.18215).sample.mean(1) < 0).cpu().numpy()
+            _same = float(np.mean([cldice_np(_dc[i], _dt[i]) for i in range(_n)]))
+            _shuf = float(np.mean([cldice_np(_dc[i], _dt[(i + 1) % _n])
+                                   for i in range(_n)]))
+            _wr = float(_dt.mean() / max(float(_dc.mean()), 1e-9))
+            _warn = ""
+            if _wr > a.width_tol or _wr < 1.0 / a.width_tol:
+                _warn = f"  ⚠ 宽度差偏大(模型需额外学{'加粗' if _wr > 1 else '变细'})"
+            log(f"[2c] 配对守门: 同 id 容差clDice {_same:.3f} vs 错配对照 {_shuf:.3f} | "
+                f"宽度比 目标/条件 = {_wr:.2f}x{_warn}")
+            if _same <= _shuf + 0.02:
+                raise SystemExit(
+                    f"[FATAL] 条件与目标**配对不一致**: 同 id clDice {_same:.3f} "
+                    f"<= 错配对照 {_shuf:.3f}+0.02\n"
+                    f"  条件 {a.cond_shards}\n  目标 {a.tgt_shards}\n"
+                    f"  -> 两者不是同一个字 (命名空间/id 错配)。继续训练毫无意义。")
+            log("[2c] 配对守门通过")
 
     # ── 训练 ─────────────────────────────────────────────────────────────
     os.makedirs(os.path.dirname(a.log) or ".", exist_ok=True)
@@ -368,8 +471,11 @@ def main():
     t0 = time.time()
     wlog(f"[3] 训练 {a.steps} 步 batch={a.batch} lr={a.lr} wd={a.wd} "
          f"style_drop={a.style_drop}")
+    _n_pool = min(a.overfit, len(ds_tr)) if a.overfit > 0 else len(ds_tr)
+    if a.overfit > 0:
+        wlog(f"[3a] ★ 门槛测试: 只拟合前 {_n_pool} 条样本, 并在同一批上评测")
     for step in range(1, a.steps + 1):
-        idx = np.random.randint(0, len(ds_tr), a.batch)
+        idx = np.random.randint(0, _n_pool, a.batch)
         x0, g, y, _ids = load_batch(ds_tr, idx)
         # ★ 起点: bridge 模式用**标准骨架 g**, 否则纯噪声。
         #   速度目标统一是 d(xt)/dt = src - x0 (t: 1->0 采样方向):
@@ -390,10 +496,31 @@ def main():
         v_pred = model(xt, t * TIME_SCALE, y_callig=y, y_char=th.zeros_like(y), g=g_cond)
         if isinstance(v_pred, tuple):
             v_pred = v_pred[0]
-        if a.pred == "x0":
-            loss = (v_pred - x0).pow(2).mean()
-        else:
-            loss = (v_pred - (src - x0)).pow(2).mean()
+        tgt = x0 if a.pred == "x0" else (src - x0)
+        _r = v_pred - tgt
+        _rw = _r * whiten if whiten is not None else _r     # ★ 白化
+        loss = _rw.pow(2).mean()
+        loss_mse = float(loss)
+        # ★ 方向项 + 模长项 (ramp 进, 初期让 MSE 稳场)
+        ramp = min(1.0, step / max(a.loss_ramp, 1))
+        aux_dir = aux_mag = float("nan")
+        nrm_ratio = float("nan")
+        if a.dir_weight > 0 or a.mag_weight > 0:
+            fb = v_pred.reshape(v_pred.shape[0], -1).float()
+            tb = tgt.reshape(tgt.shape[0], -1).float()
+            nf = fb.norm(dim=1)
+            nt = tb.norm(dim=1)
+            nrm_ratio = float((nf / nt.clamp_min(1e-8)).mean())
+            if a.dir_weight > 0:
+                # 方向: 1 - cos -> 基线2/收敛0; 与 resAlign 判据同量
+                _cd = ((fb * tb).sum(1) / (nf * nt).clamp_min(1e-8))
+                aux_dir = float((1.0 - _cd).mean())
+                loss = loss + a.dir_weight * ramp * (1.0 - _cd).mean()
+            if a.mag_weight > 0:
+                # 模长: 相对误差平方 -> 直接把 |v|/|u| 往 1 推 (治幅度收缩)
+                _mr = (nf - nt).pow(2) / nt.pow(2).clamp_min(1e-8)
+                aux_mag = float(_mr.mean())
+                loss = loss + a.mag_weight * ramp * _mr.mean()
         opt.zero_grad(set_to_none=True)
         loss.backward()
         th.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
@@ -407,7 +534,10 @@ def main():
                     else:
                         ema[k].copy_(v)
         if step % 50 == 0:
-            wlog(f"    step {step:6d}  flow {float(loss):.4f}  "
+            # ★ |v|/|u| 是关键诊断: 1.0 = 幅度正确; <0.8 = 正在漂白(MSE 把它拉向均值)
+            wlog(f"    step {step:6d}  flow {float(loss):.4f} "
+                 f"(mse {loss_mse:.4f} dir {aux_dir:.4f} mag {aux_mag:.4f})  "
+                 f"|v|/|u| {nrm_ratio:.3f}  "
                  f"lr {opt.param_groups[0]['lr']:.2e}  {time.time() - t0:.0f}s")
         if a.save_every > 0 and step % a.save_every == 0:
             sd = dict(deform=model.state_dict(), ema=ema, step=step,
@@ -417,9 +547,10 @@ def main():
             wlog(f"    [ckpt] {a.out}.step{step:06d}")
         if a.eval_every > 0 and step % a.eval_every == 0:
             m = eval_val()
-            # ★ 早停/最佳 用 **残差对齐** (基线 0, 上限 ~0.51), 不用 clDice:
-            #   clDice 的"什么都不做"基线就有 0.27, 动态范围被压死, 用它做早停等于盲选。
-            sc = m.get("resAlign", m.get("clDice", float("nan")))
+            # ★ 门槛测试用 iou0 (预测骨架 vs GT骨架, 容差0) 选模; 常规训练用 resAlign
+            #   (基线 0, 上限 ~0.51; clDice 的"什么都不做"基线就有 0.27, 用它=盲选)。
+            sc = (m.get("iou0", float("nan")) if a.overfit > 0
+                  else m.get("resAlign", m.get("clDice", float("nan"))))
             _extra = ""
             if "inkRatio" in m:
                 _flag = ""
@@ -428,11 +559,15 @@ def main():
                     _flag = " ⚠白化"
                 elif ir > 1.5:
                     _flag = " ⚠过墨"
+                _iou = "  ".join(
+                    f"k{k} {m.get(f'iou{k}', float('nan')):.4f}/"
+                    f"{m.get(f'iouG{k}', float('nan')):.4f}" for k in a.iou_tols)
                 _extra = (f"  | resAlign {m['resAlign']:.4f} (基线0/上限~0.51)  "
                           f"clDice {m['clDice']:.4f}  ink比 {ir:.3f}{_flag}  "
                           f"cosGen {m['cosGen']:.4f} / cosStd {m['cosStd']:.4f}"
                           f" ({'优于' if m['cosGen'] > m['cosStd'] else '劣于'}照抄 "
-                          f"{m['cosGen']-m['cosStd']:+.4f})")
+                          f"{m['cosGen']-m['cosStd']:+.4f})"
+                          f"  | 容差IoU 预测/什么都不做: {_iou}")
             wlog(f"    [eval] step {step}{_extra}")
             if not np.isnan(sc):
                 if sc > best + 2e-3:
@@ -440,7 +575,7 @@ def main():
                     th.save(dict(deform=model.state_dict(), ema=ema, step=step,
                                  args=vars(a), n_slots=n_slots,
                                  best_cldice=sc), a.out + ".best")
-                    wlog(f"    [es] ★ 新最佳 clDice {sc:.4f}")
+                    wlog(f"    [es] ★ 新最佳 score {sc:.4f}")
                 else:
                     bad += 1
                     wlog(f"    [es] 未改善 {bad}/{a.es_patience}")

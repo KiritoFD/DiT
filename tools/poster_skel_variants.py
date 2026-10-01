@@ -60,7 +60,18 @@ def main():
     ap.add_argument("--cell", type=int, default=110)
     ap.add_argument("--vae", default="data/pretrained/pretrained_models/sd-vae-ft-ema")
     ap.add_argument("--out", default="_ot_scratch/skel_variants.png")
+    # ★ 可把列换成任意落盘目录 (如训练自己 dump 的生成骨架) —— 不改默认行为
+    ap.add_argument("--gen-dir", default="", help="生成骨架 latent 目录; 给定则替换默认列")
+    ap.add_argument("--ref-dir", default="", help="参照列: std 条件目录")
+    ap.add_argument("--tgt-dir", default="", help="参照列: 训练目标目录")
     a = ap.parse_args()
+    if a.gen_dir or a.ref_dir or a.tgt_dir:
+        _v = ([("gen(dump)", a.gen_dir)] if a.gen_dir else [])
+        if a.ref_dir:
+            _v.append(("std(g)", a.ref_dir))
+        if a.tgt_dir:
+            _v.append(("GT(w7)", a.tgt_dir))
+        VARIANTS = _v
     dev = "cuda"
 
     ids = csv_ids(a.csv, a.n)
@@ -95,6 +106,8 @@ def main():
         inks[name] = float(b.mean())
     if "GT(3px)" in inks:
         gt_ink = inks["GT(3px)"]
+    elif "GT(w7)" in inks:          # 自定义列时用 w7 目标归一
+        gt_ink = inks["GT(w7)"]
     print("\n=== 漂白定量 (墨量比, 对 GT 归一; <0.7 明显漂白) ===")
     for name, _ in VARIANTS:
         if name in inks:
