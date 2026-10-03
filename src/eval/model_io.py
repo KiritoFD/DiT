@@ -70,7 +70,6 @@ def build_model_from_args(a, device, **overrides):
         input_size=latent_size,
         num_calligraphers=gi("num_calligraphers"),
         num_characters=gi("num_characters"),
-        use_checkpoint=bool(g("use_checkpoint", False)),
         learn_sigma=bool(g("learn_sigma", False)),
         condition_fusion=g("condition_fusion"),
         # ★ 必须与训练侧一致, 否则重建出的 cond_fusion 结构与 ckpt 不符,
@@ -101,11 +100,14 @@ def build_model_from_args(a, device, **overrides):
         #   -> 评测静默用 q_pos=False 的行为去评一个 q_pos=True 训出来的模型。
         #   这是"形状一致但行为不同"的静默失效，必须在这里显式接上。
         xattn_q_pos=bool(g("xattn_q_pos", False)),
+        # ★ 2026-10-03: attn_tau 与 xattn_q_pos 同类 —— 纯行为开关, 不改变参数形状。
+        #   漏传 -> strict=True 抠不到 -> 评测静默用 τ=1.0 去评一个 τ<1 训出来的模型。
+        attn_tau=float(g("attn_tau", 1.0)),
         glyph_embedder_depth=gi("glyph_embedder_depth", 0),
         glyph_embedder_sep=bool(g("glyph_embedder_sep", False)),
         style_token_n=gi("style_token_n", 0),
         style_role_init=gf("style_role_init", 0.02),
-        glyph_in_channels=4,
+        glyph_in_channels=gi("glyph_latent_channels", 4),
         in_channels=(_lc + 4 * _n_aux),
         char_proj_mode=g("char_proj_mode", "full"),
         callig_proj_mode=g("callig_proj_mode", "linear"),

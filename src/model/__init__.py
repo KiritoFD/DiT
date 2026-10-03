@@ -33,12 +33,15 @@ from .dit import (
 # 这里**不再默认导入** —— 它会把整条废弃依赖链拉进每次 `import src.model`。
 # 仍需要它的地方（如 cpu_eval_worker 的 ctrl_pair 模式）请显式:
 #     from src.model.legacy.controlnet import ControlNetDiT
-try:                                   # 兼容: 旧 ckpt/脚本若还指望顶层可见
-    from .legacy.controlnet import (   # noqa: F401
-        ControlConditionEncoder, ControlNetDiT, load_main_model,
-    )
-except Exception:                      # noqa: BLE001
-    ControlConditionEncoder = ControlNetDiT = load_main_model = None
+# ── ControlNet(两阶段) 线已归档, 依赖已解 (2026-10-03) ──────────────────────
+# 原实现: src/model/legacy/controlnet.py (已归档至 _archive/20261003_twostage/)。
+# ⚠ 这里**不再 try/except import 遗留模块** —— 那会让每次 `import src.model`
+#   都抛一次 ImportError 再吞掉。真要用 ControlNet 的人请显式:
+#       from _archive.20261003_twostage.src_model_legacy.controlnet import ControlNetDiT
+#   (需要时再把它捞回 src/model/ 下, 别在包初始化里挂隐式回退。)
+ControlConditionEncoder = None
+ControlNetDiT = None
+load_main_model = None
 from . import modules
 from .modules import (
     RMSNorm, SwiGLUFeedForward, Attention as ModernAttention,

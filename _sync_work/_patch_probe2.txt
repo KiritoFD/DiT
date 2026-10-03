@@ -1,0 +1,36 @@
+
+[   0.0s] ===== P0 extract =====
+  480/500  gpu_mem=0.21GB
+  500/500  gpu_mem=0.20GB
+[P0] extracted & cached (500, 256, 768)
+feats: 500x16x16x768
+
+[  26.9s] ===== P1' patch cos-to-center =====
+  >mean+0.5sd 占比: mean=0.390 std=0.054 min=0.238 max=0.520
+
+[  27.0s] ===== P2 radical cross-sim =====
+  random best-match=0.6629±0.1049
+  氵: 0.7617 (n=10)  <<< 分量弱
+  扌: 0.7745 (n=3)  <<< 分量弱
+  心: 0.5936 (n=6)  <<< 分量弱
+  日: 0.7143 (n=6)  <<< 分量弱
+
+[  27.6s] ===== P3' GPU kmeans K=512 =====
+  iter0: move=0.3910
+  iter1: move=0.1615
+  iter2: move=0.1128
+  iter3: move=0.0844
+  iter7: move=0.0411
+  iter11: move=0.0211
+  km fit done
+  token ids assigned
+  氵: token Jaccard=0.192
+  扌: token Jaccard=0.251
+  心: token Jaccard=0.061
+  日: token Jaccard=0.220
+
+[  27.8s] ===== P3b' fine pairs token diff =====
+  (token差异率低 = 分不清; 越高越好)
+
+[  27.8s] ===== done =====
+total 27.8s

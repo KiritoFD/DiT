@@ -24,8 +24,7 @@ a = ap.parse_args()
 from paddleocr import PaddleOCR
 
 print(f"  加载 PaddleOCR (lang={a.lang}) ...", flush=True)
-ocr = PaddleOCR(lang=a.lang, use_textline_orientation=False,
-                show_log=False) if True else None
+ocr = PaddleOCR(lang=a.lang, use_textline_orientation=False)
 print("  ✓ 模型已加载", flush=True)
 
 rows = list(csv.DictReader(open("assets/train_50k_v2.csv", encoding="utf-8")))

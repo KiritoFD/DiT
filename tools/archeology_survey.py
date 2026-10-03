@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""archeology_survey.py — Survey all remote experiments, logs, and data."""
+"""archeology_survey.py ??Survey all remote experiments, logs, and data."""
 
 import os
 import glob
@@ -188,3 +188,4 @@ if __name__ == "__main__":
     with open(out_json, "w", encoding="utf-8") as f:
         json.dump({"experiments": exps, "logs": logs, "data": data}, f, indent=2, ensure_ascii=False)
     print("\nSurvey data written to: " + out_json)
+

@@ -287,11 +287,17 @@ class ZeroCrossAttention(nn.Module):
     环境: cu121 torch>=2.0, 直接用 F.scaled_dot_product_attention。
     """
 
-    def __init__(self, d_model, num_heads, grid_size=16, q_pos=False):
+    def __init__(self, d_model, num_heads, grid_size=16, q_pos=False, attn_tau=1.0):
         super().__init__()
         assert d_model % num_heads == 0
         self.num_heads = num_heads
         self.head_dim = d_model // num_heads
+        # ★ 2026-10-03: 注意力温度 τ。softmax(qkᵀ/√d/τ) ≡ softmax((q/τ)kᵀ/√d),
+        #   所以只需把 q 除以 τ, **零额外开销**。τ<1 = 锐化 / hard routing。
+        #   动机(探针实测 tools/probe_style_routing.py): 风格 token 的独占熵 τ=1.0 时 0.974(均匀塔缩),
+        #   τ=0.1 时降到 0.397(真路由)。根因不是 token 共线, 而是初始化时 q/k 投影随机 -> logits 无差异。
+        #   τ=1.0 = 旧行为逐位等价。
+        self.attn_tau = float(attn_tau)
         grid_size = int(round(grid_size))
         # ⚠ `q_pos` (2026-09-17 新增, 默认 False = 旧行为, 保持 ckpt 兼容):
         #   原实现**只给 K/V 加位置, Q 没有**。而 rope=True 时 x 的残差流不加绝对位置
@@ -339,6 +345,8 @@ class ZeroCrossAttention(nn.Module):
             .view(B, Nc, self.num_heads, self.head_dim).transpose(1, 2)
         v = self.v_proj(self.norm_c(ctx_in)) \
             .view(B, Nc, self.num_heads, self.head_dim).transpose(1, 2)
+        if self.attn_tau != 1.0:
+            q = q / self.attn_tau      # = softmax(qkᵀ/√d/τ)
         out = F.scaled_dot_product_attention(q, k, v)
         out = out.transpose(1, 2).reshape(B, N, D)
         return x + self.out_proj(out)
@@ -360,11 +368,12 @@ class GlyphStyleCrossAttn(nn.Module):
     out_proj 零初始化 -> 初始恒等, 可安全从已训 ckpt 续跑。
     """
 
-    def __init__(self, d_model, num_heads):
+    def __init__(self, d_model, num_heads, attn_tau=1.0):
         super().__init__()
         assert d_model % num_heads == 0
         self.num_heads = num_heads
         self.head_dim = d_model // num_heads
+        self.attn_tau = float(attn_tau)   # τ<1 = 锐化, 见 ZeroCrossAttention
         self.norm_x = nn.LayerNorm(d_model)
         self.norm_c = nn.LayerNorm(d_model)
         self.q_proj = nn.Linear(d_model, d_model)
@@ -384,6 +393,8 @@ class GlyphStyleCrossAttn(nn.Module):
             B, Nc, self.num_heads, self.head_dim).transpose(1, 2)
         v = self.v_proj(ctx).view(
             B, Nc, self.num_heads, self.head_dim).transpose(1, 2)
+        if self.attn_tau != 1.0:
+            q = q / self.attn_tau
         out = F.scaled_dot_product_attention(q, k, v)
         out = out.transpose(1, 2).reshape(B, N, D)
         return x + self.out_proj(out)
@@ -404,11 +415,12 @@ class CalligStyleCrossAttn(nn.Module):
     out_proj zero-init：resume 起点恒等，step0 输出等于原 ckpt。
     """
 
-    def __init__(self, hidden_size, num_heads, grid_size=16):
+    def __init__(self, hidden_size, num_heads, grid_size=16, attn_tau=1.0):
         super().__init__()
         assert hidden_size % num_heads == 0
         self.num_heads = num_heads
         self.head_dim = hidden_size // num_heads
+        self.attn_tau = float(attn_tau)   # τ<1 = 锐化, 见 ZeroCrossAttention
         self.norm_q = nn.LayerNorm(hidden_size)
         self.norm_kv = nn.LayerNorm(hidden_size)
         self.q_proj = nn.Linear(hidden_size, hidden_size)
@@ -434,6 +446,8 @@ class CalligStyleCrossAttn(nn.Module):
             B, Nk, self.num_heads, self.head_dim).transpose(1, 2)
         v = self.v_proj(self.norm_kv(style_tokens)).view(
             B, Nk, self.num_heads, self.head_dim).transpose(1, 2)
+        if self.attn_tau != 1.0:
+            q = q / self.attn_tau
         out = F.scaled_dot_product_attention(q, k, v)
         out = out.transpose(1, 2).reshape(B, Nq, D)
         return g_tok + self.out_proj(out)
@@ -886,7 +900,6 @@ class DiT_2Cond(nn.Module):
         num_calligraphers=1000,
         num_characters=1000,
         learn_sigma=True,
-        use_checkpoint=True,
         condition_fusion="legacy",
         # ★ 融合前的归一化方式（仅 factorized_cat 生效）:
         #   joint: 先 cat 再一个 LayerNorm(cat_dim) —— 历史实现
@@ -942,6 +955,8 @@ class DiT_2Cond(nn.Module):
         # 旧实现只给 K/V 加位置, 而 rope=True 时 x 残差流不加绝对位置 -> Q 无位置,
         # "空间寻址"退化成"内容寻址"。打开后 Q/K/V 都带位置, 2D 绑定才成立。
         xattn_q_pos=False,
+        # ★ 2026-10-03: 注入模块的注意力温度 τ (只作用于 3 个注入 cross-attn, **不改** DiT 主干自注意力)。
+        attn_tau=1.0,
         glyph_in_channels=4,   # g 骨架 latent 的通道数 (aux 目标通道不改变它)
         # 标准字形条件的训练期随机丢弃概率。0 = 不丢弃。
         # 作用见 forward() 中的注释：防门控 + 模拟草/篆无标准字形的真实缺失。
@@ -1129,7 +1144,6 @@ class DiT_2Cond(nn.Module):
                 f"[DiT_2Cond] 忽略 {len(_legacy_kwargs)} 个未知/已改名的构造参数: "
                 f"{sorted(_legacy_kwargs)} （多为历史 ckpt 的旧字段，确认无影响）")
         self.learn_sigma = learn_sigma
-        self.use_checkpoint = use_checkpoint
         self.in_channels = in_channels
         self.image_channels = int(image_channels) if image_channels is not None else in_channels
         self.norm_type = norm_type
@@ -1405,7 +1419,8 @@ class DiT_2Cond(nn.Module):
             if self.callig_multi_style_k > 0 and callig_style_ca:
                 self.callig_style_ca = CalligStyleCrossAttn(
                     hidden_size, num_heads=num_heads,
-                    grid_size=int(self.x_embedder.num_patches ** 0.5))
+                    grid_size=int(self.x_embedder.num_patches ** 0.5),
+                    attn_tau=attn_tau)
             else:
                 self.callig_style_ca = None
             # 外挂(callig_spatial, 低秩): 书家向量 -> r 个系数, 线性组合 r 张可学习空间基图
@@ -1643,20 +1658,22 @@ class DiT_2Cond(nn.Module):
                         # 风格 token 每层可见: context 由 forward 外部拼好
                         # (骨架+pos ; 风格+role), 本类不再内部加位置。
                         self.glyph_injections = nn.ModuleList([
-                            GlyphStyleCrossAttn(hidden_size, num_heads=num_heads)
+                            GlyphStyleCrossAttn(hidden_size, num_heads=num_heads,
+                                                attn_tau=attn_tau)
                             for _ in self.glyph_inject_at
                         ])
                     else:
                         self.glyph_injections = nn.ModuleList([
                             ZeroCrossAttention(hidden_size, num_heads=num_heads,
                                                grid_size=self.x_embedder.num_patches ** 0.5,
-                                               q_pos=bool(xattn_q_pos))
+                                               q_pos=bool(xattn_q_pos),
+                                               attn_tau=attn_tau)
                             for _ in self.glyph_inject_at
                         ])
                 else:
                     # ZeroAdaLNInjection 现居 legacy/controlnet.py (ControlNet 线归档时
                     # 迁入), 但它仍是 adaln 注入的**活跃实现** (v13/v14/v15 全在用)。
-                    from .legacy.controlnet import ZeroAdaLNInjection
+                    from .injections import ZeroAdaLNInjection
                     self.glyph_injections = nn.ModuleList([
                         ZeroAdaLNInjection(hidden_size, mode="modulate")
                         for _ in self.glyph_inject_at
@@ -2423,44 +2440,22 @@ class DiT_2Cond(nn.Module):
             _lc_map = self._local_ca_map
             _e_cond_local = _e_cond()
 
-        if self.use_checkpoint:
-            for i, block in enumerate(self.blocks):
-                if _repa_layers is not None and i in _repa_layers:
-                    x = block(x, c, rope=rope, c_style=c_style)
-                    intermediate_feats[i] = x
-                elif _repa_single is not None and i == _repa_single:
-                    # Run this single block eagerly so its output can be captured for REPA.
-                    x = block(x, c, rope=rope, c_style=c_style)
-                    intermediate_feats = x
-                else:
-                    # ⚠ lambda 必须显式收 rope/c_style：默认参数在**定义时**绑定，
-                    #   避免循环变量 i / block 变化后闭包捕获错对象。
-                    x = checkpoint(
-                        lambda _x, _c, _rope=rope, _b=block, _cs=c_style:
-                            _b(_x, _c, rope=_rope, c_style=_cs),
-                        x, c, use_reentrant=False)
-                if i in _inj:
-                    x = self.glyph_injections[_inj[i]](x, inject_ctx)
-                if i in _lc_map:
-                    x = self.local_ca[_lc_map[i]](x, g_tok, _e_cond_local,
-                                                  self.local_pos, keep)
-        else:
-            for i, block in enumerate(self.blocks):
-                x = block(x, c, rope=rope, c_style=c_style)
-                if _repa_layers is not None and i in _repa_layers:
-                    intermediate_feats[i] = x
-                elif _repa_single is not None and i == _repa_single:
-                    intermediate_feats = x
-                if i in _inj:
-                    # x = x*(1+s) + t，s/t 由 g_tok 经 zero-init Linear 产出。
-                    # init 时恒等；梯度上 ∂out/∂g_tok = W = 0，因此这条路径
-                    # 初期不给 glyph_embedder 梯度 —— 但输入层的
-                    # x = x + glyph_scale * g_tok（glyph_scale=0.4 非零）
-                    # 已提供直通梯度，故 glyph_embedder 从 step 0 即可学习。
-                    x = self.glyph_injections[_inj[i]](x, inject_ctx)
-                if i in _lc_map:
-                    x = self.local_ca[_lc_map[i]](x, g_tok, _e_cond_local,
-                                                  self.local_pos, keep)
+        for i, block in enumerate(self.blocks):
+            x = block(x, c, rope=rope, c_style=c_style)
+            if _repa_layers is not None and i in _repa_layers:
+                intermediate_feats[i] = x
+            elif _repa_single is not None and i == _repa_single:
+                intermediate_feats = x
+            if i in _inj:
+                # x = x*(1+s) + t，s/t 由 g_tok 经 zero-init Linear 产出。
+                # init 时恒等；梯度上 ∂out/∂g_tok = W = 0，因此这条路径
+                # 初期不给 glyph_embedder 梯度 —— 但输入层的
+                # x = x + glyph_scale * g_tok（glyph_scale=0.4 非零）
+                # 已提供直通梯度，故 glyph_embedder 从 step 0 即可学习。
+                x = self.glyph_injections[_inj[i]](x, inject_ctx)
+            if i in _lc_map:
+                x = self.local_ca[_lc_map[i]](x, g_tok, _e_cond_local,
+                                              self.local_pos, keep)
 
         # 骨架头：从 final_layer 前的 block 输出特征并行解码 latent 骨架 (N,1,32,32)
         skel_pred = None

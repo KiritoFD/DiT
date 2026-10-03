@@ -45,6 +45,24 @@ import hashlib
 import platform
 import math
 
+# ═══════════════════════════════════════════════════════════════════════════
+# ★★ 铁律 (2026-10-03, 用户裁定): **绝不启用 expandable_segments** ★★
+#   PyTorch 的 OOM 报错会主动建议 PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True,
+#   **看到就忽略** —— 那是报错文案, 不是解决方案; 本项目已判定不允许。
+#   这道闸门在**任何 CUDA 分配之前**强制剔除该环境变量: torch 的 caching
+#   allocator 是在**首次 CUDA 分配时**才读它, 所以在此删除有效 (import torch
+#   之后再删就晚了)。
+#   显存不足时的正确应对: 调小 batch / 换省显存实现, **不许动分配器**。
+# ═══════════════════════════════════════════════════════════════════════════
+import os as _os_alloc_gate
+
+for _k in ("PYTORCH_CUDA_ALLOC_CONF", "PYTORCH_ALLOC_CONF"):
+    _v = _os_alloc_gate.environ.get(_k)
+    if _v and "expandable" in _v.lower():
+        _os_alloc_gate.environ.pop(_k, None)
+        print(f"[alloc-gate] ✗ 检测到 {_k}={_v!r} -> **已强制剔除** "
+              f"(铁律: 不允许 expandable_segments)", flush=True)
+del _k, _v
 from src.model import DiT_2Cond_models
 from src.loss import create_diffusion_or_flow, flow_kwargs_from
 from diffusers.models import AutoencoderKL
@@ -53,7 +71,6 @@ from src.utils import find_model
 from src.utils import MCCDDataset
 from src.utils import MCCDLatentDataset
 from src.loss import REPALoss
-from torch.utils.checkpoint import checkpoint as grad_ckpt
 from src.utils import (DistributedFactorBalancedSampler,
                        LongEpochDistributedSampler)
 from src.train.early_stop import EarlyStopper
@@ -402,7 +419,6 @@ def main(args):
             input_size=latent_size,
             num_calligraphers=args.num_calligraphers,
             num_characters=args.num_characters,
-            use_checkpoint=args.use_checkpoint,
             learn_sigma=_learn_sigma,
             condition_fusion=args.condition_fusion,
             # ★ factorized_cat 融合前的归一化方式 (docs 97 §3 方差失衡修复)
@@ -429,12 +445,14 @@ def main(args):
             glyph_inject_layers=getattr(args, 'glyph_inject_layers', 0),
             glyph_inject_mode=getattr(args, 'glyph_inject_mode', 'adaln'),
             xattn_q_pos=getattr(args, 'xattn_q_pos', False),
+            # ★ 2026-10-03: 同 xattn_q_pos —— 纯行为开关, 不改变参数形状。漏传 -> strict=True 抠不到。
+            attn_tau=float(getattr(args, 'attn_tau', 1.0) or 1.0),
             glyph_embedder_depth=getattr(args, 'glyph_embedder_depth', 0),
             # [v12+] glyph_embedder 的 3x3 conv 用 depthwise-separable (省约 8.6% 总 FLOPs)
             glyph_embedder_sep=getattr(args, 'glyph_embedder_sep', False),
             style_token_n=getattr(args, 'style_token_n', 0),
             style_role_init=getattr(args, 'style_role_init', 0.02),
-            glyph_in_channels=4,
+            glyph_in_channels=int(getattr(args, 'glyph_latent_channels', 4) or 4),
             in_channels=(getattr(args, 'latent_channels', 4)
                          + 4 * len(aux_dirs_of(args))),
             char_proj_mode=getattr(args, 'char_proj_mode', 'full'),
@@ -1106,10 +1124,14 @@ def main(args):
     #              该 pair 的真实风格中心, 防止 K=4 聚类在训练中重新塌缩。
     _style_anchor_w = float(getattr(args, 'style_anchor_weight', 0.0) or 0.0)
     _style_anchor_mode = str(getattr(args, 'style_anchor_mode', 'row') or 'row')
+    # ★ 2026-10-03: K 个风格 token 的正交正则 (v15b/c 的"伪多模态"对策)。
+    #   实测 K-Means 初始化的 4 个 token 两两余弦 0.900 = 已塔缩;
+    #   用 PCA 正交基初始化(cos≈0)后, 本 loss 防止训练中重新靠拢。
+    _style_ortho_w = float(getattr(args, 'w_style_ortho', 0.0) or 0.0)
     _style_table_param = None
     _style_anchor_target = None
     _style_anchor_k = 1
-    if _style_anchor_w > 0:
+    if _style_anchor_w > 0 or _style_ortho_w > 0:
         _raw = model.module if hasattr(model, "module") else model
         _raw = getattr(_raw, "_orig_mod", _raw)
         _style_table_param = _raw.y_callig_embedder.embedding_table.weight
@@ -1135,6 +1157,21 @@ def main(args):
                             f"锚到预训练目标 {tuple(_tgt.shape)} ({_cep})")
         elif rank == 0:
             logger.warning("[style-anchor] style_anchor_weight>0 但无 callig_emb_pretrained, 锚定不生效")
+    # ★ 2026-10-03 启动自检: K 个风格 token 的初始互余弦平方。
+    #   期望 ≈0 (PCA 正交基); 若 ≈0.8 (=cos 0.900) 说明拿的还是共线的 K-Means 资产。
+    if _style_ortho_w > 0 and _style_table_param is not None and _style_anchor_k > 1 \
+            and rank == 0:
+        with torch.no_grad():
+            _t0 = _style_table_param.detach().view(
+                _style_table_param.shape[0], _style_anchor_k, -1)
+            _n0 = torch.nn.functional.normalize(_t0, dim=-1)
+            _s0 = _n0 @ _n0.transpose(1, 2)
+            _of0 = ~torch.eye(_style_anchor_k, dtype=torch.bool, device=_s0.device)
+            _c0 = float((_s0[:, _of0] ** 2).mean())
+        logger.info(f"[style-ortho] λ={_style_ortho_w} K={_style_anchor_k} "
+                    f"表={tuple(_style_table_param.shape)} 初始 mean(cos²)={_c0:.6f} → mean cos={_c0 ** 0.5:.4f} "
+                    + ("✓ 正交基 (已打破对称)" if _c0 < 0.05
+                       else "✗✗ 仍共线! 检查 callig_emb_pretrained"))
     # ★ [2026-09-21] 原先这里有一段"提前把步数计数器归零"的代码（2026-09-19 加的），
     #   但它引用的 resume_start_step 要到 optim 之后才定义 —— 一跑就是
     #   UnboundLocalError，所以 --fresh-scheduler 这个开关**从来没被真正跑通过**。
@@ -2191,6 +2228,19 @@ def main(args):
                         _Ecur = _Ecur.view(_style_anchor_target.shape[0],
                                            _style_anchor_k, -1).mean(dim=1)
                     loss = loss + _style_anchor_w * ((_Ecur - _style_anchor_target) ** 2).mean()
+
+                # ★ 2026-10-03 正交正则 (方案三): 惩罚非对角余弦平方 λ·mean_{i≠j} cos²(t_i,t_j)。
+                #   目的: 让"多模态"在训练全程保持真正交, 而不是被 MSE 挤回共线。
+                #   仅对真实类别行生效 —— MultiStyleEmbedder 的 CFG null 是独立 Parameter, 天然排除。
+                if _style_ortho_w > 0 and _style_table_param is not None \
+                        and _style_anchor_k > 1:
+                    _T = _style_table_param.view(_style_table_param.shape[0],
+                                                 _style_anchor_k, -1)
+                    _Tn = torch.nn.functional.normalize(_T, dim=-1)
+                    _S = _Tn @ _Tn.transpose(1, 2)
+                    _off = ~torch.eye(_style_anchor_k, dtype=torch.bool,
+                                      device=_S.device)
+                    loss = loss + _style_ortho_w * (_S[:, _off] ** 2).mean()
 
                 opt.zero_grad(set_to_none=True)  # INFRA: set_to_none 释放梯度tensor, 比 zero_() 快且省内存
 

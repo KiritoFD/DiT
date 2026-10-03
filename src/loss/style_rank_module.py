@@ -46,10 +46,6 @@ class StyleRankLoss(nn.Module):
         cent = torch.from_numpy(np.load(cent_npy)).float()
         self.register_buffer('cent', cent)          # (87, 256)
 
-    @torch.no_grad()
-    def _enc_force_eval(self):
-        pass
-
     def forward(self, pred_xstart, y_pair, t):
         """pred_xstart (B,4,32,32); y_pair (B,) long; t (B,) float in [0,1]."""
         mask = (t >= self.t_min) & (t <= self.t_max)
@@ -57,9 +53,6 @@ class StyleRankLoss(nn.Module):
             return torch.tensor(0.0, device=pred_xstart.device), 0
         xs = pred_xstart[mask].float()
         yp = y_pair[mask]
-        with torch.no_grad():
-            # 编码器全程冻结; 对 pred_xstart 不回传编码器参数, 但要回传 pred_xstart
-            pass
         f = self.enc.emb(xs)                        # (n,256) 有 grad(xs)
         tgt = self.cent[yp]                         # (n,256)
         cos = (f * tgt).sum(-1)

@@ -79,7 +79,7 @@ def resolve_attn_impl(attn_impl):
                     "[modules] attn_impl='sdpa' 不可用（torch=%s 无 "
                     "F.scaled_dot_product_attention，且未安装 xformers/flash-attn），"
                     "已回退到 'eager'。eager 会物化整个 attention 矩阵，"
-                    "显存占用显著更高 —— 请相应调小 batch 或启用 use_checkpoint。",
+                    "显存占用显著更高 —— 请相应调小 batch。",
                     torch.__version__)
             _SDPA_WARNED = True
         impl = "xformers" if _XOPS is not None else "eager"

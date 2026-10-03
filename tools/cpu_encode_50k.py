@@ -106,23 +106,18 @@ def main():
                f"--workers 0 --device cpu")
         env = dict(os.environ, OMP_NUM_THREADS=str(a.threads),
                    MKL_NUM_THREADS=str(a.threads))
-        # ⚠ 捕获每个子进程的输出到独立日志 —— 上一版丢了 DEVNULL，导致
-        #   48 个进程只剩 9 个活着时**完全看不到原因**。
-        logf = open(os.path.join(a.out, f"_log_p{pi:02d}.txt"), "w")
         procs.append((pi, tmp_dir, subprocess.Popen(cmd, shell=True, env=env,
-                                                    stdout=logf,
-                                                    stderr=subprocess.STDOUT),
-                      logf))
+                                                    stdout=subprocess.DEVNULL,
+                                                    stderr=subprocess.STDOUT)))
     print(f"[cpu-encode] 启动 {len(procs)} 个进程 (每个 {a.threads} 线程, nice 10)")
 
-    for pi, tmp_dir, p, logf in procs:
+    for pi, tmp_dir, p in procs:
         rc = p.wait()
-        logf.close()
-        print(f"  proc {pi:02d} 结束 rc={rc}", flush=True)
+        print(f"  proc {pi:02d} 结束 rc={rc}")
 
     # 合并: 改名到 out/，删临时目录
     n = 0
-    for pi, tmp_dir, _, _ in procs:
+    for pi, tmp_dir, _ in procs:
         for k, sp in enumerate(sorted(glob.glob(os.path.join(tmp_dir, "shard_*.npz")))):
             dst = os.path.join(a.out, f"shard_{pi:02d}_{k:05d}.npz")
             shutil.move(sp, dst)

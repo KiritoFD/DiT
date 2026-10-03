@@ -21,9 +21,8 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-sys.path.insert(0, ROOT)
-os.chdir(ROOT)
+sys.path.insert(0, "/root/Workspace/xy/DiT")
+os.chdir("/root/Workspace/xy/DiT")
 sys.stdout.reconfigure(encoding="utf-8")
 
 

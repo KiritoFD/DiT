@@ -175,8 +175,6 @@ def build_parser(argv=None):
                              "    数据里 script_id ∈ {0:楷, 3:行, 4:隶} 且**直接当索引用**,\n"
                              "    所以必须 >= max(script_id)+1 = 5。默认 12 有富余, 无害\n"
                              "    (未用到的行拿不到梯度)。")
-    parser.add_argument("--use-checkpoint", type=_str_to_bool, default=False,
-                        help="Enable gradient checkpointing on DiT blocks (cuts activation memory).")
     parser.add_argument("--image-size", type=int, choices=[256, 512], default=256)
     parser.add_argument("--num-calligraphers", type=int, default=2021)
     parser.add_argument("--callig-id-map", default="",
@@ -383,6 +381,10 @@ def build_parser(argv=None):
                         help="锚定口径: row=锚 embedding_table 每行 (v14 stage3, 目标=预训练表); "
                              "mean=锚 K token mean pooling (v15, 目标=pt 文件里的 'pair_mean' "
                              "pair 级 DINO 质心) —— 允许 K token 各自分化, 只约束均值不漂。")
+    parser.add_argument("--attn-tau", type=float, default=1.0, dest="attn_tau",
+                        help="★ 注入用 cross-attn 的温度 τ (不改 DiT 主干)。τ<1 = 锐化/hard routing。1.0 = 旧行为逐位等价。")
+    parser.add_argument("--w-style-ortho", type=float, default=0.0, dest="w_style_ortho",
+                        help="★ K 个风格 token 的正交正则 λ: λ·mean_{i≠j} cos²(t_i,t_j)。0=关闭。建议 0.01~0.1。")
     parser.add_argument("--num-characters", type=int, default=7765)
     parser.add_argument("--epochs", type=int, default=1400)
     parser.add_argument("--max-steps", type=int, default=0,
@@ -478,6 +480,16 @@ def build_parser(argv=None):
                         help="Do not early-stop before this many total steps (train_steps).")
     parser.add_argument("--early-stop-check-every", type=int, default=0,
                         help="Check eval_auto json every N training steps (0 = ckpt_every//2, min 1000).")
+    parser.add_argument("--early-stop-set", type=str, default="", dest="early_stop_set",
+                        help="早停只看这个名字的 eval set (如 eval200); 空 = 取 n 最大的 set。"
+                             "数据源: ckpt 目录的 eval_auto_<step>.json 优先 "
+                             "(in_mem_eval 会写), 回退 eval_stdskel_summary.csv。"
+                             "组合判据可用 iou_lpips = skel_iou↑ + lpips↓。")
+    parser.add_argument("--early-stop-from-step", type=int, default=0,
+                        dest="early_stop_from_step",
+                        help="★ 阶段内早停: 忽略 step < N 的评测 (N = 本段起始绝对步数)。"
+                             "采样课程的阶段边界会故意让指标变差, 拿上一段最好成绩当基线"
+                             "会误停。>0 时生效; 0 = 自动(首次 check 取当前最新评测+1)。")
     parser.add_argument("--fresh-scheduler", type=_str_to_bool, default=False,
                         help="With --resume-full: ignore the restored scheduler state and "
                              "rebuild the LR schedule over the remaining fine-tune horizon "
@@ -519,6 +531,9 @@ def build_parser(argv=None):
     parser.add_argument("--vae", type=str, choices=["ema", "mse"], default="ema")
     parser.add_argument("--vae-path", type=str, default="data/pretrained/sd-vae-ft-ema", help="Local path to VAE weights")
     parser.add_argument("--vae-downscale", type=int, default=8, help="VAE spatial downsample factor (8=f8 sd-vae, 4=f4 kl-f4)")
+    parser.add_argument("--glyph-latent-channels", type=int, default=4,
+                        dest="glyph_latent_channels",
+                        help="条件 g 骨架 latent 的通道数 (随 VAE 变; 默认 4 = sd-vae)")
     parser.add_argument("--latent-channels", type=int, default=4, help="VAE latent channel count (4=sd-vae, 3=kl-f4)")
     parser.add_argument("--image-channels", type=int, default=None,
                         help="CFG 作用域: 只对这些通道做 classifier-free guidance, 其余通道"

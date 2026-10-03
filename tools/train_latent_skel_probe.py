@@ -81,7 +81,13 @@ def main():
     ap.add_argument("--val-frac", type=float, default=0.05)
     ap.add_argument("--num-workers", type=int, default=4)
     ap.add_argument("--seed", type=int, default=0)
+    ap.add_argument("--loss", default="mse", choices=["mse", "l1"],
+                    help="回归损失。**实测 l1 明显更好**: latent MSE 被背景主导, "
+                         "对细笔画塌陷的梯度太弱 (见 tools/diag_skel_latent_mapping.py)。")
+    ap.add_argument("--diag-vae", default="", help="给则训完用 VAE 解码对比墨量/IoU")
     args = ap.parse_args()
+
+    _lossfn = F.l1_loss if args.loss == "l1" else F.mse_loss
 
     torch.manual_seed(args.seed)
     dev = "cuda" if torch.cuda.is_available() else "cpu"
@@ -120,14 +126,14 @@ def main():
         for x, y in dl_tr:
             x, y = x.to(dev), y.to(dev)
             opt.zero_grad(set_to_none=True)
-            loss = F.mse_loss(m(x), y)
+            loss = _lossfn(m(x), y)
             loss.backward(); opt.step()
             se += loss.item() * x.shape[0]
         m.eval()
         ve = 0.0
         with torch.no_grad():
             for x, y in dl_va:
-                ve += F.mse_loss(m(x.to(dev)), y.to(dev)).item() * x.shape[0]
+                ve += _lossfn(m(x.to(dev)), y.to(dev)).item() * x.shape[0]
         tr_l, va_l = se / len(tr), ve / len(va)
         print(f"  ep{ep}  train={tr_l:.5f}  val={va_l:.5f}  ({time.time()-t0:.0f}s)")
         if va_l < best:
@@ -145,12 +151,54 @@ def main():
     m.eval()
     with torch.no_grad():
         ys = torch.cat([y for _, y in dl_va]).to(dev)
-        const = F.mse_loss(ys.mean(dim=0, keepdim=True).expand_as(ys), ys).item()
-    print(f"\n常数基线 val_mse = {const:.5f}   probe best = {best:.5f}   "
+        const = _lossfn(ys.mean(dim=0, keepdim=True).expand_as(ys), ys).item()
+    print(f"\n常数基线 val_{args.loss} = {const:.5f}   probe best = {best:.5f}   "
           f"比值 = {best/const:.3f}")
     if best > const * 0.5:
         print("⚠ probe 相比常数基线改进有限 —— 检查 skel_shards_dir 是否真指向实例骨架, "
               "或 img/skel 的 img_id 是否错位。")
+
+    # ── 图像空间验收: probe(GT骨架latent) 解码出来还像不像骨架 ──
+    if args.diag_vae:
+        _vae_diag(m, dl_va, args.diag_vae, dev)
+
+
+@torch.no_grad()
+def _vae_diag(m, dl_va, vae_path, dev):
+    """把 probe 输出解码成灰度图, 与 GT 骨架图比 IoU/墨量/连通分量。
+
+    这是**唯一有意义**的验收口径: latent MSE 再低, 解码出来糊了也没用。
+    """
+    import numpy as np
+    from diffusers.models import AutoencoderKL
+    from scipy.ndimage import label, generate_binary_structure
+
+    vae = AutoencoderKL.from_pretrained(vae_path, local_files_only=True).eval().to(dev)
+    sc = float(getattr(vae.config, "scaling_factor", 0.18215))
+
+    def dec(lat):
+        im = vae.decode(lat.float() / sc).sample
+        return ((im.clamp(-1, 1) + 1) / 2).mean(1)
+
+    xb = next(iter(dl_va))
+    x, y = xb[0].to(dev)[:32], xb[1].to(dev)[:32]
+    gy, gp = dec(y), dec(m(x))
+    iy, ip = (gy < 0.5), (gp < 0.5)
+    st = generate_binary_structure(2, 2)
+    iou = float((iy & ip).sum().float() / (iy | ip).sum().clamp_min(1).float())
+    ncy = float(np.mean([label(a.cpu().numpy(), st)[1] for a in iy]))
+    ncp = float(np.mean([label(a.cpu().numpy(), st)[1] for a in ip]))
+    print("\n[diag-vae] probe 输出解码 vs GT 骨架图 (32 样本)")
+    print(f"  墨量    probe {float(ip.float().mean()):.4f} / GT {float(iy.float().mean()):.4f} "
+          f"(比 {float(ip.float().mean()) / max(float(iy.float().mean()), 1e-9):.3f})")
+    print(f"  IoU(probe, GT) = {iou:.4f}")
+    print(f"  连通分量 probe {ncp:.1f} / GT {ncy:.1f}")
+    # 上限参考: VAE 自身往返保真度 (对真骨架 PNG 实测 IoU=0.956, 见 diag_skel_latent_mapping.py)
+    # ⚠ 不要拿 dec(y) 跟 iy 比 —— 两者同源, 恒等于 1.0, 是个假上限。
+    print("  [上限参考] VAE 自身 latent->img 往返 (对骨架 PNG) IoU = 0.956 "
+          "(tools/diag_skel_latent_mapping.py)")
+
+
 
 
 if __name__ == "__main__":

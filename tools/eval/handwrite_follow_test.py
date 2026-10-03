@@ -38,7 +38,7 @@ def main():
     from src.model import DiT_2Cond_models
     from src.utils import get_glyph_lookup_v2
     from src.eval.inference import load_eval_vae
-    from src.utils.cpu_sampler import heun_sample_cpu
+    from src.eval.cpu_sampler import heun_sample_cpu
 
     # 最新 v10b ckpt
     arch = dict(norm_type="rms", mlp_type="swiglu", qk_norm=True, rope=True,
@@ -81,7 +81,7 @@ def main():
         cond_key = "g"
     else:
         # 两阶段最优 v8e: ControlNetDiT(v8a base) + ctrl ckpt; char 条件传 null 行
-        from src.model.legacy.controlnet import load_main_model, ControlNetDiT
+        from src.model.controlnet import load_main_model, ControlNetDiT
         main = load_main_model(
             ckpt_path="assets/results/v8_3stage/A_main_final.pt", device=dev,
             num_calligraphers=1013, num_characters=35130,

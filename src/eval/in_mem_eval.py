@@ -752,63 +752,13 @@ def _load_font(fp, size):
 
 def _step_ssim_txt(results_dir, step, set_name):
     sum_path = os.path.join(results_dir, "eval_stdskel_summary.csv")
-    if os.path.exists(sum_path):
-        for r in csv.DictReader(open(sum_path, encoding="utf-8")):
-            if int(r["step"]) == step and r["set"] == set_name:
-                return f"ssim={float(r['ssim_mean']):.4f}"
-    return ""
-
-
-@torch.no_grad()
-def run_in_mem_eval(model, args, step, device, results_dir, sets=None,
-                    logger=print):
-    """采样→decode→指标一次算完, 返回 {set: ssim_mean}。
-
-    model: ema_model (GPU, eval 模式, 有 forward_with_cfg)。
-    sets: [(name, csv_path, n), ...] 默认 seen:10 + strict:50。
-    """
-    global _DIFF
-    os.makedirs(results_dir, exist_ok=True)
-    if sets is None:
-        sets = []
-        for spec in str(getattr(args, "in_mem_eval_sets", "") or "").split(","):
-            if spec.strip():
-                name, csvp, n = spec.strip().split(":")
-                sets.append((name, csvp, int(n)))
-    if not sets:
-        return {}
-
-    # csv image_path 已含完整相对路径 (data/imgs/...), img_root 置 None 避免重复拼接
-    img_root = None
-    # ⚠ eval 的 g 必须用**评测专用**目录: 训练 shard 按 train csv 的 img_id 建,
-    #   与 eval 集 img_id 不是同一套 (实测 strict 命中 0/237 -> g 全零 -> decode(0)
-    #   解出灰黄棕, poster 首行发黄且指标失真)。留空才退回训练目录。
-    shards = (getattr(args, "eval_skel_latent_shards_dir", "") or ""
-              or getattr(args, "skel_latent_shards_dir", "") or "")
-    cfg_scale = float(getattr(args, "eval_cfg", 0.7))
-    ddim_steps = int(getattr(args, "eval_steps", 50))
-    dit_batch = int(getattr(args, "in_mem_eval_batch", 16))
-    vae_batch = int(getattr(args, "in_mem_eval_vae_batch", 16))
-    sf = float(getattr(args, "vae_scaling_factor", 0.18215))
-    use_self_cond = bool(getattr(args, "eval_self_cond", False))
-    blend_alpha = float(getattr(args, "eval_blend_alpha", 0.0))
-    if _DIFF is None:
-        _DIFF = build_diffusion(ddim_steps, str(getattr(args, "diffusion_type", "flow")))
-
-    sum_path = os.path.join(results_dir, "eval_stdskel_summary.csv")
     raw_path = os.path.join(results_dir, "eval_stdskel_batch.csv")
-    done = set()
-    if os.path.exists(sum_path):
-        for r in csv.DictReader(open(sum_path, encoding="utf-8")):
-            done.add((int(r["step"]), r["set"]))
-    new_sum = not os.path.exists(sum_path)
-    new_raw = not os.path.exists(raw_path)
-    f_sum = open(sum_path, "a", newline="", encoding="utf-8")
-    f_raw = open(raw_path, "a", newline="", encoding="utf-8")
-    w_sum = csv.writer(f_sum)
-    w_raw = csv.writer(f_raw)
-    # ★ 表头版本守卫: 加了同字最近邻 4 列后, 对**旧表头**文件 append 会列错位且不报错。
-    #   表头不匹配就改名备份、从新表头重开（旧数据不丢, 但不再追加）。
+    # ★★ 2026-10-03 修 (P0-1): 表头检查必须放在 open(..., "a") **之前**。
+    #   旧顺序是 [open("a") -> exists() -> 读表头], 而 "a" 模式会**创建空文件**,
+    #   于是 exists() 恒真、表头恒读到 0 列 -> 每次 eval 都误判"表头不匹配"。
+    #   更致命的是 rename 时 f_sum 句柄仍指向旧 inode, writer 继续往**改名后的
+    #   备份文件**里写 -> 磁盘上主 summary 永远不存在 (实测 runs_AB 只有 3 个
+    #   .bak_oldcols 而无主文件, 每个 .bak 恰好含一次 eval 的数据)。
     _SUM_HDR = ["exp", "step", "set", "n", "ssim_mean", "ssim_p10", "ssim_q1",
                 "ssim_med", "ssim_q3", "ssim_p90", "mse_mean", "lpips_mean",
                 "ink_ssim_mean", "ink_iou_mean", "skel_iou_mean",
@@ -827,10 +777,30 @@ def run_in_mem_eval(model, args, step, device, results_dir, sets=None,
             os.rename(sum_path, _bak)
             print(f"[in-mem-eval] ⚠ summary 表头不匹配({len(_got)} vs {len(_SUM_HDR)} 列) "
                   f"-> 旧文件备份为 {os.path.basename(_bak)}, 重开新表")
-            done.clear()
+    # 检查完再读已完成项 (此时文件要么不存在, 要么表头已验证)
+    done = set()
+    if os.path.exists(sum_path):
+        for r in csv.DictReader(open(sum_path, encoding="utf-8")):
+            done.add((int(r["step"]), r["set"]))
     new_sum = not os.path.exists(sum_path)
+    new_raw = not os.path.exists(raw_path)
+    # ★ 句柄只在表头确认之后才打开; 之后不会再 rename 本文件 -> 不会再产生孤儿写入。
+    f_sum = open(sum_path, "a", newline="", encoding="utf-8")
+    f_raw = open(raw_path, "a", newline="", encoding="utf-8")
+    w_sum = csv.writer(f_sum)
+    w_raw = csv.writer(f_raw)
     if new_sum:
         w_sum.writerow(_SUM_HDR)
+        f_sum.flush()
+    # ★ 累积自检: 每次 eval 打印"主文件行数 + 已完成 (step,set) 对数"。
+    #   若曲线再被重置, 这行会立刻显示行数归零/不增长 -> 一眼可见, 不必事后考古。
+    try:
+        _nlines = sum(1 for _ in open(sum_path, encoding="utf-8")) if os.path.exists(sum_path) else 0
+    except Exception:                                            # noqa: BLE001
+        _nlines = -1
+    print(f"[eval] summary {sum_path}: {_nlines} 行, 已完成 (step,set) {len(done)} 对, "
+          f"表头 {len(_SUM_HDR)} 列{' (本次新建)' if new_sum else ''}", flush=True)
+
     if new_raw:
         w_raw.writerow(["exp", "step", "set", "idx", "img_id", "char", "script",
                         "calligrapher", "mse", "ssim", "lpips",
@@ -1029,6 +999,12 @@ def run_in_mem_eval(model, args, step, device, results_dir, sets=None,
                             (f"{_scn['nn_mean']:.4f}" if _scn else ""),
                             (f"{_scn['tgt_spec']:+.4f}" if _scn else ""),
                             (f"{_scn['cal_enrich']:.3f}" if _scn else "")])
+            # ★ 2026-10-03: 必须显式 flush。原来只靠进程退出时刷新 -> 下一次 eval 打开
+            #   本文件读表头时读到的是**空文件**, 判定表头不匹配 -> 把 summary 改名备份
+            #   (_bak_oldcols.*), 于是训练曲线每次 eval 被重置 (实测一晚上产生 10 个备份,
+            #   曲线全散在备份里)。flush 后曲线连续累积。
+            f_sum.flush()
+            f_raw.flush()
             for i in range(n):
                 _s = _src[i] if i < len(_src) else {}
                 w_raw.writerow([exp, step, name, i,
@@ -1046,10 +1022,22 @@ def run_in_mem_eval(model, args, step, device, results_dir, sets=None,
                                 (f"{_holes_g[i]:.4f}" if _holes_g else "")])
             f_sum.flush()
             f_raw.flush()
+            # ★ 2026-10-03: 补齐数值字段 —— 早停 (iou_lpips) 需要 lpips / skel_iou,
+            #   而原来只回传 4 个键 -> 早停拿不到判据。
             out[name] = {"ssim": float(ssim.mean()),
+                         "mse": float(mse),
+                         "lpips": float(np.mean(_lp)) if _lp else None,
                          "ink_ssim": float(np.mean(_inks)) if _inks else None,
+                         "ink_iou": float(np.mean(_inkious)) if _inkious else None,
+                         "skel_iou": float(np.mean(_skels)) if _skels else None,
                          "frag": float(np.mean(_frags)) if _frags else None,
-                         "hole": float(np.mean(_holes_p)) if _holes_p else None}
+                         "hole": float(np.mean(_holes_p)) if _holes_p else None,
+                         "hole_gt": float(np.mean(_holes_g)) if _holes_g else None,
+                         "n": int(n),
+                         "nn_ssim": (float(_scn["nn_ssim"]) if _scn else None),
+                         "nn_mean": (float(_scn["nn_mean"]) if _scn else None),
+                         "tgt_spec": (float(_scn["tgt_spec"]) if _scn else None),
+                         "cal_enrich": (float(_scn["cal_enrich"]) if _scn else None)}
             logger(f"[in-mem-eval] step={step} set={name} n={n} "
                    f"ssim={ssim.mean():.4f} (med={q50:.4f}) mse={mse:.5f}"
                    f"{_lp_txt}{_ink_txt}{_frag_txt}{_hole_txt}{_scn_txt} "
@@ -1114,6 +1102,33 @@ def maybe_run_in_training(args, ema_model, model, train_steps, device,
             _em, args, train_steps, device,
             results_dir=str(getattr(args, "results_dir", "")
                             or os.path.dirname(os.path.dirname(checkpoint_dir))))
+        # ★ 2026-10-03: 同步落 eval_auto_<step>.json 到 ckpt 目录 —— train.py 里
+        #   EarlyStopper 的**主数据源**就是这个文件名 (它以前只认 json, 而现代路径
+        #   只写 CSV -> 早停静默永不触发, 不报错、只是永远不停)。取 n 最大的 set
+        #   (= 最可信) 拍平成扁平指标 (含 skel_iou / lpips, 供 iou_lpips 判据)。
+        try:
+            import json as _json
+            _best = None
+            for _s, _v in (res or {}).items():
+                if not isinstance(_v, dict):
+                    continue
+                if _best is None or int(_v.get("n") or 0) > int(
+                        res[_best].get("n") or 0):
+                    _best = _s
+            if _best is not None:
+                _flat = {k: v for k, v in res[_best].items()
+                         if isinstance(v, (int, float))}
+                _flat.update({"step": int(train_steps), "set": _best})
+                with open(os.path.join(checkpoint_dir,
+                                       f"eval_auto_{int(train_steps)}.json"),
+                          "w", encoding="utf-8") as _f:
+                    _json.dump(_flat, _f, ensure_ascii=False, indent=2)
+                logger.info(
+                    f"[in-mem-eval] 早停数据源已落盘 eval_auto_{int(train_steps)}.json "
+                    f"(set={_best} n={_flat.get('n')} skel_iou={_flat.get('skel_iou')} "
+                    f"lpips={_flat.get('lpips')} ssim={_flat.get('ssim')})")
+        except Exception as _je:                              # noqa: BLE001
+            logger.info(f"[in-mem-eval] ⚠ eval_auto json 落盘失败(不影响训练/评测): {_je!r}")
         logger.info(
             f"[in-mem-eval] step {train_steps} done in {time.time() - t0:.0f}s: "
             + " | ".join(_fmt_eval(k, v) for k, v in res.items()))

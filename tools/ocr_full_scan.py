@@ -28,6 +28,7 @@ Image.MAX_IMAGE_PIXELS = None
 ap = argparse.ArgumentParser()
 ap.add_argument("--limit", type=int, default=0, help="0=全部")
 ap.add_argument("--script", default="all")
+ap.add_argument("--workers", type=int, default=1)
 ap.add_argument("--chunk", type=int, default=1000, help="每多少条 flush 一次")
 ap.add_argument("--out", default="assets/ocr_full_scan.csv")
 a = ap.parse_args()
@@ -73,7 +74,13 @@ _OCR = None
 def _init():
     global _OCR
     from rapidocr_onnxruntime import RapidOCR
-    _OCR = RapidOCR()
+    # ★ GPU: onnxruntime-gpu 1.16.3 + pip 的 nvidia-*-cu11 库
+    #   （需配合 _sync_work/run_ocr_gpu.sh 设 LD_LIBRARY_PATH）
+    #   实测 CPU 4.8/s -> GPU 39.4/s
+    try:
+        _OCR = RapidOCR(det_use_cuda=True, cls_use_cuda=True, rec_use_cuda=True)
+    except Exception:
+        _OCR = RapidOCR()
 
 
 def _work(item):

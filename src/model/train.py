@@ -1,0 +1,2228 @@
+import os
+os.environ["XFORMERS_DISABLED"] = "1"
+import torch
+import torch.nn as nn
+import torch.nn.functional as F
+torch.backends.cuda.matmul.allow_tf32 = True
+torch.backends.cudnn.allow_tf32 = True
+# [OPTIM-FUSED 2026-09-16] 让 cuDNN 为 (固定的) glyph_embedder conv
+# 选最快算法; 形状固定, 一次性 autotune 成本可忽略。
+torch.backends.cudnn.benchmark = True
+import torch.distributed as dist
+from torch.nn.parallel import DistributedDataParallel as DDP
+from torch.utils.data import DataLoader
+from torch.utils.data.distributed import DistributedSampler
+import numpy as np
+import sys
+from glob import glob
+from time import time
+import argparse
+import logging
+import json
+import datetime
+import copy
+import re
+import hashlib
+import platform
+import math
+
+from src.model import DiT_2Cond_models
+from src.loss import create_diffusion_or_flow, flow_kwargs_from
+from diffusers.models import AutoencoderKL
+from src.utils import find_model
+
+from src.utils import MCCDDataset
+from src.utils import MCCDLatentDataset
+from src.loss import REPALoss
+from torch.utils.checkpoint import checkpoint as grad_ckpt
+from src.utils import (DistributedFactorBalancedSampler,
+                       LongEpochDistributedSampler)
+
+# In-process GPU eval (bf16 sampling → VAE decode → save PNGs).
+# Metrics computed by eval_ctrl_metrics_daemon.py (CPU, separate process).
+try:
+    from src.eval.in_process_eval import (
+        prepare_eval_cache, run_gpu_eval, prepare_small_cache, run_show5,
+    )
+    _HAS_IN_PROCESS_EVAL = True
+except ImportError:
+    _HAS_IN_PROCESS_EVAL = False
+
+def _coerce(value, template, target_type=None):
+    """Coerce a config.json value to the type of the argparse default."""
+    if value is None or (isinstance(value, str) and value.lower() in ("none", "null", "")):
+        return None
+    if isinstance(template, bool):
+        return value if isinstance(value, bool) else str(value).lower() in ("1", "true", "yes", "on")
+    if target_type is not None:
+        return target_type(value)
+    if isinstance(template, int):
+        return int(value)
+    if isinstance(template, float):
+        return float(value)
+    return str(value)
+
+
+def _str_to_bool(value):
+    """Single-arg bool parser for argparse type=."""
+    if isinstance(value, bool):
+        return value
+    return str(value).lower() in ("1", "true", "yes", "on")
+
+
+def requires_grad(model, flag=True):
+    for p in model.parameters():
+        p.requires_grad = flag
+
+
+@torch.no_grad()
+def update_ema(ema_model, model, decay):
+    """Update a full-precision model EMA, including floating-point buffers."""
+    source = model.module if hasattr(model, "module") else model
+    source_params = dict(source.named_parameters())
+    for name, ema_param in ema_model.named_parameters():
+        ema_param.mul_(decay).add_(source_params[name].detach(), alpha=1.0 - decay)
+    source_buffers = dict(source.named_buffers())
+    for name, ema_buffer in ema_model.named_buffers():
+        source_buffer = source_buffers[name].detach()
+        if torch.is_floating_point(ema_buffer):
+            ema_buffer.mul_(decay).add_(source_buffer, alpha=1.0 - decay)
+        else:
+            ema_buffer.copy_(source_buffer)
+
+def _state_to_cpu(obj):
+    """Recursively move tensors in a (possibly nested) state dict to CPU.
+
+    opt.state_dict() nests dicts two levels deep (state -> param_idx -> tensors)
+    and lists (param_groups), so a flat .detach().cpu() pass is not enough.
+    """
+    if isinstance(obj, torch.Tensor):
+        return obj.detach().cpu()
+    if isinstance(obj, dict):
+        return {k: _state_to_cpu(v) for k, v in obj.items()}
+    if isinstance(obj, list):
+        return [_state_to_cpu(v) for v in obj]
+    return obj
+
+def cleanup():
+    dist.destroy_process_group()
+
+def create_logger(logging_dir):
+    if dist.get_rank() == 0:
+        logging.basicConfig(
+            level=logging.INFO,
+            format='[\033[34m%(asctime)s\033[0m] %(message)s',
+            datefmt='%Y-%m-%d %H:%M:%S',
+            handlers=[logging.StreamHandler(), logging.FileHandler(f"{logging_dir}/log.txt")]
+        )
+        logger = logging.getLogger(__name__)
+    else:
+        logger = logging.getLogger(__name__)
+        logger.addHandler(logging.NullHandler())
+    return logger
+
+def main(args):
+    assert torch.cuda.is_available(), "Training currently requires at least one GPU."
+
+    # ── 书家词表收紧: 稀疏 raw id -> 连续 0..N-1 (见 src/utils/callig_map.py) ──
+    # 设置 --callig-id-map 后, num_calligraphers 自动设为词表长度, 数据层查表映射;
+    # 未设置时行为与旧版完全一致 (稀疏 id 直通)。
+    # 注意: 此时 logger 尚未创建 (create_logger 在 setup_log_directory 之后),
+    # 用 print + 前缀, 与后续 [callig-emb] 日志区分。
+    args._callig_map = None
+    if getattr(args, "callig_id_map", ""):
+        from src.utils.callig_map import load_callig_id_map
+        _cm_path = args.callig_id_map
+        if not os.path.isabs(_cm_path) and not os.path.exists(_cm_path):
+            _cm_path = os.path.join("/root/Workspace/xy/DiT", _cm_path)
+        _cmap, _n = load_callig_id_map(_cm_path)
+        args._callig_map = _cmap
+        args.callig_id_map = _cm_path     # 回写解析后的绝对路径 (ckpt args/eval 端复用)
+        print(f"[callig-map] 加载词表 {_cm_path}: "
+              f"num_calligraphers {args.num_calligraphers} -> {_n}", flush=True)
+        args.num_calligraphers = _n
+
+    if 'LOCAL_RANK' not in os.environ:
+        os.environ['LOCAL_RANK'] = '0'
+        os.environ['RANK'] = '0'
+        os.environ['WORLD_SIZE'] = '1'
+        os.environ['MASTER_ADDR'] = 'localhost'
+        os.environ['MASTER_PORT'] = '12355'
+
+    # gloo is the only backend available on Windows; prefer nccl on Linux for speed.
+    backend = "nccl" if (dist.is_nccl_available() and sys.platform != "win32") else "gloo"
+    dist.init_process_group(backend)
+    assert args.global_batch_size % dist.get_world_size() == 0, f"Batch size must be divisible by world size."
+    rank = dist.get_rank()
+    device = rank % torch.cuda.device_count()
+    seed = args.global_seed * dist.get_world_size() + rank
+    torch.manual_seed(seed)
+    np.random.seed(seed)
+    torch.cuda.manual_seed_all(seed)
+    torch.cuda.set_device(device)
+    
+    if rank == 0:
+        os.makedirs(args.results_dir, exist_ok=True)
+        model_string_name = args.model.replace("/", "-")
+        # Timestamp-named experiment dir (unique per launch, never collides or overwrites).
+        _ts = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
+        _name = getattr(args, "experiment_name", "") or model_string_name
+        _name = re.sub(r"[^A-Za-z0-9._-]+", "-", _name).strip("-")
+        experiment_dir = f"{args.results_dir}/{_ts}-{_name}"
+        checkpoint_dir = f"{experiment_dir}/checkpoints"
+        os.makedirs(checkpoint_dir, exist_ok=True)
+        # 供 auto_eval_cpu（独立 CPU 进程）定位当前活动实验的 ckpt 目录。
+        with open(f"{args.results_dir}/_active_ckpt_dir.txt", "w", encoding="utf-8") as _m:
+            _m.write(checkpoint_dir + "\n")
+        # log.txt lives inside this experiment dir (created first), never overwritten.
+        logger = create_logger(experiment_dir)
+        logger.info(f"Experiment directory created at {experiment_dir}")
+        with open(f"{experiment_dir}/resolved_config.json", "w", encoding="utf-8") as _cf:
+            json.dump(vars(args), _cf, ensure_ascii=False, indent=2)
+        _sources = {}
+        for _path in ("models.py", "train.py", "losses.py", "latent_dataset.py",
+                      "samplers.py", "eval_auto.py"):
+            if os.path.isfile(_path):
+                with open(_path, "rb") as _sf:
+                    _sources[_path] = hashlib.sha256(_sf.read()).hexdigest()
+        with open(f"{experiment_dir}/source_manifest.json", "w", encoding="utf-8") as _mf:
+            json.dump({
+                "created_at": datetime.datetime.now().isoformat(),
+                "hostname": platform.node(),
+                "python": sys.version,
+                "torch": torch.__version__,
+                "cuda": torch.version.cuda,
+                "sha256": _sources,
+            }, _mf, ensure_ascii=False, indent=2)
+    else:
+        logger = create_logger(None)
+
+    # Latent spatial size: default f8 (sd-vae), but supports f4 (kl-f4) via vae_downscale arg.
+    vae_downscale = getattr(args, 'vae_downscale', 8)
+    assert args.image_size % vae_downscale == 0, f"image_size {args.image_size} not divisible by vae_downscale {vae_downscale}"
+    latent_size = args.image_size // vae_downscale
+    
+    # 注：历史上曾有 cond_mode=3cond（callig + script + char 三条件，模型 DiT_3Cond）。
+    # 2026-08-31 清理时删除 —— 三条件模型已废弃，当前只保留 2cond（callig + char）。
+    cond_mode = args.cond_mode
+    if cond_mode == "3cond":
+        raise ValueError(
+            "cond_mode=3cond 已废弃：DiT_3Cond 模型类于 2026-08-31 清理时删除。"
+            "当前只支持 cond_mode=2cond（书家 + 字）。若确需三条件，"
+            "需从 git 历史恢复 src/model/dit.py 中的 DiT_3Cond。")
+    else:
+        if args.model not in DiT_2Cond_models:
+            raise ValueError(f"cond_mode=2cond but model '{args.model}' is not a 2Cond model. "
+                             f"Use one of {list(DiT_2Cond_models.keys())}.")
+        # flow matching 没有方差头：learn_sigma=False 时 out_channels == in_channels。
+        # 若为 True（旧默认），final_layer 会多输出 C 个通道，而
+        # FlowMatching.training_losses 只取前 C 个 —— 后 C 个通道零初始化且
+        # **永远收不到梯度**，白白浪费参数并污染 out_channels 语义。
+        _diffusion_type = str(getattr(args, 'diffusion_type', 'ddpm')).lower()
+        _ls = getattr(args, 'learn_sigma', None)
+        _learn_sigma = bool(_ls) if _ls is not None else \
+            _diffusion_type not in ('flow', 'flow_matching', 'fm')
+        # 0/1 -> bool（argparse 用 int 以便 config JSON 里写 0/1）
+        _qk_norm = bool(getattr(args, 'qk_norm', True))
+        _rope = bool(getattr(args, 'rope', True))
+        _heun_batch = bool(getattr(args, 'heun_batch', True))
+
+        # IDS 组件码本: 构建 char_id -> char 映射
+        _ids_char_id_to_char = None
+        if getattr(args, 'use_ids_char_embedder', False):
+            _ids_csv = getattr(args, 'ids_char_map_csv', None)
+            if _ids_csv and os.path.isfile(_ids_csv):
+                from src.model.ids_embedder import build_char_id_map_from_csv
+                _ids_char_id_to_char = build_char_id_map_from_csv(_ids_csv)
+                logger.info(f"[ids] loaded char_id->char map from {_ids_csv}: "
+                            f"{len(_ids_char_id_to_char)} entries")
+            else:
+                logger.warning(f"[ids] ids_char_map_csv not found ({_ids_csv!r}), "
+                               f"assuming char_id == Unicode codepoint")
+
+        # ── 通道一致性断言 (2026-09-17) ────────────────────────────────────
+        # 12ch 下三个数必须自洽, 否则要么在 x_embedder 处炸, 要么**静默错位**
+        # (aux 通道与权重分组对不上)。此前没有任何校验。
+        _aux_dirs_chk = [s for s in
+                         str(getattr(args, 'aux_latent_shards_dirs', '') or '').split(',')
+                         if s.strip()]
+        _n_aux_chk = len(_aux_dirs_chk)
+        _lat_ch = int(getattr(args, 'latent_channels', 4))
+        _img_ch = (args.image_channels
+                   if getattr(args, 'image_channels', None) is not None else _lat_ch)
+        _in_ch = _lat_ch + 4 * _n_aux_chk
+        assert _img_ch == _lat_ch, (
+            f"image_channels({_img_ch}) 必须等于 latent_channels({_lat_ch}) —— "
+            f"它是 **CFG 作用域**, 不能跟着 aux 一起放大, 否则 aux 通道被异分布的"
+            f"同一 cfg_scale 放大 -> 采样轨迹跑飞 (doc59 §1.3 '墨团' 根因)。")
+        logger.info(f"[channels] latent={_lat_ch}  aux 组={_n_aux_chk}  "
+                    f"in_channels={_in_ch}  image_channels(CFG 作用域)={_img_ch}")
+
+        model = DiT_2Cond_models[args.model](
+            input_size=latent_size,
+            num_calligraphers=args.num_calligraphers,
+            num_characters=args.num_characters,
+            learn_sigma=_learn_sigma,
+            condition_fusion=args.condition_fusion,
+            callig_embed_dim=args.callig_embed_dim,
+            char_embed_dim=args.char_embed_dim,
+            # g 的全局内容向量因子 (v12): 池化 g_tok -> 向量, 与 callig 一起做 concat/add。
+            # 让 adaLN 调制分支第一次能看到"在写哪个字"。
+            glyph_vec_cond=getattr(args, 'glyph_vec_cond', False),
+            glyph_vec_dim=int(getattr(args, 'glyph_vec_dim', 128)),
+            glyph_vec_pool=getattr(args, 'glyph_vec_pool', 'mean'),
+            cond_drop_all_prob=args.cond_drop_all_prob,
+            cond_drop_one_prob=args.cond_drop_one_prob,
+            cond_drop_which_glyph_prob=getattr(args, 'cond_drop_which_glyph_prob', 0.5),
+            use_glyph_cond=(getattr(args, 'w_glyph_cond', 0) > 0
+                            or getattr(args, 'skel_as_glyph_cond', False)),
+            use_char_cond=not getattr(args, 'no_char_cond', False),
+            glyph_scale_init=getattr(args, 'glyph_scale_init', 0.4),
+            glyph_drop_prob=getattr(args, 'glyph_drop_prob', 0.0),
+            glyph_inject_layers=getattr(args, 'glyph_inject_layers', 0),
+            glyph_inject_mode=getattr(args, 'glyph_inject_mode', 'adaln'),
+            xattn_q_pos=getattr(args, 'xattn_q_pos', False),
+            glyph_embedder_depth=getattr(args, 'glyph_embedder_depth', 0),
+            # [v12+] glyph_embedder 的 3x3 conv 用 depthwise-separable (省约 8.6% 总 FLOPs)
+            glyph_embedder_sep=getattr(args, 'glyph_embedder_sep', False),
+            style_token_n=getattr(args, 'style_token_n', 0),
+            style_role_init=getattr(args, 'style_role_init', 0.02),
+            glyph_in_channels=4,
+            in_channels=(getattr(args, 'latent_channels', 4)
+                         + 4 * len([s for s in str(getattr(args, 'aux_latent_shards_dirs', '') or '').split(',') if s])),
+            char_proj_mode=getattr(args, 'char_proj_mode', 'full'),
+            callig_proj_mode=getattr(args, 'callig_proj_mode', 'linear'),
+            callig_scale_init=float(getattr(args, 'callig_scale_init', 1.0)),
+            callig_style_attn=getattr(args, 'callig_style_attn', False),
+            callig_n_style=getattr(args, 'callig_n_style', 8),
+            callig_spatial=getattr(args, 'callig_spatial', False),
+            callig_spatial_rank=int(getattr(args, 'callig_spatial_rank', 64)),
+            freeze_char_table=getattr(args, 'freeze_char_table', False),
+            # ---- IDS 组件码本字嵌入 ----
+            use_ids_char_embedder=getattr(args, 'use_ids_char_embedder', False),
+            ids_file=getattr(args, 'ids_file', None),
+            char_id_to_char=_ids_char_id_to_char,
+            # ---- 标准字形 DINO 字嵌入 (冻结查表) ----
+            use_std_dino_char_embedder=getattr(args, 'use_std_dino_char_embedder', False),
+            std_dino_table_path=getattr(args, 'std_dino_table_path', None),
+            # ---- 现代化骨干开关 ----
+            norm_type=getattr(args, 'norm_type', 'rms'),
+            mlp_type=getattr(args, 'mlp_type', 'swiglu'),
+            qk_norm=_qk_norm,
+            rope=_rope,
+            rope_theta=getattr(args, 'rope_theta', 100.0),
+            attn_impl=getattr(args, 'attn_impl', 'sdpa'),
+            # image_channels = **CFG 作用域**(只对图像 latent 通道做引导, 不引导 aux
+            #   结构通道)。与 latent_channels(图像 latent 通道数) 在 12ch 下不同:
+            #   latent_channels=4, in_channels=4+4*len(aux)=12, 而 image_channels 必须
+            #   保持 4 —— 否则 CFG 会放大分布不同的 aux 通道, 采样轨迹跑飞
+            #   (doc59 §1.3 "墨团"根因)。显式 --image-channels 优先。
+            image_channels=(args.image_channels
+                            if getattr(args, 'image_channels', None) is not None
+                            else getattr(args, 'latent_channels', 4)),
+        )
+        logger.info(f"Building 2-Cond model: {args.model} "
+                    f"(learn_sigma={_learn_sigma}, diffusion_type={_diffusion_type}, "
+                    f"arch={getattr(args, 'norm_type', 'rms')}/"
+                    f"{getattr(args, 'mlp_type', 'swiglu')}/"
+                    f"qknorm={_qk_norm}/rope={_rope}, "
+                    f"attn={getattr(args, 'attn_impl', 'sdpa')})")
+        logger.info(f"Building 2-Cond model: {args.model} "
+                    f"(callig={args.num_calligraphers}, glyph/char={args.num_characters}, "
+                    f"fusion={args.condition_fusion}, dims={args.callig_embed_dim}/"
+                    f"{args.char_embed_dim}, dropout=all:{args.cond_drop_all_prob}, "
+                    f"one:{args.cond_drop_one_prob}, "
+                    f"glyph_cond={(getattr(args, 'w_glyph_cond', 0) > 0) or getattr(args, 'skel_as_glyph_cond', False)}, glyph_scale_init={getattr(args, 'glyph_scale_init', 0.4)}, "
+                    f"char_proj_mode={getattr(args, 'char_proj_mode', 'full')}, "
+                    f"freeze_char_table={getattr(args, 'freeze_char_table', False)})")
+
+    # ── 书家词表: 对比预训练 embedding 加载 + 可选冻结 (2026-09-08) ──────────
+    # 词表收紧 (--callig-id-map) 后表只有 N+1 行; 预训练表 (SupCon w/ DINO 风格
+    # 特征, tools/pretrain_callig_emb.py) 覆盖前 N 行, CFG null 行保持随机。
+    # freeze_callig_table 时 null token 拆成独立 Parameter 保持可训练
+    # (LabelEmbedder.freeze_table(), 同 char 表的成熟机制)。
+    if getattr(args, "callig_emb_pretrained", ""):
+        _cep = args.callig_emb_pretrained
+        if not os.path.isabs(_cep) and not os.path.exists(_cep):
+            _cep = os.path.join("/root/Workspace/xy/DiT", _cep)
+        _d = torch.load(_cep, map_location="cpu", weights_only=False)
+        _emb = _d["embedding"] if isinstance(_d, dict) else _d
+        _w = model.y_callig_embedder.embedding_table.weight
+        assert _emb.shape == (_w.shape[0] - 1, _w.shape[1]), \
+            f"预训练书家表形状 {_emb.shape} != 表 {tuple(_w.shape)} - null 行"
+        with torch.no_grad():
+            _w[:_emb.shape[0]].copy_(_emb.float())
+        logger.info(f"[callig-emb] 加载预训练书家表 {_cep}: {_emb.shape}, "
+                    f"null 行保持随机")
+    if getattr(args, "freeze_callig_table", False):
+        assert getattr(args, "callig_emb_pretrained", ""), \
+            "freeze_callig_table 需要先 --callig-emb-pretrained (否则冻结随机表)"
+        model.y_callig_embedder.freeze_table()
+        logger.info("[callig-emb] 书家表已冻结 [0,N), CFG null token 保持可训练")
+
+    # ── 注入门控统计 (debug): forward hook 记录 xattn 注入输出的平均 L2 ──
+    # 零初始化起点, 该值增长 = 注入正在学会写入残差流 (惰性注册, 首个 debug 步挂)
+    _inj_stats = {}
+
+    # ── DINO glyph-embedding init for y_char_embedder ───────────────────────
+    # glyph_id = script_id * 7026 + character_id (每 script 7026 个字符, 见
+    # tools/remote_sync/_add_glyph_col.py). DINO vocab 是对"字*书体"(glyph) 取平均的:
+    # 同一 glyph 的所有书写样本的 CLS token 平均后 L2 归一化, 维度必须 == char_embed_dim
+    # (768), 之后 char_proj 直接 LayerNorm(768)->Linear(768,H) 投影, 不再经过中间 256 层。
+    #
+    # ⚠ 当 use_ids_char_embedder=True 时跳过 DINO 初始化:
+    # IDSCharEmbedder 用部件嵌入池化, 不需要 DINO 初始化。
+    _use_ids = getattr(args, 'use_ids_char_embedder', False)
+    _use_std_dino = getattr(args, 'use_std_dino_char_embedder', False)
+    _dino_emb_path = getattr(args, "char_dino_embeddings", None)
+    _dino_idx_path = getattr(args, "char_dino_index", None)
+    if _use_ids:
+        logger.info(f"[ids] using IDSCharEmbedder, skipping DINO init. "
+                    f"coverage={model.y_char_embedder.coverage:.2%}, "
+                    f"num_components={model.y_char_embedder.num_components}")
+    elif _use_std_dino:
+        logger.info(f"[std-dino] using StdDinoCharEmbedder (frozen standard-glyph DINO table), "
+                    f"skipping DINO init. table={tuple(model.y_char_embedder.char_table.shape)}")
+    elif _dino_emb_path and _dino_idx_path and os.path.isfile(_dino_emb_path) and os.path.isfile(_dino_idx_path):
+        _NUM_CH = 7026  # 与 _add_glyph_col.py 的 glyph_id 编码一致
+        _emb = np.load(_dino_emb_path)
+        with open(_dino_idx_path, "r", encoding="utf-8") as f:
+            _idx_data = json.load(f)
+        _glyphs = _idx_data.get("glyphs", _idx_data)
+        _table = model.y_char_embedder.embedding_table.weight
+        if _emb.ndim != 2 or _emb.shape[1] != _table.shape[1]:
+            logger.warning(f"[dino-init] shape mismatch: dino={_emb.shape} vs "
+                           f"char_embed_dim={_table.shape[1]} — skipping DINO init.")
+        else:
+            _emb = _emb.astype(np.float32)
+
+            # 未知行的填充向量必须在 centering **之前**算：centering 后每个 script
+            # 内部均值为 0，全体均值也趋近 0（实测 norm 仅 0.023），是个退化向量。
+            # 用未中心化的 DINO 均值并 L2 归一化 -> norm=1.0，与已知行同量级，
+            # 与已知行的平均余弦 +0.315（已知行两两之间平均 +0.115），
+            # 即"一个居中的典型字形"，比 N(0,0.02) 随机噪声(余弦≈0, 等同于随机字)好得多。
+            _fill_vec = _emb.mean(0)
+            _fill_vec = _fill_vec / max(float(np.linalg.norm(_fill_vec)), 1e-12)
+
+            # ---- (1) per-script centering（可选，实测有效）--------------------
+            # 冻结 DINO 表被"书体"主导：有效秩只有 34.1/384（PC1 占 26.3% 能量），
+            # 83% 的最近邻是同一书体，跨书体字符检索 top-1 仅 1.9%。
+            # 而书体信息本该由 y_callig_embedder 提供，char 分支里的书体分量
+            # 既是冗余也是噪声。减去每个书体的均值后：
+            #   有效秩 34.1 → 57.0，ret@1 1.9% → 2.6%，ret@5 4.2% → 6.8%，
+            #   书体泄漏 83.0% → 77.9%。
+            if getattr(args, 'dino_per_script_center', 0):
+                _sids = np.array([int(g[0]) for g in _glyphs])
+                for _s in np.unique(_sids):
+                    _m = _sids == _s
+                    if _m.sum() > 1:
+                        _emb[_m] -= _emb[_m].mean(0, keepdims=True)
+                _n = np.linalg.norm(_emb, axis=1, keepdims=True)
+                _emb = _emb / np.maximum(_n, 1e-12)
+                logger.info(f"[dino-init] per-script centering applied "
+                            f"({len(np.unique(_sids))} scripts) + L2 renormalized")
+
+            _loaded = 0
+            _dropped = 0
+            _filled_rows = []
+            with torch.no_grad():
+                for _gi, (_sid, _cid) in enumerate(_glyphs):
+                    _gid = int(_sid) * _NUM_CH + int(_cid)
+                    if 0 <= _gid < _table.shape[0] and _gi < _emb.shape[0]:
+                        _table[_gid].copy_(torch.from_numpy(_emb[_gi]).float())
+                        _loaded += 1
+                        _filled_rows.append(_gid)
+                    else:
+                        _dropped += 1
+
+                # ---- (2) 未命中行：用 DINO 均值填充，而不是留随机噪声 ----------
+                # y_char_embedder 有 num_characters=35130 行，而 DINO 只覆盖 20468 个
+                # glyph。未命中的行停留在 nn.Embedding 默认 N(0, 0.02) 且被冻结，
+                # 对模型来说就是一个"随机字符"。
+                # 更糟：char_proj='ln_only' 时 LayerNorm 逐样本归一化，把
+                # "已知行范数=1.0" 和 "未知行范数≈0.39" 这个唯一可辨的线索也抹掉了
+                # —— 模型在数值上无法区分。用 DINO 均值填充至少给出一个
+                # "平均字形"的合理先验（eval_unseen 上有 6.6% 的 glyph 落在这里）。
+                _fill = getattr(args, 'dino_fill_unknown', 1)
+                if _fill and _filled_rows:
+                    # 注意：embedding_table 有 num_classes + 1 行，最后一行是
+                    # LabelEmbedder 的 CFG null token，**绝不能覆盖**（否则 CFG 失效）。
+                    _n_classes = model.y_char_embedder.num_classes
+                    _mean = torch.from_numpy(_fill_vec).to(_table.device, _table.dtype)
+                    _known = set(_filled_rows)
+                    _n_unknown = _n_classes - len(_known)
+                    if _n_unknown > 0:
+                        # 只填充 [0, num_classes) 区间内未被 DINO 命中的行
+                        _unknown_rows = [r for r in range(_n_classes) if r not in _known]
+                        _rows_t = torch.as_tensor(_unknown_rows, device=_table.device)
+                        _table.index_copy_(0, _rows_t,
+                                           _mean[None].expand(len(_unknown_rows), -1))
+                        logger.info(f"[dino-init] filled {_n_unknown} unknown rows "
+                                    f"(of {_n_classes} classes) with the L2-normalized DINO "
+                                    f"mean vector (norm=1.0, was: frozen N(0,0.02) noise with "
+                                    f"~0 cosine to all real glyphs); "
+                                    f"CFG null token (row {_n_classes}) untouched.")
+
+            logger.info(f"[dino-init] injected {_loaded} glyph embeddings into "
+                        f"y_char_embedder ({_emb.shape[0]} in vocab, {_dropped} out-of-range), "
+                        f"table={tuple(_table.shape)}, L2-normalized DINO (glyph-averaged), "
+                        f"char_proj_mode={getattr(args, 'char_proj_mode', 'full')}, "
+                        f"freeze_char_table={getattr(args, 'freeze_char_table', False)}.")
+    else:
+        logger.warning(f"[dino-init] char_dino_embeddings/index not found "
+                       f"({_dino_emb_path!r}, {_dino_idx_path!r}) — y_char_embedder stays random init.")
+
+    # Load order (fixed): pretrained body -> reset cond head -> inject LoRA -> load delta.
+    # The checkpoint `delta` contains only the "changed" part (LoRA + condition head +
+    # adaLN/final_layer), so the frozen pretrained body is ALWAYS loaded from disk first.
+    _resume_full_ckpt = None
+
+    # 1) pretrained body (shared, not stored per-ckpt)
+    if args.pretrained is not None:
+        ckpt_path = args.pretrained
+        state_dict = find_model(ckpt_path)
+        # Filter out ALL label-embedding / conditioning keys that don't match DiT_2Cond.
+        # The pretrained DiT-XL checkpoint has a single 'y_embedder'; DiT_2Cond/3Cond have
+        # separate calligrapher/character(/script) embedders plus cond_fusion. Keep only the
+        # transformer body (x_embedder / pos_embed / t_embedder / blocks / final_layer).
+        state_dict = {k: v for k, v in state_dict.items()
+                      if not k.startswith(("y_embedder", "y_callig", "y_script", "y_char", "cond_fusion"))}
+        missing, unexpected = model.load_state_dict(state_dict, strict=False)
+        logger.info(f"Loaded pre-trained weights from {ckpt_path}.")
+        logger.info(f"Missing keys (expected for 2/3-cond): {missing}")
+        logger.info(f"Unexpected keys (filtered): {unexpected}")
+
+    # 2) re-init the conditioning head (adaLN & final_layer) after loading pretrained body.
+    # The pretrained adaLN was trained on ImageNet's single y_embedder; our 3-cond fused
+    # condition vector c is out-of-distribution for it, which can blow up to NaN early on.
+    # Re-initializing adaLN/final_layer to a small std (like the successful overfit run)
+    # keeps the pretrained transformer body while letting the new condition head learn.
+    # (Skipped on full resume: the delta already carries the learned adaLN.)
+    # 条件调制层总是重置从头学（无论 legacy/factorized_add/xl_highdim）。
+    # 关键认知：ImageNet 预训练 adaLN/final_layer/y_embedder 学的是"1000类自然物分类
+    # →调制"，与书法(callig×glyph)条件完全正交。保留它= 强迫模型用 ImageNet 分类
+    # 眼光生成，导致乱码/跑偏。我们只保留通用扩散引擎（t_embedder/x_embedder/attn/mlp），
+    # 条件调制一律从头学，由训练目标(结构loss+diff)自行建立"条件→生成"耦合。
+    if getattr(args, 'resume_full', None) is None:
+        import torch.nn as _nn
+        for _b in model.blocks:
+            _nn.init.normal_(_b.adaLN_modulation[-1].weight, std=0.02)
+            _nn.init.normal_(_b.adaLN_modulation[-1].bias, std=0.02)
+        _nn.init.normal_(model.final_layer.adaLN_modulation[-1].weight, std=0.02)
+        _nn.init.normal_(model.final_layer.adaLN_modulation[-1].bias, std=0.02)
+        _nn.init.normal_(model.final_layer.linear.weight, std=0.02)
+        logger.info("[cond-head] reset adaLN/final_layer to std=0.02 (retain task-agnostic "
+                    "transformer engine, drop ImageNet class-condition coupling).")
+
+
+    # 3) full resume works for both LoRA and full-from-scratch checkpoints.
+    if getattr(args, 'resume_full', None) is not None:
+        import torch as _torch
+        _rf = _torch.load(args.resume_full, map_location="cpu", weights_only=False)
+        _resume_full_ckpt = _rf
+        _sd = _rf.get("delta", _rf.get("model", _rf))
+        # torch.compile 存盘键带 _orig_mod. 前缀 —— 不剥离则全部 missing, 模型静默随机重启
+        _sd = {(k[len("_orig_mod."):] if k.startswith("_orig_mod.") else k): v
+               for k, v in _sd.items()}
+        missing, unexpected = model.load_state_dict(_sd, strict=False)
+        logger.info(f"[resume-full] Loaded weights from {args.resume_full} "
+                    f"(missing={len(missing)}, unexpected={len(unexpected)}).")
+
+    # ---- freeze / trainable policy --------------------------------------------
+    # Two regimes:
+    #   1) pretrained body: freeze the pretrained transformer body,
+    #      train only the *new* condition head + adaLN/final_layer.
+    #      adaLN is reset to std=0.02 by `reset_cond_head`, so it MUST be trainable
+    #      (`train_cond_head=true`), otherwise the model is stuck on random modulation.
+    #   2) from-scratch (pretrained=None): keep all params trainable.
+    _has_pretrained = args.pretrained is not None
+    if _has_pretrained:
+        requires_grad(model, False)
+        train_cond_head = getattr(args, 'train_cond_head', True)
+        for name, param in model.named_parameters():
+            if ('y_callig_embedder' in name or 'y_char_embedder' in name
+                    or 'cond_fusion' in name or 'y_script_embedder' in name
+                    or 'callig_proj' in name or 'script_proj' in name or 'char_proj' in name
+                    or 'y_scale' in name or 'skel_head' in name or 'glyph_scale' in name
+                    or 'glyph_embedder' in name):
+                param.requires_grad = True
+            elif train_cond_head and ('adaLN' in name or 'final_layer' in name):
+                param.requires_grad = True
+
+        # 上面的白名单用 `'y_char_embedder' in name` 匹配，会**顺带把已冻结的
+        # 字符表重新解冻**（embedding_table.weight 也在 y_char_embedder 名下）。
+        # 这里显式恢复冻结，只保留 LabelEmbedder.null_embed 可训练。
+        if getattr(model, '_char_table_frozen', False) and hasattr(model, 'y_char_embedder'):
+            _ye = model.y_char_embedder
+            # IDSCharEmbedder 用 comp_embedding 而非 embedding_table
+            if hasattr(_ye, 'comp_embedding'):
+                _ye.comp_embedding.weight.requires_grad_(False)
+                _frozen_params = _ye.comp_embedding.weight.numel()
+            else:
+                _ye.embedding_table.weight.requires_grad_(False)
+                _frozen_params = _ye.embedding_table.weight.numel()
+            if _ye.null_embed is not None:
+                _ye.null_embed.requires_grad_(True)
+            logger.info("[freeze-char-table] kept y_char_embedder frozen "
+                        f"({_frozen_params:,} params); null_embed stays trainable.")
+
+    # ── 诊断开关：只训练字 embedding（冻结主干）────────────────────────────
+    # 目的：验证「base SSIM 卡在 0.50 的瓶颈是不是 char 条件」。
+    # 除 char embedding + char_proj 外全部冻结，因此指标的任何变化都可以
+    # 直接归因到字条件，而不会被「主干也顺便多训了一会儿」污染。
+    # 背景：DINO glyph 表实测判别力极弱——库内检索 top-1 84%，换成同字
+    # 不同书家的库外检索立刻掉到 4%（见 docs/system/14_glyph_condition_probe.md），
+    # 说明 CLS 特征编码的是「这张图长什么样」而非「这个字是什么字」。
+    if getattr(args, 'train_only_char_embed', False):
+        requires_grad(model, False)
+        _n = 0
+        for _name, _p in model.named_parameters():
+            if 'y_char_embedder.embedding_table' in _name or 'char_proj' in _name:
+                _p.requires_grad = True
+                _n += _p.numel()
+        # CFG null token 必须保持可训练，否则 uncond 分支失效、eval 指标失真
+        _ye = model.y_char_embedder
+        if getattr(_ye, 'null_embed', None) is not None:
+            _ye.null_embed.requires_grad_(True)
+            _n += _ye.null_embed.numel()
+        # IDSCharEmbedder 还有 fallback_embed
+        if getattr(_ye, 'fallback_embed', None) is not None:
+            _ye.fallback_embed.requires_grad_(True)
+            _n += _ye.fallback_embed.numel()
+        logger.info(f"[train-only-char-embed] backbone frozen; trainable={_n:,} "
+                    f"(char embedder + char_proj + null/fallback). "
+                    f"NOTE: pair with freeze_char_table=false, else the table stays frozen "
+                    f"(_char_table_frozen={getattr(model, '_char_table_frozen', False)}).")
+
+    # report trainable counts
+    trainable_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
+    frozen_params = sum(p.numel() for p in model.parameters() if not p.requires_grad)
+    logger.info(f"Trainable Parameters: {trainable_params:,}")
+    logger.info(f"Frozen Parameters: {frozen_params:,} (trainable ratio: {trainable_params/(trainable_params+frozen_params)*100:.2f}%)")
+
+    model = model.to(device)
+    # torch.compile (torch>=2.0, cu121 env): 在 DDP 之前编译整个模型。
+    # 默认 mode="default"；250 steps 预热区间的首步会花数十秒编译，之后每步走
+    # inductor 缓存的 kernel。EMA 模型是 eval-only 深拷贝，不编译（省编译时间/
+    # 显存），权重同步走普通张量拷贝，与编译无关。
+    if getattr(args, "compile", False):
+        _compile_mode = getattr(args, "compile_mode", "default")
+        if float(torch.__version__[:3]) < 2.0:
+            logger.warning("[compile] torch %s 不支持 torch.compile，忽略 --compile",
+                           torch.__version__)
+        else:
+            # [INFRA 2026-09-16] pattern_matcher guard
+            # torch 2.1.2 的 inductor pattern_matcher 在整图 replacement 路径上有一个
+            # 无 visited 集保护的指数级递归 (torch/_inductor/pattern_matcher.py:652-655
+            # percolate_tags 自递归), 整图编译时把编译卡死: 实测 >30min 无任何输出,
+            # faulthandler 栈为上万层同一函数。关闭后同一张图 ~65s 编完, 实测 step
+            # 时间无损失 (181.1ms vs 181.2ms)。如需恢复 pattern 融合: DIT_PATTERN_MATCHER=1
+            if os.environ.get("DIT_PATTERN_MATCHER", "0") != "1":
+                from torch._inductor import config as _ind_cfg
+                _ind_cfg.pattern_matcher = False
+                logger.info("[compile] pattern_matcher=False (规避 torch 2.1.2 percolate_tags 递归爆炸)")
+            logger.info(f"[compile] torch.compile(mode={_compile_mode}) 注入（DDP 之前）...")
+            model = torch.compile(model, mode=_compile_mode)
+    ema_model = None
+    if getattr(args, "use_ema", False):
+        ema_model = copy.deepcopy(model).eval()
+        requires_grad(ema_model, False)
+        if _resume_full_ckpt is not None and _resume_full_ckpt.get("ema") is not None:
+            # strict=False: 模型新增模块 (如 callig_spatial) 在旧 ckpt EMA 里没有 keys;
+            # 这些 keys 会走 _LRScheduler 式的缺省初始化路径, 由 copy.deepcopy(model) 保持零初始化.
+            _ema_miss, _ema_unexp = ema_model.load_state_dict(_resume_full_ckpt["ema"], strict=False)
+            if _ema_miss:
+                logger.info(f"[EMA] missing (new modules, kept init): {sorted(set(k.split('.')[0] for k in _ema_miss))[:8]}")
+            logger.info("[EMA] restored EMA weights from checkpoint")
+        logger.info(f"[EMA] enabled with decay={args.ema_decay}, interval={getattr(args, 'ema_interval', 1)} "
+                    f"(effective per-step decay={args.ema_decay ** max(1, int(getattr(args, 'ema_interval', 1)))})")
+    if dist.get_world_size() > 1:
+        model = DDP(model, device_ids=[rank], find_unused_parameters=True)
+    # flow 的 t 分布 / 求解器 / shift 由 config 指定，训练与 eval 共用同一份
+    # （通过 flow_kwargs_from 抽取），避免两侧静默不一致。
+    _flow_kw = flow_kwargs_from(args)
+    diffusion = create_diffusion_or_flow(timestep_respacing="",
+                                         diffusion_type=getattr(args, 'diffusion_type', 'ddpm'),
+                                         **_flow_kw)
+    _is_flow = getattr(diffusion, 'is_flow', False)
+    if _is_flow:
+        logger.info(f"[flow] {diffusion.describe()}")
+        logger.info("[flow] Flow-Matching enabled (velocity target, Euler ODE sampling, t in [0,1])")
+    _vae_ds = getattr(args, 'vae_downscale', 8)
+    _vae_lc = getattr(args, 'latent_channels', 4)
+    _vae_ic = getattr(args, 'vae_in_channels', 3)
+    _vae_oc = getattr(args, 'vae_out_channels', 3)
+    _vae_sf = getattr(args, 'vae_scaling_factor', 0.18215)
+    class MockVAE(torch.nn.Module):
+        def __init__(self, device):
+            super().__init__()
+            self.device = device
+        def encode(self, x):
+            class Dist:
+                def sample(self):
+                    return torch.randn(x.shape[0], _vae_lc, x.shape[2]//_vae_ds, x.shape[3]//_vae_ds, device=x.device)
+            class Output:
+                latent_dist = Dist()
+            return Output()
+        def decode(self, z):
+            class Output:
+                sample = torch.randn(z.shape[0], _vae_oc, z.shape[2]*_vae_ds, z.shape[3]*_vae_ds, device=z.device)
+            return Output()
+
+    # 2026-09-05: REPA 不强制 VAE —— 配了 latent_shards_dir 时用预编码 latent,
+    # REPA 只需 GT 像素图(喂 DINO teacher), 不需要 vae.encode。
+    _need_vae = (not bool(getattr(args, "latent_shards_dir", None)))
+    if _need_vae:
+        try:
+            if getattr(args, 'vae_path', None) is not None and os.path.exists(args.vae_path):
+                logger.info(f"Loading VAE from local path: {args.vae_path}")
+                vae = AutoencoderKL.from_pretrained(args.vae_path).to(device)
+            else:
+                vae = AutoencoderKL.from_pretrained(f"stabilityai/sd-vae-ft-{args.vae}").to(device)
+            requires_grad(vae, False)
+        except Exception as e:
+            logger.warning(f"Failed to load AutoencoderKL due to network/path error: {e}")
+            logger.warning("Using MockVAE (random latents) for testing purposes!")
+            vae = MockVAE(device)
+    else:
+        vae = MockVAE(device)
+        logger.info("[infra] VAE skipped (latent-only mode) -> saves ~500MB VRAM")
+
+    # ---- 统一 REPA (公共 infra src.loss.repa) ----
+    # 支持多层 (repa_layers="8,11"/"8") + warmup 渐进, 与后训练(train_controlnet)完全一致。
+    repa_loss_fn = None
+    _repa_layers = getattr(args, "repa_layers", "") or ""
+    if args.w_repa > 0:
+        try:
+            layers = tuple(int(x) for x in str(_repa_layers).split(",") if x.strip()) or (8,)
+        except Exception:
+            layers = (8,)
+        try:
+            _proj = model.x_embedder.proj
+            # PatchEmbed.proj 是 Conv2d (out_channels), 非 Linear (out_features)
+            student_hidden_size = int(getattr(_proj, "out_channels",
+                                              getattr(_proj, "out_features", 0)))
+            if student_hidden_size <= 0:
+                raise ValueError("cannot infer student dim from x_embedder.proj")
+        except Exception:
+            student_hidden_size = 384
+        from src.loss.repa import build_repa_module
+        # REPA teacher 特征离线缓存: 命中免 DINO 前向, miss 兜底 (lazy teacher)
+        _feature_cache = None
+        _repa_cache_dir = str(getattr(args, "repa_cache_dir", "") or "")
+        if _repa_cache_dir:
+            try:
+                from src.utils.dino_cache import DinoFeatureCache
+                _feature_cache = DinoFeatureCache(_repa_cache_dir)
+                logger.info(f"[repa-cache] {_feature_cache.stats()}")
+            except Exception as _e:
+                logger.warning(f"[repa-cache] failed to load ({_e!r}) -> teacher forward every step")
+        repa_loss_fn = build_repa_module(
+            student_dim=student_hidden_size, layers=layers,
+            teacher_ckpt=getattr(args, "repa_teacher_ckpt", "") or None,
+            w_repa=float(args.w_repa),
+            warmup_steps=int(getattr(args, "repa_warmup", 0) or 0),
+            device=device, feature_cache=_feature_cache)
+        logger.info(f"Initializing unified REPA (Teacher: dinov2_vits14, "
+                    f"Student Dim: {student_hidden_size}, layers={layers}, "
+                    f"w={args.w_repa}, warmup={getattr(args, 'repa_warmup', 0)}, "
+                    f"cache={'yes' if _feature_cache is not None else 'no'})")
+
+    # ---- 实例骨架结构 loss: 冻结 probe (新增可训练参数 0) ----
+    # 形态对比见 latent_structure.LatentSkelStructureLoss 的 docstring。
+    # target = batch['skel_latent'], **必须指向实例骨架**; 若指到标准字形就是纯重复 g, 必败。
+    _skel_struct_loss_fn = None
+    _SKEL_STRUCT_WARNED = False
+    if getattr(args, 'w_latent_skel', 0.0) > 0:
+        # ⚠ 硬拦截: target 绝不能是标准字形骨架。
+        # 当前数据集只暴露 `skel_latent`(来自 skel_latent_shards_dir)。v12 该目录是
+        # **shards_std** 且 skel_as_glyph_cond=True -> batch['skel_latent'] 就是 g 本身。
+        # 拿它当结构 target = 纯重复条件信号 = doc60 §6 那条纪律的翻版, 必败且静默
+        # (loss 会正常下降, 因为预测 g 很容易)。故显式拒绝启动, 不给人跑废一整轮的机会。
+        if getattr(args, 'w_latent_skel', 0.0) > 0 and not (
+                getattr(args, 'inst_skel_shards_dir', '') or '').strip():
+            # ⚠ 硬拦截升级 (2026-09-16): v12 的 skel_latent_shards_dir 是 **shards_std**
+            # 且 skel_as_glyph_cond=True -> batch['skel_latent'] 就是 g 本身。拿它当结构
+            # target = 纯重复条件信号 = 必败且静默 (loss 会正常下降, 因为预测 g 很容易)。
+            # 现在 target 必须来自独立的 batch['inst_skel'](实例骨架, GT 图派生, 与 g 解耦),
+            # 故要求显式配置 --inst-skel-shards-dir。不给人跑废一整轮的机会。
+            raise ValueError(
+                "--w-latent-skel>0 需要 --inst-skel-shards-dir 指向**实例骨架** latent shards "
+                "(GT 图 -> skeletonize -> 3px 膨胀 -> VAE encode, 由 "
+                "tools/build_skel_latents.py 生成; 与条件 g 完全解耦)。\n"
+                "注意: skel_latent_shards_dir=shards_std + skel_as_glyph_cond=True 时 "
+                "batch['skel_latent'] 就是 g 本身, 不能当结构 target。\n"
+                "先跑 _sync_work/inst_skel_pipeline.sh (stage1 建 shards + stage2 训 probe)。")
+
+        _pcfg = getattr(args, 'latent_skel_probe', '') or ''
+        if not _pcfg or not os.path.exists(_pcfg):
+            raise ValueError(
+                f"--w-latent-skel > 0 需要 --latent-skel-probe 指向训好的 probe ckpt, "
+                f"当前={_pcfg!r}。用 tools/train_latent_skel_probe.py 训练。")
+        from src.train.latent_structure import LatentSkelProbe, LatentSkelStructureLoss
+        _pck = torch.load(_pcfg, map_location="cpu", weights_only=False)
+        _pargs = _pck.get("args", {}) if isinstance(_pck, dict) else {}
+        _probe = LatentSkelProbe(
+            in_channels=int(_pargs.get("in_channels", 4)),
+            out_channels=int(_pargs.get("out_channels", 4)),
+            width=int(_pargs.get("width", 64)),
+            depth=int(_pargs.get("depth", 3)))
+        _psd = _pck.get("model", _pck)
+        _missing, _unexp = _probe.load_state_dict(_psd, strict=False)
+        if _missing or _unexp:
+            raise ValueError(f"probe ckpt 不匹配: missing={_missing} unexpected={_unexp}")
+        _probe.to(device).eval().requires_grad_(False)
+        _skel_struct_loss_fn = LatentSkelStructureLoss(
+            probe=_probe, max_t=float(getattr(args, 'latent_skel_max_t', 0.3)))
+        logger.info(f"[skel-struct] enabled: w={args.w_latent_skel}, probe={_pcfg}, "
+                    f"max_t={_skel_struct_loss_fn.max_t}, metrics={_pck.get('metrics', {})}, "
+                    f"trainable_params_added=0 (probe frozen)")
+
+    trainable_params_list = [p for p in model.parameters() if p.requires_grad]
+    if repa_loss_fn is not None:
+        trainable_params_list.extend(repa_loss_fn.trainable_params())
+
+    _opt_name = getattr(args, "optimizer", "adamw")
+    if _opt_name == "muon":
+        # Muon: 矩阵权重 NS-正交化 (独立 muon_lr, 典型 0.02-0.05), 向量/embedding 走 AdamW (adamw_lr)
+        try:
+            from src.optim.muon import Muon as _Muon
+        except Exception as e:
+            raise RuntimeError(f"src.optim.muon import failed: {e}")
+        _muon_lr = float(getattr(args, "muon_lr", 0.02))
+        _adamw_lr = float(getattr(args, "lr", 3e-4))
+        _adamw_wd = float(getattr(args, "weight_decay", 0.01))
+        # REPA proj 是矩阵 dim=2 -> 自动进 muon 组, 会用它; 向量(embedding标量)进 adamw
+        opt = _Muon(
+            trainable_params_list, lr=_muon_lr, weight_decay=0.0,
+            adamw_lr=_adamw_lr, adamw_weight_decay=_adamw_wd)
+        logger.info(f"[optim] Muon: 矩阵组 lr={_muon_lr} (NS正交) / 向量+embedding组 AdamW lr={_adamw_lr} wd={_adamw_wd}")
+    else:
+        # [OPTIM-FUSED 2026-09-16] AdamW fused (单内核多张量更新, 省 elementwise 带宽)。
+        # 守卫: 仅 CUDA 且 torch 支持 fused 时启用, 否则退回默认实现。
+        _fused = bool(torch.cuda.is_available()) and float(torch.__version__[:3]) >= 2.0
+        try:
+            opt = torch.optim.AdamW(trainable_params_list, lr=args.lr,
+                                    weight_decay=args.weight_decay, fused=_fused)
+        except TypeError:
+            opt = torch.optim.AdamW(trainable_params_list, lr=args.lr, weight_decay=args.weight_decay)
+            _fused = False
+        logger.info(f"[optim] AdamW lr={args.lr} wd={args.weight_decay}")
+
+    # Restore optimizer state + step counter for full resume. If --resume-lr is given,
+    # override the LR so we can test whether a smaller LR avoids the NaN.
+    resume_start_step = 0
+    if _resume_full_ckpt is not None:
+        _opt_sd = _resume_full_ckpt.get("opt", None)
+        if _opt_sd is not None:
+            try:
+                opt.load_state_dict(_opt_sd)
+                logger.info(f"[resume-full] Restored optimizer state.")
+            except Exception as _e:
+                logger.warning(f"[resume-full] Failed to restore optimizer state: {_e}")
+
+        if getattr(args, 'resume_lr', None) is not None:
+            for _pg in opt.param_groups:
+                _pg["lr"] = args.resume_lr
+            logger.info(f"[resume-full] Overrode LR -> {args.resume_lr}")
+        # Recover the step counter, 优先级:
+        #   1) ckpt **顶层** "train_steps"  —— 唯一权威: 存盘时由真实步数写入(见下方
+        #      checkpoint["train_steps"]), 与文件名无关, 任何文件名的 ckpt 都对。
+        #      [2026-09-16] 此前**从未被读取**, 只靠文件名数字推测 -> 跨阶段备份用的
+        #      无时间戳名字会被解析错, 例: "v12_S2_cat_last.pt" 的 digits=['12','2']
+        #      -> resume_start_step=2 -> LR 退回 warmup 起点(≈6.7e-8, 看着像卡死),
+        #      且 ckpt 从 0001000.pt 重新编号会**覆盖历史 ckpt**。
+        #   2) 文件名末尾数字 (0055000.pt -> 55000), 兼容旧 ckpt (无顶层字段)。
+        #   3) 保存的 args.train_steps —— 兜底 (历史 comment 认为该字段不存在)。
+        import re as _re
+        _top_steps = _resume_full_ckpt.get("train_steps", None)
+        _fname = os.path.basename(str(args.resume_full))
+        _digits = _re.findall(r"\d+", _fname)
+        _ckpt_args = _resume_full_ckpt.get("args", None)
+        _args_steps = (getattr(_ckpt_args, "train_steps", None)
+                       if _ckpt_args is not None else None)
+        _src = None
+        if _top_steps is not None:
+            resume_start_step, _src = int(_top_steps), "ckpt 顶层 train_steps"
+        elif _digits:
+            resume_start_step, _src = int(_digits[-1]), f"文件名 {_fname}"
+        elif _args_steps is not None:
+            resume_start_step, _src = int(_args_steps), "保存的 args.train_steps"
+        if _src is not None:
+            logger.info(f"[resume-full] start step={resume_start_step} (来源: {_src})")
+            if _digits and int(_digits[-1]) != resume_start_step:
+                logger.warning(
+                    f"[resume-full] 文件名数字 {_digits[-1]} != 真实步数 "
+                    f"{resume_start_step} —— 已按真实步数走 (文件名仅供人看, 不可信)")
+
+    # bf16 training: run the model in bf16 autocast (no loss scaling needed — bf16 has
+    # the same exponent range as fp32, so it does not overflow like fp16 AMP). VAE and
+    # structural losses stay fp32 for numerical stability.
+    use_latent = bool(getattr(args, "latent_shards_dir", None))
+
+    if use_latent:
+        dataset = MCCDLatentDataset(csv_file=args.data_csv,
+                                    latent_shards_dir=args.latent_shards_dir,
+                                    img_root=args.img_root,
+                                    image_size=args.image_size,
+                                    preload=bool(getattr(args, 'preload', False)),
+                                    load_image=(args.w_repa > 0),
+                                    num_preload_workers=int(getattr(args, 'preload_workers', 16)),
+                                    use_glyph_cond=getattr(args, 'w_glyph_cond', False),
+                                    skel_latent_shards_dir=(args.skel_latent_shards_dir
+                                                            if getattr(args, 'skel_as_glyph_cond', False)
+                                                            else None),
+                                    inst_skel_shards_dir=(getattr(args, 'inst_skel_shards_dir', '') or None
+                                                          if getattr(args, 'w_latent_skel', 0.0) > 0
+                                                          else None),
+                                    callig_id_map=getattr(args, '_callig_map', None),
+                                    aux_latent_shards_dirs=[s for s in str(getattr(args, 'aux_latent_shards_dirs', '') or '').split(',') if s])
+        logger.info("Using latent-cached dataset (skip on-the-fly VAE encode)."
+                    + (" preload=ON" if getattr(args, 'preload', False) else ""))
+        _aux_dirs = [s for s in str(getattr(args, 'aux_latent_shards_dirs', '') or '').split(',') if s]
+        if _aux_dirs:
+            _aw = getattr(args, 'aux_loss_weights', '') or getattr(args, 'aux_loss_weight', 1.0)
+            logger.info(f"[aux] target=12ch+ dirs={_aux_dirs} per-group weights={_aw}")
+    else:
+        dataset = MCCDDataset(csv_file=args.data_csv, root_dir=args.data_dir, image_size=args.image_size)
+    # [2026-09-16] epoch 长度 = **固定步数**(而不是"数据集一遍")。
+    # 起因: 原先 epoch = len(dataset)//batch = 119 步(~21s), 每 119 步 DataLoader
+    # 就要重建一次迭代器; 而 ckpt + in-mem eval 落在 train_steps % ckpt_every 上,
+    # 两者互不对齐 -> iterator reset 成为一份**独立**代价, Steps/Sec 出现规律锯齿。
+    # 现在把 epoch 拉到与 ckpt_every 等长: reset 点恰好落在 ckpt+eval 上, 代价被吸收,
+    # epoch 退化为"存盘/评测的刻度"。默认 0 = 自动取 ckpt_every; 显式设 0 且
+    # ckpt_every=0 时退回旧行为(epoch = 数据集一遍)。
+    _epoch_steps = int(getattr(args, 'epoch_steps', 0) or 0)
+    if _epoch_steps < 0:
+        _epoch_steps = 0          # 显式退回旧行为(epoch = 数据集一遍)
+    if _epoch_steps == 0 and int(getattr(args, 'ckpt_every', 0) or 0) > 0:
+        _epoch_steps = int(args.ckpt_every)
+    if args.sampler == "factor_balanced":
+        sampler = DistributedFactorBalancedSampler(
+            dataset, num_replicas=dist.get_world_size(), rank=rank, seed=args.global_seed,
+            char_alpha=args.balance_char_alpha,
+            callig_alpha=args.balance_callig_alpha)
+        logger.info(f"Using factor-balanced sampler: {sampler.summary()} "
+                    f"(char_alpha={args.balance_char_alpha}, "
+                    f"callig_alpha={args.balance_callig_alpha})")
+    else:
+        if _epoch_steps > 0:
+            sampler = LongEpochDistributedSampler(
+                dataset,
+                steps_per_epoch=_epoch_steps,
+                batch_size=int(args.global_batch_size // dist.get_world_size()),
+                num_replicas=dist.get_world_size(),
+                rank=rank,
+                seed=args.global_seed,
+            )
+            _samples_per_epoch = (_epoch_steps
+                                  * (args.global_batch_size // dist.get_world_size())
+                                  * dist.get_world_size())
+            logger.info(
+                f"[sampler] LongEpoch: epoch = {_epoch_steps} 步 "
+                f"(= {_samples_per_epoch:,} 样本 = 数据集的 "
+                f"{_samples_per_epoch / max(len(dataset), 1):.1f} 倍); "
+                f"迭代器每 {_epoch_steps} 步 reset 一次, 与 ckpt_every 对齐。")
+            if resume_start_step > 0:
+                _inner = sampler.inner_epoch_for_step(resume_start_step)
+                sampler.set_start_inner_epoch(_inner)
+                logger.info(f"[sampler] resume 数据流对齐: step {resume_start_step} "
+                            f"-> 已消耗 {_inner} 个 randperm 份, 从第 {_inner} 份继续")
+        else:
+            sampler = DistributedSampler(
+                dataset,
+                num_replicas=dist.get_world_size(),
+                rank=rank,
+                shuffle=True,
+                seed=args.global_seed
+            )
+    loader = DataLoader(
+        dataset,
+        batch_size=int(args.global_batch_size // dist.get_world_size()),
+        shuffle=False,
+        sampler=sampler,
+        num_workers=args.num_workers,
+        pin_memory=True,
+        drop_last=True,
+        persistent_workers=(args.num_workers > 0),
+        prefetch_factor=4 if args.num_workers > 0 else None,
+    )
+    logger.info(f"Dataset contains {len(dataset):,} images")
+    if (args.sampler == "random" and _epoch_steps > 0
+            and len(loader) != _epoch_steps):
+        logger.warning(f"[sampler] len(loader)={len(loader)} != epoch_steps={_epoch_steps}"
+                       f" (整除性/drop_last?) —— epoch 与 ckpt 可能错位")
+    _epochs_needed = args.epochs
+    if _epoch_steps > 0 and args.max_steps > 0:
+        # epoch 已退化为 ckpt 刻度: 只需跑到 max_steps 所需的份数
+        _epochs_needed = min(args.epochs, -(-args.max_steps // _epoch_steps))
+
+    if args.max_steps > 0:
+        total_planned_steps = args.max_steps
+    elif _epoch_steps > 0:
+        total_planned_steps = _epochs_needed * len(loader)
+    else:
+        total_planned_steps = args.epochs * len(loader)
+    if getattr(args, 'fresh_scheduler', False) and _resume_full_ckpt is not None and args.max_steps > 0:
+        # 调度器按绝对步数(从 step 0)计算: resume 点落在 cosine 中段, 不是从头 warm restart
+        total_planned_steps = args.max_steps
+        for _pg in opt.param_groups:
+            _pg.pop('initial_lr', None)  # 丢弃 ckpt 里旧 LambdaLR 的 base, 让 resume_lr 覆盖生效
+        logger.info(f"[LR] fresh-scheduler: cosine computed from absolute step 0 "
+                    f"(total {total_planned_steps}); resume at {resume_start_step} "
+                    f"-> LR starts mid-decay at "
+                    f"{args.min_lr_ratio + (1.0 - args.min_lr_ratio) * 0.5 * (1.0 + math.cos(math.pi * max((resume_start_step - min(args.warmup_steps, total_planned_steps - 1)) / max(total_planned_steps - min(args.warmup_steps, total_planned_steps - 1), 1), 0.0))):.2e} (base)")
+    scheduler = None
+    if args.lr_schedule == "cosine":
+        warmup_steps = min(args.warmup_steps, max(total_planned_steps - 1, 0))
+        _step_offset = resume_start_step if (getattr(args, 'fresh_scheduler', False)
+                                             and _resume_full_ckpt is not None) else 0
+
+        def _lr_scale(step):
+            step = step + _step_offset
+            if warmup_steps > 0 and step < warmup_steps:
+                return max((step + 1) / warmup_steps, 1e-8)
+            progress = ((step - warmup_steps)
+                        / max(total_planned_steps - warmup_steps, 1))
+            progress = min(max(progress, 0.0), 1.0)
+            cosine = 0.5 * (1.0 + math.cos(math.pi * progress))
+            return args.min_lr_ratio + (1.0 - args.min_lr_ratio) * cosine
+
+        scheduler = torch.optim.lr_scheduler.LambdaLR(opt, lr_lambda=_lr_scale)
+        if (_resume_full_ckpt is not None and _resume_full_ckpt.get("scheduler") is not None
+                and not getattr(args, 'fresh_scheduler', False)):
+            scheduler.load_state_dict(_resume_full_ckpt["scheduler"])
+            logger.info("[LR] restored scheduler state")
+        elif getattr(args, 'fresh_scheduler', False):
+            logger.info("[LR] fresh-scheduler: starting from base lr "
+                        f"{opt.param_groups[0]['lr']:.2e} (old scheduler state ignored)")
+        logger.info(f"[LR] cosine schedule: warmup={warmup_steps}, "
+                    f"total={total_planned_steps}, min_ratio={args.min_lr_ratio}")
+
+    model.train()
+
+    train_steps = resume_start_step
+    log_steps = 0
+    running_loss = 0
+    running_diff = 0
+    running_repa = 0
+    running_x0lat = 0
+    running_std_mid = 0
+    running_skel = 0
+    running_c12_img = 0
+    running_c12_canny = 0
+    running_c12_skel = 0
+    nan_steps = 0
+    current_ema_decay = args.ema_decay
+    start_time = time()
+
+    # ---- 早停状态 (基于 CPU eval 的 eval_auto_*.json mse/ssim/skel_iou) ----
+    early_stop_best = None      # 最佳 metric 值 (ssim 越大越好 / mse 越小越好)
+    early_stop_stale = 0        # 连续未改善的 eval 次数
+    early_stop_last_eval_step = -1
+    early_stop_stopped = False
+    _es_metric = getattr(args, 'early_stop_metric', 'ssim')
+    _es_better = ((lambda a, b: a > b) if _es_metric in ('ssim', 'combo', 'ssim_lpips')
+                  else (lambda a, b: a < b))
+    _es_higher_better = _es_metric in ('ssim', 'combo', 'ssim_lpips')
+    # min_delta：只有超过 best ± min_delta 才算"真改善"。
+    # 默认阈值按各指标的经验噪声量级选取（ssim/skel_iou 都是 0~1 量级，
+    # mse 的量级随数据分布变化，默认不设阈值，需要时再显式配置）。
+    _es_delta = {
+        'ssim': float(getattr(args, 'early_stop_min_delta', 0.002)),
+        'skel_iou': float(getattr(args, 'early_stop_min_delta_iou', 0.005)),
+        'lpips': float(getattr(args, 'early_stop_min_delta_lpips', 0.003)),
+        'mse': float(getattr(args, 'early_stop_min_delta_mse', 0.0)),
+    }
+    logger.info(f"[early-stop] metric={_es_metric}, patience="
+                f"{getattr(args, 'early_stop_patience', 5)}, min_delta={_es_delta}")
+    # 多指标组合（双保险）: 各自追踪 best/stale, **全部** stale 才停。
+    # 用 (key, higher_better) 描述，因此天然支持方向混合
+    #   - 'combo'      : ssim↑ + skel_iou↑   (skel_iou 已被证实不敏感，不推荐)
+    #   - 'ssim_lpips' : ssim↑ + lpips↓      (推荐：像素结构 + 感知距离互补)
+    _ES_SPECS = {
+        'combo': (('ssim', True), ('skel_iou', True)),
+        'ssim_lpips': (('ssim', True), ('lpips', False)),
+    }
+    _es_spec = _ES_SPECS.get(_es_metric)
+    _es_combo_best = {k: None for k, _ in (_es_spec or ())}
+    _es_combo_stale = {k: 0 for k, _ in (_es_spec or ())}
+    _es_check_every = int(getattr(args, 'early_stop_check_every', 0))
+    if _es_check_every <= 0:
+        _es_check_every = max(int(getattr(args, 'ckpt_every', 5000)) // 2, 1000)
+
+    def _early_stop_check(force=False):
+        """读 ckpt 目录最新 eval_auto json, 更新 best/stale; 达到 patience 返回 True 表示停。
+        combo 模式: ssim 和 skel_iou 都要连续 stale >= patience 才停 (双保险)。"""
+        nonlocal early_stop_best, early_stop_stale, early_stop_last_eval_step
+        if not getattr(args, 'early_stop', False):
+            return False
+        ev_files = sorted(glob(os.path.join(checkpoint_dir, "eval_auto_*.json")))
+        if not ev_files:
+            return False
+        last_ev = ev_files[-1]
+        ev_step = int(os.path.basename(last_ev).replace("eval_auto_", "").replace(".json", ""))
+        if ev_step <= early_stop_last_eval_step:
+            return False
+        early_stop_last_eval_step = ev_step
+        try:
+            with open(last_ev, "r", encoding="utf-8") as _f:
+                d = json.load(_f)
+            m, s = d.get("mse"), d.get("ssim")
+            k = d.get("skel_iou")
+            lp = d.get("lpips")
+            if _es_metric == 'ssim_lpips':
+                # lpips 是"越低越好"，这里取负号统一成"越大越好"，
+                # 从而复用下面 (key, higher_better=True) 的通用比较逻辑。
+                val = (float(s), -float(lp)) if s is not None and lp is not None else None
+            elif _es_metric == 'combo':
+                val = (float(s), float(k)) if s is not None and k is not None else None
+            elif _es_metric == 'ssim':
+                val = float(s) if s is not None else None
+            else:
+                val = float(m) if m is not None else None
+        except Exception:
+            return False
+        if val is None:
+            return False
+
+        if _es_spec is not None:
+            # 双保险: 每个指标各自追踪新鲜度 (任一刚创新高则整体 stale 清零)
+            # min_delta: 只有超过 best + min_delta 才算"真改善"，否则指标噪声
+            # （ssim 在 256² 二值字形上对笔画粗细/亚像素位移极敏感）会不停
+            # 重置 stale 计数器，让早停实际上由噪声驱动。
+            #
+            # 注意 val 里的 lpips 已取负号，故下面对 y_v 的显示要还原。
+            improved = False
+            for (key, _hi), v in zip(_es_spec, val):
+                b = _es_combo_best[key]
+                dlt = _es_delta.get(key, 0.0)
+                if b is None or v > b + dlt:
+                    _es_combo_best[key] = v
+                    _es_combo_stale[key] = 0
+                    improved = True
+                else:
+                    _es_combo_stale[key] += 1
+            # 显示：把取过负号的还原成原值
+            shown = ", ".join(
+                f"{k}={(-v if k == 'lpips' else v):.4f}" for (k, _), v in zip(_es_spec, val))
+            best_shown = ", ".join(
+                f"best_{k}={(-_es_combo_best[k] if k == 'lpips' else _es_combo_best[k]):.4f}"
+                for k, _ in _es_spec)
+            if improved:
+                early_stop_stale = 0
+                logger.info(f"[early-stop] eval step {ev_step}: {_es_metric} {shown} "
+                            f"-> NEW BEST ({best_shown})")
+            else:
+                early_stop_stale += 1
+                logger.info(f"[early-stop] eval step {ev_step}: {_es_metric} {shown} "
+                            f"({best_shown}, stale {early_stop_stale}/"
+                            f"{args.early_stop_patience})")
+                if early_stop_stale >= int(getattr(args, 'early_stop_patience', 5)):
+                    logger.info(f"[early-stop] {_es_metric} no improvement for "
+                                f"{early_stop_stale} evals; early stopping.")
+                    return True
+            return False
+
+        _es_d = _es_delta.get(_es_metric, 0.0)
+        if early_stop_best is None or (
+                (val > early_stop_best + _es_d) if _es_higher_better else
+                (val < early_stop_best - _es_d)):
+            early_stop_best = val
+            early_stop_stale = 0
+            logger.info(f"[early-stop] eval step {ev_step}: {_es_metric}={val:.4f} (new best)")
+        else:
+            early_stop_stale += 1
+            logger.info(f"[early-stop] eval step {ev_step}: {_es_metric}={val:.4f} "
+                        f"(best {early_stop_best:.4f}, stale {early_stop_stale}/"
+                        f"{args.early_stop_patience})")
+            if early_stop_stale >= int(getattr(args, 'early_stop_patience', 5)):
+                logger.info(f"[early-stop] {_es_metric} no improvement for "
+                            f"{early_stop_stale} evals; early stopping.")
+                return True
+        return False
+
+    logger.info(f"Training for {args.epochs} epochs...")
+
+    # ── In-process GPU eval setup ──────────────────────────────────────────────
+    _eval_cache = None
+    _eval_show5_cache = None
+    _eval_seen5_cache = None
+    if _HAS_IN_PROCESS_EVAL and getattr(args, 'auto_eval', False) and rank == 0:
+        _eval_csv = getattr(args, 'eval_csv', None)
+        if _eval_csv and os.path.exists(_eval_csv):
+            _eval_n = int(getattr(args, 'eval_n', 100))
+            _vae_ds = int(getattr(args, 'vae_downscale', 4))
+            _vae_lc = int(getattr(args, 'latent_channels', 4))
+            _vae_sf = float(getattr(args, 'vae_scaling_factor', 0.18215))
+            _img_root = getattr(args, 'img_root', '') or getattr(args, 'data_dir', '') or ''
+            # 训练侧若启用标准字形条件，eval 必须同步喂 g，否则条件域不匹配：
+            # 模型训练时依赖 g，eval 却拿到全零 → 表现为「该条件无效」的假象。
+            _use_glyph = bool(getattr(args, 'use_glyph_cond', False))
+            if bool(getattr(args, 'w_glyph_cond', False)) and not _use_glyph:
+                _use_glyph = True       # w_glyph_cond 是同一个条件的别名
+            if _use_glyph:
+                logger.info("[glyph-cond] eval 侧同步启用标准字形条件 g")
+            _eval_cache = prepare_eval_cache(
+                _eval_csv, _img_root, args.image_size, _eval_n,
+                _vae_ds, _vae_lc, _vae_sf, use_glyph_cond=_use_glyph)
+            _show5_csv = getattr(args, 'show5_csv', None)
+            if _show5_csv and os.path.exists(_show5_csv):
+                _eval_show5_cache = prepare_small_cache(
+                    _show5_csv, _img_root, args.image_size, _vae_ds, _vae_lc)
+            _seen5_csv = getattr(args, 'seen5_csv', None)
+            if _seen5_csv and os.path.exists(_seen5_csv):
+                _eval_seen5_cache = prepare_small_cache(
+                    _seen5_csv, _img_root, args.image_size, _vae_ds, _vae_lc)
+            logger.info(f"[auto-eval] cache ready: eval_n={_eval_n}, "
+                        f"show5={'yes' if _eval_show5_cache else 'no'}, "
+                        f"seen5={'yes' if _eval_seen5_cache else 'no'}")
+        else:
+            logger.warning(f"[auto-eval] eval_csv not found ({_eval_csv!r}); auto-eval disabled")
+
+    for epoch in range(_epochs_needed):
+        sampler.set_epoch(epoch)
+        if rank == 0:
+            # [2026-09-16] epoch 已退化为"ckpt/eval 刻度"(见 --epoch-steps), 且续训时
+            # 外层 epoch 计数器从 0 重新开始 -> 直接乘 epoch 会算错区间号(盯着日志判断
+            # 进度时会误判)。这里用**真实已训步数**算, 续训后依旧正确。
+            _span = (f" (steps {resume_start_step + epoch * _epoch_steps + 1}"
+                     f"-{resume_start_step + (epoch + 1) * _epoch_steps})"
+                     if _epoch_steps > 0 else "")
+            logger.info(f"Begin epoch {epoch}{_span} — ckpt+eval 落点...")
+        
+        try:
+            for batch_idx, batch in enumerate(loader):
+                y_callig = batch['y_callig'].to(device)
+                y_char = batch['y_char'].to(device)
+                if cond_mode == "3cond":
+                    y_script = batch['y_script'].to(device)
+
+                _ch_w = None
+                if 'latent' in batch:
+                    # Latent-cached training: latent pre-encoded (scaled by vae_scaling_factor).
+                    x_latent = batch['latent'].to(device)
+                    # moyi 式辅助目标通道: aux latents (skel/canny) 与图像 latent 拼接成扩散目标
+                    _aux = batch.get('aux_latents', None)
+                    if _aux is not None and _aux.numel() > 0:
+                        x_latent = torch.cat([x_latent, _aux.to(device).float()], dim=1)
+                        # per-group aux 权重 (与 aux_latent_shards_dirs 同序): e.g. "0.3,0.8"
+                        # -> canny 4ch ×0.3, skel 4ch ×0.8。空则回退单一 aux_loss_weight。
+                        # ⚠ 2026-09-17: 原先"没给权重就静默回退到等权"是个**危险默认** ——
+                        #   等权正是 doc54/60 判定"已证有害"的配置(aux 吃掉 ~51% final-layer
+                        #   梯度, patch_embed 上 aux 梯度是 img 的 2.6x)。"忘了写一行"
+                        #   就掉进已知有害的坑且不报错。现在: **配了 aux 就必须显式给权重**,
+                        #   否则直接拒绝启动。
+                        _aux_dirs = [s for s in
+                                     str(getattr(args, 'aux_latent_shards_dirs', '') or '').split(',')
+                                     if s.strip()]
+                        _aux_w_list = [float(s) for s in
+                                       str(getattr(args, 'aux_loss_weights', '') or '').split(',')
+                                       if s.strip()]
+                        if not _aux_w_list:
+                            _w_aux = float(getattr(args, 'aux_loss_weight', 1.0))
+                            if _w_aux == 1.0:
+                                raise ValueError(
+                                    f"启用了 {len(_aux_dirs)} 个 aux latent 目录, 但既没给 "
+                                    f"--aux-loss-weights 也没把 --aux-loss-weight 设成非 1.0 "
+                                    f"-> 会退化成**等权**, 而等权已被证明有害"
+                                    f"(aux 吃 ~51% final-layer 梯度, doc54/60)。\n"
+                                    f"请显式指定, 例如 --aux-loss-weights "
+                                    f"{','.join(['0.3'] * len(_aux_dirs))}。")
+                            _aux_w_list = [_w_aux] * len(_aux_dirs)
+                        if len(_aux_w_list) != len(_aux_dirs):
+                            raise ValueError(
+                                f"--aux-loss-weights 给了 {len(_aux_w_list)} 个值 "
+                                f"({_aux_w_list}), 但 --aux-latent-shards-dirs 有 "
+                                f"{len(_aux_dirs)} 个目录 -> 通道分组会错位。")
+                        _ch_w = torch.ones(x_latent.shape[1], device=device)
+                        for _gi, _w in enumerate(_aux_w_list):
+                            _ch_w[4 + 4 * _gi: 8 + 4 * _gi] = _w
+                        if rank == 0:
+                            logger.info(f"[aux] {len(_aux_dirs)} 组 aux, 权重 {_aux_w_list} "
+                                        f"-> in_channels={x_latent.shape[1]}, "
+                                        f"image_channels={getattr(args, 'image_channels', None) or getattr(args, 'latent_channels', 4)}")
+                    x = batch.get('image', None)
+                    x = x.to(device) if x is not None else None
+                else:
+                    x = batch['image'].to(device)
+                    # VAE encode stays in fp32 for numerical stability (VAE is sensitive to low precision).
+                    with torch.no_grad(), torch.autocast("cuda", dtype=torch.float32):
+                        x_latent = vae.encode(x).latent_dist.sample().mul_(_vae_sf)
+                        x_latent = x_latent.float()
+
+                # 统一时间步采样: FlowMatching.sample_t -> t∈[0,1); GaussianDiffusion.sample_t -> t∈{0..T-1}。
+                # 调用方绝不自己分支 (否则会重蹈 flow/randint 错配覆辙)。
+                t = diffusion.sample_t(x_latent.shape[0], device)
+                if cond_mode == "3cond":
+                    model_kwargs = dict(y_callig=y_callig, y_script=y_script, y_char=y_char)
+                else:
+                    model_kwargs = dict(y_callig=y_callig, y_char=y_char)
+                # 标准字形条件 g(甲2 token-add): batch 由 dataset 提供, None=禁用对应项
+                if getattr(args, 'w_glyph_cond', False) and 'g' in batch and batch['g'].numel() > 0:
+                    model_kwargs['g'] = batch['g'].to(device)   # (N,4,32,32)
+                elif getattr(args, 'skel_as_glyph_cond', False) and 'skel_latent' in batch \
+                        and batch['skel_latent'].numel() > 0:
+                    # v10a: 实例 skel latent 即字条件 (与 ControlNet 的 cond 同源不同路)
+                    model_kwargs['g'] = batch['skel_latent'].to(device).float()
+
+                # ── 条件噪声增强 (Condition Noise Augmentation) ───────────
+                # 标准骨架 g 是固定的印刷体 latent (cos=0.902 to GT)。加噪声迫使
+                # 模型学会从「不完美的结构条件」中提取拓扑信息，避免对 g 精确数值过拟合。
+                _gn_scale = float(getattr(args, 'glyph_noise_scale', 0.0))
+                _gn_prob = float(getattr(args, 'glyph_noise_prob', 0.0))
+                _gpd = float(getattr(args, 'glyph_patch_drop', 0.0))
+                if 'g' in model_kwargs and (_gn_scale > 0 or _gpd > 0):
+                    _g = model_kwargs['g']
+                    if _gn_scale > 0 and _gn_prob > 0:
+                        _mask = (torch.rand(_g.shape[0], 1, 1, 1, device=device) < _gn_prob).to(_g.dtype)
+                        _scales = torch.rand(_g.shape[0], 1, 1, 1, device=device) * _gn_scale
+                        _g = _g + _mask * torch.randn_like(_g) * _scales
+                    if _gpd > 0:
+                        _pmask = (torch.rand(_g.shape[0], 1, _g.shape[2], _g.shape[3],
+                                             device=device) > _gpd).to(_g.dtype)
+                        _g = _g * _pmask
+                    model_kwargs['g'] = _g
+                
+                # REPA: 请求多层中间特征 (统一 infra, 多层 dict / 单层兼容)
+                if args.w_repa > 0 and repa_loss_fn is not None:
+                    if len(repa_loss_fn.layers) > 1:
+                        model_kwargs['return_intermediate_layers'] = repa_loss_fn.layers
+                    else:
+                        model_kwargs['return_intermediate_layer'] = repa_loss_fn.layers[0]
+
+                # Forward pass under bf16 autocast (same exponent range as fp32, no overflow).
+                #
+                # return_pred_xstart: flow 分支默认**不返回** pred_xstart（避免
+                # autograd 图膨胀），但下面 w_std_mid 依赖它。若这里不请求，flow
+                # 模式下该机制会因 `loss_dict.get("pred_xstart", None)` 恒为 None 而
+                # **静默失效** —— 不报错、loss 正常下降、但从未生效。w_std_mid 正是
+                # 「把去噪中段预测的 x0 拉向标准字形 latent」的预训练改进项。
+                # gaussian_diffusion 不接受该参数，故用 try/except 兼容。
+                _need_x0 = (getattr(args, 'w_std_mid', 0.0) > 0
+                            or getattr(args, 'w_latent_skel', 0.0) > 0)
+                with torch.autocast("cuda", dtype=torch.bfloat16):
+                    if _need_x0:
+                        try:
+                            loss_dict = diffusion.training_losses(
+                                model, x_latent, t, model_kwargs,
+                                return_pred_xstart=True, channel_weights=_ch_w)
+                        except TypeError:
+                            # gaussian_diffusion 不支持该参数，本身就会返回 pred_xstart
+                            loss_dict = diffusion.training_losses(
+                                model, x_latent, t, model_kwargs)
+                    else:
+                        loss_dict = diffusion.training_losses(
+                            model, x_latent, t, model_kwargs, channel_weights=_ch_w)
+                    loss_diff = loss_dict["loss"].mean()
+
+                loss_repa = torch.tensor(0.0, device=device)
+                loss_x0lat = torch.tensor(0.0, device=device)
+                loss_skel_struct = torch.tensor(0.0, device=device)
+
+                # === INFRA FIX: pred_xstart from training_losses carries the ENTIRE DiT
+                # forward graph (every block's activations are kept alive because the
+                # graph flows back through _predict_xstart_from_eps → model_output).
+                # This is THE memory leak: the 256-token × 384-dim × 12-block activation
+                # graph stays pinned until backward() runs, and struct decoders build
+                # ADDITIONAL 256×256 activations on top of it. When t<=500 (~50% of steps)
+                # the decoder runs → graph doubles; when t>500 the graph lingers but
+                # decoders don't run → the cycling 20G→22G→14G pattern.
+                #
+                # FIX: extract pred_xstart WITH the graph only when we actually need it
+                # for a differentiable struct loss (t<=max_t). For t>500 steps, detach
+                # immediately so the full graph is freed at the next zero_grad. We also
+                # break the reference in loss_dict so no stale graph survives the loop.
+                _need_x0_grad = (getattr(args, 'w_std_mid', 0.0) > 0
+                                 or getattr(args, 'w_latent_skel', 0.0) > 0)
+                pred_xstart_latent = loss_dict.get("pred_xstart", None)
+                if pred_xstart_latent is not None and not _need_x0_grad:
+                    # No struct loss this run at all — drop the graph immediately.
+                    pred_xstart_latent = pred_xstart_latent.detach()
+                # Clear the heavy reference inside loss_dict so the dict can't keep
+                # the graph alive after we exit this step.
+                loss_dict.pop("pred_xstart", None)
+
+                # ---- MIDSTEP_STD: 中间噪声水平, 让去噪结果 x0_pred 逼近标准字形 latent g。
+                # 主损失从 GT x0 学报内容+风格; 此项在 sqrt(alpha_cumprod)∈[alo,ahi] 的中段噪声,
+                # 额外把模型预测的 clean latent 拉向标准字形 latent g, 使字形结构在去噪中段被锚定。
+                # 权重须明显小于主 loss, 避免抹掉书家风格。仅当使用 glyph 条件时生效。采样端不变。
+                loss_std_mid = torch.tensor(0.0, device=device)
+                if (getattr(args, 'w_std_mid', 0.0) > 0
+                        and pred_xstart_latent is not None
+                        and model_kwargs.get('g') is not None):
+                    # "sqrt_alpha" 的定义随扩散形式而变:
+                    #   ddpm: sqrt_alphas_cumprod[t] (整数步索引)
+                    #   flow: x_t=(1-t)x0+t·noise, 等效 sqrt_alpha = 1-t (浮点 t)
+                    # FlowMatching 没有 sqrt_alphas_cumprod 属性 —— 直接
+                    # diffusion.sqrt_alphas_cumprod[t] 会在 flow 下 AttributeError
+                    # (且浮点 t 不能做数组索引)。
+                    _sq = getattr(diffusion, "sqrt_alphas_cumprod", None)
+                    if _sq is not None:
+                        _a_t = torch.as_tensor(_sq, device=device)[t]    # (N,)
+                    else:
+                        _a_t = (1.0 - t.float()).to(device)              # flow: 等效 sqrt_alpha
+                    _alo = float(getattr(args, 'std_mid_alo', 0.35))
+                    _ahi = float(getattr(args, 'std_mid_ahi', 0.75))
+                    _mid = (_a_t >= _alo) & (_a_t <= _ahi)  # (N,) bool: 中间噪声水平子集
+                    if bool(_mid.any()):
+                        _g = model_kwargs['g'].float()      # (N,4,32,32) 标准字形 latent
+                        _p = pred_xstart_latent.float()
+                        # 归一化到该子集作均值 (不按全 batch, 排除无监督噪声步)
+                        loss_std_mid = ((_p[_mid] - _g[_mid]) ** 2).mean()
+
+                intermediate_feats = loss_dict.get("intermediate_feats", None)
+                if x is not None and intermediate_feats is not None and repa_loss_fn is not None and args.w_repa > 0:
+                    # 统一 REPA (公共 infra): 多层 dict / 单层张量 + warmup 渐进
+                    # img_ids: 配合 --repa-cache-dir 查表 (命中免 DINO 前向)
+                    _img_ids = batch.get('img_id', None)
+                    loss_repa = repa_loss_fn(intermediate_feats, x, step=train_steps,
+                                             img_ids=_img_ids)
+
+                # ---- 实例骨架结构 loss (辅助, 冻结 probe, 零可训练参数) ----
+                # 见 latent_structure.LatentSkelStructureLoss 的 docstring:
+                # 与 12ch 的区别是"不在扩散目标里" —— 4ch 主干 / CFG 作用域 / 推理成本
+                # 全部不受影响, 新增可训练参数 0(当前主要矛盾是过拟合, 这是决定性优势)。
+                # target = batch['skel_latent'] **必须是实例骨架**; 若指到标准字形就是纯重复 g。
+                if _skel_struct_loss_fn is not None and pred_xstart_latent is not None:
+                    # [inst-skel 2026-09-16] target 现在读 **inst_skel**(实例骨架, GT 图派生),
+                    # 与条件 g (skel_latent=shards_std) 解耦。不再读 skel_latent。
+                    _sk = batch.get('inst_skel', None)
+                    if _sk is None or _sk.numel() == 0:
+                        if not _SKEL_STRUCT_WARNED:
+                            _SKEL_STRUCT_WARNED = True
+                            logger.warning(
+                                "[skel-struct] w_latent_skel>0 但 batch['inst_skel'] 为空 "
+                                "(需配置 --inst-skel-shards-dir 指向实例骨架 shards) "
+                                "-> 本项静默失效。这类静默失效已踩过多次, 故只在首次告警。")
+                        loss_skel_struct = torch.tensor(0.0, device=device)
+                    else:
+                        loss_skel_struct = _skel_struct_loss_fn(
+                            pred_xstart_latent,
+                            _sk.to(device, non_blocking=True).float(),
+                            t.to(device))
+
+                loss = (loss_diff
+                        + loss_repa  # 统一 REPA: w × (1 - cos) 已在 RepaModule.forward 内含 warmup
+                        + getattr(args, 'w_std_mid', 0.0) * loss_std_mid
+                        + getattr(args, 'w_latent_skel', 0.0) * loss_skel_struct)
+
+                opt.zero_grad(set_to_none=True)  # INFRA: set_to_none 释放梯度tensor, 比 zero_() 快且省内存
+                # Capture scalar values into plain Python floats BEFORE we del the
+                # tensors. This lets the autograd graph be freed immediately while the
+                # running accumulators (pure floats) survive for logging.
+                _v_loss = loss.item() if torch.isfinite(loss) else 0.0
+                _v_diff = loss_diff.item()
+                _v_repa = loss_repa.item()
+                _v_stdmid = loss_std_mid.item()
+                _v_skel = loss_skel_struct.item()
+
+                # ── ref 12ch 联合目标: 逐通道 MSE 拆成 image/canny/skel 三组 (日志用) ──
+                # 目标 x = cat(image(4), *aux(4)); 等权时 Diff 即三组均值。这里把
+                # 原始逐通道 MSE 分组打印, 以便直接看到 canny/skel 通道在被优化。
+                _v_c12i = _v_c12c = _v_c12s = 0.0
+                _mse_ch = loss_dict.get("mse_ch", None) if isinstance(loss_dict, dict) else None
+                if _mse_ch is not None and _mse_ch.shape[1] > 4:
+                    _cm = _mse_ch.mean(dim=0)
+                    _v_c12i = float(_cm[:4].mean())
+                    _aux_names = [s for s in str(getattr(args, 'aux_latent_shards_dirs', '') or '').split(',') if s]
+                    for _gi, _nm in enumerate(_aux_names):
+                        _gm = float(_cm[4 + 4 * _gi: 8 + 4 * _gi].mean())
+                        if 'canny' in _nm:
+                            _v_c12c = _gm
+                        elif 'skel' in _nm:
+                            _v_c12s = _gm
+
+                # NaN guard: skip the step if loss is not finite (e.g. a bad sample).
+                if torch.isfinite(loss):
+                    loss.backward()
+                    torch.nn.utils.clip_grad_norm_(trainable_params_list, max_norm=1.0)
+                    opt.step()
+                    if scheduler is not None:
+                        scheduler.step()
+                    if ema_model is not None and (train_steps % max(1, int(getattr(args, 'ema_interval', 1))) == 0):
+                        # 间隔更新: 每 N 步用 decay**N 更新, 数学上严格等价每步 decay
+                        # (β 连乘 N 次 = β^N), 省 46M 参数 x N-1 次的显存带宽往返
+                        if args.ema_warmup:
+                            current_ema_decay = min(
+                                args.ema_decay, (1.0 + train_steps) / (10.0 + train_steps))
+                        else:
+                            current_ema_decay = args.ema_decay
+                        update_ema(ema_model, model, current_ema_decay ** max(1, int(getattr(args, 'ema_interval', 1))))
+                else:
+                    nan_steps += 1
+                    if rank == 0:
+                        logger.warning(
+                            f"Step {train_steps} skipped: non-finite loss "
+                            f"(diff={_v_diff:.4f}). Accumulated skips: {nan_steps}"
+                        )
+                # === INFRA: release the autograd graph every step, finite or not.
+                # The graph built by training_losses (DiT forward + pred_xstart) must be
+                # freed BEFORE the next forward, otherwise peak = diff_graph + aux_graph.
+                del loss, loss_dict, loss_diff, pred_xstart_latent
+                del loss_repa, loss_std_mid, loss_x0lat, loss_skel_struct
+
+                if _v_loss:
+                    running_loss += _v_loss
+                    running_diff += _v_diff
+                    running_repa += _v_repa
+                    running_std_mid += _v_stdmid
+                    running_skel += _v_skel
+                    running_c12_img += _v_c12i
+                    running_c12_canny += _v_c12c
+                    running_c12_skel += _v_c12s
+                    running_x0lat += 0
+                    log_steps += 1
+                train_steps += 1
+                
+                if train_steps % args.log_every == 0:
+                    torch.cuda.synchronize()
+                    end_time = time()
+                    # Guard against a logging window in which every step was skipped due to non-finite loss.
+                    divisor = max(log_steps, 1)
+                    steps_per_sec = log_steps / max(end_time - start_time, 1e-9)
+                    
+                    avg_l = torch.tensor(running_loss / divisor, device=device)
+                    avg_d = torch.tensor(running_diff / divisor, device=device)
+                    avg_r = torch.tensor(running_repa / divisor, device=device)
+                    avg_std_mid = torch.tensor(running_std_mid / divisor, device=device)
+                    world_size = dist.get_world_size()
+                    if world_size > 1:
+                        dist.all_reduce(avg_l, op=dist.ReduceOp.SUM)
+                        dist.all_reduce(avg_d, op=dist.ReduceOp.SUM)
+                        dist.all_reduce(avg_r, op=dist.ReduceOp.SUM)
+                        dist.all_reduce(avg_std_mid, op=dist.ReduceOp.SUM)
+                        avg_l, avg_d = avg_l.item()/world_size, avg_d.item()/world_size
+                        avg_r = avg_r.item()/world_size
+                        avg_std_mid = avg_std_mid.item()/world_size
+                    else:
+                        avg_l, avg_d = avg_l.item(), avg_d.item()
+                        avg_r = avg_r.item()
+                        avg_std_mid = avg_std_mid.item()
+                    
+                    # ref 12ch 分组 loss (逐通道 MSE, 等权目标下直接反映结构通道)
+                    avg_c12i = running_c12_img / divisor
+                    avg_c12c = running_c12_canny / divisor
+                    avg_c12s = running_c12_skel / divisor
+                    avg_skel = running_skel / divisor
+
+                    if rank == 0:
+                        wr = args.w_repa
+                        ema_log = (f"EMA: {current_ema_decay:.6f} | "
+                                   if ema_model is not None else "")
+                        logger.info(
+                            f"(step={train_steps:07d}) Diff: {avg_d:.4f} | "
+                            f"c12[img={avg_c12i:.4f} canny={avg_c12c:.4f} skel={avg_c12s:.4f}] | "
+                            f"REPA(w={wr:.2f}): {avg_r:.4f} | "
+                            + (f"SkelStruct(w={args.w_latent_skel:.3f}): {avg_skel:.4f} | "
+                               if getattr(args, 'w_latent_skel', 0.0) > 0 else "") +
+                            f"LR: {opt.param_groups[0]['lr']:.2e} | {ema_log}"
+                            f"Steps/Sec: {steps_per_sec:.2f} | "
+                            f"Mem: {torch.cuda.memory_reserved() / 1024 ** 3:.2f}G/"
+                            f"{torch.cuda.max_memory_reserved() / 1024 ** 3:.2f}G"
+                        )
+                        # ── 调试诊断 (每 1000 步): 梯度分组 + 注入门控强度 ──
+                        # 门控 = xattn 注入输出在残差流上的平均 L2 (零初始化起,
+                        # 增长 = 注入正在学会写入); 梯度分组看各通路是否在学习。
+                        if train_steps % 1000 == 0:
+                            if not _inj_stats:
+                                _mm = model.module if hasattr(model, 'module') else model
+                                for _i, _inj in enumerate(
+                                        getattr(_mm, 'glyph_injections', []) or []):
+                                    if not hasattr(_inj, 'out_proj'):
+                                        continue
+
+                                    def _mk(_i):
+                                        def _h(_m, _inp, _out):
+                                            _inj_stats[_i] = _out.detach().float() \
+                                                .norm(dim=-1).mean().item()
+                                        return _h
+                                    _inj.register_forward_hook(_mk(_i))
+                            _gn = {}
+                            for _n, _p in model.named_parameters():
+                                if _p.grad is None:
+                                    continue
+                                _g = _p.grad.norm().item()
+                                if "glyph_injections" in _n:
+                                    _k = "inj_out_proj"
+                                elif "glyph_embedder" in _n:
+                                    _k = "glyph_embedder"
+                                elif "callig_proj" in _n or "callig_scale" in _n:
+                                    _k = "callig_chain"
+                                elif "blocks." in _n:
+                                    _k = "blocks"
+                                else:
+                                    _k = "other"
+                                _gn[_k] = _gn.get(_k, 0.0) + _g * _g
+                            _gn = {k: v ** 0.5 for k, v in _gn.items()}
+                            _gate = ""
+                            if _inj_stats:
+                                _gate = " | inj|out|: " + " ".join(
+                                    f"L{i}={v:.3f}" for i, v in sorted(_inj_stats.items()))
+                            logger.info(
+                                f"(step={train_steps:07d}) [diag] grad-norm: "
+                                + " ".join(f"{k}={v:.3f}" for k, v in sorted(_gn.items()))
+                                + _gate)
+                    
+                    running_loss = running_diff = 0
+                    running_repa = running_x0lat = 0
+                    running_std_mid = running_skel = 0
+                    running_c12_img = running_c12_canny = running_c12_skel = 0
+                    log_steps = 0
+                    start_time = time()
+
+                _save_ckpt = args.ckpt_every > 0 and train_steps % args.ckpt_every == 0
+                if train_steps <= 5000:
+                    _save_ckpt = args.ckpt_every > 0 and train_steps % 1000 == 0
+                elif train_steps > 5000:
+                    _save_ckpt = args.ckpt_every > 0 and (train_steps - 5000) % args.ckpt_every == 0
+
+                if _save_ckpt and train_steps > 0:
+                    if rank == 0:
+                        model_to_save = model.module if hasattr(model, 'module') else model
+                        # 始终保存完整 state_dict（LoRA 的 delta-only 保存已随
+                        # src/model/lora.py 于 2026-08-31 删除）。
+                        delta = model_to_save.state_dict()
+                        # Move tensors to CPU before serialize so torch.save never
+                        # allocates extra GPU memory (avoids save-time VRAM spikes).
+                        delta = _state_to_cpu(delta)
+                        _opt_cpu = _state_to_cpu(opt.state_dict())
+                        checkpoint = {
+                            "delta": delta,
+                            "opt": _opt_cpu,
+                            "args": args,
+                            "train_steps": train_steps,
+                        }
+                        if ema_model is not None:
+                            checkpoint["ema"] = _state_to_cpu(ema_model.state_dict())
+                        if scheduler is not None:
+                            checkpoint["scheduler"] = scheduler.state_dict()
+                        checkpoint_path = f"{checkpoint_dir}/{train_steps:07d}.pt"
+                        torch.save(checkpoint, checkpoint_path)
+                        open(checkpoint_path + ".done", "w").close()
+                        logger.info(f"Saved checkpoint to {checkpoint_path}")
+
+                        # Rotation: keep only the most recent ckpt_keep checkpoints
+                        # (and their eval dirs) to bound disk usage on long runs.
+                        ckpt_keep = int(getattr(args, 'ckpt_keep', 0))
+                        if ckpt_keep > 0:
+                            import shutil as _sh
+                            _pts = sorted(glob(f"{checkpoint_dir}/*.pt"))
+                            for _old in _pts[:-ckpt_keep]:
+                                _base = os.path.basename(_old)[:-3]
+                                os.remove(_old)
+                                for _suf in (".done",):
+                                    if os.path.exists(_old + _suf):
+                                        os.remove(_old + _suf)
+                                _eval_dir = f"{checkpoint_dir}/eval_{_base}"
+                                if os.path.isdir(_eval_dir):
+                                    _sh.rmtree(_eval_dir, ignore_errors=True)
+                            if len(_pts) > ckpt_keep:
+                                logger.info(f"[ckpt-keep] pruned {len(_pts) - ckpt_keep} old checkpoint(s), keeping {ckpt_keep}")
+
+                        # ── 真·in-mem eval (可选 config 模式): 暂停 stepping, 用常驻
+                        # EMA 模型同卡采样+decode+指标一次算完, PNG 落盘, 无 daemon。
+                        # 显存: 训练 17G + eval ~2G ≈ 19.5G < 24G; 默认关。
+                        if getattr(args, 'in_mem_eval', False):
+                            try:
+                                from src.eval.in_mem_eval import run_in_mem_eval
+                                _em = (ema_model if ema_model is not None
+                                       else (model.module if hasattr(model, 'module') else model))
+                                _em.eval()
+                                _im_t0 = time()
+                                _im_res = run_in_mem_eval(
+                                    _em, args, train_steps, device,
+                                    results_dir=str(getattr(args, 'results_dir', '')
+                                                    or os.path.dirname(os.path.dirname(checkpoint_dir))))
+                                logger.info(
+                                    f"[in-mem-eval] step {train_steps} done in {time()-_im_t0:.0f}s: "
+                                    + " | ".join(f"{k} ssim={v:.4f}" for k, v in _im_res.items()))
+                            except Exception as _ie:
+                                logger.warning(f"[in-mem-eval] step {train_steps} FAILED: {_ie}",
+                                               exc_info=True)
+
+                        # ── In-process GPU eval: bf16 DDIM → VAE decode → save PNGs ──
+                        # GPU-only (~40s for 455 imgs at batch=48). CPU metrics
+                        # computed by eval_metrics_daemon.py (separate process).
+                        if (_HAS_IN_PROCESS_EVAL and _eval_cache is not None
+                                and ema_model is not None):
+                            try:
+                                _eval_bs = int(getattr(args, 'eval_batch', 240))
+                                _eval_vae_bs = int(getattr(args, 'eval_vae_batch', 32))
+                                _eval_steps = int(getattr(args, 'eval_steps', 50))
+                                _eval_cfg = float(getattr(args, 'eval_cfg', 4.0))
+                                _eval_t0 = time()
+                                # Swap to EMA weights for eval.
+                                # 注意：必须用 try/finally 保证任何异常路径都能把训练权重
+                                # 还回去。旧实现只在 except 里调了 model.train()，
+                                # 一旦 eval 抛异常，训练会从 EMA 权重继续跑，而 Adam 的
+                                # 一/二阶矩仍对应旧权重 —— 静默的 training corruption。
+                                _orig_sd = {k: v.clone() for k, v in model.state_dict().items()}
+                                try:
+                                    _m = model.module if hasattr(model, 'module') else model
+                                    _m.load_state_dict(ema_model.state_dict(), strict=False)
+                                    model.eval()
+
+                                    run_gpu_eval(
+                                        _m, args, _eval_cache, train_steps,
+                                        checkpoint_dir, device,
+                                        dit_batch=_eval_bs,
+                                        vae_batch=_eval_vae_bs,
+                                        ddim_steps=_eval_steps,
+                                        cfg_scale=_eval_cfg)
+
+                                    if _eval_show5_cache is not None:
+                                        run_show5(_m, args, _eval_show5_cache, train_steps,
+                                                 checkpoint_dir, device,
+                                                 ddim_steps=_eval_steps, cfg_scale=_eval_cfg,
+                                                 tag="show5")
+                                    if _eval_seen5_cache is not None:
+                                        run_show5(_m, args, _eval_seen5_cache, train_steps,
+                                                 checkpoint_dir, device,
+                                                 ddim_steps=_eval_steps, cfg_scale=_eval_cfg,
+                                                 tag="seen5")
+
+                                    logger.info(
+                                        f"[auto-eval] step {train_steps} eval done in "
+                                        f"{time()-_eval_t0:.1f}s (GPU inference + PNG save; "
+                                        f"metrics by CPU daemon)")
+                                finally:
+                                    # 无论成功/失败/异常，都无条件恢复训练权重并释放备份，
+                                    # 否则 eval 失败会静默污染后续训练，且显存持续泄漏。
+                                    _m2 = model.module if hasattr(model, 'module') else model
+                                    _m2.load_state_dict(_orig_sd, strict=False)
+                                    model.train()
+                                    del _orig_sd
+                                    torch.cuda.empty_cache()
+                            except Exception as _ee:
+                                logger.warning(f"[auto-eval] step {train_steps} FAILED: {_ee}",
+                                               exc_info=True)
+
+                if args.max_steps > 0 and train_steps >= args.max_steps:
+                    logger.info(f"Reached max_steps={args.max_steps}; stopping cleanly.")
+                    break
+
+                if (getattr(args, 'early_stop', False)
+                        and train_steps >= int(getattr(args, 'early_stop_min_steps', 0))
+                        and args.ckpt_every > 0
+                        and train_steps % _es_check_every == 0
+                        and rank == 0
+                        and _early_stop_check()):
+                    early_stop_stopped = True
+                    break
+        except Exception as e:
+            import traceback
+            logger.error(f"Error during training loop: {e}")
+            logger.error(traceback.format_exc())
+            break
+
+        if args.max_steps > 0 and train_steps >= args.max_steps:
+            break
+
+        if early_stop_stopped:
+            break
+        
+        if dist.get_world_size() > 1:
+            dist.barrier()
+
+    model.eval()
+    logger.info("Done!")
+    cleanup()
+
+def main_from_cli(argv=None):
+    """CLI entry: build the argparse parser (config-file defaults + CLI overrides),
+    parse, and run main(args). Used by `python train.py` (root launcher) and
+    `python -m src.train.train`.
+    """
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--data-csv", type=str, default="train.csv",
+                        help="Path to the training CSV (default from config.json).")
+    parser.add_argument("--data-dir", type=str, default="", help="Root dataset directory if CSV has relative paths")
+    parser.add_argument("--results-dir", type=str, default="results")
+    parser.add_argument("--experiment-name", type=str, default="",
+                        help="Meaningful experiment slug appended after the launch timestamp.")
+    parser.add_argument("--pretrained", type=str, default=None, help="Path to pretrained DiT checkpoint")
+    parser.add_argument("--reset-cond-head", type=_str_to_bool, default=True,
+                        help="After loading pretrained body, re-init adaLN/final_layer (std=0.02) "
+                             "to fit new multi-cond head. Prevents early NaN from OOD conditioning.")
+    parser.add_argument("--train-cond-head", type=_str_to_bool, default=True,
+                        help="Whether adaLN/final_layer (reset by --reset-cond-head) should be "
+                             "trainable. True (default) lets them learn after reset; False keeps "
+                             "them frozen at their reset random values (legacy behavior).")
+    # 注：DiT_3Cond_models 已随 DiT_3Cond 于 2026-08-31 删除，choices 只剩 2Cond。
+    parser.add_argument("--model", type=str, choices=list(DiT_2Cond_models.keys()), default="DiT-2Cond-S/2")
+    parser.add_argument("--cond-mode", type=str, choices=["2cond", "3cond"], default="2cond",
+                        help="Conditioning mode: 2cond (callig+char) or 3cond (callig+script+char).")
+    parser.add_argument("--condition-fusion", type=str,
+                        choices=["legacy", "factorized_add", "factorized_cat", "xl_highdim"],
+                        default="legacy",
+                        help="Cond fusion: legacy joint MLP | factorized_add (low-dim additive) | "
+                             "factorized_cat (v12: 各向量因子 embedding 拼接后联合投影, ref/Moyun 式) | "
+                             "xl_highdim (high-dim, XL-aligned, preserves pretrained adaLN).")
+    parser.add_argument("--callig-embed-dim", type=int, default=None)
+    parser.add_argument("--script-embed-dim", type=int, default=None)
+    parser.add_argument("--char-embed-dim", type=int, default=None)
+    parser.add_argument("--glyph-vec-cond", type=_str_to_bool, default=False,
+                        help="v12: 把 g(标准字形) 池化成全局内容向量, 作为条件向量 c 的"
+                             "第二个操作数。仅 factorized_add / factorized_cat 下生效。"
+                             "作用: 让 adaLN 调制分支第一次能看到内容"
+                             "(原先 c = t_emb + callig_proj, 完全不知道在写哪个字);"
+                             "同时让 factorized_cat 不再退化成单层 Linear。")
+    parser.add_argument("--glyph-vec-dim", type=int, default=128,
+                        help="g 全局内容向量的维度 (concat/add 的第二个操作数)")
+    parser.add_argument("--glyph-vec-pool", type=str, choices=["mean", "max"],
+                        default="mean", help="g_tok 256 个 token 的池化方式")
+    parser.add_argument("--char-dino-embeddings", type=str, default=None,
+                        help="Path to glyph-level DINO embeddings npy (N, dim) used to init "
+                             "y_char_embedder rows via glyph_id = script_id*7026+character_id. "
+                             "Glyphs missing from the vocab keep their random init.")
+    parser.add_argument("--char-dino-index", type=str, default=None,
+                        help="Path to glyph index json ({\"glyphs\": [[script_id, char_id], ...]} "
+                             "aligned row-wise with char-dino-embeddings).")
+    parser.add_argument("--char-proj-mode", type=str, choices=["full", "ln_only", "mlp"],
+                        default="full",
+                        help="char_proj: 'full'=LayerNorm+Linear (default) | "
+                             "'ln_only'=LayerNorm only, requires char_embed_dim==hidden_size "
+                             "(DINO 384 direct, drops redundant 384->384 Linear — 但只给字符分支 "
+                             "留下 768 个可学习参数, 实测不足以利用有效秩仅 3.1 的 DINO 向量) | "
+                             "'mlp'=LayerNorm+Linear+SiLU+Linear (推荐, 给字符分支真正的容量)。")
+    parser.add_argument("--dino-per-script-center", type=int, default=0, choices=[0, 1],
+                        help="注入前先按 script 去均值再 L2 归一化。实测: 有效秩 34.1->57.0, "
+                             "跨书体字符检索 top1 1.9%%->2.6%%, top5 4.2%%->6.8%%, "
+                             "书体泄漏 83.0%%->77.9%%。书体信息本该由 y_callig_embedder 提供。")
+    parser.add_argument("--dino-fill-unknown", type=int, default=1, choices=[0, 1],
+                        help="DINO 未覆盖的 char 行用 DINO 均值填充 (默认开)。关闭则保留 "
+                             "nn.Embedding 默认的 N(0,0.02) 冻结噪声 —— 在 char_proj='ln_only' "
+                             "下 LayerNorm 会把范数线索也抹掉, 模型无法区分已知/未知字符。"
+                             "CFG null token 永远不会被覆盖。")
+    parser.add_argument("--freeze-char-table", type=_str_to_bool, default=False,
+                        help="Freeze y_char_embedder table after DINO init (keep CFG uncond row "
+                             "trainable). Saves ~13.5M trainable params; conditions become pure "
+                             "DINO 384 vectors.")
+    # ---- IDS 组件码本字嵌入 ----
+    parser.add_argument("--use-ids-char-embedder", type=_str_to_bool, default=False,
+                        help="Use IDS component-based char embedder instead of LabelEmbedder. "
+                             "Reduces char table from 35130×384 to ~1571×384 (95.5% fewer params), "
+                             "enables zero-shot generalization to unseen chars.")
+    parser.add_argument("--ids-file", type=str, default=None,
+                        help="Path to IDS dictionary file (cjkvi ids.txt format).")
+    parser.add_argument("--ids-char-map-csv", type=str, default=None,
+                        help="Path to csv with character_id,character columns for char_id->char mapping. "
+                             "If None, assumes char_id == Unicode codepoint.")
+    # ---- 标准字形 DINO 字嵌入 (冻结查表, 零可训练参数) ----
+    parser.add_argument("--use-std-dino-char-embedder", type=_str_to_bool, default=False,
+                        help="Use standard-glyph DINO frozen lookup table as char embedder "
+                             "(0 trainable params, shape-consistency AUC>0.92). "
+                             "Requires char_embed_dim == DINO dim (768).")
+    parser.add_argument("--std-dino-table-path", type=str, default=None,
+                        help="Path to std DINO char table npy (default _sync_work/std_dino_char_table_768.npy).")
+    parser.add_argument("--cond-drop-all-prob", type=float, default=0.05,
+                        help="Probability of dropping all factors for CFG.")
+    parser.add_argument("--cond-drop-one-prob", type=float, default=0.0,
+                        help="Probability of dropping exactly one uniformly selected factor.")
+    parser.add_argument("--cond-drop-which-glyph-prob", type=float, default=0.5,
+                        help="drop-one 时选择 drop callig (→glyph-only, 学字符内容分) 的概率; "
+                             "书家维度样本充足, 字符维度才是难点, 建议 >0.5. 0.5=均匀.")
+    parser.add_argument("--num-scripts", type=int, default=12,
+                        help="Number of script classes (only used in 3cond mode).")
+    parser.add_argument("--use-checkpoint", type=_str_to_bool, default=False,
+                        help="Enable gradient checkpointing on DiT blocks (cuts activation memory).")
+    parser.add_argument("--image-size", type=int, choices=[256, 512], default=256)
+    parser.add_argument("--num-calligraphers", type=int, default=2021)
+    parser.add_argument("--callig-id-map", default="",
+                        help="干净书家词表映射 json 路径 (raw calligrapher_id -> 0..N-1)。"
+                             "设置后 num_calligraphers 自动收紧为词表长度, 数据层查表映射。"
+                             "见 tools/build_callig_map.py。空=保持现状(稀疏 id 直通)。")
+    parser.add_argument("--callig-emb-pretrained", default="",
+                        help="对比预训练的书家 embedding (.pt, 含 'embedding' (N,dim))。"
+                             "加载到 y_callig_embedder 表前 N 行, 配合 --freeze-callig-table")
+    parser.add_argument("--callig-spatial", action="store_true",
+                        help="旧外挂(已证伪死重): 书家向量->r 系数 x (r,256,D) 空间基图 加到骨架。"
+                             "保留为可配置开关以复评历史 ckpt。")
+    parser.add_argument("--callig-spatial-rank", type=int, default=64,
+                        help="外挂低秩基图数量 r (callig_spatial_net 输出维度)")
+    parser.add_argument("--aux-latent-shards-dirs", type=str, default="",
+                        help="moyi 式辅助目标通道: 逗号分隔 aux latent shard 目录 "
+                             "(如 data/aux/aux_skel_latents_fame_e,data/aux/aux_canny_latents_fame_e)。"
+                             "训练目标 x = cat(image, *aux), 对全部通道加噪/算 MSE; 推理只用前 4 通道。")
+    parser.add_argument("--aux-loss-weight", type=float, default=1.0,
+                        help="aux 通道 loss 权重 (1.0=等权/ref; <1 时图像主导)")
+    parser.add_argument("--aux-loss-weights", type=str, default="",
+                        help="per-group aux 权重, 逗号分隔, 与 aux-latent-shards-dirs 同序。"
+                             "如 '0.3,0.8' -> canny×0.3, skel×0.8 (覆盖 --aux-loss-weight)。")
+    # ⚠ 必须注册: 未注册的参数会被 config 加载器**静默丢弃**
+    #   (main_from_cli 只把 config 的键套到已注册的 action 上), getattr 取到 False,
+    #   于是 decode 前不加回白底 -> 全图发黄/发黑 (2026-09-14 事故根因)。
+    parser.add_argument("--aux-zero-white", type=_str_to_bool, default=False,
+                        help="白底归零: 训练目标已减去白底 latent (见 tools/rebuild_latents_wz.py), "
+                             "评测/推理 decode 前**必须加回**, 否则 latent 的零向量会被 VAE 解成"
+                             "灰黄棕色 (实测 RGB≈[129,110,89]) -> 整图发黄、更负处发黑。")
+    parser.add_argument("--callig-style-attn", action="store_true",
+                        help="callig 风格 cross-attention(书家化骨架正确形态): 书家向量 -> N_style 个 "
+                             "style token, 骨架 token 内容寻址聚合风格, 产生'书家x字x位置'交互(结体差异)。"
+                             "zero-init 可 resume。")
+    parser.add_argument("--callig-n-style", type=int, default=8,
+                        help="callig style token 数量 (配合 --callig-style-attn)")
+    parser.add_argument("--glyph-inject-mode", choices=["adaln", "xattn"], default="adaln",
+                        help="g 逐层注入方式: adaln=ZeroAdaLN 固定位置调制 (旧默认), "
+                             "xattn=ZeroCrossAttention 空间寻址 (GlyphDraw 式, 新 ckpt 专用)")
+    parser.add_argument("--xattn-q-pos", type=_str_to_bool, default=False, dest="xattn_q_pos",
+                        help="[2026-09-17] xattn 的 **Q 是否也加 sincos 位置嵌入**。\n"
+                             "默认 False = 旧行为(只给 K/V 加位置)。\n"
+                             "⚠ 旧实现下 Q 无位置, 而 rope=True 时 x 残差流不加绝对位置\n"
+                             "-> '空间寻址'退化成'内容寻址', 与 ZeroCrossAttention 的\n"
+                             "docstring 声称的 2D 绑定保证不符。打开后 Q/K/V 都带位置。\n"
+                             "建议与旧实现做 A/B (同预算、跑到平台)。")
+    parser.add_argument("--style-token-n", type=int, default=0,
+                        help="风格 token 数 (0=关闭): >0 时每层注入 context = "
+                             "[书家化骨架(+2D位置); 风格token(+可学习role)], "
+                             "使书家风格**直接参与每一层、每个空间位置**的内容寻址 "
+                             "(风格局部化, 与局部字形共同调制最终生成)。"
+                             "配 --glyph-inject-mode xattn 使用; 建议 16~64 并做容量扫描。")
+    parser.add_argument("--style-role-init", type=float, default=0.02,
+                        help="风格 token 的 role embedding 初始化 std (促 N 个 token 分化, "
+                             "避免塌缩为同一向量)")
+    parser.add_argument("--freeze-callig-table", action="store_true",
+                        help="冻结书家表 [0,N) 行 (CFG null token 仍可训练)。"
+                             "需先 --callig-emb-pretrained, 否则冻结随机初始化无意义")
+    parser.add_argument("--num-characters", type=int, default=7765)
+    parser.add_argument("--epochs", type=int, default=1400)
+    parser.add_argument("--max-steps", type=int, default=0,
+                        help="Optional clean stop after N optimizer steps (0 disables).")
+    parser.add_argument("--early-stop", type=_str_to_bool, default=False,
+                        help="Enable early stopping based on CPU eval (eval_auto_*.json mse/ssim).")
+    parser.add_argument("--early-stop-metric", type=str,
+                        choices=["ssim", "mse", "combo"], default="ssim",
+                        help="Metric to monitor for early stopping (ssim higher better, mse lower "
+                             "better). 'combo' = dual-gate: require BOTH ssim and skel_iou to be "
+                             "stale >= patience before stopping (skel_iou higher better).")
+    parser.add_argument("--diffusion-type", type=str,
+                        choices=["ddpm", "flow"], default="ddpm",
+                        help="Diffusion formulation: 'ddpm' = standard GaussianDiffusion "
+                             "(epsilon prediction, DDIM sampling); 'flow' = linear-interpolant "
+                             "Flow Matching (velocity prediction, ODE sampling).")
+
+    # ---- Flow Matching: t 分布 / 求解器 / schedule（flow free-lunch）----
+    parser.add_argument("--t-sampler", type=str, default="logit_normal",
+                        choices=["uniform", "logit_normal", "cosmap"],
+                        dest="t_sampler",
+                        help="Training-time t distribution. 'logit_normal' (SD3) concentrates "
+                             "gradient budget on mid-t instead of wasting it on the uninformative "
+                             "endpoints. 'uniform' = legacy behaviour.")
+    parser.add_argument("--t-mean", type=float, default=0.0, dest="t_mean",
+                        help="logit_normal mean (SD3 uses 0.0). >0 biases towards t=1 (noise).")
+    parser.add_argument("--t-std", type=float, default=1.0, dest="t_std",
+                        help="logit_normal std (SD3 uses 1.0). Smaller = more concentrated at t=0.5.")
+    # NOTE: dest 用 flow_sampler 而不是 sampler —— 后者已被数据采样器
+    # (--sampler: random|factor_balanced) 占用，同名 dest 会互相覆盖。
+    parser.add_argument("--flow-sampler", type=str, default="heun",
+                        choices=["euler", "heun"], dest="flow_sampler",
+                        help="ODE solver. 'heun' = 2nd-order RK2 (trapezoidal), 2 NFE/step. "
+                             "At equal NFE Heun@25 beats Euler@50 because truncation error drops "
+                             "from O(dt) to O(dt^2).")
+    parser.add_argument("--flow-heun-batch", type=int, default=1, dest="heun_batch",
+                        help="1 = evaluate Heun's two stages as one batched forward (much better "
+                             "GPU utilisation); 0 = two separate forwards.")
+    parser.add_argument("--flow-shift", type=float, default=1.0, dest="shift",
+                        help="Sampling-side timestep shift (SD3). 1.0 = no shift (default, correct "
+                             "for detail-dominated 32x32 glyph latents). >1 concentrates steps near "
+                             "t=1 (layout), <1 near t=0 (detail).")
+    parser.add_argument("--use-ot", type=_str_to_bool, default=False, dest="use_ot",
+                        help="Minibatch Optimal Transport (OT-CFM, Tong et al. 2024): per-batch "
+                             "Hungarian reassignment of noise/data pairs so trajectories don't cross "
+                             "and the velocity field is smoother. Cheap (O(B^3) scipy), usually "
+                             "helps convergence. No downside for training.")
+    parser.add_argument("--ot-chunks", type=int, default=1,
+                        help="OT 分块数: 1 = 整 batch 全局匈牙利 (原版); k>1 把 batch 均分 k 块各自 "
+                             "做匈牙利, 大 batch 下 O(B^3)->O(k*(B/k)^3) 显著降 CPU 开销, 质量近似. "
+                             "例: batch 384 + ot_chunks=4 ~= 4x96 https://bit.ly/OT-chunks.")
+    parser.add_argument("--learn-sigma", type=int, default=None, choices=[0, 1],
+                        help="Force DiT learn_sigma on/off. Default: auto = False for flow "
+                             "(flow has no variance head; leaving it True creates C permanently "
+                             "dead zero-initialized output channels), True for ddpm.")
+
+    # ---- 骨干现代化（v2 arch）----
+    parser.add_argument("--norm-type", type=str, default="rms", choices=["rms", "layer"],
+                        dest="norm_type", help="Normalization inside DiT blocks / final layer.")
+    parser.add_argument("--mlp-type", type=str, default="swiglu", choices=["swiglu", "gelu"],
+                        dest="mlp_type",
+                        help="Feed-forward. 'swiglu' is parameter-matched to 'gelu' "
+                             "(hidden = 2/3 * 4D, rounded to multiple of 64).")
+    parser.add_argument("--qk-norm", type=int, default=1, choices=[0, 1], dest="qk_norm",
+                        help="QK-Normalization on attention q/k (stabilises logits, allows higher LR).")
+    parser.add_argument("--rope", type=int, default=1, choices=[0, 1], dest="rope",
+                        help="2D axial RoPE on q/k. 0 = legacy fixed 2D sin-cos added to the "
+                             "residual stream.")
+    parser.add_argument("--rope-theta", type=float, default=100.0, dest="rope_theta",
+                        help="RoPE base frequency (SD3/Lumina use 100 for 2D image RoPE).")
+    parser.add_argument("--attn-impl", type=str, default="sdpa", choices=["sdpa", "eager"],
+                        dest="attn_impl", help="Attention kernel. 'sdpa' = Flash/mem-efficient.")
+    parser.add_argument("--compile", type=_str_to_bool, default=False,
+                        help="Wrap the whole model with torch.compile before DDP (needs torch>=2.0). "
+                             "Speeds up PyTorch 2.x inductor kernels on cu121 env; first step is slow "
+                             "(compilation), then per-step cost drops.")
+    parser.add_argument("--compile-mode", type=str, default="default",
+                        choices=["default", "reduce-overhead", "max-autotune", "max-autotune-no-cudagraphs"],
+                        help="torch.compile mode: default / reduce-overhead (CUDA-graph, faster but "
+                             "higher mem) / max-autotune / max-autotune-no-cudagraphs (autotuned GEMM "
+                             "kernels without CUDA graphs — safe with the concurrent eval process).")
+    parser.add_argument("--early-stop-patience", type=int, default=5,
+                        help="Stop after this many consecutive evals without improvement.")
+    parser.add_argument("--early-stop-min-delta", type=float, default=0.002,
+                        help="Minimum change in the monitored metric to qualify as an improvement. "
+                             "Without it, sub-noise-level jitter (+0.0001) resets the stale counter "
+                             "and early-stop is effectively driven by eval noise.")
+    parser.add_argument("--early-stop-min-delta-iou", type=float, default=0.005,
+                        help="min_delta for the skel_iou gate when --early-stop-metric=combo.")
+    parser.add_argument("--early-stop-min-delta-mse", type=float, default=0.0,
+                        help="min_delta when --early-stop-metric=mse (scale-dependent, off by default).")
+    parser.add_argument("--early-stop-min-steps", type=int, default=0,
+                        help="Do not early-stop before this many total steps (train_steps).")
+    parser.add_argument("--early-stop-check-every", type=int, default=0,
+                        help="Check eval_auto json every N training steps (0 = ckpt_every//2, min 1000).")
+    parser.add_argument("--fresh-scheduler", type=_str_to_bool, default=False,
+                        help="With --resume-full: ignore the restored scheduler state and "
+                             "rebuild the LR schedule over the remaining fine-tune horizon "
+                             "(max_steps - resume step) instead of continuing the old one.")
+    parser.add_argument("--lr", type=float, default=1e-4, help="Learning rate")
+    parser.add_argument("--lr-schedule", choices=["constant", "cosine"], default="constant")
+    parser.add_argument("--warmup-steps", type=int, default=0)
+    parser.add_argument("--min-lr-ratio", type=float, default=0.1)
+    parser.add_argument("--weight-decay", type=float, default=0.0,
+                        help="AdamW weight decay (sparse-condition training benefits from 0.01-0.05)")
+    parser.add_argument("--global-batch-size", type=int, default=16) # default small batch for laptop GPU
+    parser.add_argument("--global-seed", type=int, default=0)
+    parser.add_argument("--sampler", type=str, choices=["random", "factor_balanced"],
+                        default="random")
+    parser.add_argument("--balance-char-alpha", type=float, default=0.5,
+                        help="Tempered inverse character-frequency exponent.")
+    parser.add_argument("--balance-callig-alpha", type=float, default=0.25,
+                        help="Tempered inverse calligrapher-frequency exponent.")
+    # [2026-09-16] epoch 长度(步)。0 = 自动取 ckpt_every(推荐): epoch 与存盘/评测
+    # 刻度重合, DataLoader 迭代器 reset 的代价被 ckpt+eval 吸收, 不再每 119 步抖一次。
+    # 负值 = 强制退回旧行为(epoch = 数据集一遍)。
+    parser.add_argument("--epoch-steps", type=int, default=0, dest="epoch_steps",
+                        help="每个 epoch 的**步数**(每 rank)。0=自动=ckpt_every; "
+                             "-1=退回旧行为(epoch=数据集一遍)。见 "
+                             "src/utils/samplers.py:LongEpochDistributedSampler。")
+    parser.add_argument("--use-ema", type=_str_to_bool, default=False,
+                        help="Maintain and evaluate a full-model exponential moving average.")
+    parser.add_argument("--ema-decay", type=float, default=0.9999)
+    parser.add_argument("--ema-interval", type=int, default=1, dest="ema_interval",
+                        help="Update EMA every N steps with decay**N (mathematically "
+                             "equivalent to per-step update, saves ~370MB/step of "
+                             "memory bandwidth for a 46M-param model).")
+    parser.add_argument("--ema-warmup", type=_str_to_bool, default=True,
+                        help="Cap early EMA decay by update count to avoid random-init lag.")
+    parser.add_argument("--vae", type=str, choices=["ema", "mse"], default="ema")
+    parser.add_argument("--vae-path", type=str, default="data/pretrained/sd-vae-ft-ema", help="Local path to VAE weights")
+    parser.add_argument("--vae-downscale", type=int, default=8, help="VAE spatial downsample factor (8=f8 sd-vae, 4=f4 kl-f4)")
+    parser.add_argument("--latent-channels", type=int, default=4, help="VAE latent channel count (4=sd-vae, 3=kl-f4)")
+    parser.add_argument("--image-channels", type=int, default=None,
+                        help="CFG 作用域: 只对这些通道做 classifier-free guidance, 其余通道"
+                             "(aux 结构通道) 保持 cond 分支原值。默认 None = 取 --latent-channels。"
+                             "⚠ 12ch 下必须保持 4: aux 分布与 image 不同, 若被同一 cfg_scale "
+                             "放大, 采样轨迹会跑飞 (doc59 §1.3 '墨团'根因)。"
+                             "此键此前未注册 -> config 里写 image_channels 会被静默丢弃。")
+    parser.add_argument("--vae-in-channels", type=int, default=3, help="VAE input image channels (3=RGB, 1=grayscale)")
+    parser.add_argument("--vae-out-channels", type=int, default=3, help="VAE output image channels (3=RGB, 1=grayscale)")
+    parser.add_argument("--vae-scaling-factor", type=float, default=0.18215, help="VAE latent scaling factor")
+    parser.add_argument("--lora-alpha", type=int, default=None,
+                        help="LoRA alpha (scaling = alpha/r). Default: same as r (scaling=1).")
+    parser.add_argument("--lora-target", type=str, choices=["all", "attn", "mlp"], default="all",
+                        help="Which linear layers to inject LoRA into: all (qkv+proj+fc1+fc2), "
+                             "attn (qkv+proj), or mlp (fc1+fc2).")
+    parser.add_argument("--resume-lora", type=str, default=None,
+                        help="Path to a previous LoRA checkpoint to upgrade from (rank up, preserving learned deltas).")
+    parser.add_argument("--old-lora-r", type=int, default=16,
+                        help="Rank of the LoRA checkpoint given by --resume-lora.")
+    parser.add_argument("--resume-full", type=str, default=None,
+                        help="Path to a training checkpoint (our own, with delta/opt/args) to resume from. "
+                             "Loads the delta (LoRA + condition head + adaLN), optimizer state and step "
+                             "counter; the pretrained body is still loaded from --pretrained (delta stores "
+                             "only the changed part).")
+    parser.add_argument("--resume-lr", type=float, default=None,
+                        help="If set with --resume-full, override the learning rate from the checkpoint "
+                             "(e.g. lower LR to test whether NaN was numerical).")
+    parser.add_argument("--train-only-char-embed", type=_str_to_bool, default=False,
+                        help="DIAGNOSTIC: freeze the whole backbone and train ONLY the character "
+                             "conditioning (y_char_embedder.embedding_table + char_proj + CFG null token). "
+                             "Any metric change is then directly attributable to the char condition, "
+                             "which is how we test whether the frozen DINO glyph table is the bottleneck. "
+                             "Pair with freeze_char_table=false and --resume-full from a trained ckpt.")
+    parser.add_argument("--num-workers", type=int, default=4)
+    parser.add_argument("--log-every", type=int, default=50)
+    parser.add_argument("--ckpt-every", type=int, default=10_000)
+    parser.add_argument("--ckpt-keep", type=int, default=0,
+                        help="Keep only the N most recent checkpoints (0 = keep all). "
+                             "Old checkpoints and their eval_* dirs are pruned after each save.")
+    parser.add_argument("--preload", type=_str_to_bool, default=False,
+                        help="Preload latents/canny/skeleton (and GT image when REPA is on) "
+                             "into RAM at startup for zero-disk-IO training.")
+    parser.add_argument("--preload-workers", type=int, default=16,
+                        help="Parallel PNG-decode workers used by preload.")
+    parser.add_argument("--auto-eval", type=_str_to_bool, default=False,
+                        help="Run in-memory eval (MSE/SSIM on N test samples) after each checkpoint save.")
+    parser.add_argument("--eval-csv", type=str, default="test.csv",
+                        help="CSV for auto-eval (only used when --auto-eval is true).")
+    parser.add_argument("--eval-n", type=int, default=100,
+                        help="Number of test samples for auto-eval (free-sampling).")
+    parser.add_argument("--eval-steps", type=int, default=50,
+                        help="DDIM steps for free-sampling auto-eval.")
+    parser.add_argument("--eval-cfg", type=float, default=1.7,
+                        help="CFG scale for free-sampling auto-eval (flow 最佳 ~1.7).")
+    parser.add_argument("--eval-seed", type=int, default=0,
+                        help="Seed for free-sampling auto-eval noise.")
+    parser.add_argument("--eval-batch", type=int, default=16,
+                        help="DiT sampling batch for auto-eval (before CFG doubling).")
+    parser.add_argument("--eval-vae-batch", type=int, default=32,
+                        help="VAE decode batch for auto-eval (fp32, force_upcast=True).")
+    parser.add_argument("--show5-csv", type=str, default=None,
+                        help="固定跨书体展示样本 CSV(如 eval5)。设后每次都采样这 N 个(不算指标, "
+                             "仅生成 eval_latest.png/eval_samples 展示, 与海报 GT 行同一批保证对照)。")
+    parser.add_argument("--seen5-csv", type=str, default=None,
+                        help="固定训练集内展示样本 CSV。")
+    parser.add_argument("--w-glyph-cond", type=_str_to_bool, default=False,
+                        help="Enable 甲2 standard-glyph token-add conditioning (use_glyph_cond).")
+    parser.add_argument("--glyph-scale-init", type=float, default=0.4,
+                        help="Initial glyph_scale (standard-glyph token-add strength).")
+    parser.add_argument("--no-char-cond", type=_str_to_bool, default=False,
+                        help="v10b: 移除 char 向量条件 (skel-g 即字条件, 因子分解=callig+skel)."
+                             " 支持 factorized_add / factorized_cat。"
+                             " 注意: 开启后向量因子只剩 callig 一个, factorized_cat 会退化为"
+                             " 单层 Linear (与 factorized_add 等价), 见 dit.py 注释。")
+    parser.add_argument("--skel-as-glyph-cond", type=_str_to_bool, default=False,
+                        help="v10a: 用实例 skel latent (skel_latent_shards_dir) 走 g 通路"
+                             " (use_glyph_cond 注入), 替代标准字形库——skel latent 即字条件, 从头预训练.")
+    parser.add_argument("--skel-latent-shards-dir", default="",
+                        help="实例 skel latent shards (--skel-as-glyph-cond 时必填)")
+    parser.add_argument("--glyph-drop-prob", type=float, default=0.0,
+                        help="g 条件训练期随机丢弃概率 (skel 模式建议 0.1, 保无 g 生成能力)")
+    parser.add_argument("--glyph-inject-layers", type=int, default=0,
+                        help="g 逐层注入层数 (0=仅输入层 token-add, s23 既有行为)")
+    parser.add_argument("--glyph-embedder-depth", type=int, default=0,
+                        help="g 编码器增强深度 (0=单层 Conv 现状; >0=降采样 Conv + N 层 "
+                             "(SiLU+Conv3x3) 残形增强 std 骨架特征, 治 std-skel g 通路不激活).")
+    # [v12+] FLOP 实测: depth=2 的两层满秩 3x3 conv 占全模型 9.7%。
+    # depthwise-separable 同感受野只需 1/8.8 的代价 (省约 8.6% 总 FLOPs)。
+    # ⚠ 这是**架构替换**, 理论上低风险(输入是近二值细线, 信息量极低), 但**未经验证**,
+    #   必须 A/B 确认不伤质量 —— 不要因为"看起来等价"就直接切。
+    parser.add_argument("--glyph-embedder-sep", type=_str_to_bool, default=False,
+                        dest="glyph_embedder_sep",
+                        help="g 编码器的 3x3 conv 用 depthwise-separable 实现 "
+                             "(省 ~8.6%% 总 FLOPs, 需 A/B 验证质量)。")
+    parser.add_argument("--glyph-init-mix", type=float, default=0.0,
+                        help="HYBRID 初始点 alpha∈[0,1]: xT=alpha*randn+(1-alpha)*std字形latent。"
+                             "0=纯噪声(现状); (0,1)=混合; 默认 0 保持当前行为, 收敛后按需设 e.g.0.6。"
+                             "见 HYBRID_INIT_PLAN.md。")
+    parser.add_argument("--w-std-mid", type=float, default=0.0,
+                        help="MIDSTEP_STD 权重: 在中间噪声水平 sqrt(alpha_cumprod)∈[alo,ahi] 时,"
+                             "额外监督 模型预测 clean latent 逼近标准字形 latent g, 让字形中段锚定。"
+                             "需 w-glyph-cond 开启。权重明显小于主 loss(如 0.1~0.5), 防抹掉风格。0=关。")
+    parser.add_argument("--w-latent-skel", type=float, default=0.0, dest="w_latent_skel",
+                        help="实例骨架结构 loss 权重(辅助项, 建议 0.02~0.1, 绝不等权)。\n"
+                             "用**冻结**的小 probe 把 pred_xstart 映射成实例骨架 latent, 与 GT\n"
+                             "skel_latent 做 MSE; 只在 t<=--latent-skel-max-t 生效。\n"
+                             "与 12ch 的本质区别: 不在扩散目标里 -> 4ch 主干/CFG 作用域/推理成本\n"
+                             "全不受影响, 且**新增可训练参数 0**(probe 冻结)。0=关。")
+    parser.add_argument("--latent-skel-probe", type=str, default="", dest="latent_skel_probe",
+                        help="冻结 probe ckpt 路径 (LatentSkelProbe: 4ch img latent -> "
+                             "4ch 实例骨架 latent)。由 tools/train_latent_skel_probe.py 训练。")
+    parser.add_argument("--inst-skel-shards-dir", type=str, default="", dest="inst_skel_shards_dir",
+                        help="**实例骨架** latent shards 目录 (结构 loss 的 target)。由 GT 图派生 "
+                             "(tools/build_skel_latents.py), 与条件 g (skel_latent_shards_dir="
+                             "shards_std) 完全解耦。w_latent_skel>0 时必填, 否则拒绝启动。")
+    parser.add_argument("--latent-skel-max-t", type=float, default=0.3, dest="latent_skel_max_t",
+                        help="结构 loss 的 t 门控上界。**flow 下 t in [0,1] 且 t=0 是干净端**\n"
+                             "(flow_matching.py:14), 故 0.3 = 只监督最干净的 30%% 时刻。\n"
+                             "⚠ 必须 float: 照抄 DDPM 的 500 会被 int() 截成 0 -> 门控恒假\n"
+                             "-> loss 静默恒为 0 (静默失效惯犯)。")
+    parser.add_argument("--std-mid-alo", type=float, default=0.35,
+                        help="中间噪声带下界(sqrt_alpha_cumprod), 默认 0.35。")
+    parser.add_argument("--std-mid-ahi", type=float, default=0.75,
+                        help="中间噪声带上界(sqrt_alpha_cumprod), 默认 0.75。")
+    parser.add_argument("--w-repa", type=float, default=0.0, help="Weight for Representation Alignment (REPA) Loss (0 = disabled, default)")
+    parser.add_argument("--repa-teacher-ckpt", type=str, default="",
+                        help="Local path to DINOv2 teacher weights (ModelScope safetensors). "
+                             "Empty = auto-detect data/pretrained/dinov2_vits14_pretrain.safetensors or $DINO_WEIGHTS.")
+    parser.add_argument("--repa-cache-dir", type=str, default="", dest="repa_cache_dir",
+                        help="Dir with pre-extracted DINOv2 teacher features (feats.f16 + ids.npy, "
+                             "built by tools/build_dino_cache.py). Hits skip the per-step DINO "
+                             "forward (+15~20% throughput, -1.5GB VRAM); misses fall back to the "
+                             "teacher forward (lazy-loaded). Empty = disabled (teacher every step).")
+    # [v12 修复] 该键此前**未注册为 argparse 参数**, 代码里用
+    #   getattr(args, "repa_layers", "") 读取 -> config JSON 里的值被**静默丢弃**,
+    #   实际永远走 train.py 的硬编码兜底 `or (8,)`。v11/v12 恰好都想要 8 所以没暴露,
+    #   但想改 REPA 层位时改了不生效。默认 "8" 与旧兜底**行为完全一致**。
+    parser.add_argument("--repa-layers", type=str, default="8",
+                        help="REPA 对齐的中间层, 单层 '8' 或多层 '8,11'。"
+                             "⚠ 此键曾未注册导致 config 值被静默丢弃 (doc56/59 同类坑)。")
+    parser.add_argument("--eval-skel-latent-shards-dir", type=str, default="",
+                        dest="eval_skel_latent_shards_dir",
+                        help="评测专用的标准字形(g) latent 目录。⚠ 必须与训练侧的 "
+                             "--skel-latent-shards-dir 分开: 训练 shard 按 **train csv 的 img_id** 建, "
+                             "而 eval 集的 img_id 是另一套。实测: 用 base_sym(train) 查 strict 命中 0/237 "
+                             "-> g 全零 -> VAE decode(0) 解出灰黄棕 [129,110,89] -> poster 首行发黄, "
+                             "且 strict 指标完全失真(曾出现 strict 0.4837 > seen 0.4577 的反常)。"
+                             "留空则退回 --skel-latent-shards-dir。")
+    parser.add_argument("--in-mem-eval", type=_str_to_bool, default=False, dest="in_mem_eval",
+                        help="True in-mem eval inside the training process: at each ckpt point, "
+                             "pause stepping, sample with the resident EMA model on the same GPU, "
+                             "decode + compute SSIM/MSE in-memory, append eval_stdskel_*.csv "
+                             "(batch_eval-compatible), then resume. No daemon, no PNGs, no ckpt reload.")
+    parser.add_argument("--in-mem-eval-sets", type=str, default="",
+                        dest="in_mem_eval_sets",
+                        help="Sets spec for --in-mem-eval: 'name:csv:n' comma-separated. "
+                             "Default: seen:assets/eval_seen_v10.csv:10,"
+                             "strict:assets/eval_fame3_strict_clean_v9.csv:50")
+    parser.add_argument("--in-mem-eval-batch", type=int, default=16, dest="in_mem_eval_batch",
+                        help="DiT sampling batch for --in-mem-eval (VRAM-safe: 16).")
+    parser.add_argument("--in-mem-eval-save-samples", type=_str_to_bool, default=True,
+                        dest="in_mem_eval_save_samples",
+                        help="Save generated + GT PNGs to eval_samples_ctrl/step{N}/{set}/ "
+                             "during --in-mem-eval (poster/sanity use).")
+    # [v12+] LPIPS 此前是"声明了但从没算过"的空列。ssim 会被大面积白底匹配骗过
+    # (doc59: 墨团也能拿 0.48), LPIPS 对结构细节敏感 —— 是区分"容量够不够"与
+    # "ssim 饱和"的关键指标 (doc62 §3)。跑在 CPU, 不与训练争显存。
+    parser.add_argument("--in-mem-eval-lpips", type=_str_to_bool, default=True,
+                        dest="in_mem_eval_lpips",
+                        help="计算 LPIPS(vgg, CPU) 并写入 summary/batch CSV 的 lpips 列。"
+                             "不可用时自动留空且不影响评测。")
+    parser.add_argument("--eval-self-cond", type=_str_to_bool, default=False, dest="eval_self_cond",
+                        help="Two-pass self-conditioning sampling in --in-mem-eval "
+                             "(pass-1 predicted skel channels fed back as g for pass-2).")
+    parser.add_argument("--eval-blend-alpha", type=float, default=0.0, dest="eval_blend_alpha",
+                        help="Self-conditioning skeleton blend (0=pure predicted, 0.5=half-half).")
+    parser.add_argument("--optimizer", type=str, default="adamw", choices=["adamw", "muon"],
+                        help="Optimizer: adamw (default) or muon (matrix NS-orth + adamw for vec/embed).")
+    parser.add_argument("--muon-lr", type=float, default=0.02,
+                        help="Muon matrix-group LR (independent scale, ~0.01-0.1; adamw uses --lr).")
+    parser.add_argument("--latent-shards-dir", type=str, default=None,
+                        help="Dir of pre-built latent shards (shard_XXXXX.npz). If set, training reads "
+                             "pre-encoded VAE latents instead of on-the-fly VAE encode.")
+    parser.add_argument("--img-root", type=str, default="data/imgs/final_imgs_256",
+                        help="Root dir of 256x256 gt images (used with latent-cached training for gt-losses).")
+    parser.add_argument("--config", type=str, default="config.json",
+                        help="Path to JSON config file with default args (CLI overrides).")
+
+    # Apply config-file defaults first, then CLI overrides.
+    config_defaults = {}
+    cfg_path = parser.parse_known_args()[0].config
+    if cfg_path and os.path.isfile(cfg_path):
+        with open(cfg_path, "r", encoding="utf-8") as f:
+            config_defaults = json.load(f)
+    for action in parser._actions:
+        if action.dest in ("help", "config"):
+            continue
+        if action.dest in config_defaults:
+            # config supplies a value: use it as default and drop "required"
+            action.default = _coerce(config_defaults[action.dest], action.default, action.type)
+            action.required = False
+
+    args = parser.parse_args(argv)
+    main(args)
+    return args
+
+
+if __name__ == "__main__":
+    main_from_cli()

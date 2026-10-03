@@ -333,9 +333,7 @@ def main():
     log(f"conds={n_eff} k={args.k} steps={args.steps} cfg={args.cfg}"
         + ("  (--skip-intra: 跳过 intra 阶段)" if args.skip_intra else ""))
 
-    # vae 固定放 cpu: heun_gpu 返回 cpu lat, vae 若在 cuda 会设备不匹配崩
-    # (decode ~96 张很便宜, 瓶颈在扩散采样而非 decode)。
-    vae = load_eval_vae("cpu", "data/pretrained/sd-vae-ft-ema")
+    vae = load_eval_vae("cpu", "data/pretrained/sd-vae-ft-ema")  # heun_gpu 返回 cpu lat, vae 固定 cpu 避免设备不匹配
     sf = float(a.get("vae_scaling_factor", 0.18215))
 
     rows, poster_rows = [], []
