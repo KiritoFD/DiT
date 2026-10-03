@@ -775,8 +775,18 @@ def main(args):
             _dropped = 0
             _filled_rows = []
             with torch.no_grad():
-                for _gi, (_sid, _cid) in enumerate(_glyphs):
-                    _gid = int(_sid) * _NUM_CH + int(_cid)
+                # [v52 2026-10-04] glyphs 兼容两种口径:
+                #   历史: [script, char] 二元组 / "s_c" 字符串 -> gid = s*7026 + c
+                #   SupCon v2: 一维 int = 全局 character_id (与 y_char label 同空间,
+                #              latent_dataset.py:615 实证 csv glyph_id == character_id)
+                for _gi, _g in enumerate(_glyphs):
+                    if isinstance(_g, (list, tuple)) and len(_g) >= 2:
+                        _gid = int(_g[0]) * _NUM_CH + int(_g[1])
+                    elif isinstance(_g, str) and "_" in _g:
+                        _a, _b = _g.split("_")[:2]
+                        _gid = int(_a) * _NUM_CH + int(_b)
+                    else:
+                        _gid = int(_g)
                     if 0 <= _gid < _table.shape[0] and _gi < _emb.shape[0]:
                         _table[_gid].copy_(torch.from_numpy(_emb[_gi]).float())
                         _loaded += 1
@@ -1264,6 +1274,13 @@ def main(args):
                 _ind_cfg.pattern_matcher = False
                 logger.info("[compile] pattern_matcher=False (规避 torch 2.1.2 percolate_tags 递归爆炸)")
             logger.info(f"[compile] torch.compile(mode={_compile_mode}) 注入（DDP 之前）...")
+            # [infra 2026-10-04] dynamo 缓存上限防御: 默认 256, 打穿后 torch.compile
+            # 静默回退 eager (batch192 下 eager ~22G, compiled 14.4G) -> 回退即 OOM,
+            # 症状伪装成 batch 太大。提高上限让偶发重编译继续走编译路径。
+            from torch import _dynamo as _td   # 勿用 import torch._dynamo: 会把 torch
+            _td.config.cache_size_limit = max(    # 变成本函数局部名 -> UnboundLocalError
+                64, _td.config.cache_size_limit)
+            _td.config.accumulated_cache_size_limit = 4096
             model = torch.compile(model, mode=_compile_mode)
     ema_model = None
     if getattr(args, "use_ema", False):

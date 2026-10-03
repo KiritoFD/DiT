@@ -131,10 +131,12 @@ class LabelEmbedder(nn.Module):
             labels = self.token_drop(labels, force_drop_ids)
         out = self.embedding_table(labels)
         if self.null_embed is not None:
-            # 用可学习的 null 参数覆盖最后一行（整表已冻结，否则整表都会更新）
+            # [infra 2026-10-04] 去掉 if null_mask.any() 数据依赖分支: .any() 在
+            # compiled 区域 graph break, 批间翻转让 dynamo 反复重编译, ~250 步打穿
+            # accumulated_cache_size_limit 256 -> 静默回退 eager -> eager ~22G -> OOM。
+            # 无分支 where 语义等价 (全 False = 恒等选择), 开销一次 (B,D) select。
             null_mask = (labels == self.num_classes)
-            if null_mask.any():
-                out = torch.where(null_mask.unsqueeze(-1), self.null_embed, out)
+            out = torch.where(null_mask.unsqueeze(-1), self.null_embed, out)
         return out
 
 
