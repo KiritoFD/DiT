@@ -76,7 +76,7 @@
   "gpu_eval_every": 5000,
   "eval_skel_latent_shards_dir": "exp-std/data/shards_std_w7_fixed_eval200",
   "in_mem_eval_sets": "eval200fix:exp-std/csv/eval200_fixed.csv:187,seen:exp-std/csv/seen20.csv:20",
-  "eval_cfg": 0.7,
+  "eval_cfg": 1.0,
   "eval_steps": 50,
   "eval_csv": "exp-std/csv/eval200_fixed.csv",
   "data_csv": "exp-std/csv/train.csv",

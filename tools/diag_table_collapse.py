@@ -75,7 +75,6 @@ for t in order[:25].tolist():
 print("\n".join(rows))
 
 # ---- 全局忠实度: 表余弦 vs DINO 中心余弦 的相关性 (抽样 20 万对) ----
-iu = iu.to(DEV)
 sel = torch.randperm(pair_cos.shape[0], device=DEV)[:200000]
 i_s, j_s = iu[0][sel], iu[1][sel]
 c_tab_s = pair_cos[sel]
@@ -83,23 +82,6 @@ c_raw_s = (C[i_s] * C[j_s]).sum(-1)
 pear = torch.corrcoef(torch.stack([c_tab_s, c_raw_s]))[0, 1].item()
 print(f"\n[忠实度] 表cos vs DINO中心cos (20万对): Pearson r = {pear:.4f}")
 print("  r 接近 1 = 表忠实复刻了 DINO 空间的相似结构 (训练没毛病);")
-
-# ---- 数据侧重复字槽统计: DINO 中心 cos>0.999 的 glyph 对 (与表无关, 纯数据) ----
-Cm = C @ C.T
-iu2 = torch.triu_indices(C.shape[0], C.shape[0], 1, device=DEV)
-raw_pair = Cm[iu2[0], iu2[1]]
-dup_mask = raw_pair > 0.999
-n_dup = int(dup_mask.sum().item())
-inv = torch.unique(torch.stack([iu2[0][dup_mask], iu2[1][dup_mask]]))
-n_g = int(inv.numel())
-print(f"\n[数据重复] DINO中心cos>0.999 的 glyph 对: {n_dup} 对, 涉及 {n_g} 个 glyph 槽位")
-if n_dup:
-    ex = []
-    for t in raw_pair.argsort(descending=True)[:10].tolist():
-        gi, gj = glist[int(iu2[0][t])], glist[int(iu2[1][t])]
-        si, ci = decode(gi); sj, cj = decode(gj)
-        ex.append(f"    ({si},{ci}) vs ({sj},{cj}) raw={float(raw_pair[t]):.6f}")
-    print("\n".join(ex))
 
 # ---- 高余弦对的总量统计 ----
 for thr in (0.9, 0.99, 0.999):

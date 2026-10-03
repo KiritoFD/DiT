@@ -83,5 +83,21 @@ keep = calligs >= 0
 print(f"[align] csv 命中 {n_match}/{N}; 保留 {int(keep.sum())}")
 uniq = len(np.unique(np.round(feat[keep][:2000], 4), axis=0))
 print(f"[guard] 采样唯一特征数 = {uniq} (build 的守卫要求 >100)")
-np.savez_compressed(a.out, feat=feat[keep], calligs=calligs[keep], scripts=scripts[keep])
+# ★ [2026-10-04] 补 char/glyph 列 —— 字×书体表预训练需要按 glyph 分组的标签。
+#   用 img_id 与 csv 做 join (与上面 calligs/scripts 的对齐方式同构)。
+#   顺序必须与 feat[keep] 一致: 缓存行 i 对应 ids[keep][i]。
+#   ⚠ 本脚本是**模块级**的(无缩进), 插入块也必须顶格 —— 上次按 4 空格插导致
+#      IndentationError, 已由语法自检拦下并回滚, 这次改对。
+_glyph_by_img = {}
+for _r in csv.DictReader(open(a.csv, encoding="utf-8")):
+    try:
+        _iid = int(_r["img_id"])
+        _gid = int(_r["glyph_id"])
+    except (KeyError, TypeError, ValueError):
+        continue
+    _glyph_by_img[_iid] = _gid
+glyph_ids = np.array([_glyph_by_img.get(int(_i), -1) for _i in ids[keep]],
+                     dtype=np.int64)
+print(f"[align] glyph 命中 {int((glyph_ids >= 0).sum())}/{len(glyph_ids)}")
+np.savez_compressed(a.out, feat=feat[keep], calligs=calligs[keep], scripts=scripts[keep], glyph_ids=glyph_ids)
 print(f"[out] {a.out}  feat={feat[keep].shape}")
