@@ -324,6 +324,8 @@ def main(args):
         os.makedirs(args.results_dir, exist_ok=True)
         model_string_name = args.model.replace("/", "-")
         # Timestamp-named experiment dir (unique per launch, never collides or overwrites).
+        # 命名规范 (跟随 assets/results/): results_dir 按**实验**独立, 其下每次
+        # 启动建一个时间戳 run 目录 —— 同名实验多次启动互不覆盖, 跨实验不冲突。
         _ts = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
         _name = getattr(args, "experiment_name", "") or model_string_name
         _name = re.sub(r"[^A-Za-z0-9._-]+", "-", _name).strip("-")
@@ -336,6 +338,13 @@ def main(args):
         # log.txt lives inside this experiment dir (created first), never overwritten.
         logger = create_logger(experiment_dir)
         logger.info(f"Experiment directory created at {experiment_dir}")
+        # ★ 评测产物 (summary/batch csv, posters/) 默认落**本次 run 目录**:
+        #   每次启动都是新目录 -> 与历史/其他实验的 (step,set) 永不撞车, 评测
+        #   不会被去重逻辑静默跳过。--eval-dir 可显式覆盖 (如汇总到别的盘)。
+        args.eval_dir = (str(getattr(args, "eval_dir", "") or "").strip()
+                         or experiment_dir)
+        os.makedirs(args.eval_dir, exist_ok=True)
+        logger.info(f"[eval-dir] eval artifacts -> {args.eval_dir}")
         with open(f"{experiment_dir}/resolved_config.json", "w", encoding="utf-8") as _cf:
             json.dump(vars(args), _cf, ensure_ascii=False, indent=2)
         _sources = {}
@@ -1978,7 +1987,8 @@ def main(args):
                 #   传 Logger 实例会 TypeError: 'Logger' object is not callable。
                 _res = run_in_mem_eval(
                     _m, args, _ev_step, device,
-                    os.path.join(checkpoint_dir, "..", "eval_only"),
+                    str(getattr(args, "eval_dir", "") or "").strip()
+                    or os.path.join(checkpoint_dir, "..", "eval_only"),
                     logger=logger.info)
                 logger.info(f"[eval-only] 完成: {_res}")
             except Exception as _e:

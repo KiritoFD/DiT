@@ -205,7 +205,10 @@ def _triple_remap_cache(cache, csv_path, n, args):
     _h = cache["hier_conds"]
     cache["hier_conds"] = (_h[0], _h[1], [_fr[int(s)] for s in _h[2]])
     cache["triple_mapped"] = True
-    print(f"[in-mem-eval] v53 triple conds remapped (n={len(_rows)})")
+    # ★ 2026-10-05 措辞修正: 这里映射的是三张**表**的 id (callig/char/font),
+    #   与骨架(skel)无关; 旧文案 "v53 triple conds" 容易被误读成"给了骨架条件"。
+    print(f"[in-mem-eval] cond tables remapped: callig/char/font ids "
+          f"(n={len(_rows)}); 与骨架条件无关")
 
 
 def _get_cache(csv_path, n, img_root, shards, args):
@@ -624,7 +627,9 @@ def render_poster(results_dir, set_name, out=None, cell=224, gap=6,
     draw = ImageDraw.Draw(canvas)
     y = gap
     draw.rectangle([0, y, W, y + hdr_h], fill=(0, 0, 0))
-    _t = f"{set_name} (n={n_max}) — input g / per-ckpt gen / GT"
+    # ★ 2026-10-05: 无 skel/glyph 条件时 has_input=False, 表头不能写 "input g"
+    _in_lbl = "input g" if has_input else "no skel/glyph cond"
+    _t = f"{set_name} (n={n_max}) — {_in_lbl} / per-ckpt gen / GT"
     if _ref:
         _t += " / 训练集类似条件 GT"
     if _nn:
@@ -725,8 +730,11 @@ def render_poster(results_dir, set_name, out=None, cell=224, gap=6,
     y = gap
     draw2.rectangle([0, y, W2, y + hdr_h], fill=(0, 0, 0))
     draw2.text((gap, y + 12),
-               f"{set_name} structure — input g / per-ckpt gen|"
-               + ("|".join(_aux_cols) if _aux_cols else "canny|skel(recomputed)")
+               f"{set_name} structure — "
+               + ("input g / " if has_input else "no skel/glyph cond / ")
+               + "per-ckpt gen|"
+               + ("|".join(_aux_cols) if _aux_cols
+                  else "canny|skel(recomputed from gen, 非输入)")
                + " / GT",
                font=font, fill=(255, 200, 120))
     y += hdr_h + gap
@@ -811,6 +819,10 @@ def run_in_mem_eval(model, args, step, device, results_dir=None, logger=print):
     model      : 已 eval() 的模型 (优先 EMA 权重; 不要传 torch.compile 包装)
     results_dir: 落盘根 (summary/batch csv, posters/, eval_samples_ctrl/)
     logger     : 可调用对象 (默认 print; train.py 传 logger.info)
+
+    ★ 2026-10-05: 以下 ssim/ink_ssim/ink_iou/skel_iou 全是**事后度量** ——
+      skel_iou 由「生成图/GT 图各自 skeletonize 后比 IoU」算出, 与是否给
+      骨架条件无关 (无 skel 条件的实验同样有 skel_iou)。
 
     返回 {set_name: {ssim, mse, lpips, ink_ssim, ink_iou, skel_iou, frag, hole,
                      n, nn_ssim, nn_mean, tgt_spec, cal_enrich}}
@@ -1197,8 +1209,11 @@ def maybe_run_in_training(args, ema_model, model, train_steps, device,
     try:
         res = run_in_mem_eval(
             _em, args, train_steps, device,
-            results_dir=str(getattr(args, "results_dir", "")
-                            or os.path.dirname(os.path.dirname(checkpoint_dir))))
+            # ★ 2026-10-04: 评测产物必须落在**本次 run 自己的**目录 (train.py 已把
+            #   args.eval_dir 解析为 run 目录), 否则共用目录下 (step,set) 去重会
+            #   把整轮评测静默跳过。兜底: 由 checkpoint_dir 反推 run 目录。
+            results_dir=str(getattr(args, "eval_dir", "") or "").strip()
+            or os.path.dirname(os.path.dirname(checkpoint_dir)))
         # ★ 2026-10-03: 同步落 eval_auto_<step>.json 到 ckpt 目录 —— train.py 里
         #   EarlyStopper 的**主数据源**就是这个文件名 (它以前只认 json, 而现代路径
         #   只写 CSV -> 早停静默永不触发, 不报错、只是永远不停)。取 n 最大的 set

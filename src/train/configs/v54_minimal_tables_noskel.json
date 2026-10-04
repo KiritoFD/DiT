@@ -1,7 +1,7 @@
 {
   "_comment": "v54 = v53 条件面换成「最小维度黄金三表」(另一台机器训练, assets/triple_tables_best_minimal): 书体 3x16(A) / 书家 10x32(A+) / 汉字 4690x256(A+)。三表**完全冻结**(requires_grad=False, 结构不变)。模型改为 **S 尺寸 (DiT-2Cond-S/2, hidden 384)**; 步数 150k。词表/remap 与 v53 逐条一致 (实测); 字符表独立探针已验证携带语义: Top-1 46.47% vs 随机表 9.0% (5.1x)。其余 (无骨架/分维度 dropout 0.16-0.08-0.08/REPA 0.03/batch 256/eval 5k) 同 v53。",
   "experiment_name": "v54-minimal-tables-S-noskel-freeze",
-  "results_dir": "exp-std/runs_AB",
+  "results_dir": "assets/results/v54_minimal_tables_noskel",
   "model": "DiT-2Cond-S/2",
   "skel_as_glyph_cond": false,
   "glyph_inject_layers": 0,
@@ -74,5 +74,7 @@
   "eval_csv": "exp-std/csv/eval200_fixed.csv",
   "data_csv": "exp-std/csv/train.csv",
   "global_batch_size": 256,
-  "freeze_triple_tables": true
+  "freeze_triple_tables": true,
+  "in_mem_eval_batch": 8,
+  "eval_dir": ""
 }

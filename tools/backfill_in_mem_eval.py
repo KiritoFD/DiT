@@ -46,6 +46,9 @@ def main():
     ap.add_argument("--ckpt-dir", required=True)
     ap.add_argument("--steps", default="", help="逗号分隔; 空 = 全部")
     ap.add_argument("--device", default="cuda")
+    ap.add_argument("--eval-dir", default="",
+                    help="评测产物目录; 空 = ckpt 里记录的 eval_dir, 再空 = ckpt "
+                         "所在 run 目录 (checkpoints/ 的上一级)")
     aa = ap.parse_args()
 
     dev = torch.device(aa.device)
@@ -74,7 +77,8 @@ def main():
             print(f"[backfill] ⚠ missing keys ({len(missing)}): {list(missing)[:5]}", flush=True)
         model.eval()
 
-        rd = str(getattr(a, "results_dir", "") or "exp-std/runs_AB")
+        rd = str(aa.eval_dir or getattr(a, "eval_dir", "")
+                 or os.path.dirname(os.path.dirname(os.path.abspath(ck))))
         res = run_in_mem_eval(model, a, int(d.get("train_steps") or step_file), dev,
                               results_dir=rd, logger=print)
         print(f"[backfill] step {step_file} 完成, sets={sorted((res or {}).keys())}", flush=True)

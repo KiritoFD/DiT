@@ -71,6 +71,15 @@ def build_parser(argv=None):
                         help="Path to the training CSV (default from config.json).")
     parser.add_argument("--data-dir", type=str, default="", help="Root dataset directory if CSV has relative paths")
     parser.add_argument("--results-dir", type=str, default="results")
+    # ★ 2026-10-04: 评测产物落点显式化。
+    #   规范: assets/results/<实验名>/<时间戳>-<name>/ (每次启动独立 run 目录);
+    #   summary/batch csv 与 posters 默认写进**本次 run 目录**, 不再写 results_dir
+    #   根 —— 原先落根目录时, 不同实验/重跑只要 step 撞上, (step,set) 去重会把整轮
+    #   评测**静默跳过** (v54 实测: step 5000 起全部跳过, 0s 完成)。
+    parser.add_argument("--eval-dir", type=str, default="", dest="eval_dir",
+                        help="评测产物目录 (summary/batch csv, posters/, "
+                             "eval_samples_ctrl/, eval_auto_*.json); "
+                             "空 = 本次 run 目录 (results_dir/<ts>-<name>)。")
     parser.add_argument("--experiment-name", type=str, default="",
                         help="Meaningful experiment slug appended after the launch timestamp.")
     parser.add_argument("--pretrained", type=str, default=None, help="Path to pretrained DiT checkpoint")

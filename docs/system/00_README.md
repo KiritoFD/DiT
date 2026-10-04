@@ -55,7 +55,13 @@
 | 两个训练入口 + 配置字段全解 | [06_training.md](06_training.md) |
 | 评测体系（一个核心 + 薄壳 + daemon） | [07_eval.md](07_eval.md) |
 | 实验史、基线与当前状态 | [08_experiments.md](08_experiments.md) |
+| **全量实验整理与结论（2026-10-05）** | [76_experiments_20261005.md](76_experiments_20261005.md) |
 | 远程部署、重启、监控、踩坑 | [09_ops.md](09_ops.md) |
+
+> **2026-10-05 归档整理**：本目录只保留 `00~09` 权威集 + `76`（全量实验结论）。
+> 原 `10~21 / 32~36 / 55 / 74 / 75` 号历史文档已移入 `docs/archive/20261005_slim/system/`；
+> 代码注释里提到的 `docs/system/70`、`25`、`12`、`62` 等属于更早批次，在 `docs/archive/system_notes/`。
+> 总索引见 [`docs/README.md`](../README.md)。
 
 ## 4. 核心事实速查（2026-08-28）
 
