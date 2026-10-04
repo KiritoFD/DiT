@@ -1827,6 +1827,50 @@ def main(args):
         logger.info(f"[LR] cosine schedule: warmup={warmup_steps}, "
                     f"total={total_planned_steps}, min_ratio={args.min_lr_ratio}")
 
+    # ── v53: 三张条件表用**独立小学习率** (lr = 主 lr × triple_table_lr_scale) ──
+    # 位置很关键, 三条顺序约束:
+    #   1) 必须在 `opt.load_state_dict` **之后** —— ckpt 里只有 1 个 param_group,
+    #      先拆组会让组数不匹配 -> 恢复抛错 -> 整份优化器状态被丢弃 (主干动量一起丢)。
+    #   2) 必须在 `scheduler.load_state_dict` **之后** —— 它的 base_lrs 长度也要匹配。
+    #   3) 拆完组要**同步 append scheduler.base_lrs**, 否则 zip 截断 -> 新组永远
+    #      不被调度 (lr 冻在初值, 不随 cosine 衰减)。
+    _tt_scale = float(getattr(args, "triple_table_lr_scale", 0.0) or 0.0)
+    if _tt_scale > 0:
+        _tt_params, _tt_names = [], []
+        _mm = model.module if hasattr(model, "module") else model   # DDP 已包装
+        for _nm in ("y_callig_embedder", "y_script_embedder", "y_char_embedder"):
+            _mod = getattr(_mm, _nm, None)
+            if _mod is None:
+                continue
+            _ps = [p for p in _mod.parameters() if p.requires_grad]
+            if _ps:
+                _tt_params.extend(_ps)
+                _tt_names.append(_nm)
+        if not _tt_params:
+            logger.warning("[optim] triple_table_lr_scale>0 但三表没有可训参数 (被冻结?)")
+        else:
+            _tt_ids = {id(p) for p in _tt_params}
+            _pg0 = opt.param_groups[0]
+            _taken = [p for p in _pg0["params"] if id(p) in _tt_ids]
+            _pg0["params"] = [p for p in _pg0["params"] if id(p) not in _tt_ids]
+            _new = {k: v for k, v in _pg0.items() if k != "params"}
+            _new["params"] = _taken
+            # ★ base 必须取 scheduler.base_lrs[0] (真实基准 lr = args.lr),
+            #   不能读 _pg0["lr"]: 那是调度器刚初始化/步进后的**瞬时值**
+            #   (实测读到 warmup 起点 1.67e-08, 再乘 0.1 = 1.67e-09 等于把表冻死)。
+            _base0 = (float(scheduler.base_lrs[0])
+                      if (scheduler is not None and getattr(scheduler, "base_lrs", None))
+                      else float(_pg0["lr"]))
+            _new["lr"] = _base0 * _tt_scale
+            opt.add_param_group(_new)
+            if scheduler is not None and getattr(scheduler, "base_lrs", None):
+                scheduler.base_lrs.append(_base0 * _tt_scale)
+            logger.info(
+                f"[optim] 三表独立小 lr: base={_base0:.2e} x {_tt_scale} -> "
+                f"{_new['lr']:.2e} (当前主 lr {float(_pg0['lr']):.2e}), "
+                f"{sum(p.numel() for p in _taken):,} 参数, 模块={_tt_names}"
+                + (" (已同步 scheduler.base_lrs)" if scheduler is not None else ""))
+
     # ★ 2026-09-19: --fresh-scheduler 时**同时把步数计数器归零**。
     #   否则 stage2 传过来的 train_steps (如 160000) 会:
     #   1) 与 max_steps=40000 比较 -> 160000 >= 40000 -> 立即退出

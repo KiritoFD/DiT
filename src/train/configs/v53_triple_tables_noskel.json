@@ -18,6 +18,7 @@
   "num_script_classes": 3,
   "use_script_cond": true,
   "triple_table_prefix": "assets/triple_tables/",
+  "triple_table_lr_scale": 0.1,
   "char_remap_json": "assets/triple_tables/char_remap.json",
   "callig_remap_json": "assets/triple_tables/callig_remap.json",
   "font_remap_json": "assets/triple_tables/font_remap.json",

@@ -256,6 +256,11 @@ def build_parser(argv=None):
     parser.add_argument("--num-script-classes", type=int, default=3,
                         dest="num_script_classes",
                         help="v53 三表: 书体表行数 (楷/行/隶 = 3)。")
+    parser.add_argument("--triple-table-lr-scale", type=float, default=0.0,
+                        dest="triple_table_lr_scale",
+                        help="v53 三表解冻但用小学习率: 书家/书体/汉字三张表的 lr = "
+                             "主 lr × scale (如 0.1)。0 = 不分组建模 (表仍按主 lr 训)。"
+                             "拆组发生在 opt/scheduler 状态恢复之后, 并同步 scheduler.base_lrs。")
     parser.add_argument("--hier-style", type=int, default=0, dest="hier_style",
                         help="[S2] >0 启用三层语义分解:\n"
                              "  e_style  = 书家主效应(既有表) + α · E_pair[pair]\n"
