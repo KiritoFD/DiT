@@ -6,6 +6,7 @@ __pycache__/
 *.ckpt
 *.npz
 *.npy
+!assets/triple_tables_best_minimal/*.npy
 *.tar.gz
 *.zip
 
