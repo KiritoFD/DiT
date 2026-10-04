@@ -256,6 +256,11 @@ def build_parser(argv=None):
     parser.add_argument("--num-script-classes", type=int, default=3,
                         dest="num_script_classes",
                         help="v53 三表: 书体表行数 (楷/行/隶 = 3)。")
+    parser.add_argument("--freeze-triple-tables", type=_str_to_bool, default=False,
+                        dest="freeze_triple_tables",
+                        help="v54: 三张条件表(书家/书体/汉字)完全冻结 (requires_grad=False)。"
+                             "结构不变 -> 评测侧零改动; CFG null 行同样冻结。"
+                             "与 triple_table_lr_scale 互斥使用 (冻结时后者无效)。")
     parser.add_argument("--triple-table-lr-scale", type=float, default=0.0,
                         dest="triple_table_lr_scale",
                         help="v53 三表解冻但用小学习率: 书家/书体/汉字三张表的 lr = "

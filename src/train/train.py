@@ -753,6 +753,25 @@ def main(args):
                     _tab[_i].copy_(torch.from_numpy(_w[_i]).float())
         logger.info(f"[triple-init] 三表 SupCon 初始化完成 (prefix={_ttp})")
 
+    # ── v54: 三表完全冻结 ────────────────────────────────────────────────────
+    # 用 requires_grad_(False) 直接冻结, **不走** freeze_table()/freeze_char_table:
+    #   那两条路会把 CFG null token 拆成独立 Parameter → 参数结构变化 → 评测侧
+    #   (model_io) 必须复刻同样的拆解, 且 freeze_callig_table 还带
+    #   "必须先 callig_emb_pretrained" 的 assert (与 triple_table_prefix 初始化冲突)。
+    # 代价: 冻结后 CFG null 行也停在 init 值 (cond_drop_all 5% 时用到), 换取零结构差异。
+    if getattr(args, "freeze_triple_tables", False):
+        _fz_n = 0
+        _mm = model.module if hasattr(model, "module") else model
+        for _nm_f in ("y_callig_embedder", "y_script_embedder", "y_char_embedder"):
+            _m = getattr(_mm, _nm_f, None)
+            if _m is None:
+                continue
+            for _p in _m.parameters():
+                _p.requires_grad_(False)
+                _fz_n += _p.numel()
+        logger.info(f"[triple-freeze] 三表已完全冻结: {_fz_n:,} 参数 "
+                    f"(结构不变, 评测侧无需改动; CFG null 行同样冻结)")
+
     # ── DINO glyph-embedding init for y_char_embedder ───────────────────────
     # glyph_id = script_id * 7026 + character_id (每 script 7026 个字符, 见
     # tools/remote_sync/_add_glyph_col.py). DINO vocab 是对"字*书体"(glyph) 取平均的:
