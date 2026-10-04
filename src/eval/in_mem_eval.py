@@ -172,40 +172,60 @@ def _get_callig_script_map(path):
     return _CSMAP
 
 
+def _triple_remap_cache(cache, csv_path, n, args):
+    """把 eval cache 的条件重映射到「三表」标签空间 (只在 cache 创建时调用一次)。
+
+    v53: y_callig -> 书家表行 (原始 calligrapher_id 经 callig_remap);
+         y_char   -> 汉字表行 (character_id 经 char_remap);
+         y_script -> 书体表行 (script_id 经 font_remap)。
+    ⚠ 必须幂等: cache 跨 step 复用, 若在命中路径也调用会二次重映射 (实测 KeyError)。
+    """
+    import json as _json
+
+    def _load(p):
+        if not p:
+            return {}
+        try:
+            return {int(k): int(v) for k, v in
+                    _json.load(open(p, encoding="utf-8")).items()}
+        except Exception as _e:                                   # noqa: BLE001
+            print(f"[in-mem-eval] ⚠ remap json 读取失败 {p}: {_e!r}")
+            return {}
+
+    _cr = _load(getattr(args, "callig_remap_json", ""))
+    _hr = _load(getattr(args, "char_remap_json", ""))
+    _fr = _load(getattr(args, "font_remap_json", ""))
+    _rows = list(csv.DictReader(open(csv_path, encoding="utf-8")))[:n]
+    _miss = [k for k in ("callig", "char", "font") if not
+             ({"callig": _cr, "char": _hr, "font": _fr}[k])]
+    if _miss:
+        raise RuntimeError(f"[in-mem-eval] use_script_cond 需要三份 remap json, 缺: {_miss}")
+    cache["conds"] = [(_cr[int(r["calligrapher_id"])], _hr[int(r["character_id"])])
+                      for r in _rows]
+    _h = cache["hier_conds"]
+    cache["hier_conds"] = (_h[0], _h[1], [_fr[int(s)] for s in _h[2]])
+    cache["triple_mapped"] = True
+    print(f"[in-mem-eval] v53 triple conds remapped (n={len(_rows)})")
+
+
 def _get_cache(csv_path, n, img_root, shards, args):
-    """eval cache 跨 step 复用 (同一 set 每 2500 步重算一次无意义)。"""
+    """eval cache 跨 step 复用 (同一 set 每 2500 步重算一次无意义)。
+
+    三表 (v53) 的重映射**只在本函数创建 cache 时**做一次:
+    cache 命中时直接返回, 保证幂等 (重复重映射会 KeyError, 实测踩过)。
+    """
     ck = (csv_path, n, shards)
     if ck not in _CACHES:
         sf = float(getattr(args, "vae_scaling_factor", 0.18215))
-        _CACHES[ck] = make_eval_cache(
+        cache = make_eval_cache(
             csv_path, img_root, None, 256, n, 8,
             int(getattr(args, "latent_channels", 4)), sf,
             skel_latent_shards_dir=shards,
             callig_id_map=_get_callig_map(getattr(args, "callig_id_map", None)),
             callig_script_map=_get_callig_script_map(getattr(args, "callig_script_map", None)))
-    if getattr(args, "use_script_cond", False):
-        # v53 三表: eval 的 conds 重映射到 (书家表行, 汉字表行); hier[2](script) 过 font_remap。
-        # 标签空间必须与训练侧一致, 否则 eval 静默用错类。
-        import json as _json
-        _cr = {int(k): int(v) for k, v in _json.load(
-            open(args.callig_remap_json, encoding="utf-8")).items()} \
-            if getattr(args, "callig_remap_json", "") else {}
-        _hr = {int(k): int(v) for k, v in _json.load(
-            open(args.char_remap_json, encoding="utf-8")).items()} \
-            if getattr(args, "char_remap_json", "") else {}
-        _fr = {int(k): int(v) for k, v in _json.load(
-            open(getattr(args, "font_remap_json", ""), encoding="utf-8")).items()} \
-            if getattr(args, "font_remap_json", "") else {}
-        _rows53 = list(csv.DictReader(open(csv_path, encoding="utf-8")))[:n]
-        _cc = _CACHES[ck]["conds"]
-        _CACHES[ck]["conds"] = [
-            (_cr[int(r["calligrapher_id"])], _hr[int(r["character_id"])])
-            for r in _rows53]
-        if _fr:
-            _h = _CACHES[ck]["hier_conds"]
-            _CACHES[ck]["hier_conds"] = (_h[0], _h[1],
-                                         [_fr[int(s)] for s in _h[2]])
-        print(f"[in-mem-eval] v53 triple conds remapped (n={len(_rows53)})")
+        if getattr(args, "use_script_cond", False):
+            _triple_remap_cache(cache, csv_path, n, args)
+        _CACHES[ck] = cache
     return _CACHES[ck]
 
 
