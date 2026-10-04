@@ -434,6 +434,11 @@ def main(args):
             cond_drop_all_prob=args.cond_drop_all_prob,
             cond_drop_one_prob=args.cond_drop_one_prob,
             cond_drop_which_glyph_prob=getattr(args, 'cond_drop_which_glyph_prob', 0.5),
+            # v53 三表条件 (script_embed_dim/num_script_classes 已由 S2 的 cli 提供)
+            use_script_cond=getattr(args, 'use_script_cond', False),
+            cond_drop_callig_prob=float(getattr(args, 'cond_drop_callig_prob', 0.0)),
+            cond_drop_script_prob=float(getattr(args, 'cond_drop_script_prob', 0.0)),
+            cond_drop_char_prob=float(getattr(args, 'cond_drop_char_prob', 0.0)),
             use_glyph_cond=(getattr(args, 'w_glyph_cond', 0) > 0
                             or getattr(args, 'skel_as_glyph_cond', False)),
             use_char_cond=not getattr(args, 'no_char_cond', False),
@@ -712,6 +717,40 @@ def main(args):
     # ── 注入门控统计 (debug): forward hook 记录 xattn 注入输出的平均 L2 ──
     # 零初始化起点, 该值增长 = 注入正在学会写入残差流 (惰性注册, 首个 debug 步挂)
     _inj_stats = {}
+
+    # ── v53: 三表重映射 json + SupCon 表初始化 ──────────────────────────────
+    _char_remaps = None
+    if getattr(args, 'char_remap_json', ''):
+        import json as _json
+        _char_remaps = {}
+        for _nm, _p in (('char', args.char_remap_json),
+                        ('callig', getattr(args, 'callig_remap_json', '')),
+                        ('font', getattr(args, 'font_remap_json', ''))):
+            if _p:
+                _char_remaps[_nm] = {int(k): int(v) for k, v in
+                                     _json.load(open(_p, encoding="utf-8")).items()}
+        logger.info(f"[triple] remap json 已加载: {list(_char_remaps.keys())}")
+    _ttp = getattr(args, 'triple_table_prefix', '') or ''
+    if _ttp:
+        import json as _json
+        import numpy as _np
+        for _nm, _emb in (('callig', model.y_callig_embedder),
+                          ('font', model.y_script_embedder),
+                          ('char', model.y_char_embedder)):
+            if _emb is None:
+                continue
+            _w = _np.load(f"{_ttp}{_nm}_table.npy")
+            _cls = _json.load(open(f"{_ttp}{_nm}_index.json",
+                                   encoding="utf-8"))["classes"]
+            _tab = _emb.embedding_table.weight
+            assert _w.shape[0] == len(_cls), \
+                f"{_nm}: 表行 {_w.shape[0]} != 类数 {len(_cls)}"
+            assert _w.shape[1] == _tab.shape[1], \
+                f"{_nm}: 维度 {_w.shape[1]} != 表 {_tab.shape[1]}"
+            with torch.no_grad():
+                for _i, _c in enumerate(_cls):
+                    _tab[int(_c)].copy_(torch.from_numpy(_w[_i]).float())
+        logger.info(f"[triple-init] 三表 SupCon 初始化完成 (prefix={_ttp})")
 
     # ── DINO glyph-embedding init for y_char_embedder ───────────────────────
     # glyph_id = script_id * 7026 + character_id (每 script 7026 个字符, 见
@@ -1608,6 +1647,9 @@ def main(args):
                                     preload=bool(getattr(args, 'preload', False)),
                                     load_image=(args.w_repa > 0),
                                     num_preload_workers=int(getattr(args, 'preload_workers', 16)),
+                                    char_remap=(_char_remaps['char'] if _char_remaps else None),
+                                    callig_remap=(_char_remaps['callig'] if _char_remaps else None),
+                                    font_remap=(_char_remaps['font'] if _char_remaps else None),
                                     use_glyph_cond=getattr(args, 'w_glyph_cond', False),
                                     skel_latent_shards_dir=(args.skel_latent_shards_dir
                                                             if getattr(args, 'skel_as_glyph_cond', False)
@@ -1902,6 +1944,10 @@ def main(args):
                 #   这个参数才会走异步拷贝；否则即使源在 pinned 内存里也是同步拷贝，
                 #   主机线程会被阻塞（图像单批 ~283MB，实测代价可观）。见 docs/system/70 §8.6。
                 y_callig = batch['y_callig'].to(device, non_blocking=True)
+                if getattr(args, 'use_script_cond', False):
+                    # v53 三表: y_callig = 书家连续索引(10 类), 另带 y_script
+                    y_callig = batch['y_callig_raw'].to(device, non_blocking=True)
+                    y_script = batch['y_script'].to(device, non_blocking=True)
                 y_char = batch['y_char'].to(device, non_blocking=True)
                 if cond_mode == "3cond":
                     y_script = batch['y_script'].to(device, non_blocking=True)
@@ -1934,7 +1980,9 @@ def main(args):
                 if cond_mode == "3cond":
                     model_kwargs = dict(y_callig=y_callig, y_script=y_script, y_char=y_char)
                 else:
-                    model_kwargs = dict(y_callig=y_callig, y_char=y_char)
+                    model_kwargs = (dict(y_callig=y_callig, y_script=y_script, y_char=y_char)
+                                    if getattr(args, 'use_script_cond', False)
+                                    else dict(y_callig=y_callig, y_char=y_char))
                 # ── S2: 三层语义分解的三个 id（数据集始终提供，模型按需消费）──
                 # hier_style=0 时 forward 会忽略它们，零副作用。
                 if int(getattr(args, 'hier_style', 0)) > 0:

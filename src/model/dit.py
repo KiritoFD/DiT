@@ -932,6 +932,13 @@ class DiT_2Cond(nn.Module):
         cond_drop_all_prob=0.05,
         cond_drop_one_prob=0.0,
         cond_drop_which_glyph_prob=0.5,
+        # ── v53 三表条件: 书家(10)/书体(3)/汉字(N) 独立 LabelEmbedder ──
+        # (script_embed_dim 形参已存在于签名, S2 hier 遗产, 默认 64, config 传 1024)
+        use_script_cond=False,
+        num_script_classes=3,
+        cond_drop_callig_prob=0.0,
+        cond_drop_script_prob=0.0,
+        cond_drop_char_prob=0.0,
         skel_head_enabled=False,
         use_glyph_cond=False,
         glyph_scale_init=0.4,
@@ -1162,6 +1169,14 @@ class DiT_2Cond(nn.Module):
         # 其余分支保持 None, 使 forward 里的 `if self.cond_ln is not None` 永远安全。
         self.cond_ln = None
         self.cond_drop_all_prob = float(cond_drop_all_prob)
+        # v53 三表
+        self.use_script_cond = bool(use_script_cond)
+        self.num_script_classes = int(num_script_classes)
+        self.cond_drop_callig_prob = float(cond_drop_callig_prob)
+        self.cond_drop_script_prob = float(cond_drop_script_prob)
+        self.cond_drop_char_prob = float(cond_drop_char_prob)
+        if self.use_script_cond:
+            script_embed_dim = script_embed_dim or hidden_size
         self.cond_drop_one_prob = float(cond_drop_one_prob)
         self.cond_drop_which_glyph_prob = float(cond_drop_which_glyph_prob)
         self.skel_head_enabled = bool(skel_head_enabled)
@@ -1257,6 +1272,11 @@ class DiT_2Cond(nn.Module):
             else:
                 self.y_char_embedder = LabelEmbedder(
                     num_characters, char_embed_dim, 0.0, use_cfg_embedding=True)
+            if self.use_script_cond:
+                self.y_script_embedder = LabelEmbedder(
+                    num_script_classes, script_embed_dim, 0.0, use_cfg_embedding=True)
+            else:
+                self.y_script_embedder = None
             if callig_proj_mode == "mlp":
                 # 42 号实验: callig 链增强 —— 两层 MLP 补容量 (诊断: callig_chain
                 # rel 0.0013 弱梯度, 128 维单层容量不足)。
@@ -1375,7 +1395,9 @@ class DiT_2Cond(nn.Module):
                 #   e_glyph_vec (glyph_vec_dim)  若 glyph_vec_cond
                 # ⚠ 若两个操作数都没有(callig 之外无因子且 glyph_vec_cond=False),
                 #   cat 会退化成单层 Linear, 与 factorized_add 等价 —— 参数量完全相同。
-                _cat_dim = callig_embed_dim + (char_embed_dim if self.use_char_cond else 0)
+                _cat_dim = (callig_embed_dim
+                            + (script_embed_dim if self.use_script_cond else 0)
+                            + (char_embed_dim if self.use_char_cond else 0))
                 if self.glyph_vec_cond:
                     _cat_dim += int(glyph_vec_dim)
                 # ★ 融合前归一化方式（docs 97 §3）:
@@ -1384,6 +1406,8 @@ class DiT_2Cond(nn.Module):
                 self.cond_fusion_norm = str(cond_fusion_norm)
                 if self.cond_fusion_norm == "split":
                     _dims = [callig_embed_dim]
+                    if self.use_script_cond:
+                        _dims.append(script_embed_dim)
                     if self.use_char_cond:
                         _dims.append(char_embed_dim)
                     if self.glyph_vec_cond:
@@ -2123,7 +2147,16 @@ class DiT_2Cond(nn.Module):
         #   后果: 推理时 `forward_with_cfg` 的 uncond 半用的是**未训练**的 null 向量,
         #   `cfg=0.7` 实际是在往一个随机方向插值, 而不是真正的 CFG。
         #   不报错、loss 正常下降 —— 又一例静默失效。**新增 fusion 分支时必须回来加。**
-        if (self.condition_fusion in ("factorized_add", "factorized_cat", "xl_highdim")
+        if getattr(self, "use_script_cond", False) and self.training:
+            # v53 三表: 各因子**独立** dropout, 三者全中 = uncond;
+            # cond_drop_all_prob 仍作无条件底座 (保 CFG 有足量 uncond 样本)。
+            _B = y_callig.shape[0]
+            _dev = y_callig.device
+            _all = torch.rand(_B, device=_dev) < self.cond_drop_all_prob
+            callig_drop = (torch.rand(_B, device=_dev) < self.cond_drop_callig_prob) | _all
+            script_drop = (torch.rand(_B, device=_dev) < self.cond_drop_script_prob) | _all
+            char_drop = (torch.rand(_B, device=_dev) < self.cond_drop_char_prob) | _all
+        elif (self.condition_fusion in ("factorized_add", "factorized_cat", "xl_highdim")
                 and self.training
                 and (self.cond_drop_all_prob > 0 or self.cond_drop_one_prob > 0)):
             r = torch.rand(y_callig.shape[0], device=y_callig.device)
@@ -2322,6 +2355,13 @@ class DiT_2Cond(nn.Module):
             # drop mask 同样复用 forward 顶部算好的那份 (y_callig_in / char_drop)。
             e_callig = _e_callig()
             _parts = [e_callig]
+            if self.use_script_cond:
+                if y_script is None:
+                    raise RuntimeError("[triple] use_script_cond=True 但 forward 未收到 y_script")
+                if self.training and script_drop is not None:
+                    y_script = torch.where(script_drop,
+                                           self.y_script_embedder.num_classes, y_script)
+                _parts.append(self.y_script_embedder(y_script, False))
             if self.use_char_cond:
                 if self.training and char_drop is not None:
                     y_char = torch.where(char_drop, self.y_char_embedder.num_classes, y_char)

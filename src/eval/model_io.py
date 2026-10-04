@@ -86,6 +86,12 @@ def build_model_from_args(a, device, **overrides):
         use_glyph_cond=bool((g("w_glyph_cond", 0) or 0) > 0
                             or g("skel_as_glyph_cond", False)),
         use_char_cond=not bool(g("no_char_cond", False)),
+    # v53 三表条件 (ckpt args 携带; 缺省 = 旧行为)
+    use_script_cond=bool(g("use_script_cond", False)),
+    num_script_classes=gi("num_script_classes", 3),
+    cond_drop_callig_prob=g("cond_drop_callig_prob", 0.0),
+    cond_drop_script_prob=g("cond_drop_script_prob", 0.0),
+    cond_drop_char_prob=g("cond_drop_char_prob", 0.0),
         glyph_scale_init=gf("glyph_scale_init", 0.4),
         # 改变第一层卷积的输入通道。漏传会按 4 通道建模型, 8 通道权重对不上。
         glyph_concat_input=bool(g("glyph_concat_input", False)),

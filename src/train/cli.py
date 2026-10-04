@@ -231,6 +231,31 @@ def build_parser(argv=None):
     # ── S2 (2026-09-22): 三层语义分解 + 局部风格-骨架引导 ──────────────────────
     # 设计文档: docs/922/20_style_encoding.md / 30_injection.md / 50_implementation.md
     # 全部默认关闭 = 与旧 ckpt 逐位等价。
+    # -- v53 三表条件 --
+    parser.add_argument("--use-script-cond", type=_str_to_bool, default=False,
+                        dest="use_script_cond",
+                        help="v53 三表条件编码器: 书家/书体/汉字三个独立 LabelEmbedder, "
+                             "concat 后 Linear 投影。配合 --cond-drop-callig/script/char-prob "
+                             "分维度 dropout (推荐 0.16/0.08/0.08)。表用 SupCon 预训练初始化。")
+    parser.add_argument("--cond-drop-callig-prob", type=float, default=0.0,
+                        dest="cond_drop_callig_prob")
+    parser.add_argument("--cond-drop-script-prob", type=float, default=0.0,
+                        dest="cond_drop_script_prob")
+    parser.add_argument("--cond-drop-char-prob", type=float, default=0.0,
+                        dest="cond_drop_char_prob")
+    parser.add_argument("--char-remap-json", type=str, default="",
+                        dest="char_remap_json",
+                        help="character_id(全局)->汉字连续索引 重映射 (build_triple_tables 产出)")
+    parser.add_argument("--callig-remap-json", type=str, default="",
+                        dest="callig_remap_json")
+    parser.add_argument("--font-remap-json", type=str, default="",
+                        dest="font_remap_json")
+    parser.add_argument("--triple-table-prefix", type=str, default="",
+                        dest="triple_table_prefix",
+                        help="三张 SupCon 表路径前缀, 如 assets/triple_tables/")
+    parser.add_argument("--num-script-classes", type=int, default=3,
+                        dest="num_script_classes",
+                        help="v53 三表: 书体表行数 (楷/行/隶 = 3)。")
     parser.add_argument("--hier-style", type=int, default=0, dest="hier_style",
                         help="[S2] >0 启用三层语义分解:\n"
                              "  e_style  = 书家主效应(既有表) + α · E_pair[pair]\n"

@@ -71,6 +71,8 @@ class MCCDLatentDataset(Dataset):
     def __init__(self, csv_file, latent_shards_dir, img_root,
                  image_size=256, is_train=False, preload=False, load_image=True,
                  num_preload_workers=16, use_glyph_cond=False, skel_latent_shards_dir=None,
+                 callig_remap=None, font_remap=None,
+                 char_remap=None,
                  skel_latent_shards_dirs=None, skel_latent_shards_weights=None,
                  callig_id_map=None, aux_latent_shards_dirs=None,
                  inst_skel_shards_dir=None, callig_script_map=None):
@@ -84,6 +86,12 @@ class MCCDLatentDataset(Dataset):
         # 改查 pair_id(0..86), 让同一书家的不同书体各得一个风格向量。
         self._callig_script_map = callig_script_map
         self.use_glyph_cond = bool(use_glyph_cond)
+        # v53: 三表重映射 (build_triple_tables 产出; 保证标签空间与 SupCon 表行一致)
+        self._char_remap = dict(char_remap) if char_remap else None
+        self._callig_remap = dict(callig_remap) if callig_remap else None
+        self._font_remap = dict(font_remap) if font_remap else None
+        # v53: character_id(全局) -> 汉字连续索引 的重映射 (build_triple_tables 产出)
+        self._char_remap = dict(char_remap) if char_remap else None
         if self.use_glyph_cond:
             # 标准字形 latent 查询(懒加载, 全局单例), 训练/推理一致
             #
@@ -609,10 +617,16 @@ class MCCDLatentDataset(Dataset):
             #   y_script     = 书体 id                            -> E_script
             # ⚠ 不能拿 y_callig 当主效应索引: 设了 callig_script_map 时它装的是
             #   **pair_id(87)**, 而 hier 模式下主效应表只有 45 行 -> 越界/串书家。
-            'y_callig_raw': torch.tensor(callig_idx, dtype=torch.long),
+            'y_callig_raw': torch.tensor(
+                (self._callig_remap[callig_idx] if self._callig_remap else callig_idx),
+                dtype=torch.long),
             'y_pair': torch.tensor(pair_idx, dtype=torch.long),
-            'y_script': torch.tensor(int(row['script_id']), dtype=torch.long),
+            'y_script': torch.tensor(
+                (self._font_remap[int(row['script_id'])] if self._font_remap
+                 else int(row['script_id'])), dtype=torch.long),
             'y_char': torch.tensor(
-                int(row.get('glyph_id', row['character_id'])), dtype=torch.long),
+                (self._char_remap[int(row.get('glyph_id', row['character_id']))]
+                 if self._char_remap is not None
+                 else int(row.get('glyph_id', row['character_id']))), dtype=torch.long),
             'g': g_t,
         }
