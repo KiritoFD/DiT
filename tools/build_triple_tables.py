@@ -136,7 +136,7 @@ def main():
               ensure_ascii=False)
 
     remap = {}
-    for r in rows:
+    for r in list(rows) + list(_eval_rows):
         remap[str(int(r["character_id"]))] = hz_idx[r["character"]]
     json.dump(remap, open(f"{OUT}/char_remap.json", "w", encoding="utf-8"),
               ensure_ascii=False)

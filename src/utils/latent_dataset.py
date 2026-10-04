@@ -618,15 +618,14 @@ class MCCDLatentDataset(Dataset):
             # ⚠ 不能拿 y_callig 当主效应索引: 设了 callig_script_map 时它装的是
             #   **pair_id(87)**, 而 hier 模式下主效应表只有 45 行 -> 越界/串书家。
             'y_callig_raw': torch.tensor(
-                (self._callig_remap[callig_idx] if self._callig_remap else callig_idx),
+                (self._callig_remap[int(_raw_cid)] if self._callig_remap else callig_idx),
                 dtype=torch.long),
             'y_pair': torch.tensor(pair_idx, dtype=torch.long),
             'y_script': torch.tensor(
                 (self._font_remap[int(row['script_id'])] if self._font_remap
                  else int(row['script_id'])), dtype=torch.long),
             'y_char': torch.tensor(
-                (self._char_remap[int(row.get('glyph_id', row['character_id']))]
-                 if self._char_remap is not None
+                (self._char_remap[int(row['character_id'])] if self._char_remap is not None
                  else int(row.get('glyph_id', row['character_id']))), dtype=torch.long),
             'g': g_t,
         }

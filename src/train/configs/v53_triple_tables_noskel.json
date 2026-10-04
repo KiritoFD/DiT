@@ -14,7 +14,7 @@
   "char_embed_dim": 1024,
   "script_embed_dim": 1024,
   "num_calligraphers": 10,
-  "num_characters": 4677,
+  "num_characters": 4690,
   "num_script_classes": 3,
   "use_script_cond": true,
   "triple_table_prefix": "assets/triple_tables/",

@@ -748,8 +748,9 @@ def main(args):
             assert _w.shape[1] == _tab.shape[1], \
                 f"{_nm}: 维度 {_w.shape[1]} != 表 {_tab.shape[1]}"
             with torch.no_grad():
-                for _i, _c in enumerate(_cls):
-                    _tab[int(_c)].copy_(torch.from_numpy(_w[_i]).float())
+                for _i in range(len(_cls)):
+                    # 表行号 == builder 索引 (dataset 侧 remap 负责把原始 id 映到行号)
+                    _tab[_i].copy_(torch.from_numpy(_w[_i]).float())
         logger.info(f"[triple-init] 三表 SupCon 初始化完成 (prefix={_ttp})")
 
     # ── DINO glyph-embedding init for y_char_embedder ───────────────────────

@@ -183,6 +183,29 @@ def _get_cache(csv_path, n, img_root, shards, args):
             skel_latent_shards_dir=shards,
             callig_id_map=_get_callig_map(getattr(args, "callig_id_map", None)),
             callig_script_map=_get_callig_script_map(getattr(args, "callig_script_map", None)))
+    if getattr(args, "use_script_cond", False):
+        # v53 三表: eval 的 conds 重映射到 (书家表行, 汉字表行); hier[2](script) 过 font_remap。
+        # 标签空间必须与训练侧一致, 否则 eval 静默用错类。
+        import json as _json
+        _cr = {int(k): int(v) for k, v in _json.load(
+            open(args.callig_remap_json, encoding="utf-8")).items()} \
+            if getattr(args, "callig_remap_json", "") else {}
+        _hr = {int(k): int(v) for k, v in _json.load(
+            open(args.char_remap_json, encoding="utf-8")).items()} \
+            if getattr(args, "char_remap_json", "") else {}
+        _fr = {int(k): int(v) for k, v in _json.load(
+            open(getattr(args, "font_remap_json", ""), encoding="utf-8")).items()} \
+            if getattr(args, "font_remap_json", "") else {}
+        _rows53 = list(csv.DictReader(open(csv_path, encoding="utf-8")))[:n]
+        _cc = _CACHES[ck]["conds"]
+        _CACHES[ck]["conds"] = [
+            (_cr[int(r["calligrapher_id"])], _hr[int(r["character_id"])])
+            for r in _rows53]
+        if _fr:
+            _h = _CACHES[ck]["hier_conds"]
+            _CACHES[ck]["hier_conds"] = (_h[0], _h[1],
+                                         [_fr[int(s)] for s in _h[2]])
+        print(f"[in-mem-eval] v53 triple conds remapped (n={len(_rows53)})")
     return _CACHES[ck]
 
 
@@ -751,6 +774,60 @@ def _load_font(fp, size):
 
 
 def _step_ssim_txt(results_dir, step, set_name):
+    """poster 标签用: 从 summary csv 读该 (step, set) 的 ssim, 缺失返回 '-'. """
+    _sp = os.path.join(results_dir, "eval_stdskel_summary.csv")
+    try:
+        for _r in csv.DictReader(open(_sp, encoding="utf-8")):
+            if int(_r["step"]) == int(step) and _r["set"] == set_name:
+                return f"ssim={float(_r['ssim_mean']):.4f}"
+    except Exception:                                            # noqa: BLE001
+        pass
+    return "-"
+
+
+def run_in_mem_eval(model, args, step, device, results_dir=None, logger=print):
+    """在训/独立评测核心: 按 `--in-mem-eval-sets` 逐集采样并评指标。
+
+    model      : 已 eval() 的模型 (优先 EMA 权重; 不要传 torch.compile 包装)
+    results_dir: 落盘根 (summary/batch csv, posters/, eval_samples_ctrl/)
+    logger     : 可调用对象 (默认 print; train.py 传 logger.info)
+
+    返回 {set_name: {ssim, mse, lpips, ink_ssim, ink_iou, skel_iou, frag, hole,
+                     n, nn_ssim, nn_mean, tgt_spec, cal_enrich}}
+    """
+    global _DIFF
+    import time
+    results_dir = str(results_dir or getattr(args, "results_dir", "") or ".")
+    os.makedirs(results_dir, exist_ok=True)
+
+    # ── 采样参数 (全部来自 args, 缺省保守值) ──
+    img_root = None                       # csv image_path 已含完整相对路径
+    shards = (getattr(args, "eval_skel_latent_shards_dir", "") or ""
+              or getattr(args, "skel_latent_shards_dir", "") or "")
+    cfg_scale = float(getattr(args, "eval_cfg", 0.7))
+    ddim_steps = int(getattr(args, "eval_steps", 50))
+    dit_batch = int(getattr(args, "in_mem_eval_batch", 16))
+    vae_batch = int(getattr(args, "in_mem_eval_vae_batch", 16))
+    sf = float(getattr(args, "vae_scaling_factor", 0.18215))
+    use_self_cond = bool(getattr(args, "eval_self_cond", False))
+    blend_alpha = float(getattr(args, "eval_blend_alpha", 0.0))
+    if _DIFF is None:
+        _DIFF = build_diffusion(ddim_steps, str(getattr(args, "diffusion_type", "flow")))
+
+    # ── 解析评测集: "name:csv:n,name:csv:n" ──
+    sets = []
+    for _spec in str(getattr(args, "in_mem_eval_sets", "") or "").split(","):
+        _spec = _spec.strip()
+        if not _spec:
+            continue
+        _p = _spec.split(":")
+        sets.append((_p[0],
+                     _p[1] if len(_p) > 1 and _p[1] else getattr(args, "eval_csv", ""),
+                     int(_p[2]) if len(_p) > 2 and _p[2] else 0))
+    if not sets:
+        logger("[in-mem-eval] in_mem_eval_sets 为空 -> 跳过评测")
+        return {}
+
     sum_path = os.path.join(results_dir, "eval_stdskel_summary.csv")
     raw_path = os.path.join(results_dir, "eval_stdskel_batch.csv")
     # ★★ 2026-10-03 修 (P0-1): 表头检查必须放在 open(..., "a") **之前**。
