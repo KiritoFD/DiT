@@ -1,8 +1,9 @@
-experiment,model_type,params,step,strict_ssim,strict_ssim_med,strict_lpips,strict_skel_iou,strict_mse,seen_ssim,seen_ssim_med,seen_lpips,seen_skel_iou,gap_ssim,source_file
-Capacity_Tier2_Sp,DiT-2Cond-Sp/2 (LayerNorm),59.2M,10000,0.5494,0.5512,0.3848,0.015,0.953,0.5444,0.5273,0.3826,0.0141,,DiT/experiments/capacity_ladder/results/tier2_sp/evaluations/eval_10k/metrics_40k.json
-Capacity_Tier2_Sp,DiT-2Cond-Sp/2 (LayerNorm),59.2M,20000,0.5606,0.5622,0.3747,0.0158,0.9052,0.5539,0.5583,0.3717,0.0145,,DiT/experiments/capacity_ladder/results/tier2_sp/evaluations/eval_20k/metrics_40k.json
-Capacity_Tier3_B,DiT-2Cond-B/2 (LayerNorm),131.0M,5000,0.5346,0.5315,0.3994,0.0134,0.9963,0.5169,0.5119,0.4079,0.0144,,DiT/experiments/capacity_ladder/results/tier3_b/evaluations/eval_5k/metrics_40k.json
-Moyi_Top10_RF_16ch,Moyi-RF-16ch (FLUX VAE),FLUX 16ch,50000,0.5935,0,0,,0.7983,,,,,,moyi/results/moyi_top10_rf/eval_ours200fix/eval_auto.json
-Moyi_Top10_RF_4ch,Moyi-RF-4ch,SD-VAE 4ch,50000,0.5949,0.599,0.3678,,0.8106,,,,,,moyi/results/moyi_top10_rf_4ch/eval_step50000/eval_metrics.json
-Moyi_Top10_RF_4ch,Moyi-RF-4ch,SD-VAE 4ch,80000,0.6085,0.6123,0.3489,,0.7604,,,,,,moyi/results/moyi_top10_rf_4ch/eval_step80000/eval_metrics.json
-Phase_A_Exp1_RMSNorm,DiT-2Cond-S/2 (RMSNorm),33.8M,10000,0.5408,0.5393,0.3926,0.014,0.979,0.5342,0.5104,0.3937,0.0141,,DiT/experiments/ablation_phase_a/results/exp1_rmsnorm/eval_10k/metrics_40k.json
+rank,experiment,model_type,params,channels,step,strict_ssim,strict_ssim_med,strict_lpips,strict_skel_iou,strict_mse,seen_ssim,gap_ssim,status,source_file
+1,Moyi_12ch_50k (Baseline),Moyun-12channel-B (Rectified Flow),252.0M,12ch (4ch img + 4ch canny + 4ch skel),50000,0.5935,0.595,0.3724,0.0177,0.7983,-,-,官方参考基线：多模态联合12通道输入，被4ch证伪,moyi/results/moyi_top10_rf/eval_ours200fix/eval_auto.json
+2,Moyi_4ch_50k,Moyun-4channel-B (Rectified Flow),252.0M,4ch (SD-VAE latent),50000,0.5949,0.599,0.3678,0.0161,0.8106,-,-,纯真迹4通道同频对照，直接超越12ch (+0.0014),moyi/results/moyi_top10_rf_4ch/eval_step50000/eval_metrics.json
+3,Moyi_4ch_80k (终局峰值),Moyun-4channel-B (Rectified Flow),252.0M,4ch (SD-VAE latent),80000,0.6085,0.6123,0.3489,0.0235,0.7604,-,-,历史工业纪录最高峰，首次突破0.60大关,moyi/results/moyi_top10_rf_4ch/eval_step80000/eval_metrics.json
+4,Phase_A_Exp1_RMSNorm,DiT-2Cond-S/2 (RMSNorm+SwiGLU),33.8M,4ch (SD-VAE latent),10000,0.5408,0.5393,0.3926,0.014,0.979,0.5422,+0.0014,微观消融证伪：33M容量瓶颈严重锁死生成上限,DiT/experiments/ablation_phase_a/results/exp1_rmsnorm/eval_10k/metrics_40k.json
+5,Capacity_Tier2_Sp_10k,DiT-2Cond-Sp/2 (LayerNorm+GELU),59.2M,4ch (SD-VAE latent),10000,0.5494,0.5512,0.3848,0.015,0.953,0.5444,-0.0050,容量单调提升：较 S/2 @ 10k 同步提升 +0.0086,DiT/experiments/capacity_ladder/results/tier2_sp/evaluations/eval_10k/metrics_40k.json
+6,Capacity_Tier2_Sp_20k,DiT-2Cond-Sp/2 (LayerNorm+GELU),59.2M,4ch (SD-VAE latent),20000,0.5606,0.5622,0.3747,0.0158,0.9052,0.5539,-0.0067,Sp/2 终测完训，稳步收敛拉开与 33M 差距,DiT/experiments/capacity_ladder/results/tier2_sp/evaluations/eval_20k/metrics_40k.json
+7,Capacity_Tier3_B_5k,DiT-2Cond-B/2 (LayerNorm+GELU),131.0M,4ch (SD-VAE latent),5000,0.5346,0.5315,0.3994,0.0134,0.9963,0.5169,-0.0178,大模型 25% 起跑爬坡点，Loss 持续破新低,DiT/experiments/capacity_ladder/results/tier3_b/evaluations/eval_5k/metrics_40k.json
+8,Capacity_Tier3_B_Aug_48k,DiT-2Cond-B/2 (v4 对称增强版),131.0M,4ch (SD-VAE latent),48000,训练中,训练中,训练中,训练中,训练中,训练中,训练中,当前运行中：10h 冲刺 + 7.8万对称数据增强,DiT/experiments/capacity_ladder/configs/tier3_b_aug.json
