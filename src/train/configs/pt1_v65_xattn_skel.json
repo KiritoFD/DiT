@@ -1,5 +1,5 @@
 {
-  "_comment": "pt1 后训练 = 从 **v65 (三表 + adaLN + 三表条件逐层注入, 0150000.pt)** 全量初始化, 冻结主干, 只训「ckpt 里没有的新模块」= 新建的 **UNIC-Adapter 式 cross-attn 空间寻址适配器** (glyph_embedder 条件压缩器 + ZeroCrossAttention×4)。\n⚠ 必须**镜像 v65 的架构**: 若这里不写 cond_inject_layers/at, pt1 建的模型就没有 cond_injections 模块 -> --resume-full 会把 v65 训好的那批权重当 unexpected **静默丢弃**, 基模退化成 v54 形状 (日志只说 unexpected=N)。\n⚠ 两套注入共存于同一深度带: 基模的**三表条件**注入在 2,4,6,8 (cond_injections, 冻结继承), 新增的**骨架**适配器在 4,5,6,7 (glyph_injections, 可训)。二者都是零初始化, 各自独立; 是否需要错开层位是后续可做的对照。\n\n★ 2026-10-05 按 UNIC-Adapter 协议对齐两处:\n (1) 注入层 2,4,6,8 -> **4,5,6,7**: UNIC 的层级法则 (浅层1-3不注入 / 中前层4-8主战场 / 深层9-12切断, 否则出塑料描边感); 层 2 属浅层带。仓库 RelaCtrl 注记同样是「20%~60% 深度最高, 深层有害」。depth=12 时 4~7 = 33%~58% = 中前层。\n (2) glyph_drop_prob 0.05 -> **0.12**: UNIC 协议要求 10~15% 骨架清零, 以保双轴 CFG 下'无骨架'仍能靠底座先验去噪。\n xattn_q_pos=true 必须保持 (空间寻址的必要条件; 历史 xattn≈0 是 q_pos=False 的产物); attn_tau 保持 1.0 (锐化是另一条轴, 不引入第二变量)。\n\nlr 1e-4 / 30k 步 / batch 384 ≈ 2.2h。判据必须看**结构项** (skel_iou / hole / nn_ssim) + 视觉; 总 ssim 在冻结主干+零初始化下可能微降 (骨架噪声拉低纹理分), 用它判胜负会得到假失败。三档对照: zero-shot(不训) / 本臂 / 从零联合。\n⚠ std skel 作条件的天花板: 自身探针实测 std-skel 注入作用 ~2.7% vs GT-skel 10.4% -> 若本臂无增益, 必须补 GT-skel 对照才能区分'适配器路由不动'与'std skel 信息太弱'。",
+  "_comment": "pt1 后训练 = 从 **v65 (三表 + adaLN + 三表条件逐层注入, 0150000.pt)** 全量初始化, 冻结主干, 只训「ckpt 里没有的新模块」= 新建的 **UNIC-Adapter 式 cross-attn 空间寻址适配器** (glyph_embedder 条件压缩器 + ZeroCrossAttention×4)。\n⚠ 必须**镜像 v65 的架构**: 若这里不写 cond_inject_layers/at, pt1 建的模型就没有 cond_injections 模块 -> --resume-full 会把 v65 训好的那批权重当 unexpected **静默丢弃**, 基模退化成 v54 形状 (日志只说 unexpected=N)。\n⚠ 两套注入共存于同一深度带: 基模的**三表条件**注入在 2,4,6,8 (cond_injections, 冻结继承), 新增的**骨架**适配器在 4,5,6,7 (glyph_injections, 可训)。二者都是零初始化, 各自独立; 是否需要错开层位是后续可做的对照。\n\n★ 2026-10-05 按 UNIC-Adapter 协议对齐两处:\n (1) 注入层 2,4,6,8 -> **4,5,6,7**: UNIC 的层级法则 (浅层1-3不注入 / 中前层4-8主战场 / 深层9-12切断, 否则出塑料描边感); 层 2 属浅层带。仓库 RelaCtrl 注记同样是「20%~60% 深度最高, 深层有害」。depth=12 时 4~7 = 33%~58% = 中前层。\n (2) glyph_drop_prob 0.05 -> **0.12**: UNIC 协议要求 10~15% 骨架清零, 以保双轴 CFG 下'无骨架'仍能靠底座先验去噪。\n xattn_q_pos=true 必须保持 (空间寻址的必要条件; 历史 xattn≈0 是 q_pos=False 的产物); attn_tau 保持 1.0 (锐化是另一条轴, 不引入第二变量)。\n\nlr 1e-4 / 30k 步 / batch 384 ≈ 2.2h。\n\n★ in_mem_eval_batch 8 -> **4**: v65 的 reserved 在 eval 后涨到 22.55G (缓存池增长, 距上限约 1G), pt1 再多 4 个 xattn 层 -> 降到 4 留余量。只影响评测耗时 (6 次 eval 各 ~200s), **不改指标** (评测样本/种子固定)。若仍吃紧, 再把训练 batch 384 -> 320。判据必须看**结构项** (skel_iou / hole / nn_ssim) + 视觉; 总 ssim 在冻结主干+零初始化下可能微降 (骨架噪声拉低纹理分), 用它判胜负会得到假失败。三档对照: zero-shot(不训) / 本臂 / 从零联合。\n⚠ std skel 作条件的天花板: 自身探针实测 std-skel 注入作用 ~2.7% vs GT-skel 10.4% -> 若本臂无增益, 必须补 GT-skel 对照才能区分'适配器路由不动'与'std skel 信息太弱'。",
   "experiment_name": "pt1-v54-xattn-skel-adapter",
   "results_dir": "assets/results/pt1_v54_xattn_skel",
   "model": "DiT-2Cond-S/2",
@@ -95,6 +95,6 @@
   "data_csv": "exp-std/csv/train.csv",
   "global_batch_size": 256,
   "freeze_triple_tables": true,
-  "in_mem_eval_batch": 8,
+  "in_mem_eval_batch": 4,
   "eval_dir": ""
 }
