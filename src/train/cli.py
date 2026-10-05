@@ -340,6 +340,11 @@ def build_parser(argv=None):
                         help="[S2] adapter 的窗口注意力大小 (0=全局 256-token)。\n"
                              "3 或 5 = 每个位置只看局部邻域, 更像'局部书写指引',\n"
                              "也更不容易退化成全局平均。")
+    parser.add_argument("--cond-gate-t", type=float, default=0.0, dest="cond_gate_t",
+                        help="Time-Gate: 条件注入(表/风格)随 t 的阶梯门控阈值 "
+                             "(归一化 t, 0=关闭; t>=阈值 -> 全强度, 否则 --cond-gate-floor)。")
+    parser.add_argument("--cond-gate-floor", type=float, default=0.0, dest="cond_gate_floor",
+                        help="Time-Gate 低于阈值时的条件强度 (0 = 完全关掉条件)。")
     parser.add_argument("--glyph-gate-t", type=float, default=0.0, dest="glyph_gate_t",
                         help="骨架时间门的转折点, flow t 的口径 (0=关闭, 与旧行为逐位等价)。\n"
                              "阶梯: t 高于它时三路骨架条件全强度; 低于它时直接锁在 --glyph-gate-floor。\n"
@@ -682,6 +687,9 @@ def build_parser(argv=None):
                         help="Seed for free-sampling auto-eval noise.")
     parser.add_argument("--eval-batch", type=int, default=16,
                         help="DiT sampling batch for auto-eval (before CFG doubling).")
+    parser.add_argument("--eval-vae-path", type=str, default="", dest="eval_vae_path",
+                        help="评测用 VAE 目录 (16ch flux: data/pretrained/flux_vae_eval); "
+                             "空 = data/pretrained/sd-vae-ft-ema (4ch)。")
     parser.add_argument("--eval-vae-batch", type=int, default=32,
                         help="VAE decode batch for auto-eval (fp32, force_upcast=True).")
     parser.add_argument("--show5-csv", type=str, default=None,
@@ -824,8 +832,20 @@ def build_parser(argv=None):
                         dest="glyph_mask_n",
                         help="每条样本抹几块 (默认 3)。")
 
+    parser.add_argument("--cond-inject-layers", type=int, default=0,
+                        help="三表条件的**逐层 adaLN 注入**层数 (0=关闭=旧行为: 表条件只经 "
+                             "cond_fusion -> c=t_emb+y_emb 做全局 adaLN 调制)。\n"
+                             ">0 时在指定 block 之后各插一个 zero-init ZeroAdaLNInjection, "
+                             "context = y_emb (融合后的表条件向量)。zero-init -> step0 恒等。")
+    parser.add_argument("--cond-inject-at", type=str, default="", dest="cond_inject_at",
+                        help="显式指定三表注入层 (block 下标, 逗号分隔, 0-based), 如 '2,4,6,8'。\n"
+                             "空 = 均匀分布 (depth=12,n=4 -> [2,5,8,11])。")
     parser.add_argument("--glyph-inject-layers", type=int, default=0,
                         help="g 逐层注入层数 (0=仅输入层 token-add, s23 既有行为)")
+    parser.add_argument("--glyph-inject-at", type=str, default="", dest="glyph_inject_at",
+                        help="显式指定注入层 (block 下标, 逗号分隔, 0-based), 如 '2,4,6,8'。\n"
+                             "空 = 均匀分布 (depth=12,n=4 -> [2,5,8,11])。\n"
+                             "理论依据: RelaCtrl(2025) 中前层相关性最高、深层最低甚至有害。")
     parser.add_argument("--glyph-embedder-depth", type=int, default=0,
                         help="g 编码器增强深度 (0=单层 Conv 现状; >0=降采样 Conv + N 层 "
                              "(SiLU+Conv3x3) 残形增强 std 骨架特征, 治 std-skel g 通路不激活).")

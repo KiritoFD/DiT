@@ -36,6 +36,7 @@ from src.eval.inference import (build_diffusion, load_eval_vae, make_eval_cache,
 # 模块级缓存: 跨 step 复用 (eval cache / VAE / diffusion / id_map)
 _CACHES = {}
 _VAE = None
+_VAE_REF = None      # ★ 2026-10-05: 缓存键 = VAE 路径 (否则第二个 VAE 复用第一个)
 _DIFF = None
 _CMAP = None
 _WHITE_LAT_CACHE = {}       # 白底 latent (aux_zero_white 时 decode 前加回)
@@ -115,9 +116,12 @@ def _lpips_per_sample(pred_np, gt_np, enabled=True):
 
 
 def _get_vae(device, vae_path="data/pretrained/sd-vae-ft-ema"):
-    global _VAE
-    if _VAE is None:
+    """★ 2026-10-05: 按**路径**缓存。原来只判 `_VAE is None` -> 换 16ch flux VAE 时
+    仍复用之前的 4ch sd-vae, 16ch latent 拿 4ch 解码器解 -> 指标静默变垃圾。"""
+    global _VAE, _VAE_REF
+    if _VAE is None or _VAE_REF != str(vae_path):
         _VAE = load_eval_vae(device, vae_path)
+        _VAE_REF = str(vae_path)
     return _VAE
 
 
@@ -970,7 +974,8 @@ def run_in_mem_eval(model, args, step, device, results_dir=None, logger=print):
                     hier_conds=cache.get("hier_conds"))
             t_s = time.time() - t0
 
-            vae = _get_vae(device)
+            vae = _get_vae(device, str(getattr(args, "eval_vae_path", "") or "")
+                           or "data/pretrained/sd-vae-ft-ema")
             gts = (cache["gts"].to(device) + 1) / 2
             preds = torch.empty_like(gts)
             _zw = bool(getattr(args, "aux_zero_white", False))
@@ -986,14 +991,19 @@ def run_in_mem_eval(model, args, step, device, results_dir=None, logger=print):
             _sub = "g" if name in ("seen", "g") else name
             _sd = os.path.join(results_dir, "eval_samples_ctrl", f"step{int(step):07d}", _sub)
             _save = bool(getattr(args, "in_mem_eval_save_samples", True))
-            _n_aux = max(0, (lat.shape[1] - 4) // 4)
+            # ★ 2026-10-05 (16ch Flux): 图像 latent 的通道数**不能硬编码 4**。
+            #   Flux AE 下图像就是全部 16 通道; 硬切成 4 通道会让 16ch VAE 解码报
+            #   "expected input[...,4,32,32] to have 16 channels" (实测冒烟抓到)。
+            #   12ch aux 配方 (latent_channels=4 + 4*len(aux)) 语义不变。
+            _n_img = int(getattr(args, "latent_channels", 4) or 4)
+            _n_aux = max(0, (lat.shape[1] - _n_img) // 4)
             for i in range(0, n, vae_batch):
                 j = min(i + vae_batch, n)
                 _lat = lat[i:j].to(device)
                 _aux_lat = None
-                if _lat.shape[1] > 4:
-                    _aux_lat = _lat[:, 4:]
-                    _lat = _lat[:, :4]
+                if _lat.shape[1] > _n_img:
+                    _aux_lat = _lat[:, _n_img:]
+                    _lat = _lat[:, :_n_img]
                 # 白底归零 (aux_zero_white): 统一走 maybe_add_white, 勿内联 (防漂移/漏改)
                 _lat = maybe_add_white(_lat, _zw)
                 with torch.autocast("cuda", dtype=torch.bfloat16):

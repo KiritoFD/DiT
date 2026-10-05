@@ -98,9 +98,18 @@ def build_model_from_args(a, device, **overrides):
         # 只改前向、不改参数形状。漏传则评测全程全强度, strict=True 抓不到。
         glyph_gate_t=gf("glyph_gate_t", 0.0),
         glyph_gate_floor=gf("glyph_gate_floor", 0.35),
+        # ★ Time-Gate: 漏传 = 评测时不门控, strict=True 抓不到 (同 glyph_gate 的坑)。
+        cond_gate_t=gf("cond_gate_t", 0.0),
+        cond_gate_floor=gf("cond_gate_floor", 0.0),
         glyph_drop_prob=gf("glyph_drop_prob", 0.0),
         glyph_inject_layers=gi("glyph_inject_layers", 0),
         glyph_inject_mode=g("glyph_inject_mode", "adaln"),
+        # ★ 2026-10-05: 显式注入层 (纯行为开关, 不改参数形状; 漏传 -> 评测用均匀分布)。
+        glyph_inject_at=g("glyph_inject_at", ""),
+        # ★ 2026-10-05: 三表条件逐层注入 (会新建 cond_injections 参数 -> 漏传则 strict=True
+        #   直接报 missing, 不像纯行为开关那样静默; 但仍必须在这里接上)。
+        cond_inject_layers=gi("cond_inject_layers", 0),
+        cond_inject_at=g("cond_inject_at", ""),
         # ★ 2026-09-17: `xattn_q_pos` 是**纯行为开关，不改变任何参数形状**
         #   （只决定 Q 是否加 sincos 位置）。漏传它 -> `strict=True` **抓不到**
         #   -> 评测静默用 q_pos=False 的行为去评一个 q_pos=True 训出来的模型。

@@ -306,7 +306,9 @@ def maybe_add_white(lat, zero_white=False):
 @torch.no_grad()
 def decode_and_save(vae, latents, scaling_factor, out_dir, tag, conds=None,
                     gts=None, vae_batch=16, skels=None, idx_offset=0,
-                    zero_white=False):
+                    zero_white=False, img_channels=4):
+    # ★ 2026-10-05: img_channels 显式化 —— 16ch Flux VAE 下图像 latent 是 16 通道,
+    #   原来硬编码 `lat[:, :4]` 会让 16ch VAE 解码失败。默认 4 保持向后兼容。
     """Decode latents (fp32, force_upcast) → save {tag}{i}.png [+gt{i}.png, skel{i}.png].
 
     latents      : (N, C, H, W) CPU float32.
@@ -324,8 +326,8 @@ def decode_and_save(vae, latents, scaling_factor, out_dir, tag, conds=None,
     for i in range(0, n, vae_batch):
         j = min(i + vae_batch, n)
         lat = latents[i:j].to(vae_dev)
-        if lat.shape[1] > 4:          # aux 目标通道: 解码只用图像 4 通道
-            lat = lat[:, :4]
+        if lat.shape[1] > img_channels:      # aux 目标通道: 解码只用图像通道
+            lat = lat[:, :img_channels]
         lat = maybe_add_white(lat, zero_white)      # 白底归零: 减过的必须加回
         decoded = vae.decode(lat / scaling_factor).sample  # fp32
         preds = decoded.float().cpu()

@@ -683,6 +683,11 @@ def build_parser(argv=None):
     parser.add_argument("--glyph-patch-drop", type=float, default=0.0,
                         dest="glyph_patch_drop",
                         help="局部随机 Mask (Cutout 式): 逐 latent patch 的丢弃概率 (0=关)。1 个 latent patch = 8x8 像素。")
+    parser.add_argument("--cond-inject-layers", type=int, default=0,
+                        help="三表条件的逐层 adaLN 注入层数 (0=关闭=旧行为; >0 时在指定 block 后 "
+                             "插 zero-init ZeroAdaLNInjection, context=y_emb)。")
+    parser.add_argument("--cond-inject-at", type=str, default="", dest="cond_inject_at",
+                        help="显式指定三表注入层 (block 下标, 逗号分隔, 0-based)。")
     parser.add_argument("--glyph-inject-layers", type=int, default=0,
                         help="g 逐层注入层数 (0=仅输入层 token-add, s23 既有行为)")
     parser.add_argument("--glyph-embedder-depth", type=int, default=0,

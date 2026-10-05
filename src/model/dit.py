@@ -950,6 +950,11 @@ class DiT_2Cond(nn.Module):
         # 线性收到 glyph_gate_floor。velocity 目标不变。
         glyph_gate_t=0.0,
         glyph_gate_floor=0.35,
+        # ★ 2026-10-05 Time-Gate: 条件(表/风格)注入随 t 的阶梯门控。
+        #   与 glyph_gate_t 同语义 (t_norm>=thr -> 1.0, 否则 floor), 但作用于
+        #   y_emb / c_style -> **无骨架的纯表模型**也能用。0 = 关闭。
+        cond_gate_t=0.0,
+        cond_gate_floor=0.0,
         # v10b: 去掉 char 向量条件 (skel-g 即字条件时的干净因子分解: 结构=skel, 风格=callig)。
         # False 时不建 y_char_embedder/char_proj/char_scale, 4-way 退化为 callig 单向量因子
         # (drop_all/drop_one 都丢 callig); forward 仍接受 y_char 形参但忽略 (接口零破坏)。
@@ -960,6 +965,19 @@ class DiT_2Cond(nn.Module):
         # 显存：每层约 +150MB（batch=192 时），12 层约 +1.8G，注意 OOM。
         glyph_inject_layers=0,
         glyph_inject_mode="adaln",
+        # ★ 2026-10-05: 显式指定注入层 (block 下标, 逗号分隔, 0-based)。
+        #   空 = 旧的均匀分布 (depth=12, n=4 -> [2,5,8,11])。
+        #   动机: RelaCtrl(2025) 逐层移除实验显示控制相关性呈倒 U —— 中前层
+        #   (约 20%~60% 深度) 最高, 深层最低甚至有害 (深层负责高频墨水质感)。
+        glyph_inject_at="",
+        # ★ [2026-10-05] **三表条件的逐层 adaLN 注入**（与 glyph/skel 分支完全无关）。
+        #   0 = 关闭（旧行为：表条件只经 cond_fusion -> c = t_emb + y_emb 做全局 adaLN 调制）；
+        #   >0 = 在该数量的 block 之后各插一个 zero-init ZeroAdaLNInjection，context = y_emb
+        #        （融合后的表条件向量，展开成 (N,1,D)）。
+        #   zero-init -> step0 严格恒等，不改变已训权重行为，可作单一变量对照。
+        #   动机：ControlNet/RelaCtrl 一类的「逐层注入 + 选位置」可能优于单一全局调制。
+        cond_inject_layers=0,
+        cond_inject_at="",
         # [2026-09-17] xattn 的 Q 是否也加 sincos 位置嵌入。默认 False = 旧行为。
         # 旧实现只给 K/V 加位置, 而 rope=True 时 x 残差流不加绝对位置 -> Q 无位置,
         # "空间寻址"退化成"内容寻址"。打开后 Q/K/V 都带位置, 2D 绑定才成立。
@@ -1185,6 +1203,8 @@ class DiT_2Cond(nn.Module):
         self.glyph_concat_input = bool(glyph_concat_input)
         self.glyph_gate_t = float(glyph_gate_t)
         self.glyph_gate_floor = float(glyph_gate_floor)
+        self.cond_gate_t = float(cond_gate_t)
+        self.cond_gate_floor = float(cond_gate_floor)
         self.use_char_cond = bool(use_char_cond)
         self.char_proj_mode = char_proj_mode
         self.freeze_char_table = bool(freeze_char_table)
@@ -1669,9 +1689,23 @@ class DiT_2Cond(nn.Module):
             #     （既能增强也能抑制残差流）。
             if self.glyph_inject_layers > 0:
                 n_inj = min(self.glyph_inject_layers, depth)
-                # 均匀分布在 depth 层中
-                self.glyph_inject_at = sorted(
-                    set(int(round((i + 1) * depth / n_inj)) - 1 for i in range(n_inj)))
+                # ★ 2026-10-05: 优先用**显式层列表** glyph_inject_at="2,4,6,8"。
+                #   空 -> 旧的均匀分布 (depth=12,n=4 -> [2,5,8,11])。
+                _at_str = str(glyph_inject_at or "").strip()
+                if _at_str:
+                    _lst = sorted({int(v) for v in _at_str.split(",") if v.strip() != ""})
+                    _lst = [i for i in _lst if 0 <= i < depth]
+                    if not _lst:
+                        raise ValueError(f"glyph_inject_at 解析为空或全越界: "
+                                         f"{glyph_inject_at!r} (depth={depth})")
+                    self.glyph_inject_at = _lst
+                    n_inj = len(_lst)
+                else:
+                    self.glyph_inject_at = sorted(
+                        set(int(round((i + 1) * depth / n_inj)) - 1 for i in range(n_inj)))
+                print(f"[glyph-inject] mode={self.glyph_inject_mode} "
+                      f"layers={self.glyph_inject_at} (depth={depth}, "
+                      f"{'显式 glyph_inject_at' if _at_str else '均匀分布'})")
                 # ★ 2026-09-17: 预计算 "block 下标 -> 注入器下标" 映射。
                 #   原来在 forward 里每步重建这个 dict（`{blk: k for ...}`）——
                 #   它是**循环不变量**（只依赖 glyph_inject_at），没必要每步做。
@@ -1704,6 +1738,44 @@ class DiT_2Cond(nn.Module):
                         ZeroAdaLNInjection(hidden_size, mode="modulate")
                         for _ in self.glyph_inject_at
                     ])
+
+        # ── [2026-10-05] 三表条件的逐层 adaLN 注入（与 glyph/skel 分支无关）──────────
+        # 背景：表条件原先只在 c = t_emb + y_emb 里做**全局** adaLN 调制，没有"注入到哪几层"
+        #       的旋钮（glyph_inject_* 那套消费的是 g_tok = glyph/skel 分支，表走不到）。
+        # 语义：在指定 block 之后插 zero-init ZeroAdaLNInjection，context = y_emb。
+        #       zero-init -> step0 恒等，不改变已训权重行为，可作为单一变量对照。
+        self.cond_inject_layers = int(cond_inject_layers or 0)
+        self.cond_injections = None
+        self.cond_inject_at = []
+        self._cond_inj_map = {}
+        if self.cond_inject_layers > 0:
+            from .injections import ZeroAdaLNInjection
+            try:
+                _cdepth = int(depth)
+            except Exception:
+                _cdepth = len(self.blocks)
+            _cat = str(cond_inject_at or "").strip()
+            _clst = []
+            if _cat:
+                for _s in _cat.replace(" ", "").split(","):
+                    if _s != "":
+                        _clst.append(int(_s))
+                _clst = [i for i in _clst if 0 <= i < _cdepth]
+                if not _clst:
+                    raise ValueError(
+                        f"[cond-inject] cond_inject_at 解析为空或全越界: "
+                        f"{cond_inject_at!r} (depth={_cdepth})")
+            else:
+                _n = max(1, self.cond_inject_layers)
+                _clst = sorted({int(round(k * (_cdepth - 1) / max(1, _n - 1)))
+                                for k in range(_n)})
+            self.cond_inject_at = _clst
+            self._cond_inj_map = {blk: k for k, blk in enumerate(_clst)}
+            self.cond_injections = nn.ModuleList([
+                ZeroAdaLNInjection(hidden_size, mode="modulate") for _ in _clst
+            ])
+            print(f"[cond-inject] 三表条件逐层注入: layers={_clst} (depth={_cdepth}, "
+                  f"n={len(_clst)}, {'显式 cond_inject_at' if _cat else '均匀分布'})")
 
         # ── S2：三层语义分解 + 局部风格-骨架引导（2026-09-22）─────────────────
         # 全部默认 None/0 = 与旧 ckpt 逐位等价。
@@ -2413,7 +2485,24 @@ class DiT_2Cond(nn.Module):
             y_concat = torch.cat([e_callig, e_char], dim=-1)
             y_emb = self.cond_fusion(y_concat)
             y_emb = self._style_branch(e_callig, y_emb)   # 922/80 改动 1 接线
+        # ★ 2026-10-05 Time-Gate: 条件注入随 t 阶梯调制 (与 glyph_gate_t 同语义)。
+        #   动机: 高噪声(t 大)给足条件信息, 低噪声(t 小)让模型自己收尾; 阶梯而非
+        #   斜坡 (斜坡在 t=0.1 仍留 floor, 等于没关 —— v17 注释里同一教训)。
+        _cgw = None
+        if getattr(self, "cond_gate_t", 0.0) > 0.0:
+            _cgt = (t.float().flatten() / 1000.0).clamp(0, 1)
+            _cgw = torch.where(_cgt >= self.cond_gate_t,
+                               torch.ones_like(_cgt),
+                               torch.full_like(_cgt, self.cond_gate_floor))
+            _cgw = _cgw.to(y_emb.dtype).view(-1, 1)
+            y_emb = y_emb * _cgw
         c = t_emb + y_emb                        # (N, D)
+
+        # ★ [2026-10-05] 三表条件逐层注入的 context：用**融合后**的 y_emb 展开成 (N,1,D)。
+        #   y_emb 已含上面的 cond_gate(time-gate) 调制与各因子 drop(null 替换发生在 embedder),
+        #   因此这条支路与 adaLN 支路共享同一份条件 -> CFG/uncond 语义不会被污染。
+        _cond_inj_ctx = (y_emb.unsqueeze(1)
+                         if self.cond_injections is not None else None)
 
         # ---- 922/80 改动 2: 风格专用支路的输入 ----
         # 直接喂**原始** e_callig（不是 y_emb），理由：
@@ -2425,6 +2514,9 @@ class DiT_2Cond(nn.Module):
         c_style = None
         if getattr(self, "style_ada_rank", 0) > 0:
             c_style = e_callig
+        # Time-Gate 同时作用于风格专用支路 (它同样是"条件注入")。
+        if _cgw is not None and c_style is not None:
+            c_style = c_style * _cgw
 
         rope = (self.rope_cos, self.rope_sin) if self.rope else None
 
@@ -2444,6 +2536,8 @@ class DiT_2Cond(nn.Module):
         _inj = {}
         if self.glyph_injections is not None and g_tok is not None:
             _inj = self._inj_map
+        # [2026-10-05] 三表条件逐层注入的层映射 (与 _inj 无关, 二者可同时开)
+        _cinj = self._cond_inj_map if self.cond_injections is not None else {}
 
         # ── 逐层注入的 context ───────────────────────────────────────────────
         # 默认 = 骨架 token(GlyphStyleCrossAttn 模式下位置在下面显式加)。
@@ -2495,6 +2589,9 @@ class DiT_2Cond(nn.Module):
                 # x = x + glyph_scale * g_tok（glyph_scale=0.4 非零）
                 # 已提供直通梯度，故 glyph_embedder 从 step 0 即可学习。
                 x = self.glyph_injections[_inj[i]](x, inject_ctx)
+            if i in _cinj:
+                # 三表条件逐层注入: zero-init adaLN (x = x*(1+s) + t), s/t 由 y_emb 产出。
+                x = self.cond_injections[_cinj[i]](x, _cond_inj_ctx)
             if i in _lc_map:
                 x = self.local_ca[_lc_map[i]](x, g_tok, _e_cond_local,
                                               self.local_pos, keep)

@@ -455,9 +455,15 @@ def main(args):
             glyph_concat_input=bool(getattr(args, 'glyph_concat_input', False)),
             glyph_gate_t=float(getattr(args, 'glyph_gate_t', 0.0)),
             glyph_gate_floor=float(getattr(args, 'glyph_gate_floor', 0.35)),
+            cond_gate_t=float(getattr(args, 'cond_gate_t', 0.0) or 0.0),
+            cond_gate_floor=float(getattr(args, 'cond_gate_floor', 0.0) or 0.0),
             glyph_drop_prob=getattr(args, 'glyph_drop_prob', 0.0),
             glyph_inject_layers=getattr(args, 'glyph_inject_layers', 0),
             glyph_inject_mode=getattr(args, 'glyph_inject_mode', 'adaln'),
+            glyph_inject_at=str(getattr(args, 'glyph_inject_at', '') or ''),
+            # [2026-10-05] 三表条件逐层 adaLN 注入 (与 glyph/skel 分支无关)
+            cond_inject_layers=int(getattr(args, 'cond_inject_layers', 0) or 0),
+            cond_inject_at=str(getattr(args, 'cond_inject_at', '') or ''),
             xattn_q_pos=getattr(args, 'xattn_q_pos', False),
             # ★ 2026-10-03: 同 xattn_q_pos —— 纯行为开关, 不改变参数形状。漏传 -> strict=True 抠不到。
             attn_tau=float(getattr(args, 'attn_tau', 1.0) or 1.0),
