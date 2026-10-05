@@ -11,6 +11,7 @@
 
 | 文档代号 | 文件名 | 核心内容与战略定位 |
 |---|---|---|
+| **DOC-105-MASTER** | [`00_master_synthesis_report.md`](./00_master_synthesis_report.md) | **全景统合报告与终极决胜战役白皮书**：汇集双机历史破局脉络、架构死刑与正名裁决、真实数据集理论物理天花板测算（0.6588）、两套 VAE 物理实测对比、v61 破 0.60 战报及双线作战大蓝图。 |
 | **DOC-105-01** | [`01_architectural_death_sentences.md`](./01_architectural_death_sentences.md) | **架构死刑清单**：基于确凿实验与数学机理，永久判处死刑的 7 大技术伪路径（12通道联合扩散、全层 Cross-Attention 插桩、连续骨架 VAE、纯随机大模型词表长跑等）。 |
 | **DOC-105-02** | [`02_pending_ablation_variables.md`](./02_pending_ablation_variables.md) | **待决待验变量库**：纠正此前将系统停滞过度归因于现代组件的逻辑错误（以 v53 0.5875 破纪录为实证反例），确立 RMSNorm、SwiGLU、2D-RoPE、QK-Norm 的单一变量严格消融实验协议。 |
 | **DOC-105-03** | [`03_condition_injection_evolution.md`](./03_condition_injection_evolution.md) | **下一代条件注入演进方案**：突破当前 AdaLN 全局广播瓶颈，设计内容与风格物理级双流解耦、时间步动态门控、多尺度分层路由及双轴独立 CFG 引导。 |
