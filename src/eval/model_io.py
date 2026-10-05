@@ -62,7 +62,12 @@ def build_model_from_args(a, device, **overrides):
         v = g(k, d)
         return None if v is None else float(v)
 
-    latent_size = gi("image_size", 256) // gi("vae_downscale", 4)
+    # ⚠ 2026-10-05: vae_downscale 的默认值必须与**训练侧**一致 (src/model/train.py:201
+    #   用的是 getattr(args, 'vae_downscale', 8))。原先这里写 4 -> 任何未显式提供该键的
+    #   config 在评测/构造路径上会建出 2 倍分辨率的模型 (256 token -> 1024 token),
+    #   pos_embed 形状失配; 在 --resume-full 后训练场景下更糟: 会被当"形状失配"剔除并
+    #   重新随机初始化, 且因进了 _missing 而变成**可训** -> 静默坏掉底座。
+    latent_size = gi("image_size", 256) // gi("vae_downscale", 8)
     _n_aux = len([s for s in str(g("aux_latent_shards_dirs", "") or "").split(",") if s])
     _lc = gi("latent_channels", 4) or 4
 
