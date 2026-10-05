@@ -1,46 +1,30 @@
-#!/bin/bash
+#!/usr/bin/env bash
 cd /root/Workspace/xy/DiT || exit 1
+L(){ echo; echo "########## $* ##########"; }
 
-echo "########## 3. 多风格/CROSS-ATTN 注入的代码位置 ##########"
-grep -rnE 'MultiStyleEmbedder|CalligStyleCrossAttn|callig_multi_style_k' \
-     src/model/*.py src/train/train.py src/eval/*.py 2>/dev/null | head -24
+L "1 dit.py 281-300 / 760-800 (两个 xattn 实现)"
+sed -n '281,300p' src/model/dit.py
+echo "..."
+sed -n '760,800p' src/model/dit.py
 
-echo
-echo "########## 3b. 现有注入模式有哪些 ##########"
-grep -rnE 'glyph_inject_mode|inject_mode ==|== "adaln"|== "xattn"' src/model/dit.py 2>/dev/null | head -14
+L "2 dit.py 1700-1745 (mode 选择)"
+sed -n '1700,1745p' src/model/dit.py
 
-echo
-echo "########## 4. v15a/b 实测 ##########"
-ls -la assets/ink_eval/ 2>/dev/null | head -14
-for f in assets/ink_eval_raw/v15a_multistyle_k4__seen.csv assets/ink_eval_raw/v15a_multistyle_k4__strict.csv \
-         assets/ink_eval_raw/v15b_multistyle_k4__seen.csv assets/ink_eval_raw/v15b_multistyle_k4__strict.csv; do
-  if [ -f "$f" ]; then echo "--- $f"; head -2 "$f"; fi
-done
-echo "--- 所有 ink_eval_raw ---"; ls assets/ink_eval_raw/ 2>/dev/null | head -20
+L "3 cli.py 所有 add_argument"
+grep -n 'add_argument' src/train/cli.py | sed 's/^\s*//' | head -60
 
-echo
-echo "########## 5. ratio_style 记录 ##########"
-grep -rn 'ratio_style' docs/ assets/*.json 2>/dev/null | head -10
-ls assets/*style*.json 2>/dev/null | head
+L "4 骨架损失/skel_head/probe 全仓库定位"
+grep -rn 'LatentSkelStructureLoss\|w_latent_skel\|skel_head\|latent_skel_probe' --include=*.py src tools | head -25
 
-echo
-echo "########## 6. 条件/骨架 shard 家底 ##########"
-for d in data/top10_style23/gt_skel_png_w7 data/top10_style23/std \
-         exp-std/data/shards_gtskel_w7 exp-std/data/shards_std_w7 \
-         exp-std/data/shards_img_flux16 exp-std/data/shards_std_flux16; do
-  echo "  $d : $(ls "$d" 2>/dev/null | wc -l) 个文件"
-done
-ls exp-std/data/shards_img_flux16/ 2>/dev/null | head -3
+L "5 预训练加载/冻结相关开关"
+grep -rn "add_argument(\"--\(init\|pretrained\|base-ckpt\|from-ckpt\|freeze\)" src/train/cli.py | head -25
+echo "--- freeze policy 分支条件 ---"
+sed -n '1043,1060p;1117,1135p;1180,1200p;1255,1275p' src/train/train.py
 
-echo
-echo "########## 7. v47 配置里的通道/模型字段 ##########"
-grep -nE 'in_channels|latent_channels|latent_shards_dir|patch_size|"model"|vae_' \
-     src/train/configs/v47_purestd_xattn12_top10.json 2>/dev/null
-echo "--- base 模型注册表 ---"
-grep -rn 'DiT_2Cond_models' src/model/__init__.py src/model/dit.py 2>/dev/null | head -6
+L "6 v54 config 余下部分 (batch/eval)"
+sed -n '60,120p' src/train/configs/v54_minimal_tables_noskel.json
 
-echo
-echo "########## 8. DINO 缓存 ##########"
-ls -la data/dino_cache/ 2>/dev/null | head -8
-ls data/dino_cache/top10_v1/ 2>/dev/null | head -4
-echo -n "top10_v1 文件数 = "; ls data/dino_cache/top10_v1/ 2>/dev/null | wc -l
+L "7 v65 现状"
+V65=$(ls -dt assets/results/v65_skel_inj2468/*/ 2>/dev/null | head -1); V65=${V65%/}
+grep -ao 'step=[0-9]*' "$V65/log.txt" | tail -1
+grep -a 'Steps/Sec' "$V65/log.txt" | tail -1 | sed 's/\x1b\[[0-9;]*m//g'
