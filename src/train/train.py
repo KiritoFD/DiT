@@ -1381,6 +1381,11 @@ def main(args):
     # flow 的 t 分布 / 求解器 / shift 由 config 指定，训练与 eval 共用同一份
     # （通过 flow_kwargs_from 抽取），避免两侧静默不一致。
     _flow_kw = flow_kwargs_from(args)
+
+    # ★ [2026-10-06] 层级敏感度探针（默认关：--probe-inject-every<=0 时只是空对象）。
+    #   用途：跑 500~1000 步测出"主干到底想在哪些层看骨架"，再据此确定正式注入层。
+    from src.utils.inject_probe import InjectLayerProbe
+    _inj_probe = InjectLayerProbe(args, model, logger)
     diffusion = create_diffusion_or_flow(timestep_respacing="",
                                          diffusion_type=getattr(args, 'diffusion_type', 'ddpm'),
                                          **_flow_kw)
@@ -2449,6 +2454,7 @@ def main(args):
                 _mse_ch = None
 
                 train_steps += 1
+                _inj_probe.maybe_log(train_steps)
 
                 # ★ 回收 torch.compile 的显存空洞（见 cli.py --empty-cache-after-warmup 的说明）
                 #

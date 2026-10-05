@@ -349,7 +349,25 @@ class ZeroCrossAttention(nn.Module):
             .view(B, Nc, self.num_heads, self.head_dim).transpose(1, 2)
         if self.attn_tau != 1.0:
             q = q / self.attn_tau      # = softmax(qkᵀ/√d/τ)
-        out = F.scaled_dot_product_attention(q, k, v)
+        # ★ [2026-10-06] 层级敏感度探针（默认关；只有 --probe-inject-every > 0 时
+        #   InjectLayerProbe 才会把本模块的 .probe 置 True）。
+        #   显式算 attention 并记录**空间寻址**统计 —— 比"注意力锐度"对症:
+        #   diag = Q 的第 k 个 token 给 K 中**同一网格位置**骨架 token 的权重
+        #   (随机均匀 = 1/N = 0.0039; 越大学得越像"看着同一位置写")。
+        #   正常训练绝不走这里（显式 softmax 更慢更吃显存）。
+        if getattr(self, "probe", False):
+            _att = ((q @ k.transpose(-2, -1)) * (float(self.head_dim) ** -0.5)).softmax(dim=-1)
+            with torch.no_grad():
+                _a = _att.detach()
+                self.probe_stats = {
+                    "diag": float(_a.diagonal(dim1=-2, dim2=-1).mean()),
+                    "entropy": float(-(_a.clamp_min(1e-9).log() * _a).sum(-1).mean()),
+                    "maxw": float(_a.max(dim=-1)[0].mean()),
+                    "n_key": int(_a.shape[-1]),
+                }
+            out = _att @ v
+        else:
+            out = F.scaled_dot_product_attention(q, k, v)
         out = out.transpose(1, 2).reshape(B, N, D)
         return x + self.out_proj(out)
 

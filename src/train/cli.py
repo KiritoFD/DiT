@@ -832,6 +832,13 @@ def build_parser(argv=None):
                         dest="glyph_mask_n",
                         help="每条样本抹几块 (默认 3)。")
 
+    parser.add_argument("--probe-inject-every", type=int, default=0,
+                        help="层级敏感度探针: 每 N 步记录每个注入层的 (a) out_proj 梯度范数 "
+                             "(b) attention 对角线质量/熵/锐度。0=关闭。\n"
+                             "用法: 把 glyph_inject_layers 临时开到全层 + 本开关设 100, "
+                             "跑 500~1000 步 -> 用模型自己的梯度/寻址投票选出该注入哪几层。")
+    parser.add_argument("--probe-inject-csv", type=str, default="", dest="probe_inject_csv",
+                        help="探针记录写入的 csv 路径 (按 step,layer 逐行追加)。")
     parser.add_argument("--cond-inject-at", type=str, default="", dest="cond_inject_at",
                         help="三表条件的**分层路由白名单** (block 下标, 逗号分隔, 0-based), 如 '2,3,4,5'。\n"
                              "列入的层: c = t_emb + y_emb*scale_i; **其余层条件完全切断** (c = t_emb)。\n"

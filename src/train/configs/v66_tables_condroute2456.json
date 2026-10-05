@@ -1,10 +1,10 @@
 {
-  "_comment": "v66 = **只用三张表** (书体 3x16 / 书家 10x32 / 汉字 4690x256, 与 v54 逐项相同) + adaLN + **条件分层路由**: 表条件**只在 block 2,3,4,5 注入** (c = t_emb + y_emb*scale_i), **其余 8 层条件完全切断** (c = t_emb, 条件张量在那几层不参与任何计算)。**无 skel**。\n\n与 v54 的唯一机制差异: v54 把条件 c = t_emb + y_emb 喂给**全部 12 层** (全局 adaLN); v66 只喂 4 层。依据 UNIC-Adapter 层级法则 (1-idx 浅1-3 不注入 / 中前 4-8 主战场 / 深 9-12 必须切断, 否则高频纹理发干、塑料描边感) -> 0-idx 中前带 3~7; 本配置取更靠前的 2,3,4,5。\n\n逐层可学习强度: 每注入层一个 scale (init 1.0)。训完 scale 本身就是\"该层多需要这个条件\"的曲线 -> 层级法则可以被**测**出来。\n\n⚠ 与 v54 相比还差一处: drop 用了对称 0.08/0.08/0.08 (v54 是 callig 0.16/script 0.08/char 0.08, 那个不对称无依据且从未 A/B)。若要严格单变量, 把 callig 改回 0.16。\n\n150k / lr 5e-5 cosine / warmup 3k / REPA 0.03 / batch 384 / eval 5k。基线: v54 best 0.5960 (150k, eval200fix) / 0.6410 (seen)。",
-  "experiment_name": "v66-tables-condroute2345-adaLN",
-  "results_dir": "assets/results/v66_tables_condroute",
+  "_comment": "v66 = **只用三张表** (书体 3x16 / 书家 10x32 / 汉字 4690x256, 与 v54 逐项相同) + adaLN + **条件分层路由**: 表条件**只在 block 2,3,4,5 注入** (c = t_emb + y_emb*scale_i), **其余 8 层条件完全切断** (c = t_emb, 条件张量在那几层不参与任何计算)。**无 skel**。\n\n与 v54 的唯一机制差异: v54 把条件 c = t_emb + y_emb 喂给**全部 12 层** (全局 adaLN); v66 只喂 4 层。依据 UNIC-Adapter 层级法则 (1-idx 浅1-3 不注入 / 中前 4-8 主战场 / 深 9-12 必须切断, 否则高频纹理发干、塑料描边感) -> 0-idx 中前带 3~7; 本配置取 **2,4,5,6** (17%~50% 深度, 落在 RelaCtrl 的 20~60% 带内; 由人工定层)。\n\n逐层可学习强度: 每注入层一个 scale (init 1.0)。训完 scale 本身就是\"该层多需要这个条件\"的曲线 -> 层级法则可以被**测**出来。\n\n⚠ 与 v54 相比还差一处: drop 用了对称 0.08/0.08/0.08 (v54 是 callig 0.16/script 0.08/char 0.08, 那个不对称无依据且从未 A/B)。若要严格单变量, 把 callig 改回 0.16。\n\n150k / lr 5e-5 cosine / warmup 3k / REPA 0.03 / batch 384 / eval 5k。基线: v54 best 0.5960 (150k, eval200fix) / 0.6410 (seen)。",
+  "experiment_name": "v66-tables-condroute2456-adaLN",
+  "results_dir": "assets/results/v66_tables_condroute2456",
   "model": "DiT-2Cond-S/2",
 
-  "cond_inject_at": "2,3,4,5",
+  "cond_inject_at": "2,4,5,6",
   "cond_inject_scale": true,
 
   "skel_as_glyph_cond": false,
