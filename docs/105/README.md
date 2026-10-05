@@ -16,6 +16,7 @@
 | **DOC-105-02** | [`02_pending_ablation_variables.md`](./02_pending_ablation_variables.md) | **待决待验变量库**：纠正此前将系统停滞过度归因于现代组件的逻辑错误（以 v53 0.5875 破纪录为实证反例），确立 RMSNorm、SwiGLU、2D-RoPE、QK-Norm 的单一变量严格消融实验协议。 |
 | **DOC-105-03** | [`03_condition_injection_evolution.md`](./03_condition_injection_evolution.md) | **下一代条件注入演进方案**：突破当前 AdaLN 全局广播瓶颈，设计内容与风格物理级双流解耦、时间步动态门控、多尺度分层路由及双轴独立 CFG 引导。 |
 | **DOC-105-04** | [`04_theoretical_upper_bound_probes.md`](./04_theoretical_upper_bound_probes.md) | **理论上界严谨测算报告**：基于训练集 26,002 样本实测同一书法家同字真迹自相关均值（0.6588），结合 SD-VAE 潜空间解码损耗，严格推导任务理论天花板（0.625 ~ 0.635）。 |
+| **DOC-105-05** | [`05_flux_16ch_vae_breakthrough_and_roadmap.md`](./05_flux_16ch_vae_breakthrough_and_roadmap.md) | **FLUX 16ch VAE 实测对决与跨代升级蓝图**：100 样本正面对决（断线率从 20.7% 骤降至 0.58%，LPIPS 骤降 83%），解锁 0.650+ 物理上限；v61 Step 65,000 战报（Strict SSIM 0.6067 / LPIPS 0.3289 破纪录）。 |
 | **工具脚本** | [`tools/probe_theoretical_bounds.py`](../../tools/probe_theoretical_bounds.py) | **理论物理极限自动化探针脚本**：支持一键复现数据集内在书法多模态方差与自相关 SSIM/LPIPS 分布。 |
 
 ---

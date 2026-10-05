@@ -23,7 +23,10 @@ from typing import Optional
 import torch.nn as nn
 import numpy as np
 import math
-from mamba_ssm import Mamba2
+try:
+    from mamba_ssm import Mamba2
+except ImportError:
+    Mamba2 = None
 from timm.models.layers import DropPath, to_2tuple
 from utils.rope import VisionRotaryEmbeddingFast
 from timm.models.vision_transformer import PatchEmbed, Attention, Mlp
@@ -36,7 +39,7 @@ def modulate(x, shift, scale):
     return x * (1 + scale.unsqueeze(1)) + shift.unsqueeze(1)
 
 
-device = "cuda:0"
+device = "cuda" if torch.cuda.is_available() else "cpu"
 
 
 ######
@@ -192,11 +195,8 @@ class TimestepEmbedder(nn.Module):
         # https://github.com/openai/glide-text2im/blob/main/glide_text2im/nn.py
         half = dim // 2
         freqs = torch.exp(
-            -math.log(max_period) * torch.arange(start=0, end=half, dtype=torch.float32) / half
+            -math.log(max_period) * torch.arange(start=0, end=half, dtype=torch.float32, device=t.device) / half
         )
-        # 额外指定了 device
-        if self.device:
-            freqs = freqs.to(self.device)
         args = t[:, None].float() * freqs[None]
         embedding = torch.cat([torch.cos(args), torch.sin(args)], dim=-1)
         if dim % 2:
@@ -641,16 +641,16 @@ class Moyun(nn.Module):
         
         model_out, _ = self.forward(combined, t, y, stroke)  # 这里因为新加feature，忽略feature返回
         
-        # For exact reproducibility reasons, we apply classifier-free guidance on only
-        # three channels by default. The standard approach to cfg applies it to all channels.
-        # This can be done by uncommenting the following line and commenting-out the line following that.
-        # eps, rest = model_out[:, :self.in_channels], model_out[:, self.in_channels:]
-        eps, rest = model_out[:, :3], model_out[:, 3:]
-        cond_eps, uncond_eps = torch.split(eps, len(eps) // 2, dim=0)
-        half_eps = uncond_eps + cfg_scale * (cond_eps - uncond_eps)
-        eps = torch.cat([half_eps, half_eps], dim=0)
-        
-        return torch.cat([eps, rest], dim=1)
+        if self.learn_sigma:
+            eps, rest = model_out[:, :self.in_channels], model_out[:, self.in_channels:]
+            cond_eps, uncond_eps = torch.split(eps, len(eps) // 2, dim=0)
+            half_eps = uncond_eps + cfg_scale * (cond_eps - uncond_eps)
+            eps = torch.cat([half_eps, half_eps], dim=0)
+            return torch.cat([eps, rest], dim=1)
+        else:
+            cond_eps, uncond_eps = torch.split(model_out, len(model_out) // 2, dim=0)
+            half_eps = uncond_eps + cfg_scale * (cond_eps - uncond_eps)
+            return torch.cat([half_eps, half_eps], dim=0)
 
 
 #################################################################################

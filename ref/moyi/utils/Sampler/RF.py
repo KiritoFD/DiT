@@ -75,30 +75,42 @@ class RF:
 
         t_in = torch.zeros_like(t) if self.without_t else t
         v_pred = model(x_t, t_in, y, stroke)
+        if isinstance(v_pred, (tuple, list)):
+            v_pred = v_pred[0]
 
         loss = F.mse_loss(v_pred.float(), v_target.float())
         return (loss,)
 
     def _apply_factor_dropout(self, y, feature_dict, device):
-        """y 是 (callig, font, char) 的 tuple；按 feature_dict 里的 *_x 概率各自置 null。
-
-        ⚠ 需要模型知道 null 的索引（= num_classes）。这里假设 y 里的值已经
-          是 0..num_classes-1，null 用 num_classes 表示 —— 与 moyun 的
-          LabelEmbedder（use_cfg_embedding 多一行）一致。
+        """按 feature_dict 里的 *_x 概率各自置 null。
+        支持 y 为 tuple/list 或 2D Tensor (B, 3)。
         """
+        null_id = int(feature_dict.get("_num_classes", 0)) or None
+        keys = ("calligrapher", "font", "charactor")
+
+        if torch.is_tensor(y) and y.dim() == 2 and y.shape[1] == 3:
+            out = []
+            for i in range(3):
+                k = keys[i]
+                p = float(feature_dict.get(f"{k}_x", 0.0))
+                yy = y[:, i].clone()
+                if p > 0 and null_id is not None:
+                    drop = torch.rand(yy.shape[0], device=device) < p
+                    yy = torch.where(drop, torch.full_like(yy, null_id), yy)
+                out.append(yy.unsqueeze(1))
+            return torch.cat(out, dim=1)
+
         if not isinstance(y, (tuple, list)):
             return y
-        keys = ("calligrapher", "font", "charactor")
+
         out = []
         for i, yy in enumerate(y):
             k = keys[i] if i < len(keys) else None
             p = float(feature_dict.get(f"{k}_x", 0.0)) if k else 0.0
-            if p > 0:
-                # num_classes 未知 -> 用 y 的最大值 + 1 近似（训练时 y 已含 null 行）
-                null_id = int(feature_dict.get(f"_{k}_num_classes", 0)) or None
+            yy = yy.clone()
+            if p > 0 and null_id is not None:
                 drop = torch.rand(yy.shape[0], device=device) < p
-                if null_id is not None:
-                    yy = torch.where(drop, torch.full_like(yy, null_id), yy)
+                yy = torch.where(drop, torch.full_like(yy, null_id), yy)
             out.append(yy)
         return tuple(out)
 
@@ -116,5 +128,7 @@ class RF:
                 v = model.forward_with_cfg(x, t, y, stroke, cfg_scale)
             else:
                 v = model(x, t, y, stroke)
+            if isinstance(v, (tuple, list)):
+                v = v[0]
             x = x + v * dt
         return x

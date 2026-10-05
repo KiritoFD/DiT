@@ -6,6 +6,7 @@ cd "$ROOT"
 
 export PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True
 export PYTHONUNBUFFERED=1
+export PYTHONPATH="$ROOT"
 
 LOG_STAGE1="$ROOT/logs/v36_stage1_skel_w7.log"
 LOG_UNION="$ROOT/logs/v36_union_w7.log"
@@ -17,7 +18,7 @@ echo "开始时间: $(date '+%Y-%m-%d %H:%M:%S')" | tee -a "$LOG_STAGE1"
 echo "配置: src/train/configs/v36_stage1_skel_w7.json (Batch 384, max 60k, early_stop 5)" | tee -a "$LOG_STAGE1"
 echo "============================================================" | tee -a "$LOG_STAGE1"
 
-/opt/conda/envs/cu121/bin/python3 -u src/train/train.py \
+/opt/conda/envs/cu121/bin/python3 -u -m src.train.train \
     --config src/train/configs/v36_stage1_skel_w7.json \
     2>&1 | tee -a "$LOG_STAGE1"
 

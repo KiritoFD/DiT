@@ -1,43 +1,178 @@
-# ── 大件/缓存 (绝不能进 git) ────────────────────────────────────────────────
-__pycache__/
-*.py[cod]
+# ============================================================
+# DiT 书法仓库 .gitignore  (2026-09-13 整理)
+# 原则: 代码/配置/文档/小样本 CSV 入库; 大资产(权重/latent/图/结果)一律不入库。
+# ============================================================
+
+# ---- 数据集 / 大压缩包 ----
+data/
+dataset/
+dataset.zip
+MCCD/
+mccd/
+MCCD.7z
+Chinese Calligraphy Styles by Calligraphers_datasets*/
+*.7z
+*.zip
+*.tar.gz
+*.tgz
+*.rar
+*.exe
+
+# ---- 预训练权重 / 模型文件 ----
+pretrained_models/
 *.pt
 *.pth
-*.ckpt
+*.onnx
+*.safetensors
+
+# ---- 数值大文件 ----
 *.npz
 *.npy
 !assets/triple_tables_best_minimal/*.npy
-*.tar.gz
-*.zip
 
-# 训练产物 / 数据
-data/
-exp-std/data/
-exp-std/runs*/
-exp-std/runs_AB/
-exp-std/runs_smoke/
-assets/results/
-assets/ink_eval*/
-_ot_scratch/
-_backups/
-/tmp_revert/
-src/utils/std_glyph_latent_v2/
+# ---- 训练/评测大资产 (repo 根 & 5script) ----
+5script/results/
+5script/pixmap/
+5script/fame3-e/
+5script/fame3-sym/
+5script/structnet/
+5script/structure_probe_cache/
+5script/condition_probes/
+5script/structure_probes/
+5script/*.npz
+final_latents_*/
+final_imgs_*/
+final_skel_latents_*/
+final_skel*/
+final_images/
+final_imgs_256/
+final_canny/
+final_skeleton*/
+final_latents/
+final_skel3_*/
+final_skel1_*/
+std_skel*_latents_*/
+std_glyph_latent_v2/
+aux_*_latents_*/
+struct_fame*/
+test_eval_*_imgs/
+fame_clean_v8.npz
+skel_bank*.npz
+_gt_cache/
 
-# 备份/临时/日志
-*.bak
-*.bak[0-9]*
-*.bak_*
-*.bak_oldcols*
+# ---- 训练/评测产物 ----
+/exp/
+/results/
+assets/results/*
+!assets/results/v21_skelnet_200k/
+!assets/results/v21_skelnet_200k/**
+assets/results/**/checkpoints/
+assets/results/**/*.pt
+assets/results/**/*.pt.done
+eval_samples*/
+eval_imgs_*/
+eval_pics/
+eval_pngs/
+eval_logs/
+example_100/
+final/
+latent_missing/
+remote_logs/
+scratch/
+test_1k/
+visuals/
+s6_top6_dashboard/
+onnx_vae/
+_exp_cache/
+new_data_eval_imgs/
+_classifier_pixel_data.npz
+glyph_classifier_ckpts/
+_smoke_data/
+
+# ---- 日志 / 运行态 ----
 *.log
-_sync_work/_AB_patch/backup_*/
-_sync_work/_inj3_bak/
-*.orig
-*.rej
+*.err
+!logs/v21_skelnet_200k.log
+__pycache__/
+*.pyc
+.vscode/
+.gradio/
+.gradio/
+.venv/
 
-# 采样图 / 海报 (可重生成)
-*_poster.png
-eval_samples_ctrl/
-posters/
+# ---- 临时/归档目录 (远端运维脚本、探针、旧产物) ----
+_ot_scratch/
+_sync_work/
+_diag/
+_zs/
+legacy/misc/
+/archive/
+/_archive/
 
-# 归档目录 (本地留档, 不入 git)
-_archive/
+# ---- 根目录散落的可视化/临时 ----
+/*.png
+ood_results/
+viz_ab_*.png
+skel_*.png
+gtskel_*.png
+gtimg_*.png
+nul
+
+# ---- 旧工具目录 (repo 内保留代码, 其产物不入库) ----
+tools/std_glyph_img/
+tools/std_glyph_latent/
+tools/remote_eval_samples*/
+tools/remote_gt/
+tools/snapshots/
+tools/_cs3_check/
+tools/_fonttest/
+tools/_exp_cache/
+tools/_exp_poster_tmp/
+tools/poster_archive/
+tools/remote_eval_jsons/
+tools/remote_seen_samples/
+tools/remote_show_samples/
+tools/s7_eval_samples/
+tools/s7_seen_samples/
+tools/evaluation/remote_*/
+tools/evaluation/s11_*/
+tools/evaluation/dashboards/
+tools/dino_samples/
+tools/poster_s*.png
+tools/s7_eval_poster.png
+tools/logs_pull_monitor.txt
+tools/*_history.json
+tools/s8_train_data.json
+tools/ev_mse6.py
+tools/evaluation/train_data*.json
+tools/evaluation/current_train.log
+tools/evaluation/poster_*.png
+tools/evaluation/train_dashboard.html
+
+# ---- docs 里保留 png 海报与技术图表 ----
+!docs/**/*.png
+!docs/**/*.json
+!docs/**/*.jpg
+
+# ---- 工具 session 记录 / 大图海报 (不入库) ----
+session-*.md
+assets/posters_12ch/
+
+# ---- 临时评审/调试脚本 (2026-09-17) ----
+# 只保留 .py 脚本 (验证/分析工具, 有复用价值); 海报 PNG / 大产物不入库
+_review/*
+!_review/*.py
+
+# ---- 备份文件不入库 ----
+*.bak
+*.bak_*
+
+# 商业字体（版权原因不入库，需要时从 Windows Fonts 拷贝）
+_fonts/
+
+# 大模型/虚拟环境（体积原因不入库）
+_models/
+_venv_qwenvl/
+tools/fonts/candidate_fonts/
+tools/fonts/google_fonts/
+
