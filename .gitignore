@@ -63,6 +63,9 @@ _gt_cache/
 # ---- 训练/评测产物 ----
 /exp/
 /results/
+exp-std/runs*/
+exp-std/data/
+exp-std/logs*/
 assets/results/*
 !assets/results/v21_skelnet_200k/
 !assets/results/v21_skelnet_200k/**
@@ -103,9 +106,11 @@ __pycache__/
 # ---- 临时/归档目录 (远端运维脚本、探针、旧产物) ----
 _ot_scratch/
 _sync_work/
+_sync_out/
 _diag/
 _zs/
 legacy/misc/
+scripts/misc/train.csv
 /archive/
 /_archive/
 
