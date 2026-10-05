@@ -1,8 +1,11 @@
 {
-  "_comment": "v65 = **只用三张表** (书体 3x16 / 书家 10x32 / 汉字 4690x256, 与 v54 逐项相同) + **adaLN** + **三表条件逐层注入到 4 层 (block 2,4,6,8)**。**无 skel** (skel_as_glyph_cond=false, shards 置空; skel 已被数据否掉: v53≈v54 终点同分、skel-only 家族慢 3-5 倍低 1-8 分)。注入走新加的 cond_inject_layers/cond_inject_at: 在各指定 block 之后插 zero-init ZeroAdaLNInjection, context = y_emb (融合后的表条件), 与全局 adaLN 的 c 共享同一份条件 (drop/time-gate 语义一致)。zero-init -> step0 与 v54 严格同起点, 是「表条件注入位置」的单一变量对照。150k / lr 5e-5 cosine / REPA 0.03 / batch 384 / eval 5k。基线: v54 best 0.5960 (150k)。\n\n★ drop 比例改为**对称 0.08/0.08/0.08** (v54 是 0.16/0.08/0.08)。理由: v53 只写了动机「分维度置 null 逼迫模型独立依赖各条件」, 但**没给书家加倍的理由**; 唯一沾边的解释 (drop_which_glyph help: 书家样本充足/字符才是难点) 属 **glyph/skel 时代**逻辑 —— 只给三张表时多丢书家买不到内容学习, 只是 20.2% 样本凭空猜风格。且全项目 254 个配置里只有 8 个用过 0.16/0.08/0.08, **无任何 A/B**。有效概率: 12.6%/12.6%/12.6%, 三者齐全 74.4%。\n⚠ 注意这是相对 v54 的**第二个 delta** (注入层 + callig drop); 若要严格单变量, 把 callig 改回 0.16 即可。",
-  "experiment_name": "v65-tables-condinj2468-adaLN",
-  "results_dir": "assets/results/v65_tables_condinj2468",
+  "_comment": "v66 = **只用三张表** (书体 3x16 / 书家 10x32 / 汉字 4690x256, 与 v54 逐项相同) + adaLN + **条件分层路由**: 表条件**只在 block 2,3,4,5 注入** (c = t_emb + y_emb*scale_i), **其余 8 层条件完全切断** (c = t_emb, 条件张量在那几层不参与任何计算)。**无 skel**。\n\n与 v54 的唯一机制差异: v54 把条件 c = t_emb + y_emb 喂给**全部 12 层** (全局 adaLN); v66 只喂 4 层。依据 UNIC-Adapter 层级法则 (1-idx 浅1-3 不注入 / 中前 4-8 主战场 / 深 9-12 必须切断, 否则高频纹理发干、塑料描边感) -> 0-idx 中前带 3~7; 本配置取更靠前的 2,3,4,5。\n\n逐层可学习强度: 每注入层一个 scale (init 1.0)。训完 scale 本身就是\"该层多需要这个条件\"的曲线 -> 层级法则可以被**测**出来。\n\n⚠ 与 v54 相比还差一处: drop 用了对称 0.08/0.08/0.08 (v54 是 callig 0.16/script 0.08/char 0.08, 那个不对称无依据且从未 A/B)。若要严格单变量, 把 callig 改回 0.16。\n\n150k / lr 5e-5 cosine / warmup 3k / REPA 0.03 / batch 384 / eval 5k。基线: v54 best 0.5960 (150k, eval200fix) / 0.6410 (seen)。",
+  "experiment_name": "v66-tables-condroute2345-adaLN",
+  "results_dir": "assets/results/v66_tables_condroute",
   "model": "DiT-2Cond-S/2",
+
+  "cond_inject_at": "2,3,4,5",
+  "cond_inject_scale": true,
 
   "skel_as_glyph_cond": false,
   "skel_latent_shards_dir": "",
@@ -11,9 +14,6 @@
   "glyph_inject_layers": 0,
   "glyph_inject_at": "",
   "glyph_inject_mode": "adaln",
-
-  "cond_inject_layers": 4,
-  "cond_inject_at": "2,4,6,8",
 
   "condition_fusion": "factorized_cat",
   "cond_fusion_norm": "split",
@@ -41,6 +41,9 @@
 
   "latent_shards_dir": "exp-std/data/shards_img",
   "img_root": "data/top10_style23/imgs",
+  "image_size": 256,
+  "vae_downscale": 8,
+  "latent_channels": 4,
   "diffusion_type": "flow",
   "t_sampler": "logit_normal",
   "t_mean": 0.0,

@@ -111,10 +111,10 @@ def build_model_from_args(a, device, **overrides):
         glyph_inject_mode=g("glyph_inject_mode", "adaln"),
         # ★ 2026-10-05: 显式注入层 (纯行为开关, 不改参数形状; 漏传 -> 评测用均匀分布)。
         glyph_inject_at=g("glyph_inject_at", ""),
-        # ★ 2026-10-05: 三表条件逐层注入 (会新建 cond_injections 参数 -> 漏传则 strict=True
-        #   直接报 missing, 不像纯行为开关那样静默; 但仍必须在这里接上)。
-        cond_inject_layers=gi("cond_inject_layers", 0),
+        # ★ 2026-10-06: 三表条件分层路由 (cond_inject_at 白名单 + 逐层可学习 scale)。
+        #   scale 是**真参数** -> 漏传会让 strict=True 报 missing (不会静默)。
         cond_inject_at=g("cond_inject_at", ""),
+        cond_inject_scale=bool(g("cond_inject_scale", True)),
         # ★ 2026-09-17: `xattn_q_pos` 是**纯行为开关，不改变任何参数形状**
         #   （只决定 Q 是否加 sincos 位置）。漏传它 -> `strict=True` **抓不到**
         #   -> 评测静默用 q_pos=False 的行为去评一个 q_pos=True 训出来的模型。

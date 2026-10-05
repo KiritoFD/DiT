@@ -280,9 +280,9 @@ def main(args):
             glyph_scale_init=getattr(args, 'glyph_scale_init', 0.4),
             glyph_drop_prob=getattr(args, 'glyph_drop_prob', 0.0),
             glyph_inject_layers=getattr(args, 'glyph_inject_layers', 0),
-            # [2026-10-05] 三表条件逐层 adaLN 注入 (与 glyph/skel 分支无关)
-            cond_inject_layers=int(getattr(args, 'cond_inject_layers', 0) or 0),
+            # [2026-10-06] 三表条件分层路由 (与 glyph/skel 分支无关)
             cond_inject_at=str(getattr(args, 'cond_inject_at', '') or ''),
+            cond_inject_scale=bool(getattr(args, 'cond_inject_scale', True)),
             glyph_inject_mode=getattr(args, 'glyph_inject_mode', 'adaln'),
             xattn_q_pos=getattr(args, 'xattn_q_pos', False),
             glyph_embedder_depth=getattr(args, 'glyph_embedder_depth', 0),

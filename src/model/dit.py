@@ -970,14 +970,16 @@ class DiT_2Cond(nn.Module):
         #   动机: RelaCtrl(2025) 逐层移除实验显示控制相关性呈倒 U —— 中前层
         #   (约 20%~60% 深度) 最高, 深层最低甚至有害 (深层负责高频墨水质感)。
         glyph_inject_at="",
-        # ★ [2026-10-05] **三表条件的逐层 adaLN 注入**（与 glyph/skel 分支完全无关）。
-        #   0 = 关闭（旧行为：表条件只经 cond_fusion -> c = t_emb + y_emb 做全局 adaLN 调制）；
-        #   >0 = 在该数量的 block 之后各插一个 zero-init ZeroAdaLNInjection，context = y_emb
-        #        （融合后的表条件向量，展开成 (N,1,D)）。
-        #   zero-init -> step0 严格恒等，不改变已训权重行为，可作单一变量对照。
-        #   动机：ControlNet/RelaCtrl 一类的「逐层注入 + 选位置」可能优于单一全局调制。
-        cond_inject_layers=0,
+        # ★ [2026-10-06] **三表条件的分层路由**（与 glyph/skel 分支完全无关）。
+        #   "2,3,4,5" = **只有列出的 block** 能得到表条件 (c = t_emb + y_emb*scale_i)；
+        #   其余 block 的条件**完全切断** (c = t_emb，条件张量在那层不参与任何计算)。
+        #   空 = 旧行为：条件给全部层（= v54 的全局 adaLN）。
+        #   依据 UNIC-Adapter 层级法则（1-idx：浅 1-3 不注入 / 中前 4-8 主战场 /
+        #   深 9-12 必须切断，否则高频纹理发干、塑料描边感）→ 0-idx 中前带 = 3..7。
         cond_inject_at="",
+        # 每个注入层一个可学习强度 scale（init 1.0，恒等起步）。训完 scale 本身就是
+        # "该层多需要这个条件"的曲线 → 层级法则可以被**测**出来，而不只是被引用。
+        cond_inject_scale=True,
         # [2026-09-17] xattn 的 Q 是否也加 sincos 位置嵌入。默认 False = 旧行为。
         # 旧实现只给 K/V 加位置, 而 rope=True 时 x 残差流不加绝对位置 -> Q 无位置,
         # "空间寻址"退化成"内容寻址"。打开后 Q/K/V 都带位置, 2D 绑定才成立。
@@ -1739,43 +1741,25 @@ class DiT_2Cond(nn.Module):
                         for _ in self.glyph_inject_at
                     ])
 
-        # ── [2026-10-05] 三表条件的逐层 adaLN 注入（与 glyph/skel 分支无关）──────────
-        # 背景：表条件原先只在 c = t_emb + y_emb 里做**全局** adaLN 调制，没有"注入到哪几层"
-        #       的旋钮（glyph_inject_* 那套消费的是 g_tok = glyph/skel 分支，表走不到）。
-        # 语义：在指定 block 之后插 zero-init ZeroAdaLNInjection，context = y_emb。
-        #       zero-init -> step0 恒等，不改变已训权重行为，可作为单一变量对照。
-        self.cond_inject_layers = int(cond_inject_layers or 0)
-        self.cond_injections = None
-        self.cond_inject_at = []
-        self._cond_inj_map = {}
-        if self.cond_inject_layers > 0:
-            from .injections import ZeroAdaLNInjection
+        # ── [2026-10-06] 三表条件的分层路由（与 glyph/skel 分支无关）───────────────
+        # v54 把表条件 c = t_emb + y_emb 喂给**全部** block；这里改成白名单：
+        # 只有 cond_inject_at 列出的 block 允许条件进入，其余层 c = t_emb（完全切断）。
+        self.cond_router = None
+        _cat = str(cond_inject_at or "").strip()
+        if _cat:
+            from .injections import TableCondRouter
             try:
                 _cdepth = int(depth)
             except Exception:
                 _cdepth = len(self.blocks)
-            _cat = str(cond_inject_at or "").strip()
-            _clst = []
-            if _cat:
-                for _s in _cat.replace(" ", "").split(","):
-                    if _s != "":
-                        _clst.append(int(_s))
-                _clst = [i for i in _clst if 0 <= i < _cdepth]
-                if not _clst:
-                    raise ValueError(
-                        f"[cond-inject] cond_inject_at 解析为空或全越界: "
-                        f"{cond_inject_at!r} (depth={_cdepth})")
-            else:
-                _n = max(1, self.cond_inject_layers)
-                _clst = sorted({int(round(k * (_cdepth - 1) / max(1, _n - 1)))
-                                for k in range(_n)})
-            self.cond_inject_at = _clst
-            self._cond_inj_map = {blk: k for k, blk in enumerate(_clst)}
-            self.cond_injections = nn.ModuleList([
-                ZeroAdaLNInjection(hidden_size, mode="modulate") for _ in _clst
-            ])
-            print(f"[cond-inject] 三表条件逐层注入: layers={_clst} (depth={_cdepth}, "
-                  f"n={len(_clst)}, {'显式 cond_inject_at' if _cat else '均匀分布'})")
+            _clst = [int(s) for s in _cat.replace(" ", "").split(",") if s != ""]
+            self.cond_router = TableCondRouter(
+                _clst, _cdepth, learnable_scale=bool(cond_inject_scale))
+            print(f"[cond-route] 表条件只在这些层注入: {self.cond_router.layers} "
+                  f"(depth={_cdepth}); 其余层条件切断 (c=t_emb); "
+                  f"learnable_scale={bool(cond_inject_scale)}")
+        else:
+            print("[cond-route] cond_inject_at 为空 -> 旧行为: 表条件给全部层 (v54 语义)")
 
         # ── S2：三层语义分解 + 局部风格-骨架引导（2026-09-22）─────────────────
         # 全部默认 None/0 = 与旧 ckpt 逐位等价。
@@ -2496,13 +2480,7 @@ class DiT_2Cond(nn.Module):
                                torch.full_like(_cgt, self.cond_gate_floor))
             _cgw = _cgw.to(y_emb.dtype).view(-1, 1)
             y_emb = y_emb * _cgw
-        c = t_emb + y_emb                        # (N, D)
-
-        # ★ [2026-10-05] 三表条件逐层注入的 context：用**融合后**的 y_emb 展开成 (N,1,D)。
-        #   y_emb 已含上面的 cond_gate(time-gate) 调制与各因子 drop(null 替换发生在 embedder),
-        #   因此这条支路与 adaLN 支路共享同一份条件 -> CFG/uncond 语义不会被污染。
-        _cond_inj_ctx = (y_emb.unsqueeze(1)
-                         if self.cond_injections is not None else None)
+        c = t_emb + y_emb                        # (N, D)  —— 旧行为/路由白名单层的条件
 
         # ---- 922/80 改动 2: 风格专用支路的输入 ----
         # 直接喂**原始** e_callig（不是 y_emb），理由：
@@ -2536,8 +2514,6 @@ class DiT_2Cond(nn.Module):
         _inj = {}
         if self.glyph_injections is not None and g_tok is not None:
             _inj = self._inj_map
-        # [2026-10-05] 三表条件逐层注入的层映射 (与 _inj 无关, 二者可同时开)
-        _cinj = self._cond_inj_map if self.cond_injections is not None else {}
 
         # ── 逐层注入的 context ───────────────────────────────────────────────
         # 默认 = 骨架 token(GlyphStyleCrossAttn 模式下位置在下面显式加)。
@@ -2576,8 +2552,17 @@ class DiT_2Cond(nn.Module):
             _lc_map = self._local_ca_map
             _e_cond_local = _e_cond()
 
+        # ★ [2026-10-06] 三表条件的分层路由：白名单层用 c（含 y_emb*scale），
+        #   其余层只用 t_emb —— 条件在那几层**完全不参与计算**（不只是"少注入"）。
+        _router = self.cond_router
         for i, block in enumerate(self.blocks):
-            x = block(x, c, rope=rope, c_style=c_style)
+            if _router is None:
+                x = block(x, c, rope=rope, c_style=c_style)
+            elif _router.allows(i):
+                x = block(x, _router.cond(i, t_emb, y_emb),
+                          rope=rope, c_style=c_style)
+            else:
+                x = block(x, t_emb, rope=rope, c_style=None)
             if _repa_layers is not None and i in _repa_layers:
                 intermediate_feats[i] = x
             elif _repa_single is not None and i == _repa_single:
@@ -2589,9 +2574,6 @@ class DiT_2Cond(nn.Module):
                 # x = x + glyph_scale * g_tok（glyph_scale=0.4 非零）
                 # 已提供直通梯度，故 glyph_embedder 从 step 0 即可学习。
                 x = self.glyph_injections[_inj[i]](x, inject_ctx)
-            if i in _cinj:
-                # 三表条件逐层注入: zero-init adaLN (x = x*(1+s) + t), s/t 由 y_emb 产出。
-                x = self.cond_injections[_cinj[i]](x, _cond_inj_ctx)
             if i in _lc_map:
                 x = self.local_ca[_lc_map[i]](x, g_tok, _e_cond_local,
                                               self.local_pos, keep)

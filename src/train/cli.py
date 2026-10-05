@@ -832,14 +832,15 @@ def build_parser(argv=None):
                         dest="glyph_mask_n",
                         help="每条样本抹几块 (默认 3)。")
 
-    parser.add_argument("--cond-inject-layers", type=int, default=0,
-                        help="三表条件的**逐层 adaLN 注入**层数 (0=关闭=旧行为: 表条件只经 "
-                             "cond_fusion -> c=t_emb+y_emb 做全局 adaLN 调制)。\n"
-                             ">0 时在指定 block 之后各插一个 zero-init ZeroAdaLNInjection, "
-                             "context = y_emb (融合后的表条件向量)。zero-init -> step0 恒等。")
     parser.add_argument("--cond-inject-at", type=str, default="", dest="cond_inject_at",
-                        help="显式指定三表注入层 (block 下标, 逗号分隔, 0-based), 如 '2,4,6,8'。\n"
-                             "空 = 均匀分布 (depth=12,n=4 -> [2,5,8,11])。")
+                        help="三表条件的**分层路由白名单** (block 下标, 逗号分隔, 0-based), 如 '2,3,4,5'。\n"
+                             "列入的层: c = t_emb + y_emb*scale_i; **其余层条件完全切断** (c = t_emb)。\n"
+                             "空 = 旧行为 (条件给全部层, v54 语义)。依据 UNIC 层级法则: "
+                             "中前 4-8(1-idx)=0-idx 3~7 是主战场, 浅层/深层必须切断。")
+    parser.add_argument("--cond-inject-scale", type=_str_to_bool, default=True,
+                        dest="cond_inject_scale",
+                        help="每个注入层一个可学习强度 scale (init 1.0 = 恒等起步); "
+                             "训完 scale 即'该层多需要这个条件'的曲线。")
     parser.add_argument("--glyph-inject-layers", type=int, default=0,
                         help="g 逐层注入层数 (0=仅输入层 token-add, s23 既有行为)")
     parser.add_argument("--glyph-inject-at", type=str, default="", dest="glyph_inject_at",
