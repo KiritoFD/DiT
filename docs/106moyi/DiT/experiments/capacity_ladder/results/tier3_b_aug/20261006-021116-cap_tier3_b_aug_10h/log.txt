@@ -1,0 +1,17 @@
+[[34m2026-10-06 02:11:16[0m] Experiment directory created at /home/ds/Workspace/DiT/experiments/capacity_ladder/results/tier3_b_aug/20261006-021116-cap_tier3_b_aug_10h
+[[34m2026-10-06 02:11:16[0m] [channels] latent=4  aux 组=0  in_channels=4  image_channels(CFG 作用域)=4
+[[34m2026-10-06 02:11:17[0m] [hier-style] 未启用（hier_style=0 且无局部通路）—— 走 v13/v15 旧路径
+[[34m2026-10-06 02:11:17[0m] Building 2-Cond model: DiT-2Cond-B/2 (learn_sigma=False, diffusion_type=flow, arch=layer/gelu/qknorm=False/rope=False, attn=sdpa)
+[[34m2026-10-06 02:11:17[0m] Building 2-Cond model: DiT-2Cond-B/2 (callig=10, glyph/char=4690, fusion=factorized_cat, dims=32/256, dropout=all:0.05, one:0.0, glyph_cond=False, glyph_scale_init=0.4, char_proj_mode=full, freeze_char_table=False)
+[[34m2026-10-06 02:11:17[0m] [triple] remap json 已加载: ['char', 'callig', 'font']
+[[34m2026-10-06 02:11:17[0m] [triple-init] 三表 SupCon 初始化完成 (prefix=/home/ds/Workspace/DiT/assets/triple_tables_best_minimal/)
+[[34m2026-10-06 02:11:17[0m] [triple-freeze] 三表已完全冻结: 1,201,312 参数 (结构不变, 评测侧无需改动; CFG null 行同样冻结)
+[[34m2026-10-06 02:11:17[0m] [dino-init] char_dino_embeddings/index not found (None, None) — y_char_embedder stays random init.
+[[34m2026-10-06 02:11:17[0m] [cond-head] reset adaLN/final_layer to std=0.02 (retain task-agnostic transformer engine, drop ImageNet class-condition coupling).
+[[34m2026-10-06 02:11:17[0m] Trainable Parameters: 129,769,585
+[[34m2026-10-06 02:11:17[0m] Frozen Parameters: 1,397,920 (trainable ratio: 98.93%)
+[[34m2026-10-06 02:11:17[0m] [EMA] enabled with decay=0.9999, interval=4 (effective per-step decay=0.9996000599960001)
+[[34m2026-10-06 02:11:17[0m] [flow] FlowMatching(steps=50, sampler=heun, nfe=100, t_sampler=logit_normal(mean=0.0,std=1.0), shift=1.0, use_ot=False)
+[[34m2026-10-06 02:11:17[0m] [flow] Flow-Matching enabled (velocity target, Euler ODE sampling, t in [0,1])
+[[34m2026-10-06 02:11:17[0m] [infra] VAE skipped (latent-only mode) -> saves ~500MB VRAM
+[[34m2026-10-06 02:11:17[0m] [optim] AdamW lr=0.00015 wd=0.0

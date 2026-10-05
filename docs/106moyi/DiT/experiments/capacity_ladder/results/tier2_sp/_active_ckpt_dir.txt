@@ -1,0 +1,1 @@
+/home/ds/Workspace/DiT/experiments/capacity_ladder/results/tier2_sp/20261005-174742-cap_tier2_sp/checkpoints

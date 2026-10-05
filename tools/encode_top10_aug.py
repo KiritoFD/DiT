@@ -77,7 +77,7 @@ def main():
     if existing_shards:
         # 验证最后一个分片是否完整
         last_shard = existing_shards[-1]
-        data = np.load(last_shard)
+        data = np.load(last_shard, allow_pickle=True)
         last_len = len(data["img_ids"])
         if last_len == SHARD_SIZE:
             start_shard_idx = len(existing_shards)
@@ -132,7 +132,7 @@ def main():
             ):
                 if valid:
                     cur_latents.append(l_sample)
-                    cur_ids.append(str(i_id))
+                    cur_ids.append(int(i_id))
                     total_new += 1
 
                 if len(cur_latents) >= SHARD_SIZE:
@@ -142,7 +142,7 @@ def main():
                     np.savez(
                         shard_file,
                         latents=np.array(cur_latents, dtype=np.float16),
-                        img_ids=np.array(cur_ids, dtype=object),
+                        img_ids=np.array(cur_ids, dtype=np.int64),
                     )
                     shard_idx += 1
                     cur_latents = []
@@ -153,7 +153,7 @@ def main():
             np.savez(
                 shard_file,
                 latents=np.array(cur_latents, dtype=np.float16),
-                img_ids=np.array(cur_ids, dtype=object),
+                img_ids=np.array(cur_ids, dtype=np.int64),
             )
             shard_idx += 1
 

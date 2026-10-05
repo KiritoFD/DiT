@@ -1,0 +1,8 @@
+experiment,model_type,params,step,strict_ssim,strict_ssim_med,strict_lpips,strict_skel_iou,strict_mse,seen_ssim,seen_ssim_med,seen_lpips,seen_skel_iou,gap_ssim,source_file
+Capacity_Tier2_Sp,DiT-2Cond-Sp/2 (LayerNorm),59.2M,10000,0.5494,0.5512,0.3848,0.015,0.953,0.5444,0.5273,0.3826,0.0141,,DiT/experiments/capacity_ladder/results/tier2_sp/evaluations/eval_10k/metrics_40k.json
+Capacity_Tier2_Sp,DiT-2Cond-Sp/2 (LayerNorm),59.2M,20000,0.5606,0.5622,0.3747,0.0158,0.9052,0.5539,0.5583,0.3717,0.0145,,DiT/experiments/capacity_ladder/results/tier2_sp/evaluations/eval_20k/metrics_40k.json
+Capacity_Tier3_B,DiT-2Cond-B/2 (LayerNorm),131.0M,5000,0.5346,0.5315,0.3994,0.0134,0.9963,0.5169,0.5119,0.4079,0.0144,,DiT/experiments/capacity_ladder/results/tier3_b/evaluations/eval_5k/metrics_40k.json
+Moyi_Top10_RF_16ch,Moyi-RF-16ch (FLUX VAE),FLUX 16ch,50000,0.5935,0,0,,0.7983,,,,,,moyi/results/moyi_top10_rf/eval_ours200fix/eval_auto.json
+Moyi_Top10_RF_4ch,Moyi-RF-4ch,SD-VAE 4ch,50000,0.5949,0.599,0.3678,,0.8106,,,,,,moyi/results/moyi_top10_rf_4ch/eval_step50000/eval_metrics.json
+Moyi_Top10_RF_4ch,Moyi-RF-4ch,SD-VAE 4ch,80000,0.6085,0.6123,0.3489,,0.7604,,,,,,moyi/results/moyi_top10_rf_4ch/eval_step80000/eval_metrics.json
+Phase_A_Exp1_RMSNorm,DiT-2Cond-S/2 (RMSNorm),33.8M,10000,0.5408,0.5393,0.3926,0.014,0.979,0.5342,0.5104,0.3937,0.0141,,DiT/experiments/ablation_phase_a/results/exp1_rmsnorm/eval_10k/metrics_40k.json

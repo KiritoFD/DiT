@@ -1,0 +1,10 @@
+{
+  "tag": "4CH_50K",
+  "ckpt": "/home/ds/Workspace/moyi/results/moyi_top10_rf_4ch/checkpoints/moyi_0050000.pt",
+  "n": 187,
+  "ssim_mean": 0.5949033687145924,
+  "ssim_med": 0.5990009487028877,
+  "mse_mean": 0.8106107228898747,
+  "lpips_mean": 0.3678174093764096,
+  "lpips_med": 0.3719777464866638
+}

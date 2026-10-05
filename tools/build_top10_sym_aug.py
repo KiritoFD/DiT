@@ -162,19 +162,17 @@ def main():
         r_orig["aug"] = ""
         out_rows.append(r_orig)
 
-        # 2. 增强变体
+        # 2. 增强变体 (使用历史 v4 规范的整数 UID 段, 确保兼容 int(img_id))
         aug_res = results.get(idx, {})
+        base_id = int(r["img_id"]) if "img_id" in r and str(r["img_id"]).isdigit() else idx
         for aug_tag in ("tp", "tn"):
             aug_p = aug_res.get(aug_tag)
             if aug_p:
                 r_aug = dict(r)
                 r_aug["image_path"] = aug_p
                 r_aug["aug"] = aug_tag
-                r_aug["img_id"] = (
-                    f"{r['img_id']}_{aug_tag}"
-                    if "img_id" in r
-                    else f"{idx:06d}_{aug_tag}"
-                )
+                # tp: 7000000 + base_id; tn: 7100000 + base_id
+                r_aug["img_id"] = (7000000 if aug_tag == "tp" else 7100000) + base_id
                 out_rows.append(r_aug)
 
     with open(OUT_CSV, "w", encoding="utf-8", newline="") as f:

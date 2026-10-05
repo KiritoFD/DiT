@@ -1,0 +1,6 @@
+{
+  "n": 187,
+  "ssim": 0.5935073125658307,
+  "mse": 0.7982978170568292,
+  "ckpt": "/home/ds/Workspace/moyi/results/moyi_top10_rf/checkpoints/moyi_0050000.pt"
+}
