@@ -1,0 +1,37 @@
+[
+  {
+    "step": 5000,
+    "strict_ssim": 0.5359,
+    "strict_lpips": 0.395,
+    "skel_iou": 0.0133,
+    "mse": 1.0098
+  },
+  {
+    "step": 10000,
+    "strict_ssim": 0.5484,
+    "strict_lpips": 0.3816,
+    "skel_iou": 0.015,
+    "mse": 0.9705
+  },
+  {
+    "step": 20000,
+    "strict_ssim": 0.5694,
+    "strict_lpips": 0.3595,
+    "skel_iou": 0.0163,
+    "mse": 0.8934
+  },
+  {
+    "step": 30000,
+    "strict_ssim": 0.5891,
+    "strict_lpips": 0.3409,
+    "skel_iou": 0.0218,
+    "mse": 0.8216
+  },
+  {
+    "step": 40000,
+    "strict_ssim": 0.6039,
+    "strict_lpips": 0.3292,
+    "skel_iou": 0.0294,
+    "mse": 0.773
+  }
+]
