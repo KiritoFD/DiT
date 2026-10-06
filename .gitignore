@@ -122,6 +122,8 @@ skel_*.png
 gtskel_*.png
 gtimg_*.png
 nul
+LiteMonitor*/
+paseo.json
 
 # ---- 旧工具目录 (repo 内保留代码, 其产物不入库) ----
 tools/std_glyph_img/

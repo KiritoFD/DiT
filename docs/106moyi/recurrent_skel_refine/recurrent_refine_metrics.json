@@ -1,0 +1,42 @@
+[
+  {
+    "round": 0,
+    "name": "Round 0 (Std Baseline)",
+    "ssim_mean": 0.5504,
+    "ssim_med": 0.5513,
+    "lpips_mean": 0.4926,
+    "skel_iou": 0.0133,
+    "mse_mean": 0.936,
+    "time_sec": 19.0
+  },
+  {
+    "round": 1,
+    "name": "Round 1 (Recurrent Refined)",
+    "ssim_mean": 0.5479,
+    "ssim_med": 0.5502,
+    "lpips_mean": 0.5111,
+    "skel_iou": 0.0112,
+    "mse_mean": 0.9442,
+    "time_sec": 18.4
+  },
+  {
+    "round": 2,
+    "name": "Round 2 (Recurrent Refined)",
+    "ssim_mean": 0.5459,
+    "ssim_med": 0.5489,
+    "lpips_mean": 0.5189,
+    "skel_iou": 0.0104,
+    "mse_mean": 0.958,
+    "time_sec": 20.0
+  },
+  {
+    "round": 3,
+    "name": "Round 3 (Recurrent Refined)",
+    "ssim_mean": 0.5452,
+    "ssim_med": 0.5496,
+    "lpips_mean": 0.5232,
+    "skel_iou": 0.01,
+    "mse_mean": 0.9649,
+    "time_sec": 19.8
+  }
+]

@@ -1,0 +1,5 @@
+round,name,ssim_mean,ssim_med,lpips_mean,skel_iou,mse_mean,time_sec
+0,Round 0 (Std Baseline),0.5504,0.5513,0.4926,0.0133,0.936,19.0
+1,Round 1 (Recurrent Refined),0.5479,0.5502,0.5111,0.0112,0.9442,18.4
+2,Round 2 (Recurrent Refined),0.5459,0.5489,0.5189,0.0104,0.958,20.0
+3,Round 3 (Recurrent Refined),0.5452,0.5496,0.5232,0.01,0.9649,19.8

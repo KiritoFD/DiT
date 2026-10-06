@@ -2846,6 +2846,17 @@ def DiT_2Cond_B_2(**kwargs):
 def DiT_2Cond_B_4(**kwargs):
     return DiT_2Cond(depth=12, hidden_size=768, patch_size=4, num_heads=12, **kwargs)
 
+def DiT_2Cond_L_2(**kwargs):
+    # Tier 4 Large: depth=24, hidden=1024, 16 头 (~340M 参数, 超过 Moyi 12ch 的 252M)
+    return DiT_2Cond(depth=24, hidden_size=1024, patch_size=2, num_heads=16, **kwargs)
+
+def DiT_2Cond_L_4(**kwargs):
+    return DiT_2Cond(depth=24, hidden_size=1024, patch_size=4, num_heads=16, **kwargs)
+
+def DiT_2Cond_XL_2(**kwargs):
+    # Tier 4 Extra-Large: depth=28, hidden=1152, 16 头 (~500M 旗舰巨型模型)
+    return DiT_2Cond(depth=28, hidden_size=1152, patch_size=2, num_heads=16, **kwargs)
+
 
 # 模型注册表。当前 pipeline 只用 **DiT-2Cond-S/2**（fame 预训练 + 1px ControlNet）。
 #
@@ -2864,6 +2875,9 @@ DiT_2Cond_models = {
     'DiT-2Cond-S/8': DiT_2Cond_S_8,
     'DiT-2Cond-B/2': DiT_2Cond_B_2,
     'DiT-2Cond-B/4': DiT_2Cond_B_4,
+    'DiT-2Cond-L/2': DiT_2Cond_L_2,
+    'DiT-2Cond-L/4': DiT_2Cond_L_4,
+    'DiT-2Cond-XL/2': DiT_2Cond_XL_2,
 }
 
 

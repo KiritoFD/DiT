@@ -4,7 +4,7 @@
   "condition_fusion": "factorized_cat",
   "cond_fusion_norm": "split",
 
-  "cond_inject_at": "2,4,5,6",
+  "cond_inject_at": "4,8,10,12",
   "cond_inject_scale": true,
 
   "triple_table_prefix": "/home/ds/Workspace/DiT/assets/triple_tables_best_minimal/",
@@ -46,7 +46,7 @@
   "compile": false,
 
   "epochs": 100000,
-  "max_steps": 60000,
+  "max_steps": 50000,
   "warmup_steps": 1000,
   "min_lr_ratio": 0.1,
   "lr_schedule": "cosine",
@@ -65,10 +65,10 @@
   "data_csv": "/home/ds/Workspace/moyi/exp-std-csv/train_top10_aug_sym.csv",
   "use_checkpoint": false,
 
-  "_comment": "v66 分层路由 (block 2,4,5,6 注入, 其余切断) + DiT-2Cond-B/2 (131.0M 参数) + 7.8万对称数据增强, 全局 Batch 384, 48k steps = 10h ETA",
-  "model": "DiT-2Cond-B/2",
-  "experiment_name": "v66_cap_tier3_b_aug_route2456",
-  "results_dir": "/home/ds/Workspace/DiT/experiments/capacity_ladder/results/tier3_b_aug_v66route",
-  "global_batch_size": 384,
-  "lr": 0.00015
+  "_comment": "Tier 4 旗舰版: DiT-2Cond-L/2 (464.0M 参数, 超过 Moyi 12ch 的 252M) + v66 分层路由 (block 4,8,10,12 注入) + 7.8万对称数据增强, 全局 Batch 192",
+  "model": "DiT-2Cond-L/2",
+  "experiment_name": "v66_cap_tier4_l_aug_route4_8_10_12",
+  "results_dir": "/home/ds/Workspace/DiT/experiments/capacity_ladder/results/tier4_l_aug_v66route",
+  "global_batch_size": 192,
+  "lr": 0.0001
 }
