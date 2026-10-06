@@ -202,8 +202,15 @@ class FlowMatching:
              彻底消除朴素无条件 OT 导致的 Train-Test Prior Mismatch 与破碎度 (frag) 反弹;
           2. 同条件流形内部几何拓扑更紧凑，流线大幅拉直，降低速度场方差与训练曲率;
           3. 复杂度从 O(B^3) 降为 sum O(N_c^3)，计算量暴降 10~100 倍。
+
+        高性能工程实现 (BLAS Level-3 + 单次 D2H 同步):
+          - 全 batch 预计算范数平方 ||x||^2 与 ||n||^2;
+          - 组内欧氏距离代价用 GEMM 矩阵乘法点积替换 (||x-n||^2 = ||x||^2 + ||n||^2 - 2*x@n.T);
+          - 全程仅 1 次批量 CPU 传输与 1 次 (B,) 整数索引回传，零逐循环流同步开销。
         """
+        import numpy as np
         from scipy.optimize import linear_sum_assignment
+
         B = x_start.shape[0]
         cond_keys = self._extract_c2ot_keys(model_kwargs, B, x_start.device)
         if cond_keys is None:
@@ -212,30 +219,39 @@ class FlowMatching:
                 x_flat = x_start.reshape(B, -1).float()
                 n_flat = noise.reshape(B, -1).float()
                 cost = th.cdist(x_flat, n_flat, p=2).pow(2)
-                _r, _cl = linear_sum_assignment(cost.cpu().numpy())
+                _r, _cl = linear_sum_assignment(cost.float().cpu().numpy())
                 return noise[th.from_numpy(_cl).to(noise.device)]
             return noise
 
-        perm = th.arange(B, dtype=th.long, device=x_start.device)
-        unique_keys = th.unique(cond_keys)
+        # 1. 批量单次拷贝至 CPU (避免循环内频繁 D2H 阻塞)
+        x_np = x_start.reshape(B, -1).float().cpu().numpy()
+        n_np = noise.reshape(B, -1).float().cpu().numpy()
+        cond_np = cond_keys.cpu().numpy()
 
-        x_flat = x_start.reshape(B, -1).float()
-        n_flat = noise.reshape(B, -1).float()
+        # 2. 全 batch 预计算范数平方向量 (B,)
+        x_norm2 = np.sum(x_np ** 2, axis=1)
+        n_norm2 = np.sum(n_np ** 2, axis=1)
 
-        # 在每个条件子集内部独立执行最优传输重排
+        perm_np = np.arange(B)
+        unique_keys = np.unique(cond_np)
+
+        # 3. 在每个条件子集内部执行 BLAS 优化的组内最优传输
         for u_val in unique_keys:
-            idx_u = th.where(cond_keys == u_val)[0]
-            n_u = idx_u.numel()
+            idx_u = np.where(cond_np == u_val)[0]
+            n_u = len(idx_u)
             if n_u <= 1:
                 continue  # 单样本无需重排，严格保持恒等
 
-            xf = x_flat[idx_u]
-            nf = n_flat[idx_u]
-            cost = th.cdist(xf, nf, p=2).pow(2)
-            _r, _cl = linear_sum_assignment(cost.float().cpu().numpy())
-            perm[idx_u] = idx_u[th.from_numpy(_cl).to(x_start.device)]
+            # 高性能 GEMM 代价矩阵计算: ||x - n||^2 = ||x||^2 + ||n||^2 - 2 * x @ n.T
+            cost = (x_norm2[idx_u, None]
+                    + n_norm2[idx_u][None, :]
+                    - 2.0 * np.dot(x_np[idx_u], n_np[idx_u].T))
+            _r, cl = linear_sum_assignment(cost)
+            perm_np[idx_u] = idx_u[cl]
 
-        return noise[perm]
+        # 4. 单次整数向量回传 GPU 执行重排
+        perm_th = th.from_numpy(perm_np).to(device=x_start.device)
+        return noise[perm_th]
 
     def _interp(self, x_start, noise, t):
         """Linear interpolant: x_t = (1-t) * x_start + t * noise.  t: [N] float.
