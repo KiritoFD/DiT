@@ -12,6 +12,7 @@
 并聚合输出为全周期收敛对比总表。
 """
 
+import argparse
 import glob
 import json
 import os
@@ -20,29 +21,73 @@ import subprocess
 import sys
 import time
 
-CKPT_DIR = "/home/ds/Workspace/DiT/experiments/capacity_ladder/results/tier3_b_aug/20261006-025311-cap_tier3_b_aug_10h/checkpoints"
-OUT_BASE = "/home/ds/Workspace/DiT/experiments/capacity_ladder/results/tier3_b_aug/20261006-025311-cap_tier3_b_aug_10h/evaluations"
-PYTHON = "/home/ds/miniconda3/envs/pytorch/bin/python"
-EVAL_SCRIPT = (
-    "/home/ds/Workspace/DiT/experiments/ablation_phase_a/eval_ablation_model.py"
-)
+DEFAULT_CKPT_DIR = "/home/ds/Workspace/DiT/experiments/capacity_ladder/results/tier3_b_aug_v66route"
+DEFAULT_PYTHON = "/home/ds/miniconda3/envs/pytorch/bin/python"
+DEFAULT_EVAL_SCRIPT = "/home/ds/Workspace/DiT/experiments/ablation_phase_a/eval_ablation_model.py"
 
-os.makedirs(OUT_BASE, exist_ok=True)
 
-# 目标评测阶段 (优先级从高到低)
-TARGET_STEPS = [10000, 20000, 30000, 40000, 48000, 5000]
+def parse_args():
+    parser = argparse.ArgumentParser(description="全自动里程碑权重批量评估流水线")
+    parser.add_argument("--ckpt-dir", type=str, default=None,
+                        help="Checkpoints 所在目录 (若未指定，自动搜索最新运行目录)")
+    parser.add_argument("--out-base", type=str, default=None,
+                        help="评测指标输出根目录 (默认在 ckpt_dir 同级 evaluations)")
+    parser.add_argument("--steps", type=str, default="5000,10000,20000,30000,40000,48000",
+                        help="目标评测步数列表 (逗号分隔)")
+    parser.add_argument("--python", type=str, default=DEFAULT_PYTHON,
+                        help="Python 解释器路径")
+    parser.add_argument("--eval-script", type=str, default=DEFAULT_EVAL_SCRIPT,
+                        help="eval_ablation_model.py 路径")
+    return parser.parse_args()
+
+
+def resolve_ckpt_dir(target_dir):
+    if target_dir and os.path.exists(target_dir):
+        # 如果传入的是直接包含 .pt 的 checkpoints 目录
+        if any(f.endswith(".pt") for f in os.listdir(target_dir)):
+            return target_dir
+        # 如果传入的是 run 目录，检查子目录 checkpoints
+        sub = os.path.join(target_dir, "checkpoints")
+        if os.path.exists(sub):
+            return sub
+
+    # 自动搜索 DEFAULT_CKPT_DIR 下最新的 run
+    if os.path.exists(DEFAULT_CKPT_DIR):
+        runs = sorted(glob.glob(os.path.join(DEFAULT_CKPT_DIR, "*v66*")))
+        if runs:
+            latest_run = runs[-1]
+            sub = os.path.join(latest_run, "checkpoints")
+            if os.path.exists(sub):
+                return sub
+            return latest_run
+
+    # 回退至旧版 tier3_b_aug
+    fallback = "/home/ds/Workspace/DiT/experiments/capacity_ladder/results/tier3_b_aug/20261006-025311-cap_tier3_b_aug_10h/checkpoints"
+    return fallback
 
 
 def main():
+    args = parse_args()
+    ckpt_dir = resolve_ckpt_dir(args.ckpt_dir)
+    if not args.out_base:
+        parent = os.path.dirname(ckpt_dir.rstrip("/"))
+        out_base = os.path.join(parent, "evaluations")
+    else:
+        out_base = args.out_base
+    os.makedirs(out_base, exist_ok=True)
+
+    target_steps = [int(s.strip()) for s in args.steps.split(",") if s.strip()]
+
     print("=" * 80)
-    print("【开始 Tier 3 (B/2) 增强模型里程碑权重批量评测流水线】")
-    print(f"  权重目录: {CKPT_DIR}")
-    print(f"  评测输出: {OUT_BASE}")
+    print("【开始里程碑权重全周期批量评测流水线】")
+    print(f"  权重目录: {ckpt_dir}")
+    print(f"  评测输出: {out_base}")
+    print(f"  目标步数: {target_steps}")
     print("=" * 80)
 
     # 扫描已落盘权重
     available_ckpts = {}
-    for pt in glob.glob(os.path.join(CKPT_DIR, "*.pt")):
+    for pt in glob.glob(os.path.join(ckpt_dir, "*.pt")):
         fn = os.path.basename(pt)
         nums = re.findall(r"\d+", fn)
         if nums:
@@ -53,13 +98,13 @@ def main():
 
     results_table = []
 
-    for st in TARGET_STEPS:
+    for st in target_steps:
         if st not in available_ckpts:
             print(f"  [跳过] Step {st} 权重尚未生成或未找到")
             continue
 
         ckpt_path = available_ckpts[st]
-        out_dir = os.path.join(OUT_BASE, f"eval_{st}")
+        out_dir = os.path.join(out_base, f"eval_{st}")
         os.makedirs(out_dir, exist_ok=True)
         metric_file = os.path.join(out_dir, "metrics_40k.json")
 
@@ -87,7 +132,7 @@ def main():
             flush=True,
         )
         t0 = time.time()
-        cmd = [PYTHON, "-u", EVAL_SCRIPT, "--ckpt", ckpt_path, "--out-dir", out_dir]
+        cmd = [args.python, "-u", args.eval_script, "--ckpt", ckpt_path, "--out-dir", out_dir]
         res = subprocess.run(cmd)
         dt = time.time() - t0
 
