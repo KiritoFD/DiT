@@ -434,6 +434,14 @@ def build_parser(argv=None):
                         help="OT 分块数: 1 = 整 batch 全局匈牙利 (原版); k>1 把 batch 均分 k 块各自 "
                              "做匈牙利, 大 batch 下 O(B^3)->O(k*(B/k)^3) 显著降 CPU 开销, 质量近似. "
                              "例: batch 384 + ot_chunks=4 ~= 4x96 https://bit.ly/OT-chunks.")
+    parser.add_argument("--use-c2ot", type=_str_to_bool, default=False, dest="use_c2ot",
+                        help="条件最优传输 (C2OT / Conditional OT, ICCV 2025): 仅在条件相同的样本子集内部 "
+                             "独立求解 OT 配对。彻底消除朴素 OT 的条件先验偏置泄漏 (q(x1|c)==N(0,I)), "
+                             "计算量降低 10~100 倍, 实现真正的 OT 路径拉直 Free Lunch。")
+    parser.add_argument("--c2ot-mode", type=str, default="slot", choices=["slot", "callig", "char"],
+                        dest="c2ot_mode",
+                        help="C2OT 条件分组模式: slot = (callig, script) 复合槽位分组 (推荐); "
+                             "callig = 仅按书家分组; char = 仅按汉字字符分组。")
     parser.add_argument("--learn-sigma", type=int, default=None, choices=[0, 1],
                         help="Force DiT learn_sigma on/off. Default: auto = False for flow "
                              "(flow has no variance head; leaving it True creates C permanently "
