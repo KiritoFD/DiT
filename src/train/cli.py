@@ -601,6 +601,13 @@ def build_parser(argv=None):
     parser.add_argument("--vae-in-channels", type=int, default=3, help="VAE input image channels (3=RGB, 1=grayscale)")
     parser.add_argument("--vae-out-channels", type=int, default=3, help="VAE output image channels (3=RGB, 1=grayscale)")
     parser.add_argument("--vae-scaling-factor", type=float, default=0.18215, help="VAE latent scaling factor")
+    parser.add_argument("--train-vae-encoder", type=_str_to_bool, default=False,
+                        help="REPA-E 端到端联合微调: 解冻 VAE Encoder，保持 Decoder 冻结，"
+                             "使潜在空间在 DiT 与 DINOv2 (REPA) 共同监督下自适应优化。")
+    parser.add_argument("--vae-lr", type=float, default=1e-5,
+                        help="VAE Encoder 联合微调学习率 (推荐极小微调率 1e-5)")
+    parser.add_argument("--calli-vae-path", type=str, default=None,
+                        help="已微调好的特化 Calli-VAE 权重目录 (默认 fallback 走 --vae-path)")
     parser.add_argument("--lora-alpha", type=int, default=None,
                         help="LoRA alpha (scaling = alpha/r). Default: same as r (scaling=1).")
     parser.add_argument("--lora-target", type=str, choices=["all", "attn", "mlp"], default="all",
