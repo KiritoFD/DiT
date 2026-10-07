@@ -210,8 +210,12 @@ def parse_args():
                         help="权重与可视化输出目录")
     parser.add_argument("--max-samples", type=int, default=None,
                         help="最大样本限制 (None=全量 39.3 万)")
-    parser.add_argument("--batch-size", type=int, default=64,
-                        help="训练批次大小 (48G 显存推荐 64)")
+    parser.add_argument("--batch-size", type=int, default=16,
+                        help="单步微批次大小 (推荐 16, 配合 --grad-accum 4 达成等效 Batch 64)")
+    parser.add_argument("--grad-accum", type=int, default=4,
+                        help="梯度累积步数 (等效 Batch = batch-size * grad-accum)")
+    parser.add_argument("--gradient-checkpointing", action="store_true", default=False,
+                        help="是否开启 VAE 激活检查点 (默认关闭，避免额外重计算损耗算力)")
     parser.add_argument("--lr", type=float, default=5e-5,
                         help="AdamW 学习率")
     parser.add_argument("--weight-decay", type=float, default=0.01)
@@ -276,6 +280,13 @@ def main():
     # 2. 载入基线 VAE 并解冻全量参数 (Encoder + Decoder)
     print(f"[vae] 从 {args.vae_base} 载入 AutoencoderKL ...", flush=True)
     vae = AutoencoderKL.from_pretrained(args.vae_base).to(device)
+    if args.gradient_checkpointing and hasattr(vae, "enable_gradient_checkpointing"):
+        try:
+            vae.enable_gradient_checkpointing()
+            print("  [vae] 成功激活 VAE 梯度检查点 (Gradient Checkpointing)！节省约 60% 激活显存。", flush=True)
+        except Exception as e:
+            print(f"  [vae warn] 启用梯度检查点失败 ({e})，继续以常规模式运行", flush=True)
+
     trainable_params = [p for p in vae.parameters() if p.requires_grad]
     print(f"  [vae] 全量可训参数量: {sum(p.numel() for p in trainable_params)/1e6:.2f}M (Encoder + Decoder)", flush=True)
 
@@ -298,19 +309,28 @@ def main():
     fixed_val_batch = next(iter(dataloader))[:8].to(device)
 
     step = 0
+    micro_step = 0
     epoch = 0
     log_path = os.path.join(args.output, "train_dino_vae.log")
     log_file = open(log_path, "a", encoding="utf-8")
 
     t_start = time.time()
-    print("\n>>> 开始全速迭代训练 ...", flush=True)
+    accum_l1 = 0.0
+    accum_struct = 0.0
+    accum_style = 0.0
+    accum_kl = 0.0
+    accum_total = 0.0
+
+    print(f"\n>>> 开始全速迭代训练 (微批次={args.batch_size}, 累积步数={args.grad_accum}, 等效Batch={args.batch_size * args.grad_accum}) ...", flush=True)
+
+    optimizer.zero_grad()
 
     while step < args.max_steps:
         epoch += 1
         for x_real in dataloader:
             if step >= args.max_steps:
                 break
-            step += 1
+            micro_step += 1
             x_real = x_real.to(device)
 
             # 前向编解码与重参数化采样
@@ -326,53 +346,76 @@ def main():
                 # DINO 感知损失与笔法方差损失
                 loss_struct, loss_style = dino_loss_fn(x_real, x_recon)
 
-                # 综合目标
-                loss = (args.w_l1 * loss_l1 
-                        + args.w_kl * loss_kl 
-                        + args.w_struct * loss_struct 
-                        + args.w_style * loss_style)
+                # 综合目标 (按累积步数缩放)
+                loss_total = (args.w_l1 * loss_l1 
+                              + args.w_kl * loss_kl 
+                              + args.w_struct * loss_struct 
+                              + args.w_style * loss_style)
+                loss = loss_total / args.grad_accum
 
-            optimizer.zero_grad()
             loss.backward()
-            torch.nn.utils.clip_grad_norm_(trainable_params, max_norm=1.0)
-            optimizer.step()
-            scheduler.step()
 
-            # 打印日志 (每 20 步)
-            if step % 20 == 0:
-                dt = time.time() - t_start
-                sps = step / max(dt, 1e-4)
-                lr = scheduler.get_last_lr()[0]
-                msg = (f"[{datetime.datetime.now():%H:%M:%S}] "
-                       f"step={step:05d}/{args.max_steps} (ep={epoch}) | "
-                       f"L1: {loss_l1.item():.4f} | "
-                       f"Struct: {loss_struct.item():.4f} | "
-                       f"Style: {loss_style.item():.4f} | "
-                       f"KL: {loss_kl.item():.4f} | "
-                       f"Total: {loss.item():.4f} | "
-                       f"LR: {lr:.2e} | "
-                       f"SPS: {sps:.2f}")
-                print(msg, flush=True)
-                log_file.write(msg + "\n")
-                log_file.flush()
+            accum_l1 += loss_l1.item()
+            accum_struct += loss_struct.item()
+            accum_style += loss_style.item()
+            accum_kl += loss_kl.item()
+            accum_total += loss_total.item()
 
-            # 保存可视化对比栅格 (每 500 步)
-            if step % args.vis_every == 0:
-                vae.eval()
-                with torch.no_grad():
-                    with torch.autocast("cuda", dtype=torch.bfloat16):
-                        val_post = vae.encode(fixed_val_batch).latent_dist
-                        val_recon = vae.decode(val_post.sample() / vae.config.scaling_factor).sample
-                vis_p = os.path.join(vis_dir, f"recon_step_{step:05d}.png")
-                save_visual_grid(fixed_val_batch, val_recon, vis_p, num_show=8)
-                print(f"  [海报] 已保存对照栅格 -> {vis_p}", flush=True)
-                vae.train()
+            # 当达到累积步数时执行参数更新
+            if micro_step % args.grad_accum == 0:
+                torch.nn.utils.clip_grad_norm_(trainable_params, max_norm=1.0)
+                optimizer.step()
+                scheduler.step()
+                optimizer.zero_grad()
+                step += 1
 
-            # 保存里程碑权重 (每 2500 步)
-            if step % args.save_every == 0:
-                ckpt_dir = os.path.join(args.output, f"calli_vae_step_{step:05d}")
-                vae.save_pretrained(ckpt_dir)
-                print(f"  [权重] 里程碑权重已保存至 -> {ckpt_dir}", flush=True)
+                # 打印日志 (每 20 个优化器步)
+                if step % 20 == 0:
+                    dt = time.time() - t_start
+                    sps = step / max(dt, 1e-4)
+                    lr = scheduler.get_last_lr()[0]
+                    avg_l1 = accum_l1 / args.grad_accum
+                    avg_struct = accum_struct / args.grad_accum
+                    avg_style = accum_style / args.grad_accum
+                    avg_kl = accum_kl / args.grad_accum
+                    avg_total = accum_total / args.grad_accum
+
+                    msg = (f"[{datetime.datetime.now():%H:%M:%S}] "
+                           f"step={step:05d}/{args.max_steps} (ep={epoch}) | "
+                           f"L1: {avg_l1:.4f} | "
+                           f"Struct: {avg_struct:.4f} | "
+                           f"Style: {avg_style:.4f} | "
+                           f"KL: {avg_kl:.4f} | "
+                           f"Total: {avg_total:.4f} | "
+                           f"LR: {lr:.2e} | "
+                           f"OptSPS: {sps:.2f}")
+                    print(msg, flush=True)
+                    log_file.write(msg + "\n")
+                    log_file.flush()
+
+                accum_l1 = 0.0
+                accum_struct = 0.0
+                accum_style = 0.0
+                accum_kl = 0.0
+                accum_total = 0.0
+
+                # 保存可视化对比栅格 (每 500 步)
+                if step % args.vis_every == 0:
+                    vae.eval()
+                    with torch.no_grad():
+                        with torch.autocast("cuda", dtype=torch.bfloat16):
+                            val_post = vae.encode(fixed_val_batch).latent_dist
+                            val_recon = vae.decode(val_post.sample() / vae.config.scaling_factor).sample
+                    vis_p = os.path.join(vis_dir, f"recon_step_{step:05d}.png")
+                    save_visual_grid(fixed_val_batch, val_recon, vis_p, num_show=8)
+                    print(f"  [海报] 已保存对照栅格 -> {vis_p}", flush=True)
+                    vae.train()
+
+                # 保存里程碑权重 (每 2500 步)
+                if step % args.save_every == 0:
+                    ckpt_dir = os.path.join(args.output, f"calli_vae_step_{step:05d}")
+                    vae.save_pretrained(ckpt_dir)
+                    print(f"  [权重] 里程碑权重已保存至 -> {ckpt_dir}", flush=True)
 
     # 完训保存最终权重
     final_dir = os.path.join(args.output, "calli_vae_final")
