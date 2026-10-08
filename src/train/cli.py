@@ -493,10 +493,11 @@ def build_parser(argv=None):
                         dest="c2ot_mode",
                         help="C2OT 条件分组模式: slot = (callig, script) 复合槽位分组 (推荐); "
                              "callig = 仅按书家分组; char = 仅按汉字字符分组。")
-    parser.add_argument("--sde-gamma", type=float, default=0.0, dest="sde_gamma",
+    parser.add_argument("--sde-gamma", type=float, default=0.5, dest="sde_gamma",
                         help="SiT SDE 随机纠偏扩散系数 (Stochastic Interpolant SDE Sampler, Ma et al. ECCV 2024): "
-                             "0.0 = 纯确定性 ODE (Euler/Heun); >0.0 (推荐 0.05~0.20) 引入布朗扩散与兰芝文得分纠偏，"
-                             "赋予采样自纠错能力，显著提升边缘锐利度与真实质感。")
+                             "0.0 = 纯确定性 ODE (Euler/Heun); >0.0 引入布朗扩散与兰芝文得分纠偏, 赋予采样自纠错能力。"
+                             "默认 0.5 = 全曲面扫描 (CFG×gamma, N=187) 验证的全局最优: 对任意 CFG 均同时提升 SSIM、"
+                             "降低 LPIPS 与破碎度, 零重训成本 (详见 docs/experiments/2026-10-08-sit-sde-sampler-investigation-and-sweep.md)。")
     parser.add_argument("--learn-sigma", type=int, default=None, choices=[0, 1],
                         help="Force DiT learn_sigma on/off. Default: auto = False for flow "
                              "(flow has no variance head; leaving it True creates C permanently "
@@ -702,8 +703,9 @@ def build_parser(argv=None):
                         help="Number of test samples for auto-eval (free-sampling).")
     parser.add_argument("--eval-steps", type=int, default=50,
                         help="DDIM steps for free-sampling auto-eval.")
-    parser.add_argument("--eval-cfg", type=float, default=1.7,
-                        help="CFG scale for free-sampling auto-eval (flow 最佳 ~1.7).")
+    parser.add_argument("--eval-cfg", type=float, default=0.8,
+                        help="CFG scale for free-sampling auto-eval. 0.8 = CFG×gamma 联合扫描帕累托拐点 "
+                             "(v68@200k, N=187: SSIM 0.6281 / LPIPS 0.3258 / Frag 2.112); 冲 SSIM 峰值可用 0.7。")
     parser.add_argument("--eval-seed", type=int, default=0,
                         help="Seed for free-sampling auto-eval noise.")
     parser.add_argument("--eval-batch", type=int, default=16,

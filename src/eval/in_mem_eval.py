@@ -842,7 +842,7 @@ def run_in_mem_eval(model, args, step, device, results_dir=None, logger=print):
     img_root = None                       # csv image_path 已含完整相对路径
     shards = (getattr(args, "eval_skel_latent_shards_dir", "") or ""
               or getattr(args, "skel_latent_shards_dir", "") or "")
-    cfg_scale = float(getattr(args, "eval_cfg", 0.7))
+    cfg_scale = float(getattr(args, "eval_cfg", 0.8))
     ddim_steps = int(getattr(args, "eval_steps", 50))
     dit_batch = int(getattr(args, "in_mem_eval_batch", 16))
     vae_batch = int(getattr(args, "in_mem_eval_vae_batch", 16))
