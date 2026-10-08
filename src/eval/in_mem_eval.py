@@ -847,6 +847,10 @@ def run_in_mem_eval(model, args, step, device, results_dir=None, logger=print):
     dit_batch = int(getattr(args, "in_mem_eval_batch", 16))
     vae_batch = int(getattr(args, "in_mem_eval_vae_batch", 16))
     sf = float(getattr(args, "vae_scaling_factor", 0.18215))
+    # ★ 2026-10-09: Calli-VAE 的 decoder 需要 sample/sf 而非 mode。DiT 输出 ≈ mode*sf,
+    #   而生成时拿不到 encoder logvar -> 用 predict_std 预测噪声补回。
+    #   详见 src/utils/calli_decode_noise.py (拟合 / 自检 / 上限分析)。
+    _calli_noise = bool(getattr(args, "calli_decode_noise", False))
     use_self_cond = bool(getattr(args, "eval_self_cond", False))
     blend_alpha = float(getattr(args, "eval_blend_alpha", 0.0))
     from src.loss import flow_kwargs_from
@@ -1010,7 +1014,11 @@ def run_in_mem_eval(model, args, step, device, results_dir=None, logger=print):
                 # 白底归零 (aux_zero_white): 统一走 maybe_add_white, 勿内联 (防漂移/漏改)
                 _lat = maybe_add_white(_lat, _zw)
                 with torch.autocast("cuda", dtype=torch.bfloat16):
-                    dec = vae.decode(_lat / sf).sample
+                    if _calli_noise:
+                        from src.utils.calli_decode_noise import decode_calli_latent
+                        dec = decode_calli_latent(vae, _lat, sf, add_noise=True)
+                    else:
+                        dec = vae.decode(_lat / sf).sample
                 preds[i:j] = (dec.clamp(-1, 1) + 1) / 2
                 # aux 通道同样减过白底 -> 也要加回再 decode, 否则整列发黄/发黑
                 if _aux_lat is not None and _save:

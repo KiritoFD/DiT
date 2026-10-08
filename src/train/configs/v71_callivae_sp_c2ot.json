@@ -50,6 +50,7 @@
   "vae_path": "/home/ds/Workspace/DiT/experiments/calli_vae_dino/calli_vae_step_25000",
   "eval_vae_path": "/home/ds/Workspace/DiT/experiments/calli_vae_dino/calli_vae_step_25000",
   "vae_scaling_factor": 0.18215,
+  "calli_decode_noise": true,
   "diffusion_type": "flow",
   "t_sampler": "logit_normal",
   "t_mean": 0.0,
