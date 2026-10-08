@@ -1416,15 +1416,39 @@ def main(args):
 
     # 2026-09-05: REPA 不强制 VAE —— 配了 latent_shards_dir 时用预编码 latent,
     # REPA 只需 GT 像素图(喂 DINO teacher), 不需要 vae.encode。
-    _need_vae = (not bool(getattr(args, "latent_shards_dir", None)))
+    # 2026-10-08 REPA-E: 解冻 VAE Encoder 联合微调时必须加载 VAE
+    _train_vae_enc = bool(getattr(args, "train_vae_encoder", False))
+    _need_vae = _train_vae_enc or (not bool(getattr(args, "latent_shards_dir", None)))
     if _need_vae:
         try:
-            if getattr(args, 'vae_path', None) is not None and os.path.exists(args.vae_path):
-                logger.info(f"Loading VAE from local path: {args.vae_path}")
-                vae = AutoencoderKL.from_pretrained(args.vae_path).to(device)
+            vae_target_path = getattr(args, 'calli_vae_path', None) or getattr(args, 'vae_path', None)
+            if vae_target_path is not None and os.path.exists(vae_target_path):
+                logger.info(f"Loading VAE from local path: {vae_target_path}")
+                vae = AutoencoderKL.from_pretrained(vae_target_path).to(device)
             else:
                 vae = AutoencoderKL.from_pretrained(f"stabilityai/sd-vae-ft-{args.vae}").to(device)
-            requires_grad(vae, False)
+            
+            if _train_vae_enc:
+                logger.info("[REPA-E] 激活端到端联合微调: 解冻 VAE Encoder, 彻底冻结 Decoder")
+                # 1. 🔒 VAE Decoder 完全冻结 (不训练, 杜绝高频解码退化并省下显存)
+                vae.decoder.eval()
+                requires_grad(vae.decoder, False)
+                if hasattr(vae, "post_quant_conv"):
+                    requires_grad(vae.post_quant_conv, False)
+                
+                # 2. 🟢 VAE Encoder 开启梯度 (端到端自适应流形雕刻)
+                vae.encoder.train()
+                requires_grad(vae.encoder, True)
+                if hasattr(vae, "quant_conv"):
+                    vae.quant_conv.train()
+                    requires_grad(vae.quant_conv, True)
+                
+                # 激活 Encoder 梯度检查点以压缩激活显存
+                if hasattr(vae.encoder, "gradient_checkpointing"):
+                    vae.encoder.gradient_checkpointing = True
+                    logger.info("[REPA-E] 成功开启 VAE Encoder 梯度检查点 (Gradient Checkpointing)")
+            else:
+                requires_grad(vae, False)
         except Exception as e:
             logger.warning(f"Failed to load AutoencoderKL due to network/path error: {e}")
             logger.warning("Using MockVAE (random latents) for testing purposes!")
@@ -1563,36 +1587,63 @@ def main(args):
                         f"lp={_mid_struct_loss.lp_factor} "
                         f"calib={getattr(args, 'std_mid_calib_json', '') or '(默认线性σ/k)'}")
 
-    trainable_params_list = [p for p in model.parameters() if p.requires_grad]
-    if repa_loss_fn is not None:
-        trainable_params_list.extend(repa_loss_fn.trainable_params())
+    _train_vae_enc = bool(getattr(args, "train_vae_encoder", False))
+    if _train_vae_enc:
+        # ⭐️ REPA-E 双轨优化器: 把 VAE Encoder 与 DiT/REPA 拆进不同 Parameter Groups
+        dit_trainable = [p for p in model.parameters() if p.requires_grad]
+        repa_trainable = repa_loss_fn.trainable_params() if repa_loss_fn is not None else []
+        vae_enc_trainable = [p for p in vae.encoder.parameters() if p.requires_grad]
+        if hasattr(vae, "quant_conv"):
+            vae_enc_trainable.extend([p for p in vae.quant_conv.parameters() if p.requires_grad])
 
-    _opt_name = getattr(args, "optimizer", "adamw")
-    if _opt_name == "muon":
-        # Muon: 矩阵权重 NS-正交化 (独立 muon_lr, 典型 0.02-0.05), 向量/embedding 走 AdamW (adamw_lr)
-        try:
-            from src.optim.muon import Muon as _Muon
-        except Exception as e:
-            raise RuntimeError(f"src.optim.muon import failed: {e}")
-        _muon_lr = float(getattr(args, "muon_lr", 0.02))
-        _adamw_lr = float(getattr(args, "lr", 3e-4))
-        _adamw_wd = float(getattr(args, "weight_decay", 0.01))
-        # REPA proj 是矩阵 dim=2 -> 自动进 muon 组, 会用它; 向量(embedding标量)进 adamw
-        opt = _Muon(
-            trainable_params_list, lr=_muon_lr, weight_decay=0.0,
-            adamw_lr=_adamw_lr, adamw_weight_decay=_adamw_wd)
-        logger.info(f"[optim] Muon: 矩阵组 lr={_muon_lr} (NS正交) / 向量+embedding组 AdamW lr={_adamw_lr} wd={_adamw_wd}")
-    else:
-        # [OPTIM-FUSED 2026-09-16] AdamW fused (单内核多张量更新, 省 elementwise 带宽)。
-        # 守卫: 仅 CUDA 且 torch 支持 fused 时启用, 否则退回默认实现。
+        vae_lr = float(getattr(args, 'vae_lr', 2e-6))
+        optim_groups = [
+            # Group 1: DiT 主干与条件嵌入 (高强度学习)
+            {"params": dit_trainable, "lr": args.lr, "weight_decay": args.weight_decay},
+            # Group 2: REPA 投影层
+            {"params": repa_trainable, "lr": args.lr, "weight_decay": 0.0},
+            # Group 3: VAE Encoder (极微小学习率，做流形软着陆)
+            {"params": vae_enc_trainable, "lr": vae_lr, "weight_decay": 0.0},
+        ]
         _fused = bool(torch.cuda.is_available()) and float(torch.__version__[:3]) >= 2.0
         try:
-            opt = torch.optim.AdamW(trainable_params_list, lr=args.lr,
-                                    weight_decay=args.weight_decay, fused=_fused)
+            opt = torch.optim.AdamW(optim_groups, fused=_fused)
         except TypeError:
-            opt = torch.optim.AdamW(trainable_params_list, lr=args.lr, weight_decay=args.weight_decay)
+            opt = torch.optim.AdamW(optim_groups)
             _fused = False
-        logger.info(f"[optim] AdamW lr={args.lr} wd={args.weight_decay}")
+        logger.info(f"[optim] REPA-E Two-Speed AdamW: DiT lr={args.lr} wd={args.weight_decay} | "
+                    f"REPA lr={args.lr} | VAE Encoder lr={vae_lr} (trainable={len(vae_enc_trainable)} tensors)")
+    else:
+        trainable_params_list = [p for p in model.parameters() if p.requires_grad]
+        if repa_loss_fn is not None:
+            trainable_params_list.extend(repa_loss_fn.trainable_params())
+
+        _opt_name = getattr(args, "optimizer", "adamw")
+        if _opt_name == "muon":
+            # Muon: 矩阵权重 NS-正交化 (独立 muon_lr, 典型 0.02-0.05), 向量/embedding 走 AdamW (adamw_lr)
+            try:
+                from src.optim.muon import Muon as _Muon
+            except Exception as e:
+                raise RuntimeError(f"src.optim.muon import failed: {e}")
+            _muon_lr = float(getattr(args, "muon_lr", 0.02))
+            _adamw_lr = float(getattr(args, "lr", 3e-4))
+            _adamw_wd = float(getattr(args, "weight_decay", 0.01))
+            # REPA proj 是矩阵 dim=2 -> 自动进 muon 组, 会用它; 向量(embedding标量)进 adamw
+            opt = _Muon(
+                trainable_params_list, lr=_muon_lr, weight_decay=0.0,
+                adamw_lr=_adamw_lr, adamw_weight_decay=_adamw_wd)
+            logger.info(f"[optim] Muon: 矩阵组 lr={_muon_lr} (NS正交) / 向量+embedding组 AdamW lr={_adamw_lr} wd={_adamw_wd}")
+        else:
+            # [OPTIM-FUSED 2026-09-16] AdamW fused (单内核多张量更新, 省 elementwise 带宽)。
+            # 守卫: 仅 CUDA 且 torch 支持 fused 时启用, 否则退回默认实现。
+            _fused = bool(torch.cuda.is_available()) and float(torch.__version__[:3]) >= 2.0
+            try:
+                opt = torch.optim.AdamW(trainable_params_list, lr=args.lr,
+                                        weight_decay=args.weight_decay, fused=_fused)
+            except TypeError:
+                opt = torch.optim.AdamW(trainable_params_list, lr=args.lr, weight_decay=args.weight_decay)
+                _fused = False
+            logger.info(f"[optim] AdamW lr={args.lr} wd={args.weight_decay}")
 
     # ★ 形变头单独一组 lr（v18-skelnet）。
     #   为什么单独一组: 它是在**另一个目标**(aux_skel3)上预训练好的, 已经在一个好状态;
@@ -2039,7 +2090,22 @@ def main(args):
 
                 # 注意: `_ch_w` 与 aux 权重已在**循环外**解析好（见 resolve_aux_channel_weights），
                 # 这里不再重算，也不要把它重置为 None。
-                if 'latent' in batch:
+                if _train_vae_enc and 'image' in batch:
+                    # ⭐️ [REPA-E] 必须实时读取真实图像，使用 rsample() 打通反向传播梯度管道
+                    x = batch['image'].to(device, non_blocking=True)
+                    if x.dtype == torch.uint8:
+                        x = x.float().div_(255.0).mul_(2.0).sub_(1.0)
+                    with torch.autocast("cuda", dtype=torch.bfloat16):
+                        posterior = vae.encode(x).latent_dist
+                        # ⚠ 必须使用 rsample() 重参数化采样: z = mu + sigma * eps
+                        # 只有 rsample 才能让 DiT 的梯度穿过高斯采样，流回 VAE Encoder 的权重！
+                        x_latent = posterior.rsample().mul_(_vae_sf).float()
+                        # 流形的物理护栏: 计算隐空间高斯 KL 散度
+                        loss_vae_kl = -0.5 * torch.sum(
+                            1 + posterior.logvar - posterior.mean.pow(2) - posterior.logvar.exp(),
+                            dim=[1, 2, 3]
+                        ).mean()
+                elif 'latent' in batch:
                     # Latent-cached training: latent pre-encoded (scaled by vae_scaling_factor).
                     x_latent = batch['latent'].to(device, non_blocking=True)
                     # moyi 式辅助目标通道: aux latents (skel/canny) 与图像 latent 拼成扩散目标
@@ -2049,6 +2115,7 @@ def main(args):
                             [x_latent, _aux.to(device, non_blocking=True).float()], dim=1)
                     x = batch.get('image', None)
                     x = x.to(device, non_blocking=True) if x is not None else None
+                    loss_vae_kl = None
                 else:
                     x = batch['image'].to(device, non_blocking=True)
                     # dataset 现在给的是 uint8（省 H2D 流量），VAE 需要 [-1,1] float
@@ -2058,6 +2125,7 @@ def main(args):
                     with torch.no_grad(), torch.autocast("cuda", dtype=torch.float32):
                         x_latent = vae.encode(x).latent_dist.sample().mul_(_vae_sf)
                         x_latent = x_latent.float()
+                    loss_vae_kl = None
 
                 # 统一时间步采样: FlowMatching.sample_t -> t∈[0,1); GaussianDiffusion.sample_t -> t∈{0..T-1}。
                 # 调用方绝不自己分支 (否则会重蹈 flow/randint 错配覆辙)。
@@ -2267,6 +2335,9 @@ def main(args):
                         + loss_repa  # 统一 REPA: w × (1 - cos) 已在 RepaModule.forward 内含 warmup
                         + getattr(args, 'w_std_mid', 0.0) * loss_std_mid
                         + getattr(args, 'w_latent_skel', 0.0) * loss_skel_struct)
+                if _train_vae_enc and loss_vae_kl is not None:
+                    _w_vkl = float(getattr(args, 'w_vae_kl', 1e-5))
+                    loss = loss + _w_vkl * loss_vae_kl
 
                 # ---- style-rank loss (t 门控在模块内) ----
                 loss_style_rank = torch.tensor(0.0, device=device)
@@ -2545,7 +2616,11 @@ def main(args):
                                f"off={((globals().get('_DEFORM_EMA') or {}).get('off') or 0.0):.4f} | "
                                if getattr(args, 'w_deform_skel', 0.0) > 0 else "")
                             + (f"SkelStruct(w={args.w_latent_skel:.3f}): {avg_skel:.4f} | "
-                               if getattr(args, 'w_latent_skel', 0.0) > 0 else "") +
+                               if getattr(args, 'w_latent_skel', 0.0) > 0 else "")
+                            + (f"VAE-KL(w={getattr(args, 'w_vae_kl', 1e-5):.1e}): {float(loss_vae_kl):.4f} | "
+                               if _train_vae_enc and loss_vae_kl is not None else "")
+                            + (f"VAE-LR: {opt.param_groups[2]['lr']:.2e} | "
+                               if _train_vae_enc and len(opt.param_groups) > 2 else "") +
                             f"LR: {opt.param_groups[0]['lr']:.2e} | {ema_log}"
                             f"Steps/Sec: {steps_per_sec:.2f} | "
                             f"Mem: {torch.cuda.memory_reserved() / 1024 ** 3:.2f}G/"
