@@ -107,12 +107,13 @@ class FlowMatching:
     def __init__(self, num_steps=50, sigma_min=1e-4, use_ot=False,
                  t_sampler="logit_normal", t_mean=0.0, t_std=1.0,
                  shift=1.0, sampler="heun", heun_batch=False, ot_chunks=1,
-                 use_c2ot=False, c2ot_mode="slot"):
+                 use_c2ot=False, c2ot_mode="slot", sde_gamma=0.0):
         self.num_timesteps = int(num_steps)
         self.sigma_min = sigma_min
         self.use_ot = bool(use_ot)
         self.use_c2ot = bool(use_c2ot)
         self.c2ot_mode = str(c2ot_mode or "slot").lower()
+        self.sde_gamma = float(sde_gamma or 0.0)
         self.is_flow = True
         # OT-CFM 分块数: 1 = 整 batch 一次全局匈牙利 (Tong et al. 原版, O(B^3));
         # >1 时把 batch 均分成 ot_chunks 块, 每块独立做匈牙利 (O((B/k)^3) * k,
@@ -142,10 +143,11 @@ class FlowMatching:
 
     def describe(self):
         c2ot_desc = f", use_c2ot={self.use_c2ot}(mode={self.c2ot_mode})" if self.use_c2ot else ""
+        sde_desc = f", sde_gamma={self.sde_gamma}" if self.sde_gamma > 0 else ""
         return (f"FlowMatching(steps={self.num_timesteps}, sampler={self.sampler}, "
                 f"nfe={self.nfe}, t_sampler={self.t_sampler}"
                 + (f"(mean={self.t_mean},std={self.t_std})" if self.t_sampler == "logit_normal" else "")
-                + f", shift={self.shift}, use_ot={self.use_ot}{c2ot_desc})")
+                + f", shift={self.shift}, use_ot={self.use_ot}{c2ot_desc}{sde_desc})")
 
     # ── training ────────────────────────────────────────────────────────
     def sample_t(self, n, device):
@@ -472,16 +474,28 @@ class FlowMatching:
                 t_cat = th.cat([t_batch, t2], dim=0)
                 v_cat = self._v(model, x_cat, t_cat, _kw_cat, C)
                 v1_, v2 = th.split(v_cat, B, dim=0)
-                x = x + dt * 0.5 * (v1_ + v2)
+                v_eff = 0.5 * (v1_ + v2)
             elif use_heun:
                 v1 = self._v(model, x, t_batch, model_kwargs, C)
                 x_euler = x + dt * v1
                 t2 = ts[i + 1].expand(B)
                 v2 = self._v(model, x_euler, t2, model_kwargs, C)
-                x = x + dt * 0.5 * (v1 + v2)
+                v_eff = 0.5 * (v1 + v2)
             else:
-                v = self._v(model, x, t_batch, model_kwargs, C)
-                x = x + dt * v
+                v_eff = self._v(model, x, t_batch, model_kwargs, C)
+
+            # ── SiT SDE 随机纠偏采样器 (Stochastic Interpolant SDE Sampler) ───────
+            # 当 sde_gamma > 0 时激活: 引入布朗运动扩散项与得分兰芝文纠偏项
+            if self.sde_gamma > 0:
+                h = -dt  # 正步长
+                # 得分动力学校正: (1 + gamma^2 * t) 动态自纠偏漂移
+                drift = v_eff * (1.0 + (self.sde_gamma ** 2) * t_i)
+                # 桥式扩散项: g(t) = gamma * sqrt(2 * t * (1 - t) * h)
+                # 在 t=1 起点和 t=0 终点自然归零，终点无残留噪声
+                noise_scale = self.sde_gamma * th.sqrt(th.clamp(2.0 * t_i * (1.0 - t_i) * h, min=0.0))
+                x = x + dt * drift + noise_scale * th.randn_like(x)
+            else:
+                x = x + dt * v_eff
 
         return x
 
@@ -504,7 +518,7 @@ class FlowMatching:
 #: （noise_schedule / learn_sigma / use_kl ...）误传进来导致 TypeError。
 FLOW_PARAMS = (
     "num_steps", "sigma_min", "use_ot", "ot_chunks",
-    "use_c2ot", "c2ot_mode",
+    "use_c2ot", "c2ot_mode", "sde_gamma",
     "t_sampler", "t_mean", "t_std",
     "shift", "sampler", "heun_batch",
 )
@@ -525,14 +539,14 @@ def _resolve_flow_aliases(kwargs):
     return kwargs
 
 
-def create_flow_matching(timestep_respacing="50", use_ot=False, use_c2ot=False, c2ot_mode="slot", **kwargs):
+def create_flow_matching(timestep_respacing="50", use_ot=False, use_c2ot=False, c2ot_mode="slot", sde_gamma=0.0, **kwargs):
     """Build a FlowMatching instance.
 
     ``timestep_respacing`` may be an int, a str int ("50"), or a comma/space
     separated list (only the count is used here).
 
     额外 kwargs 透传给 FlowMatching:
-        t_sampler, t_mean, t_std, shift, sampler, heun_batch, use_ot, use_c2ot, c2ot_mode
+        t_sampler, t_mean, t_std, shift, sampler, heun_batch, use_ot, use_c2ot, c2ot_mode, sde_gamma
 
     未知 kwargs 会被丢弃并打 warning（而不是 TypeError）—— 这样
     ``create_diffusion_or_flow`` 可以无脑把整包训练配置转发过来。
@@ -558,4 +572,5 @@ def create_flow_matching(timestep_respacing="50", use_ot=False, use_c2ot=False, 
     kw.setdefault("use_ot", use_ot)
     kw.setdefault("use_c2ot", use_c2ot)
     kw.setdefault("c2ot_mode", c2ot_mode)
+    kw.setdefault("sde_gamma", sde_gamma)
     return FlowMatching(num_steps=steps, **kw)

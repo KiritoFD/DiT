@@ -442,6 +442,10 @@ def build_parser(argv=None):
                         dest="c2ot_mode",
                         help="C2OT 条件分组模式: slot = (callig, script) 复合槽位分组 (推荐); "
                              "callig = 仅按书家分组; char = 仅按汉字字符分组。")
+    parser.add_argument("--sde-gamma", type=float, default=0.0, dest="sde_gamma",
+                        help="SiT SDE 随机纠偏扩散系数 (Stochastic Interpolant SDE Sampler, Ma et al. ECCV 2024): "
+                             "0.0 = 纯确定性 ODE (Euler/Heun); >0.0 (推荐 0.05~0.20) 引入布朗扩散与兰芝文得分纠偏，"
+                             "赋予采样自纠错能力，显著提升边缘锐利度与真实质感。")
     parser.add_argument("--learn-sigma", type=int, default=None, choices=[0, 1],
                         help="Force DiT learn_sigma on/off. Default: auto = False for flow "
                              "(flow has no variance head; leaving it True creates C permanently "
