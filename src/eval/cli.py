@@ -877,6 +877,11 @@ def build_parser(argv=None):
                              "(pass-1 predicted skel channels fed back as g for pass-2).")
     parser.add_argument("--eval-blend-alpha", type=float, default=0.0, dest="eval_blend_alpha",
                         help="Self-conditioning skeleton blend (0=pure predicted, 0.5=half-half).")
+    # ★ 2026-10-09: Calli-VAE 专用 decode 补噪 (详见 src/utils/calli_decode_noise.py)。
+    parser.add_argument("--calli-decode-noise", type=_str_to_bool, default=False,
+                        dest="calli_decode_noise",
+                        help="Calli-VAE only: predict posterior std from the DiT latent and "
+                             "inject noise before VAE decode (reverts the flat-gray output).")
     parser.add_argument("--optimizer", type=str, default="adamw", choices=["adamw", "muon"],
                         help="Optimizer: adamw (default) or muon (matrix NS-orth + adamw for vec/embed).")
     parser.add_argument("--muon-lr", type=float, default=0.02,

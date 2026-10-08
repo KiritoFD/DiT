@@ -1,5 +1,12 @@
 # Calli-VAE (纯 DINOv2 结构与笔法方差监督) 全量微调技术规范与实验报告
 
+> ⚠️ **2026-10-09 更正**：本报告对应的第一版训练脚本存在两个静默 Bug —— **解码约定写歪**
+> （训练用 `decode(z/sf)`，非标准）与 **DINOv2 权重命名在 transformers 4.x 下整网随机初始化**，
+> 导致 v71 类实验的早期评测输出恒为灰图（SSIM≈0.51、LPIPS≈0.84）。
+> 根因复现、解析救援（零训练成本把权重改回标准约定）与修复后实测详见
+> [`2026-10-09-calli-vae-decode-convention-rootcause.md`](./2026-10-09-calli-vae-decode-convention-rootcause.md)。
+> 本文件的**损失设计动机与监督范式**仍然成立；**约定与评测数字请以更正文档为准**。
+
 > **启动时间**：2026-10-08 01:53 CST  
 > **运行环境**：机器 48 (NVIDIA RTX 4090 / 48GB VRAM), CUDA 13.0, PyTorch 2.4, BF16 混合精度  
 > **数据集**：ModelScope CalligDiT 全库 393,486 张标准化 256×256 书法真迹图像（`train_clean.csv`）  

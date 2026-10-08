@@ -109,16 +109,25 @@ def load_dino_model(ckpt_path, device):
         print(f"  [dino] SDPA 不可用 ({e})，回退默认实现", flush=True)
         model = Dinov2Model(config)
 
+    # ★ [修正 2026-10-09] transformers 命名差异: 4.x 用 attention.attention.query，
+    #   5.x 用 attention.q_proj。**必须按目标模型自己的 state_dict 键决定是否改名** ——
+    #   旧代码无条件改成 5.x 命名，在 4.x 环境 (如 4090 的 transformers 4.36.2) 会让
+    #   主干权重全部 miss、整网随机初始化，而 strict=False 只打印一行 warning，
+    #   训练照跑，DINO 感知损失彻底失效 (静默错误)。
+    model_keys = set(model.state_dict().keys())
+    use_new_attn_names = any(".attention.q_proj." in k for k in model_keys)
+    print(f"  [dino] 目标模型注意力命名: {'q_proj (transformers>=5)' if use_new_attn_names else 'attention.query (transformers 4.x)'}", flush=True)
+
     sd = {}
     with safe_open(ckpt_path, framework="pt") as f:
         for k in f.keys():
             v = f.get_tensor(k)
-            # 兼容 transformers 5.x 命名 (q_proj/k_proj/v_proj/o_proj) 与旧命名
             new_k = k
-            new_k = new_k.replace("attention.attention.query", "attention.q_proj")
-            new_k = new_k.replace("attention.attention.key", "attention.k_proj")
-            new_k = new_k.replace("attention.attention.value", "attention.v_proj")
-            new_k = new_k.replace("attention.output.dense", "attention.o_proj")
+            if use_new_attn_names:
+                new_k = new_k.replace("attention.attention.query", "attention.q_proj")
+                new_k = new_k.replace("attention.attention.key", "attention.k_proj")
+                new_k = new_k.replace("attention.attention.value", "attention.v_proj")
+                new_k = new_k.replace("attention.output.dense", "attention.o_proj")
             sd[new_k] = v
 
     # 动态重采样位置编码: 518x518 (1370 tokens) -> 224x224 (257 tokens)
@@ -186,6 +195,48 @@ class DINOPerceptualLoss(nn.Module):
         return loss_struct, loss_style
 
 
+def verify_decode_convention(vae, x, device, sf):
+    """实测该 VAE 的正确解码输入, 并对照我们训练用的 decode(sample)。
+
+    背景 (2026-10-09): 旧版训练脚本写 `x_recon = vae.decode(z / sf)`，等于把 decoder
+    的输入尺度放大 1/sf ≈ 5.49 倍。实测已证明它训出一个"只认 sample/sf"的**非标准**
+    解码器 (base sd-vae 是 sample→L1 0.011 / sample/sf→0.417；旧 calli 恰好相反：
+    sample→0.848 / sample/sf→0.038)。下游一旦按标准约定 decode(pred/sf)=decode(mode)
+    去解，就得到灰图。此自检把"约定"从口头约定变成开机实测，防止再次静默跑歪。
+    """
+    with torch.no_grad():
+        post = vae.encode(x).latent_dist
+        s, m = post.sample(), post.mode()
+        l1_s = F.l1_loss(vae.decode(s).sample, x).item()
+        l1_ssf = F.l1_loss(vae.decode(s / sf).sample, x).item()
+        l1_m = F.l1_loss(vae.decode(m).sample, x).item()
+        l1_msf = F.l1_loss(vae.decode(m / sf).sample, x).item()
+    std = post.std.mean().item()
+    gap = (s - m).abs().mean().item()
+    print("[conv-selfcheck] 解码输入 -> 重建 L1 (越低越好):", flush=True)
+    print(f"    decode(sample)     = {l1_s:.4f}", flush=True)
+    print(f"    decode(sample/sf)  = {l1_ssf:.4f}", flush=True)
+    print(f"    decode(mode)       = {l1_m:.4f}", flush=True)
+    print(f"    decode(mode/sf)    = {l1_msf:.4f}", flush=True)
+    print(f"[conv-selfcheck] posterior.std={std:.4f}  |sample-mode|={gap:.4f}", flush=True)
+
+    # 判定的是"缩放约定" (真正的 bug 类别)，而非 sample-vs-mode 的 argmin：
+    # base sd-vae-ft-ema 后验极窄 (std≈2e-4)，sample 与 mode 打平，用 argmin 会误判。
+    if l1_s <= l1_ssf * 0.5:
+        verdict, ok = "STANDARD —— decoder 吃原始 z: decode(sample)  ✓", True
+    elif l1_ssf <= l1_s * 0.5:
+        verdict, ok = ("INVERTED —— decoder 只认 sample/sf，典型的 decode(z/sf) 训练残留  ✗", False)
+    else:
+        verdict, ok = ("SCALE-INSENSITIVE —— 后验极窄(sample≈mode) 且 sf 影响很小；"
+                       "标准 decode(sample) 即可  ✓", True)
+    print(f"[conv-selfcheck] 约定判定: {verdict}", flush=True)
+    print(f"[conv-selfcheck] 本脚本训练约定 = decode(posterior.sample())  (与标准一致: {ok})", flush=True)
+    if not ok:
+        print("[conv-selfcheck] ⚠ base 已非标准。本脚本仍按标准 decode(sample) 训练; "
+              "完训后会再自检, 确认其已回到 decode(sample)。", flush=True)
+    return ok
+
+
 def kl_divergence(posterior):
     """标准 KL 散度: D_KL(q(z|x) || N(0, I))"""
     return -0.5 * torch.sum(1 + posterior.logvar - posterior.mean.pow(2) - posterior.logvar.exp(), dim=[1, 2, 3]).mean()
@@ -219,6 +270,8 @@ def parse_args():
     parser.add_argument("--lr", type=float, default=5e-5,
                         help="AdamW 学习率")
     parser.add_argument("--weight-decay", type=float, default=0.01)
+    parser.add_argument("--eta-min", type=float, default=None,
+                        help="余弦学习率下限 (默认 = 0.1 * lr)")
     parser.add_argument("--w-l1", type=float, default=1.0,
                         help="L1 重建损失权重")
     parser.add_argument("--w-kl", type=float, default=1e-4,
@@ -258,6 +311,7 @@ def save_visual_grid(x_real, x_recon, out_path, num_show=8):
 
 def main():
     args = parse_args()
+    eta_min = args.eta_min if args.eta_min is not None else args.lr * 0.1
     os.makedirs(args.output, exist_ok=True)
     vis_dir = os.path.join(args.output, "visuals")
     os.makedirs(vis_dir, exist_ok=True)
@@ -268,7 +322,7 @@ def main():
     print(f"  基线 VAE: {args.vae_base}")
     print(f"  DINO 裁判: {args.dino_ckpt}")
     print(f"  训练数据: {args.csv}")
-    print(f"  Batch: {args.batch_size} | 学习率: {args.lr} | 目标步数: {args.max_steps}")
+    print(f"  Batch: {args.batch_size} | 学习率: {args.lr} (eta_min={eta_min}) | 目标步数: {args.max_steps}")
     print(f"  损失配方: {args.w_l1}*L1 + {args.w_kl}*KL + {args.w_struct}*DINO_Struct + {args.w_style}*DINO_Style")
     print(f"  输出目录: {args.output}")
     print("=" * 80)
@@ -303,10 +357,14 @@ def main():
 
     # 4. 优化器与余弦学习率调度器
     optimizer = torch.optim.AdamW(trainable_params, lr=args.lr, weight_decay=args.weight_decay)
-    scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=args.max_steps, eta_min=args.lr * 0.1)
+    scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=args.max_steps, eta_min=eta_min)
 
     # 固定的 8 张验证图 (固定观察同一批字的细节演化)
     fixed_val_batch = next(iter(dataloader))[:8].to(device)
+
+    # ★ [2026-10-09] 开机约定自检: 把"latent 喂 sample 还是 sample/sf"从口头约定
+    #   变成实测证据 (正是旧版 decode(z/sf) 静默跑歪的地方, 详见 verify_decode_convention)。
+    verify_decode_convention(vae, fixed_val_batch, device, vae.config.scaling_factor)
 
     step = 0
     micro_step = 0
@@ -335,9 +393,15 @@ def main():
 
             # 前向编解码与重参数化采样
             with torch.autocast("cuda", dtype=torch.bfloat16):
+                # ↑ [修正 2026-10-09] 旧代码是 decode(z / vae.config.scaling_factor)，等于把
+                #   decoder 的输入放大 1/0.18215 ≈ 5.5 倍 —— 与 SD-VAE 的既定输入尺度不符，
+                #   逼 decoder 去适配一个被放大的潜空间，训练出"必须喂 sample/sf"的非标准
+                #   约定（后验又因 w_kl=1e-4 极宽，std≈0.88），下游 DiT 一旦用 mode 就直接灰图。
+                #   标准约定 = decode(posterior.sample())，与 SD 管线 (latent=sample*sf →
+                #   decode(latent/sf)=decode(sample)) 一致。
                 posterior = vae.encode(x_real).latent_dist
                 z = posterior.sample()
-                x_recon = vae.decode(z / vae.config.scaling_factor).sample
+                x_recon = vae.decode(z).sample
 
                 # 基础损失
                 loss_l1 = F.l1_loss(x_recon, x_real)
@@ -386,6 +450,7 @@ def main():
                            f"Struct: {avg_struct:.4f} | "
                            f"Style: {avg_style:.4f} | "
                            f"KL: {avg_kl:.4f} | "
+                           f"Std: {posterior.std.mean().item():.4f} | "
                            f"Total: {avg_total:.4f} | "
                            f"LR: {lr:.2e} | "
                            f"OptSPS: {sps:.2f}")
@@ -405,7 +470,7 @@ def main():
                     with torch.no_grad():
                         with torch.autocast("cuda", dtype=torch.bfloat16):
                             val_post = vae.encode(fixed_val_batch).latent_dist
-                            val_recon = vae.decode(val_post.sample() / vae.config.scaling_factor).sample
+                            val_recon = vae.decode(val_post.sample()).sample
                     vis_p = os.path.join(vis_dir, f"recon_step_{step:05d}.png")
                     save_visual_grid(fixed_val_batch, val_recon, vis_p, num_show=8)
                     print(f"  [海报] 已保存对照栅格 -> {vis_p}", flush=True)
@@ -416,6 +481,9 @@ def main():
                     ckpt_dir = os.path.join(args.output, f"calli_vae_step_{step:05d}")
                     vae.save_pretrained(ckpt_dir)
                     print(f"  [权重] 里程碑权重已保存至 -> {ckpt_dir}", flush=True)
+
+    # ★ 完训自检: 训练后必须回到标准 decode(sample) 约定 (旧版正是在此跑成 sample/sf)。
+    verify_decode_convention(vae, fixed_val_batch, device, vae.config.scaling_factor)
 
     # 完训保存最终权重
     final_dir = os.path.join(args.output, "calli_vae_final")
