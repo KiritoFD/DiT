@@ -204,6 +204,8 @@ def _triple_remap_cache(cache, csv_path, n, args):
              ({"callig": _cr, "char": _hr, "font": _fr}[k])]
     if _miss:
         raise RuntimeError(f"[in-mem-eval] use_script_cond 需要三份 remap json, 缺: {_miss}")
+    if cache.get("triple_mapped", False):
+        return  # 保持幂等，防止重复映射引发 KeyError
     cache["conds"] = [(_cr[int(r["calligrapher_id"])], _hr[int(r["character_id"])])
                       for r in _rows]
     _h = cache["hier_conds"]
@@ -847,8 +849,9 @@ def run_in_mem_eval(model, args, step, device, results_dir=None, logger=print):
     sf = float(getattr(args, "vae_scaling_factor", 0.18215))
     use_self_cond = bool(getattr(args, "eval_self_cond", False))
     blend_alpha = float(getattr(args, "eval_blend_alpha", 0.0))
-    if _DIFF is None:
-        _DIFF = build_diffusion(ddim_steps, str(getattr(args, "diffusion_type", "flow")))
+    from src.loss import flow_kwargs_from
+    _DIFF = build_diffusion(ddim_steps, str(getattr(args, "diffusion_type", "flow")),
+                            flow_kwargs=flow_kwargs_from(args))
 
     # ── 解析评测集: "name:csv:n,name:csv:n" ──
     sets = []
