@@ -36,6 +36,10 @@ from diffusers import AutoencoderKL
 from safetensors import safe_open
 from transformers import Dinov2Config, Dinov2Model
 
+# ★ 2026-10-10: VAE 修正训练新增的两组损失（高频保真 + 后验坍缩）
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from hf_losses import hf_loss, posterior_std_penalty, highpass  # noqa: E402
+
 
 class CalligraphyDataset(Dataset):
     """读取 39.3 万真实书法图像数据集。"""
@@ -280,6 +284,18 @@ def parse_args():
                         help="DINO 结构保真损失权重")
     parser.add_argument("--w-style", type=float, default=0.5,
                         help="DINO 笔法方差损失权重 (核心飞白保障项)")
+    # ★ 2026-10-10 VAE 修正训练（详见 tools/vae/hf_losses.py 的论证）
+    parser.add_argument("--w-hf", type=float, default=0.0,
+                        help="高频保真损失权重 (0=关; 建议 0.2~0.5)。补齐 L1/DINO 都看不见的局部纹理")
+    parser.add_argument("--hf-mode", type=str, default="dog", choices=["dog", "fft", "focal"],
+                        help="高频损失形式: dog(高斯差分L1, 最稳) / fft(频谱L1) / focal(自适应频谱, 专治高频缺失)")
+    parser.add_argument("--hf-k", type=int, default=7, help="dog 模式的高斯核尺寸")
+    parser.add_argument("--hf-sigma", type=float, default=1.0, help="dog 模式的高斯 sigma")
+    parser.add_argument("--w-std", type=float, default=0.0,
+                        help="后验 std 惩罚权重 (推 σ→0, 让潜码确定化 mode≡sample)。"
+                             "⚠ 注意方向: 加大 KL 只会把 σ 推向 1, 必须用本项才能坍缩")
+    parser.add_argument("--logvar-max", type=float, default=None,
+                        help="硬夹紧 logvar 上限(如 -9.0 -> σ≤0.011)。比 w-std 更确定, 二者可合用")
     parser.add_argument("--max-steps", type=int, default=30000,
                         help="总训练步数 (30k 步约覆盖 200 万次样本前向)")
     parser.add_argument("--save-every", type=int, default=2500,
@@ -374,6 +390,9 @@ def main():
 
     t_start = time.time()
     accum_l1 = 0.0
+    accum_hf = 0.0
+    accum_std = 0.0
+    accum_hfr = 0.0
     accum_struct = 0.0
     accum_style = 0.0
     accum_kl = 0.0
@@ -400,7 +419,12 @@ def main():
                 #   标准约定 = decode(posterior.sample())，与 SD 管线 (latent=sample*sf →
                 #   decode(latent/sf)=decode(sample)) 一致。
                 posterior = vae.encode(x_real).latent_dist
-                z = posterior.sample()
+                if args.logvar_max is not None:
+                    # ★ 硬夹紧 logvar -> 给 σ 设上限（近似确定性编码，mode≡sample）
+                    _lv = torch.clamp(posterior.logvar, max=float(args.logvar_max))
+                    z = posterior.mean + torch.exp(0.5 * _lv) * torch.randn_like(posterior.mean)
+                else:
+                    z = posterior.sample()
                 x_recon = vae.decode(z).sample
 
                 # 基础损失
@@ -410,11 +434,29 @@ def main():
                 # DINO 感知损失与笔法方差损失
                 loss_struct, loss_style = dino_loss_fn(x_real, x_recon)
 
+                # ★ 新增: 高频保真损失（补 L1/DINO 都看不见的局部纹理）
+                if args.w_hf > 0:
+                    loss_hf = hf_loss(x_recon, x_real, args.hf_mode, args.hf_k, args.hf_sigma)
+                else:
+                    loss_hf = torch.zeros((), device=x_real.device)
+                # ★ 新增: 后验 std 惩罚（推 σ→0；加大 KL 是反方向）
+                if args.w_std > 0:
+                    loss_std = posterior_std_penalty(posterior)
+                else:
+                    loss_std = torch.zeros((), device=x_real.device)
+                # 实时诊断: 重建/真迹 的高频能量比（正是离线 census 测的那个量）
+                with torch.no_grad():
+                    _hr = highpass(x_recon.detach().float(), args.hf_k, args.hf_sigma).abs().mean()
+                    _hg = highpass(x_real.detach().float(), args.hf_k, args.hf_sigma).abs().mean()
+                    hf_ratio = (_hr / (_hg + 1e-8)).item()
+
                 # 综合目标 (按累积步数缩放)
                 loss_total = (args.w_l1 * loss_l1 
                               + args.w_kl * loss_kl 
                               + args.w_struct * loss_struct 
-                              + args.w_style * loss_style)
+                              + args.w_style * loss_style
+                              + args.w_hf * loss_hf
+                              + args.w_std * loss_std)
                 loss = loss_total / args.grad_accum
 
             loss.backward()
@@ -424,6 +466,9 @@ def main():
             accum_style += loss_style.item()
             accum_kl += loss_kl.item()
             accum_total += loss_total.item()
+            accum_hf += float(loss_hf.item())
+            accum_std += float(loss_std.item())
+            accum_hfr += hf_ratio
 
             # 当达到累积步数时执行参数更新
             if micro_step % args.grad_accum == 0:
@@ -443,14 +488,19 @@ def main():
                     avg_style = accum_style / args.grad_accum
                     avg_kl = accum_kl / args.grad_accum
                     avg_total = accum_total / args.grad_accum
+                    avg_hf = accum_hf / args.grad_accum
+                    avg_std = accum_std / args.grad_accum
+                    avg_hfr = accum_hfr / args.grad_accum
 
                     msg = (f"[{datetime.datetime.now():%H:%M:%S}] "
                            f"step={step:05d}/{args.max_steps} (ep={epoch}) | "
                            f"L1: {avg_l1:.4f} | "
                            f"Struct: {avg_struct:.4f} | "
                            f"Style: {avg_style:.4f} | "
+                           f"HF: {avg_hf:.4f} | "
                            f"KL: {avg_kl:.4f} | "
                            f"Std: {posterior.std.mean().item():.4f} | "
+                           f"HFr: {avg_hfr:.3f} | "
                            f"Total: {avg_total:.4f} | "
                            f"LR: {lr:.2e} | "
                            f"OptSPS: {sps:.2f}")
@@ -463,6 +513,9 @@ def main():
                 accum_style = 0.0
                 accum_kl = 0.0
                 accum_total = 0.0
+                accum_hf = 0.0
+                accum_std = 0.0
+                accum_hfr = 0.0
 
                 # 保存可视化对比栅格 (每 500 步)
                 if step % args.vis_every == 0:
