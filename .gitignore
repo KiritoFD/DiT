@@ -202,3 +202,8 @@ assets/v54_eval200fix/
 
 # quarantine area (reversible, never committed)
 _quarantine_*/
+
+# ---- 本机推理用权重与真迹原图（2026-10-10 海报扩行用, 不入库; v68/v72 ckpt 各 907MB）----
+_local_ckpt/
+data/top10_style23/
+experiments/

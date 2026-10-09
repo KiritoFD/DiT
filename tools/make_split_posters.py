@@ -43,6 +43,10 @@ N_COLS = 10          # 兼容旧引用 (默认值)
 # 行: (目录名, 显示名, 事实描述)
 ROWS = [
     ("v68", "v68", "Sp/2 59.2M · 200k步 · batch288 · 3x对称粗细增强 + C2OT"),
+    # ★ 2026-10-10 新增三行 (均为 cfg1.0 口径, 与上面所有行同协议; 无 GPU 冲突: 本机 4070 生成)
+    ("v68_sde", "v68 + SDE", "同上 · **cfg1.0 + γ0.5 SiT-SDE** (与 v68 行只差 γ 单变量)"),
+    ("v72", "v72 (Calli-VAE)", "Sp/2 59.2M · **130k步** · batch288 · **冻结 Calli-VAE(kl1e6, DINO监督, sample目标)** · noaug 26k · C2OT"),
+    ("v72_sde", "v72 + SDE", "同上 · **cfg1.0 + γ0.5** (SDE 对 v72 无改善: 0.6189→0.6162, 见 state.md)"),
     ("moyi_4ch", "Moyi 4ch", "Moyun-4channel-B 252M · 官方实现 (我们复现推理)"),
     ("v66", "v66", "S/2 33.9M · 150k步 · batch384 · 三表 + 条件分层路由(2,4,5,6)"),
     ("v54", "v54", "S/2 33.9M · 150k步 · 三表 minimal (无骨架/无增强)"),
@@ -67,6 +71,11 @@ ROWS = [
 # 依据: _sync_work/judge_mid_bl.png / judge_mid_top.png / judge_mid_rest.png / judge_best_*.png
 #       (每格原始 256px 未缩放)
 VISUAL_ORDER = [
+    # ★ 2026-10-10: 下面三行是**新增对照行**, 为便于与各自基线对读而插在其旁;
+    #   它们**不属于** 2026-10-07 那次人工视觉排序, 不构成任何新的质量判断。
+    "v68_sde",             # = v68 + γ0.5 SDE（与 v68 只差 γ）
+    "v72",                 # = Calli-VAE 主线（同 cfg1.0 口径）
+    "v72_sde",             # = v72 + γ0.5（SDE 对 v72 无改善）
     "v_b_aug_route_60k",   # Mid 最贴 GT: 墨量/粗单笔(已)/brushy(类) 都对, 仅 类 略糊
     "v_l_aug_route_50k",   # 与 B60k 同级, 略软
     "v_b_aug_40k",         # 同族, Mid 上 类 更碎一些
