@@ -61,10 +61,15 @@ def image_latent(lat):
 
 
 def load_eval_vae(device, vae_path=None):
-    """Lazily load the VAE once per process (modules that are eval shells share it)."""
+    """Lazily load the VAE once per **(device, 解析后的路径)**。
+
+    ⚠ 2026-10-10 BUGFIX: 原来缓存键**只有 device**，于是同一进程里第二次换 VAE 路径会
+    **静默复用第一个 VAE**（不报错、指标也像模像样）。实测后果：先加载 sd-vae-ft-ema，
+    再用 Calli-VAE 评测 -> Calli latent 被 SD decoder 解码 -> 整图发灰泛黄
+    （mean≈110 vs 正常≈225），LPIPS/SSIM 全部失真。
+    这与 `src/eval/in_mem_eval.py` 里 `_VAE_REF # 缓存键 = VAE 路径` 的修复是同一类问题。
+    """
     global _eval_vae, _eval_vae_ref
-    if _eval_vae is not None and _eval_vae_ref is device:
-        return _eval_vae
     from diffusers.models import AutoencoderKL
     candidates = [
         vae_path,
@@ -78,13 +83,15 @@ def load_eval_vae(device, vae_path=None):
         if cand and os.path.exists(cand):
             resolved = cand
             break
-    if resolved:
-        _eval_vae = AutoencoderKL.from_pretrained(resolved).to(device).eval()
-    else:
-        _eval_vae = AutoencoderKL.from_pretrained("stabilityai/sd-vae-ft-ema").to(device).eval()
+    if not resolved:
+        resolved = "stabilityai/sd-vae-ft-ema"
+    cache_key = (str(device), str(resolved))          # ★ 路径必须进缓存键
+    if _eval_vae is not None and _eval_vae_ref == cache_key:
+        return _eval_vae
+    _eval_vae = AutoencoderKL.from_pretrained(resolved).to(device).eval()
     for p in _eval_vae.parameters():
         p.requires_grad_(False)
-    _eval_vae_ref = device
+    _eval_vae_ref = cache_key
     return _eval_vae
 
 
