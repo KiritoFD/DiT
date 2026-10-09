@@ -98,3 +98,37 @@ skel_IoU 0.0169/0.0149、frag_ratio 1.488/2.036、nn_SSIM 0.6297/0.6120 **全面
 | C | REPA-E（encoder 解冻 lr 2e-6） | 仅当 T1/T2/T3 触发才跑 |
 
 看 flow loss 曲线 + 20k 处 eval200fix。A 是决策的关键路径，B 免费复用，C 按需。
+
+---
+
+## 6. 执行记录：v72 已启动（2026-10-09 14:22）
+
+**决策落地**：VAE 训练于 step 12,800 主动停机（GPU 让给 v72）；用 step 12,500 权重冻结、预编码、起 v72。
+
+### 三套 latent 的区分（★ 命名防混淆）
+
+| shards | VAE | 存盘约定 | 解码约定 | 用于 |
+|---|---|---|---|---|
+| `exp-std/data/shards_img_aug` | sd-vae-ft-ema | `mode()*sf` | `decode(lat/sf)` = `decode(mode)` | v68、消融 4 臂 |
+| `exp-std/data/shards_img_aug_calli`（48 上） | 旧 calli (step 25000, 非标准) | 裸 `sample()` | `decode(sample/sf)`（须注噪补丁） | v71 |
+| **`exp-std/data/shards_img_aug_calli_kl1e6_s12500_rsample`** | **新 calli (kl1e6, step 12500, 标准)** | **`sample()*sf`** | **`decode(lat/sf)` = `decode(sample)`** | **v72** |
+
+- 冻结制品：`experiments/vae_frozen/calli_vae_kl1e6_s12500_stdconv/`（含 `MD5SUMS.txt`、`PROVENANCE.md`）
+- 编码自检（`tools/vae/verify_calli_latent_shards.py`）：16 shards / 77,823 行 / names 齐全 / img_id 唯一；
+  存储 latent std **0.1955 ≈ sf 0.18215**（证明存的是 `sample*sf`）；
+  `decode(lat/sf)` **L1 = 0.0072**，对照 `decode(lat)` = 0.6646 → 约定唯一正确 ✓
+
+### v72 运行配置（要点）
+
+- 语料：**无增广原版 26,002 行**（`exp-std/csv/train_top10_noaug.csv`，由 `tools/derive_noaug_csv.py` 从 3x 增强 CSV 派生，覆盖率 100%）
+  → 与消融 `noaug_c2ot`（SD latent + 无增广）构成**单变量对照**（只换 VAE）；shards 是 77,823 超集，改一行 `data_csv` 即可切增强版
+- **评测 VAE 已同步切换**：`vae_path` = `eval_vae_path` = 冻结新 VAE；
+  `calli_decode_noise: false` → 评测走标准 `decode(lat/sf)`（`src/eval/in_mem_eval.py:984/1021`）
+- 启动器：`tools/launch_v72.sh`（预检 + 清单 `logs/v72_launch_manifest.json`），
+  内置「**语料一致性断言**」（config 的 `data_csv` 必须与 `CORPUS` 选择一致——曾因两者不一致误跑了增强语料，已修）
+
+### 实测（14:25）
+
+step 400 时 Diff 1.247→0.366、REPA 0.030→0.020、**3.68 steps/s**、显存 21.4G；
+预估 200k 步 ≈ 15h（明早 ~05:30 完训），首个评测点 5k ≈ 15:40（eval200fix 187）。
+
