@@ -14,7 +14,8 @@
      原脚本会退化成 -1 → 全表覆盖同一个 id。
 
 产物 (每 shard): shard_%05d.npz
-  latents : (N, 4, 32, 32) float16     (vae.latent_dist.mode() * 0.18215)
+  latents : (N, 4, 32, 32) float16    (vae.encode(x).latent_dist.mode()|sample() * 0.18215,
+                                       由 --encode-mode 决定, 默认 mode)
   img_ids : (N,) int64
   names   : (N,) unicode              (image_path 的 basename)
 
@@ -107,6 +108,11 @@ def main():
     ap.add_argument("--shard-size", type=int, default=5120)
     ap.add_argument("--image-size", type=int, default=256)
     ap.add_argument("--device", default="cuda")
+    ap.add_argument("--encode-mode", default="mode", choices=["mode", "sample"],
+                    help="潜空间编码约定。'mode' = latent_dist.mode()*sf (sd-vae-ft-ema 适用, "
+                         "其后验 std≈2e-4, 与 sample 等价)。'sample' = latent_dist.sample()*sf "
+                         "(**Calli-VAE 必须用这个**: 其后验极宽 std≈0.88, mode 无法承载细节, "
+                         "用 mode 编码会与训练/解码约定不一致 -> 灰图)。")
     a = ap.parse_args()
 
     os.makedirs(a.out, exist_ok=True)
@@ -156,7 +162,9 @@ def main():
         for imgs, ids, names, ok in dl:
             imgs = imgs.to(a.device, non_blocking=True)
             with torch.amp.autocast("cuda", dtype=torch.float16):
-                z = vae.encode(imgs).latent_dist.mode() * SCALING_FACTOR
+                _dist = vae.encode(imgs).latent_dist
+                _lat = _dist.sample() if a.encode_mode == "sample" else _dist.mode()
+                z = _lat * SCALING_FACTOR
             z = z.float().cpu().numpy()
             for k in range(z.shape[0]):
                 if not bool(ok[k]):
