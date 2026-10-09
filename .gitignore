@@ -183,3 +183,16 @@ _venv_qwenvl/
 tools/fonts/candidate_fonts/
 tools/fonts/google_fonts/
 
+# ---- eval 输出与评测采样中间产物（2026-10-09 整理：留磁盘，不入库）----
+# 说明: 这些是评测/海报流水线的原始采样图集（可再生成；策展海报已入库 docs/**）。
+# 本地/服务器路径保留，供 tools/render_* 与 tools/integrate_* 继续引用。
+eval/
+assets/server_48_evals/
+assets/from48_evals/
+assets/eval200_30_gathered/
+assets/eval200_outputs/
+assets/aligned_eval200_top10/
+assets/historical_strict_common/
+assets/poster_tree/
+assets/v54_eval200fix/
+

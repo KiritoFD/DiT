@@ -1,0 +1,18 @@
+run,定位,模型,batch,steps,ssim187,lpips,mse,ckpt位置
+v68_aug_sp_c2ot,旗舰:C2OT+3x增广+黄金路由2456+字表三元组,DiT-2Cond-Sp/2,288,200000,0.6149,,0.7496,4090 assets/runs/v68_family/
+ladder_B2_aug_route2456,容量阶梯顶:B/2+5x增广+路由2456,DiT-2Cond-S/2(推定),,60000,0.6104,0.3243,0.7633,48 experiments/capacity_ladder/results/
+moyi_top10_rf_4ch,墨意复现(4ch),,,80000,0.6085,0.3489,0.7604,48 moyi/results/moyi_top10_rf_4ch/
+v61_triple_prior_sota_b1024,三表冻结先验(100%开集),DiT-2Cond-Sp/2,1024,65000_终110000,0.6067,0.3289,0.7709,48 results/v61_triple_prior_sota_b1024/
+ladder_B2_aug5x,容量阶梯:B/2+5x增广,DiT-2Cond-S/2(推定),,40000,0.6039,,,48 experiments/capacity_ladder/results/tier3_b_aug/
+v68_pix,像素域变体,DiT-2Cond-Sp/2,288,110000,0.6002,,,4090 assets/runs/v68_family/v68_pix/
+v54_minimal_tables_noskel,字表基线(无skel注入),DiT-2Cond-S/2,384,150000,0.5960,,0.7862,4090 assets/runs/v54_67_tables/v54_minimal_tables_noskel/
+v66_tables_condroute2456,黄金路由(2456)基线,DiT-2Cond-S/2,384,150000,0.5955,,0.7849,4090 assets/runs/v54_67_tables/v66_tables_condroute2456/
+moyi_top10_rf,墨意复现(12ch),,,50000,0.5935,,0.7983,48 moyi/results/moyi_top10_rf/
+v60_randinit_sota,随机初始化表(证伪先验必要性),DiT-2Cond-Sp/2,1024,50000,0.5858,0.3500,0.8393,48 results/v60_randinit_sota/
+v56_classic_sp2,经典sp2 top10,,,80000,0.5619,0.3732,0.9024,48 results/v56_classic_sp2/
+ladder_tier2_sp,容量阶梯:S/2+std骨架(小容量),DiT-2Cond-S/2(推定),,20000,0.5606,,,48 experiments/capacity_ladder/results/tier2_sp/
+v70_aug_sp_stdskel_c2ot,标准骨架+C2OT(开集路线),DiT-2Cond-Sp/2,288,65000,0.5535,,,4090 assets/runs/v69_70/v70_aug_sp_stdskel_c2ot/
+v68_dino_raw,DINO原始特征表(探针),DiT-2Cond-Sp/2,288,20000,0.5453,,,4090 assets/runs/v68_family/v68_dino_raw/
+ladder_tier3_b,容量阶梯:B/2 base(无增广),DiT-2Cond-S/2(推定),,5000,0.5346,,,48 experiments/capacity_ladder/results/tier3_b/
+v68_randtab,随机表(探针),DiT-2Cond-Sp/2,288,20000,0.5323,,,4090 assets/runs/v68_family/v68_randtab/
+v71_callivae_sp_c2ot,calliVAE表征+sp+c2ot(在训),DiT-2Cond-Sp/2,,30000,0.5143,,0.7834,48 assets/results/v71_callivae_sp_c2ot/

@@ -1,5 +1,13 @@
 # experiments/ —— 实验数据与报告
 
+## 主面大表（2026-10-09 重抽, 统一 187 协议）★
+
+| 文件 | 说明 |
+|---|---|
+| `mainline_20261009.csv` | **17 行主面大表**：v54~v71 + 容量阶梯 + moyi 复现，全部 `eval200_fixed` N=187 统一协议（ssim/lpips/mse + ckpt 位置）。README §2.5 表格的机器可读版 |
+| 抽取脚本 | `_sync_work/extract_metrics_4090.py`（扫 4090 `assets/runs` 的 eval_auto json）、`_sync_work/extract_metrics_48.py`（ladder/v61/v60/v56/v71/moyi） |
+| 主图 | `../system/imgs/fig_mainline_eval200_20261009.png`、`fig_capacity_ladder_20261009.png`、`fig_v68_family_20261009.png`（生成脚本 `_sync_work/plot_readme_figs{,2}.py`） |
+
 ## 全量实验表（2026-10-05 生成）
 
 | 文件 | 说明 |
