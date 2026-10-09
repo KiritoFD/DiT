@@ -100,7 +100,12 @@
 基线 = 现冻结版 `vae_frozen/calli_vae_kl1e6_s12500_stdconv`，数据 `/root/Workspace/xy/UNIFIED_RAW/meta/train_clean.csv`(393,487)，batch 8×accum4，1500 步/臂（≈1.2h/臂）。
 **判据**：① 后验相对宽度 → 趋 0；② 往返 HF ≥0.85；③ PSNR 掉 ≤0.3 dB；④（最终）下游 DiT 的 HF 与墨量斜率改善。
 
-**★ v74 对照计划**：v74 跑到 **85k**（≈10:15）后 → 读两者同口径 in-mem 曲线 → `STOP=1` 停 v74 → 两个 ckpt 各跑 `census_ckpt.py`（高频×GT / 墨量斜率/r）→ 判定"是不是采样(目标)的问题"，再决定是否续训到 200k。
+**★ v74 对照计划（改为 120k）**：两边**调度完全同口径**（`max_steps=200000 / lr 5e-5 / warmup 3000 / cosine / min_lr_ratio 0.1 / batch 288 / seed 0 / ckpt_every 5000`，**唯一差异 = `latent_shards_dir`：sample vs mode**）。
+- **v72@120k 已在位**（`0120000.pt`，950MB）→ **不需要重跑**。其平台期参照（cfg1.0/γ0, N=187）：120k `ssim 0.6074 / lpips 0.3960 / frag 2.530 / ink_iou 0.3477`；100k 0.6082、125k 0.6079、130k 0.6070。
+- **v74 跑到 120k**（3.4~3.7 steps/s，**ETA ≈ 12:53**）。
+- **守候任务已装**（tmux `waiter120k`）：120k ckpt **写完**（存在 + >900MB + 30s 不变，防半截 ckpt）后自动 → ①同口径曲线对比 ②停 v74 ③`census_ckpt.py` 跑 v72@120k 与 v74@120k（cfg0.7/γ0, N=40）④写 `experiments/compare_120k/REPORT.md` + `DONE`。
+- **判定树**：v74 的 **HF↑ / 墨量斜率↑（0.55→?）/ r↑（0.53→?）** → 确认是"目标/采样"问题（mode 治住均值化），与 VAE 的"后验坍缩"是同一件事两端，可合并推进并续训到 200k；**三项都不动** → 均值化属容量/损失层面，主线转"高频损失项 + 容量/数据"。
+- 之后接 **VAE 修正训练三臂**（已就绪，见上表）；GPU 与 v74 互斥（VAE 需 20~33G，v74 占 22.5G）。
 
 > `sde_gamma=0.0` 是 2026-10-09 显式钉住的（commit `3de27be`）：因为同步 SDE 代码后，`--sde-gamma` 的 CLI 默认值 0.5 会被**训练内评测自动继承**，一旦重启就会让同一条曲线中途换口径。
 
