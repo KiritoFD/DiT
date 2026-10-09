@@ -91,6 +91,7 @@
   "in_mem_eval_sets": "eval200fix:exp-std/csv/eval200_fixed.csv:187,seen:exp-std/csv/seen20.csv:20",
   "eval_cfg": 1.0,
   "eval_steps": 50,
+  "sde_gamma": 0.0,
   "eval_csv": "exp-std/csv/eval200_fixed.csv",
   "data_csv": "exp-std/csv/train_top10_noaug.csv",
   "global_batch_size": 288,

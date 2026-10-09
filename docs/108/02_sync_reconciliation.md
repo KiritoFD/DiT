@@ -117,3 +117,41 @@ else:
    - **A3**：修 `tools/launch_v72.sh` 的溯源字段（`git_commit` 当前记的是**上游 facebookresearch/DiT 的提交** `ac2c25e`，无效）。
    - **A4**：把 §3 的 8 个配置 + 4 个工具脚本 + 2 个清单回传本地。
    - **A5**：建立正式同步契约（脚本 + 排除清单 + 本对账流程），替代临时 scp。
+
+## 6. 执行记录：采样器代码已同步（2026-10-09 20:33）
+
+**已推送并逐文件 md5 校验通过（8/8）**，远程原件先备份至 `_sync_work/_pre_sync_backup_20261009/`（含 `MD5_BEFORE.txt`，回滚 = `cp -p <backup>/<path> <path>`）：
+
+| 文件 | 作用 | 结果 |
+|---|---|---|
+| `src/loss/flow_matching.py` | **SiT SDE 采样器本体**（+`FLOW_PARAMS` 增 `sde_gamma`） | OK |
+| `src/train/cli.py` | `--sde-gamma` 默认 0.5、REPA-E 参数组 | OK |
+| `src/eval/cli.py` | 评测侧 `--sde-gamma` / `--eval-cfg` 默认 | OK |
+| `src/eval/in_mem_eval.py` | calli 解码约定分支 | OK |
+| `src/train/train.py` | REPA-E 双速优化器接线 | OK |
+| `src/train/configs/_probe_inject12.json`、`tests/test_arch_v2.py` | 配置/测试同步 | OK |
+| `src/train/configs/v72_...json` | **新增 `"sde_gamma": 0.0`**（见下） | OK |
+
+### ⚠ 同步时发现并处置的一个隐患（否则会造成曲线口径中途漂移）
+
+`flow_kwargs_from(args)` 遍历的 `FLOW_PARAMS` **包含 `sde_gamma`**，而 `in_mem_eval` 正是用它构造采样器。
+即：同步后 `--sde-gamma` 的 CLI 默认值 **0.5** 会被**训练内评测自动继承**——**一旦 v72 重启，它的内评测会从「纯 ODE」切成「SDE γ=0.5」**，同一条曲线上前后点口径不一致（比"整条曲线都是旧口径"更糟，因为不可比且不可解释）。
+
+**处置**：在 v72 config 里显式写死 `"sde_gamma": 0.0`（与既有 `"eval_cfg": 1.0` 同一套旧口径），使 v72 曲线全程 = `cfg 1.0 + 纯 ODE`，与 v68 曲线同口径、**可直接对比**；SDE 增益留待后续用新默认口径**统一重评**。
+> 该改动只影响"下次启动读取的配置"，对**正在运行的 v72 进程无影响**（其 `resolved_config.json` 已固化）。
+
+### 仍未同步（建议后续处理）
+
+| 项 | 状态 |
+|---|---|
+| `README.md`、`docs/README.md`、`docs/system/00_README.md` | 本地新版未推（远程 `docs/` 整体仍是 10-05 前布局，需整树覆盖而非单文件） |
+| `_sync_work/v50_A_*.json`、`v51_B_*.json` | 同长不同内容，来源待判，先不动 |
+| `tools/audit_minimal_best.py`、`_sync_work/peek_A.sh` | **远程较新**，建议拉回本地比对后再决定保留哪版（勿直接覆盖） |
+
+### 运维提示：4090 的 sshd 有速率限制
+
+同步过程中一度出现 `kex_exchange_identification: Connection closed by remote host`（TCP 可连通但握手被拒），
+诱因是**短时间 20+ 次连接**（6 次 scp + 8 次重试 + 诊断）打满了 sshd 的 `MaxStartups`。退避 ~5 分钟后自愈。
+**纪律**：批量传文件前合并为单次 `tar` 传输；**不要写重试循环**（会把半开连接堆起来，越试越糟）；
+另注：Windows OpenSSH **不支持 `ControlMaster`**，`ssh config` 里 `mccd` 别名的复用通道在本地无效（报 `getsockname failed: Not a socket`）。
+
