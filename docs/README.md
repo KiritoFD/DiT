@@ -60,6 +60,7 @@
 
 ## 其他
 
+- **[`../state.md`](../state.md)**：**实验状态与对照关系（单一事实来源）** —— 谈任何数字之前先读它；登记在跑/在排实验的「变量 / 基准 / 口径 / 能否读结论」。
 - VAE 转换/编码/验证流程：`tools/vae/DATA_PIPELINE.md`（设计论证 `tools/vae/README.md`）
 - `docs/experiments/2026-*.md`：近期单次实验报告（保留原处）。其中：[2026-10-08-calli-vae-dino-repa-pretraining.md](experiments/2026-10-08-calli-vae-dino-repa-pretraining.md)（v71 前置）、[2026-10-09-calli-vae-decode-convention-rootcause.md](experiments/2026-10-09-calli-vae-decode-convention-rootcause.md)（VAE 解码范式根因）
 - [107/README.md](107/README.md)：数据集规格 / 模型基准 / 证据分级与勘误 / 实验计划（规划集）
