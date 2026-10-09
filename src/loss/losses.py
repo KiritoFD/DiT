@@ -71,7 +71,15 @@ def _load_local_dinov2(ckpt_path):
         layer_scale_init_value=1.0,
         num_register_tokens=n_reg,
     )
-    model = Dinov2Model(config)
+    # ★ 2026-10-07: 默认实现是 eager attention (modeling_dinov2 里直接
+    #   F.softmax(attention_scores)), 257x257 的注意力矩阵在 batch 1536 时要 3.6G,
+    #   抽取 40w 张时直接 OOM。SDPA 不物化该矩阵且更快; 失败则回退 eager。
+    try:
+        model = Dinov2Model(config, attn_implementation="sdpa")
+        print("[dinov2] attention = sdpa")
+    except Exception as e:  # noqa: BLE001 - 老版本 transformers 不支持则回退
+        print(f"[dinov2] sdpa 不可用 ({e!r}), 回退 eager")
+        model = Dinov2Model(config)
     sd = {}
     with safe_open(ckpt_path, framework="pt") as f:
         for k in keys:

@@ -187,7 +187,31 @@ class MCCDLatentDataset(Dataset):
                 if _di == 0:
                     self._skel_id_to_shard = _m          # 兼容既有单目录逻辑
                     self._skel_names = self._load_shard_names(_sk_shards)
-                    self._check_shard_names(self._skel_names, "std_path", "skel(g)")
+
+            # ★ 支持增强样本查找标准骨架:
+            # 增强样本 (tp/tn 等) 的 img_id (如 7006533/7106533) 不在原始骨架 shard 里,
+            # 但其 std_path (如 data/top10_style23/std/006533.png -> 6533) 与原图共享同一标准骨架。
+            # 将增强 img_id 映射到对应 base_id 的 shard 位置，确保 100% 覆盖。
+            _aug_skel_mapped = 0
+            for _m in self._skel_id_to_shard_list:
+                for r in self.samples:
+                    iid = extract_img_id(r)
+                    if iid not in _m:
+                        sp_val = str(r.get("std_path", "") or "")
+                        m_sp = re.search(r"(\d+)\.png$", sp_val)
+                        if m_sp:
+                            base_id = int(m_sp.group(1))
+                            if base_id in _m:
+                                _m[iid] = _m[base_id]
+                                if _m is self._skel_id_to_shard:
+                                    _aug_skel_mapped += 1
+                                    if self._skel_names and base_id in self._skel_names:
+                                        self._skel_names[iid] = self._skel_names[base_id]
+            if _aug_skel_mapped > 0:
+                print(f"[skel-aug] 为 {_aug_skel_mapped:,} 个增强样本通过 std_path 关联了对应基础字的骨架 shard")
+
+            if self._skel_names:
+                self._check_shard_names(self._skel_names, "std_path", "skel(g)")
             if len(self._skel_dirs) > 1:
                 print(f"[skel-aug] 载入 {len(self._skel_dirs)} 个骨架变体目录，"
                       f"训练时每样本每步随机选一个: {[os.path.basename(d) for d in self._skel_dirs]}")
