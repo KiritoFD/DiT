@@ -186,7 +186,10 @@ tools/fonts/google_fonts/
 # ---- eval 输出与评测采样中间产物（2026-10-09 整理：留磁盘，不入库）----
 # 说明: 这些是评测/海报流水线的原始采样图集（可再生成；策展海报已入库 docs/**）。
 # 本地/服务器路径保留，供 tools/render_* 与 tools/integrate_* 继续引用。
-eval/
+# ⚠ 2026-10-10: 必须写成根锚定 `/eval/`。原写法 `eval/` 会匹配**任意层级**的 eval 目录，
+#   把源码目录 `src/eval/` 也标成 ignored -> 该目录下**新建文件会被静默忽略**（差点漏提交
+#   src/eval/inference.py 的 VAE 缓存 bugfix）。已跟踪的旧文件不受影响，故此前未暴露。
+/eval/
 assets/server_48_evals/
 assets/from48_evals/
 assets/eval200_30_gathered/
