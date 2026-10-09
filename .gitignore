@@ -196,3 +196,6 @@ assets/historical_strict_common/
 assets/poster_tree/
 assets/v54_eval200fix/
 
+
+# quarantine area (reversible, never committed)
+_quarantine_*/

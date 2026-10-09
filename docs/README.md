@@ -18,11 +18,16 @@
 | [system/09_ops.md](system/09_ops.md) | 远程部署、SSH 运维、GPU 纪律、踩坑清单 |
 | **[system/76_experiments_20261005.md](system/76_experiments_20261005.md)** | **全量实验整理与结论**（三目录 499 run → CSV → 同协议对照结论） |
 | **[system/10_assets_cleanup_20261009.md](system/10_assets_cleanup_20261009.md)** | **双机资产整理记录**（48 删冗余 ckpt 回收 330G / 4090 run 家族重组 / 归档包与遗留项） |
+| **[108/README.md](108/README.md)** | **双机资产总账与同步对账**（2026-10-09 晚）：远程 30 项死件隔离（43 GB）、**训练机代码落后本地 3 天（14 处真实分叉）**、616 点指标台账、本地 26 GB git 垃圾 |
 
 ## 📊 实验数据
 
 | 文件 | 内容 |
 |---|---|
+| [../assets/ledger/points_all.csv](../assets/ledger/points_all.csv) | **逐评测点台账**（616 行 × 33 列，含在跑的 v72 与 5 个消融臂，2026-10-09 重抽） |
+| [../assets/ledger/runs_all.csv](../assets/ledger/runs_all.csv) | 每 run 一行摘要 + 40 列配置快照（36 run） |
+| [../assets/ledger/aligned_curve.csv](../assets/ledger/aligned_curve.csv) | step 对齐矩阵（12 条主线，用于画图/对读） |
+| [108/03_metrics_ledger.md](108/03_metrics_ledger.md) | 台账字段说明 + 对齐曲线结论 + 消融台账 + 口径警告 |
 | [experiments/mainline_20261009.csv](experiments/mainline_20261009.csv) | **主面 17 行大表数据**（`eval200_fixed` N=187 统一协议：v54~v71 + 容量阶梯 + moyi 复现，2026-10-09 重抽） |
 | [experiments/all_runs_20261005.csv](experiments/all_runs_20261005.csv) | 每 run 一行：条件构成 + 曲线关键点 + best（499 run × 63 列，含 `eval_protocol` 列） |
 | [experiments/all_runs_curves_20261005.csv](experiments/all_runs_curves_20261005.csv) | 长表 `(run_id, step, ssim, mse)`，870 点 |
