@@ -137,3 +137,14 @@ tools/vae/
 - 传 `in_channels` 给 model 构造
 - `_vae_params()` helper 提取 VAE 参数
 - cfg dict 包含 latent_channels/latent_spatial/scaling_factor (从 ckpt_args)
+
+---
+
+## ★ 接口规约（必读）
+
+本项目 VAE↔DiT 的 latent 契约、sf 拟合规则、冻结/部署 runbook 与失败案例目录（E1–E8）见：
+
+- **[docs/vae_latent_contract.md](../../docs/vae_latent_contract.md)**
+
+**高频/尺度相关工具**：`tools/vae/hf_losses.py`（topband 损失，与离线普查同口径）、`tools/vae/judge_vae.py`（后验宽度+往返判定）、`tools/hf_decompose.py`、`tools/check_band_metric.py`。
+
