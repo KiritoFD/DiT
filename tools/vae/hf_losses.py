@@ -48,16 +48,52 @@ def highpass(x, k: int = 7, sigma: float = 1.0):
 
 
 # ---------------------------------------------------------------- 频谱
-def _radial_radius(h: int, w: int, device, dtype):
+def _radial_radius(h: int, w: int, device, dtype, normalize: bool = True):
+    """径向频率坐标。
+
+    ⚠ normalize=False 才是**离线普查的口径**（r = sqrt((dy/(H/2))^2 + (dx/(W/2))^2)，不再除以
+      r.max()）。2026-10-10 实测: 多除一次 r.max()(=1.414) 会把 r>0.5 的阈值从 64px 推到 90.5px,
+      切到另一个频段, 使 torch 版与离线普查差 41% —— 又是一个"静默口径不一致"的坑。
+    """
     yy = torch.arange(h, device=device, dtype=dtype).view(-1, 1) - h / 2
     xx = torch.arange(w, device=device, dtype=dtype).view(1, -1) - w / 2
-    r = torch.sqrt(yy ** 2 + xx ** 2)
-    return r / r.max()
+    r = torch.sqrt((yy / (h / 2)) ** 2 + (xx / (w / 2)) ** 2)
+    return r / r.max() if normalize else r
 
 
-def hf_loss(rec, gt, mode: str = "dog", k: int = 7, sigma: float = 1.0):
-    """高频保真损失（rec/gt 均在 [-1,1]）。返回标量。"""
+def band_fraction(x, r_cut: float = 0.5):
+    """★ 与离线普查【完全同口径】的指标: 灰度图 FFT 中 r>r_cut 的能量份额。
+
+    ⚠ 2026-10-10 教训: 训练时我原本用 `|DoG高通(x)|.mean()` 的比值当 HFr, 它测的是
+      **宽带幅度**(覆盖 r>0.25 以上 95%), 对"顶带份额偏低"不敏感 —— 于是出现了
+      "日志 HFr≈1.03 但离线普查 0.783" 的假象, 并让我误判高频已修好。
+      现在训练日志与本函数都改用与普查一致的口径。
+    """
+    g = x.float()
+    if g.shape[1] > 1:
+        g = g.mean(dim=1, keepdim=True)
+    g = g - g.mean(dim=(-2, -1), keepdim=True)
+    F = torch.fft.fftshift(torch.abs(torch.fft.fft2(g, norm="ortho")) ** 2, dim=(-2, -1))
+    r = _radial_radius(g.shape[-2], g.shape[-1], g.device, g.dtype, normalize=False)  # ★ 普查口径
+    tot = F.sum(dim=(-2, -1), keepdim=True) + 1e-12
+    return (F * (r > r_cut).to(F.dtype)).sum(dim=(-2, -1), keepdim=True) / tot
+
+
+def hf_loss(rec, gt, mode: str = "dog", k: int = 7, sigma: float = 1.0, r_cut: float = 0.5):
+    """高频保真损失（rec/gt 均在 [-1,1]）。返回标量。
+
+    mode:
+      'topband' —— **直接优化离线普查的指标**(r>r_cut 能量份额的 L1)。
+                   这是 2026-10-10 的结论所指: 之前 dog 模式把宽带幅度修到 1.0,
+                   但顶带份额纹丝不动(0.783->0.788), 所以必须直接对顶带份额下手。
+                   ⚠ 该指标对视网膜噪声也敏感, 必须与 L1 同时开启以免"用噪点换份额"。
+      'dog'     —— 高斯差分高通上的 L1（宽带幅度; 已证不足以移动顶带）
+      'fft'/'focal' —— 频谱 L1 / 自适应频谱 L1
+    """
     mode = (mode or "dog").lower()
+    if mode == "topband":
+        return torch.nn.functional.l1_loss(band_fraction(rec, r_cut), band_fraction(gt, r_cut))
+
     if mode == "dog":
         return F.l1_loss(highpass(rec, k, sigma), highpass(gt, k, sigma))
 

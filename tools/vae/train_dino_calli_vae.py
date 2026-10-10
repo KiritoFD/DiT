@@ -38,7 +38,7 @@ from transformers import Dinov2Config, Dinov2Model
 
 # ★ 2026-10-10: VAE 修正训练新增的两组损失（高频保真 + 后验坍缩）
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from hf_losses import hf_loss, posterior_std_penalty, highpass  # noqa: E402
+from hf_losses import hf_loss, posterior_std_penalty, highpass, band_fraction  # noqa: E402
 
 
 class CalligraphyDataset(Dataset):
@@ -287,8 +287,11 @@ def parse_args():
     # ★ 2026-10-10 VAE 修正训练（详见 tools/vae/hf_losses.py 的论证）
     parser.add_argument("--w-hf", type=float, default=0.0,
                         help="高频保真损失权重 (0=关; 建议 0.2~0.5)。补齐 L1/DINO 都看不见的局部纹理")
-    parser.add_argument("--hf-mode", type=str, default="dog", choices=["dog", "fft", "focal"],
-                        help="高频损失形式: dog(高斯差分L1, 最稳) / fft(频谱L1) / focal(自适应频谱, 专治高频缺失)")
+    parser.add_argument("--hf-mode", type=str, default="topband", choices=["dog", "fft", "focal", "topband"],
+                        help="高频损失形式: **topband(默认, 直接优化离线普查的 r>hf-band 能量份额)** / "
+                             "dog(高斯差分宽带幅度, 已证不足以移动顶带) / fft(频谱L1) / focal(自适应频谱)")
+    parser.add_argument("--hf-band", type=float, default=0.5,
+                        help="topband 模式的径向截止 (与离线普查一致, 默认 0.5)")
     parser.add_argument("--hf-k", type=int, default=7, help="dog 模式的高斯核尺寸")
     parser.add_argument("--hf-sigma", type=float, default=1.0, help="dog 模式的高斯 sigma")
     parser.add_argument("--w-std", type=float, default=0.0,
@@ -436,7 +439,7 @@ def main():
 
                 # ★ 新增: 高频保真损失（补 L1/DINO 都看不见的局部纹理）
                 if args.w_hf > 0:
-                    loss_hf = hf_loss(x_recon, x_real, args.hf_mode, args.hf_k, args.hf_sigma)
+                    loss_hf = hf_loss(x_recon, x_real, args.hf_mode, args.hf_k, args.hf_sigma, args.hf_band)
                 else:
                     loss_hf = torch.zeros((), device=x_real.device)
                 # ★ 新增: 后验 std 惩罚（推 σ→0；加大 KL 是反方向）
@@ -444,11 +447,12 @@ def main():
                     loss_std = posterior_std_penalty(posterior)
                 else:
                     loss_std = torch.zeros((), device=x_real.device)
-                # 实时诊断: 重建/真迹 的高频能量比（正是离线 census 测的那个量）
+                # 实时诊断: **与离线普查同口径**的顶带能量份额比 (r>hf_band)。
+                #   ⚠ 不要再用 DoG 宽带幅度比 —— 它会对"顶带份额不足"视而不见(实测踩过)。
                 with torch.no_grad():
-                    _hr = highpass(x_recon.detach().float(), args.hf_k, args.hf_sigma).abs().mean()
-                    _hg = highpass(x_real.detach().float(), args.hf_k, args.hf_sigma).abs().mean()
-                    hf_ratio = (_hr / (_hg + 1e-8)).item()
+                    _hr = band_fraction(x_recon.detach(), args.hf_band).mean()
+                    _hg = band_fraction(x_real.detach(), args.hf_band).mean()
+                    hf_ratio = (_hr / (_hg + 1e-12)).item()
 
                 # 综合目标 (按累积步数缩放)
                 loss_total = (args.w_l1 * loss_l1 
