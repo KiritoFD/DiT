@@ -29,7 +29,7 @@
 | # | 不变量 | 判据（阈值） | 怎么量 |
 |---|---|---|---|
 | **I1** | **往返保真** | `L1(rec, gt) ≤ 0.005`；PSNR ≥ 30 dB（我们的字帖）；**顶带高频份额 ≥ 0.85× GT** | `tools/vae/hf_roundtrip_ab.py`、`tools/hf_decompose.py` |
-| **I2** | **★ 存盘尺度 ≈ 单位方差** | **`std(z_stored) ∈ [0.8, 1.25]`**；`|mean| ≤ 0.15`；且 **`sf` 必须由实测拟合：`sf = 1/std(z_raw)`** | `tools/scale_audit`（见 §4 步骤 2） |
+| **I2** | **★ 存盘分布 ≈ N(0,1)**（尺度**与**均值都要） | `std ∈ [0.8,1.25]` **且** `mean` 必须通过 `shift` 归零（未用 shift 时 `|mean| ≤ 0.05`）。**`sf = 1/std(z_raw)`、`shift = mean(z_raw)` 必须由实测拟合** | `tools/scale_audit`（见 §4 步骤 2） |
 | **I3** | **后验宽度已记录** | 记录相对宽度 `σ/|z_raw|`；若 **> 0.1** 则必须固定用 `sample()` 并写进 PROVENANCE（此时 `mode` 与 `sample` 不等价） | `tools/vae_judge.py` |
 | **I4** | **解码约定自检** | `L1(decode(z_stored/sf))` 必须比 `L1(decode(z_stored))` **小一个数量级** | 编码脚本内置自检 |
 | **I5** | **DiT 侧三处一致** | `shards.std` ↔ `config.vae_scaling_factor` ↔ `config.vae_path`（**编码与解码必须是同一个 VAE**） | 启动脚本的 preflight（见 §4 步骤 6） |
@@ -104,9 +104,12 @@ Calli 微调后 **1.085**（缩 5.4 倍）。**这不是 bug，是没有约束�
 1. 训练 VAE
    python tools/vae/train_dino_calli_vae.py --vae-base <上一版> --output experiments/<run> ...
 
-2. ★ 量 latent 尺度并【重拟合 sf】
-   测 raw std（≥256 张）→ sf = 1/std(z_raw)；写进 PROVENANCE 的 scaling_factor
-   （本步缺失 = E5）
+2. ★ 量 latent 尺度**与均值**并【重拟合 sf + shift】
+   测 raw std / raw mean（≥256 张）→ **`sf = 1/std(z_raw)`、`shift = mean(z_raw)`**；
+   写进 PROVENANCE 的 `scaling_factor` / `shift_factor`
+   （本步缺失 = E5。**只做 scale 不做 shift 是半个修复**：2026-10-10 实测我们 raw 的
+    mean = −0.115、std = 1.120 —— raw 本身就是 N(0,1) 级，说明原实现**只抄了 SD 的 sf**；
+   FLUX 用 `shift_factor = 0.1159` 修的正是这个均值，而 SD 自己没修，留下 ±0.22 偏移。）
 
 3. 五项不变量验收（I1–I4）
    python tools/vae/hf_roundtrip_ab.py        # I1 往返（含顶带高频份额）
