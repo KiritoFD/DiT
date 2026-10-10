@@ -1735,12 +1735,26 @@ def main(args):
     use_latent = bool(getattr(args, "latent_shards_dir", None))
 
     if use_latent:
+        # ★ 2026-10-11: REPA 是否需要原图 —— **配置项**决定（两机同一份代码, 行为靠配置区分）。
+        #   依据: src/loss/losses.py 的 REPALoss 只在特征缓存 miss 的行才用真图;
+        #   有完整 repa_cache_dir 时载图纯属浪费 —— 48 上 sym3x(77.8k) 会把 15.3 GB 原图
+        #   读进 RAM、每步再 H2D 100 MB, 实测 GPU 利用率被压到 14%。
+        #   never 时若真 miss, REPALoss 会**显式报错**（绝不静默失去 REPA）。
+        _rnim = str(getattr(args, "repa_need_image", "auto") or "auto").lower()
+        if _rnim == "always":
+            _repa_need_image = bool(args.w_repa > 0)
+        elif _rnim == "never":
+            _repa_need_image = False
+        else:  # auto
+            _repa_need_image = bool(args.w_repa > 0) and (not bool(_repa_cache_dir))
+        print(f"[dataset] repa_need_image={_rnim} -> load_image={_repa_need_image} "
+              f"(w_repa={args.w_repa}, repa_cache_dir={'有' if _repa_cache_dir else '无'})", flush=True)
         dataset = MCCDLatentDataset(csv_file=args.data_csv,
                                     latent_shards_dir=args.latent_shards_dir,
                                     img_root=args.img_root,
                                     image_size=args.image_size,
                                     preload=bool(getattr(args, 'preload', False)),
-                                    load_image=(args.w_repa > 0),
+                                    load_image=_repa_need_image,
                                     num_preload_workers=int(getattr(args, 'preload_workers', 16)),
                                     char_remap=(_char_remaps['char'] if _char_remaps else None),
                                     callig_remap=(_char_remaps['callig'] if _char_remaps else None),
@@ -2079,7 +2093,38 @@ def main(args):
             logger.info(f"Begin epoch {epoch}{_span} — ckpt+eval 落点...")
         
         try:
+            # ★ 2026-10-11: 算子级 profile 适配开关（--profile-steps N, 默认 0=关）。
+            #   跳过前 --profile-skip 步后, 对接下来 N 步做 torch.profiler,
+            #   随后打印**逐算子 CUDA 时间表**（回答"GPU 时间花在哪些算子上、还剩多少空间"）。
+            _PROF_N = int(getattr(args, "profile_steps", 0) or 0)
+            _PROF_SKIP = int(getattr(args, "profile_skip", 20) or 20)
+            _PROF_OBJ = None
+            _PROF_CNT = 0
+            # ★ 2026-10-11: 分配历史 profile 适配开关（--profile-memory-steps N, 默认 0=关）。
+            #   用于回答"是谁在每步做上百次 cudaMalloc"：记录每次 device 分配的 Python 调用栈,
+            #   再由 tools/prof/mem_top.py 聚合成"分配点排行榜"。
+            _MEM_N = int(getattr(args, "profile_memory_steps", 0) or 0)
+            _MEM_SKIP = int(getattr(args, "profile_memory_skip", 10) or 10)
+            _MEM_ON = False
+            _MEM_CNT = 0
             for batch_idx, batch in enumerate(loader):
+                # ★ 2026-10-11 算子级 profile: 窗口起点（进入 profiler）
+                if _PROF_N and _PROF_OBJ is None and batch_idx >= _PROF_SKIP:
+                    _PROF_OBJ = torch.profiler.profile(
+                        activities=[torch.profiler.ProfilerActivity.CPU,
+                                    torch.profiler.ProfilerActivity.CUDA],
+                        record_shapes=False, profile_memory=False)
+                    _PROF_OBJ.__enter__()
+                    _PROF_CNT = 0
+                    logger.info(f"[profile] 开始算子级 profile: 步 {batch_idx} 起 {_PROF_N} 步 "
+                                f"(warmup {_PROF_SKIP} 步已跳过, torch={torch.__version__})")
+                # ★ 2026-10-11 分配历史: 窗口起点
+                if _MEM_N and not _MEM_ON and batch_idx >= _MEM_SKIP:
+                    import torch.cuda.memory as _tcm
+                    _tcm._record_memory_history(max_entries=300000)
+                    _MEM_ON = True
+                    _MEM_CNT = 0
+                    logger.info(f"[profile-mem] 开始记录 device 分配历史: 步 {batch_idx} 起 {_MEM_N} 步")
                 # ★ non_blocking=True: DataLoader 已开 pin_memory=True，但**必须显式传**
                 #   这个参数才会走异步拷贝；否则即使源在 pinned 内存里也是同步拷贝，
                 #   主机线程会被阻塞（图像单批 ~283MB，实测代价可观）。见 docs/system/70 §8.6。
@@ -2308,7 +2353,10 @@ def main(args):
                             t.to(device))
 
                 intermediate_feats = loss_dict.get("intermediate_feats", None)
-                if x is not None and intermediate_feats is not None and repa_loss_fn is not None and args.w_repa > 0:
+                # ★ 2026-10-11: 不再要求 `x is not None` —— 有 REPA 特征缓存时按 img_ids 查表即可,
+                #   真图只在缓存 miss 的行才需要(见 losses.py)。若 x=None 却真 miss,
+                #   REPALoss 会**显式抛错**, 绝不静默失去 REPA。
+                if intermediate_feats is not None and repa_loss_fn is not None and args.w_repa > 0:
                     # 统一 REPA (公共 infra): 多层 dict / 单层张量 + warmup 渐进
                     # img_ids: 配合 --repa-cache-dir 查表 (命中免 DINO 前向)
                     _img_ids = batch.get('img_id', None)
@@ -2492,6 +2540,45 @@ def main(args):
                     torch.nn.utils.clip_grad_norm_(trainable_params_list,
                                                    max_norm=float(getattr(args, 'grad_clip', 1.0)))
                     opt.step()
+                    # ★ 2026-10-11 算子级 profile: 窗口终点（退出并打印逐算子时间表）
+                    if _PROF_OBJ is not None:
+                        _PROF_CNT += 1
+                        if _PROF_CNT >= _PROF_N:
+                            try:
+                                _PROF_OBJ.__exit__(None, None, None)
+                                _avg = _PROF_OBJ.key_averages()
+                                _cuda = sum(float(getattr(o, "self_cuda_time_total", 0.0))
+                                            for o in _avg) / 1e3 / max(_PROF_CNT, 1)
+                                _cpu = sum(float(getattr(o, "self_cpu_time_total", 0.0))
+                                           for o in _avg) / 1e3 / max(_PROF_CNT, 1)
+                                logger.info(
+                                    f"[profile] N={_PROF_CNT} 步 | 排他 CUDA 忙 = {_cuda:.1f} ms/步 | "
+                                    f"排他 CPU = {_cpu:.1f} ms/步 | "
+                                    f"（GPU 占空比 ≈ {_cuda:.0f}ms / 实测步时；两者差 = 启动/等待开销）")
+                                logger.info("[profile] 逐算子 CUDA 时间 TOP20:\n"
+                                            + _avg.table(sort_by="self_cuda_time_total", row_limit=20))
+                                logger.info("[profile] 逐算子 CPU 时间 TOP15:\n"
+                                            + _avg.table(sort_by="self_cpu_time_total", row_limit=15))
+                            except Exception as _pe:
+                                logger.warning(f"[profile] 打印失败: {_pe}")
+                            _PROF_OBJ = None
+                    # ★ 2026-10-11 分配历史: 窗口终点（写快照 + 关闭记录）
+                    if _MEM_ON:
+                        _MEM_CNT += 1
+                        if _MEM_CNT >= _MEM_N:
+                            import torch.cuda.memory as _tcm
+                            _snap = f"/tmp/mem_snapshot_{os.getpid()}.pickle"
+                            try:
+                                _tcm._dump_snapshot(_snap)
+                                logger.info(f"[profile-mem] 快照已写 {_snap} "
+                                            f"(用 tools/prof/mem_top.py 解析)")
+                            except Exception as _me:
+                                logger.warning(f"[profile-mem] 快照失败: {_me}")
+                            try:
+                                _tcm._record_memory_history(enabled=None)
+                            except Exception:
+                                pass
+                            _MEM_ON = False
                     if scheduler is not None:
                         scheduler.step()
                     if ema_model is not None and (train_steps % max(1, int(getattr(args, 'ema_interval', 1))) == 0):

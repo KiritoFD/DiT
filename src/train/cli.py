@@ -948,6 +948,13 @@ def build_parser(argv=None):
     #   docs/vae_latent_contract.md §2 / §5.5。
     parser.add_argument("--grad-clip", type=float, default=1.0, dest="grad_clip",
                         help="grad clip 的 max_norm (默认 1.0 = 历史行为; 改 latent 尺度时按尺度比同步放大)")
+    # ★ 2026-10-11: REPA 是否需要原图 —— 用**配置项**区分行为（两机同一份代码）。
+    #   背景: REPALoss 只在特征缓存 miss 的行才用真图；有完整缓存时载图纯属浪费 ——
+    #   48 上 sym3x(77.8k) 会把 15.3 GB 原图读进 RAM 且每步 H2D 100 MB, GPU 利用率掉到 14%。
+    parser.add_argument("--repa-need-image", type=str, default="auto", dest="repa_need_image",
+                        choices=["auto", "always", "never"],
+                        help="REPA 是否需要原图: auto=有 repa_cache_dir 时不载图(省 RAM/带宽); "
+                             "always=旧行为(总是载图, 兼容); never=强制不载(真 miss 会显式报错)")
     parser.add_argument("--repa-teacher-ckpt", type=str, default="",
                         help="Local path to DINOv2 teacher weights (ModelScope safetensors). "
                              "Empty = auto-detect data/pretrained/dinov2_vits14_pretrain.safetensors or $DINO_WEIGHTS.")
@@ -962,6 +969,11 @@ def build_parser(argv=None):
                         help="在 warmup 的 [alloc] 点额外转储按尺寸分桶的分配统计 + "
                              "torch.cuda.memory_summary()，用来定位显存空洞里到底是什么"
                              "（很多小块 = 碎片/内核工作区；几个巨块 = 某个大张量）。")
+    # ★ 2026-10-11: 算子级 profile 适配开关（默认关, 不影响任何现有配方）
+    parser.add_argument("--profile-steps", type=int, default=0, dest="profile_steps",
+                        help="对训练循环中 N 步做 torch.profiler 并打印逐算子 CUDA/CPU 时间表（0=关）")
+    parser.add_argument("--profile-skip", type=int, default=20, dest="profile_skip",
+                        help="profile 前跳过的 warmup 步数（默认 20）")
     parser.add_argument("--empty-cache-after-warmup", type=int, default=50,
                         dest="empty_cache_after_warmup",
                         help="在第 N 步之后调一次 torch.cuda.empty_cache()，回收 torch.compile "

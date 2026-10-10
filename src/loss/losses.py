@@ -253,18 +253,38 @@ class REPALoss(nn.Module):
         img_ids: (B,) 样本 id (dataset 提供) — 配合 feature_cache 查表免 teacher 前向。
         """
         teacher_feats = None
+        # ★ 2026-10-11: x_0 允许为 None（配置了特征缓存时可不必载原图, 省 RAM/带宽）。
+        #   设备从 student_feats 取, 不再依赖 x_0。
+        if isinstance(student_feats, (list, tuple)):
+            _dev = student_feats[0].device if len(student_feats) else (x_0.device if x_0 is not None else None)
+        else:
+            _dev = student_feats.device
         if self.feature_cache is not None and img_ids is not None:
             # 缓存路径: 命中行查表, miss 行才跑 teacher 前向 (lazy 加载)
-            feats_cache, missing = self.feature_cache.gather(img_ids, device=x_0.device)
+            feats_cache, missing = self.feature_cache.gather(img_ids, device=_dev)
             if missing:
+                if x_0 is None:
+                    # ⚠ 绝不静默失去 REPA：本步没有原图却出现 miss -> 显式失败
+                    raise RuntimeError(
+                        f"[REPA] 特征缓存 miss {len(missing)}/{len(img_ids)} 行, 但本次未载原图 "
+                        f"(repa_cache_dir 已配置, repa_need_image=never/auto)。"
+                        f" 请检查缓存覆盖度, 或把 --repa-need-image 设为 always。")
                 self.ensure_teacher()
                 self.teacher.eval()
                 with torch.no_grad():
-                    _m = torch.as_tensor(missing, device=x_0.device, dtype=torch.long)
+                    _m = torch.as_tensor(missing, device=feats_cache.device, dtype=torch.long)
                     # 只有 miss 的行才需要真图 -> 归一化也只对这几行做
                     feats_cache[_m] = self._teacher_forward(self._to_image(x_0[_m])).to(feats_cache.dtype)
             teacher_feats = feats_cache
+            # 命中率日志（miss=0 即"原图完全用不到", 是省 RAM/带宽的前提）
+            self._repa_calls = int(getattr(self, "_repa_calls", 0)) + 1
+            self._repa_miss = int(getattr(self, "_repa_miss", 0)) + len(missing)
+            if self._repa_calls % 200 == 0:
+                print(f"[REPA] cache: calls={self._repa_calls} 累计 miss_rows={self._repa_miss} "
+                      f"(本步 miss={len(missing)})", flush=True)
         else:
+            if x_0 is None:
+                raise RuntimeError("[REPA] 既没有特征缓存、也没有原图 -> 无法计算 REPA。")
             if self.teacher is None:
                 self.ensure_teacher()
             self.teacher.eval()
