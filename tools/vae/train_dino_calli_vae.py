@@ -39,6 +39,8 @@ from transformers import Dinov2Config, Dinov2Model
 # ★ 2026-10-10: VAE 修正训练新增的两组损失（高频保真 + 后验坍缩）
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from hf_losses import hf_loss, posterior_std_penalty, highpass, band_fraction  # noqa: E402
+from gan_losses import (NLayerDiscriminator, hinge_d_loss, hinge_g_loss,      # noqa: E402
+                        adaptive_weight, find_last_layer, edge_loss, LeCamEMA)
 
 
 class CalligraphyDataset(Dataset):
@@ -299,6 +301,24 @@ def parse_args():
                              "⚠ 注意方向: 加大 KL 只会把 σ 推向 1, 必须用本项才能坍缩")
     parser.add_argument("--logvar-max", type=float, default=None,
                         help="硬夹紧 logvar 上限(如 -9.0 -> σ≤0.011)。比 w-std 更确定, 二者可合用")
+    # ★ 2026-10-10 (用户裁定): VAE 必须是**纯物理压缩器** —— 去掉 DINO, 回归
+    #   SD1.5/LDM 的标准配方: L1 + LPIPS + KL(1e-6) + PatchGAN(Hinge, 自适应权重)
+    #   + 针对书法的边缘/频域项。判别器**从零联合训练**(绝不用预训练)。
+    parser.add_argument("--w-lpips", type=float, default=0.0,
+                        help="LPIPS(VGG) 感知损失权重 (SD1.5 官方配方为 1.0)")
+    parser.add_argument("--w-edge", type=float, default=0.0,
+                        help="Laplacian 边缘 L1 权重 (书法特化; 建议 0.5)")
+    parser.add_argument("--w-gan", type=float, default=0.0,
+                        help="PatchGAN 对抗损失**基础**权重 (SD1.5 为 0.5; 实际会再乘自适应 λ)")
+    parser.add_argument("--disc-start", type=int, default=2000,
+                        help="第几步才开始启用判别器 (LDM 用 50001; 我们批次小, 2000 足够)")
+    parser.add_argument("--gan-base", type=int, default=64, help="PatchGAN 基础通道数")
+    parser.add_argument("--gan-layers", type=int, default=3, help="PatchGAN 层数")
+    parser.add_argument("--gan-spectral", action="store_true", default=False,
+                        help="判别器用谱归一化 (额外稳定性保险)")
+    parser.add_argument("--w-lecam", type=float, default=0.0,
+                        help="LeCam 正则权重(只加在判别器损失上; FLUX/MagViT-v2 家族的稳定技术: "
+                             "维持真实 logits 的 EMA, 假图分低于真实历史均值就罚) —— 默认 0 关闭")
     parser.add_argument("--max-steps", type=int, default=30000,
                         help="总训练步数 (30k 步约覆盖 200 万次样本前向)")
     parser.add_argument("--save-every", type=int, default=2500,
@@ -347,8 +367,16 @@ def main():
     print("=" * 80)
 
     # 1. 载入 DINOv2 裁判模型
-    dino_raw = load_dino_model(args.dino_ckpt, device)
-    dino_loss_fn = DINOPerceptualLoss(dino_raw, device)
+    # ★ 2026-10-10 (用户裁定): VAE 必须是**纯物理压缩器** —— DINO 只对齐语义、对低级纹理不变,
+    #   放在 VAE 里会把隐空间"语义化"，且实测只有像素域高频项能提升 HF。
+    #   -> 当 w_struct=w_style=0 时**完全不加载 DINO**（省内存/省启动时间, 也便于本地冒烟）。
+    if args.w_struct > 0 or args.w_style > 0:
+        dino_raw = load_dino_model(args.dino_ckpt, device)
+        dino_loss_fn = DINOPerceptualLoss(dino_raw, device)
+    else:
+        dino_loss_fn = None
+        print("  [DINO] w_struct=w_style=0 -> **不加载 DINO**（纯物理配方: L1+LPIPS+GAN+KL+高频）",
+              flush=True)
 
     # 2. 载入基线 VAE 并解冻全量参数 (Encoder + Decoder)
     print(f"[vae] 从 {args.vae_base} 载入 AutoencoderKL ...", flush=True)
@@ -378,6 +406,27 @@ def main():
     optimizer = torch.optim.AdamW(trainable_params, lr=args.lr, weight_decay=args.weight_decay)
     scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=args.max_steps, eta_min=eta_min)
 
+    # ★ 判别器（**从零联合训练**，绝不用预训练）+ LPIPS
+    discriminator, opt_d, last_layer_w, lpips_fn = None, None, None, None
+    if args.w_gan > 0:
+        discriminator = NLayerDiscriminator(3, base=args.gan_base, n_layers=args.gan_layers,
+                                            use_spectral_norm=args.gan_spectral).to(device)
+        opt_d = torch.optim.AdamW(discriminator.parameters(), lr=args.lr, betas=(0.5, 0.999),
+                                  weight_decay=0.0)
+        last_layer_w = find_last_layer(vae)
+        lecam = LeCamEMA(decay=0.99) if args.w_lecam > 0 else None
+        nD = sum(p.numel() for p in discriminator.parameters())
+        print(f"  [GAN] PatchGAN **从零初始化**(挑本 VAE 特有伪影): base={args.gan_base} "
+              f"layers={args.gan_layers} spectral={args.gan_spectral} 参数={nD/1e6:.2f}M | "
+              f"w_gan={args.w_gan} disc_start={args.disc_start} (自适应 λ 防冲垮 L1) | "
+              f"LeCam={args.w_lecam}", flush=True)
+    if args.w_lpips > 0:
+        import lpips as _lpips
+        lpips_fn = _lpips.LPIPS(net="vgg", verbose=False).to(device).eval()
+        for _p in lpips_fn.parameters():
+            _p.requires_grad_(False)
+        print(f"  [LPIPS] VGG 感知损失就绪 (SD1.5 配方权重 1.0), w_lpips={args.w_lpips}", flush=True)
+
     # 固定的 8 张验证图 (固定观察同一批字的细节演化)
     fixed_val_batch = next(iter(dataloader))[:8].to(device)
 
@@ -394,6 +443,12 @@ def main():
     t_start = time.time()
     accum_l1 = 0.0
     accum_hf = 0.0
+    accum_lpips = 0.0
+    accum_edge = 0.0
+    accum_adv = 0.0
+    accum_lam = 0.0
+    accum_d = 0.0
+    _gan_n = 0
     accum_std = 0.0
     accum_hfr = 0.0
     accum_struct = 0.0
@@ -434,8 +489,23 @@ def main():
                 loss_l1 = F.l1_loss(x_recon, x_real)
                 loss_kl = kl_divergence(posterior)
 
-                # DINO 感知损失与笔法方差损失
-                loss_struct, loss_style = dino_loss_fn(x_real, x_recon)
+                # DINO 感知损失与笔法方差损失（纯物理配方下关闭 -> 置零, 不参与梯度）
+                if dino_loss_fn is not None:
+                    loss_struct, loss_style = dino_loss_fn(x_real, x_recon)
+                else:
+                    loss_struct = torch.zeros((), device=x_real.device)
+                    loss_style = torch.zeros((), device=x_real.device)
+
+                # ★ LPIPS(VGG) 感知损失（SD1.5 官方配方之一；我们过去把它换成了 DINO）
+                if args.w_lpips > 0:
+                    loss_lpips = lpips_fn(x_recon, x_real).mean()
+                else:
+                    loss_lpips = torch.zeros((), device=x_real.device)
+                # ★ Laplacian 边缘 L1（书法特化；管"边缘位置"）
+                if args.w_edge > 0:
+                    loss_edge = edge_loss(x_recon, x_real)
+                else:
+                    loss_edge = torch.zeros((), device=x_real.device)
 
                 # ★ 新增: 高频保真损失（补 L1/DINO 都看不见的局部纹理）
                 if args.w_hf > 0:
@@ -460,7 +530,37 @@ def main():
                               + args.w_struct * loss_struct 
                               + args.w_style * loss_style
                               + args.w_hf * loss_hf
-                              + args.w_std * loss_std)
+                              + args.w_std * loss_std
+                              + args.w_lpips * loss_lpips
+                              + args.w_edge * loss_edge)
+
+                # ★★ PatchGAN 对抗（交替优化 + LDM 自适应权重）★
+                #   只在每个"累积组"的最后一个微批次上做, 且需 step > disc_start。
+                #   判别器从零联合训练（挑本 VAE 特有的伪影）；自适应 λ 防 GAN 冲垮 L1。
+                adv_now = 0.0
+                lam_now = 0.0
+                loss_d_now = 0.0
+                if (args.w_gan > 0 and discriminator is not None
+                        and step >= int(args.disc_start)
+                        and (micro_step % args.grad_accum == 0)):
+                    # --- Step 1: 判别器（真图推高 / 假图压低; 假图为 detach 版本）---
+                    logits_real = discriminator(x_real.detach())
+                    logits_fake_d = discriminator(x_recon.detach())
+                    loss_d = hinge_d_loss(logits_real, logits_fake_d)
+                    if lecam is not None:
+                        loss_d = loss_d + args.w_lecam * lecam(logits_real, logits_fake_d)
+                    opt_d.zero_grad(set_to_none=True)
+                    loss_d.backward()
+                    opt_d.step()
+                    # --- Step 2: VAE 对抗（骗判别器）+ 自适应权重 ---
+                    logits_fake_g = discriminator(x_recon)      # 带图, 供 G 反向
+                    loss_g_adv = hinge_g_loss(logits_fake_g)
+                    lam = adaptive_weight(loss_total, loss_g_adv, last_layer_w)
+                    loss_total = loss_total + args.w_gan * lam * loss_g_adv
+                    adv_now = float(loss_g_adv.item())
+                    lam_now = float(lam.item())
+                    loss_d_now = float(loss_d.item())
+
                 loss = loss_total / args.grad_accum
 
             loss.backward()
@@ -473,6 +573,13 @@ def main():
             accum_hf += float(loss_hf.item())
             accum_std += float(loss_std.item())
             accum_hfr += hf_ratio
+            accum_lpips += float(loss_lpips.item())
+            accum_edge += float(loss_edge.item())
+            if adv_now != 0.0 or lam_now != 0.0:
+                accum_adv += adv_now
+                accum_lam += lam_now
+                accum_d += loss_d_now
+                _gan_n += 1
 
             # 当达到累积步数时执行参数更新
             if micro_step % args.grad_accum == 0:
@@ -495,16 +602,22 @@ def main():
                     avg_hf = accum_hf / args.grad_accum
                     avg_std = accum_std / args.grad_accum
                     avg_hfr = accum_hfr / args.grad_accum
+                    avg_lpips = accum_lpips / args.grad_accum
+                    avg_edge = accum_edge / args.grad_accum
+                    avg_adv = accum_adv / max(_gan_n, 1)
+                    avg_lam = accum_lam / max(_gan_n, 1)
+                    avg_d = accum_d / max(_gan_n, 1)
 
                     msg = (f"[{datetime.datetime.now():%H:%M:%S}] "
                            f"step={step:05d}/{args.max_steps} (ep={epoch}) | "
                            f"L1: {avg_l1:.4f} | "
-                           f"Struct: {avg_struct:.4f} | "
-                           f"Style: {avg_style:.4f} | "
+                           f"LPIPS: {avg_lpips:.4f} | "
+                           f"Edge: {avg_edge:.4f} | "
                            f"HF: {avg_hf:.4f} | "
                            f"KL: {avg_kl:.4f} | "
                            f"Std: {posterior.std.mean().item():.4f} | "
                            f"HFr: {avg_hfr:.3f} | "
+                           f"D: {avg_d:.4f} lam: {avg_lam:.3f} Adv: {avg_adv:+.4f} | "
                            f"Total: {avg_total:.4f} | "
                            f"LR: {lr:.2e} | "
                            f"OptSPS: {sps:.2f}")
@@ -520,6 +633,12 @@ def main():
                 accum_hf = 0.0
                 accum_std = 0.0
                 accum_hfr = 0.0
+                accum_lpips = 0.0
+                accum_edge = 0.0
+                accum_adv = 0.0
+                accum_lam = 0.0
+                accum_d = 0.0
+                _gan_n = 0
 
                 # 保存可视化对比栅格 (每 500 步)
                 if step % args.vis_every == 0:
