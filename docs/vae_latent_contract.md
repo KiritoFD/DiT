@@ -224,3 +224,10 @@ python tools/vae/judge_vae.py --spec "name=experiments/vae_frozen/<v>:0.18215:0:
 - `tools/encode_aug_latents.py` — 编码器（`--encode-mode mode|sample`）
 - `tools/hf_decompose.py` / `tools/hf_roundtrip_ab.py` / `tools/check_band_metric.py` — 高频与口径校验
 - `state.md` — 每个 VAE 版本与下游 DiT 臂的登记处
+
+---
+
+## 9. 配套文档
+
+- **[`vae_training_recipe.md`](vae_training_recipe.md)** —— **VAE 该用什么 loss、为什么、怎么训、怎么验收**（含上一轮 DINO 版的结果与结论、PatchGAN 对抗的四条稳定性机制、实测定权重的量级表）。本文管接口/尺度约定，那份管训练配方。
+

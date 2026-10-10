@@ -75,6 +75,8 @@
 
 **★ 2026-10-10 下午：两处撤回 + 定位到正确的 VAE 修法**
 
+> 🧪 **VAE 训练配方见 [docs/vae_training_recipe.md](docs/vae_training_recipe.md)**（去 DINO 的纯物理配方：L1+LPIPS+PatchGAN+KL+高频；含上一轮结果与结论）。
+
 > 📄 **VAE↔DiT 接口规约见 [`docs/vae_latent_contract.md`](docs/vae_latent_contract.md)**（立此存照：latent 的 5 条硬性不变量、`sf` 是拟合值不是超参、冻结/部署 7 步 runbook、失败案例 E1–E8）。**任何 VAE 改动必须走那份 runbook。**
 
 **(1) v74（mode 目标）分支关闭** —— 同口径 23/23 点全落后：SSIM −0.008、**LPIPS +0.032（稳定且大）**。115k 双普查（cfg0.7/γ0, N=40）证明它**想修的两件事都没修到**：`hf_ratio` 0.516→0.538（没动）、`ink_slope` 0.550→0.539（没动）。**→ "目标里的随机分量导致均值化" 证伪。**
