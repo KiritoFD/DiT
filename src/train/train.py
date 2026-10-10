@@ -1398,6 +1398,10 @@ def main(args):
     _vae_ic = getattr(args, 'vae_in_channels', 3)
     _vae_oc = getattr(args, 'vae_out_channels', 3)
     _vae_sf = getattr(args, 'vae_scaling_factor', 0.18215)
+    # ★ 2026-10-10: 在线编码必须与 shards 的存盘约定一致（合同 I2）:
+    #   shards = (z_raw - shift) * sf; 解码 = decode(z/sf + shift)。
+    #   原来这两条在线路径只 mul_(sf) 漏了 shift -> 与预编码路径约定不一致(静默)。
+    _vae_shift = float(getattr(args, 'vae_shift_factor', 0.0) or 0.0)
     class MockVAE(torch.nn.Module):
         def __init__(self, device):
             super().__init__()
@@ -2099,7 +2103,10 @@ def main(args):
                         posterior = vae.encode(x).latent_dist
                         # ⚠ 必须使用 rsample() 重参数化采样: z = mu + sigma * eps
                         # 只有 rsample 才能让 DiT 的梯度穿过高斯采样，流回 VAE Encoder 的权重！
-                        x_latent = posterior.rsample().mul_(_vae_sf).float()
+                        # ★ 2026-10-10: 必须与 **shards 的存盘约定**一致 ——
+                        #   shards = (z_raw - SHIFT) * SF（合同 I2）; 这里原来只 mul_(sf) 漏了 shift,
+                        #   与预编码路径不一致(2016-10-10 发现)。加 _vae_shift 保持两条路同约定。
+                        x_latent = (posterior.rsample() - _vae_shift).mul_(_vae_sf).float()
                         # 流形的物理护栏: 计算隐空间高斯 KL 散度
                         loss_vae_kl = -0.5 * torch.sum(
                             1 + posterior.logvar - posterior.mean.pow(2) - posterior.logvar.exp(),
@@ -2123,7 +2130,7 @@ def main(args):
                         x = x.float().div_(255.0).mul_(2.0).sub_(1.0)
                     # VAE encode stays in fp32 for numerical stability (VAE is sensitive to low precision).
                     with torch.no_grad(), torch.autocast("cuda", dtype=torch.float32):
-                        x_latent = vae.encode(x).latent_dist.sample().mul_(_vae_sf)
+                        x_latent = (vae.encode(x).latent_dist.sample() - _vae_shift).mul_(_vae_sf)
                         x_latent = x_latent.float()
                     loss_vae_kl = None
 
