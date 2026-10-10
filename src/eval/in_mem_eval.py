@@ -115,27 +115,41 @@ def _lpips_per_sample(pred_np, gt_np, enabled=True):
         return None
 
 
+class _ShiftedVAE:
+    """只覆写 decode 的**包装对象**（合同 §1.1 的 shift 项）。
+
+    ⚠ 2026-10-10 血泪: 最初实现是**就地给共享 VAE 对象打 decode 补丁**
+    （``_VAE.decode = _decode_with_shift``）。因为 ``load_eval_vae`` 自己有模块级缓存、返回**同一对象**,
+    第二次以不同 shift 调用时会把**已带旧 shift 补丁**的对象拿回来, 且 shift=0 为假不会重包
+    -> 静默污染（实测新旧路径差 227 灰阶 = 完全错的图）。
+    **凡是"缓存共享对象 + 就地改写"的组合都会这样翻车**, 故改为不侵入的包装。
+    """
+
+    def __init__(self, base, shift):
+        self._base = base
+        self.shift = float(shift)
+
+    def decode(self, z, *a, **kw):
+        return self._base.decode(z + self.shift, *a, **kw)
+
+    def __getattr__(self, k):
+        return getattr(self._base, k)
+
+
 def _get_vae(device, vae_path="data/pretrained/sd-vae-ft-ema", shift_factor=0.0):
     """★ 2026-10-05: 按**路径**缓存。原来只判 `_VAE is None` -> 换 16ch flux VAE 时
     仍复用之前的 4ch sd-vae, 16ch latent 拿 4ch 解码器解 -> 指标静默变垃圾。
 
-    ★ 2026-10-10 加 shift_factor（合同 docs/vae_latent_contract.md §1.1）：
-      约定 = ``decode(z_stored / sf + shift)``。这里**单点封装** vae.decode, 把 shift 加回去,
-      这样所有调用点仍然写 ``vae.decode(lat / sf)``, 不会因为漏改某一处而静默错图。
-      缓存键必须含 shift（同"缓存键必须含路径"那条教训, 否则换 shift 会复用旧 VAE）。
+    ★ 2026-10-10: 加 shift_factor（合同 docs/vae_latent_contract.md §1.1）——
+      约定 ``decode(z_stored / sf + shift)``。**缓存键 = (路径, shift)**；
+      返回**包装对象**而非就地打补丁（见 _ShiftedVAE 的注释）。
     """
     global _VAE, _VAE_REF
     shift_factor = float(shift_factor or 0.0)
     key = (str(vae_path), shift_factor)
     if _VAE is None or _VAE_REF != key:
-        _VAE = load_eval_vae(device, vae_path)
-        if shift_factor:
-            _orig_decode = _VAE.decode
-
-            def _decode_with_shift(z, *a, **kw):
-                return _orig_decode(z + shift_factor, *a, **kw)
-
-            _VAE.decode = _decode_with_shift
+        _base = load_eval_vae(device, vae_path)
+        _VAE = _ShiftedVAE(_base, shift_factor) if shift_factor else _base
         _VAE_REF = key
     return _VAE
 
