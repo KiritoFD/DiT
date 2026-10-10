@@ -115,13 +115,28 @@ def _lpips_per_sample(pred_np, gt_np, enabled=True):
         return None
 
 
-def _get_vae(device, vae_path="data/pretrained/sd-vae-ft-ema"):
+def _get_vae(device, vae_path="data/pretrained/sd-vae-ft-ema", shift_factor=0.0):
     """★ 2026-10-05: 按**路径**缓存。原来只判 `_VAE is None` -> 换 16ch flux VAE 时
-    仍复用之前的 4ch sd-vae, 16ch latent 拿 4ch 解码器解 -> 指标静默变垃圾。"""
+    仍复用之前的 4ch sd-vae, 16ch latent 拿 4ch 解码器解 -> 指标静默变垃圾。
+
+    ★ 2026-10-10 加 shift_factor（合同 docs/vae_latent_contract.md §1.1）：
+      约定 = ``decode(z_stored / sf + shift)``。这里**单点封装** vae.decode, 把 shift 加回去,
+      这样所有调用点仍然写 ``vae.decode(lat / sf)``, 不会因为漏改某一处而静默错图。
+      缓存键必须含 shift（同"缓存键必须含路径"那条教训, 否则换 shift 会复用旧 VAE）。
+    """
     global _VAE, _VAE_REF
-    if _VAE is None or _VAE_REF != str(vae_path):
+    shift_factor = float(shift_factor or 0.0)
+    key = (str(vae_path), shift_factor)
+    if _VAE is None or _VAE_REF != key:
         _VAE = load_eval_vae(device, vae_path)
-        _VAE_REF = str(vae_path)
+        if shift_factor:
+            _orig_decode = _VAE.decode
+
+            def _decode_with_shift(z, *a, **kw):
+                return _orig_decode(z + shift_factor, *a, **kw)
+
+            _VAE.decode = _decode_with_shift
+        _VAE_REF = key
     return _VAE
 
 
@@ -982,7 +997,8 @@ def run_in_mem_eval(model, args, step, device, results_dir=None, logger=print):
             t_s = time.time() - t0
 
             vae = _get_vae(device, str(getattr(args, "eval_vae_path", "") or "")
-                           or "data/pretrained/sd-vae-ft-ema")
+                           or "data/pretrained/sd-vae-ft-ema",
+                           float(getattr(args, "vae_shift_factor", 0.0) or 0.0))
             gts = (cache["gts"].to(device) + 1) / 2
             preds = torch.empty_like(gts)
             _zw = bool(getattr(args, "aux_zero_white", False))

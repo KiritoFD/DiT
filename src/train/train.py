@@ -2479,7 +2479,11 @@ def main(args):
 
                 # NaN guard: skip clip/step/ema/accumulate if loss is not finite (e.g. a bad sample).
                 if _finite:
-                    torch.nn.utils.clip_grad_norm_(trainable_params_list, max_norm=1.0)
+                    # ★ 2026-10-10: max_norm 参数化。它是**绝对**阈值, 而梯度幅度随"数据端 latent 尺度"
+                    #   线性缩放 —— 换 VAE / 改 scaling_factor 后必须同步调整, 否则隐性裁剪。
+                    #   默认 1.0 保持历史行为。详见 docs/vae_latent_contract.md §2/§5.5。
+                    torch.nn.utils.clip_grad_norm_(trainable_params_list,
+                                                   max_norm=float(getattr(args, 'grad_clip', 1.0)))
                     opt.step()
                     if scheduler is not None:
                         scheduler.step()

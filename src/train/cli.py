@@ -943,6 +943,11 @@ def build_parser(argv=None):
     parser.add_argument("--std-mid-k-slope", type=float, default=2.0, dest="std_mid_k_slope",
                         help="无校准 json 时默认 k(t)=slope·t (latent px), 上限 2。")
     parser.add_argument("--w-repa", type=float, default=0.0, help="Weight for Representation Alignment (REPA) Loss (0 = disabled, default)")
+    # ★ 2026-10-10: 梯度裁剪是**绝对**阈值, 而梯度幅度随"数据端 latent 尺度"线性缩放。
+    #   换 VAE / 改 vae_scaling_factor 后必须同步调整(按尺度比), 否则会隐性裁剪。
+    #   docs/vae_latent_contract.md §2 / §5.5。
+    parser.add_argument("--grad-clip", type=float, default=1.0, dest="grad_clip",
+                        help="grad clip 的 max_norm (默认 1.0 = 历史行为; 改 latent 尺度时按尺度比同步放大)")
     parser.add_argument("--repa-teacher-ckpt", type=str, default="",
                         help="Local path to DINOv2 teacher weights (ModelScope safetensors). "
                              "Empty = auto-detect data/pretrained/dinov2_vits14_pretrain.safetensors or $DINO_WEIGHTS.")
