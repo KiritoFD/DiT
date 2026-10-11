@@ -1,5 +1,7 @@
 # SiT (Scalable Interpolant Transformers) 深入调研、SDE 随机纠偏采样器实现与调参全量报告
 
+> **历史报告更正（2026-10-12）**：下文记录的是旧漂移实现的扫描，公式后来已修正；v68 使用 C2OT，不能据此证明 corrected SDE 的边缘保持或通用 free lunch。§6 的 LPIPS 表显示 CFG=1/1.2 时 γ=.5 并非最优，所以“所有 CFG、所有指标全面胜出”的文案撤回。保留原表供复核；最新判断和对比poster见 [专门报告](2026-10-12-v68-v70-sde-role-and-free-lunch.md)。
+
 > **调研对象**：SiT (*Scalable Interpolant Transformers for Diffusion Models*, ECCV 2024, Nanye Ma, Saining Xie et al.)  
 > **核心动机**：探究 SiT 相对传统 DiT 的核心进阶机制，将具备**兰芝文自纠偏能力（Langevin Self-Correction）**的 SDE 随机插值采样器移植至现有 Flow Matching 架构，并在黄金测试集 `eval200`（200 个真实书法真迹样本）上进行参数全曲面扫描。  
 > **实测终局结论**：**零重训成本的重大免费午餐（Confirmed Free Lunch）**！在线性插值下，引入 SiT SDE 采样器并设置 $\gamma \in [0.30, 0.50]$，Strict SSIM 从 `0.5505` 跃升至 **`0.5900`（+3.95 个百分点）**，真实感知失真度 **LPIPS 从 `0.4927` 降至 `0.4781`（全场最低感知失真）**，且完全保持骨架拓扑（Skel-IoU 稳定在 0.0125~0.0132）。

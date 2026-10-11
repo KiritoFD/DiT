@@ -1,0 +1,594 @@
+{
+  "date": "2026-10-12",
+  "n": 187,
+  "cfg": 1.0,
+  "steps": 50,
+  "note": "Historical image metrics, historical scans and v80 batch metrics are separate streams.",
+  "selection": "v68 SSIM rank, fixed zero-based ranks; no SDE delta selection",
+  "samples": [
+    {
+      "idx": 75,
+      "rank_zero_based": 15,
+      "character": "扶",
+      "calligrapher": "欧阳询",
+      "script": "行",
+      "image_path": "data/top10_style23/imgs/016996.png"
+    },
+    {
+      "idx": 82,
+      "rank_zero_based": 45,
+      "character": "位",
+      "calligrapher": "王羲之",
+      "script": "楷",
+      "image_path": "data/top10_style23/imgs/017195.png"
+    },
+    {
+      "idx": 158,
+      "rank_zero_based": 70,
+      "character": "析",
+      "calligrapher": "赵孟頫",
+      "script": "行",
+      "image_path": "data/top10_style23/imgs/036979.png"
+    },
+    {
+      "idx": 133,
+      "rank_zero_based": 90,
+      "character": "物",
+      "calligrapher": "褚遂良",
+      "script": "楷",
+      "image_path": "data/top10_style23/imgs/012598.png"
+    },
+    {
+      "idx": 99,
+      "rank_zero_based": 110,
+      "character": "佐",
+      "calligrapher": "米芾",
+      "script": "楷",
+      "image_path": "data/top10_style23/imgs/000643.png"
+    },
+    {
+      "idx": 140,
+      "rank_zero_based": 135,
+      "character": "悟",
+      "calligrapher": "褚遂良",
+      "script": "行",
+      "image_path": "data/top10_style23/imgs/019436.png"
+    },
+    {
+      "idx": 154,
+      "rank_zero_based": 155,
+      "character": "翳",
+      "calligrapher": "赵孟頫",
+      "script": "楷",
+      "image_path": "data/top10_style23/imgs/037418.png"
+    },
+    {
+      "idx": 178,
+      "rank_zero_based": 175,
+      "character": "遘",
+      "calligrapher": "颜真卿",
+      "script": "楷",
+      "image_path": "data/top10_style23/imgs/010102.png"
+    }
+  ],
+  "old_image_metrics": {
+    "v68": {
+      "all_ssim": 0.6168861063706054,
+      "all_lpips": 0.3910657083565857,
+      "all_iou": 0.3044447977472037
+    },
+    "v68_sde": {
+      "all_ssim": 0.6260361850087259,
+      "all_lpips": 0.39891368039151565,
+      "all_iou": 0.2960621311566029
+    },
+    "v72": {
+      "all_ssim": 0.6070036454174053,
+      "all_lpips": 0.38560539569685803,
+      "all_iou": 0.3485736378592707
+    },
+    "v72_sde": {
+      "all_ssim": 0.6058346013235162,
+      "all_lpips": 0.3855369027285652,
+      "all_iou": 0.349046973974473
+    }
+  },
+  "historical_reported": {
+    "v68": {
+      "frag": 5.06,
+      "hf_gt": 0.811
+    },
+    "v68_sde": {
+      "frag": 2.38,
+      "hf_gt": 0.76
+    },
+    "v72": {
+      "frag": 2.566,
+      "hf_gt": 0.622
+    },
+    "v72_sde": {
+      "frag": 2.867,
+      "hf_gt": 0.63
+    },
+    "v76": {
+      "hf_gt": 0.629
+    },
+    "v77": {
+      "hf_gt": 0.623
+    },
+    "v79": {
+      "ssim": 0.5799,
+      "lpips_alex": 0.4318,
+      "ink_iou": 0.2719,
+      "frag": 1.876,
+      "hf_gt": 0.647
+    },
+    "v79_sde": {
+      "ssim": 0.5788,
+      "lpips_alex": 0.4283,
+      "ink_iou": 0.2838,
+      "frag": 1.466,
+      "hf_gt": 0.622
+    },
+    "source": "docs/sde_analysis_brief.md sections 3.1 and 3.3; rounded historical readouts, not recomputed"
+  },
+  "v68_v70_matched_curve": [
+    {
+      "family": "v68_family",
+      "run": "v68_aug_sp_c2ot",
+      "run_key": "assets/runs/v68_family/v68_aug_sp_c2ot",
+      "instance": "20261006-192021-v68-aug-sp-c2ot",
+      "set": "eval200fix",
+      "step": "30000",
+      "ssim": "0.5495086159993973",
+      "ssim_med": "",
+      "ssim_q25": "",
+      "ssim_q75": "",
+      "ssim_p10": "",
+      "ssim_p90": "",
+      "ssim_std": "",
+      "strict_ssim": "",
+      "strict_n": "",
+      "mse": "0.9635104721880214",
+      "mse_std": "",
+      "lpips": "0.38355217634994077",
+      "ink_ssim": "0.38981717548828687",
+      "ink_iou": "0.2359414433555423",
+      "skel_iou": "0.014907608335855714",
+      "frag": "2.036409115358367",
+      "hole": "0.04125661547072724",
+      "hole_gt": "0.04591099863959146",
+      "n": "187",
+      "nn_ssim": "0.6120262758684649",
+      "nn_mean": "0.541876584924325",
+      "tgt_spec": "0.009563331780589261",
+      "cal_enrich": "1.360000000000001",
+      "cfg": "",
+      "ddim_steps": "",
+      "engine": "",
+      "elapsed_s": "",
+      "json": "assets/runs/v68_family/v68_aug_sp_c2ot/20261006-192021-v68-aug-sp-c2ot/checkpoints/eval_auto_30000.json"
+    },
+    {
+      "family": "v68_family",
+      "run": "v68_aug_sp_c2ot",
+      "run_key": "assets/runs/v68_family/v68_aug_sp_c2ot",
+      "instance": "20261006-192021-v68-aug-sp-c2ot",
+      "set": "eval200fix",
+      "step": "65000",
+      "ssim": "0.5833092349647435",
+      "ssim_med": "",
+      "ssim_q25": "",
+      "ssim_q75": "",
+      "ssim_p10": "",
+      "ssim_p90": "",
+      "ssim_std": "",
+      "strict_ssim": "",
+      "strict_n": "",
+      "mse": "0.8480279796263751",
+      "mse_std": "",
+      "lpips": "0.3505091824952294",
+      "ink_ssim": "0.4224067780742803",
+      "ink_iou": "0.27406651318871433",
+      "skel_iou": "0.019233630101527167",
+      "frag": "1.8929233807653918",
+      "hole": "0.046035259066809615",
+      "hole_gt": "0.04591099863959146",
+      "n": "187",
+      "nn_ssim": "0.6475066058222573",
+      "nn_mean": "0.567115967032792",
+      "tgt_spec": "0.019781026326684905",
+      "cal_enrich": "2.3600000000000017",
+      "cfg": "",
+      "ddim_steps": "",
+      "engine": "",
+      "elapsed_s": "",
+      "json": "assets/runs/v68_family/v68_aug_sp_c2ot/20261006-192021-v68-aug-sp-c2ot/checkpoints/eval_auto_65000.json"
+    },
+    {
+      "family": "v69_70",
+      "run": "v70_aug_sp_stdskel_c2ot",
+      "run_key": "assets/runs/v69_70/v70_aug_sp_stdskel_c2ot",
+      "instance": "20261007-141413-v70-aug-sp-stdskel-c2ot",
+      "set": "eval200fix",
+      "step": "30000",
+      "ssim": "0.54572180769753",
+      "ssim_med": "",
+      "ssim_q25": "",
+      "ssim_q75": "",
+      "ssim_p10": "",
+      "ssim_p90": "",
+      "ssim_std": "",
+      "strict_ssim": "",
+      "strict_n": "",
+      "mse": "0.9721625619393619",
+      "mse_std": "",
+      "lpips": "0.38731991240685",
+      "ink_ssim": "0.3866594839583632",
+      "ink_iou": "0.23193822650705753",
+      "skel_iou": "0.0146374332411867",
+      "frag": "2.5699589144004764",
+      "hole": "0.051269282489783276",
+      "hole_gt": "0.04591099863959146",
+      "n": "187",
+      "nn_ssim": "0.6075667208069259",
+      "nn_mean": "0.5360643435896687",
+      "tgt_spec": "0.010393941793027151",
+      "cal_enrich": "1.320000000000001",
+      "cfg": "",
+      "ddim_steps": "",
+      "engine": "",
+      "elapsed_s": "",
+      "json": "assets/runs/v69_70/v70_aug_sp_stdskel_c2ot/20261007-141413-v70-aug-sp-stdskel-c2ot/checkpoints/eval_auto_30000.json"
+    },
+    {
+      "family": "v69_70",
+      "run": "v70_aug_sp_stdskel_c2ot",
+      "run_key": "assets/runs/v69_70/v70_aug_sp_stdskel_c2ot",
+      "instance": "20261007-141413-v70-aug-sp-stdskel-c2ot",
+      "set": "eval200fix",
+      "step": "65000",
+      "ssim": "0.5535352527238958",
+      "ssim_med": "",
+      "ssim_q25": "",
+      "ssim_q75": "",
+      "ssim_p10": "",
+      "ssim_p90": "",
+      "ssim_std": "",
+      "strict_ssim": "",
+      "strict_n": "",
+      "mse": "0.9209549632620684",
+      "mse_std": "",
+      "lpips": "0.384605583819476",
+      "ink_ssim": "0.388957784634689",
+      "ink_iou": "0.240573834288178",
+      "skel_iou": "0.016322698200002657",
+      "frag": "4.366719861514596",
+      "hole": "0.04832999284591181",
+      "hole_gt": "0.04591099863959146",
+      "n": "187",
+      "nn_ssim": "0.6122345954162829",
+      "nn_mean": "0.5381279766873976",
+      "tgt_spec": "0.01604428366445217",
+      "cal_enrich": "1.320000000000001",
+      "cfg": "",
+      "ddim_steps": "",
+      "engine": "",
+      "elapsed_s": "",
+      "json": "assets/runs/v69_70/v70_aug_sp_stdskel_c2ot/20261007-141413-v70-aug-sp-stdskel-c2ot/checkpoints/eval_auto_65000.json"
+    }
+  ],
+  "v80_three_seed": {
+    "ssim": {
+      "ode_mean": 0.583216935828877,
+      "seed_means": [
+        0.5838200748663102,
+        0.5835352299465242,
+        0.5840244491978609
+      ],
+      "sde_mean": 0.5837932513368984,
+      "mean_delta": 0.0005763155080213842,
+      "ci95": [
+        -0.00031505739750446374,
+        0.0015115415775401007
+      ],
+      "bootstrap_unit": "sample; averaged over 3 fixed path seeds"
+    },
+    "mse": {
+      "ode_mean": 0.8589083422459893,
+      "seed_means": [
+        0.8558561550802138,
+        0.8578131978609626,
+        0.8564959251336899
+      ],
+      "sde_mean": 0.8567217593582888,
+      "mean_delta": -0.0021865828877005405,
+      "ci95": [
+        -0.005136007575757582,
+        0.0006864524064171073
+      ],
+      "bootstrap_unit": "sample; averaged over 3 fixed path seeds"
+    },
+    "lpips": {
+      "ode_mean": 0.4251299090909091,
+      "seed_means": [
+        0.42406036363636357,
+        0.424892807486631,
+        0.4239472780748663
+      ],
+      "sde_mean": 0.42430014973262026,
+      "mean_delta": -0.0008297593582887675,
+      "ci95": [
+        -0.001957498885917999,
+        0.00034050570409982164
+      ],
+      "bootstrap_unit": "sample; averaged over 3 fixed path seeds"
+    },
+    "ink_ssim": {
+      "ode_mean": 0.419955064171123,
+      "seed_means": [
+        0.4204968235294117,
+        0.41960962566844917,
+        0.419866935828877
+      ],
+      "sde_mean": 0.419991128342246,
+      "mean_delta": 3.6064171122998366e-05,
+      "ci95": [
+        -0.0011928009803921543,
+        0.001218466666666665
+      ],
+      "bootstrap_unit": "sample; averaged over 3 fixed path seeds"
+    },
+    "ink_iou": {
+      "ode_mean": 0.28344759893048127,
+      "seed_means": [
+        0.28394388770053475,
+        0.28513604812834226,
+        0.28398542780748665
+      ],
+      "sde_mean": 0.2843551212121212,
+      "mean_delta": 0.0009075222816399305,
+      "ci95": [
+        -0.00037707704991087076,
+        0.0022310738859180074
+      ],
+      "bootstrap_unit": "sample; averaged over 3 fixed path seeds"
+    },
+    "skel_iou": {
+      "ode_mean": 0.018644,
+      "seed_means": [
+        0.01875177540106952,
+        0.018631508021390377,
+        0.018122631016042782
+      ],
+      "sde_mean": 0.01850197147950089,
+      "mean_delta": -0.00014202852049910873,
+      "ci95": [
+        -0.0007001239304812834,
+        0.0003884741087344015
+      ],
+      "bootstrap_unit": "sample; averaged over 3 fixed path seeds"
+    },
+    "frag_ratio": {
+      "ode_mean": 1.7449188021390372,
+      "seed_means": [
+        1.6469626203208558,
+        1.6602108128342248,
+        1.7116630213903743
+      ],
+      "sde_mean": 1.6729454848484846,
+      "mean_delta": -0.07197331729055258,
+      "ci95": [
+        -0.1478695430926916,
+        -0.0021856147058824005
+      ],
+      "bootstrap_unit": "sample; averaged over 3 fixed path seeds"
+    }
+  },
+  "legacy_sweep": {
+    "cfgs": [
+      0.4,
+      0.6,
+      0.7,
+      0.8,
+      1.0,
+      1.2
+    ],
+    "gammas": [
+      0.0,
+      0.2,
+      0.35,
+      0.5
+    ],
+    "v68_ssim": [
+      [
+        0.5615,
+        0.5727,
+        0.5911,
+        0.6125
+      ],
+      [
+        0.5985,
+        0.6052,
+        0.6161,
+        0.6282
+      ],
+      [
+        0.6088,
+        0.6136,
+        0.6208,
+        0.6289
+      ],
+      [
+        0.6132,
+        0.6166,
+        0.6217,
+        0.6281
+      ],
+      [
+        0.615,
+        0.6172,
+        0.6206,
+        0.6253
+      ],
+      [
+        0.6141,
+        0.6161,
+        0.619,
+        0.6223
+      ]
+    ],
+    "v72_ssim": [
+      [
+        0.5635,
+        0.5632,
+        0.565,
+        0.5688
+      ],
+      [
+        0.6033,
+        0.6034,
+        0.603,
+        0.601
+      ],
+      [
+        0.6083,
+        0.6082,
+        0.6076,
+        0.6058
+      ],
+      [
+        0.6086,
+        0.6086,
+        0.6075,
+        0.6053
+      ],
+      [
+        0.6069,
+        0.6067,
+        0.606,
+        0.6047
+      ],
+      [
+        0.6063,
+        0.606,
+        0.6053,
+        0.6042
+      ]
+    ],
+    "v68_source": "docs/experiments/2026-10-08-sit-sde-sampler-investigation-and-sweep.md section 6.1",
+    "v72_source": "assets/ledger/v72_sweep_130k_2d.csv",
+    "note": "Legacy drift; separate scan batches, not the poster image batches. LPIPS not mixed."
+  },
+  "image_sha256": {
+    "eval/gt/75.png": "f46e40e390c18103676af72760dda11467e111e8f4a13f17f316a05ab62d40b0",
+    "eval/gt/82.png": "3218af8919824463c10e717e5ea9ed942c449c47ef0c3166cce548effae58662",
+    "eval/gt/158.png": "6af806b1f5afa8fdcbc0f62dbce15d09eb93caf9e368bfaaee35549d7061a727",
+    "eval/gt/133.png": "354eefb61b92c5b6f60cbaf59efe4b7f7f4afc6b7ea9c7cc7b7fcee7169717f2",
+    "eval/gt/99.png": "4f606545aba63cf55688cec4fefc7349300fac295ac0a6bd92c21c937621d7a4",
+    "eval/gt/140.png": "b9bfb980c3b218d06a77af184843cb56180b107cf5c79ac30dc90d5ec7875d9a",
+    "eval/gt/154.png": "f29ea63b33b814ad47f5853d1912a5c98bd32b2de25206385f17269f3dd89bec",
+    "eval/gt/178.png": "ded1ea63ea54de8cbb65bb99d33ed7db8956f2b3aae9481f59f1639754ddf5cb",
+    "eval/v68/75.png": "60d3ae93c85a4128d756fb49c29c6e44834714db8915bacde027ee99b11d35bb",
+    "eval/v68/82.png": "951babe12a441b874cf0eba58e0e1cd32dfd9911919b1db29a341173cdc2d342",
+    "eval/v68/158.png": "d95ffef422dfcb5d0469e12de9b2068c36fe586143359eb45a11089c63f1ecb0",
+    "eval/v68/133.png": "9220e1f46ef4d7a9b80f957273ee77a65e59d6ed59fd51c3f5c11de267a1aaa8",
+    "eval/v68/99.png": "ac80352b53176e22f131353405550760ad422fd47e69622599dc592baea30f50",
+    "eval/v68/140.png": "b177f40c8b26173aa80992550837b08e4d47323c901dccba70e8ab6d069d1329",
+    "eval/v68/154.png": "4fe35187572896c135a566ff1661f27323dc340141cbe885159ae8993dbcfbe2",
+    "eval/v68/178.png": "37d912d6eca8a607fa4304b5368b8a506e9f273559d043609410218b0c5d137e",
+    "eval/v68_sde/75.png": "f592c0195c429dea3d43ea620dec4c444dd50794ec5214fa86769de81fdee585",
+    "eval/v68_sde/82.png": "d414d0ff10a40608cf28668d7d572dd159d2a00c3af6eae2301f1bc1dc8e7fcb",
+    "eval/v68_sde/158.png": "c8292d76cf8d3d837adf751fe28017904d6d777011ea6f65dad31ddb86e23f25",
+    "eval/v68_sde/133.png": "ef7843d7ce7bf94b0b77bd2bcdb751eb7fdd40e83705895e9c17ece2afc9b66b",
+    "eval/v68_sde/99.png": "0ea950d7c35656f33d267df83f80c7b245fdb443c8bf81b5ee1024d3f860988c",
+    "eval/v68_sde/140.png": "c4133b4e8359f0808e71904074b1e1c6153bc9a4b877a0a10f127e789234493a",
+    "eval/v68_sde/154.png": "fecd314d4045a1054f1072f8db5d250263f7eed51a1b0414e6beefce2a338d3f",
+    "eval/v68_sde/178.png": "abb89f7e3a3b4806bc89ff16ccc60054ec8cc7b582da097b06d3b3ae99290860",
+    "eval/v70/75.png": "8abc6252d66cdae3f74af92108c9d491ce9d26de32589112c05e5512e2997ff2",
+    "eval/v70/82.png": "fef1635d666ef2fcf5db1e69196475b6cf06b80cb88ae767b1570ae0466129d7",
+    "eval/v70/158.png": "301e8b7cb2fe481865a0fbcf1e71a27a488766ee2b11c0ac34a6c5e33c48dc84",
+    "eval/v70/133.png": "ae9cd77667b44426dae372b151cd45ef8bc34e3d8304a968b4494f7e1b082c20",
+    "eval/v70/99.png": "f35967dc018d98c43ee07a1007479184894e3e171c4992a16d824c45959cead4",
+    "eval/v70/140.png": "fa55f2ba5c97476c7177c87abe5e718fdede1cda5d180d904c4d97df7cc4a9f9",
+    "eval/v70/154.png": "bf8ef64d8cdbd34a4d3652e0cc0b21f73f0cad2ba4709f4e666e136fe186c82e",
+    "eval/v70/178.png": "a4d35c386fbcfc65b3c065f220004a74fe7ed4856fabcbf1f4654bf0d9293bbf",
+    "eval/v72/75.png": "77471be9cb387cac62bca3e7d5f1c1dc6a7cfac3af3d756cd6283eb0365ae639",
+    "eval/v72/82.png": "1772b4df7b81eda80e82c7a9526418714ccab64a5acb1d229268326205690c3a",
+    "eval/v72/158.png": "3b8666184512ecba92cc6ede9c5cc00d58b927a58d9b0550df73e03e10894df4",
+    "eval/v72/133.png": "4747775b80312d60eb7ace8157f027fd1c7b27a3aaed61549c9e35b29190b722",
+    "eval/v72/99.png": "15095eb168a0bcb13037a420fb5c4f974f02fd4c891e06736a9c81d5f76c82fe",
+    "eval/v72/140.png": "aa52cc01f16e9f7700ae47a619fc98584596e6636d4b759721098faedeaeb44b",
+    "eval/v72/154.png": "3819059c72e1acab4bd959aa931da53de18e7c039fcc7f17014b91de1ddc8be2",
+    "eval/v72/178.png": "5c84a18abb7d8b5c05eb4a8c58e7a43266124b6140bac66c529b132265df80fa",
+    "eval/v72_sde/75.png": "b472131b65ece7a21f050509ea562ac23408a6d138e1c09e241c20d695cce1f8",
+    "eval/v72_sde/82.png": "6ce31bd3a87d84c3ec80008d515c6f51f6e86c1b23b61675a5bd1f22df1df78a",
+    "eval/v72_sde/158.png": "294ec87ac9e2c8f60805cd8b404bd8a2da3d2bb2d453528544448ccf5011f4b2",
+    "eval/v72_sde/133.png": "5499af4bd804b3b22c0013c2d5079d24e662a758f93d8fcd0373a9ce48bb5fc4",
+    "eval/v72_sde/99.png": "0a5435cdf9f44811f4424fbfe9dfa748a76e3862b28df54799dd458039324f02",
+    "eval/v72_sde/140.png": "15be6f7467b7715dcd7c9a1d5420ecd398fecab060f3bb0e6bc9518ccf04ef7a",
+    "eval/v72_sde/154.png": "fd0bd05b1aab3e61865dfe167e94f9dd78719f0dfad222273ab88d34c4b1aa1b",
+    "eval/v72_sde/178.png": "d9741f2a81c92a3afa473ee1e9ace2f2de05d482f673a7b6a22983c91be0f88c",
+    "eval/v76/75.png": "be4b47315a3e174bfacf6d389b88c0639b8a9bd3d66a844a83261a2056fcf767",
+    "eval/v76/82.png": "272584f396e9c49ccf62b20bd5ddb4f3f2bba8a502b6db2b02a977a65b4ff138",
+    "eval/v76/158.png": "cfcd6627ae9f54d05150cb1646a7c4bb9336416218f78ed9b82f0e8390563e17",
+    "eval/v76/133.png": "9f59f6674ba2730fb3b8aa0766cdc3255a3ff2bc254988f009fa51cd315561b7",
+    "eval/v76/99.png": "272b853a3bbbfaf67f94f3fbec51fb497a2eb607f419c648c74bed3a42b7bf1a",
+    "eval/v76/140.png": "af369a4455473912e06cb8be3dc44bc6e2256292106c21794858903f5d4ed97c",
+    "eval/v76/154.png": "e7888ce791bb84353faafd82d32b4f8de8ef4af39627df2c0c1b607275e673a6",
+    "eval/v76/178.png": "3f073f34186684084f81ca6fa7d17ea3ba29106f07d8745502c0c01a5ae50993",
+    "eval/v77/75.png": "a3cdb5b80e8e231dc0587ead1a705413cd9ddcdf01b7809892f7ea87bb5cc444",
+    "eval/v77/82.png": "9352863dac069386e4ae6f6808673801f575449e47bdb0af3a4faf849d56d726",
+    "eval/v77/158.png": "c63ecbedb357b1dbb11acba8bea4712c95dabf21f4474c56e9c2c010c9aa5b4a",
+    "eval/v77/133.png": "03c66637e518e52c17ce3b999516fb7fd4c0929108627ba264ad9a7b8d18f85e",
+    "eval/v77/99.png": "db7570e854b2b71d89cf603cac528f2122c62885c546e9bf0b9d737ff69689ea",
+    "eval/v77/140.png": "a3f812e66e4460d46de62e7d9ebd62c0f18706a74526120ead578737d96b992d",
+    "eval/v77/154.png": "327422438bf0962bb3ca3b60e764b34342f4c96cb4cbc1b9b9f490edece3509d",
+    "eval/v77/178.png": "05bc08a74ecfd90e50cfda7e60d41340c9fd4dac0164e94ea635f0ff82c01834",
+    "eval/v79_55k/75.png": "4d26c1fe867e5380e18d572b08360bf7d76a8ab622941a823038713a2ec4b9bd",
+    "eval/v79_55k/82.png": "cbc247353291ac7f7bc79f27b12afa2723f40322c4000a6a649e4397013d2878",
+    "eval/v79_55k/158.png": "60e5e2b3a92feca30549b6a42ab09f45777a59fdab28c54a422e697f118715f4",
+    "eval/v79_55k/133.png": "fb0783ee2cf57d642346a1d8be7e4ed7595eb621311ae76ccd60f2ec67b977a5",
+    "eval/v79_55k/99.png": "a74e0045e4d70ef2046fb73775f493363ed69d5bb2fa921fb9d8a283b8815808",
+    "eval/v79_55k/140.png": "a0125ca2cf53c1661131a7a337adde04a4b5b161f2f438e6e870ed771cf474b6",
+    "eval/v79_55k/154.png": "26e33a5d58b172cf0859b5a528254864ddbdd9254f17e62412c995e788a80318",
+    "eval/v79_55k/178.png": "942f302ef2293bba2d4c5863c3314ec610b96116415a8c8772ef7fbf46107c72",
+    "eval/v79_sde/75.png": "a3a4358e8b18534d6f687177f6ff74889e461589d1ab6081387ee5037fbebf27",
+    "eval/v79_sde/82.png": "7f4f600e5a5b221cfdb675bdbbe86067f6c52158a5cfc86eb59e587c48dab0a7",
+    "eval/v79_sde/158.png": "a633abe607c6993a112de12f42b1a2524401b2a84cb1bf64b45ad1f47eab814f",
+    "eval/v79_sde/133.png": "8f07dccbaedd1b61d6f7d88372ba973260787d0c0aaadd542e67c3185d73ead1",
+    "eval/v79_sde/99.png": "0b6d020478e736a7d9909cf3986eed5914aa63ee269e7cfb806d87a58641c5df",
+    "eval/v79_sde/140.png": "3deca08a64e7a7e082386628c27643239e459b8bd3b9172ab9c8e84639656969",
+    "eval/v79_sde/154.png": "36202573ca20cb791d3f3049cbe0d3882a3d8100c6fd5d9223774418e7ec3e98",
+    "eval/v79_sde/178.png": "c3ca8349905c4013c8e40c9309bd2eda989c6ab9bb8297ffab2046be7e7d8059",
+    "assets/results/_local_v80_50k_ode/eval_samples_ctrl/step0050000/eval200fix/g75.png": "3e350907a999777f8122859f80e7d3d7e5c8e069a93704afc33fa5c1f1461e82",
+    "assets/results/_local_v80_50k_ode/eval_samples_ctrl/step0050000/eval200fix/g82.png": "5f85530d614049612027f2cd0d8b0404164d6e65fae1437acb1790b8960f7f92",
+    "assets/results/_local_v80_50k_ode/eval_samples_ctrl/step0050000/eval200fix/g158.png": "cf7c897f2b68341c2cbc4381e176cd121e702f6a582c52d7eb8c86f999cf37e3",
+    "assets/results/_local_v80_50k_ode/eval_samples_ctrl/step0050000/eval200fix/g133.png": "9857b016a1d42d62ce06662e8a2bb6dc1cdbd782d2d7baa0639b99e86fce6a74",
+    "assets/results/_local_v80_50k_ode/eval_samples_ctrl/step0050000/eval200fix/g99.png": "3875634bef30f6b3f75ab69f620e6ae236f234950690d196162a0350f12ce425",
+    "assets/results/_local_v80_50k_ode/eval_samples_ctrl/step0050000/eval200fix/g140.png": "d80d1a7cef1c9bbb16614b48e22cbb3283eb37c20193cbd64b093894cace51ad",
+    "assets/results/_local_v80_50k_ode/eval_samples_ctrl/step0050000/eval200fix/g154.png": "f8ebecb42c5736a476ca20714c92337d75a33f13badfccd4427f981169018708",
+    "assets/results/_local_v80_50k_ode/eval_samples_ctrl/step0050000/eval200fix/g178.png": "f6b9374cc8d59da1776f5b1e2d76297a3474bca9635a96e39cdfda6dcbd785af",
+    "assets/results/_local_v80_50k_sde_g05/eval_samples_ctrl/step0050000/eval200fix/g75.png": "74dc1e936df900969bee71d46a44414969c4a8c6eae6175ebb646b68c9aa0967",
+    "assets/results/_local_v80_50k_sde_g05/eval_samples_ctrl/step0050000/eval200fix/g82.png": "da6d19c1234eeac59901d084a550cdfe7b684b4bc177f94a5e835514efc96447",
+    "assets/results/_local_v80_50k_sde_g05/eval_samples_ctrl/step0050000/eval200fix/g158.png": "387e2b65d3ef2c01d9a99c5acad443efbac254dc61e45e1cb87183fe9c0302b2",
+    "assets/results/_local_v80_50k_sde_g05/eval_samples_ctrl/step0050000/eval200fix/g133.png": "b245a84ebfcbf9017bb954169b4b9a642977246babf8884c10d6c023ca573097",
+    "assets/results/_local_v80_50k_sde_g05/eval_samples_ctrl/step0050000/eval200fix/g99.png": "a51192aaf52d83aff7963e865f870a2b7209499e6fc9f5de667295ced7e5d9da",
+    "assets/results/_local_v80_50k_sde_g05/eval_samples_ctrl/step0050000/eval200fix/g140.png": "2bc72d718542994c917f524fb0f3e539fdfb4d1fd0f22817c2ad0e6d939d7353",
+    "assets/results/_local_v80_50k_sde_g05/eval_samples_ctrl/step0050000/eval200fix/g154.png": "6c897589be107d9433c73e4d876e733619b56f6c659b6eb574ceeb410830e134",
+    "assets/results/_local_v80_50k_sde_g05/eval_samples_ctrl/step0050000/eval200fix/g178.png": "ee2075ca247e4d46db2411e8bd853faee9b7088a8d6c3f7e8152337a9e0ad68f"
+  },
+  "source_sha256": {
+    "assets/eval200_splits_exact_metrics.csv": "2c7f238bab51b2b14419cdb8547bb09e9a364cc54b36966e94326b16db92f55f",
+    "assets/ledger/points_all.csv": "9a5dbf9197a2fd0a274f9d4755471cd8decde5517baa401555d4ff9d0142f431",
+    "assets/ledger/v72_sweep_130k_2d.csv": "e69c1c8b8d51ea388744a3bd94919727b4c1ad4794ae332151e5a37a597f1cb8",
+    "assets/eval200fix_models_per_sample.csv": "a52722feae381ef51a053640d1b1bcd980c72473dd0541d2d380b134704cd7a9",
+    "exp-std/csv/eval200_fixed.csv": "f2205eb2fbd34b03915d4dd26b379a107183606683cf3389b5264bcdd6d45a27",
+    "docs/sde_analysis_brief.md": "95b02fbd725693f03c48f02a5816c01dad2c4bce19c8bdd0aa81f4aba457c380",
+    "docs/experiments/2026-10-08-sit-sde-sampler-investigation-and-sweep.md": "9ed424a59e5f371e61862739b0dee028f504363e895ef5b214aeb78686c9811d",
+    "assets/results/_local_v80_50k_ode/eval_stdskel_batch.csv": "84dc5c5bdb09056bfdebce603c6548ae18195de2a169c53c8e1c9a17746c75a8",
+    "assets/results/_local_v80_50k_sde_g05/eval_stdskel_batch.csv": "fe320e552eabf03fcb732e8ba1f86be8865139740c8c9bf5b23db8bd77f80063",
+    "assets/results/_local_v80_50k_sde_g05_seed1/eval_stdskel_batch.csv": "b2e4d0690cb00edac1060a7a47641ee3a95550635e226cd90ef5f7f6a80ee4d1",
+    "assets/results/_local_v80_50k_sde_g05_seed2/eval_stdskel_batch.csv": "295f06120bc276f721dbddbd03aae6e3045cb24bda9a36288adee980c8739e17"
+  }
+}
