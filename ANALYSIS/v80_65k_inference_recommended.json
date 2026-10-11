@@ -1,0 +1,14 @@
+{
+  "purpose": "Inference-only recipe validated on v80 EMA 65k; do not merge blindly into training config",
+  "checkpoint_sha256": "a498386dfc7a3473678a85ee269b69056045a7ca2edeee9b31e0f4bc3f456492",
+  "diffusion_type": "flow",
+  "flow_sampler": "heun",
+  "eval_steps": 50,
+  "eval_cfg": 1.5,
+  "shift": 1.0,
+  "sde_gamma": 0.0,
+  "vae_scaling_factor": 0.8439769211405432,
+  "vae_shift_factor": -0.03341800242750449,
+  "vae_path": "experiments/calli_vae_physics/calli_vae_final",
+  "caveat": "LPIPS and ink-IoU improve; heldout mean SSIM decreases 0.000828. No proven extra SDE gain."
+}

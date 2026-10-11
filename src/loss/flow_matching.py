@@ -107,13 +107,21 @@ class FlowMatching:
     def __init__(self, num_steps=50, sigma_min=1e-4, use_ot=False,
                  t_sampler="logit_normal", t_mean=0.0, t_std=1.0,
                  shift=1.0, sampler="heun", heun_batch=False, ot_chunks=1,
-                 use_c2ot=False, c2ot_mode="slot", sde_gamma=0.0):
+                 use_c2ot=False, c2ot_mode="slot", sde_gamma=0.0,
+                 sde_tmin=0.0, sde_tmax=1.0, sde_ramp=0.0):
         self.num_timesteps = int(num_steps)
         self.sigma_min = sigma_min
         self.use_ot = bool(use_ot)
         self.use_c2ot = bool(use_c2ot)
         self.c2ot_mode = str(c2ot_mode or "slot").lower()
         self.sde_gamma = float(sde_gamma or 0.0)
+        self.sde_tmin = float(sde_tmin)
+        self.sde_tmax = float(sde_tmax)
+        self.sde_ramp = float(sde_ramp)
+        if not (0 <= self.sde_tmin < self.sde_tmax <= 1):
+            raise ValueError("SDE window requires 0 <= sde_tmin < sde_tmax <= 1")
+        if not (0 <= self.sde_ramp <= (self.sde_tmax - self.sde_tmin) / 2):
+            raise ValueError("sde_ramp must fit inside both ends of the SDE window")
         self.is_flow = True
         # OT-CFM 分块数: 1 = 整 batch 一次全局匈牙利 (Tong et al. 原版, O(B^3));
         # >1 时把 batch 均分成 ot_chunks 块, 每块独立做匈牙利 (O((B/k)^3) * k,
@@ -139,15 +147,31 @@ class FlowMatching:
     @property
     def nfe(self):
         """一次采样循环的网络前向次数（per sample）。"""
-        return self.num_timesteps * (2 if self.sampler == "heun" else 1)
+        return self.num_timesteps * (2 if self.sampler == "heun" or self.sde_gamma > 0 else 1)
 
     def describe(self):
         c2ot_desc = f", use_c2ot={self.use_c2ot}(mode={self.c2ot_mode})" if self.use_c2ot else ""
-        sde_desc = f", sde_gamma={self.sde_gamma}" if self.sde_gamma > 0 else ""
+        sde_desc = (f", sde_gamma={self.sde_gamma}, "
+                    f"sde_window=({self.sde_tmin},{self.sde_tmax}), ramp={self.sde_ramp}"
+                    if self.sde_gamma > 0 else "")
         return (f"FlowMatching(steps={self.num_timesteps}, sampler={self.sampler}, "
                 f"nfe={self.nfe}, t_sampler={self.t_sampler}"
                 + (f"(mean={self.t_mean},std={self.t_std})" if self.t_sampler == "logit_normal" else "")
                 + f", shift={self.shift}, use_ot={self.use_ot}{c2ot_desc}{sde_desc})")
+
+    def _sde_weight(self, t):
+        """Time-only envelope. Default 1 preserves the existing bridge sampler.
+
+        D(t)=gamma^2*t*(1-t)*w(t)^2; both drift and diffusion must use w^2.
+        A deterministic time window needs no spatial div(D) correction.
+        """
+        if self.sde_tmin == 0 and self.sde_tmax == 1 and self.sde_ramp == 0:
+            return th.ones_like(t)
+        if self.sde_ramp == 0:
+            return ((t >= self.sde_tmin) & (t <= self.sde_tmax)).to(t.dtype)
+        left = ((t - self.sde_tmin) / self.sde_ramp).clamp(0, 1)
+        right = ((self.sde_tmax - t) / self.sde_ramp).clamp(0, 1)
+        return th.minimum(left, right)
 
     # ── training ────────────────────────────────────────────────────────
     def sample_t(self, n, device):
@@ -470,7 +494,7 @@ class FlowMatching:
             #     连续性方程:  ∂_t p = −∇·(p v)
             #     SDE dx = b dt + g dW 的 Fokker–Planck:
             #                 ∂_t p = −∇·( p [ b − (g²/2) ∇log p ] )
-            #     要求与 ODE 同边缘 => b = v + (g²/2) ∇log p_t
+            #     上式是正向时间；本代码积分 t:1→0，反向漂移为 b = v - (g²/2) ∇log p_t
             #     Tweedie:  ∇log p_t = −(x + (1−t) v)/t ,   g² = 2 γ² t (1−t)
             #     =>  b = v + γ² (1−t) [ x + (1−t) v ]                       ← **加号**
             #
@@ -493,13 +517,14 @@ class FlowMatching:
             if self.sde_gamma > 0:
                 g = self.sde_gamma
                 h = -dt                              # 正步长
-                noise_std = g * th.sqrt(th.clamp(2.0 * t_i * (1.0 - t_i) * h, min=0.0))
+                noise_std = (g * self._sde_weight(t_i)
+                             * th.sqrt(th.clamp(2.0 * t_i * (1.0 - t_i) * h, min=0.0)))
                 dW = noise_std * th.randn_like(x)
 
                 def _drift(xx, t_scalar):
                     vv = self._v(model, xx, t_scalar.expand(B), model_kwargs, C)
                     a = 1.0 - t_scalar
-                    return vv + (g ** 2) * a * (xx + a * vv)
+                    return vv + (g ** 2) * self._sde_weight(t_scalar).square() * a * (xx + a * vv)
 
                 b1 = _drift(x, t_i)                  # predictor
                 x_pred = x + dt * b1 + dW
@@ -552,7 +577,7 @@ class FlowMatching:
 #: （noise_schedule / learn_sigma / use_kl ...）误传进来导致 TypeError。
 FLOW_PARAMS = (
     "num_steps", "sigma_min", "use_ot", "ot_chunks",
-    "use_c2ot", "c2ot_mode", "sde_gamma",
+    "use_c2ot", "c2ot_mode", "sde_gamma", "sde_tmin", "sde_tmax", "sde_ramp",
     "t_sampler", "t_mean", "t_std",
     "shift", "sampler", "heun_batch",
 )

@@ -12,6 +12,7 @@
 """
 import argparse
 import csv
+import gc
 import glob
 import os
 import re
@@ -40,6 +41,19 @@ def main():
                              "strict:assets/eval_fame3_strict_clean_v9.csv:237"])
     ap.add_argument("--cfg", type=float, default=0.7)
     ap.add_argument("--steps", type=int, default=50)
+    ap.add_argument("--seed", type=int, default=0,
+                    help="采样随机种子；初始 eval noise 固定，SDE 时控制 Brownian 路径。")
+    ap.add_argument("--sde-gamma", type=float, default=None,
+                    help="覆盖 checkpoint 中的 SDE gamma；0=ODE，>0=corrected SDE。"
+                         "默认 None 表示沿用 checkpoint 配置。")
+    ap.add_argument("--vae-path", default="",
+                    help="覆盖 checkpoint 中的 eval_vae_path/vae_path。"
+                         "跨机器评测时用于替换失效的远端绝对路径。")
+    ap.add_argument("--vae-shift-factor", type=float, default=None,
+                    help="Override missing checkpoint shift using verified shard provenance")
+    ap.add_argument("--sde-tmin", type=float, default=None)
+    ap.add_argument("--sde-tmax", type=float, default=None)
+    ap.add_argument("--sde-ramp", type=float, default=None)
     # ★ 2026-09-17: 50 -> 240。默认 50 在 4090 上对 37M 小模型**严重欠载**
     #   （doc70 §7.2c），批量补跑的全部收益都会被这个默认值吃掉。
     #   240 与训练侧 in_mem_eval_batch 对齐；显存不够时用 --dit-batch 回调。
@@ -56,6 +70,8 @@ def main():
                          "用于修复 shard 覆盖不到 eval id 时 g=零 的静默失效")
     ap.add_argument("--save-samples", action="store_true",
                     help="落盘 g{i}/gt{i}.png 到 eval_samples_ctrl/ (供 poster)")
+    ap.add_argument("--sample-dir", default="",
+                    help="--save-samples 的输出根目录；空则保持历史行为，写到 ckpt run。")
     ap.add_argument("--self-cond", action="store_true", default=False,
                     help="启用两遍自条件采样 (Self-Conditioning)")
     ap.add_argument("--disable-callig-style", action="store_true", default=False,
@@ -89,7 +105,7 @@ def main():
     from src.eval.inference import (make_eval_cache, load_eval_vae, sample_latents,
                                     sample_latents_self_cond,
                                     _mse, _ssim, build_diffusion)
-    ck0 = torch.load(cks[0], map_location="cpu", weights_only=False)
+    ck0 = torch.load(cks[0], map_location="cpu", weights_only=False, mmap=True)
     # ★★ [2026-09-22 bugfix] 原写法把 a 强制转成 **dict**，但下游
     #   build_model_from_args / apply_post_construction 都用  ——
     #   dict 没有属性 -> **ckpt 的架构/开关参数全部被忽略、静默走默认值**！
@@ -112,6 +128,8 @@ def main():
     if hasattr(_raw, "__dict__"):
         _raw = vars(_raw)
     a = _AttrDict(_raw if isinstance(_raw, dict) else {})
+    del ck0, _raw
+    gc.collect()
     # ★ 2026-09-17: 整段"手抄构造参数"已删除，统一到 src/eval/model_io.py。
     #   原实现的问题（见 docs/system/70 §1.1）：
     #     - 硬编码 cond_drop_all_prob=0.05 / cond_drop_one_prob=0.25（不取 ckpt 的值）
@@ -125,9 +143,30 @@ def main():
     model = build_model_from_args(a, dev)
     apply_post_construction(model, a, verbose=False)
     _warned_strict = False
-    vae = load_eval_vae(dev, "data/pretrained/sd-vae-ft-ema")
-    diff = build_diffusion(args.steps, "flow")
-    shards = args.skel_shards or a.get("skel_latent_shards_dir") or "data/skel/std_skel1_latents_fame3_v8"
+    _vae_path = (args.vae_path or a.get("eval_vae_path")
+                 or a.get("vae_path") or "data/pretrained/sd-vae-ft-ema")
+    from src.eval.in_mem_eval import _get_vae
+    _vae_shift = (args.vae_shift_factor if args.vae_shift_factor is not None
+                  else float(a.get("vae_shift_factor", 0.0) or 0.0))
+    vae = _get_vae(dev, _vae_path, _vae_shift)
+    from src.loss import flow_kwargs_from
+    _flow_kw = flow_kwargs_from(a)
+    if args.sde_gamma is not None:
+        _flow_kw["sde_gamma"] = float(args.sde_gamma)
+    for _key in ("sde_tmin", "sde_tmax", "sde_ramp"):
+        if getattr(args, _key) is not None:
+            _flow_kw[_key] = getattr(args, _key)
+    diff = build_diffusion(args.steps,
+                           a.get("diffusion_type", "flow"),
+                           flow_kwargs=_flow_kw)
+    print(f"[batch] sampler={diff.describe()} vae={_vae_path}")
+    _uses_skel = bool(a.get("skel_as_glyph_cond", False)
+                      or a.get("use_glyph_cond", False)
+                      or a.get("w_glyph_cond", False))
+    shards = ((args.skel_shards or a.get("eval_skel_latent_shards_dir")
+               or a.get("skel_latent_shards_dir")
+               or "data/skel/std_skel1_latents_fame3_v8")
+              if _uses_skel else None)
     img_root = a.get("gpu_eval_img_root") or a.get("img_root")
     sf = float(a.get("vae_scaling_factor", 0.18215))
     # 书家词表收紧: y_callig 与训练数据层同一张映射表
@@ -154,6 +193,11 @@ def main():
         rows = list(csv.DictReader(open(csvp, encoding="utf-8")))[:n]
         cache = make_eval_cache(csvp, img_root, None, 256, n, 8, 4, sf,
                                 skel_latent_shards_dir=shards, callig_id_map=cmap)
+        if a.get("use_script_cond", False):
+            # 三表模型训练时用连续 remap id；原始 CSV id 可能远大于 embedding
+            # 行数。不做这一步会在 GPU embedding lookup 触发越界 assert。
+            from src.eval.in_mem_eval import _triple_remap_cache
+            _triple_remap_cache(cache, csvp, n, a)
         meta = []
         for r in rows:
             m = re.search(r"(\d+)\.png", r["image_path"])
@@ -215,7 +259,7 @@ def main():
         todo = list(sets.keys()) if getattr(args, "force", False) else [s for s in sets if (step, s) not in done]
         if not todo:
             continue
-        d = torch.load(ck, map_location="cpu", weights_only=False)
+        d = torch.load(ck, map_location="cpu", weights_only=False, mmap=True)
         sd = _strip(d.get("ema") or d.get("model") or d)
         if args.disable_callig_style:
             # 消融模式: 丢弃 ckpt 里的 callig_style 系键 (模块已被禁用), 其余照常
@@ -234,6 +278,8 @@ def main():
                       f"请用 src/eval/model_io.py 补字段，**不要退回 strict=False**:\n{_e}")
                 _warned_strict = True
             raise
+        del d, sd
+        gc.collect()
 
         for name in todo:
             S = sets[name]
@@ -243,18 +289,25 @@ def main():
                 lat = sample_latents_self_cond(
                     model, diff, cache["noise"], cache["conds"],
                     args.cfg, args.dit_batch, dev,
-                    skel=cache["skels_latent"], seed=0,
+                    skel=cache["skels_latent"], seed=args.seed,
                     blend_alpha=args.blend_alpha,
                     hier_conds=cache.get("hier_conds"))
             else:
                 lat = sample_latents(
                     model, diff, cache["noise"], cache["conds"],
                     args.cfg, args.dit_batch, dev,
-                    skel=cache["skels_latent"], seed=0,
+                    skel=cache["skels_latent"], seed=args.seed,
                     hier_conds=cache.get("hier_conds"))
             t_s = time.time() - t0
             # decode in memory (bf16 autocast: 共 GPU 训练时省一半激活显存)
-            gts = (cache["gts"].to(dev) + 1) / 2
+            # Windows/WDDM 的显存提交上限会比 nvidia-smi 的 free 更早触发；采样阶段
+            # 的临时缓存已无用，解码前主动释放，避免小显存机器在 VAE up-block OOM。
+            if dev.type == "cuda":
+                torch.cuda.empty_cache()
+            # 全量评测的 GT/预测缓存常驻 CPU；GPU 只保留当前 VAE micro-batch。
+            # 否则 Windows/WDDM 下即使 vae_batch=1，也会因整块 preds 在 GPU 上
+            # 占用提交额度而在 decoder 尾部报 OOM。
+            gts = (cache["gts"].cpu() + 1) / 2
             preds = torch.empty_like(gts)
             for i in range(0, n, args.vae_batch):
                 j = min(i + args.vae_batch, n)
@@ -263,14 +316,16 @@ def main():
                     _lat = _lat[:, :4]
                 with torch.autocast("cuda", dtype=torch.bfloat16):
                     dec = vae.decode(_lat / sf).sample
-                preds[i:j] = (dec.clamp(-1, 1) + 1) / 2
+                preds[i:j] = ((dec.clamp(-1, 1) + 1) / 2).float().cpu()
             pred_np = preds.cpu().numpy().transpose(0, 2, 3, 1)   # -> (n,H,W,C) 与 _ssim/_lpips 对齐
             gt_np = gts.cpu().numpy().transpose(0, 2, 3, 1)
             if args.save_samples:
                 # 落盘样本供 poster: seen->g/, strict->strict50/
                 from PIL import Image as _Img
                 _sub = "g" if name in ("seen", "g") else ("strict50" if name == "strict" else name)
-                _sd = os.path.join(os.path.dirname(os.path.dirname(ck)), "eval_samples_ctrl",
+                _sample_root = (args.sample_dir
+                                or os.path.dirname(os.path.dirname(ck)))
+                _sd = os.path.join(_sample_root, "eval_samples_ctrl",
                                    f"step{step:07d}", _sub)
                 os.makedirs(_sd, exist_ok=True)
                 for i in range(n):

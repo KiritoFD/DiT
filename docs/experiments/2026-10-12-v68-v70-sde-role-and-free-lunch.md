@@ -199,3 +199,11 @@ python tools/analysis/render_v68_v70_sde_poster.py --capture
 依赖NumPy和Pillow、Microsoft YaHei或Noto Sans CJK。海报内的8列图片保持256×256原尺寸；preview仅供浏览。`evidence.json`记录96张图像的SHA-256、选择规则、来源CSV的hash、扫描矩阵与三seed统计。`v80_50k_paired.csv`快照保存4×187行，足以独立重建v80数字，无需权重。
 
 主要项目来源：`docs/sde_analysis_brief.md`、`docs/experiments/2026-10-08-sit-sde-sampler-investigation-and-sweep.md`、`assets/ledger/points_all.csv`、`assets/ledger/v72_sweep_130k_2d.csv`、各版本配置和`state.md`。历史材料中的早期机制推断并非最新结论；应与本文记录的数学修正和口径限制一起引用。
+
+## 8. 后续：v80 65k 的实际推理调参
+
+用户随后授权执行推理扫描，结果见 [v80 65k 多指标推理调参](2026-10-12-v80-65k-inference-tuning.md)。
+80 张选参、107 张预留验证、三个初始/Brownian seed，同 100 NFE：提高 CFG 到 1.5 可稳定改善两种 LPIPS 和墨迹 IoU，
+但 SSIM 小降；同 CFG 加 corrected SDE γ0.5 的额外收益未得到支持，中段窗口也未在调参集胜出。
+同时查明 checkpoint 缺失 VAE shift 字段，后续验证按 shard provenance 修复解码；该修复影响很小。
+本海报与 50k 快照保留原实验的历史口径，不把后续的解码修复/CFG 收益追记成旧实验的 SDE 增益。

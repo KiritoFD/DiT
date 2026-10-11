@@ -21,7 +21,7 @@
 
 - `sf`（`vae_scaling_factor`）**不是超参，是"由实测拟合出来的归一化常数"**——它存在的唯一目的是
   让 `z_stored` 的分布接近 `N(0, I)`，因为**采样起点就是 `N(0, I)`**（`make_eval_cache` 的 noise）。
-- `shift` 仅用于 FLUX 家族（其 config 给出 `shift_factor=0.1159`）；**用了 shift 就必须在
+- `shift` 不限于 FLUX（其 config 给出 `shift_factor=0.1159`）；本项目 Calli-VAE 也按 shard 实测均值去中心。**用了 shift 就必须在
   PROVENANCE 与 DiT config 里成对出现**，漏掉一侧就是静默错图。
 
 ### 1.2 五条不变量（全部硬性，缺一不可）

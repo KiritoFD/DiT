@@ -606,6 +606,11 @@ def build_parser(argv=None):
     parser.add_argument("--vae-in-channels", type=int, default=3, help="VAE input image channels (3=RGB, 1=grayscale)")
     parser.add_argument("--vae-out-channels", type=int, default=3, help="VAE output image channels (3=RGB, 1=grayscale)")
     parser.add_argument("--vae-scaling-factor", type=float, default=0.18215, help="VAE latent scaling factor")
+    parser.add_argument("--vae-shift-factor", type=float, default=0.0,
+                        help="Shard contract: stored=(raw-shift)*sf; decode(stored/sf+shift)")
+    parser.add_argument("--sde-tmin", type=float, default=0.0)
+    parser.add_argument("--sde-tmax", type=float, default=1.0)
+    parser.add_argument("--sde-ramp", type=float, default=0.0)
     parser.add_argument("--train-vae-encoder", type=_str_to_bool, default=False,
                         help="REPA-E 端到端联合微调: 解冻 VAE Encoder，保持 Decoder 冻结，"
                              "使潜在空间在 DiT 与 DINOv2 (REPA) 共同监督下自适应优化。")

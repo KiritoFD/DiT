@@ -1,0 +1,6 @@
+[
+  {"name":"baseline", "cfg":1.0},
+  {"name":"cfg150", "cfg":1.5},
+  {"name":"cfg200", "cfg":2.0},
+  {"name":"cfg150_bridge050", "cfg":1.5, "gamma":0.5}
+]

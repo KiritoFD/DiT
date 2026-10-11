@@ -542,6 +542,11 @@ def build_parser(argv=None):
     parser.add_argument("--vae-in-channels", type=int, default=3, help="VAE input image channels (3=RGB, 1=grayscale)")
     parser.add_argument("--vae-out-channels", type=int, default=3, help="VAE output image channels (3=RGB, 1=grayscale)")
     parser.add_argument("--vae-scaling-factor", type=float, default=0.18215, help="VAE latent scaling factor")
+    parser.add_argument("--vae-shift-factor", type=float, default=0.0,
+                        help="Shard contract: stored=(raw-shift)*sf; decode(stored/sf+shift)")
+    parser.add_argument("--sde-tmin", type=float, default=0.0)
+    parser.add_argument("--sde-tmax", type=float, default=1.0)
+    parser.add_argument("--sde-ramp", type=float, default=0.0)
     parser.add_argument("--lora-alpha", type=int, default=None,
                         help="LoRA alpha (scaling = alpha/r). Default: same as r (scaling=1).")
     parser.add_argument("--lora-target", type=str, choices=["all", "attn", "mlp"], default="all",

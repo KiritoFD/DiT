@@ -132,6 +132,12 @@ class _ShiftedVAE:
     def decode(self, z, *a, **kw):
         return self._base.decode(z + self.shift, *a, **kw)
 
+    def eval(self):
+        # Returning base.eval() through __getattr__ discards the decode wrapper
+        # in the common `vae = _get_vae(...).eval()` idiom.
+        self._base.eval()
+        return self
+
     def __getattr__(self, k):
         return getattr(self._base, k)
 

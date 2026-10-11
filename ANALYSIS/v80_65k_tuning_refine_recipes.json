@@ -1,0 +1,9 @@
+[
+  {"name":"baseline", "cfg":1.0},
+  {"name":"cfg150", "cfg":1.5},
+  {"name":"cfg175", "cfg":1.75},
+  {"name":"cfg200", "cfg":2.0},
+  {"name":"cfg250", "cfg":2.5},
+  {"name":"cfg150_mid070", "cfg":1.5, "gamma":0.7, "tmin":0.2, "tmax":0.8, "ramp":0.1},
+  {"name":"cfg150_bridge050", "cfg":1.5, "gamma":0.5}
+]

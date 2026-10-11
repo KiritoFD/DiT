@@ -1,0 +1,14 @@
+[
+  {"name":"historical_decode", "cfg":1.0, "decode_shift":0.0},
+  {"name":"baseline", "cfg":1.0},
+  {"name":"cfg070", "cfg":0.7},
+  {"name":"cfg085", "cfg":0.85},
+  {"name":"cfg115", "cfg":1.15},
+  {"name":"cfg130", "cfg":1.3},
+  {"name":"shift070", "cfg":1.0, "shift":0.7},
+  {"name":"shift140", "cfg":1.0, "shift":1.4},
+  {"name":"bridge025", "cfg":1.0, "gamma":0.25},
+  {"name":"bridge050", "cfg":1.0, "gamma":0.5},
+  {"name":"mid035", "cfg":1.0, "gamma":0.35, "tmin":0.2, "tmax":0.8, "ramp":0.1},
+  {"name":"mid070", "cfg":1.0, "gamma":0.7, "tmin":0.2, "tmax":0.8, "ramp":0.1}
+]
