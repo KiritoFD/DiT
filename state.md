@@ -334,7 +334,9 @@ latent 归一化 **实测拟合 sf=0.843977 / shift=−0.03342**（`encode --sca
 
 **★ 不随口径变的元结论**：**网格所有效应 ≤0.016 SSIM / ≤0.010 LPIPS，而单换 VAE 就是 −0.054 LPIPS（vgg, 匹配步数, 单变量）+0.0048 SSIM → 杠杆在 VAE/latent 与 DiT 侧，不在 aug/OT 网格。**
 
-### 6. ★ SDE 的真实机制（2026-10-11 补测 v79_sde）
+### 6. ★ > 📐 **SDE 问题的完整技术简报（含精确更新式与全部数据）见 [`docs/sde_analysis_brief.md`](docs/sde_analysis_brief.md)**。
+
+SDE 的真实机制（2026-10-11 补测 v79_sde）
 
 | 行 | HF | HF/GT | ink/GT | 用掉天花板 |
 |---|---|---|---|---|

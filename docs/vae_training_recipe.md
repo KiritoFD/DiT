@@ -213,6 +213,8 @@ GT  : 0.9091  0.0471  0.0198  0.0147  0.0076  0.0015
 
 ---
 
+> 📐 SDE 增益翻转问题的完整技术简报见 [`docs/sde_analysis_brief.md`](docs/sde_analysis_brief.md)。
+
 ## 7. 不要做的事（血泪清单）
 
 | 不要 | 因为 |
