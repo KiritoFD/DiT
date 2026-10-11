@@ -44,6 +44,11 @@ MODELS = {
     "v68_sde": ("", "ours v68 200k + SiT-SDE γ0.5 (cfg1.0; 与 v68 只差 γ)"),
     "v72": ("", "ours Sp/2 + 冻结 Calli-VAE(kl1e6, sample目标) 130k"),
     "v72_sde": ("", "ours v72 130k + SiT-SDE γ0.5 (cfg1.0)"),
+    # ★ 2026-10-11 新增: 纯物理 VAE(去 DINO) 下游 DiT + 其 SDE 对照
+    "v79": ("", "ours Sp/2 + 纯物理 VAE(L1+LPIPS+GAN+KL+HF, 无DINO)"),
+    "v79_sde": ("", "ours v79 + SiT-SDE γ0.5 (cfg1.0; 与 v79 只差 γ)"),
+    "v76": ("", "ours Sp/2 + topband VAE 40k"),
+    "v78": ("", "ours Sp/2 + topband VAE + 尺度修正 45k"),
     "v66": ("", "ours S/2 route2456"),
     "v54": ("", "ours S/2 三表 minimal"),
     # ── 48 机器容量阶梯 (2026-10-07 用**我们主线的 Heun 协议**在 48 上重新导出 187 张) ──

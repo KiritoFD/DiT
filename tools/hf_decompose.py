@@ -27,20 +27,26 @@ sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 SD_VAE = "pretrained_models/sd-vae-ft-ema"
 CALLI_VAE = "experiments/vae_frozen/calli_vae_kl1e6_s12500_stdconv"
 TOPBAND_VAE = "experiments/vae_fix_topband/calli_vae_final"
+# ★ 2026-10-11: 纯物理 VAE（去 DINO: L1+LPIPS+PatchGAN+KL+topband+Laplacian, 20k 步）
+#   验收: 往返顶带 0.901 / LPIPS 0.0135 / PSNR 34.04（均优于 SD 与旧 DINO 版）
+PHYSICS_VAE = "experiments/calli_vae_physics/calli_vae_final"
 
 # 行 -> 该行**实际使用的** VAE（决定它的往返天花板）
 ROWS = {
     "v68": SD_VAE, "v68_sde": SD_VAE,
     "v72": CALLI_VAE, "v72_sde": CALLI_VAE,
-    "v76": TOPBAND_VAE, "v77": TOPBAND_VAE,
+    "v76": TOPBAND_VAE, "v77": TOPBAND_VAE, "v78": TOPBAND_VAE,
+    "v79": PHYSICS_VAE, "v79_sde": PHYSICS_VAE,
 }
 # 需要测往返的 VAE 集合 (tag, path, mode)
 CEIL_VAES = [
     ("vae_sd", SD_VAE, "mode"),
     ("vae_calli", CALLI_VAE, "sample"),
     ("vae_topband", TOPBAND_VAE, "sample"),
+    ("vae_physics", PHYSICS_VAE, "sample"),
 ]
-TAG_OF = {SD_VAE: "vae_sd", CALLI_VAE: "vae_calli", TOPBAND_VAE: "vae_topband"}
+TAG_OF = {SD_VAE: "vae_sd", CALLI_VAE: "vae_calli", TOPBAND_VAE: "vae_topband",
+          PHYSICS_VAE: "vae_physics"}
 
 
 def hf_of(arr_uint8, r_cut=0.5):
