@@ -27,6 +27,42 @@ sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 from hf_losses import band_fraction  # noqa: E402
 
 
+def band_fraction_np(a_uint8, r_cut=0.5):
+    """numpy 版顶带份额（与 census 同口径），用于逐图统计。"""
+    a = a_uint8.astype(np.float32)
+    if a.ndim == 3:
+        a = a.mean(axis=-1)
+    b = a / 255.0
+    F = np.fft.fftshift(np.abs(np.fft.fft2(b - b.mean())) ** 2)
+    h, w = b.shape
+    yy, xx = np.mgrid[0:h, 0:w]
+    r = np.sqrt(((yy - h / 2) / (h / 2)) ** 2 + ((xx - w / 2) / (w / 2)) ** 2)
+    return float(F[r > r_cut].sum() / max(F.sum(), 1e-9))
+
+
+def radial_profile(a_uint8, nbins=6):
+    """径向功率谱**剖面**（按半径分箱的归一化能量，从低频到高频）。
+
+    ★ 为什么需要它: "顶带份额"只是一个数字, 噪声也能把它刷高;
+      而"GAN 没做好"的典型指纹是**中高频整段能量不足**（图像发"塑料"）。
+      逐带对比才能区分『真锐』与『用噪点换份额』。
+    """
+    a = a_uint8.astype(np.float32)
+    if a.ndim == 3:
+        a = a.mean(axis=-1)
+    b = a / 255.0
+    F = np.fft.fftshift(np.abs(np.fft.fft2(b - b.mean())) ** 2)
+    h, w = b.shape
+    yy, xx = np.mgrid[0:h, 0:w]
+    r = np.sqrt(((yy - h / 2) / (h / 2)) ** 2 + ((xx - w / 2) / (w / 2)) ** 2) / np.sqrt(2.0)
+    tot = F.sum() + 1e-12
+    out = []
+    for i in range(nbins):
+        lo, hi = i / nbins, (i + 1) / nbins
+        out.append(float(F[(r >= lo) & (r < hi)].sum() / tot))
+    return out
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--vae", required=True)
@@ -62,6 +98,7 @@ def main():
         for p in vae.parameters():
             p.requires_grad_(False)
         l1s, ps, ss, hfs, lps, inks, sig = [], [], [], [], [], [], []
+        rps, gps = [], []
         from skimage.metrics import structural_similarity as ssim_fn
         for i in range(0, len(xt), 8):
             xb = xt[i:i + 8]
@@ -81,6 +118,8 @@ def main():
                 ss.append(ssim_fn(rn, gn, channel_axis=2, data_range=255))
                 hfs.append(float(band_fraction(torch.from_numpy(rn).float().permute(2, 0, 1).unsqueeze(0) / 127.5 - 1).item()))
                 inks.append(float((rn.mean(axis=2) < 128).mean()))
+                rps.append(radial_profile(rn))
+                gps.append(radial_profile(gn))
             if lp is not None:
                 lps.append(float(lp(rec, xb).mean().item()))
         gt_hf = []
@@ -95,7 +134,11 @@ def main():
             "LPIPS": round(float(np.mean(lps)), 4) if lps else None,
             "ink_x_gt": round(float(np.mean(inks) / np.mean([ (np.asarray(Image.fromarray(g).convert("L")) < 128).mean() for g in gt])), 3),
             "posterior_rel_width": round(float(np.mean(sig)), 4),
+            "radial_rec": [round(v, 4) for v in np.mean(np.array(rps), axis=0)],
+            "radial_gt": [round(v, 4) for v in np.mean(np.array(gps), axis=0)],
         }
+        r["radial_ratio"] = [round(a / b, 3) if b > 1e-9 else None
+                             for a, b in zip(r["radial_rec"], r["radial_gt"])]
         # I2: raw 尺度（用于定 sf/shift）
         with torch.no_grad(), torch.autocast("cuda", dtype=torch.bfloat16):
             post = vae.encode(xt[:64]).latent_dist
@@ -122,6 +165,17 @@ def main():
         print(f"  I6 往返 LPIPS: 新 {n['LPIPS']} vs 对照 {res['ctrl']['LPIPS']} -> "
               f"{'✓ 不退化' if n['LPIPS'] <= res['ctrl']['LPIPS'] + 0.005 else '⚠ 退化'}")
     print(f"  I2 拟合参数: sf={n.get('sf_fit')}  shift={n.get('raw_mean')}  (交给 encode --scaling-factor auto)")
+    # ★ 径向谱剖面: 区分『真锐』与『用噪点换份额/发塑料』
+    if n.get("radial_gt"):
+        nb = len(n["radial_gt"])
+        print(f"\n  径向谱剖面（低→高 {nb} 带, 重建/GT 的能量比）:")
+        print("    GT  : " + "  ".join(f"{v:.4f}" for v in n["radial_gt"]))
+        for tag in ("new", "ctrl"):
+            if tag in res and res[tag].get("radial_rec"):
+                lab = "新  " if tag == "new" else "对照"
+                print(f"    {lab}: " + "  ".join(f"{v:.4f}" for v in res[tag]["radial_rec"]))
+                print(f"    比值: " + "  ".join(f"{v:.3f}" for v in res[tag]["radial_ratio"]))
+        print("    → 判读: 高频带比值 <<1 且顶带份额却很高 = 用噪点/伪影换份额; 全带比值≈1 = 频谱保真良好")
     if a.out:
         json.dump(res, open(a.out, "w", encoding="utf-8"), ensure_ascii=False, indent=2)
         print(f"  -> {a.out}")
