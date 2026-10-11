@@ -462,6 +462,51 @@ class FlowMatching:
             dt = (t_next - t_i)                      # 负数：从 t=1 走向 t=0
             t_batch = ts[i].expand(B)
 
+            # ═══════════════════════════════════════════════════════════════════
+            # ★★ 2026-10-11 重写 SiT SDE：**旧实现的漂移式在数学上是错的**
+            #   旧:  drift = v * (1 + γ² t)      ← 只给速度乘系数, **缺少 score 修正项**
+            #
+            #   正确推导（线性插值 + 独立高斯配对）:
+            #     连续性方程:  ∂_t p = −∇·(p v)
+            #     SDE dx = b dt + g dW 的 Fokker–Planck:
+            #                 ∂_t p = −∇·( p [ b − (g²/2) ∇log p ] )
+            #     要求与 ODE 同边缘 => b = v + (g²/2) ∇log p_t
+            #     Tweedie:  ∇log p_t = −(x + (1−t) v)/t ,   g² = 2 γ² t (1−t)
+            #     =>  b = v + γ² (1−t) [ x + (1−t) v ]                       ← **加号**
+            #
+            #   ★ 数值验证: tools/analysis/sde_oracle_test3.py（完美速度场下解精确方差 ODE
+            #     dV/dt = 2a(t)V − g(t)², 时间 t: 1→0 倒退积分, 故噪声项取负）:
+            #         理论 1.0000 | 旧式 1.0432 | **本式 1.0000** | (错写成减号会得 1.3068)
+            #     对 s0∈{1,0.5,0.2,0.1} 与 γ∈{0,0.1,0.2,0.5,1.0} 全部精确。
+            #     端到端复验: tools/analysis/sde_e2e_test.py（用真实采样代码 + 线性完美速度场）。
+            #   ⚠ 旧式的误差量级: γ=0.5 时终点方差偏 +4.3%, γ=1.0 时 +26% —— 是真实 bug,
+            #     但不是"无 SSIM 增益"的主因（主因见 docs/sde_analysis_brief.md §4/§5）。
+            #
+            #   ⚠ 该恒等式要求 x0 与 ε **独立配对**。**C2OT/OT 会改变配对**
+            #     （_apply_c2ot 返回 noise[perm]），此时该式不成立 ——
+            #     **启用 SDE 的模型必须 use_c2ot=False**（见 48 消融: C2OT 四指标全负）。
+            #
+            #   同时修正 Heun 一致性: 旧实现先做 ODE 的 Heun 平均得 v_eff, 再对 v_eff 施加
+            #   修正 —— 而修正是 (x,v) 的非线性函数, 两者不可交换。现改为**对修正后的漂移**
+            #   做 Heun 平均, 且 predictor/corrector **共享同一噪声增量**（随机 Heun 标准形式）。
+            # ═══════════════════════════════════════════════════════════════════
+            if self.sde_gamma > 0:
+                g = self.sde_gamma
+                h = -dt                              # 正步长
+                noise_std = g * th.sqrt(th.clamp(2.0 * t_i * (1.0 - t_i) * h, min=0.0))
+                dW = noise_std * th.randn_like(x)
+
+                def _drift(xx, t_scalar):
+                    vv = self._v(model, xx, t_scalar.expand(B), model_kwargs, C)
+                    a = 1.0 - t_scalar
+                    return vv + (g ** 2) * a * (xx + a * vv)
+
+                b1 = _drift(x, t_i)                  # predictor
+                x_pred = x + dt * b1 + dW
+                b2 = _drift(x_pred, t_next)          # corrector（同一 dW）
+                x = x + 0.5 * dt * (b1 + b2) + dW
+                continue
+
             if use_heun and self.heun_batch:
                 # 把两个 RK stage 沿 batch 维拼成一次 forward（更好摊销 kernel
                 # launch 与显存带宽）。model 对 batch 维无状态，因此语义等价。
@@ -484,18 +529,7 @@ class FlowMatching:
             else:
                 v_eff = self._v(model, x, t_batch, model_kwargs, C)
 
-            # ── SiT SDE 随机纠偏采样器 (Stochastic Interpolant SDE Sampler) ───────
-            # 当 sde_gamma > 0 时激活: 引入布朗运动扩散项与得分兰芝文纠偏项
-            if self.sde_gamma > 0:
-                h = -dt  # 正步长
-                # 得分动力学校正: (1 + gamma^2 * t) 动态自纠偏漂移
-                drift = v_eff * (1.0 + (self.sde_gamma ** 2) * t_i)
-                # 桥式扩散项: g(t) = gamma * sqrt(2 * t * (1 - t) * h)
-                # 在 t=1 起点和 t=0 终点自然归零，终点无残留噪声
-                noise_scale = self.sde_gamma * th.sqrt(th.clamp(2.0 * t_i * (1.0 - t_i) * h, min=0.0))
-                x = x + dt * drift + noise_scale * th.randn_like(x)
-            else:
-                x = x + dt * v_eff
+            x = x + dt * v_eff
 
         return x
 
