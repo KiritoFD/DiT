@@ -186,15 +186,19 @@ class StdSoftGlyphStore:
     def __init__(self, root: str, *, is_train: bool = False,
                  sigma_min: float = 0.4, sigma_max: float = 1.0,
                  eval_sigma: float = 0.65, preload: bool = True,
-                 strict: bool = True):
+                 strict: bool = True, sigma_step: float = 0.05):
         self.root = os.path.abspath(root)
         self.is_train = bool(is_train)
         self.sigma_min = float(sigma_min)
         self.sigma_max = float(sigma_max)
         self.eval_sigma = float(eval_sigma)
         self.strict = bool(strict)
-        if self.sigma_min < 0 or self.sigma_max < self.sigma_min or self.eval_sigma < 0:
-            raise ValueError("std-soft sigma values must satisfy 0 <= min <= max and eval >= 0")
+        # ★ 2026-10-11: σ 预离散化。训练时 σ~U(min,max) 是连续随机 —— 但**逐样本现做高斯模糊**
+        #   是纯 CPU 开销（288 样本/步 × 8 workers ≈ 2300 次/步），在 CPU 被别的租户抢占的机器上
+        #   会把训练拖到 0.6 steps/s（实测 48）。改为**preload 阶段把 σ 网格全部materialize**
+        #   成一个 uint8 张量 (K, N, H, W)，用 share_memory_() 让 fork 出来的 worker 共享同一份
+        #   （copy-on-write，不额外占内存）→ 取值退化成一次切片 + /255（微秒级）。
+        self.sigma_step = max(float(sigma_step), 1e-6)
         index_path = os.path.join(self.root, "index.csv")
         if not os.path.isfile(index_path):
             raise FileNotFoundError(f"std-soft index not found: {index_path}")
@@ -213,9 +217,14 @@ class StdSoftGlyphStore:
                 self._paths[key] = path
                 self._meta[key] = row
         self._images: Dict[Tuple[int, str], np.ndarray] = {}
+        self._stack: Optional[torch.Tensor] = None      # (K, N, H, W) uint8，σ 网格全量
+        self._levels: Dict[float, int] = {}
+        self._key_index: Dict[Tuple[int, str], int] = {}
+        self._size = 0
         if preload:
             for key, path in self._paths.items():
                 self._images[key] = self._read(path)
+            self._materialize_sigma_grid()
 
     @staticmethod
     def _read(path: str) -> np.ndarray:
@@ -225,11 +234,56 @@ class StdSoftGlyphStore:
             raise ValueError(f"std-soft image must be square grayscale, got {array.shape}: {path}")
         return array
 
+    def _sigma_grid(self) -> List[float]:
+        """σ 网格（含 sigma_min/max 与 eval_sigma），步长 sigma_step。"""
+        lo, hi = self.sigma_min, self.sigma_max
+        n = int(round((hi - lo) / self.sigma_step))
+        grid = [round(lo + i * self.sigma_step, 6) for i in range(n + 1)]
+        if grid[-1] < hi - 1e-9:
+            grid.append(round(hi, 6))
+        ev = round(float(self.eval_sigma), 6)
+        if not any(abs(g - ev) < 1e-9 for g in grid):
+            grid.append(ev)
+            grid.sort()
+        return grid
+
+    def _snap(self, sigma: float) -> float:
+        return min(self._levels, key=lambda g: abs(g - float(sigma)))
+
+    def _materialize_sigma_grid(self) -> None:
+        """把 σ 网格的全部模糊版本一次性做成 (K,N,H,W) uint8 并共享内存。
+
+        内存：K × N × H × W 字节。K=13（0.40..1.00 步长 0.05）、N=8451、64×64 → **450 MB**；
+        `share_memory_()` 后由所有 fork 出来的 dataloader worker 共享（COW），不按 worker 翻倍。
+        构建耗时：K×N 次高斯模糊（110k 次 × ~0.1ms ≈ 十秒量级，一次性）。
+        """
+        keys = list(self._paths)
+        self._key_index = {k: i for i, k in enumerate(keys)}
+        grid = self._sigma_grid()
+        self._levels = {round(s, 6): j for j, s in enumerate(grid)}
+        h = self._size or self._read(self._paths[keys[0]]).shape[0]
+        self._size = int(h)
+        stack = np.zeros((len(grid), len(keys), h, h), dtype=np.uint8)
+        for j, s in enumerate(grid):
+            for i, k in enumerate(keys):
+                base = self._images.get(k)
+                if base is None:
+                    base = self._read(self._paths[k])
+                stack[j, i] = np.asarray(soften_mask(Image.fromarray(base, mode="L"), s),
+                                         dtype=np.uint8)
+        tensor = torch.from_numpy(stack)
+        tensor.share_memory_()
+        self._stack = tensor
+        print(f"[std-soft] σ 网格已materialize: K={len(grid)} 档 ({grid[0]:.2f}..{grid[-1]:.2f}) × "
+              f"N={len(keys)} × {h}×{h} uint8 = {stack.nbytes/2**20:.0f} MB（worker 共享）", flush=True)
+
     def __len__(self) -> int:
         return len(self._paths)
 
     @property
     def size(self) -> int:
+        if self._size:
+            return int(self._size)
         if not self._paths:
             return 0
         first = next(iter(self._paths))
@@ -255,12 +309,18 @@ class StdSoftGlyphStore:
             if self.strict:
                 raise KeyError(f"std-soft glyph missing: script_id={key[0]} char={key[1]!r}")
             return torch.zeros(1, self.size, self.size, dtype=torch.float32)
-        array = self._images.get(key)
-        if array is None:
-            array = self._read(self._paths[key])
         if sigma is None:
             sigma = (random.uniform(self.sigma_min, self.sigma_max)
                      if self.is_train else self.eval_sigma)
+        # ★ 快路径：preload 阶段已 materialize σ 网格 → 这里只是切片 + /255（微秒级，零 CPU 重活）
+        if self._stack is not None:
+            j = self._levels[round(self._snap(float(sigma)), 6)]
+            i = self._key_index[key]
+            return self._stack[j, i].float().div_(255.0).unsqueeze(0)
+        # 慢路径（preload=False，推理/调试用）
+        array = self._images.get(key)
+        if array is None:
+            array = self._read(self._paths[key])
         image = soften_mask(Image.fromarray(array, mode="L"), float(sigma))
         out = np.asarray(image, dtype=np.float32).copy() / 255.0
         return torch.from_numpy(out).unsqueeze(0)
