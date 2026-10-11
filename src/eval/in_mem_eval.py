@@ -252,7 +252,10 @@ def _get_cache(csv_path, n, img_root, shards, args):
     三表 (v53) 的重映射**只在本函数创建 cache 时**做一次:
     cache 命中时直接返回, 保证幂等 (重复重映射会 KeyError, 实测踩过)。
     """
-    ck = (csv_path, n, shards)
+    _soft_root = (getattr(args, "std_soft_root", "") or ""
+                  if bool(getattr(args, "std_soft_cond", False)) else "")
+    _soft_sigma = float(getattr(args, "std_soft_eval_sigma", 0.65))
+    ck = (csv_path, n, shards, _soft_root, _soft_sigma)
     if ck not in _CACHES:
         sf = float(getattr(args, "vae_scaling_factor", 0.18215))
         cache = make_eval_cache(
@@ -260,7 +263,8 @@ def _get_cache(csv_path, n, img_root, shards, args):
             int(getattr(args, "latent_channels", 4)), sf,
             skel_latent_shards_dir=shards,
             callig_id_map=_get_callig_map(getattr(args, "callig_id_map", None)),
-            callig_script_map=_get_callig_script_map(getattr(args, "callig_script_map", None)))
+            callig_script_map=_get_callig_script_map(getattr(args, "callig_script_map", None)),
+            std_soft_root=_soft_root or None, std_soft_sigma=_soft_sigma)
         if getattr(args, "use_script_cond", False):
             _triple_remap_cache(cache, csv_path, n, args)
         _CACHES[ck] = cache
@@ -320,6 +324,14 @@ def save_input_g(results_dir, set_name, skels_latent, vae, sf, batch=16):
     if all(os.path.exists(os.path.join(out_dir, f"g{i}.png")) for i in range(n)):
         return out_dir
     from PIL import Image as _Img
+    if skels_latent.ndim == 4 and skels_latent.shape[1] == 1:
+        # std-soft convention is ink=1/background=0; PNG convention is black
+        # ink on white background.  This branch never touches the VAE.
+        for i in range(n):
+            array = ((1.0 - skels_latent[i, 0].float().clamp(0, 1)) * 255.0)
+            _Img.fromarray(array.byte().cpu().numpy(), mode="L").save(
+                os.path.join(out_dir, f"g{i}.png"))
+        return out_dir
     dev = next(vae.parameters()).device
     bs = max(1, int(batch))
     for i in range(0, n, bs):
@@ -871,6 +883,10 @@ def run_in_mem_eval(model, args, step, device, results_dir=None, logger=print):
     img_root = None                       # csv image_path 已含完整相对路径
     shards = (getattr(args, "eval_skel_latent_shards_dir", "") or ""
               or getattr(args, "skel_latent_shards_dir", "") or "")
+    if bool(getattr(args, "std_soft_cond", False)):
+        if not str(getattr(args, "std_soft_root", "") or "").strip():
+            raise ValueError("std_soft_cond evaluation requires std_soft_root")
+        shards = ""
     cfg_scale = float(getattr(args, "eval_cfg", 0.8))
     ddim_steps = int(getattr(args, "eval_steps", 50))
     dit_batch = int(getattr(args, "in_mem_eval_batch", 16))
@@ -983,6 +999,8 @@ def run_in_mem_eval(model, args, step, device, results_dir=None, logger=print):
                               if _seen_like else
                               (getattr(args, "eval_skel_latent_shards_dir", "") or ""
                                or getattr(args, "skel_latent_shards_dir", "") or ""))
+            if bool(getattr(args, "std_soft_cond", False)):
+                set_shards = ""
             if _is_pred:
                 print(f"[in-mem-eval] set={name} (pred 口径) skel={set_shards}")
             cache = _get_cache(csvp, n, img_root, set_shards, args)

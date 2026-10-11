@@ -75,7 +75,10 @@ class MCCDLatentDataset(Dataset):
                  char_remap=None,
                  skel_latent_shards_dirs=None, skel_latent_shards_weights=None,
                  callig_id_map=None, aux_latent_shards_dirs=None,
-                 inst_skel_shards_dir=None, callig_script_map=None):
+                 inst_skel_shards_dir=None, callig_script_map=None,
+                 std_soft_root=None, std_soft_sigma_min=0.4,
+                 std_soft_sigma_max=1.0, std_soft_eval_sigma=0.65,
+                 std_soft_preload=True):
         self.samples = []
         with open(csv_file, 'r', encoding='utf-8') as f:
             for row in csv.DictReader(f):
@@ -107,6 +110,23 @@ class MCCDLatentDataset(Dataset):
             self._glookup = None
         self._g_hit = 0
         self._g_miss = 0
+
+        # Raw 1x64x64 standard-glyph mask.  This is deliberately separate from
+        # the historical VAE-latent glyph lookup above: the two representations
+        # must never be selected implicitly or mixed in one batch.
+        self._std_soft = None
+        if std_soft_root:
+            from .std_soft_glyph import StdSoftGlyphStore
+            self._std_soft = StdSoftGlyphStore(
+                std_soft_root, is_train=is_train,
+                sigma_min=std_soft_sigma_min, sigma_max=std_soft_sigma_max,
+                eval_sigma=std_soft_eval_sigma, preload=std_soft_preload,
+                strict=True)
+            pairs = ((int(row["script_id"]), row.get("character", ""))
+                     for row in self.samples)
+            self._std_soft.assert_coverage(pairs, label=os.path.basename(csv_file))
+            print(f"[std-soft] strict coverage OK: {len(self._std_soft):,} cached glyphs, "
+                  f"size={self._std_soft.size}, train_blur={bool(is_train)}", flush=True)
 
         self.latent_shards_dir = latent_shards_dir
         self.img_root = img_root
@@ -620,6 +640,11 @@ class MCCDLatentDataset(Dataset):
         else:
             g_t = torch.zeros(0)
 
+        if self._std_soft is not None:
+            std_soft_t = self._std_soft.get(int(row['script_id']), row.get('character', ''))
+        else:
+            std_soft_t = torch.zeros(0)
+
         return {
             'latent': latent,
             'img_id': img_id,
@@ -627,6 +652,7 @@ class MCCDLatentDataset(Dataset):
             'canny': torch.empty(0),
             'skeleton': torch.empty(0),
             'skel_latent': skel_lat,
+            'std_soft': std_soft_t,
             'inst_skel': inst_skel,
             'aux_latents': aux_t,
             'y_callig': torch.tensor(

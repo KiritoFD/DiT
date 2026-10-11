@@ -458,17 +458,28 @@ def compute_metrics(dec_dir, gt_dir, tag_prefix, n, use_lpips=True, idx_range=No
 def make_eval_cache(eval_csv, img_root, skel_root, image_size, n,
                     vae_downscale, latent_channels, scaling_factor,
                     skel_latent_shards_dir=None, callig_id_map=None,
-                    callig_script_map=None):
+                    callig_script_map=None, std_soft_root=None,
+                    std_soft_sigma=0.65):
     """Pre-load N eval samples: GT images + conditions + skels + fixed noise (CPU).
 
-    skel 条件: 优先从 skel_latent_shards_dir 加载 VAE latent (N,4,32,32);
-    否则从 skel_root 读 PNG (N,1,256,256)。两者都存: skels_latent 供采样,
-    skels (PNG 时) 供 skel{i}.png 可视化。
+    g 条件三选一: std_soft_root 的 raw mask (N,1,64,64)、
+    skel_latent_shards_dir 的 VAE latent (N,4,32,32)、或 skel_root PNG。
     """
     rows = list(csv.DictReader(open(eval_csv, encoding="utf-8")))
     if n > len(rows):
         n = len(rows)
     rows = rows[:n]
+    if std_soft_root and skel_latent_shards_dir:
+        raise ValueError("std_soft_root and skel_latent_shards_dir are mutually exclusive")
+    std_soft_store = None
+    if std_soft_root:
+        from src.utils.std_soft_glyph import StdSoftGlyphStore
+        std_soft_store = StdSoftGlyphStore(
+            std_soft_root, is_train=False, eval_sigma=std_soft_sigma,
+            preload=True, strict=True)
+        std_soft_store.assert_coverage(
+            ((int(row["script_id"]), row.get("character", "")) for row in rows),
+            label=os.path.basename(eval_csv))
     # ★ 2026-09-17: 书家词表校验**必须放在循环之前**。
     #   原来是在循环里 `continue` 掉不在词表里的行 —— 但 `gts`/`skels`/
     #   `skels_latent`/`noise` 都按 `n` 定长，而 `conds` 是循环里 append 的，
@@ -508,9 +519,14 @@ def make_eval_cache(eval_csv, img_root, skel_root, image_size, n,
     # S2: 与 conds 平行的三个 id 列表（书家主效应 / pair 残差 / 书体）
     raw_conds, pair_conds, script_conds = [], [], []
     skels = torch.zeros(n, 1, image_size, image_size, dtype=torch.float32)
-    skels_latent = torch.zeros(
-        n, latent_channels, latent_spatial, latent_spatial, dtype=torch.float32) \
-        if skel_latent_shards_dir else None
+    if std_soft_store is not None:
+        skels_latent = torch.zeros(
+            n, 1, std_soft_store.size, std_soft_store.size, dtype=torch.float32)
+    elif skel_latent_shards_dir:
+        skels_latent = torch.zeros(
+            n, latent_channels, latent_spatial, latent_spatial, dtype=torch.float32)
+    else:
+        skels_latent = None
 
     # 预建 skel latent shard 索引 (id -> (shard_path, offset))
     skel_id_to_shard = {}
@@ -584,7 +600,10 @@ def make_eval_cache(eval_csv, img_root, skel_root, image_size, n,
                 print(f"[eval-cache] ⚠ {_e}")
                 _ID_WARNED[0] = True
             img_id = None
-        if img_id is not None and skel_names:
+        if std_soft_store is not None:
+            skels_latent[i] = std_soft_store.get(
+                int(row["script_id"]), row.get("character", ""))
+        elif img_id is not None and skel_names:
             # 与 latent_dataset 同一套内容绑定校验: shard 里的 names 必须等于本行的骨架图名。
             # 没有这道闸，小数据集(如 few-shot)指向大库时会号段撞车 —— 查得到骨架但是
             # 别的字的，评测照样出分，只是分全是错的（2026-09-21 实测作废一整轮实验）。
@@ -595,7 +614,9 @@ def make_eval_cache(eval_csv, img_root, skel_root, image_size, n,
                     f"[eval-cache] skel latent 与 CSV 对不上: img_id={img_id} "
                     f"需要 {_want} 但 shard 里是 {_got} —— "
                     f"检查 eval_skel_latent_shards_dir 是否指向本评测集自己的 shard")
-        if img_id is not None and skels_latent is not None:
+        if std_soft_store is not None:
+            pass
+        elif img_id is not None and skels_latent is not None:
             if img_id in skel_id_to_shard:
                 sp, j = skel_id_to_shard[img_id]
                 with np.load(sp, mmap_mode="r") as d:      # ★ mmap: 别解压整个 shard
@@ -630,7 +651,9 @@ def make_eval_cache(eval_csv, img_root, skel_root, image_size, n,
             "skels_latent": skels_latent, "missing_skel": missing_skel,
             "n": n, "latent_channels": latent_channels,
             "latent_spatial": latent_spatial, "scaling_factor": scaling_factor,
-            "img_root": img_root, "skel_root": skel_root, "image_size": image_size}
+            "img_root": img_root, "skel_root": skel_root, "image_size": image_size,
+            "g_kind": "std_soft" if std_soft_store is not None else
+                      ("latent" if skel_latent_shards_dir else "png")}
 
 
 # ── 高层组合: pair eval (base vs ctrl) ──────────────────────────────────────

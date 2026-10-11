@@ -1023,6 +1023,10 @@ class DiT_2Cond(nn.Module):
         #   标准 MobileNet 式分解, 感受野/表达能力基本等价。
         # 默认 False = 保持原满秩实现, 不改变任何已有 ckpt 的行为。
         glyph_embedder_sep=False,
+        # Raw grayscale std glyph path: [N,1,64,64] -> 16x16 tokens without VAE.
+        # Kept as an explicit architecture/state-dict contract, never auto-detected.
+        std_soft_cond=False,
+        std_soft_zero_init=True,
         char_proj_mode="full",
         callig_proj_mode="linear",   # 42 号实验: "mlp" 两层 MLP 补 callig 容量
         callig_scale_init=1.0,       # 42 号实验: callig_scale 初值 (1.5 增强风格权重)
@@ -1219,6 +1223,8 @@ class DiT_2Cond(nn.Module):
         self.cond_drop_which_glyph_prob = float(cond_drop_which_glyph_prob)
         self.skel_head_enabled = bool(skel_head_enabled)
         self.use_glyph_cond = bool(use_glyph_cond)
+        self.std_soft_cond = bool(std_soft_cond)
+        self.std_soft_zero_init = bool(std_soft_zero_init)
         self.glyph_scale_init = float(glyph_scale_init)
         self.glyph_concat_input = bool(glyph_concat_input)
         self.glyph_gate_t = float(glyph_gate_t)
@@ -1647,8 +1653,8 @@ class DiT_2Cond(nn.Module):
             )
         # 甲2 标准字形条件的 token-add 缩放(可学习, 初始 glyph_scale_init, 让字形条件有存在感)
         self.glyph_scale = nn.Parameter(torch.tensor(self.glyph_scale_init))
-        # 甲2 标准字形条件：独立可训练 glyph_embedder(Conv2d 4→hidden, patch 编码)
-        # 把标准字形 latent G(4,32,32) 编成与 x token 同形 token, forward 时注入。
+        # 标准字形条件：独立可训练 glyph_embedder。旧路径编码 G(4,32,32)，
+        # std-soft 路径编码 raw mask(1,64,64)，两者都输出与 x 同形的 16x16 token。
         # 独立投影而非复用 x_embedder: 保证 g 编码可学习、norm 可控, 不依赖 x_embedder
         # 是否被冻结(XL LoRA 模式下 x_embedder 冻结, 复用会导致 g 信号被锁死)。
         self.glyph_embedder = None
@@ -1666,7 +1672,19 @@ class DiT_2Cond(nn.Module):
         self.glyph_embedder_sep = bool(glyph_embedder_sep)
         if self.use_glyph_cond:
             ps_ = self.x_embedder.patch_size[0] if not isinstance(self.x_embedder.patch_size, int) else self.x_embedder.patch_size
-            if self.glyph_embedder_depth <= 0:
+            if self.std_soft_cond:
+                if int(glyph_in_channels) != 1:
+                    raise ValueError("std_soft_cond requires glyph_in_channels=1")
+                if self.glyph_concat_input:
+                    raise ValueError("std_soft_cond is incompatible with glyph_concat_input")
+                self.glyph_embedder = nn.Sequential(
+                    nn.Conv2d(1, 32, kernel_size=3, stride=2, padding=1),
+                    nn.SiLU(),
+                    nn.Conv2d(32, 64, kernel_size=3, stride=2, padding=1),
+                    nn.SiLU(),
+                    nn.Conv2d(64, hidden_size, kernel_size=1, bias=False),
+                )
+            elif self.glyph_embedder_depth <= 0:
                 self.glyph_embedder = nn.Conv2d(glyph_in_channels, hidden_size, kernel_size=ps_, stride=ps_, bias=False)
             elif self.glyph_embedder_sep:
                 # [v12+] depthwise-separable 版: 同感受野/同通道数, 但把空间混合与
@@ -1860,6 +1878,10 @@ class DiT_2Cond(nn.Module):
             self.local_ca_at = []
 
         self.initialize_weights()
+        if self.std_soft_cond and self.std_soft_zero_init:
+            # Step 0 is exactly the base model. The output projection itself
+            # receives gradients immediately; earlier convs start once it moves.
+            nn.init.zeros_(self.glyph_embedder[-1].weight)
         if self.freeze_char_table and hasattr(self, "y_char_embedder"):
             # 冻结 char 表：DINO 预填充后不再训练（省 35130×384≈13.5M 训练参数），
             # 但保留最后一行的 CFG uncond 项可学习（它没有 DINO 对应物）。
@@ -2178,7 +2200,7 @@ class DiT_2Cond(nn.Module):
         x: (N, C, H, W) noisy latents
         t: (N,) timesteps
         y_callig, y_char: (N,) condition IDs
-        g: (N, C, H, W) 标准字形 latent(与 x 同空间), 甲2 token-add 条件; None=不使用
+        g: 旧路径为 (N,4,32,32) latent；std-soft 为 (N,1,64,64) raw mask；None=不使用
         return_intermediate_layer: int block index (e.g. 8) whose patch features to return for REPA.
                                    When set, returns (output, intermediate_feats) as a tuple.
 
@@ -2332,8 +2354,12 @@ class DiT_2Cond(nn.Module):
             else:
                 g = _g2
         if self.use_glyph_cond and self.glyph_embedder is not None and g is not None:
-            # 独立 glyph_embedder 把标准字形 latent 编成 (N, D, 16, 16) -> flat tokens (N,256,D)
+            # 两类 glyph_embedder 最终都输出 (N,D,16,16) -> flat (N,256,D)。
             g_tok = self.glyph_embedder(g).flatten(2).transpose(1, 2)  # (N,256,D)
+            if g_tok.shape[1] != x.shape[1]:
+                raise ValueError(
+                    f"glyph token grid mismatch: g produced {g_tok.shape[1]} tokens but "
+                    f"image latent has {x.shape[1]}; std_soft_cond expects 1x64x64 input")
             if self.callig_style_ca is not None:
                 # 书家化骨架(cross-attn): 骨架 token(+2D 位置) 在 K 个风格模态间
                 # 内容寻址聚合, 产生"书家x字x位置"交互(结体差异)。

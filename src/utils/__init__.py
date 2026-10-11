@@ -5,6 +5,7 @@ from .latent_dataset import MCCDLatentDataset
 from .samplers import DistributedFactorBalancedSampler, LongEpochDistributedSampler
 from .glyph_latent import GlyphLatentLookup, get_glyph_lookup
 from .glyph_latent_v2 import GlyphLatentLookupV2, get_glyph_lookup_v2
+from .std_soft_glyph import StdSoftGlyphStore
 from .download import find_model, download_model
 
 __all__ = [
@@ -12,5 +13,6 @@ __all__ = [
     "LongEpochDistributedSampler",
     "GlyphLatentLookup", "get_glyph_lookup",
     "GlyphLatentLookupV2", "get_glyph_lookup_v2",
+    "StdSoftGlyphStore",
     "find_model", "download_model",
 ]

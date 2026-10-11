@@ -264,6 +264,24 @@ def create_logger(logging_dir):
 def main(args):
     assert torch.cuda.is_available(), "Training currently requires at least one GPU."
 
+    # std-soft is a third, explicit g representation.  Fail before allocating a
+    # process group/model if a config accidentally mixes it with either legacy
+    # VAE glyph source; those tensors have different channel/spatial contracts.
+    _std_soft_cond = bool(getattr(args, "std_soft_cond", False))
+    if _std_soft_cond:
+        if bool(getattr(args, "w_glyph_cond", False)) or bool(
+                getattr(args, "skel_as_glyph_cond", False)):
+            raise ValueError("std_soft_cond is mutually exclusive with w_glyph_cond and "
+                             "skel_as_glyph_cond")
+        if not str(getattr(args, "std_soft_root", "") or "").strip():
+            raise ValueError("std_soft_cond requires --std-soft-root")
+        if int(getattr(args, "std_soft_size", 64)) != 64:
+            raise ValueError("current std-soft encoder requires --std-soft-size 64")
+        if bool(getattr(args, "glyph_concat_input", False)):
+            raise ValueError("std_soft_cond is incompatible with glyph_concat_input")
+        if int(getattr(args, "deform_skel", 0) or 0) > 0:
+            raise ValueError("std_soft_cond is incompatible with latent-space DeformSkel")
+
     # ── 书家词表收紧: 稀疏 raw id -> 连续 0..N-1 (见 src/utils/callig_map.py) ──
     # 设置 --callig-id-map 后, num_calligraphers 自动设为词表长度, 数据层查表映射;
     # 未设置时行为与旧版完全一致 (稀疏 id 直通)。
@@ -449,7 +467,10 @@ def main(args):
             cond_drop_script_prob=float(getattr(args, 'cond_drop_script_prob', 0.0)),
             cond_drop_char_prob=float(getattr(args, 'cond_drop_char_prob', 0.0)),
             use_glyph_cond=(getattr(args, 'w_glyph_cond', 0) > 0
-                            or getattr(args, 'skel_as_glyph_cond', False)),
+                            or getattr(args, 'skel_as_glyph_cond', False)
+                            or _std_soft_cond),
+            std_soft_cond=_std_soft_cond,
+            std_soft_zero_init=bool(getattr(args, 'std_soft_zero_init', True)),
             use_char_cond=not getattr(args, 'no_char_cond', False),
             glyph_scale_init=getattr(args, 'glyph_scale_init', 0.4),
             glyph_concat_input=bool(getattr(args, 'glyph_concat_input', False)),
@@ -472,7 +493,8 @@ def main(args):
             glyph_embedder_sep=getattr(args, 'glyph_embedder_sep', False),
             style_token_n=getattr(args, 'style_token_n', 0),
             style_role_init=getattr(args, 'style_role_init', 0.02),
-            glyph_in_channels=int(getattr(args, 'glyph_latent_channels', 4) or 4),
+            glyph_in_channels=(1 if _std_soft_cond else
+                               int(getattr(args, 'glyph_latent_channels', 4) or 4)),
             in_channels=(getattr(args, 'latent_channels', 4)
                          + 4 * len(aux_dirs_of(args))),
             char_proj_mode=getattr(args, 'char_proj_mode', 'full'),
@@ -623,7 +645,8 @@ def main(args):
                     f"fusion={args.condition_fusion}, dims={args.callig_embed_dim}/"
                     f"{args.char_embed_dim}, dropout=all:{args.cond_drop_all_prob}, "
                     f"one:{args.cond_drop_one_prob}, "
-                    f"glyph_cond={(getattr(args, 'w_glyph_cond', 0) > 0) or getattr(args, 'skel_as_glyph_cond', False)}, glyph_scale_init={getattr(args, 'glyph_scale_init', 0.4)}, "
+                    f"glyph_cond={(getattr(args, 'w_glyph_cond', 0) > 0) or getattr(args, 'skel_as_glyph_cond', False) or _std_soft_cond}, "
+                    f"std_soft={_std_soft_cond}, glyph_scale_init={getattr(args, 'glyph_scale_init', 0.4)}, "
                     f"char_proj_mode={getattr(args, 'char_proj_mode', 'full')}, "
                     f"freeze_char_table={getattr(args, 'freeze_char_table', False)})")
 
@@ -1754,12 +1777,21 @@ def main(args):
                                     img_root=args.img_root,
                                     image_size=args.image_size,
                                     preload=bool(getattr(args, 'preload', False)),
+                                    is_train=_std_soft_cond,
                                     load_image=_repa_need_image,
                                     num_preload_workers=int(getattr(args, 'preload_workers', 16)),
                                     char_remap=(_char_remaps['char'] if _char_remaps else None),
                                     callig_remap=(_char_remaps['callig'] if _char_remaps else None),
                                     font_remap=(_char_remaps['font'] if _char_remaps else None),
                                     use_glyph_cond=getattr(args, 'w_glyph_cond', False),
+                                    std_soft_root=(getattr(args, 'std_soft_root', '')
+                                                   if _std_soft_cond else None),
+                                    std_soft_sigma_min=float(getattr(
+                                        args, 'std_soft_sigma_min', 0.4)),
+                                    std_soft_sigma_max=float(getattr(
+                                        args, 'std_soft_sigma_max', 1.0)),
+                                    std_soft_eval_sigma=float(getattr(
+                                        args, 'std_soft_eval_sigma', 0.65)),
                                     skel_latent_shards_dir=(args.skel_latent_shards_dir
                                                             if getattr(args, 'skel_as_glyph_cond', False)
                                                             else None),
@@ -2196,7 +2228,10 @@ def main(args):
                     model_kwargs['y_pair'] = batch['y_pair'].to(device, non_blocking=True)
                     model_kwargs['y_script'] = batch['y_script'].to(device, non_blocking=True)
                 # 标准字形条件 g(甲2 token-add): batch 由 dataset 提供, None=禁用对应项
-                if getattr(args, 'w_glyph_cond', False) and 'g' in batch and batch['g'].numel() > 0:
+                if _std_soft_cond and 'std_soft' in batch and batch['std_soft'].numel() > 0:
+                    model_kwargs['g'] = batch['std_soft'].to(
+                        device, non_blocking=True).float()  # (N,1,64,64), ink=1
+                elif getattr(args, 'w_glyph_cond', False) and 'g' in batch and batch['g'].numel() > 0:
                     model_kwargs['g'] = batch['g'].to(device, non_blocking=True)  # (N,4,32,32)
                 elif getattr(args, 'skel_as_glyph_cond', False) and 'skel_latent' in batch \
                         and batch['skel_latent'].numel() > 0:
@@ -2215,7 +2250,8 @@ def main(args):
                         max_scale=0.08 * _g_def_scale,
                         max_shear=0.06 * _g_def_scale,
                         max_trans_px=1.5 * _g_def_scale,
-                        max_elastic_px=1.5 * _g_def_scale
+                        max_elastic_px=1.5 * _g_def_scale,
+                        preserve_amplitude=not _std_soft_cond,
                     )
 
                 # ── 条件噪声增强 (Condition Noise Augmentation) ───────────
@@ -2233,8 +2269,11 @@ def main(args):
                     if _gpd > 0:
                         _pmask = (torch.rand(_g.shape[0], 1, _g.shape[2], _g.shape[3],
                                              device=device) > _gpd).to(_g.dtype)
-                        from src.utils.deform_aug import Z_BG_VEC
-                        _z_bg = Z_BG_VEC.to(device=device, dtype=_g.dtype)
+                        if _std_soft_cond:
+                            _z_bg = torch.zeros(1, 1, 1, 1, device=device, dtype=_g.dtype)
+                        else:
+                            from src.utils.deform_aug import Z_BG_VEC
+                            _z_bg = Z_BG_VEC.to(device=device, dtype=_g.dtype)
                         _g = _g * _pmask + _z_bg * (1.0 - _pmask)
                     model_kwargs['g'] = _g
 
@@ -2246,9 +2285,12 @@ def main(args):
                 #   两种形状: 细长条(≈少了一笔) / 方块(≈一块糊掉)。
                 _gm_prob = float(getattr(args, 'glyph_mask_prob', 0.0))
                 if 'g' in model_kwargs and _gm_prob > 0:
-                    from src.utils.deform_aug import Z_BG_VEC
                     _g = model_kwargs['g']
-                    _z_bg = Z_BG_VEC.to(device=device, dtype=_g.dtype)
+                    if _std_soft_cond:
+                        _z_bg = torch.zeros(1, 1, 1, 1, device=device, dtype=_g.dtype)
+                    else:
+                        from src.utils.deform_aug import Z_BG_VEC
+                        _z_bg = Z_BG_VEC.to(device=device, dtype=_g.dtype)
                     _B, _C, _H, _W = _g.shape
                     _hit = torch.rand(_B, device=device) < _gm_prob
                     # 尺度: 1 个 latent 格 = 8px, 默认 4 格 = 32x32 px (2026-10-01 指定)

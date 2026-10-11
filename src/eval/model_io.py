@@ -89,7 +89,10 @@ def build_model_from_args(a, device, **overrides):
         cond_drop_one_prob=g("cond_drop_one_prob"),
         cond_drop_which_glyph_prob=g("cond_drop_which_glyph_prob", 0.5),
         use_glyph_cond=bool((g("w_glyph_cond", 0) or 0) > 0
-                            or g("skel_as_glyph_cond", False)),
+                            or g("skel_as_glyph_cond", False)
+                            or g("std_soft_cond", False)),
+        std_soft_cond=bool(g("std_soft_cond", False)),
+        std_soft_zero_init=bool(g("std_soft_zero_init", True)),
         use_char_cond=not bool(g("no_char_cond", False)),
     # v53 三表条件 (ckpt args 携带; 缺省 = 旧行为)
     use_script_cond=bool(g("use_script_cond", False)),
@@ -127,7 +130,8 @@ def build_model_from_args(a, device, **overrides):
         glyph_embedder_sep=bool(g("glyph_embedder_sep", False)),
         style_token_n=gi("style_token_n", 0),
         style_role_init=gf("style_role_init", 0.02),
-        glyph_in_channels=gi("glyph_latent_channels", 4),
+        glyph_in_channels=(1 if bool(g("std_soft_cond", False))
+                           else (gi("glyph_latent_channels", 4) or 4)),
         in_channels=(_lc + 4 * _n_aux),
         char_proj_mode=g("char_proj_mode", "full"),
         callig_proj_mode=g("callig_proj_mode", "linear"),

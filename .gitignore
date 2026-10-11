@@ -207,3 +207,9 @@ _quarantine_*/
 _local_ckpt/
 data/top10_style23/
 experiments/
+
+# 生成物/临时目录（可由脚本重建，不入库）
+_sync_48/
+expert_pack/
+ANALYSIS/std_soft_preview/
+

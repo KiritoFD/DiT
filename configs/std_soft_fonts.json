@@ -1,0 +1,53 @@
+{
+  "version": 1,
+  "description": "Script-specific TTF cascade for 64x64 soft standard-glyph conditions. The first font supporting a character wins; every fallback is recorded in index.csv.",
+  "font_dirs": [
+    "_fonts",
+    "tools/fonts",
+    "tools/fonts/candidate_fonts",
+    "tools/fonts/google_fonts",
+    "C:/Windows/Fonts",
+    "/tmp",
+    "/usr/share/fonts/opentype/noto",
+    "/usr/share/fonts/truetype"
+  ],
+  "scripts": {
+    "0": {
+      "key": "kai",
+      "label": "楷",
+      "fonts": [
+        "simkai.ttf",
+        "STKAITI.TTF",
+        "NotoSerifSC-VF.ttf",
+        "NotoSerifCJK-Regular.ttc",
+        "simsunb.ttf"
+      ],
+      "reason": "simkai has near-complete current-corpus coverage and a neutral regular-script skeleton; STKAITI and Noto are explicit fallbacks."
+    },
+    "3": {
+      "key": "xing",
+      "label": "行",
+      "fonts": [
+        "STXINGKA.TTF",
+        "ZhiMangXing-Regular.ttf",
+        "NotoSerifSC-VF.ttf",
+        "NotoSerifCJK-Regular.ttc",
+        "simkai.ttf",
+        "simsunb.ttf"
+      ],
+      "reason": "STXINGKA is the neutral first-round running-script prior. OFL ZhiMangXing is an explicit same-coverage style alternative; neutral serif/regular fallbacks are mandatory and recorded per glyph. Licensed FangZheng Wang Xizhi may replace the primary after its actual TTF passes this same cmap audit."
+    },
+    "4": {
+      "key": "li",
+      "label": "隶",
+      "fonts": [
+        "SIMLI.TTF",
+        "NotoSerifSC-VF.ttf",
+        "NotoSerifCJK-Regular.ttc",
+        "simkai.ttf",
+        "simsunb.ttf"
+      ],
+      "reason": "SIMLI covers substantially more of the current corpus than STLITI while retaining a clear clerical-script shape."
+    }
+  }
+}

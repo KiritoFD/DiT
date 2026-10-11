@@ -638,6 +638,17 @@ def build_parser(argv=None):
                         help="固定训练集内展示样本 CSV。")
     parser.add_argument("--w-glyph-cond", type=_str_to_bool, default=False,
                         help="Enable 甲2 standard-glyph token-add conditioning (use_glyph_cond).")
+    parser.add_argument("--std-soft-cond", type=_str_to_bool, default=False,
+                        help="Use raw 1x64x64 blurred TTF glyphs as g (no VAE encoding).")
+    parser.add_argument("--std-soft-root", type=str, default="",
+                        help="Store built by tools/build_std_soft_glyphs.py (contains index.csv).")
+    parser.add_argument("--std-soft-size", type=int, default=64,
+                        help="Expected std-soft raster size; current encoder requires 64.")
+    parser.add_argument("--std-soft-sigma-min", type=float, default=0.4)
+    parser.add_argument("--std-soft-sigma-max", type=float, default=1.0)
+    parser.add_argument("--std-soft-eval-sigma", type=float, default=0.65)
+    parser.add_argument("--std-soft-zero-init", type=_str_to_bool, default=True,
+                        help="Zero-init the std-soft encoder output projection.")
     parser.add_argument("--glyph-scale-init", type=float, default=0.4,
                         help="Initial glyph_scale (standard-glyph token-add strength).")
     parser.add_argument("--no-char-cond", type=_str_to_bool, default=False,
