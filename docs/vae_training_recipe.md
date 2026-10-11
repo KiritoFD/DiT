@@ -1,7 +1,7 @@
 # Calli-VAE 训练配方（Recipe）与两轮实验结论
 
 > 2026-10-11 立。本文档说明 **VAE 该用什么 loss、为什么、怎么训、怎么验收**。
-> 与 [`vae_latent_contract.md`](vae_latent_contract.md) 配套：**那份管"接口/尺度约定"（latent 契约），本文管"训练配方"**。
+> 与 [`vae_latent_contract.md`](docs/vae_latent_contract.md) 配套：**那份管"接口/尺度约定"（latent 契约），本文管"训练配方"**。
 >
 > 一句话结论：**VAE 必须是纯物理压缩器 —— 用 L1 + LPIPS + PatchGAN + 极小 KL + 像素域高频项；
 > 绝不能挂 DINO（或任何语义特征）**。REPA/DINO 的位置在 **DiT 主干**（REPA / REPA-E）。
