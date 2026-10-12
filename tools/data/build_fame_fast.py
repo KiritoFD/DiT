@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 """build_fame_fast.py — fame 数据集快速版: CSV + GPU encode (极性检查/skel 后续补)."""
+import glob
 import os
 import sys
 import csv

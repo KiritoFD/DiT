@@ -201,7 +201,7 @@ def main():
     model = build_model(a, dev)
     sd = strip(ck.get("ema") or ck.get("model") or ck)
     # ★ strict=True: 原来 strict=False 只断言 unexp==0, **missing 被静默忽略**
-    model.load_state_dict(sd, strict=True)
+    miss, unexp = model.load_state_dict(sd, strict=True)
     log(f"load: missing={len(miss)} unexpected={len(unexp)}")
     del ck
     # 关键参数回显

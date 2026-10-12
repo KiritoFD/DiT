@@ -1,5 +1,5 @@
 {
-  "_comment": "v81 = **v68 逐项照抄**（SD-VAE shards / aug 77.8k / batch288 / 200k / C2OT），只加 **std_soft 空间条件**（1×64×64 soft mask，独立 CNN→16×16 token，zero-init）。\n目的: 对 **v68（0.6149@200k）** 做**单变量** A/B —— 这是最干净的因果检验。\n⚠ 显式写出 vae_scaling_factor/shift_factor: 防止日后换 shards 时静默沿用错常数(E5)。\n\n【48 版】与 v68 单变量 A/B，跑在 48（GPU 空闲）。路径已对齐 48 布局；std_soft store 由本机同步（8451 条、零缺字）。",
+  "_comment": "v81 = **v68 逐项照抄**（SD-VAE shards / aug 77.8k / batch288 / 200k / C2OT），只加 **std_soft 空间条件**（1×64×64 soft mask，独立 CNN→16×16 token，zero-init）。\n目的: 对 **v68（0.6149@200k）** 做**单变量** A/B —— 这是最干净的因果检验。\n⚠ 显式写出 vae_scaling_factor/shift_factor: 防止日后换 shards 时静默沿用错常数(E5)。\n\n【48 版】与 v68 单变量 A/B，跑在 48（GPU 空闲）。路径已对齐 48 布局；std_soft store 由本机同步（8451 条、零缺字）。\n\n【修正 2026-10-12】清空骨架 latent 目录: 它们会让评测缓存塞入 'cond' 键, 而 DiT_2Cond.forward_with_cfg 只给 ControlNetDiT 留了该键 → 采样直接崩。本 run 的 skel_as_glyph_cond=false, 原本也不需要骨架条件。",
   "experiment_name": "v81-stdsoft-vs-v68-48",
   "results_dir": "assets/results/v81_stdsoft_vs_v68_48",
   "model": "DiT-2Cond-Sp/2",
