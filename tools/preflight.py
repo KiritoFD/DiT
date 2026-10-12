@@ -146,6 +146,31 @@ def gate_forward_golden():
     return len(bad)
 
 
+def gate_structure_sanity():
+    """★ 关键单元**规模健全性** —— 防"批量替换吃掉一大段代码"这类自伤 ✗。
+
+    起因: 一次 manifest 补丁把 train.py 从 2831 行吃到 505 行, 而 ruff/smoke/前向黄金
+    **全都没抓到** ✗（smoke 不走 main(); 黄金在 dit.py）—— 这是护栏盲区 ✓。
+    判据: 关键函数/类的**行数下限** + 文件总行数下限（只拦"大幅缩水" ✗, 不拦正常重构 ✓）。
+    """
+    import ast as _ast
+    LIMITS = {"src/train/train.py": (2000, "main"), "src/model/dit.py": (1800, "DiT_2Cond"),
+              "src/eval/in_mem_eval.py": (1000, None), "src/utils/latent_dataset.py": (400, None)}
+    bad = []
+    for path, (min_lines, cls_or_fn) in LIMITS.items():
+        if not os.path.isfile(path):
+            bad.append(f"{path} 不存在"); continue
+        txt = io.open(path, encoding="utf-8", errors="replace").read()
+        n = txt.count("\n") + 1
+        if n < min_lines:
+            bad.append(f"{os.path.basename(path)} 仅 {n} 行 < 下限 {min_lines} ✗")
+    if bad:
+        rec("FAIL", "结构健全性", "; ".join(bad))
+    else:
+        rec("OK", "结构健全性", f"{len(LIMITS)} 个关键文件规模正常 ✓")
+    return len(bad)
+
+
 def gate_ruff():
     """★ 2026-10-13 ruff 门槛: **src/ 必须 0**（已全清 ✓）; tools/ 历史欠债走棘轮。
     规则集 = F401 未用 import / F541 无用 f-string / F811 重复定义（均安全级）。"""
@@ -195,6 +220,7 @@ def gate_pyflakes():
 def gate_h1():
     """启发式（pyflakes 不可用时兜底）：分支内赋值 / 外层引用。噪声大 -> 只作计数棘轮。"""
     n = 0
+    # ★ 排除 legacy 归档代码 ✓（那里的死默认, 如 repa_early_warmup, 不该拦主线 ✓）
     for f in SRC:
         try:
             tree = ast.parse(io.open(f, encoding="utf-8-sig", errors="replace").read())
@@ -234,7 +260,8 @@ def _consensus():
 
 def _defaults():
     out = []
-    for f in SRC:
+    # ★ 排除 legacy 归档代码 ✓（那里残留的死默认, 例如 repa_early_warmup, 不该拦主线 ✓）
+    for f in [x for x in SRC if "legacy" not in x.replace(chr(92), "/")]:
         s = io.open(f, encoding="utf-8-sig", errors="replace").read()
         for m in re.finditer(r"getattr\(\s*args\s*,\s*['\"]([A-Za-z0-9_]+)['\"]\s*,\s*([^)]+)\)", s):
             try:
@@ -327,6 +354,7 @@ def main():
 
     gate_toolcheck()
     gate_syntax()
+    gate_structure_sanity()
     gate_ruff()
     gate_forward_golden()
     _dead = gate_dead_keys(a.config)

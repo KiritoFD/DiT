@@ -42,8 +42,6 @@ import json
 import datetime
 import copy
 import re
-import hashlib
-import platform
 import math
 
 # ═══════════════════════════════════════════════════════════════════════════
@@ -506,20 +504,9 @@ def main(args):
         with open(f"{experiment_dir}/resolved_config.json", "w", encoding="utf-8") as _cf:
             json.dump(vars(args), _cf, ensure_ascii=False, indent=2)
         _sources = {}
-        for _path in ("models.py", "train.py", "losses.py", "latent_dataset.py",
-                      "samplers.py", "eval_auto.py"):
-            if os.path.isfile(_path):
-                with open(_path, "rb") as _sf:
-                    _sources[_path] = hashlib.sha256(_sf.read()).hexdigest()
-        with open(f"{experiment_dir}/source_manifest.json", "w", encoding="utf-8") as _mf:
-            json.dump({
-                "created_at": datetime.datetime.now().isoformat(),
-                "hostname": platform.node(),
-                "python": sys.version,
-                "torch": torch.__version__,
-                "cuda": torch.version.cuda,
-                "sha256": _sources,
-            }, _mf, ensure_ascii=False, indent=2)
+        # ★ 2026-10-13 [审查 P0]: 原块只哈希根目录旧文件名(实际为空 ✗) -> 改为自包含模块 ✓
+        from src.train.manifest import write_source_manifest
+        write_source_manifest(experiment_dir, extra={"config_path": getattr(args, "config", None)})
     else:
         logger = create_logger(None)
 

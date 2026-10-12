@@ -124,6 +124,13 @@ def run_setup(cfg_path, steps=2):
                  ("use_wandb", False)):
         if hasattr(a, k):
             setattr(a, k, v)
+    # ★ 修可用性缺陷: MASTER_PORT 固定 12355 会被残留进程占用 -> EADDRINUSE
+    #   -> 护栏判定'无效'（正确拒绝假通过 ✓）但用不了 ✗。改为**自动挑空闲端口** ✓
+    import socket as _sock
+    with _sock.socket() as _s:
+        _s.bind(('', 0)); _free = _s.getsockname()[1]
+    for _k in ('MASTER_PORT',):
+        os.environ[_k] = str(_free)
     buf = io.StringIO()
     err = None
     try:

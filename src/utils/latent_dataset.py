@@ -73,6 +73,7 @@ class MCCDLatentDataset(Dataset):
                  num_preload_workers=16, use_glyph_cond=False, skel_latent_shards_dir=None,
                  callig_remap=None, font_remap=None,
                  char_remap=None,
+                 allow_oov_char=False,   # ★ 2026-10-13 [审查]: std 模式(不依赖字表)放行 OOV ✓
                  skel_latent_shards_dirs=None, skel_latent_shards_weights=None,
                  callig_id_map=None, aux_latent_shards_dirs=None,
                  inst_skel_shards_dir=None, callig_script_map=None,
@@ -91,6 +92,13 @@ class MCCDLatentDataset(Dataset):
         self.use_glyph_cond = bool(use_glyph_cond)
         # v53: 三表重映射 (build_triple_tables 产出; 保证标签空间与 SupCon 表行一致)
         self._char_remap = dict(char_remap) if char_remap else None
+        # ★ [审查 P1]: 纯 std/开集模式下字表**不参与内容条件** ⇒ 表外字符不该崩 ✗
+        #   （原来 _char_remap[int(cid)] 对 OOV 直接 KeyError ✗）。
+        #   放行时用 **null token**(= num_characters, 即 CFG 的 null 行 ✓) 表示"无此字",
+        #   语义正确且模型侧 use_char_cond=False 时本来就会忽略它 ✓。
+        #   ⚠ table/hybrid 模式**仍严格报错** ✓（那里字表是真源, 静默替换会污染实验 ✗）。
+        self._allow_oov_char = bool(allow_oov_char)
+        self._oov_warned = 0
         self._callig_remap = dict(callig_remap) if callig_remap else None
         self._font_remap = dict(font_remap) if font_remap else None
         # v53: character_id(全局) -> 汉字连续索引 的重映射 (build_triple_tables 产出)
@@ -522,6 +530,33 @@ class MCCDLatentDataset(Dataset):
         return rate
 
     # -------------------------------------------------------------- getitem
+    def _map_char_id(self, row):
+        """字符 id -> 字表索引（★ 2026-10-13 [审查 P1] OOV 策略 ✓）。
+
+        · 无字表：直接用 glyph_id/character_id ✓（原行为）
+        · 有字表且在表内：返回映射值 ✓
+        · 有字表但**表外**：
+            - allow_oov_char=True（std 等**不依赖字表**的模式）-> 返回 null token
+              (= self._char_remap 的词表大小, 即 CFG 的 null 行 ✓), 并**只警告一次** ✓
+            - allow_oov_char=False（table/hybrid）-> **照旧 KeyError** ✓
+              （字表是内容真源, 静默替换会污染实验 ✗）
+        """
+        cid = int(row['character_id'])
+        if self._char_remap is None:
+            return int(row.get('glyph_id', cid))
+        try:
+            return self._char_remap[cid]
+        except KeyError:
+            if not self._allow_oov_char:
+                raise
+            self._oov_warned += 1
+            if self._oov_warned <= 3:
+                import logging as _lg
+                _lg.getLogger(__name__).warning(
+                    "[oov-char] 表外字符 character_id=%s -> null token（allow_oov_char=True, "
+                    "该模式不依赖字表 ✓）。累计 %d 次。", cid, self._oov_warned)
+            return int(max(self._char_remap.values()) + 1)      # = null 行 ✓
+
     def __getitem__(self, idx):
         row = self.samples[idx]
 
@@ -674,8 +709,6 @@ class MCCDLatentDataset(Dataset):
             'y_script': torch.tensor(
                 (self._font_remap[int(row['script_id'])] if self._font_remap
                  else int(row['script_id'])), dtype=torch.long),
-            'y_char': torch.tensor(
-                (self._char_remap[int(row['character_id'])] if self._char_remap is not None
-                 else int(row.get('glyph_id', row['character_id']))), dtype=torch.long),
+            'y_char': torch.tensor(self._map_char_id(row), dtype=torch.long),
             'g': g_t,
         }
