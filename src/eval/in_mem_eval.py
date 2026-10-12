@@ -941,6 +941,9 @@ def run_in_mem_eval(model, args, step, device, results_dir=None, logger=print):
                 "ssim_med", "ssim_q3", "ssim_p90", "mse_mean", "lpips_mean",
                 "ink_ssim_mean", "ink_iou_mean", "skel_iou_mean",
                 "frag_ratio", "hole_pred", "hole_gt",
+                # ★ 2026-10-12 白化专用列：v81 事故里 ssim / lpips / ink_iou 全都看不出来 ✗
+                #   （全白图 SSIM 0.6855 > 模型真实输出 0.6371）。这两列才是"有没有墨"的判据。
+                "soft_ink_ratio", "near_blank_rate", "gt_soft_mass",
                 "nn_ssim", "nn_mean", "tgt_spec", "cal_enrich"]
     if os.path.exists(sum_path):
         try:
@@ -948,7 +951,12 @@ def run_in_mem_eval(model, args, step, device, results_dir=None, logger=print):
                 _got = next(csv.reader(_f), [])
         except StopIteration:
             _got = []
-        if _got != _SUM_HDR:
+        if _got != _SUM_HDR and _got == _SUM_HDR[:len(_got)] and len(_got) > 0:
+            # ★ 2026-10-12: 新表只是**在后面追加了列** -> 旧行保持原样(缺的尾列为空),
+            #   历史曲线继续累积, 不再产生 .bak_oldcols 重置(旧行为会把曲线打散到备份里 ✗)。
+            print(f"[in-mem-eval] 表头新增 {len(_SUM_HDR)-len(_got)} 列(仅追加) "
+                  f"-> 保留历史行, 继续累积 ✓", flush=True)
+        elif _got != _SUM_HDR:
             _bak = sum_path + ".bak_oldcols"
             if os.path.exists(_bak):
                 _bak = sum_path + f".bak_oldcols.{int(os.path.getmtime(sum_path))}"
@@ -983,7 +991,8 @@ def run_in_mem_eval(model, args, step, device, results_dir=None, logger=print):
         w_raw.writerow(["exp", "step", "set", "idx", "img_id", "char", "script",
                         "calligrapher", "mse", "ssim", "lpips",
                         "ink_ssim", "ink_iou", "skel_iou",
-                        "frag_ratio", "hole_pred", "hole_gt"])
+                        "frag_ratio", "hole_pred", "hole_gt",
+                        "soft_ink_ratio", "gt_soft_mass"])
     exp = os.path.basename(results_dir.rstrip("/"))
     out = {}
 
@@ -1130,6 +1139,8 @@ def run_in_mem_eval(model, args, step, device, results_dir=None, logger=print):
             #   "字写得对不对" 的真实反映。
             _inks, _inkious, _skels, _frags = [], [], [], []
             _holes_p, _holes_g = [], []
+            # ★ 软墨量/近白: 与 metrics_ink 无关, 永远计算（白化只能靠它看出来）
+            _sir, _nb, _gtm = [], [], []
             try:
                 from src.eval.metrics_ink import ink_ssim as _ink_ssim, ink_iou as _ink_iou
                 from src.eval.metrics import (skel_iou as _skel_iou,
@@ -1149,6 +1160,13 @@ def run_in_mem_eval(model, args, step, device, results_dir=None, logger=print):
                     _frags.append(_frag_ratio(pred_np[i], gt_np[i], thresh=0.5))
                     _holes_p.append(_hole_ratio(pred_np[i], thresh=0.5))
                     _holes_g.append(_hole_ratio(gt_np[i], thresh=0.5))
+                # 软墨量 = mean(1 - gray), gray∈[0,1]；比值 <0.10 判为"近白"（计划里的硬门）
+                _mp = float(np.mean(1.0 - np.asarray(pred_np[i]).mean(axis=2)))
+                _mg = float(np.mean(1.0 - np.asarray(gt_np[i]).mean(axis=2)))
+                _r = _mp / max(_mg, 1e-6)
+                _sir.append(_r)
+                _gtm.append(_mg)
+                _nb.append(1.0 if _r < 0.10 else 0.0)
             ssim = np.array(ssims)
             mse = float(np.mean(mses))
             _ink_ssim_mean = f"{float(np.mean(_inks)):.5f}" if _inks else ""
@@ -1157,10 +1175,16 @@ def run_in_mem_eval(model, args, step, device, results_dir=None, logger=print):
             _frag_mean = f"{float(np.mean(_frags)):.4f}" if _frags else ""
             _hole_p_mean = f"{float(np.mean(_holes_p)):.4f}" if _holes_p else ""
             _hole_g_mean = f"{float(np.mean(_holes_g)):.4f}" if _holes_g else ""
+            _sir_mean = f"{float(np.mean(_sir)):.4f}" if _sir else ""
+            _nb_mean = f"{float(np.mean(_nb)):.4f}" if _nb else ""
+            _gtm_mean = f"{float(np.mean(_gtm)):.5f}" if _gtm else ""
             _ink_txt = (f" ink_ssim={float(np.mean(_inks)):.4f}" if _inks else "")
             _frag_txt = (f" frag={float(np.mean(_frags)):.3f}" if _frags else "")
             _hole_txt = (f" hole={float(np.mean(_holes_p)):.3f}"
                          f"/{float(np.mean(_holes_g)):.3f}" if _holes_p else "")
+            _si_txt = (f" **soft_ink={float(np.mean(_sir)):.3f}**"
+                       f" near_blank={float(np.mean(_nb)):.3f}"
+                       f" gt_mass={float(np.mean(_gtm)):.4f}" if _sir else "")
             # LPIPS (v12+): 默认开启, 可用 --in-mem-eval-lpips 0 关闭。
             # ssim 会被大面积白底匹配骗过 (doc59), LPIPS 对结构细节敏感。
             _lp = _lpips_per_sample(
@@ -1186,6 +1210,7 @@ def run_in_mem_eval(model, args, step, device, results_dir=None, logger=print):
                             f"{q75:.4f}", f"{q90:.4f}", f"{mse:.5f}", _lp_mean,
                             _ink_ssim_mean, _ink_iou_mean, _skel_iou_mean, _frag_mean,
                             _hole_p_mean, _hole_g_mean,
+                            _sir_mean, _nb_mean, _gtm_mean,
                             (f"{_scn['nn_ssim']:.4f}" if _scn else ""),
                             (f"{_scn['nn_mean']:.4f}" if _scn else ""),
                             (f"{_scn['tgt_spec']:+.4f}" if _scn else ""),
@@ -1210,7 +1235,9 @@ def run_in_mem_eval(model, args, step, device, results_dir=None, logger=print):
                                 (f"{_skels[i]:.5f}" if _skels else ""),
                                 (f"{_frags[i]:.4f}" if _frags else ""),
                                 (f"{_holes_p[i]:.4f}" if _holes_p else ""),
-                                (f"{_holes_g[i]:.4f}" if _holes_g else "")])
+                                (f"{_holes_g[i]:.4f}" if _holes_g else ""),
+                                (f"{_sir[i]:.5f}" if _sir else ""),
+                                (f"{_gtm[i]:.5f}" if _gtm else "")])
             f_sum.flush()
             f_raw.flush()
             # ★ 2026-10-03: 补齐数值字段 —— 早停 (iou_lpips) 需要 lpips / skel_iou,
@@ -1224,6 +1251,10 @@ def run_in_mem_eval(model, args, step, device, results_dir=None, logger=print):
                          "frag": float(np.mean(_frags)) if _frags else None,
                          "hole": float(np.mean(_holes_p)) if _holes_p else None,
                          "hole_gt": float(np.mean(_holes_g)) if _holes_g else None,
+                         # ★ 白化判据（None 时调用方需自己兜底）
+                         "soft_ink_ratio": float(np.mean(_sir)) if _sir else None,
+                         "near_blank_rate": float(np.mean(_nb)) if _nb else None,
+                         "gt_soft_mass": float(np.mean(_gtm)) if _gtm else None,
                          "n": int(n),
                          "nn_ssim": (float(_scn["nn_ssim"]) if _scn else None),
                          "nn_mean": (float(_scn["nn_mean"]) if _scn else None),
@@ -1231,7 +1262,7 @@ def run_in_mem_eval(model, args, step, device, results_dir=None, logger=print):
                          "cal_enrich": (float(_scn["cal_enrich"]) if _scn else None)}
             logger(f"[in-mem-eval] step={step} set={name} n={n} "
                    f"ssim={ssim.mean():.4f} (med={q50:.4f}) mse={mse:.5f}"
-                   f"{_lp_txt}{_ink_txt}{_frag_txt}{_hole_txt}{_scn_txt} "
+                   f"{_lp_txt}{_ink_txt}{_frag_txt}{_hole_txt}{_si_txt}{_scn_txt} "
                    f"sample={t_s:.0f}s total={time.time()-t0:.0f}s")
             # 自动 poster: 全量重画该 set 所有 step (秒级, 覆盖旧文件)
             try:

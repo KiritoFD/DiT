@@ -89,7 +89,12 @@ try:
     before = next(p for p in model.parameters() if p.requires_grad).detach().clone()
     losses = []
     for i in range(a.steps):
-        out = model(x, t, y_callig, y_char, y_script, g)
+        # ★ 位置参数陷阱（2026-10-12 干跑实测踩到）:
+        #   DiT_2Cond.forward(x, t, y_callig, y_char, return_intermediate_layer=None, ...,
+        #                     g=None, y_script=None, ...)
+        #   第 5 个位置是 return_intermediate_layer ✗ —— 用位置传 y_script 会报
+        #   "use_script_cond=True 但 forward 未收到 y_script"。**必须关键字传 g / y_script** ✓
+        out = model(x, t, y_callig, y_char, g=g, y_script=y_script)
         pred = out[0] if isinstance(out, (tuple, list)) else out
         loss = torch.mean((pred - x) ** 2)
         opt.zero_grad(set_to_none=True)
