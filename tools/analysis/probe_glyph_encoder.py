@@ -1,0 +1,133 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""probe_glyph_encoder.py — 条件字形编码器的偏置/内容体检（参数化，任意机器/任意 run 可用）
+
+为什么需要它（v81 白化事故的机制）:
+  std_soft 的 CNN 编码器前两层 conv 带 bias ⇒ 对**全零输入**有非零响应,
+  该响应随训练从 19.9 涨到 72.1（3.6×）, 内容/背景比从 2.48 掉到 1.13,
+  最终"空白画布特征"压过真实字形结构 ⇒ decode 出白纸。
+修复: 注入量改为 **enc(g) - enc(0)**（不 detach）⇒ 偏置被差分抵消。
+
+本工具同时报三组量, 用于**判断修复是否生效**:
+  A. ||enc(0)||            —— 裸偏置响应大小（会随训练涨, 本身不是 bug 只要它被差分掉）
+  B. ||enc(g)-enc(0)||     —— **真正被注入的内容信号**（修复后应平稳/上升, 不应衰减到 0）
+  C. A/B 比值（背景/内容）—— v81 从 0.40 升到 0.88（内容被淹没）; 修复后应保持低位平稳 ✓
+
+用法:
+  python tools/analysis/probe_glyph_encoder.py \
+      --ckpt-dir checkpoints --config src/train/configs/v83A_stdsoft_zerofix.json \
+      --store exp-std/data/std_soft_glyphs_v1 --device cpu --steps 20000,25000,30000
+"""
+import argparse
+import glob
+import json
+import os
+import sys
+
+import torch
+
+sys.path.insert(0, ".")
+if hasattr(sys.stdout, "reconfigure"):          # Python 3.7+；3.6 上没有
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+
+ap = argparse.ArgumentParser()
+ap.add_argument("--ckpt-dir", required=True, help="含 00NNNNN.pt 的目录")
+ap.add_argument("--config", required=True, help="训练/评测用的 config json")
+ap.add_argument("--store", default="", help="std_soft 字形 store 目录（含 index.csv）")
+ap.add_argument("--device", default="cpu", help="cpu / cuda:0（GPU 被训练占满时用 cpu）")
+ap.add_argument("--steps", default="", help="只测这些 step, 逗号分隔, 如 20000,25000; 空=全部")
+ap.add_argument("--n", type=int, default=8, help="取多少个字形求平均")
+ap.add_argument("--ckpt-glob", default="*.pt")
+a = ap.parse_args()
+dev = torch.device(a.device)
+
+from src.eval import model_io  # noqa: E402
+
+cfg = json.load(open(a.config, encoding="utf-8"))
+
+
+class _A:
+    pass
+
+
+args = _A()
+for k, v in cfg.items():
+    setattr(args, k, v)
+
+# ── 取真实字形掩码 ──
+store_dir = a.store or getattr(args, "std_soft_store", "") or getattr(args, "std_soft_dir", "")
+g_real = None
+if store_dir and os.path.isfile(os.path.join(store_dir, "index.csv")):
+    import csv
+    from src.utils.std_soft_glyph import StdSoftGlyphStore
+    rows = list(csv.DictReader(open(os.path.join(store_dir, "index.csv"), encoding="utf-8-sig")))
+    st = StdSoftGlyphStore(store_dir, is_train=False, preload=False)
+    tens, used = [], []
+    for r in rows:
+        if len(tens) >= a.n:
+            break
+        try:
+            t = st.get(int(r.get("script_id") or r.get("script") or 0), r["character"])
+        except Exception:
+            continue
+        if t is None:
+            continue
+        t = t if t.dim() == 3 else t.unsqueeze(0)      # (1,64,64)
+        tens.append(t)
+        used.append(r["character"])
+    if tens:
+        g_real = torch.stack(tens).float().to(dev)      # (N,1,64,64)
+        # 用 % 格式化: 避免老解释器/嵌套引号的 f-string 兼容问题
+        _ex = "".join(used[:8])
+        print("  真字形 %s 墨量均值=%.4f 例=%s" % (tuple(g_real.shape), float(g_real.mean()), _ex))
+    else:
+        print("  取真字形失败: store 里没有可用条目")
+else:
+    print(f"  未找到 store({store_dir or '未指定'}), 只测 ||enc(0)||")
+
+steps = [s.strip() for s in a.steps.split(",") if s.strip()]
+files = sorted(glob.glob(os.path.join(a.ckpt_dir, a.ckpt_glob)))
+if steps:
+    files = [f for f in files if any(s in os.path.basename(f) for s in steps)]
+print(f"  待测 ckpt: {len(files)} 个  device={a.device}\n")
+
+hdr = f"  {'step':>8} | {'||enc(0)||':>10} | {'||enc(g)-enc(0)||':>17} | {'背景/内容':>9} | {'||enc(g)||':>10}"
+print(hdr)
+print("  " + "-" * (len(hdr) + 2))
+for f in files:
+    tag = os.path.basename(f).replace(".pt", "")
+    try:
+        # ★ load_model_from_ckpt **自己按 ckpt 里的 args 重建模型**（strict=True 护栏, 见 model_io.py:329-377）。
+        #   绝不能"用 config 先建模型再灌 ckpt" —— 键会对不上（v83 实测踩到 ✗）。
+        out = model_io.load_model_from_ckpt(f, device=dev, use_ema=True, verbose=False)
+        m = out[0] if isinstance(out, tuple) else out
+        m.eval()
+    except Exception as e:
+        print(f"  {tag:>8} | 加载失败 {type(e).__name__}: {str(e)[:60]}")
+        continue
+    emb = next((mod for n, mod in m.named_modules()
+                if "embed" in n.lower() and any(t in n.lower() for t in ("glyph", "soft", "skel"))), None)
+    if emb is None:
+        print(f"  {tag:>8} | 未找到 glyph embedder")
+        continue
+    try:
+        with torch.no_grad():
+            f0 = emb(torch.zeros(1, 1, 64, 64, device=dev)).float()
+            n0 = float(f0.norm())
+            if g_real is not None:
+                fr = emb(g_real[: min(4, g_real.shape[0])]).float()
+                f0b = f0.expand_as(fr)
+                nc = float((fr - f0b).norm())
+                ng = float(fr.norm())
+                print(f"  {tag:>8} | {n0:>10.4f} | {nc:>17.4f} | {n0/max(nc,1e-9):>9.4f} | {ng:>10.4f}")
+            else:
+                print(f"  {tag:>8} | {n0:>10.4f} | {'-':>17} | {'-':>9} | {'-':>10}")
+    except Exception as e:
+        print(f"  {tag:>8} | 前向失败 {type(e).__name__}: {str(e)[:60]}")
+
+print("""
+  判读:
+   * **背景/内容** 随训练**单调上升** ⇒ 内容被偏置淹没（v81 事故特征: 0.40 → 0.88）✗
+   * 修复(注入 enc(g)-enc(0))生效时 ⇒ 该比值应**低位平稳** ✓（即使 ||enc(0)|| 仍在涨也无害, 因为被差分掉）
+   * 若 内容项 ||enc(g)-enc(0)|| 本身**衰减到接近 0** ⇒ 编码器在丢弃字形结构, 属另一种失效 ✗
+""")
