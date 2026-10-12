@@ -36,42 +36,19 @@ def aux_dirs_of(a) -> list:
 
 
 def resolve_content_cond(a, log=None) -> Optional[str]:
-    """内容条件模式: 'table' / 'std' / 'hybrid' / None(未指定, 按开关推导并告警) ✓
+    """内容条件模式: 'table' / 'std' / 'hybrid' / None(未显式声明 -> 推导并告警) ✓
 
-    **唯一实现** ✓ —— train.py / eval 端都必须调这里, 不许各自复刻（历史教训:
-    两处实现漂移 -> 静默不一致 ✗）。
-
-    table  : 字表给内容      (use_char_cond=True,  std_soft_cond=False)
-    std    : 字形给内容      (use_char_cond=False, std_soft_cond=True)
-    hybrid : 字表 + std 并存 (use_char_cond=True,  std_soft_cond=True)
-             ⇒ **归因不可分离** ✗（v83-A/B/C 的真实架构, 历史 ckpt 必须能如实标注 ✓）
-             新实验应避免; 显式写 'hybrid' 只用于诚实记录已有运行 ✓
+    ★ 2026-10-13 [审查 PR2]: 语义**唯一真源**已收拢到 src/model/conditioning.py 的
+      ContentConfig ✓ —— 本函数只是保持旧接口的薄封装（训练/评测都经由它 ✓）:
+        table  : 字表给内容      (use_char_cond=True,  std_soft_cond=False)
+        std    : 字形给内容      (use_char_cond=False, std_soft_cond=True)
+        hybrid : 两者并存        (use_char_cond=True,  std_soft_cond=True)
+                 ⇒ **归因不可分离** ✗（v83-A/B/C 的真实架构; 历史 ckpt 必须能如实标注 ✓）
+      未显式写 content_cond 时按开关推导并告警 ✓（不再允许"隐式 hybrid"悄悄发生 ✗）。
     """
-    std_soft = bool(getattr(a, "std_soft_cond", False))
-    use_char = not bool(getattr(a, "no_char_cond", False))
-    cc = getattr(a, "content_cond", None)
-    want = {
-        "table": (True, False),
-        "std": (False, True),
-        "hybrid": (True, True),
-    }
-    if cc is not None:
-        cc = str(cc).lower()
-        if cc not in want:
-            raise ValueError(
-                f"content_cond 只能是 'table' / 'std' / 'hybrid'，收到 {cc!r}。"
-                f"table=仅字表 / std=仅标准字形 / hybrid=两者并存(归因不可分离 ✗)")
-        w_char, w_std = want[cc]
-        if (use_char, std_soft) != (w_char, w_std):
-            raise ValueError(
-                f"content_cond={cc!r} 与开关不一致: 期望 (no_char_cond={not w_char}, "
-                f"std_soft_cond={w_std})，实际 (no_char_cond={not use_char}, "
-                f"std_soft_cond={std_soft}) —— 配置自相矛盾 ✗")
-    elif use_char and std_soft and log is not None:
-        log("[content-cond] ⚠ 未显式指定 content_cond, 当前为**混合模式**(字表+std 并存) "
-            "✗ 归因不可分离 —— 请在配置里显式写 content_cond='hybrid' (记录) 或 "
-            "'table'/'std' (单因素实验) ✓")
-    return cc
+    from src.model.conditioning import content_config_from_args
+    cfg = content_config_from_args(a, log=log)
+    return (cfg.mode if cfg.declared else None)
 
 
 def derive(a, overrides: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
