@@ -67,6 +67,19 @@ def setup_only(text: str) -> str:
     return "\n".join(out)
 
 
+def train_part(text: str) -> str:
+    """训练循环段（[Begin epoch] 之后）—— setup_only 的**互补面** ✓
+
+    训练循环是 main() 里最大的块(754 行), 而 setup 指纹切在 [Begin epoch] ⇒
+    循环里的改动**完全不受保护** ✗ ⇒ 用同一份日志的**后半段**做指纹 ✓。
+    """
+    lines = text.splitlines()
+    for i, ln in enumerate(lines):
+        if TRAIN_MARK.search(ln):
+            return "\n".join(lines[i:])
+    return ""
+
+
 def normalize(text: str) -> str:
     for pat, rep in SUBS:
         text = pat.sub(rep, text)
@@ -82,8 +95,9 @@ def normalize(text: str) -> str:
     return "\n".join(out)
 
 
-def fingerprint(text: str) -> str:
-    return hashlib.sha256(normalize(setup_only(text)).encode("utf-8")).hexdigest()
+def fingerprint(text: str, phase: str = "setup") -> str:
+    seg = setup_only(text) if phase == "setup" else train_part(text)
+    return hashlib.sha256(normalize(seg).encode("utf-8")).hexdigest()
 
 
 def run_setup(cfg_path, steps=2):
@@ -130,15 +144,19 @@ def main():
     ap.add_argument("--save", action="store_true")
     ap.add_argument("--check", action="store_true")
     ap.add_argument("--steps", type=int, default=2)
+    ap.add_argument("--phase", choices=("setup", "train"), default="setup",
+                    help="setup=训练开始前的解析/装配指纹; train=训练循环段指纹 + 结构断言 ✓")
     args = ap.parse_args()
 
     log, err = run_setup(args.config, args.steps)
-    fp = fingerprint(log)
-    nlines = len(normalize(setup_only(log)).splitlines())
+    phase = args.phase
+    seg = setup_only(log) if phase == "setup" else train_part(log)
+    fp = fingerprint(log, phase)
+    nlines = len(normalize(seg).splitlines())
     has_step = bool(re.search(r"\bstep\b", log, re.I))
     _cut = next((ln.strip()[:70] for ln in log.splitlines() if TRAIN_MARK.search(ln)), "(无)")
-    print("  setup 段 %d 行 · 指纹 %s · 推进到 step=%s · 异常=%s"
-          % (nlines, fp[:16], has_step, err or "无"))
+    print("  [%s] 段 %d 行 · 指纹 %s · 推进到 step=%s · 异常=%s"
+          % (phase, nlines, fp[:16], has_step, err or "无"))
     print("  切点(训练开始) = %s" % _cut)
     if err:
         print("  ⚠ 运行期异常（可能是 DDP/环境退出）:", err)
@@ -156,8 +174,21 @@ def main():
     if not real_step:
         print("  ✗ 未能确认真的跑过训练步（未见 step>=1 的 loss 行）⇒ 护栏无效 ✗")
         return 4
-    meta = {"config": args.config, "steps": args.steps, "sha256": fp, "nlines": nlines,
-            "has_step": has_step, "real_step": real_step}
+    if phase == "train":
+        # ★ 结构断言（train 段指纹之外的独立证据 ✓）。
+        #   ⚠ 别用"loss 行数 >= 步数" —— 日志按**间隔**打印, 2 步 run 只出 1 行 loss
+        #     ⇒ 会误报 ✗（实测踩过）。改用**全文跑完的完成标记** ✓: 它只在 main()
+        #     真正走完训练循环/收尾后才出现, 是最强且不误报的信号 ✓
+        done = ("Done!" in log) or ("async writer drained" in log)
+        reached = bool(re.search(r"\bstep\s*[1-9]\d*\b", log)) or \
+            bool(re.search(r"\bep\s*\d+\s+it", log)) or ("Begin epoch" in log)
+        if not reached:
+            print("  ✗ 未观察到训练推进 ⇒ 护栏无效 ✗"); return 4
+        if not done:
+            print("  ✗ 未见完成标记(Done!/ckpt drain) ⇒ 训练未真正走完 ✗"); return 4
+        print("  ✓ 结构断言: 已推进到训练 + 观察到完成标记 ✓")
+    meta = {"config": args.config, "steps": args.steps, "phase": phase, "sha256": fp,
+            "nlines": nlines, "has_step": has_step, "real_step": real_step}
     if args.save:
         if not args.golden:
             print("  ✗ --save 需要 --golden"); return 2
@@ -169,6 +200,9 @@ def main():
         if not args.golden or not os.path.isfile(args.golden):
             print("  ✗ 黄金不存在:", args.golden); return 2
         g = json.load(io.open(args.golden, encoding="utf-8"))
+        if g.get("phase", "setup") != phase:
+            print("  ✗ 黄金相位(%s) 与当前(%s) 不一致 —— 别混用 ✗"
+                  % (g.get("phase", "setup"), phase)); return 2
         if g["sha256"] == fp:
             print("  ✓ setup 行为指纹**一致** —— 重构未改变 setup ✓✓")
             return 0
