@@ -853,34 +853,8 @@ class DiT_2Cond(nn.Module):
 
         self._build_style_hierarchy(callig_embed_dim=callig_embed_dim, depth=depth, hidden_size=hidden_size, hier_style=hier_style, local_ca_at=local_ca_at, local_ca_heads=local_ca_heads, local_ca_impl=local_ca_impl, local_ca_layers=local_ca_layers, local_ca_q=local_ca_q, local_ca_rank=local_ca_rank, local_ca_window=local_ca_window, lowrank_spatial_rank=lowrank_spatial_rank, num_calligraphers=num_calligraphers, num_pairs=num_pairs, num_scripts=num_scripts, pair_init=pair_init, pair_residual=pair_residual, script_embed_dim=script_embed_dim, script_film=script_film, spatial_film_rank=spatial_film_rank)
         # ↑ 原 118 行内联构造已抽成方法（见 _build_style_hierarchy）✓
-        self.deform_skel = None
-        if int(deform_skel) > 0:
-            from .deform_skel import DeformSkel
-            self.deform_skel = DeformSkel(
-                cond_dim=self.cond_dim, ch=4, grid=int(deform_grid),
-                style_ch=int(deform_style_ch), width=int(deform_width),
-                max_off=float(deform_max_off), coarse=int(deform_coarse),
-                residual=int(residual), res_cap=float(res_cap),
-                stroke_mod=int(stroke_mod), stroke_cap=float(stroke_cap),
-                gate_radius=float(gate_radius), dt_ch=int(deform_dt_ch),
-                topo_mode=int(deform_topo), warp_iters=int(deform_warp_iters),
-                film_mode=str(deform_film_mode),
-                style_tokens=int(deform_style_tokens),
-                attn_heads=int(deform_attn_heads),
-                preserve_amp=int(deform_preserve_amp))
-            if str(deform_ckpt):
-
-                _sd = torch.load(deform_ckpt, map_location="cpu", weights_only=False)
-                _sd = _sd.get("deform", _sd) if isinstance(_sd, dict) else _sd
-                _miss, _unexp = self.deform_skel.load_state_dict(_sd, strict=False)
-                print(f"[deform] 已载入离线权重 {deform_ckpt} "
-                      f"(missing={len(_miss)}, unexpected={len(_unexp)})")
-                if _miss or _unexp:
-                    print(f"[deform] ⚠ 键不匹配: missing={list(_miss)[:4]} "
-                          f"unexpected={list(_unexp)[:4]} -> 形变头可能没真正载入")
-            print(f"[deform] enabled: width={int(deform_width)} "
-                  f"max_off={float(deform_max_off)} coarse={int(deform_coarse)} "
-                  f"params={sum(p.numel() for p in self.deform_skel.parameters()):,}")
+        self._build_deform(deform_attn_heads=deform_attn_heads, deform_ckpt=deform_ckpt, deform_coarse=deform_coarse, deform_dt_ch=deform_dt_ch, deform_film_mode=deform_film_mode, deform_grid=deform_grid, deform_max_off=deform_max_off, deform_preserve_amp=deform_preserve_amp, deform_skel=deform_skel, deform_style_ch=deform_style_ch, deform_style_tokens=deform_style_tokens, deform_topo=deform_topo, deform_warp_iters=deform_warp_iters, deform_width=deform_width, gate_radius=gate_radius, res_cap=res_cap, residual=residual, stroke_cap=stroke_cap, stroke_mod=stroke_mod)
+        # ↑ 原 28 行内联构造已抽成方法（见 _build_deform）✓
 
     def _build_glyph_condition(self, *, hidden_size, depth, num_heads, attn_tau,
                                glyph_in_channels, glyph_inject_layers, glyph_inject_mode, glyph_inject_at,
@@ -1158,6 +1132,37 @@ class DiT_2Cond(nn.Module):
         # ★ 必须放在 initialize_weights() 之后构造与载入！
         #   否则 _basic_init 会递归把 DeformSkel 内部的 nn.Linear 权重（style_proj、
         #   affine、style_off、所有 FiLM 调制层）全部用 xavier_uniform 随机冲掉！
+
+    def _build_deform(self, deform_attn_heads, deform_ckpt, deform_coarse, deform_dt_ch, deform_film_mode, deform_grid, deform_max_off, deform_preserve_amp, deform_skel, deform_style_ch, deform_style_tokens, deform_topo, deform_warp_iters, deform_width, gate_radius, res_cap, residual, stroke_cap, stroke_mod):
+        """DeformSkel + 残差/笔画调制头 —— 2026-10-13 从 __init__ 抽出 ✓（内容与原文逐字相同, 行为不变）"""
+        self.deform_skel = None
+        if int(deform_skel) > 0:
+            from .deform_skel import DeformSkel
+            self.deform_skel = DeformSkel(
+                cond_dim=self.cond_dim, ch=4, grid=int(deform_grid),
+                style_ch=int(deform_style_ch), width=int(deform_width),
+                max_off=float(deform_max_off), coarse=int(deform_coarse),
+                residual=int(residual), res_cap=float(res_cap),
+                stroke_mod=int(stroke_mod), stroke_cap=float(stroke_cap),
+                gate_radius=float(gate_radius), dt_ch=int(deform_dt_ch),
+                topo_mode=int(deform_topo), warp_iters=int(deform_warp_iters),
+                film_mode=str(deform_film_mode),
+                style_tokens=int(deform_style_tokens),
+                attn_heads=int(deform_attn_heads),
+                preserve_amp=int(deform_preserve_amp))
+            if str(deform_ckpt):
+
+                _sd = torch.load(deform_ckpt, map_location="cpu", weights_only=False)
+                _sd = _sd.get("deform", _sd) if isinstance(_sd, dict) else _sd
+                _miss, _unexp = self.deform_skel.load_state_dict(_sd, strict=False)
+                print(f"[deform] 已载入离线权重 {deform_ckpt} "
+                      f"(missing={len(_miss)}, unexpected={len(_unexp)})")
+                if _miss or _unexp:
+                    print(f"[deform] ⚠ 键不匹配: missing={list(_miss)[:4]} "
+                          f"unexpected={list(_unexp)[:4]} -> 形变头可能没真正载入")
+            print(f"[deform] enabled: width={int(deform_width)} "
+                  f"max_off={float(deform_max_off)} coarse={int(deform_coarse)} "
+                  f"params={sum(p.numel() for p in self.deform_skel.parameters()):,}")
 
     def initialize_weights(self):
         def _basic_init(module):
