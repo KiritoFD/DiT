@@ -82,20 +82,8 @@ def build_model(args, device="cpu"):
         # DiT_3Cond 已于 2026-08-31 删除（见 src/model/__init__.py 的清理说明）。
         raise ValueError(
             "cond_mode=3cond 已废弃：DiT_3Cond 模型类已删除，当前只支持 2cond。")
-        model = DiT_3Cond_models[args.model](
-            input_size=latent_size,
-            num_calligraphers=args.num_calligraphers,
-            num_scripts=args.num_scripts,
-            num_characters=args.num_characters,
-            use_checkpoint=args.use_checkpoint,
-            condition_fusion=args.condition_fusion,
-            callig_embed_dim=args.callig_embed_dim,
-            script_embed_dim=args.script_embed_dim,
-            char_embed_dim=args.char_embed_dim,
-            cond_drop_all_prob=args.cond_drop_all_prob,
-            cond_drop_one_prob=args.cond_drop_one_prob,
-            in_channels=_in_ch,
-        )
+        # ★ 2026-10-13: 此处原有 DiT_3Cond_models[...] 构建代码, 但它在上一行 raise 之后
+        #   ⇒ **永远不可达**, 且引用的 DiT_3Cond 早已删除（见 src/model/__init__.py 清理说明）✗ 已删 ✓
     else:
         from src.model import DiT_2Cond_models
         if args.model not in DiT_2Cond_models:

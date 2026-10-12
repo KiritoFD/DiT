@@ -336,6 +336,12 @@ def main():
     counts = gate_ratchet()
     counts["h3_default_mismatch"] = h3
     counts["dead_config_keys"] = _dead
+    # ★ 2026-10-13: pyflakes src/ **总数**棘轮（当前 41 条 F841 噪声, 只许减少 ✗）
+    try:
+        _r = sh([sys.executable, "-m", "pyflakes", "src"])
+        counts["pyflakes_src_total"] = len([x for x in (_r.stdout or "").splitlines() if x.strip()])
+    except Exception:                                         # noqa: BLE001
+        counts["pyflakes_src_total"] = counts.get("pyflakes_src_total", 0)
     counts["h1_heuristic"] = h1
 
     if a.update_baseline:

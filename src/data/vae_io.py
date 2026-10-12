@@ -26,7 +26,6 @@ import argparse
 import csv
 import os
 import re
-import sys
 import time
 
 import numpy as np

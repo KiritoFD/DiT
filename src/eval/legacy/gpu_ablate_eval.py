@@ -200,7 +200,9 @@ def main():
     sd = strip(ck.get("ema") or ck.get("model") or ck)
     # ★ strict=True: 原来 strict=False 只断言 unexp==0, **missing 被静默忽略**
     model.load_state_dict(sd, strict=True)
-    log(f"load: missing={len(miss)} unexpected={len(unexp)}")
+    # ★ 2026-10-13: strict=True 已保证 missing/unexpected 均为 0（否则上面就抛错了），
+    #   原来的 miss/unexp 是 strict=False 时代的残留 -> 未定义名 ✗ 已改为如实记录 ✓
+    log("load: strict=True OK (0 missing / 0 unexpected)")
     del ck
     # 关键参数回显
     log(f"inject_layers={a.get('glyph_inject_layers')}")
