@@ -1,5 +1,5 @@
 {
-  "_comment": "v83-A = v81 配方 + **零输入响应消除**（dit.py: feat = enc(g) - enc(0)，不 detach）\n\n根因(2026-10-12 实测): ‖encoder(0)‖ 20k→115k 由 19.93 涨到 72.07(3.6×)，内容/背景比 2.48→1.13，墨量 0.174→0.073 ⇒ 输出塌成平均画布(白纸)。内因: 编码器前两层 Conv2d 带 bias + glyph_drop_prob 默认 0（从未训练空条件）。\n对照纪律: **v83-A vs v81 才是单变量因果检验**（同 VAE/语料/batch/调度/C2OT）；v80 只作稳定基线参照（与 v83 相差 4 个变量）。\n硬闸门: 软墨量 < GT 的 10% 记近空白；连续两个 ckpt 墨量明显下滑即停，不再因 SSIM 上升而继续。验收点 20k/35k/50k/70k，ODE γ=0，固定样本+seed，并单列 112 个未见组合。\n\n【Phase-2 显式化 2026-10-12】以下键原为**隐式默认**（配置未给, 代码兜底）; 为消除'配置漏写->静默用错默认'隐患, 按**当前实际生效值**显式写入 —— 重启后行为逐位不变 ✓。他族若用别的值, 已在下方标注, 请确认是否本族有意为之:\n  · eval_blend_alpha: 0.0（本族原为隐式默认; 他族用 0.5）\n  · glyph_embedder_depth: 0（本族原为隐式默认; 他族用 2）\n  · callig_scale_init: 1.0（本族原为隐式默认; 他族用 1.5）\n  · dino_per_script_center: 0（本族原为隐式默认; 他族用 1）\n  · repa_early_warmup: 0（本族原为隐式默认; 他族用 2000）\n  · glyph_latent_channels: 4（本族原为隐式默认; 他族用 16）\n  · callig_multi_style_k: 0（本族原为隐式默认; 他族用 4）\n  · deform_max_off: 3（本族原为隐式默认; 他族用 6）\n  · w_style_ortho: 0.0（本族原为隐式默认; 他族用 0.05）",
+  "_comment": "v83-A = v81 配方 + **零输入响应消除**（dit.py: feat = enc(g) - enc(0)，不 detach）\n\n根因(2026-10-12 实测): ‖encoder(0)‖ 20k→115k 由 19.93 涨到 72.07(3.6×)，内容/背景比 2.48→1.13，墨量 0.174→0.073 ⇒ 输出塌成平均画布(白纸)。内因: 编码器前两层 Conv2d 带 bias + glyph_drop_prob 默认 0（从未训练空条件）。\n对照纪律: **v83-A vs v81 才是单变量因果检验**（同 VAE/语料/batch/调度/C2OT）；v80 只作稳定基线参照（与 v83 相差 4 个变量）。\n硬闸门: 软墨量 < GT 的 10% 记近空白；连续两个 ckpt 墨量明显下滑即停，不再因 SSIM 上升而继续。验收点 20k/35k/50k/70k，ODE γ=0，固定样本+seed，并单列 112 个未见组合。\n\n【Phase-2 显式化 2026-10-12】以下键原为**隐式默认**（配置未给, 代码兜底）; 为消除'配置漏写->静默用错默认'隐患, 按**当前实际生效值**显式写入 —— 重启后行为逐位不变 ✓。他族若用别的值, 已在下方标注, 请确认是否本族有意为之:\n  · eval_blend_alpha: 0.0（本族原为隐式默认; 他族用 0.5）\n  · glyph_embedder_depth: 0（本族原为隐式默认; 他族用 2）\n  · callig_scale_init: 1.0（本族原为隐式默认; 他族用 1.5）\n  · dino_per_script_center: 0（本族原为隐式默认; 他族用 1）\n  · repa_early_warmup: 0（本族原为隐式默认; 他族用 2000）\n  · glyph_latent_channels: 4（本族原为隐式默认; 他族用 16）\n  · callig_multi_style_k: 0（本族原为隐式默认; 他族用 4）\n  · deform_max_off: 3（本族原为隐式默认; 他族用 6）\n  · w_style_ortho: 0.0（本族原为隐式默认; 他族用 0.05）\n\n【2026-10-12】python_bin: 4090 上 **必须** 用 /opt/conda/envs/cu121/bin/python（torch 2.5.1+cu121）。\n  该机 /usr/bin/python=2.7.17 ✗, /usr/bin/python3=3.6.9 ✗(无 torch), /opt/conda/bin/python=cu117 ✗。启动脚本与工具都应读本键，不要再靠探测 ✗。",
   "experiment_name": "v83A-stdsoft-zerofix",
   "results_dir": "assets/results/v83A_stdsoft_zerofix",
   "model": "DiT-2Cond-Sp/2",
@@ -105,5 +105,6 @@
   "glyph_latent_channels": 4,
   "callig_multi_style_k": 0,
   "deform_max_off": 3,
-  "w_style_ortho": 0.0
+  "w_style_ortho": 0.0,
+  "python_bin": "/opt/conda/envs/cu121/bin/python"
 }

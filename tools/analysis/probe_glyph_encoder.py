@@ -97,11 +97,20 @@ print("  " + "-" * (len(hdr) + 2))
 for f in files:
     tag = os.path.basename(f).replace(".pt", "")
     try:
-        # ★ load_model_from_ckpt **自己按 ckpt 里的 args 重建模型**（strict=True 护栏, 见 model_io.py:329-377）。
-        #   绝不能"用 config 先建模型再灌 ckpt" —— 键会对不上（v83 实测踩到 ✗）。
-        out = model_io.load_model_from_ckpt(f, device=dev, use_ema=True, verbose=False)
-        m = out[0] if isinstance(out, tuple) else out
-        m.eval()
+        # ★ 实测(2026-10-12): 该 ckpt 的 args 里没有 std_soft 标志 -> load_model_from_ckpt
+        #   按 ckpt args 自建的模型**缺字形编码器** -> strict=True 直接 Unexpected key ✗。
+        #   故改为: 按**传入 config** 建模型 + strict=False 加载, 并打印 glyph 相关缺/多键**自证**。
+        m = model_io.build_model_from_args(args, dev)
+        _ck = torch.load(f, map_location="cpu", weights_only=False)
+        _sd = _ck.get("ema") if _ck.get("ema") is not None else _ck.get("model", _ck)
+        _sd = {k.replace("_orig_mod.", ""): v for k, v in _sd.items()}
+        _miss, _unexp = m.load_state_dict(_sd, strict=False)
+        _gm = [k for k in _miss if "glyph" in k.lower()]
+        _gu = [k for k in _unexp if "glyph" in k.lower()]
+        print("      load: missing=%d unexpected=%d | glyph: missing=%d unexpected=%d"
+              % (len(_miss), len(_unexp), len(_gm), len(_gu)))
+        del _ck, _sd
+        m.to(dev).eval()
     except Exception as e:
         print(f"  {tag:>8} | 加载失败 {type(e).__name__}: {str(e)[:60]}")
         continue

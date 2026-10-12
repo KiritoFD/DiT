@@ -39,6 +39,7 @@ _VAE = None
 _VAE_REF = None      # ★ 2026-10-05: 缓存键 = VAE 路径 (否则第二个 VAE 复用第一个)
 _DIFF = None
 _CMAP = None
+_CMAP_REF = None     # ★ 缓存键 = 路径（原来只判 `is not None` ⇒ 换表静默复用旧映射 ✗）
 _WHITE_LAT_CACHE = {}       # 白底 latent (aux_zero_white 时 decode 前加回)
 
 # ── LPIPS ─────────────────────────────────────────────────────────────────
@@ -170,8 +171,8 @@ def _get_callig_map(path):
 
     现在: 配了路径但不存在 -> **直接抛错**；没配 -> 返回 None（合法，走原始 id）。
     """
-    global _CMAP
-    if _CMAP is not None:
+    global _CMAP, _CMAP_REF
+    if _CMAP is not None and _CMAP_REF == str(path):
         return _CMAP
     if not path:
         return None
@@ -182,11 +183,13 @@ def _get_callig_map(path):
             f"书家条件静默错位。请修正路径, 或显式清空 callig_id_map 表示走原始 id。")
     from src.utils.callig_map import load_callig_id_map
     _CMAP, _ = load_callig_id_map(path)
+    _CMAP_REF = str(path)
     print(f"[in-mem-eval] callig_id_map loaded: {path}")
     return _CMAP
 
 
 _CSMAP = None
+_CSMAP_REF = None    # ★ 缓存键 = 路径（同上）
 
 
 def _get_callig_script_map(path):
@@ -195,8 +198,8 @@ def _get_callig_script_map(path):
     与 _get_callig_map 同理: 配了路径但不存在 -> 直接报错(否则评测用单书家表
     而训练用 pair 表 -> 风格条件静默错位, ssim 照样算得出)。
     """
-    global _CSMAP
-    if _CSMAP is not None:
+    global _CSMAP, _CSMAP_REF
+    if _CSMAP is not None and _CSMAP_REF == str(path):
         return _CSMAP
     if not path:
         return None
@@ -206,6 +209,7 @@ def _get_callig_script_map(path):
             f"而训练用的是 (书家,书体) pair -> 风格条件静默错位。")
     from src.utils.callig_script_map import load_callig_script_map
     _CSMAP = load_callig_script_map(path)
+    _CSMAP_REF = str(path)
     print(f"[in-mem-eval] callig_script_map loaded: {path} "
           f"({_CSMAP['num_pairs']} pairs)")
     return _CSMAP
@@ -263,7 +267,8 @@ def _get_cache(csv_path, n, img_root, shards, args):
     _soft_sigma = float(getattr(args, "std_soft_eval_sigma", 0.65))
     ck = (csv_path, n, shards, _soft_root, _soft_sigma)
     if ck not in _CACHES:
-        sf = float(getattr(args, "vae_scaling_factor", 0.18215))
+        from src.utils.vae_scaling import resolve_vae_scaling
+        sf, _sf_shift = resolve_vae_scaling(args)   # ★ 唯一来源（原为硬编码 0.18215 兜底）
         cache = make_eval_cache(
             csv_path, img_root, None, 256, n, 8,
             int(getattr(args, "latent_channels", 4)), sf,
@@ -881,6 +886,7 @@ def run_in_mem_eval(model, args, step, device, results_dir=None, logger=print):
                      n, nn_ssim, nn_mean, tgt_spec, cal_enrich}}
     """
     global _DIFF
+    # 注: _DIFF 是**每次调用重建**的（不是缓存）——2026-10-12 审计确认无脏缓存问题, 保留原语义。
     import time
     results_dir = str(results_dir or getattr(args, "results_dir", "") or ".")
     os.makedirs(results_dir, exist_ok=True)
@@ -897,7 +903,8 @@ def run_in_mem_eval(model, args, step, device, results_dir=None, logger=print):
     ddim_steps = int(getattr(args, "eval_steps", 50))
     dit_batch = int(getattr(args, "in_mem_eval_batch", 16))
     vae_batch = int(getattr(args, "in_mem_eval_vae_batch", 16))
-    sf = float(getattr(args, "vae_scaling_factor", 0.18215))
+    from src.utils.vae_scaling import resolve_vae_scaling
+    sf, _sf_shift = resolve_vae_scaling(args)       # ★ 唯一来源（原为硬编码 0.18215 兜底）
     # ★ 2026-10-09: Calli-VAE 的 decoder 需要 sample/sf 而非 mode。DiT 输出 ≈ mode*sf,
     #   而生成时拿不到 encoder logvar -> 用 predict_std 预测噪声补回。
     #   详见 src/utils/calli_decode_noise.py (拟合 / 自检 / 上限分析)。
