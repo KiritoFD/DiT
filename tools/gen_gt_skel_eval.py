@@ -128,7 +128,6 @@ def main():
     # ---- 配方校验: 与已有 top10 shards_aux_skel3 比 ----
     if a.verify_top10:
         import glob
-        import torch
         ref = {}
         for f in sorted(glob.glob("data/top10_style23/shards_aux_skel3/*.npz")):
             with np.load(f) as z:

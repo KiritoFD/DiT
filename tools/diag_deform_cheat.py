@@ -25,7 +25,6 @@ import sys
 
 import numpy as np
 import torch
-import torch.nn.functional as F
 from scipy import ndimage
 
 os.chdir('/root/Workspace/xy/DiT')

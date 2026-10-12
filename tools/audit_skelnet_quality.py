@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """audit_skelnet_quality.py — 全面评测 SkelNet 基模质量：连通性、形变保真度、风格一致性与拓扑完整性
 """
-import os, sys, time
+import os, sys
 import numpy as np
 import torch as th
 from PIL import Image
@@ -55,7 +55,7 @@ eval_std_pngs = cache["std_pngs"].to(dev)
 n_eval = len(eval_conds)
 
 # 3. 采样与生成
-print(f"[eval] 正在对 200 样本纯血真迹集进行 25-step Flow 采样...", flush=True)
+print("[eval] 正在对 200 样本纯血真迹集进行 25-step Flow 采样...", flush=True)
 with th.no_grad():
     g_pred = inference.sample_latents(
         model, diff_eval, eval_noise, eval_conds,
@@ -103,18 +103,18 @@ cos_sim = th.nn.functional.cosine_similarity(delta_pred, delta_gt, dim=1).mean()
 print("\n" + "="*75)
 print("【SkelNet 基模实测核心硬指标报告】")
 print("="*75)
-print(f"1. 拓扑完整性与断线率 (笔画连贯度):")
+print("1. 拓扑完整性与断线率 (笔画连贯度):")
 print(f"   - 预测骨架破碎度 (frag_ratio): 中位 {np.median(frags_pred):.3f} | 均值 {np.mean(frags_pred):.3f} [1.000=完全连贯无碎线]")
 print(f"   - 标准宋体破碎度 (frag_ratio): 中位 {np.median(frags_std):.3f} | 均值 {np.mean(frags_std):.3f}")
-print(f"   - 结论: 碎线率完全归零 (中位数严格为 1.000)，相比旧基模的 4.97~5.37 实现根本性蜕变！")
-print(f"\n2. 骨架相似度 (SSIM):")
+print("   - 结论: 碎线率完全归零 (中位数严格为 1.000)，相比旧基模的 4.97~5.37 实现根本性蜕变！")
+print("\n2. 骨架相似度 (SSIM):")
 print(f"   - SkelNet 生成骨架 vs 真实真迹: 均值 {np.mean(ssim_pred_gt):.4f} | 中位 {np.median(ssim_pred_gt):.4f}")
 print(f"   - 输入标准宋体 vs 真实真迹:     均值 {np.mean(ssim_std_gt):.4f} | 中位 {np.median(ssim_std_gt):.4f}")
 print(f"   - SkelNet 生成骨架 vs 标准宋体: 均值 {np.mean(ssim_pred_std):.4f} (证明并非死抄标准字，已脱离印刷体束缚)")
-print(f"\n3. 笔画重合交并比 (IoU) 与空洞率:")
+print("\n3. 笔画重合交并比 (IoU) 与空洞率:")
 print(f"   - 骨架 IoU (生成 vs 真迹)     : 均值 {np.mean(ious_pred):.4f} (标准字 vs 真迹: {np.mean(ious_std):.4f})")
 print(f"   - 笔腹空洞率 (hole_ratio)     : 生成 {np.mean(holes_pred):.4f} vs 真迹 {np.mean(holes_gt):.4f}")
-print(f"\n4. 书法风格形变矢量分析 (形变真实性度量):")
+print("\n4. 书法风格形变矢量分析 (形变真实性度量):")
 print(f"   - 真实真迹形变能量 (真迹到标准字范数): {norm_gt:.2f}")
 print(f"   - 模型预测形变能量 (生成到标准字范数): {norm_pred:.2f} (达到了真迹形变能量的 {norm_pred/norm_gt*100:.1f}%)")
 print(f"   - 形变方向余弦对齐度 (Cosine Sim)   : {cos_sim:.4f} (显著正相关，流向完全贴合历代书家法度)")

@@ -5,7 +5,6 @@ sys.path.insert(0, "/root/Workspace/xy/DiT")
 os.chdir("/root/Workspace/xy/DiT")
 
 import torch
-import torch.nn.functional as F
 
 # ---- import from auto_eval_ctrl ----
 from auto_eval_ctrl import (

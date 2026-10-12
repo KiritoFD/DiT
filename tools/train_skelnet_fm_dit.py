@@ -356,8 +356,8 @@ def main():
             z = (th.cat(zl) * 0.18215).cpu().numpy()
             del vae
             th.cuda.empty_cache()
-            outd = (f"data/top10_style23/predskel_fmdit_seen20" if name == "seen20"
-                    else f"data/top10_style23/predskel_fmdit_strict84")
+            outd = ("data/top10_style23/predskel_fmdit_seen20" if name == "seen20"
+                    else "data/top10_style23/predskel_fmdit_strict84")
             if a.dump_tag:
                 outd += "_" + a.dump_tag
             os.makedirs(outd, exist_ok=True)

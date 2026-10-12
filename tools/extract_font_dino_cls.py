@@ -12,7 +12,6 @@ import sys
 import time
 import numpy as np
 import torch
-import torch.nn.functional as F
 from PIL import Image
 from torchvision import transforms
 
@@ -54,7 +53,7 @@ def main():
 
     device = "cuda" if torch.cuda.is_available() else "cpu"
     print(f"=== 开始在本地 ({device}) 上抽取增强字体的 DINOv2 特征 ===")
-    print(f"显存上限约束: 进程 <= 4.0GB, 总显存 < 7.0GB")
+    print("显存上限约束: 进程 <= 4.0GB, 总显存 < 7.0GB")
 
     # 1. 加载补丁元数据
     rows = list(csv.DictReader(open(SUPP_CSV, encoding="utf-8")))

@@ -56,7 +56,7 @@ for f in FILES:
     total_removed += len(drop)
 
 print(f"\n  合计剔除: {total_removed} 行")
-print(f"  备份后缀: .bak_pairs")
+print("  备份后缀: .bak_pairs")
 
 # 复验
 print("\n  === 复验 ===")

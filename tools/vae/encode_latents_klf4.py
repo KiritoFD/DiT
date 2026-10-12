@@ -11,7 +11,7 @@ encode_latents_klf4.py — 用 kl-f4 VAE 编码全量 MCCD 图片 → shard_XXXX
   python tools/vae/encode_latents_klf4.py --csv assets/train_top30.csv --img-root final_images \
     --vae data/pretrained/kl-f4 --out data/latents/final_latents_f4 --shard-size 5000 --scaling-factor 0.102079
 """
-import os, sys, csv, json, glob, time, re, argparse
+import os, sys, csv, time, re, argparse
 sys.stdout.reconfigure(encoding="utf-8")
 import numpy as np
 import torch

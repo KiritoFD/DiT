@@ -90,7 +90,6 @@ def main():
 
     # 4. 立刻验证 lpips 能加载
     try:
-        import torch
         import lpips
         f = lpips.LPIPS(net="vgg").eval()
         print(f"[verify] ✓ lpips.LPIPS(net='vgg') 加载成功 "

@@ -18,7 +18,6 @@ PP-OCRv4 是**专用 OCR**（PP-OCRv4_rec_server，字表 6623 字），
 import argparse
 import csv
 import os
-import sys
 
 import numpy as np
 import onnxruntime as ort
@@ -131,7 +130,7 @@ rl = sum(1 for x in res
          if _c2t.convert(x["pred"]) == _c2t.convert(x["char"]))
 print(f"\n  ★ PP-OCRv4: exact={ex/max(len(res),1):.4f}  "
       f"relaxed(简繁)={rl/max(len(res),1):.4f}")
-print(f"\n  前 30 条:")
+print("\n  前 30 条:")
 for x in res[:30]:
     ok = "OK " if x["pred"] == x["char"] else "   "
     print(f"    {ok}{x['char']:>2} -> {x['pred']:<4} "

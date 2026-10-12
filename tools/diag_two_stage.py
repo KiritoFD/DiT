@@ -10,7 +10,6 @@ frag_ratio= 断笔率
 hole_*    = 空洞 (预测/GT)
 """
 import csv
-import glob
 import os
 import sys
 from collections import defaultdict

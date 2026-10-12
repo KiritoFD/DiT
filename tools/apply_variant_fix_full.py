@@ -191,5 +191,5 @@ with open("assets/variant_fixed_ids.csv", "w", newline="",
     w.writerow(["idx", "img_id", "old_char", "new_char"])
     for i, iid, o, n in todo:
         w.writerow([i, iid, o, n])
-print(f"  ✓ -> assets/variant_fixed_ids.csv")
+print("  ✓ -> assets/variant_fixed_ids.csv")
 print(f"\n  完成: csv {n_chg} / std {n_rend} / shards {n_shard}")

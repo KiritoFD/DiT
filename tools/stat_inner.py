@@ -22,7 +22,7 @@ print(f"\n  w_max<=60 且 inner>0.9 : {int(((w<=60)&(inn>0.9)).sum())}")
 print(f"  w_max<=60 且 inner>0.95: {int(((w<=60)&(inn>0.95)).sum())}")
 
 sel = np.nonzero((w <= 60) & (inn > 0.9))[0]
-print(f"\n  样例 (clean 判据下漏掉的反色/黑框图):")
+print("\n  样例 (clean 判据下漏掉的反色/黑框图):")
 for k in sel[:15]:
     r = rows[int(k)]
     print(f"    {r['image_path']} w={w[k]:5.1f} inner={inn[k]:.3f} "

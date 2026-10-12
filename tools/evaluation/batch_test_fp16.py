@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """batch_test_fp16.py — fp16 推理测试最大 batch。"""
-import os, sys, time, json, glob
+import os, sys, json, glob
 import numpy as np
 import torch
 sys.stdout.reconfigure(encoding="utf-8")
@@ -47,12 +47,12 @@ model = model_cls(
 ckpt = torch.load(first_ckpt, map_location="cpu", weights_only=False)
 model.load_state_dict(ckpt["ema"], strict=False)
 del ckpt
-log(f"[model] loaded, fp32 params")
+log("[model] loaded, fp32 params")
 
 # VAE
 from diffusers.models import AutoencoderKL
 vae = AutoencoderKL.from_pretrained(args.vae_path).to(device).eval()
-log(f"[vae] loaded")
+log("[vae] loaded")
 
 # DINO injection
 emb = np.load(args.char_dino_embeddings)
@@ -66,12 +66,12 @@ with torch.no_grad():
             e = emb[gi]
             e = e / (np.linalg.norm(e) + 1e-8)
             model.y_char_embedder.embedding_table.weight.data[gid] = torch.from_numpy(e).float()
-log(f"[dino] injected")
+log("[dino] injected")
 
 # Convert to fp16
 model.half()
 vae.half()
-log(f"[model+vae] converted to fp16")
+log("[model+vae] converted to fp16")
 
 from diffusion import create_diffusion
 ddim = create_diffusion("50")

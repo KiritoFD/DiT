@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-import os, sys, glob
+import os, glob
 import numpy as np
 import pandas as pd
 from PIL import Image

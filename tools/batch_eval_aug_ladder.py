@@ -18,7 +18,6 @@ import json
 import os
 import re
 import subprocess
-import sys
 import time
 
 DEFAULT_CKPT_DIR = "/home/ds/Workspace/DiT/experiments/capacity_ladder/results/tier3_b_aug_v66route"

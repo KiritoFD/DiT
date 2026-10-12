@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """peek_glyph_scale.py — 读多个 ckpt 的 glyph_scale 学习值 (快速对照 g 通路是否激活)."""
-import sys, glob, torch
+import glob, torch
 
 paths = {
     "v10b-GT-g(85000)": "assets/results/v10b_skel_only_pretrain/*/checkpoints/0085000.pt",

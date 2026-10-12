@@ -1,5 +1,4 @@
 import torch
-import json
 
 cache_path = "/home/ds/Workspace/moyi/data/top10_style23/eval_real200_cache.pt"
 cache = torch.load(cache_path, map_location="cpu")

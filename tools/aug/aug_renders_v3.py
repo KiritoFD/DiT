@@ -9,7 +9,6 @@ b1/b2/b3 = 同一算子不同强度: 测笔画宽 w, 朝带中 mid=(4.5+9)/2=6.7
 输出: data/imgs/fame3-e/<id>_{b1,b2,b3}.png + assets/train_fame3_e.csv
 """
 import csv
-import json
 import os
 import random
 import sys

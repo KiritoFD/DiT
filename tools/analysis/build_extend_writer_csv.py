@@ -1,9 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """tools/analysis/build_extend_writer_csv.py — 生成规范的 train_extend_writer.csv"""
-import os
 import sys
-import json
 import pandas as pd
 
 sys.stdout.reconfigure(encoding="utf-8")

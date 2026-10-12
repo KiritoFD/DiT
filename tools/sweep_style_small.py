@@ -6,7 +6,7 @@
 每个配置训完立即评测（留出 top1/top5 + 同字池富集 + pairwise AUC），分别存 ckpt。
 参照: 2.9M 大模型 (ch96 b512) => 字没见过 23.3% / 富集 3.13x / AUC 0.606。
 """
-import argparse, csv, glob, os, re, sys, time
+import argparse, csv, glob, os, re, time
 import numpy as np
 import torch
 import torch.nn as nn

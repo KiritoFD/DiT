@@ -1,5 +1,4 @@
 import os
-import sys
 import time
 from modelscope_hub.api import HubApi
 

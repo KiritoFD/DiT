@@ -3,10 +3,8 @@
 High-speed wild.zip password cracker with parallel threads.
 Generates ~50k candidates from a codebook and tests in parallel.
 """
-import os, sys, time, zipfile, itertools
+import os, time, zipfile
 from multiprocessing import Pool, cpu_count
-from threading import Thread
-import queue
 
 WILD = "/root/Workspace/xy/HCSU/wild.zip"
 
@@ -458,7 +456,7 @@ def main():
                         
                         with open("/root/Workspace/xy/HCSU/wild_password.txt", "w") as f:
                             f.write(pwd)
-                        print(f"Saved to wild_password.txt")
+                        print("Saved to wild_password.txt")
                         found = True
                         pool.terminate()
                         break

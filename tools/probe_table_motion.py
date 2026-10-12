@@ -46,7 +46,6 @@ def _pick_keys(sd, needle):
 
 def _row_cos_mean(a, b, eps=1e-8):
     """逐行余弦的平均（a,b 同形状 2D）。"""
-    import torch
     an = a / a.norm(dim=-1, keepdim=True).clamp_min(eps)
     bn = b / b.norm(dim=-1, keepdim=True).clamp_min(eps)
     return float((an * bn).sum(dim=-1).mean())
@@ -74,7 +73,6 @@ def main():
     ap.add_argument("--to", type=int, default=1000000, help="只看 <= 该步")
     a = ap.parse_args()
 
-    import torch
 
     files = sorted(glob.glob(os.path.join(a.ckpt_dir, "*.pt")))
     files = [(int(re.search(r"(\d+)\.pt$", f).group(1)), f) for f in files]

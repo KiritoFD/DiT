@@ -1,4 +1,3 @@
-import os
 
 with open("/home/ds/Workspace/DiT/experiments/ablation_phase_a/eval_ablation_model.py", "r", encoding="utf-8") as f:
     lines = f.readlines()

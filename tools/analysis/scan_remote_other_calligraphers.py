@@ -3,8 +3,7 @@
 """tools/analysis/scan_remote_other_calligraphers.py — 汇总 HCSU (wild/tie/bei) 中所有非 45 类的其他书法家资源"""
 import os
 import sys
-import json
-from collections import defaultdict, Counter
+from collections import defaultdict
 import pandas as pd
 
 sys.stdout.reconfigure(encoding="utf-8")

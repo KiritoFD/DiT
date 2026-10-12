@@ -4,7 +4,6 @@ sys.path.insert(0, base)
 sys.path.insert(0, os.path.join(base, "moyun"))
 
 import torch
-import torch.nn as nn
 from moyun_2 import DiT_models
 from utils.Sampler.RF import RF
 

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """tools/eval_v31_skelnet_standalone.py — 评估 v31_stage1_skel 骨架生成器的独立预测能力与质量"""
-import os, sys, glob, json, time
+import os, sys, glob, time
 import numpy as np
 import pandas as pd
 import torch as th
@@ -15,7 +15,6 @@ from src.eval import model_io
 from src.eval.inference import sample_latents, build_diffusion
 from src.eval.in_mem_eval import _get_vae, _get_cache
 from src.utils.callig_script_map import load_callig_script_map
-from types import SimpleNamespace
 
 def cl_dice_2d(a_bin, b_bin):
     from scipy.ndimage import binary_dilation
@@ -74,7 +73,7 @@ def main():
         # 4. 闭合率 = 1 - MSE(g_pred, g_gt) / MSE(g_std, g_gt)
         closure_rate = (1.0 - mse_pred_gt / max(mse_std_gt, 1e-6)) * 100.0
         
-        print(f"Latent 空间对比:")
+        print("Latent 空间对比:")
         print(f"  基线 MSE(std, gt):    {mse_std_gt:.5f} | 余弦相似度: {cos_std_gt:.4f}")
         print(f"  预测 MSE(pred, gt):   {mse_pred_gt:.5f} | 余弦相似度: {cos_pred_gt:.4f}")
         print(f"  闭合率 (Closure Rate): {closure_rate:.2f}%  (生成耗时: {t_sample:.1f}s)")
@@ -90,7 +89,7 @@ def main():
         im_g = ((dec_g.clamp(-1, 1) + 1) / 2).cpu().numpy()[:, 0]
         
         df_csv = pd.read_csv(csv_p)
-        print(f"\n前 3 个样本的形态学重合度与 ASCII 诊断:")
+        print("\n前 3 个样本的形态学重合度与 ASCII 诊断:")
         for i in range(min(3, n_eval)):
             ch = df_csv.iloc[i]["character"]
             c_name = df_csv.iloc[i]["calligrapher"]

@@ -174,7 +174,7 @@ def main():
             if tag in res and res[tag].get("radial_rec"):
                 lab = "新  " if tag == "new" else "对照"
                 print(f"    {lab}: " + "  ".join(f"{v:.4f}" for v in res[tag]["radial_rec"]))
-                print(f"    比值: " + "  ".join(f"{v:.3f}" for v in res[tag]["radial_ratio"]))
+                print("    比值: " + "  ".join(f"{v:.3f}" for v in res[tag]["radial_ratio"]))
         print("    → 判读: 高频带比值 <<1 且顶带份额却很高 = 用噪点/伪影换份额; 全带比值≈1 = 频谱保真良好")
     if a.out:
         json.dump(res, open(a.out, "w", encoding="utf-8"), ensure_ascii=False, indent=2)

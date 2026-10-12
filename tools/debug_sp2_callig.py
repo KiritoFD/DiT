@@ -65,13 +65,13 @@ def main():
     # ── 1. 生命信号 ──
     gs = getattr(model, "glyph_scale", None)
     cs = getattr(model, "callig_scale", None)
-    print(f"\n[1] 生命信号")
+    print("\n[1] 生命信号")
     print(f"  glyph_scale   = {gs.item():.4f} (init {a.get('glyph_scale_init')})")
     if cs is not None:
         print(f"  callig_scale  = {cs.item():.4f} (init {a.get('callig_scale_init', 1.0)})")
 
     # ── 2. callig embedding 塌缩检查 ──
-    print(f"\n[2] callig embedding 塌缩检查")
+    print("\n[2] callig embedding 塌缩检查")
     emb = None
     for name, p in model.named_parameters():
         if "callig" in name and "embed" in name and "weight" in name:
@@ -101,7 +101,7 @@ def main():
         print("  [未找到 callig embedding 权重]")
 
     # ── 3. 注入幅度 (callig 条件 vs t_emb 的幅度) ──
-    print(f"\n[3] callig 注入幅度")
+    print("\n[3] callig 注入幅度")
     try:
         with torch.no_grad():
             t_vec = torch.full((16,), 0.5)
@@ -123,7 +123,7 @@ def main():
     except Exception as ex:
         print(f"  [注入幅度诊断失败: {ex}]")
 
-    print(f"\n== 解读 ==")
+    print("\n== 解读 ==")
     print("  callig_scale 降/不动 + embedding 塌缩 + 两书家距离≈0 => 风格通路断裂(梯度/优化问题)")
     print("  embedding 分化好但风格仍统一          => 注入机制问题(信息算了但没进主干)")
 

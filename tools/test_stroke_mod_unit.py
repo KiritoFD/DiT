@@ -2,7 +2,6 @@ import sys
 sys.path.insert(0, '.')
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
 from src.model.deform_skel import DeformSkel
 
 def test_stroke_mod():

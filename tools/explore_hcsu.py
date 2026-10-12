@@ -1,5 +1,5 @@
 #!/opt/conda/envs/cu121/bin/python
-import os, sys
+import os
 os.environ["HF_ENDPOINT"] = "https://hf-mirror.com"
 
 from huggingface_hub import HfApi

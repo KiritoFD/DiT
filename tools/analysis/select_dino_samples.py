@@ -1,6 +1,6 @@
 """选取适合做 DINO embedding 验证的样本：
    挑选同一字符、多位书家写过的样本，用于验证 DINO 能否区分字符内容 vs 书家风格。"""
-import csv, os
+import csv
 from collections import defaultdict
 
 CSV = "assets/train_top30_clean.csv"
@@ -43,7 +43,7 @@ for s in selected:
     s["char_id"] = char2id.get(s["character"])
 
 print(f"选取 {len(selected)} 张图片，覆盖 {len(set(s['character'] for s in selected))} 个字符")
-print(f"\nTop 字符（按书家数排序）:")
+print("\nTop 字符（按书家数排序）:")
 for n, sid, char, calligs in ranked[:20]:
     script = {0:"楷",1:"篆",2:"草",3:"行",4:"隶"}[sid]
     print(f"  {script} {char} (U+{ord(char):05X}): {n} 位书家 — {', '.join(sorted(calligs.keys())[:6])}...")

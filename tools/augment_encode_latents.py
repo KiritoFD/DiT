@@ -4,13 +4,12 @@
 Phase A of the experiment plan.
 Uses multiprocessing for CPU PIL augmentation, GPU batch VAE encode.
 """
-import os, sys, csv, re, time, argparse, math, glob, multiprocessing as mp
+import os, sys, csv, re, time, argparse, glob, multiprocessing as mp
 from collections import Counter, defaultdict
 sys.stdout.reconfigure(encoding="utf-8")
 import numpy as np
 import torch
 from PIL import Image
-from functools import partial
 
 
 def count_combos(csv_path):
@@ -191,7 +190,7 @@ def main():
         p.requires_grad_(False)
 
     t2 = time.time()
-    print(f"GPU VAE encode with batch=32...")
+    print("GPU VAE encode with batch=32...")
     vae_bs = 32
     aug_latents = [(None, None)] * len(results)  # pre-allocate
 

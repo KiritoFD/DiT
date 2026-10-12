@@ -11,7 +11,7 @@ GT 是 csv 的繁体版，那几乎不可能是巧合 -> 强确认。
   只有其中一个 == X                    -> 弱（单模型可能错）
 """
 import csv
-from collections import Counter, defaultdict
+from collections import Counter
 
 from opencc import OpenCC
 
@@ -50,19 +50,19 @@ for ip, o in ocr.items():
     elif v_says:
         vlm_only.append((o, v))
 
-print(f"\n  === 交叉验证结果 ===")
+print("\n  === 交叉验证结果 ===")
 print(f"    ★★ OCR + VLM 都指向繁体: {len(strong)}")
 print(f"       仅 OCR:                {len(ocr_only)}")
 print(f"       仅 VLM:                {len(vlm_only)}")
 
-print(f"\n  === 强确认的字符对 Top25 ===")
+print("\n  === 强确认的字符对 Top25 ===")
 for (a, b), n in Counter((o["char_csv"], s2t.convert(o["char_csv"]))
                          for o, _ in strong).most_common(25):
     print(f"    {a} -> {b}: {n}")
 
-print(f"\n  === 强确认按书体 ===")
+print("\n  === 强确认按书体 ===")
 print(f"    {dict(Counter(o['script'] for o, _ in strong))}")
-print(f"\n  === 强确认按书家 Top12 ===")
+print("\n  === 强确认按书家 Top12 ===")
 for k, n in Counter(o["calligrapher"] for o, _ in strong).most_common(12):
     print(f"    {k}: {n}")
 
@@ -70,7 +70,7 @@ for k, n in Counter(o["calligrapher"] for o, _ in strong).most_common(12):
 cb = Counter("0.9+" if float(o["conf"]) >= 0.9 else
              "0.6-0.9" if float(o["conf"]) >= 0.6 else "<0.6"
              for o, _ in strong)
-print(f"\n  === 强确认的 OCR 置信度分布 ===")
+print("\n  === 强确认的 OCR 置信度分布 ===")
 print(f"    {dict(cb)}")
 
 with open("assets/mismatch_strong.csv", "w", newline="", encoding="utf-8") as f:

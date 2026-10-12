@@ -1,6 +1,5 @@
 import os
 import shutil
-from PIL import Image
 
 base = "assets/aligned_eval200_top10"
 

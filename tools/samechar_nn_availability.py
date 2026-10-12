@@ -4,7 +4,7 @@
 
 只有存在同书家候选的列, 才谈得上"最近邻是不是同书家"。
 """
-import csv, os, sys, collections
+import csv, os, sys
 import numpy as np
 os.chdir('/root/Workspace/xy/DiT'); sys.path.insert(0, '.')
 

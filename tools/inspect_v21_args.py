@@ -1,6 +1,4 @@
-import os
 import torch
-import json
 
 p = "/root/Workspace/xy/DiT/archive_experiments/results_archive_failed/failed_skelnet_runs/v21_skelnet_200k/20260926-005749-v21-skelnet-200k/checkpoints/0155000.pt"
 ckpt = torch.load(p, map_location="cpu")

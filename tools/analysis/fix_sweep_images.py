@@ -71,7 +71,7 @@ for st in STEPS:
             gi = np.array([ink(p) for p in group])
             scored.append((float(np.nanmean(np.abs(gi - gt_ink))), k, group))
         scored.sort()
-        print(f"    无干净前缀 -> 前/后各半: " + ", ".join(f"{k}:{d:.4f}" for d, k, _ in scored))
+        print("    无干净前缀 -> 前/后各半: " + ", ".join(f"{k}:{d:.4f}" for d, k, _ in scored))
         best = (scored[-1][0], scored[-1][1], scored[-1][2])   # 取离 GT 更远者
     d_gt, k, group = best
     group = sorted(group)

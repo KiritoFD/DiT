@@ -52,7 +52,7 @@ def main():
     Ys = Y.to(DEV)
 
     # 每条的风格: 用 train csv 的 slot
-    import csv, re
+    import csv
     rows = list(csv.DictReader(open('assets/train_top10_style23.csv', encoding='utf-8')))
     id2slot = {}
     slots = sorted({r['slot_name'] for r in rows})

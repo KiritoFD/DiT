@@ -35,7 +35,7 @@ def gib(x):
 def main():
     from src.model.deform_skel import DeformSkel
     from diffusers.models import AutoencoderKL
-    from scipy.ndimage import label, generate_binary_structure
+    from scipy.ndimage import generate_binary_structure
     from skimage.morphology import skeletonize
 
     vae = AutoencoderKL.from_pretrained('data/pretrained/pretrained_models/sd-vae-ft-ema',

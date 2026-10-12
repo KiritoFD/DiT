@@ -13,7 +13,6 @@
 """
 import argparse
 import csv
-import json
 import multiprocessing as mp
 import os
 import sys

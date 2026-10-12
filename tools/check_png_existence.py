@@ -1,6 +1,4 @@
 import os
-import glob
-from PIL import Image
 
 base = "/root/Workspace/xy/DiT"
 

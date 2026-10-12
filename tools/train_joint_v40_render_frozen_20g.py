@@ -90,7 +90,7 @@ def main():
     print(f"  Stage 2 Render 基模 : {a.render_ckpt} (★ 完全冻结, 33.2M S/2, SSIM 0.5812)")
     print(f"  训练集              : {a.csv} (26,002 条纯血古代书法真迹)")
     print(f"  物理 Batch 大小     : {a.batch} (实测占用 20.2 GB VRAM, ~3.0 step/s)")
-    print(f"  联合机制            : 1-Step 闭式 Tweedie 骨架投影 -> Render 传导图像视觉梯度")
+    print("  联合机制            : 1-Step 闭式 Tweedie 骨架投影 -> Render 传导图像视觉梯度")
     print("="*75 + "\n")
 
     from src.model.dit import DiT_2Cond_S_2
@@ -187,7 +187,7 @@ def main():
         eval_gt_imgs.append(tf(Image.open(p).convert("RGB")))
     eval_gt_imgs = th.stack(eval_gt_imgs).to(dev)
     eval_gt_imgs_norm = (eval_gt_imgs + 1.0) / 2.0
-    print(f"[eval] 已载入 200 样本纯真迹测试集 (覆盖 23 个风格槽位)", flush=True)
+    print("[eval] 已载入 200 样本纯真迹测试集 (覆盖 23 个风格槽位)", flush=True)
 
     best_e2e_ssim = 0.0
 

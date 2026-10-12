@@ -1,4 +1,4 @@
-import os, sys, glob, argparse
+import os, sys, argparse
 import numpy as np
 import torch as th
 from PIL import Image
@@ -64,7 +64,7 @@ def main():
     diff_eval = inference.build_diffusion(25, "flow")
 
     step_info = d.get("step", os.path.basename(a.ckpt).split(".")[0])
-    print(f"\n=================================================================")
+    print("\n=================================================================")
     print(f"【SkelNet-Sp 纯血真迹 200 样本评测 @ Checkpoint: {os.path.basename(a.ckpt)} ({weight_key})】")
     with th.no_grad():
         g_pred = inference.sample_latents(
@@ -100,7 +100,7 @@ def main():
     print(f"  骨架 SSIM (均值)   : {mean_ssim:.4f} (中位: {med_ssim:.4f})")
     print(f"  墨迹 SSIM (Ink)    : {mean_ink:.4f}")
     print(f"  破碎度 (frag_ratio): {mean_frag:.3f} (中位: {med_frag:.3f}, 1.0=完全连贯无破碎)")
-    print(f"=================================================================\n")
+    print("=================================================================\n")
 
     # 4. 渲染海报
     out_poster = a.out_poster

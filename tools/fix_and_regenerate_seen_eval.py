@@ -4,10 +4,8 @@
 import os
 import sys
 import glob
-import json
 import torch
 import numpy as np
-import pandas as pd
 from PIL import Image
 
 sys.stdout.reconfigure(encoding="utf-8")

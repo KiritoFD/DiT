@@ -13,7 +13,6 @@ import sys
 
 import numpy as np
 import torch
-import torch.nn.functional as F
 from PIL import Image
 from skimage.morphology import skeletonize
 from scipy import ndimage

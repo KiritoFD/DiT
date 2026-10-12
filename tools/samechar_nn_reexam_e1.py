@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """复查 E1(style LN) vs E0 —— 用**新接进 eval 的那个函数**，匹配 step，带计数与检验。"""
-import csv, glob, os, re, sys
+import csv, os, sys
 import numpy as np
 from PIL import Image
 os.chdir('/root/Workspace/xy/DiT'); sys.path.insert(0, '.')
-from src.eval.in_mem_eval import _samechar_nn_eval, _SAMECHAR_BYCHAR
+from src.eval.in_mem_eval import _samechar_nn_eval
 
 EV = 'assets/eval_v13_strict.csv'
 ev = list(csv.DictReader(open(EV, encoding='utf-8')))[:249]

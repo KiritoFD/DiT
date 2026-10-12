@@ -347,7 +347,7 @@ def main():
     print(f"  增量补丁 CSV 已保存: {supp_csv} ({len(supp_df)} 行)")
 
     # 合并完整终态训练集 CSV
-    print(f"\n[4/5] 合并生成完整终态训练集 CSV...")
+    print("\n[4/5] 合并生成完整终态训练集 CSV...")
     cols = [c for c in df.columns if c != "glyph"]
     supp_df = supp_df[cols]
     df_base = df[cols]
@@ -358,7 +358,7 @@ def main():
     print(f"  终态全量训练 CSV 已保存: {combined_csv} ({len(combined_df)} 行)")
 
     # 验证统计
-    print(f"\n[5/5] 全数据集 Glyph 稀疏性终验复核:")
+    print("\n[5/5] 全数据集 Glyph 稀疏性终验复核:")
     combined_df["glyph"] = combined_df["character"].astype(str) + "_" + combined_df["script"].astype(str)
     final_g_counts = combined_df["glyph"].value_counts()
     min_glyph_cnt = final_g_counts.min()
@@ -371,11 +371,11 @@ def main():
     print(f"  最终 Glyph 最少样本数: min(glyph_count) = {min_glyph_cnt}")
     print(f"  最终样本数 < 4 的 Glyph 数: {deficient_rem} 个 (100% 彻底清零！)")
 
-    print(f"\n本次 27,012 张增量的书体分布:")
+    print("\n本次 27,012 张增量的书体分布:")
     for s, c in supp_df["script"].value_counts().items():
         print(f"  书体 [{s}]: {c:5d} 张 ({c / len(supp_df) * 100:.1f}%)")
 
-    print(f"\n各名家共用槽位接收量前 10 位:")
+    print("\n各名家共用槽位接收量前 10 位:")
     for cal, c in supp_df["calligrapher"].value_counts().head(10).items():
         cid = supp_df[supp_df["calligrapher"] == cal]["calligrapher_id"].iloc[0]
         print(f"  大师: {cal:6s} (ID={cid:4d}): 接收 {c:5d} 张")

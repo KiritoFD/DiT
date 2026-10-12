@@ -10,8 +10,6 @@
 3. 综合推导“理论完美模型”在 eval200_fixed 测试集上的可达分数上限。
 """
 
-import os
-import sys
 import csv
 import glob
 import random
@@ -19,7 +17,6 @@ from collections import defaultdict
 
 import numpy as np
 import torch
-from PIL import Image
 from diffusers.models import AutoencoderKL
 from scipy.ndimage import correlate1d
 import lpips
@@ -79,7 +76,7 @@ def main():
         groups[key].append(str(r["img_id"]))
 
     multis = {k: v for k, v in groups.items() if len(v) >= 2}
-    print(f"\n--- 数据集书法多模态统计 ---")
+    print("\n--- 数据集书法多模态统计 ---")
     print(f"训练集总样本数: {len(rows):,}")
     print(f"独立 (书家, 书体, 汉字) 元组总数: {len(groups):,}")
     print(f"存在 >=2 张真实真迹的元组数: {len(multis):,} ({len(multis)/len(groups):.1%})")
@@ -129,8 +126,8 @@ def main():
     print(f"真迹自相关 LPIPS 均值: {np.mean(pair_lpipss):.4f}")
     print(f"真迹自相关 LPIPS 中位数: {np.median(pair_lpipss):.4f}")
     print("=" * 70)
-    print(f"★ 结论：在单标签条件 (c, s, ch) 下，模型的最大期望 SSIM 上界受限于真迹内在自相关均值 (~0.6588)。")
-    print(f"★ 扣除 VAE 解码损耗后，完美模型在测试集上的工程理论天花板为: 0.6250 ~ 0.6350。")
+    print("★ 结论：在单标签条件 (c, s, ch) 下，模型的最大期望 SSIM 上界受限于真迹内在自相关均值 (~0.6588)。")
+    print("★ 扣除 VAE 解码损耗后，完美模型在测试集上的工程理论天花板为: 0.6250 ~ 0.6350。")
 
 
 if __name__ == "__main__":

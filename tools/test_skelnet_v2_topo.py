@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 import os, sys, torch
-import numpy as np
 
 ROOT = "/root/Workspace/xy/DiT"
 if os.path.exists(ROOT):

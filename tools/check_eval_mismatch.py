@@ -5,7 +5,6 @@
 import csv
 import os
 import sys
-from collections import Counter
 
 import numpy as np
 from PIL import Image
@@ -61,7 +60,7 @@ for it in items:
                 it["_conf"] = float(res[0][2]) if len(res[0]) > 2 else 0.0
         except Exception:
             pass
-print(f"  OCR 完成")
+print("  OCR 完成")
 
 # ── 3) 导出给 VLM ────────────────────────────────────────────────────
 os.makedirs("assets", exist_ok=True)
@@ -101,6 +100,6 @@ rev = [it for it in items
        and t2s.convert(it["character"]) != it["character"]]
 print(f"\n  (对照) csv 繁体 -> OCR 简体: {len(rev)} 条（OCR 局限）")
 
-print(f"\n  === 一致率 ===")
+print("\n  === 一致率 ===")
 ok = sum(1 for it in items if it["_ocr"] == it["character"])
 print(f"    {ok}/{len(items)} = {ok/len(items)*100:.1f}%")

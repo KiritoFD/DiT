@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """eval_real200_e2e_gpu.py — 在 GPU 上以正统两阶段流水线评估 200 条纯血真迹测试集端到端成绩"""
-import os, sys, json, csv, re, time, argparse, math
+import os, sys, json, time, argparse
 import numpy as np
 import torch as th
 from PIL import Image
@@ -34,14 +34,14 @@ def parse_args():
 def main():
     a = parse_args()
     os.makedirs(a.out_dir, exist_ok=True)
-    print(f"\n=================================================================")
-    print(f"【两阶段端到端真迹评测系统 (200 样本纯血真迹)】")
+    print("\n=================================================================")
+    print("【两阶段端到端真迹评测系统 (200 样本纯血真迹)】")
     print(f"  Stage 1 SkelNet-Sp : {a.gen_ckpt}")
     print(f"  Stage 2 Backbone   : {a.bak_ckpt}")
-    print(f"=================================================================\n")
+    print("=================================================================\n")
 
     # 1. 载入模型
-    from src.model.dit import DiT_2Cond_Sp_2, DiT_2Cond_S_2
+    from src.model.dit import DiT_2Cond_Sp_2
     
     # 1.1 Stage 1 SkelNet-Sp
     gen = DiT_2Cond_Sp_2(
@@ -57,13 +57,12 @@ def main():
     sd_gen = d_gen.get("model", d_gen)
     sd_gen = {k[len("_orig_mod."):] if k.startswith("_orig_mod.") else k: v for k, v in sd_gen.items()}
     gen.load_state_dict(sd_gen)
-    print(f"[model] Stage 1 SkelNet-Sp (65.4M) 已成功载入 online 权重")
+    print("[model] Stage 1 SkelNet-Sp (65.4M) 已成功载入 online 权重")
 
     # 1.2 Stage 2 Backbone
-    from src.eval import model_io
     bak, _ = model_io.load_model_from_ckpt(a.bak_ckpt, device=dev, use_ema=True)
     bak.eval()
-    print(f"[model] Stage 2 Backbone 已成功载入权重", flush=True)
+    print("[model] Stage 2 Backbone 已成功载入权重", flush=True)
 
     # 2. 载入 200 黄金真迹评测缓存
     cache = th.load(a.eval_cache, map_location="cpu", weights_only=False)
@@ -75,7 +74,7 @@ def main():
     gt_skel_pngs = cache["gt_pngs"].to(dev)
     std_pngs = cache["std_pngs"].to(dev)
     n = len(rows)
-    print(f"[data] 已载入 200 样本纯血真迹评测集 (覆盖 23 个风格槽位)")
+    print("[data] 已载入 200 样本纯血真迹评测集 (覆盖 23 个风格槽位)")
 
     # 3. 载入真实真迹原图 (用于最终成画图像指标评测)
     vae = _get_vae(dev, "data/pretrained/pretrained_models/sd-vae-ft-ema").eval()
@@ -112,7 +111,7 @@ def main():
     print(f"[run] 推理完成! 200 样本总耗时: {dt:.2f}s ({n/dt:.1f} samples/s)")
 
     # 5. VAE 解码与指标计算
-    print(f"\n[metric] VAE 解码与多维指标计算...")
+    print("\n[metric] VAE 解码与多维指标计算...")
     with th.no_grad():
         dec_skel_list = []
         dec_e2e_list = []
@@ -159,13 +158,13 @@ def main():
     print("\n" + "="*70)
     print("【两阶段纯血真迹 200 样本端到端评测最终成绩单】:")
     print("-" * 70)
-    print(f"  1. Stage 1 骨架生成质量:")
+    print("  1. Stage 1 骨架生成质量:")
     print(f"     - 骨架 SSIM (均值)   : {skel_mean_ssim:.4f} (中位: {skel_med_ssim:.4f})")
     print(f"     - 破碎度 (frag_ratio): {mean_frag:.3f} (中位: {med_frag:.3f}) [1.0=完全连贯无破碎!]")
-    print(f"  2. Stage 2 两阶段端到端 (E2E):")
+    print("  2. Stage 2 两阶段端到端 (E2E):")
     print(f"     - 成画 SSIM (均值)   : {e2e_mean_ssim:.4f} (中位: {e2e_med_ssim:.4f})")
     print(f"     - 墨迹 SSIM (Ink)    : {e2e_ink_ssim:.4f}")
-    print(f"  3. Stage 2 Oracle 理论上界 (真实 GT 骨架输入):")
+    print("  3. Stage 2 Oracle 理论上界 (真实 GT 骨架输入):")
     print(f"     - 上界 SSIM (均值)   : {ora_mean_ssim:.4f} (中位: {ora_med_ssim:.4f})")
     print("="*70 + "\n")
 

@@ -20,7 +20,6 @@ PP-OCRv4 的 rec 模型是为**文本行**训练的（输入 48x320，一行多�
 import argparse
 import csv
 import os
-import sys
 
 import numpy as np
 import onnxruntime as ort
@@ -154,7 +153,7 @@ rl = sum(1 for x in res
          if _c2t.convert(x["pred"]) == _c2t.convert(x["char"]))
 print(f"\n  ★ PP-OCRv4 拼接(group={a.group}): "
       f"exact={ex/max(len(res),1):.4f}  relaxed={rl/max(len(res),1):.4f}")
-print(f"\n  前 24 条:")
+print("\n  前 24 条:")
 for x in res[:24]:
     ok = "OK " if x["pred"] == x["char"] else "   "
     print(f"    {ok}{x['char']:>2} -> {x['pred']:<3}  "

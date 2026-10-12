@@ -20,7 +20,7 @@ import argparse
 import json
 import csv
 import time
-from typing import Dict, Any, List
+from typing import List
 
 # 保证在工作目录下运行
 BASE_DIR = "/root/Workspace/xy/DiT"
@@ -181,9 +181,9 @@ def infer_stage_on_eval200(
     selected_indices: List[int] = None
 ):
     stage_id = meta["stage_id"]
-    print(f"\n=======================================================")
+    print("\n=======================================================")
     print(f"▶ 正在运行阶段推理: [{stage_id}] {meta['name']}")
-    print(f"=======================================================")
+    print("=======================================================")
     
     stage_out_dir = os.path.join(out_dir, stage_id)
     os.makedirs(stage_out_dir, exist_ok=True)

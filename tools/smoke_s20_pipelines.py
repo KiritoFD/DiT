@@ -7,7 +7,7 @@
   3. 现代化骨干 + Heun/logit-normal 能跑通 forward/backward
   4. 采样循环（Heun, 25 步）输出有限且形状正确
 """
-import io, json, os, sys, glob, subprocess, time
+import io, json, os, sys, time
 
 BASE = "/root/Workspace/xy/DiT"
 os.chdir(BASE)
@@ -84,7 +84,7 @@ print(f"    unknown rows   : {len(unknown)}  -> filled with DINO mean (norm={fv.
 print(f"    known norm     : {kn.mean():.4f} ± {kn.std():.4f}")
 print(f"    unknown norm   : {un.mean():.4f} ± {un.std():.4f}  (应与 known 同量级 = 1.0)")
 assert torch.allclose(null_before, table.weight[NC]), "CFG null token 被覆盖!"
-print(f"    CFG null token : 未被覆盖 OK")
+print("    CFG null token : 未被覆盖 OK")
 assert abs(un.mean() - 1.0) < 0.01, f"unknown 行范数异常: {un.mean()}"
 
 # ---------- 3. 模型 forward/backward ----------
@@ -181,7 +181,7 @@ with torch.no_grad():
                                   clip_denoised=False, model_kwargs=mk4, device="cuda")
 diff = (out - out_e).abs().mean().item()
 print(f"    Heun@25 vs Euler@50 (同 NFE=50): mean|diff| = {diff:.5f}")
-print(f"    (差异小说明两者一致；未训练模型上不代表质量差异)")
+print("    (差异小说明两者一致；未训练模型上不代表质量差异)")
 
 # ---------- 5. ControlNet 管线 ----------
 print("\n[5] ControlNet 管线")
@@ -236,7 +236,7 @@ for step in range(20):
               f"inj.grad={g_inj.abs().sum().item() if g_inj is not None else 0:.3e}")
 print(f"    20 steps in {time.time()-t0:.2f}s")
 assert all(not p.requires_grad for p in cnet.main.parameters()), "主模型未冻结!"
-print(f"    主模型保持冻结: OK")
+print("    主模型保持冻结: OK")
 
 print("\n" + "=" * 78)
 print("SMOKE TEST PASSED")

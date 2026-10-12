@@ -1,5 +1,5 @@
 import csv
-from collections import defaultdict, Counter
+from collections import defaultdict
 
 rows = list(csv.DictReader(open('/root/Workspace/xy/DiT/assets/train_fame3_clean_v8.csv', encoding='utf-8')))
 # 组合 key = (calligrapher_id, glyph_id/character_id)

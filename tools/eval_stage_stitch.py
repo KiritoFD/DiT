@@ -45,7 +45,6 @@ def main():
     from src.eval.in_mem_eval import _get_vae
     from src.utils.callig_script_map import map_callig_script
     from PIL import Image
-    from scipy.ndimage import skeletonize
 
     GEN_CK = sorted(glob.glob("assets/results/v33_stage1_xs/*/checkpoints/0*.pt"))[-1]
     BAK_CK = sorted(glob.glob("assets/results/v32_stage2_img/*/checkpoints/0*.pt"))[-1]

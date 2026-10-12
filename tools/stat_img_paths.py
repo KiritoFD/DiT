@@ -21,7 +21,6 @@ for r in rows:
         pat["other"] += 1
 print("path patterns:", dict(pat))
 # check existence on a few
-import glob
 for r in rows[:5]:
     p = r["image_path"]
     full = os.path.join(BASE, p) if not os.path.isabs(p) else p

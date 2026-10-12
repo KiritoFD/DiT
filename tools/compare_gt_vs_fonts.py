@@ -4,7 +4,6 @@
 import os
 import sys
 import shutil
-import cv2
 import numpy as np
 from PIL import Image, ImageDraw, ImageFont
 from skimage.metrics import structural_similarity as ssim

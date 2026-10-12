@@ -1,13 +1,11 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """tools/analysis/audit_salvage_image_quality.py — 全面质检 MCCD 4,421 张待打捞真迹图像质量、反色与噪点"""
-import os
 import sys
 import numpy as np
 import pandas as pd
 from PIL import Image
 import cv2
-from scipy.ndimage import label
 
 sys.stdout.reconfigure(encoding="utf-8")
 

@@ -33,4 +33,4 @@ shard_aux = os.path.join(base, "data/50k/shards_aux_skel3")
 if os.path.exists(shard_aux):
     print(f"shards_aux_skel3 found: {len(os.listdir(shard_aux))} files")
 else:
-    print(f"shards_aux_skel3 NOT found")
+    print("shards_aux_skel3 NOT found")

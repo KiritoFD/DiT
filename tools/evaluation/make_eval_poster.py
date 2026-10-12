@@ -250,12 +250,12 @@ def main():
     seen5_meta = _find_group_meta(args.seen5_csv)
     if n_seen:
         sx = GAP + 0 * 3 * CELL
-        draw.text((sx + 6, gy), f"SHOW5 (unseen)", font=font, fill=(120, 200, 255))
+        draw.text((sx + 6, gy), "SHOW5 (unseen)", font=font, fill=(120, 200, 255))
         draw.text((sx + 6, gy + 18), " | ".join(
             f"#{i+1}{('·'+(show5_meta[i][1] if i < len(show5_meta) and show5_meta[i][1] else ''))}" for i in range(n_show)),
             font=font_s, fill=(150, 165, 190))
         sx = GAP + n_show * 3 * CELL
-        draw.text((sx + 6, gy), f"SEEN5 (train)", font=font, fill=(255, 200, 120))
+        draw.text((sx + 6, gy), "SEEN5 (train)", font=font, fill=(255, 200, 120))
         draw.text((sx + 6, gy + 18), " | ".join(
             f"#{i+1}{('·'+(seen5_meta[i][1] if i < len(seen5_meta) and seen5_meta[i][1] else ''))}" for i in range(n_seen)),
             font=font_s, fill=(150, 165, 190))

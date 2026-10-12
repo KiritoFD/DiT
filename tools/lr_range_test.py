@@ -129,7 +129,7 @@ def main():
     lrs = np.array([r[0] for r in results])
     losses = np.array([r[1] for r in results])
     best_i = int(np.argmin(losses))
-    print(f"\n[结论]")
+    print("\n[结论]")
     print(f"  loss 最低点: lr={lrs[best_i]:.2e} loss={losses[best_i]:.4f}")
     print(f"  保守建议 (最低点/10): lr={lrs[best_i]/10:.2e}")
     print(f"  激进建议 (最低点):    lr={lrs[best_i]:.2e}")
@@ -138,7 +138,7 @@ def main():
     steep_i = int(np.argmin(dl))
     print(f"  loss 陡降最快的 LR: {lrs[steep_i]:.2e} (该区为'还在快速下降'区)")
     np.savez("/tmp/lr_range_test.npz", lrs=lrs, losses=losses)
-    print(f"  曲线已存 /tmp/lr_range_test.npz")
+    print("  曲线已存 /tmp/lr_range_test.npz")
 
 
 if __name__ == "__main__":

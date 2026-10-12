@@ -1,6 +1,5 @@
 import os
 import glob
-import json
 
 print("=== 1. 检查 48 机器上 moyi_4ch 的完整情况 ===")
 p_moyi4 = "/home/ds/Workspace/moyi/results/moyi_top10_rf_4ch"

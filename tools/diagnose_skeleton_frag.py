@@ -1,7 +1,6 @@
 import os, sys, json, csv, re
 import numpy as np
 import torch as th
-from PIL import Image
 
 ROOT = "/root/Workspace/xy/DiT"
 os.chdir(ROOT)
@@ -14,7 +13,6 @@ from src.eval.in_mem_eval import _get_vae
 from src.eval.inference import sample_latents, build_diffusion
 from src.eval.metrics import frag_ratio
 from src.utils.callig_script_map import map_callig_script
-import torchvision.transforms as T
 
 # Load Step 10,000 ckpt
 ckpt_path = "exp/v35_union/20261002-003600-v35-union-1step/checkpoints/0010000.pt"
@@ -75,7 +73,7 @@ frags_v31 = frag_ratio(v31_np, std_np)
 frags_union = frag_ratio(union_np, std_np)
 
 print("=== 骨架破碎度 (frag_ratio) 现场诊断对比 (n=10) ===")
-print(f"标准字骨架 基准破碎度 : 1.000")
+print("标准字骨架 基准破碎度 : 1.000")
 print(f"v31 原版 Stage 1 骨架破碎度 : {np.mean(frags_v31):.3f}")
 print(f"v35 联训后 Stage 1 骨架破碎度: {np.mean(frags_union):.3f}")
 

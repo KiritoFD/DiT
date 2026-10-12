@@ -1,6 +1,5 @@
 import os
 import sys
-import json
 from PIL import Image, ImageDraw, ImageFont
 
 sys.stdout.reconfigure(encoding="utf-8")

@@ -142,7 +142,6 @@ def phase_a(args, rows, need_aug, combo2rows):
 
 def phase_b(args, aug_meta):
     """GPU 编码增强 PNG → 临时 latent shard."""
-    import torch
     device = torch.device("cuda")
     print("Loading VAE...")
     from diffusers import AutoencoderKL
@@ -190,7 +189,6 @@ def phase_c(args, rows, aug_meta):
 
     只保留 rows 中出现的 img_id (清洗后), 丢弃被剔除的国标外样本 latent.
     """
-    import glob
     os.makedirs(args.out_latent, exist_ok=True)
 
     # 收集清洗后 csv 的 img_id 集合 (只保留这些原 latent)

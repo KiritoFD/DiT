@@ -86,6 +86,6 @@ print(f"    不一致:   {len(mismatch)}")
 c = Counter(m[4] for m in mismatch)
 print(f"    其中属于简繁关系的: {c.get('简繁', 0)}")
 
-print(f"\n  === 不一致样例（前 25）===")
+print("\n  === 不一致样例（前 25）===")
 for truth, pred, sc, cal, rel in mismatch[:25]:
     print(f"    csv={truth!r}  OCR={pred!r}  [{sc}/{cal}]  {rel}")

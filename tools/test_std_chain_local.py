@@ -163,7 +163,7 @@ def main():
             h = model.glyph_embedder.register_forward_pre_hook(
                 lambda mod, inp: seen.setdefault("x", inp[0].detach()))
             try:
-                from src.eval.in_mem_eval import _get_cache, run_in_mem_eval
+                from src.eval.in_mem_eval import run_in_mem_eval
                 # 只评 1 张：借首个 set 的 csv，n=1
                 spec = cfg["in_mem_eval_sets"].split(",")[0].split(":")
                 args.in_mem_eval_sets = "%s:%s:1" % (spec[0], spec[1])

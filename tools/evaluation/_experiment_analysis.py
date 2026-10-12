@@ -2,8 +2,7 @@
 Comprehensive S vs B experiment comparison + scaling projection.
 Pulls data from all available experiments on remote.
 """
-import json, sys, re
-import numpy as np
+import sys
 
 sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 
@@ -125,7 +124,7 @@ print("─" * 90)
 
 # SSIM at various milestones
 milestones = [5000, 10000, 20000, 30000, 50000]
-print(f"\n  SSIM at milestones:")
+print("\n  SSIM at milestones:")
 print(f"  {'Step':>8}  {'S7(XL)':>8}  {'S8(XL)':>8}  {'S10(B)':>8}  {'B/Big%':>8}")
 for ms in milestones:
     s7v = s7_map.get(ms, (None, None))[1]

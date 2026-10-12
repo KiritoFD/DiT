@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """tools/analysis/inspect_top10_and_eval.py — 审计 Top 10 书家体系与现有 eval 集兼容性"""
-import os
 import sys
 import pandas as pd
 

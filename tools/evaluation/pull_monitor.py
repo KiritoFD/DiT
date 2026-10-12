@@ -8,8 +8,8 @@
   python pull_monitor.py            # 拉一次
   python pull_monitor.py --loop    # 每 --interval 秒循环（默认 120）
 """
-import os, re, sys, json, time, glob, io, tarfile
-import subprocess, datetime, sys
+import os, re, sys, json, time
+import subprocess, datetime
 
 REMOTE_USER = "root"
 REMOTE_HOST = "10.176.54.17"

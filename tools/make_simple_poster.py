@@ -4,8 +4,7 @@
 Each row = one eval step. Columns = [gen0, gt0, gen1, gt1, ...] for N samples.
 Top row = step labels with SSIM/MSE. Bottom row = nothing.
 """
-import os, sys, json, glob, re, argparse
-import numpy as np
+import os, json, glob, re, argparse
 from PIL import Image, ImageDraw, ImageFont
 
 CELL = 128

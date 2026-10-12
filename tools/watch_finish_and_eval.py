@@ -11,7 +11,6 @@
 
 import os
 import subprocess
-import sys
 import time
 
 CKPT_DIR = "/home/ds/Workspace/DiT/experiments/capacity_ladder/results/tier3_b_aug/20261006-025311-cap_tier3_b_aug_10h/checkpoints"

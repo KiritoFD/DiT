@@ -95,11 +95,11 @@ def main():
 
     R = np.stack(Rs)
     S = np.array(slots)
-    print(f"\n[1] 目标与输入的固有重合度")
+    print("\n[1] 目标与输入的固有重合度")
     print(f"    cos(x0, g) = {np.mean(cos_xg):.4f}   <- 越高说明'照抄'越接近答案")
     print(f"    残差能量占比 ≈ 1 - cos² = {1 - np.mean(cos_xg)**2:.3f}")
 
-    print(f"\n[2] 残差的风格可解释性 (按槽位做方差分解)")
+    print("\n[2] 残差的风格可解释性 (按槽位做方差分解)")
     tot = R.var(axis=0).sum() + (R.mean(axis=0) ** 2).sum() * 0  # 总方差(含均值)
     grand = R.mean(axis=0)
     tot_ss = float(((R - grand) ** 2).sum())
@@ -114,7 +114,7 @@ def main():
     print(f"    ★ R²_style = {r2*100:.2f}%   <- 风格槽位能解释的残差方差")
     print(f"    -> 其余 {100 - r2*100:.2f}% 是**同槽位内的逐字差异**, 只给风格向量推不出来")
 
-    print(f"\n[3] 同一 (槽位,字) 是否有多张 (决定能否学逐字结构)")
+    print("\n[3] 同一 (槽位,字) 是否有多张 (决定能否学逐字结构)")
     mult = sum(1 for v in by_pair.values() if v > 1)
     print(f"    (槽位,字) 组合数 {len(by_pair)}, 其中样本数>1 的 {mult} "
           f"({mult/max(len(by_pair),1)*100:.1f}%)")

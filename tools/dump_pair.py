@@ -2,7 +2,6 @@
 import os
 import sys
 
-import numpy as np
 from PIL import Image
 
 ROOT = "/root/Workspace/xy/DiT"

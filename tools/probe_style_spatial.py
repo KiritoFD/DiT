@@ -70,8 +70,6 @@ def main():
 
     import numpy as np
     import torch as th
-    from PIL import Image
-    from scipy import ndimage
 
     dev = th.device(a.device if th.cuda.is_available() else "cpu")
 

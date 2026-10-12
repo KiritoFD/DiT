@@ -3,8 +3,7 @@
 """tools/analysis/aggregate_other_calligraphers.py — 汇总统计 HCSU 与 MCCD 中所有非 45 类的其他书法家资源"""
 import os
 import sys
-import json
-from collections import defaultdict, Counter
+from collections import defaultdict
 import pandas as pd
 
 sys.stdout.reconfigure(encoding="utf-8")

@@ -1,5 +1,4 @@
 import os, sys, time
-import numpy as np
 import torch as th
 
 sys.path.insert(0, "/root/Workspace/xy/DiT")
@@ -7,7 +6,7 @@ os.chdir("/root/Workspace/xy/DiT")
 
 dev = th.device("cuda")
 
-from src.model.dit import DiT_2Cond_Sp_2, DiT_2Cond_S_2
+from src.model.dit import DiT_2Cond_Sp_2
 from src.eval import model_io
 
 gen = DiT_2Cond_Sp_2(

@@ -8,7 +8,7 @@
   ③ 换书家条件 -> g' 真的变（且幅度合理）
   ④ step0 不再恒等（因为载入了训好的权重）—— 这是**预期行为**
 """
-import sys, json, os
+import sys, os
 import torch
 sys.path.insert(0, '/root/Workspace/xy/DiT')
 os.chdir('/root/Workspace/xy/DiT')

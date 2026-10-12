@@ -40,7 +40,7 @@ def main():
         print(f"错误: 找不到补丁元数据: {CSV_PATH}")
         sys.exit(1)
 
-    print(f"=== 本地 GPU (RTX 4070) VAE Latent 编码器启动 ===")
+    print("=== 本地 GPU (RTX 4070) VAE Latent 编码器启动 ===")
     print(f"输入 CSV: {CSV_PATH}")
     print(f"输出根目录: {OUT_BASE}")
     print(f"VAE 模型: {VAE_PATH}")

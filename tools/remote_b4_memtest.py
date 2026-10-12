@@ -3,7 +3,7 @@
 """远程 GPU: 实测 B/4 模型在不同 batch 下的显存峰值。
 逐步增大 batch, 记录峰值显存, 找到 24G 下的最大可行 batch。
 """
-import os, sys, gc
+import sys, gc
 sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 
 import torch
@@ -99,10 +99,10 @@ def main():
         max_bs, max_mb = max(ok_batches, key=lambda x: x[0])
         print(f"\n=== 最大可行 batch: {max_bs} (peak {max_mb/1e3:.2f} GB) ===")
     else:
-        print(f"\n=== 所有 batch 都 OOM ===")
+        print("\n=== 所有 batch 都 OOM ===")
 
     # 速度估算: 跑 10 步计时
-    print(f"\n=== 速度测试 ===")
+    print("\n=== 速度测试 ===")
     import time
     for test_bs in [32, 48, 64, 96]:
         if not any(bs == test_bs for bs, _ in ok_batches):

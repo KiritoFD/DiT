@@ -55,7 +55,7 @@ for dataset, ann_list in [("bei", bei_ann), ("tie", tie_ann)]:
     print(f"New calligraphers ({len(new_cals)}): {new_cals}")
     
     # Summary for new calligraphers
-    print(f"\n--- New calligrapher details ---")
+    print("\n--- New calligrapher details ---")
     for cal in new_cals:
         d2 = cal_ann[cal]
         print(f"  {cal}: {d2['total']} imgs, {len(d2['chars'])} chars, clear={d2['clear']}, blurry={d2['blurry']}, scripts={sorted(d2['scripts'])}")

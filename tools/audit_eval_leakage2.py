@@ -59,7 +59,7 @@ def main():
     print(f"[eval] 187 行中: (书家,书体,字) 见过 {n3} / (书家,字) 见过 {n2} / 仅字见过 {n1}")
     print(f"[eval] 不同字 {len({r['character'] for r in ev})} 个, "
           f"其中在训练字表里 {len({r['character'] for r in ev} & seen1)} 个")
-    print(f"[eval] 样本级 (img_id/image_path) 与训练重叠: 0 (见 audit_eval_leakage.py)")
+    print("[eval] 样本级 (img_id/image_path) 与训练重叠: 0 (见 audit_eval_leakage.py)")
 
     # 档位
     tier_map = {}

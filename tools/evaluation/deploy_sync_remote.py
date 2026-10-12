@@ -5,7 +5,6 @@ Robust deployment script to sync code changes to remote 4090 server.
 """
 
 import os
-import sys
 import tarfile
 import base64
 import subprocess

@@ -1,6 +1,6 @@
 """分析 rapidocr 全量结果：简繁错配的分布 + 高置信度子集。"""
 import csv
-from collections import Counter, defaultdict
+from collections import Counter
 
 rows = list(csv.DictReader(open("assets/ocr_gpu_scan.csv", encoding="utf-8")))
 print(f"  n={len(rows)}")
@@ -16,7 +16,7 @@ def conf_bin(f):
             "0.6-0.9" if f < 0.9 else "0.9-1.0")
 
 
-print(f"\n  === 简繁错配的置信度分布 ===")
+print("\n  === 简繁错配的置信度分布 ===")
 cb = Counter(conf_bin(float(r["conf"])) for r in rel)
 for k in ("0-0.3", "0.3-0.6", "0.6-0.9", "0.9-1.0"):
     n = cb.get(k, 0)
@@ -26,18 +26,18 @@ for k in ("0-0.3", "0.3-0.6", "0.6-0.9", "0.9-1.0"):
 hi = [r for r in rel if float(r["conf"]) >= 0.9]
 print(f"\n  ★ 高置信度(>=0.9)简繁错配: {len(hi)}")
 
-print(f"\n  === 按书体 ===")
+print("\n  === 按书体 ===")
 print(f"    {dict(Counter(r['script'] for r in rel))}")
-print(f"\n  === 按书家 Top15 ===")
+print("\n  === 按书家 Top15 ===")
 for k, v in Counter(r["calligrapher"] for r in rel).most_common(15):
     print(f"    {k}: {v}")
 
-print(f"\n  === 错配的字符对 Top25 ===")
+print("\n  === 错配的字符对 Top25 ===")
 pairs = Counter((r["char_csv"], r["char_ocr"]) for r in rel)
 for (a, b), v in pairs.most_common(25):
     print(f"    {a} -> {b}: {v}")
 
-print(f"\n  === 高置信度错配样例 20 ===")
+print("\n  === 高置信度错配样例 20 ===")
 for r in hi[:20]:
     print(f"    {r['char_csv']} -> {r['char_ocr']}  conf={r['conf']}  "
           f"[{r['script']}/{r['calligrapher']}]")

@@ -6,7 +6,6 @@ Inspect remote dataset data quality, grey ratio, color contamination, and backgr
 
 import subprocess
 import json
-import sys
 
 REMOTE_HOST = "root@10.176.54.17"
 REMOTE_PORT = "36430"

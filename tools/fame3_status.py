@@ -8,7 +8,7 @@
 
 单次 ssh 批量采集: 训练日志 + GPU + ckpt + eval json + follow 诊断.
 """
-import argparse, json, os, re, subprocess, sys
+import argparse, json, os, re, subprocess
 from datetime import datetime
 
 REMOTE = "4090"
@@ -34,7 +34,7 @@ def ssh_batch(cmd, timeout=30):
 def build_remote_script(exp, compare, logpath):
     parts = []
     parts.append(f"echo '===SECTION:TRAINLOG==='; tail -40 {logpath} 2>/dev/null")
-    parts.append(f"echo '===SECTION:GPU==='; nvidia-smi --query-gpu=utilization.gpu,memory.used,memory.total,temperature.gpu --format=csv,noheader 2>/dev/null")
+    parts.append("echo '===SECTION:GPU==='; nvidia-smi --query-gpu=utilization.gpu,memory.used,memory.total,temperature.gpu --format=csv,noheader 2>/dev/null")
     parts.append(f"echo '===SECTION:ACTIVE==='; cat {RESULTS_ROOT}/{exp}/_active_ckpt_dir.txt 2>/dev/null")
     parts.append(f"echo '===SECTION:CKPT_LIST==='; ACTIVE=$(cat {RESULTS_ROOT}/{exp}/_active_ckpt_dir.txt 2>/dev/null); CKPT_DIR={REMOTE_ROOT}/$ACTIVE; ls -1 $CKPT_DIR/*.pt 2>/dev/null | sort | tail -6")
     parts.append(f"echo '===SECTION:EVAL_LIST==='; ACTIVE=$(cat {RESULTS_ROOT}/{exp}/_active_ckpt_dir.txt 2>/dev/null); CKPT_DIR={REMOTE_ROOT}/$ACTIVE; for f in $(ls -1 $CKPT_DIR/eval_auto_*.json 2>/dev/null | sort); do echo '---EVALFILE---'; cat $f; done")
@@ -176,7 +176,7 @@ def main():
         print("  [无训练日志]")
 
     # 2. GPU
-    print(f"\n[2] GPU")
+    print("\n[2] GPU")
     gpu = sec.get("GPU", "").strip()
     print(f"  {gpu or '[n/a]'}")
 
@@ -191,7 +191,7 @@ def main():
         print("  [无 ckpt]")
 
     # 4. eval
-    print(f"\n[4] eval (auto)")
+    print("\n[4] eval (auto)")
     evals = parse_eval_list(sec.get("EVAL_LIST", ""))
     if evals:
         for r in evals:
@@ -228,7 +228,7 @@ def main():
         except json.JSONDecodeError:
             print("  [debug_stdskel.json 解析失败]")
     else:
-        print(f"  [无 debug_stdskel.json — 用 tools/debug_fame3_stdskel.py 生成]")
+        print("  [无 debug_stdskel.json — 用 tools/debug_fame3_stdskel.py 生成]")
 
     print(f"\n{'='*80}")
 

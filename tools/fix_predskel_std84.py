@@ -1,4 +1,4 @@
-import os, sys, glob, csv, re
+import os, glob, csv, re
 import numpy as np
 
 ROOT = "/root/Workspace/xy/DiT"

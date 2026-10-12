@@ -82,7 +82,7 @@ def main():
             im.resize((256, 256), Image.NEAREST).save(f"/tmp/wv/{i}_wdt{w1:.0f}_{ch}.png")
         except Exception:
             shutil_ok = False
-    print(f"\n  -> /tmp/wv (原尺寸 256, NEAREST 放大便于目测笔画宽度)")
+    print("\n  -> /tmp/wv (原尺寸 256, NEAREST 放大便于目测笔画宽度)")
 
     # 全局分布 (对 一/七 这类简单字)
     ws = np.array([x[3] for x in recs])

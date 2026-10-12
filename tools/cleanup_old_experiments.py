@@ -16,7 +16,6 @@ cleanup_old_experiments.py — 旧实验整理 + ckpt 抽稀清理 (约 1/10 保
   /opt/conda/bin/python tools/cleanup_old_experiments.py --apply    # 执行删除
 """
 import os
-import sys
 import csv
 import json
 import glob

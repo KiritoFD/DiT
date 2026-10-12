@@ -1,4 +1,3 @@
-import os
 import sys
 import re
 import pandas as pd
@@ -21,7 +20,7 @@ print(f"\n编年史中详细建档的实验数量: {len(experiments)} 项")
 # 2. 分析 all_runs_20261005.csv 中的所有运行
 csv_path = "docs/experiments/all_runs_20261005.csv"
 df = pd.read_csv(csv_path)
-print(f"\n=== all_runs_20261005.csv 全量统计 ===")
+print("\n=== all_runs_20261005.csv 全量统计 ===")
 print(f"总运行记录数: {len(df)}")
 unique_exps = df["experiment_name"].dropna().unique()
 print(f"独立实验系列数: {len(unique_exps)}")

@@ -15,7 +15,7 @@
 
 书体范围: 只留 楷/行/隶（无草/篆字体）。
 """
-import argparse, collections, csv, json, os, re, sys
+import argparse, collections, csv, json, os
 from multiprocessing import Pool
 
 import numpy as np

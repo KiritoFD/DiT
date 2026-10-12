@@ -11,7 +11,6 @@ import os, sys, csv, json, time
 sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 
 import torch
-import torch.nn.functional as F
 import numpy as np
 from PIL import Image
 
@@ -119,7 +118,7 @@ def evaluate_vae(vae, cfg, images, device):
 
 
 def main():
-    print(f"=== VAE 重建质量对比 (f8+patch2 vs f4+patch4, 同 256 token) ===")
+    print("=== VAE 重建质量对比 (f8+patch2 vs f4+patch4, 同 256 token) ===")
     print(f"图片: {CSV_PATH}, 前 {N} 张")
     print(f"设备: {DEVICE}")
     print()

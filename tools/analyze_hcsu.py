@@ -1,5 +1,5 @@
 #!/opt/conda/envs/cu121/bin/python
-import os, json
+import os
 os.environ["HF_ENDPOINT"] = "https://hf-mirror.com"
 os.environ["HF_TOKEN"] = "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"
 from huggingface_hub import HfApi
@@ -56,7 +56,7 @@ for cat, cals in sorted(pngs.items()):
     
     print(f"  Unique calligraphers: {len(cal_set)}")
     print(f"  Scripts: {sorted(script_set)}")
-    print(f"  Images per calligrapher-script (min/max/avg):", end=" ")
+    print("  Images per calligrapher-script (min/max/avg):", end=" ")
     counts = [len(v) for v in cals.values()]
     print(f"{min(counts)}/{max(counts)}/{sum(counts)/len(counts):.0f}")
     

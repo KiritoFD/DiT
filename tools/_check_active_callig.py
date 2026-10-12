@@ -61,11 +61,11 @@ print(f"  ||emb|| 分布 = mean {act.norm(dim=1).mean():.3f} ± {act.norm(dim=1)
 
 # 对比: 死行 vs 活跃行的分布差异 (活跃行是否被训练"拉开")
 dead = emb[[i for i in range(emb.shape[0]) if i not in active]]
-print(f"\n[死行 vs 活跃行]")
+print("\n[死行 vs 活跃行]")
 print(f"  死行数 = {dead.shape[0]}, 活跃行数 = {act.shape[0]}")
 print(f"  死行 ||emb|| = mean {dead.norm(dim=1).mean():.3f} ± {dead.norm(dim=1).std():.3f}")
 print(f"  活跃行 ||emb|| = mean {act.norm(dim=1).mean():.3f} ± {act.norm(dim=1).std():.3f}")
-print(f"  (训练不会改变 embedding 模长明显; 关键看活跃行 pairwise cos 是否趋近 1 = 塌缩)")
+print("  (训练不会改变 embedding 模长明显; 关键看活跃行 pairwise cos 是否趋近 1 = 塌缩)")
 
 # proj 后: 两两活跃书家距离 (是否可区分)
 with torch.no_grad():
@@ -74,6 +74,6 @@ with torch.no_grad():
     cp = model.callig_proj(ec)
     d = (cp.unsqueeze(0) - cp.unsqueeze(1)).norm(dim=-1)
     off_d = d[~torch.eye(nc, dtype=torch.bool)]
-    print(f"\n[proj 后活跃书家两两距离]")
+    print("\n[proj 后活跃书家两两距离]")
     print(f"  mean {off_d.mean():.3f} / min {off_d.min():.3f} / ||proj后|| mean {cp.norm(dim=-1).mean():.3f}")
     print(f"  最接近的两书家距离 = {off_d.min():.3f} (若≈0 则这两书家风格无法区分)")

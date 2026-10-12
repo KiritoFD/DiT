@@ -4,7 +4,7 @@ import collections
 import io
 import zipfile
 
-from PIL import Image, ImageSequence
+from PIL import Image
 import numpy as np
 
 Z = r"G:\GitHub\DiT\chinese-calligraphy-dataset-with-calligrapher-221030.zip"

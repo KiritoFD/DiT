@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """tools/analysis/filter_extend_writer.py — 审计并过滤 extend_writer 集合中的书体与样本"""
-import os
 import sys
 import pandas as pd
 
@@ -37,7 +36,7 @@ def main():
         else:
             keep_pairs.add((c, s))
 
-    print(f"\n【微量毛刺书体剔除名单】（合并后总数依然 < 30 张的对）:")
+    print("\n【微量毛刺书体剔除名单】（合并后总数依然 < 30 张的对）:")
     dropped_rows = 0
     for c, s in sorted(drop_pairs):
         b = base_cs.get((c, s), 0)

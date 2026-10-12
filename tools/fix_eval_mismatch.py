@@ -1,7 +1,6 @@
 """eval 集交叉验证 + 生成修复后的 eval csv。"""
 import csv
 import os
-import shutil
 
 from opencc import OpenCC
 

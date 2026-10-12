@@ -12,7 +12,6 @@
 """
 
 import argparse
-import copy
 import csv
 import json
 import os

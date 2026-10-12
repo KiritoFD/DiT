@@ -1,7 +1,5 @@
 import os
 import glob
-import pandas as pd
-import json
 
 base_4090 = "/root/Workspace/xy/DiT"
 print("=== 1. 查找 4090 上 v68 的详细 eval 结果 ===")

@@ -1,7 +1,6 @@
-import os, sys, glob, csv, time, json
+import os, sys, glob, csv
 import numpy as np
 import torch as th
-from PIL import Image
 
 sys.path.insert(0, "/root/Workspace/xy/DiT")
 os.chdir("/root/Workspace/xy/DiT")
@@ -127,7 +126,7 @@ print("="*85)
 
 # A. Copy Baseline (照抄基线: 直接用输入标准骨架作为预测)
 res_copy_eval = evaluate_latents(eval_std_lats, eval_gt_pngs, eval_gt_lats)
-print(f"1. Copy Baseline (照抄输入标准骨架) on Eval:")
+print("1. Copy Baseline (照抄输入标准骨架) on Eval:")
 print(f"   SSIM: {res_copy_eval['ssim_mean']:.4f} (中位 {res_copy_eval['ssim_med']:.4f}) | "
       f"Ink: {res_copy_eval['ink_ssim']:.4f} | "
       f"Frag: {res_copy_eval['frag_mean']:.3f} (中位 {res_copy_eval['frag_med']:.3f}) | "
@@ -152,7 +151,7 @@ if os.path.exists(v36_ckpt):
     with th.no_grad():
         v36_pred = inference.sample_latents(v36_model, diff_eval, eval_noise, eval_conds, cfg_scale=1.0, batch=50, device=dev, skel=eval_std_lats)
     res_v36 = evaluate_latents(v36_pred, eval_gt_pngs, eval_gt_lats)
-    print(f"\n2. 旧基模 v36-Stage1 (DiT-S/2 60k步, 无扰动增强, 纯MSE) on Eval:")
+    print("\n2. 旧基模 v36-Stage1 (DiT-S/2 60k步, 无扰动增强, 纯MSE) on Eval:")
     print(f"   SSIM: {res_v36['ssim_mean']:.4f} (中位 {res_v36['ssim_med']:.4f}) | "
           f"Ink: {res_v36['ink_ssim']:.4f} | "
           f"Frag: {res_v36['frag_mean']:.3f} (中位 {res_v36['frag_med']:.3f}) | "
@@ -184,7 +183,7 @@ v37_model.load_state_dict(_sd37)
 with th.no_grad():
     v37_eval_pred = inference.sample_latents(v37_model, diff_eval, eval_noise, eval_conds, cfg_scale=1.0, batch=50, device=dev, skel=eval_std_lats)
 res_v37_eval = evaluate_latents(v37_eval_pred, eval_gt_pngs, eval_gt_lats)
-print(f"   [Eval 集合 - 纯血未见真迹 (n=200)]:")
+print("   [Eval 集合 - 纯血未见真迹 (n=200)]:")
 print(f"     SSIM: {res_v37_eval['ssim_mean']:.4f} (中位 {res_v37_eval['ssim_med']:.4f}) | "
       f"Ink: {res_v37_eval['ink_ssim']:.4f} | "
       f"Frag: {res_v37_eval['frag_mean']:.3f} (中位 {res_v37_eval['frag_med']:.3f}) | "
@@ -195,7 +194,7 @@ print(f"     SSIM: {res_v37_eval['ssim_mean']:.4f} (中位 {res_v37_eval['ssim_m
 with th.no_grad():
     v37_train_pred = inference.sample_latents(v37_model, diff_eval, tr_noise, tr_conds, cfg_scale=1.0, batch=50, device=dev, skel=tr_std_lats)
 res_v37_train = evaluate_latents(v37_train_pred, tr_gt_pngs, tr_gt_lats)
-print(f"   [Train 集合 - 纯血训练真迹 (n=200)]:")
+print("   [Train 集合 - 纯血训练真迹 (n=200)]:")
 print(f"     SSIM: {res_v37_train['ssim_mean']:.4f} (中位 {res_v37_train['ssim_med']:.4f}) | "
       f"Ink: {res_v37_train['ink_ssim']:.4f} | "
       f"Frag: {res_v37_train['frag_mean']:.3f} (中位 {res_v37_train['frag_med']:.3f}) | "
@@ -205,7 +204,7 @@ print(f"     SSIM: {res_v37_train['ssim_mean']:.4f} (中位 {res_v37_train['ssim
 # 3.3 计算真实泛化差距 (Generalization Gap)
 gap_ssim = res_v37_train['ssim_mean'] - res_v37_eval['ssim_mean']
 gap_frag = abs(res_v37_train['frag_mean'] - res_v37_eval['frag_mean'])
-print(f"\n   ★ 真实泛化差距 (Generalization Gap 诊断):")
+print("\n   ★ 真实泛化差距 (Generalization Gap 诊断):")
 print(f"     ΔSSIM (Train - Eval) : {gap_ssim:+.4f} (仅为 {gap_ssim*100:+.2f}%, 远低于 0.05 阈值，完全无过拟合!)")
 print(f"     ΔFrag (Train vs Eval): {gap_frag:.3f} (Train中位={res_v37_train['frag_med']:.3f}, Eval中位={res_v37_eval['frag_med']:.3f}，拓扑连通完全守恒!)")
 

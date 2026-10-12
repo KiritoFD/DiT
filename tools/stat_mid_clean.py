@@ -48,7 +48,7 @@ cc = char_count(clean)
 counts = sorted(cc.values(), reverse=True)
 import numpy as np
 arr = np.array(counts)
-print(f"\n=== char sample distribution (cleaned) ===")
+print("\n=== char sample distribution (cleaned) ===")
 print(f"total chars: {len(arr)}")
 for t in [1, 2, 3, 5, 10, 20, 50, 100]:
     print(f"  >= {t}: {(arr >= t).sum()} chars")
@@ -56,14 +56,14 @@ for t in [1, 2, 3, 5, 10, 20, 50, 100]:
 # combo distribution + aug needed
 combo = combo_count(clean)
 cvals = np.array(list(combo.values()))
-print(f"\n=== combo (script,char,calligrapher) distribution (cleaned) ===")
+print("\n=== combo (script,char,calligrapher) distribution (cleaned) ===")
 print(f"total combos: {len(combo)}")
 for t in [1, 2, 3, 5, 6, 10, 20, 50]:
     print(f"  = {t}: {(cvals == t).sum()}  (< {t+1}: {(cvals <= t).sum()})")
 
 need_aug = {k: TARGET - n for k, n in combo.items() if n < TARGET}
 total_aug = sum(need_aug.values())
-print(f"\n=== aug-to-6 dry run ===")
+print("\n=== aug-to-6 dry run ===")
 print(f"combos needing aug: {len(need_aug)} ({len(need_aug)/len(combo)*100:.1f}%)")
 print(f"combos already >= 6: {len(combo) - len(need_aug)}")
 print(f"total aug images needed: {total_aug}")
@@ -77,7 +77,7 @@ for k, n in combo.items():
     by_script[s][0] += n
 for k, n in need_aug.items():
     by_script[k[0]][1] += n
-print(f"\n=== by script ===")
+print("\n=== by script ===")
 print(f"{'script':<6} {'rows':>8} {'aug':>8} {'final':>8}")
 for s in sorted(by_script):
     r, a = by_script[s]

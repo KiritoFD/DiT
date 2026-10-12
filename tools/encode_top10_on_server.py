@@ -26,7 +26,7 @@ def main():
     parser.add_argument("--target", default="all", choices=["img", "std", "aux", "all"])
     args = parser.parse_args()
 
-    print(f"=== 开始在 4090 上编码 Top 10 (38,583 样本) VAE 潜变量分片 ===")
+    print("=== 开始在 4090 上编码 Top 10 (38,583 样本) VAE 潜变量分片 ===")
     t_start = time.time()
 
     # 1. 目标图像分片 (shards_img)

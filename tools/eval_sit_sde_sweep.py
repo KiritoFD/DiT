@@ -18,7 +18,6 @@ import sys
 import time
 
 import numpy as np
-import torch
 import torch as th
 
 _root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))

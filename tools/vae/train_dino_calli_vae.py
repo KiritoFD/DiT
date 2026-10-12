@@ -38,7 +38,7 @@ from transformers import Dinov2Config, Dinov2Model
 
 # ★ 2026-10-10: VAE 修正训练新增的两组损失（高频保真 + 后验坍缩）
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from hf_losses import hf_loss, posterior_std_penalty, highpass, band_fraction  # noqa: E402
+from hf_losses import hf_loss, posterior_std_penalty, band_fraction  # noqa: E402
 from gan_losses import (NLayerDiscriminator, hinge_d_loss, hinge_g_loss,      # noqa: E402
                         adaptive_weight, find_last_layer, edge_loss, LeCamEMA)
 

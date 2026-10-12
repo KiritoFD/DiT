@@ -6,11 +6,10 @@
 3. 分析: 同字不同书家的 embedding 距离 vs 不同字的 embedding 距离
 4. 可视化: t-SNE 降维 + 按字符/书家着色
 """
-import os, csv, sys, math
+import os, csv, math
 os.environ.setdefault("HF_ENDPOINT", "https://hf-mirror.com")
 
 import torch
-import torch.nn.functional as F
 from PIL import Image
 import numpy as np
 
@@ -116,7 +115,7 @@ def main():
     dc_std = np.std(diff_char_sims) if diff_char_sims else 0
 
     print(f"\n{'='*60}")
-    print(f"DINO Embedding 分析结果")
+    print("DINO Embedding 分析结果")
     print(f"{'='*60}")
     print(f"同字不同书家: mean cosine = {sc_mean:.4f} ± {sc_std:.4f} (n={len(same_char_diff_callig_sims)})")
     print(f"不同字:       mean cosine = {dc_mean:.4f} ± {dc_std:.4f} (n={len(diff_char_sims)})")
@@ -128,7 +127,7 @@ def main():
     for i, c in enumerate(chars):
         char_groups.setdefault(c, []).append(i)
 
-    print(f"\n逐字分析（同字组内平均相似度）:")
+    print("\n逐字分析（同字组内平均相似度）:")
     for c in sorted(char_groups.keys()):
         idxs = char_groups[c]
         if len(idxs) < 2:
@@ -142,7 +141,7 @@ def main():
               f"组内cos={np.mean(group_sims):.4f}±{np.std(group_sims):.4f}")
 
     # 3. t-SNE 可视化
-    print(f"\n生成 t-SNE 可视化...")
+    print("\n生成 t-SNE 可视化...")
     try:
         from sklearn.manifold import TSNE
         tsne = TSNE(n_components=2, random_state=42, perplexity=min(30, len(embeds)-1))

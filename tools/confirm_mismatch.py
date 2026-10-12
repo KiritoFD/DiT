@@ -37,25 +37,25 @@ for c in cand:
     else:
         other.append((c, vl))
 
-print(f"\n  === 结果 ===")
+print("\n  === 结果 ===")
 print(f"    ★ VLM 确认是繁体（真错配）: {len(confirm)} = "
       f"{len(confirm)/max(len(cand),1)*100:.1f}%")
 print(f"    VLM 说是简体（OCR 错认）:   {len(reject)}")
 print(f"    其他:                       {len(other)}")
 
-print(f"\n  === 确认错配的字符对 Top20 ===")
+print("\n  === 确认错配的字符对 Top20 ===")
 for (a, b), n in Counter((c["char_csv"], c["char_ocr"])
                          for c, _ in confirm).most_common(20):
     print(f"    {a} -> {b}: {n}")
 
-print(f"\n  === 确认错配按书家 Top12 ===")
+print("\n  === 确认错配按书家 Top12 ===")
 for k, n in Counter(c["calligrapher"] for c, _ in confirm).most_common(12):
     print(f"    {k}: {n}")
 
-print(f"\n  === 确认错配按书体 ===")
+print("\n  === 确认错配按书体 ===")
 print(f"    {dict(Counter(c['script'] for c, _ in confirm))}")
 
-print(f"\n  === 确认错配样例 15 ===")
+print("\n  === 确认错配样例 15 ===")
 for c, vl in confirm[:15]:
     print(f"    {c['char_csv']} -> {vl}  conf(ocr)={c['conf']}  "
           f"[{c['script']}/{c['calligrapher']}]")
@@ -71,7 +71,7 @@ with open("assets/mismatch_confirmed.csv", "w", newline="", encoding="utf-8") as
 print(f"\n  written assets/mismatch_confirmed.csv ({len(confirm)} 条)")
 
 # 顺便: 反过来的情况（csv 是繁体，VLM 说是简体 -> 反向错配）
-print(f"\n  === 反向检查（csv 繁体 / VLM 简体）===")
+print("\n  === 反向检查（csv 繁体 / VLM 简体）===")
 rev = [(c, v) for c, v in ((x, vm.get(x["image_path"])) for x in cand)
        if v and t2s.convert(c["char_csv"]) == v["char_vlm"]
        and t2s.convert(c["char_csv"]) != c["char_csv"]]

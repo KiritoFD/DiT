@@ -11,7 +11,6 @@ bank 格式（gradio 期望）:
 """
 import os
 from concurrent.futures import ThreadPoolExecutor
-from pathlib import Path
 
 import numpy as np
 import torch

@@ -14,12 +14,9 @@
   - /root/Workspace/xy/RAW_DATASET/RAW_AUDIT_REPORT.md
 """
 
-import codecs
 import csv
 import io
-import json
 import os
-import sys
 import time
 import zipfile
 from collections import Counter
@@ -215,7 +212,7 @@ def audit_dataset(manifest_rows):
     sources = Counter(r["source"] for r in manifest_rows)
     calligs = Counter(r["calligrapher"] for r in manifest_rows)
 
-    print(f"1. 字符集覆盖与清洗率:")
+    print("1. 字符集覆盖与清洗率:")
     print(f"   总记录数         : {total_samples:,} 条")
     print(
         f"   合规 CJK 字符样本: {cjk_count:,} 条 ({cjk_count/total_samples*100:.2f}%)"
@@ -309,7 +306,7 @@ def audit_dataset(manifest_rows):
     estimated_usable = int(total_samples * usable_ratio)
 
     print("\n" + "=" * 75)
-    print(f"【最终全量 RAW 数据池可用性总核算】")
+    print("【最终全量 RAW 数据池可用性总核算】")
     print(f"  原始总图数     : {total_samples:,} 张 (~41.2 万)")
     print(
         f"  综合可用性比例 : {usable_ratio*100:.2f}% (扣除损坏、纯色空白、非 CJK 标签)"

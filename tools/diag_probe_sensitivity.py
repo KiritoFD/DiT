@@ -18,7 +18,6 @@ import glob
 import numpy as np
 import torch
 import torch.nn.functional as F
-from PIL import Image
 
 os.chdir(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 sys.path.insert(0, os.getcwd())
@@ -34,7 +33,7 @@ PNG_DIR = "data/top10_style23/gt_skel_eval_strict84_png"
 def main():
     from diffusers.models import AutoencoderKL
     from src.train.latent_structure import LatentSkelProbe
-    from scipy.ndimage import label, generate_binary_structure
+    from scipy.ndimage import generate_binary_structure
 
     probe_path = sys.argv[1] if len(sys.argv) > 1 else \
         "assets/structure_probes/latent_skel_probe_v1_mse/best.pt"

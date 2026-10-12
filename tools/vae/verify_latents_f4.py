@@ -97,7 +97,7 @@ def main():
     if recommended_scaling > 0:
         print(f"  (current config uses 0.102079, diff = {abs(recommended_scaling - 0.102079)/recommended_scaling*100:.2f}%)")
     else:
-        print(f"  WARNING: std=0 or inf, statistics computation failed")
+        print("  WARNING: std=0 or inf, statistics computation failed")
 
     # === 2. 随机挑 N 张做 reconstruct 底噪测试 ===
     print(f"\n{'='*60}")
@@ -185,14 +185,14 @@ def main():
     print(f"\n{'='*60}")
     print("SUMMARY")
     print(f"{'='*60}")
-    print(f"  Latent shape:  (3, 64, 64) = 12288 values/img")
+    print("  Latent shape:  (3, 64, 64) = 12288 values/img")
     print(f"  Latent mean:   {global_mean:.6f}")
     print(f"  Latent std:    {global_std:.6f}")
     print(f"  Scaling factor (1/std): {recommended_scaling:.6f}")
     print(f"  Recon MSE:     {mse_mean:.6f}")
     print(f"  Recon SSIM:    {ssim_mean:.4f}")
-    print(f"  (sd-vae-ft-ema for reference: MSE=0.206, SSIM=0.723)")
-    print(f"  (kl-f4 benchmark:           MSE=0.074, SSIM=0.870)")
+    print("  (sd-vae-ft-ema for reference: MSE=0.206, SSIM=0.723)")
+    print("  (kl-f4 benchmark:           MSE=0.074, SSIM=0.870)")
     print(f"{'='*60}")
 
 

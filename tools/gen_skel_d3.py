@@ -8,7 +8,7 @@ gen_skel_d3.py — 从 1px GT skel 生成 3px 膨胀版, 存到 data/skel/final_
 用法 (远程 CPU 后台):
   /opt/conda/bin/python tools/gen_skel_d3.py --in-dir data/skel/final_skeleton --out-dir data/skel/final_skeleton_d3 --workers 16
 """
-import os, sys, time, argparse, glob, re
+import os, sys, time, argparse, glob
 import numpy as np
 from PIL import Image
 

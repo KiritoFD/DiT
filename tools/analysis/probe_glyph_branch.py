@@ -10,9 +10,8 @@ P0: 三种条件推理（normal / g=0 / wrong-char g）的墨量与 ink_iou
      正常 g 白、g=0 也白 -> 主干速度场已退化
      正常 g 白、g=0 恢复   -> 骨架注入支路可疑
 """
-import csv, glob, os, sys
-import numpy as np, torch
-from PIL import Image
+import glob, os, sys
+import torch
 os.chdir("/home/ds/Workspace/DiT"); sys.path.insert(0, ".")
 sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 

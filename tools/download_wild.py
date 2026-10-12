@@ -1,5 +1,5 @@
 #!/opt/conda/envs/cu121/bin/python
-import os, sys, time
+import os, time
 os.environ["HF_ENDPOINT"] = "https://hf-mirror.com"
 os.environ["HF_TOKEN"] = "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"
 

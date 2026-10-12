@@ -10,8 +10,6 @@ GPU 现在空了（v15b 已停），VLM 上 GPU 比 rapidocr CPU 快得多。
 import argparse
 import csv
 import os
-import sys
-from collections import Counter
 from time import time
 
 import torch

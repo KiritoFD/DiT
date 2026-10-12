@@ -5,7 +5,6 @@ import os
 import random
 import sys
 
-import numpy as np
 from PIL import Image, ImageDraw, ImageFont
 
 ROOT = "/root/Workspace/xy/DiT"

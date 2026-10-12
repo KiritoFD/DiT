@@ -1,5 +1,4 @@
 import os
-import sys
 
 BASE_DIR = "/root/Workspace/xy/DiT"
 if os.path.exists(BASE_DIR):

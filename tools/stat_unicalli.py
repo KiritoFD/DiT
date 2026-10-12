@@ -3,7 +3,6 @@
 import ast
 import collections
 import csv
-import json
 
 rows = list(csv.DictReader(open("data/unicalli/data.csv", encoding="utf-8")))
 out = open("unicalli_stats.txt", "w", encoding="utf-8")

@@ -114,10 +114,10 @@ def main():
     print(f"  去 PC1             = {r2*100:.2f}%   ({r2/r0:.1f}x)")
     print(f"  PCA{200} 等权        = {r4*100:.2f}%   ({r4/r0:.1f}x)")
     print("\n  判读:")
-    print(f"  若 per-script 去均值显著提升 -> 字形信息是次主成分，"
-          f"正确信号 = 去均值 DINO（无需换特征）")
-    print(f"  若去主成分都提升不大       -> 字形信息分布太散，"
-          f"需更强表示（patch tokens）")
+    print("  若 per-script 去均值显著提升 -> 字形信息是次主成分，"
+          "正确信号 = 去均值 DINO（无需换特征）")
+    print("  若去主成分都提升不大       -> 字形信息分布太散，"
+          "需更强表示（patch tokens）")
 
     os.makedirs("assets", exist_ok=True)
     with open("assets/dino_centered.json", "w", encoding="utf-8") as f:

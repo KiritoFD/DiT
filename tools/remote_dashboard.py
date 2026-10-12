@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-import os, glob, json, subprocess, datetime, time
+import os, glob, subprocess, datetime, time
 
 # Dashboard 文件路径
 DASHBOARD_DIR = '/root/Workspace/xy/DiT/tools'

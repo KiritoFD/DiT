@@ -11,7 +11,6 @@
 import csv
 import glob
 import os
-import sys
 import time
 from diffusers.models import AutoencoderKL
 import numpy as np

@@ -75,7 +75,7 @@ for m in SHOW:
     print(f"  {m:<10} {ds.mean():>+10.5f} {wins:>6}/{len(ds):<3} "
           f"{'↑好' if m in HIGHER else '↓好':>6}   {verdict}")
 
-print(f"""
+print("""
   读法: 每格 Δ 后的 +/- 已按"该指标是否更好"标注 ✓
         SSIM 单独看会被稀疏 GT 的白图基线污染（见 white_baseline.py），
         所以必须同时看 ink_iou（对空白敏感 ✓）与 frag/hole（结构/空洞）✓

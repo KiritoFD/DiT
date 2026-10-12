@@ -11,11 +11,9 @@ import os
 import sys
 import csv
 import glob
-import json
 
 import numpy as np
 import torch
-from PIL import Image
 
 ROOT = "/root/Workspace/xy/DiT"
 os.chdir(ROOT)

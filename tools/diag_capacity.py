@@ -11,7 +11,6 @@ import os
 import sys
 import glob
 import csv
-import re
 import numpy as np
 import torch
 
@@ -164,8 +163,8 @@ def main():
         cnt += len(b) * OD
     print(f"   每槽位一套线性 (完整交互)     参数 {len(cals)*(OD+1)*OD/1e6:>6.0f}M   "
           f"留出 MSE = {tot/max(cnt,1):.5f}")
-    print(f"\n   对照: conv net(width128, 6.44M) 在 probe 空间 MSE = 0.32;")
-    print(f"         probe 空间基线 = 0.45693, 输出真值的下界 = 0.01464")
+    print("\n   对照: conv net(width128, 6.44M) 在 probe 空间 MSE = 0.32;")
+    print("         probe 空间基线 = 0.45693, 输出真值的下界 = 0.01464")
 
     # ── D. 风格模板的秩 ───────────────────────────────────────────────
     print("\n" + "=" * 78)

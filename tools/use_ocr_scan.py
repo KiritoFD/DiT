@@ -9,7 +9,6 @@ import os
 import re
 from collections import Counter
 
-import numpy as np
 from PIL import Image
 
 ROOT = "/root/Workspace/xy/DiT"

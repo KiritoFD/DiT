@@ -168,8 +168,8 @@ def main():
     print(f"  embedding {tuple(embedding.shape)} | 尺度 SCALE={SCALE} (与原 K-Means 版同) ")
     print(f"  ★ token 两两余弦: 均值={gm:.6f}  最大={max(gram) if gram else float('nan'):.6f}"
           f"   <- 目标 ≈ 0 (正交)")
-    print(f"  对照 K-Means 版: 均值 0.900 / 最大 0.970  (高度共线)")
-    print(f"  pair_mean 保留为 DINO 真均值 (style_anchor_mode=mean 的目标不变)")
+    print("  对照 K-Means 版: 均值 0.900 / 最大 0.970  (高度共线)")
+    print("  pair_mean 保留为 DINO 真均值 (style_anchor_mode=mean 的目标不变)")
 
 
 if __name__ == "__main__":

@@ -2,7 +2,7 @@
 """一次性: 拉取远程 s7 完整 log + eval_auto + cpu_eval_state → 生成 s7_history.json。
 复用 pull_monitor.py 的 parse / merge_eval_json 逻辑。
 """
-import os, sys, json, subprocess
+import os, sys, json
 sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 
 HERE = os.path.dirname(os.path.abspath(__file__))

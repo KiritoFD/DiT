@@ -44,7 +44,6 @@ from src.eval import inference                       # noqa: E402
 from src.eval.in_mem_eval import _get_vae, _lpips_per_sample  # noqa: E402
 from src.eval.metrics import frag_ratio, hole_ratio, skel_iou, ssim_torch  # noqa: E402
 from src.eval.metrics_ink import ink_iou, ink_ssim   # noqa: E402
-from src.model.dit import DiT_2Cond_S_2              # noqa: E402
 
 c = th.load(a.cache, map_location="cpu", weights_only=False)
 ids = [int(i) for i in c["img_ids"]][:a.n]

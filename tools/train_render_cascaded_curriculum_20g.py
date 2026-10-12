@@ -12,7 +12,7 @@
 4. 显存与算力: Batch 208, 显存吃满 20.44 GB VRAM, 关闭梯度重计算 (2.7+ step/s, 560+ samples/s)。
 5. 自动在每个阶段末尾落盘专属 Checkpoint 与 4 行端到端对比全景海报。
 """
-import os, sys, json, time, math, argparse
+import os, sys, json, time, argparse
 import numpy as np
 import torch as th
 from PIL import Image
@@ -87,7 +87,7 @@ def main():
     print(f"  初始底座        : {a.init_ckpt} (50% 混合最佳权重)")
     print(f"  训练集          : {a.csv} (26,002 条古代书法纯真迹)")
     print(f"  物理 Batch 大小 : {a.batch} (显存饱和在 20.44 GB VRAM, ~2.7 step/s)")
-    print(f"  评测机制        : ★ 100% 采用 SkelNet 预测骨架评测, 杜绝 GT 泄露")
+    print("  评测机制        : ★ 100% 采用 SkelNet 预测骨架评测, 杜绝 GT 泄露")
     print("  级联梯度规划    :")
     total_steps = 0
     for name, pw, gw, n_steps in CURRICULUM_STAGES:

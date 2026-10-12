@@ -1,5 +1,4 @@
 import os, sys, time
-import numpy as np
 import torch as th
 
 sys.path.insert(0, "/root/Workspace/xy/DiT")

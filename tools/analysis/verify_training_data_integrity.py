@@ -5,7 +5,6 @@ import os
 import sys
 import numpy as np
 import pandas as pd
-from PIL import Image
 
 sys.stdout.reconfigure(encoding="utf-8")
 ROOT = "/root/Workspace/xy/DiT"
@@ -13,7 +12,6 @@ os.chdir(ROOT)
 sys.path.insert(0, ROOT)
 
 from src.eval.in_mem_eval import _get_vae
-from skimage.metrics import structural_similarity as ssim_fn
 
 def main():
     print("=== [训练数据完整性核验] 验证 shards_img 与 shards_std 是否 1:1 绝对对齐 ===")

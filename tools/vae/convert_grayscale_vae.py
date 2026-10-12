@@ -14,10 +14,7 @@ convert_grayscale_vae.py — 把 3ch VAE 改造成 1ch 黑白 VAE (外科手术)
   python tools/vae/convert_grayscale_vae.py --src data/pretrained/kl-f4 --dst data/pretrained/kl-f4-gray
 """
 import os
-import sys
-import json
 import argparse
-import torch
 import torch.nn as nn
 
 
@@ -26,7 +23,7 @@ def convert_grayscale(src_path, dst_path):
 
     vae = AutoencoderKL.from_pretrained(src_path)
     config = dict(vae.config)
-    print(f"=== 原始 VAE ===")
+    print("=== 原始 VAE ===")
     print(f"  in_channels:  {config['in_channels']}")
     print(f"  out_channels: {config['out_channels']}")
     print(f"  latent_channels: {config['latent_channels']}")
@@ -37,7 +34,7 @@ def convert_grayscale(src_path, dst_path):
     old_w = old_conv_in.weight.data  # [C_out, 3, K, K]
     old_b = old_conv_in.bias.data   # [C_out]
     C_out, C_in_old, K_h, K_w = old_w.shape
-    print(f"\n=== 第一刀: encoder.conv_in ===")
+    print("\n=== 第一刀: encoder.conv_in ===")
     print(f"  原始: {old_w.shape}  ({C_in_old}ch input)")
 
     # sum(dim=1, keepdim=True) -> [C_out, 1, K, K]
@@ -58,7 +55,7 @@ def convert_grayscale(src_path, dst_path):
     old_w2 = old_conv_out.weight.data  # [3, C_in, K, K]
     old_b2 = old_conv_out.bias.data    # [3]
     C_out_old2, C_in2, K_h2, K_w2 = old_w2.shape
-    print(f"\n=== 第二刀: decoder.conv_out ===")
+    print("\n=== 第二刀: decoder.conv_out ===")
     print(f"  原始: {old_w2.shape}  ({C_out_old2}ch output)")
 
     # mean(dim=0, keepdim=True) -> [1, C_in, K, K]
@@ -82,7 +79,7 @@ def convert_grayscale(src_path, dst_path):
     # === 保存 ===
     os.makedirs(dst_path, exist_ok=True)
     vae.save_pretrained(dst_path)
-    print(f"\n=== 保存 ===")
+    print("\n=== 保存 ===")
     print(f"  {src_path} -> {dst_path}")
     print(f"  in/out: 1ch, latent: {config['latent_channels']}ch")
 
@@ -91,7 +88,7 @@ def convert_grayscale(src_path, dst_path):
     assert vae2.encoder.conv_in.weight.shape[1] == 1, "conv_in not 1ch!"
     assert vae2.decoder.conv_out.weight.shape[0] == 1, "conv_out not 1ch!"
     print(f"  验证: conv_in={vae2.encoder.conv_in.weight.shape}, conv_out={vae2.decoder.conv_out.weight.shape}")
-    print(f"  DONE!")
+    print("  DONE!")
 
 
 if __name__ == "__main__":

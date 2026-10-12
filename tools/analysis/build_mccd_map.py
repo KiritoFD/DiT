@@ -30,7 +30,6 @@ print(f"Characters: {len(char2id)}")
 
 # 遍历 MCCD-Calligrapher 目录
 # 文件名格式: 字-书体-朝代-书家-编号.png  例如: 人-楷-唐-吴彩鸾-170027.png
-import re
 records = []
 skipped_script = 0
 skipped_callig = 0

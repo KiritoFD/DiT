@@ -9,7 +9,6 @@ import csv
 import glob
 import os
 
-import numpy as np
 from PIL import Image, ImageDraw, ImageFont
 
 os.chdir("/root/Workspace/xy/DiT")

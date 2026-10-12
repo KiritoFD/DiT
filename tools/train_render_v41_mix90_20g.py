@@ -83,13 +83,13 @@ def main():
 
     print("\n" + "="*75)
     print("【Render 模型 90% 预测骨架混合重训 (20G 显存, 全部 Eval 用 Pred)】")
-    print(f"  模型架构        : DiT-2Cond-S/2 (Render 主干网络, 33.2M 参数)")
+    print("  模型架构        : DiT-2Cond-S/2 (Render 主干网络, 33.2M 参数)")
     print(f"  底座初始权重    : {a.init_render_ckpt}")
     print(f"  训练集          : {a.csv} (26,002 条古代书法纯真迹)")
     print(f"  物理 Batch 大小 : {a.batch} (实测占用 20.44 GB VRAM, 2.7+ step/s)")
-    print(f"  骨架条件混合比  : ★ 90% 预测骨架 + 10% GT 骨架 (权重 0.9 : 0.1)")
-    print(f"  评测机制        : ★ 100% 采用 SkelNet 预测骨架评测, 杜绝 GT 泄露作弊")
-    print(f"  目标输出        : 真实书法墨迹图像 (shards_img)")
+    print("  骨架条件混合比  : ★ 90% 预测骨架 + 10% GT 骨架 (权重 0.9 : 0.1)")
+    print("  评测机制        : ★ 100% 采用 SkelNet 预测骨架评测, 杜绝 GT 泄露作弊")
+    print("  目标输出        : 真实书法墨迹图像 (shards_img)")
     print("="*75 + "\n")
 
     # 1. 载入模型 (DiT-2Cond-S/2 Render 架构, 关闭梯度检查点)

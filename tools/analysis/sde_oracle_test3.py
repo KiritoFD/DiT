@@ -15,7 +15,6 @@
 """
 import sys
 
-import numpy as np
 
 sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 
@@ -64,7 +63,7 @@ for s0 in (1.0, 0.5, 0.2, 0.1):
     print(f"  {s0:>6.2f} | {s0**2:>9.4f} | {final_var(s0, G, 'current'):>10.4f} | "
           f"{final_var(s0, G, 'plus'):>12.4f} | {final_var(s0, G, 'minus'):>10.4f}")
 
-print(f"\n【C】γ 依赖（s0=1.0）")
+print("\n【C】γ 依赖（s0=1.0）")
 print(f"  {'γ':>5} | {'理论':>7} | {'现状(A)':>9} | {'加号(B+)':>10} | {'减号(B-)':>10}")
 for g in (0.0, 0.1, 0.2, 0.5, 1.0):
     print(f"  {g:>5.2f} | {1.0:>7.4f} | {final_var(1.0, g, 'current'):>9.4f} | "

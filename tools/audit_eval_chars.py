@@ -77,7 +77,7 @@ with open(a.out, "w", newline="", encoding="utf-8") as f:
 
 bad = [x for x in res if x["match"] == "N"]
 print(f"\n  不匹配: {len(bad)}/{len(res)} ({len(bad)/max(len(res),1)*100:.1f}%)")
-print(f"\n  === 前 25 个可疑 ===")
+print("\n  === 前 25 个可疑 ===")
 for x in bad[:25]:
     print(f"    csv={x['character']}  ocr={x['ocr_gt']}  "
           f"({x['callig']}/{x['script']})  {os.path.basename(x['src'])}")

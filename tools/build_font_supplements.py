@@ -198,7 +198,7 @@ def main():
         os.makedirs(img_dir, exist_ok=True)
         os.makedirs(std_dir, exist_ok=True)
 
-    print(f"[2/4] 多字体配对渲染与几何提取...")
+    print("[2/4] 多字体配对渲染与几何提取...")
     supp_rows = []
     generated_count = 0
     font_stats = {f["name"]: 0 for f in SYNTH_FONTS}
@@ -255,13 +255,13 @@ def main():
         if (ci + 1) % 500 == 0:
             print(f"  已扫描 {ci + 1}/{len(rare_chars)} 个字，累计生成 {generated_count} 张配对样本...")
 
-    print(f"\n[3/4] 渲染完成统计报告:")
+    print("\n[3/4] 渲染完成统计报告:")
     print(f"  总生成有效增强样本: {generated_count} 张")
     for fname, cnt in font_stats.items():
         print(f"    - {fname}: {cnt} 张")
 
     # [4/4] 增量更新书家映射表
-    print(f"\n[4/4] 更新书家词表与导出 CSV...")
+    print("\n[4/4] 更新书家词表与导出 CSV...")
     if os.path.exists(args.callig_map_in):
         with open(args.callig_map_in, encoding="utf-8") as f:
             cmap_data = json.load(f)

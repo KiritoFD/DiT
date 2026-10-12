@@ -91,7 +91,7 @@ def main():
             font_used[(s, ch)] = fn
 
     success_cnt = sum(1 for _, row in df.iterrows() if ok_map.get((row["script"], row["character"]), False))
-    print(f"\n【骨架渲染测试结果】:")
+    print("\n【骨架渲染测试结果】:")
     print(f"  - 总候选样本: {len(df)} 张")
     print(f"  - 成功渲染骨架: {success_cnt} 张 ({success_cnt/len(df)*100:.2f}%)")
     print(f"  - 失败样本数: {len(df) - success_cnt} 张")

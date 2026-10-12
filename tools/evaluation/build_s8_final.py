@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """从最后一次 s8 完整数据快照重建 s8 dashboard (s8 已停训, train_data.json 已切到 s9)。
 数据来源: 远程 s8 ckpt 目录的 log.txt + cpu_eval_state.json, 一次性拉取并固化。"""
-import os, sys, json, subprocess
+import os, sys, json
 sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 
 HERE = os.path.dirname(os.path.abspath(__file__))

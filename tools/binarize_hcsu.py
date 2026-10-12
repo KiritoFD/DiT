@@ -18,7 +18,7 @@
 
 书体范围: 只保留 楷/行/隶（用户决定; 草/篆没有对应字体渲染不出 std 骨架）。
 """
-import argparse, collections, json, os, sys
+import argparse, collections, json, os
 from multiprocessing import Pool
 
 import numpy as np

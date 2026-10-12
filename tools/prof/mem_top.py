@@ -71,7 +71,7 @@ def main():
     for s, b in alloc_b.most_common(a.top):
         print(f"  {alloc_cnt[s]:>9,}  {b:>14,}  {b/max(alloc_cnt[s],1):>10,.0f}  {s}")
     print()
-    print(f"  === 最常见分配尺寸 TOP10 ===")
+    print("  === 最常见分配尺寸 TOP10 ===")
     for sz, c in sizes.most_common(10):
         print(f"  {c:>9,} 次  {sz:>12,} B  ({sz/1024/1024:.2f} MiB)")
 

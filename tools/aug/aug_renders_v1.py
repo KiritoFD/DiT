@@ -16,7 +16,7 @@ import sys
 from multiprocessing import Pool
 
 import numpy as np
-from PIL import Image, ImageEnhance, ImageFilter
+from PIL import Image, ImageFilter
 
 ROOT = "/root/Workspace/xy/DiT"
 SRC_CSV = f"{ROOT}/assets/train_fame3_clean_v8.csv"

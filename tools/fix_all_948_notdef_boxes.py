@@ -68,7 +68,7 @@ def main():
 
     print("\n" + "=" * 60)
     print(f"🎉 全部重新渲染完成！成功修复: {success}/{len(df)} 张，失败: {fail} 张")
-    print(f"重点核验 034130.png ('陞'): 已重新渲染为真字！")
+    print("重点核验 034130.png ('陞'): 已重新渲染为真字！")
     print("=" * 60)
 
 if __name__ == "__main__":

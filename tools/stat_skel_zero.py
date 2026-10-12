@@ -55,10 +55,10 @@ for sp in sorted(glob.glob(os.path.join(SKEL, "shard_*.npz"))):
 
 print(f"\n  参与统计 {tot} 个 id")
 print(f"  **零骨架 {zero}  ({100*zero/max(tot,1):.2f}%)**")
-print(f"\n  零骨架样例:")
+print("\n  零骨架样例:")
 for iid, am, sc, ch, cal in zero_rows:
     print(f"    id={iid} |lat|mean={am:.5f}  {sc}/{ch}  {cal}")
-print(f"\n  零骨架按 (script,char) Top15:")
+print("\n  零骨架按 (script,char) Top15:")
 for k, v in by_char.most_common(15):
     print(f"    {k[0]}/{k[1]}  {v}")
 print(f"  受影响唯一字符数: {len(by_char)}")

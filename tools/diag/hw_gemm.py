@@ -5,7 +5,7 @@
 形状: square(4096^3) 峰值参照 / qkv(8192,384)@(384,1152) / mlp_up(8192,384)@(384,1536)
       / mlp_down(8192,1536)@(1536,384) —— 与 DiT-S/2 实际 GEMM 同形
 """
-import os, sys, time
+import sys, time
 sys.path.insert(0, "/root/Workspace/xy/DiT")
 NT = int(sys.argv[1])
 import torch

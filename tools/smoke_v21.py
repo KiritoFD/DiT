@@ -1,5 +1,4 @@
 import json
-import torch
 import sys
 sys.path.insert(0, '.')
 from src.model.dit import DiT_2Cond

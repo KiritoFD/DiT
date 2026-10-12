@@ -19,7 +19,6 @@ import csv
 import glob
 import json
 import copy
-import time
 import argparse
 import numpy as np
 import torch as th
@@ -74,7 +73,7 @@ def main():
     os.makedirs(a.out_dir, exist_ok=True)
     os.makedirs(a.pred_shards_out, exist_ok=True)
 
-    print(f'[1] 建模型 (shell 用原始 ckpt, 随后被 union ckpt 覆盖)', flush=True)
+    print('[1] 建模型 (shell 用原始 ckpt, 随后被 union ckpt 覆盖)', flush=True)
     a.gen_ckpt = a.gen_ckpt
     a.bak_ckpt = a.bak_ckpt
     a.bak_config = a.bak_config

@@ -1,8 +1,6 @@
 # -*- coding: utf-8 -*-
 """read the csv inside chinese-calligraphy-dataset-221030 zip + full char dir stats."""
-import csv
 import collections
-import io
 import zipfile
 
 Z = r"E:\chinese-calligraphy-dataset-221030 (1).zip"

@@ -127,7 +127,7 @@ print(f"  IoU 分布: p1={np.percentile(v,1):.3f} p5={np.percentile(v,5):.3f} "
       f"p25={np.percentile(v,25):.3f} p50={np.median(v):.3f} "
       f"p75={np.percentile(v,75):.3f} p95={np.percentile(v,95):.3f}")
 print(f"  IoU < {a.thr}: {len(bad)} 条 ({len(bad)/max(len(out),1)*100:.1f}%)")
-print(f"\n  === 最可疑的 30 条 ===")
+print("\n  === 最可疑的 30 条 ===")
 for x in sorted(out, key=lambda z: z["iou"])[:30]:
     print(f"    iou={x['iou']:.3f}  {x['character']}  "
           f"({x['callig']}/{x['script']})  id={x['id']}")

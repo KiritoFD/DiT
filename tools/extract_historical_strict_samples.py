@@ -1,7 +1,6 @@
 import os
 import shutil
 import json
-from PIL import Image
 
 base = "/root/Workspace/xy/DiT"
 out_dir = os.path.join(base, "exp_milestones/historical_strict_common")

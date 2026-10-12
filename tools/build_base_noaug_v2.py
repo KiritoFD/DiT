@@ -14,7 +14,6 @@ import csv
 import glob
 import json
 import os
-import shutil
 import sys
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -56,7 +55,6 @@ for p in glob.glob("data/imgs/calli_tongji_imgs/*.png"):
         tongji_src.setdefault(iid, p)
 # v1 flat 是按 950000+ 顺序复制的: 重建 (callig,script,char)->flat 需要目录结构
 flat_by_key = {}
-import hashlib
 rows_v1 = list(csv.DictReader(open("assets/train_fame_tj_kxl.csv", encoding="utf-8")))
 v1_map = {}
 for r in rows_v1:

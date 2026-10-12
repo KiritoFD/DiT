@@ -5,10 +5,9 @@
 2) SkelNet 是否真的在做 std->pred 的有效形变(位移场非零、非饱和);
 3) 下游 frozen 训练 SSIM 随 step 的走势。
 """
-import os, sys, json
+import os, sys
 import numpy as np
 import torch
-import torch.nn.functional as F
 
 sys.stdout.reconfigure(encoding="utf-8")
 ROOT = "/root/Workspace/xy/DiT"
@@ -74,7 +73,6 @@ try:
 
     csmap = load_callig_script_map("assets/callig_script_id_map_top10.json")
     # 构造一个 skelnet (用评测里同样的参数)
-    import inspect
     sk = DeformSkel(cond_dim=128, ch=4, grid=32, style_ch=32, width=96,
                     max_off=6.0, coarse=8, residual=0, res_cap=1.0,
                     stroke_mod=1, stroke_cap=1.0, gate_radius=0.25, dt_ch=1)

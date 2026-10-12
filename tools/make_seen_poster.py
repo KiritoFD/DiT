@@ -7,7 +7,7 @@
   GT 行：对映最后 step 的 ground truth
 底部注释
 """
-import os, re, sys, glob, json, argparse, datetime
+import os, re, sys, glob, argparse, datetime
 import numpy as np
 from PIL import Image, ImageDraw, ImageFont
 import cv2

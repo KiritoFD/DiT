@@ -225,7 +225,7 @@ def main():
     a = ap.parse_args()
     dev = torch.device(a.device if torch.cuda.is_available() else "cpu")
 
-    import csv, re
+    import csv
     rows = []
     with open(a.eval_csv, encoding="utf-8") as f:
         for r in csv.DictReader(f):

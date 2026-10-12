@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """从 train_top30_clean.csv 剔除 grey_ratio > 0.3 的脏图, 原地覆盖。"""
-import os, sys, csv, json, shutil
+import os, sys, csv, shutil
 import numpy as np
 from PIL import Image
 from concurrent.futures import ThreadPoolExecutor

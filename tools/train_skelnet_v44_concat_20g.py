@@ -13,7 +13,7 @@
   4. 显存拉满 20G: 物理 Batch=1440, 实测显存占用 19.37 GB, 吞吐 459+ samples/s (每步覆盖全部 23 槽位)
   5. 评测: data/top10_style23/eval_real200_cache.pt (200 样本随机分层真迹), 自动落盘 3 行对比全景海报
 """
-import os, sys, json, glob, csv, re, time, math, argparse
+import os, sys, json, time, math, argparse
 import numpy as np
 import torch as th
 from PIL import Image
@@ -91,10 +91,10 @@ def main():
 
     print("\n" + "="*75)
     print("【SkelNet v38 正统 S/2 纯血真迹训练 (显存拉满 20G 旗舰级)】")
-    print(f"  模型架构        : DiT-2Cond-S/2 (33.2M 原版基模架构)")
+    print("  模型架构        : DiT-2Cond-S/2 (33.2M 原版基模架构)")
     print(f"  训练集          : {a.csv} (26,002 条纯正古代书法真迹)")
     print(f"  物理 Batch 大小 : {a.batch} (实测占用 19.37 GB VRAM, 459+ samples/s)")
-    print(f"  目标/条件       : 纯净 w7 (无人工几何扭曲，纯净学书法间架)")
+    print("  目标/条件       : 纯净 w7 (无人工几何扭曲，纯净学书法间架)")
     print("="*75 + "\n")
 
     # 1. 载入模型 (DiT-2Cond-S/2 原版架构)
@@ -174,7 +174,6 @@ def main():
     vae = _get_vae(dev, a.vae).eval()
 
     # ── 真迹墨迹掩码缓存: 解码一次, 落盘复用 (结构监督的参照) ──
-    import torch.nn.functional as F
     _H = 256
     _ii = np.arange(_H)[:, None] + np.arange(_H)[None, :]
     IDX45 = th.from_numpy(_ii.reshape(-1).astype(np.int64))
@@ -241,7 +240,7 @@ def main():
     eval_gt_pngs = cache["gt_pngs"].to(dev)
     eval_std_pngs = cache["std_pngs"].to(dev)
     n_eval = len(eval_conds)
-    print(f"[eval] 已载入 200 样本纯血真迹评测集 (覆盖 23 个风格槽位)", flush=True)
+    print("[eval] 已载入 200 样本纯血真迹评测集 (覆盖 23 个风格槽位)", flush=True)
 
     best_ssim = 0.0
 

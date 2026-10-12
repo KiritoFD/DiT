@@ -2,7 +2,6 @@
 # -*- coding: utf-8 -*-
 import os
 import sys
-import json
 import torch
 
 sys.stdout.reconfigure(encoding="utf-8")

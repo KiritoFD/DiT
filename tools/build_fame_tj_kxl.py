@@ -17,7 +17,6 @@ build_fame_tj_kxl.py — fame-tj-kxl 数据集 v2 (v4 对称增强统一口径).
 import csv
 import json
 import os
-import re
 import sys
 from multiprocessing import Pool
 

@@ -26,7 +26,6 @@ for run, pat in DIR_PAT.items():
         continue
     # 标准字输入 (g 条件): decode skels_latent -> input_g/g{i}.png (幂等)
     try:
-        import csv as _csv
         import torch as _torch
         import glob as _glob
         from src.eval.inference import load_eval_vae, make_eval_cache
@@ -35,7 +34,6 @@ for run, pat in DIR_PAT.items():
         ckd = _torch.load(ck, map_location="cpu", weights_only=False)
         a = ckd.get("args", {})
         if not isinstance(a, dict):
-            import argparse as _ap
             a = vars(a)
         cmap = None
         if a.get("callig_id_map") and os.path.exists(a["callig_id_map"]):

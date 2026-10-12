@@ -5,7 +5,6 @@
     GT(真迹) / WHITE(全白) / SAMPLE(模型输出)
 指标: SSIM(default) / SSIM(gaussian, 原论文版) / LPIPS(vgg) / ink_iou / HF / frag
 """
-import csv
 import os
 import sys
 

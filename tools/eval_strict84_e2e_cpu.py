@@ -1,8 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """eval_strict84_e2e_cpu.py — 在 CPU (32线程) 上使用官方 shards_std 评估 JointSkel2Img 在 Step 4,000 的真实端到端生成表现"""
-import os, sys, json, csv, time, re
-import numpy as np
+import os, sys, time
 import torch as th
 
 ROOT = "/root/Workspace/xy/DiT"
@@ -25,7 +24,7 @@ gen_sd = ck["gen_ema"]
 gen_ckpt = ck["gen_ckpt"]
 bak_ckpt = ck["bak_ckpt"]
 
-print(f"[2] 装载模型到 CPU...")
+print("[2] 装载模型到 CPU...")
 gen, ga = model_io.load_model_from_ckpt(gen_ckpt, device=dev, use_ema=True)
 bak, ba = model_io.load_model_from_ckpt(bak_ckpt, device=dev, use_ema=True)
 

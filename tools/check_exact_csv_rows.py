@@ -1,6 +1,5 @@
 import os
 import csv
-import json
 
 def check_csv(path):
     if not os.path.exists(path):

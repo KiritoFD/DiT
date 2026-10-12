@@ -14,8 +14,6 @@ kl-f4 mid block 有 attention (attn_1), 用 q/k/v (不是 to_q/to_k/to_v).
   python tools/vae/convert_klf4.py --ckpt _sync_work/kl-f4/model.ckpt --out data/pretrained/kl-f4
 """
 import os
-import sys
-import json
 import argparse
 import torch
 import re
@@ -110,16 +108,16 @@ def convert(ckpt_path, out_dir):
         "scaling_factor": 0.18215,
     }
 
-    print(f"\n=== kl-f4 VAE config ===")
-    print(f"  in/out: 3ch, latent: 3ch, blocks: [128,256,512], layers: 2, f4")
-    print(f"  256x256 -> 3x64x64")
+    print("\n=== kl-f4 VAE config ===")
+    print("  in/out: 3ch, latent: 3ch, blocks: [128,256,512], layers: 2, f4")
+    print("  256x256 -> 3x64x64")
 
     os.makedirs(out_dir, exist_ok=True)
 
     from diffusers import AutoencoderKL
     vae = AutoencoderKL(**config)
     missing, unexpected = vae.load_state_dict(new_sd, strict=False)
-    print(f"\n=== load_state_dict ===")
+    print("\n=== load_state_dict ===")
     print(f"  missing: {len(missing)} keys")
     print(f"  unexpected: {len(unexpected)} keys")
     if missing:

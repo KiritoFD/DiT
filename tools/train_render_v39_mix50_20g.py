@@ -73,11 +73,11 @@ def main():
 
     print("\n" + "="*75)
     print("【Render 模型 (Stage 2) 50% 混合比旗舰训练 (显存吃满 20G)】")
-    print(f"  模型架构        : DiT-2Cond-S/2 (Render 主干网络, 33.2M 参数)")
+    print("  模型架构        : DiT-2Cond-S/2 (Render 主干网络, 33.2M 参数)")
     print(f"  训练集          : {a.csv} (26,002 条古代书法纯真迹)")
     print(f"  物理 Batch 大小 : {a.batch} (实测占用 20.12 GB VRAM, 443+ samples/s)")
-    print(f"  骨架条件混合比  : 50% GT真迹骨架 + 50% 预测骨架 (权重 0.5:0.5)")
-    print(f"  目标输出        : 真迹墨迹图像 (shards_img)")
+    print("  骨架条件混合比  : 50% GT真迹骨架 + 50% 预测骨架 (权重 0.5:0.5)")
+    print("  目标输出        : 真迹墨迹图像 (shards_img)")
     print("="*75 + "\n")
 
     # 1. 载入模型 (DiT-2Cond-S/2 原版 Render 架构)
@@ -151,7 +151,7 @@ def main():
     eval_skel_lats = cache["gt_skel_lats"].to(dev) if "gt_skel_lats" in cache else cache["std_lats"].to(dev)
     eval_gt_imgs = cache["gt_pngs"].to(dev)
     n_eval = len(eval_conds)
-    print(f"[eval] 已载入 200 样本纯血真迹评测集 (覆盖 23 个风格槽位)", flush=True)
+    print("[eval] 已载入 200 样本纯血真迹评测集 (覆盖 23 个风格槽位)", flush=True)
 
     best_ssim = 0.0
 

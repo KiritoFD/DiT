@@ -2,7 +2,6 @@
 # -*- coding: utf-8 -*-
 import os
 import sys
-import torch
 
 sys.stdout.reconfigure(encoding="utf-8")
 ROOT = "/root/Workspace/xy/DiT"
@@ -10,7 +9,6 @@ os.chdir(ROOT)
 sys.path.insert(0, ROOT)
 
 from src.eval.in_mem_eval import run_in_mem_eval
-from src.train.cli import parse_args
 
 def main():
     print("=== [Eval Test] 验证在内存评测流程 ===")

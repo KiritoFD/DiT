@@ -9,7 +9,6 @@
 
 用法: N=60 python tools/eval_ctrl_fame_cpu.py
 """
-import csv
 import os
 import sys
 import time

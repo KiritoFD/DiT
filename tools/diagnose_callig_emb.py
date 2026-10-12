@@ -102,7 +102,7 @@ def main():
     print(f"  - 向量间余弦均值 mean(cos): {off_diag.mean():.4f}")
     print(f"  - 最大余弦相关度 max(cos): {off_diag.max():.4f}")
     print(f"  - 最小余弦相关度 min(cos): {off_diag.min():.4f}")
-    print(f"  - 早期未受控端到端塌缩基线: 0.323")
+    print("  - 早期未受控端到端塌缩基线: 0.323")
     ortho_status = "✅ 卓越的正交分离度 (远离 0.323 塌缩线，各书家在球面上均匀离散排布)" if np.abs(off_diag).mean() < 0.12 else "⚠️ 存在局部聚集"
     print(f"  - 状态判定: {ortho_status}")
 

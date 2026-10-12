@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-import os, glob, pandas as pd
+import glob, pandas as pd
 
 files = sorted(glob.glob('/root/Workspace/xy/DiT/assets/results/v23_splitnorm/eval_stdskel_summary.csv*'))
 dfs = []

@@ -1,4 +1,4 @@
-import os, sys, glob
+import os, sys
 import numpy as np
 import torch as th
 from PIL import Image
@@ -53,7 +53,7 @@ from src.eval.metrics import ssim_torch, frag_ratio
 vae = _get_vae(dev, "data/pretrained/pretrained_models/sd-vae-ft-ema").eval()
 diff_eval = inference.build_diffusion(25, "flow")
 
-print(f"\n[Real Eval] 运行 200 样本评测 (使用实际训练 online 权重 @ step 2500):")
+print("\n[Real Eval] 运行 200 样本评测 (使用实际训练 online 权重 @ step 2500):")
 with th.no_grad():
     g_pred = inference.sample_latents(
         model, diff_eval, noise, conds,
@@ -86,7 +86,7 @@ with th.no_grad():
     med_frag = float(np.median(frags))
 
 print("="*65)
-print(f"【真实纯真迹 200 样本评测结果 @ Step 2500】:")
+print("【真实纯真迹 200 样本评测结果 @ Step 2500】:")
 print(f"  骨架 SSIM (均值)   : {mean_ssim:.4f} (中位: {med_ssim:.4f})")
 print(f"  墨迹 SSIM (Ink)    : {mean_ink:.4f}")
 print(f"  破碎度 (frag_ratio): {mean_frag:.3f} (中位: {med_frag:.3f}, 1.0=完全连贯无破碎)")

@@ -2,7 +2,6 @@
 # -*- coding: utf-8 -*-
 import os
 import sys
-import torch
 
 sys.stdout.reconfigure(encoding="utf-8")
 ROOT = "/root/Workspace/xy/DiT"

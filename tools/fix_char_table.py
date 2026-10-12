@@ -5,8 +5,7 @@
 """
 import csv
 import os
-import re
-from collections import Counter, defaultdict
+from collections import Counter
 
 os.chdir("/root/Workspace/xy/DiT")
 
@@ -55,7 +54,7 @@ print(f"\n  ✓ written {out}")
 print(f"    修正了 {n_fixed} 行（character + std_path 都换成繁体版）")
 
 # 差异报告
-print(f"\n  === 修正明细 Top20 ===")
+print("\n  === 修正明细 Top20 ===")
 for (a, b), n in Counter((c["char_csv"], c["char_true"])
                          for c in conf).most_common(20):
     print(f"    {a} -> {b}: {n}")
@@ -66,7 +65,7 @@ ch_changed = sum(1 for a, b in zip(rows, new_rows)
                  if a["character"] != b["character"])
 std_changed = sum(1 for a, b in zip(rows, new_rows)
                   if a["std_path"] != b["std_path"])
-print(f"\n  === 校验 ===")
+print("\n  === 校验 ===")
 print(f"    character 变化: {ch_changed}")
 print(f"    std_path 变化:  {std_changed}")
 print(f"    行数一致: {len(rows)} == {len(new_rows)}")

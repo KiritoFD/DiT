@@ -110,7 +110,7 @@ if len(xs) >= 3:
     r_ = float(np.corrcoef(xs, ys)[0, 1])
     OUT["corr_n_vs_iou"] = round(r_, 3)
     print(f"    书家样本数 vs strict ink_iou 的相关性 r = {r_:.3f}")
-    print(f"    （历史记录: 全图 SSIM 的 r = -0.62）")
+    print("    （历史记录: 全图 SSIM 的 r = -0.62）")
     top = sorted(OUT["per_callig"].items(), key=lambda x: x[1]["mean_iou"])
     print(f"\n    {'书家':<12}{'训练数':<8}{'eval数':<8}ink_iou")
     for k, v in top[:8]:

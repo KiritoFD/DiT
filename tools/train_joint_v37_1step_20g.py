@@ -15,7 +15,7 @@
      - 评估骨架质量 (SSIM, frag_ratio) 与 最终图像端到端质量 (E2E SSIM, Ink SSIM)
      - 渲染 4 行全景对比海报
 """
-import os, sys, json, glob, csv, re, time, math, argparse
+import os, sys, json, time, math, argparse
 import numpy as np
 import torch as th
 from PIL import Image
@@ -116,14 +116,14 @@ def main():
     gen.load_state_dict(sd_gen)
     # 冻结底层风格表
     gen.y_callig_embedder.embedding_table.weight.requires_grad_(False)
-    print(f"[model] Stage 1 SkelNet-Sp (65.4M) 已成功载入")
+    print("[model] Stage 1 SkelNet-Sp (65.4M) 已成功载入")
 
     # 1.2 Stage 2 Backbone (33.2M, 冻结, 传导图像视觉判别梯度)
     bak, _ = model_io.load_model_from_ckpt(a.bak_ckpt, device=dev, use_ema=True)
     bak.eval()
     for p in bak.parameters():
         p.requires_grad_(False)
-    print(f"[model] Stage 2 Backbone (33.2M) 已成功载入并冻结")
+    print("[model] Stage 2 Backbone (33.2M) 已成功载入并冻结")
 
     gen_p = [p for p in gen.parameters() if p.requires_grad]
     print(f"[model] 联合微调优化器目标: {sum(p.numel() for p in gen_p):,} 个参数", flush=True)

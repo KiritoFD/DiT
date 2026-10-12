@@ -1,6 +1,4 @@
-import os
 import glob
-import json
 
 print("=== 1. 查找 tier3_b_aug_v66route 的评估代码 ===")
 train_script = "/home/ds/Workspace/DiT/experiments/capacity_ladder"

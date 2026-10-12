@@ -16,7 +16,7 @@ merge_eval_json/_pull_sample_dir/_existing_steps) 和 make_eval_poster.py,
   python pull_s11.py --loop         # 每 --interval 秒循环 (默认 120)
   python pull_s11.py --no-poster    # 跳过样本图拉取+海报 (只更新曲线数据)
 """
-import os, re, sys, json, time, glob, subprocess, datetime, shutil, tempfile
+import os, sys, json, time, glob, subprocess, datetime, shutil, tempfile
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 DASH_DIR = os.path.join(HERE, "dashboards")

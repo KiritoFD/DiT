@@ -1,5 +1,4 @@
 import pandas as pd
-import numpy as np
 
 csv_path = "/root/Workspace/xy/DiT/exp-std/runs_purestd/eval_stdskel_batch.csv"
 try:

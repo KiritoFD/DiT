@@ -2,7 +2,6 @@
    ② 重建 data/50k/shards_std（std_path 变了 1921 条，g 必须跟着换）
 """
 import csv
-import glob
 import json
 import os
 

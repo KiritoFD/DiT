@@ -18,7 +18,6 @@ import json
 import os
 import re
 import subprocess
-import sys
 import time
 
 WORKSPACE = "/home/ds/Workspace/DiT"
@@ -285,7 +284,7 @@ def generate_final_scorecard():
 
     # Tier 4: v61 官方实测
     lines.append(
-        f"| **Tier 4: B1024** | DiT-2Cond-B1024/2 | h=1024, 8头 | 233.0M (6.90x) | 23.7G (B=128) | 0.5544 (20k) | **`0.5821 (40k)`** / **`0.6067 (65k)`** | **0.3289** | **0.0305** | **`+0.0659`** |"
+        "| **Tier 4: B1024** | DiT-2Cond-B1024/2 | h=1024, 8头 | 233.0M (6.90x) | 23.7G (B=128) | 0.5544 (20k) | **`0.5821 (40k)`** / **`0.6067 (65k)`** | **0.3289** | **0.0305** | **`+0.0659`** |"
     )
 
     lines.append("\n---\n")

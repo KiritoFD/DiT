@@ -1,6 +1,5 @@
 import os
 import json
-from PIL import Image, ImageDraw, ImageFont
 
 base_dir = "assets/historical_strict_common"
 manifest_path = os.path.join(base_dir, "manifest.json")

@@ -32,7 +32,6 @@ import json
 import os
 import sys
 import torch
-import torch.nn as nn
 import torch.nn.functional as F
 
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
@@ -53,7 +52,7 @@ def build_model_and_batch(config_path, ckpt_path=None, batch_size=16, device="cp
     from src.eval.model_io import load_model_from_ckpt
     from src.model.dit import DiT_2Cond_models
     from src.utils.latent_dataset import MCCDLatentDataset
-    from src.loss.flow_matching import FlowMatching, TIME_SCALE
+    from src.loss.flow_matching import FlowMatching
 
     # 1. 词表映射
     csmap = None
@@ -213,7 +212,7 @@ def run_probe(model, batch, fm, device="cpu"):
     diff_g = (g_deform - g_std).abs()
     rel_change_g = (g_deform - g_std).norm() / g_std.norm()
 
-    print(f"\n  [通道 A: SkelNet 间架通道]")
+    print("\n  [通道 A: SkelNet 间架通道]")
     print(f"  • 全局位移场 (dx, dy): 均值 = {off_stats['mean_abs']:.4f} px, 最大 = {off_stats['max_abs']:.4f} px")
     print(f"  • 骨架潜空间相对形变量 ||g' - g_std|| / ||g_std||: {rel_change_g.item()*100:.2f}%")
     print(f"  • 平均绝对改动像素值: {diff_g.mean().item():.4f}")
@@ -239,15 +238,15 @@ def run_probe(model, batch, fm, device="cpu"):
     norm_c = c.norm(dim=-1).mean().item()
     energy_ratio = (norm_y ** 2) / (norm_y ** 2 + norm_t ** 2)
 
-    print(f"\n  [通道 B: Diffusion adaLN 通道]")
+    print("\n  [通道 B: Diffusion adaLN 通道]")
     print(f"  • cond_fusion 输入操作数对比: ||e_dit|| = {e_dit.norm(dim=-1).mean().item():.4f} vs ||e_glyph_vec|| = {norm_eglyph:.4f}")
-    print(f"  • 调制向量能量分解 (c = t_emb + y_emb):")
+    print("  • 调制向量能量分解 (c = t_emb + y_emb):")
     print(f"    - 时间信号 ||t_emb|| = {norm_t:.4f}")
     print(f"    - 条件信号 ||y_emb|| = {norm_y:.4f}")
     print(f"    - 风格条件能量占比 ||y||^2 / (||y||^2 + ||t||^2) = {energy_ratio*100:.2f}%")
 
     # 逐层 adaLN 调制强度检查
-    print(f"\n  [DiT Block 逐层 adaLN 调制幅度]")
+    print("\n  [DiT Block 逐层 adaLN 调制幅度]")
     block_gammas = []
     block_alphas = []
     for i, blk in enumerate(model.blocks):
@@ -284,7 +283,7 @@ def run_probe(model, batch, fm, device="cpu"):
     loss_deform = ((g_deform - g_inst) ** 2).mean()
     loss_total = loss_diff + 1.0 * loss_deform
 
-    print(f"\n  [当前 Batch 损失]")
+    print("\n  [当前 Batch 损失]")
     print(f"  • L_diff (扩散流匹配损失) = {loss_diff.item():.4f}")
     print(f"  • L_deform (骨架形变监督损失) = {loss_deform.item():.4f}")
     print(f"  • L_total = {loss_total.item():.4f}")
@@ -307,25 +306,25 @@ def run_probe(model, batch, fm, device="cpu"):
     gn_dit_diff = grad_dit_diff.norm(dim=-1).mean().item()
     gn_skel_deform = grad_skel_deform.norm(dim=-1).mean().item()
 
-    print(f"  • 扩散任务 L_diff 反传到风格嵌入的梯度:")
+    print("  • 扩散任务 L_diff 反传到风格嵌入的梯度:")
     print(f"    - 通道 A (经由 DiT -> SkelNet 反传): ||grad_{{skel}}(L_diff)|| = {gn_skel_diff:.6f}")
     print(f"    - 通道 B (经由 DiT adaLN 直接反传):  ||grad_{{dit}}(L_diff)||  = {gn_dit_diff:.6f}")
     print(f"    - 扩散梯度比值 (SkelNet / adaLN) = {gn_skel_diff / max(gn_dit_diff, 1e-9):.4f}")
 
-    print(f"\n  • 骨架中间监督 L_deform 对 SkelNet 的梯度:")
+    print("\n  • 骨架中间监督 L_deform 对 SkelNet 的梯度:")
     print(f"    - ||grad_{{skel}}(L_deform)|| = {gn_skel_deform:.6f}")
     print(f"    - 监督信号强度比 (L_deform / L_diff 作用在 SkelNet 上) = {gn_skel_deform / max(gn_skel_diff, 1e-9):.2f} 倍")
 
     # 3. 梯度方向协同度 (Cosine Similarity)
     cos_sim = F.cosine_similarity(grad_skel_diff, grad_skel_deform, dim=-1).mean().item()
-    print(f"\n  • 核心检验: 扩散目标与骨架 GT 监督在 SkelNet 上的梯度余弦相似度:")
+    print("\n  • 核心检验: 扩散目标与骨架 GT 监督在 SkelNet 上的梯度余弦相似度:")
     print(f"    - cos(grad_skel(L_diff), grad_skel(L_deform)) = {cos_sim:+.4f}")
     if cos_sim > 0.05:
-        print(f"    => 【协同同向】: 扩散任务自发引导骨架朝向真实书家间架形变！两者正向共振。")
+        print("    => 【协同同向】: 扩散任务自发引导骨架朝向真实书家间架形变！两者正向共振。")
     elif cos_sim < -0.05:
-        print(f"    => 【冲突拉扯】: 扩散任务的梯度在把骨架拉向其它方向，与 GT 间架冲突！")
+        print("    => 【冲突拉扯】: 扩散任务的梯度在把骨架拉向其它方向，与 GT 间架冲突！")
     else:
-        print(f"    => 【解耦正交】: 扩散任务对骨架间架细节近乎零干涉，主要依靠 L_deform 单独锚定。")
+        print("    => 【解耦正交】: 扩散任务对骨架间架细节近乎零干涉，主要依靠 L_deform 单独锚定。")
 
     # =========================================================================
     # [Probe 3] 风格敏感度消融测试 (Sensitivity & Ablation)
@@ -397,10 +396,10 @@ def run_probe(model, batch, fm, device="cpu"):
     print(f"  • [消融 5] 关闭主干风格 (e_dit 归零):          L = {loss_no_dit_style:.5f} (Δ = {loss_no_dit_style - base_loss:+.5f}, {(loss_no_dit_style - base_loss)/base_loss*100:+.2f}%)")
 
     print(f"\n{'='*70}\n[诊断结论总结]\n{'='*70}")
-    print(f"1. 双通道注入确认: 风格信息已严格实现双通道注入。")
+    print("1. 双通道注入确认: 风格信息已严格实现双通道注入。")
     print(f"   - 通道 A (SkelNet 间架级): e_callig 驱动 deformable offset/affine/stroke -> 输出形变骨架 g'，形变量达 {rel_change_g.item()*100:.1f}%。")
-    print(f"   - 通道 B (Backbone 笔触级): e_callig 进入 cond_fusion 与 e_glyph_vec 融合，在 12 层 DiT blocks 的 adaLN 中全面驱动 scale/shift/gate。")
-    print(f"2. 梯度流态势:")
+    print("   - 通道 B (Backbone 笔触级): e_callig 进入 cond_fusion 与 e_glyph_vec 融合，在 12 层 DiT blocks 的 adaLN 中全面驱动 scale/shift/gate。")
+    print("2. 梯度流态势:")
     print(f"   - 主干 adaLN 承接了扩散目标对风格的核心梯度 (||grad|| = {gn_dit_diff:.6f})。")
     print(f"   - SkelNet 通道除了承接扩散梯度的微弱穿透 ({gn_skel_diff:.6f}) 外，主要由 L_deform 监督主导 ({gn_skel_deform:.6f}，强约 {gn_skel_deform/max(gn_skel_diff, 1e-9):.1f} 倍)，保证间架结构不会被扩散噪声带偏。")
     print(f"   - 扩散目标与骨架监督在 SkelNet 上的余弦相似度为 {cos_sim:+.3f}。")

@@ -40,8 +40,8 @@ def main():
         print(f"错误: 找不到补丁元数据: {CSV_PATH}")
         sys.exit(1)
 
-    print(f"=== 开始在本地 GPU (RTX 4070) 上执行 VAE Latent 编码 ===")
-    print(f"显存安全策略: 进程硬锁上限 <= 4.8GB, 系统总显存严格保持 < 7.0GB")
+    print("=== 开始在本地 GPU (RTX 4070) 上执行 VAE Latent 编码 ===")
+    print("显存安全策略: 进程硬锁上限 <= 4.8GB, 系统总显存严格保持 < 7.0GB")
     print(f"Batch 大小: {args.batch} | Workers: {args.workers}")
     print(f"输入 CSV: {CSV_PATH}")
     print(f"VAE 权重: {VAE_PATH}")

@@ -15,7 +15,7 @@ _pull_sample_dir/_strip_label/make_eval_poster 调用), 参数化为多实验:
   python pull_s11.py --loop         # 每 --interval 秒循环 (默认 120)
   python pull_s11.py --no-poster    # 跳过样本图拉取+海报 (只更新曲线数据)
 """
-import os, re, sys, json, time, glob, subprocess, datetime, shutil, tempfile
+import os, sys, json, time, glob, subprocess, datetime, shutil, tempfile
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 # 复用 pull_monitor 的底层函数 (不触发其 __main__)

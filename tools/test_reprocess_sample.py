@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 """test_reprocess_sample.py — 测试从原始拓片进行古法CV自适应清洗+标准化的效果。"""
-import os
 import cv2
 import numpy as np
 from scipy.ndimage import distance_transform_edt

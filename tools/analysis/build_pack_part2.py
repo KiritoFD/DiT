@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 """build_pack_part2.py — 专家包 第2/3/4/5 项 + 文档 + 导读 + zip"""
 import csv
-import glob
 import hashlib
 import os
 import shutil

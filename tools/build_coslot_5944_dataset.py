@@ -19,8 +19,6 @@
 """
 import os
 import sys
-import csv
-import json
 import numpy as np
 import pandas as pd
 from PIL import Image, ImageDraw, ImageFont
@@ -201,7 +199,7 @@ def main():
     # 规划样本序号（从 60,000 开始，彻底与已有 000000~052456 隔离，防止覆盖或混淆）
     start_id = 60000
 
-    print(f"\n[2/5] 开始批量渲染与生成 5,944 张共用槽位增强样本...")
+    print("\n[2/5] 开始批量渲染与生成 5,944 张共用槽位增强样本...")
     supplement_rows = []
     generated_count = 0
 
@@ -309,7 +307,7 @@ def main():
     print(f"  增量补丁 CSV 已保存: {supp_csv} ({len(supp_df)} 行)")
 
     # 合并完整训练 CSV
-    print(f"\n[4/5] 合并生成完整增强训练集 CSV...")
+    print("\n[4/5] 合并生成完整增强训练集 CSV...")
     # 对齐列
     cols = list(df.columns)
     supp_df = supp_df[cols]
@@ -319,7 +317,7 @@ def main():
     print(f"  完整合并 CSV 已保存: {combined_csv} ({len(combined_df)} 行)")
 
     # 验证统计
-    print(f"\n[5/5] 数据集质量与稀疏性复核验证:")
+    print("\n[5/5] 数据集质量与稀疏性复核验证:")
     new_char_counts = combined_df["character"].value_counts()
     min_count = new_char_counts.min()
     deficient_remaining = (new_char_counts < 4).sum()
@@ -329,11 +327,11 @@ def main():
     print(f"  合并后最低汉字频次: min(char_count) = {min_count}")
     print(f"  频次 < 4 张的汉字数: {deficient_remaining} 个 (目标清零)")
 
-    print(f"\n新增 5,944 样本的书体分布:")
+    print("\n新增 5,944 样本的书体分布:")
     for s, c in supp_df["script"].value_counts().items():
         print(f"  书体 [{s}]: {c:5d} 张 ({c / len(supp_df) * 100:.1f}%)")
 
-    print(f"\n共用槽位接收量前 10 位大师:")
+    print("\n共用槽位接收量前 10 位大师:")
     for cal, c in supp_df["calligrapher"].value_counts().head(10).items():
         cid = supp_df[supp_df["calligrapher"] == cal]["calligrapher_id"].iloc[0]
         print(f"  大师: {cal:6s} (ID={cid:4d}): 接收 {c:5d} 张")

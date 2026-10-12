@@ -2,7 +2,6 @@
 """eval coverage + sparsity analysis vs train_base_noaug."""
 import collections as C
 import csv
-import re
 
 train = list(csv.DictReader(open("assets/train_base_noaug.csv", encoding="utf-8")))
 out = open("eval_sparsity.txt", "w", encoding="utf-8")

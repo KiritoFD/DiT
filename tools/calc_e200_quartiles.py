@@ -1,7 +1,5 @@
 import os
 import csv
-import json
-import numpy as np
 import pandas as pd
 
 # 1. 首先加载 v68 step 200000 的 187 个样本，建立基于 v68 SSIM 的排序索引

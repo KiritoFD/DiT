@@ -1,4 +1,4 @@
-import csv, os, sys
+import csv
 from collections import defaultdict, Counter
 
 csv_path = "assets/train_top10_style23.csv"
@@ -37,7 +37,7 @@ print(f"{'TOTAL':16s} | {tot_all:6d} | {real_all:6d} | {syn_all:6d} | {syn_all/t
 
 # Look at some synthetic image paths
 syn_rows = [r for r in rows if "font" in r.get("source", "")]
-print(f"\nSample 5 synthetic entries:")
+print("\nSample 5 synthetic entries:")
 for r in syn_rows[:5]:
     print(f"  slot={r['slot_name']}, char={r['character']}, img_path={r['image_path']}, src_path={r.get('src_image_path', '')}")
 

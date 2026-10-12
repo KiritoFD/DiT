@@ -1,5 +1,4 @@
 import pandas as pd
-import os
 
 df = pd.read_csv("/root/Workspace/xy/DiT/exp-std/csv/eval200_fixed.csv")
 print(f"Total samples: {len(df)}")

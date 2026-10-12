@@ -50,16 +50,16 @@ for k, lst in cand.items():
 
 n_con = sum(v[2] for v in consistent.values())
 n_inc = sum(v[1] for v in inconsistent.values())
-print(f"\n  === 一致性过滤 ===")
+print("\n  === 一致性过滤 ===")
 print(f"    ✓ 组内一致(>=60% 同一输出): {len(consistent)} 组, {n_con} 样本")
 print(f"    ✗ 组内不一致:               {len(inconsistent)} 组, {n_inc} 样本")
 
-print(f"\n  === 一致的组（前 30）===")
+print("\n  === 一致的组（前 30）===")
 for (sc, ch), (top, n, tot_) in sorted(consistent.items(),
                                        key=lambda x: -x[1][2])[:30]:
     print(f"    [{sc}] {ch} -> {top}   {n}/{tot_} 一致")
 
-print(f"\n  === 不一致的组（前 12，VLM 认不准）===")
+print("\n  === 不一致的组（前 12，VLM 认不准）===")
 for (sc, ch), (outs, tot_) in list(inconsistent.items())[:12]:
     print(f"    [{sc}] {ch}: {dict(outs)} (共{tot_})")
 

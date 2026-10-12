@@ -1,4 +1,4 @@
-import os, sys, glob, csv, re
+import os, glob, csv, re
 import numpy as np
 
 csv_path = "assets/eval_top10_strict_subset84.csv"

@@ -8,7 +8,7 @@
   assets/rank_feat_meta.npz         ids 数组 + 质心->pair_key 对照
 口径与 tools/rank_dino.py 完全一致（同划分、同 CSV），保证可复现。
 """
-import csv, glob, os, re, sys
+import csv, glob, os, re
 import numpy as np
 import torch
 import torch.nn as nn

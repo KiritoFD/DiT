@@ -10,9 +10,7 @@ eval_sweep_12ch.py — 12ch 以来全部实验统一复评 (SIGSTOP 训练, in-m
 """
 import argparse
 import csv
-import glob
 import os
-import re
 import subprocess
 import sys
 import time
@@ -50,7 +48,6 @@ def build_model(ck):
     ck = torch.load(ck, map_location="cpu", weights_only=False)
     a = ck.get("args", {})
     if not isinstance(a, dict):
-        import argparse as _ap
         a = vars(a)
     arch = dict(norm_type=a.get("norm_type", "rms"), mlp_type=a.get("mlp_type", "swiglu"),
                 qk_norm=bool(a.get("qk_norm", 1)), rope=bool(a.get("rope", 1)),

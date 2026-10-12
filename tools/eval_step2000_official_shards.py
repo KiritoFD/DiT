@@ -1,4 +1,4 @@
-import os, sys, json
+import os, sys
 import torch as th
 
 ROOT = "/root/Workspace/xy/DiT"

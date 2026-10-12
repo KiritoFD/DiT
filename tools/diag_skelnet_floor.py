@@ -88,7 +88,7 @@ with torch.no_grad():
         j = min(s + a.batch, len(ids))
         out[s:j] = head(torch.from_numpy(G[s:j]),
                         tab[torch.from_numpy(Y[s:j])]).numpy()
-print(f'[2] 头输出完成')
+print('[2] 头输出完成')
 
 # ── 各口径的 MSE ──
 mse_base = float(((G - T) ** 2).mean())        # 什么都不做

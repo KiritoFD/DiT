@@ -12,10 +12,8 @@
   python tools/reprocess_wild_cpu.py --workers 32
 """
 import argparse
-import csv
 import multiprocessing as mp
 import os
-import sys
 import time
 
 import cv2

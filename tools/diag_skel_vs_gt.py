@@ -46,7 +46,6 @@ def load_gray(p, size=128):
     return np.asarray(Image.open(p).convert("L").resize((size, size),
                       Image.Resampling.LANCZOS)).astype(np.float32) / 255.0
 
-from skimage.metrics import structural_similarity as ssim_fn
 
 # 读 50k_v2 的 skel 分片
 per = 5056

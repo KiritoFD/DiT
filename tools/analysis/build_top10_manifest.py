@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """tools/analysis/build_top10_manifest.py — 筛选 Top 10 书家的 23 槽位样本清单并构建映射"""
-import os
 import sys
 import json
 import pandas as pd

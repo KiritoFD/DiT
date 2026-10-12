@@ -144,7 +144,7 @@ def main():
                 union_keys.add(k)
     print(f"\n[结论数据] train ∪ eval 的唯一 glyph 键 = {len(union_keys)} "
           f"(纯 train = {len(tset)})")
-    print(f"  config 里的 num_characters = 35130 (表行数)")
+    print("  config 里的 num_characters = 35130 (表行数)")
     all_oov = sum(v[1] for v in overview.values())
     print(f"\n{'='*66}")
     if all_oov == 0:

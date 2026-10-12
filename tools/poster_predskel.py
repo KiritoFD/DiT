@@ -8,10 +8,8 @@
 用法: python tools/poster_predskel.py --n 12
 """
 import argparse
-import csv
 import json
 import os
-import re
 import sys
 
 import numpy as np

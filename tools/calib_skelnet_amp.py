@@ -26,7 +26,6 @@ resAlign 对 β 不变 (方向不变), 所以 β 影响的是 clDice/ink/cosGen�
   python tools/calib_skelnet_amp.py --resume assets/skelnet_dit_G_bridge_nog.pt
 """
 import argparse
-import csv
 import json
 import os
 import sys
@@ -219,8 +218,8 @@ def main():
     print(f"\n{'β':>10} {'clDice':>8} {'idIoU':>8} {'ink比':>7} {'cosGen':>8} {'resAlign':>9}")
     for tag, b_, c, i_, ir, cg_, ra in rows:
         print(f"{tag:>10} {c:8.4f} {i_:8.4f} {ir:7.3f} {cg_:8.4f} {ra:9.4f}")
-    print(f"\n  copy 基线 (β=0, 直接用标准骨架): clDice 第一行")
-    print(f"  β=1 (raw 模型输出): 最后一行 β=1.00")
+    print("\n  copy 基线 (β=0, 直接用标准骨架): clDice 第一行")
+    print("  β=1 (raw 模型输出): 最后一行 β=1.00")
     out_json = {"resume": a.resume, "step": rf.get("step"),
                 "beta_star": {"p10": float(np.percentile(bstar, 10)),
                               "p50": float(np.percentile(bstar, 50)),

@@ -44,7 +44,6 @@ import time
 
 import numpy as np
 import torch
-import torch.nn.functional as F
 from PIL import Image
 
 # 注意: 这里 **不乘** scaling_factor (与 sd-vae 版不同)

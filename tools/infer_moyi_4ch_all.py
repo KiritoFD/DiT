@@ -3,8 +3,6 @@ import sys
 import json
 import csv
 import time
-import numpy as np
-from PIL import Image
 
 base = "/home/ds/Workspace/moyi/ref/moyi"
 sys.path.insert(0, base)

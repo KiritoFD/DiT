@@ -172,7 +172,7 @@ def main():
 
     res = {"t": tgrid, "iou_k": ks, "width": wp, "width_mean": float(ws.mean()),
            "rows": []}
-    print(f"\n[Q1] 中程 x0_pred 解码后的结构指标 (skel IoU@k / clDice / mask IoU)")
+    print("\n[Q1] 中程 x0_pred 解码后的结构指标 (skel IoU@k / clDice / mask IoU)")
     hdr = "  " + "".join(f"{'IoU@' + str(k):>9}" for k in ks) + f"{'clDice':>9}{'maskIoU':>9}"
     print("载体" + hdr)
     print("-" * (len(hdr) + 8))

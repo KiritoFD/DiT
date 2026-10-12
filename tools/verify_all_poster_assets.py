@@ -1,6 +1,5 @@
 import os
 import glob
-from PIL import Image
 
 indices = [32, 4, 130, 162, 140, 114, 54, 144, 84, 172]
 chars = ["冠", "豈", "出", "典", "悟", "照", "鼓", "呼", "兩", "其"]

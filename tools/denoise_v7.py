@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """denoise_v7.py — v7 pipeline: 极性(黑组件>55%→反色) → 切边条 → 外框白化 → 去小件. 无缩放."""
-import os, sys, json, glob
+import os, sys, json
 import numpy as np
 sys.path.insert(0, '/root/Workspace/xy/DiT'); os.chdir('/root/Workspace/xy/DiT')
 sys.stdout.reconfigure(encoding='utf-8')

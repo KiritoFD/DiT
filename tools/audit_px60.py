@@ -83,7 +83,7 @@ def main():
         print(f"    inner>{t:.2f}: {n:6d}")
 
     order = np.argsort(-inn)
-    print(f"\n  最可疑 (inner 最大) 12 张:")
+    print("\n  最可疑 (inner 最大) 12 张:")
     for k in order[:12]:
         print(f"    inner={inn[k]:.4f} w={ww[k]:6.1f} ink={ink[k]:.3f} "
               f"char={rows[keep[k]].get('character','')} "

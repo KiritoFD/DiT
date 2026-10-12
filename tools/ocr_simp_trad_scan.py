@@ -10,7 +10,7 @@ import argparse
 import csv
 import os
 import random
-from collections import Counter, defaultdict
+from collections import Counter
 
 import numpy as np
 from PIL import Image
@@ -105,6 +105,6 @@ with open(a.out, "w", newline="", encoding="utf-8") as f:
         w.writerow(m)
 print(f"\n  written {a.out}")
 
-print(f"\n  === 简繁错配明细（全部）===")
+print("\n  === 简繁错配明细（全部）===")
 for m in rel_mis:
     print(f"    csv={m[3]!r} -> OCR={m[4]!r}  conf={m[5]}  [{m[1]}/{m[2]}]")

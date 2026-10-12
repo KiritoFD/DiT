@@ -9,7 +9,7 @@
   - char_dino_embeddings.npy   (num_chars, 768)  按 character 平均 (跨书体)
   - char_dino_index.json        character_id → row index
 """
-import os, csv, json, sys, io, math, time
+import os, csv, json, sys, io, time
 os.environ["HF_ENDPOINT"] = "https://hf-mirror.com"
 sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
 

@@ -51,7 +51,7 @@ def probe(r):
 with mp.Pool(40) as pool:
     res = pool.map(probe, rows, chunksize=256)
 bg = np.array([x[2] for x in res])
-print(f"\n=== 背景(亮部中位)分布 ===")
+print("\n=== 背景(亮部中位)分布 ===")
 print(f"  p1={np.percentile(bg,1):.1f} p5={np.percentile(bg,5):.1f} "
       f"p50={np.percentile(bg,50):.1f} min={bg.min():.1f}")
 for t in (200, 220, 235, 245, 250):

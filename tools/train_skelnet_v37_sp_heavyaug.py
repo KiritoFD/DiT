@@ -19,7 +19,7 @@
      - loss_ramp: 前 1000 步平滑爬坡, 保证初始化平稳
   5. 7px 粗骨架目标与输入 (shards_gtskel_w7 + shards_std_w7)
 """
-import os, sys, json, glob, csv, re, time, math, argparse
+import os, sys, json, time, math, argparse
 import numpy as np
 import torch as th
 import torch.nn.functional as F
@@ -263,7 +263,7 @@ def main():
             mean_frag = float(np.mean(frags))
             med_frag = float(np.median(frags))
 
-        print(f"\n" + "="*65, flush=True)
+        print("\n" + "="*65, flush=True)
         print(f"[EVAL @ Step {step:05d}] 纯血真迹 200 样本评测:", flush=True)
         print(f"  骨架 SSIM (均值)   : {mean_ssim:.4f} (中位: {med_ssim:.4f})", flush=True)
         print(f"  墨迹 SSIM (Ink)    : {mean_ink:.4f}", flush=True)

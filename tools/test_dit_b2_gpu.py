@@ -1,4 +1,4 @@
-import sys, os
+import sys
 sys.path.insert(0, "/root/Workspace/xy/DiT")
 import torch as th
 from src.model.dit import DiT_2Cond_B_2, DiT_2Cond_Sp_2, DiT_2Cond_S_2

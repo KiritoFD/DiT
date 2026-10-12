@@ -130,7 +130,7 @@ def main():
     print(f"  holdout per-sample top-1 = {acc:.4f} ± {1.96*se:.4f} (n={len(y):,}, "
           f"随机 {1/n_cls:.2f})")
     print(f"  基线 (v1, top10 训练)     = {base:.4f} ± 0.0135   Δ = {acc-base:+.4f}")
-    print(f"  每类召回: " + " ".join(f"c{c}={rec[c]:.3f}" for c in range(n_cls)))
+    print("  每类召回: " + " ".join(f"c{c}={rec[c]:.3f}" for c in range(n_cls)))
     print(f"  表行|cos|均值 = {mc:.4f}")
     print("=" * 70, flush=True)
     json.dump(dict(tag=a.tag, enc_dir=a.enc_dir, acc=acc, ci95=1.96 * se,

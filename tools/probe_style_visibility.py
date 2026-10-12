@@ -63,7 +63,6 @@
 """
 import argparse
 import json
-import math
 import os
 import sys
 
@@ -340,7 +339,7 @@ def _report(r, a):
             fl = r["final_layer"]
             print(f"\n  final_layer: shift={fl['shift_final']:.4f} "
                   f"scale={fl['scale_final']:.4f} mean={fl['_mean']:.4f}")
-        print(f"\n  逐层 Δ：")
+        print("\n  逐层 Δ：")
         for i in sorted(r["per_layer"]):
             print(f"    block {i:>2}  {r['per_layer'][i]['_mean']:.4f}")
     else:

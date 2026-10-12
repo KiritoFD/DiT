@@ -84,7 +84,7 @@ for src in ("assets/eval_v13_strict.csv", "assets/eval_v13_seen.csv"):
     print(f"  ✓ {dst}: 修 {m} 行" + (f", 跳过 {m2}" if m2 else ""))
 
 # ── 汇总 ──────────────────────────────────────────────────────────────
-print(f"\n  === 汇总 ===")
+print("\n  === 汇总 ===")
 a = list(csv.DictReader(open("assets/train_50k_v2.csv", encoding="utf-8")))
 b = list(csv.DictReader(open("assets/train_50k_v2_fixed.csv",
                              encoding="utf-8")))

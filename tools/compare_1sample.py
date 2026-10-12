@@ -97,8 +97,8 @@ with th.no_grad():
 ssim_s = ssim_torch(dec_seen, gt_s_norm).item()
 ssim_st = ssim_torch(dec_strict, gt_st_norm).item()
 
-print(f"\n" + "="*50)
-print(f"【实测对比结果】:")
+print("\n" + "="*50)
+print("【实测对比结果】:")
 print(f"  Seen 样本 ({r_seen['calligrapher']} · {r_seen['character']}):   SSIM = {ssim_s:.4f}")
 print(f"  Strict 样本 ({r_strict['calligrapher']} · {r_strict['character']}): SSIM = {ssim_st:.4f}")
-print(f"="*50)
+print("="*50)

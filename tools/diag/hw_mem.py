@@ -3,7 +3,7 @@
 
 用法: taskset -c <cores> python hw_mem.py <threads>
 """
-import os, sys, time
+import sys, time
 sys.path.insert(0, "/root/Workspace/xy/DiT")
 NT = int(sys.argv[1])
 import torch

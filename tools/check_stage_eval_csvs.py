@@ -1,6 +1,5 @@
 import os
 import json
-import csv
 
 base = "/root/Workspace/xy/DiT"
 manifest_path = os.path.join(base, "exp_milestones/milestones_manifest.json")

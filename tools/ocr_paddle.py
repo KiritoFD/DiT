@@ -92,11 +92,11 @@ print(f"    不一致: {len(mismatch)}")
 c = Counter(m[4] for m in mismatch)
 print(f"    其中简繁关系: {c.get('简繁', 0)}")
 
-print(f"\n  === 简繁错配（真问题）===")
+print("\n  === 简繁错配（真问题）===")
 for truth, pred, sc, cal, rel in mismatch:
     if rel == "简繁":
         print(f"    csv={truth!r}  OCR={pred!r}  [{sc}/{cal}]")
-print(f"\n  === 其他不一致（多为 OCR 错认，前20）===")
+print("\n  === 其他不一致（多为 OCR 错认，前20）===")
 n = 0
 for truth, pred, sc, cal, rel in mismatch:
     if rel != "简繁":

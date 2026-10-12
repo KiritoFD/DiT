@@ -18,7 +18,6 @@ build_std_skel_latents.py — 从标准字库 skel PNG 构建 VAE latent 分片
       > /tmp/build_std_skel_latents.log 2>&1 &
 """
 import os
-import sys
 import csv
 import argparse
 import numpy as np

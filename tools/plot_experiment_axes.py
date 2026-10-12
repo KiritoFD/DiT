@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 """plot_experiment_axes.py — 实验设计变量 × 性能可视化 (本地 matplotlib)."""
 import os
-import sys
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt

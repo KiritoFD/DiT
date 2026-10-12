@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 """check_wild_raw_match.py — 验证 train_50k_v2_fixed_augmented.csv 中的 hcsu_wild 样本与 HCSU/wild_extract 原始图片的一致性。"""
 import os
-import sys
 import pandas as pd
 
 CSV_PATH = "assets/train_50k_v2_fixed_augmented.csv"

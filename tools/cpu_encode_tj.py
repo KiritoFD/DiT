@@ -14,7 +14,6 @@
 """
 import csv
 import glob
-import io
 import multiprocessing as mp
 import os
 import sys
@@ -283,7 +282,7 @@ def run_std_skel(nproc, ithr, batch):
     for p in procs:
         p.join()
     # 聚合 + 展开: uid -> img_id (tongji 行)
-    w_files = sorted(glob.glob(f"/tmp/tj_enc/w*_std_skel.npz"))
+    w_files = sorted(glob.glob("/tmp/tj_enc/w*_std_skel.npz"))
     uid2lat = {}
     for wf in w_files:
         with np.load(wf) as d:

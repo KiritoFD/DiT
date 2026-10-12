@@ -1,9 +1,8 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """tools/export_predskel_shards.py — 用 v31_stage1_skel @ 80k 全量离线生成预测骨架潜变量分片"""
-import os, sys, glob, json, time, csv, re
+import os, sys, glob, time, csv, re
 import numpy as np
-import pandas as pd
 import torch as th
 
 ROOT = "/root/Workspace/xy/DiT"

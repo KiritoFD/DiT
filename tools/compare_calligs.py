@@ -2,8 +2,6 @@
 """per-calligrapher comparison: fame vs tongji (by script)."""
 import collections
 import csv
-import glob
-import os
 import zipfile
 
 out = open("callig_compare.txt", "w", encoding="utf-8")

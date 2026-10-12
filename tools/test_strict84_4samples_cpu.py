@@ -52,7 +52,7 @@ def get_std_lat(iid):
 
 csv_path = "assets/eval_top10_strict_subset84.csv"
 rows = list(csv.DictReader(open(csv_path, encoding="utf-8")))[:4]
-print(f"[2] 选取前 4 条 Strict84 样本测试:")
+print("[2] 选取前 4 条 Strict84 样本测试:")
 for i, r in enumerate(rows):
     print(f"  Sample {i}: 书家={r['calligrapher']} 书体={r['script']} 字={r['character']} img_path={r['image_path']}")
 
@@ -92,7 +92,7 @@ with th.no_grad():
 
 from src.eval.in_mem_eval import _ssim_tensor
 ssim_vals = _ssim_tensor(dec, gts_norm)
-print(f"\n🎉 4 样本真实 Strict84 E2E SSIM 结果:")
+print("\n🎉 4 样本真实 Strict84 E2E SSIM 结果:")
 for i, (r, ssim) in enumerate(zip(rows, ssim_vals)):
     print(f"  [{i}] {r['calligrapher']} · {r['character']} ({r['script']}): SSIM = {ssim:.4f}")
 print(f"  ==> 均值 SSIM: {float(np.mean(ssim_vals)):.4f}")

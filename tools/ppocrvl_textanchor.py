@@ -197,7 +197,7 @@ ex = sum(1 for r in res if r["pred"] == r["char"])
 rl = sum(int(r["relaxed_eq"]) for r in res)
 print(f"\n  ★ style={a.style}: n={len(res)}  exact={ex/len(res):.4f}  "
       f"relaxed={rl/len(res):.4f}", flush=True)
-print(f"\n  前 20 条:")
+print("\n  前 20 条:")
 for r in res[:20]:
     ok = "OK " if r["pred"] == r["char"] else "   "
     print(f"    {ok}{r['char']:>2} -> {r['pred']:<3} raw={r['raw'][:26]!r}")

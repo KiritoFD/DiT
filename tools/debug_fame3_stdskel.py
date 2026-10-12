@@ -14,7 +14,7 @@
   python tools/debug_fame3_stdskel.py --ckpt 52500 --n 32
   python tools/debug_fame3_stdskel.py --ckpt /abs/path/to/ckpt.pt --n 32
 """
-import os, sys, json, argparse, time
+import os, sys, json, argparse
 sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 _root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, _root)

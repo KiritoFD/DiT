@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """tools/merge_extend_writer_to_base.py — 合并 extend_writer 到全量训练集 CSV"""
-import os
 import sys
 import pandas as pd
 

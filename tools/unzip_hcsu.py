@@ -1,8 +1,7 @@
 #!/opt/conda/envs/cu121/bin/python
-import os, sys, time, json, csv
-from collections import Counter, defaultdict
+import os
+from collections import defaultdict
 from PIL import Image
-import numpy as np
 
 BASE = "/root/Workspace/xy/HCSU"
 

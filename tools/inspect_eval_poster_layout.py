@@ -1,5 +1,4 @@
 from PIL import Image
-import numpy as np
 
 im = Image.open("exp/purestd_posters/eval200fix_poster.png")
 w, h = im.size

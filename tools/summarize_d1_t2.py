@@ -10,7 +10,6 @@ import glob
 import io
 import json
 import os
-import sys
 
 # ---------------------------------------------------------------- D1
 

@@ -8,7 +8,6 @@
   - 清洗报告
 """
 import csv, json, os
-from collections import defaultdict, Counter
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.join(HERE, "..")
@@ -78,24 +77,24 @@ print("=" * 60)
 print("清洗报告")
 print("=" * 60)
 print(f"\n清除标签: {DIRTY}")
-print(f"保留标签: 碑刻, 篆刻 (真实风格)\n")
+print("保留标签: 碑刻, 篆刻 (真实风格)\n")
 
 # 原始统计
 orig_glyphs = set(int(r["glyph_id"]) for r in train_rows)
 clean_glyphs = set(int(r["glyph_id"]) for r in clean_train)
-print(f"train CSV:")
+print("train CSV:")
 print(f"  原始: {len(train_rows):>6} 样本, {len(orig_glyphs):>5} glyphs")
 print(f"  清洗: {len(clean_train):>6} 样本, {len(clean_glyphs):>5} glyphs")
 print(f"  删除: {len(train_rows)-len(clean_train):>6} 样本 "
       f"({(len(train_rows)-len(clean_train))/len(train_rows)*100:.1f}%), "
       f"{len(orig_glyphs)-len(clean_glyphs):>4} glyphs")
 
-print(f"\neval100 CSV:")
+print("\neval100 CSV:")
 print(f"  原始: {len(eval_rows):>4} 样本")
 print(f"  清洗: {len(clean_eval):>4} 样本")
 print(f"  删除: {len(eval_rows)-len(clean_eval):>4} 样本")
 
-print(f"\ncalligs.json 更新:")
+print("\ncalligs.json 更新:")
 for sid in range(5):
     orig_n = len(calligs[str(sid)])
     clean_n = len(clean_calligs[str(sid)])
@@ -117,14 +116,14 @@ if clean_eval:
           f"({found/len(clean_eval)*100:.1f}%)")
 
 # 各 script 清洗后样本数
-print(f"\n各书体清洗后:")
+print("\n各书体清洗后:")
 for sid in range(5):
     orig = sum(1 for r in train_rows if int(r["script_id"]) == sid)
     clean = sum(1 for r in clean_train if int(r["script_id"]) == sid)
     print(f"  {SCRIPT_NAMES[sid]}: {orig} -> {clean} "
           f"(删除 {orig-clean}, {(orig-clean)/orig*100:.1f}%)")
 
-print(f"\n输出文件:")
+print("\n输出文件:")
 print(f"  {TRAIN_OUT}")
 print(f"  {EVAL_OUT}")
 print(f"  {CALLIGS_OUT}")

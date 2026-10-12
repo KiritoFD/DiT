@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """tools/build_canonical_top10_seen.py — 从 train_top10_style23.csv 中按书家均匀抽取 20 张 Seen 评测集"""
-import os
 import sys
 import pandas as pd
 

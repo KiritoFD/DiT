@@ -5,7 +5,7 @@
 只算 MSE (全量 106k), SSIM 单独采样 1000 张。
 4 组: f4_p4, f4_p2, f8_p4, f8_p2 (patch 不影响 VAE 重建, 但跑全 4 组验证)。
 """
-import os, sys, csv, json, time, gc, math
+import os, sys, csv, json, time, gc
 import torch
 import numpy as np
 from PIL import Image
@@ -150,7 +150,7 @@ def evaluate_config(name, cfg, all_paths):
     print(f"  time: {elapsed:.0f}s ({summary['rate']:.1f} img/s)")
 
     # SSIM 采样 1000 张 (单进程)
-    print(f"  computing SSIM on 1000 samples...")
+    print("  computing SSIM on 1000 samples...")
     from scipy.ndimage import uniform_filter
     def compute_ssim(img1, img2):
         c1, c2 = 0.01**2, 0.03**2
@@ -211,7 +211,7 @@ def main():
 
     # 汇总
     print(f"\n{'='*60}")
-    print(f"=== 汇总 ===")
+    print("=== 汇总 ===")
     print(f"{'配置':<20} {'VAE':<6} {'patch':<5} {'tokens':<7} "
           f"{'MSE':<12} {'SSIM(1k)':<10}")
     for s in summaries:

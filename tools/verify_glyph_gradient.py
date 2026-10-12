@@ -156,12 +156,12 @@ def main():
         torch.cuda.empty_cache() if dev.type == "cuda" else None
 
     base = results[0]["params"]
-    print(f"\n参数增量（相对 A）:")
+    print("\n参数增量（相对 A）:")
     for r in results[1:]:
         print(f"  {r['name'][:44]:<44} +{r['params']-base:,} "
               f"({(r['params']/base-1)*100:+.1f}%)")
 
-    print(f"\n梯度通路诊断:")
+    print("\n梯度通路诊断:")
     for r in results:
         flag = "✅" if r["glyph_embedder_grad"] > 0 else "❌ 无梯度"
         print(f"  {r['name'][:44]:<44} glyph_embedder {flag}")
@@ -173,7 +173,7 @@ def main():
             ok = "✅ 恒等" if r["inject_max_abs"] == 0 else f"⚠️ {r['inject_max_abs']}"
             print(f"      zero-init 检查: max|W,b|={r['inject_max_abs']} {ok}")
 
-    print(f"\n结论提示:")
+    print("\n结论提示:")
     print("  · A/B/C 的 glyph_embedder 均应有非零梯度（来自输入层 token-add）")
     print("  · D 若为 0，证明『只靠逐层注入会冻死 glyph_embedder』")
     print("     → 这正是保留输入层 token-add 的原因")

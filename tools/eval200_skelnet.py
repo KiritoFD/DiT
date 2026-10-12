@@ -116,7 +116,7 @@ for r in rows:
     print(f"{r['name']:<14}{r['ssim']:>8.4f}{r['ink']:>10.4f}"
           f"{r['iou']:>8.4f}{r['lpips']:>9.4f}{r['l2']:>10.4f}")
 b, m = rows[0], rows[1]
-print(f"\n判读 (相对基线):")
+print("\n判读 (相对基线):")
 print(f"  SSIM  {'✓' if m['ssim'] > b['ssim'] else '✗'}  "
       f"{m['ssim'] - b['ssim']:+.4f}")
 print(f"  IoU   {'✓' if m['iou'] > b['iou'] else '✗'}  "

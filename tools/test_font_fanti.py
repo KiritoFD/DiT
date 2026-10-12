@@ -5,7 +5,6 @@
 输出差异度量 (0 = 完全相同) + 拼图供人眼确认。
 """
 import os
-import sys
 
 import numpy as np
 from PIL import Image, ImageDraw, ImageFont

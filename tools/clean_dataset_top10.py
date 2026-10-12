@@ -1,5 +1,5 @@
-import os, sys, csv, random
-from collections import defaultdict, Counter
+import os, csv, random
+from collections import defaultdict
 import numpy as np
 
 random.seed(42)
@@ -99,7 +99,7 @@ for s in slot_names:
     train_rows.extend(tr)
     print(f"  {s:16s}: Real Total={len(pool):5d} -> Eval={len(ev):3d}, Train={len(tr):5d}")
 
-print(f"\nFinal Split:")
+print("\nFinal Split:")
 print(f"  Eval  set: {len(eval_rows):6d} pure real samples -> {eval_out_csv}")
 print(f"  Train set: {len(train_rows):6d} pure real samples -> {train_out_csv}")
 

@@ -16,7 +16,6 @@ import io
 import json
 import multiprocessing as mp
 import os
-import sys
 import time
 import zipfile
 from collections import Counter
@@ -259,9 +258,9 @@ def main():
     total_raw = len(entries)
 
     print("\n" + "=" * 75)
-    print(f"【步骤 2/4】多进程并发执行反相检测、60px 过粗清洗与尺寸归一化解包...")
+    print("【步骤 2/4】多进程并发执行反相检测、60px 过粗清洗与尺寸归一化解包...")
     print(f"  CPU 可用核心: {mp.cpu_count()} 核心")
-    print(f"  进程池并发数: 32 Workers (NVMe 极限读写吞吐)")
+    print("  进程池并发数: 32 Workers (NVMe 极限读写吞吐)")
     print("=" * 75)
 
     indexed_entries = list(enumerate(entries))

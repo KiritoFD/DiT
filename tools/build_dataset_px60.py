@@ -159,7 +159,7 @@ def main():
         assert len(w) == len(rows), "cache mismatch"
         print(f"  [scan] 复用缓存 {SCAN_CACHE}")
     else:
-        print(f"  [scan] 计算 w_max ...", flush=True)
+        print("  [scan] 计算 w_max ...", flush=True)
         with mp.Pool(40) as pool:
             w = np.array(pool.map(wmax, [r["image_path"] for r in rows], chunksize=128),
                          dtype=np.float32)

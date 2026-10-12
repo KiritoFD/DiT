@@ -3,7 +3,6 @@
 """tools/analysis/inspect_mccd_salvage.py — 全面盘点 MCCD 原始数据中的可用量与遗失量"""
 import os
 import sys
-import json
 from collections import defaultdict, Counter
 import pandas as pd
 
@@ -68,11 +67,11 @@ def main():
     imgs_not_in_45_all = sum(callig_imgs[c] for c in mccd_not_in_45)
     imgs_not_in_45_kxl = sum(callig_kxl_imgs[c] for c in mccd_not_in_45)
 
-    print(f"\n【维度一：45 类已收录名家在 MCCD 中的存量情况】")
+    print("\n【维度一：45 类已收录名家在 MCCD 中的存量情况】")
     print(f"  - 45 位书家中在 MCCD 有对应目录的有: {len(mccd_in_45)} 位")
     print(f"  - 这 {len(mccd_in_45)} 位书家在 MCCD 的图片总量: {imgs_in_45_all:,} 张")
     print(f"  - 这 {len(mccd_in_45)} 位书家在 MCCD 的【楷/行/隶】真迹总量: {imgs_in_45_kxl:,} 张")
-    print(f"  - 当前 50k 底库中来自原名家底库 (final_imgs_fame_v8) 的仅有: 26,171 张")
+    print("  - 当前 50k 底库中来自原名家底库 (final_imgs_fame_v8) 的仅有: 26,171 张")
     print(f"  - ➡ 即使只看这 37 位已有书家，在 MCCD 的楷行隶中仍有至少 {imgs_in_45_kxl - 26171:,} 张真实真迹未进入底库！")
 
     print("\n【维度二：未收录的 100+ 位古代/近代名家（全集）】")

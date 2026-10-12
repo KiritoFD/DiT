@@ -1,6 +1,4 @@
 import os
-import glob
-import json
 
 base = "/root/Workspace/xy/DiT"
 

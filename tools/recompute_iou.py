@@ -30,7 +30,7 @@ DIR_PAT = {
 
 def one(task):
     sub, step, i = task
-    base = f"assets/results"
+    base = "assets/results"
     # 找 run 目录 (按 RUNS 顺序在 main 里对齐; 这里传入完整路径)
     return task
 

@@ -6,7 +6,7 @@ Input : assets/dino_meanstd_50k.npy (51036,768) = DINO patch mean+std, frozen.
 Loss  : pairwise ranking, POS=same-cal-diff-char, NEG=same-char-diff-cal (anti-shortcut).
 Eval  : held-out same-char-pool enrichment (ref 3.36x) + pairwise AUC (ref 0.606).
 """
-import argparse, csv, glob, os, re, sys, time
+import argparse, csv, os, re, time
 import numpy as np
 import torch
 import torch.nn as nn

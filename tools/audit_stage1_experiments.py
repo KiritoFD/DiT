@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-import os, sys, glob, json
+import os, glob, json
 import pandas as pd
 
 ROOT = "/root/Workspace/xy/DiT"
@@ -40,7 +40,7 @@ for s_dir in stage1_dirs:
             print(f"  [{s:<10}] (n={len(s_df):>2}): SSIM={s_df['ssim'].mean():.4f} (med={s_df['ssim'].median():.4f}) | MSE={s_df['mse'].mean():.5f} | LPIPS={s_df['lpips'].mean():.4f} | Ink_IoU={s_df['ink_iou'].mean():.4f}")
             
         # Key checkpoints progression
-        print(f"\n--- Progression History (Strict) ---")
+        print("\n--- Progression History (Strict) ---")
         strict_prog = []
         for st in steps:
             s_df = df[(df["step"] == st) & (df["set"] == "strict")]

@@ -8,7 +8,7 @@ Creates:
 
 Uses the local sd-vae-ft-ema to encode so train.py's latent-cached path works.
 """
-import os, sys, json, csv
+import os, sys, csv
 import numpy as np
 import torch
 from PIL import Image

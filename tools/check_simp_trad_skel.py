@@ -18,8 +18,6 @@ GT 是书法家写的字，风格差异大，但**拓扑（骨架）**是稳定�
 import argparse
 import csv
 import os
-import re
-from collections import defaultdict
 from concurrent.futures import ThreadPoolExecutor
 
 import numpy as np
@@ -161,7 +159,7 @@ print(f"  完成 {len(res)} 条有简繁变体的样本, {time()-t0:.0f}s")
 # 判定: alt 明显更好
 TH = 0.03
 mismatch = [r for r in res if r[6] - r[5] > TH]
-print(f"\n  === 结果 ===")
+print("\n  === 结果 ===")
 print(f"    有简繁变体的样本: {len(res)}")
 print(f"    alt 明显更好(IoU 差 >{TH}): {len(mismatch)} = "
       f"{len(mismatch)/max(len(res),1)*100:.1f}%")
@@ -174,7 +172,7 @@ with open(a.out, "w", newline="", encoding="utf-8") as f:
         w.writerow(list(r) + [round(r[6] - r[5], 4)])
 print(f"  written {a.out}")
 
-print(f"\n  === 最可疑的 20 条 ===")
+print("\n  === 最可疑的 20 条 ===")
 for r in sorted(res, key=lambda x: -(x[6] - x[5]))[:20]:
     print(f"    csv={r[3]}  alt={r[4]}  IoU {r[5]:.3f}->{r[6]:.3f}  "
           f"[{r[1]}/{r[2]}]")

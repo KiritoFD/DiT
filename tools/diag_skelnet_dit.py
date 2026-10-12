@@ -9,7 +9,6 @@
 同时报墨量 (生成 / 输入 / GT), 判断是在造墨还是输出空白。
 """
 import argparse
-import csv
 import json
 import os
 import sys

@@ -6,7 +6,7 @@ B 12块 nn.Linear 堆栈 (实际 GEMM 形状, 连续输入): in-module mm 真实
 C 非连续输入 mm 对照
 D 每次前向的分配总量推算 (逐 op 输出字节)
 """
-import os, sys, time
+import sys, time
 sys.path.insert(0, "/root/Workspace/xy/DiT")
 NT = int(sys.argv[1]) if len(sys.argv) > 1 else 32
 import torch

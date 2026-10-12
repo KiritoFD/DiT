@@ -80,7 +80,7 @@ def main():
         w.writerow(["image_path", "ink", "w_max", "blob", "reason"])
         for r in bad:
             w.writerow(r)
-    print(f"\n  -> /tmp/clean_v1_bad.csv")
+    print("\n  -> /tmp/clean_v1_bad.csv")
 
 
 if __name__ == "__main__":

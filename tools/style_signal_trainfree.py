@@ -13,7 +13,7 @@
   pixel_l2                              —— 原图 L2
   ink_stats                             —— 手写墨迹统计（墨量/笔宽/重心/倾斜）
 """
-import csv, json, os, sys
+import csv, os, sys
 import concurrent.futures as cf
 import numpy as np
 from PIL import Image
@@ -151,5 +151,5 @@ for k in KEYS:
     print(f'{k:>16} | {hit:7.1%} {base:7.1%} {hit/max(base,1e-9):6.2f}x {len(ok):>5}')
 
 # 免训练信号的"检索稳定性": 同一样本不同实例能否互相找回
-print(f'\n参考: 纯随机猜 = 基线列（≈ 1/池内候选数）')
+print('\n参考: 纯随机猜 = 基线列（≈ 1/池内候选数）')
 print('判读: 富集 >1.3x 才算"有可用的免训练信号"; ~1.0x = 该表示读不出书家')

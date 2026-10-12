@@ -3,7 +3,6 @@
 import csv
 import glob
 import os
-import zipfile
 
 fame = set()
 for p in ["assets/train_fame3_clean_v8.csv", "assets/train_fame3_e_full.csv"]:

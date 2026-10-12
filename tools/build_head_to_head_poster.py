@@ -1,7 +1,6 @@
-import os, sys
+import os
 import subprocess
 from PIL import Image, ImageDraw, ImageFont
-import numpy as np
 
 os.makedirs("exp/h2h_cache", exist_ok=True)
 

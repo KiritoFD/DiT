@@ -34,18 +34,18 @@ print(f"\n  ★ 真错配候选 (csv 简体 -> OCR 繁体): {len(real)} = "
 hi = [r for r in real if float(r["conf"]) >= 0.9]
 print(f"    其中高置信度(>=0.9): {len(hi)}")
 
-print(f"\n  === 按书体 ===")
+print("\n  === 按书体 ===")
 print(f"    {dict(Counter(r['script'] for r in real))}")
-print(f"\n  === 按书家 Top12 ===")
+print("\n  === 按书家 Top12 ===")
 for k, v in Counter(r["calligrapher"] for r in real).most_common(12):
     print(f"    {k}: {v}")
 
-print(f"\n  === 字符对 Top25 ===")
+print("\n  === 字符对 Top25 ===")
 for (a, b), v in Counter((r["char_csv"], r["char_ocr"])
                          for r in real).most_common(25):
     print(f"    {a} -> {b}: {v}")
 
-print(f"\n  === 高置信度样例 20 ===")
+print("\n  === 高置信度样例 20 ===")
 for r in hi[:20]:
     print(f"    {r['char_csv']} -> {r['char_ocr']}  conf={r['conf']}  "
           f"[{r['script']}/{r['calligrapher']}]")

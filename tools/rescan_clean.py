@@ -18,7 +18,6 @@ import os
 import shutil
 import sys
 import time
-from collections import Counter
 
 import numpy as np
 from PIL import Image

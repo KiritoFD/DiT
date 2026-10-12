@@ -180,7 +180,7 @@ def eval_one(name, vae_path, images, dev, batch, dino=None, dino_ckpt=None):
     sf = vae.config.scaling_factor
     best, probe, pstd = probe_convention(vae, images[:8].to(dev), sf, dev)
     print(f"\n=== [{name}] {vae_path}")
-    print(f"  [探针] 四种解码 L1: " + "  ".join(f"{k}={v:.4f}" for k, v in probe.items())
+    print("  [探针] 四种解码 L1: " + "  ".join(f"{k}={v:.4f}" for k, v in probe.items())
           + f"   -> 正确约定 = decode({best})")
     print(f"  [latent] posterior.std mean = {pstd:.4f}")
 

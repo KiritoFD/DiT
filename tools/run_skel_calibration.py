@@ -32,7 +32,6 @@ import shutil
 import sys
 
 import numpy as np
-import torch as th
 
 sys.path.insert(0, "/root/Workspace/xy/DiT")
 os.chdir("/root/Workspace/xy/DiT")

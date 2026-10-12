@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """eval_render_base_poster.py — 评测训练前 Render 基模 (v34 30k) 并生成真实真迹全景海报
 """
-import os, sys, time
+import os, sys
 import numpy as np
 import torch as th
 from PIL import Image
@@ -71,7 +71,7 @@ with th.no_grad():
     med_ssim = float(np.median(ssim_vals))
     l1_val = float(th.nn.functional.l1_loss(dec, eval_gt_imgs_norm).item())
 
-print(f"\n【训练前 Render 基模 (v34 30k) 评测结果】:")
+print("\n【训练前 Render 基模 (v34 30k) 评测结果】:")
 print(f"  出墨 SSIM (均值)   : {mean_ssim:.4f} (中位: {med_ssim:.4f})")
 print(f"  出墨 L1 误差       : {l1_val:.4f}\n")
 

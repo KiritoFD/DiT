@@ -4,7 +4,7 @@
 Saves augmented latents to a temp directory first, then Phase 2 merges
 with original latents efficiently.
 """
-import os, sys, csv, re, time, argparse, glob, multiprocessing as mp
+import os, sys, csv, re, time, argparse, multiprocessing as mp
 from collections import Counter, defaultdict
 sys.stdout.reconfigure(encoding="utf-8")
 import numpy as np

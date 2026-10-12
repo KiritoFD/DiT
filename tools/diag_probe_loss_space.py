@@ -17,7 +17,6 @@ import glob
 import numpy as np
 import torch
 import torch.nn.functional as F
-from PIL import Image
 
 os.chdir(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 sys.path.insert(0, os.getcwd())

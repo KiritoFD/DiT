@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """build_master_results.py — 汇总全部实验数据 → 树状 results/ + 极详细 master_results.csv/json."""
-import os, sys, csv, json, glob, shutil
+import os, sys, csv, json
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 os.chdir(ROOT)
 sys.stdout.reconfigure(encoding="utf-8")

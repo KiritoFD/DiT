@@ -20,10 +20,8 @@
 """
 import argparse
 import csv
-import glob
 import os
 
-import numpy as np
 
 os.chdir("/root/Workspace/xy/DiT")
 
@@ -84,4 +82,4 @@ with open("assets/variant_fixed_ids.csv", "w", newline="",
     w.writerow(["idx", "old_50k_id", "old_char", "new_char"])
     for i, o, n in todo:
         w.writerow([i, rows[i].get("old_50k_id", ""), o, n])
-print(f"  ✓ -> assets/variant_fixed_ids.csv（供重渲染 std / 重建 shards）")
+print("  ✓ -> assets/variant_fixed_ids.csv（供重渲染 std / 重建 shards）")

@@ -1,7 +1,6 @@
 import os
 import glob
 import pandas as pd
-from PIL import Image
 
 os.chdir("/root/Workspace/xy/DiT")
 

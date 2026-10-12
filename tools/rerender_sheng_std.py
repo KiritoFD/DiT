@@ -58,6 +58,6 @@ a = np.asarray(Image.open(OUT))
 print(f"    尺寸={a.shape}  墨迹占比={float((a < 127).mean()):.4f}")
 
 # 顺便对比：旧的是「升」
-print(f"\n  对比参考:")
+print("\n  对比参考:")
 print(f"    训练集里「陞」的 std: data/50k/std/019962.png  "
       f"存在={os.path.exists('data/50k/std/019962.png')}")

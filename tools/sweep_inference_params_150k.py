@@ -3,11 +3,9 @@
 """tools/sweep_inference_params_150k.py — 对 v24_top10 终点 150k 检查点进行全方位推理参数扫描"""
 import os
 import sys
-import glob
 import torch
 import numpy as np
 import pandas as pd
-from PIL import Image
 import cv2
 
 sys.stdout.reconfigure(encoding="utf-8")

@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """tools/analysis/build_unified_salvage_csv.py — 汇总合并 MCCD 与 HCSU 6,029 张待打捞全景质检总表"""
-import os
 import sys
 import pandas as pd
 
@@ -66,7 +65,7 @@ def main():
         print(f"  - {act:<20}: {cnt:>5} 张 ({cnt/len(merged)*100:.2f}%)")
 
     total_salvageable = merged["is_salvageable"].sum()
-    print(f"\n【3. 最终判定】:")
+    print("\n【3. 最终判定】:")
     print(f"  - 100% 确认可打捞入库高质量真迹: {total_salvageable:,} 张 ({total_salvageable/len(merged)*100:.1f}%)")
     print(f"  - 建议彻底剔除的残次/空白样本: {len(merged) - total_salvageable} 张 (仅 {(len(merged)-total_salvageable)/len(merged)*100:.1f}%)")
 

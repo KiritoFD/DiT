@@ -26,8 +26,6 @@ import time
 
 import numpy as np
 import torch
-import torch as th
-from PIL import Image
 from scipy.ndimage import correlate1d
 from skimage.morphology import skeletonize
 

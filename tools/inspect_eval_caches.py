@@ -1,4 +1,4 @@
-import os, sys, json, csv
+import os, sys, json
 ROOT = "/root/Workspace/xy/DiT"
 os.chdir(ROOT)
 sys.path.insert(0, ROOT)

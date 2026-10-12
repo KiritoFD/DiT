@@ -1,9 +1,6 @@
 import os
 import numpy as np
-import torch
 import csv
-from PIL import Image
-from diffusers.models import AutoencoderKL
 
 base = "/root/Workspace/xy/DiT"
 

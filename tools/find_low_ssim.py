@@ -60,7 +60,7 @@ print(f"\n  mean_ssim 分布: p1={statistics.quantiles(ms,n=100)[0]:.3f} "
       f"p25={statistics.quantiles(ms,n=4)[0]:.3f} "
       f"中位={statistics.median(ms):.3f}")
 
-print(f"\n  === mean_ssim 最低的 40 条（跨所有 ckpt 都差）===")
+print("\n  === mean_ssim 最低的 40 条（跨所有 ckpt 都差）===")
 print(f"  {'mean':<8}{'min':<8}{'max':<8}{'n':<4}{'char':<5}{'script':<5}img_id")
 for r in rows[:40]:
     print(f"  {r['mean_ssim']:<8}{r['min_ssim']:<8}{r['max_ssim']:<8}"

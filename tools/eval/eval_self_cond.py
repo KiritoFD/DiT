@@ -206,7 +206,7 @@ def main():
 
     # ── Summary ──
     print(f"\n{'='*60}")
-    print(f"  Summary")
+    print("  Summary")
     print(f"{'='*60}")
     for r in results_summary:
         if r['alpha'] == 'baseline':

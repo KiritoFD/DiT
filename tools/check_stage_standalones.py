@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-import os, sys, glob
+import os
 import pandas as pd
 
 ROOT = "/root/Workspace/xy/DiT"

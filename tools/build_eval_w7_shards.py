@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """tools/build_eval_w7_shards.py — 为 Strict84 和 Seen20 评测集生成 7px (w7) 粗骨架的评测分片 (GT 骨架目标 + 标准字骨架条件)"""
-import os, sys, glob, csv, re, time
+import os, sys, csv, re
 import numpy as np
 import torch as th
 from PIL import Image
@@ -74,7 +74,7 @@ def main():
     # ── 1. Strict84 GT 骨架 (w7 目标) ──
     strict_csv = "assets/eval_top10_strict_subset84.csv"
     rows_strict = list(csv.DictReader(open(strict_csv, encoding="utf-8")))
-    print(f"\n[2] 处理 Strict84 GT 骨架 (w7, 84 样本)...")
+    print("\n[2] 处理 Strict84 GT 骨架 (w7, 84 样本)...")
     gt_imgs, gt_ids = [], []
     for r in rows_strict:
         iid = int(re.search(r"(\d+)\.png", r["image_path"]).group(1))
@@ -84,7 +84,7 @@ def main():
     encode_images_to_shard(gt_imgs, gt_ids, "data/top10_style23/gt_skel_eval_strict84_w7", vae)
     
     # ── 2. Strict84 标准字骨架 (w7 条件) ──
-    print(f"\n[3] 处理 Strict84 标准字骨架 (w7, 84 样本)...")
+    print("\n[3] 处理 Strict84 标准字骨架 (w7, 84 样本)...")
     std_imgs, std_ids = [], []
     for r in rows_strict:
         iid = int(re.search(r"(\d+)\.png", r["image_path"]).group(1))
@@ -96,7 +96,7 @@ def main():
     # ── 3. Seen20 标准字骨架 (w7 条件) ──
     seen_csv = "assets/eval_top10_seen_20.csv"
     rows_seen = list(csv.DictReader(open(seen_csv, encoding="utf-8")))
-    print(f"\n[4] 处理 Seen20 标准字骨架 (w7, 20 样本)...")
+    print("\n[4] 处理 Seen20 标准字骨架 (w7, 20 样本)...")
     seen_std_imgs, seen_std_ids = [], []
     for r in rows_seen:
         iid = int(re.search(r"(\d+)\.png", r["image_path"]).group(1))

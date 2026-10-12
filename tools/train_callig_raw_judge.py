@@ -21,7 +21,6 @@ import json
 import os
 import sys
 import time
-from collections import defaultdict
 from concurrent.futures import ThreadPoolExecutor
 
 import cv2
@@ -277,7 +276,7 @@ def main():
     se = float(np.sqrt(0.542 * (1 - 0.542) / max(1, len(yho))))
     print("\n" + "=" * 74)
     print(f"top10 留出集 (n={len(yho):,}, 与 top10 版同划分) 的 per-sample top-1:")
-    print(f"  基线 (top10 训练, 上一轮)       = 0.5420 ± 0.0135")
+    print("  基线 (top10 训练, 上一轮)       = 0.5420 ± 0.0135")
     print(f"  A) raw 编码器 + top10 训练行     = {accA:.4f}  (Δ {accA-0.5420:+.4f})")
     print(f"  B) raw 编码器 + raw 同名书家行   = {accB:.4f}  (Δ {accB-0.5420:+.4f})")
     print(f"     配对标准误参考 ±{1.96*se:.4f}")

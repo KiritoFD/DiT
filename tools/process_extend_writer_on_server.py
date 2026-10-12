@@ -3,7 +3,6 @@
 """tools/process_extend_writer_on_server.py — 在服务器全速多进程处理并生成 extend_writer 图像与骨架"""
 import os
 import sys
-import re
 import numpy as np
 import pandas as pd
 from PIL import Image, ImageDraw, ImageFont

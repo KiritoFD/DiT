@@ -11,7 +11,6 @@
 只读 + 推理, 不训练。
 """
 import argparse
-import csv
 import json
 import os
 import sys
@@ -79,9 +78,9 @@ def main():
     xs = th.stack([ds[i]["latent"] for i in range(min(n, 256))])
     sx = float(xs.std())
     vx = float(xs.var())
-    print(f"\n[B 信噪比]")
+    print("\n[B 信噪比]")
     print(f"  x0 (GT骨架 latent) std = {sx:.4f}, var = {vx:.5f}")
-    print(f"  eps ~ N(0,1)      std = 1.0000, var = 1.00000")
+    print("  eps ~ N(0,1)      std = 1.0000, var = 1.00000")
     print(f"  速度目标 v = eps - x0 : var = 1 + {vx:.5f} = {1+vx:.5f}")
     print(f"  ★ x0 占 v 的方差比 = {vx/(1+vx)*100:.2f}%")
     print(f"  -> 若模型完全不学 x0, 只把噪声学好, loss 也能降到接近 (噪声残差) 的水平;"
@@ -119,14 +118,14 @@ def main():
         mse_s.append(float((g[0] - x0[0]).pow(2).mean()))
 
     m = lambda v: float(np.mean(v))
-    print(f"\n[C latent 域: 生成 vs 照抄输入]")
+    print("\n[C latent 域: 生成 vs 照抄输入]")
     print(f"  cos(生成, GT)   = {m(cg):+.4f}")
     print(f"  cos(输入std,GT) = {m(cs):+.4f}   <- copy baseline")
     print(f"  ★ 生成{'优于' if m(cg) > m(cs) else '**劣于**'}照抄输入 (差 {m(cg)-m(cs):+.4f})")
     print(f"  MSE(生成,GT)    = {m(mse_g):.5f}")
     print(f"  MSE(输入std,GT) = {m(mse_s):.5f}")
 
-    print(f"\n[D 是否塌成条件均值(过平滑)]")
+    print("\n[D 是否塌成条件均值(过平滑)]")
     print(f"  std: 生成 {m(sg_):.4f} | GT {m(sx_):.4f} | 比 {m(sg_)/m(sx_):.3f}")
 
 

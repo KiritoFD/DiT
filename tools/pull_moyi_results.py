@@ -1,4 +1,4 @@
-import os, sys, subprocess
+import os, subprocess
 
 base_dir = "exp/moyi_top10_rf"
 os.makedirs(os.path.join(base_dir, "posters"), exist_ok=True)

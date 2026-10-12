@@ -19,7 +19,7 @@ for r in rows:
         pass
 
 print("=" * 80)
-print(f"【v66 实验阶段评测全生命周期指标 (eval200_fixed, N=187)】")
+print("【v66 实验阶段评测全生命周期指标 (eval200_fixed, N=187)】")
 print("=" * 80)
 print(f"{'Step':<8} | {'Strict SSIM':<12} | {'Strict LPIPS':<12} | {'Seen SSIM':<12} | {'Skel IoU':<10} | {'MSE':<8}")
 print("-" * 80)

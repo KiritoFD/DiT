@@ -146,7 +146,7 @@ def main():
           f"{bf_gt_mode/bf_gt_sample:>13.3f}")
     print(f"{'DiT 预测':<16}{bf_pred:>10.4f}{z_pred.std():>9.4f}{z_pred.mean():>9.4f}"
           f"{bf_pred/bf_gt_sample:>13.3f}")
-    print(f"\n逐通道顶带份额:")
+    print("\n逐通道顶带份额:")
     print(f"  GT  : {[round(x,4) for x in per_ch_gt]}")
     print(f"  pred: {[round(x,4) for x in per_ch_pr]}")
     res = {"ckpt": a.ckpt, "n": int(z_pred.shape[0]),

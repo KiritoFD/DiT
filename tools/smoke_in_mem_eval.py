@@ -16,7 +16,6 @@ RESULTS = "/tmp/in_mem_eval_smoke"
 ck = torch.load(CKPT, map_location="cpu", weights_only=False)
 a = ck.get("args", {})
 if not isinstance(a, dict):
-    import argparse as _ap
     a = vars(a) if isinstance(a, __import__("argparse").Namespace) else {}
 
 arch = dict(norm_type=a.get("norm_type", "rms"), mlp_type=a.get("mlp_type", "swiglu"),

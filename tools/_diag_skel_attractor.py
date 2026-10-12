@@ -25,7 +25,6 @@ X, xid = load_all(IMG)
 print(f"shapes Y={Y.shape} G={G.shape} X={X.shape}")
 
 # 背景参考 (白底) —— 用实际白图的 latent
-import torch
 from diffusers.models import AutoencoderKL
 dev = 'cuda'
 vae = AutoencoderKL.from_pretrained('data/pretrained/pretrained_models/sd-vae-ft-ema',

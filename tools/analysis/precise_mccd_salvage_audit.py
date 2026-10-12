@@ -148,8 +148,8 @@ def main():
     print(f"  - 损坏/读失败: {corrupt_count} 张")
 
     est_salvageable = int(len(df_cand) * pass_rate)
-    print(f"\n=== [4/4] 最终评估 ===")
-    print(f"🎉 MCCD 中在严格限制在【45 类已有书家 + 楷/行/隶】前提下，")
+    print("\n=== [4/4] 最终评估 ===")
+    print("🎉 MCCD 中在严格限制在【45 类已有书家 + 楷/行/隶】前提下，")
     print(f"   可为当前底库打捞出约 【{est_salvageable:,} 张】 100% 真实历代名家墨迹/碑帖！")
     print(f"   其中赵孟頫真迹贡献: {(df_cand['calligrapher']=='赵孟頫').sum()} 张！")
 

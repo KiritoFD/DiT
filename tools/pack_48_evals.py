@@ -1,5 +1,3 @@
-import os
-import subprocess
 
 print("=== 准备在 48 机器上打包 eval 成果 ===")
 remote_script = """

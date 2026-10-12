@@ -1,7 +1,5 @@
-import os, sys
+import os
 import subprocess
-from PIL import Image, ImageDraw, ImageFont
-import numpy as np
 
 # Create local directory
 local_dir = "exp/head_to_head"

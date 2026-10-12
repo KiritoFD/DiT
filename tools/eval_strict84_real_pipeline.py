@@ -19,7 +19,6 @@ dev = th.device("cpu")
 from src.eval import model_io
 from src.eval.in_mem_eval import _get_vae
 from src.eval.metrics import ssim_torch
-from src.eval.metrics_ink import ink_ssim
 from src.eval.inference import sample_latents, build_diffusion
 from src.utils.callig_script_map import map_callig_script
 import torchvision.transforms as T

@@ -3,7 +3,7 @@
 Try common passwords on merged wild.zip.
 Validates by reading first PNG file and checking magic bytes.
 """
-import os, sys, time, zipfile
+import os, time, zipfile
 
 WILD = "/root/Workspace/xy/HCSU/wild.zip"
 
@@ -220,7 +220,7 @@ def main():
             
             with open("/root/Workspace/xy/HCSU/wild_password.txt", "w") as f:
                 f.write(pwd)
-            print(f"Saved to /root/Workspace/xy/HCSU/wild_password.txt")
+            print("Saved to /root/Workspace/xy/HCSU/wild_password.txt")
             found = True
             break
     

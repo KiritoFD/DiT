@@ -1,7 +1,5 @@
 import os
-import glob
 import csv
-import pandas as pd
 
 base = "/root/Workspace/xy/DiT/assets/results"
 

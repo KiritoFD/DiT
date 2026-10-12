@@ -1,5 +1,4 @@
 import os
-import glob
 
 print("=== 1. 查看 /home/ds/Workspace/moyi 下的所有文件 ===")
 for item in sorted(os.listdir("/home/ds/Workspace/moyi")):

@@ -164,12 +164,12 @@ def main():
         if _re.match(r"head\.\d+\.weight", k) and v.dim() == 4:
             head_out = tuple(v.shape)
     print(f"  stem.weight={stem_w}  head 输出层={head_out}")
-    print(f"  -> 这是 **LatentStructureProbe**(4ch latent -> 2ch 像素 logits, width 32)")
-    print(f"     而 LatentSkelStructureLoss 要求 probe 输出 4ch (实例骨架 latent)")
-    print(f"     -> **类不兼容, 不能直接用**。")
+    print("  -> 这是 **LatentStructureProbe**(4ch latent -> 2ch 像素 logits, width 32)")
+    print("     而 LatentSkelStructureLoss 要求 probe 输出 4ch (实例骨架 latent)")
+    print("     -> **类不兼容, 不能直接用**。")
     # 试一下它输出的东西长什么样
     try:
-        from src.train.latent_structure import LatentStructureProbe, LatentSkelProbe
+        from src.train.latent_structure import LatentStructureProbe
         p = LatentStructureProbe(in_channels=4, width=32, depth=2)
         miss = p.load_state_dict(sd, strict=False)
         print(f"     LatentStructureProbe 载入: missing={len(miss.missing_keys)} "
@@ -180,11 +180,11 @@ def main():
         print(f"     probe(真骨架 latent) 输出 shape={tuple(o.shape)} "
               f"sigmoid均值={float(o.sigmoid().mean()):.4f} "
               f"每通道={[round(float(o.sigmoid()[:, c].mean()), 4) for c in range(o.shape[1])]}")
-        print(f"     (2ch = [canny, skeleton] 像素 logits; 均值 0.5 附近 = 没学到判别性)")
+        print("     (2ch = [canny, skeleton] 像素 logits; 均值 0.5 附近 = 没学到判别性)")
     except Exception as e:
         print("     探针前向失败:", repr(e))
     # LatentSkelProbe 是否存在
-    print(f"\n  LatentSkelProbe 检查点搜索:")
+    print("\n  LatentSkelProbe 检查点搜索:")
     for pat in ["assets/structure_probes/**/*.pt", "assets/**/*skel_probe*.pt",
                 "assets/results/*skel*.pt"]:
         hit = glob.glob(pat, recursive=True)

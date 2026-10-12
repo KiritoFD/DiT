@@ -95,7 +95,7 @@ print(f"  grey_ratio: mean={grey_ratios.mean():.4f} median={np.median(grey_ratio
 
 # 最脏的 10 张
 dirty_idx = np.argsort(grey_ratios)[::-1][:10]
-print(f"\n  最脏的 10 张 (eval500):")
+print("\n  最脏的 10 张 (eval500):")
 for idx in dirty_idx:
     r = valid[idx]
     print(f"    {r['image_path']} grey={grey_ratios[idx]:.3f} char={r['character']} script={r['script']}")
@@ -129,7 +129,7 @@ print(f"  grey_ratio: mean={train_grey.mean():.4f} median={np.median(train_grey)
       f"p95={np.percentile(train_grey, 95):.4f} max={train_grey.max():.4f}")
 
 # 按 script 分组统计
-print(f"\n=== 按 script 分组 ===")
+print("\n=== 按 script 分组 ===")
 script_grey = {}
 for r, g in zip(train_rows[:len(train_results)], train_grey):
     s = r["script"]

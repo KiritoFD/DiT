@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """profile_cpu7.py — 按 (op, 输入形状) 聚合的前向热点 + 线程数对照."""
-import os, sys, time
+import os, sys
 sys.path.insert(0, "/root/Workspace/xy/DiT")
 os.chdir("/root/Workspace/xy/DiT")
 sys.stdout.reconfigure(encoding="utf-8")

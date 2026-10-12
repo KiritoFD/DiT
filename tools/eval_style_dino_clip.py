@@ -3,7 +3,6 @@
 """tools/eval_style_dino_clip.py — 计算 DINO-S 风格表征相似度与风格边际增益"""
 import os
 import sys
-import glob
 import torch
 import torch.nn.functional as F
 import numpy as np

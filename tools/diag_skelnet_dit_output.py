@@ -9,7 +9,6 @@
 """
 import argparse
 import csv
-import glob
 import os
 import sys
 

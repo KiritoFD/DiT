@@ -17,7 +17,7 @@
 产物: {'model': state_dict, 'args': {...}, 'metrics': {...}}
 由 --latent-skel-probe 加载; train.py 会按 args 重建结构并 strict=False 校验。
 """
-import argparse, glob, json, os, time
+import argparse, glob, os, time
 import numpy as np
 import torch
 import torch.nn.functional as F

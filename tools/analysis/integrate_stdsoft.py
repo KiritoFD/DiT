@@ -41,7 +41,7 @@ cols = set(idx[0].keys())
 print(f"    index 列: {sorted(cols)}")
 
 # ── 2) 一条 mask 的形状/极性 + blur ──
-from src.utils.std_soft_glyph import StdSoftGlyphStore, soften_mask  # noqa: E402
+from src.utils.std_soft_glyph import StdSoftGlyphStore  # noqa: E402
 
 st = StdSoftGlyphStore(STORE)
 scripts = sorted({r.get("script_id") for r in idx})[:1]

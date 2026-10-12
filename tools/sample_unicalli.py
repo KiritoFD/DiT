@@ -11,7 +11,6 @@ import csv
 import multiprocessing as mp
 import os
 import sys
-from collections import Counter
 
 import numpy as np
 from PIL import Image

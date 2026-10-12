@@ -1,7 +1,6 @@
 import os
 import sys
 import csv
-import json
 import numpy as np
 import pandas as pd
 from PIL import Image

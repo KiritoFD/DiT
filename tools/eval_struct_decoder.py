@@ -9,7 +9,7 @@
   4. 显存开销: decoder forward+backward 的峰值显存 vs VAE decode
   5. 小模型对比: base=32 depth=3 的同测试
 """
-import os, sys, json, time
+import os, sys, json
 os.environ["XFORMERS_DISABLED"] = "1"
 sys.path.insert(0, "/root/Workspace/xy/DiT/src")
 import torch, torch.nn as nn, torch.nn.functional as F

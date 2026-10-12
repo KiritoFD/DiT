@@ -52,7 +52,7 @@ print(f"\n  单 batch({BATCH} 样本) CPU 时间：")
 print(f"    slow（现做高斯模糊, 旧行为）: {t_slow*1000:8.1f} ms")
 print(f"    fast（σ 网格切片,   新行为）: {t_fast*1000:8.1f} ms")
 print(f"    加速比: {t_slow/max(t_fast,1e-9):.1f}×")
-print(f"\n  按 8 workers 估算每步（288 样本/batch）总耗时：")
+print("\n  按 8 workers 估算每步（288 样本/batch）总耗时：")
 print(f"    旧: {t_slow*1000:.0f} ms → 单步下限 {1000/max(t_slow*1000,1e-9):.1f} steps/s（与实测 0.6 吻合）")
 print(f"    新: {t_fast*1000:.1f} ms → 不再是瓶颈")
 # 校验快慢路径数值一致（同一 σ 下）

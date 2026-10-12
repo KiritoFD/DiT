@@ -10,7 +10,6 @@
     python tools/train_style_head.py --ckpt <pt> --steps 3000 --device cuda
 """
 import argparse
-import json
 import os
 import sys
 

@@ -1,6 +1,4 @@
-import os
 import subprocess
-import sys
 
 cmd = """ssh -o ConnectTimeout=5 ds@10.222.120.101 '
 PYTHON=/home/ds/miniconda3/envs/pytorch/bin/python

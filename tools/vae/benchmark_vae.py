@@ -182,7 +182,6 @@ def eval_vae(vae, images_gray, device, batch=4, is_1ch=True, save_dir=None, save
 
 def save_comparison_grid(results, out_dir):
     """Save a grid of original vs recon for each VAE."""
-    import math
     n_vaes = len(results)
     n_samples = min(8, list(results.values())[0]["recon_samples"]["orig"].shape[0])
 

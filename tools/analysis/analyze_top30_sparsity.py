@@ -83,7 +83,7 @@ for sid in range(5):
             print(f"  {c['name']:8s}: {len(cs):4d}/{len(union)} = {len(cs)/len(union)*100:.1f}%")
     # 计算 pair-wise 重叠（前5位书家之间）
     top5 = [c["name"] for c in callig_list[:5]]
-    print(f"  前5位书家两两重叠:")
+    print("  前5位书家两两重叠:")
     for i in range(len(top5)):
         for j in range(i+1, len(top5)):
             ci, cj = char_sets[top5[i]], char_sets[top5[j]]
@@ -103,7 +103,7 @@ print(f"  每个 glyph 平均样本数: {sum(counts_sorted)/len(counts_sorted):.
 print(f"  最大: {counts_sorted[0]}, 最小: {counts_sorted[-1]}")
 # 分布
 dist = Counter(counts_sorted)
-print(f"  分布 (样本数: glyph数):")
+print("  分布 (样本数: glyph数):")
 for n in sorted(dist.keys()):
     print(f"    {n:3d} 样本: {dist[n]:5d} glyphs ({dist[n]/len(glyph_counts)*100:.1f}%)")
 
@@ -117,6 +117,6 @@ combo_counts.sort(reverse=True)
 print(f"  每个字符平均组合数: {sum(combo_counts)/len(combo_counts):.2f}")
 print(f"  最大: {combo_counts[0]}, 最小: {combo_counts[-1]}")
 cdist = Counter(combo_counts)
-print(f"  分布 (组合数: 字符数):")
+print("  分布 (组合数: 字符数):")
 for n in sorted(cdist.keys()):
     print(f"    {n:3d} 组合: {cdist[n]:5d} 字 ({cdist[n]/len(combo_counts)*100:.1f}%)")

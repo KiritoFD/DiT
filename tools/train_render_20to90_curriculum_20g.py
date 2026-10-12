@@ -14,7 +14,7 @@
 3. "所有训练应该把显存拉到20G去" (Batch 208, 显存饱和在 20.44 GB VRAM, 关闭梯度重计算, 2.7+ step/s)
 4. 纯正真实数据: assets/train_top10_style23_real.csv (26,002 条古代真迹)
 """
-import os, sys, json, time, math, argparse
+import os, sys, json, time, argparse
 from collections import deque
 import numpy as np
 import torch as th
@@ -91,7 +91,7 @@ def main():
     print(f"  初始底座        : {a.init_ckpt} (v34 30k 经典高出墨基模, SSIM 0.7262)")
     print(f"  训练集          : {a.csv} (26,002 条古代书法纯真迹)")
     print(f"  物理 Batch 大小 : {a.batch} (显存吃满 20.44 GB VRAM, ~2.7+ step/s)")
-    print(f"  评测机制        : ★ 100% 采用 SkelNet 预测骨架评测, 杜绝 GT 泄露")
+    print("  评测机制        : ★ 100% 采用 SkelNet 预测骨架评测, 杜绝 GT 泄露")
     print("  级联梯度全阶段规划 :")
     total_est_steps = 0
     for name, pw, gw, min_s, max_s in CURRICULUM_STAGES:

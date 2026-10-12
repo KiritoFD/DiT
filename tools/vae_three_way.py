@@ -12,7 +12,6 @@
 同时给出三方的 往返 PSNR/SSIM/墨量/高频（判断谁的细节保真最好）。
 """
 import os
-import sys
 import argparse
 import numpy as np
 import torch

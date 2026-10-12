@@ -4,7 +4,6 @@
 import os
 import sys
 import shutil
-import json
 import numpy as np
 import pandas as pd
 from PIL import Image, ImageDraw, ImageFont
@@ -112,7 +111,7 @@ def process_copy_task(task):
         return False, str(e)
 
 def main():
-    print(f"=== 开始在服务器构建独立 Top 10 (23 黄金槽位) 数据集 ===")
+    print("=== 开始在服务器构建独立 Top 10 (23 黄金槽位) 数据集 ===")
     df = pd.read_csv(MANIFEST_CSV)
     total = len(df)
     print(f"待处理样本总数: {total:,} 张")

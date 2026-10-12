@@ -3,7 +3,7 @@
 1) CSV row count + unique img ids
 2) latency coverage in latent shards dir 3) skel coverage in skel_root
 """
-import os, sys, csv, re, glob, json
+import os, sys, csv, re, glob
 import numpy as np
 
 csv_path = sys.argv[1]

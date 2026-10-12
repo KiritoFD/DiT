@@ -1,7 +1,6 @@
 """把审计出的反色(拓片)样本拼一张图 (左=条件 std, 右=真迹目标)。纯 CPU。"""
 import os
 
-import numpy as np
 from PIL import Image
 
 ROOT = "/root/Workspace/xy/DiT"

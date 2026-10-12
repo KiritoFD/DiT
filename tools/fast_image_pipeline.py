@@ -14,7 +14,6 @@
     for x_uint8_gpu, s in feeder:        # x 已在显存, uint8 (B,1 or 3,H,W)
         ...                              # 主流已 wait_event, 直接可用
 """
-import os
 from concurrent.futures import ThreadPoolExecutor
 from queue import Queue
 from threading import Thread

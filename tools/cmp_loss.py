@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 """cmp_loss.py — 对比多个 run 的 step->loss / LR 曲线 (含同配方历史 run)。"""
-import glob
 import os
 import re
 import sys

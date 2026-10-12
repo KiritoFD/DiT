@@ -5,7 +5,6 @@
 对 12 张真迹做 encode->decode，量重建图的 高频占比/梯度/Laplacian 方差，与 GT 比。
 """
 import os
-import sys
 import numpy as np
 import torch
 from PIL import Image

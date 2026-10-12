@@ -57,7 +57,6 @@ def load_images(csv_path, n=100, img_root="final_images"):
 @torch.no_grad()
 def eval_recon(vae, images, device, batch=8):
     """Encode → decode → MSE/SSIM."""
-    import torch.nn.functional as Fn
 
     # SSIM
     def _gaussian_window(window_size=11, sigma=1.5):

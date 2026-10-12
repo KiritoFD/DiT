@@ -144,4 +144,4 @@ print(f"\n  补了 {len(added)} 个字")
 import json
 json.dump(added, open("assets/_std_added.json", "w", encoding="utf-8"),
           ensure_ascii=False, indent=2)
-print(f"  written assets/_std_added.json")
+print("  written assets/_std_added.json")

@@ -1,6 +1,5 @@
 import os
 import csv
-import json
 
 base = "/root/Workspace/xy/DiT"
 

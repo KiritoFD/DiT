@@ -14,7 +14,6 @@
 import argparse
 import csv
 import glob
-import json
 import os
 import re
 import sys
@@ -83,7 +82,7 @@ def main():
             between.append(float(vs[0] @ v2))
 
     w, b = np.array(within), np.array(between)
-    print(f"\n残差方向余弦 (残差已单位化):")
+    print("\n残差方向余弦 (残差已单位化):")
     print(f"  组内 (同一 槽位+字, 不同样本) n={len(w)}  mean={w.mean():+.4f}  "
           f"std={w.std():.4f}")
     print(f"  组间 (不同 槽位/字)          n={len(b)}  mean={b.mean():+.4f}  "

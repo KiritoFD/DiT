@@ -1,8 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """tools/diag_style_table.py — 解析 top10 风格表 (callig_script_emb_top10.pt) 的结构、分布与性能。"""
-import os, sys, json
-import numpy as np
+import os, sys
 import torch
 import torch.nn.functional as F
 

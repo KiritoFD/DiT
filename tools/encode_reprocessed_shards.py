@@ -49,7 +49,7 @@ def main():
     ap.add_argument("--with-skel", action="store_true", default=True)
     args = ap.parse_args()
 
-    print(f"=== VAE Latent Encoding Pipeline for Reprocessed Calligraphy ===")
+    print("=== VAE Latent Encoding Pipeline for Reprocessed Calligraphy ===")
     print(f"Reading CSV: {args.csv}")
     rows = list(csv.DictReader(open(args.csv, encoding="utf-8")))
     print(f"Total samples: {len(rows)}")

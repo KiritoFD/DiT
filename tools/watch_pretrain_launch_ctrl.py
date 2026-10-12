@@ -7,7 +7,6 @@ import time
 import glob
 import subprocess
 
-import numpy as np
 
 ROOT = "/root/Workspace/xy/DiT"
 os.chdir(ROOT)

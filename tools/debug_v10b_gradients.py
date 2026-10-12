@@ -200,7 +200,7 @@ def main():
                     o_g = model(xb, tb, ycb, yhb, g=gb).float()
                     rel = (o_nog - o_g).norm() / o_g.norm().clamp_min(1e-8)
                     g_fracs.append(float(rel))
-                    print(f"\n=== g 注入作用 (eval) ===")
+                    print("\n=== g 注入作用 (eval) ===")
                     print(f"  有/无 g 输出相对差: {rel:.5f} "
                           f"({'条件生效' if rel > 0.02 else '<<< 条件几乎无影响'})")
                     res["g_out_diff"] = round(float(rel), 5)

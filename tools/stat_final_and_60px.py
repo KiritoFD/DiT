@@ -38,7 +38,7 @@ def main():
     rows = [r for r in csv.DictReader(
         open("assets/train_base_noaug.csv", encoding="utf-8"))
         if any(s in r["image_path"] for s in KEEP)]
-    print(f"=== 数据集规模 ===")
+    print("=== 数据集规模 ===")
     print(f"  样本数          : {len(rows)}")
     print(f"  书法家数        : {len({r.get('calligrapher','') for r in rows})}")
     print(f"  唯一 character  : {len({r.get('character','') for r in rows})}")
@@ -51,7 +51,7 @@ def main():
     print(f"  每字样本数      : min={v[0]} p25={v[len(v)//4]} p50={v[len(v)//2]} "
           f"p75={v[3*len(v)//4]} max={v[-1]}")
 
-    print(f"\n  书法家明细 (Top20):")
+    print("\n  书法家明细 (Top20):")
     for k, n in Counter(r.get("calligrapher", "") for r in rows).most_common(20):
         print(f"    {k:12s} {n}")
 

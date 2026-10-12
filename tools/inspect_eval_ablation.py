@@ -1,4 +1,3 @@
-import os
 
 eval_script = "/home/ds/Workspace/DiT/experiments/ablation_phase_a/eval_ablation_model.py"
 print(f"=== 查看 {eval_script} ===")

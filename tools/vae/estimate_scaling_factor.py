@@ -9,9 +9,7 @@ scaling_factor = 1 / std(latent_samples)  (使 latent std ≈ 1, 利于 diffusio
   python tools/vae/estimate_scaling_factor.py --vae data/pretrained/sd-vae-ft-ema --csv assets/train_top6.csv --n 500
 """
 import os
-import sys
 import csv
-import re
 import argparse
 import numpy as np
 import torch
@@ -72,7 +70,7 @@ def main():
     print(f"  min:  {all_latents.min().item():.4f}")
     print(f"  max:  {all_latents.max().item():.4f}")
     print(f"\nRecommended scaling_factor = 1/std = {1.0 / all_latents.std().item():.6f}")
-    print(f"  (sd-vae uses 0.18215, which corresponds to std≈5.49)")
+    print("  (sd-vae uses 0.18215, which corresponds to std≈5.49)")
 
 
 if __name__ == "__main__":

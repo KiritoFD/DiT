@@ -60,7 +60,7 @@ for m in ("skel", "ink", "iou", "ssim"):
     print(f"    {m:<6} p5={q[4]:.3f}  p25={q[24]:.3f}  "
           f"中位={statistics.median(vs):.3f}  p75={q[74]:.3f}")
 
-print(f"\n  === 墨迹 SSIM 最低的 40 条（跨 8 个 ckpt 都差）===")
+print("\n  === 墨迹 SSIM 最低的 40 条（跨 8 个 ckpt 都差）===")
 print(f"  {'ink':<8}{'skel':<8}{'iou':<8}{'ssim':<8}{'char':<5}{'script':<5}img_id")
 for r in rows[:40]:
     print(f"  {r['skel']:<8}{r['ink']:<8}{r['iou']:<8}{r['ssim']:<8}"
@@ -80,6 +80,6 @@ for r in rows:
 multi = {c: (statistics.mean(v), len(v)) for c, v in bychar.items()
          if len(v) >= 1}
 worst = sorted(multi.items(), key=lambda x: x[1][0])[:30]
-print(f"\n  === 按字聚合，墨迹 SSIM 最低的 30 个字 ===")
+print("\n  === 按字聚合，墨迹 SSIM 最低的 30 个字 ===")
 for c, (m, n) in worst:
     print(f"    {c}: ink_ssim={m:.3f}  (n={n})")

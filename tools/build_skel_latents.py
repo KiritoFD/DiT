@@ -22,7 +22,6 @@ build_skel_latents.py — 为 mid_clean 构建全新的 skel 数据 (旧 data/sk
       --workers 32 > /tmp/build_skel_latents.log 2>&1 &
 """
 import os
-import sys
 import csv
 import re
 import time

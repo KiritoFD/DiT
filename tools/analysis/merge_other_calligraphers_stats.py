@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """tools/analysis/merge_other_calligraphers_stats.py — 联合汇总 MCCD 与 HCSU 中所有非 45 书家的完整资源清单"""
-import os
 import sys
 import pandas as pd
 
@@ -12,7 +11,7 @@ MCCD_DIR = r"G:\GitHub\DiT\MCCD\MCCD\MCCD-Calligrapher\calligrapher_dataset"
 TRAIN_50K = r"G:\GitHub\DiT\assets\train_50k_v2_fixed.csv"
 
 # 从之前的 scan_mccd 提取数据
-from aggregate_other_calligraphers import scan_mccd, NAME_MAP
+from aggregate_other_calligraphers import scan_mccd
 
 def main():
     df_50k = pd.read_csv(TRAIN_50K)

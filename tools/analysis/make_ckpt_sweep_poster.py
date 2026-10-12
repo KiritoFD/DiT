@@ -8,7 +8,6 @@ import csv
 import os
 import sys
 
-import numpy as np
 from PIL import Image, ImageDraw, ImageFont
 
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))

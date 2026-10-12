@@ -1,9 +1,6 @@
-import os
-import sys
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
-import matplotlib.ticker as ticker
 
 # 设置绘图字体与风格
 plt.rcParams['font.sans-serif'] = ['Microsoft YaHei', 'SimHei', 'DejaVu Sans']

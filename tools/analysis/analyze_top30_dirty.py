@@ -1,6 +1,6 @@
 """聚焦分析：脏数据识别 + eval100 GT 覆盖率"""
 import csv, json, os
-from collections import defaultdict, Counter
+from collections import defaultdict
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 TRAIN_CSV = os.path.join(HERE, "..", "assets", "train_top30.csv")
@@ -84,7 +84,7 @@ print(f"  eval100 总样本: {len(eval_rows)}")
 print(f"  GT 在 train 中找到: {gt_found} ({gt_found/len(eval_rows)*100:.1f}%)")
 print(f"  GT 缺失: {gt_missing} ({gt_missing/len(eval_rows)*100:.1f}%)")
 if gt_missing_detail:
-    print(f"\n  缺失 GT 明细:")
+    print("\n  缺失 GT 明细:")
     for r in gt_missing_detail:
         print(f"    {r['calligrapher']:8s} {SCRIPT_NAMES[int(r['script_id'])]} "
               f"{r['character']} (callig_id={r['calligrapher_id']}, "
@@ -119,7 +119,7 @@ print(f"  单样本 glyph: {len(single_glyph)} / {len(glyph_samples)} "
 # 这些单样本中有多少是模糊标签
 single_vague = sum(1 for r in single_glyph.values() if r["calligrapher"] in VAGUE_LABELS)
 print(f"  其中模糊标签: {single_vague} ({single_vague/len(single_glyph)*100:.1f}%)")
-print(f"  这些单样本无法构成有效的 style transfer pair")
+print("  这些单样本无法构成有效的 style transfer pair")
 
 # 5. 如果去掉模糊标签，数据量和覆盖率变化
 print("\n" + "=" * 60)

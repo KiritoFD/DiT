@@ -50,7 +50,7 @@ def main():
     parser.add_argument("--out-ckpt", default="assets/v22_init_from_v21_155k.pt", help="输出缝合检查点")
     args = parser.parse_args()
 
-    print(f"=== 开始缝合 v21 (155k) 权重 -> v22 初始化检查点 ===")
+    print("=== 开始缝合 v21 (155k) 权重 -> v22 初始化检查点 ===")
     print(f"  输入 v21 Checkpoint: {args.v21_ckpt}")
     print(f"  输入 50 类风格表: {args.ext_emb}")
     print(f"  目标输出: {args.out_ckpt}")

@@ -16,7 +16,7 @@ vlm = list(csv.DictReader(open("assets/vlm_7b_lowconf.csv", encoding="utf-8")))
 print(f"  7B 低置信度结果: {len(vlm)}")
 
 ok = sum(1 for r in vlm if r["char_vlm"] == r["char_csv"])
-print(f"\n  === 与 csv 一致 ===")
+print("\n  === 与 csv 一致 ===")
 print(f"    一致: {ok}/{len(vlm)} = {ok/len(vlm)*100:.1f}%")
 print(f"    (说明 OCR 低置信度里约 {ok/len(vlm)*100:.0f}% 是 OCR 自己认错了，csv 是对的)")
 
@@ -34,12 +34,12 @@ rev = [r for r in vlm
        and t2s.convert(r["char_csv"]) != r["char_csv"]]
 print(f"    反向(csv繁体/VLM简体): {len(rev)}")
 
-print(f"\n  === 新发现错配的字符对 Top20 ===")
+print("\n  === 新发现错配的字符对 Top20 ===")
 for (a, b), n in Counter((r["char_csv"], r["char_vlm"])
                          for r in real).most_common(20):
     print(f"    {a} -> {b}: {n}")
 
-print(f"\n  === 新发现错配按书体 ===")
+print("\n  === 新发现错配按书体 ===")
 print(f"    {dict(Counter(r['script'] for r in real))}")
 
 # 合并（已确认的 752 + 新发现的）
@@ -47,7 +47,7 @@ old = list(csv.DictReader(open("assets/mismatch_confirmed.csv",
                                encoding="utf-8")))
 old_ip = {r["image_path"] for r in old}
 new_only = [r for r in real if r["image_path"] not in old_ip]
-print(f"\n  === 合并 ===")
+print("\n  === 合并 ===")
 print(f"    之前确认: {len(old)}")
 print(f"    低置信度新增: {len(new_only)}")
 print(f"    合计: {len(old) + len(new_only)}")

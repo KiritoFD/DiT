@@ -436,9 +436,9 @@ def main():
                     else "assets/eval_top10_strict_subset84.csv")
             ids = [r[0] for r in rows_with_y(csvp) if r[0] in mp_]
             ys = [r[1] for r in rows_with_y(csvp) if r[0] in mp_]
-            outd = (f"data/top10_style23/predskel_fm_seen20"
+            outd = ("data/top10_style23/predskel_fm_seen20"
                     if name == "seen20" else
-                    f"data/top10_style23/predskel_fm_strict84")
+                    "data/top10_style23/predskel_fm_strict84")
             if a.dump_tag:
                 outd += "_" + a.dump_tag
             from skimage.morphology import skeletonize as _sk

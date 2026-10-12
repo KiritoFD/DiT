@@ -59,7 +59,7 @@ keep_scripts = {"楷", "行"}
 fame_keep = {(c, s): v for (c, s), v in by_callig_script.items() if s in keep_scripts}
 tj_keep = {(c, s): len(v) for (c, s), v in tongji.items() if s in keep_scripts}
 tj_li = {(c, s): len(v) for (c, s), v in tongji.items() if s == "隶"}
-out.write(f"\n=== fame-tj-kxl plan ===\n")
+out.write("\n=== fame-tj-kxl plan ===\n")
 out.write(f"fame keep (楷+行): {sum(fame_keep.values())} rows in ({len(fame_keep)} callig-script)\n")
 out.write(f"tongji keep (楷+行): {sum(tj_keep.values())} rows in {len(tj_keep)} dirs\n")
 out.write(f"tongji 隶 (new script): {sum(tj_li.values())} rows in {len(tj_li)} dirs\n")

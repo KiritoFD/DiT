@@ -15,12 +15,11 @@ patch2 vs patch4 在 VAE 重建层面完全等价 (它们 decode 的是同样的
 优化: batch encode (CPU), 64 核并行, 预计 ~3h。
 输出: vae_noise_full.json (每张图的 MSE/SSIM) + vae_noise_summary.json (统计)。
 """
-import os, sys, csv, json, time, gc, math
+import os, sys, csv, json, time, gc
 sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 
 import torch
 torch.set_num_threads(64)
-import torch.nn.functional as F
 import numpy as np
 from PIL import Image
 from concurrent.futures import ThreadPoolExecutor

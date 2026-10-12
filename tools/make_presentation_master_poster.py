@@ -7,7 +7,6 @@ tools/make_presentation_master_poster.py
 import os
 import sys
 import pandas as pd
-import numpy as np
 from PIL import Image, ImageDraw, ImageFont
 
 sys.stdout.reconfigure(encoding="utf-8")

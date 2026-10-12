@@ -26,8 +26,6 @@ skel/canny 图, 目前靠 vae.decode(整图) 或像素侧整图监督。本小�
 import os
 import sys
 import time
-import glob
-import json
 import argparse
 import datetime
 import torch

@@ -11,7 +11,7 @@ v2 升级:
 
 梯度路径: loss@256 → head(1×1) → up3(PixelShuffle+conv@128) → up2(@64) → up1(@32) → body → stem → latent
 """
-import os, sys, time, json, argparse, datetime, math, re
+import os, sys, time, json, argparse, datetime, math
 import numpy as np
 
 HERE = os.path.dirname(os.path.abspath(__file__))

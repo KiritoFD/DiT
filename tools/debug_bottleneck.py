@@ -7,12 +7,11 @@
   B. callig_scale / glyph_scale 各学到多少? (两条通路活性)
   C. 换书家, 同一骨架+同一噪声, 输出 latent 变多少? (风格是否可控)
 """
-import sys, os, glob, json
+import sys, os, glob
 sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 ROOT = "/root/Workspace/xy/DiT"
 sys.path.insert(0, ROOT)
 os.chdir(ROOT)
-import numpy as np
 import torch
 
 # ── A. 预训练书家表塌缩度 ──
@@ -70,7 +69,7 @@ if w is not None:
     s = e @ e.T
     off = s[~torch.eye(41, dtype=torch.bool)]
     print(f"  模型内 41 书家 pairwise cos = mean {off.mean():.4f} / std {off.std():.4f}")
-    print(f"  前41行与预训练表是否一致: (freeze 后应逐元素相等)")
+    print("  前41行与预训练表是否一致: (freeze 后应逐元素相等)")
 else:
     print("  未找到 y_callig_embedder.embedding_table.weight")
 print("=" * 60)

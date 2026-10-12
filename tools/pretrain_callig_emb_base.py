@@ -8,7 +8,6 @@
 输出: assets/callig_emb_pretrained_base.pt {"embedding": (52,128), "raw_ids": [...]}
 """
 import argparse
-import json
 import os
 import sys
 

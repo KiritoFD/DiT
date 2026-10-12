@@ -116,7 +116,7 @@ def main():
     # ---- 4) ctrl watchdog ----
     sys.path.insert(0, ".")
     import torch
-    from src.model.controlnet import load_main_model, ControlNetDiT
+    from src.model.controlnet import load_main_model
     from src.eval.inference import (
         build_diffusion, sample_latents, load_eval_vae, make_eval_cache, _ssim)
     dev = torch.device("cuda")

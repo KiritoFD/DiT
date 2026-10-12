@@ -17,7 +17,6 @@ v68 在 Best 档的高分里有相当部分是**记住**的样本 -> 海报会�
 import csv
 import os
 import sys
-from collections import defaultdict
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 os.chdir(ROOT)

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """eval_strict84_e2e_gpu.py — 在 GPU 上以正统两阶段流水线快速评估 Strict84 端到端真实成绩"""
-import os, sys, json, csv, re, time, argparse, math
+import os, sys, json, csv, re, time, argparse
 import numpy as np
 import torch as th
 from PIL import Image

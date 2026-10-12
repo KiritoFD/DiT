@@ -72,7 +72,7 @@ def push_to_remote():
 
 
 def verify_remote():
-    print(f"\n=== [3/4] 远程服务器文件落地校验 ===")
+    print("\n=== [3/4] 远程服务器文件落地校验 ===")
     res = subprocess.run(
         ["ssh", REMOTE_HOST, f"ls -lh {REMOTE_ROOT}/data/supplements_glyph/shards_img {REMOTE_ROOT}/data/supplements_glyph/shards_std {REMOTE_ROOT}/assets/*glyph15k.csv"],
         capture_output=True, text=True, check=True, encoding="utf-8", errors="replace"

@@ -24,7 +24,6 @@ import json
 import os
 import sys
 import time
-from collections import defaultdict
 from concurrent.futures import ThreadPoolExecutor
 
 import numpy as np
