@@ -32,6 +32,11 @@ _VAE_TABLE = (
     ("sd-vae-ft-mse", (SD_SF, SD_SHIFT)),
     ("sd-vae", (SD_SF, SD_SHIFT)),
     ("stabilityai/sd-vae", (SD_SF, SD_SHIFT)),
+    # ★ 2026-10-12: Calli "physics" VAE —— 取值直接来自 v80_callivae_physics_noOT /
+    #   v82_physics_noOT_stdsoft 两个**已跑过**的配置（不是我推算的 ✗）。
+    #   ⚠ 它的 shift 非零、sf 与 SD 差 4.6× ⇒ 若某处仍按 0.18215 编解码，图必错 ✗
+    ("calli_vae_physics", (0.843976921140543, -0.0334180024275045)),
+    ("calli_vae_final", (0.843976921140543, -0.0334180024275045)),
 )
 
 _WARNED = set()
