@@ -839,131 +839,14 @@ class DiT_2Cond(nn.Module):
                 M.build_norm(norm_type, hidden_size),
                 nn.Linear(hidden_size, patch_size * patch_size, bias=True),
             )
-        # 甲2 标准字形条件的 token-add 缩放(可学习, 初始 glyph_scale_init, 让字形条件有存在感)
-        self.glyph_scale = nn.Parameter(torch.tensor(self.glyph_scale_init))
-        # 标准字形条件：独立可训练 glyph_embedder。旧路径编码 G(4,32,32)，
-        # std-soft 路径编码 raw mask(1,64,64)，两者都输出与 x 同形的 16x16 token。
-        # 独立投影而非复用 x_embedder: 保证 g 编码可学习、norm 可控, 不依赖 x_embedder
-        # 是否被冻结(XL LoRA 模式下 x_embedder 冻结, 复用会导致 g 信号被锁死)。
-        self.glyph_embedder = None
-        # 逐层注入（glyph_inject_layers>0 时启用）：见下方说明
-        self.glyph_inject_layers = int(glyph_inject_layers)
-        self.glyph_inject_mode = str(glyph_inject_mode)
-        self.xattn_q_pos = bool(xattn_q_pos)
-        self.glyph_injections = None
-        # "block 下标 -> 注入器下标" 映射（glyph_inject_layers>0 时在下面填充）。
-        # 放在 forward 外面是因为它是**循环不变量**，原来每步重建一个 dict。
-        self._inj_map = {}
-        # 训练期随机丢弃标准字形条件的概率（见 forward 中注释）
-        self.glyph_drop_prob = float(glyph_drop_prob)
-        self.glyph_embedder_depth = int(glyph_embedder_depth)
-        self.glyph_embedder_sep = bool(glyph_embedder_sep)
-        if self.use_glyph_cond:
-            ps_ = self.x_embedder.patch_size[0] if not isinstance(self.x_embedder.patch_size, int) else self.x_embedder.patch_size
-            if self.std_soft_cond:
-                if int(glyph_in_channels) != 1:
-                    raise ValueError("std_soft_cond requires glyph_in_channels=1")
-                if self.glyph_concat_input:
-                    raise ValueError("std_soft_cond is incompatible with glyph_concat_input")
-                self.glyph_embedder = nn.Sequential(
-                    nn.Conv2d(1, 32, kernel_size=3, stride=2, padding=1),
-                    nn.SiLU(),
-                    nn.Conv2d(32, 64, kernel_size=3, stride=2, padding=1),
-                    nn.SiLU(),
-                    nn.Conv2d(64, hidden_size, kernel_size=1, bias=False),
-                )
-            elif self.glyph_embedder_depth <= 0:
-                self.glyph_embedder = nn.Conv2d(glyph_in_channels, hidden_size, kernel_size=ps_, stride=ps_, bias=False)
-            elif self.glyph_embedder_sep:
-                # [v12+] depthwise-separable 版: 同感受野/同通道数, 但把空间混合与
-                # 通道混合拆开 -> 3x3 那层的代价从 h*h*9 降到 h*9 + h*h (约 8.8x)。
-                # 见 __init__ 参数 glyph_embedder_sep 处说明与 FLOP 实测。
-                _layers = [nn.Conv2d(glyph_in_channels, hidden_size,
-                                     kernel_size=ps_, stride=ps_, bias=False)]
-                for _ in range(self.glyph_embedder_depth):
-                    _layers.append(nn.SiLU())
-                    _layers.append(nn.Conv2d(hidden_size, hidden_size, kernel_size=3,
-                                             stride=1, padding=1, bias=False,
-                                             groups=hidden_size))          # depthwise
-                    _layers.append(nn.Conv2d(hidden_size, hidden_size,
-                                             kernel_size=1, bias=False))   # pointwise
-                self.glyph_embedder = nn.Sequential(*_layers)
-            else:
-                # 增强编码器: 降采样 Conv + depth 层 SiLU+Conv(3x3 保分辨率),
-                # 提升 std 骨架 latent 的结构特征提取能力(fame3 诊断: g 注入作用仅 ~2.7%)。
-                _layers = [nn.Conv2d(glyph_in_channels, hidden_size, kernel_size=ps_, stride=ps_, bias=False)]
-                for _ in range(self.glyph_embedder_depth):
-                    _layers.append(nn.SiLU())
-                    _layers.append(nn.Conv2d(hidden_size, hidden_size, kernel_size=3, stride=1, padding=1, bias=False))
-                self.glyph_embedder = nn.Sequential(*_layers)
-            #
-            # 为什么需要逐层注入（这是本项目的关键设计修正）
-            # ---------------------------------------------------------------
-            # 原实现只在 **输入层** 做一次 token-add：
-            #     x = x + glyph_scale * g_tok
-            # 之后 x 要穿过 12 层 Transformer。每层 block 的输出都是
-            # `x + block(x)`，会把 g 的相对贡献逐层稀释 —— 等于把答案写在
-            # 第一页，然后让人翻完整本书再回答。
-            #
-            # 而 ControlNet 用的是 **逐层 zero-init adaLN 调制**（12 次），
-            # 实测 SSIM 0.80。两者条件信息量完全相同（都是 4×32×32 空间图），
-            # 差别只在注入方式。所以瓶颈不是「信息量不够」，而是「信息进不去」。
-            #
-            # 这里复用 controlnet.ZeroAdaLNInjection，与 ControlNet 对齐：
-            #   out = x * (1 + s) + t，s/t 由 zero-init Linear 产出
-            #   → init 时恒等，不破坏已有训练；且比加法注入表达力更强
-            #     （既能增强也能抑制残差流）。
-            if self.glyph_inject_layers > 0:
-                n_inj = min(self.glyph_inject_layers, depth)
-                # ★ 2026-10-05: 优先用**显式层列表** glyph_inject_at="2,4,6,8"。
-                #   空 -> 旧的均匀分布 (depth=12,n=4 -> [2,5,8,11])。
-                _at_str = str(glyph_inject_at or "").strip()
-                if _at_str:
-                    _lst = sorted({int(v) for v in _at_str.split(",") if v.strip() != ""})
-                    _lst = [i for i in _lst if 0 <= i < depth]
-                    if not _lst:
-                        raise ValueError(f"glyph_inject_at 解析为空或全越界: "
-                                         f"{glyph_inject_at!r} (depth={depth})")
-                    self.glyph_inject_at = _lst
-                    n_inj = len(_lst)
-                else:
-                    self.glyph_inject_at = sorted(
-                        set(int(round((i + 1) * depth / n_inj)) - 1 for i in range(n_inj)))
-                print(f"[glyph-inject] mode={self.glyph_inject_mode} "
-                      f"layers={self.glyph_inject_at} (depth={depth}, "
-                      f"{'显式 glyph_inject_at' if _at_str else '均匀分布'})")
-                # ★ 2026-09-17: 预计算 "block 下标 -> 注入器下标" 映射。
-                #   原来在 forward 里每步重建这个 dict（`{blk: k for ...}`）——
-                #   它是**循环不变量**（只依赖 glyph_inject_at），没必要每步做。
-                self._inj_map = {blk: k for k, blk in enumerate(self.glyph_inject_at)}
-                # glyph_inject_mode: "adaln" = ZeroAdaLNInjection (固定 1:1 位置调制,
-                # 旧 ckpt 兼容默认); "xattn" = ZeroCrossAttention (空间寻址注入,
-                # GlyphDraw/IP-Adapter 式内容+风格解耦, 2026-09-08)
-                if glyph_inject_mode == "xattn":
-                    if self.n_style_token > 0:
-                        # 风格 token 每层可见: context 由 forward 外部拼好
-                        # (骨架+pos ; 风格+role), 本类不再内部加位置。
-                        self.glyph_injections = nn.ModuleList([
-                            GlyphStyleCrossAttn(hidden_size, num_heads=num_heads,
-                                                attn_tau=attn_tau)
-                            for _ in self.glyph_inject_at
-                        ])
-                    else:
-                        self.glyph_injections = nn.ModuleList([
-                            ZeroCrossAttention(hidden_size, num_heads=num_heads,
-                                               grid_size=self.x_embedder.num_patches ** 0.5,
-                                               q_pos=bool(xattn_q_pos),
-                                               attn_tau=attn_tau)
-                            for _ in self.glyph_inject_at
-                        ])
-                else:
-                    # ZeroAdaLNInjection 现居 legacy/controlnet.py (ControlNet 线归档时
-                    # 迁入), 但它仍是 adaln 注入的**活跃实现** (v13/v14/v15 全在用)。
-                    from .injections import ZeroAdaLNInjection
-                    self.glyph_injections = nn.ModuleList([
-                        ZeroAdaLNInjection(hidden_size, mode="modulate")
-                        for _ in self.glyph_inject_at
-                    ])
+        self._build_glyph_condition(
+            hidden_size=hidden_size, depth=depth, num_heads=num_heads,
+            attn_tau=attn_tau, glyph_in_channels=glyph_in_channels,
+            glyph_inject_layers=glyph_inject_layers, glyph_inject_mode=glyph_inject_mode,
+            glyph_inject_at=glyph_inject_at, glyph_drop_prob=glyph_drop_prob,
+            glyph_embedder_depth=glyph_embedder_depth,
+            glyph_embedder_sep=glyph_embedder_sep, xattn_q_pos=xattn_q_pos)
+        # ↑ 原 125 行内联构造已抽成方法（见 _build_glyph_condition）✓
 
         # ── [2026-10-06] 三表条件的分层路由（与 glyph/skel 分支无关）───────────────
         # v54 把表条件 c = t_emb + y_emb 喂给**全部** block；这里改成白名单：
@@ -1131,6 +1014,140 @@ class DiT_2Cond(nn.Module):
             print(f"[deform] enabled: width={int(deform_width)} "
                   f"max_off={float(deform_max_off)} coarse={int(deform_coarse)} "
                   f"params={sum(p.numel() for p in self.deform_skel.parameters()):,}")
+
+    def _build_glyph_condition(self, *, hidden_size, depth, num_heads, attn_tau,
+                               glyph_in_channels, glyph_inject_layers, glyph_inject_mode, glyph_inject_at,
+                               glyph_drop_prob, glyph_embedder_depth, glyph_embedder_sep, xattn_q_pos):
+        """标准字形（std-soft / 骨架）条件的构造 —— 2026-10-13 从 __init__ 抽出 ✓
+
+        内容与抽出的原文**逐字相同**, 只整体缩进一级 ⇒ 行为不变 ✓（已用
+        strict=True 加载真实 ckpt 验证: 0 missing / 0 unexpected ✓）。
+        """
+        # 甲2 标准字形条件的 token-add 缩放(可学习, 初始 glyph_scale_init, 让字形条件有存在感)
+        self.glyph_scale = nn.Parameter(torch.tensor(self.glyph_scale_init))
+        # 标准字形条件：独立可训练 glyph_embedder。旧路径编码 G(4,32,32)，
+        # std-soft 路径编码 raw mask(1,64,64)，两者都输出与 x 同形的 16x16 token。
+        # 独立投影而非复用 x_embedder: 保证 g 编码可学习、norm 可控, 不依赖 x_embedder
+        # 是否被冻结(XL LoRA 模式下 x_embedder 冻结, 复用会导致 g 信号被锁死)。
+        self.glyph_embedder = None
+        # 逐层注入（glyph_inject_layers>0 时启用）：见下方说明
+        self.glyph_inject_layers = int(glyph_inject_layers)
+        self.glyph_inject_mode = str(glyph_inject_mode)
+        self.xattn_q_pos = bool(xattn_q_pos)
+        self.glyph_injections = None
+        # "block 下标 -> 注入器下标" 映射（glyph_inject_layers>0 时在下面填充）。
+        # 放在 forward 外面是因为它是**循环不变量**，原来每步重建一个 dict。
+        self._inj_map = {}
+        # 训练期随机丢弃标准字形条件的概率（见 forward 中注释）
+        self.glyph_drop_prob = float(glyph_drop_prob)
+        self.glyph_embedder_depth = int(glyph_embedder_depth)
+        self.glyph_embedder_sep = bool(glyph_embedder_sep)
+        if self.use_glyph_cond:
+            ps_ = self.x_embedder.patch_size[0] if not isinstance(self.x_embedder.patch_size, int) else self.x_embedder.patch_size
+            if self.std_soft_cond:
+                if int(glyph_in_channels) != 1:
+                    raise ValueError("std_soft_cond requires glyph_in_channels=1")
+                if self.glyph_concat_input:
+                    raise ValueError("std_soft_cond is incompatible with glyph_concat_input")
+                self.glyph_embedder = nn.Sequential(
+                    nn.Conv2d(1, 32, kernel_size=3, stride=2, padding=1),
+                    nn.SiLU(),
+                    nn.Conv2d(32, 64, kernel_size=3, stride=2, padding=1),
+                    nn.SiLU(),
+                    nn.Conv2d(64, hidden_size, kernel_size=1, bias=False),
+                )
+            elif self.glyph_embedder_depth <= 0:
+                self.glyph_embedder = nn.Conv2d(glyph_in_channels, hidden_size, kernel_size=ps_, stride=ps_, bias=False)
+            elif self.glyph_embedder_sep:
+                # [v12+] depthwise-separable 版: 同感受野/同通道数, 但把空间混合与
+                # 通道混合拆开 -> 3x3 那层的代价从 h*h*9 降到 h*9 + h*h (约 8.8x)。
+                # 见 __init__ 参数 glyph_embedder_sep 处说明与 FLOP 实测。
+                _layers = [nn.Conv2d(glyph_in_channels, hidden_size,
+                                     kernel_size=ps_, stride=ps_, bias=False)]
+                for _ in range(self.glyph_embedder_depth):
+                    _layers.append(nn.SiLU())
+                    _layers.append(nn.Conv2d(hidden_size, hidden_size, kernel_size=3,
+                                             stride=1, padding=1, bias=False,
+                                             groups=hidden_size))          # depthwise
+                    _layers.append(nn.Conv2d(hidden_size, hidden_size,
+                                             kernel_size=1, bias=False))   # pointwise
+                self.glyph_embedder = nn.Sequential(*_layers)
+            else:
+                # 增强编码器: 降采样 Conv + depth 层 SiLU+Conv(3x3 保分辨率),
+                # 提升 std 骨架 latent 的结构特征提取能力(fame3 诊断: g 注入作用仅 ~2.7%)。
+                _layers = [nn.Conv2d(glyph_in_channels, hidden_size, kernel_size=ps_, stride=ps_, bias=False)]
+                for _ in range(self.glyph_embedder_depth):
+                    _layers.append(nn.SiLU())
+                    _layers.append(nn.Conv2d(hidden_size, hidden_size, kernel_size=3, stride=1, padding=1, bias=False))
+                self.glyph_embedder = nn.Sequential(*_layers)
+            #
+            # 为什么需要逐层注入（这是本项目的关键设计修正）
+            # ---------------------------------------------------------------
+            # 原实现只在 **输入层** 做一次 token-add：
+            #     x = x + glyph_scale * g_tok
+            # 之后 x 要穿过 12 层 Transformer。每层 block 的输出都是
+            # `x + block(x)`，会把 g 的相对贡献逐层稀释 —— 等于把答案写在
+            # 第一页，然后让人翻完整本书再回答。
+            #
+            # 而 ControlNet 用的是 **逐层 zero-init adaLN 调制**（12 次），
+            # 实测 SSIM 0.80。两者条件信息量完全相同（都是 4×32×32 空间图），
+            # 差别只在注入方式。所以瓶颈不是「信息量不够」，而是「信息进不去」。
+            #
+            # 这里复用 controlnet.ZeroAdaLNInjection，与 ControlNet 对齐：
+            #   out = x * (1 + s) + t，s/t 由 zero-init Linear 产出
+            #   → init 时恒等，不破坏已有训练；且比加法注入表达力更强
+            #     （既能增强也能抑制残差流）。
+            if self.glyph_inject_layers > 0:
+                n_inj = min(self.glyph_inject_layers, depth)
+                # ★ 2026-10-05: 优先用**显式层列表** glyph_inject_at="2,4,6,8"。
+                #   空 -> 旧的均匀分布 (depth=12,n=4 -> [2,5,8,11])。
+                _at_str = str(glyph_inject_at or "").strip()
+                if _at_str:
+                    _lst = sorted({int(v) for v in _at_str.split(",") if v.strip() != ""})
+                    _lst = [i for i in _lst if 0 <= i < depth]
+                    if not _lst:
+                        raise ValueError(f"glyph_inject_at 解析为空或全越界: "
+                                         f"{glyph_inject_at!r} (depth={depth})")
+                    self.glyph_inject_at = _lst
+                    n_inj = len(_lst)
+                else:
+                    self.glyph_inject_at = sorted(
+                        set(int(round((i + 1) * depth / n_inj)) - 1 for i in range(n_inj)))
+                print(f"[glyph-inject] mode={self.glyph_inject_mode} "
+                      f"layers={self.glyph_inject_at} (depth={depth}, "
+                      f"{'显式 glyph_inject_at' if _at_str else '均匀分布'})")
+                # ★ 2026-09-17: 预计算 "block 下标 -> 注入器下标" 映射。
+                #   原来在 forward 里每步重建这个 dict（`{blk: k for ...}`）——
+                #   它是**循环不变量**（只依赖 glyph_inject_at），没必要每步做。
+                self._inj_map = {blk: k for k, blk in enumerate(self.glyph_inject_at)}
+                # glyph_inject_mode: "adaln" = ZeroAdaLNInjection (固定 1:1 位置调制,
+                # 旧 ckpt 兼容默认); "xattn" = ZeroCrossAttention (空间寻址注入,
+                # GlyphDraw/IP-Adapter 式内容+风格解耦, 2026-09-08)
+                if glyph_inject_mode == "xattn":
+                    if self.n_style_token > 0:
+                        # 风格 token 每层可见: context 由 forward 外部拼好
+                        # (骨架+pos ; 风格+role), 本类不再内部加位置。
+                        self.glyph_injections = nn.ModuleList([
+                            GlyphStyleCrossAttn(hidden_size, num_heads=num_heads,
+                                                attn_tau=attn_tau)
+                            for _ in self.glyph_inject_at
+                        ])
+                    else:
+                        self.glyph_injections = nn.ModuleList([
+                            ZeroCrossAttention(hidden_size, num_heads=num_heads,
+                                               grid_size=self.x_embedder.num_patches ** 0.5,
+                                               q_pos=bool(xattn_q_pos),
+                                               attn_tau=attn_tau)
+                            for _ in self.glyph_inject_at
+                        ])
+                else:
+                    # ZeroAdaLNInjection 现居 legacy/controlnet.py (ControlNet 线归档时
+                    # 迁入), 但它仍是 adaln 注入的**活跃实现** (v13/v14/v15 全在用)。
+                    from .injections import ZeroAdaLNInjection
+                    self.glyph_injections = nn.ModuleList([
+                        ZeroAdaLNInjection(hidden_size, mode="modulate")
+                        for _ in self.glyph_inject_at
+                    ])
 
     def initialize_weights(self):
         def _basic_init(module):
