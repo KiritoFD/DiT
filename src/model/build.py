@@ -62,6 +62,8 @@ def resolve_content_cond(a, log=None) -> Optional[str]:
 
 def derive(a, overrides: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
     """构造前派生值（逐字复刻 src/train/train.py:433-469 的语义 ✓）"""
+    ov = overrides or {}
+    g = lambda k, d=None: ov.get(k, getattr(a, k, d))          # noqa: E731
     dt = str(g("diffusion_type", "ddpm")).lower()
     ls = g("learn_sigma", None)
     n_aux = len(aux_dirs_of(a))
