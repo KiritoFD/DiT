@@ -1,0 +1,18 @@
+# Ruff 配置（2026-10-13 建立）
+# 目标: 把"已清理干净"的部分**锁住**，只允许变好，不允许回退 ✓
+target-version = "py310"
+line-length = 120
+exclude = [
+  "legacy", "_archive", "_quarantine_20261009", "_pull_archive", "_sync_",
+  "tools/legacy", "tools/archive", "tools/remote_sync", "src/train/legacy",
+  "src/eval/legacy", "src/model/legacy", "docs", "scratch", "_backup_cond_refactor",
+]
+
+[lint]
+# 只启用**安全且已清零**的规则集 —— 它们是硬门槛
+select = ["F401", "F541", "F811"]
+ignore = []
+
+[lint.per-file-ignores]
+# __init__.py 承担再导出职责，未用 import 合法 ✓
+"**/__init__.py" = ["F401"]

@@ -80,6 +80,29 @@ def gate_syntax():
 
 
 # ───────────────────────── ② pyflakes / H1 ─────────────────────────
+def gate_ruff():
+    """★ 2026-10-13 ruff 门槛: **src/ 必须 0**（已全清 ✓）; tools/ 历史欠债走棘轮。
+    规则集 = F401 未用 import / F541 无用 f-string / F811 重复定义（均安全级）。"""
+    def _run(target):
+        try:
+            r = sh([sys.executable, "-m", "ruff", "check", target])
+        except Exception as e:                                    # noqa: BLE001
+            return None, f"不可用 ({type(e).__name__})"
+        out = (r.stdout or "") + (r.stderr or "")
+        if "No module named" in out:
+            return None, "未安装（pip install ruff）"
+        m = re.search(r"Found (\d+) error", out)
+        return (int(m.group(1)) if m else 0), ""
+    n_src, err = _run("src")
+    if n_src is None:
+        rec("UNKNOWN", "ruff", err); return None
+    rec("FAIL" if n_src else "OK", "ruff src/", f"{n_src} 条（要求 0，已清理部分不许回退 ✗）")
+    n_tools, _ = _run("tools")
+    if n_tools is not None:
+        rec("INFO", "ruff tools/", f"{n_tools} 条历史欠债（棘轮，只许下降）")
+    return n_src
+
+
 def gate_pyflakes():
     # 注意: Windows 命令行长度上限 —— 传目录而不是逐个文件（149 文件必炸 WinError 206）
     r = sh([sys.executable, "-m", "pyflakes", "src", "tools"])
@@ -238,6 +261,7 @@ def main():
 
     gate_toolcheck()
     gate_syntax()
+    gate_ruff()
     gate_pyflakes()
     h1 = gate_h1()
     h3 = gate_config(a.config)
