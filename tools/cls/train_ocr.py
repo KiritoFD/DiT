@@ -54,7 +54,7 @@ IMAGENET_STD = (0.229, 0.224, 0.225)
 
 # ───────────────────────── 数据 ─────────────────────────
 def load_rows(csv_path, img_root, group_col, char_col, script_col,
-              pol_col, exclude_ids, min_count, log=print):
+              pol_col, exclude_ids, min_count, log=print, excl_pairs=None, source_col="source"):
     """读 csv -> [(path, char, script, group)]，并做全部过滤 + 组划分。"""
     rows = list(csv.DictReader(open(csv_path, encoding="utf-8-sig")))
     log("  csv 行数: %d" % len(rows))
@@ -67,9 +67,16 @@ def load_rows(csv_path, img_root, group_col, char_col, script_col,
             bad_char += 1
             continue
         if exclude_ids and ((r.get("img_id", "") in exclude_ids)
-                            or (r.get("src_image_path", "") in exclude_ids)):
+                            or (r.get("src_image_path", "") in exclude_ids)
+                            or (os.path.basename(r.get("src_image_path") or "") in exclude_ids)):
             ex += 1
             continue
+        if excl_pairs:
+            _k2 = ((r.get(source_col) or "").strip(), (r.get(group_col) or "").strip())
+            _k3 = _k2 + ((r.get(char_col) or "").strip(),)
+            if _k2 in excl_pairs or _k3 in excl_pairs:
+                ex += 1
+                continue
         p = None
         for root in cand_roots:
             q = os.path.join(root, ip) if root else ip
@@ -231,6 +238,7 @@ def main():
     ap.add_argument("--patience", type=int, default=6)
     ap.add_argument("--group-col", default="calligrapher", help="作品/来源组列（400k 语料里就是它）")
     ap.add_argument("--char-col", default="character")
+    ap.add_argument("--source-col", default="source")
     ap.add_argument("--script-col", default="script")
     ap.add_argument("--pol-col", default="is_inverted")
     ap.add_argument("--exclude-csv", default="exp-std/csv/eval200_fixed.csv",
@@ -253,9 +261,21 @@ def main():
                     exclude_ids.add(os.path.basename(v))
         log("排除集: %d 个 id/路径（来自 %s）" % (len(exclude_ids), a.exclude_csv))
 
+    excl_pairs = set()
+    if a.exclude_csv and os.path.isfile(a.exclude_csv):
+        for r in csv.DictReader(open(a.exclude_csv, encoding="utf-8-sig")):
+            _s = (r.get("source") or "").strip()
+            _w = (r.get("calligrapher") or "").strip()
+            _c = (r.get("character") or "").strip()
+            if _s and _w:
+                excl_pairs.add((_s, _w))
+                if _c:
+                    excl_pairs.add((_s, _w, _c))
+        log("来源级排除键: %d 个 (source, 书家/作品[, 字]) —— 规则#3 ✓" % len(excl_pairs))
+
     log("== 读数据 ==")
     items, cnt = load_rows(a.csv, a.img_root, a.group_col, a.char_col, a.script_col,
-                           a.pol_col, exclude_ids, a.min_count, log)
+                           a.pol_col, exclude_ids, a.min_count, log, excl_pairs=excl_pairs)
     cnt = collections.Counter(x[1] for x in items)   # fix: 用**过滤后**的真实类别计数(否则头里会有死类)
     if a.limit:
         items = items[: a.limit]
