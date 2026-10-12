@@ -4,7 +4,7 @@
 对 new_data 里 step 1000..10000 的每个 ckpt 加载 -> 对 eval 集跑 eval_in_memory -> 存 eval_<step>.png。
 复用 train.py 的模型构建 + LoRA 注入 + delta 加载 + eval_cache 逻辑。
 """
-import os, sys, glob, re, datetime
+import os, sys, glob
 sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 import torch
 import numpy as np

@@ -8,9 +8,6 @@
 - 全部参数冻结 (added=0)；BN 无 -> eval 模式下确定性。
 - ⚠ adapter 无参数: 直接把 VAE latent 喂给编码器（它就是在这个 latent 空间训的）。
 """
-import csv
-import json
-import os
 
 import numpy as np
 import torch

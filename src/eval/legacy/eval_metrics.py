@@ -1,6 +1,5 @@
 import os
 import torch
-import torch.nn as nn
 from eval_models import MultiTaskCalligraphyEvalNet
 
 class CalligraphyEvaluator:

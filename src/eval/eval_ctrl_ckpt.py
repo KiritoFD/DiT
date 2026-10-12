@@ -25,7 +25,6 @@ import json
 import argparse
 import traceback
 
-import numpy as np
 import torch
 
 _src = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", "src")

@@ -15,7 +15,6 @@
     {"gen","gen_ema","bak","bak_ema"} 也可直接 load_v35()
 """
 import torch as th
-import numpy as np
 
 TIME_SCALE = 1000.0
 

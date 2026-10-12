@@ -35,7 +35,6 @@ def _get_lpips():
     _lpips_loaded = True
     try:
         import lpips
-        import torch
         _lpips_fn = lpips.LPIPS(net='vgg', verbose=False)
         _lpips_fn.eval()
         for p in _lpips_fn.parameters():
@@ -231,7 +230,6 @@ def process_one(pending_path, checkpoint_dir):
 def _find_all_ckpt_dirs(results_dir):
     """Find ALL ckpt dirs under the series dir, not just the active one.
     This lets the daemon process pending markers from prior runs too."""
-    import re
     dirs = []
     series = os.path.join(BASE, results_dir) if not os.path.isabs(results_dir) else results_dir
     if not os.path.isdir(series):

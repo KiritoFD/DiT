@@ -181,7 +181,7 @@ def main():
         sampler = torch.utils.data.WeightedRandomSampler(sample_weights, n_train, replacement=True)
         train_loader = DataLoader(train_ds, batch_size=args.batch, sampler=sampler,
                                    num_workers=0, pin_memory=True, drop_last=True)
-        print(f"  class-balanced sampling: ON")
+        print("  class-balanced sampling: ON")
     else:
         train_loader = DataLoader(train_ds, batch_size=args.batch, shuffle=True,
                                    num_workers=0, pin_memory=True, drop_last=True)

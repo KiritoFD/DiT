@@ -52,8 +52,6 @@ def _compute_and_save(vae, latents, cache, out_dir, tag, step_tag, device,
                       vae_batch=16, use_lpips=True, with_skel=False, skels_latent=None):
     """decode latents → 落盘 PNG (tag{i}.png + gt{i}.png [+skel{i}.png]) → 内存算指标。"""
     from .inference import decode_and_save, compute_metrics
-    from PIL import Image
-    import torch
 
     n = cache["n"]
     sf = cache["scaling_factor"]

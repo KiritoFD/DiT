@@ -21,7 +21,6 @@ repa.py — 公共 REPA (Representation Alignment) infra。
     # 优化器:
     trainable += repa.trainable_params()
 """
-import os
 import torch
 import torch.nn as nn
 

@@ -18,14 +18,10 @@ _s = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", "src")
 if _s not in sys.path:
     sys.path.insert(0, _s)
 import glob
-import json
 import argparse
-import numpy as np
 import torch
 import torch.nn.functional as F
-from PIL import Image
 
-from src.model import DiT_2Cond_models
 from src.loss import create_diffusion
 from src.model.controlnet import ControlNetDiT, load_main_model
 
@@ -67,7 +63,6 @@ def find_latest_ckpt(ckpt_dir):
 
 def load_eval_samples(csv_path, latent_dir, skel_root, img_root, n=50):
     """Load n samples: latent + skel + GT image + conditions."""
-    import csv, re
     from src.utils import MCCDLatentDataset
     ds = MCCDLatentDataset(
         csv_file=csv_path, latent_shards_dir=latent_dir,

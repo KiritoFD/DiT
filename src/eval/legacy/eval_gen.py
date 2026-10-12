@@ -10,10 +10,6 @@ import os
 import sys
 import json
 import argparse
-import numpy as np
-import torch
-import torch.nn.functional as F
-from PIL import Image
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.abspath(os.path.join(HERE, ".."))
@@ -23,7 +19,6 @@ if HERE not in sys.path:
     sys.path.insert(0, HERE)
 
 from src.inference import CalligraphySampler
-from eval_auto import _gaussian_window, _ssim
 
 
 def parse_args():

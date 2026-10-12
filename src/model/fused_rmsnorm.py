@@ -17,7 +17,6 @@ torch.compile 会把 `torch.nn.functional.rms_norm`（或手写 RMSNorm）**分�
 """
 
 import torch
-import torch.nn as nn
 
 _HAS_TRITON = False
 try:

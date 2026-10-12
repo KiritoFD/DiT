@@ -22,7 +22,6 @@ _r = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..")
 if _r not in sys.path:
     sys.path.insert(0, _r)
 import copy
-import glob
 import time
 import math
 import logging
@@ -31,11 +30,8 @@ import argparse
 import json
 
 import torch
-import torch.nn as nn
-import numpy as np
 
-from src.model import DiT_2Cond_models
-from src.loss import create_diffusion_or_flow, flow_kwargs_from, REPALoss
+from src.loss import create_diffusion_or_flow, flow_kwargs_from
 from src.utils import MCCDLatentDataset
 from src.model.legacy.controlnet import ControlNetDiT, load_main_model
 from src.eval.legacy.in_process_ctrl_eval import prepare_ctrl_eval_cache, run_ctrl_pair_eval

@@ -20,7 +20,6 @@
 返回 (4,32,32) float32 tensor, 缺失返回 None.
 """
 import os
-import json
 import random as _random
 
 import numpy as np

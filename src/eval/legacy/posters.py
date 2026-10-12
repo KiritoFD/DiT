@@ -15,7 +15,6 @@ import re
 
 import numpy as np
 from PIL import Image, ImageDraw, ImageFont
-from scipy.ndimage import uniform_filter
 
 CELL, PAIR_GAP, ROW_GAP = 140, 14, 34
 COLS = 5

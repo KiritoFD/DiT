@@ -1,6 +1,5 @@
 import os, sys, torch
 os.environ["XFORMERS_DISABLED"] = "1"
-import torch.nn as nn
 from torchvision.utils import save_image
 from src.model import DiT_3Cond_models
 from src.model import inject_lora

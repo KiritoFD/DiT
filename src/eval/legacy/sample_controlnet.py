@@ -74,7 +74,7 @@ def load_main_and_ctrl(args, device):
         else:
             print(f"[ctrl] WARNING: no ctrl/ema key in {args.ctrl_ckpt}, using zero-init (no control)")
     else:
-        print(f"[ctrl] no ckpt, using zero-init (equivalent to base model)")
+        print("[ctrl] no ckpt, using zero-init (equivalent to base model)")
     ctrl.to(device).eval()
     return ctrl
 

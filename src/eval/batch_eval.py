@@ -101,8 +101,7 @@ def main():
     print(f"[batch] exp={exp} ckpts={len(cks)}")
 
     # ── 模型/VAE 只建一次 (架构取自首个 ckpt args) ──────────────────────
-    from src.model import DiT_2Cond_models
-    from src.eval.inference import (make_eval_cache, load_eval_vae, sample_latents,
+    from src.eval.inference import (make_eval_cache, sample_latents,
                                     sample_latents_self_cond,
                                     _mse, _ssim, build_diffusion)
     ck0 = torch.load(cks[0], map_location="cpu", weights_only=False, mmap=True)

@@ -51,7 +51,6 @@ def main():
     # ⚠ ControlNet 已归档：只在真的走 ctrl_pair 时才导入，
     #   免得 pretrain_g（主线）被一条废弃依赖链拖住。
     from src.model.legacy.controlnet import load_main_model, ControlNetDiT
-    from src.model import DiT_2Cond_models
     from src.eval.inference import (make_eval_cache, load_eval_vae, decode_and_save,
                                     compute_metrics)
     from src.eval.cpu_sampler import heun_sample_cpu
@@ -78,7 +77,6 @@ def main():
                   learn_sigma=False, **arch)
 
     if args.mode == "pretrain_g":
-        from src.utils import get_glyph_lookup_v2
         return _run_pretrain_g(args, ck, a, arch, common, t0)
     import warnings
     warnings.warn("[cpu_eval_worker] --mode ctrl_pair 走的是**已废弃**的 ControlNet 双臂路径"
@@ -157,7 +155,6 @@ def main():
 def _run_pretrain_g(args, ck, a, arch, common, t0):
     """v10a 预训练 ckpt 的 g 单臂评测: 裸主模型 + 标准字形库 g (部署态)."""
     import torch
-    from src.model import DiT_2Cond_models
     from src.eval.inference import make_eval_cache, load_eval_vae, decode_and_save, compute_metrics
     from src.eval.cpu_sampler import heun_sample_cpu
     dev = torch.device("cpu")

@@ -33,7 +33,7 @@ import time
 import datetime
 import traceback
 import multiprocessing as mp
-from concurrent.futures import ProcessPoolExecutor, as_completed
+from concurrent.futures import ProcessPoolExecutor
 
 import torch
 
@@ -188,7 +188,6 @@ def _init_worker(ckpt_args_dict, worker_threads, seen5_csv, show5_csv_override,
     """每个 Worker 启动时仅执行一次（spawn 后）。
     独立建 model/VAE/caches，与父进程内存完全隔离。
     core_table: 全局核表（picklable list of lists），用 /tmp 文件做原子计数分配 worker_id。"""
-    import ctypes, tempfile
 
     # ── 原子获取唯一 worker_id（文件锁方式，spawn 安全）──
     lock_path = "/tmp/_eval_worker_id.lock"
@@ -484,7 +483,7 @@ def main():
             start = w * cpw
             end = min(start + cpw, 64)
             core_table.append(PHYSICAL_CORES[start:end])
-        log(f"[main] core affinity table: " +
+        log("[main] core affinity table: " +
             " ".join(f"W{i}={core_table[i]}" for i in range(n_w)))
 
     results_dir = None
@@ -576,7 +575,7 @@ def main():
                               args.seen5_csv, args.show5_csv,
                               core_table),
                 )
-                log(f"[pool] ProcessPoolExecutor created, waiting for workers...")
+                log("[pool] ProcessPoolExecutor created, waiting for workers...")
 
             # 评测
             eval_n = int(getattr(ckpt_args, "eval_n", 100))

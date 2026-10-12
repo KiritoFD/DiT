@@ -6,7 +6,6 @@ in_process_ctrl_eval — 薄壳: ControlNet 训练内的 in-process GPU eval.
 (prepare_ctrl_eval_cache / run_ctrl_pair_eval) 供 train_controlnet.py 调用。
 """
 from src.eval.inference import (
-    make_eval_cache as prepare_ctrl_eval_cache,
     run_pair_eval,
     write_pending_metrics_marker,
 )

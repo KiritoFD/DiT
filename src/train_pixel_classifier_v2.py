@@ -16,7 +16,6 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 import numpy as np
 import torch
-import torch.nn as nn
 import torch.nn.functional as F
 from torch.utils.data import Dataset, DataLoader
 from torch.optim import AdamW
@@ -28,7 +27,7 @@ TRAIN_CSV = "assets/train_3top30_nobeike.csv"
 CKPT_DIR = "glyph_classifier_ckpts"
 LABEL_SMOOTHING = 0.1
 
-from train_pixel_classifier import PixelClassifier, ConvBlock
+from train_pixel_classifier import PixelClassifier
 
 
 class PixelGlyphDataset(Dataset):

@@ -14,10 +14,8 @@ forward(x, skel, t, y_callig, return_intermediate_layers=None, ...)：
     x: (N,4,32,32) noised latent; skel: (N,4,32,32) GT skeleton latent
     返回 (out, {layer: feats}) 或 out
 """
-import math
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
 
 from .. import modules as M
 from ..dit import TimestepEmbedder, LabelEmbedder

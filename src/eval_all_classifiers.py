@@ -3,7 +3,7 @@
 Loads each checkpoint, evaluates top-1/top-5 accuracy on the same val split,
 and breaks down accuracy by class frequency (well-represented vs rare).
 """
-import os, sys, csv, json, numpy as np, torch
+import os, sys, torch
 os.environ["XFORMERS_DISABLED"] = "1"
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import torch.nn.functional as F

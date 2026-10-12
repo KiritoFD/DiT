@@ -40,8 +40,6 @@ def log(msg):
 
 
 # ── 指标 (CPU numpy, 与 gpu_batch_eval_v2 同实现) ────────────────────────────
-from skimage.morphology import skeletonize
-from scipy.ndimage import uniform_filter
 
 
 def ssim_np(a, b, win=7):

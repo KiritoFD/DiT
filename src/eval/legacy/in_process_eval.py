@@ -14,10 +14,9 @@ Design:
                             Writes eval_pending_{step}.json for the CPU daemon.
   - load_eval_vae()        : lazily loads the real VAE (training uses MockVAE).
 """
-import os, json, csv, time, traceback
+import os, json, csv, time
 import numpy as np
 import torch
-import torch.nn.functional as F
 from PIL import Image
 
 # 白底归零 (aux_zero_white) 的加回入口 —— decode 前统一走它, 勿内联

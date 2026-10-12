@@ -12,11 +12,9 @@ train_skel_1cond.py — 无 char 条件的骨架引导生成训练 (DiT-1CondSke
 用法:
   python src/train/legacy/train_skel_1cond.py --config src/train/configs/v10_skel1cond.json
 """
-import os, sys, json, math, time, glob, datetime
+import os, sys, json, math, time, datetime
 sys.stdout.reconfigure(encoding="utf-8", errors="replace")
-import numpy as np
 import torch
-import torch.nn as nn
 from torch.utils.data import DataLoader
 from torch.optim.lr_scheduler import LambdaLR
 

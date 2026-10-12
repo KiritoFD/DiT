@@ -9,7 +9,7 @@ and then `eval_in_memory()` after each save.
 Procedure (identical to eval_full_3cond.py / the manual remote eval):
   single-step xstart reconstruction at t=T_EVAL, VAE decode, MSE/SSIM vs GT.
 """
-import sys, json, os
+import sys, os
 sys.stdout.reconfigure(encoding='utf-8')
 import torch
 import torch.nn.functional as F

@@ -18,11 +18,9 @@ _s = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", "src")
 if _s not in sys.path:
     sys.path.insert(0, _s)
 import torch
-import torch.nn as nn
-import numpy as np
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from src.model.controlnet import ControlNetDiT, ControlConditionEncoder, DiTBlockSimple
+from src.model.controlnet import ControlNetDiT
 
 from src.model import DiT_2Cond_models
 

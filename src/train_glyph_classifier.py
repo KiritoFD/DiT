@@ -13,7 +13,6 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 import numpy as np
 import torch
-import torch.nn as nn
 import torch.nn.functional as F
 from torch.utils.data import Dataset, DataLoader
 from torch.optim import AdamW
@@ -180,7 +179,7 @@ def main():
             sample_weights, num_samples=len(train_targets), replacement=True)
         train_loader = DataLoader(train_ds, batch_size=args.batch, sampler=sampler,
                                   num_workers=0, pin_memory=True, drop_last=True)
-        print(f"  class-balanced sampling: ON")
+        print("  class-balanced sampling: ON")
     else:
         train_loader = DataLoader(train_ds, batch_size=args.batch, shuffle=True,
                                   num_workers=0, pin_memory=True, drop_last=True)

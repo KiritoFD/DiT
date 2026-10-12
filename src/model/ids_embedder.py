@@ -13,7 +13,6 @@
 接口与 LabelEmbedder 完全兼容:
   forward(labels, train, force_drop_ids) -> (B, embed_dim)
 """
-import os
 import torch
 import torch.nn as nn
 

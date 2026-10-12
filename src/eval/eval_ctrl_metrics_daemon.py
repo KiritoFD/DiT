@@ -30,7 +30,6 @@ def _get_lpips():
     _lpips_loaded = True
     try:
         import lpips
-        import torch
         _lpips_fn = lpips.LPIPS(net='vgg', verbose=False)
         _lpips_fn.eval()
         for p in _lpips_fn.parameters():

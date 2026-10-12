@@ -11,7 +11,6 @@
 import argparse, glob, json, os, sys, time, traceback
 import numpy as np
 import torch
-import torch.nn.functional as F
 from PIL import Image
 
 sys.stdout.reconfigure(encoding="utf-8")
