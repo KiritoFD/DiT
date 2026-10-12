@@ -2355,7 +2355,20 @@ class DiT_2Cond(nn.Module):
                 g = _g2
         if self.use_glyph_cond and self.glyph_embedder is not None and g is not None:
             # 两类 glyph_embedder 最终都输出 (N,D,16,16) -> flat (N,256,D)。
-            g_tok = self.glyph_embedder(g).flatten(2).transpose(1, 2)  # (N,256,D)
+            # ★★ 2026-10-12 修（v81 白化根因，专家定位）: **显式减去零输入响应**
+            #   实测证据(probe2_glyph.py, v81 同配方):
+            #     ‖encoder(0)‖ : 19.93(20k) → 34.11(35k) → 50.69(55k) → 72.07(115k)  = 3.6×
+            #     内容/背景比  : 2.48 → 1.76 → 1.41 → 1.13（腰斩）
+            #     同期生成墨量 : 0.174(35k，最佳) → 0.098(55k) → 0.073(115k)
+            #     稀疏字不画 / 重墨字过墨（體 0.4948 vs GT 0.3559）→ 条件→墨迹映射失控
+            #   机制: 编码器前两层 Conv2d 带 bias，而 `glyph_drop_prob` 默认 **0**
+            #     ⇒ 训练中从未出现"无条件"状态 ⇒ 背景/偏置响应无人约束、自由膨胀
+            #     ⇒ 注入主干的"空白画布特征"逐渐压过内容 ⇒ latent 空间结构消失
+            #     ⇒ 解码成 DC ⇒ **白纸**（实测: latent 取均值 → 灰度 254.7 / 硬墨 0.0000）
+            #   修法: feat = enc(g) - enc(0)，**不 detach 第二项** ⇒ g=0 ⟹ feat=0
+            #     （即使编码器内部仍有 bias）。注意: 仅去掉 Conv bias 不够——膨胀来自深层。
+            _g_zero = torch.zeros_like(g)
+            g_tok = (self.glyph_embedder(g) - self.glyph_embedder(_g_zero)).flatten(2).transpose(1, 2)
             if g_tok.shape[1] != x.shape[1]:
                 raise ValueError(
                     f"glyph token grid mismatch: g produced {g_tok.shape[1]} tokens but "

@@ -1764,14 +1764,18 @@ def main(args):
         #   读进 RAM、每步再 H2D 100 MB, 实测 GPU 利用率被压到 14%。
         #   never 时若真 miss, REPALoss 会**显式报错**（绝不静默失去 REPA）。
         _rnim = str(getattr(args, "repa_need_image", "auto") or "auto").lower()
+        # ★ 2026-10-12 修: 原来直接引用 _repa_cache_dir, 而它只在 **REPA 分支内**(w_repa>0) 赋值
+        #   -> w_repa=0 时必然 UnboundLocalError（v83 在 48 启动即崩; v77 时代这行还不存在 = 回归）。
+        #   改为自足表达式, 不依赖赋值顺序。
+        _repa_cache_dir_safe = str(getattr(args, "repa_cache_dir", "") or "")
         if _rnim == "always":
             _repa_need_image = bool(args.w_repa > 0)
         elif _rnim == "never":
             _repa_need_image = False
         else:  # auto
-            _repa_need_image = bool(args.w_repa > 0) and (not bool(_repa_cache_dir))
+            _repa_need_image = bool(args.w_repa > 0) and (not bool(_repa_cache_dir_safe))
         print(f"[dataset] repa_need_image={_rnim} -> load_image={_repa_need_image} "
-              f"(w_repa={args.w_repa}, repa_cache_dir={'有' if _repa_cache_dir else '无'})", flush=True)
+              f"(w_repa={args.w_repa}, repa_cache_dir={_repa_cache_dir_safe or '无'})", flush=True)
         dataset = MCCDLatentDataset(csv_file=args.data_csv,
                                     latent_shards_dir=args.latent_shards_dir,
                                     img_root=args.img_root,
