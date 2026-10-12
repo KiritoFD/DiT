@@ -1546,37 +1546,12 @@ class DiT_2Cond(nn.Module):
         return y_emb, e_callig, _cgw
 
 
-    def forward(self, x, t, y_callig, y_char, return_intermediate_layer=None,
-                return_intermediate_layers=None, g=None,
-                y_script=None, y_callig_raw=None, y_pair=None):
-        """
-        Forward pass of DiT_2Cond.
-        x: (N, C, H, W) noisy latents
-        t: (N,) timesteps
-        y_callig, y_char: (N,) condition IDs
-        g: 旧路径为 (N,4,32,32) latent；std-soft 为 (N,1,64,64) raw mask；None=不使用
-        return_intermediate_layer: int block index (e.g. 8) whose patch features to return for REPA.
-                                   When set, returns (output, intermediate_feats) as a tuple.
+    def _cond_drop_masks(self, g, y_callig):
+        """字形/书家/字/书体 四路条件丢弃遮罩（原 forward 内联 46 行 ✓, **train-only**）。
 
-        S2 新增条件（全部可选，None = 该层缺失 / 走旧路径）:
-        y_script:     (N,) 书体 id（楷/行/隶）→ E_script
-        y_callig_raw: (N,) 书家**连续索引**（不是 pair id）→ 主效应表
-        y_pair:       (N,) (书家×书体) pair id → E_pair 残差
+        返回 (g, keep, callig_drop, char_drop, script_drop, y_callig_in) —— g 可能被整样本置零（模拟"该字没有标准字形"）;
+        y_callig_in 已套用 drop; keep 供后续门控复用。
         """
-        # ── 标准字形条件的随机丢弃（仅训练时）────────────────────────────
-        #
-        # 为什么要 drop：
-        # 1. 防止「门控」。标准字形 latent 与 DINO CLS 都由字 ID 推出，存在冗余。
-        #    std-skel 实验已证明：冗余条件会被 ControlNet 学成恒等门控掉
-        #    （SSIM 0.494≈base，SkelIoU 0.015，12 个评测点全平）。
-        #    随机丢弃使 g 不可预测，模型无法依赖「反正能从字 ID 推出来」而忽略它。
-        # 2. 覆盖现实：fame 上 v2 字典只覆盖 53.1%，草/篆（46.9%）本来就没有
-        #    标准字形，推理时 g 只能是零。训练时模拟这种缺失，让模型学会
-        #    「g 有效时跟随，g 为零时依赖书家+字条件」。
-        # 3. 与 CFG 兼容：丢弃时该样本等价于 uncond-g 分支。
-        #
-        # 注意：以**整张样本**为单位丢弃（而非逐像素），与「某字没有标准字形」
-        # 的真实情况一致。
         if (g is not None and self.training and self.glyph_drop_prob > 0.0):
             N = g.shape[0]
             keep = torch.rand(N, device=g.device) >= self.glyph_drop_prob
@@ -1623,6 +1598,42 @@ class DiT_2Cond(nn.Module):
                 char_drop = drop_all | (drop_one & ~which_glyph)
         y_callig_in = (torch.where(callig_drop, self.y_callig_embedder.num_classes, y_callig)
                        if callig_drop is not None else y_callig)
+        return g, keep, callig_drop, char_drop, script_drop, y_callig_in
+
+
+    def forward(self, x, t, y_callig, y_char, return_intermediate_layer=None,
+                return_intermediate_layers=None, g=None,
+                y_script=None, y_callig_raw=None, y_pair=None):
+        """
+        Forward pass of DiT_2Cond.
+        x: (N, C, H, W) noisy latents
+        t: (N,) timesteps
+        y_callig, y_char: (N,) condition IDs
+        g: 旧路径为 (N,4,32,32) latent；std-soft 为 (N,1,64,64) raw mask；None=不使用
+        return_intermediate_layer: int block index (e.g. 8) whose patch features to return for REPA.
+                                   When set, returns (output, intermediate_feats) as a tuple.
+
+        S2 新增条件（全部可选，None = 该层缺失 / 走旧路径）:
+        y_script:     (N,) 书体 id（楷/行/隶）→ E_script
+        y_callig_raw: (N,) 书家**连续索引**（不是 pair id）→ 主效应表
+        y_pair:       (N,) (书家×书体) pair id → E_pair 残差
+        """
+        # ── 标准字形条件的随机丢弃（仅训练时）────────────────────────────
+        #
+        # 为什么要 drop：
+        # 1. 防止「门控」。标准字形 latent 与 DINO CLS 都由字 ID 推出，存在冗余。
+        #    std-skel 实验已证明：冗余条件会被 ControlNet 学成恒等门控掉
+        #    （SSIM 0.494≈base，SkelIoU 0.015，12 个评测点全平）。
+        #    随机丢弃使 g 不可预测，模型无法依赖「反正能从字 ID 推出来」而忽略它。
+        # 2. 覆盖现实：fame 上 v2 字典只覆盖 53.1%，草/篆（46.9%）本来就没有
+        #    标准字形，推理时 g 只能是零。训练时模拟这种缺失，让模型学会
+        #    「g 有效时跟随，g 为零时依赖书家+字条件」。
+        # 3. 与 CFG 兼容：丢弃时该样本等价于 uncond-g 分支。
+        #
+        # 注意：以**整张样本**为单位丢弃（而非逐像素），与「某字没有标准字形」
+        # 的真实情况一致。
+        # ★ 2026-10-13: 原 46 行内联条件遮罩已抽成 _cond_drop_masks ✓（返回值由**输出穷举分析**决定, 防漏交 ✗）
+        g, keep, callig_drop, char_drop, script_drop, y_callig_in = self._cond_drop_masks(g, y_callig)
 
         # ── v15 多模态风格 token：一次查表, 骨架注入与 adaLN 融合共享 ──────────
         # (B, K, D); drop 已由 y_callig_in 携带 (null 标签 -> null_embed 整组替换)
