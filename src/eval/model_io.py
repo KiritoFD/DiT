@@ -23,6 +23,7 @@
 
 它内部做了 `strict=True` 的护栏 —— **字段漏一个就抛错，不会静默**。
 """
+from src.model.build import build_dit_from_args   # noqa: E402
 import os
 
 import torch
@@ -42,7 +43,6 @@ def build_model_from_args(a, device, **overrides):
 
     返回已 ``.to(device).eval()`` 的模型（**未加载权重**）。
     """
-    from src.model import DiT_2Cond_models
 
     if isinstance(a, dict):
         from argparse import Namespace
@@ -67,152 +67,11 @@ def build_model_from_args(a, device, **overrides):
     #   config 在评测/构造路径上会建出 2 倍分辨率的模型 (256 token -> 1024 token),
     #   pos_embed 形状失配; 在 --resume-full 后训练场景下更糟: 会被当"形状失配"剔除并
     #   重新随机初始化, 且因进了 _missing 而变成**可训** -> 静默坏掉底座。
-    latent_size = gi("image_size", 256) // gi("vae_downscale", 8)
-    _n_aux = len([s for s in str(g("aux_latent_shards_dirs", "") or "").split(",") if s])
-    _lc = gi("latent_channels", 4) or 4
 
-    model = DiT_2Cond_models[g("model")](
-        input_size=latent_size,
-        num_calligraphers=gi("num_calligraphers"),
-        num_characters=gi("num_characters"),
-        learn_sigma=bool(g("learn_sigma", False)),
-        condition_fusion=g("condition_fusion"),
-        # ★ 必须与训练侧一致, 否则重建出的 cond_fusion 结构与 ckpt 不符,
-        #   split 模式下会静默丢掉 cond_ln / cond_fusion 的权重 (见本文件开头警告)。
-        cond_fusion_norm=g("cond_fusion_norm", "joint"),
-        callig_embed_dim=gi("callig_embed_dim"),
-        char_embed_dim=gi("char_embed_dim"),
-        glyph_vec_cond=bool(g("glyph_vec_cond", False)),
-        glyph_vec_dim=gi("glyph_vec_dim", 128),
-        glyph_vec_pool=g("glyph_vec_pool", "mean"),
-        cond_drop_all_prob=g("cond_drop_all_prob"),
-        cond_drop_one_prob=g("cond_drop_one_prob"),
-        cond_drop_which_glyph_prob=g("cond_drop_which_glyph_prob", 0.5),
-        use_glyph_cond=bool((g("w_glyph_cond", 0) or 0) > 0
-                            or g("skel_as_glyph_cond", False)
-                            or g("std_soft_cond", False)),
-        std_soft_cond=bool(g("std_soft_cond", False)),
-        std_soft_zero_init=bool(g("std_soft_zero_init", True)),
-        use_char_cond=not bool(g("no_char_cond", False)),
-        # ★ 2026-10-13: 内容条件模式（"table" / "std"，互斥）。None = 旧 ckpt（混合模式，会告警）
-        content_cond=g("content_cond", None),
-    # v53 三表条件 (ckpt args 携带; 缺省 = 旧行为)
-    use_script_cond=bool(g("use_script_cond", False)),
-    num_script_classes=gi("num_script_classes", 3),
-    cond_drop_callig_prob=g("cond_drop_callig_prob", 0.0),
-    cond_drop_script_prob=g("cond_drop_script_prob", 0.0),
-    cond_drop_char_prob=g("cond_drop_char_prob", 0.0),
-        glyph_scale_init=gf("glyph_scale_init", 0.4),
-        # 改变第一层卷积的输入通道。漏传会按 4 通道建模型, 8 通道权重对不上。
-        glyph_concat_input=bool(g("glyph_concat_input", False)),
-        # 只改前向、不改参数形状。漏传则评测全程全强度, strict=True 抓不到。
-        glyph_gate_t=gf("glyph_gate_t", 0.0),
-        glyph_gate_floor=gf("glyph_gate_floor", 0.35),
-        # ★ Time-Gate: 漏传 = 评测时不门控, strict=True 抓不到 (同 glyph_gate 的坑)。
-        cond_gate_t=gf("cond_gate_t", 0.0),
-        cond_gate_floor=gf("cond_gate_floor", 0.0),
-        glyph_drop_prob=gf("glyph_drop_prob", 0.0),
-        glyph_inject_layers=gi("glyph_inject_layers", 0),
-        glyph_inject_mode=g("glyph_inject_mode", "adaln"),
-        # ★ 2026-10-05: 显式注入层 (纯行为开关, 不改参数形状; 漏传 -> 评测用均匀分布)。
-        glyph_inject_at=g("glyph_inject_at", ""),
-        # ★ 2026-10-06: 三表条件分层路由 (cond_inject_at 白名单 + 逐层可学习 scale)。
-        #   scale 是**真参数** -> 漏传会让 strict=True 报 missing (不会静默)。
-        cond_inject_at=g("cond_inject_at", ""),
-        cond_inject_scale=bool(g("cond_inject_scale", True)),
-        # ★ 2026-09-17: `xattn_q_pos` 是**纯行为开关，不改变任何参数形状**
-        #   （只决定 Q 是否加 sincos 位置）。漏传它 -> `strict=True` **抓不到**
-        #   -> 评测静默用 q_pos=False 的行为去评一个 q_pos=True 训出来的模型。
-        #   这是"形状一致但行为不同"的静默失效，必须在这里显式接上。
-        xattn_q_pos=bool(g("xattn_q_pos", False)),
-        # ★ 2026-10-03: attn_tau 与 xattn_q_pos 同类 —— 纯行为开关, 不改变参数形状。
-        #   漏传 -> strict=True 抠不到 -> 评测静默用 τ=1.0 去评一个 τ<1 训出来的模型。
-        attn_tau=float(g("attn_tau", 1.0)),
-        glyph_embedder_depth=gi("glyph_embedder_depth", 0),
-        glyph_embedder_sep=bool(g("glyph_embedder_sep", False)),
-        style_token_n=gi("style_token_n", 0),
-        style_role_init=gf("style_role_init", 0.02),
-        glyph_in_channels=(1 if bool(g("std_soft_cond", False))
-                           else (gi("glyph_latent_channels", 4) or 4)),
-        in_channels=(_lc + 4 * _n_aux),
-        char_proj_mode=g("char_proj_mode", "full"),
-        callig_proj_mode=g("callig_proj_mode", "linear"),
-        callig_scale_init=gf("callig_scale_init", 1.0),
-        # ---- 922/80 改动 1: 风格分支独立 LN + 独立增益 ----
-        # ⚠ 缺这两行会让评测构造出"没有 style_ln_mod/style_gain"的模型 ->
-        #   这两个权重变 unexpected key -> 静默走旧通路、D1/D3 指标全错。
-        style_ln=bool(g("style_ln", False)),
-        style_gain_init=gf("style_gain_init", 1.0),
-        # 只影响"未传 style_gain_init 时的自动标定"，对已存 ckpt 无影响
-        # （ckpt 里 style_gain 是实际值，直接 load_state_dict 覆盖）。
-        style_y_over_t_init=gf("style_y_over_t_init", 1.0),
-        # 922/80 改动 2: 缺这行会让评测构造出没有 style_ada_* 的模型 ->
-        # 这些权重变 unexpected key -> 静默走旧通路、指标全错。
-        style_ada_rank=gi("style_ada_rank", 0),
-        # v15 多模态风格: >0 时 y_callig_embedder = MultiStyleEmbedder((B,K,D) 查表)
-        callig_multi_style_k=gi("callig_multi_style_k", 0),
-        callig_style_ca=bool(g("callig_style_ca", False)),
-        style_ctx_every_layer=bool(g("style_ctx_every_layer", False)),
-        # ---- S2 (2026-09-22): 三层语义分解 + 局部风格-骨架引导 ----
-        # ⚠ 缺这些字段会让独立评测构造出"没有 S2 模块"的模型 ->
-        #   所有 S2 权重变成 unexpected key -> 评测静默走旧路径、指标全错。
-        #   （同类事故: batch_eval 把 ckpt args 转 dict -> 架构参数全被忽略。）
-        hier_style=gi("hier_style", 0),
-        num_pairs=gi("num_pairs", 0),
-        num_scripts=gi("num_scripts", 12),
-        script_embed_dim=gi("script_embed_dim", None),
-        pair_init=str(g("pair_init", "zero")),
-        pair_residual=gi("pair_residual", 1),
-        script_film=bool(g("script_film", False)),
-        spatial_film_rank=gi("spatial_film_rank", 0),
-        # 缺这行会让评测构造出没有 lowrank_spatial 的模型, 权重变
-        # unexpected key, 静默走旧通路, 指标和 baseline 逐位相同。
-        lowrank_spatial_rank=gi("lowrank_spatial_rank", 0),
-        local_ca_layers=gi("local_ca_layers", 0),
-        local_ca_heads=gi("local_ca_heads", 4),
-        local_ca_rank=gi("local_ca_rank", 64),
-        local_ca_q=str(g("local_ca_q", "g")),
-        local_ca_window=gi("local_ca_window", 0),
-        local_ca_at=g("local_ca_at", None),
-        # ★ 必须透传: 否则 load_model_from_ckpt 的自动判定白做, 旧 ckpt 仍会 strict 失败。
-        local_ca_impl=str(g("local_ca_impl", "glyph_query")),
-        deform_skel=gi("deform_skel", 0),
-        deform_width=gi("deform_width", 64),
-        deform_grid=gi("deform_grid", 32),
-        deform_max_off=gf("deform_max_off", 3.0),
-        deform_coarse=gi("deform_coarse", 8),
-        residual=gi("residual", 0),
-        res_cap=gf("res_cap", 1.0),
-        stroke_mod=gi("stroke_mod", 0),
-        stroke_cap=gf("stroke_cap", 1.0),
-        gate_radius=gf("gate_radius", 0.25),
-        deform_dt_ch=gi("deform_dt_ch", 0),
-        # ⚠ [2026-09-29] 原来**漏传 deform_topo** -> 事后评测(batch_eval)重建的模型
-        #   没有 head_prune/head_ligature, 拓扑增删路径静默失效, 评测口径与训练不一致。
-        deform_topo=gi("deform_topo", 0),
-        deform_warp_iters=gi("deform_warp_iters", 1),
-        deform_film_mode=str(g("deform_film_mode", "film")),
-        deform_style_tokens=gi("deform_style_tokens", 0),
-        deform_attn_heads=gi("deform_attn_heads", 4),
-        deform_preserve_amp=gi("deform_preserve_amp", 0),
-        deform_ckpt=str(g("deform_ckpt", "") or ""),
-        callig_spatial=bool(g("callig_spatial", False)),
-        callig_spatial_rank=gi("callig_spatial_rank", 64),
-        freeze_char_table=bool(g("freeze_char_table", False)),
-        use_ids_char_embedder=bool(g("use_ids_char_embedder", False)),
-        ids_file=g("ids_file", None),
-        char_id_to_char=None,
-        use_std_dino_char_embedder=bool(g("use_std_dino_char_embedder", False)),
-        std_dino_table_path=g("std_dino_table_path", None),
-        norm_type=g("norm_type", "rms"),
-        mlp_type=g("mlp_type", "swiglu"),
-        qk_norm=bool(g("qk_norm", True)),
-        rope=bool(g("rope", True)),
-        rope_theta=gf("rope_theta", 100.0),
-        attn_impl=g("attn_impl", "sdpa"),
-        image_channels=(g("image_channels")
-                        if g("image_channels", None) is not None else _lc),
-    )
+    # ★ 2026-10-13: 构造逻辑收敛到**唯一实现** src/model/build.py（训练/评测共用）✓
+    #   原先此处手写 ~110 行 kwargs 与 train.py 人肉同步, 是"评测架构静默不一致"的温床 ✗
+    model = build_dit_from_args(a, device, overrides=overrides, eval_mode=True)
+    return model
     return model.to(device).eval()
 
 
