@@ -109,6 +109,34 @@ def build_diffusion(steps, diffusion_type="ddpm", flow_kwargs=None):
 
 
 # ── 采样 (GPU, bf16) → latents on CPU ───────────────────────────────────────
+def model_uses_std_soft(model):
+    """Recognize plain, compiled, DDP and ControlNet-wrapped std-soft models."""
+    pending, seen = [model], set()
+    while pending:
+        current = pending.pop()
+        if current is None or id(current) in seen:
+            continue
+        seen.add(id(current))
+        if bool(getattr(current, "std_soft_cond", False)):
+            return True
+        pending.extend(getattr(current, key, None)
+                       for key in ("main", "module", "_orig_mod"))
+    return False
+
+
+def validate_std_soft_condition(g, n):
+    """Fail closed: missing/blank std-soft must never produce valid-looking scores."""
+    if not isinstance(g, torch.Tensor) or tuple(g.shape) != (n, 1, 64, 64):
+        shape = None if g is None else getattr(g, "shape", type(g).__name__)
+        raise ValueError(f"std-soft evaluation requires nonempty g [N,1,64,64]; got {shape}")
+    if n <= 0 or not g.is_floating_point() or not torch.isfinite(g).all():
+        raise ValueError("std-soft condition must be finite floating-point masks")
+    if (g < 0).any() or (g > 1).any():
+        raise ValueError("std-soft condition must use ink=1/background=0 in [0,1]")
+    if (g.flatten(1).sum(1) <= 0).any():
+        raise ValueError("std-soft condition contains blank glyphs")
+
+
 @torch.no_grad()
 def sample_latents(model, diffusion, noise, conds, cfg_scale, batch, device,
                    skel=None, seed=0, hier_conds=None):
@@ -124,6 +152,9 @@ def sample_latents(model, diffusion, noise, conds, cfg_scale, batch, device,
     Returns (N, C, H, W) float32 latents on CPU.
     """
     n = noise.shape[0]
+    if model_uses_std_soft(model):
+        # v83-A remote eval used an old cache returning None while training had g.
+        validate_std_soft_condition(skel, n)
     noise = match_model_channels(noise, model)   # aux 目标通道: 噪声扩到 in_channels
     lc, ls = noise.shape[1], noise.shape[2]
     all_latents = torch.zeros(n, lc, ls, ls, dtype=torch.float32)
@@ -164,10 +195,8 @@ def sample_latents(model, diffusion, noise, conds, cfg_scale, batch, device,
         if skel is not None:
             # g 条件模型 (train.py use_glyph_cond/skel_as_glyph_cond/std_soft_cond 预训练) 走 'g' 键;
             # ControlNetDiT 包装走 'cond' 键。
-            # ★ 2026-10-12 修: 原来只按 `model.use_glyph_cond` 判 —— 而 **std_soft 的 DiT_2Cond
-            #   并不暴露该属性**, 于是误走 'cond' 分支 → forward_with_cfg 直接 TypeError 崩掉
-            #   (48 上生成 v81 样本时踩到)。改为**看模型实际接受哪些关键字**再路由, 并顺带认
-            #   `std_soft_cond` 属性; 判不出来时保守走 'g'(DiT 家族一直是 g)。
+            # Recognize wrappers and the accepted keyword; flags alone are not
+            # sufficient for every historical checkpoint/model wrapper.
             import inspect as _inspect
             _fn = getattr(model, "forward_with_cfg", None) or model
             try:
@@ -178,6 +207,7 @@ def sample_latents(model, diffusion, noise, conds, cfg_scale, batch, device,
                       or getattr(getattr(model, "main", None), "use_glyph_cond", False)
                       or getattr(model, "std_soft_cond", False)
                       or getattr(getattr(model, "main", None), "std_soft_cond", False)
+                      or model_uses_std_soft(model)
                       or ("g" in _params and "cond" not in _params))
             mk["g" if _use_g else "cond"] = skel[i:j].to(device)
         # bf16 autocast 仅 cuda (CPU 无 AVX512-BF16/AMX 时 bf16 走软件上转反而慢)

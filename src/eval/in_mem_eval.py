@@ -31,7 +31,8 @@ from PIL import Image
 
 from src.eval.inference import (build_diffusion, load_eval_vae, make_eval_cache,
                                 sample_latents, sample_latents_self_cond,
-                                maybe_add_white, _mse, _ssim)
+                                maybe_add_white, _mse, _ssim,
+                                model_uses_std_soft, validate_std_soft_condition)
 
 # 模块级缓存: 跨 step 复用 (eval cache / VAE / diffusion / id_map)
 _CACHES = {}
@@ -279,6 +280,11 @@ def _get_cache(csv_path, n, img_root, shards, args):
         if getattr(args, "use_script_cond", False):
             _triple_remap_cache(cache, csv_path, n, args)
         _CACHES[ck] = cache
+    if bool(getattr(args, "std_soft_cond", False)):
+        cache = _CACHES[ck]
+        if cache.get("g_kind") != "std_soft":
+            raise ValueError("std-soft evaluation received a legacy condition cache")
+        validate_std_soft_condition(cache.get("skels_latent"), cache["n"])
     return _CACHES[ck]
 
 
@@ -890,6 +896,8 @@ def run_in_mem_eval(model, args, step, device, results_dir=None, logger=print):
     import time
     results_dir = str(results_dir or getattr(args, "results_dir", "") or ".")
     os.makedirs(results_dir, exist_ok=True)
+    if bool(getattr(args, "std_soft_cond", False)) != model_uses_std_soft(model):
+        raise ValueError("std-soft flag mismatch between eval args and reconstructed model")
 
     # ── 采样参数 (全部来自 args, 缺省保守值) ──
     img_root = None                       # csv image_path 已含完整相对路径
@@ -914,6 +922,8 @@ def run_in_mem_eval(model, args, step, device, results_dir=None, logger=print):
     from src.loss import flow_kwargs_from
     _DIFF = build_diffusion(ddim_steps, str(getattr(args, "diffusion_type", "flow")),
                             flow_kwargs=flow_kwargs_from(args))
+    logger(f"[in-mem-eval] sampler={_DIFF.describe() if hasattr(_DIFF, 'describe') else type(_DIFF).__name__} "
+           f"cfg={cfg_scale} std_soft={bool(getattr(args, 'std_soft_cond', False))}")
 
     # ── 解析评测集: "name:csv:n,name:csv:n" ──
     sets = []
@@ -1027,6 +1037,27 @@ def run_in_mem_eval(model, args, step, device, results_dir=None, logger=print):
                 print(f"[in-mem-eval] set={name} (pred 口径) skel={set_shards}")
             cache = _get_cache(csvp, n, img_root, set_shards, args)
             n = cache["n"]
+            # Persist the actual input and sampler contract, not config comments.
+            import hashlib
+            import json
+            _g = cache.get("skels_latent")
+            _protocol = dict(
+                step=int(step), set=name, n=n, seed=0, cfg=cfg_scale,
+                steps=ddim_steps, sampler=getattr(_DIFF, "sampler", None),
+                sde_gamma=float(getattr(_DIFF, "sde_gamma", 0.0)),
+                g_kind=cache.get("g_kind", "latent" if _g is not None else "none"),
+                g_shape=list(_g.shape) if _g is not None else None,
+                g_sha256=(hashlib.sha256(_g.detach().cpu().contiguous().numpy().tobytes()).hexdigest()
+                          if _g is not None else None),
+                std_soft_root=str(getattr(args, "std_soft_root", "") or ""),
+                std_soft_sigma=float(getattr(args, "std_soft_eval_sigma", 0.65)),
+                vae_path=str(getattr(args, "eval_vae_path", "") or "data/pretrained/sd-vae-ft-ema"),
+                vae_scaling_factor=sf, vae_shift_factor=_sf_shift)
+            _pd = os.path.join(results_dir, "eval_protocol")
+            os.makedirs(_pd, exist_ok=True)
+            with open(os.path.join(_pd, f"step{int(step):07d}_{name}.json"), "w", encoding="utf-8") as _pf:
+                json.dump(_protocol, _pf, indent=2, ensure_ascii=False)
+            logger(f"[in-mem-eval] set={name} g={_protocol['g_kind']} shape={_protocol['g_shape']}")
             # ★ 2026-09-18: 读源 csv 行，用于把 img_id/char/script/**calligrapher**
             #   写进逐样本 CSV。原来这几列全是空串，导致无法把"每个书家的 strict ssim"
             #   与"该书家的风格条件强度"对齐做散点（区分瓶颈在数据还是条件机制）。
