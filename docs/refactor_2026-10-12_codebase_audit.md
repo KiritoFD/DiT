@@ -19,7 +19,7 @@
 | 文件 | 改动 | 依据 |
 |---|---|---|
 | `tools/preflight.py` | **新增**：统一启动闸门（工具自检 + pyflakes + 常数棘轮 + 配置显式性）| 这次事故的通用化 |
-| `tools/analysis/validate_config.py` | **新增**：单条规则覆盖全部隐式默认隐患 | 46 处 H3 |
+| `tools/preflight.py`（含 H3 规则）| **新增并成为唯一入口**：`validate_config.py` 与 `static_check.py` 完成后即删除（前者规则并入 preflight，后者被 pyflakes 取代）| 46 处 H3 |
 | `tools/analysis/audit_repo.py` | **新增**：6 类"已发生过的事故"可扫描 | 巡检 |
 | `tools/analysis/static_check.py`、`white_baseline.py`、`code_md5.py`、`v81_faintness.py` | **新增**：静态检查 / 指标白图零点 / 两端一致性 / 墨量体检 | 本次复盘沉淀 |
 | `scratch/check_v83_wiring.sh` | **新增**：接线熔断（缺失即 kill）| 实战拦下一次错跑 ✓ |
@@ -56,3 +56,44 @@ python tools/preflight.py --config <cfg> --strict      # FAIL=0  exit=0 ✓
 2. **指标必须过"零点基线"** —— SSIM 给全白图 0.6855，高于模型真实输出 0.6371 ✗ → 该类指标永久降级为参考项。
 3. **启动前必须过接线/配置闸门** —— 本轮它拦下了一次跑错配置的 200k 实验 ✓。
 4. **重构用小步、可验证、可回退的提交** —— 本次 2 个提交，每步都有静态验证 ✓。
+
+---
+
+## 六、第二轮（同日）：审查 → 精简 → 文档同步
+
+**审查发现（全部为"已损坏/必崩"的真实问题，非风格问题）**
+
+| 类别 | 位置 | 证据 |
+|---|---|---|
+| **全局替换事故污染标识符** | `sample_controlnet.py`(×2)、`make_fame3_poster.py`、`_diag_skel_similarity.py`、`legacy/gradio/gradio_fame_local.py` | `std_skel` → `data/skel/std_skel` 命中**标识符**：`def render_data/skel/std_skel(` 直接无法解析 ✗ |
+| **mojibake 吃掉换行** | `sample_controlnet.py`(×2) | 中文注释被 GBK↔UTF-8 双重解码碾平，`skel_path = ...` 整行落进注释 → L174 **NameError** ✗ |
+| **UTF-8 BOM** | 10 个文件 | 噪音；且让"按 str 编译"的检查误报（`compileall` 读 bytes 所以不报 ✗）|
+| **裸转义** | 4 个 tools | `\d` `\|` `\p`（未来 Python 变 SyntaxError）|
+
+**精简**
+
+| 动作 | 对象 | 理由 |
+|---|---|---|
+| 删 | `validate_config.py` | H3 规则 100% 被 `preflight.py` 覆盖 |
+| 删 | `static_check.py` | 被 pyflakes + 语法门取代（噪声 295 vs 真信号 0）|
+| 删 | `apply_refactor_p1.py` / `p2.py` | 一次性迁移脚本，已完成（git 历史保留）|
+| 删 | `sde_oracle_test.py` / `2.py` | 迭代中间版；保留 `3.py`（被 `src/loss/flow_matching.py:501` 注释引用 ✓）|
+| 去后缀改名 | `fix_sweep_images2.py`、`make_ckpt_sweep_poster2.py` | 去掉"2"，消除编号重复味道 |
+
+**闸门补强**：新增 **语法门**（`src/` 零不可编译为硬门槛）。
+> 必要性：pyflakes **只在文件可解析时才有信号** ✗ —— 上述 5 个语法损坏文件被它整体跳过，
+> 旧的闸门因此全绿而实际已有文件损坏 ✗。**语法门必须排在 pyflakes 之前** ✓。
+> 有效性已证明：故意投放坏文件 → 立刻 FAIL ✓。
+
+**验收**
+
+```
+python tools/preflight.py --config src/train/configs/v83A_stdsoft_zerofix.json --strict
+  ✓ 语法 src/ 0   ✓ pyflakes src/ 0   ✓ H3 0   ✓ 棘轮 460/136 持平      FAIL=0 exit=0
+```
+
+**新增教训（补进第五节）**
+
+5. **读文件一律 `utf-8-sig`**，与解释器对齐；否则 BOM 制造假阳性 ✗。
+6. **`compileall(quiet=1)` 会吞掉错误输出** —— 我用它做的"编译 OK"是**假绿** ✗，改用逐文件 `compile()` ✓。
+7. **一次全局替换的杀伤半径要用"全仓 grep + 编译门"双重兜底** ✗。
