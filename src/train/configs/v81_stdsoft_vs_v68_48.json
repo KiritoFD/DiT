@@ -1,5 +1,5 @@
 {
-  "_comment": "v81 = **v68 逐项照抄**（SD-VAE shards / aug 77.8k / batch288 / 200k / C2OT），只加 **std_soft 空间条件**（1×64×64 soft mask，独立 CNN→16×16 token，zero-init）。\n目的: 对 **v68（0.6149@200k）** 做**单变量** A/B —— 这是最干净的因果检验。\n⚠ 显式写出 vae_scaling_factor/shift_factor: 防止日后换 shards 时静默沿用错常数(E5)。\n\n【48 版】与 v68 单变量 A/B，跑在 48（GPU 空闲）。路径已对齐 48 布局；std_soft store 由本机同步（8451 条、零缺字）。\n\n【修正 2026-10-12】清空骨架 latent 目录: 它们会让评测缓存塞入 'cond' 键, 而 DiT_2Cond.forward_with_cfg 只给 ControlNetDiT 留了该键 → 采样直接崩。本 run 的 skel_as_glyph_cond=false, 原本也不需要骨架条件。",
+  "_comment": "v81 = **v68 逐项照抄**（SD-VAE shards / aug 77.8k / batch288 / 200k / C2OT），只加 **std_soft 空间条件**（1×64×64 soft mask，独立 CNN→16×16 token，zero-init）。\n目的: 对 **v68（0.6149@200k）** 做**单变量** A/B —— 这是最干净的因果检验。\n⚠ 显式写出 vae_scaling_factor/shift_factor: 防止日后换 shards 时静默沿用错常数(E5)。\n\n【48 版】与 v68 单变量 A/B，跑在 48（GPU 空闲）。路径已对齐 48 布局；std_soft store 由本机同步（8451 条、零缺字）。\n\n【修正 2026-10-12】清空骨架 latent 目录: 它们会让评测缓存塞入 'cond' 键, 而 DiT_2Cond.forward_with_cfg 只给 ControlNetDiT 留了该键 → 采样直接崩。本 run 的 skel_as_glyph_cond=false, 原本也不需要骨架条件。\n\n【2026-10-13 配置可靠性修复】本配置原先**没有** sde_gamma, 即沿用代码默认 0.5;\n而 v83-A 显式写了 0.0 ⇒ 按 JSON 直接启动时 A/B 的**评测采样方式不同**(SDE vs ODE),\n不能直接公平比较 ✗。现显式补 0.0 以统一为 ODE ✓。\n⚠ 若历史运行的启动脚本曾显式覆盖 sde_gamma, 则实际行为以当时保存的 effective config 为准 ✓。",
   "experiment_name": "v81-stdsoft-vs-v68-48",
   "results_dir": "assets/results/v81_stdsoft_vs_v68_48",
   "model": "DiT-2Cond-Sp/2",
@@ -71,13 +71,11 @@
   "use_ema": true,
   "ema_decay": 0.999,
   "ema_interval": 4,
-  "seed": 0,
   "w_repa": 0.03,
   "repa_cache_dir": "data/dino_cache/top10_aug_v1",
   "repa_layers": "8",
   "early_stop": false,
   "in_mem_eval": true,
-  "gpu_eval_every": 5000,
   "in_mem_eval_sets": "eval200fix:exp-std/csv/eval200_fixed.csv:187,seen:exp-std/csv/seen20.csv:20",
   "eval_cfg": 1.0,
   "eval_steps": 50,
@@ -95,5 +93,8 @@
   "std_soft_eval_sigma": 0.65,
   "std_soft_zero_init": true,
   "vae_scaling_factor": 0.18215,
-  "vae_shift_factor": 0.0
+  "vae_shift_factor": 0.0,
+  "global_seed": 0,
+  "sde_gamma": 0.0,
+  "content_cond": "hybrid"
 }

@@ -1,15 +1,12 @@
 {
-  "_comment": "v80 code-ready only; do not launch yet. Relative to v70, replace the VAE std-skel latent with an unblurred TTF raster store. Runtime train blur is sampled uniformly in [0.4,1.0], eval blur is fixed at 0.65. The 1x64x64 mask is encoded directly to 16x16 DiT tokens; no skeletonize/dilate and no VAE.",
+  "_comment": "v80 code-ready only; do not launch yet. Relative to v70, replace the VAE std-skel latent with an unblurred TTF raster store. Runtime train blur is sampled uniformly in [0.4,1.0], eval blur is fixed at 0.65. The 1x64x64 mask is encoded directly to 16x16 DiT tokens; no skeletonize/dilate and no VAE.\n\n【2026-10-13 配置可靠性修复】本配置原先**没有** sde_gamma, 即沿用代码默认 0.5;\n而 v83-A 显式写了 0.0 ⇒ 按 JSON 直接启动时 A/B 的**评测采样方式不同**(SDE vs ODE),\n不能直接公平比较 ✗。现显式补 0.0 以统一为 ODE ✓。\n⚠ 若历史运行的启动脚本曾显式覆盖 sde_gamma, 则实际行为以当时保存的 effective config 为准 ✓。",
   "experiment_name": "v80-aug-sp-stdsoft-c2ot",
   "results_dir": "assets/results/v80_aug_sp_stdsoft_c2ot",
   "model": "DiT-2Cond-Sp/2",
-
   "use_c2ot": true,
   "c2ot_mode": "slot",
-
   "cond_inject_at": "2,4,5,6",
   "cond_inject_scale": true,
-
   "std_soft_cond": true,
   "std_soft_root": "exp-std/data/std_soft_glyphs_v1",
   "std_soft_size": 64,
@@ -28,7 +25,6 @@
   "glyph_noise_prob": 0.0,
   "glyph_patch_drop": 0.0,
   "xattn_q_pos": true,
-
   "condition_fusion": "factorized_cat",
   "cond_fusion_norm": "split",
   "callig_embed_dim": 32,
@@ -46,14 +42,12 @@
   "freeze_char_table": false,
   "freeze_callig_table": false,
   "no_char_cond": true,
-
   "cond_drop_all_prob": 0.05,
   "cond_drop_one_prob": 0.0,
   "cond_drop_callig_prob": 0.08,
   "cond_drop_script_prob": 0.08,
   "cond_drop_char_prob": 0.0,
   "cond_drop_which_glyph_prob": 0.0,
-
   "latent_shards_dir": "exp-std/data/shards_img_aug",
   "img_root": "data/top10_style23/imgs",
   "image_size": 256,
@@ -73,7 +67,6 @@
   "attn_impl": "sdpa",
   "compile": true,
   "compile_mode": "default",
-
   "epochs": 200000,
   "max_steps": 200000,
   "lr": 5e-05,
@@ -89,13 +82,11 @@
   "use_ema": true,
   "ema_decay": 0.999,
   "ema_interval": 4,
-  "seed": 0,
   "w_repa": 0.03,
   "repa_cache_dir": "data/dino_cache/top10_aug_v1",
   "repa_layers": "8",
   "early_stop": false,
   "in_mem_eval": true,
-  "gpu_eval_every": 5000,
   "in_mem_eval_sets": "eval200fix:exp-std/csv/eval200_fixed.csv:187,seen:exp-std/csv/seen20.csv:20",
   "eval_cfg": 1.0,
   "eval_steps": 50,
@@ -104,5 +95,8 @@
   "global_batch_size": 288,
   "freeze_triple_tables": true,
   "in_mem_eval_batch": 8,
-  "eval_dir": ""
+  "eval_dir": "",
+  "global_seed": 0,
+  "sde_gamma": 0.0,
+  "content_cond": "std"
 }

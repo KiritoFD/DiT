@@ -582,6 +582,27 @@ def main(args):
         logger.info(f"[channels] latent={_lat_ch}  aux 组={_n_aux_chk}  "
                     f"in_channels={_in_ch}  image_channels(CFG 作用域)={_img_ch}")
 
+        # ── ★ 2026-10-13 [审查 P0-A]: **有效配置落盘** ✓ ─────────────────────────────
+        #   此前只有"输入的 config JSON", 没有"真正生效的配置" ✗ —— 一旦未注册键被静默
+        #   忽略 / CLI 覆盖 / 代码默认参与, 事后无法知道实际跑了什么。现在把解析后的
+        #   完整 vars(args) + sha256 落到实验目录, "记录配置 ≠ 实际配置"可直接对账 ✓。
+        try:
+            import hashlib as _hl
+            import json as _json
+            _eff = {k: (v if isinstance(v, (int, float, bool, str, type(None), list, dict)) else str(v))
+                    for k, v in vars(args).items() if not k.startswith("__")}
+            _eff_blob = _json.dumps(_eff, ensure_ascii=False, sort_keys=True, default=str)
+            _eff_hash = _hl.sha256(_eff_blob.encode("utf-8")).hexdigest()
+            _eff_dir = getattr(args, "results_dir", ".") or "."
+            os.makedirs(_eff_dir, exist_ok=True)
+            _eff_path = os.path.join(_eff_dir, "effective_config.json")
+            with open(_eff_path, "w", encoding="utf-8") as _f:
+                _json.dump({"_sha256": _eff_hash, "_config_path": getattr(args, "config", None),
+                            "args": _eff}, _f, ensure_ascii=False, indent=2, sort_keys=True)
+            print(f"[effective-config] 已落盘 {_eff_path} (sha256={_eff_hash[:16]}) ✓", flush=True)
+        except Exception as _e:                                     # noqa: BLE001
+            print(f"[effective-config] ⚠ 落盘失败(不致命): {type(_e).__name__}: {_e}", flush=True)
+
         model = build_dit_from_args(args)   # ★ 唯一构造器（src/model/build.py）✓ 不再手写 kwargs
         # ── 双轴 CFG 的推理期开关 (2026-09-17) ─────────────────────────────
         # 挂在**模型属性**上, 让 src/eval/inference.sample_latents 不必改签名即可透传。

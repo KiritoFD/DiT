@@ -36,27 +36,41 @@ def aux_dirs_of(a) -> list:
 
 
 def resolve_content_cond(a, log=None) -> Optional[str]:
-    """内容条件模式: 'table' / 'std' / None(legacy 混合, 仅告警) —— 与 train.py 同一规则 ✓
+    """内容条件模式: 'table' / 'std' / 'hybrid' / None(未指定, 按开关推导并告警) ✓
 
-    table: 字表给内容 (use_char_cond=True,  std_soft_cond=False)
-    std  : 字形给内容 (use_char_cond=False, std_soft_cond=True)
-    两者**不得共存** ✗
+    **唯一实现** ✓ —— train.py / eval 端都必须调这里, 不许各自复刻（历史教训:
+    两处实现漂移 -> 静默不一致 ✗）。
+
+    table  : 字表给内容      (use_char_cond=True,  std_soft_cond=False)
+    std    : 字形给内容      (use_char_cond=False, std_soft_cond=True)
+    hybrid : 字表 + std 并存 (use_char_cond=True,  std_soft_cond=True)
+             ⇒ **归因不可分离** ✗（v83-A/B/C 的真实架构, 历史 ckpt 必须能如实标注 ✓）
+             新实验应避免; 显式写 'hybrid' 只用于诚实记录已有运行 ✓
     """
     std_soft = bool(getattr(a, "std_soft_cond", False))
     use_char = not bool(getattr(a, "no_char_cond", False))
     cc = getattr(a, "content_cond", None)
+    want = {
+        "table": (True, False),
+        "std": (False, True),
+        "hybrid": (True, True),
+    }
     if cc is not None:
         cc = str(cc).lower()
-        if cc not in ("table", "std"):
-            raise ValueError(f"content_cond 只能是 'table' 或 'std'，收到 {cc!r}")
-        if cc == "table" and std_soft:
-            raise ValueError("content_cond='table' 但 std_soft_cond=True —— 两种内容条件不得共存 ✗")
-        if cc == "std" and use_char:
-            raise ValueError("content_cond='std' 但字表仍开 —— 请设 no_char_cond=True ✗")
-        if cc == "std" and not std_soft:
-            raise ValueError("content_cond='std' 需要 std_soft_cond=True")
+        if cc not in want:
+            raise ValueError(
+                f"content_cond 只能是 'table' / 'std' / 'hybrid'，收到 {cc!r}。"
+                f"table=仅字表 / std=仅标准字形 / hybrid=两者并存(归因不可分离 ✗)")
+        w_char, w_std = want[cc]
+        if (use_char, std_soft) != (w_char, w_std):
+            raise ValueError(
+                f"content_cond={cc!r} 与开关不一致: 期望 (no_char_cond={not w_char}, "
+                f"std_soft_cond={w_std})，实际 (no_char_cond={not use_char}, "
+                f"std_soft_cond={std_soft}) —— 配置自相矛盾 ✗")
     elif use_char and std_soft and log is not None:
-        log("[content-cond] ⚠ legacy 混合模式: 字表与 std 字形同时开启 ✗ 归因不可分离")
+        log("[content-cond] ⚠ 未显式指定 content_cond, 当前为**混合模式**(字表+std 并存) "
+            "✗ 归因不可分离 —— 请在配置里显式写 content_cond='hybrid' (记录) 或 "
+            "'table'/'std' (单因素实验) ✓")
     return cc
 
 

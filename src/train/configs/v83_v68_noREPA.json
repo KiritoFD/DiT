@@ -1,5 +1,5 @@
 {
-  "_comment": "v83 = **v68 配方逐项照抄**（SD-VAE shards / aug_sym 77.8k / batch288 / 200k cosine / C2OT ✓）\n只改一处: **w_repa 0.03 -> 0**（关 REPA）。\n\n目的（用户 2026-10-12）: 在 v68 这套配方上做**从未做过的 REPA 消融**，看掉点是否严重 ——\n  ① 若掉点可忽略 -> 增广四臂可以直接 w_repa=0 跑，**省掉 2h 的 per-family REPA 缓存构建** ✓\n  ② 若掉点明显 -> 必须为四族建各自缓存（否则增强行的 REPA 监督会错配到源图特征）\n\n注意: max_steps 保持 200000，与 v68 **同调度** -> 逐点可比 ✓；关 REPA 后不读 repa_cache_dir ✓。\n\n[修正] 补上 v77 继承的 repa 键: []（w_repa=0 时代码仍会引用 _repa_cache_dir, 缺键即 UnboundLocalError）",
+  "_comment": "v83 = **v68 配方逐项照抄**（SD-VAE shards / aug_sym 77.8k / batch288 / 200k cosine / C2OT ✓）\n只改一处: **w_repa 0.03 -> 0**（关 REPA）。\n\n目的（用户 2026-10-12）: 在 v68 这套配方上做**从未做过的 REPA 消融**，看掉点是否严重 ——\n  ① 若掉点可忽略 -> 增广四臂可以直接 w_repa=0 跑，**省掉 2h 的 per-family REPA 缓存构建** ✓\n  ② 若掉点明显 -> 必须为四族建各自缓存（否则增强行的 REPA 监督会错配到源图特征）\n\n注意: max_steps 保持 200000，与 v68 **同调度** -> 逐点可比 ✓；关 REPA 后不读 repa_cache_dir ✓。\n\n[修正] 补上 v77 继承的 repa 键: []（w_repa=0 时代码仍会引用 _repa_cache_dir, 缺键即 UnboundLocalError）\n\n【2026-10-13 配置可靠性修复】本配置原先**没有** sde_gamma, 即沿用代码默认 0.5;\n而 v83-A 显式写了 0.0 ⇒ 按 JSON 直接启动时 A/B 的**评测采样方式不同**(SDE vs ODE),\n不能直接公平比较 ✗。现显式补 0.0 以统一为 ODE ✓。\n⚠ 若历史运行的启动脚本曾显式覆盖 sde_gamma, 则实际行为以当时保存的 effective config 为准 ✓。",
   "experiment_name": "v83-v68-noREPA",
   "results_dir": "assets/results/v83_v68_noREPA",
   "model": "DiT-2Cond-Sp/2",
@@ -71,13 +71,11 @@
   "use_ema": true,
   "ema_decay": 0.999,
   "ema_interval": 4,
-  "seed": 0,
   "w_repa": 0.0,
   "repa_cache_dir": "data/dino_cache/top10_aug_v1",
   "repa_layers": "8",
   "early_stop": false,
   "in_mem_eval": true,
-  "gpu_eval_every": 5000,
   "in_mem_eval_sets": "eval200fix:exp-std/csv/eval200_fixed.csv:187,seen:exp-std/csv/seen20.csv:20",
   "eval_cfg": 1.0,
   "eval_steps": 50,
@@ -86,5 +84,8 @@
   "global_batch_size": 288,
   "freeze_triple_tables": true,
   "in_mem_eval_batch": 8,
-  "eval_dir": ""
+  "eval_dir": "",
+  "global_seed": 0,
+  "sde_gamma": 0.0,
+  "content_cond": "table"
 }

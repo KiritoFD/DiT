@@ -72,13 +72,11 @@
   "use_ema": true,
   "ema_decay": 0.999,
   "ema_interval": 4,
-  "seed": 0,
   "w_repa": 0.03,
   "repa_cache_dir": "data/dino_cache/top10_aug_v1",
   "repa_layers": "8",
   "early_stop": false,
   "in_mem_eval": true,
-  "gpu_eval_every": 5000,
   "in_mem_eval_sets": "eval200fix:exp-std/csv/eval200_fixed.csv:187,seen:exp-std/csv/seen20.csv:20",
   "eval_cfg": 1.0,
   "eval_steps": 50,
@@ -102,11 +100,11 @@
   "glyph_embedder_depth": 0,
   "callig_scale_init": 1.0,
   "dino_per_script_center": 0,
-  "repa_early_warmup": 0,
   "glyph_latent_channels": 4,
   "callig_multi_style_k": 0,
   "deform_max_off": 3,
   "w_style_ortho": 0.0,
   "python_bin": "/opt/conda/envs/cu121/bin/python",
-  "content_cond": "std"
+  "content_cond": "std",
+  "global_seed": 0
 }

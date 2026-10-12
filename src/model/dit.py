@@ -396,11 +396,15 @@ class DiT_2Cond(nn.Module):
         # 书家/书体表是**风格/身份**条件，两种模式下都保留（有实验支持其有效性）。
         self.content_cond = None if content_cond is None else str(content_cond).lower()
         if self.content_cond is not None:
-            if self.content_cond not in ("table", "std"):
+            if self.content_cond not in ("table", "std", "hybrid"):
                 raise ValueError(
-                    f"content_cond 只能是 'table' 或 'std'，收到 {content_cond!r}")
+                    f"content_cond 只能是 'table' / 'std' / 'hybrid'，收到 {content_cond!r}")
             _has_char_table = bool(self.use_char_cond)
             _has_std_glyph = bool(std_soft_cond)
+            if self.content_cond == "hybrid" and not (_has_char_table and _has_std_glyph):
+                raise ValueError(
+                    "content_cond='hybrid' 需要字表与 std 字形**同时**开启 "
+                    f"(use_char_cond={_has_char_table}, std_soft_cond={_has_std_glyph})")
             if self.content_cond == "table" and _has_std_glyph:
                 raise ValueError(
                     "content_cond='table' 但 std_soft_cond=True —— "

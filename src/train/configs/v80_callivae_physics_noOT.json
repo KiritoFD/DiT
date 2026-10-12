@@ -75,13 +75,11 @@
   "use_ema": true,
   "ema_decay": 0.999,
   "ema_interval": 4,
-  "seed": 0,
   "w_repa": 0.03,
   "repa_cache_dir": "data/dino_cache/top10_aug_v1",
   "repa_layers": "8",
   "early_stop": false,
   "in_mem_eval": true,
-  "gpu_eval_every": 5000,
   "in_mem_eval_sets": "eval200fix:exp-std/csv/eval200_fixed.csv:187,seen:exp-std/csv/seen20.csv:20",
   "eval_cfg": 1.0,
   "eval_steps": 50,
@@ -93,5 +91,7 @@
   "in_mem_eval_batch": 8,
   "eval_dir": "",
   "grad_clip": 1.0,
-  "vae_shift_factor": -0.03341800242750449
+  "vae_shift_factor": -0.03341800242750449,
+  "global_seed": 0,
+  "content_cond": "table"
 }

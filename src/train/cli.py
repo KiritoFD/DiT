@@ -740,6 +740,17 @@ def build_parser(argv=None):
                         help="Zero-init the std-soft encoder output projection.")
     parser.add_argument("--glyph-scale-init", type=float, default=0.4,
                         help="Initial glyph_scale (standard-glyph token-add strength).")
+    parser.add_argument("--content-cond", default=None,
+                        choices=["table", "std", "hybrid"],
+                        help="★ 内容条件模式(互斥, 显式声明 ✓): "
+                             "table=仅字表给内容 / std=仅标准字形给内容 / "
+                             "hybrid=两者并存(归因不可分离 ✗, 仅用于如实记录 v83-A/B/C)。"
+                             "必须与 no_char_cond/std_soft_cond 自洽, 否则启动报错 ✓。"
+                             "不写 = 按开关推导并告警 ✗")
+    parser.add_argument("--callig-scale-init", type=float, default=1.0,
+                        dest="callig_scale_init",
+                        help="书家向量因子的可学习幅度初值(42 号实验: 1.5 增强风格权重)。"
+                             "**此前未注册 ⇒ 配置里写了也静默失效** ✗ 2026-10-13 补注册")
     parser.add_argument("--no-char-cond", type=_str_to_bool, default=False,
                         help="v10b: 移除 char 向量条件 (skel-g 即字条件, 因子分解=callig+skel)."
                              " 支持 factorized_add / factorized_cat。"
@@ -1101,6 +1112,10 @@ def build_parser(argv=None):
                         help="Root dir of 256x256 gt images (used with latent-cached training for gt-losses).")
     parser.add_argument("--config", type=str, default="config.json",
                         help="Path to JSON config file with default args (CLI overrides).")
+    parser.add_argument("--allow-unknown-config-keys", type=_str_to_bool, default=False,
+                        dest="allow_unknown_config_keys",
+                        help="★ 逃生开关(审查 P0): 默认 False ⇒ config JSON 里的**未注册键直接报错** ✓"
+                             "(防止配置静默失效)。仅历史配置临时放行时置 True。")
 
     # Apply config-file defaults first, then CLI overrides.
     config_defaults = {}
@@ -1109,10 +1124,46 @@ def build_parser(argv=None):
     #   任何程序化调用 `parse_args(['--config', p])`（测试 / 脚本 / notebook /
     #   sweep 生成器）都会静默拿到 cfg_path="config.json" -> **config 一个字段都不生效**，
     #   全部退回代码默认值，且不报任何错。本项目已多次栽在"静默失效"上，故显式修掉。
-    cfg_path = parser.parse_known_args(argv)[0].config
+    _known_pre, _ = parser.parse_known_args(argv)
+    cfg_path = _known_pre.config
     if cfg_path and os.path.isfile(cfg_path):
         with open(cfg_path, "r", encoding="utf-8") as f:
             config_defaults = json.load(f)
+
+    # ── ★ 2026-10-13 [审查 P0]: **未注册的配置键必须报错, 不许静默忽略** ✗✗ ──
+    #   旧行为: 只遍历已注册 action ⇒ JSON 里写错的键被无声丢弃,
+    #   "实验实际跑的配置 ≠ 记录下来的配置" 且不报错（本项目栽过多次）。
+    #   现在: 未知键 -> ValueError 列出全部; 别名键(seed/gpu_eval_every)映射到正式名并告警 ✓;
+    #   逃生开关 --allow-unknown-config-keys 供历史配置临时放行（会打印警告 ✓）。
+    _ALIASES = {"seed": "global_seed", "gpu_eval_every": "ckpt_every"}
+    _ALLOW = {"python_bin", "results_dir", "experiment_name", "eval_sets"}
+    if config_defaults:
+        _dests = {a.dest for a in parser._actions}
+        _unknown, _aliased = [], []
+        for _k in list(config_defaults.keys()):
+            if _k.startswith("_") or _k in _ALLOW or _k in _dests:
+                continue
+            if _k in _ALIASES:
+                _tgt = _ALIASES[_k]
+                if _tgt not in config_defaults:               # 正式键缺席 -> 别名生效 ✓
+                    config_defaults[_tgt] = config_defaults.pop(_k)
+                    _aliased.append((_k, _tgt))
+                else:                                          # 正式键在场 -> 别名被忽略 ✓
+                    config_defaults.pop(_k)
+                    _aliased.append((_k, _tgt + "(被同名正式键覆盖, 已丢弃别名)"))
+                continue
+            _unknown.append(_k)
+        if _aliased:
+            import warnings
+            warnings.warn("[config] 别名键已映射(建议改用正式名 ✓): "
+                          + ", ".join("%s->%s" % a for a in _aliased), RuntimeWarning, stacklevel=2)
+        if _unknown and not getattr(_known_pre, "allow_unknown_config_keys", False):
+            raise ValueError(
+                "[config] %s 里有 %d 个**未注册**的键 ✗ —— 它们会被静默忽略, "
+                "导致'实际配置 ≠ 记录配置'。请改正式名/删掉, 或加 "
+                "--allow-unknown-config-keys 临时放行。未知键: %s"
+                % (cfg_path, len(_unknown), ", ".join(sorted(_unknown))))
+
     for action in parser._actions:
         if action.dest in ("help", "config"):
             continue
