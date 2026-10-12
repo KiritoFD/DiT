@@ -162,12 +162,24 @@ def sample_latents(model, diffusion, noise, conds, cfg_scale, batch, device,
             mk['y_pair'] = torch.tensor(_hpair[i:j], device=device, dtype=torch.long)
             mk['y_script'] = torch.tensor(_hscript[i:j], device=device, dtype=torch.long)
         if skel is not None:
-            # g 条件模型 (train.py use_glyph_cond/skel_as_glyph_cond 预训练) 走 'g' 键;
-            # ControlNetDiT 包装走 'cond' 键 —— 按模型类型自动路由
-            if getattr(model, "use_glyph_cond", False) or getattr(getattr(model, "main", None), "use_glyph_cond", False):
-                mk["g"] = skel[i:j].to(device)
-            else:
-                mk["cond"] = skel[i:j].to(device)
+            # g 条件模型 (train.py use_glyph_cond/skel_as_glyph_cond/std_soft_cond 预训练) 走 'g' 键;
+            # ControlNetDiT 包装走 'cond' 键。
+            # ★ 2026-10-12 修: 原来只按 `model.use_glyph_cond` 判 —— 而 **std_soft 的 DiT_2Cond
+            #   并不暴露该属性**, 于是误走 'cond' 分支 → forward_with_cfg 直接 TypeError 崩掉
+            #   (48 上生成 v81 样本时踩到)。改为**看模型实际接受哪些关键字**再路由, 并顺带认
+            #   `std_soft_cond` 属性; 判不出来时保守走 'g'(DiT 家族一直是 g)。
+            import inspect as _inspect
+            _fn = getattr(model, "forward_with_cfg", None) or model
+            try:
+                _params = set(_inspect.signature(_fn).parameters)
+            except Exception:
+                _params = set()
+            _use_g = (getattr(model, "use_glyph_cond", False)
+                      or getattr(getattr(model, "main", None), "use_glyph_cond", False)
+                      or getattr(model, "std_soft_cond", False)
+                      or getattr(getattr(model, "main", None), "std_soft_cond", False)
+                      or ("g" in _params and "cond" not in _params))
+            mk["g" if _use_g else "cond"] = skel[i:j].to(device)
         # bf16 autocast 仅 cuda (CPU 无 AVX512-BF16/AMX 时 bf16 走软件上转反而慢)
         if dev_type == "cuda":
             with torch.autocast("cuda", dtype=torch.bfloat16):
