@@ -94,6 +94,8 @@ def build_model_from_args(a, device, **overrides):
         std_soft_cond=bool(g("std_soft_cond", False)),
         std_soft_zero_init=bool(g("std_soft_zero_init", True)),
         use_char_cond=not bool(g("no_char_cond", False)),
+        # ★ 2026-10-13: 内容条件模式（"table" / "std"，互斥）。None = 旧 ckpt（混合模式，会告警）
+        content_cond=g("content_cond", None),
     # v53 三表条件 (ckpt args 携带; 缺省 = 旧行为)
     use_script_cond=bool(g("use_script_cond", False)),
     num_script_classes=gi("num_script_classes", 3),

@@ -1026,6 +1026,12 @@ class DiT_2Cond(nn.Module):
         # Raw grayscale std glyph path: [N,1,64,64] -> 16x16 tokens without VAE.
         # Kept as an explicit architecture/state-dict contract, never auto-detected.
         std_soft_cond=False,
+        # ★ 2026-10-13 **两种内容条件模式，二选一，不得共存**（评审要求）:
+        #     "table" : 字条件 = **字表** embedding（use_char_cond=True, std_soft_cond=False）
+        #     "std"   : 字条件 = **标准字形软掩码** 经 glyph_embedder（use_char_cond=False, std_soft_cond=True）
+        #   None = 旧行为（允许共存，仅用于加载 2026-10-13 之前已训的 ckpt），会打 WARNING ✓
+        #   显式给值时**硬校验**：两个都开 / 两个都关 ⇒ ValueError ✗
+        content_cond=None,
         std_soft_zero_init=True,
         char_proj_mode="full",
         callig_proj_mode="linear",   # 42 号实验: "mlp" 两层 MLP 补 callig 容量
@@ -1232,6 +1238,40 @@ class DiT_2Cond(nn.Module):
         self.cond_gate_t = float(cond_gate_t)
         self.cond_gate_floor = float(cond_gate_floor)
         self.use_char_cond = bool(use_char_cond)
+
+        # ── ★ 内容条件模式互斥校验（2026-10-13）──────────────────────────────
+        # 背景：v83-A 同时开了"字表"与"std 字形"，两条内容条件并存 ⇒ 归因不可分离
+        # （实测：把字表换成中性值，输出仍能写出正确的字，ssim 0.6103→0.6071）。
+        # 约定：**一个模型只能是一种内容条件模式**。
+        #   table: 字表给内容      (use_char_cond=True,  std_soft_cond=False)
+        #   std  : 字形给内容      (use_char_cond=False, std_soft_cond=True)
+        # 书家/书体表是**风格/身份**条件，两种模式下都保留（有实验支持其有效性）。
+        self.content_cond = None if content_cond is None else str(content_cond).lower()
+        if self.content_cond is not None:
+            if self.content_cond not in ("table", "std"):
+                raise ValueError(
+                    f"content_cond 只能是 'table' 或 'std'，收到 {content_cond!r}")
+            _has_char_table = bool(self.use_char_cond)
+            _has_std_glyph = bool(std_soft_cond)
+            if self.content_cond == "table" and _has_std_glyph:
+                raise ValueError(
+                    "content_cond='table' 但 std_soft_cond=True —— "
+                    "两种内容条件（字表 / std 字形）不得共存 ✗ 请二选一")
+            if self.content_cond == "std" and _has_char_table:
+                raise ValueError(
+                    "content_cond='std' 但 use_char_cond=True —— "
+                    "两种内容条件（字表 / std 字形）不得共存 ✗ 请设 no_char_cond=True")
+            if self.content_cond == "table" and not _has_char_table:
+                raise ValueError("content_cond='table' 需要 use_char_cond=True")
+            if self.content_cond == "std" and not _has_std_glyph:
+                raise ValueError("content_cond='std' 需要 std_soft_cond=True")
+        else:
+            if self.use_char_cond and bool(std_soft_cond):
+                import warnings
+                warnings.warn(
+                    "[content_cond] 字表与 std 字形**同时开启**（legacy 混合模式）✗ "
+                    "新训练请显式指定 content_cond='table' 或 'std'（二者互斥）",
+                    RuntimeWarning, stacklevel=2)
         self.char_proj_mode = char_proj_mode
         self.freeze_char_table = bool(freeze_char_table)
         if self.cond_drop_all_prob < 0 or self.cond_drop_one_prob < 0:

@@ -86,7 +86,9 @@ try:
     y_char = torch.zeros(B, dtype=torch.long, device=dev)
     y_script = torch.zeros(B, dtype=torch.long, device=dev)
     g = (torch.rand(B, 1, 64, 64, device=dev) > 0.9).float()
-    before = next(p for p in model.parameters() if p.requires_grad).detach().clone()
+    # ★ 判据改为**全局参数位移**：原来只盯"第一个可训参数" ✗，而它可能是仅在
+    #   cond_drop/CFG 路径下才用到的行（干净前向里没有梯度）⇒ 假报"链路断了" ✗
+    before = {n: p.detach().clone() for n, p in model.named_parameters() if p.requires_grad}
     losses = []
     for i in range(a.steps):
         # ★ 位置参数陷阱（2026-10-12 干跑实测踩到）:
@@ -104,9 +106,12 @@ try:
         if not torch.isfinite(loss):
             raise AssertionError("loss 非有限: %r" % loss)
         print("[smoke] step %d loss=%.6f" % (i + 1, float(loss)))
-    after = next(p for p in model.parameters() if p.requires_grad).detach().clone()
-    if torch.equal(before, after):
-        raise AssertionError("参数没被更新（反传/优化器链路断了）✗")
+    moved = [n for n, p in model.named_parameters()
+             if p.requires_grad and not torch.equal(before[n], p.detach())]
+    if not moved:
+        raise AssertionError("没有任何参数被更新（反传/优化器链路断了）✗")
+    print("[smoke] ✓ 参数已更新 %d/%d 个（例: %s）"
+          % (len(moved), len(before), moved[:3]))
     print("[smoke] ✓ 链路通: 前向+反传+优化器都生效 (loss %s)" % ["%.4f" % x for x in losses])
 except Exception as e:
     fail = 1

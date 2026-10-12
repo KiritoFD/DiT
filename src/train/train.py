@@ -282,6 +282,32 @@ def main(args):
         if int(getattr(args, "deform_skel", 0) or 0) > 0:
             raise ValueError("std_soft_cond is incompatible with latent-space DeformSkel")
 
+    # ── ★ 2026-10-13 内容条件模式: table(字表) / std(标准字形) —— **二选一, 不得共存** ──
+    # 背景: v83-A 同时开了两条内容条件 ⇒ 归因不可分离(实测把字表换成中性值, 输出仍写对字)。
+    # 约定: 书家/书体表是风格条件, 两种模式下都保留 ✓
+    _use_char_cond = not bool(getattr(args, "no_char_cond", False))
+    _content_cond = getattr(args, "content_cond", None)
+    if _content_cond is not None:
+        _content_cond = str(_content_cond).lower()
+        if _content_cond not in ("table", "std"):
+            raise ValueError(f"content_cond 只能是 'table' 或 'std'，收到 {_content_cond!r}")
+        if _content_cond == "table":
+            if _std_soft_cond:
+                raise ValueError("content_cond='table' 但 std_soft_cond=True —— 两种内容条件不得共存 ✗")
+            if not _use_char_cond:
+                raise ValueError("content_cond='table' 需要 no_char_cond=False")
+        else:  # std
+            if _use_char_cond:
+                raise ValueError("content_cond='std' 但字表仍开 —— 请设 no_char_cond=True ✗")
+            if not _std_soft_cond:
+                raise ValueError("content_cond='std' 需要 std_soft_cond=True")
+        print(f"[content-cond] 模式 = {_content_cond} ✓ "
+              f"(table=字表给内容 / std=标准字形给内容；两者互斥；书家/书体表两种模式都保留)")
+    elif _use_char_cond and _std_soft_cond:
+        print("[content-cond] ⚠ legacy 混合模式: 字表与 std 字形**同时开启** ✗ "
+              "归因不可分离 —— 新训练请显式指定 content_cond='table' 或 'std'")
+    args.content_cond = _content_cond
+
     # ── 书家词表收紧: 稀疏 raw id -> 连续 0..N-1 (见 src/utils/callig_map.py) ──
     # 设置 --callig-id-map 后, num_calligraphers 自动设为词表长度, 数据层查表映射;
     # 未设置时行为与旧版完全一致 (稀疏 id 直通)。
@@ -472,6 +498,7 @@ def main(args):
             std_soft_cond=_std_soft_cond,
             std_soft_zero_init=bool(getattr(args, 'std_soft_zero_init', True)),
             use_char_cond=not getattr(args, 'no_char_cond', False),
+            content_cond=_content_cond,
             glyph_scale_init=getattr(args, 'glyph_scale_init', 0.4),
             glyph_concat_input=bool(getattr(args, 'glyph_concat_input', False)),
             glyph_gate_t=float(getattr(args, 'glyph_gate_t', 0.0)),
