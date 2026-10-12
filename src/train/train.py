@@ -20,8 +20,8 @@ os.environ["XFORMERS_DISABLED"] = "1"
 # 注意：**这里故意不设置该变量**。设成空字符串 PyTorch 会解析报错；
 # 设成别的值又等于强加默认。保持"不碰"才是真正的默认行为。
 import torch
-import torch.nn as nn
-import torch.nn.functional as F
+
+
 torch.backends.cuda.matmul.allow_tf32 = True
 torch.backends.cudnn.allow_tf32 = True
 # [OPTIM-FUSED 2026-09-16] 让 cuDNN 为 (固定的) glyph_embedder conv
@@ -33,9 +33,9 @@ from torch.utils.data import DataLoader
 from torch.utils.data.distributed import DistributedSampler
 import numpy as np
 import sys
-from glob import glob
+
 from time import time
-import argparse
+
 import logging
 import json
 import datetime
@@ -70,7 +70,7 @@ from src.utils import find_model
 
 from src.utils import MCCDDataset
 from src.utils import MCCDLatentDataset
-from src.loss import REPALoss
+
 from src.utils import (DistributedFactorBalancedSampler,
                        LongEpochDistributedSampler)
 from src.train.early_stop import EarlyStopper
@@ -355,7 +355,7 @@ def main(args):
     # gloo is the only backend available on Windows; prefer nccl on Linux for speed.
     backend = "nccl" if (dist.is_nccl_available() and sys.platform != "win32") else "gloo"
     dist.init_process_group(backend)
-    assert args.global_batch_size % dist.get_world_size() == 0, f"Batch size must be divisible by world size."
+    assert args.global_batch_size % dist.get_world_size() == 0, "Batch size must be divisible by world size."
     rank = dist.get_rank()
     device = rank % torch.cuda.device_count()
     seed = args.global_seed * dist.get_world_size() + rank
@@ -1741,7 +1741,7 @@ def main(args):
         if _opt_sd is not None:
             try:
                 opt.load_state_dict(_opt_sd)
-                logger.info(f"[resume-full] Restored optimizer state.")
+                logger.info("[resume-full] Restored optimizer state.")
             except Exception as _e:
                 logger.warning(f"[resume-full] Failed to restore optimizer state: {_e}")
 
@@ -2906,11 +2906,6 @@ def main(args):
     logger.info("Done!")
     cleanup()
 
-def main_from_cli(argv=None):
-    """CLI entry: build the argparse parser (config-file defaults + CLI overrides),
-    parse, and run main(args). Used by `python train.py` (root launcher) and
-    `python -m src.train.train`.
-    """
 def main_from_cli(argv=None):
     """CLI 入口：解析参数后跑 main(args)。
 

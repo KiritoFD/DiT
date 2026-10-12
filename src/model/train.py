@@ -1,8 +1,8 @@
 import os
 os.environ["XFORMERS_DISABLED"] = "1"
 import torch
-import torch.nn as nn
-import torch.nn.functional as F
+
+
 torch.backends.cuda.matmul.allow_tf32 = True
 torch.backends.cudnn.allow_tf32 = True
 # [OPTIM-FUSED 2026-09-16] 让 cuDNN 为 (固定的) glyph_embedder conv
@@ -33,8 +33,8 @@ from src.utils import find_model
 
 from src.utils import MCCDDataset
 from src.utils import MCCDLatentDataset
-from src.loss import REPALoss
-from torch.utils.checkpoint import checkpoint as grad_ckpt
+
+
 from src.utils import (DistributedFactorBalancedSampler,
                        LongEpochDistributedSampler)
 
@@ -152,7 +152,7 @@ def main(args):
     # gloo is the only backend available on Windows; prefer nccl on Linux for speed.
     backend = "nccl" if (dist.is_nccl_available() and sys.platform != "win32") else "gloo"
     dist.init_process_group(backend)
-    assert args.global_batch_size % dist.get_world_size() == 0, f"Batch size must be divisible by world size."
+    assert args.global_batch_size % dist.get_world_size() == 0, "Batch size must be divisible by world size."
     rank = dist.get_rank()
     device = rank % torch.cuda.device_count()
     seed = args.global_seed * dist.get_world_size() + rank
@@ -225,7 +225,6 @@ def main(args):
         # 0/1 -> bool（argparse 用 int 以便 config JSON 里写 0/1）
         _qk_norm = bool(getattr(args, 'qk_norm', True))
         _rope = bool(getattr(args, 'rope', True))
-        _heun_batch = bool(getattr(args, 'heun_batch', True))
 
         # IDS 组件码本: 构建 char_id -> char 映射
         _ids_char_id_to_char = None
@@ -653,7 +652,6 @@ def main(args):
         logger.info("[flow] Flow-Matching enabled (velocity target, Euler ODE sampling, t in [0,1])")
     _vae_ds = getattr(args, 'vae_downscale', 8)
     _vae_lc = getattr(args, 'latent_channels', 4)
-    _vae_ic = getattr(args, 'vae_in_channels', 3)
     _vae_oc = getattr(args, 'vae_out_channels', 3)
     _vae_sf = getattr(args, 'vae_scaling_factor', 0.18215)
     class MockVAE(torch.nn.Module):
@@ -820,7 +818,7 @@ def main(args):
         if _opt_sd is not None:
             try:
                 opt.load_state_dict(_opt_sd)
-                logger.info(f"[resume-full] Restored optimizer state.")
+                logger.info("[resume-full] Restored optimizer state.")
             except Exception as _e:
                 logger.warning(f"[resume-full] Failed to restore optimizer state: {_e}")
 
@@ -1025,8 +1023,6 @@ def main(args):
     early_stop_last_eval_step = -1
     early_stop_stopped = False
     _es_metric = getattr(args, 'early_stop_metric', 'ssim')
-    _es_better = ((lambda a, b: a > b) if _es_metric in ('ssim', 'combo', 'ssim_lpips')
-                  else (lambda a, b: a < b))
     _es_higher_better = _es_metric in ('ssim', 'combo', 'ssim_lpips')
     # min_delta：只有超过 best ± min_delta 才算"真改善"。
     # 默认阈值按各指标的经验噪声量级选取（ssim/skel_iou 都是 0~1 量级，

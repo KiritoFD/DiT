@@ -16,7 +16,7 @@ import torch.nn.functional as F
 import numpy as np
 import math
 import logging
-from torch.utils.checkpoint import checkpoint
+
 
 # 现代化组件（RMSNorm / SwiGLU / 2D-RoPE / QK-Norm / SDPA / PatchEmbed / DiTBlock / FinalLayer）
 # DiT_2Cond 使用。
@@ -1971,7 +1971,7 @@ class DiT_2Cond(nn.Module):
                 attn_heads=int(deform_attn_heads),
                 preserve_amp=int(deform_preserve_amp))
             if str(deform_ckpt):
-                import os as _os
+
                 _sd = torch.load(deform_ckpt, map_location="cpu", weights_only=False)
                 _sd = _sd.get("deform", _sd) if isinstance(_sd, dict) else _sd
                 _miss, _unexp = self.deform_skel.load_state_dict(_sd, strict=False)
@@ -2860,13 +2860,6 @@ class DiT_2Cond(nn.Module):
         out = torch.cat([eps_guided, rest], dim=1)
         return out
 
-
-
-def DiT_2Cond_M_2(**kwargs):
-    # M (between S and Sp): h=432, d=12, heads=6 (~42M). 2026-09-12 用户裁定:
-    # S/2 (384, 30M) seen 天花板 ~0.52 偏低; Sp/2 (512, 59M) 可达 0.67-0.76。
-    # 取中间容量点验证 "容量-质量" 曲线。
-    return DiT_2Cond(depth=12, hidden_size=432, patch_size=2, num_heads=6, **kwargs)
 
 
 def DiT_2Cond_S320_2(**kwargs):

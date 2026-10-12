@@ -95,7 +95,8 @@ def _sets_from_manifest(sd):
 def collect(root, skip_done=True, only_step=None):
     """返回 [(step, set_name, [g...], [gt...], step_dir)]，只挑"图齐且未算完"的。"""
     out = []
-    for sd in sorted(glob.glob(os.path.join(root, "step*"))):
+    # ??? step*??????? <root>/eval_samples_ctrl/step*/...?????????????
+    for sd in sorted(glob.glob(os.path.join(root, "**", "step*"), recursive=True)):
         if not os.path.isdir(sd):
             continue
         step = os.path.basename(sd).replace("step", "")

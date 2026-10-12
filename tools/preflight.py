@@ -189,9 +189,31 @@ def gate_config(cfg_path):
 # ───────────────────────── ④ 常数棘轮 ─────────────────────────
 def gate_ratchet():
     txts = {f: io.open(f, encoding="utf-8-sig", errors="replace").read() for f in SRC + TOOLS}
+    # ★ 只统计**代码里的 token**，排除注释/字符串/文档里的"提及" ✓
+    #   （否则"单一来源"文件自己声明的 SD_SF=0.18215、以及 linter 的 pattern
+    #     都会被算成违规 ✗ —— 那不是蔓延，是定义本身）
+    import tokenize as _tk
+
+    def _count_tok(text, kind, lit):
+        n = 0
+        try:
+            for tok in _tk.generate_tokens(io.StringIO(text).readline):
+                if tok.type == kind and tok.string.replace("_", "") == lit:
+                    n += 1
+        except Exception:                                    # noqa: BLE001
+            return text.count(lit)
+        return n
+
+    def _count_number(text, lit):
+        return _count_tok(text, _tk.NUMBER, lit)
+
+    def _count_name(text, lit):
+        # TIME_SCALE 既可能是标识符也可能作为字符串键出现 —— 两种都算 ✓
+        return _count_tok(text, _tk.NAME, lit) + _count_tok(text, _tk.STRING, lit)
+
     counts = {
-        "hardcoded_0.18215": sum(s.count("0.18215") for s in txts.values()),
-        "hardcoded_TIME_SCALE": sum(s.count("TIME_SCALE") for s in txts.values()),
+        "hardcoded_0.18215": sum(_count_number(s, "0.18215") for s in txts.values()),
+        "hardcoded_TIME_SCALE": sum(_count_name(s, "TIME_SCALE") for s in txts.values()),
     }
     base = {}
     if os.path.exists(BASE):
