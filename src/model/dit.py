@@ -851,124 +851,8 @@ class DiT_2Cond(nn.Module):
         self._build_cond_router(cond_inject_at=cond_inject_at, cond_inject_scale=cond_inject_scale, depth=depth)
         # ↑ 原 19 行内联构造已抽成方法（见 _build_cond_router）✓
 
-        # ── S2：三层语义分解 + 局部风格-骨架引导（2026-09-22）─────────────────
-        # 全部默认 None/0 = 与旧 ckpt 逐位等价。
-        _grid = int(round(self.x_embedder.num_patches ** 0.5))
-        _d_style = int(callig_embed_dim or hidden_size)
-        self.hier_style = int(hier_style)
-        # ⚠ --script-embed-dim 的历史默认是 None（3cond 时由别处兜底），
-        #   独立评测端会原样透传 None -> int(None) TypeError。这里兜底为 64。
-        self.script_embed_dim = int(script_embed_dim or 64)
-        # 局部通路的 e_cond 维度 = [e_style; e_script]
-        self.cond_dim = _d_style + (self.script_embed_dim if self.hier_style > 0 else 0)
-
-        self.style_hier = None
-        self.script_film = None
-        self.spatial_film = None
-        self.lowrank_spatial = None
-        self.local_ca = None
-        self._local_ca_map = {}
-        self.local_ca_q = str(local_ca_q)
-
-        if self.hier_style > 0:
-            _n_pair = int(num_pairs) if int(num_pairs) > 0 else int(num_calligraphers)
-            self.style_hier = StyleHierarchy(
-                num_pairs=_n_pair, num_scripts=int(num_scripts),
-                style_dim=_d_style, script_dim=self.script_embed_dim,
-                pair_init=str(pair_init), pair_residual=int(pair_residual))
-            if bool(script_film):
-                self.script_film = ScriptGlyphFiLM(self.script_embed_dim, hidden_size)
-
-        if int(spatial_film_rank) > 0:
-            self.spatial_film = SpatialStyleFiLM(
-                self.cond_dim, hidden_size, rank=int(spatial_film_rank))
-
-        if int(lowrank_spatial_rank) > 0:
-            # 风格侧只用 e_callig (callig_embed_dim), 不拼书体。
-            # 书体已经烘进 g 本身, 再乘一次是同一个信号喂两遍。
-            self.lowrank_spatial = LowRankSpatialStyleFiLM(
-                _d_style, hidden_size, rank=int(lowrank_spatial_rank))
-
-        # 局部通路的位置编码：x 与 g_tok 同为 grid×grid，共用一份 sincos。
-        # ⚠ 必须 **任一局部通路开启** 就注册 —— 否则
-        #   "只开 spatial_film_rank 不开 local_ca_layers"（配置 s2d_spfilm）
-        #   会在 forward 里 AttributeError: local_pos。
-        if (int(spatial_film_rank) > 0 or int(local_ca_layers) > 0
-                or int(lowrank_spatial_rank) > 0):
-            # ⚠ 用独立名字 local_pos，避开 ctx_pos_g 的"属性已存在"register_buffer 坑
-            _pe = get_2d_sincos_pos_embed(hidden_size, _grid)
-            if "local_pos" in self.__dict__:
-                del self.__dict__["local_pos"]
-            self.register_buffer("local_pos",
-                                 torch.from_numpy(_pe).float().unsqueeze(0),
-                                 persistent=False)
-        else:
-            self.local_pos = None
-
-        if int(local_ca_layers) > 0:
-            n_lc = min(int(local_ca_layers), depth)
-            if local_ca_at:
-                _at = sorted({int(v) for v in str(local_ca_at).split(",")
-                              if str(v).strip() != ""})
-                _at = [i for i in _at if 0 <= i < depth]
-                if not _at:
-                    raise ValueError(f"--local-ca-at 解析为空或越界: {local_ca_at!r}")
-            else:
-                # 均匀分布在 depth 层里（与 glyph_inject_at 同规则）
-                _at = sorted(set(int(round((i + 1) * depth / n_lc)) - 1
-                                 for i in range(n_lc)))
-            self._local_ca_map = {blk: k for k, blk in enumerate(_at)}
-            self.local_ca_at = _at
-            _lc_cls = (LocalStyleGlyphAdapter
-                       if str(local_ca_impl).lower() == "legacy" else GlyphQuery)
-            self.local_ca = nn.ModuleList([
-                _lc_cls(
-                    hidden_size, self.cond_dim,
-                    num_heads=int(local_ca_heads), rank=int(local_ca_rank),
-                    window=int(local_ca_window), grid_size=_grid)
-                for _ in _at
-            ])
-        else:
-            self.local_ca_at = []
-
-        self.initialize_weights()
-        if self.std_soft_cond and self.std_soft_zero_init:
-            # Step 0 is exactly the base model. The output projection itself
-            # receives gradients immediately; earlier convs start once it moves.
-            nn.init.zeros_(self.glyph_embedder[-1].weight)
-        if self.freeze_char_table and hasattr(self, "y_char_embedder"):
-            # 冻结 char 表：DINO 预填充后不再训练（省 35130×384≈13.5M 训练参数），
-            # 但保留最后一行的 CFG uncond 项可学习（它没有 DINO 对应物）。
-            # 具体做法见 LabelEmbedder.freeze_table() —— 旧的
-            # `w[-1].requires_grad_(True)` 是静默 no-op，null token 实际被冻结。
-            _ye = self.y_char_embedder
-            if hasattr(_ye, 'comp_embedding'):
-                # IDSCharEmbedder: 冻结部件嵌入表
-                _ye.comp_embedding.weight.requires_grad_(False)
-                if _ye.null_embed is not None:
-                    _ye.null_embed.requires_grad_(True)
-                if _ye.fallback_embed is not None:
-                    _ye.fallback_embed.requires_grad_(True)
-            elif hasattr(_ye, 'char_table'):
-                # StdDinoCharEmbedder: 冻结 buffer 查表, 天然不参与梯度;
-                # 仅确保 CFG null token 可学习 (与 IDS 分支一致)。
-                if _ye.null_embed is not None:
-                    _ye.null_embed.requires_grad_(True)
-            else:
-                # LabelEmbedder: 冻结字符表
-                with torch.no_grad():
-                    w = _ye.embedding_table.weight
-                    if w.shape[0] > 1:
-                        w[-1].normal_(std=0.02)
-                _ye.freeze_table()
-            self._char_table_frozen = True
-        else:
-            self._char_table_frozen = False
-
-        # ── DeformSkel ────────────────────────────────────────────────
-        # ★ 必须放在 initialize_weights() 之后构造与载入！
-        #   否则 _basic_init 会递归把 DeformSkel 内部的 nn.Linear 权重（style_proj、
-        #   affine、style_off、所有 FiLM 调制层）全部用 xavier_uniform 随机冲掉！
+        self._build_style_hierarchy(callig_embed_dim=callig_embed_dim, depth=depth, hidden_size=hidden_size, hier_style=hier_style, local_ca_at=local_ca_at, local_ca_heads=local_ca_heads, local_ca_impl=local_ca_impl, local_ca_layers=local_ca_layers, local_ca_q=local_ca_q, local_ca_rank=local_ca_rank, local_ca_window=local_ca_window, lowrank_spatial_rank=lowrank_spatial_rank, num_calligraphers=num_calligraphers, num_pairs=num_pairs, num_scripts=num_scripts, pair_init=pair_init, pair_residual=pair_residual, script_embed_dim=script_embed_dim, script_film=script_film, spatial_film_rank=spatial_film_rank)
+        # ↑ 原 118 行内联构造已抽成方法（见 _build_style_hierarchy）✓
         self.deform_skel = None
         if int(deform_skel) > 0:
             from .deform_skel import DeformSkel
@@ -1153,6 +1037,127 @@ class DiT_2Cond(nn.Module):
                   f"learnable_scale={bool(cond_inject_scale)}")
         else:
             print("[cond-route] cond_inject_at 为空 -> 旧行为: 表条件给全部层 (v54 语义)")
+
+    def _build_style_hierarchy(self, callig_embed_dim, depth, hidden_size, hier_style, local_ca_at, local_ca_heads, local_ca_impl, local_ca_layers, local_ca_q, local_ca_rank, local_ca_window, lowrank_spatial_rank, num_calligraphers, num_pairs, num_scripts, pair_init, pair_residual, script_embed_dim, script_film, spatial_film_rank):
+        """S2 三层语义分解 + 脚本 FiLM + 空间/低秩 FiLM + local_ca —— 2026-10-13 从 __init__ 抽出 ✓（内容与原文逐字相同, 行为不变）"""
+        # ── S2：三层语义分解 + 局部风格-骨架引导（2026-09-22）─────────────────
+        # 全部默认 None/0 = 与旧 ckpt 逐位等价。
+        _grid = int(round(self.x_embedder.num_patches ** 0.5))
+        _d_style = int(callig_embed_dim or hidden_size)
+        self.hier_style = int(hier_style)
+        # ⚠ --script-embed-dim 的历史默认是 None（3cond 时由别处兜底），
+        #   独立评测端会原样透传 None -> int(None) TypeError。这里兜底为 64。
+        self.script_embed_dim = int(script_embed_dim or 64)
+        # 局部通路的 e_cond 维度 = [e_style; e_script]
+        self.cond_dim = _d_style + (self.script_embed_dim if self.hier_style > 0 else 0)
+
+        self.style_hier = None
+        self.script_film = None
+        self.spatial_film = None
+        self.lowrank_spatial = None
+        self.local_ca = None
+        self._local_ca_map = {}
+        self.local_ca_q = str(local_ca_q)
+
+        if self.hier_style > 0:
+            _n_pair = int(num_pairs) if int(num_pairs) > 0 else int(num_calligraphers)
+            self.style_hier = StyleHierarchy(
+                num_pairs=_n_pair, num_scripts=int(num_scripts),
+                style_dim=_d_style, script_dim=self.script_embed_dim,
+                pair_init=str(pair_init), pair_residual=int(pair_residual))
+            if bool(script_film):
+                self.script_film = ScriptGlyphFiLM(self.script_embed_dim, hidden_size)
+
+        if int(spatial_film_rank) > 0:
+            self.spatial_film = SpatialStyleFiLM(
+                self.cond_dim, hidden_size, rank=int(spatial_film_rank))
+
+        if int(lowrank_spatial_rank) > 0:
+            # 风格侧只用 e_callig (callig_embed_dim), 不拼书体。
+            # 书体已经烘进 g 本身, 再乘一次是同一个信号喂两遍。
+            self.lowrank_spatial = LowRankSpatialStyleFiLM(
+                _d_style, hidden_size, rank=int(lowrank_spatial_rank))
+
+        # 局部通路的位置编码：x 与 g_tok 同为 grid×grid，共用一份 sincos。
+        # ⚠ 必须 **任一局部通路开启** 就注册 —— 否则
+        #   "只开 spatial_film_rank 不开 local_ca_layers"（配置 s2d_spfilm）
+        #   会在 forward 里 AttributeError: local_pos。
+        if (int(spatial_film_rank) > 0 or int(local_ca_layers) > 0
+                or int(lowrank_spatial_rank) > 0):
+            # ⚠ 用独立名字 local_pos，避开 ctx_pos_g 的"属性已存在"register_buffer 坑
+            _pe = get_2d_sincos_pos_embed(hidden_size, _grid)
+            if "local_pos" in self.__dict__:
+                del self.__dict__["local_pos"]
+            self.register_buffer("local_pos",
+                                 torch.from_numpy(_pe).float().unsqueeze(0),
+                                 persistent=False)
+        else:
+            self.local_pos = None
+
+        if int(local_ca_layers) > 0:
+            n_lc = min(int(local_ca_layers), depth)
+            if local_ca_at:
+                _at = sorted({int(v) for v in str(local_ca_at).split(",")
+                              if str(v).strip() != ""})
+                _at = [i for i in _at if 0 <= i < depth]
+                if not _at:
+                    raise ValueError(f"--local-ca-at 解析为空或越界: {local_ca_at!r}")
+            else:
+                # 均匀分布在 depth 层里（与 glyph_inject_at 同规则）
+                _at = sorted(set(int(round((i + 1) * depth / n_lc)) - 1
+                                 for i in range(n_lc)))
+            self._local_ca_map = {blk: k for k, blk in enumerate(_at)}
+            self.local_ca_at = _at
+            _lc_cls = (LocalStyleGlyphAdapter
+                       if str(local_ca_impl).lower() == "legacy" else GlyphQuery)
+            self.local_ca = nn.ModuleList([
+                _lc_cls(
+                    hidden_size, self.cond_dim,
+                    num_heads=int(local_ca_heads), rank=int(local_ca_rank),
+                    window=int(local_ca_window), grid_size=_grid)
+                for _ in _at
+            ])
+        else:
+            self.local_ca_at = []
+
+        self.initialize_weights()
+        if self.std_soft_cond and self.std_soft_zero_init:
+            # Step 0 is exactly the base model. The output projection itself
+            # receives gradients immediately; earlier convs start once it moves.
+            nn.init.zeros_(self.glyph_embedder[-1].weight)
+        if self.freeze_char_table and hasattr(self, "y_char_embedder"):
+            # 冻结 char 表：DINO 预填充后不再训练（省 35130×384≈13.5M 训练参数），
+            # 但保留最后一行的 CFG uncond 项可学习（它没有 DINO 对应物）。
+            # 具体做法见 LabelEmbedder.freeze_table() —— 旧的
+            # `w[-1].requires_grad_(True)` 是静默 no-op，null token 实际被冻结。
+            _ye = self.y_char_embedder
+            if hasattr(_ye, 'comp_embedding'):
+                # IDSCharEmbedder: 冻结部件嵌入表
+                _ye.comp_embedding.weight.requires_grad_(False)
+                if _ye.null_embed is not None:
+                    _ye.null_embed.requires_grad_(True)
+                if _ye.fallback_embed is not None:
+                    _ye.fallback_embed.requires_grad_(True)
+            elif hasattr(_ye, 'char_table'):
+                # StdDinoCharEmbedder: 冻结 buffer 查表, 天然不参与梯度;
+                # 仅确保 CFG null token 可学习 (与 IDS 分支一致)。
+                if _ye.null_embed is not None:
+                    _ye.null_embed.requires_grad_(True)
+            else:
+                # LabelEmbedder: 冻结字符表
+                with torch.no_grad():
+                    w = _ye.embedding_table.weight
+                    if w.shape[0] > 1:
+                        w[-1].normal_(std=0.02)
+                _ye.freeze_table()
+            self._char_table_frozen = True
+        else:
+            self._char_table_frozen = False
+
+        # ── DeformSkel ────────────────────────────────────────────────
+        # ★ 必须放在 initialize_weights() 之后构造与载入！
+        #   否则 _basic_init 会递归把 DeformSkel 内部的 nn.Linear 权重（style_proj、
+        #   affine、style_off、所有 FiLM 调制层）全部用 xavier_uniform 随机冲掉！
 
     def initialize_weights(self):
         def _basic_init(module):
