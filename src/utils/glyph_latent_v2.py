@@ -26,7 +26,27 @@ import numpy as np
 import torch
 
 _HERE = os.path.dirname(os.path.abspath(__file__))
-DEFAULT_LIB_DIR = os.path.join(_HERE, "std_glyph_latent_v2")
+_REPO = os.path.dirname(os.path.dirname(_HERE))          # <repo>/src/utils -> <repo>
+
+# ★ 2026-10-13: 该字库是 **306MB / 3.8 万个 .npy 的资产**, 不属于 src/ ✗
+#   已挪到 <repo>/assets/std_glyph_latent_v2 ✓。解析优先级:
+#     ① 环境变量 CALLIG_STD_GLYPH_LIB（显式指定, 部署到别处时用 ✓）
+#     ② <repo>/assets/std_glyph_latent_v2      （新家 ✓）
+#     ③ <repo>/src/utils/std_glyph_latent_v2   （旧位置, 向后兼容 ✓）
+#   ⇒ 挪资产**不影响**任何调用方（都经由本常量 ✓）; 若三处都没有, 查询返回 None
+#     （与原行为一致: 缺字返回 None ✓）, 不抛异常 ✓
+def _resolve_lib_dir():
+    env = os.environ.get("CALLIG_STD_GLYPH_LIB")
+    if env:
+        return env
+    for cand in (os.path.join(_REPO, "assets", "std_glyph_latent_v2"),
+                 os.path.join(_HERE, "std_glyph_latent_v2")):
+        if os.path.isdir(cand):
+            return cand
+    return os.path.join(_REPO, "assets", "std_glyph_latent_v2")   # 默认新址 ✓
+
+
+DEFAULT_LIB_DIR = _resolve_lib_dir()
 
 # script_id -> 该书体可用字体 (顺序即默认优先级)
 SCRIPT_FONTS = {

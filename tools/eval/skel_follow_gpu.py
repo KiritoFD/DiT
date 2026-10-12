@@ -140,7 +140,7 @@ def main():
     #   * v10b 无 char 因子: y_char 被 forward 忽略, 传啥都一样。
     fame_chars = {r["character"] for r in csv.DictReader(open("assets/train_fame_clean_v8.csv", encoding="utf-8"))}
     cand = []
-    for p in sorted(glob.glob("src/utils/std_glyph_latent_v2/kai_gb/U+*.npy")):
+    for p in sorted(glob.glob(os.path.join(get_lib_dir(), "kai_gb", "U+*.npy"))):
         try:
             cp = int(os.path.basename(p)[2:-4], 16)
         except ValueError:

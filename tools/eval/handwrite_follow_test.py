@@ -112,7 +112,7 @@ def main():
     import glob as _g
     lk = get_glyph_lookup_v2()
     cand = []
-    for p in sorted(_g.glob("src/utils/std_glyph_latent_v2/kai_gb/U+*.npy")):
+    for p in sorted(_g.glob(os.path.join(get_lib_dir(), "kai_gb", "U+*.npy"))):
         try:
             cp = int(os.path.basename(p)[2:-4], 16)
         except ValueError:
