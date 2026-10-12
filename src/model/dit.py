@@ -848,25 +848,8 @@ class DiT_2Cond(nn.Module):
             glyph_embedder_sep=glyph_embedder_sep, xattn_q_pos=xattn_q_pos)
         # ↑ 原 125 行内联构造已抽成方法（见 _build_glyph_condition）✓
 
-        # ── [2026-10-06] 三表条件的分层路由（与 glyph/skel 分支无关）───────────────
-        # v54 把表条件 c = t_emb + y_emb 喂给**全部** block；这里改成白名单：
-        # 只有 cond_inject_at 列出的 block 允许条件进入，其余层 c = t_emb（完全切断）。
-        self.cond_router = None
-        _cat = str(cond_inject_at or "").strip()
-        if _cat:
-            from .injections import TableCondRouter
-            try:
-                _cdepth = int(depth)
-            except Exception:
-                _cdepth = len(self.blocks)
-            _clst = [int(s) for s in _cat.replace(" ", "").split(",") if s != ""]
-            self.cond_router = TableCondRouter(
-                _clst, _cdepth, learnable_scale=bool(cond_inject_scale))
-            print(f"[cond-route] 表条件只在这些层注入: {self.cond_router.layers} "
-                  f"(depth={_cdepth}); 其余层条件切断 (c=t_emb); "
-                  f"learnable_scale={bool(cond_inject_scale)}")
-        else:
-            print("[cond-route] cond_inject_at 为空 -> 旧行为: 表条件给全部层 (v54 语义)")
+        self._build_cond_router(cond_inject_at=cond_inject_at, cond_inject_scale=cond_inject_scale, depth=depth)
+        # ↑ 原 19 行内联构造已抽成方法（见 _build_cond_router）✓
 
         # ── S2：三层语义分解 + 局部风格-骨架引导（2026-09-22）─────────────────
         # 全部默认 None/0 = 与旧 ckpt 逐位等价。
@@ -1148,6 +1131,28 @@ class DiT_2Cond(nn.Module):
                         ZeroAdaLNInjection(hidden_size, mode="modulate")
                         for _ in self.glyph_inject_at
                     ])
+
+    def _build_cond_router(self, cond_inject_at, cond_inject_scale, depth):
+        """三表条件分层路由(TableCondRouter) —— 2026-10-13 从 __init__ 抽出 ✓（内容与原文逐字相同, 行为不变）"""
+        # ── [2026-10-06] 三表条件的分层路由（与 glyph/skel 分支无关）───────────────
+        # v54 把表条件 c = t_emb + y_emb 喂给**全部** block；这里改成白名单：
+        # 只有 cond_inject_at 列出的 block 允许条件进入，其余层 c = t_emb（完全切断）。
+        self.cond_router = None
+        _cat = str(cond_inject_at or "").strip()
+        if _cat:
+            from .injections import TableCondRouter
+            try:
+                _cdepth = int(depth)
+            except Exception:
+                _cdepth = len(self.blocks)
+            _clst = [int(s) for s in _cat.replace(" ", "").split(",") if s != ""]
+            self.cond_router = TableCondRouter(
+                _clst, _cdepth, learnable_scale=bool(cond_inject_scale))
+            print(f"[cond-route] 表条件只在这些层注入: {self.cond_router.layers} "
+                  f"(depth={_cdepth}); 其余层条件切断 (c=t_emb); "
+                  f"learnable_scale={bool(cond_inject_scale)}")
+        else:
+            print("[cond-route] cond_inject_at 为空 -> 旧行为: 表条件给全部层 (v54 语义)")
 
     def initialize_weights(self):
         def _basic_init(module):
