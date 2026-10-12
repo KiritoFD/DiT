@@ -262,7 +262,14 @@ def create_logger(logging_dir):
         logger.addHandler(logging.NullHandler())
     return logger
 
-def main(args):
+def _resolve_and_validate_args(args):
+    """args 校验与词表解析（原 main 内联 89 行 ✓, 2026-10-13 抽出）。
+
+    内容与原文逐字相同, 只整体缩进不变 ⇒ 行为不变 ✓（由 main() 的 **setup 行为指纹**
+    裁决: setup 打印的解析后配置值必须一字不差 ✓）。
+    args 为**原地修改**（写回 content_cond / _callig_map / num_calligraphers 等）
+    ⇒ 只返回后续 main 需要用的 _std_soft_cond ✓。
+    """
     assert torch.cuda.is_available(), "Training currently requires at least one GPU."
 
     # std-soft is a third, explicit g representation.  Fail before allocating a
@@ -352,6 +359,112 @@ def main(args):
         os.environ['WORLD_SIZE'] = '1'
         os.environ['MASTER_ADDR'] = 'localhost'
         os.environ['MASTER_PORT'] = '12355'
+    return _std_soft_cond
+
+
+
+def _build_aux_losses(args, device, logger, rank):
+    """辅助 loss 的构建（原 main 内联 87 行 ✓, 2026-10-13 抽出）。
+
+    三块: style-rank 风格秩 loss · 实例骨架结构 loss(冻结 probe, 新增可训练参数 0)
+    · 中程结构 aux loss。**返回 4 个供训练循环使用的对象** ✓
+    （耦合分析在这里给出"输出为空"是**假阴性** ✗ —— 它只扫了 setup 区,
+      而这 4 个名字在 [Begin epoch] 之后的训练循环里被使用 ✓ 已人工核对 L2287-2353 ✓）。
+    """
+    _style_rank_loss_fn = None
+    if getattr(args, 'w_style_rank', 0.0) > 0:
+        import importlib
+        _srm = importlib.import_module('src.loss.style_rank_module')
+        _style_rank_loss_fn = _srm.StyleRankLoss(
+            ckpt=getattr(args, 'style_rank_ckpt', 'assets/style_enc_latent.pt'),
+            cent_npy=getattr(args, 'style_rank_cent', 'assets/rank_cent87.npy'),
+            t_min=float(getattr(args, 'style_rank_t_min', 0.05)),
+            t_max=float(getattr(args, 'style_rank_t_max', 0.25)))
+        _style_rank_loss_fn.to(device)
+        logger.info("[style-rank] enabled: w=%.4f t=[%.2f,%.2f] cent=%s added=0"
+                    % (args.w_style_rank, _style_rank_loss_fn.t_min,
+                       _style_rank_loss_fn.t_max, tuple(_style_rank_loss_fn.cent.shape)))
+
+    # ---- 实例骨架结构 loss: 冻结 probe (新增可训练参数 0) ----
+    # 形态对比见 src/train/latent_structure.py:LatentSkelStructureLoss 的 docstring。
+    # target = batch['skel_latent'], **必须指向实例骨架**; 若指到标准字形就是纯重复 g, 必败。
+    _skel_struct_loss_fn = None
+    _SKEL_STRUCT_WARNED = False
+    if getattr(args, 'w_latent_skel', 0.0) > 0:
+        # ⚠ 硬拦截: target 绝不能是标准字形骨架。
+        # 当前数据集只暴露 `skel_latent`(来自 skel_latent_shards_dir)。v12 该目录是
+        # **shards_std** 且 skel_as_glyph_cond=True -> batch['skel_latent'] 就是 g 本身。
+        # 拿它当结构 target = 纯重复条件信号 = doc60 §6 那条纪律的翻版, 必败且静默
+        # (loss 会正常下降, 因为预测 g 很容易)。故显式拒绝启动, 不给人跑废一整轮的机会。
+        if getattr(args, 'w_latent_skel', 0.0) > 0 and not (
+                getattr(args, 'inst_skel_shards_dir', '') or '').strip():
+            # ⚠ 硬拦截升级 (2026-09-16): v12 的 skel_latent_shards_dir 是 **shards_std**
+            # 且 skel_as_glyph_cond=True -> batch['skel_latent'] 就是 g 本身。拿它当结构
+            # target = 纯重复条件信号 = 必败且静默 (loss 会正常下降, 因为预测 g 很容易)。
+            # 现在 target 必须来自独立的 batch['inst_skel'](实例骨架, GT 图派生, 与 g 解耦),
+            # 故要求显式配置 --inst-skel-shards-dir。不给人跑废一整轮的机会。
+            raise ValueError(
+                "--w-latent-skel>0 需要 --inst-skel-shards-dir 指向**实例骨架** latent shards "
+                "(GT 图 -> skeletonize -> 3px 膨胀 -> VAE encode, 由 "
+                "tools/build_skel_latents.py 生成; 与条件 g 完全解耦)。\n"
+                "注意: skel_latent_shards_dir=shards_std + skel_as_glyph_cond=True 时 "
+                "batch['skel_latent'] 就是 g 本身, 不能当结构 target。\n"
+                "先跑 _sync_work/inst_skel_pipeline.sh (stage1 建 shards + stage2 训 probe)。")
+
+        _pcfg = getattr(args, 'latent_skel_probe', '') or ''
+        if not _pcfg or not os.path.exists(_pcfg):
+            raise ValueError(
+                f"--w-latent-skel > 0 需要 --latent-skel-probe 指向训好的 probe ckpt, "
+                f"当前={_pcfg!r}。用 tools/train_latent_skel_probe.py 训练。")
+        from src.train.latent_structure import LatentSkelProbe, LatentSkelStructureLoss
+        _pck = torch.load(_pcfg, map_location="cpu", weights_only=False)
+        _pargs = _pck.get("args", {}) if isinstance(_pck, dict) else {}
+        _probe = LatentSkelProbe(
+            in_channels=int(_pargs.get("in_channels", 4)),
+            out_channels=int(_pargs.get("out_channels", 4)),
+            width=int(_pargs.get("width", 64)),
+            depth=int(_pargs.get("depth", 3)))
+        _psd = _pck.get("model", _pck)
+        _missing, _unexp = _probe.load_state_dict(_psd, strict=False)
+        if _missing or _unexp:
+            raise ValueError(f"probe ckpt 不匹配: missing={_missing} unexpected={_unexp}")
+        _probe.to(device).eval().requires_grad_(False)
+        _skel_struct_loss_fn = LatentSkelStructureLoss(
+            probe=_probe, max_t=float(getattr(args, 'latent_skel_max_t', 0.3)))
+        logger.info(f"[skel-struct] enabled: w={args.w_latent_skel}, probe={_pcfg}, "
+                    f"max_t={_skel_struct_loss_fn.max_t}, metrics={_pck.get('metrics', {})}, "
+                    f"trainable_params_added=0 (probe frozen)")
+
+    # ---- 中程结构 aux loss (独立模块 src/loss/structure_mid.py, 替代旧内联 std_mid) ----
+    # 旧内联: MSE(x0_pred, 细骨架 g) —— 与中程"软墨迹"形态冲突。新模块: 载体粗化
+    # (blur GT / dilate skel, σ(t)/k(t) 由 calibrate_mid_structure.py 校准) + 低通子空间
+    # + 通道归一 -> k/σ 不敏感。默认 w_std_mid=0 关闭, 零破坏。
+    _mid_struct_loss = None
+    if getattr(args, 'w_std_mid', 0.0) > 0:
+        from src.loss.structure_mid import MidStructureLoss, TSchedule
+        _sched = TSchedule.from_json(
+            getattr(args, 'std_mid_calib_json', '') or '',
+            sigma_slope=float(getattr(args, 'std_mid_sigma_slope', 4.0)),
+            k_slope=float(getattr(args, 'std_mid_k_slope', 2.0)))
+        _mid_struct_loss = MidStructureLoss(
+            carrier=getattr(args, 'std_mid_carrier', 'blur_gt'),
+            alo=float(getattr(args, 'std_mid_alo', 0.35)),
+            ahi=float(getattr(args, 'std_mid_ahi', 0.75)),
+            lp_factor=int(getattr(args, 'std_mid_lp', 2)),
+            sigma_sched=_sched,
+            latent_channels=int(getattr(args, 'latent_channels', 4)))
+        if rank == 0:
+            logger.info(f"[std_mid] MidStructureLoss carrier={_mid_struct_loss.carrier} "
+                        f"window a_t∈[{_mid_struct_loss.alo},{_mid_struct_loss.ahi}] "
+                        f"lp={_mid_struct_loss.lp_factor} "
+                        f"calib={getattr(args, 'std_mid_calib_json', '') or '(默认线性σ/k)'}")
+    return _style_rank_loss_fn, _skel_struct_loss_fn, _SKEL_STRUCT_WARNED, _mid_struct_loss
+
+
+
+def main(args):
+    # ★ 2026-10-13: 原 89 行内联的 args 校验+词表解析已抽成函数 ✓
+    _std_soft_cond = _resolve_and_validate_args(args)
 
     # gloo is the only backend available on Windows; prefer nccl on Linux for speed.
     backend = "nccl" if (dist.is_nccl_available() and sys.platform != "win32") else "gloo"
@@ -1417,93 +1530,8 @@ def main(args):
 
     # ---- 冻结风格排序头 loss (2026-09-25 冒烟): 全冻结, added=0 ----
     # loss = 1 - cos(f(pred_xstart), centroid[y_pair]); 只在 t∈[t_min,t_max] 生效。
-    _style_rank_loss_fn = None
-    if getattr(args, 'w_style_rank', 0.0) > 0:
-        import importlib
-        _srm = importlib.import_module('src.loss.style_rank_module')
-        _style_rank_loss_fn = _srm.StyleRankLoss(
-            ckpt=getattr(args, 'style_rank_ckpt', 'assets/style_enc_latent.pt'),
-            cent_npy=getattr(args, 'style_rank_cent', 'assets/rank_cent87.npy'),
-            t_min=float(getattr(args, 'style_rank_t_min', 0.05)),
-            t_max=float(getattr(args, 'style_rank_t_max', 0.25)))
-        _style_rank_loss_fn.to(device)
-        logger.info("[style-rank] enabled: w=%.4f t=[%.2f,%.2f] cent=%s added=0"
-                    % (args.w_style_rank, _style_rank_loss_fn.t_min,
-                       _style_rank_loss_fn.t_max, tuple(_style_rank_loss_fn.cent.shape)))
-
-    # ---- 实例骨架结构 loss: 冻结 probe (新增可训练参数 0) ----
-    # 形态对比见 src/train/latent_structure.py:LatentSkelStructureLoss 的 docstring。
-    # target = batch['skel_latent'], **必须指向实例骨架**; 若指到标准字形就是纯重复 g, 必败。
-    _skel_struct_loss_fn = None
-    _SKEL_STRUCT_WARNED = False
-    if getattr(args, 'w_latent_skel', 0.0) > 0:
-        # ⚠ 硬拦截: target 绝不能是标准字形骨架。
-        # 当前数据集只暴露 `skel_latent`(来自 skel_latent_shards_dir)。v12 该目录是
-        # **shards_std** 且 skel_as_glyph_cond=True -> batch['skel_latent'] 就是 g 本身。
-        # 拿它当结构 target = 纯重复条件信号 = doc60 §6 那条纪律的翻版, 必败且静默
-        # (loss 会正常下降, 因为预测 g 很容易)。故显式拒绝启动, 不给人跑废一整轮的机会。
-        if getattr(args, 'w_latent_skel', 0.0) > 0 and not (
-                getattr(args, 'inst_skel_shards_dir', '') or '').strip():
-            # ⚠ 硬拦截升级 (2026-09-16): v12 的 skel_latent_shards_dir 是 **shards_std**
-            # 且 skel_as_glyph_cond=True -> batch['skel_latent'] 就是 g 本身。拿它当结构
-            # target = 纯重复条件信号 = 必败且静默 (loss 会正常下降, 因为预测 g 很容易)。
-            # 现在 target 必须来自独立的 batch['inst_skel'](实例骨架, GT 图派生, 与 g 解耦),
-            # 故要求显式配置 --inst-skel-shards-dir。不给人跑废一整轮的机会。
-            raise ValueError(
-                "--w-latent-skel>0 需要 --inst-skel-shards-dir 指向**实例骨架** latent shards "
-                "(GT 图 -> skeletonize -> 3px 膨胀 -> VAE encode, 由 "
-                "tools/build_skel_latents.py 生成; 与条件 g 完全解耦)。\n"
-                "注意: skel_latent_shards_dir=shards_std + skel_as_glyph_cond=True 时 "
-                "batch['skel_latent'] 就是 g 本身, 不能当结构 target。\n"
-                "先跑 _sync_work/inst_skel_pipeline.sh (stage1 建 shards + stage2 训 probe)。")
-
-        _pcfg = getattr(args, 'latent_skel_probe', '') or ''
-        if not _pcfg or not os.path.exists(_pcfg):
-            raise ValueError(
-                f"--w-latent-skel > 0 需要 --latent-skel-probe 指向训好的 probe ckpt, "
-                f"当前={_pcfg!r}。用 tools/train_latent_skel_probe.py 训练。")
-        from src.train.latent_structure import LatentSkelProbe, LatentSkelStructureLoss
-        _pck = torch.load(_pcfg, map_location="cpu", weights_only=False)
-        _pargs = _pck.get("args", {}) if isinstance(_pck, dict) else {}
-        _probe = LatentSkelProbe(
-            in_channels=int(_pargs.get("in_channels", 4)),
-            out_channels=int(_pargs.get("out_channels", 4)),
-            width=int(_pargs.get("width", 64)),
-            depth=int(_pargs.get("depth", 3)))
-        _psd = _pck.get("model", _pck)
-        _missing, _unexp = _probe.load_state_dict(_psd, strict=False)
-        if _missing or _unexp:
-            raise ValueError(f"probe ckpt 不匹配: missing={_missing} unexpected={_unexp}")
-        _probe.to(device).eval().requires_grad_(False)
-        _skel_struct_loss_fn = LatentSkelStructureLoss(
-            probe=_probe, max_t=float(getattr(args, 'latent_skel_max_t', 0.3)))
-        logger.info(f"[skel-struct] enabled: w={args.w_latent_skel}, probe={_pcfg}, "
-                    f"max_t={_skel_struct_loss_fn.max_t}, metrics={_pck.get('metrics', {})}, "
-                    f"trainable_params_added=0 (probe frozen)")
-
-    # ---- 中程结构 aux loss (独立模块 src/loss/structure_mid.py, 替代旧内联 std_mid) ----
-    # 旧内联: MSE(x0_pred, 细骨架 g) —— 与中程"软墨迹"形态冲突。新模块: 载体粗化
-    # (blur GT / dilate skel, σ(t)/k(t) 由 calibrate_mid_structure.py 校准) + 低通子空间
-    # + 通道归一 -> k/σ 不敏感。默认 w_std_mid=0 关闭, 零破坏。
-    _mid_struct_loss = None
-    if getattr(args, 'w_std_mid', 0.0) > 0:
-        from src.loss.structure_mid import MidStructureLoss, TSchedule
-        _sched = TSchedule.from_json(
-            getattr(args, 'std_mid_calib_json', '') or '',
-            sigma_slope=float(getattr(args, 'std_mid_sigma_slope', 4.0)),
-            k_slope=float(getattr(args, 'std_mid_k_slope', 2.0)))
-        _mid_struct_loss = MidStructureLoss(
-            carrier=getattr(args, 'std_mid_carrier', 'blur_gt'),
-            alo=float(getattr(args, 'std_mid_alo', 0.35)),
-            ahi=float(getattr(args, 'std_mid_ahi', 0.75)),
-            lp_factor=int(getattr(args, 'std_mid_lp', 2)),
-            sigma_sched=_sched,
-            latent_channels=int(getattr(args, 'latent_channels', 4)))
-        if rank == 0:
-            logger.info(f"[std_mid] MidStructureLoss carrier={_mid_struct_loss.carrier} "
-                        f"window a_t∈[{_mid_struct_loss.alo},{_mid_struct_loss.ahi}] "
-                        f"lp={_mid_struct_loss.lp_factor} "
-                        f"calib={getattr(args, 'std_mid_calib_json', '') or '(默认线性σ/k)'}")
+    # ★ 2026-10-13: 原 87 行内联的 aux-loss 构建已抽成函数 ✓（4 个输出供训练循环使用 ✓）
+    _style_rank_loss_fn, _skel_struct_loss_fn, _SKEL_STRUCT_WARNED, _mid_struct_loss = _build_aux_losses(args, device, logger, rank)
 
     _train_vae_enc = bool(getattr(args, "train_vae_encoder", False))
     if _train_vae_enc:

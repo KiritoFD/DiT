@@ -146,8 +146,18 @@ def main():
         print("  ✗ 捕获到的 setup 日志过少 —— 护栏无效, 不要当通过 ✗")
         return 3
 
+    # ★★ 崩溃检测：切点只截到 [Begin epoch]，若崩溃发生在其**之后**，指纹照样"一致" ✗✗
+    #    ⇒ 必须独立断言：无 traceback / 无 Error / 真的推进到训练步 ✓
+    tb = ("Traceback (most recent call last)" in log) or ("Error" in log and "OutOfMemory" in log)
+    real_step = bool(re.search(r"\bstep\s*[1-9]\d*\b", log)) and ("loss" in log.lower())
+    if tb:
+        print("  ✗ 运行中出现 traceback/Error —— 护栏判定**失败** ✗（切点之后崩溃也会被抓 ✓）")
+        return 4
+    if not real_step:
+        print("  ✗ 未能确认真的跑过训练步（未见 step>=1 的 loss 行）⇒ 护栏无效 ✗")
+        return 4
     meta = {"config": args.config, "steps": args.steps, "sha256": fp, "nlines": nlines,
-            "has_step": has_step}
+            "has_step": has_step, "real_step": real_step}
     if args.save:
         if not args.golden:
             print("  ✗ --save 需要 --golden"); return 2
