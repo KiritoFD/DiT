@@ -91,7 +91,8 @@ if steps:
     files = [f for f in files if any(s in os.path.basename(f) for s in steps)]
 print(f"  待测 ckpt: {len(files)} 个  device={a.device}\n")
 
-hdr = f"  {'step':>8} | {'||enc(0)||':>10} | {'||enc(g)-enc(0)||':>17} | {'背景/内容':>9} | {'||enc(g)||':>10}"
+hdr = ("  %8s | %10s | %17s | %9s | %10s | %10s"
+       % ("step", "||enc0||/N", "||encg-enc0||/N", "背景/内容", "||encg||/N", "rms(enc0)"))
 print(hdr)
 print("  " + "-" * (len(hdr) + 2))
 for f in files:
@@ -121,18 +122,27 @@ for f in files:
         continue
     try:
         with torch.no_grad():
-            f0 = emb(torch.zeros(1, 1, 64, 64, device=dev)).float()
-            n0 = float(f0.norm())
+            # ★ 口径必须一致（2026-10-12 修 bug）: 旧版拿 **1 个全零样本** 的范数去除
+            #   **4 个真实样本** 的范数 -> 比值系统性偏离 2×(√4), 且与 v81 旧脚本(两边都是
+            #   4 样本)口径不同 -> 跨版本对比无效 ✗。现在: f0 与 fr 用**同一 batch 大小**,
+            #   同时给 per-sample 范数与逐元素 RMS, 便于与别的会话/工具对齐 ✓
+            _nb = max(1, min(4, int(getattr(g_real, "shape", [1])[0]))) if g_real is not None else 1
+            f0 = emb(torch.zeros(_nb, 1, 64, 64, device=dev)).float()
+            n0_tot = float(f0.norm())
+            n0_ps = n0_tot / (_nb ** 0.5)                       # per-sample 范数
+            n0_rms = n0_tot / (f0.numel() ** 0.5)               # 逐元素 RMS（跨工具对齐用）
             if g_real is not None:
-                fr = emb(g_real[: min(4, g_real.shape[0])]).float()
-                f0b = f0.expand_as(fr)
-                nc = float((fr - f0b).norm())
-                ng = float(fr.norm())
-                print(f"  {tag:>8} | {n0:>10.4f} | {nc:>17.4f} | {n0/max(nc,1e-9):>9.4f} | {ng:>10.4f}")
+                fr = emb(g_real[:_nb]).float()
+                nc_ps = float((fr - f0).norm()) / (_nb ** 0.5)
+                ng_ps = float(fr.norm()) / (_nb ** 0.5)
+                ratio = n0_ps / max(nc_ps, 1e-9)                # ★ 同口径 per-sample/per-sample
+                print("  %s | %10.4f | %17.4f | %9.4f | %10.4f | rms0=%.4f"
+                      % (tag, n0_ps, nc_ps, ratio, ng_ps, n0_rms))
             else:
-                print(f"  {tag:>8} | {n0:>10.4f} | {'-':>17} | {'-':>9} | {'-':>10}")
+                print("  %s | %10.4f | %17s | %9s | %10s | rms0=%.4f"
+                      % (tag, n0_ps, "-", "-", "-", n0_rms))
     except Exception as e:
-        print(f"  {tag:>8} | 前向失败 {type(e).__name__}: {str(e)[:60]}")
+        print("  %s | 前向失败 %s: %s" % (tag, type(e).__name__, str(e)[:60]))
 
 print("""
   判读:
