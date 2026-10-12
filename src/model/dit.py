@@ -1601,6 +1601,121 @@ class DiT_2Cond(nn.Module):
         return g, keep, callig_drop, char_drop, script_drop, y_callig_in
 
 
+    def _embed_glyph(self, x, g, keep, y_callig_in, e_style, e_script, style_tokens, _gate):
+        """标准字形条件的嵌入与逐层注入准备（原 forward 内联 106 行 ✓）。
+
+        包含: 形变骨架 DeformSkel -> glyph_embedder(含 std-soft 零输入修复) ->
+        S2 通路 B1/B2/B3 -> 全局内容向量 e_glyph_vec。返回 (x, g_tok, e_glyph_vec)。
+        """
+        g_tok = None            # 标准字形 token；未启用时保持 None（逐层注入会检查）
+        if self.rope:
+            # 位置信息由 RoPE 在 attention 内部注入，不再加到残差流上。
+            # 这样 token 幅度不随位置编码偏移，也天然支持不同 grid 的外推。
+            pass
+        else:
+            x = x + self.pos_embed
+        # ★ 形变标准骨架: g -> g'(书家习惯间架)。必须放在 g_tok 之前,
+        #   这样 concat / adaLN 注入 / local_ca 三条通路都用同一个 g'。
+        if getattr(self, "deform_skel", None) is not None and g is not None:
+            _g2 = self.deform_skel(g, self._embed_callig(y_callig_in, e_style=e_style, style_tokens=style_tokens))
+            # ⚠ 条件被 drop 的样本（CFG uncond 分支）拿到的是 **null 风格向量** ->
+            #   形变头会产出垃圾骨架, 等于往条件里注入噪声。
+            #   实测: 10% 条件丢弃时 Deform loss 从离线的 0.167 涨到 0.37
+            #   (0.9*0.167 + 0.1*2.0 ≈ 0.35, 吻合) —— 正是这个原因。
+            #   -> 对丢弃样本**跳过形变**, 保持原骨架。
+            # ⚠ 模型上**没有** num_calligraphers 属性（只是构造形参）——
+            #   用 getattr(...,0) 会拿到 0, 让这段修复变成空操作。
+            #   null 索引的真值在 y_callig_embedder.num_classes。
+            _ncal = int(getattr(getattr(self, "y_callig_embedder", None),
+                                "num_classes", 0))
+            if _ncal > 0:
+                _kept = (y_callig_in < _ncal)
+                if not bool(_kept.all()):
+                    g = torch.where(_kept.view(-1, 1, 1, 1), _g2, g)
+                else:
+                    g = _g2
+            else:
+                g = _g2
+        if self.use_glyph_cond and self.glyph_embedder is not None and g is not None:
+            # 两类 glyph_embedder 最终都输出 (N,D,16,16) -> flat (N,256,D)。
+            # ★★ 2026-10-12 修（v81 白化根因，专家定位）: **显式减去零输入响应**
+            #   实测证据(probe2_glyph.py, v81 同配方):
+            #     ‖encoder(0)‖ : 19.93(20k) → 34.11(35k) → 50.69(55k) → 72.07(115k)  = 3.6×
+            #     内容/背景比  : 2.48 → 1.76 → 1.41 → 1.13（腰斩）
+            #     同期生成墨量 : 0.174(35k，最佳) → 0.098(55k) → 0.073(115k)
+            #     稀疏字不画 / 重墨字过墨（體 0.4948 vs GT 0.3559）→ 条件→墨迹映射失控
+            #   机制: 编码器前两层 Conv2d 带 bias，而 `glyph_drop_prob` 默认 **0**
+            #     ⇒ 训练中从未出现"无条件"状态 ⇒ 背景/偏置响应无人约束、自由膨胀
+            #     ⇒ 注入主干的"空白画布特征"逐渐压过内容 ⇒ latent 空间结构消失
+            #     ⇒ 解码成 DC ⇒ **白纸**（实测: latent 取均值 → 灰度 254.7 / 硬墨 0.0000）
+            #   修法: feat = enc(g) - enc(0)，**不 detach 第二项** ⇒ g=0 ⟹ feat=0
+            #     （即使编码器内部仍有 bias）。注意: 仅去掉 Conv bias 不够——膨胀来自深层。
+            _g_zero = torch.zeros_like(g)
+            g_tok = (self.glyph_embedder(g) - self.glyph_embedder(_g_zero)).flatten(2).transpose(1, 2)
+            if g_tok.shape[1] != x.shape[1]:
+                raise ValueError(
+                    f"glyph token grid mismatch: g produced {g_tok.shape[1]} tokens but "
+                    f"image latent has {x.shape[1]}; std_soft_cond expects 1x64x64 input")
+            if self.callig_style_ca is not None:
+                # 书家化骨架(cross-attn): 骨架 token(+2D 位置) 在 K 个风格模态间
+                # 内容寻址聚合, 产生"书家x字x位置"交互(结体差异)。
+                # 注意 out_proj zero-init -> 注入从 0 平滑启动, 残差注入标准做法。
+                # style_tokens 用 drop 后的 y_callig_in 查表: drop-callig 样本的
+                # style token 全组来自 null_embed, 与 adaLN 分支一致。
+                g_tok = self.callig_style_ca(g_tok, style_tokens)
+            if getattr(self, "callig_spatial_net", None) is not None and self.callig_basis is not None:
+                # 外挂(低秩): 书家向量 -> r 系数 x (r,256,D) 基图 -> 逐 token 加到骨架
+                e_c_sp = self.y_callig_embedder(y_callig_in, False)
+                _coef = self.callig_spatial_net(e_c_sp)                    # (N, r)
+                g_tok = g_tok + torch.einsum("nr,rpd->npd", _coef, self.callig_basis)
+            # ── S2 通路 B1：书体 FiLM（结构轴，全局 γ/β）────────────────────
+            if self.script_film is not None and e_script is not None:
+                g_tok = self.script_film(g_tok, e_script, keep)
+            # ── 低秩逐位置风格×几何乘法 ─────────────────────────────────────
+            # 用纯 e_callig, 不用拼了书体的 self._embed_cond(y_callig_in, e_style=e_style, style_tokens=style_tokens, e_script=e_script): 书体已在 g 里。
+            # 放在 script_film 之后、spatial_film 之前, 三者互不覆盖。
+            if self.lowrank_spatial is not None:
+                g_tok = self.lowrank_spatial(g_tok, self._embed_callig(y_callig_in, e_style=e_style, style_tokens=style_tokens), self.local_pos, keep)
+            # ── S2 通路 B2：逐位置局部 FiLM（Phase 1）───────────────────────
+            if self.spatial_film is not None:
+                g_tok = self.spatial_film(g_tok, self._embed_cond(y_callig_in, e_style=e_style, style_tokens=style_tokens, e_script=e_script), self.local_pos, keep)
+            # ── S2 通路 B3：局部风格-骨架 cross-attn（q="g" 时在条件侧堆叠）──
+            # 语义："先按风格重组骨架，再注入主干"。比 q="x" 更安全、可回退。
+            if self.local_ca is not None and g_tok is not None and self.local_ca_q == "g":
+                _cond = self._embed_cond(y_callig_in, e_style=e_style, style_tokens=style_tokens, e_script=e_script)
+                for _lc in self.local_ca:
+                    g_tok = _lc(g_tok, g_tok, _cond, self.local_pos, keep)
+            if keep is not None:
+                # ⚠ 丢弃语义保护: style 注入会给零骨架加非零风格输出, 会把
+                # "uncond-g 分支"(drop 的样本)重新变成有条件 —— 必须**在风格调制
+                # 之后**把被丢弃样本的 g_tok 重新置零, 保持 drop 分支纯净。
+                g_tok = g_tok * keep.view(-1, 1, 1).to(g_tok.dtype)
+            if not self.glyph_concat_input:
+                # 拼接模式不再把骨架加到残差上。g_tok 仍留给交叉注意力当 K/V。
+                x = x + self.glyph_scale * (_gate * g_tok if _gate is not None else g_tok)
+
+        # ── g 的全局内容向量 (进入条件向量 c) ────────────────────────────────
+        # 把 g_tok 的 256 个 token 池化成一个向量, 作为 concat/add 的第二个操作数。
+        # 池化源用**已做 drop 掩码后**的 g_tok, 保证 drop-g 样本的该向量也为零
+        # (与"该样本没有 g 条件"的语义一致)。
+        e_glyph_vec = None
+        if self.glyph_vec_cond:
+            if _gate is not None and g_tok is not None:
+                # 池化进 adaLN 的那一路也要乘, 否则只弱了输入残差, 条件向量里
+                # 的骨架还是全强度。
+                g_tok = _gate * g_tok
+            if g_tok is not None:
+                _pooled = (g_tok.amax(dim=1) if self.glyph_vec_pool == "max"
+                           else g_tok.mean(dim=1))
+            else:
+                # 完全没有 g 时走零向量 —— 仍经过 proj, 保证 DDP 下该分支参数
+                # 参与前向 (否则报 "parameters that didn't receive grad")。
+                _pooled = torch.zeros(x.shape[0], self.x_embedder.hidden_size,
+                                      device=x.device, dtype=x.dtype)
+            e_glyph_vec = self.glyph_vec_proj(_pooled)
+        return x, g_tok, e_glyph_vec
+
+
     def forward(self, x, t, y_callig, y_char, return_intermediate_layer=None,
                 return_intermediate_layers=None, g=None,
                 y_script=None, y_callig_raw=None, y_pair=None):
@@ -1685,112 +1800,8 @@ class DiT_2Cond(nn.Module):
                 torch.ones_like(_tf),
                 torch.full_like(_tf, self.glyph_gate_floor))
             _gate = _w.to(x.dtype).view(-1, 1, 1)
-        g_tok = None            # 标准字形 token；未启用时保持 None（逐层注入会检查）
-        if self.rope:
-            # 位置信息由 RoPE 在 attention 内部注入，不再加到残差流上。
-            # 这样 token 幅度不随位置编码偏移，也天然支持不同 grid 的外推。
-            pass
-        else:
-            x = x + self.pos_embed
-        # ★ 形变标准骨架: g -> g'(书家习惯间架)。必须放在 g_tok 之前,
-        #   这样 concat / adaLN 注入 / local_ca 三条通路都用同一个 g'。
-        if getattr(self, "deform_skel", None) is not None and g is not None:
-            _g2 = self.deform_skel(g, _e_callig())
-            # ⚠ 条件被 drop 的样本（CFG uncond 分支）拿到的是 **null 风格向量** ->
-            #   形变头会产出垃圾骨架, 等于往条件里注入噪声。
-            #   实测: 10% 条件丢弃时 Deform loss 从离线的 0.167 涨到 0.37
-            #   (0.9*0.167 + 0.1*2.0 ≈ 0.35, 吻合) —— 正是这个原因。
-            #   -> 对丢弃样本**跳过形变**, 保持原骨架。
-            # ⚠ 模型上**没有** num_calligraphers 属性（只是构造形参）——
-            #   用 getattr(...,0) 会拿到 0, 让这段修复变成空操作。
-            #   null 索引的真值在 y_callig_embedder.num_classes。
-            _ncal = int(getattr(getattr(self, "y_callig_embedder", None),
-                                "num_classes", 0))
-            if _ncal > 0:
-                _kept = (y_callig_in < _ncal)
-                if not bool(_kept.all()):
-                    g = torch.where(_kept.view(-1, 1, 1, 1), _g2, g)
-                else:
-                    g = _g2
-            else:
-                g = _g2
-        if self.use_glyph_cond and self.glyph_embedder is not None and g is not None:
-            # 两类 glyph_embedder 最终都输出 (N,D,16,16) -> flat (N,256,D)。
-            # ★★ 2026-10-12 修（v81 白化根因，专家定位）: **显式减去零输入响应**
-            #   实测证据(probe2_glyph.py, v81 同配方):
-            #     ‖encoder(0)‖ : 19.93(20k) → 34.11(35k) → 50.69(55k) → 72.07(115k)  = 3.6×
-            #     内容/背景比  : 2.48 → 1.76 → 1.41 → 1.13（腰斩）
-            #     同期生成墨量 : 0.174(35k，最佳) → 0.098(55k) → 0.073(115k)
-            #     稀疏字不画 / 重墨字过墨（體 0.4948 vs GT 0.3559）→ 条件→墨迹映射失控
-            #   机制: 编码器前两层 Conv2d 带 bias，而 `glyph_drop_prob` 默认 **0**
-            #     ⇒ 训练中从未出现"无条件"状态 ⇒ 背景/偏置响应无人约束、自由膨胀
-            #     ⇒ 注入主干的"空白画布特征"逐渐压过内容 ⇒ latent 空间结构消失
-            #     ⇒ 解码成 DC ⇒ **白纸**（实测: latent 取均值 → 灰度 254.7 / 硬墨 0.0000）
-            #   修法: feat = enc(g) - enc(0)，**不 detach 第二项** ⇒ g=0 ⟹ feat=0
-            #     （即使编码器内部仍有 bias）。注意: 仅去掉 Conv bias 不够——膨胀来自深层。
-            _g_zero = torch.zeros_like(g)
-            g_tok = (self.glyph_embedder(g) - self.glyph_embedder(_g_zero)).flatten(2).transpose(1, 2)
-            if g_tok.shape[1] != x.shape[1]:
-                raise ValueError(
-                    f"glyph token grid mismatch: g produced {g_tok.shape[1]} tokens but "
-                    f"image latent has {x.shape[1]}; std_soft_cond expects 1x64x64 input")
-            if self.callig_style_ca is not None:
-                # 书家化骨架(cross-attn): 骨架 token(+2D 位置) 在 K 个风格模态间
-                # 内容寻址聚合, 产生"书家x字x位置"交互(结体差异)。
-                # 注意 out_proj zero-init -> 注入从 0 平滑启动, 残差注入标准做法。
-                # style_tokens 用 drop 后的 y_callig_in 查表: drop-callig 样本的
-                # style token 全组来自 null_embed, 与 adaLN 分支一致。
-                g_tok = self.callig_style_ca(g_tok, style_tokens)
-            if getattr(self, "callig_spatial_net", None) is not None and self.callig_basis is not None:
-                # 外挂(低秩): 书家向量 -> r 系数 x (r,256,D) 基图 -> 逐 token 加到骨架
-                e_c_sp = self.y_callig_embedder(y_callig_in, False)
-                _coef = self.callig_spatial_net(e_c_sp)                    # (N, r)
-                g_tok = g_tok + torch.einsum("nr,rpd->npd", _coef, self.callig_basis)
-            # ── S2 通路 B1：书体 FiLM（结构轴，全局 γ/β）────────────────────
-            if self.script_film is not None and e_script is not None:
-                g_tok = self.script_film(g_tok, e_script, keep)
-            # ── 低秩逐位置风格×几何乘法 ─────────────────────────────────────
-            # 用纯 e_callig, 不用拼了书体的 _e_cond(): 书体已在 g 里。
-            # 放在 script_film 之后、spatial_film 之前, 三者互不覆盖。
-            if self.lowrank_spatial is not None:
-                g_tok = self.lowrank_spatial(g_tok, _e_callig(), self.local_pos, keep)
-            # ── S2 通路 B2：逐位置局部 FiLM（Phase 1）───────────────────────
-            if self.spatial_film is not None:
-                g_tok = self.spatial_film(g_tok, _e_cond(), self.local_pos, keep)
-            # ── S2 通路 B3：局部风格-骨架 cross-attn（q="g" 时在条件侧堆叠）──
-            # 语义："先按风格重组骨架，再注入主干"。比 q="x" 更安全、可回退。
-            if self.local_ca is not None and g_tok is not None and self.local_ca_q == "g":
-                _cond = _e_cond()
-                for _lc in self.local_ca:
-                    g_tok = _lc(g_tok, g_tok, _cond, self.local_pos, keep)
-            if keep is not None:
-                # ⚠ 丢弃语义保护: style 注入会给零骨架加非零风格输出, 会把
-                # "uncond-g 分支"(drop 的样本)重新变成有条件 —— 必须**在风格调制
-                # 之后**把被丢弃样本的 g_tok 重新置零, 保持 drop 分支纯净。
-                g_tok = g_tok * keep.view(-1, 1, 1).to(g_tok.dtype)
-            if not self.glyph_concat_input:
-                # 拼接模式不再把骨架加到残差上。g_tok 仍留给交叉注意力当 K/V。
-                x = x + self.glyph_scale * (_gate * g_tok if _gate is not None else g_tok)
-
-        # ── g 的全局内容向量 (进入条件向量 c) ────────────────────────────────
-        # 把 g_tok 的 256 个 token 池化成一个向量, 作为 concat/add 的第二个操作数。
-        # 池化源用**已做 drop 掩码后**的 g_tok, 保证 drop-g 样本的该向量也为零
-        # (与"该样本没有 g 条件"的语义一致)。
-        e_glyph_vec = None
-        if self.glyph_vec_cond:
-            if _gate is not None and g_tok is not None:
-                # 池化进 adaLN 的那一路也要乘, 否则只弱了输入残差, 条件向量里
-                # 的骨架还是全强度。
-                g_tok = _gate * g_tok
-            if g_tok is not None:
-                _pooled = (g_tok.amax(dim=1) if self.glyph_vec_pool == "max"
-                           else g_tok.mean(dim=1))
-            else:
-                # 完全没有 g 时走零向量 —— 仍经过 proj, 保证 DDP 下该分支参数
-                # 参与前向 (否则报 "parameters that didn't receive grad")。
-                _pooled = torch.zeros(x.shape[0], self.x_embedder.hidden_size,
-                                      device=x.device, dtype=x.dtype)
-            e_glyph_vec = self.glyph_vec_proj(_pooled)
+        # ★ 2026-10-13: 原 106 行内联字形嵌入已抽成 _embed_glyph ✓
+        x, g_tok, e_glyph_vec = self._embed_glyph(x, g, keep, y_callig_in, e_style, e_script, style_tokens, _gate)
 
         t_emb = self.t_embedder(t)               # (N, D)
 
