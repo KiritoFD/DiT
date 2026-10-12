@@ -34,7 +34,8 @@ except Exception:                                        # noqa: BLE001
     Tensor = Any                                        # type: ignore
 
 __all__ = ["ContentMode", "ContentConfig", "content_config_from_args", "content_config_from",
-           "ConditionBatch", "ConditionFeatures", "MODE_SWITCHES"]
+           "ConditionBatch", "ConditionFeatures", "MODE_SWITCHES",
+           "build_batch", "batch_to_kwargs", "call_forward"]
 
 # 模式 -> (use_char_cond, std_soft_cond)
 MODE_SWITCHES: Dict[str, tuple] = {
@@ -175,3 +176,36 @@ class ConditionFeatures:
     style_features: Optional[Tensor] = None
     present_masks: Dict[str, bool] = field(default_factory=dict)
     extra: Dict[str, Any] = field(default_factory=dict)
+
+# ─────────────────── 与既有接口的**薄适配层**（不改 DiT.forward 签名 ✓）───────────────────
+# 审查要求的"第一阶段: 只移动逻辑, 不移动接口/权重" —— 因此这里只提供**打包/解包**,
+# DiT.forward / forward_with_cfg 的签名与调用点一律不动 ✓（前向黄金可逐位验证 ✓）。
+# 训练/CFG/评测可以**逐个**迁移到 ConditionBatch, 不需要一次性大改 ✓。
+
+def build_batch(y_callig=None, y_char=None, g=None, y_script=None,
+                y_callig_raw=None, y_pair=None, content_mode=None) -> ConditionBatch:
+    """把历史关键字打包成 ConditionBatch ✓（名字即语义, 减少传错 ✗）"""
+    return ConditionBatch(writer=y_callig, char=y_char, glyph=g, script=y_script,
+                          writer_raw=y_callig_raw, writer_script_pair=y_pair,
+                          content_mode=content_mode)
+
+
+def batch_to_kwargs(batch: ConditionBatch, *, for_forward: bool = True) -> Dict[str, Any]:
+    """ConditionBatch -> 历史关键字（供尚未迁移的调用点使用 ✓）
+
+    for_forward=True 时只保留非 None 项（forward 的默认值语义一致 ✓）;
+    显式传 None 与"不传"在 forward 里等价 ✓, 但 g=None 是**条件被丢掉**的语义 ✓,
+    所以需要表达"明确不带 g"时必须走 for_forward=False 的完整映射 ✓。
+    """
+    kw = batch.to_kwargs()
+    if for_forward:
+        out = {k: v for k, v in kw.items() if v is not None or k == "g"}
+        return out
+    return kw
+
+
+def call_forward(model, x, t, batch: ConditionBatch, **extra):
+    """用 ConditionBatch 调 model.forward（**不改签名** ✓）"""
+    kw = dict(batch_to_kwargs(batch))
+    kw.update(extra)
+    return model(x, t, **kw)

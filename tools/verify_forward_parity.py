@@ -95,6 +95,8 @@ def main():
     ap.add_argument("--save", action="store_true")
     ap.add_argument("--check", action="store_true")
     ap.add_argument("--selftest", action="store_true", help="证明护栏灵敏（改输入必须改输出 ✓）")
+    ap.add_argument("--cfg1", action="store_true",
+                    help="★ [审查 CI] 验证 forward_with_cfg(cfg=1.0) 与条件 forward 等价 ✓")
     ap.add_argument("--train", action="store_true",
                     help="train 模式黄金（覆盖 dropout / 条件 drop mask 等 train-only 通路 ✓）")
     ap.add_argument("--seed", type=int, default=1234, help="train 模式的 RNG 种子（可逐位复现 ✓）")
@@ -103,6 +105,24 @@ def main():
 
     torch.set_num_threads(1)
     m, a = load(args.ckpt)
+    if args.cfg1:
+        # ★ [审查 CI 项] CFG=1 必须与条件 forward 等价（否则说明 CFG 路径有额外副作用 ✗）
+        x, t, yc, ych, kw = make_inputs(a, m, batch=args.batch)
+        base = run(m, x, t, yc, ych, kw)
+        try:
+            cfg = m.forward_with_cfg(x, t, yc, ych, cfg_scale=1.0, **kw)
+        except TypeError:
+            cfg = m.forward_with_cfg(x, t, yc, ych, cfg_scale=1.0)
+        if isinstance(cfg, tuple):
+            cfg = cfg[0]
+        d = float((cfg - base).abs().max())
+        rel = d / max(1e-9, float(base.abs().max()))
+        print(f"  CFG=1 vs 条件 forward: max|diff|={d:.3e}  相对={rel:.3e}")
+        if rel <= 1e-4:
+            print("  ✓ 等价（在 1e-4 相对容差内 ✓）—— 审查 CI 项通过 ✓")
+            return 0
+        print("  ✗ **不等价** ✗ —— CFG 路径存在额外行为, 需查（审查 CI 项不过 ✗）")
+        return 1
     mode = "train" if args.train else "eval"
     m.train() if args.train else m.eval()
     x, t, yc, ych, kw = make_inputs(a, m, batch=args.batch)
