@@ -80,6 +80,38 @@ def gate_syntax():
 
 
 # ───────────────────────── ② pyflakes / H1 ─────────────────────────
+def gate_dead_keys(cfg_path):
+    """配置里"全仓无人读取"的 key = 已删功能的遗留 ✗ 只报告 + 走棘轮。
+
+    实现: **一遍扫描建 token 集合**（标识符 + 引号标识符）, 再 O(1) 查表 ✓
+    —— 覆盖 args.X / getattr(args,'X') / cfg['X'] 三种读法。原先按 key 逐个跑正则
+       是 O(keys×代码) 会卡住几分钟 ✗。
+    """
+    if not cfg_path or not os.path.isfile(cfg_path):
+        rec("INFO", "死 config key", "未指定配置，跳过"); return 0
+    try:
+        cfg = json.load(open(cfg_path, encoding="utf-8"))
+    except Exception as e:                                        # noqa: BLE001
+        rec("INFO", "死 config key", f"读取失败 {e}"); return 0
+    if not isinstance(cfg, dict):
+        rec("INFO", "死 config key", "非 dict，跳过"); return 0
+    buf = []
+    for f in sorted(glob.glob("src/**/*.py", recursive=True)) + ["tools/cls/train_ocr.py"]:
+        try:
+            buf.append(io.open(f, encoding="utf-8", errors="replace").read())
+        except Exception:                                         # noqa: BLE001
+            pass
+    text = "\n".join(buf)
+    known = set(re.findall(r"[A-Za-z_][A-Za-z0-9_]*", text)) | \
+        set(re.findall(r"""[\'"]([A-Za-z_][A-Za-z0-9_]*)[\'"]""", text))
+    dead = [k for k, v in cfg.items()
+            if not k.startswith("_") and isinstance(v, (int, float, bool, str))
+            and k not in ("python_bin",) and k not in known]
+    rec("INFO", "死 config key", f"{len(dead)} 个无人读取"
+        + (f"（例: {', '.join(dead[:6])}）" if dead else " ✓"))
+    return len(dead)
+
+
 def gate_ruff():
     """★ 2026-10-13 ruff 门槛: **src/ 必须 0**（已全清 ✓）; tools/ 历史欠债走棘轮。
     规则集 = F401 未用 import / F541 无用 f-string / F811 重复定义（均安全级）。"""
@@ -262,11 +294,13 @@ def main():
     gate_toolcheck()
     gate_syntax()
     gate_ruff()
+    _dead = gate_dead_keys(a.config)
     gate_pyflakes()
     h1 = gate_h1()
     h3 = gate_config(a.config)
     counts = gate_ratchet()
     counts["h3_default_mismatch"] = h3
+    counts["dead_config_keys"] = _dead
     counts["h1_heuristic"] = h1
 
     if a.update_baseline:
