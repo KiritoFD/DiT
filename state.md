@@ -560,3 +560,29 @@ python tools/preflight.py --config src/train/configs/v83A_stdsoft_zerofix.json -
 2. **读文件用 `utf-8-sig`** 与解释器对齐，否则 BOM 会制造假阳性 ✗。
 3. **pyflakes 只在文件可解析时才有信号** —— 语法损坏的文件它直接跳过 ✗，所以**语法门必须在 pyflakes 之前** ✓。
 4. **mojibake 会吃掉换行** ⇒ 赋值语句无声消失 ⇒ 一律由 pyflakes 门兜住 ✓。
+
+---
+
+## ★ 命名规则：本会话（4090/48 侧的自主实验）一律用 **A0 / A1 / A2 …**（2026-10-12 用户指定）
+
+**原因**：避免与用户的 **V 系列**撞号（V83 曾在两边同时被占用 ✗）。
+
+| 代号 | 含义 | 磁盘目录 | 状态 |
+|---|---|---|---|
+| **A0** | **v68 配方 + `w_repa=0`**（REPA 消融，v68 配方上首次做） | `assets/results/v83_v68_noREPA` | **已停（85.3k/200k）** |
+| **A1** | 增广族 **morphE**（arm2 逐键复制 + 族数据 + REPA=0） | `assets/results/A1_morphE` | 运行中 |
+| **A2** | 增广族 **elastic** | `assets/results/A2_elastic` | 排队 |
+| **A3** | 增广族 **grid** | `assets/results/A3_grid` | 排队 |
+| **A4** | 增广族 **affine** | `assets/results/A4_affine` | 排队 |
+
+**A1–A4 的口径（用户指定）**：`batch 512 × 100k 步`（= 51.2M 样本，与 48 消融族 arm2/arm4 同口径 ✓）、
+`use_c2ot=False`、`w_repa=0`、SD-VAE shards、SD-VAE sf=0.18215/shift=0.0。
+基线配置 = `ablation/sym3x_noOT.json`（arm2: aug + noOT），只改 `data_csv` / `latent_shards_dir` / `w_repa` / 命名。
+配置：`src/train/configs/A{1..4}_*_noREPA.json`（已入库）。
+
+**A0 的结论（用于决定 A1–A4 走 REPA=0）**：v68 配方下关掉 REPA，17 个匹配评测点（5k–85k）配对符号检验：
+- `ssim` p=0.500、`lpips` p=0.685 → **主指标完全无差异**（掷硬币）
+- `ink_iou` / `hole` / `nn_ssim` 三项 **p=0.975 显著更差** ✗，但量级仅 **1~7%**（hole 最大 +7.4%）
+- → **REPA 效应小于运行间噪声** ⇒ 四臂之间互比不受影响；与 arm2/arm4（REPA on）横比时会混入该小偏差
+- 视觉：**无灾难性差异**，未见过字的失败模式两边相同（海报 `ANALYSIS/repa_ablation_A0_vs_v68.png`）
+- 速度：A0 = 4.2 steps/s × 288 = **1210 样本/s**（同机 512-batch REPA-on 臂为 1126 样本/s，但 batch 不同 ✗ 不可精确归因）
