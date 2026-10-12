@@ -1955,9 +1955,14 @@ class DiT_2Cond(nn.Module):
           要做内容轴引导必须走 `forward_with_2axis_cfg`，且训练时 `glyph_drop_prob > 0`。
         """
         if cfg_glyph is not None:
+            # ★ 2026-10-13 [审查 P0]: 原来**漏传** y_script / y_callig_raw / y_pair ✗
+            #   —— 与本方法 docstring 自己的要求相矛盾（S2 条件必须随 y_callig 一起复制,
+            #   否则 hier/三表分支拿到 None -> 条件 batch 不一致或直接报错 ✗）。
+            #   现全部透传 ✓（复制/拼接由 forward_with_2axis_cfg 内部按 4-pass 处理 ✓）
             return self.forward_with_2axis_cfg(
                 x, t, y_callig, y_char,
-                cfg_callig=cfg_scale, cfg_glyph=cfg_glyph, w_inter=w_inter, g=g)
+                cfg_callig=cfg_scale, cfg_glyph=cfg_glyph, w_inter=w_inter, g=g,
+                y_script=y_script, y_callig_raw=y_callig_raw, y_pair=y_pair)
         # Duplicate every sample: first copy conditional, second copy unconditional.
         original_bs = x.shape[0]
         # ★ 2026-09-17 诊断: 入口处各张量的 batch 必须一致，否则复制后仍不一致，
