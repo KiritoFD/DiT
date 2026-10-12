@@ -17,6 +17,7 @@
   python tools/verify_forward_parity.py --ckpt <ckpt> --golden <path> --save
   python tools/verify_forward_parity.py --ckpt <ckpt> --golden <path> --check
   python tools/verify_forward_parity.py --ckpt <ckpt> --selftest
+  python tools/verify_forward_parity.py --ckpt <ckpt> --golden <p> --train --save|--check   # train 模式 ✓
 """
 from __future__ import annotations
 
@@ -73,7 +74,10 @@ def make_inputs(a, m, seed=1234, batch=2):
     return x, t, yc, ych, kw
 
 
-def run(m, x, t, yc, ych, kw):
+def run(m, x, t, yc, ych, kw, seed=None):
+    """seed 非空时在 forward 前播种 —— train 模式的 dropout / 条件 drop mask 才能逐位复现 ✓"""
+    if seed is not None:
+        torch.manual_seed(seed)
     with torch.no_grad():
         out = m(x, t, yc, ych, **kw)
     return out[0] if isinstance(out, tuple) else out
@@ -92,15 +96,21 @@ def main():
     ap.add_argument("--save", action="store_true")
     ap.add_argument("--check", action="store_true")
     ap.add_argument("--selftest", action="store_true", help="证明护栏灵敏（改输入必须改输出 ✓）")
+    ap.add_argument("--train", action="store_true",
+                    help="train 模式黄金（覆盖 dropout / 条件 drop mask 等 train-only 通路 ✓）")
+    ap.add_argument("--seed", type=int, default=1234, help="train 模式的 RNG 种子（可逐位复现 ✓）")
     ap.add_argument("--batch", type=int, default=2)
     args = ap.parse_args()
 
     torch.set_num_threads(1)
     m, a = load(args.ckpt)
+    mode = "train" if args.train else "eval"
+    m.train() if args.train else m.eval()
     x, t, yc, ych, kw = make_inputs(a, m, batch=args.batch)
-    out = run(m, x, t, yc, ych, kw)
+    out = run(m, x, t, yc, ych, kw, seed=(args.seed if args.train else None))
     h = sha(out)
-    meta = {"ckpt": os.path.basename(args.ckpt), "batch": args.batch,
+    meta = {"ckpt": os.path.basename(args.ckpt), "batch": args.batch, "mode": mode,
+            "seed": (args.seed if args.train else None),
             "shape": list(out.shape), "sha256": h,
             "abs_sum": float(out.abs().sum()),
             "std_soft_cond": bool(getattr(m, "std_soft_cond", False)),
@@ -114,14 +124,15 @@ def main():
         rc = 0
         # ① 改 y_char -> 输出必须变
         ych2 = (ych + 1) % max(1, int(getattr(a, "num_characters", 8) or 8))
-        d1 = float((run(m, x, t, yc, ych2, kw) - out).abs().max())
+        sd = args.seed if args.train else None
+        d1 = float((run(m, x, t, yc, ych2, kw, seed=sd) - out).abs().max())
         # ② 改 t -> 必须变
-        d2 = float((run(m, x, t + 1.0, yc, ych, kw) - out).abs().max())
+        d2 = float((run(m, x, t + 1.0, yc, ych, kw, seed=sd) - out).abs().max())
         # ③ 改 g（若启用）-> 必须变
         d3 = None
         if "g" in kw:
             kw2 = dict(kw); kw2["g"] = kw["g"].flip(0)
-            d3 = float((run(m, x, t, yc, ych, kw2) - out).abs().max())
+            d3 = float((run(m, x, t, yc, ych, kw2, seed=sd) - out).abs().max())
         print("  灵敏度: Δy_char=%.4e  Δt=%.4e  Δg=%s" % (d1, d2, ("%.4e" % d3) if d3 is not None else "n/a"))
         if d1 <= 0: print("  ✗ 改字条件输出不变 —— 护栏不灵敏 ✗"); rc = 1
         if d2 <= 0: print("  ✗ 改 t 输出不变 —— 护栏不灵敏 ✗"); rc = 1
@@ -139,7 +150,11 @@ def main():
             print("  ✗ 黄金不存在:", args.golden); return 2
         g = torch.load(args.golden, map_location="cpu", weights_only=False)
         bit = bool(torch.equal(g["out"], out.detach().cpu()))
-        print("  黄金哈希=%s  当前哈希=%s" % (g["meta"]["sha256"][:16], h[:16]))
+        gm = g["meta"]
+        if gm.get("mode", "eval") != mode:
+            print("  ✗ 黄金模式(%s)与当前(%s)不一致 —— 别混用 ✗" % (gm.get("mode", "eval"), mode))
+            return 2
+        print("  黄金哈希=%s  当前哈希=%s  (mode=%s)" % (gm["sha256"][:16], h[:16], mode))
         if bit:
             print("  ✓ 前向**逐位一致** —— 重构未改变行为 ✓✓")
             return 0

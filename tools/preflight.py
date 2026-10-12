@@ -112,6 +112,40 @@ def gate_dead_keys(cfg_path):
     return len(dead)
 
 
+def gate_forward_golden():
+    """前向黄金对比 —— 捕获**逻辑重构**引入的行为漂移 ✗（ruff/pyflakes/strict 都看不到 ✓）。
+
+    只在**本地黄金与 ckpt 都存在**时执行（黄金是本地制品, 不入库 ✓）；
+    覆盖 eval 与 train 两种模式 ✓（train 需 seeded dropout, 见 --train）。
+    """
+    pairs = [
+        ("assets/_audit/fwd_v83A55k.pt", "_local_ckpt/0055000.pt", []),
+        ("assets/_audit/fwd_v68_200k.pt", "_local_ckpt/v68_200k/0200000.pt", []),
+        ("assets/_audit/fwd_train_v83A55k.pt", "_local_ckpt/0055000.pt", ["--train"]),
+        ("assets/_audit/fwd_train_v68_200k.pt", "_local_ckpt/v68_200k/0200000.pt", ["--train"]),
+    ]
+    avail = [(g, c, e) for g, c, e in pairs if os.path.isfile(g) and os.path.isfile(c)]
+    if not avail:
+        rec("INFO", "前向黄金", "本地无黄金/ckpt，跳过（用 tools/verify_forward_parity.py --save 生成）")
+        return 0
+    bad, ok = [], 0
+    for g, c, extra in avail:
+        try:
+            r = sh([sys.executable, "tools/verify_forward_parity.py",
+                    "--ckpt", c, "--golden", g, "--check", *extra])
+        except Exception as e:                                    # noqa: BLE001
+            rec("UNKNOWN", "前向黄金", f"执行失败 {type(e).__name__}"); return None
+        if r.returncode == 0:
+            ok += 1
+        else:
+            bad.append(os.path.basename(g))
+    if bad:
+        rec("FAIL", "前向黄金", f"{len(bad)}/{len(avail)} 与黄金不一致 ✗: {', '.join(bad)}")
+    else:
+        rec("OK", "前向黄金", f"{ok}/{len(avail)} 逐位一致 ✓（eval + train 两模式）")
+    return len(bad)
+
+
 def gate_ruff():
     """★ 2026-10-13 ruff 门槛: **src/ 必须 0**（已全清 ✓）; tools/ 历史欠债走棘轮。
     规则集 = F401 未用 import / F541 无用 f-string / F811 重复定义（均安全级）。"""
@@ -294,6 +328,7 @@ def main():
     gate_toolcheck()
     gate_syntax()
     gate_ruff()
+    gate_forward_golden()
     _dead = gate_dead_keys(a.config)
     gate_pyflakes()
     h1 = gate_h1()
