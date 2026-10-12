@@ -95,6 +95,8 @@ def derive(a, overrides: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
 def dit_kwargs(a, overrides: Optional[Dict[str, Any]] = None,
                ids_char_id_to_char=None) -> Dict[str, Any]:
     """产出 DiT_2Cond 的全部构造 kwargs（**唯一**映射 ✓）"""
+    ov = overrides or {}
+    g = lambda k, d=None: ov.get(k, getattr(a, k, d))          # noqa: E731
     if ids_char_id_to_char is None and bool(g("use_ids_char_embedder", False)):
         csv_path = g("ids_char_map_csv", None)
         if csv_path and os.path.isfile(csv_path):
