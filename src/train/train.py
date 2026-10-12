@@ -2057,6 +2057,7 @@ def main(args):
         logger.info("[eval-only] 退出")
         return
 
+    _train_fatal = None            # ★ 训练期致命异常（见 except 处）
     for epoch in range(_epochs_needed):
         sampler.set_epoch(epoch)
         if rank == 0:
@@ -2798,9 +2799,13 @@ def main(args):
                     early_stop_stopped = True
                     break
         except Exception as e:
+            # ★ 2026-10-13 [审查 P0]: **不许吞异常** ✗ —— 原来这里 break 之后仍会走到
+            #   末尾打印 "Done!", 于是崩溃任务在远程/队列/自动验收里**表现为正常完训** ✗✗。
+            #   现在: 记录 traceback -> 走完清理 -> **重新抛出**, 让进程以非零码退出 ✓
             import traceback
             logger.error(f"Error during training loop: {e}")
             logger.error(traceback.format_exc())
+            _train_fatal = e
             break
 
         if args.max_steps > 0 and train_steps >= args.max_steps:
@@ -2816,6 +2821,11 @@ def main(args):
     # 等后台写盘收尾 —— 否则最后一个 ckpt 可能还没落盘进程就退了。
     if dist.get_rank() == 0:
         drain_ckpt(logger, timeout=600)
+    if _train_fatal is not None:
+        logger.error("训练**异常中止** ✗ —— 不打印 Done!, 并以非零码退出 ✓"
+                     "（此前会静默打印 Done! 让失败看起来像成功 ✗）")
+        cleanup()
+        raise _train_fatal
     logger.info("Done!")
     cleanup()
 

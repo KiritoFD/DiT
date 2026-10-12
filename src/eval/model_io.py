@@ -202,7 +202,16 @@ def load_model_from_ckpt(ckpt_path, device="cuda", use_ema=True, verbose=True,
         from argparse import Namespace
         a = Namespace(**a)
     _use_ema = bool(use_ema) and ("ema" in ck) and (ck["ema"] is not None)
-    sd = ck["ema"] if _use_ema else ck["model"]
+    # ★ 2026-10-13 [审查 P0]: 训练器保存**主权重**用的键历史上是 "delta", 而这里只读
+    #   "model" ⇒ 无 EMA 的 ckpt 会 KeyError ✗。现在显式按 ema > model > delta 取,
+    #   并**打印来源**, 不再靠猜 ✓
+    _cands = (["ema", "model", "delta"] if _use_ema else ["model", "delta", "ema"])
+    _src = next((k for k in _cands if ck.get(k) is not None), None)
+    if _src is None:
+        raise KeyError(f"ckpt 里找不到权重(尝试 {_cands}); 实际键={sorted(ck.keys())[:10]}")
+    sd = ck[_src]
+    print(f"[model_io] weights from '{_src}'" + (" (use_ema=True 但无 ema, 已回退 ✓)"
+          if (_use_ema and _src != "ema") else ""))
     if verbose:
         print(f"[model_io] weights from {'ema' if _use_ema else 'model'}")
 

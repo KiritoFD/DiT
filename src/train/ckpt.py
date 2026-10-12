@@ -87,8 +87,34 @@ class AsyncCkptWriter:
                 return
             checkpoint, path = item
             try:
-                torch.save(checkpoint, path)
-                open(path + ".done", "w").close()
+                # ★ 2026-10-13 [审查 P0]: **原子写盘** ✓ —— 原来直接 torch.save 到最终
+                #   路径: 崩溃/被杀/并发读会看到**半文件** ✗, 而 ".done" 仅靠文件存在
+                #   也不能证明权重完整 ✗。现在: 临时文件 -> fsync -> os.replace(原子 ✓)
+                #   -> 写含 sha256/size/step 的完成 manifest ✓
+                import hashlib
+                import json as _json
+                tmp = "%s.%d.tmp" % (path, os.getpid())
+                # ⚠ fsync 必须在**可写**句柄上 ✗ —— 用只读句柄会 OSError(9) Bad file descriptor
+                #   （本 session 实测踩过 ✓）。写法: 写完同一个句柄 flush+fsync 后再关 ✓
+                with open(tmp, "wb") as _f:
+                    torch.save(checkpoint, _f)
+                    _f.flush()
+                    os.fsync(_f.fileno())
+                _h = hashlib.sha256()
+                with open(tmp, "rb") as _f:
+                    for _chunk in iter(lambda: _f.read(1 << 20), b""):
+                        _h.update(_chunk)
+                _size = os.path.getsize(tmp)
+                os.replace(tmp, path)                       # 原子替换 ✓
+                _step = None
+                try:
+                    _step = int(checkpoint.get("step")) if isinstance(checkpoint, dict) else None
+                except Exception:                           # noqa: BLE001
+                    _step = None
+                with open(path + ".done", "w", encoding="utf-8") as _f:
+                    _json.dump({"sha256": _h.hexdigest(), "size": _size, "step": _step,
+                                "atomic": True}, _f)
+                    _f.flush(); os.fsync(_f.fileno())
                 with self._lock:
                     self._n_done += 1
             except Exception as e:                            # noqa: BLE001

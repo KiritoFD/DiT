@@ -54,7 +54,7 @@ def lookup_by_path(vae_path):
 def resolve_vae_scaling(args=None, vae_path=None, verbose=True):
     """返回 ``(sf, shift)``。
 
-    优先级: 显式 args.vae_scaling_factor/shift_factor  >  按 vae_path 查表  >  警告 + SD 回落
+    优先级: 显式 args.vae_scaling_factor/shift_factor  >  按 vae_path 查表  >  **报错** ✓（2026-10-13 [审查 P0]: 不再静默回退 SD ✗）
     """
     sf = getattr(args, "vae_scaling_factor", None) if args is not None else None
     sh = getattr(args, "vae_shift_factor", None) if args is not None else None
@@ -66,13 +66,14 @@ def resolve_vae_scaling(args=None, vae_path=None, verbose=True):
     if hit is not None:
         return hit
 
-    key = str(path or "<unknown>")
-    if verbose and key not in _WARNED:
-        _WARNED.add(key)
-        print("=" * 70)
-        print("[vae_scaling] ⚠ 未在 _VAE_TABLE 登记的 VAE 路径: %r" % key)
-        print("    将回落到 SD 值 sf=%.5f shift=%.1f —— 若这不是 SD-VAE, 缩放就是错的 ✗" % (SD_SF, SD_SHIFT))
-        print("    修法: 在 src/utils/vae_scaling.py 的 _VAE_TABLE 登记该 VAE, 或在 config 里显式给")
-        print("          vae_scaling_factor / vae_shift_factor。")
-        print("=" * 70)
-    return SD_SF, SD_SHIFT
+    # ★ 2026-10-13 [审查 P0]: **未登记的 VAE 必须报错, 不许回退 SD** ✗✗
+    #   回退 sf=0.18215 会让"换了 VAE 但缩放没跟着换"变成**静默错误 latent 契约** ——
+    #   本项目已为此付出过代价 ✗。现在 fail loudly, 让人显式登记或显式给值 ✓
+    raise ValueError(
+        "[vae_scaling] 未登记的 VAE 路径: %r\n"
+        "  拒绝回退 SD 值(sf=%.5f) —— 那会让 latent 契约静默错误 ✗\n"
+        "  修法(任选其一):\n"
+        "    1) 在 src/utils/vae_scaling.py 的 _VAE_TABLE 登记该 VAE(附 sf/shift + 出处 ✓);\n"
+        "    2) 在 config/args 里**显式**给 vae_scaling_factor / vae_shift_factor ✓;\n"
+        "    3) 从 checkpoint 的 args 读(评测端应优先用 ckpt 自带值 ✓)。"
+        % (str(path or "<unknown>"), SD_SF))
