@@ -210,7 +210,7 @@ def decode_sk(sk_lat):
         rec = vae.decode(torch.from_numpy(sk_lat.astype(np.float32))[None].to(dev) / 0.18215).sample.float().cpu()
     return Image.fromarray((((rec[0].clamp(-1, 1) + 1) / 2).permute(1, 2, 0).numpy() * 255).astype("uint8"))
 
-def data/skel/std_skel(script, ch, ps):
+def std_skel(script, ch, ps):
     img = Image.new("L", (256, 256), 255)
     d = ImageDraw.Draw(img)
     d.text((128, 128), ch, font=font_of(script, 200), fill=0, anchor="mm")
@@ -308,7 +308,7 @@ def generate(ch, callig, script, steps, cfg, seed_n, ps, sketch, model_key="s21"
         badge_color = "#CC0000"
         sk_img = decode_sk(sk_lat)
     else:
-        sk_lat, sk_img = data/skel/std_skel(script, ch, _ps)
+        sk_lat, sk_img = std_skel(script, ch, _ps)
         if sk_lat is None:
             return None, None, None, None, f"标准字体不包含「{ch}」，无法构建骨架", SESSION[:]
         if known_char:

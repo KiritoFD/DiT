@@ -1,4 +1,4 @@
-﻿# -*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 """
 eval_controlnet_cpu.py 鈥?CPU-only eval for ControlNet.
 

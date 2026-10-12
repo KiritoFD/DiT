@@ -36,7 +36,7 @@ def load_gt_skel(path):
     a = np.asarray(Image.open(path).convert("L"), dtype=np.float32)
     return (a > 64)
 
-def load_data/skel/std_skel(fname):
+def load_std_skel(fname):
     # data/skel/std_skel/{kai|li}/U+XXXXX.png (标准字体渲染骨架, 二值)
     p = os.path.join(HERE, "data/skel/std_skel", fname)
     if not os.path.exists(p):
@@ -72,7 +72,7 @@ for cid, rlist in by_callig.items():
         # 标准字形骨架文件名
         std_fn = os.path.join(script_key, f"U+{ord(r['character']):05X}.png")
         gtsk = load_gt_skel(os.path.join("data/skel/final_skeleton", f"{img_id}.png"))
-        stsk = load_data/skel/std_skel(std_fn)
+        stsk = load_std_skel(std_fn)
         if stsk is None or stsk.sum() < 20:
             missing_std += 1
             continue

@@ -1,4 +1,4 @@
-﻿# -*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 """
 sample_controlnet.py 鈥?ControlNet 鎺ㄧ悊: skel 鏉′欢寮曞鐨?latent DiT 閲囨牱.
 
@@ -80,7 +80,7 @@ def load_main_and_ctrl(args, device):
 
 
 def load_skel(skel_mode, img_id=None, char_id=None,
-              skel_root="data/skel/final_skeleton_d3", data/skel/std_skel_root="std_glyphs/skel", device="cpu"):
+              skel_root="data/skel/final_skeleton_d3", std_skel_root="std_glyphs/skel", device="cpu"):
     """鍔犺浇 skel 鏉′欢 (GT 鎴栨爣鍑嗗瓧搴?, 杩斿洖 (1,1,256,256) float32 0/1."""
     if skel_mode == "gt":
         if img_id is None:
@@ -89,7 +89,7 @@ def load_skel(skel_mode, img_id=None, char_id=None,
     elif skel_mode == "std":
         if char_id is None:
             raise ValueError("skel-mode=std requires --char-id")
-        path = os.path.join(data/skel/std_skel_root, f"{char_id}.png")
+        path = os.path.join(std_skel_root, f"{char_id}.png")
     else:
         raise ValueError(f"Unknown skel_mode: {skel_mode}")
     if not os.path.exists(path):
@@ -157,7 +157,7 @@ def main():
     ctrl = load_main_and_ctrl(args, device)
 
     skel = load_skel(args.skel_mode, img_id=args.img_id, char_id=args.char_id,
-                     skel_root=args.skel_root, data/skel/std_skel_root=args.data/skel/std_skel_root, device=device)
+                     skel_root=args.skel_root, std_skel_root=args.std_skel_root, device=device)
     print(f"[skel] mode={args.skel_mode} shape={skel.shape} density={skel.mean().item():.3f}")
 
     latent = sample(ctrl, skel, args.callig_id, args.char_id, device,
@@ -169,10 +169,11 @@ def main():
     Image.fromarray(img_np).save(args.output)
     print(f"[save] {args.output}")
 
-    # skel 鏉′欢瀵圭収鍥?    skel_path = args.output.replace(".png", "_skel.png")
+    # skel 条件对照图
+    skel_path = args.output.replace(".png", "_skel.png")
     skel_img = (skel.cpu().numpy()[0, 0] * 255).astype(np.uint8)
     Image.fromarray(skel_img).save(skel_path)
-    print(f"[save] skel 鈫?{skel_path}")
+    print(f"[save] skel -> {skel_path}")
 
 
 if __name__ == "__main__":

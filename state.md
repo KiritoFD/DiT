@@ -508,3 +508,55 @@ b = v + γ²(1−t)[ x + (1−t)v ]        （含显式 x 项）
 
 **当前应用**：v81（主线 288）先跑到 **100k = 28.8M**，与 **v68@100k = 28.8M** 严格匹配（batch 也相同）
 ⇒ 该对照**单变量、同调度、同样本** ✓；若要与 48 的 51.2M 家族横比，需续到 **177.8k**。
+
+---
+
+## 巡检与加固（2026-10-12 第二轮 · 自动化闸门入库）
+
+**目标**：把本次白化事故排查中暴露的**每一类静默 bug** 变成**启动前自动可查**，并清掉仓库里的历史污染。
+
+### 一、新增闸门 `tools/preflight.py`（唯一启动前入口）
+
+| 检查 | 策略 | 本次战果 |
+|---|---|---|
+| **工具自检** | 每个检查先证明"它真的在跑"，否则记 `UNKNOWN`（不得当通过 ✗）| 曾把"pyflakes 未安装"误报成"0 处可疑" ✗ |
+| **语法门** | `src/` 零不可编译（硬门槛）| **抓到 10 个 BOM 文件 + 之前漏掉的 5 个标识符污染文件** ✗ |
+| **pyflakes** | `src/` 零"未定义/先引用"；`tools/`+`legacy/` 走棘轮 | src 3 条 → **0 条** ✓ |
+| **配置显式性 (H3)** | 键未显式给出 且 代码默认 ≠ 其它配置共识 即高危 | v83-A 9 项 → **0 项** ✓；全仓 2779 → 621 |
+| **常数棘轮** | `0.18215` / `TIME_SCALE` **只许下降** | 460 / 136 冻结 |
+
+用法：`python tools/preflight.py --config <cfg> --strict`（有高危则 exit 1，用于启动脚本）
+
+### 二、修掉的真实隐患（全部为**已损坏**或**必崩**的代码）
+
+| 隐患 | 位置 | 性质 |
+|---|---|---|
+| **全局替换事故**：`std_skel` → `data/skel/std_skel` **污染了标识符** | `sample_controlnet.py`(×2 副本)、`make_fame3_poster.py`、`_diag_skel_similarity.py`、`legacy/gradio/gradio_fame_local.py` | **文件无法解析** ✗（5 文件）|
+| **mojibake 吃掉换行**：注释把 `skel_path = ...` 整行吞进注释 | `sample_controlnet.py` ×2 | **必崩 NameError** ✗（L174）|
+| **UTF-8 BOM** | 10 个文件 | 噪音 + 按 str 编译的工具误报 |
+| **不可达死代码**（3cond 分支 raise 之后 14 行） | `auto_eval_cpu.py` | 死路径 |
+| **load_state_dict 返回值丢失**（日志引用未绑定 `miss/unexp`）| `gpu_ablate_eval.py` | 未绑定 ✗ |
+| **缺 `import glob`** | `build_fame_fast.py` ×2 | NameError ✗ |
+| **裸转义** `\d` `\|` `\p`（未来 Python 将变 SyntaxError）| 4 个 tools | 前瞻性 |
+
+### 三、精简（删除冗余/一次性脚本）
+
+- 删 `validate_config.py`（H3 规则 100% 被 preflight 覆盖）、`static_check.py`（被 pyflakes 取代）
+- 删一次性迁移脚本 `apply_refactor_p1/p2.py`、收敛前后的 `sde_oracle_test.py`/`2`（保留 `3`，被 `flow_matching.py` 注释引用 ✓）
+- 去重命名：`fix_sweep_images2.py`→`fix_sweep_images.py`、`make_ckpt_sweep_poster2.py`→`make_ckpt_sweep_poster.py`
+
+### 四、验收
+
+```
+python tools/preflight.py --config src/train/configs/v83A_stdsoft_zerofix.json --strict
+  ✓ 语法 src/ 0    ✓ pyflakes src/ 0    ✓ H3 0    ✓ 棘轮 460/136 持平
+  FAIL=0  UNKNOWN=0  exit=0
+```
+**语法门有效性已证明**：故意投放 `src/_syntaxgate_probe/broken.py` → 立刻 FAIL ✓（随后清理）。
+
+### 五、教训（写给未来的自己）
+
+1. **工具的"通过"必须先证明工具真在跑** —— 两次栽在这上面（pyflakes 未安装 ✗、`compileall(quiet=1)` 吞错误 ✗）。
+2. **读文件用 `utf-8-sig`** 与解释器对齐，否则 BOM 会制造假阳性 ✗。
+3. **pyflakes 只在文件可解析时才有信号** —— 语法损坏的文件它直接跳过 ✗，所以**语法门必须在 pyflakes 之前** ✓。
+4. **mojibake 会吃掉换行** ⇒ 赋值语句无声消失 ⇒ 一律由 pyflakes 门兜住 ✓。

@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""build_data/skel/std_skel1_latents.py — 渲染标准字形 -> 1px 骨架 -> VAE latent (一条龙).
+"""build_std_skel1_latents.py — 渲染标准字形 -> 1px 骨架 -> VAE latent (一条龙).
 
 输出两件套:
   1) data/skel/std_skel1_latents_fame/  训练 shards (shard_XXXXX.npz, latents+img_ids)  <- s27 训练条件

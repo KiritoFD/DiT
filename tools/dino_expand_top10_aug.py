@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""dino_expand_top10_aug.py — 把 REPA 的 DINO cache 从 top10(26,002) 扩到对称增强全集(77,823)。
+r"""dino_expand_top10_aug.py — 把 REPA 的 DINO cache 从 top10(26,002) 扩到对称增强全集(77,823)。
 
 为什么可以复用源图特征 (与 tools/dino_expand_base_sym.py 同一判据):
     build_top10_sym_aug.py 的增强只有**笔画粗细** (binary_dilation / binary_erosion),

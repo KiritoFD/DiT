@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""rebuild_data/skel/std_skel1_shards.py — 从 data/skel/skel_bank_std1.npz 重建训练 shards.
+"""rebuild_std_skel1_shards.py — 从 data/skel/skel_bank_std1.npz 重建训练 shards.
 
 修复: MCCDLatentDataset 的 img_id 是 image_path 里的图像编号 (非 csv 行号).
 输入: data/skel/skel_bank_std1.npz (keys="script|char", latents) + train_fame.csv

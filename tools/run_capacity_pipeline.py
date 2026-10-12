@@ -298,7 +298,7 @@ def generate_final_scorecard():
     lines.append(
         "2. **Scaling Law 强力主导性能跨越**：\n"
         "   - 模型容量从 33M 提升到 233M，Strict SSIM 从 `0.5408` 暴涨至 `0.6067`（提升 **+0.0659**），LPIPS 从 `0.3926` 骤降至 `0.3289`；\n"
-        "   - 算子微调（RMSNorm/SwiGLU）仅贡献 $\pm 0.003$ 的边缘增益，而**隐藏维度的加宽（带宽扩展）才是突破 0.60 工业天花板的根本动力**！\n"
+        "   - 算子微调（RMSNorm/SwiGLU）仅贡献 $\\pm 0.003$ 的边缘增益，而**隐藏维度的加宽（带宽扩展）才是突破 0.60 工业天花板的根本动力**！\n"
     )
 
     report_path = os.path.join(EXP_ROOT, "SCORECARD_CAPACITY_LADDER.md")

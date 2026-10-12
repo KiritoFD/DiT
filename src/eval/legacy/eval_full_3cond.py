@@ -1,4 +1,4 @@
-﻿import os, sys, torch
+import os, sys, torch
 os.environ["XFORMERS_DISABLED"] = "1"
 import torch.nn as nn
 from torchvision.utils import save_image

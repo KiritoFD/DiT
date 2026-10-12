@@ -55,6 +55,30 @@ def gate_toolcheck():
     return ok
 
 
+# ───────────────────────── ①b 语法门（compile() 级）─────────────────────────
+def gate_syntax():
+    """每个 .py 必须可编译。教训: 曾有全局替换把标识符污染成 'data/skel/std_skel',
+    5 个文件语法损坏而旧闸门没拦住（pyflakes 只筛了 undefined 行）。"""
+    src_bad, tools_bad = [], []
+    for f in SRC:
+        try:
+            compile(io.open(f, encoding="utf-8-sig", errors="replace").read(), f, "exec")
+        except SyntaxError as e:
+            src_bad.append(f"{f}:{e.lineno}: {e.msg}")
+    for f in TOOLS:
+        try:
+            compile(io.open(f, encoding="utf-8-sig", errors="replace").read(), f, "exec")
+        except SyntaxError as e:
+            tools_bad.append(f"{f}:{e.lineno}: {e.msg}")
+    rec("FAIL" if src_bad else "OK", "语法 src/", f"{len(src_bad)} 个文件不可编译（要求 0）")
+    for b in src_bad[:6]:
+        rec("FAIL", "  └", b[:140])
+    rec("INFO", "语法 tools/", f"{len(tools_bad)} 个（棘轮）")
+    for b in tools_bad[:3]:
+        rec("INFO", "  └", b[:140])
+    return len(src_bad)
+
+
 # ───────────────────────── ② pyflakes / H1 ─────────────────────────
 def gate_pyflakes():
     # 注意: Windows 命令行长度上限 —— 传目录而不是逐个文件（149 文件必炸 WinError 206）
@@ -84,10 +108,10 @@ def gate_h1():
     n = 0
     for f in SRC:
         try:
-            tree = ast.parse(io.open(f, encoding="utf-8", errors="replace").read())
+            tree = ast.parse(io.open(f, encoding="utf-8-sig", errors="replace").read())
         except SyntaxError:
             continue
-        lines = io.open(f, encoding="utf-8", errors="replace").read().splitlines()
+        lines = io.open(f, encoding="utf-8-sig", errors="replace").read().splitlines()
         for fn in [x for x in ast.walk(tree) if isinstance(x, (ast.FunctionDef, ast.AsyncFunctionDef))]:
             A, U = {}, {}
             for x in ast.walk(fn):
@@ -122,7 +146,7 @@ def _consensus():
 def _defaults():
     out = []
     for f in SRC:
-        s = io.open(f, encoding="utf-8", errors="replace").read()
+        s = io.open(f, encoding="utf-8-sig", errors="replace").read()
         for m in re.finditer(r"getattr\(\s*args\s*,\s*['\"]([A-Za-z0-9_]+)['\"]\s*,\s*([^)]+)\)", s):
             try:
                 dv = ast.literal_eval(m.group(2).strip())
@@ -164,7 +188,7 @@ def gate_config(cfg_path):
 
 # ───────────────────────── ④ 常数棘轮 ─────────────────────────
 def gate_ratchet():
-    txts = {f: io.open(f, encoding="utf-8", errors="replace").read() for f in SRC + TOOLS}
+    txts = {f: io.open(f, encoding="utf-8-sig", errors="replace").read() for f in SRC + TOOLS}
     counts = {
         "hardcoded_0.18215": sum(s.count("0.18215") for s in txts.values()),
         "hardcoded_TIME_SCALE": sum(s.count("TIME_SCALE") for s in txts.values()),
@@ -191,6 +215,7 @@ def main():
     a = ap.parse_args()
 
     gate_toolcheck()
+    gate_syntax()
     gate_pyflakes()
     h1 = gate_h1()
     h3 = gate_config(a.config)

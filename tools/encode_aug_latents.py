@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""encode_aug_latents.py — 为"对称笔画粗细增强"数据集批量生成 VAE latent shards。
+r"""encode_aug_latents.py — 为"对称笔画粗细增强"数据集批量生成 VAE latent shards。
 
 与既有 tools/build_std_skel_widths.py / encode_top10_aug.py 的区别 (三条都是硬需求):
   1. **路径全部参数化** (原 encode_top10_aug.py 把 /home/ds/... 写死在源码里, 换机器就废)。

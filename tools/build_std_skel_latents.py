@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-build_data/skel/std_skel_latents.py — 从标准字库 skel PNG 构建 VAE latent 分片
+build_std_skel_latents.py — 从标准字库 skel PNG 构建 VAE latent 分片
 
 输入: data/skel/std_skeleton_d3/<script>/U+XXXX.png (3px 白底黑线骨架图)
 输出: data/skel/std_skel_latents_fame/latents_XXXXX.npy (float16, N×4×32×32) + img_ids.npy
@@ -10,12 +10,12 @@ build_data/skel/std_skel_latents.py — 从标准字库 skel PNG 构建 VAE late
   - 输出格式与 data/skel/final_skel_latents_* 完全兼容 (ControlNet 可直接用)
 
 用法 (远程后台):
-  nohup /opt/conda/bin/python tools/build_data/skel/std_skel_latents.py \
+  nohup /opt/conda/bin/python tools/build_std_skel_latents.py \
       --skel-root data/skel/std_skeleton_d3 \
       --out-dir data/skel/std_skel_latents_fame \
       --csv assets/train_fame.csv \
       --vae-path data/pretrained/sd-vae-ft-ema \
-      > /tmp/build_data/skel/std_skel_latents.log 2>&1 &
+      > /tmp/build_std_skel_latents.log 2>&1 &
 """
 import os
 import sys

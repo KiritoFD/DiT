@@ -195,7 +195,7 @@ for era in eras:
         out_md.append(f"| **条件融合方式** | `{cfg.get('fusion') or 'factorized_cat'}` |")
         out_md.append(f"| **骨架形变机制** | `deform_skel={cfg.get('deform_skel') or 0}` (权重: {cfg.get('w_deform_skel') or 0.0}) |")
         out_md.append(f"| **REPA 表征损失权重** | `w_repa={cfg.get('w_repa') or 0.0}` |")
-        out_md.append(f"| **全局学习率与批次** | `lr={cfg.get('lr') or 'N/A'}` \| `batch_size={cfg.get('batch') or 'N/A'}` |")
+        out_md.append(f"| **全局学习率与批次** | `lr={cfg.get('lr') or 'N/A'}` \\| `batch_size={cfg.get('batch') or 'N/A'}` |")
         out_md.append(f"| **最佳 Strict SSIM** | **`{peak_strict:.4f}`** (Step {peak_strict_step}) |")
         out_md.append(f"| **最佳 Seen SSIM** | **`{peak_seen:.4f}`** (Step {peak_seen_step}) |")
         if min_lpips < 10:

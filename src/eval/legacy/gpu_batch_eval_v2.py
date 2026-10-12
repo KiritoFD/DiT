@@ -1,4 +1,4 @@
-﻿#!/usr/bin/env python
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """gpu_batch_eval_v2.py 鈥?楂樻晥 GPU 鎵归噺璇勬祴銆?
 鏍稿績浼樺寲:

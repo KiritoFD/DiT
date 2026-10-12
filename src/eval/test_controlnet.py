@@ -1,4 +1,4 @@
-﻿# -*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 """
 test_controlnet.py 鈥?鏈湴娴嬭瘯 ControlNet 绠楁硶姝ｇ‘鎬?
 
