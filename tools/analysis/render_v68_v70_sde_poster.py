@@ -11,6 +11,7 @@ import argparse
 import csv
 import hashlib
 import json
+from datetime import datetime
 from pathlib import Path
 
 import numpy as np
@@ -57,6 +58,63 @@ def image_rows():
         ("v80", "v80 · ODE", "50k · 纯物理 VAE · no-OT", base.format("ode")),
         ("v80_sde", "v80 · corrected SDE", "同 ckpt · γ0.5 · 展示 seed0", base.format("sde_g05")),
     ]
+
+
+def latest_image_rows():
+    return [("v80_best", "v80-best · ODE", "190k · CFG1 / Heun50 / no-OT · 用户选定综合折中",
+             "assets/results/v80_callivae_physics_noOT/20261011-195827-v80-callivae-physics-noOT/"
+             "eval_samples_ctrl/step0190000/eval200fix/g{idx}.png")]
+
+
+def update_v80():
+    """Extend the historical snapshot with downloaded artifacts; no generation."""
+    evidence = json.loads((OUT / "evidence.json").read_text(encoding="utf-8"))
+    progress = OUT / "v80_progress_200k"
+    points = sorted([json.loads(p.read_text(encoding="utf-8"))
+                     for p in progress.glob("eval_auto_*.json")], key=lambda r: r["step"])
+    assert len(points) == 40 and points[-1]["step"] == 200000
+    assert all(r["n"] == 187 and r["set"] == "eval200fix" for r in points)
+    config = json.loads((progress / "resolved_config.json").read_text(encoding="utf-8"))
+    assert config["sde_gamma"] == 0 and config["eval_cfg"] == 1 and config["eval_steps"] == 50
+    assert config["use_c2ot"] is False
+    by_step = {p["step"]: p for p in points}
+    row_metrics = json.loads((OUT / "row_metrics.json").read_text(encoding="utf-8"))
+    required = {r[0] for r in image_rows() + latest_image_rows() if r[0] != "gt"}
+    assert required <= row_metrics.keys()
+    for key in required:
+        assert row_metrics[key]["n"] == 187 and len(row_metrics[key]["per_image"]) == 187
+    for key, _, _, pattern in latest_image_rows():
+        for sample in evidence["samples"]:
+            path = ROOT / pattern.format(idx=sample["idx"])
+            gt_path = path.with_name(f"gt{sample['idx']}.png")
+            with Image.open(ROOT / f"eval/gt/{sample['idx']}.png") as old_gt, Image.open(gt_path) as new_gt:
+                assert np.array_equal(np.asarray(old_gt.convert("RGB")), np.asarray(new_gt.convert("RGB")))
+            assert sha(path) == row_metrics[key]["image_sha256"][path.relative_to(ROOT).as_posix()]
+            evidence["image_sha256"][path.relative_to(ROOT).as_posix()] = sha(path)
+    tuning = ROOT / "docs/experiments/v80_65k_inference_tuning"
+    baseline = json.loads((tuning / "paired_holdout.json").read_text(encoding="utf-8"))
+    incremental = json.loads((tuning / "paired_holdout_vs_cfg150.json").read_text(encoding="utf-8"))
+    assert baseline["n_images"] == 107 and baseline["seeds"] == [0, 1, 2]
+    evidence["v80_latest_training"] = {
+        "points": points, "latest": points[-1], "selected_best_step": 190000,
+        "selected_best": by_step[190000], "best_ssim": max(points, key=lambda p: p["ssim"]),
+        "best_lpips_vgg": min(points, key=lambda p: p["lpips"]),
+        "completed_at": "2026-10-12 11:57:18 +08:00", "status": "completed max_steps=200000",
+        "protocol": "training in-mem eval; N187; CFG1; Heun50; gamma0; LPIPS-vgg; shift missing => 0",
+        "actual_decode_shift": float(config.get("vae_shift_factor", 0) or 0),
+        "source_sha256": {p.relative_to(ROOT).as_posix(): sha(p) for p in
+                          [*progress.glob("eval_auto_*.json"), *progress.glob("*.log"),
+                           progress / "training_summary.csv", progress / "resolved_config.json"]}}
+    evidence["v80_65k_tuning"] = {"baseline": baseline, "incremental": incremental,
+        "note": "corrected decode shift; float predictions; 107 holdout x3 joint initial/Brownian seeds; not transferred to190k",
+        "source_sha256": {p.relative_to(ROOT).as_posix(): sha(p) for p in
+                          [tuning / "paired_holdout.json", tuning / "paired_holdout_vs_cfg150.json", tuning / "manifest.json"]}}
+    evidence["poster_row_metrics"] = {key: {k: r[k] for k in ["mean", "n", "protocol", "source_pattern"]}
+                                      for key, r in row_metrics.items()}
+    evidence["poster_row_metrics_source_sha256"] = sha(OUT / "row_metrics.json")
+    evidence["updated_at"] = datetime.now().isoformat(timespec="seconds") + "+08:00"
+    (OUT / "evidence.json").write_text(json.dumps(evidence, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    print("Updated v80 evidence: completed200k / selected190k / unified PNG metrics / 65k holdout tuning")
 
 
 def capture():
@@ -168,7 +226,7 @@ def font(size, bold=False):
 
 def render(verify=True):
     evidence = json.loads((OUT / "evidence.json").read_text(encoding="utf-8"))
-    width, height = 3140, 5830
+    width, height = 3140, 7100
     im = Image.new("RGB", (width, height), "#f7f6f2")
     d = ImageDraw.Draw(im)
 
@@ -191,7 +249,7 @@ def render(verify=True):
     d.rectangle((0, 0, width, 210), fill=INK)
     text(50, 24, "v68 → v70 系列：SDE 修了什么，什么时候还能获益？", 58, "#ffffff", True)
     text(52, 109, "历史消融 / 同字图像 / 旧式与 corrected SDE / 新模型的推理收益空间", 32, "#dce8e9")
-    text(52, 158, "证据截止 2026-10-12  ·  eval200fix N=187  ·  展示统一 CFG=1 / Heun-50  ·  本页由已有产物生成", 25, "#dce8e9")
+    text(52, 158, "2026-10-12 更新  ·  v80 200k 已完成 / v80-best=190k  ·  图像行 CFG1 / Heun50 / N187  ·  65k调参另列", 25, "#dce8e9")
 
     section(240, "01", "实验链路：训练消融与采样消融分别读")
     xcols = [50, 440, 790, 1450, 2140]
@@ -204,7 +262,7 @@ def render(verify=True):
         ["v71 / v73 / v75", "作废 / 未启动 / 停止", "旧 latent 契约 / REPA-E / DoG", "不提供有效的 SDE 对照", "缺有效结果，不补造数据"],
         ["v72 → v74", "130k / mode 消融", "DINO-VAE + noaug / sample→mode", "mode：23/23 点落后", "v68→v72 同时变语料+VAE"],
         ["v76 → v77 → v78", "topband / 去 REPA / scale", "VAE 高频 / w_repa=0 / std≈1", "看各自配对训练曲线", "图像 40k/35k；v78 未列图"],
-        ["v79 → v80", "55k → 50k", "纯物理 VAE / C2OT→no-OT", "v80 corrected：frag 下降", "只在各 ckpt 内做 ODE/SDE A/B"],
+        ["v79 → v80", "55k → 完成200k", "纯物理 VAE / C2OT→no-OT", "v80-best选190k；65k CFG有收益", "多项训练变化；非纯OT因果实验"],
     ]
     for j, row in enumerate(lineage):
         yy = 350 + 53 * j
@@ -216,17 +274,17 @@ def render(verify=True):
     for x, label in zip(columns, ["配对实验 / 数据流", "SSIM ↑", "LPIPS-alex ↓", "frag 生成/GT 连通块比", "HF/GT · 描述性频谱"]):
         text(x, 750, label, 25, GRAY, True)
     a = evidence["old_image_metrics"]
+    measured = evidence["poster_row_metrics"]
+    def paired_row(name, left, right):
+        x, y = measured[left]["mean"], measured[right]["mean"]
+        return [name, f"{x['ssim']:.6f} → {y['ssim']:.6f}",
+                f"{x['lpips_alex']:.6f} → {y['lpips_alex']:.6f}",
+                f"{x['frag']:.4f} → {y['frag']:.4f}"]
     table = [
-        ["v68 200k · 旧 SDE · 历史图像批", f"{a['v68']['all_ssim']:.4f} → {a['v68_sde']['all_ssim']:.4f}",
-         f"{a['v68']['all_lpips']:.4f} → {a['v68_sde']['all_lpips']:.4f}", "5.06 → 2.38*", ".811 → .760*"],
-        ["v72 130k · 旧 SDE · 历史图像批", f"{a['v72']['all_ssim']:.4f} → {a['v72_sde']['all_ssim']:.4f}",
-         f"{a['v72']['all_lpips']:.4f} → {a['v72_sde']['all_lpips']:.4f}", "2.566 → 2.867*", ".622 → .630*"],
-        ["v79 55k · 旧 SDE · 历史简报", ".5799 → .5788*", ".4318 → .4283*", "1.876 → 1.466*", ".647 → .622*"],
-        ["v80 50k · corrected · 3 seed 均值",
-         f"{evidence['v80_three_seed']['ssim']['ode_mean']:.6f} → {evidence['v80_three_seed']['ssim']['sde_mean']:.6f}",
-         f"{evidence['v80_three_seed']['lpips']['ode_mean']:.6f} → {evidence['v80_three_seed']['lpips']['sde_mean']:.6f}",
-         f"{evidence['v80_three_seed']['frag_ratio']['ode_mean']:.6f} → {evidence['v80_three_seed']['frag_ratio']['sde_mean']:.6f}",
-         "seed0: .633 → .638"],
+        paired_row("v68 200k · 旧 SDE · 187 PNG", "v68", "v68_sde") + [".811 → .760*"],
+        paired_row("v72 130k · 旧 SDE · 187 PNG", "v72", "v72_sde") + [".622 → .630*"],
+        paired_row("v79 55k · 旧 SDE · 187 PNG", "v79", "v79_sde") + [".647 → .622*"],
+        paired_row("v80 50k · corrected · PNG seed0", "v80", "v80_sde") + ["seed0: .633 → .638"],
     ]
     for j, row in enumerate(table):
         yy = 798 + 58 * j
@@ -235,37 +293,99 @@ def render(verify=True):
     s, f = evidence["v80_three_seed"]["ssim"], evidence["v80_three_seed"]["frag_ratio"]
     text(50, 1046, f"v80：ΔSSIM {s['mean_delta']:+.6f}，95% CI [{s['ci95'][0]:+.6f}, {s['ci95'][1]:+.6f}]；"
          f"Δfrag {f['mean_delta']:+.5f}，CI [{f['ci95'][0]:+.5f}, {f['ci95'][1]:+.5f}]。", 28, BLUE, True)
-    text(50, 1093, "* 历史简报读数；不同数据流只读组内变化。旧式漂移+C2OT 无边缘保持保证；frag 更低也可能来自并笔/丢笔。", 25, GRAY)
+    text(50, 1093, "表内SSIM/LPIPS/frag统一由187 PNG重算；CI仍为50k原float三路径seed；*仅HF沿用简报，frag低需排除并笔。", 25, GRAY)
 
-    section(1150, "03", "旧 SDE 的 γ × CFG 变体：历史扫描 SSIM；两批扫描仅各自读行内变化")
+    training = evidence["v80_latest_training"]
+    section(1150, "03", "v80训练进展：200k正常完成；190k作v80-best，并非所有单项最优")
+    def training_plot(x, metric, title, prefer_high=True):
+        points = training["points"]
+        text(x, 1214, title, 29, INK, True)
+        px, py, pw, ph = x + 105, 1270, 600, 190
+        values = np.array([p[metric] for p in points])
+        pad = max(float(np.ptp(values)) * .08, .0001)
+        lo, hi = float(values.min() - pad), float(values.max() + pad)
+        def xy(p):
+            return (px + (p["step"] - 5000) / 195000 * pw,
+                    py + ph - (p[metric] - lo) / (hi - lo) * ph)
+        for level in [lo, (lo + hi) / 2, hi]:
+            yy = py + ph - (level - lo) / (hi - lo) * ph
+            d.line((px, yy, px + pw, yy), fill="#d9dfe0", width=1)
+            text(x, yy - 13, f"{level:.3f}", 23, GRAY)
+        d.line((px, py, px, py + ph, px + pw, py + ph), fill=GRAY, width=2)
+        d.line([xy(p) for p in points], fill=BLUE, width=4)
+        selected = next(p for p in points if p["step"] == 190000)
+        sx, sy = xy(selected)
+        d.ellipse((sx-7, sy-7, sx+7, sy+7), fill=ORANGE)
+        ex, ey = xy(points[-1])
+        d.ellipse((ex-5, ey-5, ex+5, ey+5), fill=INK)
+        for step, label in [(5000, "5k"), (100000, "100k"), (200000, "200k")]:
+            xx = px + (step - 5000) / 195000 * pw
+            text(xx - (54 if step == 200000 else 0), py + ph + 8, label, 23, GRAY)
+        text(x, 1515, f"190k {selected[metric]:.5f}   200k {points[-1][metric]:.5f}", 25, BLUE)
+    for x, metric, label in [(50, "ssim", "SSIM ↑"), (825, "lpips", "LPIPS-vgg ↓"),
+                              (1600, "ink_iou", "墨迹 IoU ↑"), (2375, "frag", "frag：接近1较理想")]:
+        training_plot(x, metric, label)
+    text(50, 1566, "40个固定训练评测点：N187 / CFG1 / Heun50 / γ0 / 历史shift=0。150k后平台；SSIM最佳190k，LPIPS-vgg最佳165k。", 26, GRAY)
+    text(50, 1605, "200k：SSIM .616278 / LPIPS-vgg .324916 / ink IoU .346796 / frag 2.1929；训练已于11:57正常收尾，无新SDE结果。", 26, BLUE)
+
+    tuning = evidence["v80_65k_tuning"]
+    section(1650, "04", "65k推理调参：80张选参 → 107张预留 × 3个seed；同100 NFE，不能冒充190k收益")
+    cols = [50, 770, 1250, 1750, 2240, 2670]
+    for x, label in zip(cols, ["配方 / 同一EMA65k", "SSIM ↑", "LPIPS-alex ↓", "LPIPS-vgg ↓", "ink IoU ↑", "|frag−1| ↓"]):
+        text(x, 1710, label, 25, GRAY, True)
+    comparisons = tuning["baseline"]["comparisons"]
+    for j, (name, label) in enumerate([("baseline", "ODE · CFG1.0"), ("cfg150", "ODE · CFG1.5（保守推荐）"),
+                                      ("cfg200", "ODE · CFG2.0（更偏感知）"),
+                                      ("cfg150_bridge050", "SDE · CFG1.5 + γ0.5")]):
+        text(cols[0], 1760 + j * 48, label, 26, BLUE if name == "cfg150" else INK, name == "cfg150")
+        for x, key in zip(cols[1:], ["ssim", "lpips_alex", "lpips_vgg", "ink_iou", "frag_error"]):
+            text(x, 1760 + j * 48, f"{comparisons[name][key]['mean']:.6f}", 26)
+    a = comparisons["cfg150"]
+    extra = tuning["incremental"]["comparisons"]["cfg150_bridge050"]
+    text(50, 1970, f"CFG1.5：ΔSSIM {a['ssim']['delta']:+.6f}；ΔLPIPS-alex {a['lpips_alex']['delta']:+.6f}；"
+         f"ΔLPIPS-vgg {a['lpips_vgg']['delta']:+.6f}；Δink IoU {a['ink_iou']['delta']:+.6f}。", 28, BLUE, True)
+    text(50, 2013, "CFG两种LPIPS与ink IoU的图像CI不跨零，但SSIM三seed均小降；墨迹面积比1.136→1.180，需防偏粗。", 27, GRAY)
+    text(50, 2056, f"同CFG1.5的SDE额外ΔLPIPS-alex {extra['lpips_alex']['delta']:+.6f}，CI "
+         f"[{extra['lpips_alex']['ci95'][0]:+.6f}, {extra['lpips_alex']['ci95'][1]:+.6f}]；"
+         f"Δfrag偏差 {extra['frag_error']['delta']:+.6f}。", 27, ORANGE)
+    text(50, 2099, "SDE整体额外收益未证实；中段窗也未赢。此块为修复shift后的float评测；CI先平均seed再重采样图像，条件于这3个seed。", 25, GRAY)
+
+    section(2150, "05", "旧 SDE 的 γ × CFG 变体：历史扫描 SSIM；两批扫描仅各自读行内变化")
     sweep = evidence["legacy_sweep"]
     for xx, key, title in [(50, "v68_ssim", "v68 @200k · 旧漂移：低 CFG 时修复空间更大"),
                            (1590, "v72_ssim", "v72 @130k · 旧漂移：γ0.5 在 CFG≥0.6 反而下降")]:
-        text(xx, 1214, title, 29, INK, True)
-        text(xx, 1264, "CFG / γ", 25, GRAY)
+        text(xx, 2214, title, 29, INK, True)
+        text(xx, 2264, "CFG / γ", 25, GRAY)
         for col, gamma in enumerate(sweep["gammas"]):
-            text(xx + 250 + 270 * col, 1264, f"γ={gamma:.2f}", 25, GRAY)
+            text(xx + 250 + 270 * col, 2264, f"γ={gamma:.2f}", 25, GRAY)
         for row, cfg in enumerate(sweep["cfgs"]):
-            yy = 1307 + row * 34
+            yy = 2307 + row * 34
             values = sweep[key][row]
             text(xx, yy, f"{cfg:.2f}", 25, GRAY)
             for col, value in enumerate(values):
                 text(xx + 250 + 270 * col, yy, f"{value:.4f}", 25,
                      BLUE if col == int(np.argmax(values)) else INK, col == int(np.argmax(values)))
-    text(50, 1538, "注意：v68 扫描 γ0.5 的 SSIM 每行最高，但 LPIPS 并非每行最优；不能称为“全指标免费午餐”。", 26, ORANGE)
+    text(50, 2538, "注意：v68 扫描 γ0.5 的 SSIM 每行最高，但 LPIPS 并非每行最优；不能称为“全指标免费午餐”。", 26, ORANGE)
 
-    section(1610, "04", "同字图像：8 个固定 v68 排名位置，所有行共享列；按实验关系排序")
-    text(50, 1673, "零基排名 15 / 45 / 70 / 90 / 110 / 135 / 155 / 175；按 v68 定义难度，因此跨档均值有选择偏差。", 25, GRAY)
-    left, cell, gap, top, row_h = 870, 256, 20, 1850, 270
+    section(2610, "06", "每一生成行都标指标：SSIM / LPIPS-alex / 墨迹IoU / frag；v80-best固定选190k")
+    text(50, 2673, "指标是每行全部187 PNG均值，非展示8张均值；8列沿用固定v68排名，不按新模型涨幅挑字。原尺寸、无后处理。", 25, GRAY)
+    left, cell, gap, top, row_h = 870, 256, 20, 2850, 270
     for j, s in enumerate(evidence["samples"]):
         xx = left + j * (cell + gap)
-        text(xx, 1725, f"{s['character']} · {s['script']}", 30, INK, True)
-        text(xx, 1770, s["calligrapher"], 25, GRAY)
-        text(xx, 1805, f"idx {s['idx']} · rank {s['rank_zero_based']}", 21, GRAY)
-    for i, (key, title, desc, pattern) in enumerate(image_rows()):
+        text(xx, 2725, f"{s['character']} · {s['script']}", 30, INK, True)
+        text(xx, 2770, s["calligrapher"], 25, GRAY)
+        text(xx, 2805, f"idx {s['idx']} · rank {s['rank_zero_based']}", 21, GRAY)
+    for i, (key, title, desc, pattern) in enumerate(image_rows() + latest_image_rows()):
         yy = top + i * row_h
-        text(50, yy + 30, title, 35, BLUE if key.startswith("v80") else INK, True)
-        text(50, yy + 90, desc, 27, GRAY)
+        text(50, yy + 15, title, 35, BLUE if key.startswith("v80") else INK, True)
+        text(50, yy + 65, desc, 25, GRAY)
+        if key == "gt":
+            text(50, yy + 112, "SSIM / LPIPS / ink IoU / frag：—", 27, GRAY)
+            text(50, yy + 160, "参考真迹，不把自比较的1/0当生成成绩", 25, GRAY)
+        else:
+            m = measured[key]["mean"]
+            text(50, yy + 112, f"SSIM {m['ssim']:.6f}   LPIPS-alex {m['lpips_alex']:.6f}", 27, INK)
+            text(50, yy + 158, f"ink IoU {m['ink_iou']:.6f}   frag {m['frag']:.4f}   N187", 27, INK)
         notes = {
             "gt": "对照图像；原始 256×256，无锐化、无反色",
             "v68": "基线保留飞白，但部分笔画断成碎片",
@@ -277,10 +397,11 @@ def render(verify=True):
             "v77": "历史 HF/GT .623；不能与 40k 归因比较",
             "v79": "使用 eval/v79_55k，排除旧 eval/v79 批",
             "v79_sde": "连通性改善，同时高频减少",
-            "v80": "本地 ODE .583217 ≈ 4090 .5835",
-            "v80_sde": "3 seed frag 同向下降；SSIM 增益未显著",
+            "v80": "50k历史配对；本行PNG口径，不代表190k终点",
+            "v80_sde": "图像seed0；三路径seed统计见02区",
+            "v80_best": "190k为选定折中；LPIPS-vgg单项最佳在165k",
         }
-        text(50, yy + 143, notes[key], 25, GRAY)
+        text(50, yy + 208, notes[key], 23, GRAY)
         for j, s in enumerate(evidence["samples"]):
             path = ROOT / pattern.format(idx=s["idx"])
             rel = path.relative_to(ROOT).as_posix()
@@ -290,26 +411,26 @@ def render(verify=True):
                 assert source.size == (256, 256)
                 im.paste(source.convert("RGB"), (left + j * (cell + gap), yy))
 
-    section(5110, "05", "能否有 free lunch？有推理收益空间；关键在扩散的时段和可靠的条件场")
+    section(6380, "07", "结论更新：v80已到200k；65k已证CFG折中收益，尚未证SDE全面free lunch")
     # Reserve the full mathematical explanation for the companion document.
-    lines(50, 5170, [
+    lines(50, 6440, [
         "corrected: b=v−D(t)·score，g²=2D；score=−[x+(1−t)v]/t；代码 dt<0。精确场同分布，实际场可以获益。",
         "旧式: b=(1+γ²t)v；有偏外推，不保证边缘保持。v68 的大涨是真实组内观测，旧漂移与 C2OT 的贡献尚未分离。",
     ], size=28, step=48)
     for x, title, body in [
         (50, "成立条件", ["线性训练路径，ε独立于x0（给定条件）", "推理时关OT不能修复旧C2OT训练耦合", "时间D与score漂移必须同步调整", "严格对照先CFG1；随机Heun共享dW", "std≈1有利优化，但不是公式成立条件"]),
-        (1080, "首选未测候选", ["D(t)=γ₀² t(1−t) w(t)²", "前段布局 → 中段弱SDE → 末段ODE", "w(t)平滑时间窗；γ₀先考虑.2/.35", "理由：当前桥式末段放大场误差", "代价：不重训、保持Heun NFE100"]),
-        (2110, "怎样才算 free lunch", ["验证集选日程，独立测试集确认", "多个起始seed + 多个路径seed", "SSIM/LPIPS/字形/飞白共同检查", "frag降低要排除并笔、丢笔", "当前只证小幅碎片率收益，非全质量提升"]),
+        (1080, "65k已测结论", ["CFG1.5：LPIPS/墨迹有稳定收益", "代价：SSIM均值−.000828", "同CFG加SDE：额外LPIPS约−.000005", "中段窗未赢，不再写成“首选未测”", "推荐ODE / CFG1.5 / Heun50"]),
+        (2110, "190k/200k的边界", ["190k SSIM最佳，作用户选定v80-best", "165k为LPIPS-vgg单项最佳", "200k正常完成，后半程基本平台", "190k尚未做CFG/SDE多seed复验", "65k配方不能直接宣称已迁移涨点"]),
     ]:
-        text(x, 5322, title, 34, BLUE, True)
-        lines(x, 5380, body, size=27, step=52)
-    text(50, 5680, "参考：SiT §2.4/3.2（训练后可调扩散系数）；Cao et al. 2023（误差时段影响ODE/SDE优劣）；迁移效果未验证。", 26, GRAY)
-    text(50, 5730, "完整推导、证据边界与复现：docs/experiments/2026-10-12-v68-v70-sde-role-and-free-lunch.md", 26, GRAY)
-    text(50, 5770, "此页只聚合已有数据；evidence.json记录96张源图的SHA-256；原尺寸图像无重采样；poster不是训练终点排行榜。", 25, GRAY)
+        text(x, 6592, title, 34, BLUE, True)
+        lines(x, 6650, body, size=27, step=52)
+    text(50, 6950, "参考：SiT §2.4/3.2 / Cao et al. 2023；本次只核对已有训练产物、重算已有PNG指标，不新增DiT/VAE采样。", 26, GRAY)
+    text(50, 7000, "完整推导/复现：docs/experiments/2026-10-12-v68-v70-sde-role-and-free-lunch.md；最新进展：2026-10-12-v80-progress-200k.md", 25, GRAY)
+    text(50, 7040, "每行N187采用统一PNG口径；训练曲线用原float+LPIPS-vgg；65k独立验证N107×3另列。源图与数值均有hash。", 25, GRAY)
     OUT.mkdir(parents=True, exist_ok=True)
     im.save(OUT / "poster.png", optimize=True)
     preview = im.copy()
-    preview.thumbnail((1570, 2500), Image.Resampling.LANCZOS)
+    preview.thumbnail((1570, 3550), Image.Resampling.LANCZOS)
     preview.save(OUT / "poster_preview.jpg", quality=92, subsampling=0)
     print(f"Rendered {OUT / 'poster.png'} ({width}x{height})")
 
@@ -317,9 +438,12 @@ def render(verify=True):
 def main():
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--capture", action="store_true", help="Snapshot existing artifacts; never runs inference")
+    ap.add_argument("--update-v80", action="store_true", help="Snapshot current completed run and unified row metrics")
     args = ap.parse_args()
     if args.capture:
         capture()
+    if args.update_v80 or args.capture:
+        update_v80()
     render()
 
 

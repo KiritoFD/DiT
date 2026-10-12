@@ -1,0 +1,6 @@
+[2026-10-12 11:54:54] [ckpt] queued assets/results/v80_callivae_physics_noOT/20261011-195827-v80-callivae-physics-noOT/checkpoints/0200000.pt (async write, 1 in flight)
+[2026-10-12 11:57:18] [in-mem-eval] 早停数据源已落盘 eval_auto_200000.json (set=eval200fix n=187 skel_iou=0.03442103328880937 lpips=0.32491584476780766 ssim=0.6162775041062428)
+[2026-10-12 11:57:18] [in-mem-eval] step 200000 done in 144s: eval200fix ssim=0.6163 ink=0.4686 frag=2.193 hole=0.043 | seen ssim=0.7716 ink=0.7249 frag=1.128 hole=0.056
+[2026-10-12 11:57:18] Reached max_steps=200000; stopping cleanly.
+[2026-10-12 11:57:18] [ckpt] async writer drained: 40 个已落盘
+[2026-10-12 11:57:18] Done!
