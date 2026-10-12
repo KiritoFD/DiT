@@ -1412,6 +1412,25 @@ class DiT_2Cond(nn.Module):
         _s = self._style_out(e_callig)
         return y_emb + self.style_gain.to(y_emb.dtype) * _s.to(y_emb.dtype)
 
+    def _embed_callig(self, y_callig_in, e_style=None, style_tokens=None):
+        """adaLN 融合的书家向量因子（原 forward 内闭包 ✓）。
+
+        S2 三层语义分解时 = 主效应+残差（e_style）; 多模态风格 = K 个 token 取均值;
+        否则退回既有书家表。
+        """
+        if e_style is not None:
+            return e_style                       # (N, D_style)
+        if style_tokens is not None:
+            return style_tokens.mean(dim=1)      # (N, D)
+        return self.y_callig_embedder(y_callig_in, False)
+
+    def _embed_cond(self, y_callig_in, e_style=None, style_tokens=None, e_script=None):
+        """局部通路的条件向量 = [e_style ; e_script]（无 hier 时退化为 e_style）。"""
+        _s = self._embed_callig(y_callig_in, e_style=e_style, style_tokens=style_tokens)
+        if e_script is None:
+            return _s
+        return torch.cat([_s, e_script], dim=-1)
+
     def forward(self, x, t, y_callig, y_char, return_intermediate_layer=None,
                 return_intermediate_layers=None, g=None,
                 y_script=None, y_callig_raw=None, y_pair=None):
@@ -1511,20 +1530,15 @@ class DiT_2Cond(nn.Module):
             _base = self.y_callig_embedder(_base_in, False)
             e_style, e_script = self.style_hier(_base, y_pair, y_script, callig_drop)
 
+        # ★ 2026-10-13: 原两个闭包升格为方法（逻辑见 _embed_callig / _embed_cond ✓）。
+        #   这里保留一行转发 ⇒ **调用点完全不变**（最小改动 ✓）；升格后可被
+        #   _fuse_condition 等其它方法复用, 也便于单独测试 ✓
         def _e_callig():
-            """adaLN 融合的书家向量因子：S2 = 主效应+残差；多模态 = K token mean。"""
-            if e_style is not None:
-                return e_style                       # (N, D_style)
-            if style_tokens is not None:
-                return style_tokens.mean(dim=1)      # (N, D)
-            return self.y_callig_embedder(y_callig_in, False)
+            return self._embed_callig(y_callig_in, e_style=e_style, style_tokens=style_tokens)
 
         def _e_cond():
-            """局部通路的条件向量 = [e_style ; e_script]（无 hier 时退化为 e_style）。"""
-            _s = _e_callig()
-            if e_script is None:
-                return _s
-            return torch.cat([_s, e_script], dim=-1)
+            return self._embed_cond(y_callig_in, e_style=e_style,
+                                    style_tokens=style_tokens, e_script=e_script)
 
         if self.glyph_concat_input:
             # g 在上面的 drop 里已经被整样本置零。拼在图像后面,
