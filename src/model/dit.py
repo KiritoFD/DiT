@@ -1654,7 +1654,13 @@ class DiT_2Cond(nn.Module):
             #     ⇒ 解码成 DC ⇒ **白纸**（实测: latent 取均值 → 灰度 254.7 / 硬墨 0.0000）
             #   修法: feat = enc(g) - enc(0)，**不 detach 第二项** ⇒ g=0 ⟹ feat=0
             #     （即使编码器内部仍有 bias）。注意: 仅去掉 Conv bias 不够——膨胀来自深层。
-            _g_zero = torch.zeros_like(g)
+            # ★ 2026-10-13 [审查 P1]: 零输入只算**一张**再广播 ✓ —— 编码器是 Conv2d+SiLU,
+
+            #   无 BatchNorm/批间交互 ⇒ 单样本零图与整批零图逐位等价（审查实测 max|diff|=0 ✓）。
+
+            #   ⚠ 梯度路径不变: 这里**不 detach** ✓（_g_zero 是常量, 无梯度需求）
+
+            _g_zero = g.new_zeros((1, *g.shape[1:]))
             g_tok = (self.glyph_embedder(g) - self.glyph_embedder(_g_zero)).flatten(2).transpose(1, 2)
             if g_tok.shape[1] != x.shape[1]:
                 raise ValueError(
