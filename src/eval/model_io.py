@@ -32,6 +32,12 @@ ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)
 
 
 def build_model_from_args(a, device, **overrides):
+    """...
+
+    expect_ckpt_weights: True 表示**随后会 load_state_dict 灌入已训权重** ⇒
+      预训练表缺失/形状不匹配只告警不报错 ✓（2026-10-13 [审查 v3]: 恢复 ckpt 时
+      不该要求外部表文件存在 ✗）。False = 从头初始化, 表是必需资源 ✓
+    """
     """**严格复刻** train.py 的 ``DiT_2Cond_models[...]`` 构造（字段与默认值逐一对齐）。
 
     参数
@@ -85,7 +91,7 @@ def _resolve(path):
     return alt if os.path.exists(alt) else path
 
 
-def apply_post_construction(model, a, verbose=True):
+def apply_post_construction(model, a, verbose=True, expect_ckpt_weights=False):
     """复刻 train.py 在 ``DiT_2Cond_models[...]`` **之后**的两步后处理。
 
     不做这两步，``state_dict`` 的 key 会对不上（`strict=True` 下会抛错）：
@@ -127,8 +133,25 @@ def apply_post_construction(model, a, verbose=True):
             print(f"[model_io] callig 预训练表已加载: {tuple(_emb.shape)}")
 
     if bool(g("freeze_callig_table", False)):
-        assert _cep and os.path.exists(_cep), (
-            "freeze_callig_table=True 需要 callig_emb_pretrained（否则 null_embed 无法确定）")
+        # ★ 2026-10-13 [审查 v3, 修正版]: 审查建议"恢复时缺外部表只告警" —— 但**不能只是跳过**
+        #   ✗: freeze_table() 会把 CFG 的 null token 拆成独立 Parameter
+        #   (y_callig_embedder.null_embed), **不调用这个键就不存在** ⇒ 恢复含该键的 ckpt 会
+        #   Error(s) in loading state_dict ✗✗(本 session 实测确认 ✓)。
+        #   正确语义: **始终执行冻结以保证键存在** ✓, 缺外部表时只**跳过灌入预训练值**
+        #   （值随后由 load_state_dict 覆盖 ✓); 只有从头训练且无表时才当硬错误 ✗。
+        if _cep and os.path.exists(_cep):
+            model.y_callig_embedder.freeze_table()
+            if verbose:
+                print("[model_io] callig 表已冻结 (null_embed 已拆出)")
+        elif expect_ckpt_weights:
+            model.y_callig_embedder.freeze_table()
+            if verbose:
+                print("[model_io] ⚠ freeze_callig_table=True 但未找到 callig_emb_pretrained —— "
+                      "仍执行冻结以生成 null_embed 键 ✓（预训练值缺失, 随后由 ckpt 覆盖 ✓）")
+        else:
+            raise ValueError(
+                "freeze_callig_table=True 需要 callig_emb_pretrained（从头训练时否则 "
+                "null_embed 无法确定）")
         model.y_callig_embedder.freeze_table()
         if verbose:
             print("[model_io] callig 表已冻结 (null_embed 已拆出)")
@@ -231,8 +254,10 @@ def load_model_from_ckpt(ckpt_path, device="cuda", use_ema=True, verbose=True,
             print(f"[model_io] local_ca_impl = {getattr(a, 'local_ca_impl', '?')} "
                   f"(按 state_dict 键自动判定, {len(_lc_keys)} 个 local_ca 键)")
 
-    model = build_model_from_args(a, device, **(model_overrides or {}))
-    apply_post_construction(model, a, verbose=verbose)
+    model = build_model_from_args(a, device, expect_ckpt_weights=True,
+                              **(model_overrides or {}))
+    apply_post_construction(model, a, verbose=verbose,
+                                 expect_ckpt_weights=True)
 
     # torch.compile 会加 `_orig_mod.` 前缀 -> 剥掉，否则 strict 直接报 key 不匹配
     if any(k.startswith("_orig_mod.") for k in sd):

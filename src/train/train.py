@@ -288,31 +288,23 @@ def _resolve_and_validate_args(args):
         if int(getattr(args, "deform_skel", 0) or 0) > 0:
             raise ValueError("std_soft_cond is incompatible with latent-space DeformSkel")
 
-    # ── ★ 2026-10-13 内容条件模式: table(字表) / std(标准字形) —— **二选一, 不得共存** ──
-    # 背景: v83-A 同时开了两条内容条件 ⇒ 归因不可分离(实测把字表换成中性值, 输出仍写对字)。
-    # 约定: 书家/书体表是风格条件, 两种模式下都保留 ✓
-    _use_char_cond = not bool(getattr(args, "no_char_cond", False))
-    _content_cond = getattr(args, "content_cond", None)
-    if _content_cond is not None:
-        _content_cond = str(_content_cond).lower()
-        if _content_cond not in ("table", "std"):
-            raise ValueError(f"content_cond 只能是 'table' 或 'std'，收到 {_content_cond!r}")
-        if _content_cond == "table":
-            if _std_soft_cond:
-                raise ValueError("content_cond='table' 但 std_soft_cond=True —— 两种内容条件不得共存 ✗")
-            if not _use_char_cond:
-                raise ValueError("content_cond='table' 需要 no_char_cond=False")
-        else:  # std
-            if _use_char_cond:
-                raise ValueError("content_cond='std' 但字表仍开 —— 请设 no_char_cond=True ✗")
-            if not _std_soft_cond:
-                raise ValueError("content_cond='std' 需要 std_soft_cond=True")
-        print(f"[content-cond] 模式 = {_content_cond} ✓ "
-              f"(table=字表给内容 / std=标准字形给内容；两者互斥；书家/书体表两种模式都保留)")
-    elif _use_char_cond and _std_soft_cond:
-        print("[content-cond] ⚠ legacy 混合模式: 字表与 std 字形**同时开启** ✗ "
-              "归因不可分离 —— 新训练请显式指定 content_cond='table' 或 'std'")
-    args.content_cond = _content_cond
+    # ── ★ 2026-10-13 [审查 PR2]: 内容条件校验**收敛到唯一真源** ✓ ──────────────────
+    #   此处原先**复刻**了一份校验, 且只允许 table/std ✗ —— 于是 CLI / ContentConfig /
+    #   模型三处都合法的 content_cond="hybrid" 会被**训练入口拒掉** ✗✗(v83A/B/C 因此
+    #   起不来, 已实测确认)。现在只调 src/model/conditioning.py, 三处定义合一 ✓。
+    #   （历史 ckpt 的旧格式推导放在同一转换器里, 不再混在新训练路径 ✓）
+    from src.model.conditioning import content_config_from_args as _cc_from_args
+    _cc = _cc_from_args(args, log=print)
+    args.content_cond = _cc.mode
+    args.no_char_cond = not _cc.use_char_cond
+    args.std_soft_cond = _cc.std_soft_cond
+    _std_soft_cond = _cc.std_soft_cond
+    print(f"[content-cond] 模式 = {_cc.mode} ✓ "
+          f"(table=仅字表 / std=仅标准字形 / hybrid=两者并存, 归因不可分离 ✗；"
+          f"书家/书体表三种模式都保留 ✓)")
+    # 只保留**与真实数据资源有关**的额外校验（模式合法性已由 ContentConfig 负责 ✓）
+    if _cc.mode == "std" and not str(getattr(args, "std_soft_root", "") or "").strip():
+        raise ValueError("content_cond='std' 需要 --std-soft-root（标准字形库路径）")
 
     # ── 书家词表收紧: 稀疏 raw id -> 连续 0..N-1 (见 src/utils/callig_map.py) ──
     # 设置 --callig-id-map 后, num_calligraphers 自动设为词表长度, 数据层查表映射;

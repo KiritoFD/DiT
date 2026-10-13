@@ -1136,7 +1136,14 @@ def build_parser(argv=None):
     #   现在: 未知键 -> ValueError 列出全部; 别名键(seed/gpu_eval_every)映射到正式名并告警 ✓;
     #   逃生开关 --allow-unknown-config-keys 供历史配置临时放行（会打印警告 ✓）。
     _ALIASES = {"seed": "global_seed", "gpu_eval_every": "ckpt_every"}
-    _ALLOW = {"python_bin", "results_dir", "experiment_name", "eval_sets"}
+    # ★ 2026-10-13 [审查 v3]: 这里原本把 python_bin / eval_sets 也放进白名单,
+    #   但它们**不是注册 dest** ⇒ 被"放行"后其实**静默丢弃**, 既不进 args 也不进
+    #   effective_config ✗（与"唯一真源"矛盾）。现在显式分成两类:
+    #     · 训练参数 -> 必须已注册（否则报错 ✓）
+    #     · 启动元数据 -> 收进 args._startup_meta（可被 effective_config/manifest 记录 ✓）
+    _STARTUP_META = ("python_bin", "eval_sets", "allow_unknown_config_keys")
+    _ALLOW = {"results_dir", "experiment_name"} & {a.dest for a in parser._actions}
+    _startup_meta = {k: config_defaults.pop(k) for k in _STARTUP_META if k in config_defaults}
     if config_defaults:
         _dests = {a.dest for a in parser._actions}
         _unknown, _aliased = [], []
@@ -1172,6 +1179,7 @@ def build_parser(argv=None):
             action.default = _coerce(config_defaults[action.dest], action.default, action.type)
             action.required = False
 
+    parser._dsh_startup_meta = _startup_meta if "_startup_meta" in dir() else {}
     return parser
 
 
@@ -1184,4 +1192,12 @@ def parse_args(argv=None):
     # 原来这里把合并逻辑**又抄了一遍**（且同样漏传 argv）—— 现在只调一次，
     # 避免两处实现漂移（本项目已有"两处实现不一致"的历史教训）。
     parser = build_parser(argv)
-    return parser.parse_args(argv)
+    a = parser.parse_args(argv)
+    # ★ 启动元数据显式挂到 args（与训练参数分开 ✓）: 保证它出现在 effective_config ✓
+    sm = getattr(parser, "_dsh_startup_meta", None)
+    if sm is None:
+        # build_parser 里收集的元数据经属性透传（parser 对象上）
+        sm = getattr(a, "_startup_meta_from_config", {})
+    if sm:
+        a._startup_meta = sm
+    return a

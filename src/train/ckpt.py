@@ -106,14 +106,21 @@ class AsyncCkptWriter:
                         _h.update(_chunk)
                 _size = os.path.getsize(tmp)
                 os.replace(tmp, path)                       # 原子替换 ✓
-                _step = None
-                try:
-                    _step = int(checkpoint.get("step")) if isinstance(checkpoint, dict) else None
-                except Exception:                           # noqa: BLE001
-                    _step = None
+                # ★ 2026-10-13 [审查]: 训练器写的是**顶层 "train_steps"** ✓, 而这里原来只读
+                #   "step" ✗ ⇒ manifest 里的 step 恒为 null, 削弱实验溯源 ✗。
+                #   现在按 train_steps > step > epoch 依次取（并保留原始来源名便于对账 ✓）
+                _step, _step_src = None, None
+                for _k in ("train_steps", "step", "global_step", "epoch"):
+                    _v = checkpoint.get(_k) if isinstance(checkpoint, dict) else None
+                    if _v is not None:
+                        try:
+                            _step, _step_src = int(_v), _k
+                            break
+                        except Exception:                       # noqa: BLE001
+                            continue
                 with open(path + ".done", "w", encoding="utf-8") as _f:
                     _json.dump({"sha256": _h.hexdigest(), "size": _size, "step": _step,
-                                "atomic": True}, _f)
+                                "step_source": _step_src, "atomic": True}, _f)
                     _f.flush(); os.fsync(_f.fileno())
                 with self._lock:
                     self._n_done += 1
@@ -198,12 +205,38 @@ def prune_checkpoints(checkpoint_dir, keep, logger=None):
     import shutil
     pts = sorted(glob.glob(os.path.join(checkpoint_dir, "*.pt")))
     n = 0
+    import hashlib as _hl
+    import json as _js
+    skipped = []
     for old in pts[:-keep]:
         base = os.path.basename(old)[:-3]
+        # ★ 2026-10-13 [审查 v3]: 原实现**直接 os.remove** ✗（docstring 声称会查 .done ✗）
+        #   半写入 / 在途 / 未完成校验的 ckpt 被删掉 => 评测可能引用到不存在的权重 ✗。
+        #   现在: 只有 .done 存在、可解析、且 sha256 与 size 与实际文件**一致**才删 ✓,
+        #   否则**保留并告警** ✓（宁可留几个旧 ckpt, 也不删错的 ✓）。
+        _done = old + ".done"
+        _ok = False
+        try:
+            m = _js.load(open(_done, encoding="utf-8"))
+            _ok = (m.get("size") == os.path.getsize(old))
+            if _ok and m.get("sha256"):
+                h = _hl.sha256()
+                with open(old, "rb") as f:
+                    for c in iter(lambda: f.read(1 << 20), b""):
+                        h.update(c)
+                _ok = (h.hexdigest() == m["sha256"])
+        except Exception:                                       # noqa: BLE001
+            _ok = False
+        if not _ok:
+            skipped.append(base)
+            continue
         os.remove(old)
         done = old + ".done"
         if os.path.exists(done):
             os.remove(done)
+        if skipped and logger is not None and len(skipped) <= 3:
+            logger.warning("[ckpt] prune 跳过 %d 个**未通过完成校验**的 ckpt（保留 ✓）: %s",
+                           len(skipped), skipped[:3])
         eval_dir = os.path.join(checkpoint_dir, f"eval_{base}")
         if os.path.isdir(eval_dir):
             shutil.rmtree(eval_dir, ignore_errors=True)
