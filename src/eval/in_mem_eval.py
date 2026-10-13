@@ -758,6 +758,52 @@ def resolve_eval_setup(args, model, results_dir, logger=print):
 
 
 
+_RAW_HDR = ["exp", "step", "set", "idx", "img_id", "char", "script",
+            "calligrapher", "mse", "ssim", "lpips",
+            "ink_ssim", "ink_iou", "skel_iou",
+            "frag_ratio", "hole_pred", "hole_gt",
+            "soft_ink_ratio", "gt_soft_mass"]
+
+
+def write_raw_header(w_raw):
+    """写逐样本 CSV 表头 ✓（与 `_write_sample_rows` 的列顺序**同处一地** ✓✓）。
+
+    ⚠ 本文件历史上"漏改 header → 列错位且**不报错**"是重灾区 ✗；把两者放在一起，
+    任何人改列都会同时看到另一处 ✓。返回列数，便于调用方/测试核对 ✓。
+    """
+    w_raw.writerow(_RAW_HDR)
+    return len(_RAW_HDR)
+
+
+def _write_sample_rows(w_raw, exp, step, name, n, mt, src_rows, lp):
+    """逐样本原始行写入（2026-10-13 [审查 §4.1] 抽出的"保存"步 ✓）。
+
+    审查: "拆开采样、指标、保存和完成判定" ✓。
+    入参 `mt` 即 `compute_set_metrics` 的 SetMetrics ✓（其 11 个数组与原来内联的
+    mses/ssims/_inks/… 是**同一批对象** ✓ ⇒ 数值行为完全不变 ✓）。
+    缺值一律写空串（与原实现一致 ✓）。返回写入行数。
+    """
+    _src = src_rows or []
+    for i in range(n):
+        _s = _src[i] if i < len(_src) else {}
+        w_raw.writerow([exp, step, name, i,
+                        _s.get("image_path", ""),
+                        _s.get("character", ""),
+                        _s.get("script", ""),
+                        _s.get("calligrapher", ""),
+                        f"{mt.mses[i]:.5f}", f"{mt.ssims[i]:.4f}",
+                        (f"{lp[i]:.5f}" if lp else ""),
+                        (f"{mt.inks[i]:.5f}" if mt.inks else ""),
+                        (f"{mt.inkious[i]:.5f}" if mt.inkious else ""),
+                        (f"{mt.skels[i]:.5f}" if mt.skels else ""),
+                        (f"{mt.frags[i]:.4f}" if mt.frags else ""),
+                        (f"{mt.holes_p[i]:.4f}" if mt.holes_p else ""),
+                        (f"{mt.holes_g[i]:.4f}" if mt.holes_g else ""),
+                        (f"{mt.sir[i]:.5f}" if mt.sir else ""),
+                        (f"{mt.gtm[i]:.5f}" if mt.gtm else "")])
+    return n
+
+
 def _eval_done_key(step, set_name, cfg, steps, sf, csvp, code_rev):
     """评测**已完成**的判据键（2026-10-13 [审查 P0]: "评测的缓存身份必须彻底改" ✓✓）。
 
@@ -960,11 +1006,9 @@ def run_in_mem_eval(model, args, step, device, results_dir=None, logger=print):
           f"表头 {len(_SUM_HDR)} 列{' (本次新建)' if new_sum else ''}", flush=True)
 
     if new_raw:
-        w_raw.writerow(["exp", "step", "set", "idx", "img_id", "char", "script",
-                        "calligrapher", "mse", "ssim", "lpips",
-                        "ink_ssim", "ink_iou", "skel_iou",
-                        "frag_ratio", "hole_pred", "hole_gt",
-                        "soft_ink_ratio", "gt_soft_mass"])
+        # ★ 2026-10-13 [审查 §4.1]: 表头改由 write_raw_header 写 ✓
+        #   （与 _write_sample_rows 的列顺序同处一地 ⇒ 防"漏改 header 列错位" ✗）
+        write_raw_header(w_raw)
     # ★ 代码版本进完成判据 ✓（改了评测代码 => 不复用旧结果 ✓）
     try:
         from src.eval.protocol import git_revision as _git_rev
@@ -1209,23 +1253,11 @@ def run_in_mem_eval(model, args, step, device, results_dir=None, logger=print):
             #   曲线全散在备份里)。flush 后曲线连续累积。
             f_sum.flush()
             f_raw.flush()
-            for i in range(n):
-                _s = _src[i] if i < len(_src) else {}
-                w_raw.writerow([exp, step, name, i,
-                                _s.get("image_path", ""),
-                                _s.get("character", ""),
-                                _s.get("script", ""),
-                                _s.get("calligrapher", ""),
-                                f"{mses[i]:.5f}", f"{ssims[i]:.4f}",
-                                (f"{_lp[i]:.5f}" if _lp else ""),
-                                (f"{_inks[i]:.5f}" if _inks else ""),
-                                (f"{_inkious[i]:.5f}" if _inkious else ""),
-                                (f"{_skels[i]:.5f}" if _skels else ""),
-                                (f"{_frags[i]:.4f}" if _frags else ""),
-                                (f"{_holes_p[i]:.4f}" if _holes_p else ""),
-                                (f"{_holes_g[i]:.4f}" if _holes_g else ""),
-                                (f"{_sir[i]:.5f}" if _sir else ""),
-                                (f"{_gtm[i]:.5f}" if _gtm else "")])
+            # ★ 2026-10-13 [审查 §4.1]: 逐样本行写入抽成 _write_sample_rows ✓
+            #   （审查"拆开采样、指标、保存和完成判定" —— 这是"保存"那一步 ✓）。
+            #   原为内联 17 行、列顺序与 _RAW_HDR 靠人眼对齐 ✗（本文件历史上正是
+            #   "漏改 header -> 列错位且不报错" 的重灾区 ✗）；现在两者同处一地 ✓。
+            _write_sample_rows(w_raw, exp, step, name, n, _mt, _src, _lp)
             f_sum.flush()
             f_raw.flush()
             # ★ 2026-10-03: 补齐数值字段 —— 早停 (iou_lpips) 需要 lpips / skel_iou,
