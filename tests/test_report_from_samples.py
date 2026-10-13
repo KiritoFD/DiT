@@ -92,6 +92,10 @@ def test_end_to_end_writes_metrics_with_both_identities():
     csvp, gen_dir = _setup(tmp)
     out = os.path.join(tmp, "out")
     rc = rfs.main(["--eval-csv", csvp, "--gen-dir", gen_dir, "--out", out,
+                   # ⚠ 本测试的 fixture 把图直接放在 <gen>/<img_id>.png ⇒ **显式**声明模板 ✓
+                   #   （工具的默认模板已与 src/eval/artifacts.py 的 ArtifactWriter 对齐为
+                   #    samples/{img_id}.png ✓ —— 这正是"声明式、不猜"的代价与好处 ✓✓）
+                   "--gen-name-template", "{img_id}.png",
                    "--write-samples-jsonl"])
     assert rc == 0
     import json

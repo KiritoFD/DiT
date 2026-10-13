@@ -104,8 +104,9 @@ def main(argv=None):
     ap.add_argument("--pairs-csv", help="显式配对表（sample_id,generated_path,gt_path）✓ 与 ② 二选一")
     ap.add_argument("--eval-csv", help="评测集 CSV（含 img_id / image_path ✓）")
     ap.add_argument("--gen-dir", help="生成图目录（与 --gen-name-template 搭配 ✓）")
-    ap.add_argument("--gen-name-template", default="{img_id}.png",
-                    help="**声明式**生成文件名模板 ✓（如 '{img_id}.png'）；不做模糊匹配 ✗")
+    ap.add_argument("--gen-name-template", default="samples/{img_id}.png",
+                    help="声明式文件名模板; 默认与 src/eval/artifacts.py 的 ArtifactWriter "
+                         "布局一致(samples/<safe_name(sample_id)>.png); 刻意不做模糊匹配")
     ap.add_argument("--id-col", default="img_id", help="评测 CSV 里的样本 id 列（默认 img_id ✓）")
     ap.add_argument("--gt-col", default="image_path", help="评测 CSV 里的 GT 路径列（默认 image_path ✓）")
     ap.add_argument("--samples-jsonl", help="生成清单（可选 ✓）；给了就用它算 generation_id ✓")
@@ -133,9 +134,18 @@ def main(argv=None):
                             device=a.device, progress=True)
 
     # 生成身份: 有清单就按清单算 ✓; 否则由配对表**派生**一个最小清单并**明确标注** ✓
-    if a.samples_jsonl:
-        gs = read_samples_jsonl(a.samples_jsonl)
-        src = "samples_jsonl"
+    # ★ 2026-10-13: 自动发现 ArtifactWriter 落盘的 samples.jsonl ✓✓
+    #   （src/eval/artifacts.py 写图时**同步**记录身份 ⇒ 那份清单是"生成的副产品",
+    #    比事后从配对表推出来的权威 ✓ —— 有它就用它 ✓）
+    _auto = a.samples_jsonl
+    _why = "explicit"
+    if not _auto and a.gen_dir:
+        _cand = os.path.join(a.gen_dir, "samples.jsonl")
+        if os.path.isfile(_cand):
+            _auto, _why = _cand, "auto:<gen_dir>/samples.jsonl"
+    if _auto:
+        gs = read_samples_jsonl(_auto)
+        src = "samples_jsonl(%s)" % _why
     else:
         gs = [GenerationSample(sample_id=s.sample_id, writer_id=int(s.meta.get("calligrapher_id", -1) or -1),
                                script_id=int(s.meta.get("script_id", -1) or -1),
