@@ -27,6 +27,10 @@ sys.path.insert(0, _root)
 os.chdir(_root)
 sys.stdout.reconfigure(encoding="utf-8")
 
+# NOTE 2026-10-13 [审查 §4.1]: 指标聚合的唯一实现（本文件原有一份复制 ✗，已删除 ✓）。
+#   放在 sys.path 调整之后，保证直接运行本脚本时也能 import ✓。
+from src.eval.in_mem_eval import compute_set_metrics   # noqa: E402
+
 
 def _strip(sd):
     return {(k[len("_orig_mod."):] if k.startswith("_orig_mod.") else k): v
@@ -103,7 +107,7 @@ def main():
     # ── 模型/VAE 只建一次 (架构取自首个 ckpt args) ──────────────────────
     from src.eval.inference import (make_eval_cache, sample_latents,
                                     sample_latents_self_cond,
-                                    _mse, _ssim, build_diffusion)
+                                    build_diffusion)
     ck0 = torch.load(cks[0], map_location="cpu", weights_only=False, mmap=True)
     # ★★ [2026-09-22 bugfix] 原写法把 a 强制转成 **dict**，但下游
     #   build_model_from_args / apply_post_construction 都用  ——
@@ -348,41 +352,21 @@ def main():
                     _Img.fromarray((gt_np[i] * 255).astype(np.uint8)).save(
                         os.path.join(_sd, f"gt{i}.png"))
                 print(f"[batch] step{step} {name}: saved {n} samples -> {_sub}/", flush=True)
-            ssims, mses, lp_list = [], [], []
-            # ★ 新增墨迹域指标：全图 SSIM 被 ~90% 白底严重抬高
-            #   （实测「升」vs「陞」两个字完全不同，全图 SSIM 0.5745
-            #     而墨迹框 SSIM 只有 0.3161、骨架 IoU 只有 0.0211）
-            #   -> 这三个才是"字写得对不对"的真实反映
-            inks, inkious, skels = [], [], []
-            # frag_ratio = 断笔比（生成墨迹连通块数 / 真迹连通块数, 1 左右正常）。
-            # ★ 这是"骨架条件到底有没有被用上"的主判据之一 —— 之前只有 in_mem_eval
-            #   算它, 离线 batch_eval 没有 -> E0/E1/gate 这些历史 run 全都**没有 baseline**。
-            #   2026-09-24 补上, 以便回溯评旧 ckpt。
-            frags, holes_p, holes_g = [], [], []
-            try:
-                from src.eval.metrics_ink import ink_ssim as _ink_ssim, ink_iou as _ink_iou
-                from src.eval.metrics import (skel_iou as _skel_iou,
-                                              frag_ratio as _frag_ratio,
-                                              hole_ratio as _hole_ratio)
-                _has_ink = True
-            except Exception as _e:
-                print(f"[batch] ⚠ 墨迹指标不可用 ({_e})，只出旧指标")
-                _has_ink = False
-            for i in range(n):
-                mses.append(_mse(pred_np[i], gt_np[i]))
-                ssims.append(_ssim(pred_np[i], gt_np[i]))
-                if _has_ink:
-                    inks.append(_ink_ssim(pred_np[i], gt_np[i]))
-                    inkious.append(_ink_iou(pred_np[i], gt_np[i]))
-                    skels.append(_skel_iou(pred_np[i], gt_np[i], thresh=0.5))
-                    frags.append(_frag_ratio(pred_np[i], gt_np[i], thresh=0.5))
-                    holes_p.append(_hole_ratio(pred_np[i], thresh=0.5))
-                    holes_g.append(_hole_ratio(gt_np[i], thresh=0.5))
-                if lpips_fn is not None:
+            # NOTE 2026-10-13 [审查 §4.1]: 指标聚合改用**唯一实现** compute_set_metrics ✓
+            #   （原来这里是与 in_mem_eval 同期复制的一份 6 指标循环 ✗）。
+            #   ⚠ LPIPS 仍用本文件自己的 **alex** 主干（见上方 lpips_fn 构造）—— 与 in_mem_eval
+            #     的 **vgg** 不同，两者数值本就不可比 ✓，故保留原样、不统一 ✗（统一会改历史数字 ✗）。
+            _mt = compute_set_metrics(pred_np, gt_np, n, logger=print)
+            mses, ssims, _has_ink = _mt.mses, _mt.ssims, _mt.has_ink
+            inks, inkious, skels = _mt.inks, _mt.inkious, _mt.skels
+            frags, holes_p, holes_g = _mt.frags, _mt.holes_p, _mt.holes_g
+            lp_list = []
+            if lpips_fn is not None:
+                for i in range(n):
                     p = torch.from_numpy(pred_np[i].transpose(2, 0, 1)[None] * 2 - 1).to(dev)
                     g = torch.from_numpy(gt_np[i].transpose(2, 0, 1)[None] * 2 - 1).to(dev)
                     lp_list.append(float(lpips_fn(p, g).mean().item()))
-            ssim = np.array(ssims)
+            ssim = _mt.ssim_arr
             q10, q25, q50, q75, q90 = np.percentile(ssim, [10, 25, 50, 75, 90])
             iid_s = [m0 for m0, _, _ in S["meta"]]
             ch_s = [c for _, c, _ in S["meta"]]
