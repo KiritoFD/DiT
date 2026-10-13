@@ -457,6 +457,116 @@ def forward_with_cfg(cfg, x, t, y_callig, y_char, cfg_scale, g=None, cfg_glyph=1
     return out
 
 
+@dataclass(frozen=True)
+class TwoAxisCfg:
+    """`forward_with_2axis_cfg` 用到的**全部** `self.*`（2026-10-13 [审查 PR3] 第四步 ✓）。
+
+    审查: "只移动逻辑, 不移动权重注册位置" ✓ ⇒ 不注册模块 ⇒ **state_dict 键不变** ✓✓。
+    ⚠ `forward` 是**绑定方法** ✓；其余用 getattr 兜底 ✓（防惰性访问 ✗）。
+    """
+    forward: Any                # 原 self.forward（**绑定方法** ✓）
+    image_channels: Any
+    style_hier: Any
+    y_callig_embedder: Any
+
+    @classmethod
+    def from_model(cls, m):
+        return cls(
+                   forward=m.forward,
+                   image_channels=getattr(m, "image_channels", None),
+                   style_hier=getattr(m, "style_hier", None),
+                   y_callig_embedder=getattr(m, "y_callig_embedder", None),
+        )
+
+
+def forward_with_2axis_cfg(cfg, x, t, y_callig, y_char, cfg_callig, cfg_glyph, w_inter,
+                           g=None, y_script=None, y_callig_raw=None, y_pair=None):
+    """双轴 CFG 前向（**逐行等价**于 `DiT_2Cond.forward_with_2axis_cfg` ✓，[审查 PR3] 第四步 ✓）。
+
+    只把 `self.X` 换成 `cfg.X` ✓；**未改动任何数值逻辑、未新增/移动任何 nn.Module** ✓
+    ⇒ 由 eval + train 两个前向黄金 + `--cfg1` 共同裁决 ✓✓。
+    """
+    """双轴 CFG: 风格轴(书家) × 内容轴(骨架 g) 各自独立强度。
+
+    ★ 2026-09-17 修正。**旧实现是错的**（且零调用者，是死代码）:
+      它把 "glyph 轴" 定义在 **`y_char`**（字符 ID）上, 并且
+      `g4 = cat([g, g, g, g])` —— **g 在 4 个 pass 里完全相同**。
+      后果: ① 对 `no_char_cond=True` 的架构(内容来自 g), glyph 轴是 **no-op**;
+            ② g 在 `eps_cond − eps_uncond` 里**仍然完全抵消**,
+               所以 xattn / glyph_embedder 这类"只由 g 驱动"的通路对 CFG 贡献恒为 0。
+      现在 glyph 轴改为**变化 g 本身**（置零 = "无骨架"分支）。
+
+    4 个 pass 沿 batch 维拼成一次 forward:
+      1. full    : (y_callig, g)     -> eps_full     两个条件都有
+      2. style   : (y_callig, g=0)   -> eps_style    只有书家(风格), 无内容
+      3. content : (null,     g)     -> eps_content  只有骨架(内容), 无风格
+      4. uncond  : (null,     g=0)   -> eps_uncond   都没有
+
+    Möbius / Product-of-Experts 组合:
+      eps = eps_uncond
+          + cfg_glyph  * (eps_content - eps_uncond)                 内容轴
+          + cfg_callig * (eps_style   - eps_uncond)                 风格轴
+          + w_inter    * (eps_full - eps_content - eps_style + eps_uncond)  交互项
+
+    ⚠ **前提**: `g=0` 必须是模型训练时见过的条件 —— 即 `glyph_drop_prob > 0`。
+      该 drop 的实现是 `g = g * keep`（整张样本置零），注释里明确写着
+      "与 CFG 兼容: 丢弃时该样本等价于 uncond-g 分支"。
+      若 `glyph_drop_prob == 0`，content 轴同样**未训练**，本函数会给出
+      误导性结果（与 callig null 行是同一类问题）。
+    """
+    B = x.shape[0]
+    x4 = torch.cat([x, x, x, x], dim=0)
+    t4 = torch.cat([t, t, t, t], dim=0)
+
+    null_c = torch.full_like(y_callig, cfg.y_callig_embedder.num_classes)
+    yc4 = torch.cat([y_callig, y_callig, null_c, null_c], dim=0)
+    # char 通路保持不变（我们 no_char_cond=True，该值被 forward 忽略）
+    yg4 = torch.cat([y_char, y_char, y_char, y_char], dim=0)
+    # S2: 风格轴的两个新条件同样按 [real, real, null, null] 拼 4 份。
+    # 书体属于结构轴 -> 4 份都给真实值（与 g 同一处理）。
+    _null_callig = cfg.y_callig_embedder.num_classes
+    _null_pair = cfg.style_hier.num_pairs if cfg.style_hier is not None else 0
+    if y_script is not None:
+        ys4 = torch.cat([y_script] * 4, dim=0)
+    else:
+        ys4 = None
+    if y_callig_raw is not None:
+        _nr = torch.full_like(y_callig_raw, int(_null_callig))
+        ycr4 = torch.cat([y_callig_raw, y_callig_raw, _nr, _nr], dim=0)
+    else:
+        ycr4 = None
+    if y_pair is not None:
+        _np = torch.full_like(y_pair, int(_null_pair))
+        yp4 = torch.cat([y_pair, y_pair, _np, _np], dim=0)
+    else:
+        yp4 = None
+
+    if g is not None:
+        zero_g = torch.zeros_like(g)
+        g4 = torch.cat([g, zero_g, g, zero_g], dim=0)
+    else:
+        g4 = None
+
+    model_out = cfg.forward(x4, t4, yc4, yg4, g=g4,
+                             y_script=ys4, y_callig_raw=ycr4, y_pair=yp4)
+    if isinstance(model_out, tuple):
+        model_out = model_out[0]
+
+    eps4, rest4 = model_out[:, :cfg.image_channels], model_out[:, cfg.image_channels:]
+    eps_full, eps_style, eps_content, eps_uncond = torch.split(eps4, B, dim=0)
+
+    eps_guided = (
+        eps_uncond
+        + cfg_glyph * (eps_content - eps_uncond)
+        + cfg_callig * (eps_style - eps_uncond)
+        + w_inter * (eps_full - eps_content - eps_style + eps_uncond)
+    )
+
+    rest = rest4[:B]
+    out = torch.cat([eps_guided, rest], dim=1)
+    return out
+
+
 class DiT_2Cond(nn.Module):
     """
     Diffusion model with a Transformer backbone conditioned on 2 discrete labels:
@@ -2219,85 +2329,14 @@ class DiT_2Cond(nn.Module):
     def forward_with_2axis_cfg(self, x, t, y_callig, y_char,
                                cfg_callig=2.0, cfg_glyph=4.0, w_inter=0.0, g=None,
                                y_script=None, y_callig_raw=None, y_pair=None):
-        """双轴 CFG: 风格轴(书家) × 内容轴(骨架 g) 各自独立强度。
+        """薄封装 ✓ —— 实现已抽成模块级 `forward_with_2axis_cfg`（[审查 PR3] 第四步 ✓）。
 
-        ★ 2026-09-17 修正。**旧实现是错的**（且零调用者，是死代码）:
-          它把 "glyph 轴" 定义在 **`y_char`**（字符 ID）上, 并且
-          `g4 = cat([g, g, g, g])` —— **g 在 4 个 pass 里完全相同**。
-          后果: ① 对 `no_char_cond=True` 的架构(内容来自 g), glyph 轴是 **no-op**;
-                ② g 在 `eps_cond − eps_uncond` 里**仍然完全抵消**,
-                   所以 xattn / glyph_embedder 这类"只由 g 驱动"的通路对 CFG 贡献恒为 0。
-          现在 glyph 轴改为**变化 g 本身**（置零 = "无骨架"分支）。
-
-        4 个 pass 沿 batch 维拼成一次 forward:
-          1. full    : (y_callig, g)     -> eps_full     两个条件都有
-          2. style   : (y_callig, g=0)   -> eps_style    只有书家(风格), 无内容
-          3. content : (null,     g)     -> eps_content  只有骨架(内容), 无风格
-          4. uncond  : (null,     g=0)   -> eps_uncond   都没有
-
-        Möbius / Product-of-Experts 组合:
-          eps = eps_uncond
-              + cfg_glyph  * (eps_content - eps_uncond)                 内容轴
-              + cfg_callig * (eps_style   - eps_uncond)                 风格轴
-              + w_inter    * (eps_full - eps_content - eps_style + eps_uncond)  交互项
-
-        ⚠ **前提**: `g=0` 必须是模型训练时见过的条件 —— 即 `glyph_drop_prob > 0`。
-          该 drop 的实现是 `g = g * keep`（整张样本置零），注释里明确写着
-          "与 CFG 兼容: 丢弃时该样本等价于 uncond-g 分支"。
-          若 `glyph_drop_prob == 0`，content 轴同样**未训练**，本函数会给出
-          误导性结果（与 callig null 行是同一类问题）。
+        保留本方法只为兼容既有调用 ✓（离线扫描 cfg_callig/cfg_glyph 的工具按原样调用 ✓）。
+        等价性由 eval + train 两个前向黄金 + `--cfg1` 共同裁决 ✓✓。
         """
-        B = x.shape[0]
-        x4 = torch.cat([x, x, x, x], dim=0)
-        t4 = torch.cat([t, t, t, t], dim=0)
-
-        null_c = torch.full_like(y_callig, self.y_callig_embedder.num_classes)
-        yc4 = torch.cat([y_callig, y_callig, null_c, null_c], dim=0)
-        # char 通路保持不变（我们 no_char_cond=True，该值被 forward 忽略）
-        yg4 = torch.cat([y_char, y_char, y_char, y_char], dim=0)
-        # S2: 风格轴的两个新条件同样按 [real, real, null, null] 拼 4 份。
-        # 书体属于结构轴 -> 4 份都给真实值（与 g 同一处理）。
-        _null_callig = self.y_callig_embedder.num_classes
-        _null_pair = self.style_hier.num_pairs if self.style_hier is not None else 0
-        if y_script is not None:
-            ys4 = torch.cat([y_script] * 4, dim=0)
-        else:
-            ys4 = None
-        if y_callig_raw is not None:
-            _nr = torch.full_like(y_callig_raw, int(_null_callig))
-            ycr4 = torch.cat([y_callig_raw, y_callig_raw, _nr, _nr], dim=0)
-        else:
-            ycr4 = None
-        if y_pair is not None:
-            _np = torch.full_like(y_pair, int(_null_pair))
-            yp4 = torch.cat([y_pair, y_pair, _np, _np], dim=0)
-        else:
-            yp4 = None
-
-        if g is not None:
-            zero_g = torch.zeros_like(g)
-            g4 = torch.cat([g, zero_g, g, zero_g], dim=0)
-        else:
-            g4 = None
-
-        model_out = self.forward(x4, t4, yc4, yg4, g=g4,
-                                 y_script=ys4, y_callig_raw=ycr4, y_pair=yp4)
-        if isinstance(model_out, tuple):
-            model_out = model_out[0]
-
-        eps4, rest4 = model_out[:, :self.image_channels], model_out[:, self.image_channels:]
-        eps_full, eps_style, eps_content, eps_uncond = torch.split(eps4, B, dim=0)
-
-        eps_guided = (
-            eps_uncond
-            + cfg_glyph * (eps_content - eps_uncond)
-            + cfg_callig * (eps_style - eps_uncond)
-            + w_inter * (eps_full - eps_content - eps_style + eps_uncond)
-        )
-
-        rest = rest4[:B]
-        out = torch.cat([eps_guided, rest], dim=1)
-        return out
+        return forward_with_2axis_cfg(TwoAxisCfg.from_model(self), x, t, y_callig, y_char,
+                                      cfg_callig, cfg_glyph, w_inter, g=g, y_script=y_script,
+                                      y_callig_raw=y_callig_raw, y_pair=y_pair)
 
 
 
