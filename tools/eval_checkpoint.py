@@ -18,6 +18,7 @@
 from __future__ import annotations
 
 import argparse
+import os
 import subprocess
 import sys
 from pathlib import Path
@@ -26,6 +27,42 @@ import torch
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
+
+
+from src.eval.protocol import (EvalRequest, git_revision, is_complete,   # noqa: E402
+                               sha256_file, sha256_tree, write_done, write_protocol)
+
+VAE_EXTS = ("config.json", ".safetensors", ".bin", ".txt", ".model")   # HF VAE 目录 ✓
+
+
+def build_request(ckpt_path, vae_path, args, *, sampler="heun", steps=50, cfg=1.0,
+                  gamma=0.0, seed=0, ema=True, sets_spec=""):
+    """从 ckpt + 参数构造**冻结协议**（审查 §4.3 ✓）。
+
+    · VAE 缩放走 src/utils/vae_scaling 的**唯一真源** ✓ —— 未登记 VAE 会**报错**
+      (fail-closed ✓), 绝不用 SD 默认值冒充 ✗。
+    · 身份 = ckpt/VAE 的 sha256 + 采样协议 + 代码版本 ⇒ 任一变化都会得到**新 eval_id** ✓✓。
+    """
+    from types import SimpleNamespace
+    from src.utils.vae_scaling import resolve_vae_scaling
+    # ⚠ 顺序很重要 ✓: 先确认目录存在（避免 sha256_tree 抛出"目录不存在"掩盖真正的问题 ✗）
+    if not os.path.isdir(vae_path):
+        raise ValueError("[eval_checkpoint] --vae-path 不是目录: %r ✗（显式指定就必须存在 ✓）" % vae_path)
+    _a = SimpleNamespace(vae_scaling_factor=args.get("vae_scaling_factor"),
+                         vae_shift_factor=args.get("vae_shift_factor"), vae_path=vae_path)
+    # 未登记 **且** 没有显式 sf ⇒ 抛 ValueError（fail-closed ✓）;
+    # 有显式 sf 则用它 ✓（这是被认可的逃生路径 ✓ —— ckpt 自带 vae_scaling_factor 的情形）
+    sf, sh = resolve_vae_scaling(_a, vae_path)
+    return EvalRequest(
+        checkpoint_sha256=sha256_file(ckpt_path),
+        vae_sha256=sha256_tree(vae_path, exts=VAE_EXTS),
+        vae_scale=float(sf), vae_shift=float(sh), sampler=str(sampler),
+        num_steps=int(steps), cfg=float(cfg), gamma=float(gamma), seed=int(seed),
+        ema=bool(ema), code_revision=git_revision(), sets_spec=str(sets_spec or ""),
+        extra={"content_cond": args.get("content_cond"),
+               "no_char_cond": bool(args.get("no_char_cond", False)),
+               "std_soft_cond": bool(args.get("std_soft_cond", False))})
+
 
 
 def ckpt_args(path):
@@ -76,6 +113,21 @@ def main():
     print("[eval_checkpoint] 协议      = gamma=%s steps=%s cfg=%s batch=%s sampler=heun(固定) 权重=ema"
           % (a.gamma, a.steps, a.cfg, a.batch))
 
+    # ★ 2026-10-13 [审查 §4.3] **评测身份**: 先写不可变协议(protocol.json + eval_id) ✓
+    req = build_request(a.ckpt, a.vae_path, args, sampler="heun", steps=a.steps,
+                        cfg=a.cfg, gamma=a.gamma,
+                        seed=int(args.get("global_seed", 0) or 0), ema=True,
+                        sets_spec=str(a.sets or ""))
+    eid = req.eval_id()
+    Path(a.out).mkdir(parents=True, exist_ok=True)
+    write_protocol(req, Path(a.out))
+    _ok, _why = is_complete(req, Path(a.out))
+    print("[eval_checkpoint] eval_id    = %s" % eid)
+    print("[eval_checkpoint] 协议已写入 = %s" % (Path(a.out) / "protocol.json"))
+    if _ok:
+        print("[eval_checkpoint] ⚠ 该 eval_id **已完成**（%s）—— 要重跑请换 --out ✓" % _why)
+
+
     tool = ROOT / ("tools/eval_std_soft_checkpoint.py" if branch == "std"
                    else "tools/eval_table_checkpoint.py")
     if not tool.is_file():
@@ -89,7 +141,13 @@ def main():
     if a.preflight_only:
         cmd += ["--preflight-only"]
     print("[eval_checkpoint] 调用      = %s" % " ".join(cmd[1:]))
-    sys.exit(subprocess.call(cmd))
+    rc = subprocess.call(cmd)
+    if rc == 0:
+        # ★ 只有**跑完**才写 DONE ✓（审查: "只有在所有样本、评分文件和哈希校验成功之后才写入" ✓✓）
+        n_png = len(list(Path(a.out).rglob("*.png")))
+        write_done(req, Path(a.out), n_samples=n_png)
+        print("[eval_checkpoint] ✓ 完成: eval_id=%s, 样本 %d 张, DONE.json 已写 ✓" % (eid[:12], n_png))
+    sys.exit(rc)
 
 
 if __name__ == "__main__":
