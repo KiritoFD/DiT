@@ -84,7 +84,8 @@ from src.utils.channel_expand import (drop_shape_mismatched,
                                       materialize_lazy_params)
 from src.model.dit import MultiStyleEmbedder
 from src.train.ckpt import save_checkpoint, prune_checkpoints, drain_ckpt
-from src.eval.in_mem_eval import maybe_run_in_training, run_in_mem_eval
+from src.eval.in_mem_eval import run_in_mem_eval
+from src.train.eval_callback import maybe_run_in_training   # 审查: 训练器决定何时评测 ✓
 
 # ── in-process GPU eval 路径已删除（2026-09-17）────────────────────────────
 # 它由 `--auto-eval` 门控，而**全仓 0 个配置把它设为 true**（70 个显式 false）。
