@@ -145,6 +145,9 @@ def main() -> int:
     ap.add_argument("--out", default="assets/style_enc_v85.pt")
     ap.add_argument("--steps", type=int, default=6000)
     ap.add_argument("--batch", type=int, default=256)
+    ap.add_argument("--neg-per-anchor", type=int, default=1,
+                    help="[v3] 每个 anchor 用几个**内容匹配**难负（默认 1 = 与 v2 逐位一致 ✓）。\n"
+                    "方案的核心是内容匹配难负 ⇒ 只 1 个时对比项会很快平台 ✗（实测 ✓）")
     ap.add_argument("--ch", type=int, default=96)
     ap.add_argument("--d", type=int, default=256)
     ap.add_argument("--lr", type=float, default=8e-4)
@@ -239,12 +242,24 @@ def main() -> int:
         sim_p = (zb @ zp.t()) / args.tau
         l_pos = -F.log_softmax(sim_p, dim=1).diagonal().mean()
         # HardNCE: 难负 = 同字异书家 ✓（InfoNCE 写全: logsumexp − pos/τ ✓）
-        nj = np.array([NEG[i][rng2.randint(len(NEG[i]))] for i in idx])
-        zn = model.emb(X[nj])
-        sim_n = (zb @ zn.t()) / args.tau
+        # ★ v3: 支持**每个 anchor 用多个**难负 ✓（默认 1 ⇒ 与 v2 **逐位一致** ✓，不静默改 ✓）
+        #   为什么: 方案的核心是"**内容匹配**的难负样本" ✓；只用 1 个时 2.9M 编码器
+        #   750 步就把 CE 压到 0.002 而**对比项随即平台** ✗（实测 ✓）⇒ 加负样本数最直接 ✓。
+        kn = int(getattr(args, "neg_per_anchor", 1) or 1)
         pos_ii = (zb * zp).sum(-1, keepdim=True) / args.tau
-        l_hard = (torch.logsumexp(torch.cat([pos_ii, sim_n], 1), dim=1)
-                  - pos_ii.squeeze(1)).mean()
+        if kn <= 1:
+            nj = np.array([NEG[i][rng2.randint(len(NEG[i]))] for i in idx])
+            zn = model.emb(X[nj])
+            sim_n = (zb @ zn.t()) / args.tau
+            l_hard = (torch.logsumexp(torch.cat([pos_ii, sim_n], 1), dim=1)
+                      - pos_ii.squeeze(1)).mean()
+        else:
+            nj = np.stack([np.array([NEG[i][rng2.randint(len(NEG[i]))] for _ in range(kn)])
+                           for i in idx])                       # (n, kn) ✓
+            zn = model.emb(X[nj.reshape(-1)])                   # (n*kn, 256) ✓
+            sim_n = torch.einsum("nd,nkd->nk", zb, zn.view(len(idx), kn, -1)) / args.tau
+            l_hard = (torch.logsumexp(torch.cat([pos_ii, sim_n], 1), dim=1)
+                      - pos_ii.squeeze(1)).mean()
         loss = l_ce + args.w_supcon * l_pos + args.w_hard * l_hard
         opt.zero_grad(set_to_none=True)
         loss.backward()
