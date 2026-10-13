@@ -202,3 +202,36 @@ if __name__ == "__main__":
             print("  ✗ %s -> %s: %s" % (fn.__name__, type(e).__name__, str(e)[:110]))
     print("\n  %d/%d 通过" % (len(fns) - bad, len(fns)))
     sys.exit(1 if bad else 0)
+
+# ─────────────────────────── ⑨ ★ skel_iou 的**设计语义**必须被钉住 ✓✓ ───────────────────────────
+def test_skel_iou_semantics_are_pinned_by_design():
+    """skel_iou 是**位置敏感**指标（不是掩码 IoU ✓）—— 用实测把语义钉死 ✓✓
+
+    背景（2026-10-13, 训练报告引出）:
+      std run 在 80k 步时 ink_iou=0.2459 而 **skel_iou=0.0155** ✗ —— 一度怀疑指标坏了 ✓。
+      实测证明**没坏**, 而是设计如此:
+        · GT vs GT            = 1.0000 ✓
+        · GT vs 白图           = 0.0000 ✓
+        · GT vs 平移 1px       = **0.3115**（而 ink_iou = 0.8261）⇒ 对 1px 错位极敏感 ✓
+        · 细笔画 vs 粗笔画      = 0.7347 **>** ink_iou 0.3651 ⇒ 对线宽鲁棒 ✓
+      这与 metrics.py 里 frag_ratio 的文档一致: "骨架 IoU 对 1 像素的错位就掉到接近 0" ✓
+
+    ⚠ 本测试的作用是**防止误修**: 若有人把 skel_iou "调高"（例如改成掩码 IoU ✗）,
+      下面的两条不等式会立刻失败 ✓✓ —— 它的低值在低质量阶段是**预期行为** ✓。
+    """
+    from src.eval.metrics import skel_iou as _skel
+    from src.eval.metrics_ink import ink_iou as _ink
+    g = glyph()
+    assert abs(_skel(g, g) - 1.0) < 1e-6, "自比必须满分 ✓"
+    assert _skel(g, white()) < 1e-9, "对白图必须为 0 ✓"
+    # ① 位置敏感: 1px 错位把骨架 IoU 打到很低（而墨迹 IoU 仍高 ✓）
+    s1, i1 = _skel(g, np.roll(g, 1, axis=1)), _ink(g, np.roll(g, 1, axis=1))
+    assert s1 < 0.5 < i1, f"骨架口径应**远低于**墨迹口径（位置敏感 ✓）: skel={s1:.4f} ink={i1:.4f}"
+    assert s1 < i1 / 2.0, "1px 错位下 skel_iou 应不到 ink_iou 的一半 ✓（设计如此 ✗ 不是 bug ✓）"
+    # ② 线宽鲁棒: 粗细不同时骨架口径**高于**墨迹口径（两者互补 ✓）
+    thin = glyph(thick=1)
+    st, it = _skel(g, thin), _ink(g, thin)
+    assert st > it, f"线宽变化时 skel_iou 应**高于** ink_iou（互补 ✓）: skel={st:.4f} ink={it:.4f}"
+    # ③ 低质量阶段 skel_iou 可以接近 0（这是**预期**, 不该被当成指标坏 ✗）
+    noisy = np.clip(g + np.random.RandomState(0).normal(0, 0.05, g.shape).astype(np.float32), 0, 1)
+    assert _skel(g, noisy) > 0.9, "轻微噪声不该击穿骨架口径 ✓"
