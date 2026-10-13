@@ -21,6 +21,7 @@ in_mem_eval.py — 真·in-mem eval: 训练进程内, 暂停 stepping, 同卡采
 """
 import csv
 import glob
+from dataclasses import dataclass
 import os
 import re
 import time
@@ -681,6 +682,82 @@ def _step_ssim_txt(results_dir, step, set_name):
     return "-"
 
 
+@dataclass(frozen=True)
+class EvalSetup:
+    """run_in_mem_eval 的**配置解析结果**（2026-10-13 [审查 §4.1] 抽出的纯 setup 块 ✓）。
+
+    抽出目的: 审查要求"拆开采样、指标、保存和完成判定" ✓ —— 这是第一步: 把"从 args 解析出
+    本次评测的全部配置"独立成**显式输入输出**的一步 ✓（原来是 439 行函数开头 45 行的隐式赋值 ✗）。
+    """
+    results_dir: str
+    img_root: object
+    shards: str
+    cfg_scale: float
+    ddim_steps: int
+    dit_batch: int
+    vae_batch: int
+    sf: float
+    sf_shift: float
+    calli_noise: bool
+    use_self_cond: bool
+    blend_alpha: float
+    diffusion: object
+    sets: list
+
+
+def resolve_eval_setup(args, model, results_dir, logger=print):
+    """解析本次评测的配置 ✓；sets 为空时按**原语义**打印并返回 None（调用方 return {} ✓）。
+
+    ⚠ 与原文**逐行等价**（只把结果装进 EvalSetup 而不是散落的局部变量 ✓）:
+      · std-soft 开关与模型不一致 -> raise ✓
+      · std_soft_cond 需要 std_soft_root -> raise ✓（且 shards 置空 ✓）
+      · VAE 缩放走 resolve_vae_scaling **唯一来源** ✓
+      · diffusion 用 build_diffusion + flow_kwargs_from ✓（原为模块全局 _DIFF, 现由调用方赋值 ✓）
+    """
+    import os as _os
+    from src.utils.vae_scaling import resolve_vae_scaling
+    from src.loss import flow_kwargs_from
+    results_dir = str(results_dir or getattr(args, "results_dir", "") or ".")
+    _os.makedirs(results_dir, exist_ok=True)
+    if bool(getattr(args, "std_soft_cond", False)) != model_uses_std_soft(model):
+        raise ValueError("std-soft flag mismatch between eval args and reconstructed model")
+    img_root = None
+    shards = (getattr(args, "eval_skel_latent_shards_dir", "") or ""
+              or getattr(args, "skel_latent_shards_dir", "") or "")
+    if bool(getattr(args, "std_soft_cond", False)):
+        if not str(getattr(args, "std_soft_root", "") or "").strip():
+            raise ValueError("std_soft_cond evaluation requires std_soft_root")
+        shards = ""
+    cfg_scale = float(getattr(args, "eval_cfg", 0.8))
+    ddim_steps = int(getattr(args, "eval_steps", 50))
+    dit_batch = int(getattr(args, "in_mem_eval_batch", 16))
+    vae_batch = int(getattr(args, "in_mem_eval_vae_batch", 16))
+    sf, _sf_shift = resolve_vae_scaling(args)
+    _calli_noise = bool(getattr(args, "calli_decode_noise", False))
+    use_self_cond = bool(getattr(args, "eval_self_cond", False))
+    blend_alpha = float(getattr(args, "eval_blend_alpha", 0.0))
+    _DIFF_LOCAL = build_diffusion(ddim_steps, str(getattr(args, "diffusion_type", "flow")),
+                                  flow_kwargs=flow_kwargs_from(args))
+    logger(f"[in-mem-eval] sampler={_DIFF_LOCAL.describe() if hasattr(_DIFF_LOCAL, 'describe') else type(_DIFF_LOCAL).__name__} "
+           f"cfg={cfg_scale} std_soft={bool(getattr(args, 'std_soft_cond', False))}")
+    sets = []
+    for _spec in str(getattr(args, "in_mem_eval_sets", "") or "").split(","):
+        _spec = _spec.strip()
+        if not _spec:
+            continue
+        _p = _spec.split(":")
+        sets.append((_p[0], _p[1] if len(_p) > 1 and _p[1] else getattr(args, "eval_csv", ""),
+                     int(_p[2]) if len(_p) > 2 and _p[2] else 0))
+    if not sets:
+        logger("[in-mem-eval] in_mem_eval_sets 为空 -> 跳过评测")
+        return None
+    return EvalSetup(results_dir=results_dir, img_root=img_root, shards=shards, cfg_scale=cfg_scale,
+                     ddim_steps=ddim_steps, dit_batch=dit_batch, vae_batch=vae_batch, sf=sf,
+                     sf_shift=_sf_shift, calli_noise=_calli_noise, use_self_cond=use_self_cond,
+                     blend_alpha=blend_alpha, diffusion=_DIFF_LOCAL, sets=sets)
+
+
+
 def run_in_mem_eval(model, args, step, device, results_dir=None, logger=print):
     """在训/独立评测核心: 按 `--in-mem-eval-sets` 逐集采样并评指标。
 
@@ -696,51 +773,17 @@ def run_in_mem_eval(model, args, step, device, results_dir=None, logger=print):
                      n, nn_ssim, nn_mean, tgt_spec, cal_enrich}}
     """
     global _DIFF
-    # 注: _DIFF 是**每次调用重建**的（不是缓存）——2026-10-12 审计确认无脏缓存问题, 保留原语义。
-    results_dir = str(results_dir or getattr(args, "results_dir", "") or ".")
-    os.makedirs(results_dir, exist_ok=True)
-    if bool(getattr(args, "std_soft_cond", False)) != model_uses_std_soft(model):
-        raise ValueError("std-soft flag mismatch between eval args and reconstructed model")
-
-    # ── 采样参数 (全部来自 args, 缺省保守值) ──
-    img_root = None                       # csv image_path 已含完整相对路径
-    shards = (getattr(args, "eval_skel_latent_shards_dir", "") or ""
-              or getattr(args, "skel_latent_shards_dir", "") or "")
-    if bool(getattr(args, "std_soft_cond", False)):
-        if not str(getattr(args, "std_soft_root", "") or "").strip():
-            raise ValueError("std_soft_cond evaluation requires std_soft_root")
-        shards = ""
-    cfg_scale = float(getattr(args, "eval_cfg", 0.8))
-    ddim_steps = int(getattr(args, "eval_steps", 50))
-    dit_batch = int(getattr(args, "in_mem_eval_batch", 16))
-    vae_batch = int(getattr(args, "in_mem_eval_vae_batch", 16))
-    from src.utils.vae_scaling import resolve_vae_scaling
-    sf, _sf_shift = resolve_vae_scaling(args)       # ★ 唯一来源（原为硬编码 0.18215 兜底）
-    # ★ 2026-10-09: Calli-VAE 的 decoder 需要 sample/sf 而非 mode。DiT 输出 ≈ mode*sf,
-    #   而生成时拿不到 encoder logvar -> 用 predict_std 预测噪声补回。
-    #   详见 src/utils/calli_decode_noise.py (拟合 / 自检 / 上限分析)。
-    _calli_noise = bool(getattr(args, "calli_decode_noise", False))
-    use_self_cond = bool(getattr(args, "eval_self_cond", False))
-    blend_alpha = float(getattr(args, "eval_blend_alpha", 0.0))
-    from src.loss import flow_kwargs_from
-    _DIFF = build_diffusion(ddim_steps, str(getattr(args, "diffusion_type", "flow")),
-                            flow_kwargs=flow_kwargs_from(args))
-    logger(f"[in-mem-eval] sampler={_DIFF.describe() if hasattr(_DIFF, 'describe') else type(_DIFF).__name__} "
-           f"cfg={cfg_scale} std_soft={bool(getattr(args, 'std_soft_cond', False))}")
-
-    # ── 解析评测集: "name:csv:n,name:csv:n" ──
-    sets = []
-    for _spec in str(getattr(args, "in_mem_eval_sets", "") or "").split(","):
-        _spec = _spec.strip()
-        if not _spec:
-            continue
-        _p = _spec.split(":")
-        sets.append((_p[0],
-                     _p[1] if len(_p) > 1 and _p[1] else getattr(args, "eval_csv", ""),
-                     int(_p[2]) if len(_p) > 2 and _p[2] else 0))
-    if not sets:
-        logger("[in-mem-eval] in_mem_eval_sets 为空 -> 跳过评测")
+    # ★ 2026-10-13 [审查 §4.1]: 配置解析已抽成 resolve_eval_setup -> EvalSetup ✓（显式输入输出 ✓）
+    _st = resolve_eval_setup(args, model, results_dir, logger)
+    if _st is None:
         return {}
+    _DIFF = _st.diffusion
+    results_dir, img_root, shards = _st.results_dir, _st.img_root, _st.shards
+    cfg_scale, ddim_steps = _st.cfg_scale, _st.ddim_steps
+    dit_batch, vae_batch = _st.dit_batch, _st.vae_batch
+    sf, _sf_shift = _st.sf, _st.sf_shift
+    _calli_noise, use_self_cond = _st.calli_noise, _st.use_self_cond
+    blend_alpha, sets = _st.blend_alpha, _st.sets
 
     sum_path = os.path.join(results_dir, "eval_stdskel_summary.csv")
     raw_path = os.path.join(results_dir, "eval_stdskel_batch.csv")
