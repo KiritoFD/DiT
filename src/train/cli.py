@@ -1060,6 +1060,10 @@ def build_parser(argv=None):
                              "pause stepping, sample with the resident EMA model on the same GPU, "
                              "decode + compute SSIM/MSE in-memory, append eval_stdskel_*.csv "
                              "(batch_eval-compatible), then resume. No daemon, no PNGs, no ckpt reload.")
+    # ★ 2026-10-13 [审查 §4.1]: 训练内 poster 是否自动重画 —— **默认 True = 原行为** ✓
+    parser.add_argument("--in-mem-eval-poster", type=_str_to_bool, default=True,
+                        dest="in_mem_eval_poster",
+                        help="训练内评测后自动重画 poster（默认 True ✓; 设 0 可省时间）")
     parser.add_argument("--eval-mode", type=str, default="inline", dest="eval_mode",
                         choices=["inline", "deferred"],
                         help="**inline**: 训练中按 eval 周期就地评测（默认，现状）。\n"

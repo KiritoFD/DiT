@@ -1207,14 +1207,18 @@ def run_in_mem_eval(model, args, step, device, results_dir=None, logger=print):
                    f"{_lp_txt}{_ink_txt}{_frag_txt}{_hole_txt}{_si_txt}{_scn_txt} "
                    f"sample={t_s:.0f}s total={time.time()-t0:.0f}s")
             # 自动 poster: 全量重画该 set 所有 step (秒级, 覆盖旧文件)
-            try:
-                _p = render_poster(results_dir, name,
-                                   train_csv=getattr(args, "data_csv", None),
-                                   eval_csv=csvp, n_eval=n)
-                if _p:
-                    logger(f"[in-mem-eval] poster updated: {_p}")
-            except Exception as _pe:
-                logger(f"[in-mem-eval] poster render failed: {_pe!r}")
+            # ★ 2026-10-13 [审查 §4.1]: 训练内 poster 变为**可控**, 默认 True ⇒ **零行为变更** ✓。
+            #   实测成本很低(日志: 同字最近邻 20 列 16 线程 0.8s ✓), 且产物是人工看图的主入口
+            #   (eval200fix_struct.png ~20MB ✓) ⇒ 不默认关闭 ✗; 配置里 in_mem_eval_poster=false 可省 ✓。
+            if getattr(args, "in_mem_eval_poster", True):
+                try:
+                    _p = render_poster(results_dir, name,
+                                       train_csv=getattr(args, "data_csv", None),
+                                       eval_csv=csvp, n_eval=n)
+                    if _p:
+                        logger(f"[in-mem-eval] poster updated: {_p}")
+                except Exception as _pe:
+                    logger(f"[in-mem-eval] poster render failed: {_pe!r}")
     finally:
         f_sum.close()
         f_raw.close()
