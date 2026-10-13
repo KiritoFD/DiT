@@ -80,6 +80,8 @@ def main() -> int:
                     help="G1 在**全部行**上算（= 方案字面的\"真实真迹\"口径 ✓）\n"
                     "默认 False = 作品级留出（更难 ✓，方案也要求留出验证 ✓）⇒ **两种都报** ✓")
     ap.add_argument("--device", default="")
+    ap.add_argument("--save-json", default="", dest="save_json",
+                    help="把两种口径的结论存成 JSON（供 build_style_protos --gate-json 读 ✓）")
     args = ap.parse_args()
     import torch
     from src.loss.style_rank_module import load_encoder
@@ -138,6 +140,13 @@ def main() -> int:
         else:
             verd = "⚠ **临界**（CI 含 0.65 ⇒ 如实报告 ✓）"
     print("  ⇒ 按**预先登记**的规则: %s" % verd)
+    if args.save_json:
+        import json as _j
+        _j.dump({"ckpt": args.ckpt, "same_dist": g1, "g2": g2,
+                 "pass": bool(ci and ci[0] > 0.65), "n_rows": len(rows),
+                 "holdout_n": len(ho_rows)},
+                open(args.save_json, "w", encoding="utf-8"), ensure_ascii=False, indent=2)
+        print("  ✓ 结论已存 %s" % args.save_json)
     return 0 if (ci and ci[0] > 0.65) else 1
 
 

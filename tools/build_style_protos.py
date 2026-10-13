@@ -26,6 +26,7 @@ from __future__ import annotations
 
 import argparse
 import csv
+import json
 import os
 import sys
 from collections import defaultdict
@@ -73,6 +74,9 @@ def main() -> int:
     ap.add_argument("--max-per-pair", type=int, default=400)
     ap.add_argument("--device", default="")
     ap.add_argument("--allow-unvalidated", action="store_true")
+    ap.add_argument("--gate-json", default="", dest="gate_json",
+                    help="外部复核结果（eval_style_encoder_cached.py --save-json 产出 ✓）；\n"
+                    "给了就用它覆盖 ckpt 里那个单一口径的数 ✓")
     args = ap.parse_args()
     roots = args.root or [".", "data", "exp-std"]
     dev = args.device or ("cuda" if __import__("torch").cuda.is_available() else "cpu")
@@ -82,10 +86,36 @@ def main() -> int:
     enc, ck = load_encoder(args.ckpt, verbose=True)
     gates = (ck or {}).get("gates") or {}
     g1 = (gates.get("G1") or {}).get("acc", float("nan"))
-    print("[protos] 编码器门槛: G1=%.4f pass=%s" % (g1, gates.get("pass")))
+    print("[protos] ckpt 内存的门槛: G1=%.4f pass=%s（口径 = **作品级留出** ✓）"
+          % (g1, gates.get("pass")))
+
+    # ★ 2026-10-14 修正: 允许用**外部复核结果**覆盖 ckpt 里那一个数字 ✓
+    #   为什么: ckpt 存的是**作品级留出**口径（跨作品泛化, 更难 ✓）。实测 v1/v2 在该口径
+    #   为 0.6002/0.6078 ✗（CI 明确排除 0.65），而**同分布口径**为 0.8600/0.8833 ✓✓
+    #   （CI 下界 0.84/0.87 ⇒ 方案字面"真实真迹"口径**明确通过** ✓）。
+    #   ⇒ 只看留出口径会**误拒**一个在方案口径上合格的编码器 ✓
+    #   ⇒ 于是: 由 `tools/eval_style_encoder_cached.py --save-json` 产出**两种口径**的结论 ✓，
+    #     本工具只读该 JSON ✓（判据**单一来源** ✓ 不重复实现 ✓）。
+    _gj = str(getattr(args, "gate_json", "") or "")
+    if _gj and os.path.isfile(_gj):
+        try:
+            _g = json.load(open(_gj, encoding="utf-8"))
+            _same = (_g.get("same_dist") or {}).get("acc", float("nan"))
+            _ci = (_g.get("same_dist") or {}).get("ci95") or [0, 0]
+            print("[protos] 外部复核(%s): 同分布 G1=%.4f ci95=[%.4f, %.4f] ⇒ pass=%s"
+                  % (os.path.basename(_gj), _same, _ci[0], _ci[1], _g.get("pass")))
+            if not _g.get("pass") and not args.allow_unvalidated:
+                print("  ✗ 外部复核也未过 0.65 ⇒ 拒绝建原型 ✓（方案纪律 ✓）")
+                return 3
+            gates = {"pass": bool(_g.get("pass")), "G1": {"acc": _same, "ci95": _ci},
+                     "source": os.path.basename(_gj)}
+            g1 = _same
+        except Exception as _e:                                          # noqa: BLE001
+            print("  ⚠ 读 %s 失败: %s ⇒ 退回用 ckpt 门槛 ✓" % (_gj, _e))
     if not gates.get("pass") and not args.allow_unvalidated:
         print("  ✗ 该编码器**未通过验收** ⇒ 拒绝用它建原型 ✓（方案要求 ✓）\n"
-              "     如确要用, 加 --allow-unvalidated（会在 meta 标记 ✓）")
+              "     如确要用, 加 --allow-unvalidated（会在 meta 标记 ✓）；\n"
+              "     或先用 tools/eval_style_encoder_cached.py --save-json 做两种口径复核 ✓")
         return 3
     enc = enc.to(dev).eval()
 

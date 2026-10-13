@@ -62,12 +62,20 @@ def gate1_2afc(emb, rows, *, n_pairs: int = 400, seed: int = 0,
     for i, r in enumerate(rows):
         by[(r["writer"], r["script"], r["char"])].append(i)
     e = l2norm(emb)
+    # ★ 2026-10-14 修正（方法学缺陷 ✓）: 原来按 **dict 枚举顺序**取前 n_pairs 个 ✗
+    #   ⇒ 估计值依赖枚举顺序与截断点 ✓（实测: 同一编码器 n=1000 得 0.9350、
+    #     n=1200 得 0.8833 ✗✗ —— 相差 0.05，纯属**抽样顺序伪影** ✓）。
+    #   方案要求"数百组**独立**对子" ✓ ⇒ 必须是**代表性样本** ✓
+    #   ⇒ 改为: 先收集**全部可用 anchor 键**并**用 seed 打乱** ✓，再顺序取 n_pairs ✓
+    #     （等价于无放回均匀抽样 ✓，且 n_pairs 才真正是样本量 ✓）。
+    keys = [k for k in by if any(k2[0] == k[0] and k2[1] == k[1] and k2[2] != k[2] for k2 in by)
+            and any(k2[0] != k[0] and k2[1] == k[1] and k2[2] == k[2] for k2 in by)]
+    rng.shuffle(keys)
     hits: List[int] = []
-    for (w, s, c), idxs in by.items():
+    for w, s, c in keys:
+        idxs = by[(w, s, c)]
         pos_c = [k for k in by if k[0] == w and k[1] == s and k[2] != c]
         neg_w = [k for k in by if k[0] != w and k[1] == s and k[2] == c]
-        if not pos_c or not neg_w:
-            continue
         a, p = rng.choice(idxs), rng.choice(by[rng.choice(pos_c)])
         n = rng.choice(by[rng.choice(neg_w)])
         hits.append(int(e[a] @ e[p] > e[a] @ e[n]))
