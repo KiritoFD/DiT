@@ -985,7 +985,12 @@ def initialize_weights(cfg, ):
     if cfg.style_ada_rank > 0:
         for _m in list(cfg.blocks) + [cfg.final_layer]:
             if getattr(_m, "style_ada_up", None) is not None:
-                _m._style_ada_init_up(_m.style_ada_up)
+                # ⚠ v85A: 必须带上 gain 标志 ✗ —— 否则这里会把"非零 bias"
+                #   又抹回 0 ✓（实测 up.bias std = 0.0 ⇒ Δ 可能恒为 0 ⇒
+                #   ∂L/∂gain = δ·Δ ≡ 0 ⇒ 支路永远启动不了 ✗）
+                _m._style_ada_init_up(
+                    _m.style_ada_up,
+                    nonzero_bias=getattr(_m, "_style_ada_gain_on", False))
 
     # ── 922/80 改动 1：style_gain 初值按实测范数**自动标定** ──
     # 必须放在最后：依赖 t_embedder / y_callig_embedder / style_ln_mod 都已建好。
@@ -1252,14 +1257,25 @@ def forward(cfg, x, t, y_callig, y_char, return_intermediate_layer, return_inter
     # ★ [2026-10-06] 三表条件的分层路由：白名单层用 c（含 y_emb*scale），
     #   其余层只用 t_emb —— 条件在那几层**完全不参与计算**（不只是"少注入"）。
     _router = cfg.cond_router
+    # ★★ v85A (2026-10-13) 关键语义修正（方案 §二.4）:
+    #   原实现里 `else` 分支把 `c_style=None` 一并切断 ✗ ⇒ 若风格层不在白名单内,
+    #   这条支路**白建**（参数存在但永远收不到输入 ✗）。改为：内容条件仍按白名单路由 ✓，
+    #   而**书家风格走独立通路** ✓ —— 这正是"独立书家风格调制"的字面含义 ✓。
+    _style_layers = getattr(cfg, "_style_ada_layers", None)
+    if _style_layers is None:
+        # 兜底: 从 block 自身推断（旧对象/未经过新构造路径时 ✓）
+        _style_layers = tuple(i for i, b in enumerate(cfg.blocks)
+                              if getattr(b, "style_ada_up", None) is not None)
+    _style_layers = set(_style_layers)
     for i, block in enumerate(cfg.blocks):
         if _router is None:
-            x = block(x, c, rope=rope, c_style=c_style)
+            c_main = c
         elif _router.allows(i):
-            x = block(x, _router.cond(i, t_emb, y_emb),
-                      rope=rope, c_style=c_style)
+            c_main = _router.cond(i, t_emb, y_emb)
         else:
-            x = block(x, t_emb, rope=rope, c_style=None)
+            c_main = t_emb
+        x = block(x, c_main, rope=rope,
+                  c_style=(c_style if i in _style_layers else None))
         if _repa_layers is not None and i in _repa_layers:
             intermediate_feats[i] = x
         elif _repa_single is not None and i == _repa_single:

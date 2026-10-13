@@ -379,11 +379,20 @@ def build_parser(argv=None):
                              "改动 1 解决幅度, 本改动解决'风格与 t 共用同一个\n"
                              "adaLN_modulation 矩阵'。\n"
                              "  mod = adaLN(c) + W_up·LN(e_callig)\n"
-                             "两条路相 + (不是替换), 主干梯度路径完全不变;\n"
+                        "两条路相 + (不是替换), 主干梯度路径完全不变;\n"
                              "W_up zero-init -> step 0 恒等, 可在旧 ckpt 上 resume。\n"
                              "S/2 (D=384, 12 层+final): rank=64 -> +2.1M (+6.4%);\n"
                              "rank=32 -> +1.1M (+3.2%)。\n"
                              "0 = 关闭 = 与旧 ckpt **逐位等价**。")
+
+    parser.add_argument("--style-ada-at", type=str, default="", dest="style_ada_at",
+                        help="[v85A] 只在**指定层**建风格支路, 如 '8,10,11' 或\n"
+                        "'8,10,11,final'（含 final_layer）; 空 = 全部层 = 旧行为 ✓。\n"
+                        "为什么分层: 浅层管局部笔画/结构, 深层调制才更直接决定落笔习惯 ✓")
+    parser.add_argument("--style-ada-gain", type=int, default=0, dest="style_ada_gain",
+                        help="[v85A] 在 Δmod 前加 tanh(style_gain), gain 初始 0 ⇒\n"
+                        "从 v84A warm-start 时 step 0 输出**逐位等价** ✓;\n"
+                        "默认 0 = m+Δ（与既有 rank>0 ckpt 逐位一致, 不静默改老模型 ✓）")
     parser.add_argument("--cfg-glyph-scale", type=float, default=None, dest="cfg_glyph_scale",
                         help="[2026-09-17] 双轴 CFG 的**内容轴**(骨架 g)引导强度。\n"
                              "默认 None = 经典 2 路 CFG(只引导书家风格)。\n"

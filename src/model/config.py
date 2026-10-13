@@ -116,6 +116,10 @@ class CalligStyleCfg:
     style_gain_init: float = 1.0
     style_y_over_t_init: float = 1.0
     style_ada_rank: int = 0
+    # v85A: 只在指定层建风格支路（"8,10,11" / "8,10,11,final" / ""=全部层）
+    style_ada_at: str = ""
+    # v85A: Δmod 前的 tanh(style_gain) 门控（gain 初始 0 ⇒ warm-start 逐位等价）
+    style_ada_gain: bool = False
     style_ctx_every_layer: bool = False
     hier_style: int = 0
     num_pairs: int = 0
@@ -269,6 +273,8 @@ class DiTConfig:
                 style_gain_init=gf("style_gain_init", 1.0),
                 style_y_over_t_init=gf("style_y_over_t_init", 1.0),
                 style_ada_rank=gi("style_ada_rank", 0),
+            style_ada_at=g("style_ada_at", "") or "",
+            style_ada_gain=bool(g("style_ada_gain", False)),
                 style_ctx_every_layer=bool(g("style_ctx_every_layer", False)),
                 hier_style=gi("hier_style", 0),
                 num_pairs=gi("num_pairs", 0),

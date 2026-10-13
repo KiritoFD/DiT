@@ -283,6 +283,16 @@ class DiT_2Cond(nn.Module):
         #   的 5k 步判据（dmod ≥ 0.3）是否达标 —— 达标则本改动可缓，
         #   未达标（说明共享矩阵确实是瓶颈）则本改动是主力。
         style_ada_rank=0,
+        # ---- v85A (2026-10-13): 风格支路的**分层**选择 + 零初始化门控 ----
+        # `style_ada_at`: 只在指定层建风格支路（"" = 全部层 = 旧行为 ✓）。
+        #   取值示例 "8,10,11"（只在这三层）或 "8,10,11,final"（再加 final_layer）。
+        #   为什么分层（方案 §二.2）: 浅层负责局部笔画/结构，深层的调制才更直接地
+        #   决定"落笔习惯"；全层铺开会把风格预算摊薄在大片已收敛的浅层上 ✓。
+        # `style_ada_gain`: 在 Δmod 前加 **tanh(style_gain)**（gain 初始 0 ✓）。
+        #   默认 False ⇒ `m + Δ`（与既有 rank>0 ckpt **逐位一致** ✓，不静默改老模型 ✓）。
+        #   v85A 从 v84A@200k warm-start 时必须为 True ⇒ step 0 输出与 v84A 逐位等价 ✓。
+        style_ada_at="",
+        style_ada_gain=False,
         # ---- 多模态风格 (v15): 每类 K 个 style token + 三种注入方式矩阵 ----
         # >0 时 y_callig_embedder 换成 MultiStyleEmbedder（查表 (B,K,D)，DINO
         # K-Means 质心初始化），token dim = callig_embed_dim（None 则 = hidden）。
@@ -851,17 +861,54 @@ class DiT_2Cond(nn.Module):
         # 支路的输入是**原始 e_callig**，其维度 = callig_embed_dim（常 != hidden）
         _style_in_dim = int(callig_embed_dim or hidden_size)
 
+        # ---- v85A: 解析"哪些层建风格支路" + 零初始化门控开关 ✓ ----
+        # 取值 "8,10,11" / "8,10,11,final" / ""（空=全部层, 保持旧行为 ✓）
+        _at_raw = style_ada_at
+        if isinstance(_at_raw, str):
+            _toks = [s.strip().lower() for s in _at_raw.replace(";", ",").split(",") if s.strip()]
+        else:
+            _toks = [str(s).strip().lower() for s in (_at_raw or ())]
+        self._style_ada_final = ("final" in _toks) or ("last" in _toks) or ("-1" in _toks)
+        _idx = set()
+        for _tk in _toks:
+            if _tk.lstrip("-").isdigit() and int(_tk) >= 0:
+                _idx.add(int(_tk))
+        # "" 或未给 ⇒ 全部层（旧行为 ✓）；给了非空但解析不出索引 ⇒ 全部层并告警 ✓
+        if not _toks:
+            self._style_ada_layers = tuple(range(depth))
+            # ★ 旧行为下 final_layer **也有**支路 ⇒ 这里必须为 True ✗
+            #   （我第一版漏了它 ⇒ 既有 rank>0 的模型会静默丢掉出口的风格支路 ✓）
+            self._style_ada_final = True
+        elif _idx or self._style_ada_final:
+            self._style_ada_layers = tuple(sorted(i for i in _idx if i < depth))
+        else:
+            log.warning("[style_ada] style_ada_at=%r 解析不出层号 ✗ ⇒ 退回全部层 ✓", style_ada_at)
+            self._style_ada_layers = tuple(range(depth))
+        if self.style_ada_rank > 0:
+            _bad = [i for i in _idx if i >= depth]
+            if _bad:
+                raise ValueError("style_ada_at 含越界层号 %s ✗（depth=%d）" % (_bad, depth))
+            log.info("[style_ada] rank=%d 层=%s final=%s gain=%s",
+                     self.style_ada_rank, list(self._style_ada_layers),
+                     self._style_ada_final, bool(style_ada_gain))
+
+        _sl = set(self._style_ada_layers)
         self.blocks = nn.ModuleList([
             M.DiTBlock(hidden_size, num_heads, mlp_ratio=mlp_ratio,
                        norm_type=norm_type, mlp_type=mlp_type, qk_norm=qk_norm,
-                       attn_impl=attn_impl, style_ada_rank=self.style_ada_rank,
-                       style_in_dim=_style_in_dim)
-            for _ in range(depth)
+                       attn_impl=attn_impl,
+                       # ★ 只在选定层建参数 ⇒ 未选中的层与前代**逐位一致** ✓
+                       style_ada_rank=(self.style_ada_rank if i in _sl else 0),
+                       style_in_dim=_style_in_dim,
+                       style_ada_gain=style_ada_gain)
+            for i in range(depth)
         ])
         self.final_layer = M.FinalLayer(hidden_size, patch_size, self.out_channels,
                                         norm_type=norm_type,
-                                        style_ada_rank=self.style_ada_rank,
-                                        style_in_dim=_style_in_dim)
+                                        style_ada_rank=(self.style_ada_rank
+                                                        if self._style_ada_final else 0),
+                                        style_in_dim=_style_in_dim,
+                                        style_ada_gain=style_ada_gain)
 
         # ---- 2D axial RoPE 缓存 ----
         # persistent=False：不写进 state_dict，避免任何 ckpt key 变化。

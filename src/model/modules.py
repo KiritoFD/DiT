@@ -374,43 +374,89 @@ class StyleAdaBranchInitMixin:
     """
 
     @staticmethod
-    def _style_ada_init_up(up):
+    def _style_ada_init_up(up, nonzero_bias=False):
+        """风格支路 ``W_up`` 的初始化 ✓。
+
+        ``nonzero_bias``（v85A 的 gain 门控下**必须**开 ✓）::
+            实测（tests/test_style_ada.py::test_style_gain_receives_gradient_at_init）:
+            train 模式下 cond_drop 会把书家条件置空 ⇒ ``e_callig`` 可能**恰为 0** ✗
+            ⇒ ``Δ = up(LN(0)) = up.bias``；若 bias 也为 0 ⇒ ``Δ ≡ 0``
+            ⇒ ``∂L/∂gain = δ·Δ·(1-tanh²) = 0`` ✗✗ ⇒ 支路**永远启动不了** ✗。
+            给 bias 一个**小非零**初值 ⇒ ``Δ ≠ 0`` ⇒ gain 立刻有梯度 ✓，
+            而 gain=0 时 Δ 仍被 ``tanh(0)=0`` 乘掉 ⇒ 输出**逐位等价**不受影响 ✓✓。
+        """
         nn.init.normal_(up.weight, std=STYLE_ADA_INIT_STD)
-        nn.init.zeros_(up.bias)
+        if nonzero_bias:
+            nn.init.normal_(up.bias, std=STYLE_ADA_INIT_STD)
+        else:
+            nn.init.zeros_(up.bias)
+
+    def _style_ada_build_gain(self):
+        """v85A: 建**初始为 0** 的标量门控 ``style_gain``（配 ``tanh`` 使用）✓。
+
+        为什么需要它（方案 §二.4）::
+            ``STYLE_ADA_INIT_STD`` 的小非零初值虽能让梯度流动 ✓，但从 v84A@200k
+            warm-start 时支路**立刻**产生非零 Δmod ⇒ 起点输出与 v84A 不再逐位等价 ✗。
+            加一个 ``tanh(gain)``、``gain=0`` ⇒ ``Δmod ≡ 0`` ⇒ **step 0 完全等价于 v84A** ✓✓。
+
+        为什么不把 ``W_up`` 也设 0 ✗: 那会让 ``∂L/∂W_up ≡ 0``（见类 docstring 的
+            "zero-init 死锁" ✓） ⇒ 支路永久废掉 ✗。这里 ``W_up`` 保持小非零 ✓，
+            ``∂L/∂gain = δ·Δ·(1-tanh²)`` 在 ``Δ≠0`` 时非零 ⇒ **gain 先动、W_up 随后** ✓。
+
+        ⚠ 与旧行为的关系: 只有显式开 ``style_ada_gain=True`` 才启用门控 ✓；
+          默认 ``False`` ⇒ ``m + Δ``（与既有 rank>0 的 checkpoint **逐位一致** ✓，
+          不静默改变老模型 ✓）。
+        """
+        self.style_gain = nn.Parameter(torch.zeros(1))
+        return self.style_gain
 
     def _style_ada_apply_in(self, c_style):
-        """把风格向量投影到 hidden_size，必要时**就地重建**投影层。
+        """把风格向量投影到 hidden_size（**严格**校验输入维度 ✓）。
 
-        为什么需要懒适配（2026-09-23 真实事故）::
-
-            构造期只知道 ``callig_embed_dim``（128）这一个候选维度，
-            但 ``e_callig`` 在**运行时**的维度由若干开关共同决定：
-
-              * 普通路径            -> y_callig_embedder 输出，= callig_embed_dim
-              * ``hier_style`` 打开 -> ``e_style``（S2 三层分解的输出），= D_style
-              * 多模态 style_tokens -> mean(dim=1)，= D
-              * ``xl_highdim``      -> d_c（= hidden_size，384）
-
-            构造期无法可靠预知，于是 ``style_ada_in`` 建的 ``Linear(128, 384)``
-            在 xl_highdim 下直接
-            ``RuntimeError: mat1 and mat2 shapes cannot be multiplied (2x384 and 128x384)``。
-
-        修法：检测 ``in_features`` 与实际不符就地重建（只发生一次，日志可见）。
-        与 ``DiT_2Cond._style_out`` 里对 ``style_in_proj`` 的处理同源，
-        保证改动 1 / 改动 2 两条通路的适配策略一致。
+        ⚠ 2026-10-13 (v85A) 改动: 原来这里会**就地重建** ``style_ada_in`` ✗。
+        为什么必须去掉（方案 §二.4 明确要求 ✓）::
+            1. 重建发生在 **forward 内** ⇒ 新参数在第一次 forward 后才出现 ⇒
+               **optimizer 建好后无法管理它** ✗（参数组里根本没有这个张量）。
+            2. 训练中静默换层 ⇒ 权重/动量丢失，且 ckpt 与代码不一致 ✗。
+        ⇒ 改为**构造期按 ``style_in_dim`` 建好**、forward 只做**校验并报错** ✓。
         """
         _p = self.style_ada_in
-        if _p is None or isinstance(_p, nn.Identity):
+        if _p is None:
             return c_style
-        if int(_p.in_features) != int(c_style.shape[-1]):
-            _hidden = int(_p.out_features)
-            _new = nn.Linear(int(c_style.shape[-1]), _hidden).to(
-                c_style.device, _p.weight.dtype)
-            log.info("[style_ada] style_ada_in 懒重建: %d -> %d (原 %d)",
-                     int(c_style.shape[-1]), _hidden, int(_p.in_features))
-            self.style_ada_in = _new
-            _p = _new
+        _got = int(c_style.shape[-1])
+        # ⚠ style_in_dim == hidden_size 时投影层是 Identity ⇒ 也必须**显式校验** ✗
+        #   （我第一版直接 return ⇒ 错维度会掉进 down 的 LN/Linear, 报的是 torch 的
+        #    晦涩错而不是我们自己的信息 ✓；tests 里的 mismatch 用例就因此没触发 ✓）
+        _exp = int(getattr(self, "_style_in_dim_expect", 0))
+        if _exp and _got != _exp:
+            raise RuntimeError(
+                "style_ada 输入维度不匹配 ✗: 构造期 style_in_dim=%d, 实际 e_callig=%d。"
+                "请把 style_in_dim 配成 callig_embed_dim（或对应风格向量维度），"
+                "不要在 forward 里重建（optimizer 无法管理新建参数 ✗）。" % (_exp, _got))
+        if isinstance(_p, nn.Identity):
+            return c_style
+        if int(_p.in_features) != _got:
+            raise RuntimeError(
+                "style_ada_in 输入维度不匹配 ✗: 构造期=%d, 实际 e_callig=%d。"
+                "请把 style_in_dim 配成 callig_embed_dim（或对应风格向量维度），"
+                "不要在 forward 里重建（optimizer 无法管理新建参数 ✗）。"
+                % (int(_p.in_features), _got))
         return _p(c_style)
+
+    def _style_ada_delta(self, c_style, down, up):
+        """风格支路的调制增量 Δ；未启用时返回 ``None`` ✓。"""
+        if up is None or c_style is None:
+            return None
+        return up(down(self._style_ada_apply_in(c_style)))
+
+    def _style_ada_gate(self, delta):
+        """按需对 Δ 施加 ``tanh(style_gain)`` 门控 ✓（默认关闭 ⇒ 旧行为不变 ✓）。"""
+        if delta is None:
+            return None
+        if getattr(self, "_style_ada_gain_on", False):
+            return torch.tanh(self.style_gain) * delta
+        return delta
+
 
 
 class DiTBlock(nn.Module, StyleAdaBranchInitMixin):
@@ -428,7 +474,7 @@ class DiTBlock(nn.Module, StyleAdaBranchInitMixin):
     def __init__(self, hidden_size, num_heads, mlp_ratio=4.0,
                  norm_type="rms", mlp_type="swiglu", qk_norm=True,
                  attn_impl="sdpa", style_ada_rank=0, style_in_dim=0,
-                 **block_kwargs):
+                 style_ada_gain=False, **block_kwargs):
         super().__init__()
         self.norm1 = build_norm(norm_type, hidden_size)
         self.attn = Attention(hidden_size, num_heads=num_heads, qkv_bias=True,
@@ -441,6 +487,8 @@ class DiTBlock(nn.Module, StyleAdaBranchInitMixin):
         )
         # ---- 922/80 改动 2：风格专用低秩 adaLN 支路（默认关闭，不建参数）----
         self._style_ada_rank = int(style_ada_rank)
+        self._style_ada_gain_on = bool(style_ada_gain)
+        self._style_in_dim_expect = int(style_in_dim)
         if self._style_ada_rank > 0:
             r = self._style_ada_rank
             # ⚠ 风格向量 e_callig 的维度 = callig_embed_dim（实测 128），
@@ -454,7 +502,10 @@ class DiTBlock(nn.Module, StyleAdaBranchInitMixin):
                 nn.Linear(hidden_size, r, bias=False),
             )
             self.style_ada_up = nn.Linear(r, 6 * hidden_size, bias=True)
-            self._style_ada_init_up(self.style_ada_up)
+            self._style_ada_init_up(self.style_ada_up,
+                                    nonzero_bias=self._style_ada_gain_on)
+            if self._style_ada_gain_on:
+                self._style_ada_build_gain()          # v85A: 零初始化标量门控 ✓
         else:
             self.style_ada_in = None
             self.style_ada_down = None
@@ -463,10 +514,9 @@ class DiTBlock(nn.Module, StyleAdaBranchInitMixin):
     def _mod6(self, c, c_style=None):
         """6 路调制量 = 主干支路(c) + 风格支路(c_style)。"""
         m = self.adaLN_modulation(c)
-        if self.style_ada_up is not None and c_style is not None:
-            m = m + self.style_ada_up(
-                self.style_ada_down(self._style_ada_apply_in(c_style)))
-        return m
+        _d = self._style_ada_gate(self._style_ada_delta(
+            c_style, self.style_ada_down, self.style_ada_up))
+        return m if _d is None else m + _d
 
     def forward(self, x, c, rope=None, c_style=None):
         shift_msa, scale_msa, gate_msa, shift_mlp, scale_mlp, gate_mlp = \
@@ -482,7 +532,7 @@ class DiTBlock(nn.Module, StyleAdaBranchInitMixin):
 # --------------------------------------------------------------------------- #
 class FinalLayer(nn.Module, StyleAdaBranchInitMixin):
     def __init__(self, hidden_size, patch_size, out_channels, norm_type="rms",
-                 style_ada_rank=0, style_in_dim=0):
+                 style_ada_rank=0, style_in_dim=0, style_ada_gain=False):
         super().__init__()
         self.norm_final = build_norm(norm_type, hidden_size)
         self.linear = nn.Linear(hidden_size, patch_size * patch_size * out_channels, bias=True)
@@ -492,6 +542,8 @@ class FinalLayer(nn.Module, StyleAdaBranchInitMixin):
         )
         # ---- 922/80 改动 2：风格支路同样接到 final_layer（出口也必须吃风格）----
         self._style_ada_rank = int(style_ada_rank)
+        self._style_ada_gain_on = bool(style_ada_gain)
+        self._style_in_dim_expect = int(style_in_dim)
         if self._style_ada_rank > 0:
             r = self._style_ada_rank
             self.style_ada_in = (
@@ -502,7 +554,10 @@ class FinalLayer(nn.Module, StyleAdaBranchInitMixin):
                 nn.Linear(hidden_size, r, bias=False),
             )
             self.style_ada_up = nn.Linear(r, 2 * hidden_size, bias=True)
-            self._style_ada_init_up(self.style_ada_up)
+            self._style_ada_init_up(self.style_ada_up,
+                                    nonzero_bias=self._style_ada_gain_on)
+            if self._style_ada_gain_on:
+                self._style_ada_build_gain()          # v85A: 零初始化标量门控 ✓
         else:
             self.style_ada_in = None
             self.style_ada_down = None
@@ -510,10 +565,9 @@ class FinalLayer(nn.Module, StyleAdaBranchInitMixin):
 
     def _mod2(self, c, c_style=None):
         m = self.adaLN_modulation(c)
-        if self.style_ada_up is not None and c_style is not None:
-            m = m + self.style_ada_up(
-                self.style_ada_down(self._style_ada_apply_in(c_style)))
-        return m
+        _d = self._style_ada_gate(self._style_ada_delta(
+            c_style, self.style_ada_down, self.style_ada_up))
+        return m if _d is None else m + _d
 
     def forward(self, x, c, c_style=None):
         shift, scale = self._mod2(c, c_style).chunk(2, dim=1)
