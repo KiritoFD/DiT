@@ -998,6 +998,308 @@ def initialize_weights(cfg, ):
                 cfg.style_gain.fill_(float(_gi))
 
 
+@dataclass(frozen=True)
+class ForwardCfg:
+    """`forward` 用到的**全部** `self.*`（2026-10-13 [审查 PR3] 通用抽取 ✓）。
+
+    审查: "只移动逻辑, 不移动权重注册位置" ✓ ⇒ 不注册模块 ⇒ **state_dict 键不变** ✓✓。
+    ⚠ 全部用 getattr 兜底 ✓（防**惰性访问** ✗）；陷阱项默认值与原文一致 ✓。
+    """
+    _cond_drop_masks: Any
+    _embed_callig: Any
+    _embed_cond: Any
+    _embed_glyph: Any
+    _fuse_condition: Any
+    _inj_map: Any
+    _local_ca_map: Any
+    blocks: Any
+    callig_multi_style_k: Any
+    cond_router: Any
+    ctx_pos_g: Any
+    final_layer: Any
+    glyph_concat_input: Any
+    glyph_gate_floor: Any
+    glyph_gate_t: Any
+    glyph_injections: Any
+    glyph_vec_cond: Any
+    local_ca: Any
+    local_ca_q: Any
+    local_pos: Any
+    n_style_token: Any
+    rope: Any
+    rope_cos: Any
+    rope_sin: Any
+    skel_head: Any
+    skel_head_enabled: Any
+    style_ada_rank: Any
+    style_ctx_every_layer: Any
+    style_hier: Any
+    style_proj: Any
+    style_role: Any
+    t_embedder: Any
+    unpatchify: Any
+    use_glyph_cond: Any
+    x_embedder: Any
+    y_callig_embedder: Any
+
+    @classmethod
+    def from_model(cls, m):
+        return cls(
+                   _cond_drop_masks=getattr(m, "_cond_drop_masks", None),
+                   _embed_callig=getattr(m, "_embed_callig", None),
+                   _embed_cond=getattr(m, "_embed_cond", None),
+                   _embed_glyph=getattr(m, "_embed_glyph", None),
+                   _fuse_condition=getattr(m, "_fuse_condition", None),
+                   _inj_map=getattr(m, "_inj_map", None),
+                   _local_ca_map=getattr(m, "_local_ca_map", None),
+                   blocks=getattr(m, "blocks", None),
+                   callig_multi_style_k=getattr(m, "callig_multi_style_k", None),
+                   cond_router=getattr(m, "cond_router", None),
+                   ctx_pos_g=getattr(m, "ctx_pos_g", None),
+                   final_layer=getattr(m, "final_layer", None),
+                   glyph_concat_input=getattr(m, "glyph_concat_input", None),
+                   glyph_gate_floor=getattr(m, "glyph_gate_floor", None),
+                   glyph_gate_t=getattr(m, "glyph_gate_t", None),
+                   glyph_injections=getattr(m, "glyph_injections", None),
+                   glyph_vec_cond=getattr(m, "glyph_vec_cond", None),
+                   local_ca=getattr(m, "local_ca", None),
+                   local_ca_q=getattr(m, "local_ca_q", None),
+                   local_pos=getattr(m, "local_pos", None),
+                   n_style_token=getattr(m, "n_style_token", None),
+                   rope=getattr(m, "rope", None),
+                   rope_cos=getattr(m, "rope_cos", None),
+                   rope_sin=getattr(m, "rope_sin", None),
+                   skel_head=getattr(m, "skel_head", None),
+                   skel_head_enabled=getattr(m, "skel_head_enabled", None),
+                   style_ada_rank=getattr(m, "style_ada_rank", 0),
+                   style_ctx_every_layer=getattr(m, "style_ctx_every_layer", False),
+                   style_hier=getattr(m, "style_hier", None),
+                   style_proj=getattr(m, "style_proj", None),
+                   style_role=getattr(m, "style_role", None),
+                   t_embedder=getattr(m, "t_embedder", None),
+                   unpatchify=getattr(m, "unpatchify", None),
+                   use_glyph_cond=getattr(m, "use_glyph_cond", None),
+                   x_embedder=getattr(m, "x_embedder", None),
+                   y_callig_embedder=getattr(m, "y_callig_embedder", None),
+        )
+
+
+def forward(cfg, x, t, y_callig, y_char, return_intermediate_layer, return_intermediate_layers, g, y_script, y_callig_raw, y_pair):
+    """**逐行等价**于 `DiT_2Cond.forward` ✓（[审查 PR3] 通用抽取 ✓）。"""
+    """
+    Forward pass of DiT_2Cond.
+    x: (N, C, H, W) noisy latents
+    t: (N,) timesteps
+    y_callig, y_char: (N,) condition IDs
+    g: 旧路径为 (N,4,32,32) latent；std-soft 为 (N,1,64,64) raw mask；None=不使用
+    return_intermediate_layer: int block index (e.g. 8) whose patch features to return for REPA.
+                               When set, returns (output, intermediate_feats) as a tuple.
+
+    S2 新增条件（全部可选，None = 该层缺失 / 走旧路径）:
+    y_script:     (N,) 书体 id（楷/行/隶）→ E_script
+    y_callig_raw: (N,) 书家**连续索引**（不是 pair id）→ 主效应表
+    y_pair:       (N,) (书家×书体) pair id → E_pair 残差
+    """
+    # ── 标准字形条件的随机丢弃（仅训练时）────────────────────────────
+    #
+    # 为什么要 drop：
+    # 1. 防止「门控」。标准字形 latent 与 DINO CLS 都由字 ID 推出，存在冗余。
+    #    std-skel 实验已证明：冗余条件会被 ControlNet 学成恒等门控掉
+    #    （SSIM 0.494≈base，SkelIoU 0.015，12 个评测点全平）。
+    #    随机丢弃使 g 不可预测，模型无法依赖「反正能从字 ID 推出来」而忽略它。
+    # 2. 覆盖现实：fame 上 v2 字典只覆盖 53.1%，草/篆（46.9%）本来就没有
+    #    标准字形，推理时 g 只能是零。训练时模拟这种缺失，让模型学会
+    #    「g 有效时跟随，g 为零时依赖书家+字条件」。
+    # 3. 与 CFG 兼容：丢弃时该样本等价于 uncond-g 分支。
+    #
+    # 注意：以**整张样本**为单位丢弃（而非逐像素），与「某字没有标准字形」
+    # 的真实情况一致。
+    # ★ 2026-10-13: 原 46 行内联条件遮罩已抽成 _cond_drop_masks ✓（返回值由**输出穷举分析**决定, 防漏交 ✗）
+    g, keep, callig_drop, char_drop, script_drop, y_callig_in = cfg._cond_drop_masks(g, y_callig)
+
+    # ── v15 多模态风格 token：一次查表, 骨架注入与 adaLN 融合共享 ──────────
+    # (B, K, D); drop 已由 y_callig_in 携带 (null 标签 -> null_embed 整组替换)
+    style_tokens = None
+    if cfg.callig_multi_style_k > 0:
+        style_tokens = cfg.y_callig_embedder(y_callig_in, False)
+
+    # ── S2：三层语义分解 ─────────────────────────────────────────────────
+    #   e_style  = 书家主效应(既有表) + α · E_pair[pair]
+    #   e_script = E_script[script]
+    # 主效应表用 **y_callig_raw（书家连续索引）**，pair 残差用 **y_pair**。
+    # ⚠ 两者不是同一个 id：v14/v15 里 y_callig 装的是 pair_id(87)，
+    #    hier 模式下主效应表只有 45 行，必须用 raw，否则越界/串书家。
+    e_style = None
+    e_script = None
+    if cfg.style_hier is not None:
+        _base_ids = y_callig_raw if y_callig_raw is not None else y_callig
+        _base_in = (torch.where(callig_drop, cfg.y_callig_embedder.num_classes,
+                                _base_ids)
+                    if callig_drop is not None else _base_ids)
+        _base = cfg.y_callig_embedder(_base_in, False)
+        e_style, e_script = cfg.style_hier(_base, y_pair, y_script, callig_drop)
+
+    # ★ 2026-10-13: 原两个闭包升格为方法（逻辑见 _embed_callig / _embed_cond ✓）。
+    #   这里保留一行转发 ⇒ **调用点完全不变**（最小改动 ✓）；升格后可被
+    #   _fuse_condition 等其它方法复用, 也便于单独测试 ✓
+    def _e_callig():
+        return cfg._embed_callig(y_callig_in, e_style=e_style, style_tokens=style_tokens)
+
+    def _e_cond():
+        return cfg._embed_cond(y_callig_in, e_style=e_style,
+                                style_tokens=style_tokens, e_script=e_script)
+
+    if cfg.glyph_concat_input:
+        # g 在上面的 drop 里已经被整样本置零。拼在图像后面,
+        # 第一层卷积的后 4 个通道初始为 0, 第 0 步等于没有骨架。
+        g_in = torch.zeros_like(x) if g is None else g
+        x = cfg.x_embedder(torch.cat([x, g_in], dim=1))
+    else:
+        x = cfg.x_embedder(x)  # (N, T, D)
+    # 时间门: 训练和采样传进来的 t 都乘过 TIME_SCALE=1000, 这里除回来。
+    # 阶梯, 不是斜坡。t≥glyph_gate_t 时为 1; 低于它时三路骨架条件
+    # 直接锁在 glyph_gate_floor。斜坡会让 t=0.1 仍有 0.36, 等于没关。
+    _gate = None
+    if cfg.glyph_gate_t > 0 and cfg.use_glyph_cond:
+        _tf = (t.float().flatten() / 1000.0).clamp(0, 1)
+        _w = torch.where(
+            _tf >= cfg.glyph_gate_t,
+            torch.ones_like(_tf),
+            torch.full_like(_tf, cfg.glyph_gate_floor))
+        _gate = _w.to(x.dtype).view(-1, 1, 1)
+    # ★ 2026-10-13: 原 106 行内联字形嵌入已抽成 _embed_glyph ✓
+    x, g_tok, e_glyph_vec = cfg._embed_glyph(x, g, keep, y_callig_in, e_style, e_script, style_tokens, _gate)
+
+    t_emb = cfg.t_embedder(t)               # (N, D)
+
+    # ★ 2026-10-13: 原 115 行内联条件融合已抽成 _fuse_condition ✓
+    y_emb, e_callig, _cgw = cfg._fuse_condition(
+        t, x, y_callig_in, y_callig, y_char, y_script, char_drop, script_drop,
+        e_glyph_vec, g_tok, e_style, style_tokens)
+    c = t_emb + y_emb                        # (N, D)  —— 旧行为/路由白名单层的条件
+
+    # ---- 922/80 改动 2: 风格专用支路的输入 ----
+    # 直接喂**原始** e_callig（不是 y_emb），理由：
+    #   e_callig 是"纯风格"信号，不含 t、不含 char/glyph 产物；
+    #   若喂 y_emb 则又走回共享混合的旧问题（其中 t 间接进入不了，但
+    #   char/glyph 会串味，且 factorized_cat 下 y_emb 已被投影混合）。
+    # 用独立 LN 归一化，范数失衡（D5 实测 63 倍）不会直接传到 W_up。
+    # zero-init -> 关闭时 c_style 不参与任何计算（也不建参数）。
+    c_style = None
+    if cfg.style_ada_rank > 0:
+        c_style = e_callig
+    # Time-Gate 同时作用于风格专用支路 (它同样是"条件注入")。
+    if _cgw is not None and c_style is not None:
+        c_style = c_style * _cgw
+
+    rope = (cfg.rope_cos, cfg.rope_sin) if cfg.rope else None
+
+    intermediate_feats = None
+    # 多层 REPA 捕获 (统一): return_intermediate_layers=(8,11) -> dict {8:feats, 11:feats}
+    _repa_layers = None
+    if return_intermediate_layers is not None:
+        _repa_layers = (return_intermediate_layers
+                        if isinstance(return_intermediate_layers, (list, tuple))
+                        else (return_intermediate_layers,))
+        intermediate_feats = {}
+    # 兼容旧单层接口
+    _repa_single = None
+    if return_intermediate_layer is not None:
+        _repa_single = int(return_intermediate_layer)
+    # 预计算好的映射（__init__ 里建），不再每步重建
+    _inj = {}
+    if cfg.glyph_injections is not None and g_tok is not None:
+        _inj = cfg._inj_map
+
+    # ── 逐层注入的 context ───────────────────────────────────────────────
+    # 默认 = 骨架 token(GlyphStyleCrossAttn 模式下位置在下面显式加)。
+    # style_token_n>0 时拼接风格 token: 让**每一层**的 attention 都能直接
+    # 看到书家风格, 而不是只通过"书家化骨架"间接进入(会被深层稀释)。
+    # 每个 x 位置(query)因此可同时寻址: 局部字形(空间对应) + 书家风格。
+    # 逐层注入是第三路, 不经过 glyph_scale。g_tok 在上面已经乘过门
+    # (开了 glyph_vec_cond 时); 没开时在这里乘, 避免这一路漏掉。
+    if _gate is not None and not cfg.glyph_vec_cond and g_tok is not None:
+        g_tok = _gate * g_tok
+    inject_ctx = g_tok
+    if (cfg.style_ctx_every_layer
+            and g_tok is not None and style_tokens is not None):
+        # v15c: 骨架 token(+2D 位置) 与 K 个风格 token(+可学习 role) 拼成
+        # 每层 xattn 的 K/V —— 风格在**每一层、每个空间位置**都可直接寻址。
+        _Ng = g_tok.shape[1]
+        inject_ctx = torch.cat(
+            [g_tok + cfg.ctx_pos_g[:, :_Ng],
+             style_tokens + cfg.style_role.unsqueeze(0)], dim=1)
+    elif cfg.style_proj is not None and g_tok is not None:
+        _B = g_tok.shape[0]
+        _D = g_tok.shape[-1]
+        _Ng = g_tok.shape[1]
+        _style = cfg.style_proj(e_callig).view(
+            _B, cfg.n_style_token, _D) + cfg.style_role.unsqueeze(0)
+        # 骨架 token 加 2D sincos 位置(空间对应), 风格 token 用可学习 role
+        inject_ctx = torch.cat([g_tok + cfg.ctx_pos_g[:, :_Ng], _style], dim=1)
+
+    # ── S2 通路 B3（q="x"）：局部风格-骨架 adapter 插在**主干 block 之间** ──
+    # 语义："去噪中的画布，在风格条件下向局部骨架询问书写证据"。
+    # 比 q="g" 更标准，但改动更深入主干、成本略高。默认走 q="g"。
+    _lc_map = {}
+    _e_cond_local = None
+    if (cfg.local_ca is not None and cfg.local_ca_q == "x"
+            and g_tok is not None):
+        _lc_map = cfg._local_ca_map
+        _e_cond_local = _e_cond()
+
+    # ★ [2026-10-06] 三表条件的分层路由：白名单层用 c（含 y_emb*scale），
+    #   其余层只用 t_emb —— 条件在那几层**完全不参与计算**（不只是"少注入"）。
+    _router = cfg.cond_router
+    for i, block in enumerate(cfg.blocks):
+        if _router is None:
+            x = block(x, c, rope=rope, c_style=c_style)
+        elif _router.allows(i):
+            x = block(x, _router.cond(i, t_emb, y_emb),
+                      rope=rope, c_style=c_style)
+        else:
+            x = block(x, t_emb, rope=rope, c_style=None)
+        if _repa_layers is not None and i in _repa_layers:
+            intermediate_feats[i] = x
+        elif _repa_single is not None and i == _repa_single:
+            intermediate_feats = x
+        if i in _inj:
+            # x = x*(1+s) + t，s/t 由 g_tok 经 zero-init Linear 产出。
+            # init 时恒等；梯度上 ∂out/∂g_tok = W = 0，因此这条路径
+            # 初期不给 glyph_embedder 梯度 —— 但输入层的
+            # x = x + glyph_scale * g_tok（glyph_scale=0.4 非零）
+            # 已提供直通梯度，故 glyph_embedder 从 step 0 即可学习。
+            x = cfg.glyph_injections[_inj[i]](x, inject_ctx)
+        if i in _lc_map:
+            x = cfg.local_ca[_lc_map[i]](x, g_tok, _e_cond_local,
+                                          cfg.local_pos, keep)
+
+    # 骨架头：从 final_layer 前的 block 输出特征并行解码 latent 骨架 (N,1,32,32)
+    skel_pred = None
+    if cfg.skel_head_enabled and cfg.skel_head is not None:
+        skel_n = cfg.skel_head(x)                       # (N, T, p*p)，单通道 patch 值
+        B_, T_, PP = skel_n.shape
+        h_ = int(T_ ** 0.5)
+        p_ = cfg.x_embedder.patch_size[0]
+        # 完全镜像主 head 的 unpatchify（C=1）：
+        # (B,H*W,p*p) -> (B,H,W,p,p,1) -> einsum 'nhwpqc->nchpwq' -> (B,1,H,W,p,p) -> (B,1,H*p,W*p)
+        skel5 = skel_n.reshape(B_, h_, h_, p_, p_, 1)
+        skel5 = torch.einsum('nhwpqc->nchpwq', skel5)
+        skel_pred = skel5.reshape(B_, 1, h_ * p_, h_ * p_)
+
+    x = cfg.final_layer(x, c, c_style=c_style)
+    x = cfg.unpatchify(x)
+    if cfg.skel_head_enabled and skel_pred is not None:
+        # 返回 (主输出, skel_pred)；gaussian_diffusion.training_losses 会把第二元素
+        # 当作 intermediate_feats 存入 loss_dict['intermediate_feats']
+        return x, skel_pred
+    if _repa_layers is not None:
+        return x, intermediate_feats   # dict {layer: feats} (多层 REPA)
+    if return_intermediate_layer is not None:
+        return x, intermediate_feats
+    return x
+
+
 class DiT_2Cond(nn.Module):
     """
     Diffusion model with a Transformer backbone conditioned on 2 discrete labels:
@@ -2261,218 +2563,8 @@ class DiT_2Cond(nn.Module):
     def forward(self, x, t, y_callig, y_char, return_intermediate_layer=None,
                 return_intermediate_layers=None, g=None,
                 y_script=None, y_callig_raw=None, y_pair=None):
-        """
-        Forward pass of DiT_2Cond.
-        x: (N, C, H, W) noisy latents
-        t: (N,) timesteps
-        y_callig, y_char: (N,) condition IDs
-        g: 旧路径为 (N,4,32,32) latent；std-soft 为 (N,1,64,64) raw mask；None=不使用
-        return_intermediate_layer: int block index (e.g. 8) whose patch features to return for REPA.
-                                   When set, returns (output, intermediate_feats) as a tuple.
-
-        S2 新增条件（全部可选，None = 该层缺失 / 走旧路径）:
-        y_script:     (N,) 书体 id（楷/行/隶）→ E_script
-        y_callig_raw: (N,) 书家**连续索引**（不是 pair id）→ 主效应表
-        y_pair:       (N,) (书家×书体) pair id → E_pair 残差
-        """
-        # ── 标准字形条件的随机丢弃（仅训练时）────────────────────────────
-        #
-        # 为什么要 drop：
-        # 1. 防止「门控」。标准字形 latent 与 DINO CLS 都由字 ID 推出，存在冗余。
-        #    std-skel 实验已证明：冗余条件会被 ControlNet 学成恒等门控掉
-        #    （SSIM 0.494≈base，SkelIoU 0.015，12 个评测点全平）。
-        #    随机丢弃使 g 不可预测，模型无法依赖「反正能从字 ID 推出来」而忽略它。
-        # 2. 覆盖现实：fame 上 v2 字典只覆盖 53.1%，草/篆（46.9%）本来就没有
-        #    标准字形，推理时 g 只能是零。训练时模拟这种缺失，让模型学会
-        #    「g 有效时跟随，g 为零时依赖书家+字条件」。
-        # 3. 与 CFG 兼容：丢弃时该样本等价于 uncond-g 分支。
-        #
-        # 注意：以**整张样本**为单位丢弃（而非逐像素），与「某字没有标准字形」
-        # 的真实情况一致。
-        # ★ 2026-10-13: 原 46 行内联条件遮罩已抽成 _cond_drop_masks ✓（返回值由**输出穷举分析**决定, 防漏交 ✗）
-        g, keep, callig_drop, char_drop, script_drop, y_callig_in = self._cond_drop_masks(g, y_callig)
-
-        # ── v15 多模态风格 token：一次查表, 骨架注入与 adaLN 融合共享 ──────────
-        # (B, K, D); drop 已由 y_callig_in 携带 (null 标签 -> null_embed 整组替换)
-        style_tokens = None
-        if self.callig_multi_style_k > 0:
-            style_tokens = self.y_callig_embedder(y_callig_in, False)
-
-        # ── S2：三层语义分解 ─────────────────────────────────────────────────
-        #   e_style  = 书家主效应(既有表) + α · E_pair[pair]
-        #   e_script = E_script[script]
-        # 主效应表用 **y_callig_raw（书家连续索引）**，pair 残差用 **y_pair**。
-        # ⚠ 两者不是同一个 id：v14/v15 里 y_callig 装的是 pair_id(87)，
-        #    hier 模式下主效应表只有 45 行，必须用 raw，否则越界/串书家。
-        e_style = None
-        e_script = None
-        if self.style_hier is not None:
-            _base_ids = y_callig_raw if y_callig_raw is not None else y_callig
-            _base_in = (torch.where(callig_drop, self.y_callig_embedder.num_classes,
-                                    _base_ids)
-                        if callig_drop is not None else _base_ids)
-            _base = self.y_callig_embedder(_base_in, False)
-            e_style, e_script = self.style_hier(_base, y_pair, y_script, callig_drop)
-
-        # ★ 2026-10-13: 原两个闭包升格为方法（逻辑见 _embed_callig / _embed_cond ✓）。
-        #   这里保留一行转发 ⇒ **调用点完全不变**（最小改动 ✓）；升格后可被
-        #   _fuse_condition 等其它方法复用, 也便于单独测试 ✓
-        def _e_callig():
-            return self._embed_callig(y_callig_in, e_style=e_style, style_tokens=style_tokens)
-
-        def _e_cond():
-            return self._embed_cond(y_callig_in, e_style=e_style,
-                                    style_tokens=style_tokens, e_script=e_script)
-
-        if self.glyph_concat_input:
-            # g 在上面的 drop 里已经被整样本置零。拼在图像后面,
-            # 第一层卷积的后 4 个通道初始为 0, 第 0 步等于没有骨架。
-            g_in = torch.zeros_like(x) if g is None else g
-            x = self.x_embedder(torch.cat([x, g_in], dim=1))
-        else:
-            x = self.x_embedder(x)  # (N, T, D)
-        # 时间门: 训练和采样传进来的 t 都乘过 TIME_SCALE=1000, 这里除回来。
-        # 阶梯, 不是斜坡。t≥glyph_gate_t 时为 1; 低于它时三路骨架条件
-        # 直接锁在 glyph_gate_floor。斜坡会让 t=0.1 仍有 0.36, 等于没关。
-        _gate = None
-        if self.glyph_gate_t > 0 and self.use_glyph_cond:
-            _tf = (t.float().flatten() / 1000.0).clamp(0, 1)
-            _w = torch.where(
-                _tf >= self.glyph_gate_t,
-                torch.ones_like(_tf),
-                torch.full_like(_tf, self.glyph_gate_floor))
-            _gate = _w.to(x.dtype).view(-1, 1, 1)
-        # ★ 2026-10-13: 原 106 行内联字形嵌入已抽成 _embed_glyph ✓
-        x, g_tok, e_glyph_vec = self._embed_glyph(x, g, keep, y_callig_in, e_style, e_script, style_tokens, _gate)
-
-        t_emb = self.t_embedder(t)               # (N, D)
-
-        # ★ 2026-10-13: 原 115 行内联条件融合已抽成 _fuse_condition ✓
-        y_emb, e_callig, _cgw = self._fuse_condition(
-            t, x, y_callig_in, y_callig, y_char, y_script, char_drop, script_drop,
-            e_glyph_vec, g_tok, e_style, style_tokens)
-        c = t_emb + y_emb                        # (N, D)  —— 旧行为/路由白名单层的条件
-
-        # ---- 922/80 改动 2: 风格专用支路的输入 ----
-        # 直接喂**原始** e_callig（不是 y_emb），理由：
-        #   e_callig 是"纯风格"信号，不含 t、不含 char/glyph 产物；
-        #   若喂 y_emb 则又走回共享混合的旧问题（其中 t 间接进入不了，但
-        #   char/glyph 会串味，且 factorized_cat 下 y_emb 已被投影混合）。
-        # 用独立 LN 归一化，范数失衡（D5 实测 63 倍）不会直接传到 W_up。
-        # zero-init -> 关闭时 c_style 不参与任何计算（也不建参数）。
-        c_style = None
-        if getattr(self, "style_ada_rank", 0) > 0:
-            c_style = e_callig
-        # Time-Gate 同时作用于风格专用支路 (它同样是"条件注入")。
-        if _cgw is not None and c_style is not None:
-            c_style = c_style * _cgw
-
-        rope = (self.rope_cos, self.rope_sin) if self.rope else None
-
-        intermediate_feats = None
-        # 多层 REPA 捕获 (统一): return_intermediate_layers=(8,11) -> dict {8:feats, 11:feats}
-        _repa_layers = None
-        if return_intermediate_layers is not None:
-            _repa_layers = (return_intermediate_layers
-                            if isinstance(return_intermediate_layers, (list, tuple))
-                            else (return_intermediate_layers,))
-            intermediate_feats = {}
-        # 兼容旧单层接口
-        _repa_single = None
-        if return_intermediate_layer is not None:
-            _repa_single = int(return_intermediate_layer)
-        # 预计算好的映射（__init__ 里建），不再每步重建
-        _inj = {}
-        if self.glyph_injections is not None and g_tok is not None:
-            _inj = self._inj_map
-
-        # ── 逐层注入的 context ───────────────────────────────────────────────
-        # 默认 = 骨架 token(GlyphStyleCrossAttn 模式下位置在下面显式加)。
-        # style_token_n>0 时拼接风格 token: 让**每一层**的 attention 都能直接
-        # 看到书家风格, 而不是只通过"书家化骨架"间接进入(会被深层稀释)。
-        # 每个 x 位置(query)因此可同时寻址: 局部字形(空间对应) + 书家风格。
-        # 逐层注入是第三路, 不经过 glyph_scale。g_tok 在上面已经乘过门
-        # (开了 glyph_vec_cond 时); 没开时在这里乘, 避免这一路漏掉。
-        if _gate is not None and not self.glyph_vec_cond and g_tok is not None:
-            g_tok = _gate * g_tok
-        inject_ctx = g_tok
-        if (getattr(self, "style_ctx_every_layer", False)
-                and g_tok is not None and style_tokens is not None):
-            # v15c: 骨架 token(+2D 位置) 与 K 个风格 token(+可学习 role) 拼成
-            # 每层 xattn 的 K/V —— 风格在**每一层、每个空间位置**都可直接寻址。
-            _Ng = g_tok.shape[1]
-            inject_ctx = torch.cat(
-                [g_tok + self.ctx_pos_g[:, :_Ng],
-                 style_tokens + self.style_role.unsqueeze(0)], dim=1)
-        elif getattr(self, "style_proj", None) is not None and g_tok is not None:
-            _B = g_tok.shape[0]
-            _D = g_tok.shape[-1]
-            _Ng = g_tok.shape[1]
-            _style = self.style_proj(e_callig).view(
-                _B, self.n_style_token, _D) + self.style_role.unsqueeze(0)
-            # 骨架 token 加 2D sincos 位置(空间对应), 风格 token 用可学习 role
-            inject_ctx = torch.cat([g_tok + self.ctx_pos_g[:, :_Ng], _style], dim=1)
-
-        # ── S2 通路 B3（q="x"）：局部风格-骨架 adapter 插在**主干 block 之间** ──
-        # 语义："去噪中的画布，在风格条件下向局部骨架询问书写证据"。
-        # 比 q="g" 更标准，但改动更深入主干、成本略高。默认走 q="g"。
-        _lc_map = {}
-        _e_cond_local = None
-        if (self.local_ca is not None and self.local_ca_q == "x"
-                and g_tok is not None):
-            _lc_map = self._local_ca_map
-            _e_cond_local = _e_cond()
-
-        # ★ [2026-10-06] 三表条件的分层路由：白名单层用 c（含 y_emb*scale），
-        #   其余层只用 t_emb —— 条件在那几层**完全不参与计算**（不只是"少注入"）。
-        _router = self.cond_router
-        for i, block in enumerate(self.blocks):
-            if _router is None:
-                x = block(x, c, rope=rope, c_style=c_style)
-            elif _router.allows(i):
-                x = block(x, _router.cond(i, t_emb, y_emb),
-                          rope=rope, c_style=c_style)
-            else:
-                x = block(x, t_emb, rope=rope, c_style=None)
-            if _repa_layers is not None and i in _repa_layers:
-                intermediate_feats[i] = x
-            elif _repa_single is not None and i == _repa_single:
-                intermediate_feats = x
-            if i in _inj:
-                # x = x*(1+s) + t，s/t 由 g_tok 经 zero-init Linear 产出。
-                # init 时恒等；梯度上 ∂out/∂g_tok = W = 0，因此这条路径
-                # 初期不给 glyph_embedder 梯度 —— 但输入层的
-                # x = x + glyph_scale * g_tok（glyph_scale=0.4 非零）
-                # 已提供直通梯度，故 glyph_embedder 从 step 0 即可学习。
-                x = self.glyph_injections[_inj[i]](x, inject_ctx)
-            if i in _lc_map:
-                x = self.local_ca[_lc_map[i]](x, g_tok, _e_cond_local,
-                                              self.local_pos, keep)
-
-        # 骨架头：从 final_layer 前的 block 输出特征并行解码 latent 骨架 (N,1,32,32)
-        skel_pred = None
-        if self.skel_head_enabled and self.skel_head is not None:
-            skel_n = self.skel_head(x)                       # (N, T, p*p)，单通道 patch 值
-            B_, T_, PP = skel_n.shape
-            h_ = int(T_ ** 0.5)
-            p_ = self.x_embedder.patch_size[0]
-            # 完全镜像主 head 的 unpatchify（C=1）：
-            # (B,H*W,p*p) -> (B,H,W,p,p,1) -> einsum 'nhwpqc->nchpwq' -> (B,1,H,W,p,p) -> (B,1,H*p,W*p)
-            skel5 = skel_n.reshape(B_, h_, h_, p_, p_, 1)
-            skel5 = torch.einsum('nhwpqc->nchpwq', skel5)
-            skel_pred = skel5.reshape(B_, 1, h_ * p_, h_ * p_)
-
-        x = self.final_layer(x, c, c_style=c_style)
-        x = self.unpatchify(x)
-        if self.skel_head_enabled and skel_pred is not None:
-            # 返回 (主输出, skel_pred)；gaussian_diffusion.training_losses 会把第二元素
-            # 当作 intermediate_feats 存入 loss_dict['intermediate_feats']
-            return x, skel_pred
-        if _repa_layers is not None:
-            return x, intermediate_feats   # dict {layer: feats} (多层 REPA)
-        if return_intermediate_layer is not None:
-            return x, intermediate_feats
-        return x
+        """薄封装 ✓ —— 实现已抽成模块级 `forward`（[审查 PR3] ✓）。"""
+        return forward(ForwardCfg.from_model(self), x=x, t=t, y_callig=y_callig, y_char=y_char, return_intermediate_layer=return_intermediate_layer, return_intermediate_layers=return_intermediate_layers, g=g, y_script=y_script, y_callig_raw=y_callig_raw, y_pair=y_pair)
 
     def forward_with_cfg(self, x, t, y_callig, y_char, cfg_scale=4.0, g=None,
                          cfg_glyph=None, w_inter=0.0,
