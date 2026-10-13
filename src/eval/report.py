@@ -177,6 +177,12 @@ def score_samples(samples: Sequence[ScoringSample], *, size: Optional[Tuple[int,
             "ink_mass_pred": ink_mass(p), "ink_mass_gt": ink_mass(g),
             "near_blank_pred": bool(near_blank(p)),
         }
+        # ★ 2026-10-13 [审查 §5 相关]: 把样本**元数据**带进逐样本行 ✓
+        #   审查强调 near_blank 才是"有没有墨"的判据; 而要看**是谁/哪个字**近白, 指标行就
+        #   必须带上 character/script/calligrapher ✓（离线细分分析的前提 ✓）。
+        #   加在指标之后 + setdefault ⇒ 绝不覆盖任何指标键 ✓。
+        for _k, _v in (s.meta or {}).items():
+            row.setdefault(str(_k), _v)
         if lpips_fn is not None:
             import torch
             with torch.no_grad():
