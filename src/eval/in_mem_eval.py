@@ -705,6 +705,53 @@ class EvalSetup:
     sets: list
 
 
+def _decode_set_latents(vae, lat, sf, preds, *, device, vae_batch, n_img, aux_names,
+                        sd=None, save=False, zero_white=False, calli_noise=False):
+    """把一集的 latents **解码进 preds**（+ 可选 aux 通道 PNG 落盘）✓。
+
+    2026-10-13 [审查 §4.1] 从 `run_in_mem_eval` 抽出（原 L1138-1167, 30 行）——
+    审查"拆开采样、指标、保存和完成判定"的收尾一块 ✓（解码落盘 ✓）。
+
+    与原文**逐行等价** ✓（只把隐式局部变量改成显式入参 ✓）:
+      · 图像 latent 通道数**不能硬编码 4** ✓（16ch Flux AE 下就是全部通道；
+        硬切会让 16ch VAE 报 "expected input[...,4,32,32] to have 16 channels" ✗）
+      · 白底归零统一走 `maybe_add_white` ✓（勿内联, 防漂移/漏改 ✓）
+      · aux 通道**同样减过白底 ⇒ 也要加回再 decode** ✓（否则整列发黄/发黑 ✓）
+      · 返回解码后的 preds（**原地**写入 ✓）
+    """
+    for i in range(0, lat.shape[0], vae_batch):
+        j = min(i + vae_batch, lat.shape[0])
+        _lat = lat[i:j].to(device)
+        _aux_lat = None
+        if _lat.shape[1] > n_img:
+            _aux_lat = _lat[:, n_img:]
+            _lat = _lat[:, :n_img]
+        # 白底归零 (aux_zero_white): 统一走 maybe_add_white, 勿内联 (防漂移/漏改)
+        _lat = maybe_add_white(_lat, zero_white)
+        with torch.autocast("cuda", dtype=torch.bfloat16):
+            if calli_noise:
+                from src.utils.calli_decode_noise import decode_calli_latent
+                dec = decode_calli_latent(vae, _lat, sf, add_noise=True)
+            else:
+                dec = vae.decode(_lat / sf).sample
+        preds[i:j] = (dec.clamp(-1, 1) + 1) / 2
+        # aux 通道同样减过白底 -> 也要加回再 decode, 否则整列发黄/发黑
+        if _aux_lat is not None and save:
+            from PIL import Image as _AImg
+            _aux_lat = maybe_add_white(_aux_lat, zero_white)
+            os.makedirs(sd, exist_ok=True)
+            for _g in range(len(aux_names) if aux_names else max(0, _aux_lat.shape[1] // 4)):
+                _nm = aux_names[_g] if _g < len(aux_names) else f"aux{_g}"
+                with torch.autocast("cuda", dtype=torch.bfloat16):
+                    _da = vae.decode(_aux_lat[:, _g * 4:(_g + 1) * 4] / sf).sample
+                for _k in range(_da.shape[0]):
+                    _ar = ((_da[_k].float().clamp(-1, 1) + 1) / 2
+                           ).cpu().numpy().transpose(1, 2, 0)
+                    _AImg.fromarray((_ar * 255).astype(np.uint8)).save(
+                        os.path.join(sd, f"aux_{_nm}{i + _k}.png"))
+    return preds
+
+
 def _sample_set_latents(model, diffusion, cache, cfg_scale, dit_batch, device,
                         use_self_cond, blend_alpha):
     """一个评测集的**采样**（2026-10-13 [审查 §4.1] 抽出的"采样"步 ✓）。
@@ -1135,36 +1182,10 @@ def run_in_mem_eval(model, args, step, device, results_dir=None, logger=print):
             #   12ch aux 配方 (latent_channels=4 + 4*len(aux)) 语义不变。
             _n_img = int(getattr(args, "latent_channels", 4) or 4)
             _n_aux = max(0, (lat.shape[1] - _n_img) // 4)
-            for i in range(0, n, vae_batch):
-                j = min(i + vae_batch, n)
-                _lat = lat[i:j].to(device)
-                _aux_lat = None
-                if _lat.shape[1] > _n_img:
-                    _aux_lat = _lat[:, _n_img:]
-                    _lat = _lat[:, :_n_img]
-                # 白底归零 (aux_zero_white): 统一走 maybe_add_white, 勿内联 (防漂移/漏改)
-                _lat = maybe_add_white(_lat, _zw)
-                with torch.autocast("cuda", dtype=torch.bfloat16):
-                    if _calli_noise:
-                        from src.utils.calli_decode_noise import decode_calli_latent
-                        dec = decode_calli_latent(vae, _lat, sf, add_noise=True)
-                    else:
-                        dec = vae.decode(_lat / sf).sample
-                preds[i:j] = (dec.clamp(-1, 1) + 1) / 2
-                # aux 通道同样减过白底 -> 也要加回再 decode, 否则整列发黄/发黑
-                if _aux_lat is not None and _save:
-                    from PIL import Image as _AImg
-                    _aux_lat = maybe_add_white(_aux_lat, _zw)
-                    os.makedirs(_sd, exist_ok=True)
-                    for _g in range(_n_aux):
-                        _nm = _aux_names[_g] if _g < len(_aux_names) else f"aux{_g}"
-                        with torch.autocast("cuda", dtype=torch.bfloat16):
-                            _da = vae.decode(_aux_lat[:, _g * 4:(_g + 1) * 4] / sf).sample
-                        for _k in range(_da.shape[0]):
-                            _ar = ((_da[_k].float().clamp(-1, 1) + 1) / 2
-                                   ).cpu().numpy().transpose(1, 2, 0)
-                            _AImg.fromarray((_ar * 255).astype(np.uint8)).save(
-                                os.path.join(_sd, f"aux_{_nm}{i + _k}.png"))
+            # ★ 2026-10-13 [审查 §4.1]: 解码落盘抽成 _decode_set_latents ✓（逐行等价 ✓）
+            _decode_set_latents(vae, lat, sf, preds, device=device, vae_batch=vae_batch,
+                                n_img=_n_img, aux_names=_aux_names, sd=_sd, save=_save,
+                                zero_white=_zw, calli_noise=_calli_noise)
             pred_np = preds.cpu().numpy().transpose(0, 2, 3, 1)
             gt_np = gts.cpu().numpy().transpose(0, 2, 3, 1)
 
