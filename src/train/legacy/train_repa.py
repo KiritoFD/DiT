@@ -34,7 +34,7 @@ import torch
 from src.loss import create_diffusion_or_flow, flow_kwargs_from
 from src.utils import MCCDLatentDataset
 from src.model.legacy.controlnet import ControlNetDiT, load_main_model
-from src.eval.legacy.in_process_ctrl_eval import prepare_ctrl_eval_cache, run_ctrl_pair_eval
+from legacy.eval.in_process_ctrl_eval import prepare_ctrl_eval_cache, run_ctrl_pair_eval
 
 if sys.platform == 'win32':
     sys.stdout.reconfigure(encoding="utf-8")
