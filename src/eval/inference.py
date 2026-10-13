@@ -17,9 +17,7 @@ import os
 import time
 import json
 
-import numpy as np
 import torch
-from PIL import Image
 
 
 _ID_WARNED = [False]
@@ -42,6 +40,11 @@ from src.eval.sampler import (build_diffusion, model_uses_std_soft,   # noqa: F4
                               sample_latents, sample_latents_self_cond,
                               validate_std_soft_condition)
 
+# ── 目录级评分器已迁出（2026-10-13 [审查 §4.1]: 评分器不负责加载 VAE）──────────────────
+#   含 _mse/_ssim/_skel_iou 三个私有别名（有工具直接 import ✓）与 _get_lpips ✓
+from src.eval.scoring import (_get_lpips, _mse, _skel_iou, _ssim,   # noqa: F401
+                              compute_metrics)
+
 
 # ── 白底归零 (aux_zero_white) 的**唯一**加回入口 ──────────────────────────────
 
@@ -56,86 +59,8 @@ from src.eval.sampler import (build_diffusion, model_uses_std_soft,   # noqa: F4
 #   skel_iou / 4 份 MSE 的复制粘贴，且 win 与输入约定不一致 -> 数字不可比）。
 #   这里保留 `_mse` / `_ssim` / `_skel_iou` 三个名字做**向后兼容的再导出**，
 #   所有既有调用点无需改动。口径与历史主评测路径完全一致（win=11 高斯窗）。
-from src.eval.metrics import mse as _mse_impl, ssim as _ssim_impl, \
-    skel_iou as _skel_iou_impl
 
 
-def _mse(pred, gt):
-    return _mse_impl(pred, gt)
-
-
-def _ssim(pred, gt, win=11, data_range=1.0, sigma=1.5):
-    return _ssim_impl(pred, gt, win=win, data_range=data_range, sigma=sigma)
-
-
-def _skel_iou(pred, gt, thresh=0.5):
-    return _skel_iou_impl(pred, gt, thresh=thresh)
-
-
-_lpips_fn = None
-_lpips_loaded = False
-
-
-def _get_lpips():
-    global _lpips_fn, _lpips_loaded
-    if _lpips_loaded:
-        return _lpips_fn
-    _lpips_loaded = True
-    try:
-        import lpips
-        _lpips_fn = lpips.LPIPS(net='vgg', verbose=False)
-        _lpips_fn.eval()
-        for p in _lpips_fn.parameters():
-            p.requires_grad_(False)
-    except Exception:
-        _lpips_fn = None
-    return _lpips_fn
-
-
-def compute_metrics(dec_dir, gt_dir, tag_prefix, n, use_lpips=True, idx_range=None,
-                    with_lists=False):
-    """Compute MSE/SSIM/skel_iou (optional LPIPS) from PNG pairs on CPU.
-
-    dec_dir : dir with {tag_prefix}{i}.png
-    gt_dir  : dir with gt{i}.png (== dec_dir in the ctrl eval layout)
-    idx_range : (start, end) 只统计该全局下标区间 (分段并行 eval 用); None = 0..n
-    with_lists : True 时额外返回逐样本指标列表 (供跨分段精确合并 std/分位数)
-    Returns dict of scalar metrics (with_lists 时返回 (dict, lists_dict)).
-    """
-    lpips_fn = _get_lpips() if use_lpips else None
-    mses, ssims, skels, lpips_ = [], [], [], []
-    idxs = list(range(n)) if idx_range is None else list(range(*idx_range))
-    for i in idxs:
-        p = os.path.join(dec_dir, f"{tag_prefix}{i}.png")
-        g = os.path.join(gt_dir, f"gt{i}.png")
-        if not (os.path.exists(p) and os.path.exists(g)):
-            continue
-        pred = np.asarray(Image.open(p).convert("RGB"), np.float32) / 255.0
-        gt = np.asarray(Image.open(g).convert("RGB"), np.float32) / 255.0
-        mses.append(_mse(pred, gt))
-        ssims.append(_ssim(pred, gt))
-        skels.append(_skel_iou(pred, gt))
-        if lpips_fn is not None:
-            import torch as _t
-            pp = _t.from_numpy(pred.transpose(2, 0, 1)[None] * 2 - 1)
-            gg = _t.from_numpy(gt.transpose(2, 0, 1)[None] * 2 - 1)
-            with _t.no_grad():
-                lpips_.append(float(lpips_fn(pp, gg).mean().item()))
-    res = {"n": len(mses)}
-    if mses:
-        res["mse_mean"] = float(np.mean(mses))
-        res["mse_std"] = float(np.std(mses))
-        res["mse_q25"], res["mse_q50"], res["mse_q75"] = [float(q) for q in np.percentile(mses, [25, 50, 75])]
-        res["ssim_mean"] = float(np.mean(ssims))
-        res["ssim_std"] = float(np.std(ssims))
-        res["skel_iou_mean"] = float(np.mean(skels))
-        res["skel_iou_std"] = float(np.std(skels))
-    if lpips_:
-        res["lpips_mean"] = float(np.mean(lpips_))
-    if with_lists:
-        return res, {"idx": idxs, "mse": mses, "ssim": ssims, "skel_iou": skels,
-                     "lpips": lpips_}
-    return res
 
 
 # ── eval 条件缓存 (GT 图 + conds + skel + 固定 noise) ───────────────────────
