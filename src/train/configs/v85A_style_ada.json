@@ -1,7 +1,7 @@
 {
   "_comment": "v84-A: **std 模式** —— 字条件只由标准字形软掩码给出（字表整体移除）。\n\n【2026-10-13 内容条件模式（互斥）】\n  · content_cond='table' : 字条件=**字表** embedding（use_char_cond=True, std_soft_cond=False）\n  · content_cond='std'   : 字条件=**标准字形软掩码**（use_char_cond=False, std_soft_cond=True）\n  两者**不得共存** ✗（dit.py/train.py/model_io.py 均硬校验）。\n  书家/书体表是风格条件, 两种模式都保留 ✓（实验B已证其有效: 同g换书家墨量差65%）。\n  除本模式相关键外, 其余与 v83A **逐位相同** ✓（单变量对照）。",
-  "experiment_name": "v84A-std-cond",
-  "results_dir": "assets/results/v84A_std_cond",
+  "experiment_name": "v85A-style-ada",
+  "results_dir": "assets/results/v85A_style_ada",
   "model": "DiT-2Cond-Sp/2",
   "use_c2ot": true,
   "sde_gamma": 0.0,
@@ -57,7 +57,7 @@
   "attn_impl": "sdpa",
   "compile": true,
   "compile_mode": "default",
-  "epochs": 200000,
+  "epochs": 30000,
   "max_steps": 30000,
   "lr": 1e-05,
   "warmup_steps": 3000,
@@ -67,7 +67,6 @@
   "num_workers": 8,
   "preload": true,
   "preload_workers": 16,
-  "ckpt_every": 2500,
   "epoch_steps": 5000,
   "use_ema": true,
   "ema_decay": 0.999,
@@ -107,13 +106,11 @@
   "python_bin": "/opt/conda/envs/cu121/bin/python",
   "content_cond": "std",
   "global_seed": 0,
-  "_derived_from": "v84A_std_cond",
   "warm_start_from": "assets/results/v84A_std_cond/20261013-072215-v84A-std-cond/checkpoints/0200000.pt",
   "reset_cond_head": false,
-  "name": "v85A_style_ada",
-  "desc": "v85A: v84A@200k warm-start + 第 8/10/11 层 rank32 Style AdaLN（style_gain 初始 0 ✓）",
   "style_ada_rank": 32,
   "style_ada_at": "8,10,11",
   "style_ada_gain": true,
-  "style_ada_lr": 5e-05
+  "style_ada_lr": 5e-05,
+  "ckpt_every": 5000
 }
