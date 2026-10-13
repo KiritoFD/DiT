@@ -29,6 +29,7 @@ import numpy as np
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from src.eval.style import bank as B                                     # noqa: E402
+from src.eval.style import store                                         # noqa: E402
 from src.eval.style.brush import (BrushFeat, aggregate, bsd,             # noqa: E402
                                   features_from_gray)
 from src.eval.style.encoder import StyleEncoder                          # noqa: E402
@@ -118,6 +119,10 @@ def main() -> int:
     ap.add_argument("--query-frac", type=float, default=0.3)
     ap.add_argument("--baselines", type=int, default=1)
     ap.add_argument("--bsd", type=int, default=1)
+    ap.add_argument("--save-bank-pack", default="",
+                    help="把参考库嵌入导出成**可移植 pack** ✓（远端编码一次, 拉回本地复用 ✓）")
+    ap.add_argument("--bank-pack", default="",
+                    help="直接载入参考库 pack（**跳过参考库编码** ✓ ⇒ 本地评测只需编码测试输出 ✓）")
     ap.add_argument("--bsd-ref-max", type=int, default=3000,
                     help="BSD 参考侧最多用多少张（骨架化较慢；按槽位均衡抽样 ✓，0=全部）")
     ap.add_argument("--batch", type=int, default=32)
@@ -128,16 +133,31 @@ def main() -> int:
     roots = args.root or [".", "data", "exp-std"]
 
     print("== ① 建参考库 ==", flush=True)
-    rows = B.build_bank(args.csv, roots=roots,
-                        max_rows=(args.max_ref * 3 if args.max_ref else None))
-    if not rows:
-        print("参考库为空 ✗（图像路径不可解析?）"); return 2
-    if args.max_ref and len(rows) > args.max_ref:
-        rows = B.cap_balanced(rows, args.max_ref)
-        print("  参考库**按槽位均衡**压到 %d 张 ✓（避免截断丢掉整族书家 ✗）" % len(rows))
-    ref_rows, real_q = B.split_by_work(rows, query_frac=args.query_frac)
-    print("  ref=%d  real_query=%d（按**作品**划分 ✓ 保证 query 的作品不在 gallery 中 ✓）"
-          % (len(ref_rows), len(real_q)))
+    if args.bank_pack:
+        # ★ 用户建议的路径 ✓: 远端把参考库编码一次 -> 存 pack -> 拉回本地 ->
+        #   本地 GPU 只编码**测试输出** ⇒ 秒级完成, 且与远端路径无关 ✓
+        emb_all, rdict = store.load_pack(args.bank_pack)
+        rows = [B.RefRow(path=d.get("path", ""), src_path="", writer=d.get("writer", ""),
+                         script=d.get("script", ""), char=d.get("char", ""),
+                         work=d.get("work", ""), split=(d.get("split") or ""))
+                for d in rdict]
+        ref_i = [i for i, r in enumerate(rows) if r.split == "ref"]
+        qry_i = [i for i, r in enumerate(rows) if r.split == "query"]
+        if not ref_i:                           # 兼容没写 split 的旧 pack ✓
+            ref_i, qry_i = B.split_index_by_work(rows, query_frac=args.query_frac)
+        print("  ✓ 载入参考库 pack: %s（%d 张, dim=%d ✓ 跳过参考库编码 ✓）"
+              % (os.path.basename(args.bank_pack), len(rows), emb_all.shape[1]))
+    else:
+        rows = B.build_bank(args.csv, roots=roots)
+        if not rows:
+            print("参考库为空 ✗（图像路径不可解析?）"); return 2
+        if args.max_ref and len(rows) > args.max_ref:
+            rows = B.cap_balanced(rows, args.max_ref)
+            print("  参考库**按槽位均衡**压到 %d 张 ✓（避免截断丢掉整族书家 ✗）" % len(rows))
+        ref_i, qry_i = B.split_index_by_work(rows, query_frac=args.query_frac)
+        rows = B.tag_split(rows, ref_i, qry_i)  # ★ 写回划分 ⇒ pack 可自描述 ✓
+        print("  ref=%d  real_query=%d（按**作品**划分 ✓ 保证 query 的作品不在 gallery 中 ✓）"
+              % (len(ref_i), len(qry_i)))
 
     print("== ② 加载风格编码器 ==", flush=True)
     enc = StyleEncoder.load(args.ckpt, kind=args.kind, device=(args.device or None))
@@ -145,14 +165,24 @@ def main() -> int:
 
     print("== ③ 提特征（带缓存 ✓）==", flush=True)
     cache = os.path.join(args.out, "emb_cache.npz")
-    emb_all, _ = enc.embed_paths([r.path for r in rows], cache=cache, batch=args.batch,
-                                 mask_ink=bool(args.mask_ink), progress=True)
-    idx = {id(r): i for i, r in enumerate(rows)}
+    if args.bank_pack:
+        pass                                     # emb_all 已从 pack 载入 ✓
+    else:
+        emb_all, _ = enc.embed_paths([r.path for r in rows], cache=cache, batch=args.batch,
+                                     mask_ink=bool(args.mask_ink), progress=True)
+        if args.save_bank_pack:
+            store.save_pack(args.save_bank_pack, emb_all, rows)
+            print("  ✓ 参考库 pack 已导出: %s %s"
+                  % (args.save_bank_pack, store.pack_summary(args.save_bank_pack)), flush=True)
+    # ★ 一律用**行索引**索引嵌入 ✓ —— 早先按 `id(row)` 建映射, 而 split_by_work 会 replace
+    #   出新对象 ⇒ 映射整体失效 ✗（KeyError: <大整数> ✓）。索引不会失效 ✓。
+    rows_ref = [rows[i] for i in ref_i]
+    rows_qry = [rows[i] for i in qry_i]
     # 统一标签映射（用**全部**行, 保证 ref/query/gen 的 id 一致 ✓）
     allw, alls, allc, allk = _ids(rows, "writer"), _ids(rows, "script"), _ids(rows, "char"), \
         _ids(rows, "work")
-    E_ref = to_embset(ref_rows, emb_all[[idx[id(r)] for r in ref_rows]], allw, alls, allc, allk)
-    E_realq = to_embset(real_q, emb_all[[idx[id(r)] for r in real_q]], allw, alls, allc, allk)
+    E_ref = to_embset(rows_ref, emb_all[ref_i], allw, alls, allc, allk)
+    E_realq = to_embset(rows_qry, emb_all[qry_i], allw, alls, allc, allk)
     proto = build_prototypes(E_ref)
     print("  原型 %d 个 (writer×script) ✓" % len(proto), flush=True)
 
@@ -161,7 +191,7 @@ def main() -> int:
 
     report = {"encoder": {"ckpt": os.path.basename(args.ckpt), "kind": args.kind,
                           "dim": enc.dim, "mask_ink": bool(args.mask_ink)},
-              "bank": {"n_rows": len(rows), "n_ref": len(ref_rows), "n_real_query": len(real_q),
+              "bank": {"n_rows": len(rows), "n_ref": len(rows_ref), "n_real_query": len(rows_qry),
                        "n_proto": len(proto)},
               "baselines": {}, "sets": {}}
 
@@ -202,18 +232,18 @@ def main() -> int:
     bsd_ref = None
     if args.bsd:
         print("== ④ 参考侧笔法特征 ==", flush=True)
-        picks = ref_rows
-        if args.bsd_ref_max and len(ref_rows) > args.bsd_ref_max:
+        picks = rows_ref
+        if args.bsd_ref_max and len(rows_ref) > args.bsd_ref_max:
             # 按槽位**均衡抽样** ✓（否则会偏向样本最多的书家 ✗）
             per: dict = {}
-            for r in ref_rows:
+            for r in rows_ref:
                 per.setdefault(r.slot, []).append(r)
             quota = max(1, args.bsd_ref_max // max(len(per), 1))
             picks = []
             for slot, rs in sorted(per.items()):
                 picks += rs[:quota] if len(rs) > quota else rs
             print("  BSD 参考侧抽样 %d -> %d 张（每槽位配额 %d ✓）"
-                  % (len(ref_rows), len(picks), quota), flush=True)
+                  % (len(rows_ref), len(picks), quota), flush=True)
         bsd_ref = brush_feats(enc, [r.path for r in picks], args.out)
         print("  参考侧笔法特征: 宽度中位 %.2f | 样本 %d ✓"
               % (float(np.median(bsd_ref.width)) if bsd_ref.width.size else float("nan"),
@@ -222,7 +252,7 @@ def main() -> int:
     if args.baselines:
         print("== ⑤ 基线 ==", flush=True)
         report["baselines"]["real_real"] = full_metrics(
-            E_realq, "Real-Real", bsd_ref=bsd_ref, q_paths=[r.path for r in real_q])
+            E_realq, "Real-Real", bsd_ref=bsd_ref, q_paths=[r.path for r in rows_qry])
         # Real-Other-Writer: 把 query 的书家**故意错位**（同书体内轮换 ✓）
         wl = sorted(set(allw.values()))
         wrong = np.array([wl[(wl.index(int(w)) + 1) % len(wl)] for w in E_realq.writer])
@@ -247,10 +277,10 @@ def main() -> int:
                        script=(row.get("script") or "").strip(),
                        char=(row.get("character") or "").strip(), work="TTF", path=p)
                   for row, p in zip(gen_map_rows, ttf_paths)]
-            E_ttf = EmbSet(emb_ttf, np.array([allw[g["writer"]] for g in gm]),
-                           np.array([alls[g["script"]] for g in gm]),
-                           np.array([allc[g["char"]] for g in gm]),
-                           np.array([allk.setdefault("TTF", len(allk)) for _ in gm]),
+            E_ttf = EmbSet(emb_ttf, np.array([_mid(allw, g["writer"]) for g in gm]),
+                           np.array([_mid(alls, g["script"]) for g in gm]),
+                           np.array([_mid(allc, g["char"]) for g in gm]),
+                           np.array([_mid(allk, g["work"]) for g in gm]),
                            [os.path.basename(g["path"]) for g in gm])
             report["baselines"]["ttf_only"] = full_metrics(
                 E_ttf, "TTF-only", bsd_ref=bsd_ref, q_paths=ttf_paths)

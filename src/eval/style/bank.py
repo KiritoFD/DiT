@@ -12,7 +12,7 @@ from __future__ import annotations
 
 import csv
 import os
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from typing import Dict, List, Optional, Sequence, Tuple
 
 SCRIPT_KEYS = {"楷": "kai", "行": "xing", "隶": "li", "草": "cao", "篆": "zhuan"}
@@ -127,10 +127,45 @@ def split_by_work(bank: Sequence[RefRow], *, query_frac: float = 0.3, seed: int 
             qset = set()
         for w, idxs in works.items():
             for i in idxs:
-                (qry if w in qset else ref).append(bank[i])
+                # ★ 把 split **写回行**（RefRow 是 frozen ⇒ 用 replace ✓）——
+                #   这样嵌入 pack 里能自带划分, 本地复用远端参考嵌入时不必重算划分 ✓
+                r = replace(bank[i], split=("query" if w in qset else "ref"))
+                (qry if w in qset else ref).append(r)
     return ref, qry
 
 
+def split_index_by_work(bank: Sequence[RefRow], *, query_frac: float = 0.3, seed: int = 0
+                        ) -> Tuple[List[int], List[int]]:
+    """按**作品**划分，返回**行索引** (ref_idx, qry_idx) ✓。
+
+    ★ 为什么返回索引而不是行对象: 早先按 `id(row)` 建映射 ⇒ `replace()` 造出新对象后
+      映射整体失效 ✗（`KeyError: <一个大整数>` ✓）。索引**永远指向同一行** ✓，不会失效 ✓。
+    """
+    import random
+    rng = random.Random(seed)
+    by_slot: Dict[Tuple[str, str], Dict[str, List[int]]] = {}
+    for i, r in enumerate(bank):
+        by_slot.setdefault(r.slot, {}).setdefault(r.work, []).append(i)
+    ref_i: List[int] = []
+    qry_i: List[int] = []
+    for _slot, works in by_slot.items():
+        ws = sorted(works)
+        if len(ws) >= 3:
+            rng.shuffle(ws)
+            n_q = max(1, int(round(len(ws) * query_frac)))
+            qset = set(ws[:min(n_q, len(ws) - 1)])
+        else:
+            qset = set()
+        for w, idxs in works.items():
+            (qry_i if w in qset else ref_i).extend(idxs)
+    return sorted(ref_i), sorted(qry_i)
+
+
+def tag_split(rows: Sequence[RefRow], ref_idx: Sequence[int],
+              qry_idx: Sequence[int]) -> List[RefRow]:
+    """把划分**写回行**（frozen ⇒ 造新对象 ✓）⇒ 嵌入 pack 可自描述划分 ✓。"""
+    qs = set(qry_idx)
+    return [replace(r, split=("query" if i in qs else "ref")) for i, r in enumerate(rows)]
 def cap_balanced(rows: Sequence[RefRow], n: int) -> List[RefRow]:
     """把参考库压到 n 张，**按槽位均衡**（轮转取样 ✓）。
 
