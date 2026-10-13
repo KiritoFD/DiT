@@ -1119,6 +1119,30 @@ def run_in_mem_eval(model, args, step, device, results_dir=None, logger=print):
                         os.path.join(_sd, f"g{i}.png"))
                     _Img.fromarray((gt_np[i] * 255).astype(np.uint8)).save(
                         os.path.join(_sd, f"gt{i}.png"))
+                # ★ 2026-10-13 [审查 §4.1/§4.2] **接线**: 顺带写生成清单 samples.jsonl ✓✓
+                #   审查: "训练内与离线使用同一套代码"。有了这份清单, 离线工具就能
+                #   **不重新生成**地重算指标/出报告 ✓:
+                #       python tools/report_from_samples.py --eval-csv <csvp> \
+                #           --gen-dir <_sd> --gen-name-template 'g{idx}.png' --out <_sd>
+                #   （生成身份由清单**权威给出** ✓, 不必从目录名猜哪个文件最新 ✗）
+                #   清单只含身份、**不含任何 GT/图片路径** ✓（report.py 的元测试保证 ✓）。
+                try:
+                    from src.eval.report import GenerationSample, write_samples_jsonl
+                    _gs = []
+                    for i in range(n):
+                        _r = _src[i] if i < len(_src) else {}
+                        _cid = str(_r.get("character_id", "")).strip()
+                        _gs.append(GenerationSample(
+                            sample_id=str(_r.get("img_id", "") or i),
+                            writer_id=int(_r.get("calligrapher_id", -1) or -1),
+                            script_id=int(_r.get("script_id", -1) or -1),
+                            char_id=(int(_cid) if _cid.isdigit() else None),
+                            glyph_key=(str(_r.get("glyph_id")) or None),
+                            seed=int(getattr(args, "global_seed", 0) or 0)))
+                    _mp = write_samples_jsonl(os.path.join(_sd, "samples.jsonl"), _gs)
+                    logger(f"[in-mem-eval] 生成清单已写 {_mp}（{len(_gs)} 条 ✓ 供离线重算 ✓）")
+                except Exception as _ge:                              # noqa: BLE001
+                    logger(f"[in-mem-eval] ⚠ 生成清单写入失败(不影响评测): {_ge!r}")
                 # 标准字输入 (g 条件) 落盘 (poster 第 1 行, 跨 step 复用, 幂等)
                 if cache.get("skels_latent") is not None:
                     try:
