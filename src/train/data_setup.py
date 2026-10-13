@@ -21,7 +21,10 @@ import logging
 from torch.utils.data import DataLoader
 from torch.utils.data.distributed import DistributedSampler
 
-from src.utils.latent_dataset import MCCDLatentDataset, MCCDDataset
+from src.utils.latent_dataset import MCCDLatentDataset
+# ★ 2026-10-13 修正: MCCDDataset 由 **src.utils 包**再导出 ✓（不在 latent_dataset 里 ✗）
+#   —— 这是 round 32 我引入的 ImportError ✗（smoke 没抓到, 因为 smoke 不 import train.py ✗）
+from src.utils import MCCDDataset
 from src.utils.samplers import (DistributedFactorBalancedSampler,
                                 LongEpochDistributedSampler)
 

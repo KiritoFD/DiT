@@ -31,15 +31,11 @@ torch.backends.cudnn.benchmark = True
 import torch.distributed as dist
 from torch.nn.parallel import DistributedDataParallel as DDP
 import numpy as np
-import sys
 
 from time import time
 
-import logging
 import json
-import datetime
 import copy
-import re
 import math
 
 # ═══════════════════════════════════════════════════════════════════════════
@@ -79,6 +75,7 @@ from src.utils.channel_expand import (drop_shape_mismatched,
 from src.model.dit import MultiStyleEmbedder
 from src.train.ckpt import save_checkpoint, prune_checkpoints, drain_ckpt
 from src.train.data_setup import build_data   # ★ PR4: 数据装配 ✓
+from src.train.setup import setup_runtime   # ★ PR4: 运行时装配 ✓
 
 from src.eval.in_mem_eval import run_in_mem_eval
 from src.train.eval_callback import maybe_run_in_training   # 审查: 训练器决定何时评测 ✓
@@ -243,19 +240,7 @@ def update_ema(ema_model, model, decay):
 def cleanup():
     dist.destroy_process_group()
 
-def create_logger(logging_dir):
-    if dist.get_rank() == 0:
-        logging.basicConfig(
-            level=logging.INFO,
-            format='[\033[34m%(asctime)s\033[0m] %(message)s',
-            datefmt='%Y-%m-%d %H:%M:%S',
-            handlers=[logging.StreamHandler(), logging.FileHandler(f"{logging_dir}/log.txt")]
-        )
-        logger = logging.getLogger(__name__)
-    else:
-        logger = logging.getLogger(__name__)
-        logger.addHandler(logging.NullHandler())
-    return logger
+# ★ 2026-10-13 [审查 PR4]: create_logger 已迁到 src/train/setup.py ✓（下方 import ✓）
 
 def _resolve_and_validate_args(args):
     """args 校验与词表解析（原 main 内联 89 行 ✓, 2026-10-13 抽出）。
@@ -454,55 +439,11 @@ def main(args):
     _std_soft_cond = _resolve_and_validate_args(args)
 
     # gloo is the only backend available on Windows; prefer nccl on Linux for speed.
-    backend = "nccl" if (dist.is_nccl_available() and sys.platform != "win32") else "gloo"
-    dist.init_process_group(backend)
-    assert args.global_batch_size % dist.get_world_size() == 0, "Batch size must be divisible by world size."
-    rank = dist.get_rank()
-    device = rank % torch.cuda.device_count()
-    seed = args.global_seed * dist.get_world_size() + rank
-    torch.manual_seed(seed)
-    np.random.seed(seed)
-    torch.cuda.manual_seed_all(seed)
-    torch.cuda.set_device(device)
-    
-    if rank == 0:
-        os.makedirs(args.results_dir, exist_ok=True)
-        model_string_name = args.model.replace("/", "-")
-        # Timestamp-named experiment dir (unique per launch, never collides or overwrites).
-        # 命名规范 (跟随 assets/results/): results_dir 按**实验**独立, 其下每次
-        # 启动建一个时间戳 run 目录 —— 同名实验多次启动互不覆盖, 跨实验不冲突。
-        _ts = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
-        _name = getattr(args, "experiment_name", "") or model_string_name
-        _name = re.sub(r"[^A-Za-z0-9._-]+", "-", _name).strip("-")
-        experiment_dir = f"{args.results_dir}/{_ts}-{_name}"
-        checkpoint_dir = f"{experiment_dir}/checkpoints"
-        os.makedirs(checkpoint_dir, exist_ok=True)
-        # 供外部 CPU 评测进程定位当前活动实验的 ckpt 目录。
-        with open(f"{args.results_dir}/_active_ckpt_dir.txt", "w", encoding="utf-8") as _m:
-            _m.write(checkpoint_dir + "\n")
-        # log.txt lives inside this experiment dir (created first), never overwritten.
-        logger = create_logger(experiment_dir)
-        logger.info(f"Experiment directory created at {experiment_dir}")
-        # ★ 评测产物 (summary/batch csv, posters/) 默认落**本次 run 目录**:
-        #   每次启动都是新目录 -> 与历史/其他实验的 (step,set) 永不撞车, 评测
-        #   不会被去重逻辑静默跳过。--eval-dir 可显式覆盖 (如汇总到别的盘)。
-        args.eval_dir = (str(getattr(args, "eval_dir", "") or "").strip()
-                         or experiment_dir)
-        os.makedirs(args.eval_dir, exist_ok=True)
-        logger.info(f"[eval-dir] eval artifacts -> {args.eval_dir}")
-        with open(f"{experiment_dir}/resolved_config.json", "w", encoding="utf-8") as _cf:
-            json.dump(vars(args), _cf, ensure_ascii=False, indent=2)
-        _sources = {}
-        # ★ 2026-10-13 [审查 P0]: 原块只哈希根目录旧文件名(实际为空 ✗) -> 改为自包含模块 ✓
-        from src.train.manifest import write_source_manifest
-        write_source_manifest(experiment_dir, extra={"config_path": getattr(args, "config", None)})
-    else:
-        logger = create_logger(None)
-
-    # Latent spatial size: default f8 (sd-vae), but supports f4 (kl-f4) via vae_downscale arg.
-    vae_downscale = getattr(args, 'vae_downscale', 8)
-    assert args.image_size % vae_downscale == 0, f"image_size {args.image_size} not divisible by vae_downscale {vae_downscale}"
-    latent_size = args.image_size // vae_downscale
+    # ★ 2026-10-13 [审查 PR4]: 运行时装配已抽成 src/train/setup.setup_runtime ✓（逐行等价 ✓）
+    _rt = setup_runtime(args)
+    rank, device, seed, logger = _rt.rank, _rt.device, _rt.seed, _rt.logger
+    experiment_dir, checkpoint_dir = _rt.experiment_dir, _rt.checkpoint_dir
+    vae_downscale, latent_size = _rt.vae_downscale, _rt.latent_size
     
     # 注：历史上曾有 cond_mode=3cond（callig + script + char 三条件，模型 DiT_3Cond）。
     # 2026-08-31 清理时删除 —— 三条件模型已废弃，当前只保留 2cond（callig + char）。
