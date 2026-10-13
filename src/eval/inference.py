@@ -29,8 +29,8 @@ _ID_WARNED = [False]
 #   ★ 迁移策略: 下面三个名字在此**原样再导出**（同一个函数对象 ✓）⇒ 全仓 ~25 个既有调用点
 #     **一行都不用改** ✓✓；VAE 缓存单例随函数一起搬走, 仍是唯一一份 ✓（in_mem_eval 对返回
 #     对象打的 _VAE.decode 补丁依旧作用在同一对象上 ✓）。新代码请直接 from src.eval.decoder import …
-from src.eval.decoder import (image_latent, load_eval_vae,   # noqa: F401
-                              match_model_channels)
+from src.eval.decoder import (decode_and_save, get_white_latent, image_latent,   # noqa: F401
+                              load_eval_vae, match_model_channels, maybe_add_white)
 
 
 # ── 评测缓存已迁出（2026-10-13 [审查 §4.1]: 合并评测样本映射和缓存）────────────────────
@@ -44,105 +44,11 @@ from src.eval.sampler import (build_diffusion, model_uses_std_soft,   # noqa: F4
 
 
 # ── 白底归零 (aux_zero_white) 的**唯一**加回入口 ──────────────────────────────
-_WHITE_LAT = {}
 
 
-def get_white_latent(device=None, path="data/white_latent.npy"):
-    """白底图的 VAE latent (4,32,32)，已乘 scaling_factor（与训练目标同尺度）。"""
-    z = _WHITE_LAT.get("w")
-    if z is None:
-        z = torch.from_numpy(np.load(path)).float()
-        _WHITE_LAT["w"] = z
-    return z if device is None else z.to(device)
-
-
-def maybe_add_white(lat, zero_white=False):
-    """decode 前把白底加回（当训练用 `tools/rebuild_latents_wz.py` 减过白底时）。
-
-    ⚠ 为什么不内联在各处:
-      2026-09-14 事故 —— 训练目标减了白底, 但 `aux_zero_white` 没在 train.py 注册,
-      config 的值被静默丢弃, 于是**所有** decode 路径都没加回:
-      VAE 把 latent 零向量解成灰黄棕色 (实测 RGB≈[129,110,89]), 更负处变黑,
-      生成图整体发黄/发黑, poster 上看起来"全黑"。而训练本身完全正常。
-      → 新增任何 decode 路径都必须走本函数, 不要各自实现。
-    """
-    if not zero_white:
-        return lat
-    try:
-        w = get_white_latent(lat.device)
-    except Exception:
-        return lat
-    if lat.dim() == 4 and lat.shape[1] != w.shape[0]:
-        # aux 多通道 (如 8ch = canny4 + skel4 / 12ch = img4+canny4+skel4):
-        # 白底 latent 固定 4ch, 每个 4ch 目标组都减过同一个白底,
-        # 加回时按组重复到 C 通道, 否则 8ch + 4ch 维度不匹配 (2026-09-14 事故续)。
-        c = lat.shape[1]
-        if c % w.shape[0] != 0:
-            raise ValueError(
-                f"maybe_add_white: 通道数 {c} 不是 {w.shape[0]} 的整数倍, 无法按组加回白底")
-        # ⚠ Tensor.repeat 的实参个数必须等于张量维数: (4,32,32) 要写 repeat(n,1,1),
-        #   写成 repeat(n) 会直接报 "Number of dimensions of repeat dims can not be
-        #   smaller than number of dimensions of tensor"。此前 eval 全线 FAILED 就是这个。
-        w = w.repeat(c // w.shape[0], 1, 1)
-    return lat + (w[None] if lat.dim() == 4 else w)
 
 
 # ── VAE decode (fp32) → PNG 落盘 ────────────────────────────────────────────
-@torch.no_grad()
-def decode_and_save(vae, latents, scaling_factor, out_dir, tag, conds=None,
-                    gts=None, vae_batch=16, skels=None, idx_offset=0,
-                    zero_white=False, img_channels=4):
-    # ★ 2026-10-05: img_channels 显式化 —— 16ch Flux VAE 下图像 latent 是 16 通道,
-    #   原来硬编码 `lat[:, :4]` 会让 16ch VAE 解码失败。默认 4 保持向后兼容。
-    """Decode latents (fp32, force_upcast) → save {tag}{i}.png [+gt{i}.png, skel{i}.png].
-
-    latents      : (N, C, H, W) CPU float32.
-    scaling_factor: VAE latent scaling (e.g. 0.18215).
-    out_dir      : directory to write PNGs into (created).
-    tag          : image prefix (e.g. 'ctrl' / 'base' / 'sample').
-    conds/gts/skels: optional metadata / GT images (N,3,H,W) [-1,1] / skels.
-    idx_offset   : 全局下标偏移 (分段并行 eval 时 = 段起点, PNG 命名用全局下标).
-    Returns number of saved images.
-    """
-    os.makedirs(out_dir, exist_ok=True)
-    n = latents.shape[0]
-    n_saved = 0
-    vae_dev = next(vae.parameters()).device
-    for i in range(0, n, vae_batch):
-        j = min(i + vae_batch, n)
-        lat = latents[i:j].to(vae_dev)
-        if lat.shape[1] > img_channels:      # aux 目标通道: 解码只用图像通道
-            lat = lat[:, :img_channels]
-        lat = maybe_add_white(lat, zero_white)      # 白底归零: 减过的必须加回
-        decoded = vae.decode(lat / scaling_factor).sample  # fp32
-        preds = decoded.float().cpu()
-        for k in range(j - i):
-            idx = idx_offset + i + k
-            p = ((preds[k].clamp(-1, 1) + 1) / 2).clamp(0, 1)
-            Image.fromarray((p.permute(1, 2, 0).numpy() * 255).astype(np.uint8)).save(
-                os.path.join(out_dir, f"{tag}{idx}.png"))
-            if gts is not None:
-                g = ((gts[i + k].clamp(-1, 1) + 1) / 2).clamp(0, 1)
-                Image.fromarray((g.permute(1, 2, 0).numpy() * 255).astype(np.uint8)).save(
-                    os.path.join(out_dir, f"gt{idx}.png"))
-            if skels is not None:
-                # skel 可视化: latent (N,4,32,32) 先 VAE decode; PNG (N,1,H,W) 直接用
-                if skels.ndim == 4 and skels.shape[1] == 4:
-                    lat_sk = skels[i + k:i + k + 1].to(
-                        next(vae.parameters()).device)
-                    dec_sk = vae.decode(lat_sk / scaling_factor).sample.float().cpu()[0]
-                    s = ((dec_sk.clamp(-1, 1) + 1) / 2).clamp(0, 1).permute(1, 2, 0).numpy()
-                    Image.fromarray((s * 255).astype(np.uint8)).save(
-                        os.path.join(out_dir, f"skel{idx}.png"))
-                else:
-                    s = skels[i + k, 0].numpy()
-                    Image.fromarray((s * 255).astype(np.uint8)).save(
-                        os.path.join(out_dir, f"skel{idx}.png"))
-        n_saved += j - i
-        del lat, decoded, preds
-        if vae_dev.type == "cuda":
-            torch.cuda.empty_cache()
-    return n_saved
 
 
 # ── CPU 指标 ────────────────────────────────────────────────────────────────
