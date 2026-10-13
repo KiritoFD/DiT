@@ -93,9 +93,25 @@ def main():
     print("  CLI 已注册参数 %d 个" % len(dests))
     print("  审计 %d 份配置\n" % len(files))
 
-    bad, warned = [], []
+    bad, warned, impl = [], [], []
     for f in files:
         r = audit(f, dests)
+        # ★ 2026-10-13 [审查]: 内容条件必须**显式**声明, 且与旧开关**自洽** ✓
+        #   审查原话: "不应允许它靠 content_cond=None 隐式启用" ✗
+        #   校验直接复用唯一真源 src/model/conditioning.py ✓（不再有第二套解释 ✗）
+        _cfg = r.get("cfg") or {}
+        if any(k in _cfg for k in ("std_soft_cond", "no_char_cond", "content_cond")) and not r.get("err"):
+            from types import SimpleNamespace as _NS
+            from src.model.conditioning import content_config_from as _ccf
+            try:
+                _c = _ccf(_NS(**{k: _cfg.get(k) for k in
+                                 ("content_cond", "no_char_cond", "std_soft_cond", "glyph_dropout")}))
+                if not _c.declared:
+                    impl.append((os.path.basename(f), _c.mode))
+            except ValueError as _e:
+                bad.append(f)
+                print("  ✗ %-46s content_cond 与开关**矛盾** ✗: %s" % (os.path.basename(f), str(_e)[:70]))
+                continue          # ★ 矛盾已定性, 不要再印"全部键有效" ✗（首版会双重打印 ✓）
         name = os.path.basename(f)
         if r["err"]:
             print("  ✗ %-46s %s" % (name, r["err"])); bad.append(f); continue
@@ -113,10 +129,17 @@ def main():
         elif not a.quiet:
             print("  ✓ %-46s 全部键有效（%d 个）" % (name, len(r["ok"])))
 
-    print("\n  汇总: 有效 %d · 含别名 %d · **含未知键 %d** ✗ · 共 %d"
-          % (len(files) - len(bad) - len(warned), len(warned), len(bad), len(files)))
-    if a.strict and bad:
-        print("  ✗ --strict: 存在未知键配置, 判定失败 ✗")
+    if impl:
+        print("\n  ⚠ **隐式内容条件 %d 份** ✗（未显式写 content_cond, 由开关推导）:" % len(impl))
+        for n, m in impl[:12]:
+            print("        %-44s 推导为 %r ⇒ 请显式写 content_cond=%r ✓" % (n, m, m))
+    print("\n  汇总: 有效 %d · 含别名 %d · **含未知键 %d** ✗ · 隐式内容条件 %d ⚠ · 共 %d"
+          % (len(files) - len(bad) - len(warned), len(warned), len(bad), len(impl), len(files)))
+    if a.strict and (bad or impl):
+        if bad:
+            print("  ✗ --strict: 存在未知键/矛盾配置, 判定失败 ✗")
+        if impl:
+            print("  ✗ --strict: 存在**隐式内容条件**（审查要求必须显式 ✓）, 判定失败 ✗")
         return 1
     return 0
 

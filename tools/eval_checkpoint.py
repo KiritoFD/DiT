@@ -100,6 +100,8 @@ def main():
     ap.add_argument("--sets", default=None)
     ap.add_argument("--device", default="cuda")
     ap.add_argument("--preflight-only", action="store_true")
+    ap.add_argument("--force", action="store_true",
+                    help="即使该 eval_id 已完成 / 目录里是别的协议, 也强制重跑并覆盖 ✓")
     a = ap.parse_args()
 
     args = ckpt_args(a.ckpt)
@@ -120,12 +122,34 @@ def main():
                         sets_spec=str(a.sets or ""))
     eid = req.eval_id()
     Path(a.out).mkdir(parents=True, exist_ok=True)
-    write_protocol(req, Path(a.out))
-    _ok, _why = is_complete(req, Path(a.out))
     print("[eval_checkpoint] eval_id    = %s" % eid)
-    print("[eval_checkpoint] 协议已写入 = %s" % (Path(a.out) / "protocol.json"))
-    if _ok:
-        print("[eval_checkpoint] ⚠ 该 eval_id **已完成**（%s）—— 要重跑请换 --out ✓" % _why)
+
+    # ★ 2026-10-13 [审查 §4.3 后半句] "同一 eval_id 可以**安全复用**" ✓✓
+    #   并严格执行本工具自己的承诺"禁止混协议" ✓（原来只是**口头**承诺 ✗: 它会直接把
+    #   目录里已有的 protocol.json **覆盖**掉, 从而抹掉"这目录里到底跑过什么"的记录 ✗✗）
+    import json as _json
+    _pp = Path(a.out) / "protocol.json"
+    _prev = None
+    if _pp.is_file():
+        try:
+            _prev = _json.loads(_pp.read_text(encoding="utf-8"))
+        except Exception:                                        # noqa: BLE001
+            _prev = "unreadable"
+    if _prev is not None and not a.force:
+        if _prev == "unreadable":
+            raise SystemExit("[eval_checkpoint] ✗ %s 存在但不可解析 ⇒ 拒绝在未知协议上重跑 ✗（换 --out 或 --force）" % _pp)
+        if _prev.get("eval_id") != eid:
+            raise SystemExit(
+                "[eval_checkpoint] ✗ 该目录已属于**另一个协议**(eval_id=%s ≠ 本次 %s) ⇒ 禁止混协议 ✗。"
+                "\n                   请换 --out；确要覆盖请显式加 --force ✓"
+                % (str(_prev.get("eval_id"))[:12], eid[:12]))
+    _ok, _why = is_complete(req, Path(a.out))
+    if _ok and not a.force:
+        print("[eval_checkpoint] ✓ 该 eval_id **已完成 ⇒ 安全复用, 不重跑** ✓（--force 可强制重跑）")
+        print("[eval_checkpoint]   %s" % _why)
+        return 0
+    write_protocol(req, Path(a.out))
+    print("[eval_checkpoint] 协议已写入 = %s" % _pp)
 
 
     tool = ROOT / ("tools/eval_std_soft_checkpoint.py" if branch == "std"
@@ -142,13 +166,17 @@ def main():
         cmd += ["--preflight-only"]
     print("[eval_checkpoint] 调用      = %s" % " ".join(cmd[1:]))
     rc = subprocess.call(cmd)
+    if rc == 0 and a.preflight_only:
+        # ★ 真 bug 修复: 原先 --preflight-only 也 rc==0 ⇒ 会写 DONE.json = **假完成** ✗✗
+        print("[eval_checkpoint] · --preflight-only ⇒ **不写 DONE**（只做预检, 未真正评测 ✓）")
+        return 0
     if rc == 0:
         # ★ 只有**跑完**才写 DONE ✓（审查: "只有在所有样本、评分文件和哈希校验成功之后才写入" ✓✓）
         n_png = len(list(Path(a.out).rglob("*.png")))
         write_done(req, Path(a.out), n_samples=n_png)
         print("[eval_checkpoint] ✓ 完成: eval_id=%s, 样本 %d 张, DONE.json 已写 ✓" % (eid[:12], n_png))
-    sys.exit(rc)
+    return rc
 
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())
