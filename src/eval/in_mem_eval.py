@@ -705,6 +705,31 @@ class EvalSetup:
     sets: list
 
 
+def _sample_set_latents(model, diffusion, cache, cfg_scale, dit_batch, device,
+                        use_self_cond, blend_alpha):
+    """一个评测集的**采样**（2026-10-13 [审查 §4.1] 抽出的"采样"步 ✓）。
+
+    审查: "拆开采样、指标、保存和完成判定" ✓ —— 本函数就是"采样"那一步 ✓。
+
+    与原文**逐行等价** ✓（只把两条分支装进一个函数、把入参显式化）:
+      · use_self_cond=True -> sample_latents_self_cond(…, blend_alpha=…, seed=0) ✓
+      · 否则               -> sample_latents(…, seed=0) ✓
+      · 两者都传 skel=cache["skels_latent"] 与 hier_conds=cache.get("hier_conds") ✓
+    ⚠ `seed=0` 是**原样保留**的（真正的随机性来自 cache["noise"]，它已是固定张量 ✓）。
+    """
+    if use_self_cond:
+        return sample_latents_self_cond(
+            model, diffusion, cache["noise"], cache["conds"],
+            cfg_scale, dit_batch, device,
+            skel=cache["skels_latent"], seed=0, blend_alpha=blend_alpha,
+            hier_conds=cache.get("hier_conds"))
+    return sample_latents(
+        model, diffusion, cache["noise"], cache["conds"],
+        cfg_scale, dit_batch, device,
+        skel=cache["skels_latent"], seed=0,
+        hier_conds=cache.get("hier_conds"))
+
+
 def resolve_eval_setup(args, model, results_dir, logger=print):
     """解析本次评测的配置 ✓；sets 为空时按**原语义**打印并返回 None（调用方 return {} ✓）。
 
@@ -1081,18 +1106,9 @@ def run_in_mem_eval(model, args, step, device, results_dir=None, logger=print):
             except Exception:
                 _src = []
             t0 = time.time()
-            if use_self_cond:
-                lat = sample_latents_self_cond(
-                    model, _DIFF, cache["noise"], cache["conds"],
-                    cfg_scale, dit_batch, device,
-                    skel=cache["skels_latent"], seed=0, blend_alpha=blend_alpha,
-                    hier_conds=cache.get("hier_conds"))
-            else:
-                lat = sample_latents(
-                    model, _DIFF, cache["noise"], cache["conds"],
-                    cfg_scale, dit_batch, device,
-                    skel=cache["skels_latent"], seed=0,
-                    hier_conds=cache.get("hier_conds"))
+            # ★ 2026-10-13 [审查 §4.1]: 采样步已抽成 _sample_set_latents ✓（逐行等价 ✓）
+            lat = _sample_set_latents(model, _DIFF, cache, cfg_scale, dit_batch, device,
+                                      use_self_cond, blend_alpha)
             t_s = time.time() - t0
 
             vae = _get_vae(device, str(getattr(args, "eval_vae_path", "") or "")
