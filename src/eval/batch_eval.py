@@ -197,11 +197,24 @@ def main():
             # 行数。不做这一步会在 GPU embedding lookup 触发越界 assert。
             from src.eval.in_mem_eval import _triple_remap_cache
             _triple_remap_cache(cache, csvp, n, a)
-        meta = []
+        # NOTE 2026-10-13 [review]: the old code derived img_id from the FILE NAME of image_path,
+        #   which is wrong. Verified on the real eval CSV: a row with image_path ending 009150.png
+        #   has img_id 22004 (the GT is reused), so the filename number 9150 was written into the
+        #   img_id column, breaking per-sample traceability and GT pairing.
+        #   Fix: read the img_id column that the CSV already carries; fall back to the filename
+        #   number ONLY when the column is missing, and report how many rows fell back.
+        meta, _n_fallback = [], 0
         for r in rows:
-            m = re.search(r"(\d+)\.png", r["image_path"])
-            meta.append((int(m.group(1)) if m else -1, r.get("character", ""),
-                         r.get("script", "")))
+            _iid = r.get("img_id", "")
+            try:
+                _iid_i = int(_iid)
+            except (TypeError, ValueError):
+                _m = re.search(r"(\d+)\.png", r.get("image_path", ""))
+                _iid_i, _n_fallback = (int(_m.group(1)) if _m else -1), _n_fallback + 1
+            meta.append((_iid_i, r.get("character", ""), r.get("script", "")))
+        if _n_fallback:
+            print(f"[batch] WARNING set={name}: {_n_fallback}/{len(rows)} rows lack img_id"
+                  f" -> fell back to filename number (please check the eval CSV schema)")
         sets[name] = {"cache": cache, "meta": meta, "n": len(rows), "csv": csvp}
         print(f"[batch] set={name} n={len(rows)} csv={csvp}")
 
@@ -212,6 +225,8 @@ def main():
                   "ssim_med", "ssim_q3", "ssim_p90", "mse_mean", "lpips_mean",
                   "ink_ssim_mean", "ink_iou_mean", "skel_iou_mean",
                   "frag_mean", "hole_pred_mean", "hole_gt_mean"]
+    # NOTE 2026-10-13: img_id semantics changed (now read from the CSV column) => bump the
+    #   header so the guard below backs up old-schema tables instead of mixing semantics.
     RAW_HEADER = ["exp", "step", "set", "idx", "img_id", "char", "script",
                   "mse", "ssim", "lpips",
                   "ink_ssim", "ink_iou", "skel_iou",
