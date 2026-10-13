@@ -758,6 +758,25 @@ def resolve_eval_setup(args, model, results_dir, logger=print):
 
 
 
+def _eval_done_key(step, set_name, cfg, steps, sf, csvp, code_rev):
+    """评测**已完成**的判据键（2026-10-13 [审查 P0]: "评测的缓存身份必须彻底改" ✓✓）。
+
+    审查原文: "当前仍以 (step, set) 为主要完成判据。这**不足以区分同一步数下的不同模型、
+              CFG、TTF 或采样参数**。"
+
+    键 = (step, set, code_rev, cfg, steps, sf, csv) ✓
+      · step   : 权重（同一 run 内唯一 ✓）
+      · set    : 评测集名 ✓
+      · code_rev: 代码版本 ⇒ 改了评测代码不会复用旧结果 ✓
+      · cfg/steps: 采样参数 ⇒ 换 CFG/步数必须重算 ✓✓（这正是原实现漏掉的 ✓）
+      · sf     : VAE 缩放 ⇒ 换 VAE 必须重算 ✓✓
+      · csv    : 评测集 CSV 路径 ⇒ 同名集换数据必须重算 ✓✓
+    ⚠ 本函数被**两处共用**（写 done 集合 + 跳过判定 ✓）⇒ 二者不可能漂移 ✓。
+    """
+    return (int(step), str(set_name), str(code_rev), str(cfg), str(steps), str(sf), str(csvp))
+
+
+
 @dataclass(frozen=True)
 class SetMetrics:
     """单个评测集的**逐样本指标 + 汇总**（2026-10-13 [审查 §4.1] 抽出的指标块 ✓）。
@@ -884,7 +903,10 @@ def run_in_mem_eval(model, args, step, device, results_dir=None, logger=print):
     #   更致命的是 rename 时 f_sum 句柄仍指向旧 inode, writer 继续往**改名后的
     #   备份文件**里写 -> 磁盘上主 summary 永远不存在 (实测 runs_AB 只有 3 个
     #   .bak_oldcols 而无主文件, 每个 .bak 恰好含一次 eval 的数据)。
-    _SUM_HDR = ["exp", "step", "set", "n", "ssim_mean", "ssim_p10", "ssim_q1",
+    # ★ 2026-10-13 [审查 P0]: 前 7 列是**完成判据键**（见 _eval_done_key ✓）。
+    #   加列会让表头守卫自动把旧 schema 的 summary 改名备份 ⇒ 老结果不会被误复用 ✓✓。
+    _SUM_HDR = ["exp", "step", "set", "code_rev", "cfg", "steps", "sf", "eval_csv",
+                "n", "ssim_mean", "ssim_p10", "ssim_q1",
                 "ssim_med", "ssim_q3", "ssim_p90", "mse_mean", "lpips_mean",
                 "ink_ssim_mean", "ink_iou_mean", "skel_iou_mean",
                 "frag_ratio", "hole_pred", "hole_gt",
@@ -914,7 +936,10 @@ def run_in_mem_eval(model, args, step, device, results_dir=None, logger=print):
     done = set()
     if os.path.exists(sum_path):
         for r in csv.DictReader(open(sum_path, encoding="utf-8")):
-            done.add((int(r["step"]), r["set"]))
+            done.add(_eval_done_key(r.get("step", -1), r.get("set", ""),
+                                    r.get("cfg", ""), r.get("steps", ""),
+                                    r.get("sf", ""), r.get("eval_csv", ""),
+                                    r.get("code_rev", "")))
     new_sum = not os.path.exists(sum_path)
     new_raw = not os.path.exists(raw_path)
     # ★ 句柄只在表头确认之后才打开; 之后不会再 rename 本文件 -> 不会再产生孤儿写入。
@@ -940,12 +965,20 @@ def run_in_mem_eval(model, args, step, device, results_dir=None, logger=print):
                         "ink_ssim", "ink_iou", "skel_iou",
                         "frag_ratio", "hole_pred", "hole_gt",
                         "soft_ink_ratio", "gt_soft_mass"])
+    # ★ 代码版本进完成判据 ✓（改了评测代码 => 不复用旧结果 ✓）
+    try:
+        from src.eval.protocol import git_revision as _git_rev
+        _CODE_REV = _git_rev()
+    except Exception:                                            # noqa: BLE001
+        _CODE_REV = "unknown"
     exp = os.path.basename(results_dir.rstrip("/"))
     out = {}
 
     try:
         for name, csvp, n in sets:
-            if (step, name) in done:
+            # ★ 2026-10-13 [审查 P0]: 判据从 (step,set) 加宽到 _eval_done_key ✓
+            _dkey = _eval_done_key(step, name, cfg_scale, ddim_steps, sf, csvp, _CODE_REV)
+            if _dkey in done:
                 print(f"[in-mem-eval] ⚠ step={step} set={name} 已记录在 {sum_path} 里"
                       f" -> 跳过。同一 results_dir 按 (step,set) 去重，**换数据重跑**时"
                       f"整轮评测会这样静默跳过；重跑请换一个新的 results_dir。")
@@ -1136,7 +1169,7 @@ def run_in_mem_eval(model, args, step, device, results_dir=None, logger=print):
             if _scn:
                 _scn_txt = (f" | nn={_scn['nn_ssim']:.4f} tgt_spec={_scn['tgt_spec']:+.4f}"
                             f" cal_enrich={_scn['cal_enrich']:.2f}x")
-            w_sum.writerow([exp, step, name, n, f"{ssim.mean():.4f}",
+            w_sum.writerow([exp, step, name, _CODE_REV, cfg_scale, ddim_steps, sf, csvp, n, f"{ssim.mean():.4f}",
                             f"{q10:.4f}", f"{q25:.4f}", f"{q50:.4f}",
                             f"{q75:.4f}", f"{q90:.4f}", f"{mse:.5f}", _lp_mean,
                             _ink_ssim_mean, _ink_iou_mean, _skel_iou_mean, _frag_mean,
