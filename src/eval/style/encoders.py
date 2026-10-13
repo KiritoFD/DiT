@@ -24,6 +24,9 @@ import numpy as np
 TIMM_ENCODERS = {
     "dinov2_vits14":        ("vit_small_patch14_dinov2.lvd142m", 518),
     "dinov2_vitb14_reg4":   ("vit_base_patch14_reg4_dinov2.lvd142m", 224),
+    # ★ CLIP-S / DINO-S 的**标准 backbone** 是 ViT-L/14 ✓（文献口径 ✓，便于对照已发表数字 ✓）
+    "dinov2_vitl14":        ("vit_large_patch14_dinov2.lvd142m", 224),
+    "clip_vitl14":          ("vit_large_patch14_clip_224.openai", 224),
     "dino_vits16":          ("vit_small_patch16_224.dino", 224),
     "dino_vitb16":          ("vit_base_patch16_224.dino", 224),
     "mae_vitb16":           ("vit_base_patch16_224.mae", 224),
@@ -60,13 +63,16 @@ class TimmEncoder:
         name, native = TIMM_ENCODERS[key]
         if device is None:
             device = "cuda" if torch.cuda.is_available() else "cpu"
-        # ★ 传 img_size 允许把"原生 518"的模型建成 224 输入 ✓（否则 forward 会断言失败 ✗）
+        # ★ 传 img_size 允许把"原生 518"的模型建成 224 输入 ✓
+        #   ⚠ 建模尺寸与前处理尺寸**必须一致** ✗ —— 第一版我建 224 但前处理取了
+        #     `resolve_data_config` 的 518 ⇒ patch_embed 断言失败 ✓
+        #   （`lvd142m` 系列要求 H 严格等于建模尺寸, 不能靠插值 ✓）
         m = timm.create_model(name, pretrained=True, num_classes=0, img_size=224)
         m.eval().to(device)
         cfg = resolve_data_config({}, model=m)
         enc = cls(model=m, device=device, spec=spec, timm_name=name, pool=pool,
                   mean=tuple(cfg["mean"]), std=tuple(cfg["std"]),
-                  size=int(cfg["input_size"][-1]))
+                  size=224)                       # ★ 与建模尺寸一致 ✓
         if verbose:
             n = sum(p.numel() for p in m.parameters()) / 1e6
             print("[enc] %s (%s) %.1fM | pool=%s | 预处理 mean=%s std=%s size=%d"

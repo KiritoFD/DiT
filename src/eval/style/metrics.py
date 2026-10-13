@@ -65,6 +65,66 @@ def cosine(a: np.ndarray, b: np.ndarray) -> np.ndarray:
     return np.asarray(a, dtype=np.float32) @ np.asarray(b, dtype=np.float32).T
 
 
+def leave_one_out_similarity(ref: EmbSet, *, same_script: bool = True) -> Dict[str, object]:
+    """**Real-Real 上限**的正确口径 ✓: 每张参考图 vs 该书写过的**其他字**（留一法 ✓）。
+
+    ⚠ 为什么不用"按作品留出的真实 query" ✗: 那要求**跨扫描/版本**泛化 ✗,
+      而参考库 55% 来自单一合并源 ⇒ 域偏移会把上限人为压低 ✗✗（实测: 5 个编码器
+      一致出现 real_real < 生成集 的反常模式 ✓，根因就是难度口径错了 ✓）。
+    """
+    e = l2norm(ref.emb)
+    per: Dict[Tuple[int, int], float] = {}
+    allv: List[np.ndarray] = []
+    for w, s in sorted(set(zip(ref.writer.tolist(), ref.script.tolist()))):
+        m = (ref.writer == w) & ((ref.script == s) if same_script else True)
+        idx = np.nonzero(m)[0]
+        if idx.size < 2:
+            continue
+        sim = e[idx] @ e[idx].T                       # (N,N)
+        np.fill_diagonal(sim, np.nan)                 # 去掉"自己 vs 自己" ✓
+        vals = sim[~np.isnan(sim)]
+        per[(int(w), int(s))] = float(vals.mean())
+        allv.append(vals)
+    if not allv:
+        return {"s_macro": float("nan"), "s_all": float("nan"), "n_slots": 0, "per_slot": {}}
+    a = np.concatenate(allv)
+    return {"s_macro": float(np.mean(list(per.values()))), "s_all": float(a.mean()),
+            "s_std": float(a.std()), "n_slots": len(per), "n_pairs": int(a.size),
+            "per_slot": per}
+
+
+# ─────────────── ⓪ CLIP-S / DINO-S：风格相似度（**不要求同字** ✓）───────────────
+def style_similarity(gen: EmbSet, ref: EmbSet, *, same_script: bool = True) -> Dict[str, object]:
+    """生成图 与 **风格参考图** 的**平均余弦相似度** ✓ —— CLIP-S / DINO-S 的核心 ✓。
+
+    与检索式指标的根本区别 ✓
+        · **不要求同字** ✓、不要求同作品 ✓ —— 生成「體」可以和该书家写过的「家/山/端」比 ✓
+          （这正是风格相似度指标的标准定义 ✓，也是本任务最贴切的口径 ✓）
+        · 参考侧 = 目标书家（同书体）的**全部**参考图 ⇒ 逐对求余弦后取均值 ✓
+
+    ⚠ 原始余弦值本身跨编码器**不可比** ✗ ⇒ 必须与 `real_real`(上限) / `real_other_writer` /
+      `ttf_only`(下限) 一起报告才能解读 ✓。
+    """
+    ge, re_ = l2norm(gen.emb), l2norm(ref.emb)
+    per: Dict[Tuple[int, int], float] = {}
+    sims: List[np.ndarray] = []
+    for w, s in sorted(set(zip(gen.writer.tolist(), gen.script.tolist()))):
+        mg = (gen.writer == w) & (gen.script == s)
+        mr = (ref.writer == w) & ((ref.script == s) if same_script else True)
+        if mg.sum() == 0 or mr.sum() == 0:
+            continue
+        sim = ge[mg] @ re_[mr].T                      # (N_gen, N_ref) ✓
+        per[(int(w), int(s))] = float(sim.mean())
+        sims.append(sim.ravel())
+    if not sims:
+        return {"s_macro": float("nan"), "s_all": float("nan"), "n_slots": 0, "per_slot": {}}
+    allv = np.concatenate(sims)
+    return {"s_macro": float(np.mean(list(per.values()))),   # 每槽位先平均再宏平均 ✓
+            "s_all": float(allv.mean()),                     # 全部配对直接平均 ✓
+            "s_std": float(allv.std()),
+            "n_slots": len(per), "n_pairs": int(allv.size), "per_slot": per}
+
+
 # ─────────────────────── ① 跨字符书家检索 ───────────────────────
 def _ap(rel: np.ndarray) -> float:
     """单条 query 的 average precision（rel 为按相似度降序的相关性 0/1）。"""

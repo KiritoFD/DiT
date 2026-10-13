@@ -36,6 +36,7 @@ from src.eval.style.brush import (BrushFeat, aggregate, bsd,             # noqa:
 from src.eval.style.encoder import StyleEncoder                          # noqa: E402
 from src.eval.style.encoders import TimmEncoder                          # noqa: E402
 from src.eval.style.metrics import (EmbSet, build_prototypes, cross_char_retrieval,  # noqa: E402
+                                    leave_one_out_similarity, style_similarity,
                                     hwd_cn, prototype_margin, style_mmd_by_slot, xctacc)
 from PIL import Image                                                    # noqa: E402
 
@@ -217,7 +218,11 @@ def main() -> int:
         r_hwd = hwd_cn(Eq, E_ref)
         r_mmd = style_mmd_by_slot(Eq, E_ref)
         r_xct = xctacc(Eq, E_ref)
-        out = {"n_query": len(Eq), "retrieval": {k: v for k, v in r_ret.items()
+        # ★ CLIP-S / DINO-S: 与**风格参考图**的平均余弦（不要求同字 ✓）
+        r_sim = style_similarity(Eq, E_ref)
+        out = {"style_sim": {"s_macro": r_sim["s_macro"], "s_all": r_sim["s_all"],
+                             "s_std": r_sim["s_std"], "n_pairs": r_sim["n_pairs"]},
+               "n_query": len(Eq), "retrieval": {k: v for k, v in r_ret.items()
                                                  if k != "per_writer_map"},
                "prototype_margin": {k: v for k, v in r_pm.items() if k != "worst_pairs"},
                "hwd_cn": {"macro": r_hwd["hwd_cn_macro"], "n_used": r_hwd["n_used"]},
@@ -234,9 +239,10 @@ def main() -> int:
         if args.bsd and bsd_ref is not None and q_paths:
             fq = brush_feats(enc, q_paths, args.out)
             out["bsd"] = {k: v for k, v in bsd(fq, bsd_ref).items()}
-        print("  [%s] retrieval mAP=%.4f top1=%.4f | margin=%+.4f | HWD-CN=%.4f | "
+        print("  [%s] **S=%.4f** | mAP=%.4f top1=%.4f | margin=%+.4f | HWD-CN=%.4f | "
               "MMD=%.5f | XCTAcc=%.4f"
-              % (tag, out["retrieval"].get("map", float("nan")),
+              % (tag, out["style_sim"]["s_all"],
+                 out["retrieval"].get("map", float("nan")),
                  out["retrieval"].get("top1", float("nan")),
                  out["prototype_margin"].get("margin_mean", float("nan")),
                  out["hwd_cn"]["macro"], out["style_mmd"]["macro"],
@@ -264,6 +270,12 @@ def main() -> int:
               % (float(np.median(bsd_ref.width)) if bsd_ref.width.size else float("nan"),
                  bsd_ref.width.size), flush=True)
 
+    loo = leave_one_out_similarity(E_ref)
+    report["baselines"]["real_real_loo"] = {
+        "style_sim": {"s_macro": loo["s_macro"], "s_all": loo["s_all"],
+                      "s_std": loo["s_std"], "n_pairs": loo["n_pairs"]}}
+    print("  ★ Real-Real 上限(留一法 ✓): S=%.4f (n_pairs=%d)"
+          % (loo["s_all"], loo["n_pairs"]), flush=True)
     if args.baselines:
         print("== ⑤ 基线 ==", flush=True)
         report["baselines"]["real_real"] = full_metrics(
@@ -276,7 +288,9 @@ def main() -> int:
         report["baselines"]["real_other_writer"] = full_metrics(E_wrong, "Real-Other-Writer")
         # TTF-only: 直接用**标准字形渲染图**(std_path)当"生成样本" ✓
         ttf_paths = []
-        if has_char_head and args.gen_map and gen_map_rows:
+        # ★ TTF-only 基线**只**依赖 std 渲染图 + 标签 ✓，与 char_head 无关 ✗
+        #   （我上一版把它和"内容判定"绑在一起 ⇒ 用 timm 编码器时被误跳过 ✗）
+        if args.gen_map and gen_map_rows:
             for row in gen_map_rows:
                 sp = (row.get("std_path") or "").strip()
                 p = B.resolve(sp, roots)
@@ -358,20 +372,25 @@ def main() -> int:
 
     # ── 对比表（基线 + 各生成集, 同一口径 ✓）──
     def _row(tag: str, d: dict) -> str:
-        r = d.get("retrieval", {}) or {}
+        r = d.get("retrieval", {}) or {}          # LOO 项没有 retrieval ✓
         pm = d.get("prototype_margin", {}) or {}
-        b = d.get("bsd", {}) or {}
-        return "| %-20s | %6s | %6s | %8s | %8s | %9s | %7s | %7s | %6s |" % (
-            tag,
+        # ⚠ 表头 8 列 ⇒ 参数必须**恰好 8 个** ✗（我改表头时漏删 BSD 两个参数 ⇒ 格式错 ✓）；
+        #   BSD 仍完整保存在 style_report.json 里 ✓
+        return "| %-22s | %7s | %6s | %6s | %8s | %8s | %9s | %7s |" % (
+            tag, _f((d.get("style_sim") or {}).get("s_all"), 4),
             _f(r.get("map")), _f(r.get("top1")), _f(pm.get("margin_mean")),
             _f((d.get("hwd_cn") or {}).get("macro")),
             _f((d.get("style_mmd") or {}).get("macro")),
-            _f((d.get("xctacc") or {}).get("xctacc")),
-            _f(b.get("width")), _f(b.get("bsd_macro")))
+            _f((d.get("xctacc") or {}).get("xctacc")))
 
-    lines = ["| 集合 | mAP | Top-1 | Δmargin | HWD-CN | Style-MMD | XCTAcc | BSD宽 | BSD宏 |",
-             "|---|---|---|---|---|---|---|---|---|"]
-    for k, d in (report.get("baselines") or {}).items():
+    lines = ["| 集合 | **CLIP-S/DINO-S** | mAP | Top-1 | Δmargin | HWD-CN | Style-MMD | XCTAcc |",
+             "|---|---|---|---|---|---|---|---|"]
+    bl = report.get("baselines") or {}
+    if "real_real_loo" in bl:
+        lines.append(_row("real_real_loo(上限)", bl["real_real_loo"]))
+    for k, d in bl.items():
+        if k == "real_real_loo":
+            continue
         if isinstance(d, dict) and "skipped" not in d:
             lines.append(_row(k, d))
     for k, d in (report.get("sets") or {}).items():
