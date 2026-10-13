@@ -20,6 +20,7 @@ from __future__ import annotations
 import argparse
 import csv
 import json
+import re
 import os
 import sys
 import time
@@ -33,6 +34,7 @@ from src.eval.style import store                                         # noqa:
 from src.eval.style.brush import (BrushFeat, aggregate, bsd,             # noqa: E402
                                   features_from_gray)
 from src.eval.style.encoder import StyleEncoder                          # noqa: E402
+from src.eval.style.encoders import TimmEncoder                          # noqa: E402
 from src.eval.style.metrics import (EmbSet, build_prototypes, cross_char_retrieval,  # noqa: E402
                                     hwd_cn, prototype_margin, style_mmd_by_slot, xctacc)
 from PIL import Image                                                    # noqa: E402
@@ -112,6 +114,11 @@ def main() -> int:
     ap.add_argument("--gen-map", default="", help="生成样本按**索引**对应的 CSV ✓")
     ap.add_argument("--out", required=True)
     ap.add_argument("--ckpt", default="pretrained_models/eval_classifier.pt")
+    ap.add_argument("--enc", default="",
+                    help="★ timm **现成**编码器（dino_vitb16 / clip_vitb32 / mae_vitb16 / "
+                         "dinov2_vits14 … ✓）；给了它就不用 --ckpt ✓（不自训 ✓）")
+    ap.add_argument("--pool", default="cls", choices=["cls", "patch_mean", "patch_stats"],
+                    help="timm 编码器的池化方式（patch_stats=均值+标准差, 对笔法更敏感 ✓）")
     ap.add_argument("--kind", default="callig", choices=["callig", "cls"])
     ap.add_argument("--device", default="", help="cpu/cuda（空=自动 ✓）。训练占满 GPU 时用 cpu ✓")
     ap.add_argument("--mask-ink", type=int, default=0, help="1=背景对照（把墨迹抹掉 ✓）")
@@ -160,8 +167,16 @@ def main() -> int:
               % (len(ref_i), len(qry_i)))
 
     print("== ② 加载风格编码器 ==", flush=True)
-    enc = StyleEncoder.load(args.ckpt, kind=args.kind, device=(args.device or None))
-    print("  dim=%d device=%s mask_ink=%s" % (enc.dim, enc.device, bool(args.mask_ink)), flush=True)
+    if args.enc:
+        # ★ 现成预训练编码器（不自训 ✓）—— 用有效性判据挑: real_real 最高 + XCTAcc>0.5
+        #   + 背景对照更差 ✓
+        enc = TimmEncoder.load(args.enc, pool=args.pool, device=(args.device or None))
+    else:
+        enc = StyleEncoder.load(args.ckpt, kind=args.kind, device=(args.device or None))
+    has_char_head = hasattr(enc, "net")
+    print("  spec=%s dim=%d device=%s mask_ink=%s 内容判别器=%s"
+          % (getattr(enc, "spec", os.path.basename(args.ckpt)), enc.dim, enc.device,
+             bool(args.mask_ink), "有 ✓" if has_char_head else "无（跳过内容分组 ✓）"), flush=True)
 
     print("== ③ 提特征（带缓存 ✓）==", flush=True)
     cache = os.path.join(args.out, "emb_cache.npz")
@@ -260,11 +275,8 @@ def main() -> int:
                          E_realq.name)
         report["baselines"]["real_other_writer"] = full_metrics(E_wrong, "Real-Other-Writer")
         # TTF-only: 直接用**标准字形渲染图**(std_path)当"生成样本" ✓
-        ttf_rows = []
-        for r in rows[:2000]:
-            sp = (getattr(r, "src_path", "") or "")
         ttf_paths = []
-        if args.gen_map and gen_map_rows:
+        if has_char_head and args.gen_map and gen_map_rows:
             for row in gen_map_rows:
                 sp = (row.get("std_path") or "").strip()
                 p = B.resolve(sp, roots)
@@ -285,21 +297,25 @@ def main() -> int:
             report["baselines"]["ttf_only"] = full_metrics(
                 E_ttf, "TTF-only", bsd_ref=bsd_ref, q_paths=ttf_paths)
         else:
-            report["baselines"]["ttf_only"] = {"skipped": "无 std_path / 未给 --gen-map"}
+            report["baselines"]["ttf_only"] = {"skipped": "无 char_head 或无 std_path / 未给 --gen-map"}
 
     print("== ⑥ 生成样本 ==", flush=True)
     for spec in args.gen:
         name, _, d = spec.partition("=")
         d = d or name
-        files = sorted([f for f in os.listdir(d) if f.startswith("g") and f.endswith(".png")],
-                       key=lambda x: int("".join(c for c in x[1:-4] if c.isdigit()) or -1))
-        if not files:
-            print("  [%s] 无 g*.png ✗" % name); continue
+        # ★★ 必须严格匹配 `g<数字>.png` ✗✗ —— 我第一版 `startswith("g")` 会把
+        #   **`gt*.png`(真值图) 也当成生成图** ✗（实测每 step 数到 374 张
+        #   = 187 生成 + 187 真值 ✓）⇒ 检索/风格指标被严重抬高 ✗✗；
+        #   且按 `[1:-4]` 取索引对 `gt123.png` 也得 123 ⇒ 索引重复 ✓。
+        _pat = re.compile(r"^g(\d+)\.png$")
+        _pairs = sorted((int(m.group(1)), f) for f in os.listdir(d)
+                        if (m := _pat.match(f)))
+        files = [f for _, f in _pairs]
+        idxs = [k for k, _ in _pairs]
+        # ★ 下面两行被我上一次"整块替换"**误删过** ✗（替换区间越界 ⇒ paths/emb 未定义 ✓）
         paths = [os.path.join(d, f) for f in files]
         emb, _ = enc.embed_paths(paths, cache=os.path.join(args.out, "emb_gen_%s.npz" % name),
                                  batch=args.batch, mask_ink=bool(args.mask_ink))
-        # 与 gen-map **按索引**对齐 ✓（g{i}.png ↔ 第 i 行 ✓）
-        idxs = [int("".join(c for c in f[1:-4] if c.isdigit())) for f in files]
         rows_g = [gen_map_rows[i] for i in idxs if i < len(gen_map_rows)]
         keep = [k for k, i in enumerate(idxs) if i < len(gen_map_rows)]
         emb = emb[keep]
@@ -316,13 +332,12 @@ def main() -> int:
                        np.array([_mid(allk, g["work"]) for g in gm]),
                        [os.path.basename(g["path"]) for g in gm])
         # ★ 报告"字符是否在参考库内"（unseen-char 占比 ✓ —— 这是必然要分组看的 ✓）
-        bank_chars = set(allc) - set(g["char"] for g in gm) if False else None
         fixed = {r.char for r in rows}
         n_unseen = sum(1 for g in gm if g["char"] not in fixed)
         E_gen_unseen = E_gen.subset(np.array([g["char"] not in fixed for g in gm], dtype=bool))
         E_gen_seen = E_gen.subset(np.array([g["char"] in fixed for g in gm], dtype=bool))
-        print("  字符分组: seen=%d unseen=%d（unseen 在库里没有同字候选 ✓ 正是要评的 ✓）"
-              % (len(E_gen_seen), len(E_gen_unseen)), flush=True)
+        print("  [%s] 字符分组: seen=%d unseen=%d（unseen 在库里没有同字候选 ✓ 正是要评的 ✓）"
+              % (name, len(E_gen_seen), n_unseen), flush=True)
         if len(E_gen_unseen) >= 8:
             report.setdefault("sets", {}).setdefault(name + "__unseen_char", {})
             report["sets"][name + "__unseen_char"] = full_metrics(
@@ -330,7 +345,7 @@ def main() -> int:
         # 内容判定: 生成图 char 预测 == 同行 std 图 char 预测 ✓
         std_paths = [B.resolve((r.get("std_path") or "").strip(), roots) for r in rows_g]
         ok = None
-        if all(std_paths):
+        if all(std_paths) and has_char_head:   # ★ 无 char_head ⇒ 跳过内容分组 ✓
             p_gen = ocr_pred(enc, [paths[k] for k in keep], args.out, args.batch)
             p_std = ocr_pred(enc, std_paths, args.out, args.batch)
             ok = (p_gen == p_std)
