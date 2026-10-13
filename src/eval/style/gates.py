@@ -47,14 +47,22 @@ def _maps(rows):
     return f("writer"), f("script"), f("char"), f("work")
 
 
-def gate1_2afc(emb, rows, *, n_pairs: int = 400, seed: int = 0) -> Dict[str, float]:
-    """同书家异字 vs 异书家同字 —— 2AFC 准确率（0.5 = 随机 ✓）。"""
+def gate1_2afc(emb, rows, *, n_pairs: int = 400, seed: int = 0,
+               bootstrap: int = 0) -> Dict[str, float]:
+    """同书家异字 vs 异书家同字 —— 2AFC 准确率（0.5 = 随机 ✓）。
+
+    `bootstrap>0` 时额外给 **自助法 95% 置信区间** ✓（对**对子**重采样 ✓）。
+
+    ⚠ 为什么必须给 CI（实测教训 ✓）: n=400 时 1σ ≈ **0.024** ✗ ⇒ 0.6475 vs 门槛 0.65
+      完全落在噪声内 ✓ ⇒ 用单点判"过/不过"不严谨 ✓。方案要求"最好在数百组独立对子上
+      复核" ✓ ⇒ 本函数把复核变成**可判定**的量 ✓。
+    """
     rng = random.Random(seed)
     by = defaultdict(list)
     for i, r in enumerate(rows):
         by[(r["writer"], r["script"], r["char"])].append(i)
     e = l2norm(emb)
-    hits = tried = 0
+    hits: List[int] = []
     for (w, s, c), idxs in by.items():
         pos_c = [k for k in by if k[0] == w and k[1] == s and k[2] != c]
         neg_w = [k for k in by if k[0] != w and k[1] == s and k[2] == c]
@@ -62,11 +70,19 @@ def gate1_2afc(emb, rows, *, n_pairs: int = 400, seed: int = 0) -> Dict[str, flo
             continue
         a, p = rng.choice(idxs), rng.choice(by[rng.choice(pos_c)])
         n = rng.choice(by[rng.choice(neg_w)])
-        hits += int(e[a] @ e[p] > e[a] @ e[n])
-        tried += 1
-        if tried >= n_pairs:
+        hits.append(int(e[a] @ e[p] > e[a] @ e[n]))
+        if len(hits) >= n_pairs:
             break
-    return {"n": tried, "acc": (hits / tried) if tried else float("nan")}
+    tried = len(hits)
+    out = {"n": tried, "acc": (sum(hits) / tried) if tried else float("nan")}
+    if bootstrap and tried:
+        br = random.Random(seed + 1)
+        arr = np.asarray(hits, dtype=np.float64)
+        means = [float(arr[[br.randrange(tried) for _ in range(tried)]].mean())
+                 for _ in range(int(bootstrap))]
+        out["se"] = float(np.std(means))
+        out["ci95"] = [float(np.percentile(means, 2.5)), float(np.percentile(means, 97.5))]
+    return out
 
 
 def gate2_retrieval(emb, rows, *, q_frac: float = 0.3, seed: int = 0) -> Dict[str, float]:
@@ -136,9 +152,9 @@ def gate3_printed(emb_real, rows_real, emb_std, rows_std
 
 
 def run_gates(emb, rows, *, emb_std=None, rows_std=None, n_pairs=400, seed=0,
-              verbose=True) -> Dict[str, object]:
+              bootstrap=0, verbose=True) -> Dict[str, object]:
     """跑全部门槛并给出判定 ✓（训练脚本与验收脚本共用 ✓）。"""
-    g1 = gate1_2afc(emb, rows, n_pairs=n_pairs, seed=seed)
+    g1 = gate1_2afc(emb, rows, n_pairs=n_pairs, seed=seed, bootstrap=bootstrap)
     g2 = gate2_retrieval(emb, rows, seed=seed)
     g3 = gate3_printed(emb, rows, emb_std, rows_std)
     res = {"G1": g1, "G2": g2, "G3": g3}
@@ -147,8 +163,12 @@ def run_gates(emb, rows, *, emb_std=None, rows_std=None, n_pairs=400, seed=0,
            and g2["map"] > g2["base_script"] + 0.05)
     res["pass"] = bool(ok1 and ok2)
     if verbose:
-        print("  G1 2AFC(同字异书家) : %.4f  (n=%d)   随机 0.5 / 门槛 ≥0.65  -> %s"
-              % (g1["acc"], g1["n"], "✓" if ok1 else "✗"))
+        _ci = g1.get("ci95")
+        print("  G1 2AFC(同字异书家) : %.4f  (n=%d%s)   随机 0.5 / 门槛 ≥0.65  -> %s"
+              % (g1["acc"], g1["n"],
+                 (" 95%%CI [%.4f, %.4f] se=%.4f" % (_ci[0], _ci[1], g1.get("se", 0.0)))
+                 if _ci else "",
+                 "✓" if ok1 else "✗"))
         print("  G2 跨字符检索 mAP   : %.4f  (n=%d)   同书体基线 %.4f  -> %s"
               % (g2["map"], g2["n"], g2["base_script"], "✓" if ok2 else "✗"))
         if "skip" in g3:
