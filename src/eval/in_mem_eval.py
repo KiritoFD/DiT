@@ -758,6 +758,97 @@ def resolve_eval_setup(args, model, results_dir, logger=print):
 
 
 
+@dataclass(frozen=True)
+class SetMetrics:
+    """单个评测集的**逐样本指标 + 汇总**（2026-10-13 [审查 §4.1] 抽出的指标块 ✓）。
+
+    审查: "拆开采样、指标、保存和完成判定" ✓ —— 这是"指标"那一步 ✓。
+    ⚠ 连**格式化的文本串**都原样保留（日志输出逐字不变 ✓, 黄金可校验到字符串层 ✓）。
+    """
+    mses: list
+    ssims: list
+    inks: list
+    inkious: list
+    skels: list
+    frags: list
+    holes_p: list
+    holes_g: list
+    sir: list
+    nb: list
+    gtm: list
+    has_ink: bool
+    ssim_arr: object
+    mse: float
+    ink_ssim_mean: str
+    ink_iou_mean: str
+    skel_iou_mean: str
+    frag_mean: str
+    hole_p_mean: str
+    hole_g_mean: str
+    sir_mean: str
+    nb_mean: str
+    gtm_mean: str
+    ink_txt: str
+    frag_txt: str
+    hole_txt: str
+    si_txt: str
+
+
+def compute_set_metrics(pred_np, gt_np, n, logger=print):
+    """逐样本算 mse/ssim/墨迹域指标/软墨量 + 汇总（**与原文逐行等价** ✓）。
+
+    墨迹指标不可用时按原语义告警并把 ink 列留空（_has_ink=False ✓）。
+    """
+    _mses, _ssims = [], []
+    _inks, _inkious, _skels, _frags = [], [], [], []
+    _holes_p, _holes_g = [], []
+    _sir, _nb, _gtm = [], [], []
+    try:
+        from src.eval.metrics_ink import ink_ssim as _ink_ssim, ink_iou as _ink_iou
+        from src.eval.metrics import (skel_iou as _skel_iou,
+                                      frag_ratio as _frag_ratio,
+                                      hole_ratio as _hole_ratio)
+        _has_ink = True
+    except Exception as _e:                                     # noqa: BLE001
+        logger(f"[in-mem-eval] ⚠ 墨迹指标不可用 ({_e!r})，ink 列将留空")
+        _has_ink = False
+    for i in range(n):
+        _mses.append(_mse(pred_np[i], gt_np[i]))
+        _ssims.append(_ssim(pred_np[i], gt_np[i]))
+        if _has_ink:
+            _inks.append(_ink_ssim(pred_np[i], gt_np[i]))
+            _inkious.append(_ink_iou(pred_np[i], gt_np[i]))
+            _skels.append(_skel_iou(pred_np[i], gt_np[i], thresh=0.5))
+            _frags.append(_frag_ratio(pred_np[i], gt_np[i], thresh=0.5))
+            _holes_p.append(_hole_ratio(pred_np[i], thresh=0.5))
+            _holes_g.append(_hole_ratio(gt_np[i], thresh=0.5))
+        _mp = float(np.mean(1.0 - np.asarray(pred_np[i]).mean(axis=2)))
+        _mg = float(np.mean(1.0 - np.asarray(gt_np[i]).mean(axis=2)))
+        _r = _mp / max(_mg, 1e-6)
+        _sir.append(_r)
+        _gtm.append(_mg)
+        _nb.append(1.0 if _r < 0.10 else 0.0)
+    return SetMetrics(
+        mses=_mses, ssims=_ssims, inks=_inks, inkious=_inkious, skels=_skels, frags=_frags,
+        holes_p=_holes_p, holes_g=_holes_g, sir=_sir, nb=_nb, gtm=_gtm, has_ink=_has_ink,
+        ssim_arr=np.array(_ssims), mse=float(np.mean(_mses)),
+        ink_ssim_mean=(f"{float(np.mean(_inks)):.5f}" if _inks else ""),
+        ink_iou_mean=(f"{float(np.mean(_inkious)):.5f}" if _inkious else ""),
+        skel_iou_mean=(f"{float(np.mean(_skels)):.5f}" if _skels else ""),
+        frag_mean=(f"{float(np.mean(_frags)):.4f}" if _frags else ""),
+        hole_p_mean=(f"{float(np.mean(_holes_p)):.4f}" if _holes_p else ""),
+        hole_g_mean=(f"{float(np.mean(_holes_g)):.4f}" if _holes_g else ""),
+        sir_mean=(f"{float(np.mean(_sir)):.4f}" if _sir else ""),
+        nb_mean=(f"{float(np.mean(_nb)):.4f}" if _nb else ""),
+        gtm_mean=(f"{float(np.mean(_gtm)):.5f}" if _gtm else ""),
+        ink_txt=(f" ink_ssim={float(np.mean(_inks)):.4f}" if _inks else ""),
+        frag_txt=(f" frag={float(np.mean(_frags)):.3f}" if _frags else ""),
+        hole_txt=(f" hole={float(np.mean(_holes_p)):.3f}" f"/{float(np.mean(_holes_g)):.3f}" if _holes_p else ""),
+        si_txt=(f" **soft_ink={float(np.mean(_sir)):.3f}**" f" near_blank={float(np.mean(_nb)):.3f}"
+                f" gt_mass={float(np.mean(_gtm)):.4f}" if _sir else ""))
+
+
+
 def run_in_mem_eval(model, args, step, device, results_dir=None, logger=print):
     """在训/独立评测核心: 按 `--in-mem-eval-sets` 逐集采样并评指标。
 
@@ -1010,58 +1101,17 @@ def run_in_mem_eval(model, args, step, device, results_dir=None, logger=print):
                                f"{_tb.format_exc()}\n"
                                f"  -> poster 第 1 行（标准字输入）会缺失，但**指标不受影响**")
 
-            ssims, mses = [], []
-            # ★ 墨迹域指标：全图 SSIM 被 ~90% 白底严重抬高（实测 0.5745 vs 墨迹框 0.3161）。
-            #   对齐 tools/batch_eval 的口径：ink_ssim / ink_iou / skel_iou 才是
-            #   "字写得对不对" 的真实反映。
-            _inks, _inkious, _skels, _frags = [], [], [], []
-            _holes_p, _holes_g = [], []
-            # ★ 软墨量/近白: 与 metrics_ink 无关, 永远计算（白化只能靠它看出来）
-            _sir, _nb, _gtm = [], [], []
-            try:
-                from src.eval.metrics_ink import ink_ssim as _ink_ssim, ink_iou as _ink_iou
-                from src.eval.metrics import (skel_iou as _skel_iou,
-                                              frag_ratio as _frag_ratio,
-                                              hole_ratio as _hole_ratio)
-                _has_ink = True
-            except Exception as _e:
-                logger(f"[in-mem-eval] ⚠ 墨迹指标不可用 ({_e!r})，ink 列将留空")
-                _has_ink = False
-            for i in range(n):
-                mses.append(_mse(pred_np[i], gt_np[i]))
-                ssims.append(_ssim(pred_np[i], gt_np[i]))
-                if _has_ink:
-                    _inks.append(_ink_ssim(pred_np[i], gt_np[i]))
-                    _inkious.append(_ink_iou(pred_np[i], gt_np[i]))
-                    _skels.append(_skel_iou(pred_np[i], gt_np[i], thresh=0.5))
-                    _frags.append(_frag_ratio(pred_np[i], gt_np[i], thresh=0.5))
-                    _holes_p.append(_hole_ratio(pred_np[i], thresh=0.5))
-                    _holes_g.append(_hole_ratio(gt_np[i], thresh=0.5))
-                # 软墨量 = mean(1 - gray), gray∈[0,1]；比值 <0.10 判为"近白"（计划里的硬门）
-                _mp = float(np.mean(1.0 - np.asarray(pred_np[i]).mean(axis=2)))
-                _mg = float(np.mean(1.0 - np.asarray(gt_np[i]).mean(axis=2)))
-                _r = _mp / max(_mg, 1e-6)
-                _sir.append(_r)
-                _gtm.append(_mg)
-                _nb.append(1.0 if _r < 0.10 else 0.0)
-            ssim = np.array(ssims)
-            mse = float(np.mean(mses))
-            _ink_ssim_mean = f"{float(np.mean(_inks)):.5f}" if _inks else ""
-            _ink_iou_mean = f"{float(np.mean(_inkious)):.5f}" if _inkious else ""
-            _skel_iou_mean = f"{float(np.mean(_skels)):.5f}" if _skels else ""
-            _frag_mean = f"{float(np.mean(_frags)):.4f}" if _frags else ""
-            _hole_p_mean = f"{float(np.mean(_holes_p)):.4f}" if _holes_p else ""
-            _hole_g_mean = f"{float(np.mean(_holes_g)):.4f}" if _holes_g else ""
-            _sir_mean = f"{float(np.mean(_sir)):.4f}" if _sir else ""
-            _nb_mean = f"{float(np.mean(_nb)):.4f}" if _nb else ""
-            _gtm_mean = f"{float(np.mean(_gtm)):.5f}" if _gtm else ""
-            _ink_txt = (f" ink_ssim={float(np.mean(_inks)):.4f}" if _inks else "")
-            _frag_txt = (f" frag={float(np.mean(_frags)):.3f}" if _frags else "")
-            _hole_txt = (f" hole={float(np.mean(_holes_p)):.3f}"
-                         f"/{float(np.mean(_holes_g)):.3f}" if _holes_p else "")
-            _si_txt = (f" **soft_ink={float(np.mean(_sir)):.3f}**"
-                       f" near_blank={float(np.mean(_nb)):.3f}"
-                       f" gt_mass={float(np.mean(_gtm)):.4f}" if _sir else "")
+            # ★ 2026-10-13 [审查 §4.1]: 指标计算/汇总已抽成 compute_set_metrics -> SetMetrics ✓
+            _mt = compute_set_metrics(pred_np, gt_np, n, logger)
+            mses, ssims, _has_ink = _mt.mses, _mt.ssims, _mt.has_ink
+            _inks, _inkious, _skels, _frags = _mt.inks, _mt.inkious, _mt.skels, _mt.frags
+            _holes_p, _holes_g = _mt.holes_p, _mt.holes_g
+            _sir, _nb, _gtm = _mt.sir, _mt.nb, _mt.gtm
+            ssim, mse = _mt.ssim_arr, _mt.mse
+            _ink_ssim_mean, _ink_iou_mean, _skel_iou_mean = _mt.ink_ssim_mean, _mt.ink_iou_mean, _mt.skel_iou_mean
+            _frag_mean, _hole_p_mean, _hole_g_mean = _mt.frag_mean, _mt.hole_p_mean, _mt.hole_g_mean
+            _sir_mean, _nb_mean, _gtm_mean = _mt.sir_mean, _mt.nb_mean, _mt.gtm_mean
+            _ink_txt, _frag_txt, _hole_txt, _si_txt = _mt.ink_txt, _mt.frag_txt, _mt.hole_txt, _mt.si_txt
             # LPIPS (v12+): 默认开启, 可用 --in-mem-eval-lpips 0 关闭。
             # ssim 会被大面积白底匹配骗过 (doc59), LPIPS 对结构细节敏感。
             _lp = _lpips_per_sample(
