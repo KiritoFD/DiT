@@ -567,6 +567,55 @@ def forward_with_2axis_cfg(cfg, x, t, y_callig, y_char, cfg_callig, cfg_glyph, w
     return out
 
 
+@dataclass(frozen=True)
+class StyleBranchCfg:
+    """`_style_branch` 用到的**全部** `self.*`（2026-10-13 [审查 PR3] 通用抽取 ✓）。
+
+    审查: "只移动逻辑, 不移动权重注册位置" ✓ ⇒ 不注册模块 ⇒ **state_dict 键不变** ✓✓。
+    ⚠ 全部用 getattr 兜底 ✓（防**惰性访问** ✗）；陷阱项默认值与原文一致 ✓。
+    """
+    _style_out: Any
+    style_gain: Any
+    style_ln_mod: Any
+
+    @classmethod
+    def from_model(cls, m):
+        return cls(
+                   _style_out=getattr(m, "_style_out", None),
+                   style_gain=getattr(m, "style_gain", None),
+                   style_ln_mod=getattr(m, "style_ln_mod", None),
+        )
+
+
+def style_branch(cfg, e_callig, y_emb):
+    """**逐行等价**于 `DiT_2Cond._style_branch` ✓（[审查 PR3] 通用抽取 ✓）。"""
+    """922/80 改动 1：把风格向量经独立 LN + 独立增益**加**进 y_emb。
+
+    动机（见 ``__init__`` 的 ``style_ln`` / ``style_gain_init`` 注释）：
+    ``c = t_emb + y_emb`` 里 ``y_emb`` 只占 0.34–0.77，adaLN 共享投影后
+    梯度被 ``t_emb`` 主导，且 zero-init 起步梯度 ∝ ``‖c‖`` -> 越弱越锁死。
+    独立 LN 抹平 ``e_callig`` 的范数失衡（D5 实测 63 倍），
+    独立增益把 ``y_emb`` 的起步幅度抬到与 ``t_emb`` 同量级，打破死锁。
+
+    增益初值不硬编码，由 ``_init_style_gain`` 按实测范数标定
+    （否则 LN 输出 19.1 vs t_emb 0.89 会直接过冲 21 倍）。
+
+    返回**新的** y_emb（不改原张量，避免 in-place 影响 autograd 图）。
+    未启用时（``style_ln_mod is None``）直接返回原值 —— 与旧 ckpt 逐位等价。
+
+    ⚠ **`factorized_cat` / `xl_highdim` 模式下 `callig_proj` 是 None**
+    （`__init__` 里显式置 None 以避免 DDP "参数未参与前向"报错，
+    那些模式走 `cond_fusion` 自己融合）。所以这里**不能依赖 `callig_proj`**，
+    改为用恒等 + LN：LN 后接一个 1x1 Linear 与"先 proj 再 LN"在表达能力上
+    等价（都是逐样本的仿射+线性组合），且**不引入对现有投影的依赖**。
+    这样三种 fusion 模式行为一致。
+    """
+    if cfg.style_ln_mod is None:
+        return y_emb
+    _s = cfg._style_out(e_callig)
+    return y_emb + cfg.style_gain.to(y_emb.dtype) * _s.to(y_emb.dtype)
+
+
 class DiT_2Cond(nn.Module):
     """
     Diffusion model with a Transformer backbone conditioned on 2 discrete labels:
@@ -1910,31 +1959,8 @@ class DiT_2Cond(nn.Module):
                  "target_y/t=%.2f -> style_gain=%.4f", _n_t, _n_s, _tgt, _g)
 
     def _style_branch(self, e_callig, y_emb):
-        """922/80 改动 1：把风格向量经独立 LN + 独立增益**加**进 y_emb。
-
-        动机（见 ``__init__`` 的 ``style_ln`` / ``style_gain_init`` 注释）：
-        ``c = t_emb + y_emb`` 里 ``y_emb`` 只占 0.34–0.77，adaLN 共享投影后
-        梯度被 ``t_emb`` 主导，且 zero-init 起步梯度 ∝ ``‖c‖`` -> 越弱越锁死。
-        独立 LN 抹平 ``e_callig`` 的范数失衡（D5 实测 63 倍），
-        独立增益把 ``y_emb`` 的起步幅度抬到与 ``t_emb`` 同量级，打破死锁。
-
-        增益初值不硬编码，由 ``_init_style_gain`` 按实测范数标定
-        （否则 LN 输出 19.1 vs t_emb 0.89 会直接过冲 21 倍）。
-
-        返回**新的** y_emb（不改原张量，避免 in-place 影响 autograd 图）。
-        未启用时（``style_ln_mod is None``）直接返回原值 —— 与旧 ckpt 逐位等价。
-
-        ⚠ **`factorized_cat` / `xl_highdim` 模式下 `callig_proj` 是 None**
-        （`__init__` 里显式置 None 以避免 DDP "参数未参与前向"报错，
-        那些模式走 `cond_fusion` 自己融合）。所以这里**不能依赖 `callig_proj`**，
-        改为用恒等 + LN：LN 后接一个 1x1 Linear 与"先 proj 再 LN"在表达能力上
-        等价（都是逐样本的仿射+线性组合），且**不引入对现有投影的依赖**。
-        这样三种 fusion 模式行为一致。
-        """
-        if getattr(self, "style_ln_mod", None) is None:
-            return y_emb
-        _s = self._style_out(e_callig)
-        return y_emb + self.style_gain.to(y_emb.dtype) * _s.to(y_emb.dtype)
+        """薄封装 ✓ —— 实现已抽成模块级 `style_branch`（[审查 PR3] ✓）。"""
+        return style_branch(StyleBranchCfg.from_model(self), e_callig=e_callig, y_emb=y_emb)
 
     def _embed_callig(self, y_callig_in, e_style=None, style_tokens=None):
         """adaLN 融合的书家向量因子（原 forward 内闭包 ✓）。
