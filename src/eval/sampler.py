@@ -1,0 +1,238 @@
+# -*- coding: utf-8 -*-
+"""sampler.py — **唯一的采样实现**（2026-10-13 [审查 §4.1] 从 src/eval/inference.py 迁出）
+
+审查迁移表: "inference.py:38-313 -> sampler.py：**保留唯一 Heun/SDE/CFG 实现**" ✓
+
+本模块只负责"条件 + 噪声 -> latent"这一步:
+  · build_diffusion              : 构造 diffusion/flow 对象（ODE/DDIM 步数 ✓）
+  · model_uses_std_soft          : 该模型是否走 std-soft 空间条件 ✓
+  · validate_std_soft_condition  : std-soft 必须收到非空软掩码（否则**报错**, 不静默兜底 ✗）
+  · sample_latents               : 主采样（CFG 由**模型层** forward_with_cfg 处理 ✓）
+  · sample_latents_self_cond     : 两遍自条件采样 ✓
+
+⚠ 迁移策略（审查"第一阶段只移动逻辑" ✓）: 这些名字仍由 src/eval/inference.py
+  **原样再导出**（同一函数对象 ✓）⇒ 既有调用点无需改动 ✓✓。
+
+刻意**不**依赖 inference（否则成环 ✗）: 只依赖 src.eval.decoder + src.loss ✓
+"""
+from __future__ import annotations
+
+import torch
+
+from src.loss import create_diffusion_or_flow
+from src.eval.decoder import match_model_channels
+
+__all__ = ["build_diffusion", "model_uses_std_soft", "validate_std_soft_condition",
+           "sample_latents", "sample_latents_self_cond"]
+
+
+# ── 扩散对象 ─────────────────────────────────────────────────────────────────
+def build_diffusion(steps, diffusion_type="ddpm", flow_kwargs=None):
+    """Build the diffusion sampler for eval. steps: int (ODE/DDIM step count).
+
+    ``flow_kwargs`` (dict) 透传给 FlowMatching —— 例如
+    ``{"t_sampler": "logit_normal", "sampler": "heun", "shift": 1.0}``。
+    推理侧必须与训练侧使用同一份 flow 配置，否则会静默地用另一套
+    时间步分布 / 求解器去评估模型。
+    """
+    return create_diffusion_or_flow(str(steps), diffusion_type=diffusion_type,
+                                    **(flow_kwargs or {}))
+
+
+# ── 采样 (GPU, bf16) → latents on CPU ───────────────────────────────────────
+def model_uses_std_soft(model):
+    """Recognize plain, compiled, DDP and ControlNet-wrapped std-soft models."""
+    pending, seen = [model], set()
+    while pending:
+        current = pending.pop()
+        if current is None or id(current) in seen:
+            continue
+        seen.add(id(current))
+        if bool(getattr(current, "std_soft_cond", False)):
+            return True
+        pending.extend(getattr(current, key, None)
+                       for key in ("main", "module", "_orig_mod"))
+    return False
+
+
+def validate_std_soft_condition(g, n):
+    """Fail closed: missing/blank std-soft must never produce valid-looking scores."""
+    if not isinstance(g, torch.Tensor) or tuple(g.shape) != (n, 1, 64, 64):
+        shape = None if g is None else getattr(g, "shape", type(g).__name__)
+        raise ValueError(f"std-soft evaluation requires nonempty g [N,1,64,64]; got {shape}")
+    if n <= 0 or not g.is_floating_point() or not torch.isfinite(g).all():
+        raise ValueError("std-soft condition must be finite floating-point masks")
+    if (g < 0).any() or (g > 1).any():
+        raise ValueError("std-soft condition must use ink=1/background=0 in [0,1]")
+    if (g.flatten(1).sum(1) <= 0).any():
+        raise ValueError("std-soft condition contains blank glyphs")
+
+
+@torch.no_grad()
+def sample_latents(model, diffusion, noise, conds, cfg_scale, batch, device,
+                   skel=None, seed=0, hier_conds=None):
+    """Run diffusion sampling (DDIM for ddpm / Euler for flow) → CPU latents.
+
+    model       : callable(x, t, y_callig, y_char, cfg_scale=..., cond=...) —
+                  i.e. ``model.forward_with_cfg`` (CFG handled at the model level).
+    noise       : (N, C, H, W) fixed noise (CPU).
+    conds       : list of (callig_id, glyph_id) tuples, length N.
+    cfg_scale   : classifier-free guidance scale (0 = no CFG).
+    skel        : optional structural condition (ControlNet path):
+                  (N,4,32,32) VAE latent (新) 或 (N,1,256,256) PNG (旧).
+    Returns (N, C, H, W) float32 latents on CPU.
+    """
+    n = noise.shape[0]
+    if model_uses_std_soft(model):
+        # v83-A remote eval used an old cache returning None while training had g.
+        validate_std_soft_condition(skel, n)
+    noise = match_model_channels(noise, model)   # aux 目标通道: 噪声扩到 in_channels
+    lc, ls = noise.shape[1], noise.shape[2]
+    all_latents = torch.zeros(n, lc, ls, ls, dtype=torch.float32)
+    torch.manual_seed(seed)  # deterministic per call; noise itself is fixed anyway
+    dev_type = device.type if isinstance(device, torch.device) else str(device)
+    # CFG 在模型层处理 (forward_with_cfg)。不能把 cfg_scale 塞进 model_kwargs:
+    # sampler 只做 model(x, t, **kwargs) 转发, plain forward 收到 cfg_scale 会
+    # 直接 TypeError (base 通道崩溃), ctrl 通道则静默吞掉 → CFG 从未生效。
+    if cfg_scale and cfg_scale > 0:
+        # [2026-09-17] 双轴 CFG: 由**模型属性**驱动, 避免改 sample_latents 签名。
+        #   cfg_glyph_scale 为 None -> 走经典 2 路 (向后兼容)
+        #   非 None -> forward_with_cfg 内部委托给 forward_with_2axis_cfg
+        #   ⚠ 仅在训练时 glyph_drop_prob>0 的 ckpt 上才有意义
+        #     (g=0 必须是训练见过的条件, 否则内容轴未训练)
+        _cg = getattr(model, "cfg_glyph_scale", None)
+        _wi = float(getattr(model, "cfg_w_inter", 0.0) or 0.0)
+
+        def model_fn(x, t, **kw):
+            extra = {}
+            if _cg is not None:
+                extra["cfg_glyph"] = float(_cg)
+                extra["w_inter"] = _wi
+            return model.forward_with_cfg(x, t, cfg_scale=cfg_scale, **extra, **kw)
+    else:
+        model_fn = model
+    for i in range(0, n, batch):
+        j = min(i + batch, n)
+        z = noise[i:j].to(device)
+        yc = torch.tensor([c[0] for c in conds[i:j]], device=device, dtype=torch.long)
+        yh = torch.tensor([c[1] for c in conds[i:j]], device=device, dtype=torch.long)
+        mk = dict(y_callig=yc, y_char=yh)
+        # ── S2 三层语义分解的三个 id（None = 模型走旧路径，零副作用）──────────
+        if hier_conds is not None:
+            _hraw, _hpair, _hscript = hier_conds
+            mk['y_callig_raw'] = torch.tensor(_hraw[i:j], device=device, dtype=torch.long)
+            mk['y_pair'] = torch.tensor(_hpair[i:j], device=device, dtype=torch.long)
+            mk['y_script'] = torch.tensor(_hscript[i:j], device=device, dtype=torch.long)
+        if skel is not None:
+            # g 条件模型 (train.py use_glyph_cond/skel_as_glyph_cond/std_soft_cond 预训练) 走 'g' 键;
+            # ControlNetDiT 包装走 'cond' 键。
+            # Recognize wrappers and the accepted keyword; flags alone are not
+            # sufficient for every historical checkpoint/model wrapper.
+            import inspect as _inspect
+            _fn = getattr(model, "forward_with_cfg", None) or model
+            try:
+                _params = set(_inspect.signature(_fn).parameters)
+            except Exception:
+                _params = set()
+            _use_g = (getattr(model, "use_glyph_cond", False)
+                      or getattr(getattr(model, "main", None), "use_glyph_cond", False)
+                      or getattr(model, "std_soft_cond", False)
+                      or getattr(getattr(model, "main", None), "std_soft_cond", False)
+                      or model_uses_std_soft(model)
+                      or ("g" in _params and "cond" not in _params))
+            mk["g" if _use_g else "cond"] = skel[i:j].to(device)
+        # bf16 autocast 仅 cuda (CPU 无 AVX512-BF16/AMX 时 bf16 走软件上转反而慢)
+        if dev_type == "cuda":
+            with torch.autocast("cuda", dtype=torch.bfloat16):
+                samples = diffusion.ddim_sample_loop(
+                    model_fn, z.shape, z,
+                    clip_denoised=False, model_kwargs=mk, device=device)
+        else:
+            samples = diffusion.ddim_sample_loop(
+                model_fn, z.shape, z,
+                clip_denoised=False, model_kwargs=mk, device=device)
+        all_latents[i:j] = samples.float().cpu()
+        del z, samples
+        if dev_type == "cuda":
+            torch.cuda.empty_cache()
+    return all_latents
+
+
+# ── 两遍自条件采样 (Self-Conditioning) ───────────────────────────────────────
+# 核心思路: 12ch 联合模型在推理时同时去噪 image/canny/skel 三组通道。
+# 其中 skel 通道 (ch 8-11) 的预测实质是「模型认为这个书家会怎么写这个字的骨架」
+# —— 即一个 **书家风格化骨架**，比通用印刷标准骨架 g 更接近 GT 骨架。
+#
+# 将 pass-1 预测的 skel 通道回灌为 pass-2 的条件 g，让模型在第二遍时拿到
+# 一个自洽的、带书家个性的骨架条件，而非千篇一律的楷体印刷骨架。
+#
+# 开销: 约 1.4× (pass-1 用较少 ODE 步) 到 2× (pass-1 同等步数)。
+# 不改训练，纯推理侧增益。
+
+@torch.no_grad()
+def sample_latents_self_cond(
+    model, diffusion, noise, conds, cfg_scale, batch, device,
+    skel=None, seed=0,
+    hier_conds=None,
+    # ── self-cond 参数 ──
+    skel_ch_start=8, skel_ch_end=12,
+    first_pass_steps=None,
+    blend_alpha=0.0,
+):
+    """两遍自条件采样 (Self-Conditioning) for 12ch joint models.
+
+    Pass 1: 用标准骨架 g 正常采样 → 得到 12ch 预测 (含 skel ch)
+    Pass 2: 用 pass-1 预测的 skel 通道替换 g 重新采样 → 更优图像
+
+    Args:
+        skel_ch_start, skel_ch_end: 输出中骨架 latent 的通道范围
+            (默认 8:12, 即 [img(0-3), canny(4-7), skel(8-11)])。
+        first_pass_steps: pass-1 的 ODE 步数 (None = 与 pass-2 相同;
+            设较小值如 20 可将总开销从 2× 降至 ~1.4×)。
+        blend_alpha: pass-2 条件的混合系数:
+            g_pass2 = (1 - α) · predicted_skel + α · g_original
+            0.0 = 纯自条件; 0.5 = 各半; 1.0 = 无自条件 (退化为普通采样)。
+
+    Returns:
+        (N, C, H, W) float32 CPU latents (与 sample_latents 相同格式)。
+    """
+    # 非 12ch 模型或无 skel 条件 → 退化为普通采样
+    _main = getattr(model, 'main', model)
+    model_ch = int(getattr(_main, 'in_channels', 4))
+    if model_ch <= 4 or skel is None or blend_alpha >= 1.0:
+        return sample_latents(model, diffusion, noise, conds, cfg_scale,
+                              batch, device, skel=skel, seed=seed,
+                              hier_conds=hier_conds)
+
+    # ── Pass 1: 用标准骨架采样，得到书家风格化骨架预测 ──
+    if first_pass_steps is not None and first_pass_steps != diffusion.num_timesteps:
+        diff1 = build_diffusion(
+            first_pass_steps, diffusion_type='flow',
+            flow_kwargs={
+                'sampler': getattr(diffusion, 'sampler', 'heun'),
+                'heun_batch': getattr(diffusion, 'heun_batch', True),
+                'shift': getattr(diffusion, 'shift', 1.0),
+            })
+    else:
+        diff1 = diffusion
+
+    x0_pass1 = sample_latents(model, diff1, noise, conds, cfg_scale,
+                              batch, device, skel=skel, seed=seed,
+                              hier_conds=hier_conds)
+
+    # 提取预测骨架 (pass-1 的 skel 通道)
+    if x0_pass1.shape[1] <= skel_ch_start:
+        # 模型输出通道不够 → 无 skel 可提取，退化为普通采样
+        return x0_pass1
+
+    predicted_skel = x0_pass1[:, skel_ch_start:skel_ch_end].clone()
+
+    # 混合: 保留部分标准骨架信息 (α > 0 时对预测骨架做保守修正)
+    if blend_alpha > 0:
+        predicted_skel = (1.0 - blend_alpha) * predicted_skel + blend_alpha * skel
+
+    # ── Pass 2: 用风格化骨架作为条件重新采样 ──
+    x0_pass2 = sample_latents(model, diffusion, noise, conds, cfg_scale,
+                              batch, device, skel=predicted_skel, seed=seed,
+                              hier_conds=hier_conds)
+    return x0_pass2
