@@ -9,7 +9,8 @@ import pytest
 import torch
 from PIL import Image, ImageDraw
 
-from src.eval.inference import make_eval_cache
+from src.eval.inference import (make_eval_cache, sample_latents,
+                                validate_std_soft_condition)
 from src.model.dit import DiT_2Cond
 from src.utils.latent_dataset import MCCDLatentDataset
 from src.utils.std_soft_glyph import StdSoftGlyphStore
@@ -148,4 +149,71 @@ def test_legacy_glyph_encoder_contract_is_unchanged():
     # Assert
     assert isinstance(model.glyph_embedder, torch.nn.Conv2d)
     assert model.glyph_embedder.in_channels == 4
+
+
+@pytest.mark.parametrize("bad", [
+    None, torch.zeros(2, 4, 32, 32), torch.zeros(2, 1, 64, 64),
+    torch.full((2, 1, 64, 64), float("nan")),
+    torch.full((2, 1, 64, 64), -0.1), torch.full((2, 1, 64, 64), 1.1),
+    torch.ones(2, 1, 64, 64, dtype=torch.uint8),
+])
+def test_std_soft_rejects_missing_or_invalid_condition(bad):
+    with pytest.raises(ValueError, match="std-soft"):
+        validate_std_soft_condition(bad, 2)
+
+
+class _RecordingStdSoftModel:
+    std_soft_cond = True  # Also exercise models without use_glyph_cond.
+    in_channels = 4
+
+    def __init__(self):
+        self.received = []
+
+    def forward_with_cfg(self, x, t, y_callig, y_char, cfg_scale, g=None):
+        self.received.append(g.clone())
+        return x
+
+
+class _OneStepSampler:
+    def ddim_sample_loop(self, model, shape, noise, **kwargs):
+        return model(noise, torch.zeros(shape[0]), **kwargs["model_kwargs"])
+
+
+def test_sampling_routes_std_soft_to_g_in_every_batch():
+    model = _RecordingStdSoftModel()
+    g = torch.rand(3, 1, 64, 64)
+    noise = torch.rand(3, 4, 32, 32)
+    result = sample_latents(model, _OneStepSampler(), noise, [(0, 0)] * 3,
+                            cfg_scale=1.0, batch=2, device=torch.device("cpu"), skel=g)
+    assert torch.equal(result, noise)
+    assert torch.equal(torch.cat(model.received), g)
+
+
+def test_sampling_fails_before_sampler_when_std_soft_is_missing():
+    with pytest.raises(ValueError, match="nonempty g"):
+        sample_latents(_RecordingStdSoftModel(), _OneStepSampler(),
+                       torch.zeros(2, 4, 32, 32), [(0, 0)] * 2,
+                       cfg_scale=1.0, batch=2, device=torch.device("cpu"))
+
+
+def test_cache_rejects_legacy_cache_for_std_soft(monkeypatch):
+    from argparse import Namespace
+    from src.eval import in_mem_eval
+    monkeypatch.setattr(in_mem_eval, "_CACHES", {})
+    monkeypatch.setattr(in_mem_eval, "make_eval_cache", lambda *a, **kw: {
+        "n": 1, "skels_latent": None})
+    args = Namespace(std_soft_cond=True, std_soft_root="store", vae_scaling_factor=.18215)
+    with pytest.raises(ValueError, match="legacy condition cache"):
+        in_mem_eval._get_cache("unused.csv", 1, None, "", args)
+
+
+def test_standalone_eval_overrides_stored_gamma_and_rejects_ot_sde():
+    from argparse import Namespace
+    from tools.eval_std_soft_checkpoint import prepare_eval_args
+    args = Namespace(std_soft_cond=True, sde_gamma=.5, use_c2ot=True)
+    prepare_eval_args(args, gamma=0.0, steps=50, cfg=1.0, batch=16)
+    assert args.sde_gamma == 0.0
+    assert args.in_mem_eval_lpips is True
+    with pytest.raises(ValueError, match="independent Gaussian pairing"):
+        prepare_eval_args(args, gamma=.5, steps=50, cfg=1.0, batch=16)
 

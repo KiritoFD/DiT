@@ -84,10 +84,10 @@ def _get_lpips():
         _LPIPS_FAIL_REASON = f"{type(_e).__name__}: {_e}"
         _LPIPS_FN = None
         print("=" * 70)
-        print(f"[in-mem-eval] ⚠⚠ LPIPS 不可用 —— **lpips 列将全部为空**")
+        print("[in-mem-eval] ⚠⚠ LPIPS 不可用 —— **lpips 列将全部为空**")
         print(f"    原因: {_LPIPS_FAIL_REASON}")
-        print(f"    修法: pip install lpips  (或用 --in-mem-eval-lpips 0 显式关闭)")
-        print(f"    影响: 本次实验将**无法判断容量是否饱和**(ssim 会饱和, LPIPS 不会)")
+        print("    修法: pip install lpips  (或用 --in-mem-eval-lpips 0 显式关闭)")
+        print("    影响: 本次实验将**无法判断容量是否饱和**(ssim 会饱和, LPIPS 不会)")
         print("=" * 70)
         traceback.print_exc()
     return _LPIPS_FN
@@ -893,7 +893,6 @@ def run_in_mem_eval(model, args, step, device, results_dir=None, logger=print):
     """
     global _DIFF
     # 注: _DIFF 是**每次调用重建**的（不是缓存）——2026-10-12 审计确认无脏缓存问题, 保留原语义。
-    import time
     results_dir = str(results_dir or getattr(args, "results_dir", "") or ".")
     os.makedirs(results_dir, exist_ok=True)
     if bool(getattr(args, "std_soft_cond", False)) != model_uses_std_soft(model):
@@ -1345,7 +1344,6 @@ def maybe_run_in_training(args, ema_model, model, train_steps, device,
     """
     if not (inline and getattr(args, "in_mem_eval", False) and is_eval_step):
         return None
-    import time
     _em = (ema_model if ema_model is not None
            else (model.module if hasattr(model, "module") else model))
     _em.eval()

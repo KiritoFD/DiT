@@ -17,7 +17,6 @@ import os
 import time
 import json
 import csv
-import re
 
 import numpy as np
 import torch
