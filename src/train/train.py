@@ -911,6 +911,41 @@ def main(args):
         logger.info("[cond-head] reset adaLN/final_layer to std=0.02 (retain task-agnostic "
                     "transformer engine, drop ImageNet class-condition coupling).")
 
+    # 3) ★ v85 **受控 warm-start**（方案 §二.5）—— 放在重置**之后** ⇒ 我们的权重胜出 ✓
+    #    与 `--resume-full` 的区别（方案明确要求 ✓）:
+    #      · 只灌**模型权重**, **不动 optimizer**（新模型参数集不同 ⇒ 必须重建 optimizer ✓）
+    #      · 允许缺失的键**仅限**新增的 style-ada 分支 ✓；原模块 missing/unexpected 一律报错 ✓
+    #      · 不恢复 step 计数（这是一次**新训练** ✓）
+    _warm = str(getattr(args, "warm_start_from", "") or "")
+    if _warm:
+        from src.eval.model_io import check_state_dict as _chk
+        _ck = torch.load(_warm, map_location="cpu", weights_only=False)
+        if isinstance(_ck, dict):
+            _src = None
+            for _cand in ("ema", "model", "delta"):
+                if _ck.get(_cand) is not None:
+                    _sd, _src = _ck[_cand], _cand
+                    break
+            if _sd is None:
+                _sd, _src = _ck, "raw"
+        else:
+            _sd, _src = _ck, "raw"
+        if any(k.startswith("_orig_mod.") for k in _sd):
+            _sd = {k.replace("_orig_mod.", "", 1): v for k, v in _sd.items()}
+        _miss, _unexp = model.load_state_dict(_sd, strict=False)
+        # ★ 只允许**新增的**风格支路缺失 ✓（这是"受控"二字的全部含义 ✓）
+        _m2, _u2 = _chk(model, _sd, tag="warm-start",
+                        allow_missing=("style_ada", "style_gain"), raise_on_missing=True)
+        if _u2:
+            raise RuntimeError(
+                "[warm-start] ckpt 里有 %d 个**本模型不认识**的键 ✗（原模块不该有 unexpected ✓）: %s"
+                % (len(_u2), sorted(_u2)[:6]))
+        _new = [k for k in model.state_dict()
+                if ("style_ada" in k or "style_gain" in k)]
+        logger.info("[warm-start] %s (%s): 新支路 %d 个键按**本模型初始化** ✓; "
+                    "原有模块 0 缺失/0 意外 ✓", _warm, _src, len(_new))
+        del _ck, _sd
+
 
     # 2.5) 4ch -> 12ch 通道扩展（12ch 后训练）。
     #      ⚠ 必须在 --resume-full **之前**跑，且这里载入的权重优先 ——
@@ -1553,6 +1588,29 @@ def main(args):
                             f"({_scale}x 主 lr), {sum(p.numel() for p in _dm):,} 参数")
         else:
             logger.info("[optim] deform_skel **冻结**（--deform-trainable 0）")
+
+    # ★ v85A: 新增的**风格支路**单独一组 lr（方案 §二.5: 主干 1e-5 / 新支路 5e-5 ✓）
+    #   为什么单独一组: 主干是从 v84A@200k **warm-start** 来的成熟状态, 大 lr 会把它推坏 ✗;
+    #   而风格支路是**全新初始化**的, 需要正常 lr 才能开始学 ✓。两个诉求相反 ⇒ 必须分组 ✓。
+    #   实现完全照 `deform_skel` 的先例 ✓（LambdaLR 按各组**初始 lr** 等比缩放 ⇒
+    #   设好初值即自动跟随同一条 cosine ✓）。**没有改优化器实现** ✓。
+    _sal = float(getattr(args, "style_ada_lr", 0.0) or 0.0)
+    if _sal > 0 and int(getattr(model, "style_ada_rank", 0) or 0) > 0:
+        _sid = {id(p) for n, p in model.named_parameters()
+                if ("style_ada" in n or "style_gain" in n)}
+        _pg0 = opt.param_groups[0]
+        _rest = [p for p in _pg0["params"] if id(p) not in _sid]
+        _sm = [p for p in _pg0["params"] if id(p) in _sid]
+        if _sm:
+            _pg0["params"] = _rest
+            _new = {k: v for k, v in _pg0.items() if k != "params"}
+            _new["params"] = _sm
+            _new["lr"] = _sal
+            opt.add_param_group(_new)
+            logger.info("[optim] style-ada 单独一组: lr=%.2e（主 lr %.2e）, %s 参数 / %d 个张量"
+                        % (_sal, args.lr, format(sum(p.numel() for p in _sm), ","), len(_sm)))
+    elif int(getattr(model, "style_ada_rank", 0) or 0) > 0:
+        logger.info("[optim] style-ada 用**主 lr**（--style-ada-lr 未设 ✓）")
 
     # Restore optimizer state + step counter for full resume. If --resume-lr is given,
     # override the LR so we can test whether a smaller LR avoids the NaN.

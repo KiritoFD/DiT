@@ -83,6 +83,11 @@ def build_parser(argv=None):
     parser.add_argument("--experiment-name", type=str, default="",
                         help="Meaningful experiment slug appended after the launch timestamp.")
     parser.add_argument("--pretrained", type=str, default=None, help="Path to pretrained DiT checkpoint")
+    parser.add_argument("--warm-start-from", type=str, default="", dest="warm_start_from",
+                        help="[v85] **受控 warm-start**: 从我们自己的 ckpt 只灌**模型权重**\n"
+                        "（不动 optimizer、不用 --resume-full）✓。允许缺失的键**仅限**新增的\n"
+                        "style-ada 分支（blocks.*.style_ada_*/style_gain）✓, 其余 missing/unexpected\n"
+                        "一律报错 ✓。配合 --reset-cond-head 0 使用（否则 adaLN/final_layer 会被重置 ✗）")
     parser.add_argument("--reset-cond-head", type=_str_to_bool, default=True,
                         help="After loading pretrained body, re-init adaLN/final_layer (std=0.02) "
                              "to fit new multi-cond head. Prevents early NaN from OOD conditioning.")
@@ -566,6 +571,12 @@ def build_parser(argv=None):
                              "rebuild the LR schedule over the remaining fine-tune horizon "
                              "(max_steps - resume step) instead of continuing the old one.")
     parser.add_argument("--lr", type=float, default=1e-4, help="Learning rate")
+    parser.add_argument("--style-ada-lr", type=float, default=0.0,
+                        dest="style_ada_lr",
+                        help="[v85A] 风格支路的**独立学习率**（0=用主 lr ✓）。\n"
+                        "方案要求: 主干 1e-5（warm-start 来的成熟状态, 大 lr 会推坏 ✗）\n"
+                        "而新支路 5e-5（全新初始化, 需正常 lr 才学得动 ✓）。\n"
+                        "实现照 `deform_skel` 的既有参数组先例, **未改优化器实现** ✓")
     parser.add_argument("--lr-schedule", choices=["constant", "cosine"], default="constant")
     parser.add_argument("--warmup-steps", type=int, default=0)
     parser.add_argument("--min-lr-ratio", type=float, default=0.1)
