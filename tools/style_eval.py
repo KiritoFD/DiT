@@ -43,6 +43,19 @@ def _ids(rows, key):
     return {v: i for i, v in enumerate(u)}
 
 
+def _mid(m: dict, key) -> int:
+    """**自动扩展**的标签映射 ✓。
+
+    ★ 必需: 评测集的字符常常**不在参考库里** ✗（实测 `KeyError: '恆'` ✓）——
+      这正是"unseen-char"情形 ✓。给未见标签分配新 id ⇒ 该样本在检索里**没有同字候选**
+      （`exclude_same_char` 自然失效 ✓）但仍是**合法 query** ✓，正是我们要评的 ✓。
+    """
+    k = str(key)
+    if k not in m:
+        m[k] = len(m)
+    return m[k]
+
+
 def to_embset(rows, emb, wmap, smap, cmap, kmap, name="set"):
     return EmbSet(emb, np.array([wmap[r.writer] for r in rows]),
                   np.array([smap[r.script] for r in rows]),
@@ -267,11 +280,23 @@ def main() -> int:
                    char=(r.get("character") or "").strip(),
                    work="gen_%s" % name, path=p)
               for r, p in zip(rows_g, [paths[k] for k in keep])]
-        E_gen = EmbSet(emb, np.array([allw[g["writer"]] for g in gm]),
-                       np.array([alls[g["script"]] for g in gm]),
-                       np.array([allc[g["char"]] for g in gm]),
-                       np.array([allk.setdefault(g["work"], len(allk)) for g in gm]),
+        E_gen = EmbSet(emb, np.array([_mid(allw, g["writer"]) for g in gm]),
+                       np.array([_mid(alls, g["script"]) for g in gm]),
+                       np.array([_mid(allc, g["char"]) for g in gm]),
+                       np.array([_mid(allk, g["work"]) for g in gm]),
                        [os.path.basename(g["path"]) for g in gm])
+        # ★ 报告"字符是否在参考库内"（unseen-char 占比 ✓ —— 这是必然要分组看的 ✓）
+        bank_chars = set(allc) - set(g["char"] for g in gm) if False else None
+        fixed = {r.char for r in rows}
+        n_unseen = sum(1 for g in gm if g["char"] not in fixed)
+        E_gen_unseen = E_gen.subset(np.array([g["char"] not in fixed for g in gm], dtype=bool))
+        E_gen_seen = E_gen.subset(np.array([g["char"] in fixed for g in gm], dtype=bool))
+        print("  字符分组: seen=%d unseen=%d（unseen 在库里没有同字候选 ✓ 正是要评的 ✓）"
+              % (len(E_gen_seen), len(E_gen_unseen)), flush=True)
+        if len(E_gen_unseen) >= 8:
+            report.setdefault("sets", {}).setdefault(name + "__unseen_char", {})
+            report["sets"][name + "__unseen_char"] = full_metrics(
+                E_gen_unseen, name + "__unseen_char")
         # 内容判定: 生成图 char 预测 == 同行 std 图 char 预测 ✓
         std_paths = [B.resolve((r.get("std_path") or "").strip(), roots) for r in rows_g]
         ok = None
