@@ -339,6 +339,124 @@ def fuse_condition(cfg, t, x, y_callig_in, y_callig, y_char, y_script,
     return y_emb, e_callig, _cgw
 
 
+@dataclass(frozen=True)
+class CfgForwardCfg:
+    """`forward_with_cfg` 用到的**全部** `self.*`（2026-10-13 [审查 PR3] 第三步 ✓）。
+
+    审查: "只移动逻辑, 不移动权重注册位置" ✓ ⇒ 本类不注册模块 ⇒ **state_dict 键不变** ✓✓。
+    ⚠ 两个字段是**绑定方法**（`forward` / `forward_with_2axis_cfg` ✓）；
+      `use_char_cond` 的默认值**必须与原 `getattr(self, "use_char_cond", True)` 一致** ✓✓
+      （工具 tools/measure_deps.py 会主动报出这类陷阱 ✓）。
+    """
+    forward: Any                # 原 self.forward（**绑定方法** ✓）
+    forward_with_2axis_cfg: Any                # 原 self.forward_with_2axis_cfg（**绑定方法** ✓）
+    image_channels: Any
+    style_hier: Any
+    y_callig_embedder: Any
+    y_char_embedder: Any
+    use_char_cond: Any                # 原 getattr(self, "use_char_cond", True) ✓ 默认必须为 True ✓
+
+    @classmethod
+    def from_model(cls, m):
+        return cls(
+                   forward=m.forward,
+                   forward_with_2axis_cfg=m.forward_with_2axis_cfg,
+                   image_channels=getattr(m, "image_channels", None),
+                   style_hier=getattr(m, "style_hier", None),
+                   y_callig_embedder=getattr(m, "y_callig_embedder", None),
+                   y_char_embedder=getattr(m, "y_char_embedder", None),
+                   use_char_cond=getattr(m, "use_char_cond", True),
+        )
+
+
+def forward_with_cfg(cfg, x, t, y_callig, y_char, cfg_scale, g=None, cfg_glyph=1.0,
+                     w_inter=None, y_script=None, y_callig_raw=None, y_pair=None):
+    """CFG 前向（**逐行等价**于 `DiT_2Cond.forward_with_cfg` ✓，2026-10-13 [审查 PR3] 第三步 ✓）。
+
+    只把 `self.X` 换成 `cfg.X`、把 `getattr(self, "use_char_cond", True)` 换成 `cfg.use_char_cond` ✓；
+    **未改动任何数值逻辑、未新增/移动任何 nn.Module** ✓
+    ⇒ 由 eval + train 两个前向黄金 + `--cfg1` 等价检查共同裁决 ✓✓。
+    """
+    """经典 2 路 CFG（默认），或委托给双轴 CFG。
+
+    S2: ``y_script`` / ``y_callig_raw`` / ``y_pair`` 需与 ``y_callig`` 一起复制，
+    否则 hier 分支会拿到错误长度的条件（batch 不一致）。
+
+    ★ 2026-09-17: 增加 `cfg_glyph` 参数。给了就走 `forward_with_2axis_cfg`
+      （风格轴 × 内容轴各自独立），否则保持原有 2 路行为（**向后兼容**）。
+
+    ⚠ 默认 2 路路径里 `g2 = cat([g, g])` —— **两半给同一个 g**，
+      所以任何"只由 g 驱动"的通路（xattn / glyph_embedder）在
+      `eps_cond − eps_uncond` 里**完全抵消，对 CFG 贡献恒为 0**。
+      这是有意的（"CFG 只强化 callig 风格"），但会让组件结论失真：
+      **xattn 这类通路在 cfg 引导下天然被绕过**（doc54 的 "xattn strict≈0" 即此）。
+      要做内容轴引导必须走 `forward_with_2axis_cfg`，且训练时 `glyph_drop_prob > 0`。
+    """
+    if cfg_glyph is not None:
+        # ★ 2026-10-13 [审查 P0]: 原来**漏传** y_script / y_callig_raw / y_pair ✗
+        #   —— 与本方法 docstring 自己的要求相矛盾（S2 条件必须随 y_callig 一起复制,
+        #   否则 hier/三表分支拿到 None -> 条件 batch 不一致或直接报错 ✗）。
+        #   现全部透传 ✓（复制/拼接由 forward_with_2axis_cfg 内部按 4-pass 处理 ✓）
+        return cfg.forward_with_2axis_cfg(
+            x, t, y_callig, y_char,
+            cfg_callig=cfg_scale, cfg_glyph=cfg_glyph, w_inter=w_inter, g=g,
+            y_script=y_script, y_callig_raw=y_callig_raw, y_pair=y_pair)
+    # Duplicate every sample: first copy conditional, second copy unconditional.
+    original_bs = x.shape[0]
+    # ★ 2026-09-17 诊断: 入口处各张量的 batch 必须一致，否则复制后仍不一致，
+    #   最终在 factorized_cat 的 cat 里报一个看不出原因的 size 错。
+    _in_bs = {"x": int(x.shape[0]), "t": int(t.shape[0]),
+              "y_callig": int(y_callig.shape[0]), "y_char": int(y_char.shape[0])}
+    if g is not None:
+        _in_bs["g"] = int(g.shape[0])
+    if len(set(_in_bs.values())) != 1:
+        raise RuntimeError(
+            f"[forward_with_cfg] 入口 batch 不一致: {_in_bs}。"
+            f" 复制成 2B 后仍会不一致 -> 后面 cat 会报模糊的 size 错。"
+            f" 调用方（sample_latents 等）必须给同一段切片。")
+    x = torch.cat([x, x], dim=0)
+    t = torch.cat([t, t], dim=0)
+    y_callig = torch.cat([y_callig, y_callig], dim=0)
+    y_char = torch.cat([y_char, y_char], dim=0)
+    uncond_callig = torch.full_like(y_callig, cfg.y_callig_embedder.num_classes)
+    y_callig_combined = torch.cat([y_callig[:original_bs], uncond_callig[original_bs:]], dim=0)
+    if cfg.use_char_cond:
+        uncond_char = torch.full_like(y_char, cfg.y_char_embedder.num_classes)
+        y_char_combined = torch.cat([y_char[:original_bs], uncond_char[original_bs:]], dim=0)
+    else:
+        y_char_combined = y_char    # v10b: char 因子不存在, 值被 forward 忽略
+    # 标准字形条件 g 始终全给(两半都用真实 g): 字形内容是正条件, CFG 只强化 callig 风格
+    g2 = torch.cat([g, g], dim=0) if g is not None else None
+    # S2: 三个新条件都要跟着复制成 2B，且**风格轴必须做 uncond 半置 null**。
+    #   y_script     -> 两半都给真实书体（结构轴，与 g 同源；与 g2=cat([g,g]) 一致）
+    #   y_callig_raw -> [real, null]  ← 不置 null 的话 uncond 半仍带真书家，CFG 直接失效
+    #   y_pair       -> [real, null]  ← 同上；且 pair>=num_pairs 时残差自动为 0
+    _dup = lambda v: torch.cat([v, v], dim=0) if v is not None else None
+    _null_callig = cfg.y_callig_embedder.num_classes
+    _null_pair = cfg.style_hier.num_pairs if cfg.style_hier is not None else 0
+    _comb = lambda v, nv: (torch.cat(
+        [v, torch.full_like(v, int(nv))], dim=0) if v is not None else None)
+    model_out = cfg.forward(x, t, y_callig_combined, y_char_combined, g=g2,
+                             y_script=_dup(y_script),
+                             y_callig_raw=_comb(y_callig_raw, _null_callig),
+                             y_pair=_comb(y_pair, _null_pair))
+    if isinstance(model_out, tuple):
+        model_out = model_out[0]  # skel_head 启用时 forward 返回 (主输出, skel_pred)，CFG 只取主输出
+    # Apply CFG only on image latent channels (eps subspace), not canny/skel structure channels.
+    eps, rest = model_out[:, :cfg.image_channels], model_out[:, cfg.image_channels:]
+    cond_eps, uncond_eps = torch.split(eps, original_bs, dim=0)
+    half_eps = uncond_eps + cfg_scale * (cond_eps - uncond_eps)
+    # ★ 2026-09-17: 原来写的是
+    #     eps = torch.cat([half_eps, half_eps], dim=0)   # 白做一次 2B 分配
+    #     out = torch.cat([eps, rest], dim=1)
+    #     return out[:original_bs]                        # 又把后一半丢掉
+    #   即先复制一份再截断 —— 纯浪费一次 2B×image_channels 的分配与拷贝。
+    #   直接用 cond 那半的 rest(aux 通道取条件分支的值), 形状即 (B, C+rest)。
+    #   语义完全一致 (返回行 = 前 original_bs 行)。
+    out = torch.cat([half_eps, rest[:original_bs]], dim=1)
+    return out
+
+
 class DiT_2Cond(nn.Module):
     """
     Diffusion model with a Transformer backbone conditioned on 2 discrete labels:
@@ -2089,84 +2207,14 @@ class DiT_2Cond(nn.Module):
     def forward_with_cfg(self, x, t, y_callig, y_char, cfg_scale=4.0, g=None,
                          cfg_glyph=None, w_inter=0.0,
                          y_script=None, y_callig_raw=None, y_pair=None):
-        """经典 2 路 CFG（默认），或委托给双轴 CFG。
+        """薄封装 ✓ —— 实现已抽成模块级 `forward_with_cfg`（2026-10-13 [审查 PR3] 第三步 ✓）。
 
-        S2: ``y_script`` / ``y_callig_raw`` / ``y_pair`` 需与 ``y_callig`` 一起复制，
-        否则 hier 分支会拿到错误长度的条件（batch 不一致）。
-
-        ★ 2026-09-17: 增加 `cfg_glyph` 参数。给了就走 `forward_with_2axis_cfg`
-          （风格轴 × 内容轴各自独立），否则保持原有 2 路行为（**向后兼容**）。
-
-        ⚠ 默认 2 路路径里 `g2 = cat([g, g])` —— **两半给同一个 g**，
-          所以任何"只由 g 驱动"的通路（xattn / glyph_embedder）在
-          `eps_cond − eps_uncond` 里**完全抵消，对 CFG 贡献恒为 0**。
-          这是有意的（"CFG 只强化 callig 风格"），但会让组件结论失真：
-          **xattn 这类通路在 cfg 引导下天然被绕过**（doc54 的 "xattn strict≈0" 即此）。
-          要做内容轴引导必须走 `forward_with_2axis_cfg`，且训练时 `glyph_drop_prob > 0`。
+        保留本方法只为兼容既有调用 ✓（训练内评测 / 离线评测 / 工具均按原样调用 ✓）。
+        等价性由 eval + train 两个前向黄金 + `verify_forward_parity.py --cfg1` 共同裁决 ✓✓。
         """
-        if cfg_glyph is not None:
-            # ★ 2026-10-13 [审查 P0]: 原来**漏传** y_script / y_callig_raw / y_pair ✗
-            #   —— 与本方法 docstring 自己的要求相矛盾（S2 条件必须随 y_callig 一起复制,
-            #   否则 hier/三表分支拿到 None -> 条件 batch 不一致或直接报错 ✗）。
-            #   现全部透传 ✓（复制/拼接由 forward_with_2axis_cfg 内部按 4-pass 处理 ✓）
-            return self.forward_with_2axis_cfg(
-                x, t, y_callig, y_char,
-                cfg_callig=cfg_scale, cfg_glyph=cfg_glyph, w_inter=w_inter, g=g,
-                y_script=y_script, y_callig_raw=y_callig_raw, y_pair=y_pair)
-        # Duplicate every sample: first copy conditional, second copy unconditional.
-        original_bs = x.shape[0]
-        # ★ 2026-09-17 诊断: 入口处各张量的 batch 必须一致，否则复制后仍不一致，
-        #   最终在 factorized_cat 的 cat 里报一个看不出原因的 size 错。
-        _in_bs = {"x": int(x.shape[0]), "t": int(t.shape[0]),
-                  "y_callig": int(y_callig.shape[0]), "y_char": int(y_char.shape[0])}
-        if g is not None:
-            _in_bs["g"] = int(g.shape[0])
-        if len(set(_in_bs.values())) != 1:
-            raise RuntimeError(
-                f"[forward_with_cfg] 入口 batch 不一致: {_in_bs}。"
-                f" 复制成 2B 后仍会不一致 -> 后面 cat 会报模糊的 size 错。"
-                f" 调用方（sample_latents 等）必须给同一段切片。")
-        x = torch.cat([x, x], dim=0)
-        t = torch.cat([t, t], dim=0)
-        y_callig = torch.cat([y_callig, y_callig], dim=0)
-        y_char = torch.cat([y_char, y_char], dim=0)
-        uncond_callig = torch.full_like(y_callig, self.y_callig_embedder.num_classes)
-        y_callig_combined = torch.cat([y_callig[:original_bs], uncond_callig[original_bs:]], dim=0)
-        if getattr(self, 'use_char_cond', True):
-            uncond_char = torch.full_like(y_char, self.y_char_embedder.num_classes)
-            y_char_combined = torch.cat([y_char[:original_bs], uncond_char[original_bs:]], dim=0)
-        else:
-            y_char_combined = y_char    # v10b: char 因子不存在, 值被 forward 忽略
-        # 标准字形条件 g 始终全给(两半都用真实 g): 字形内容是正条件, CFG 只强化 callig 风格
-        g2 = torch.cat([g, g], dim=0) if g is not None else None
-        # S2: 三个新条件都要跟着复制成 2B，且**风格轴必须做 uncond 半置 null**。
-        #   y_script     -> 两半都给真实书体（结构轴，与 g 同源；与 g2=cat([g,g]) 一致）
-        #   y_callig_raw -> [real, null]  ← 不置 null 的话 uncond 半仍带真书家，CFG 直接失效
-        #   y_pair       -> [real, null]  ← 同上；且 pair>=num_pairs 时残差自动为 0
-        _dup = lambda v: torch.cat([v, v], dim=0) if v is not None else None
-        _null_callig = self.y_callig_embedder.num_classes
-        _null_pair = self.style_hier.num_pairs if self.style_hier is not None else 0
-        _comb = lambda v, nv: (torch.cat(
-            [v, torch.full_like(v, int(nv))], dim=0) if v is not None else None)
-        model_out = self.forward(x, t, y_callig_combined, y_char_combined, g=g2,
-                                 y_script=_dup(y_script),
-                                 y_callig_raw=_comb(y_callig_raw, _null_callig),
-                                 y_pair=_comb(y_pair, _null_pair))
-        if isinstance(model_out, tuple):
-            model_out = model_out[0]  # skel_head 启用时 forward 返回 (主输出, skel_pred)，CFG 只取主输出
-        # Apply CFG only on image latent channels (eps subspace), not canny/skel structure channels.
-        eps, rest = model_out[:, :self.image_channels], model_out[:, self.image_channels:]
-        cond_eps, uncond_eps = torch.split(eps, original_bs, dim=0)
-        half_eps = uncond_eps + cfg_scale * (cond_eps - uncond_eps)
-        # ★ 2026-09-17: 原来写的是
-        #     eps = torch.cat([half_eps, half_eps], dim=0)   # 白做一次 2B 分配
-        #     out = torch.cat([eps, rest], dim=1)
-        #     return out[:original_bs]                        # 又把后一半丢掉
-        #   即先复制一份再截断 —— 纯浪费一次 2B×image_channels 的分配与拷贝。
-        #   直接用 cond 那半的 rest(aux 通道取条件分支的值), 形状即 (B, C+rest)。
-        #   语义完全一致 (返回行 = 前 original_bs 行)。
-        out = torch.cat([half_eps, rest[:original_bs]], dim=1)
-        return out
+        return forward_with_cfg(CfgForwardCfg.from_model(self), x, t, y_callig, y_char,
+                                cfg_scale, g=g, cfg_glyph=cfg_glyph, w_inter=w_inter,
+                                y_script=y_script, y_callig_raw=y_callig_raw, y_pair=y_pair)
 
     def forward_with_2axis_cfg(self, x, t, y_callig, y_char,
                                cfg_callig=2.0, cfg_glyph=4.0, w_inter=0.0, g=None,
