@@ -73,7 +73,11 @@ DROP = dict(all=0.05, callig=0.08, script=0.08)   # 与 v66/v67 配置一致
 
 # 可选: 用命令行覆盖 drop 概率, 做**功效检验** (一个测不出问题的测试没有价值)
 #   python tests/test_c2ot_drop_interaction.py [drop_all] [drop_callig] [drop_script]
-if len(sys.argv) >= 4:
+# NOTE 2026-10-13: reading sys.argv at module level is a real bug under pytest:
+#   pytest argv e.g. [pytest, tests/, --collect-only, -q] has len>=4, so the flag
+#   string got passed to float() and collection crashed (ValueError, verified).
+#   Only parse positional args when this file is executed directly.
+if __name__ == "__main__" and len(sys.argv) >= 4:
     DROP = dict(all=float(sys.argv[1]), callig=float(sys.argv[2]),
                 script=float(sys.argv[3]))
     print('[power-check] drop 覆盖为 all=%.2f callig=%.2f script=%.2f'

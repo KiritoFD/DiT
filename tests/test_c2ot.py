@@ -10,7 +10,6 @@
   5. 计算吞吐基准: 大批次 (B=384) 下较朴素全局 OT 获得 10~50x 算法加速
 """
 
-import math
 import os
 import sys
 import time
@@ -18,10 +17,9 @@ import time
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import numpy as np
-import torch
 import torch as th
 
-from src.loss.flow_matching import FlowMatching, create_flow_matching
+from src.loss.flow_matching import FlowMatching
 
 
 def test_c2ot_condition_isolation():
@@ -225,7 +223,7 @@ def test_c2ot_speedup_benchmark():
     _ = fm_c2ot._apply_c2ot(x, n, model_kwargs)
     total_c2ot_ms = (time.perf_counter() - t0) * 1000
 
-    print(f"\n[B=384 性能基准]")
+    print("\n[B=384 性能基准]")
     print(f"  全局 Hungarian 纯配对耗时 (384x384): {hungarian_naive_ms:.3f} ms")
     print(f"  C2OT 组内 Hungarian 耗时 (20组小块):  {hungarian_c2ot_ms:.3f} ms")
     print(f"  匈牙利求解核心算法加速比:            {speedup_hungarian:.1f}x")

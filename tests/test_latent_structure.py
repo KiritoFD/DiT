@@ -2,8 +2,8 @@ import unittest
 
 import torch
 
-from latent_structure import LatentStructureLoss, LatentStructureProbe
-from latent_condition_probe import LatentConditionProbe
+from src.train.latent_structure import LatentStructureLoss, LatentStructureProbe
+from src.eval.latent_condition_probe import LatentConditionProbe
 
 
 class LatentStructureTests(unittest.TestCase):
