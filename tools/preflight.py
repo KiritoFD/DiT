@@ -153,7 +153,6 @@ def gate_structure_sanity():
     **全都没抓到** ✗（smoke 不走 main(); 黄金在 dit.py）—— 这是护栏盲区 ✓。
     判据: 关键函数/类的**行数下限** + 文件总行数下限（只拦"大幅缩水" ✗, 不拦正常重构 ✓）。
     """
-    import ast as _ast
     LIMITS = {"src/train/train.py": (2000, "main"), "src/model/dit.py": (1800, "DiT_2Cond"),
               "src/eval/in_mem_eval.py": (1000, None), "src/utils/latent_dataset.py": (400, None)}
     bad = []
