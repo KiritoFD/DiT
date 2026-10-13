@@ -76,6 +76,9 @@ def main() -> int:
     ap.add_argument("--n-pairs", type=int, default=1500)
     ap.add_argument("--bootstrap", type=int, default=2000)
     ap.add_argument("--seed", type=int, default=0)
+    ap.add_argument("--no-holdout", action="store_true",
+                    help="G1 在**全部行**上算（= 方案字面的\"真实真迹\"口径 ✓）\n"
+                    "默认 False = 作品级留出（更难 ✓，方案也要求留出验证 ✓）⇒ **两种都报** ✓")
     ap.add_argument("--device", default="")
     args = ap.parse_args()
     import torch
@@ -113,7 +116,11 @@ def main() -> int:
     ho_rows = [rows[i] for i in ho]
 
     print("\n===== 复评 %s（作品级留出 n=%d ✓）=====" % (os.path.basename(args.ckpt), len(ho)))
-    g1 = gate1_2afc(emb[ho], ho_rows, n_pairs=args.n_pairs, seed=args.seed,
+    _g1_rows = rows if args.no_holdout else ho_rows
+    _g1_emb = emb if args.no_holdout else emb[ho]
+    _tag = "全部行(同分布 ✓)" if args.no_holdout else "作品级留出(更难 ✓)"
+    print("  G1 口径: %s n_rows=%d" % (_tag, len(_g1_rows)))
+    g1 = gate1_2afc(_g1_emb, _g1_rows, n_pairs=args.n_pairs, seed=args.seed,
                     bootstrap=args.bootstrap)
     g2 = gate2_retrieval(emb, rows, seed=args.seed)
     g3 = gate3_printed(emb[ho], ho_rows, None, None)
