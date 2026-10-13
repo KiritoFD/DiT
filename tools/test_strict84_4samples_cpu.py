@@ -90,8 +90,12 @@ with th.no_grad():
     dec = (vae.decode(x_pred / 0.18215).sample.clamp(-1, 1) + 1) / 2
     gts_norm = (gts + 1) / 2
 
-from src.eval.in_mem_eval import _ssim_tensor
-ssim_vals = _ssim_tensor(dec, gts_norm)
+# ★ 2026-10-13 [清理]: 原为 `from src.eval.in_mem_eval import _ssim_tensor` ✗ ——
+#   该名字在**全仓从未存在过**（`git log -S'_ssim_tensor' -- src/eval/in_mem_eval.py` 零命中 ✓）
+#   ⇒ 本工具自诞生起就**无法运行** ✓✗。它要的是**张量版** SSIM，而
+#   `src.eval.metrics.ssim_torch(x, y)` 正是逐样本 (B,) 的实现 ✓ ⇒ 改用它 ✓。
+from src.eval.metrics import ssim_torch as _ssim_tensor
+ssim_vals = _ssim_tensor(dec, gts_norm).tolist()
 print("\n🎉 4 样本真实 Strict84 E2E SSIM 结果:")
 for i, (r, ssim) in enumerate(zip(rows, ssim_vals)):
     print(f"  [{i}] {r['calligrapher']} · {r['character']} ({r['script']}): SSIM = {ssim:.4f}")
