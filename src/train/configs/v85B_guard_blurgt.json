@@ -118,5 +118,6 @@
   "style_rank_tau": 0.07,
   "style_rank_ckpt": "assets/style_enc_v85c.pt",
   "w_std_mid": 0.05,
-  "std_mid_carrier": "blur_gt"
+  "std_mid_carrier": "blur_gt",
+  "probe_style_grad_steps": 200
 }

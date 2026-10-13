@@ -960,6 +960,10 @@ def build_parser(argv=None):
                         dest="style_rank_margin", help="[v85B] 排序损失的 margin m ✓")
     parser.add_argument("--style-rank-tau", type=float, default=0.07,
                         dest="style_rank_tau", help="[v85B] 排序损失的温度 τ ✓")
+    parser.add_argument("--probe-style-grad-steps", type=int, default=0,
+                        dest="probe_style_grad_steps",
+                        help="[v85B] 前 N 步打印**梯度范数比探针**（方案 §三.3 的 λ_s 标定方式 ✓）\n"
+                        "—— 报告 ‖∂L_FM/∂θ‖ 与 ‖∂L_style/∂θ‖ 及使贡献比达 7.5% 的 λ ✓。0=关")
     parser.add_argument("--style-rank-ckpt", type=str, default="assets/style_enc_latent.pt",
                         dest="style_rank_ckpt")
     parser.add_argument("--style-rank-cent", type=str, default="assets/rank_cent87.npy",

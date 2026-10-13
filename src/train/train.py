@@ -2214,6 +2214,34 @@ def main(args):
                         _yp = batch['y_pair'].to(device, non_blocking=True)
                         loss_style_rank, _n_style_rank = _style_rank_loss_fn(
                             pred_xstart_latent, _yp, t.to(device))
+                        # ★★ v85B: **梯度范数比探针**（方案 §三.3 明确要求的标定方式 ✓）
+                        #   方案原文: "建议按**共享 DiT 参数的梯度范数**确定权重，使新风格损失
+                        #   在启用样本上贡献约 **FM 梯度的 5–10%**，而**不是仅根据两个标量
+                        #   loss 的数值**选择权重 ✓"。
+                        #   为什么: 两个 loss 的**标量数值不可比** ✗（一个在 latent MSE 尺度、
+                        #   一个在 logsumexp 尺度 ✓）⇒ 只有**对同一组参数的梯度**可比 ✓。
+                        #   实现: 用 autograd.grad 分别对两组 loss 求同一组共享参数（可训练 ✓）
+                        #   的梯度（retain_graph=True ✓），只在**前几步**做以免拖慢训练 ✓。
+                        _pstep = int(getattr(args, 'probe_style_grad_steps', 0) or 0)
+                        if _pstep and train_steps < _pstep and int(_n_style_rank) > 0:
+                            _shared = [p for p in model.parameters() if p.requires_grad]
+                            _g_fm = torch.autograd.grad(
+                                loss, _shared, retain_graph=True, allow_unused=True)
+                            _g_st = torch.autograd.grad(
+                                loss_style_rank, _shared, retain_graph=True,
+                                allow_unused=True)
+                            _n_fm = torch.sqrt(sum((g ** 2).sum() for g in _g_fm
+                                                   if g is not None))
+                            _n_st = torch.sqrt(sum((g ** 2).sum() for g in _g_st
+                                                   if g is not None))
+                            _ratio = float(_n_st / (_n_fm + 1e-12))
+                            logger.info(
+                                "[style-rank-probe] step=%d n=%d | ‖dL_FM/dθ‖=%.4e "
+                                "‖dL_style/dθ‖=%.4e | λ=%.5g 时贡献比=%.2f%% | "
+                                "目标 5-10%% ⇒ 建议 λ≈%.5g",
+                                train_steps, int(_n_style_rank), float(_n_fm), float(_n_st),
+                                float(args.w_style_rank), 100.0 * _ratio,
+                                float(args.w_style_rank) * (0.075 / max(_ratio, 1e-12)))
                         loss = loss + getattr(args, 'w_style_rank', 0.0) * loss_style_rank
 
                 # ---- DeformSkel 中间监督: 形变后的骨架应逼近**该书家的 GT 骨架** ----

@@ -116,5 +116,6 @@
   "style_rank_t_max": 0.3,
   "style_rank_margin": 0.0,
   "style_rank_tau": 0.07,
-  "style_rank_ckpt": "assets/style_enc_v85c.pt"
+  "style_rank_ckpt": "assets/style_enc_v85c.pt",
+  "probe_style_grad_steps": 200
 }
