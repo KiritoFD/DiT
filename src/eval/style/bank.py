@@ -131,6 +131,34 @@ def split_by_work(bank: Sequence[RefRow], *, query_frac: float = 0.3, seed: int 
     return ref, qry
 
 
+def cap_balanced(rows: Sequence[RefRow], n: int) -> List[RefRow]:
+    """把参考库压到 n 张，**按槽位均衡**（轮转取样 ✓）。
+
+    ⚠ 直接截断 CSV 会**整族丢掉后面的书家** ✗（CSV 按书家排序 ✓）⇒ 检索候选书家数会变 ✗。
+      轮转取样保证每个槽位按比例保留 ✓，且不改变 writer 集合 ✓。
+    """
+    if n <= 0 or len(rows) <= n:
+        return list(rows)
+    by_slot: Dict[Tuple[str, str], List[RefRow]] = {}
+    for r in rows:
+        by_slot.setdefault(r.slot, []).append(r)
+    out: List[RefRow] = []
+    i = 0
+    while len(out) < n:
+        added = False
+        for slot in sorted(by_slot):
+            lst = by_slot[slot]
+            if i < len(lst):
+                out.append(lst[i])
+                added = True
+                if len(out) >= n:
+                    break
+        if not added:
+            break
+        i += 1
+    return out
+
+
 def slot_counts(rows: Sequence[RefRow]) -> Dict[Tuple[str, str], int]:
     d: Dict[Tuple[str, str], int] = {}
     for r in rows:

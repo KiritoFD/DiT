@@ -47,10 +47,22 @@ class StyleEncoder:
              num_scripts: int = 12, verbose: bool = True) -> "StyleEncoder":
         import torch
 
-        here = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-        if not os.path.isabs(ckpt) and not os.path.exists(ckpt):
-            ckpt = os.path.join(here, ckpt)
-        assert os.path.isfile(ckpt), f"找不到分类器权重: {ckpt} ✗"
+        # ★ 路径解析必须**多候选 + 按文件名搜索** ✓ ——
+        #   第一版回溯 3 层得到的是 `<repo>/src` ✗（`src/eval/style/encoder.py` 需 **4** 层 ✓）
+        #   ⇒ 4090 上直接 assert 失败 ✓。改为: 绝对路径直接用; 否则在候选根下找同名文件 ✓。
+        root = os.path.dirname(os.path.dirname(os.path.dirname(
+            os.path.dirname(os.path.abspath(__file__)))))            # <repo> ✓
+        if os.path.isabs(ckpt):
+            cands = [ckpt]
+        else:
+            base = os.path.basename(ckpt)
+            cands = []
+            for r in (os.getcwd(), root, os.path.join(root, "data", "pretrained"),
+                      os.path.join(root, "pretrained_models"),
+                      os.path.join(root, "data", "pretrained", "pretrained_models")):
+                cands += [os.path.join(r, ckpt), os.path.join(r, base)]
+        ckpt = next((c for c in cands if os.path.isfile(c)), cands[0])
+        assert os.path.isfile(ckpt), "找不到分类器权重 ✗；试过: %s" % cands[:6]
         if device is None:
             device = "cuda" if torch.cuda.is_available() else "cpu"
 

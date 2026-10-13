@@ -99,6 +99,7 @@ def main() -> int:
     ap.add_argument("--out", required=True)
     ap.add_argument("--ckpt", default="pretrained_models/eval_classifier.pt")
     ap.add_argument("--kind", default="callig", choices=["callig", "cls"])
+    ap.add_argument("--device", default="", help="cpu/cuda（空=自动 ✓）。训练占满 GPU 时用 cpu ✓")
     ap.add_argument("--mask-ink", type=int, default=0, help="1=背景对照（把墨迹抹掉 ✓）")
     ap.add_argument("--max-ref", type=int, default=0, help="限制参考库规模（0=全部）")
     ap.add_argument("--query-frac", type=float, default=0.3)
@@ -114,15 +115,19 @@ def main() -> int:
     roots = args.root or [".", "data", "exp-std"]
 
     print("== ① 建参考库 ==", flush=True)
-    rows = B.build_bank(args.csv, roots=roots, max_rows=(args.max_ref or None))
+    rows = B.build_bank(args.csv, roots=roots,
+                        max_rows=(args.max_ref * 3 if args.max_ref else None))
     if not rows:
         print("参考库为空 ✗（图像路径不可解析?）"); return 2
+    if args.max_ref and len(rows) > args.max_ref:
+        rows = B.cap_balanced(rows, args.max_ref)
+        print("  参考库**按槽位均衡**压到 %d 张 ✓（避免截断丢掉整族书家 ✗）" % len(rows))
     ref_rows, real_q = B.split_by_work(rows, query_frac=args.query_frac)
     print("  ref=%d  real_query=%d（按**作品**划分 ✓ 保证 query 的作品不在 gallery 中 ✓）"
           % (len(ref_rows), len(real_q)))
 
     print("== ② 加载风格编码器 ==", flush=True)
-    enc = StyleEncoder.load(args.ckpt, kind=args.kind)
+    enc = StyleEncoder.load(args.ckpt, kind=args.kind, device=(args.device or None))
     print("  dim=%d device=%s mask_ink=%s" % (enc.dim, enc.device, bool(args.mask_ink)), flush=True)
 
     print("== ③ 提特征（带缓存 ✓）==", flush=True)
