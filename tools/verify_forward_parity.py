@@ -153,7 +153,21 @@ def main():
             kw2 = dict(kw); kw2["g"] = kw["g"].flip(0)
             d3 = float((run(m, x, t, yc, ych, kw2, seed=sd) - out).abs().max())
         print("  灵敏度: Δy_char=%.4e  Δt=%.4e  Δg=%s" % (d1, d2, ("%.4e" % d3) if d3 is not None else "n/a"))
-        if d1 <= 0: print("  ✗ 改字条件输出不变 —— 护栏不灵敏 ✗"); rc = 1
+        # ★ 2026-10-13 [审查 v3 发现]: 判据必须**模式感知** ✓
+        #   std 模式 use_char_cond=False ⇒ 字表**不参与内容条件** ⇒ Δy_char **本就应当为 0**
+        #   ⇒ 这不是"护栏不灵敏" ✗, 而是 **std 语义的正面证据** ✓✓（"不依赖字表的开集路线"）。
+        #   于是把它升级为一条**新 CI 不变量**: std 模式下 Δy_char 必须**恰为 0** ✓✓。
+        _uses_char = bool(getattr(m, "use_char_cond", True))
+        if _uses_char:
+            if d1 <= 0: print("  ✗ 改字条件输出不变 —— 护栏不灵敏 ✗"); rc = 1
+        else:
+            if d1 > 0:
+                print(f"  ✗ **std 模式仍受字表影响** ✗（Δy_char={d1:.3e} ≠ 0）—— 开集语义不成立 ✗")
+                rc = 1
+            else:
+                print("  ✓ **std 模式对字表零依赖** ✓✓（Δy_char 恰为 0 = 开集语义成立的正面证据 ✓）")
+                if d3 is None or d3 <= 0:
+                    print("  ✗ std 模式下 g 必须有效（Δg>0）✗"); rc = 1
         if d2 <= 0: print("  ✗ 改 t 输出不变 —— 护栏不灵敏 ✗"); rc = 1
         if d3 is not None and d3 <= 0: print("  ✗ 改 g 输出不变 —— 护栏不灵敏 ✗"); rc = 1
         if rc == 0: print("  ✓ 护栏灵敏 ✓（三类输入扰动都能反映到输出）")

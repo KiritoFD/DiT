@@ -38,7 +38,7 @@ def main():
     from src.model import DiT_2Cond_models
     from src.utils import get_glyph_lookup_v2
     from src.eval.inference import load_eval_vae
-    from src.eval.cpu_sampler import heun_sample_cpu
+    from src.utils.cpu_sampler import heun_sample_cpu
 
     # 最新 v10b ckpt
     arch = dict(norm_type="rms", mlp_type="swiglu", qk_norm=True, rope=True,

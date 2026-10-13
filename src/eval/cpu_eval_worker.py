@@ -53,7 +53,7 @@ def main():
     from src.model.legacy.controlnet import load_main_model, ControlNetDiT
     from src.eval.inference import (make_eval_cache, load_eval_vae, decode_and_save,
                                     compute_metrics)
-    from src.eval.cpu_sampler import heun_sample_cpu
+    from src.utils.cpu_sampler import heun_sample_cpu
 
     ck = torch.load(args.ckpt, map_location="cpu", weights_only=False)
     a = ck.get("args", {}) or {}
@@ -156,7 +156,7 @@ def _run_pretrain_g(args, ck, a, arch, common, t0):
     """v10a 预训练 ckpt 的 g 单臂评测: 裸主模型 + 标准字形库 g (部署态)."""
     import torch
     from src.eval.inference import make_eval_cache, load_eval_vae, decode_and_save, compute_metrics
-    from src.eval.cpu_sampler import heun_sample_cpu
+    from src.utils.cpu_sampler import heun_sample_cpu
     dev = torch.device("cpu")
     # ★ 2026-09-17: 整段"手抄构造参数"已删除，统一到 src/eval/model_io.py。
     #   原实现硬编码 cond_drop_*=0.05/0.25、缺 glyph_vec_cond/glyph_embedder_sep/
