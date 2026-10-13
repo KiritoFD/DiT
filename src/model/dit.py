@@ -798,6 +798,206 @@ def embed_glyph(cfg, x, g, keep, y_callig_in, e_style, e_script, style_tokens, _
     return x, g_tok, e_glyph_vec
 
 
+@dataclass(frozen=True)
+class InitWeightsCfg:
+    """`initialize_weights` 用到的**全部** `self.*`（2026-10-13 [审查 PR3] 通用抽取 ✓）。
+
+    审查: "只移动逻辑, 不移动权重注册位置" ✓ ⇒ 不注册模块 ⇒ **state_dict 键不变** ✓✓。
+    ⚠ 全部用 getattr 兜底 ✓（防**惰性访问** ✗）；陷阱项默认值与原文一致 ✓。
+    """
+    _init_style_gain: Any
+    _style_gain_init: Any
+    apply: Any
+    blocks: Any
+    callig_spatial_net: Any
+    callig_style_ca: Any
+    deform_skel: Any
+    final_layer: Any
+    glyph_concat_input: Any
+    glyph_injections: Any
+    local_ca: Any
+    lowrank_spatial: Any
+    pos_embed: Any
+    script_film: Any
+    skel_head: Any
+    skel_head_enabled: Any
+    spatial_film: Any
+    style_ada_rank: Any
+    style_gain: Any
+    style_hier: Any
+    t_embedder: Any
+    x_embedder: Any
+    y_callig_embedder: Any
+    y_char_embedder: Any
+
+    @classmethod
+    def from_model(cls, m):
+        return cls(
+                   _init_style_gain=getattr(m, "_init_style_gain", None),
+                   _style_gain_init=getattr(m, "_style_gain_init", 1.0),
+                   apply=getattr(m, "apply", None),
+                   blocks=getattr(m, "blocks", None),
+                   callig_spatial_net=getattr(m, "callig_spatial_net", None),
+                   callig_style_ca=getattr(m, "callig_style_ca", None),
+                   deform_skel=getattr(m, "deform_skel", None),
+                   final_layer=getattr(m, "final_layer", None),
+                   glyph_concat_input=getattr(m, "glyph_concat_input", None),
+                   glyph_injections=getattr(m, "glyph_injections", None),
+                   local_ca=getattr(m, "local_ca", None),
+                   lowrank_spatial=getattr(m, "lowrank_spatial", None),
+                   pos_embed=getattr(m, "pos_embed", None),
+                   script_film=getattr(m, "script_film", None),
+                   skel_head=getattr(m, "skel_head", None),
+                   skel_head_enabled=getattr(m, "skel_head_enabled", False),
+                   spatial_film=getattr(m, "spatial_film", None),
+                   style_ada_rank=getattr(m, "style_ada_rank", 0),
+                   style_gain=getattr(m, "style_gain", None),
+                   style_hier=getattr(m, "style_hier", None),
+                   t_embedder=getattr(m, "t_embedder", None),
+                   x_embedder=getattr(m, "x_embedder", None),
+                   y_callig_embedder=getattr(m, "y_callig_embedder", None),
+                   y_char_embedder=getattr(m, "y_char_embedder", None),
+        )
+
+
+def initialize_weights(cfg, ):
+    """**逐行等价**于 `DiT_2Cond.initialize_weights` ✓（[审查 PR3] 通用抽取 ✓）。"""
+    def _basic_init(module):
+        if isinstance(module, nn.Linear):
+            # 严禁重置形变网络权重
+            if cfg.deform_skel is not None and any(module is m for m in cfg.deform_skel.modules()):
+                return
+            torch.nn.init.xavier_uniform_(module.weight)
+            if module.bias is not None:
+                nn.init.constant_(module.bias, 0)
+    cfg.apply(_basic_init)
+
+    pos_embed = get_2d_sincos_pos_embed(cfg.pos_embed.shape[-1], int(cfg.x_embedder.num_patches ** 0.5))
+    cfg.pos_embed.data.copy_(torch.from_numpy(pos_embed).float().unsqueeze(0))
+
+    w = cfg.x_embedder.proj.weight.data
+    nn.init.xavier_uniform_(w.view([w.shape[0], -1]))
+    nn.init.constant_(cfg.x_embedder.proj.bias, 0)
+    if cfg.glyph_concat_input:
+        # 后 4 个输入通道是骨架。置 0, 第 0 步骨架对输出没有贡献。
+        c0 = w.shape[1] - 4
+        if c0 > 0:
+            w[:, c0:].zero_()
+
+    nn.init.normal_(cfg.y_callig_embedder.embedding_table.weight, std=0.02)
+    # v10b: use_char_cond=False 时 char 侧整体不存在
+    # IDSCharEmbedder 用 comp_embedding 而非 embedding_table
+    if cfg.y_char_embedder is None:
+        pass    # v10b: 无 char 侧
+    elif cfg.y_char_embedder is not None and hasattr(cfg.y_char_embedder, 'comp_embedding'):
+        nn.init.normal_(cfg.y_char_embedder.comp_embedding.weight, std=0.02)
+        if cfg.y_char_embedder.null_embed is not None:
+            nn.init.normal_(cfg.y_char_embedder.null_embed, std=0.02)
+        if cfg.y_char_embedder.fallback_embed is not None:
+            nn.init.normal_(cfg.y_char_embedder.fallback_embed, std=0.02)
+    elif hasattr(cfg.y_char_embedder, 'char_table'):
+        # 标准字形 DINO 冻结表：不重新初始化（保持标准字形特征）。
+        # 只初始化可学习的 CFG null token。
+        if cfg.y_char_embedder.null_embed is not None:
+            nn.init.normal_(cfg.y_char_embedder.null_embed, std=0.02)
+    else:
+        nn.init.normal_(cfg.y_char_embedder.embedding_table.weight, std=0.02)
+
+    if cfg.skel_head_enabled and cfg.skel_head is not None:
+        nn.init.zeros_(cfg.skel_head[-1].weight)
+        nn.init.zeros_(cfg.skel_head[-1].bias)
+
+    nn.init.normal_(cfg.t_embedder.mlp[0].weight, std=0.02)
+    nn.init.normal_(cfg.t_embedder.mlp[2].weight, std=0.02)
+
+    for block in cfg.blocks:
+        nn.init.constant_(block.adaLN_modulation[-1].weight, 0)
+        nn.init.constant_(block.adaLN_modulation[-1].bias, 0)
+
+    nn.init.constant_(cfg.final_layer.adaLN_modulation[-1].weight, 0)
+    nn.init.constant_(cfg.final_layer.adaLN_modulation[-1].bias, 0)
+    nn.init.constant_(cfg.final_layer.linear.weight, 0)
+    nn.init.constant_(cfg.final_layer.linear.bias, 0)
+
+    # 标准字形的逐层注入必须**保持 zero-init**。
+    #
+    # ZeroAdaLNInjection 在构造时已把 proj 的 weight/bias 置零，但上面
+    # 的 ``cfg.apply(_basic_init)`` 会把**所有** nn.Linear（含这些 proj）
+    # 重新初始化成 xavier_uniform —— 于是注入不再是恒等映射，
+    # warm-start 语义被破坏：从已训练 ckpt 续跑时，新加的注入层会给
+    # 残差流注入随机扰动，等价于在训练好的模型上叠加噪声。
+    #
+    # 这里显式重新置零，恢复 ``out = x*(1+s)+t`` 中 s=t=0 的恒等起点。
+    if cfg.glyph_injections is not None:
+        for _inj in cfg.glyph_injections:
+            if hasattr(_inj, "out_proj"):      # ZeroCrossAttention
+                nn.init.zeros_(_inj.out_proj.weight)
+                nn.init.zeros_(_inj.out_proj.bias)
+            else:                              # ZeroAdaLNInjection
+                nn.init.zeros_(_inj.proj.weight)
+                nn.init.zeros_(_inj.proj.bias)
+
+    # callig 空间化最后一层 (to_spatial) 同样恢复 zero-init:
+    # s_callig=0 初始恒等, 从已训 ckpt 续跑时不注入随机扰动。
+    if cfg.callig_spatial_net is not None:
+        nn.init.zeros_(cfg.callig_spatial_net[-1].weight)
+        nn.init.zeros_(cfg.callig_spatial_net[-1].bias)
+
+    # callig 风格 cross-attn 的 out_proj 同样恢复 zero-init (resume 恒等)。
+    if cfg.callig_style_ca is not None:
+        nn.init.zeros_(cfg.callig_style_ca.out_proj.weight)
+        nn.init.zeros_(cfg.callig_style_ca.out_proj.bias)
+
+    # ── S2 新模块：同样必须恢复 zero-init（_basic_init 会把它们 xavier 掉）──
+    if cfg.script_film is not None:
+        nn.init.zeros_(cfg.script_film.film.weight)
+        nn.init.zeros_(cfg.script_film.film.bias)
+    if cfg.spatial_film is not None:
+        nn.init.zeros_(cfg.spatial_film.net[-1].weight)
+        nn.init.zeros_(cfg.spatial_film.net[-1].bias)
+    if cfg.lowrank_spatial is not None:
+        # 不能 zeros_: 全零会让 u_i 的下游梯度为 0, P/Q 一步不动。
+        cfg.lowrank_spatial.reset_output()
+    if cfg.local_ca is not None:
+        for _lc in cfg.local_ca:
+            # _basic_init 会把新模块的 Linear 重新 xavier 掉, 限幅初始值必须再设一次。
+            if hasattr(_lc, "reset"):
+                _lc.reset()          # GlyphQuery
+            else:                    # legacy LocalStyleGlyphAdapter: 它自己那套
+                nn.init.zeros_(_lc.out_proj.weight)
+                nn.init.zeros_(_lc.out_proj.bias)
+                nn.init.zeros_(_lc.style_qk[-1].weight)
+                nn.init.zeros_(_lc.style_qk[-1].bias)
+    # pair 残差表保持 zero-init（残差语义：step 0 退化为纯主效应）
+    if cfg.style_hier is not None and str(
+            getattr(cfg.style_hier, "_pair_init", "zero")) == "zero":
+        nn.init.zeros_(cfg.style_hier.E_pair.weight)
+
+    # ── 922/80 改动 2：风格专用 adaLN 支路的 W_up 必须**重新初始化** ──
+    # ⚠ 极易漏：`_basic_init` 对**所有** nn.Linear 做 xavier_uniform_，
+    #   会把 DiTBlock/FinalLayer.__init__ 里刚设好的初值**整片冲掉**。
+    #   （同样的坑此前已在 script_film / spatial_film / local_ca 上踩过。）
+    #
+    # ⚠⚠ 这里**不能**用 zeros_：W_up=0 会让 ∂L/∂W_up ≡ 0（见 T5 实测），
+    #    支路永远学不动。必须用 M.STYLE_ADA_INIT_STD 的小随机初值，
+    #    让梯度从头就 ∝ ‖W_up‖ ≠ 0。
+    if cfg.style_ada_rank > 0:
+        for _m in list(cfg.blocks) + [cfg.final_layer]:
+            if getattr(_m, "style_ada_up", None) is not None:
+                _m._style_ada_init_up(_m.style_ada_up)
+
+    # ── 922/80 改动 1：style_gain 初值按实测范数**自动标定** ──
+    # 必须放在最后：依赖 t_embedder / y_callig_embedder / style_ln_mod 都已建好。
+    # 传 style_gain_init=None（或负数）走自动标定，否则用显式值。
+    if cfg.style_gain is not None:
+        _gi = cfg._style_gain_init
+        if _gi is None or float(_gi) < 0:
+            cfg._init_style_gain()
+        else:
+            with torch.no_grad():
+                cfg.style_gain.fill_(float(_gi))
+
+
 class DiT_2Cond(nn.Module):
     """
     Diffusion model with a Transformer backbone conditioned on 2 discrete labels:
@@ -1920,140 +2120,8 @@ class DiT_2Cond(nn.Module):
                   f"params={sum(p.numel() for p in self.deform_skel.parameters()):,}")
 
     def initialize_weights(self):
-        def _basic_init(module):
-            if isinstance(module, nn.Linear):
-                # 严禁重置形变网络权重
-                if getattr(self, "deform_skel", None) is not None and any(module is m for m in self.deform_skel.modules()):
-                    return
-                torch.nn.init.xavier_uniform_(module.weight)
-                if module.bias is not None:
-                    nn.init.constant_(module.bias, 0)
-        self.apply(_basic_init)
-
-        pos_embed = get_2d_sincos_pos_embed(self.pos_embed.shape[-1], int(self.x_embedder.num_patches ** 0.5))
-        self.pos_embed.data.copy_(torch.from_numpy(pos_embed).float().unsqueeze(0))
-
-        w = self.x_embedder.proj.weight.data
-        nn.init.xavier_uniform_(w.view([w.shape[0], -1]))
-        nn.init.constant_(self.x_embedder.proj.bias, 0)
-        if self.glyph_concat_input:
-            # 后 4 个输入通道是骨架。置 0, 第 0 步骨架对输出没有贡献。
-            c0 = w.shape[1] - 4
-            if c0 > 0:
-                w[:, c0:].zero_()
-
-        nn.init.normal_(self.y_callig_embedder.embedding_table.weight, std=0.02)
-        # v10b: use_char_cond=False 时 char 侧整体不存在
-        # IDSCharEmbedder 用 comp_embedding 而非 embedding_table
-        if self.y_char_embedder is None:
-            pass    # v10b: 无 char 侧
-        elif self.y_char_embedder is not None and hasattr(self.y_char_embedder, 'comp_embedding'):
-            nn.init.normal_(self.y_char_embedder.comp_embedding.weight, std=0.02)
-            if self.y_char_embedder.null_embed is not None:
-                nn.init.normal_(self.y_char_embedder.null_embed, std=0.02)
-            if self.y_char_embedder.fallback_embed is not None:
-                nn.init.normal_(self.y_char_embedder.fallback_embed, std=0.02)
-        elif hasattr(self.y_char_embedder, 'char_table'):
-            # 标准字形 DINO 冻结表：不重新初始化（保持标准字形特征）。
-            # 只初始化可学习的 CFG null token。
-            if self.y_char_embedder.null_embed is not None:
-                nn.init.normal_(self.y_char_embedder.null_embed, std=0.02)
-        else:
-            nn.init.normal_(self.y_char_embedder.embedding_table.weight, std=0.02)
-
-        if getattr(self, "skel_head_enabled", False) and self.skel_head is not None:
-            nn.init.zeros_(self.skel_head[-1].weight)
-            nn.init.zeros_(self.skel_head[-1].bias)
-
-        nn.init.normal_(self.t_embedder.mlp[0].weight, std=0.02)
-        nn.init.normal_(self.t_embedder.mlp[2].weight, std=0.02)
-
-        for block in self.blocks:
-            nn.init.constant_(block.adaLN_modulation[-1].weight, 0)
-            nn.init.constant_(block.adaLN_modulation[-1].bias, 0)
-
-        nn.init.constant_(self.final_layer.adaLN_modulation[-1].weight, 0)
-        nn.init.constant_(self.final_layer.adaLN_modulation[-1].bias, 0)
-        nn.init.constant_(self.final_layer.linear.weight, 0)
-        nn.init.constant_(self.final_layer.linear.bias, 0)
-
-        # 标准字形的逐层注入必须**保持 zero-init**。
-        #
-        # ZeroAdaLNInjection 在构造时已把 proj 的 weight/bias 置零，但上面
-        # 的 ``self.apply(_basic_init)`` 会把**所有** nn.Linear（含这些 proj）
-        # 重新初始化成 xavier_uniform —— 于是注入不再是恒等映射，
-        # warm-start 语义被破坏：从已训练 ckpt 续跑时，新加的注入层会给
-        # 残差流注入随机扰动，等价于在训练好的模型上叠加噪声。
-        #
-        # 这里显式重新置零，恢复 ``out = x*(1+s)+t`` 中 s=t=0 的恒等起点。
-        if getattr(self, "glyph_injections", None) is not None:
-            for _inj in self.glyph_injections:
-                if hasattr(_inj, "out_proj"):      # ZeroCrossAttention
-                    nn.init.zeros_(_inj.out_proj.weight)
-                    nn.init.zeros_(_inj.out_proj.bias)
-                else:                              # ZeroAdaLNInjection
-                    nn.init.zeros_(_inj.proj.weight)
-                    nn.init.zeros_(_inj.proj.bias)
-
-        # callig 空间化最后一层 (to_spatial) 同样恢复 zero-init:
-        # s_callig=0 初始恒等, 从已训 ckpt 续跑时不注入随机扰动。
-        if getattr(self, "callig_spatial_net", None) is not None:
-            nn.init.zeros_(self.callig_spatial_net[-1].weight)
-            nn.init.zeros_(self.callig_spatial_net[-1].bias)
-
-        # callig 风格 cross-attn 的 out_proj 同样恢复 zero-init (resume 恒等)。
-        if getattr(self, "callig_style_ca", None) is not None:
-            nn.init.zeros_(self.callig_style_ca.out_proj.weight)
-            nn.init.zeros_(self.callig_style_ca.out_proj.bias)
-
-        # ── S2 新模块：同样必须恢复 zero-init（_basic_init 会把它们 xavier 掉）──
-        if getattr(self, "script_film", None) is not None:
-            nn.init.zeros_(self.script_film.film.weight)
-            nn.init.zeros_(self.script_film.film.bias)
-        if getattr(self, "spatial_film", None) is not None:
-            nn.init.zeros_(self.spatial_film.net[-1].weight)
-            nn.init.zeros_(self.spatial_film.net[-1].bias)
-        if getattr(self, "lowrank_spatial", None) is not None:
-            # 不能 zeros_: 全零会让 u_i 的下游梯度为 0, P/Q 一步不动。
-            self.lowrank_spatial.reset_output()
-        if getattr(self, "local_ca", None) is not None:
-            for _lc in self.local_ca:
-                # _basic_init 会把新模块的 Linear 重新 xavier 掉, 限幅初始值必须再设一次。
-                if hasattr(_lc, "reset"):
-                    _lc.reset()          # GlyphQuery
-                else:                    # legacy LocalStyleGlyphAdapter: 它自己那套
-                    nn.init.zeros_(_lc.out_proj.weight)
-                    nn.init.zeros_(_lc.out_proj.bias)
-                    nn.init.zeros_(_lc.style_qk[-1].weight)
-                    nn.init.zeros_(_lc.style_qk[-1].bias)
-        # pair 残差表保持 zero-init（残差语义：step 0 退化为纯主效应）
-        if getattr(self, "style_hier", None) is not None and str(
-                getattr(self.style_hier, "_pair_init", "zero")) == "zero":
-            nn.init.zeros_(self.style_hier.E_pair.weight)
-
-        # ── 922/80 改动 2：风格专用 adaLN 支路的 W_up 必须**重新初始化** ──
-        # ⚠ 极易漏：`_basic_init` 对**所有** nn.Linear 做 xavier_uniform_，
-        #   会把 DiTBlock/FinalLayer.__init__ 里刚设好的初值**整片冲掉**。
-        #   （同样的坑此前已在 script_film / spatial_film / local_ca 上踩过。）
-        #
-        # ⚠⚠ 这里**不能**用 zeros_：W_up=0 会让 ∂L/∂W_up ≡ 0（见 T5 实测），
-        #    支路永远学不动。必须用 M.STYLE_ADA_INIT_STD 的小随机初值，
-        #    让梯度从头就 ∝ ‖W_up‖ ≠ 0。
-        if getattr(self, "style_ada_rank", 0) > 0:
-            for _m in list(self.blocks) + [self.final_layer]:
-                if getattr(_m, "style_ada_up", None) is not None:
-                    _m._style_ada_init_up(_m.style_ada_up)
-
-        # ── 922/80 改动 1：style_gain 初值按实测范数**自动标定** ──
-        # 必须放在最后：依赖 t_embedder / y_callig_embedder / style_ln_mod 都已建好。
-        # 传 style_gain_init=None（或负数）走自动标定，否则用显式值。
-        if getattr(self, "style_gain", None) is not None:
-            _gi = getattr(self, "_style_gain_init", 1.0)
-            if _gi is None or float(_gi) < 0:
-                self._init_style_gain()
-            else:
-                with torch.no_grad():
-                    self.style_gain.fill_(float(_gi))
+        """薄封装 ✓ —— 实现已抽成模块级 `initialize_weights`（[审查 PR3] ✓）。"""
+        return initialize_weights(InitWeightsCfg.from_model(self), )
 
     def unpatchify(self, x):
         c = self.out_channels
