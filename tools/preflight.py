@@ -155,18 +155,26 @@ def gate_structure_sanity():
     """
     LIMITS = {"src/train/train.py": (2000, "main"), "src/model/dit.py": (1800, "DiT_2Cond"),
               "src/eval/in_mem_eval.py": (1000, None), "src/utils/latent_dataset.py": (400, None)}
+    # ★ 2026-10-13 [审查 PR3 结构归位]: 允许"把代码搬到同目录子模块" ✓ ——
+    #   若 dit.py 缩水但 **dit.py + dit_conditioning.py 之和**仍达标, 视为正常重构 ✓
+    #   （护栏本意就是"只拦大幅缩水 ✗, 不拦正常重构 ✓" —— 见上面 docstring ✓）
+    COMPANIONS = {"src/model/dit.py": ["src/model/dit_conditioning.py"]}
     bad = []
     for path, (min_lines, cls_or_fn) in LIMITS.items():
         if not os.path.isfile(path):
             bad.append(f"{path} 不存在"); continue
-        txt = io.open(path, encoding="utf-8", errors="replace").read()
-        n = txt.count("\n") + 1
-        if n < min_lines:
-            bad.append(f"{os.path.basename(path)} 仅 {n} 行 < 下限 {min_lines} ✗")
+        n = io.open(path, encoding="utf-8", errors="replace").read().count("\n") + 1
+        extra = 0
+        for comp in COMPANIONS.get(path, []):
+            if os.path.isfile(comp):
+                extra += io.open(comp, encoding="utf-8", errors="replace").read().count("\n") + 1
+        if n + extra < min_lines:
+            bad.append(f"{os.path.basename(path)} 仅 {n} 行（+同目录子模块 {extra}）"
+                       f" < 下限 {min_lines} ✗")
     if bad:
         rec("FAIL", "结构健全性", "; ".join(bad))
     else:
-        rec("OK", "结构健全性", f"{len(LIMITS)} 个关键文件规模正常 ✓")
+        rec("OK", "结构健全性", f"{len(LIMITS)} 个关键文件规模正常 ✓（含同目录子模块之和 ✓）")
     return len(bad)
 
 
