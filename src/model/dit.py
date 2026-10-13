@@ -14,8 +14,9 @@ import torch.nn as nn
 from .glyph_query import GlyphQuery
 import math
 import logging
-# ★ 2026-10-13 [审查 PR3]: CondDropCfg 用（条件 dropout 配置的显式化 ✓）
+# ★ 2026-10-13 [审查 PR3]: CondDropCfg / FuseCfg 用
 from dataclasses import dataclass
+from typing import Any
 
 
 # 现代化组件（RMSNorm / SwiGLU / 2D-RoPE / QK-Norm / SDPA / PatchEmbed / DiTBlock / FinalLayer）
@@ -151,6 +152,191 @@ def cond_drop_masks(cfg, g, y_callig):
     y_callig_in = (torch.where(callig_drop, cfg.num_callig_classes, y_callig)
                    if callig_drop is not None else y_callig)
     return g, keep, callig_drop, char_drop, script_drop, y_callig_in
+
+
+@dataclass(frozen=True)
+class FuseCfg:
+    """`_fuse_condition` 用到的**全部** `self.*`（2026-10-13 [审查 PR3] 显式化 ✓）。
+
+    审查: "第一阶段只移动逻辑, 不移动权重注册位置" ✓ 且 "通过**明确的数据对象**交换结果" ✓
+    ⇒ 本类不注册任何模块 ⇒ **state_dict 键完全不变** ✓✓（strict 加载已复验 ✓）。
+    ⚠ 其中两个字段是**绑定方法**（`embed_callig` / `style_branch` ✓）—— 原为 self._embed_callig /
+      self._style_branch ✓；其余是 nn.Module 或配置标量 ✓。
+    """
+    embed_callig: Any                    # 原 self._embed_callig（绑定方法 ✓）
+    style_branch: Any                    # 原 self._style_branch（绑定方法 ✓）
+    callig_proj: Any
+    callig_scale: Any
+    char_proj: Any
+    char_scale: Any
+    cond_fusion: Any
+    cond_gate_floor: Any
+    cond_gate_t: Any
+    cond_ln: Any
+    condition_fusion: Any
+    glyph_vec_cond: Any
+    glyph_vec_out: Any
+    glyph_vec_scale: Any
+    training: Any
+    use_char_cond: Any
+    use_script_cond: Any
+    y_callig_embedder: Any
+    y_char_embedder: Any
+    y_scale: Any
+    y_script_embedder: Any
+
+    @classmethod
+    def from_model(cls, m):
+        """★ 全部用 `getattr` 兜底 ✓✓ —— 原实现里这些属性是**分支内惰性访问** ✓：
+        例如 `y_scale` 只在 use_char_cond 的某条路径上被读 ✓；若在此**急切**读取 ✗，
+        则对不含该属性的模型（实测 v83-A ✗）会 `AttributeError` ✓。
+        ⇒ 兜底为 None 后, 行为与原实现**完全一致** ✓（分支不走到就不会被读 ✓），
+          由 eval + train 两个前向黄金**逐位**裁决 ✓✓。
+        """
+        def _g(k):
+            return getattr(m, k, None)
+        return cls(
+                   embed_callig=m._embed_callig,
+                   style_branch=m._style_branch,
+                   callig_proj=_g("callig_proj"),
+                   callig_scale=_g("callig_scale"),
+                   char_proj=_g("char_proj"),
+                   char_scale=_g("char_scale"),
+                   cond_fusion=_g("cond_fusion"),
+                   cond_gate_floor=_g("cond_gate_floor"),
+                   cond_gate_t=getattr(m, "cond_gate_t", 0.0),   # ★ 默认必须与原 getattr 一致 ✓
+                   cond_ln=_g("cond_ln"),
+                   condition_fusion=_g("condition_fusion"),
+                   glyph_vec_cond=_g("glyph_vec_cond"),
+                   glyph_vec_out=_g("glyph_vec_out"),
+                   glyph_vec_scale=_g("glyph_vec_scale"),
+                   training=m.training,
+                   use_char_cond=_g("use_char_cond"),
+                   use_script_cond=_g("use_script_cond"),
+                   y_callig_embedder=_g("y_callig_embedder"),
+                   y_char_embedder=_g("y_char_embedder"),
+                   y_scale=_g("y_scale"),
+                   y_script_embedder=_g("y_script_embedder"),
+        )
+
+
+def fuse_condition(cfg, t, x, y_callig_in, y_callig, y_char, y_script,
+                   char_drop, script_drop, e_glyph_vec, g_tok, e_style, style_tokens):
+    """条件融合（**逐行等价**于 `DiT_2Cond._fuse_condition` ✓，2026-10-13 [审查 PR3] 第二步 ✓）。
+
+    只把 `self.X` 换成 `cfg.X` ✓；**未改动任何数值逻辑、未新增/移动任何 nn.Module** ✓
+    ⇒ 由 eval + train 两个前向黄金**逐位**裁决 ✓✓。
+    """
+    """条件向量融合 -> y_emb（原 forward 内联 115 行 ✓）。
+
+    四种 condition_fusion 分支 + Time-Gate；返回 (y_emb, e_callig, _cgw)，
+    其中 e_callig 供风格专用支路 c_style 使用。
+    """
+    if cfg.condition_fusion == "factorized_add":
+        # V3-A 二因子可组合 mask（4-way）：
+        #   - drop_all           -> unconditional（CFG 基准）
+        #   - drop_one & which=0 -> glyph-only（drop callig，学 content score s_G）
+        #   - drop_one & which=1 -> callig-only（drop glyph，学 style score s_A）
+        #   - 其余               -> full（callig+glyph，学 joint score）
+        # 默认 0.10/0.30 配比 => full 60% / callig-only 15% / glyph-only 15% / uncond 10%。
+        # 书家维度样本充足而字符维度才是难点: cond_drop_which_glyph_prob 让 drop-one
+        # 偏向 glyph-only（drop callig 保 char），把专门训练预算给 5461 个字符内容分。
+        # 注意: drop mask 已在 forward 顶部计算 (y_callig_in 与骨架风格注入共享),
+        # 这里不再重复 roll (重复 roll 会导致两分支 mask 不一致)。
+        if not cfg.use_char_cond:
+            # v10b: 单向量因子 (callig), drop_all/drop_one 同义 —— 丢 callig = uncond 向量
+            e_callig = cfg.embed_callig(y_callig_in, e_style=e_style, style_tokens=style_tokens)
+            y_emb = cfg.callig_scale * cfg.callig_proj(e_callig)
+            y_emb = cfg.style_branch(e_callig, y_emb)
+        else:
+            if cfg.training and char_drop is not None:
+                y_char = torch.where(char_drop, cfg.y_char_embedder.num_classes, y_char)
+            e_callig = cfg.embed_callig(y_callig_in, e_style=e_style, style_tokens=style_tokens)
+            e_char = cfg.y_char_embedder(y_char, False)
+            # 可学习幅度平衡：见 __init__ 处注释（DINO 区分度被书家分支淹没的实测）。
+            y_emb = (cfg.callig_scale * cfg.callig_proj(e_callig)
+                     + cfg.char_scale * cfg.char_proj(e_char)) / math.sqrt(2.0)
+            y_emb = cfg.style_branch(e_callig, y_emb)
+        if cfg.glyph_vec_cond and e_glyph_vec is not None:
+            # g 向量因子: 与 callig 分支对称的"独立投影 + 可学习标量"加数。
+            # 操作数集合与 factorized_cat 完全一致 -> 两种融合方式可直接对照。
+            y_emb = y_emb + cfg.glyph_vec_scale * cfg.glyph_vec_out(e_glyph_vec)
+    elif cfg.condition_fusion == "factorized_cat":
+        # ref(Moyun) 式 concat 融合: 各向量因子 embedding 拼接 -> 联合 LN+Linear。
+        # 见 __init__ 处说明。操作数 = {e_callig [, e_char] [, e_glyph_vec]}。
+        # drop mask 同样复用 forward 顶部算好的那份 (y_callig_in / char_drop)。
+        e_callig = cfg.embed_callig(y_callig_in, e_style=e_style, style_tokens=style_tokens)
+        _parts = [e_callig]
+        if cfg.use_script_cond:
+            if y_script is None:
+                raise RuntimeError("[triple] use_script_cond=True 但 forward 未收到 y_script")
+            if cfg.training and script_drop is not None:
+                y_script = torch.where(script_drop,
+                                       cfg.y_script_embedder.num_classes, y_script)
+            _parts.append(cfg.y_script_embedder(y_script, False))
+        if cfg.use_char_cond:
+            if cfg.training and char_drop is not None:
+                y_char = torch.where(char_drop, cfg.y_char_embedder.num_classes, y_char)
+            _parts.append(cfg.y_char_embedder(y_char, False))
+        if cfg.glyph_vec_cond and e_glyph_vec is not None:
+            _parts.append(e_glyph_vec)
+        # ★ 2026-09-17: 批次不一致时 `torch.cat` 只会抛
+        #   "Sizes of tensors must match except in dimension 1"
+        #   —— 完全看不出是哪个条件通路、各自多少，极难定位。
+        #   这里显式检查并报出每个操作数的 batch，把模糊错误变成可诊断的。
+        _bs = [int(p.shape[0]) for p in _parts]
+        if len(set(_bs)) != 1:
+            raise RuntimeError(
+                f"[factorized_cat] 条件操作数 batch 不一致: {_bs} "
+                f"(x batch={int(x.shape[0])}, g_tok="
+                f"{None if g_tok is None else int(g_tok.shape[0])}, "
+                f"y_callig={int(y_callig_in.shape[0])})。"
+                f" 通常是 CFG 路径里 x 被复制成 2B 但某个条件通路没跟上。")
+        if cfg.cond_ln is not None:
+            # ★ split 归一化: 各操作数**独立** LayerNorm 后再 cat (docs 97 §3)。
+            # 顺序必须与 __init__ 里 _dims 的构造顺序一致:
+            # [e_callig, (e_char), (e_glyph_vec)]
+            if len(_parts) != len(cfg.cond_ln):
+                raise RuntimeError(
+                    f"[factorized_cat/split] 操作数个数 {len(_parts)} 与 "
+                    f"cond_ln 个数 {len(cfg.cond_ln)} 不一致 "
+                    f"(use_char_cond={cfg.use_char_cond}, "
+                    f"glyph_vec_cond={cfg.glyph_vec_cond})。")
+            _parts = [ln(p) for ln, p in zip(cfg.cond_ln, _parts)]
+        y_emb = cfg.cond_fusion(torch.cat(_parts, dim=-1))
+        # ★ 2026-09-23 修复：改动 1 的 _style_branch 原先**只接在
+        #   factorized_add 上**，而 v13/v15/v17 全部用 factorized_cat
+        #   -> 改动 1 在这条真实路径上完全是**死代码**（无参数、无梯度、
+        #      _style_branch 的返回值被丢弃）。必须在 cat 分支同样接上。
+        #   注意 e_callig 就是 _parts[0]，直接用即可。
+        y_emb = cfg.style_branch(e_callig, y_emb)
+    elif cfg.condition_fusion == "xl_highdim":
+        # XL 高维条件：与 factorized_add 相同的 4-way 可控 mask（CFG 需要 uncond 维度）。
+        # drop mask 已在 forward 顶部计算 (与骨架风格注入共享同一份)。
+        if cfg.training and char_drop is not None:
+            y_char = torch.where(char_drop, cfg.y_char_embedder.num_classes, y_char)
+        e_callig = cfg.embed_callig(y_callig_in, e_style=e_style, style_tokens=style_tokens)
+        e_char = cfg.y_char_embedder(y_char, False)
+        y_emb = cfg.cond_fusion(torch.cat([e_callig, e_char], dim=-1)) * cfg.y_scale
+        y_emb = cfg.style_branch(e_callig, y_emb)   # 922/80 改动 1 接线
+    else:
+        e_callig = cfg.y_callig_embedder(y_callig, cfg.training)
+        e_char = cfg.y_char_embedder(y_char, cfg.training)
+        y_concat = torch.cat([e_callig, e_char], dim=-1)
+        y_emb = cfg.cond_fusion(y_concat)
+        y_emb = cfg.style_branch(e_callig, y_emb)   # 922/80 改动 1 接线
+    # ★ 2026-10-05 Time-Gate: 条件注入随 t 阶梯调制 (与 glyph_gate_t 同语义)。
+    #   动机: 高噪声(t 大)给足条件信息, 低噪声(t 小)让模型自己收尾; 阶梯而非
+    #   斜坡 (斜坡在 t=0.1 仍留 floor, 等于没关 —— v17 注释里同一教训)。
+    _cgw = None
+    if cfg.cond_gate_t > 0.0:
+        _cgt = (t.float().flatten() / 1000.0).clamp(0, 1)
+        _cgw = torch.where(_cgt >= cfg.cond_gate_t,
+                           torch.ones_like(_cgt),
+                           torch.full_like(_cgt, cfg.cond_gate_floor))
+        _cgw = _cgw.to(y_emb.dtype).view(-1, 1)
+        y_emb = y_emb * _cgw
+    return y_emb, e_callig, _cgw
 
 
 class DiT_2Cond(nn.Module):
@@ -1544,116 +1730,14 @@ class DiT_2Cond(nn.Module):
     def _fuse_condition(self, t, x, y_callig_in, y_callig, y_char, y_script,
                        char_drop, script_drop, e_glyph_vec, g_tok,
                        e_style, style_tokens):
-        """条件向量融合 -> y_emb（原 forward 内联 115 行 ✓）。
+        """薄封装 ✓ —— 实现已抽成模块级 `fuse_condition`（2026-10-13 [审查 PR3] 第二步 ✓）。
 
-        四种 condition_fusion 分支 + Time-Gate；返回 (y_emb, e_callig, _cgw)，
-        其中 e_callig 供风格专用支路 c_style 使用。
+        保留本方法只为兼容既有调用 ✓（`forward` 里按原样调用 ✓）。
+        等价性由 eval + train 两个前向黄金**逐位**裁决 ✓（见 `fuse_condition` 的 docstring）。
         """
-        if self.condition_fusion == "factorized_add":
-            # V3-A 二因子可组合 mask（4-way）：
-            #   - drop_all           -> unconditional（CFG 基准）
-            #   - drop_one & which=0 -> glyph-only（drop callig，学 content score s_G）
-            #   - drop_one & which=1 -> callig-only（drop glyph，学 style score s_A）
-            #   - 其余               -> full（callig+glyph，学 joint score）
-            # 默认 0.10/0.30 配比 => full 60% / callig-only 15% / glyph-only 15% / uncond 10%。
-            # 书家维度样本充足而字符维度才是难点: cond_drop_which_glyph_prob 让 drop-one
-            # 偏向 glyph-only（drop callig 保 char），把专门训练预算给 5461 个字符内容分。
-            # 注意: drop mask 已在 forward 顶部计算 (y_callig_in 与骨架风格注入共享),
-            # 这里不再重复 roll (重复 roll 会导致两分支 mask 不一致)。
-            if not self.use_char_cond:
-                # v10b: 单向量因子 (callig), drop_all/drop_one 同义 —— 丢 callig = uncond 向量
-                e_callig = self._embed_callig(y_callig_in, e_style=e_style, style_tokens=style_tokens)
-                y_emb = self.callig_scale * self.callig_proj(e_callig)
-                y_emb = self._style_branch(e_callig, y_emb)
-            else:
-                if self.training and char_drop is not None:
-                    y_char = torch.where(char_drop, self.y_char_embedder.num_classes, y_char)
-                e_callig = self._embed_callig(y_callig_in, e_style=e_style, style_tokens=style_tokens)
-                e_char = self.y_char_embedder(y_char, False)
-                # 可学习幅度平衡：见 __init__ 处注释（DINO 区分度被书家分支淹没的实测）。
-                y_emb = (self.callig_scale * self.callig_proj(e_callig)
-                         + self.char_scale * self.char_proj(e_char)) / math.sqrt(2.0)
-                y_emb = self._style_branch(e_callig, y_emb)
-            if self.glyph_vec_cond and e_glyph_vec is not None:
-                # g 向量因子: 与 callig 分支对称的"独立投影 + 可学习标量"加数。
-                # 操作数集合与 factorized_cat 完全一致 -> 两种融合方式可直接对照。
-                y_emb = y_emb + self.glyph_vec_scale * self.glyph_vec_out(e_glyph_vec)
-        elif self.condition_fusion == "factorized_cat":
-            # ref(Moyun) 式 concat 融合: 各向量因子 embedding 拼接 -> 联合 LN+Linear。
-            # 见 __init__ 处说明。操作数 = {e_callig [, e_char] [, e_glyph_vec]}。
-            # drop mask 同样复用 forward 顶部算好的那份 (y_callig_in / char_drop)。
-            e_callig = self._embed_callig(y_callig_in, e_style=e_style, style_tokens=style_tokens)
-            _parts = [e_callig]
-            if self.use_script_cond:
-                if y_script is None:
-                    raise RuntimeError("[triple] use_script_cond=True 但 forward 未收到 y_script")
-                if self.training and script_drop is not None:
-                    y_script = torch.where(script_drop,
-                                           self.y_script_embedder.num_classes, y_script)
-                _parts.append(self.y_script_embedder(y_script, False))
-            if self.use_char_cond:
-                if self.training and char_drop is not None:
-                    y_char = torch.where(char_drop, self.y_char_embedder.num_classes, y_char)
-                _parts.append(self.y_char_embedder(y_char, False))
-            if self.glyph_vec_cond and e_glyph_vec is not None:
-                _parts.append(e_glyph_vec)
-            # ★ 2026-09-17: 批次不一致时 `torch.cat` 只会抛
-            #   "Sizes of tensors must match except in dimension 1"
-            #   —— 完全看不出是哪个条件通路、各自多少，极难定位。
-            #   这里显式检查并报出每个操作数的 batch，把模糊错误变成可诊断的。
-            _bs = [int(p.shape[0]) for p in _parts]
-            if len(set(_bs)) != 1:
-                raise RuntimeError(
-                    f"[factorized_cat] 条件操作数 batch 不一致: {_bs} "
-                    f"(x batch={int(x.shape[0])}, g_tok="
-                    f"{None if g_tok is None else int(g_tok.shape[0])}, "
-                    f"y_callig={int(y_callig_in.shape[0])})。"
-                    f" 通常是 CFG 路径里 x 被复制成 2B 但某个条件通路没跟上。")
-            if self.cond_ln is not None:
-                # ★ split 归一化: 各操作数**独立** LayerNorm 后再 cat (docs 97 §3)。
-                # 顺序必须与 __init__ 里 _dims 的构造顺序一致:
-                # [e_callig, (e_char), (e_glyph_vec)]
-                if len(_parts) != len(self.cond_ln):
-                    raise RuntimeError(
-                        f"[factorized_cat/split] 操作数个数 {len(_parts)} 与 "
-                        f"cond_ln 个数 {len(self.cond_ln)} 不一致 "
-                        f"(use_char_cond={self.use_char_cond}, "
-                        f"glyph_vec_cond={self.glyph_vec_cond})。")
-                _parts = [ln(p) for ln, p in zip(self.cond_ln, _parts)]
-            y_emb = self.cond_fusion(torch.cat(_parts, dim=-1))
-            # ★ 2026-09-23 修复：改动 1 的 _style_branch 原先**只接在
-            #   factorized_add 上**，而 v13/v15/v17 全部用 factorized_cat
-            #   -> 改动 1 在这条真实路径上完全是**死代码**（无参数、无梯度、
-            #      _style_branch 的返回值被丢弃）。必须在 cat 分支同样接上。
-            #   注意 e_callig 就是 _parts[0]，直接用即可。
-            y_emb = self._style_branch(e_callig, y_emb)
-        elif self.condition_fusion == "xl_highdim":
-            # XL 高维条件：与 factorized_add 相同的 4-way 可控 mask（CFG 需要 uncond 维度）。
-            # drop mask 已在 forward 顶部计算 (与骨架风格注入共享同一份)。
-            if self.training and char_drop is not None:
-                y_char = torch.where(char_drop, self.y_char_embedder.num_classes, y_char)
-            e_callig = self._embed_callig(y_callig_in, e_style=e_style, style_tokens=style_tokens)
-            e_char = self.y_char_embedder(y_char, False)
-            y_emb = self.cond_fusion(torch.cat([e_callig, e_char], dim=-1)) * self.y_scale
-            y_emb = self._style_branch(e_callig, y_emb)   # 922/80 改动 1 接线
-        else:
-            e_callig = self.y_callig_embedder(y_callig, self.training)
-            e_char = self.y_char_embedder(y_char, self.training)
-            y_concat = torch.cat([e_callig, e_char], dim=-1)
-            y_emb = self.cond_fusion(y_concat)
-            y_emb = self._style_branch(e_callig, y_emb)   # 922/80 改动 1 接线
-        # ★ 2026-10-05 Time-Gate: 条件注入随 t 阶梯调制 (与 glyph_gate_t 同语义)。
-        #   动机: 高噪声(t 大)给足条件信息, 低噪声(t 小)让模型自己收尾; 阶梯而非
-        #   斜坡 (斜坡在 t=0.1 仍留 floor, 等于没关 —— v17 注释里同一教训)。
-        _cgw = None
-        if getattr(self, "cond_gate_t", 0.0) > 0.0:
-            _cgt = (t.float().flatten() / 1000.0).clamp(0, 1)
-            _cgw = torch.where(_cgt >= self.cond_gate_t,
-                               torch.ones_like(_cgt),
-                               torch.full_like(_cgt, self.cond_gate_floor))
-            _cgw = _cgw.to(y_emb.dtype).view(-1, 1)
-            y_emb = y_emb * _cgw
-        return y_emb, e_callig, _cgw
+        return fuse_condition(FuseCfg.from_model(self), t, x, y_callig_in, y_callig, y_char,
+                              y_script, char_drop, script_drop, e_glyph_vec, g_tok, e_style,
+                              style_tokens)
 
 
     def _cond_drop_masks(self, g, y_callig):
