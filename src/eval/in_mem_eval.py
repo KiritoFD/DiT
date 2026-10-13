@@ -29,15 +29,13 @@ import numpy as np
 import torch
 from PIL import Image
 
-from src.eval.inference import (build_diffusion, load_eval_vae, make_eval_cache,
+from src.eval.inference import (build_diffusion, make_eval_cache,
                                 sample_latents, sample_latents_self_cond,
                                 maybe_add_white, _mse, _ssim,
                                 model_uses_std_soft, validate_std_soft_condition)
 
 # 模块级缓存: 跨 step 复用 (eval cache / VAE / diffusion / id_map)
 _CACHES = {}
-_VAE = None
-_VAE_REF = None      # ★ 2026-10-05: 缓存键 = VAE 路径 (否则第二个 VAE 复用第一个)
 _DIFF = None
 _CMAP = None
 _CMAP_REF = None     # ★ 缓存键 = 路径（原来只判 `is not None` ⇒ 换表静默复用旧映射 ✗）
@@ -50,116 +48,12 @@ _WHITE_LAT_CACHE = {}       # 白底 latent (aux_zero_white 时 decode 前加回
 # LPIPS 对结构与细节敏感, 正是用来区分"容量够不够"与"ssim 饱和"的工具
 # (doc62 §3)。实现照搬 auto_eval_ctrl.py 的可用版本, **跑在 CPU** ——
 # in-mem eval 与训练同进程同卡, 走 CPU 可避免任何显存争用。
-_LPIPS_FN = None
-_LPIPS_LOADED = False
 # ★ 2026-09-17: 记录**为什么**不可用，并在 summary 里醒目打印。
 #   原行为: 失败只 print 一行 `lpips 列将留空`，然后 summary 里该列就是空的 ——
 #   在几百行日志里极易漏看，而 LPIPS 正是用来区分"容量够不够"与"ssim 饱和"的
 #   关键指标（doc62 §3）。**静默缺失等于丢掉了本次实验的主要结论依据。**
-_LPIPS_FAIL_REASON = None
 
 
-def lpips_status():
-    """返回 LPIPS 的可用性描述（供 summary 打印）。"""
-    if _LPIPS_FN is not None:
-        return "ok"
-    return f"UNAVAILABLE ({_LPIPS_FAIL_REASON})" if _LPIPS_FAIL_REASON else "not-requested"
-
-
-def _get_lpips():
-    """惰性加载 LPIPS(vgg) 到 CPU。不可用返回 None，但**原因会被记录并醒目上报**。"""
-    global _LPIPS_FN, _LPIPS_LOADED, _LPIPS_FAIL_REASON
-    if _LPIPS_LOADED:
-        return _LPIPS_FN
-    _LPIPS_LOADED = True
-    try:
-        import lpips
-        _LPIPS_FN = lpips.LPIPS(net="vgg", verbose=False)
-        _LPIPS_FN.eval()
-        for p in _LPIPS_FN.parameters():
-            p.requires_grad_(False)
-        print("[in-mem-eval] LPIPS(vgg) loaded on CPU")
-    except Exception as _e:                                    # noqa: BLE001
-        import traceback
-        _LPIPS_FAIL_REASON = f"{type(_e).__name__}: {_e}"
-        _LPIPS_FN = None
-        print("=" * 70)
-        print("[in-mem-eval] ⚠⚠ LPIPS 不可用 —— **lpips 列将全部为空**")
-        print(f"    原因: {_LPIPS_FAIL_REASON}")
-        print("    修法: pip install lpips  (或用 --in-mem-eval-lpips 0 显式关闭)")
-        print("    影响: 本次实验将**无法判断容量是否饱和**(ssim 会饱和, LPIPS 不会)")
-        print("=" * 70)
-        traceback.print_exc()
-    return _LPIPS_FN
-
-
-def _lpips_per_sample(pred_np, gt_np, enabled=True):
-    """pred_np/gt_np: (N,H,W,3) float32 [0,1] -> list[float] 或 None。
-
-    转成 LPIPS 要求的 (N,3,H,W) [-1,1] 后一次批量 forward。
-    """
-    if not enabled:
-        return None
-    fn = _get_lpips()
-    if fn is None:
-        return None
-    try:
-        p = torch.from_numpy(np.ascontiguousarray(pred_np)).permute(0, 3, 1, 2).float()
-        g = torch.from_numpy(np.ascontiguousarray(gt_np)).permute(0, 3, 1, 2).float()
-        p = (p * 2.0 - 1.0).clamp(-1, 1)
-        g = (g * 2.0 - 1.0).clamp(-1, 1)
-        with torch.no_grad():
-            d = fn(p, g)
-        d = d.reshape(-1).cpu().numpy().astype(float)
-        return [float(x) for x in d]
-    except Exception as _e:                                    # noqa: BLE001
-        print(f"[in-mem-eval] LPIPS forward failed ({_e!r}); lpips 列将留空")
-        return None
-
-
-class _ShiftedVAE:
-    """只覆写 decode 的**包装对象**（合同 §1.1 的 shift 项）。
-
-    ⚠ 2026-10-10 血泪: 最初实现是**就地给共享 VAE 对象打 decode 补丁**
-    （``_VAE.decode = _decode_with_shift``）。因为 ``load_eval_vae`` 自己有模块级缓存、返回**同一对象**,
-    第二次以不同 shift 调用时会把**已带旧 shift 补丁**的对象拿回来, 且 shift=0 为假不会重包
-    -> 静默污染（实测新旧路径差 227 灰阶 = 完全错的图）。
-    **凡是"缓存共享对象 + 就地改写"的组合都会这样翻车**, 故改为不侵入的包装。
-    """
-
-    def __init__(self, base, shift):
-        self._base = base
-        self.shift = float(shift)
-
-    def decode(self, z, *a, **kw):
-        return self._base.decode(z + self.shift, *a, **kw)
-
-    def eval(self):
-        # Returning base.eval() through __getattr__ discards the decode wrapper
-        # in the common `vae = _get_vae(...).eval()` idiom.
-        self._base.eval()
-        return self
-
-    def __getattr__(self, k):
-        return getattr(self._base, k)
-
-
-def _get_vae(device, vae_path="data/pretrained/sd-vae-ft-ema", shift_factor=0.0):
-    """★ 2026-10-05: 按**路径**缓存。原来只判 `_VAE is None` -> 换 16ch flux VAE 时
-    仍复用之前的 4ch sd-vae, 16ch latent 拿 4ch 解码器解 -> 指标静默变垃圾。
-
-    ★ 2026-10-10: 加 shift_factor（合同 docs/vae_latent_contract.md §1.1）——
-      约定 ``decode(z_stored / sf + shift)``。**缓存键 = (路径, shift)**；
-      返回**包装对象**而非就地打补丁（见 _ShiftedVAE 的注释）。
-    """
-    global _VAE, _VAE_REF
-    shift_factor = float(shift_factor or 0.0)
-    key = (str(vae_path), shift_factor)
-    if _VAE is None or _VAE_REF != key:
-        _base = load_eval_vae(device, vae_path)
-        _VAE = _ShiftedVAE(_base, shift_factor) if shift_factor else _base
-        _VAE_REF = key
-    return _VAE
 
 
 def _get_callig_map(path):
@@ -380,6 +274,8 @@ def _steps_scan(results_dir, sub):
 
 
 import time as _time  # noqa: E402  (poster 计时用)
+from src.eval.decoder import (_get_lpips, _get_vae, _lpips_per_sample,   # noqa: F401
+                              _ShiftedVAE, lpips_status)   # VAE/LPIPS 已迁到 decoder ✓
 
 _TRAIN_REF_CACHE = {}
 _font_cache = {}
