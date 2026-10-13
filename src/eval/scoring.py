@@ -24,6 +24,11 @@ from PIL import Image
 from src.eval.metrics import mse as _mse_impl, ssim as _ssim_impl, \
     skel_iou as _skel_iou_impl
 
+# ★ 2026-10-13 [审查 §4.1]: LPIPS 加载器**全仓只保留一份** ✓（原 scoring 这份是 decoder 那份的
+#   语义子集: 都返回 callable-or-None ✓; decoder 版还会记录失败原因并醒目上报 ✓）
+#   ⇒ 直接再导出**同一对象** ✓（同一缓存 ✓ 零契约变化 ✓）。
+from src.eval.decoder import _get_lpips   # noqa: F401
+
 __all__ = ["compute_metrics", "_mse", "_ssim", "_skel_iou", "_get_lpips"]
 
 
@@ -39,24 +44,8 @@ def _skel_iou(pred, gt, thresh=0.5):
     return _skel_iou_impl(pred, gt, thresh=thresh)
 
 
-_lpips_fn = None
-_lpips_loaded = False
 
 
-def _get_lpips():
-    global _lpips_fn, _lpips_loaded
-    if _lpips_loaded:
-        return _lpips_fn
-    _lpips_loaded = True
-    try:
-        import lpips
-        _lpips_fn = lpips.LPIPS(net='vgg', verbose=False)
-        _lpips_fn.eval()
-        for p in _lpips_fn.parameters():
-            p.requires_grad_(False)
-    except Exception:
-        _lpips_fn = None
-    return _lpips_fn
 
 
 def compute_metrics(dec_dir, gt_dir, tag_prefix, n, use_lpips=True, idx_range=None,
