@@ -14,6 +14,8 @@ import torch.nn as nn
 from .glyph_query import GlyphQuery
 import math
 import logging
+# ★ 2026-10-13 [审查 PR3]: CondDropCfg 用（条件 dropout 配置的显式化 ✓）
+from dataclasses import dataclass
 
 
 # 现代化组件（RMSNorm / SwiGLU / 2D-RoPE / QK-Norm / SDPA / PatchEmbed / DiTBlock / FinalLayer）
@@ -46,6 +48,110 @@ ScriptGlyphFiLM = _components.ScriptGlyphFiLM
 SpatialStyleFiLM = _components.SpatialStyleFiLM
 LowRankSpatialStyleFiLM = _components.LowRankSpatialStyleFiLM
 LocalStyleGlyphAdapter = _components.LocalStyleGlyphAdapter
+
+@dataclass(frozen=True)
+class CondDropCfg:
+    """条件 dropout 的**全部**配置（2026-10-13 [审查 PR3] 从 `DiT_2Cond` 抽出 ✓）。
+
+    审查: "第一阶段只移动逻辑, 不移动权重注册位置" ✓ —— 本类只把 `_cond_drop_masks`
+    用到的 12 个 `self.*` **显式化** ✓，不注册任何模块 ⇒ **state_dict 键完全不变** ✓✓。
+    """
+    training: bool
+    glyph_drop_prob: float
+    use_char_cond: bool
+    use_script_cond: bool
+    condition_fusion: str
+    cond_drop_all_prob: float
+    cond_drop_one_prob: float
+    cond_drop_callig_prob: float
+    cond_drop_char_prob: float
+    cond_drop_script_prob: float
+    cond_drop_which_glyph_prob: float
+    num_callig_classes: int
+
+    @classmethod
+    def from_model(cls, m):
+        def _g(k, d):
+            return getattr(m, k, d)
+        return cls(training=bool(m.training),
+                   glyph_drop_prob=float(_g("glyph_drop_prob", 0.0)),
+                   use_char_cond=bool(_g("use_char_cond", True)),
+                   use_script_cond=bool(_g("use_script_cond", False)),
+                   condition_fusion=str(_g("condition_fusion", "")),
+                   cond_drop_all_prob=float(_g("cond_drop_all_prob", 0.0)),
+                   cond_drop_one_prob=float(_g("cond_drop_one_prob", 0.0)),
+                   cond_drop_callig_prob=float(_g("cond_drop_callig_prob", 0.0)),
+                   cond_drop_char_prob=float(_g("cond_drop_char_prob", 0.0)),
+                   cond_drop_script_prob=float(_g("cond_drop_script_prob", 0.0)),
+                   cond_drop_which_glyph_prob=float(_g("cond_drop_which_glyph_prob", 0.5)),
+                   num_callig_classes=int(m.y_callig_embedder.num_classes))
+
+
+def cond_drop_masks(cfg, g, y_callig):
+    """字形/书家/字/书体 四路条件丢弃遮罩（**train-only** ✓）。
+
+    从 `DiT_2Cond._cond_drop_masks` 原样搬出（2026-10-13 [审查 PR3] 第一步 ✓），
+    只把 `self.*` 换成 `cfg.*` ✓；`torch.rand` 的**调用顺序完全不变** ✓
+    ⇒ 固定种子下与搬移前**逐位等价** ✓（由 eval + train 两个前向黄金裁决 ✓）。
+
+    返回 (g, keep, callig_drop, char_drop, script_drop, y_callig_in)。
+
+    ⚠ **诚实记录（含一条我自己的教训）**: 迁移过程中我曾一度断言这里有一个"属性名少
+      `_prob`"的潜伏 bug ✗ —— **那是错的** ✓。原因是我用 `python -c` 打印源码时用了
+      `[:108]` **截断**，看到 `self.cond_drop_which_g` 就下了结论 ✗✗；用 read 工具读**完整**
+      行后确认原文写的就是 `self.cond_drop_which_glyph_prob` ✓（名字正确 ✓）。
+      ⇒ 教训: **报 bug 前必须读完整行，绝不从截断输出下诊断** ✓✓。
+      本函数因此**不含任何行为修复** ✓：只是把 `self.*` 原样翻译成 `cfg.*` ✓。
+    """
+    if (g is not None and cfg.training and cfg.glyph_drop_prob > 0.0):
+        N = g.shape[0]
+        keep = torch.rand(N, device=g.device) >= cfg.glyph_drop_prob
+        g = g * keep.view(N, 1, 1, 1).to(g.dtype)
+    else:
+        keep = None
+
+    # ── callig 条件 drop mask: 在 g 路径**之前**计算并全程共享 ────────────
+    # (adaLN 分支与骨架风格注入必须用同一份 drop mask, 否则 drop-callig 样本
+    #  的 adaLN 是 null 向量而骨架通路仍带真实风格 -> uncond 分支被污染)
+    callig_drop = None
+    char_drop = None
+    script_drop = None          # 书体条件 drop mask（仅 use_script_cond 且训练时才有值 ✓）
+    # ⚠ 这个元组必须与**所有会读 `y_callig_in` / `char_drop` 的融合分支**一一对应。
+    #   2026-09-17 修: 原先漏了 "factorized_cat" —— 该分支在下方同样复用
+    #   `y_callig_in` / `char_drop`, 但因不在元组里, 整个 drop 块被跳过 ->
+    #   `callig_drop is None` -> `y_callig_in = y_callig` -> **训练全程零条件 dropout**,
+    #   null token 从未出现, `null_embed` 停在随机初始化。
+    #   后果: 推理时 `forward_with_cfg` 的 uncond 半用的是**未训练**的 null 向量,
+    #   `cfg=0.7` 实际是在往一个随机方向插值, 而不是真正的 CFG。
+    #   不报错、loss 正常下降 —— 又一例静默失效。**新增 fusion 分支时必须回来加。**
+    if cfg.use_script_cond and cfg.training:
+        # v53 三表: 各因子**独立** dropout, 三者全中 = uncond;
+        # cond_drop_all_prob 仍作无条件底座 (保 CFG 有足量 uncond 样本)。
+        _B = y_callig.shape[0]
+        _dev = y_callig.device
+        _all = torch.rand(_B, device=_dev) < cfg.cond_drop_all_prob
+        callig_drop = (torch.rand(_B, device=_dev) < cfg.cond_drop_callig_prob) | _all
+        script_drop = (torch.rand(_B, device=_dev) < cfg.cond_drop_script_prob) | _all
+        char_drop = (torch.rand(_B, device=_dev) < cfg.cond_drop_char_prob) | _all
+    elif (cfg.condition_fusion in ("factorized_add", "factorized_cat", "xl_highdim")
+            and cfg.training
+            and (cfg.cond_drop_all_prob > 0 or cfg.cond_drop_one_prob > 0)):
+        r = torch.rand(y_callig.shape[0], device=y_callig.device)
+        if not cfg.use_char_cond:
+            # v10b 单向量因子: drop_all/drop_one 同义
+            callig_drop = r < (cfg.cond_drop_all_prob + cfg.cond_drop_one_prob)
+        else:
+            drop_all = r < cfg.cond_drop_all_prob
+            drop_one = ((r >= cfg.cond_drop_all_prob)
+                        & (r < cfg.cond_drop_all_prob + cfg.cond_drop_one_prob))
+            which_glyph = torch.rand(y_callig.shape[0],
+                                     device=y_callig.device) < cfg.cond_drop_which_glyph_prob
+            callig_drop = drop_all | (drop_one & which_glyph)
+            char_drop = drop_all | (drop_one & ~which_glyph)
+    y_callig_in = (torch.where(callig_drop, cfg.num_callig_classes, y_callig)
+                   if callig_drop is not None else y_callig)
+    return g, keep, callig_drop, char_drop, script_drop, y_callig_in
+
 
 class DiT_2Cond(nn.Module):
     """
@@ -1551,58 +1657,12 @@ class DiT_2Cond(nn.Module):
 
 
     def _cond_drop_masks(self, g, y_callig):
-        """字形/书家/字/书体 四路条件丢弃遮罩（原 forward 内联 46 行 ✓, **train-only**）。
+        """薄封装 ✓ —— 实现已抽成模块级 `cond_drop_masks`（2026-10-13 [审查 PR3] 第一步 ✓）。
 
-        返回 (g, keep, callig_drop, char_drop, script_drop, y_callig_in) —— g 可能被整样本置零（模拟"该字没有标准字形"）;
-        y_callig_in 已套用 drop; keep 供后续门控复用。
+        保留本方法只为兼容可能的既有调用（私有的，理论上无外部调用者 ✓）。
+        等价性由 eval + train 两个前向黄金裁决 ✓（见 `cond_drop_masks` 的 docstring）。
         """
-        if (g is not None and self.training and self.glyph_drop_prob > 0.0):
-            N = g.shape[0]
-            keep = torch.rand(N, device=g.device) >= self.glyph_drop_prob
-            g = g * keep.view(N, 1, 1, 1).to(g.dtype)
-        else:
-            keep = None
-
-        # ── callig 条件 drop mask: 在 g 路径**之前**计算并全程共享 ────────────
-        # (adaLN 分支与骨架风格注入必须用同一份 drop mask, 否则 drop-callig 样本
-        #  的 adaLN 是 null 向量而骨架通路仍带真实风格 -> uncond 分支被污染)
-        callig_drop = None
-        char_drop = None
-        script_drop = None          # 书体条件 drop mask（仅 use_script_cond 且训练时才有值 ✓）
-        # ⚠ 这个元组必须与**所有会读 `y_callig_in` / `char_drop` 的融合分支**一一对应。
-        #   2026-09-17 修: 原先漏了 "factorized_cat" —— 该分支在下方同样复用
-        #   `y_callig_in` / `char_drop`, 但因不在元组里, 整个 drop 块被跳过 ->
-        #   `callig_drop is None` -> `y_callig_in = y_callig` -> **训练全程零条件 dropout**,
-        #   null token 从未出现, `null_embed` 停在随机初始化。
-        #   后果: 推理时 `forward_with_cfg` 的 uncond 半用的是**未训练**的 null 向量,
-        #   `cfg=0.7` 实际是在往一个随机方向插值, 而不是真正的 CFG。
-        #   不报错、loss 正常下降 —— 又一例静默失效。**新增 fusion 分支时必须回来加。**
-        if getattr(self, "use_script_cond", False) and self.training:
-            # v53 三表: 各因子**独立** dropout, 三者全中 = uncond;
-            # cond_drop_all_prob 仍作无条件底座 (保 CFG 有足量 uncond 样本)。
-            _B = y_callig.shape[0]
-            _dev = y_callig.device
-            _all = torch.rand(_B, device=_dev) < self.cond_drop_all_prob
-            callig_drop = (torch.rand(_B, device=_dev) < self.cond_drop_callig_prob) | _all
-            script_drop = (torch.rand(_B, device=_dev) < self.cond_drop_script_prob) | _all
-            char_drop = (torch.rand(_B, device=_dev) < self.cond_drop_char_prob) | _all
-        elif (self.condition_fusion in ("factorized_add", "factorized_cat", "xl_highdim")
-                and self.training
-                and (self.cond_drop_all_prob > 0 or self.cond_drop_one_prob > 0)):
-            r = torch.rand(y_callig.shape[0], device=y_callig.device)
-            if not self.use_char_cond:
-                # v10b 单向量因子: drop_all/drop_one 同义
-                callig_drop = r < (self.cond_drop_all_prob + self.cond_drop_one_prob)
-            else:
-                drop_all = r < self.cond_drop_all_prob
-                drop_one = ((r >= self.cond_drop_all_prob)
-                            & (r < self.cond_drop_all_prob + self.cond_drop_one_prob))
-                which_glyph = torch.rand(y_callig.shape[0], device=y_callig.device) < self.cond_drop_which_glyph_prob
-                callig_drop = drop_all | (drop_one & which_glyph)
-                char_drop = drop_all | (drop_one & ~which_glyph)
-        y_callig_in = (torch.where(callig_drop, self.y_callig_embedder.num_classes, y_callig)
-                       if callig_drop is not None else y_callig)
-        return g, keep, callig_drop, char_drop, script_drop, y_callig_in
+        return cond_drop_masks(CondDropCfg.from_model(self), g, y_callig)
 
 
     def _embed_glyph(self, x, g, keep, y_callig_in, e_style, e_script, style_tokens, _gate):
