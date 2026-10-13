@@ -946,6 +946,20 @@ def build_parser(argv=None):
     parser.add_argument("--w-style-rank", type=float, default=0.0, dest="w_style_rank",
                         help="frozen style-ranker loss (1-cos(f(pred_x0), pair centroid)), "
                              "active only inside t-gate. smoke: 0.005. 0=off.")
+    parser.add_argument("--style-rank-mode", type=str, default="cos",
+                        dest="style_rank_mode", choices=["cos", "rank"],
+                        help="[v85B] 风格损失形式 ✓：cos=旧行为（只拉向目标质心 ✗）；\n"
+                        "rank=方案 §三.3 的**书家排序**形式 log(1+Σ exp((s_j−s_w+m)/τ)) ✓\n"
+                        "—— 不仅要求像目标书家, 还要求**比其他书家更像** ✓。默认 cos 不改变历史 ✓")
+    parser.add_argument("--style-rank-protos", type=str, default="",
+                        dest="style_rank_protos",
+                        help="[v85B] **新**原型表 npz（由 tools/build_style_protos.py 用**已验证**\n"
+                        "的编码器在真迹上生成 ✓）。⚠ 不要复用 rank_cent87.npy ✗ —— 它的索引\n"
+                        "对应 45 书家/87 pairs, 与 v84A 的 10 书家语义不匹配 ✓")
+    parser.add_argument("--style-rank-margin", type=float, default=0.0,
+                        dest="style_rank_margin", help="[v85B] 排序损失的 margin m ✓")
+    parser.add_argument("--style-rank-tau", type=float, default=0.07,
+                        dest="style_rank_tau", help="[v85B] 排序损失的温度 τ ✓")
     parser.add_argument("--style-rank-ckpt", type=str, default="assets/style_enc_latent.pt",
                         dest="style_rank_ckpt")
     parser.add_argument("--style-rank-cent", type=str, default="assets/rank_cent87.npy",

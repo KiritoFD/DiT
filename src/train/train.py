@@ -351,11 +351,19 @@ def _build_aux_losses(args, device, logger, rank):
             ckpt=getattr(args, 'style_rank_ckpt', 'assets/style_enc_latent.pt'),
             cent_npy=getattr(args, 'style_rank_cent', 'assets/rank_cent87.npy'),
             t_min=float(getattr(args, 'style_rank_t_min', 0.05)),
-            t_max=float(getattr(args, 'style_rank_t_max', 0.25)))
+            t_max=float(getattr(args, 'style_rank_t_max', 0.25)),
+            # ★ v85B: 默认 mode="cos" ⇒ **与历史逐位一致** ✓（不静默改变旧实验 ✓）
+            mode=str(getattr(args, 'style_rank_mode', 'cos') or 'cos'),
+            protos=str(getattr(args, 'style_rank_protos', '') or ''),
+            margin=float(getattr(args, 'style_rank_margin', 0.0) or 0.0),
+            tau=float(getattr(args, 'style_rank_tau', 0.07) or 0.07),
+            verbose=True)
         _style_rank_loss_fn.to(device)
-        logger.info("[style-rank] enabled: w=%.4f t=[%.2f,%.2f] cent=%s added=0"
-                    % (args.w_style_rank, _style_rank_loss_fn.t_min,
-                       _style_rank_loss_fn.t_max, tuple(_style_rank_loss_fn.cent.shape)))
+        logger.info("[style-rank] enabled: w=%.4f mode=%s t=[%.2f,%.2f] cent=%s "
+                    "rival=有 ✓ added=0"
+                    % (args.w_style_rank, _style_rank_loss_fn.mode,
+                       _style_rank_loss_fn.t_min, _style_rank_loss_fn.t_max,
+                       tuple(_style_rank_loss_fn.cent.shape)))
 
     # ---- 实例骨架结构 loss: 冻结 probe (新增可训练参数 0) ----
     # 形态对比见 src/train/latent_structure.py:LatentSkelStructureLoss 的 docstring。
