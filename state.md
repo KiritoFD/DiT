@@ -618,7 +618,12 @@ python tools/preflight.py --config src/train/configs/v83A_stdsoft_zerofix.json -
 **结果已回传本地**（`_local_ckpt/from48/` + 解包入 `assets/results/`）：
 - `res_all48.tgz` 15MB / 2122 文件：**664 评测JSON + 142 CSV + 144 py + 56 日志**（覆盖 A1–A4、消融 4 臂、v71/v80/v81/v83/v83A/v84A）
 - `res_small48.tgz` 1.6MB / 521 文件（首批）
-- `res_png_target.tgz` 2.2GB / 80,989 张评测图（后台传输）
+- `res_png_target.tgz` 2.2GB / 80,989 张评测图 — **分片断点续传拉取中**（36 片 × 64MB）
+  - 脚本 `scratch/pull_png_chunks.ps1`（纯 ASCII；分离进程，不随会话退出；日志 `_local_ckpt/from48/pull_png.log`）
+  - 设计：逐片 sha256 校验 ✓ + 每片最多 6 次重试(15s 退避) ✓ + `ServerAlive` 让卡死连接自动断开 ✓
+    + **幂等可续传**（重跑脚本自动跳过已校验的片 ✓）+ 合并后校验整包 sha256(`c3fd8323…`) ✓ 再自动解包到 `png_all/`
+  - 实测 **150 KB/s** → 全量 ETA **~4.2 小时**；中断后直接重跑脚本即可续传
+  - ⚠ 教训：PowerShell 变量名**大小写不敏感** —— `$Manifest`(路径) 与 `$manifest`(哈希表) 会撞成同一个变量 ✗
 - `ckpt_manifest.txt` 133 行：**所有 ckpt 的 sha256+体积留档**（含已删的）
 
 **48 清理**：仓库 **178GB → 32GB（释放 146GB，清理 82%）**，磁盘可用 294G → **429G**
