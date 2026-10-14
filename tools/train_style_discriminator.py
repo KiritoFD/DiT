@@ -1,28 +1,14 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-"""train_style_discriminator.py —— 风格判别器（**吃图片** ✓；标准字体做量大管饱的负样本 ✓）。
+"""train_style_discriminator.py —— 风格判别器 ✓
 
-★ 一次被我改回来的弯路（记下 ✓）
-    第一版我把图片 encode 成 VAE latent (4×32×32) 再送判别器 ✗ —— 用户指出"判别器应该对图片" ✓
-    三个理由都支持改回像素 ✓:
-      ① 判别器是**独立模型**，不需要与扩散的 latent 空间对齐 ✓
-      ② 4×32×32 的 latent **已经丢掉细笔触** ✗（这正是我先前诊断出的瓶颈 ✓）
-      ③ 白等 70 分钟 VAE 编码 7.3 万张 ✗，而字体图**本就是 256×256 PNG** ✓ 直接可用 ✓
-
-★ 核心思想（用户）: **用标准字体作为量大管饱的负样本** ✓
-    anchor  = 真迹图（书家 w、字 c）
-    正样本  = 同书家、**异字**的真迹 ✓
-    难负    = **同一个字 c** 的 N 个**标准字体**渲染图 ✓✓（同字 ⇒ 严格内容匹配 ✓）
-              + 同字、其他书家的真迹 ✓
-  ⇒ 之前只用书家时"同字异风格"候选**平均仅 2.4 个** ✗；加入 16 个字体后可到 **~16–25** ✓✓
-  ⇒ 而且字体负样本**无限可再生**（不依赖真迹标注 ✓）⇒ 名副其实"量大管饱" ✓
-
-★ 损失 = InfoNCE，**必须写全**: `logsumexp(pos, negs) − pos/τ` ✓
-    （漏掉 `− pos/τ` 就退化成"把一切都推开" ✗ —— 仓库里已记过这个坑 ✓）
-
-用法
-    python tools/train_style_discriminator.py --steps 6000 --batch 96 \
-        --font-csv data/font_slots/font_slots.csv --out assets/style_disc_v1.pt
+★ 核心思想（用户 ✓）: **用 std 标准字形当作独立"虚拟书家"槽位** ✓✓
+    槽位 = { 王羲之·行, 王羲之·楷, ..., std·楷, std·行, std·隶 }
+    anchor  = 真迹(书家 w, 书体 s, 字 c)
+    正样本  = 同槽位(w×s)、异字 ✓
+    难负    = 同字 c、**异槽位** ✓ —— 其他书家 ✓ + **std 字形** ✓✓
+  ⇒ 模型学"这是书家写的 ≠ 这是标准字形" ✓✓
+  ⇒ std 字形已在管线里 ✓（train.csv 的 std_path ✓ 100% 覆盖 ✓）不用下载字体 ✓✓
 """
 from __future__ import annotations
 
@@ -44,18 +30,21 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from src.eval.style.bank import resolve, work_id                          # noqa: E402
 from src.eval.style.gates import run_gates                                # noqa: E402
 
-IMG = 224
+IMG = 160
 MEAN = (0.485, 0.456, 0.406)
 STD = (0.229, 0.224, 0.225)
 
 
+def _posix(p):
+    return str(p).replace("\\", "/")
+
+
 def real_rows(csv_path, roots, max_rows=0):
-    """真迹（按 (书家,书体) 槽位均衡 ✓ —— 直接截断只会拿到前 1–2 位书家 ✗）。"""
     by = defaultdict(list)
     for r in csv.DictReader(open(csv_path, encoding="utf-8-sig")):
         if (r.get("aug") or "").strip():
             continue
-        p = resolve(r.get("image_path", ""), roots)
+        p = resolve(_posix(r.get("image_path", "")), roots)
         if not p:
             continue
         by[(r.get("calligrapher") or "", r.get("script") or "")].append({
@@ -63,50 +52,38 @@ def real_rows(csv_path, roots, max_rows=0):
             "script": (r.get("script") or "").strip(),
             "char": (r.get("character") or "").strip(),
             "work": work_id(r.get("src_image_path", ""), r.get("image_path", "")),
-            "is_font": 0})
+            "std": _posix(r.get("std_path", ""))})
     out = [d for k in sorted(by) for d in by[k]]
     return out[:max_rows] if max_rows else out
 
 
-def font_rows(font_csv, *, per_char=None, seed=0, chars_keep=None):
-    """标准字体渲染图 = **负样本池** ✓（量大管饱 ✓）。"""
-    if not os.path.isfile(font_csv):
-        return []
-    rows = list(csv.DictReader(open(font_csv, encoding="utf-8")))
-    if chars_keep:
-        rows = [r for r in rows if r.get("char") in chars_keep]
-    rng = random.Random(seed)
-    by = defaultdict(list)
-    for r in rows:
-        by[r.get("char")].append(r)
-    out = []
-    for c, rs in sorted(by.items()):
-        rng.shuffle(rs)
-        for r in (rs if not per_char else rs[:per_char]):
-            out.append({"path": r["path"], "writer": "@font:" + r["font"], "script": "font",
-                        "char": c, "work": "font:" + r["font"], "is_font": 1})
+def std_rows(real):
+    """每个唯一 (script, char) ⇒ 一行 std 样本 ✓（writer = 'std·{script}' ✓）。"""
+    seen, out = set(), []
+    for r in real:
+        key = (r["script"], r["char"])
+        if key in seen or not r.get("std") or not os.path.isfile(r["std"]):
+            continue
+        seen.add(key)
+        out.append({"path": r["std"], "writer": f"std·{r['script']}",
+                    "script": r["script"], "char": r["char"],
+                    "work": "std", "is_std": 1})
     return out
 
 
 class ImgSet:
-    """图片集（一次性读进内存 ✓；224×224×3 uint8 ⇒ 每万张约 0.15 GB ✓）。"""
-
-    def __init__(self, rows, size=IMG, tag="", verbose=True):
+    def __init__(self, rows, size=IMG, tag=""):
         from PIL import Image
         self.rows = rows
-        n = len(rows)
-        self.arr = np.zeros((n, size, size, 3), np.uint8)
+        self.arr = np.zeros((len(rows), size, size, 3), np.uint8)
         t0 = time.time()
         for i, r in enumerate(rows):
-            a = np.asarray(Image.open(r["path"]).convert("RGB"))
-            if a.shape[0] != size or a.shape[1] != size:
+            a = np.asarray(Image.open(_posix(r["path"])).convert("RGB"))
+            if a.shape[:2] != (size, size):
                 a = np.asarray(Image.fromarray(a).resize((size, size), Image.BICUBIC))
             self.arr[i] = a
-            if verbose and i and i % 20000 == 0:
-                print("  [img %s] %d/%d (%.0fs)" % (tag, i, n, time.time() - t0), flush=True)
-        if verbose:
-            print("  [img %s] %d 张 / %.2f GB (%.0fs)"
-                  % (tag, n, self.arr.nbytes / 1e9, time.time() - t0), flush=True)
+        print("  [img %s] %d 张 / %.2f GB (%.0fs)"
+              % (tag, len(rows), self.arr.nbytes / 1e9, time.time() - t0), flush=True)
 
     def batch(self, idx, device):
         a = self.arr[idx]
@@ -117,13 +94,11 @@ class ImgSet:
 
 
 class Enc(nn.Module):
-    """图片 -> d 维 L2 归一化嵌入（resnet18 主干 ✓，从 ImageNet 预训练起 ✓）。"""
-
     def __init__(self, d=256, pretrained=True):
         super().__init__()
         from torchvision.models import resnet18, ResNet18_Weights
         base = resnet18(weights=ResNet18_Weights.DEFAULT if pretrained else None)
-        self.body = nn.Sequential(*list(base.children())[:-1])       # -> (B,512,1,1)
+        self.body = nn.Sequential(*list(base.children())[:-1])
         self.head = nn.Sequential(nn.Flatten(), nn.Linear(512, d))
 
     def emb(self, x):
@@ -134,27 +109,23 @@ def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--csv", default="exp-std/csv/train.csv")
-    ap.add_argument("--font-csv", default="data/font_slots/font_slots.csv")
     ap.add_argument("--root", action="append", default=[])
-    ap.add_argument("--out", default="assets/style_disc_v1.pt")
-    ap.add_argument("--steps", type=int, default=6000)
-    ap.add_argument("--batch", type=int, default=96, help="总 batch（含字体部分 ✓）")
+    ap.add_argument("--out", default="assets/style_disc_std.pt")
+    ap.add_argument("--steps", type=int, default=5000)
+    ap.add_argument("--batch", type=int, default=192)
     ap.add_argument("--d", type=int, default=256)
     ap.add_argument("--lr", type=float, default=3e-4)
     ap.add_argument("--wd", type=float, default=1e-4)
     ap.add_argument("--tau", type=float, default=0.07)
-    ap.add_argument("--n-font-neg", type=int, default=6,
-                    help="每个 anchor 抽几个**同字标准字体**负样本 ✓（核心 ✓）")
-    ap.add_argument("--font-frac", type=float, default=0.5, help="batch 里字体 anchor 占比 ✓")
-    ap.add_argument("--font-per-char", type=int, default=4,
-                    help="每字保留几张字体图 ✓（0=全部 7.3 万 ⇒ 内存/时间都大 ✗）")
-    ap.add_argument("--max-real", type=int, default=0, help="0=全部 ✓")
+    ap.add_argument("--n-std-neg", type=int, default=1)
+    ap.add_argument("--n-writer-neg", type=int, default=3)
+    ap.add_argument("--max-real", type=int, default=0)
     ap.add_argument("--img", type=int, default=IMG)
-    ap.add_argument("--no-pretrained", action="store_true")
-    ap.add_argument("--n-pairs", type=int, default=1200)
-    ap.add_argument("--bootstrap", type=int, default=1200)
+    ap.add_argument("--n-pairs", type=int, default=1500)
+    ap.add_argument("--bootstrap", type=int, default=1500)
     ap.add_argument("--seed", type=int, default=0)
     ap.add_argument("--device", default="")
+    ap.add_argument("--no-pretrained", action="store_true")
     args = ap.parse_args()
     dev = args.device or ("cuda" if torch.cuda.is_available() else "cpu")
     torch.manual_seed(args.seed)
@@ -163,111 +134,136 @@ def main() -> int:
     roots = args.root or [".", "data", "exp-std"]
 
     R = real_rows(args.csv, roots, args.max_real)
-    print("[data] 真迹 %d | 书家 %d | 字 %d"
-          % (len(R), len({r['writer'] for r in R}), len({r['char'] for r in R})), flush=True)
-    F_ = font_rows(args.font_csv, per_char=(args.font_per_char or None), seed=args.seed,
-                   chars_keep={r["char"] for r in R})
-    print("[data] 字体 %d | 字体数 %d | 字 %d"
-          % (len(F_), len({r['writer'] for r in F_}), len({r['char'] for r in F_})), flush=True)
-    if not F_:
-        print("  ✗ 无字体样本 ⇒ 先跑 tools/build_font_slot_dataset.py ✓")
-        return 3
-    n_font = len({r['writer'] for r in F_})
+    print("[data] 真迹 %d | 书家 %d" % (len(R), len({r['writer'] for r in R})), flush=True)
+    S = std_rows(R)
+    print("[data] std 字形 %d | 槽位 %d"
+          % (len(S), len({r['writer'] for r in S})), flush=True)
 
     IR = ImgSet(R, size=args.img, tag="real")
-    IF = ImgSet(F_, size=args.img, tag="font")
+    IS = ImgSet(S, size=args.img, tag="std")
 
-    by_char_F, by_writer = defaultdict(list), defaultdict(list)
-    for i, r in enumerate(F_):
-        by_char_F[r["char"]].append(i)
+    by_writer = defaultdict(list)
+    by_char_R = defaultdict(list)     # char -> [real idx]（异书家负 ✓）
+    by_char_S = defaultdict(list)     # char -> [std idx]（std 负 ✓）
     for i, r in enumerate(R):
         by_writer[(r["writer"], r["script"])].append(i)
-    hit = sum(1 for r in R if by_char_F.get(r["char"]))
-    print("[pair] 真迹中**有同字字体负样本**的比例 = %.0f%% ✓（这就是'量大管饱' ✓）"
-          % (100.0 * hit / max(1, len(R))), flush=True)
-    print("[pair] 每 anchor 的字体负上限 = %d ✓（此前只用书家时平均 2.4 ✗）" % n_font, flush=True)
+        by_char_R[r["char"]].append(i)
+    for i, r in enumerate(S):
+        by_char_S[r["char"]].append(i)
+    hit_s = sum(1 for r in R if by_char_S.get(r["char"]))
+    print("[pair] 有 std 负 = %.0f%% ✓ | 每 anchor 负样本 = %d std + ≤%d writer ✓"
+          % (100.0 * hit_s / len(R), args.n_std_neg, args.n_writer_neg), flush=True)
 
     model = Enc(d=args.d, pretrained=not args.no_pretrained).to(dev)
-    print("[model] 参数 %s" % format(sum(p.numel() for p in model.parameters()), ","), flush=True)
+    print("[model] %s 参数" % format(sum(p.numel() for p in model.parameters()), ","), flush=True)
     opt = torch.optim.AdamW(model.parameters(), lr=args.lr, weight_decay=args.wd)
     sched = torch.optim.lr_scheduler.CosineAnnealingLR(opt, T_max=args.steps)
     rng = random.Random(args.seed)
     t0 = time.time()
-    for step in range(1, args.steps + 1):
-        # ★ 结构对齐用户的话: "**标准字体作为负样本**" ✓
-        #   ⇒ anchor **全是真迹** ✓；字体**只作为负样本**出现 ✓
-        #   （我第一版让字体样本自己当 anchor ✗ ⇒ 它们没有正样本 ⇒ 张量形状对不上 ✓，
-        #     而且那也偏离了"字体是负样本"的原意 ✓）
-        ia = [rng.randrange(len(R)) for _ in range(args.batch)]
-        xb = IR.batch(ia, dev)
-        zb = model.emb(xb)
 
-        # ① 正样本: 同书家**异字**的真迹 ✓
-        pos_idx, has_pos = [], []
+    for step in range(1, args.steps + 1):
+        ia = [rng.randrange(len(R)) for _ in range(args.batch)]
+        zb = model.emb(IR.batch(ia, dev))
+
+        # ① 正样本: 同书家×同书体、异字 ✓
+        pos_idx, pos_char, has_pos = [], [], []
         for i in ia:
             r = R[i]
-            cand = [j for j in by_writer[(r["writer"], r["script"])] if R[j]["char"] != r["char"]]
+            cand = [j for j in by_writer[(r["writer"], r["script"])]
+                    if R[j]["char"] != r["char"]]
             if cand:
-                pos_idx.append(rng.choice(cand))
+                p = rng.choice(cand)
+                pos_idx.append(p)
+                pos_char.append(R[p]["char"])
                 has_pos.append(True)
             else:
                 pos_idx.append(i)
+                pos_char.append(r["char"])
                 has_pos.append(False)
         zp = model.emb(IR.batch(pos_idx, dev))
 
-        # ② ★★ 核心: **同字标准字体**难负 ✓（量大管饱 ✓ —— 每个 anchor 最多 n_font 个 ✓）
-        #   ⚠ R 与 F_ 的索引**必须分开取** ✗ —— 混用会拿到**别的字**的负样本 ✗✗，
-        #     那正好毁掉"同字异风格"这个唯一有意义的约束 ✓
-        neg_by_anchor = []
-        for i in ia:
-            cand = list(by_char_F.get(R[i]["char"], []))
-            rng.shuffle(cand)
-            neg_by_anchor.append(cand[:args.n_font_neg])
-        n_neg = sum(len(v) for v in neg_by_anchor)
-        sim_n = None
-        if n_neg:
-            n_max = max(len(v) for v in neg_by_anchor)
-            flat = [j for v in neg_by_anchor for j in v]
-            flat += [neg_by_anchor[0][0]] * (n_max * len(neg_by_anchor) - n_neg)
-            zn = model.emb(IF.batch(flat, dev))
-            sim_all = torch.einsum("bd,nkd->nk", zb, zn.view(len(neg_by_anchor), n_max, -1))
-            mask = torch.zeros((len(neg_by_anchor), n_max), dtype=torch.bool, device=dev)
-            for k, v in enumerate(neg_by_anchor):
-                mask[k, :len(v)] = True
-            sim_n = (sim_all / args.tau).masked_fill(~mask, float("-inf"))
+        # ② ★★ 难负: 同字 c₂（正样本的字 ✓）、异槽位 ✓
+        #    收集 (is_std, data_idx) 对 ✓ → **统一 padding 到 n_max** ✓
+        neg_padded = []                # 每个 anchor: list of (is_std, idx) ✓
+        for k, c2 in enumerate(pos_char):
+            negs = []
+            # std 负 ✓（核心 ✓）
+            std_c = list(by_char_S.get(c2, []))
+            rng.shuffle(std_c)
+            for j in std_c[:args.n_std_neg]:
+                negs.append((True, j))
+            # 异书家真迹负 ✓
+            wr = [j for j in by_char_R.get(c2, []) if R[j]["writer"] != R[ia[k]]["writer"]]
+            rng.shuffle(wr)
+            for j in wr[:args.n_writer_neg]:
+                negs.append((False, j))
+            if not negs:
+                negs = [(False, ia[k])]      # 退化: 自身（不影响 ✓ 因为 pos 也在 logits ✓）
+            neg_padded.append(negs)
 
-        # ③ InfoNCE（写全 ✓）: 每行 = 1 正 + 若干同字字体负 ✓
-        pos = (zb * zp).sum(-1, keepdim=True) / args.tau
-        logits = torch.cat([pos, sim_n], 1) if sim_n is not None else pos
-        loss = (torch.logsumexp(logits, dim=1) - pos.squeeze(1)).mean()
+        # ★ 统一 padding 到 n_max ✓（不足则重复第一个 ✓ ⇒ 每 anchor 负样本数恒等 ✓）
+        n_max = max(len(v) for v in neg_padded)
+        for v in neg_padded:
+            while len(v) < n_max:
+                v.append(v[0])
+
+        # ③ 编码全部唯一负样本 ✓（分 R/S 两池 ✓）
+        r_negs = sorted(set(j for negs in neg_padded for is_s, j in negs if not is_s))
+        s_negs = sorted(set(j for negs in neg_padded for is_s, j in negs if is_s))
+        E_rneg = model.emb(IR.batch(r_negs, dev)) if r_negs else None
+        E_sneg = model.emb(IS.batch(s_negs, dev)) if s_negs else None
+        r_map = {j: q for q, j in enumerate(r_negs)} if r_negs else {}
+        s_map = {j: q for q, j in enumerate(s_negs)} if s_negs else {}
+
+        # ④ 组装 (B, n_max, d) 负样本嵌入张量 ✓
+        neg_emb = torch.zeros(args.batch, n_max, args.d, device=dev)
+        for k, negs in enumerate(neg_padded):
+            for m, (is_s, j) in enumerate(negs):
+                if is_s and s_map:
+                    neg_emb[k, m] = E_sneg[s_map[j]]
+                elif not is_s and r_map:
+                    neg_emb[k, m] = E_rneg[r_map[j]]
+
+        # ⑤ InfoNCE ✓
+        n_neg = args.batch * n_max
+        pos_sim = (zb * zp).sum(-1, keepdim=True) / args.tau
+        sim_n = (zb.unsqueeze(1) * neg_emb).sum(-1) / args.tau
+        logits = torch.cat([pos_sim, sim_n], 1)
+        loss = (torch.logsumexp(logits, dim=1) - pos_sim.squeeze(1)).mean()
+
         opt.zero_grad(set_to_none=True)
         loss.backward()
         opt.step()
         sched.step()
         if step % max(1, args.steps // 8) == 0 or step == 1:
-            print("  [step %5d] InfoNCE %.4f | 正样本 %d/%d | 负样本 %d | %.0fs"
-                  % (step, float(loss), sum(has_pos), len(has_pos), n_neg, time.time() - t0),
-                  flush=True)
+            print("  [step %5d] InfoNCE %.4f | 正 %d/%d | 负 %d | %.0fs"
+                  % (step, float(loss.detach()), sum(has_pos), len(has_pos),
+                     n_neg, time.time() - t0), flush=True)
 
-    # ── 性能指标（同一套门槛 ✓ + 字体维度 ✓）
+    # ── 性能指标 ✓
     @torch.no_grad()
-    def emb_all(IS, bs=32):
+    def emb_all(IS_, bs=64):
         o = []
-        for s in range(0, len(IS.arr), bs):
-            o.append(model.emb(IS.batch(list(range(s, min(s + bs, len(IS.arr)))), dev)).cpu().numpy())
+        for s in range(0, len(IS_.arr), bs):
+            o.append(model.emb(IS_.batch(list(range(s, min(s + bs, len(IS_.arr)))), dev)).cpu().numpy())
         return np.concatenate(o)
 
     print("\n===== 判别器性能指标 =====", flush=True)
     E_R = emb_all(IR)
+    std_rows_eval = [r for r in R if r.get("std")][:1500]
+    IS_eval = ImgSet(std_rows_eval, size=args.img, tag="std_eval")
+    E_std = emb_all(IS_eval)
+    S_eval = [{"writer": f"std·{r['script']}", "script": r["script"],
+               "char": r["char"], "work": "std"} for r in std_rows_eval]
     resR = run_gates(E_R, R, n_pairs=args.n_pairs, seed=args.seed, bootstrap=args.bootstrap)
-    resF = run_gates(emb_all(IF), F_, n_pairs=min(args.n_pairs, 800), seed=args.seed,
-                     bootstrap=min(args.bootstrap, 800))
+    # std 维度: std 样本之间的 2AFC ✓（std·楷 之间应可区分 ✓）
+    resS = run_gates(E_std, S_eval, n_pairs=min(args.n_pairs, 500), seed=args.seed,
+                     bootstrap=min(args.bootstrap, 500))
     os.makedirs(os.path.dirname(os.path.abspath(args.out)), exist_ok=True)
     torch.save({"model": model.state_dict(), "d": args.d, "img": args.img,
-                "writers": sorted({r["writer"] for r in R}),
-                "fonts": sorted({r["writer"] for r in F_}),
-                "gates_real": resR, "gates_font": resF,
-                "n_font_neg": args.n_font_neg, "tau": args.tau}, args.out)
+                "gates_real": resR, "gates_std": resS,
+                "n_std_neg": args.n_std_neg, "n_writer_neg": args.n_writer_neg,
+                "tau": args.tau}, args.out)
     print("[done] 保存 %s" % args.out)
     return 0
 
