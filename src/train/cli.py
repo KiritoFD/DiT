@@ -960,6 +960,20 @@ def build_parser(argv=None):
                         dest="style_rank_margin", help="[v85B] 排序损失的 margin m ✓")
     parser.add_argument("--style-rank-tau", type=float, default=0.07,
                         dest="style_rank_tau", help="[v85B] 排序损失的温度 τ ✓")
+    parser.add_argument("--critic-ckpt", default="assets/writer_brush_critic.pt",
+                        dest="critic_ckpt", help="[v85C] 冻结双头 critic ckpt ✓")
+    parser.add_argument("--critic-std-bank", default="scratch/disc_lat_full.npz",
+                        dest="critic_std_bank", help="[v85C] std 条件 bank（g_std ✓）")
+    parser.add_argument("--w-critic-writer", type=float, default=0.0,
+                        dest="w_critic_writer",
+                        help="[v85C] Writer-Discriminative Loss 权重 ✓（0=关 ✓）")
+    parser.add_argument("--w-critic-away", type=float, default=0.0,
+                        dest="w_critic_away",
+                        help="[v85C] AwaySTD Loss 权重 ✓（0=关 ✓）")
+    parser.add_argument("--critic-t-min", type=float, default=0.05,
+                        dest="critic_t_min", help="[v85C] 辅助项 t 下界 ✓")
+    parser.add_argument("--critic-t-max", type=float, default=0.30,
+                        dest="critic_t_max", help="[v85C] 辅助项 t 上界 ✓")
     parser.add_argument("--probe-style-grad-steps", type=int, default=0,
                         dest="probe_style_grad_steps",
                         help="[v85B] 前 N 步打印**梯度范数比探针**（方案 §三.3 的 λ_s 标定方式 ✓）\n"

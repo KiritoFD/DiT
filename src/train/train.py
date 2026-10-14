@@ -344,6 +344,25 @@ def _build_aux_losses(args, device, logger, rank):
       而这 4 个名字在 [Begin epoch] 之后的训练循环里被使用 ✓ 已人工核对 L2287-2353 ✓）。
     """
     _style_rank_loss_fn = None
+    # ---- v85B/C: 冻结双头 critic（Writer+Brush ✓ 方案 §六 ✓）----
+    _critic_loss_fn = None
+    if getattr(args, 'w_critic_writer', 0.0) > 0 or getattr(args, 'w_critic_away', 0.0) > 0:
+        import importlib
+        _clm = importlib.import_module('src.loss.critic_loss')
+        _critic_loss_fn = _clm.CriticLoss(
+            ckpt=getattr(args, 'critic_ckpt', 'assets/writer_brush_critic.pt'),
+            device=device)
+        _critic_loss_fn.attach_std_bank(
+            getattr(args, 'critic_std_bank', 'scratch/disc_lat_full.npz'))
+        _lut = _critic_loss_fn.build_id2slot(
+            getattr(args, 'train_csv', 'exp-std/csv/train.csv'))
+        logger.info('[critic] id2slot lut: %d 对（callig_raw×script ✓）' % len(_lut))
+        logger.info("[critic] frozen writer+brush critic loaded: %s (%d slots) | "
+                    "w_writer=%.4g w_away=%.4g t=[%.2f,%.2f]"
+                    % (getattr(args, 'critic_ckpt', ''), len(_critic_loss_fn.slots),
+                       args.w_critic_writer, args.w_critic_away,
+                       getattr(args, 'critic_t_min', 0.05),
+                       getattr(args, 'critic_t_max', 0.30)))
     if getattr(args, 'w_style_rank', 0.0) > 0:
         import importlib
         _srm = importlib.import_module('src.loss.style_rank_module')
@@ -438,7 +457,7 @@ def _build_aux_losses(args, device, logger, rank):
                         f"window a_t∈[{_mid_struct_loss.alo},{_mid_struct_loss.ahi}] "
                         f"lp={_mid_struct_loss.lp_factor} "
                         f"calib={getattr(args, 'std_mid_calib_json', '') or '(默认线性σ/k)'}")
-    return _style_rank_loss_fn, _skel_struct_loss_fn, _SKEL_STRUCT_WARNED, _mid_struct_loss
+    return _style_rank_loss_fn, _skel_struct_loss_fn, _SKEL_STRUCT_WARNED, _mid_struct_loss, _critic_loss_fn
 
 
 
@@ -1512,7 +1531,7 @@ def main(args):
     # ---- 冻结风格排序头 loss (2026-09-25 冒烟): 全冻结, added=0 ----
     # loss = 1 - cos(f(pred_xstart), centroid[y_pair]); 只在 t∈[t_min,t_max] 生效。
     # ★ 2026-10-13: 原 87 行内联的 aux-loss 构建已抽成函数 ✓（4 个输出供训练循环使用 ✓）
-    _style_rank_loss_fn, _skel_struct_loss_fn, _SKEL_STRUCT_WARNED, _mid_struct_loss = _build_aux_losses(args, device, logger, rank)
+    _style_rank_loss_fn, _skel_struct_loss_fn, _SKEL_STRUCT_WARNED, _mid_struct_loss, _critic_loss_fn = _build_aux_losses(args, device, logger, rank)
 
     _train_vae_enc = bool(getattr(args, "train_vae_encoder", False))
     if _train_vae_enc:
@@ -2098,7 +2117,9 @@ def main(args):
                 # gaussian_diffusion 不接受该参数，故用 try/except 兼容。
                 _need_x0 = (getattr(args, 'w_std_mid', 0.0) > 0
                             or getattr(args, 'w_latent_skel', 0.0) > 0
-                            or getattr(args, 'w_style_rank', 0.0) > 0)
+                            or getattr(args, 'w_style_rank', 0.0) > 0
+                            or getattr(args, 'w_critic_writer', 0.0) > 0
+                            or getattr(args, 'w_critic_away', 0.0) > 0)
                 with torch.autocast("cuda", dtype=torch.bfloat16):
                     if _need_x0:
                         try:
@@ -2133,7 +2154,9 @@ def main(args):
                 # break the reference in loss_dict so no stale graph survives the loop.
                 _need_x0_grad = (getattr(args, 'w_std_mid', 0.0) > 0
                                  or getattr(args, 'w_latent_skel', 0.0) > 0
-                                 or getattr(args, 'w_style_rank', 0.0) > 0)
+                                 or getattr(args, 'w_style_rank', 0.0) > 0
+                                 or getattr(args, 'w_critic_writer', 0.0) > 0
+                                 or getattr(args, 'w_critic_away', 0.0) > 0)
                 pred_xstart_latent = loss_dict.get("pred_xstart", None)
                 if pred_xstart_latent is not None and not _need_x0_grad:
                     # No struct loss this run at all — drop the graph immediately.
@@ -2243,6 +2266,116 @@ def main(args):
                                 float(args.w_style_rank), 100.0 * _ratio,
                                 float(args.w_style_rank) * (0.075 / max(_ratio, 1e-12)))
                         loss = loss + getattr(args, 'w_style_rank', 0.0) * loss_style_rank
+
+                # ---- v85B/C: 冻结 critic 的生成端辅助 Loss（方案 §六 ✓）----
+                # L_writer^G = CE(slot(ẑ₀), 目标书家槽) | L_away^G = softplus(−brush(ẑ₀))
+                # 全程 latent ✓（ẑ₀ 直接喂 ✓ 不挂 decoder ✓）critic 冻结但**不套 no_grad** ✓
+                # 只对 t∈[t_min,t_max] 的样本计算 ✓（方案建议 ✓）
+                loss_critic_writer = torch.tensor(0.0, device=device)
+                loss_critic_away = torch.tensor(0.0, device=device)
+                # ★ 活性计数器（静默失效必须可观测 ✓ —— 本会话第 3 次同类坑 ✓）
+                _cw = globals().setdefault('_CRITIC_CNT', {'n': 0, 'hit': 0, 'warned': False})
+                _cw['n'] += 1
+                if _critic_loss_fn is not None and pred_xstart_latent is not None \
+                        and (getattr(args, 'w_critic_writer', 0.0) > 0
+                             or getattr(args, 'w_critic_away', 0.0) > 0):
+                    # ★ flow matching 的 t 本来就是 [0,1] 连续值 ✓（实测 0.042-0.965,
+                    #   num_timesteps=50 只是档位数 ✗ —— 除它就把窗口错位 50 倍 ✗✗）
+                    _ct = t.to(device).float()
+                    _cmask = ((_ct >= getattr(args, 'critic_t_min', 0.05))
+                              & (_ct <= getattr(args, 'critic_t_max', 0.30)))
+                    if _cmask.any():
+                        _cw['hit'] += 1
+                    if train_steps % 100 == 0 and not _cw['warned']:
+                        _cw['warned'] = True
+                        logger.info("[critic-activity] steps=%d hit=%d | "
+                                    "pred_xstart=%s w=(%.4g,%.4g) | t 原始: min=%.4g "
+                                    "max=%.4g num_ts=%s | _ct: min=%.4g max=%.4g ⇒ %s",
+                                    _cw['n'], _cw['hit'],
+                                    '有' if pred_xstart_latent is not None else 'None!',
+                                    args.w_critic_writer, args.w_critic_away,
+                                    float(t.min()), float(t.max()),
+                                    str(getattr(diffusion, 'num_timesteps', '?')),
+                                    float(_ct.min()), float(_ct.max()),
+                                    '正常' if _cw['hit'] else '**未命中 ✗**')
+                    if _cmask.any():
+                        _zs = pred_xstart_latent[_cmask].float()
+                        # ★ g = batch['std_soft'] ✓（现成 per-sample [1,64,64] ✓
+                        #   σ=eval 0.65 ✓ —— 与 critic 的 g_std bank 同源同分布 ✓
+                        #   **不需要任何字符反查** ✓（y_script/y_char 是整数索引 ✗
+                        #   str() 会得到 'tensor(1)' ⇒ KeyError: 'tensor(1)' ✗✗ 实测 ✓））
+                        _ss = batch['std_soft'][_cmask.cpu()]
+                        if _ss.dim() == 3:
+                            _ss = _ss.unsqueeze(1)                # [B,1,64,64] ✓
+                        _g_direct = _ss.float().to(device) / 255.0 \
+                            if _ss.float().max() > 1.5 else _ss.float().to(device)
+                        # 目标槽 = 书家×书体（y_callig_raw + y_script **都是 id** ✓）
+                        _cmask_cpu = _cmask.cpu()          # batch 张量在 CPU ✓
+                        _sc_id = batch['y_script'][_cmask_cpu].long().to(device)
+                        _cw_id = batch['y_callig_raw'][_cmask_cpu].long().to(device)
+                        # slots 表按 "writer·script" 存 ✗ 但 id 空间不同 ⇒ 用 critic 的
+                        # **writer_ids/scripts** 反查 ✓（critic 存了训练 CSV 的 slot 字符串 ✓
+                        # 但 batch 只有 id ⇒ 需要 id→str 映射 —— 由 _build_aux_losses 建好 ✓）
+                        _lut = getattr(_critic_loss_fn, 'id2slot', None)
+                        if _lut is None:
+                            _cw['warned'] = False
+                            logger.info("[critic-missing-lut] id→slot 映射缺失 ⇒ 本步跳过 ✗")
+                        else:
+                            _keys = [_lut.get((int(w), int(s)), None)
+                                     for w, s in zip(_cw_id.tolist(), _sc_id.tolist())]
+                            _valid = [k is not None for k in _keys]
+                            if any(_valid):
+                                _zi = [i for i, v in enumerate(_valid) if v]
+                                _zs = _zs[_zi]
+                                _g_direct = _g_direct[_zi]
+                                _si = torch.tensor(
+                                    [_critic_loss_fn.s2i[
+                                        _lut[(int(_cw_id[i]), int(_sc_id[i]))].split('·')[1]]
+                                     for i in _zi], dtype=torch.long, device=device)
+                                _ys = torch.tensor(
+                                    [_critic_loss_fn.slots.index(
+                                        _lut[(int(_cw_id[i]), int(_sc_id[i]))])
+                                     for i in _zi], dtype=torch.long, device=device)
+                                _lw, _la, _cp = _critic_loss_fn.forward_g(
+                                    _zs, _g_direct, _si, _ys)
+                                loss_critic_writer = _lw
+                                loss_critic_away = _la
+                        # ★ 梯度范数比探针 ✓（与 style-rank 探针同一机制 ✓）
+                        _pstep = int(getattr(args, 'probe_style_grad_steps', 0) or 0)
+                        if _pstep and train_steps < _pstep:
+                            _shared = [p for p in model.parameters() if p.requires_grad]
+                            # ★ FM 基线用**总 loss 减去 critic 项** ✗ 更简单可靠:
+                            #    直接对 loss_diff 求梯度 ✓（它是本步 FM 项 ✓）
+                            _g_fm = torch.autograd.grad(
+                                loss_diff, _shared, retain_graph=True, allow_unused=True)
+                            _g_cw = torch.autograd.grad(
+                                loss_critic_writer, _shared, retain_graph=True,
+                                allow_unused=True)
+                            _g_ca = torch.autograd.grad(
+                                loss_critic_away, _shared, retain_graph=True,
+                                allow_unused=True)
+                            _n_fm = torch.sqrt(sum((g ** 2).sum() for g in _g_fm
+                                                   if g is not None))
+                            _n_cw = torch.sqrt(sum((g ** 2).sum() for g in _g_cw
+                                                   if g is not None))
+                            _n_ca = torch.sqrt(sum((g ** 2).sum() for g in _g_ca
+                                                   if g is not None))
+                            logger.info(
+                                "[critic-probe] step=%d n=%d | ‖dL_FM/dθ‖=%.4e "
+                                "‖dL_writer/dθ‖=%.4e ‖dL_away/dθ‖=%.4e | "
+                                "w_writer=%.4g w_away=%.4g ⇒ 贡献 %.1f%% / %.1f%% | "
+                                "目标 5%%/1-2%% ⇒ 建议 w_writer≈%.4g w_away≈%.4g",
+                                train_steps, int(_cmask.sum()), float(_n_fm), float(_n_cw),
+                                float(_n_ca), float(args.w_critic_writer),
+                                float(args.w_critic_away),
+                                100.0 * float(_n_cw / (_n_fm + 1e-12)),
+                                100.0 * float(_n_ca / (_n_fm + 1e-12)),
+                                float(args.w_critic_writer) * (0.05 / max(
+                                    float(_n_cw / (_n_fm + 1e-12)), 1e-12)),
+                                float(args.w_critic_away) * (0.015 / max(
+                                    float(_n_ca / (_n_fm + 1e-12)), 1e-12)))
+                        loss = (loss + getattr(args, 'w_critic_writer', 0.0) * loss_critic_writer
+                                + getattr(args, 'w_critic_away', 0.0) * loss_critic_away)
 
                 # ---- DeformSkel 中间监督: 形变后的骨架应逼近**该书家的 GT 骨架** ----
                 # 这是本项目第一个"自带稠密监督"的风格干预: 目标数据(实例骨架)现成,
