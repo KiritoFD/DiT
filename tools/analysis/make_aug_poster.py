@@ -28,7 +28,8 @@ ROWS = [
     ("arm2_sym3x(原增强)", "frag 最佳 1.944 ✓ hole 最佳 0.0418 ✓", (0, 90, 200)),
     ("A3_grid(网格)", "唯一好过无增强的 frag (−0.126) ✓", (120, 0, 170)),
     ("A2_elastic(弹性)", "nn_ssim/skel_iou 最佳 ✓ frag 尚可", (200, 90, 0)),
-    ("A1_morphE(形态学)", "frag 最差 2.507 ✗ 全面落后", (170, 0, 90)),
+    ("A1_morphE(形态学)", "frag 垫底 2.507 ✗ 笔画断裂严重", (170, 0, 90)),
+    ("A4_affine(仿射)", "全场垫底: ssim 0.597 ✗ ink_iou 0.318 ✗ 结构破坏", (0, 120, 150)),
 ]
 
 CELL, PADL, HDR = 118, 130, 96
@@ -56,11 +57,11 @@ d.text((8, 8), "数据增强族消融 — 全部 batch512×100k (=51.2M 样本, 
        fill=(0, 0, 0), font=f_t)
 d.text((8, 32), "结论: 五种增强(含原有 sym3x)在同样本下, ssim/lpips/ink_iou/ink_ssim 全部不如【不增强】"
                 "  |  A系列为 REPA=0(已实测混杂仅1~7%, 远小于此处差距)", fill=(80, 80, 80), font=f_s)
-d.text((8, 48), "增强的代价集中在 stroke 断裂(frag): 原增强 1.944 最好; 形态学 2.507 最差; 不增强 2.369",
+d.text((8, 48), "增强主要在笔画连通性与结构对齐产生分化: 原增强 1.944 断笔最少; 仿射 0.597 严重退化; 不增强 0.6098 综合最优",
        fill=(80, 80, 80), font=f_s)
 for j, (key, lab, col) in enumerate(COLS):
     x = PADL + j * CELL
-    step = "75k" if key == "A4_affine" else ("—" if key == "gt" else "100k")
+    step = "—" if key == "gt" else "100k"
     d.text((x + 4, HDR - 34), lab, fill=col, font=f_h)
     d.text((x + 4, HDR - 18), step, fill=(150, 150, 150), font=f_s)
 for i, idx in enumerate(IDX):
