@@ -2360,20 +2360,22 @@ def main(args):
                                                    if g is not None))
                             _n_ca = torch.sqrt(sum((g ** 2).sum() for g in _g_ca
                                                    if g is not None))
+                            # ★★ 贡献%必须**含 w** ✓（裸比 ✗ 曾致 λ 建议错 w 倍 ✗✗
+                            #    ⇒ v85C 以 3e-8 实跑 = 有效贡献 0.00016%% ≈ 空跑 ✗）
+                            _r_w = float(_n_cw / (_n_fm + 1e-12))
+                            _r_a = float(_n_ca / (_n_fm + 1e-12))
                             logger.info(
                                 "[critic-probe] step=%d n=%d | ‖dL_FM/dθ‖=%.4e "
                                 "‖dL_writer/dθ‖=%.4e ‖dL_away/dθ‖=%.4e | "
-                                "w_writer=%.4g w_away=%.4g ⇒ 贡献 %.1f%% / %.1f%% | "
+                                "w=(%.4g,%.4g) ⇒ 实际贡献 %.2f%% / %.2f%% | "
                                 "目标 5%%/1-2%% ⇒ 建议 w_writer≈%.4g w_away≈%.4g",
                                 train_steps, int(_cmask.sum()), float(_n_fm), float(_n_cw),
                                 float(_n_ca), float(args.w_critic_writer),
                                 float(args.w_critic_away),
-                                100.0 * float(_n_cw / (_n_fm + 1e-12)),
-                                100.0 * float(_n_ca / (_n_fm + 1e-12)),
-                                float(args.w_critic_writer) * (0.05 / max(
-                                    float(_n_cw / (_n_fm + 1e-12)), 1e-12)),
-                                float(args.w_critic_away) * (0.015 / max(
-                                    float(_n_ca / (_n_fm + 1e-12)), 1e-12)))
+                                100.0 * float(args.w_critic_writer) * _r_w,
+                                100.0 * float(args.w_critic_away) * _r_a,
+                                0.05 / max(_r_w, 1e-12),
+                                0.015 / max(_r_a, 1e-12))
                         loss = (loss + getattr(args, 'w_critic_writer', 0.0) * loss_critic_writer
                                 + getattr(args, 'w_critic_away', 0.0) * loss_critic_away)
 
