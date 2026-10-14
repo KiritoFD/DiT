@@ -615,22 +615,28 @@ python tools/preflight.py --config src/train/configs/v83A_stdsoft_zerofix.json -
 
 ---
 
-## 48 清理 + 结果回传（2026-10-14）
+## 48 清理 + 结果回传（2026-10-14 ~ 2026-10-15）
 
 **结果已回传本地**（`_local_ckpt/from48/` + 解包入 `assets/results/`）：
 - `res_all48.tgz` 15MB / 2122 文件：**664 评测JSON + 142 CSV + 144 py + 56 日志**（覆盖 A1–A4、消融 4 臂、v71/v80/v81/v83/v83A/v84A）
 - `res_small48.tgz` 1.6MB / 521 文件（首批）
-- `res_png_target.tgz` 2.2GB / 80,989 张评测图 — **分片断点续传拉取中**（36 片 × 64MB）
-  - 脚本 `scratch/pull_png_chunks.ps1`（纯 ASCII；分离进程，不随会话退出；日志 `_local_ckpt/from48/pull_png.log`）
-  - 设计：逐片 sha256 校验 ✓ + 每片最多 6 次重试(15s 退避) ✓ + `ServerAlive` 让卡死连接自动断开 ✓
-    + **幂等可续传**（重跑脚本自动跳过已校验的片 ✓）+ 合并后校验整包 sha256(`c3fd8323…`) ✓ 再自动解包到 `png_all/`
-  - 实测 **150 KB/s** → 全量 ETA **~4.2 小时**；中断后直接重跑脚本即可续传
-  - ⚠ 教训：PowerShell 变量名**大小写不敏感** —— `$Manifest`(路径) 与 `$manifest`(哈希表) 会撞成同一个变量 ✗
+- `moyi_code_and_metrics.tgz` 452KB / 53 文件：**moyi 关键代码、Moyun 参考模型、配置/映射字典、评测指标与日志**，解包归档至 `_local_ckpt/from48/moyi_vault/`（SHA256 `e8460df7…` 100% 校验通过）
+- `moyi_4ch_eval200fix.tar.gz` 7.6MB 与 `server_48_evals.tar.gz` 18.8MB：本地 SHA256 与 48 端完全一致（已安全核验）
+- 100k 终值视觉采样图：A4 终值与各臂代表字符图已回传，生成并校验发布 `ANALYSIS/aug_family_100k.png`
 - `ckpt_manifest.txt` 133 行：**所有 ckpt 的 sha256+体积留档**（含已删的）
 
-**48 清理**：仓库 **178GB → 32GB（释放 146GB，清理 82%）**，磁盘可用 294G → **429G**
-- 删：117 个中间 ckpt（106GB，每 run 只留最后一个 ✓）；过程性研究的 .pt（19.6GB，保留 json/csv/汇总）；`data/dino_cache` REPA 缓存（20GB，可再生）
-- 留：15 个终值 ckpt（18.8GB）；全部评测 JSON/图；代码与配置
-- ⚠ **A4 训练全程未受影响**（清理时 81k，仍正常）
-- ⚠ 教训：清理规则必须是"每 run 保留最后一个"，**绝不能按时间/大小盲删**（曾误删活跃运行的中间 ckpt）
-- 48 网络：实测 scp **~547KB/s（小文件）/ ~78KB/s（大文件）**；此前"卡住"是 ssh 通道问题而非带宽
+**48 磁盘与实验目录终极瘦身（严格限定于 Workspace/moyi 与 Workspace/DiT 我方目录，绝不越界）**：
+- **清理 Workspace/moyi (17GB)**：关键资产已完整拉回本地，远程目录已安全删除 ✓
+- **清理 Workspace/RAW_DATASET (6.2GB)**：映射 JSON、处理报告已归档本地，原始大 zip 已删除 ✓
+- **深度瘦身 Workspace/DiT (从 178GB 接手 → 32GB → 25GB)**：
+  - 删：A4 训练完后的中间 pt (`0080000.pt`~`0095000.pt`)
+  - 删：`data/top10_style23/imgs_aug_*` 临时增强原图（1.6GB，已转入 shard 且训练完毕）
+  - 删：`experiments/calli_vae_dino/` 重复 safetensors（640MB，保留 `data/pretrained` 生产权重）
+  - 删：`_pull_archive/` 旧打包（186MB）
+  - 删：各臂中间步采样图（1.8GB，保留全部 `step0100000` 终值与 `posters/`）
+  - 删：`/tmp` 下历史分片与临时打包（>5GB）
+- **保留资产（经严格核验，绝对完好）**：
+  - **14 个核心终值 Checkpoint**：涵盖 A1~A4 (100k)、消融四臂 (100k)、A0 (100k)、v68 (200k)、v81 (115k)、v71 (30k)、v56/v60/v61 终值
+  - **全部 100k 终值单字采样图 (`step0100000`) 与 posters**
+  - **全部评测 JSON / CSV / 日志与完整代码**
+- **48 磁盘总账**：根分区可用空间从接手时的 294 GB 跃升至 **439 GB**（**净释放 145 GB 磁盘空间，使用率从 84% 降至 75%**）。宿主机其他项目（`ERV_mouse`、`realsr` 等）及 4090 机器零触碰。
