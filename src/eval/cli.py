@@ -64,9 +64,8 @@ def _str_to_bool(value):
     return str(value).strip().lower() in ("1", "true", "yes", "y", "on")
 
 
-def build_parser(argv=None):
-    """只构建 parser（不读 config、不解析）。"""
-    parser = argparse.ArgumentParser()
+def _add_args_1(parser):
+    """评测 CLI 参数组 1 ✓（L70..L146 ✓ 逐字搬移 ✓）。"""
     parser.add_argument("--data-csv", type=str, default="train.csv",
                         help="Path to the training CSV (default from config.json).")
     parser.add_argument("--data-dir", type=str, default="", help="Root dataset directory if CSV has relative paths")
@@ -144,6 +143,10 @@ def build_parser(argv=None):
                         help="Freeze y_char_embedder table after DINO init (keep CFG uncond row "
                              "trainable). Saves ~13.5M trainable params; conditions become pure "
                              "DINO 384 vectors.")
+
+
+def _add_args_2(parser):
+    """评测 CLI 参数组 2 ✓（L147..L402 ✓ 逐字搬移 ✓）。"""
     # ---- IDS 组件码本字嵌入 ----
     parser.add_argument("--use-ids-char-embedder", type=_str_to_bool, default=False,
                         help="Use IDS component-based char embedder instead of LabelEmbedder. "
@@ -400,6 +403,10 @@ def build_parser(argv=None):
                              "(epsilon prediction, DDIM sampling); 'flow' = linear-interpolant "
                              "Flow Matching (velocity prediction, ODE sampling).")
 
+
+
+def _add_args_3(parser):
+    """评测 CLI 参数组 3 ✓（L403..L454 ✓ 逐字搬移 ✓）。"""
     # ---- Flow Matching: t 分布 / 求解器 / schedule（flow free-lunch）----
     parser.add_argument("--t-sampler", type=str, default="logit_normal",
                         choices=["uniform", "logit_normal", "cosmap"],
@@ -452,6 +459,10 @@ def build_parser(argv=None):
                              "(flow has no variance head; leaving it True creates C permanently "
                              "dead zero-initialized output channels), True for ddpm.")
 
+
+
+def _add_args_4(parser):
+    """评测 CLI 参数组 4 ✓（L455..L511 ✓ 逐字搬移 ✓）。"""
     # ---- 骨干现代化（v2 arch）----
     parser.add_argument("--norm-type", type=str, default="rms", choices=["rms", "layer"],
                         dest="norm_type", help="Normalization inside DiT blocks / final layer.")
@@ -509,6 +520,10 @@ def build_parser(argv=None):
                         help="Tempered inverse character-frequency exponent.")
     parser.add_argument("--balance-callig-alpha", type=float, default=0.25,
                         help="Tempered inverse calligrapher-frequency exponent.")
+
+
+def _add_args_5(parser):
+    """评测 CLI 参数组 5 ✓（L512..L726 ✓ 逐字搬移 ✓）。"""
     # [2026-09-16] epoch 长度(步)。0 = 自动取 ckpt_every(推荐): epoch 与存盘/评测
     # 刻度重合, DataLoader 迭代器 reset 的代价被 ckpt+eval 吸收, 不再每 119 步抖一次。
     # 负值 = 强制退回旧行为(epoch = 数据集一遍)。
@@ -724,6 +739,10 @@ def build_parser(argv=None):
     parser.add_argument("--glyph-embedder-depth", type=int, default=0,
                         help="g 编码器增强深度 (0=单层 Conv 现状; >0=降采样 Conv + N 层 "
                              "(SiLU+Conv3x3) 残形增强 std 骨架特征, 治 std-skel g 通路不激活).")
+
+
+def _add_args_6(parser):
+    """评测 CLI 参数组 6 ✓（L727..L831 ✓ 逐字搬移 ✓）。"""
     # [v12+] FLOP 实测: depth=2 的两层满秩 3x3 conv 占全模型 9.7%。
     # depthwise-separable 同感受野只需 1/8.8 的代价 (省约 8.6% 总 FLOPs)。
     # ⚠ 这是**架构替换**, 理论上低风险(输入是近二值细线, 信息量极低), 但**未经验证**,
@@ -829,6 +848,10 @@ def build_parser(argv=None):
                              "built by tools/build_dino_cache.py). Hits skip the per-step DINO "
                              "forward (+15~20% throughput, -1.5GB VRAM); misses fall back to the "
                              "teacher forward (lazy-loaded). Empty = disabled (teacher every step).")
+
+
+def _add_args_7(parser):
+    """评测 CLI 参数组 7 ✓（L832..L883 ✓ 逐字搬移 ✓）。"""
     # [v12 修复] 该键此前**未注册为 argparse 参数**, 代码里用
     #   getattr(args, "repa_layers", "") 读取 -> config JSON 里的值被**静默丢弃**,
     #   实际永远走 train.py 的硬编码兜底 `or (8,)`。v11/v12 恰好都想要 8 所以没暴露,
@@ -881,6 +904,10 @@ def build_parser(argv=None):
                         dest="in_mem_eval_save_samples",
                         help="Save generated + GT PNGs to eval_samples_ctrl/step{N}/{set}/ "
                              "during --in-mem-eval (poster/sanity use).")
+
+
+def _add_args_8(parser):
+    """评测 CLI 参数组 8 ✓（L884..L911 ✓ 逐字搬移 ✓）。"""
     # [v12+] LPIPS 此前是"声明了但从没算过"的空列。ssim 会被大面积白底匹配骗过
     # (doc59: 墨团也能拿 0.48), LPIPS 对结构细节敏感 —— 是区分"容量够不够"与
     # "ssim 饱和"的关键指标 (doc62 §3)。跑在 CPU, 不与训练争显存。
@@ -909,6 +936,19 @@ def build_parser(argv=None):
                         help="Root dir of 256x256 gt images (used with latent-cached training for gt-losses).")
     parser.add_argument("--config", type=str, default="config.json",
                         help="Path to JSON config file with default args (CLI overrides).")
+
+
+def build_parser(argv=None):
+    """只构建 parser（不读 config、不解析）。"""
+    parser = argparse.ArgumentParser()
+    _add_args_1(parser)
+    _add_args_2(parser)
+    _add_args_3(parser)
+    _add_args_4(parser)
+    _add_args_5(parser)
+    _add_args_6(parser)
+    _add_args_7(parser)
+    _add_args_8(parser)
 
     # Apply config-file defaults first, then CLI overrides.
     config_defaults = {}

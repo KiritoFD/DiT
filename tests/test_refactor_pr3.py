@@ -227,4 +227,4 @@ def test_eval_max_function_size_shrank():
                 sz = nd.end_lineno - nd.lineno + 1
                 if sz > worst[0]:
                     worst = (sz, "%s:%s" % (f, nd.name))
-    assert worst[0] <= 870, f"eval 里最大单元 {worst[1]} = {worst[0]} 行 ✗（应 ≤870 ✓）"
+    assert worst[0] <= 370, f"eval 里最大单元 {worst[1]} = {worst[0]} 行 ✗（应 ≤370 ✓）"
