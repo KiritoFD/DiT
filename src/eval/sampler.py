@@ -21,8 +21,10 @@ import torch
 
 from src.loss import create_diffusion_or_flow
 from src.eval.decoder import match_model_channels
+from src.model.conditioning import build_batch, kwargs_for_call
 
 __all__ = ["build_diffusion", "model_uses_std_soft", "validate_std_soft_condition",
+           "model_kwargs_for_slice",
            "sample_latents", "sample_latents_self_cond"]
 
 
@@ -69,6 +71,65 @@ def validate_std_soft_condition(g, n):
 
 
 @torch.no_grad()
+
+def model_kwargs_for_slice(model, *, yc, yh, hier_slice=None, skel_slice=None,
+                           device="cpu") -> dict:
+    """装配一次 `ddim_sample_loop` 的 `model_kwargs` ✓（2026-10-14 [重构 PR5] ✓）
+
+    ★ 逐字搬移自 `sample_latents` 的内联逻辑 ✓（审查 §4.1: 收进 `ConditionBatch` ✓）
+    抽成函数只为**可测** ✓ —— 逻辑与顺序一字未改 ✓。
+
+    ★★ 关键契约（**已实测** ✓ 见 tests/test_refactor_migration_rule.py ✓）:
+      必须用 `kwargs_for_call` ✗ —— **不能**用 `batch_to_kwargs(for_forward=True)` ✓
+        后者**总是**保留 `g`（契约: `g=None` = "**条件被丢掉**" ✓）
+        ⇒ 会把"没传 g"变成"明确传 g=None" ✗ ⇒ **语义改变** ✗
+      本函数用 `kwargs_for_call` ✓ ⇒ 与旧的"**存在才加键**"逐字等价 ✓
+
+    ★ `cond` 键（ControlNet 包装 ✓）**不在** `ConditionBatch` 里 ✗
+      ⇒ 按契约**留在调用方**（本函数内）✓ 不要硬塞进兼容层 ✗
+
+    参数:
+      hier_slice : `(hraw, hpair, hscript)` 的**已切片**序列 ✓ 或 None ✓
+      skel_slice : 字形/骨架张量 ✓ 或 None ✓（None ⇒ **根本不传**该键 ✓）
+    """
+    _hraw = _hpair = _hscript = None
+    if hier_slice is not None:
+        _hraw, _hpair, _hscript = hier_slice
+    # ── S2 三层语义分解的三个 id（None = 模型走旧路径，零副作用）──────────
+    _batch = build_batch(
+        y_callig=yc, y_char=yh,
+        y_callig_raw=(torch.tensor(_hraw, device=device, dtype=torch.long)
+                      if _hraw is not None else None),
+        y_pair=(torch.tensor(_hpair, device=device, dtype=torch.long)
+                if _hpair is not None else None),
+        y_script=(torch.tensor(_hscript, device=device, dtype=torch.long)
+                  if _hscript is not None else None))
+    mk = kwargs_for_call(_batch)
+    if skel_slice is not None:
+        # g 条件模型 (train.py use_glyph_cond/skel_as_glyph_cond/std_soft_cond 预训练) 走 'g' 键;
+        # ControlNetDiT 包装走 'cond' 键。
+        # Recognize wrappers and the accepted keyword; flags alone are not
+        # sufficient for every historical checkpoint/model wrapper.
+        import inspect as _inspect
+        _fn = getattr(model, "forward_with_cfg", None) or model
+        try:
+            _params = set(_inspect.signature(_fn).parameters)
+        except Exception:                                              # noqa: BLE001
+            _params = set()
+        _use_g = (getattr(model, "use_glyph_cond", False)
+                  or getattr(getattr(model, "main", None), "use_glyph_cond", False)
+                  or getattr(model, "std_soft_cond", False)
+                  or getattr(getattr(model, "main", None), "std_soft_cond", False)
+                  or model_uses_std_soft(model)
+                  or ("g" in _params and "cond" not in _params))
+        if _use_g:
+            mk["g"] = skel_slice.to(device)
+        else:
+            # ⚠ `cond` 是 ControlNet 包装的键 ✗ 不在 ConditionBatch 里 ✓
+            #   ⇒ 按契约留在调用方 ✓（不要硬塞进兼容层 ✗）
+            mk["cond"] = skel_slice.to(device)
+    return mk
+
 def sample_latents(model, diffusion, noise, conds, cfg_scale, batch, device,
                    skel=None, seed=0, hier_conds=None):
     """Run diffusion sampling (DDIM for ddpm / Euler for flow) → CPU latents.
@@ -116,31 +177,14 @@ def sample_latents(model, diffusion, noise, conds, cfg_scale, batch, device,
         z = noise[i:j].to(device)
         yc = torch.tensor([c[0] for c in conds[i:j]], device=device, dtype=torch.long)
         yh = torch.tensor([c[1] for c in conds[i:j]], device=device, dtype=torch.long)
-        mk = dict(y_callig=yc, y_char=yh)
-        # ── S2 三层语义分解的三个 id（None = 模型走旧路径，零副作用）──────────
-        if hier_conds is not None:
-            _hraw, _hpair, _hscript = hier_conds
-            mk['y_callig_raw'] = torch.tensor(_hraw[i:j], device=device, dtype=torch.long)
-            mk['y_pair'] = torch.tensor(_hpair[i:j], device=device, dtype=torch.long)
-            mk['y_script'] = torch.tensor(_hscript[i:j], device=device, dtype=torch.long)
-        if skel is not None:
-            # g 条件模型 (train.py use_glyph_cond/skel_as_glyph_cond/std_soft_cond 预训练) 走 'g' 键;
-            # ControlNetDiT 包装走 'cond' 键。
-            # Recognize wrappers and the accepted keyword; flags alone are not
-            # sufficient for every historical checkpoint/model wrapper.
-            import inspect as _inspect
-            _fn = getattr(model, "forward_with_cfg", None) or model
-            try:
-                _params = set(_inspect.signature(_fn).parameters)
-            except Exception:
-                _params = set()
-            _use_g = (getattr(model, "use_glyph_cond", False)
-                      or getattr(getattr(model, "main", None), "use_glyph_cond", False)
-                      or getattr(model, "std_soft_cond", False)
-                      or getattr(getattr(model, "main", None), "std_soft_cond", False)
-                      or model_uses_std_soft(model)
-                      or ("g" in _params and "cond" not in _params))
-            mk["g" if _use_g else "cond"] = skel[i:j].to(device)
+        # ★ 2026-10-14 [重构 PR5] 条件装配抽成 model_kwargs_for_slice ✓（审查 §4.1 ✓）
+        #   逐字等价 ✓（含"存在才加键"语义 ✓ 与 g/cond 包装器判定 ✓）
+        mk = model_kwargs_for_slice(
+            model, yc=yc, yh=yh,
+            hier_slice=((hier_conds[0][i:j], hier_conds[1][i:j], hier_conds[2][i:j])
+                        if hier_conds is not None else None),
+            skel_slice=(skel[i:j] if skel is not None else None),
+            device=device)
         # bf16 autocast 仅 cuda (CPU 无 AVX512-BF16/AMX 时 bf16 走软件上转反而慢)
         if dev_type == "cuda":
             with torch.autocast("cuda", dtype=torch.bfloat16):

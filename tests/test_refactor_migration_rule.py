@@ -110,17 +110,22 @@ def test_cond_key_is_not_part_of_condition_batch():
         assert "cond" not in fn(b), "`cond` 不应由 ConditionBatch 产生 ✗（那是包装器的键 ✓）"
 
 
-def test_sampler_still_uses_existence_based_construction():
-    """★ 特性化守卫 ✓: 记录 `sampler.py` 目前仍是"存在才加键"的写法 ✓
+def test_sampler_has_been_migrated_with_the_safe_helper():
+    """★ 特性化守卫 ✓（**已按迁移更新** ✓ 2026-10-14 ✓）
 
-    若将来迁移它 ⇒ 必须改用 `kwargs_for_call` ✓ 或显式保留"存在才加"语义 ✓
-    ⇒ 本测试会在**迁移未配套**时失败 ✓（提醒去核对 ✓）
+    ⚠ 上一版本守卫断言"`sampler.py` **仍是**'存在才加键'写法" ✓
+      ⇒ 本轮真的迁移它时，本守卫**如期失败** ✓✓ —— 这正是它的设计意图 ✓
+        （防止"迁移了但没配套改用 `kwargs_for_call`" ✗）
+      ⇒ 现按它自己的注释改成"断言它**用了**安全助手" ✓
     """
     src = io.open("src/eval/sampler.py", encoding="utf-8").read()
-    assert "mk = dict(y_callig=yc, y_char=yh)" in src, \
-        "sampler 的构造方式变了 ✗ ⇒ 请核对迁移是否保持了'存在才加键'语义 ✓"
-    assert "if hier_conds is not None:" in src and "if skel is not None:" in src, \
-        "sampler 的按存在加键结构变了 ✗ ⇒ 请核对语义 ✓"
-    # 且**尚未**迁移到 kwargs_for_call ✓（迁移后本断言需一并更新 ✓）
-    assert "kwargs_for_call" not in src, \
-        "sampler 已迁移 ✓ ⇒ 请把本守卫改成断言它**用了** kwargs_for_call ✓"
+    assert "def model_kwargs_for_slice(" in src, "迁移助手不存在 ✗"
+    assert "mk = model_kwargs_for_slice(" in src, "循环体未改用助手 ✗"
+    assert "kwargs_for_call(_batch)" in src, \
+        "必须用 `kwargs_for_call` ✓（**不能**用 for_forward=True ✗ 会凭空加 g ✗）"
+    # ⚠ 剥三引号块再查 ✓（文档里引用了反例名 ✓）
+    import re
+    code = re.sub(r'""".*?"""', '""', src, flags=re.S)
+    code = re.sub(r"'''.*?'''", "''", code, flags=re.S)
+    assert "batch_to_kwargs" not in code, "**代码里**不得使用 batch_to_kwargs ✗"
+    assert 'mk = dict(y_callig=yc, y_char=yh)' not in code, "旧内联仍在 ✗"
