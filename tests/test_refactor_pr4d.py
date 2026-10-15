@@ -28,6 +28,24 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from src.train.objectives import ObjectiveComposer, compose                  # noqa: E402
 
 
+def _read_train_src() -> str:
+    """训练路径的源码 = `train.py` + `trainer.py` ✓（2026-10-14 循环已搬到 trainer.py ✓）。
+
+    ⚠ 守卫不应**绑死文件位置** ✗ —— 它要守的是"**这段代码存在且形状正确**" ✓
+      （审查 §3: 迁移可保留兼容层 ✓ 同一精神 ✓）
+    """
+    import io as _io
+    import os as _os
+    root = _os.path.dirname(_os.path.dirname(_os.path.abspath(__file__)))
+    out = []
+    for f in ("src/train/train.py", "src/train/trainer.py"):
+        p = _os.path.join(root, f)
+        if _os.path.exists(p):
+            out.append(_io.open(p, encoding="utf-8").read())
+    return "\n".join(out)
+
+
+
 # ─────────────── ① 与手写链逐位一致 ───────────────
 def test_total_matches_handwritten_chain_bitwise():
     """★★ 核心 ✓: `total` 必须与手写 `a + w1*b + w2*c + …` **逐位**一致 ✓"""
@@ -157,7 +175,7 @@ def test_compose_helper_equivalence():
 # ─────────────── 接线守卫 ───────────────
 def test_train_py_uses_composer_for_wired_terms():
     """★ 接线守卫 ✓: 已迁移的三类项必须走 composer ✓ 且顺序断言仍在 ✓"""
-    t = io.open("src/train/train.py", encoding="utf-8").read()
+    t = _read_train_src()
     assert "_ObjComposer(" in t, "未接线到 ObjectiveComposer ✗"
     for name in ('_obj.add("repa"', '_obj.add("std_mid"', '_obj.add("latent_skel"',
                  '_obj.add("style_rank"', '_obj.add("critic_writer"',

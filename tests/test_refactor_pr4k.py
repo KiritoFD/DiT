@@ -21,6 +21,24 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from src.train.telemetry import format_step_log as F                        # noqa: E402
 
+
+def _read_train_src() -> str:
+    """训练路径的源码 = `train.py` + `trainer.py` ✓（2026-10-14 循环已搬到 trainer.py ✓）。
+
+    ⚠ 守卫不应**绑死文件位置** ✗ —— 它要守的是"**这段代码存在且形状正确**" ✓
+      （审查 §3: 迁移可保留兼容层 ✓ 同一精神 ✓）
+    """
+    import io as _io
+    import os as _os
+    root = _os.path.dirname(_os.path.dirname(_os.path.abspath(__file__)))
+    out = []
+    for f in ("src/train/train.py", "src/train/trainer.py"):
+        p = _os.path.join(root, f)
+        if _os.path.exists(p):
+            out.append(_io.open(p, encoding="utf-8").read())
+    return "\n".join(out)
+
+
 BASE = dict(step=5000, avg_d=0.2750, avg_r=0.0037, avg_std_mid=0.01,
             avg_skel=0.02, steps_per_sec=3.50, w_repa=0.03, mem=(22.56, 22.60))
 
@@ -95,7 +113,7 @@ def test_module_does_not_read_globals_for_deform():
 
 def test_train_py_still_owns_the_global_read():
     """★ 反过来: `_DEFORM_EMA` 的读取**必须留在** train.py ✓（全局在那里 ✓）"""
-    t = io.open("src/train/train.py", encoding="utf-8").read()
+    t = _read_train_src()
     assert "globals().get('_DEFORM_EMA')" in t, \
         "train.py 必须继续自己读该全局 ✓（然后只传值进去 ✓）"
     assert "_tel.format_step_log(" in t, "未接线 ✗"

@@ -14,7 +14,6 @@
 """
 from __future__ import annotations
 
-import io
 import os
 import sys
 
@@ -23,6 +22,24 @@ import torch
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from src.train.step import resolve_step_inputs, StepInputs                # noqa: E402
+
+
+def _read_train_src() -> str:
+    """训练路径的源码 = `train.py` + `trainer.py` ✓（2026-10-14 循环已搬到 trainer.py ✓）。
+
+    ⚠ 守卫不应**绑死文件位置** ✗ —— 它要守的是"**这段代码存在且形状正确**" ✓
+      （审查 §3: 迁移可保留兼容层 ✓ 同一精神 ✓）
+    """
+    import io as _io
+    import os as _os
+    root = _os.path.dirname(_os.path.dirname(_os.path.abspath(__file__)))
+    out = []
+    for f in ("src/train/train.py", "src/train/trainer.py"):
+        p = _os.path.join(root, f)
+        if _os.path.exists(p):
+            out.append(_io.open(p, encoding="utf-8").read())
+    return "\n".join(out)
+
 
 
 # ─────────────── 假 VAE（可观测 rsample / sample 是否被调用 ✓）───────────────
@@ -165,7 +182,7 @@ def test_vae_enc_requires_image_key():
 
 # ─────────────── 接线守卫 ───────────────
 def test_train_py_uses_resolve_step_inputs():
-    t = io.open("src/train/train.py", encoding="utf-8").read()
+    t = _read_train_src()
     assert "_resolve_step_inputs(batch, vae, device," in t, "未接线 ✗"
     assert "x_latent, x, loss_vae_kl = _si.x_latent, _si.x, _si.loss_vae_kl" in t, \
         "下游变量名必须保持 ✓"

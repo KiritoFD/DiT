@@ -158,7 +158,11 @@ def gate_structure_sanity():
     # ★ 2026-10-13 [审查 PR3 结构归位]: 允许"把代码搬到同目录子模块" ✓ ——
     #   若 dit.py 缩水但 **dit.py + dit_conditioning.py 之和**仍达标, 视为正常重构 ✓
     #   （护栏本意就是"只拦大幅缩水 ✗, 不拦正常重构 ✓" —— 见上面 docstring ✓）
-    COMPANIONS = {"src/model/dit.py": ["src/model/dit_conditioning.py"]}
+    COMPANIONS = {"src/model/dit.py": ["src/model/dit_conditioning.py"],
+                  # ★ 2026-10-14 [审查 §4.2 / PR4 收官]: 810 行训练循环搬到
+                  #   `src/train/trainer.py` ✓（**审查要求的拆分** ✓）
+                  #   ⇒ 护栏本意是"只拦大幅缩水 ✗, 不拦正常重构 ✓" ⇒ 必须配对 ✓
+                  "src/train/train.py": ["src/train/trainer.py"]}
     bad = []
     for path, (min_lines, cls_or_fn) in LIMITS.items():
         if not os.path.isfile(path):

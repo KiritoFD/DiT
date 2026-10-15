@@ -26,6 +26,24 @@ from src.train import ema as EM                                            # noq
 from src.train import train as TR                                          # noqa: E402
 
 
+def _read_train_src() -> str:
+    """训练路径的源码 = `train.py` + `trainer.py` ✓（2026-10-14 循环已搬到 trainer.py ✓）。
+
+    ⚠ 守卫不应**绑死文件位置** ✗ —— 它要守的是"**这段代码存在且形状正确**" ✓
+      （审查 §3: 迁移可保留兼容层 ✓ 同一精神 ✓）
+    """
+    import io as _io
+    import os as _os
+    root = _os.path.dirname(_os.path.dirname(_os.path.abspath(__file__)))
+    out = []
+    for f in ("src/train/train.py", "src/train/trainer.py"):
+        p = _os.path.join(root, f)
+        if _os.path.exists(p):
+            out.append(_io.open(p, encoding="utf-8").read())
+    return "\n".join(out)
+
+
+
 # ─────────────── ① update_ema 数值等价 ───────────────
 class _M(torch.nn.Module):
     def __init__(self):
@@ -115,8 +133,7 @@ def test_update_ema_keeps_no_grad_decorator():
     assert "@torch.no_grad()" in src, \
         "update_ema 丢失 @torch.no_grad() ✗（它关掉 EMA 更新的 autograd 追踪 ✓ 属语义 ✓）"
     # 且 train.py 不得有孤儿装饰器 ✗
-    import io
-    t = io.open("src/train/train.py", encoding="utf-8").read()
+    t = _read_train_src()
     assert "@torch.no_grad()\nfrom src.train.ema import" not in t, \
         "train.py 残留孤儿装饰器 ✗（会导致 SyntaxError ✗）"
 
@@ -236,8 +253,7 @@ def test_describe_reports_identity():
 
 def test_train_py_uses_ema_component():
     """接线守卫 ✓: 循环里必须走组件 ✓ 且启动日志打印 EMA 身份 ✓"""
-    import io
-    t = io.open("src/train/train.py", encoding="utf-8").read()
+    t = _read_train_src()
     assert "_ema.should_update(" in t and "_ema.effective_decay(" in t, "未接线 ✗"
     assert "[ema]" in t, "启动日志必须打印 EMA 摘要 ✓（interval 属实验身份 ✓）"
     assert "current_ema_decay ** max(1, int(getattr(args, 'ema_interval'" not in t, \

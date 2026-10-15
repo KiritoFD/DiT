@@ -27,6 +27,24 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from src.train.step import NonFiniteGuard                                  # noqa: E402
 
 
+def _read_train_src() -> str:
+    """训练路径的源码 = `train.py` + `trainer.py` ✓（2026-10-14 循环已搬到 trainer.py ✓）。
+
+    ⚠ 守卫不应**绑死文件位置** ✗ —— 它要守的是"**这段代码存在且形状正确**" ✓
+      （审查 §3: 迁移可保留兼容层 ✓ 同一精神 ✓）
+    """
+    import io as _io
+    import os as _os
+    root = _os.path.dirname(_os.path.dirname(_os.path.abspath(__file__)))
+    out = []
+    for f in ("src/train/train.py", "src/train/trainer.py"):
+        p = _os.path.join(root, f)
+        if _os.path.exists(p):
+            out.append(_io.open(p, encoding="utf-8").read())
+    return "\n".join(out)
+
+
+
 class _Log:
     def __init__(self):
         self.msgs = []
@@ -156,7 +174,7 @@ def test_stats_and_describe():
 
 # ─────────────── 接线守卫 ───────────────
 def test_train_py_uses_guard():
-    t = io.open("src/train/train.py", encoding="utf-8").read()
+    t = _read_train_src()
     assert "_guard = _NonFiniteGuard(logger, rank)" in t, "未构造守卫 ✗"
     assert "_finite = _guard.check(loss)" in t, "判定未接线 ✗"
     assert "_guard.note_skipped(train_steps, loss_diff)" in t, "跳过分支未接线 ✗"

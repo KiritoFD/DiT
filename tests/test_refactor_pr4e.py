@@ -26,6 +26,24 @@ from src.train import ckpt as CK                                           # noq
 from src.train.checkpoint import CheckpointManager                         # noqa: E402
 
 
+def _read_train_src() -> str:
+    """训练路径的源码 = `train.py` + `trainer.py` ✓（2026-10-14 循环已搬到 trainer.py ✓）。
+
+    ⚠ 守卫不应**绑死文件位置** ✗ —— 它要守的是"**这段代码存在且形状正确**" ✓
+      （审查 §3: 迁移可保留兼容层 ✓ 同一精神 ✓）
+    """
+    import io as _io
+    import os as _os
+    root = _os.path.dirname(_os.path.dirname(_os.path.abspath(__file__)))
+    out = []
+    for f in ("src/train/train.py", "src/train/trainer.py"):
+        p = _os.path.join(root, f)
+        if _os.path.exists(p):
+            out.append(_io.open(p, encoding="utf-8").read())
+    return "\n".join(out)
+
+
+
 # ─────────────── ① save ≡ 旧两行（参数与顺序 ✓）───────────────
 def test_save_calls_same_functions_with_same_args(monkeypatch, tmp_path):
     """★★ 核心 ✓: 必须**先** save_checkpoint（同参数同顺序 ✓）**再** prune_checkpoints ✓"""
@@ -124,7 +142,7 @@ def test_should_save_matches_old_condition(every, step, expect):
 
 def test_step_gt_zero_stays_in_caller():
     """★ `step > 0` 属**训练语义** ✓ 仍留在调用方 ✓（本模块只管"刻度对齐" ✓）"""
-    t = io.open("src/train/train.py", encoding="utf-8").read()
+    t = _read_train_src()
     assert "if _save_ckpt and train_steps > 0:" in t, \
         "`train_steps > 0` 必须仍留在调用方 ✓（不得挪进 manager ✗）"
 
@@ -139,7 +157,7 @@ def test_module_has_no_optimizer_or_eval_side_effects():
 
 def test_train_py_uses_manager_and_dropped_old_calls():
     """★ 接线守卫 ✓: 旧的三处直接调用必须已消失 ✗ 且改走 manager ✓"""
-    t = io.open("src/train/train.py", encoding="utf-8").read()
+    t = _read_train_src()
     assert "_ckpt.save(model, opt, ema_model, scheduler, args, train_steps)" in t, "未接线 ✗"
     assert "_ckpt.finalize(timeout=600)" in t, "收尾未接线 ✗"
     assert "[ckpt]" in t, "启动日志必须打印存盘策略身份 ✓"

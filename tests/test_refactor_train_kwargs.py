@@ -25,6 +25,24 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from src.train.step import build_train_model_kwargs as B                   # noqa: E402
 
+
+def _read_train_src() -> str:
+    """训练路径的源码 = `train.py` + `trainer.py` ✓（2026-10-14 循环已搬到 trainer.py ✓）。
+
+    ⚠ 守卫不应**绑死文件位置** ✗ —— 它要守的是"**这段代码存在且形状正确**" ✓
+      （审查 §3: 迁移可保留兼容层 ✓ 同一精神 ✓）
+    """
+    import io as _io
+    import os as _os
+    root = _os.path.dirname(_os.path.dirname(_os.path.abspath(__file__)))
+    out = []
+    for f in ("src/train/train.py", "src/train/trainer.py"):
+        p = _os.path.join(root, f)
+        if _os.path.exists(p):
+            out.append(_io.open(p, encoding="utf-8").read())
+    return "\n".join(out)
+
+
 DEV = "cpu"
 BATCH_N = 3
 
@@ -196,7 +214,7 @@ def test_missing_batch_keys_are_safe():
 
 # ─────────────── ★ 接线守卫 ✓ ───────────────
 def test_train_py_uses_the_helper():
-    src = open("src/train/train.py", encoding="utf-8").read()
+    src = _read_train_src()
     assert "model_kwargs = _build_train_model_kwargs(" in src, "未接线 ✗"
     assert "std_soft_cond=_std_soft_cond," in src
     # 旧内联必须消失 ✓
