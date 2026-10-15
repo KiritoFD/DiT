@@ -79,7 +79,7 @@ class MCCDLatentDataset(Dataset):
                  inst_skel_shards_dir=None, callig_script_map=None,
                  std_soft_root=None, std_soft_sigma_min=0.4,
                  std_soft_sigma_max=1.0, std_soft_eval_sigma=0.65,
-                 std_soft_preload=True):
+                 std_soft_preload=True, strict_coverage=True):
         self.samples = []
         with open(csv_file, 'r', encoding='utf-8') as f:
             for row in csv.DictReader(f):
@@ -305,8 +305,90 @@ class MCCDLatentDataset(Dataset):
         self._skel_latents_list = []
         self._inst_skel_latents = None
         self._aux_latents = None
+        # ★ 2026-10-14 [重构 PR2] **LatentContract**: 覆盖率契约 ✓（完成标准: 100% 无静默 fallback ✗）
+        #   必须放在 preload **之前** ✓ —— 缺行要在**训练开始前**报错 ✗，
+        #   而不是等 `_preload_all` / `_get_latent` 的 KeyError（那是**训练中途** ✗✗），
+        #   更不是被 `_check_shard_names` 的 `got is not None` 静默放行 ✗（旧缺陷 ✓）。
+        self.audit_coverage(strict=bool(strict_coverage))
         if preload:
             self._preload_all(num_preload_workers)
+
+    # ─────────────────────────── PR2: 覆盖率契约 ───────────────────────────
+    def _families(self):
+        """需要 100% 覆盖的张量族 ✓: 名字 -> id→(shard, row) 映射（或映射列表 ✓）。"""
+        fams = {"target_latent": self._id_to_shard}
+        if self._skel_id_to_shard_list:
+            for _di, _m in enumerate(self._skel_id_to_shard_list):
+                fams["skel_latent_v%d" % _di] = _m
+        if self._inst_id_to_shard:
+            fams["inst_skel_latent"] = self._inst_id_to_shard
+        for _ai, _m in enumerate(self._aux_id_to_shard or []):
+            fams["aux_latent_v%d" % _ai] = _m
+        return fams
+
+    def audit_coverage(self, strict=True, verbose=True):
+        """★ PR2 ✓: 逐族核对 **CSV 每一行**都有对应张量；缺行 ⇒ 报错 ✗（不再静默 ✗）。
+
+        返回 {"n_samples": int, "families": {族名: {"n_hit", "n_missing", "examples"}}} ✓
+        · `strict=True`（默认 ✓）: 任一族缺行 ⇒ **ValueError** ✗（训练开始前就失败 ✓）
+        · `strict=False`           : 只**大声**报告 ✗（供确实需要容忍缺失的条件族 ✓）
+        """
+        ids = [int(extract_img_id(r, where="coverage-audit")) for r in self.samples]
+        report = {"n_samples": len(ids), "families": {}}
+        problems = []
+        for name, mapping in self._families().items():
+            miss = [i for i in ids if i not in mapping]
+            report["families"][name] = {
+                "n_ids_in_store": len(mapping),
+                "n_hit": len(ids) - len(miss),
+                "n_missing": len(miss),
+                "examples": miss[:8],
+            }
+            if miss:
+                problems.append((name, len(miss), miss[:8]))
+        report["ok"] = not problems
+        if verbose:
+            _sum = " | ".join("%s %d/%d" % (k, v["n_hit"], report["n_samples"])
+                              for k, v in report["families"].items())
+            print(f"[latent-contract] 覆盖 {_sum}"
+                  + ("  ✓ 100%" if not problems else "  ✗ 有缺失"), flush=True)
+        if problems and strict:
+            _txt = "; ".join("%s 缺 %d 行(例 %s)" % (n, c, e) for n, c, e in problems)
+            raise ValueError(
+                f"[latent-contract] **数据覆盖不足** ✗（PR2: 100% 覆盖, 无静默 fallback ✗）: "
+                f"{_txt} —— 缺失行会在训练中变成 KeyError（中途崩溃 ✗）或被静默填零 ✗✗。"
+                f"请核对 latent_shards_dir / skel_latent_shards_dirs / "
+                f"inst_skel_shards_dir / aux_latent_shards_dirs 是否指向**本数据集自己**的 shard ✗")
+        if problems and not strict:
+            print(f"[latent-contract] ⚠ strict=False ⇒ **已知并接受**缺失 ✗: "
+                  f"{[p[0] for p in problems]}（这些行会用显式定义的零值 fallback ✓ "
+                  f"—— 见 P0-2 ✓；绝不再是未初始化内存 ✗）", flush=True)
+        return report
+
+    def latent_contract(self):
+        """★ PR2 ✓: 契约**身份** —— 供 manifest 记录"这份数据是哪一份" ✓（P1-7 ✓）。
+
+        记录每族的 (shard 路径, 文件大小, id 数, **id 数组内容哈希** ✓)。
+        只哈希 id 数组（小 ✓ 便宜 ✓），不哈希 GB 级张量 ✗ —— 但配合文件大小已足以
+        发现"换了 shard 目录 / 行序变了" ✗✓。
+        """
+        import hashlib as _hl
+        fams = {}
+        for name, mapping in self._families().items():
+            shards = {}
+            h = _hl.sha256()
+            for iid in sorted(mapping.keys()):
+                sp, j = mapping[iid]
+                h.update(b"%d|%d|%s\n" % (iid, j, sp.encode()))
+                if sp not in shards:
+                    try:
+                        shards[sp] = os.path.getsize(sp)
+                    except OSError:
+                        shards[sp] = -1
+            fams[name] = {"n_ids": len(mapping), "n_shards": len(shards),
+                          "rowmap_sha256": h.hexdigest(),
+                          "shard_sizes": shards}
+        return {"n_samples": len(self.samples), "families": fams}
 
     def __len__(self):
         return len(self.samples)
