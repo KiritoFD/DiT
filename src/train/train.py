@@ -78,6 +78,7 @@ from src.train import ema as _ema              # ★ PR4: EMA 组件 ✓
 from src.train.checkpoint import CheckpointManager as _CkptManager   # ★ PR4: 持久化 ✓
 from src.train import optimizer as _opt        # ★ PR4: 优化器装配（纯决策 + 薄工厂）✓
 from src.train.step import NonFiniteGuard as _NonFiniteGuard   # ★ PR4: 单步组件 ✓
+from src.train.telemetry import Diagnostics as _Diagnostics    # ★ PR4: 训练期诊断（纯观测）✓
 from src.train.objectives import ObjectiveComposer as _ObjComposer   # ★ PR4: 损失装配 ✓
 from src.train.ckpt import (restore_rng)
 from src.train.data_setup import build_data   # ★ PR4: 数据装配 ✓
@@ -1917,38 +1918,17 @@ def main(args):
             logger.info(f"Begin epoch {epoch}{_span} — ckpt+eval 落点...")
         
         try:
-            # ★ 2026-10-11: 算子级 profile 适配开关（--profile-steps N, 默认 0=关）。
-            #   跳过前 --profile-skip 步后, 对接下来 N 步做 torch.profiler,
-            #   随后打印**逐算子 CUDA 时间表**（回答"GPU 时间花在哪些算子上、还剩多少空间"）。
-            _PROF_N = int(getattr(args, "profile_steps", 0) or 0)
-            _PROF_SKIP = int(getattr(args, "profile_skip", 20) or 20)
-            _PROF_OBJ = None
-            _PROF_CNT = 0
-            # ★ 2026-10-11: 分配历史 profile 适配开关（--profile-memory-steps N, 默认 0=关）。
-            #   用于回答"是谁在每步做上百次 cudaMalloc"：记录每次 device 分配的 Python 调用栈,
-            #   再由 tools/prof/mem_top.py 聚合成"分配点排行榜"。
-            _MEM_N = int(getattr(args, "profile_memory_steps", 0) or 0)
-            _MEM_SKIP = int(getattr(args, "profile_memory_skip", 10) or 10)
-            _MEM_ON = False
-            _MEM_CNT = 0
+            # ★ 2026-10-14 [重构 PR4] 训练期诊断收进 src/train/telemetry.py ✓（纯观测 ✓）
+            #   ① 算子级 profile（--profile-steps N, 默认 0=关 ✓）
+            #      跳过前 --profile-skip 步后, 对接下来 N 步做 torch.profiler,
+            #      随后打印**逐算子 CUDA 时间表**（回答"GPU 时间花在哪些算子上" ✓）
+            #   ② 分配历史（--profile-memory-steps N, 默认 0=关 ✓）
+            #      记录 device 分配的 Python 调用栈 ⇒ tools/prof/mem_top.py 聚合"分配点排行榜" ✓
+            #   两者**默认全关** ✓ 只在窗口内开销 ✓ 不参与任何训练语义 ✓
+            _diag = _Diagnostics(args, logger)
             for batch_idx, batch in enumerate(loader):
-                # ★ 2026-10-11 算子级 profile: 窗口起点（进入 profiler）
-                if _PROF_N and _PROF_OBJ is None and batch_idx >= _PROF_SKIP:
-                    _PROF_OBJ = torch.profiler.profile(
-                        activities=[torch.profiler.ProfilerActivity.CPU,
-                                    torch.profiler.ProfilerActivity.CUDA],
-                        record_shapes=False, profile_memory=False)
-                    _PROF_OBJ.__enter__()
-                    _PROF_CNT = 0
-                    logger.info(f"[profile] 开始算子级 profile: 步 {batch_idx} 起 {_PROF_N} 步 "
-                                f"(warmup {_PROF_SKIP} 步已跳过, torch={torch.__version__})")
-                # ★ 2026-10-11 分配历史: 窗口起点
-                if _MEM_N and not _MEM_ON and batch_idx >= _MEM_SKIP:
-                    import torch.cuda.memory as _tcm
-                    _tcm._record_memory_history(max_entries=300000)
-                    _MEM_ON = True
-                    _MEM_CNT = 0
-                    logger.info(f"[profile-mem] 开始记录 device 分配历史: 步 {batch_idx} 起 {_MEM_N} 步")
+                # ★ 2026-10-11 算子级 profile / 分配历史: 窗口起点 ⇒ 见 telemetry.py ✓
+                _diag.maybe_start(batch_idx)
                 # ★ non_blocking=True: DataLoader 已开 pin_memory=True，但**必须显式传**
                 #   这个参数才会走异步拷贝；否则即使源在 pinned 内存里也是同步拷贝，
                 #   主机线程会被阻塞（图像单批 ~283MB，实测代价可观）。见 docs/system/70 §8.6。
@@ -2538,45 +2518,9 @@ def main(args):
                     opt.step()
                     if _writer_table_tuning is not None:
                         _writer_table_tuning.restore_null()
-                    # ★ 2026-10-11 算子级 profile: 窗口终点（退出并打印逐算子时间表）
-                    if _PROF_OBJ is not None:
-                        _PROF_CNT += 1
-                        if _PROF_CNT >= _PROF_N:
-                            try:
-                                _PROF_OBJ.__exit__(None, None, None)
-                                _avg = _PROF_OBJ.key_averages()
-                                _cuda = sum(float(getattr(o, "self_cuda_time_total", 0.0))
-                                            for o in _avg) / 1e3 / max(_PROF_CNT, 1)
-                                _cpu = sum(float(getattr(o, "self_cpu_time_total", 0.0))
-                                           for o in _avg) / 1e3 / max(_PROF_CNT, 1)
-                                logger.info(
-                                    f"[profile] N={_PROF_CNT} 步 | 排他 CUDA 忙 = {_cuda:.1f} ms/步 | "
-                                    f"排他 CPU = {_cpu:.1f} ms/步 | "
-                                    f"（GPU 占空比 ≈ {_cuda:.0f}ms / 实测步时；两者差 = 启动/等待开销）")
-                                logger.info("[profile] 逐算子 CUDA 时间 TOP20:\n"
-                                            + _avg.table(sort_by="self_cuda_time_total", row_limit=20))
-                                logger.info("[profile] 逐算子 CPU 时间 TOP15:\n"
-                                            + _avg.table(sort_by="self_cpu_time_total", row_limit=15))
-                            except Exception as _pe:
-                                logger.warning(f"[profile] 打印失败: {_pe}")
-                            _PROF_OBJ = None
-                    # ★ 2026-10-11 分配历史: 窗口终点（写快照 + 关闭记录）
-                    if _MEM_ON:
-                        _MEM_CNT += 1
-                        if _MEM_CNT >= _MEM_N:
-                            import torch.cuda.memory as _tcm
-                            _snap = f"/tmp/mem_snapshot_{os.getpid()}.pickle"
-                            try:
-                                _tcm._dump_snapshot(_snap)
-                                logger.info(f"[profile-mem] 快照已写 {_snap} "
-                                            f"(用 tools/prof/mem_top.py 解析)")
-                            except Exception as _me:
-                                logger.warning(f"[profile-mem] 快照失败: {_me}")
-                            try:
-                                _tcm._record_memory_history(enabled=None)
-                            except Exception:
-                                pass
-                            _MEM_ON = False
+                    # ★ 2026-10-11 算子级 profile / 分配历史: 窗口终点 ⇒ 见 telemetry.py ✓
+                    #   ⚠ 仍在 `if _finite:` 分支内 ✓（旧语义: 非有限步不计入窗口 ✓ 顺序不变 ✓）
+                    _diag.tick()
                     if scheduler is not None:
                         scheduler.step()
                     # ★ 2026-10-14 [重构 PR4] EMA 调度与更新已抽到 src/train/ema.py ✓
