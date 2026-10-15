@@ -30,7 +30,7 @@ from typing import Callable, Optional, Sequence
 import torch
 
 __all__ = ["StepProfiler", "MemoryHistoryRecorder", "Diagnostics",
-           "WindowAverages", "average_window"]
+           "WindowAverages", "average_window", "format_step_log"]
 
 
 class StepProfiler:
@@ -237,4 +237,46 @@ def average_window(running, divisor: int, world_size: int, *,
         skel=skel, c12_img=c12i, c12_canny=c12c, c12_skel=c12s,
         steps=int(steps), seconds=_secs,
         steps_per_sec=(float(steps) / max(_secs, 1e-9)),
+    )
+
+# ══════════════════════════ 单步日志文本（纯格式化 ✓） ══════════════════════════
+def format_step_log(*, step: int, avg_d: float, avg_r: float, avg_std_mid: float,
+                    avg_skel: float, steps_per_sec: float, w_repa: float,
+                    w_std_mid: float = 0.0, w_deform_skel: float = 0.0,
+                    deform_loss: float = 0.0, deform_off: float = 0.0,
+                    w_latent_skel: float = 0.0, vae_kl=None, w_vae_kl: float = 1e-5,
+                    train_vae_enc: bool = False, vae_lr=None, lr: float = 0.0,
+                    ema_decay=None, mem=None) -> str:
+    """构造单步训练日志行 ✓（**纯格式化** ✓ 无副作用 ✓ 便于单测 ✓）。
+
+    ⚠ 搬移要点 ✗: 原代码用 `globals().get('_DEFORM_EMA')` 读形变损失的 EMA ✗
+      ⇒ 函数化后 `globals()` 变成**本模块**的 ✗ ⇒ 会读到空 ⇒ 形变项恒为 0 ✗✗
+      ⇒ 因此改成**显式参数** `deform_loss` / `deform_off` ✓（由调用方传入 ✓）
+
+    段落的**条件**与**格式**与旧实现逐字一致 ✓:
+      · StdMid   仅在 `w_std_mid > 0` ✓
+      · Deform   仅在 `w_deform_skel > 0` ✓
+      · SkelStruct 仅在 `w_latent_skel > 0` ✓
+      · VAE-KL   仅在 `train_vae_enc 且 vae_kl is not None` ✓
+      · VAE-LR   仅在 `train_vae_enc 且组数 > 2` ✓（此处由 `vae_lr is not None` 表达 ✓）
+      · EMA      仅在有 ema_decay 时 ✓
+    """
+    if mem is None:
+        mem = (torch.cuda.memory_reserved() / 1024 ** 3,
+               torch.cuda.max_memory_reserved() / 1024 ** 3)
+    ema_log = (f"EMA: {ema_decay:.6f} | " if ema_decay is not None else "")
+    return (
+        f"(step={step:07d}) Diff: {avg_d:.4f} | "
+        f"REPA(w={w_repa:.2f}): {avg_r:.4f} | "
+        + (f"StdMid(w={w_std_mid:.3f}): {avg_std_mid:.4f} | " if w_std_mid > 0 else "")
+        + (f"Deform(w={w_deform_skel:.2f}): {deform_loss:.4f} off={deform_off:.4f} | "
+           if w_deform_skel > 0 else "")
+        + (f"SkelStruct(w={w_latent_skel:.3f}): {avg_skel:.4f} | "
+           if w_latent_skel > 0 else "")
+        + (f"VAE-KL(w={w_vae_kl:.1e}): {float(vae_kl):.4f} | "
+           if train_vae_enc and vae_kl is not None else "")
+        + (f"VAE-LR: {vae_lr:.2e} | " if train_vae_enc and vae_lr is not None else "")
+        + f"LR: {lr:.2e} | {ema_log}"
+        f"Steps/Sec: {steps_per_sec:.2f} | "
+        f"Mem: {mem[0]:.2f}G/{mem[1]:.2f}G"
     )

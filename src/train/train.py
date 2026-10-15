@@ -2606,28 +2606,26 @@ def main(args):
                             logger.info('[writer-table-step] step=%d grad=%.4e drift=%.4e null_max=%.4e anchor=%.4e table_lr=%.4e',
                                         train_steps, _wg, _wd, _wn, _wt.anchor_loss().detach().item(),
                                         opt.param_groups[-1]['lr'])
-                        ema_log = (f"EMA: {current_ema_decay:.6f} | "
-                                   if ema_model is not None else "")
-                        logger.info(
-                            f"(step={train_steps:07d}) Diff: {avg_d:.4f} | "
-                            f"REPA(w={wr:.2f}): {avg_r:.4f} | "
-                            + (f"StdMid(w={args.w_std_mid:.3f}): {avg_std_mid:.4f} | "
-                               if getattr(args, 'w_std_mid', 0.0) > 0 else "")
-                            + (f"Deform(w={args.w_deform_skel:.2f}): "
-                               f"{(globals().get('_DEFORM_EMA') or {}).get('loss') or 0.0:.4f} "
-                               f"off={((globals().get('_DEFORM_EMA') or {}).get('off') or 0.0):.4f} | "
-                               if getattr(args, 'w_deform_skel', 0.0) > 0 else "")
-                            + (f"SkelStruct(w={args.w_latent_skel:.3f}): {avg_skel:.4f} | "
-                               if getattr(args, 'w_latent_skel', 0.0) > 0 else "")
-                            + (f"VAE-KL(w={getattr(args, 'w_vae_kl', 1e-5):.1e}): {float(loss_vae_kl):.4f} | "
-                               if _train_vae_enc and loss_vae_kl is not None else "")
-                            + (f"VAE-LR: {opt.param_groups[2]['lr']:.2e} | "
-                               if _train_vae_enc and len(opt.param_groups) > 2 else "") +
-                            f"LR: {opt.param_groups[0]['lr']:.2e} | {ema_log}"
-                            f"Steps/Sec: {steps_per_sec:.2f} | "
-                            f"Mem: {torch.cuda.memory_reserved() / 1024 ** 3:.2f}G/"
-                            f"{torch.cuda.max_memory_reserved() / 1024 ** 3:.2f}G"
-                        )
+                        # ★ 2026-10-14 [重构 PR4] 单步日志文本抽到 telemetry ✓（纯格式化 ✓）
+                        #   ⚠ `_DEFORM_EMA` 是**模块全局** ✗ ⇒ 读取**留在本文件** ✓
+                        #     只把**值**传进去 ✓（搬进 telemetry 会读到空 ✗✗ 经典陷阱 ✓）
+                        _de = (globals().get('_DEFORM_EMA') or {})
+                        logger.info(_tel.format_step_log(
+                            step=train_steps, avg_d=avg_d, avg_r=avg_r,
+                            avg_std_mid=avg_std_mid, avg_skel=avg_skel,
+                            steps_per_sec=steps_per_sec, w_repa=wr,
+                            w_std_mid=float(getattr(args, 'w_std_mid', 0.0) or 0.0),
+                            w_deform_skel=float(getattr(args, 'w_deform_skel', 0.0) or 0.0),
+                            deform_loss=float(_de.get('loss') or 0.0),
+                            deform_off=float(_de.get('off') or 0.0),
+                            w_latent_skel=float(getattr(args, 'w_latent_skel', 0.0) or 0.0),
+                            vae_kl=loss_vae_kl,
+                            w_vae_kl=float(getattr(args, 'w_vae_kl', 1e-5)),
+                            train_vae_enc=_train_vae_enc,
+                            vae_lr=(opt.param_groups[2]['lr']
+                                    if _train_vae_enc and len(opt.param_groups) > 2 else None),
+                            lr=opt.param_groups[0]['lr'],
+                            ema_decay=(current_ema_decay if ema_model is not None else None)))
                         # ── 调试诊断 (每 1000 步): 梯度分组 + 注入门控强度 ──
                         # 门控 = xattn 注入输出在残差流上的平均 L2 (零初始化起,
                         # 增长 = 注入正在学会写入); 梯度分组看各通路是否在学习。
