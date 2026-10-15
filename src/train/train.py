@@ -75,6 +75,7 @@ from src.utils.channel_expand import (drop_shape_mismatched,
 from src.model.dit import MultiStyleEmbedder
 from src.train import backward as _bw          # ★ PR4: backward 策略模块 ✓
 from src.train import ema as _ema              # ★ PR4: EMA 组件 ✓
+from src.train.objectives import ObjectiveComposer as _ObjComposer   # ★ PR4: 损失装配 ✓
 from src.train.ckpt import (save_checkpoint, prune_checkpoints, drain_ckpt,
                                restore_rng)
 from src.train.data_setup import build_data   # ★ PR4: 数据装配 ✓
@@ -2225,10 +2226,16 @@ def main(args):
                             _sk.to(device, non_blocking=True).float(),
                             t.to(device))
 
-                loss = (loss_diff
-                        + loss_repa  # 统一 REPA: w × (1 - cos) 已在 RepaModule.forward 内含 warmup
-                        + getattr(args, 'w_std_mid', 0.0) * loss_std_mid
-                        + getattr(args, 'w_latent_skel', 0.0) * loss_skel_struct)
+                # ★ 2026-10-14 [重构 PR4] 损失装配抽到 ObjectiveComposer ✓
+                #   ⚠ **注册顺序 = 原加法顺序** ✗（浮点加法不满足结合律 ✓
+                #     顺序变了 ⇒ 末位不同 ⇒ 训练轨迹不同 ✗）
+                _obj = _ObjComposer(loss_diff, base_name="fm")
+                # 统一 REPA: w × (1 - cos) 已在 RepaModule.forward 内含 warmup
+                _obj.add("repa", loss_repa, 1.0)
+                _obj.add("std_mid", loss_std_mid, getattr(args, 'w_std_mid', 0.0))
+                _obj.add("latent_skel", loss_skel_struct,
+                         getattr(args, 'w_latent_skel', 0.0))
+                loss = _obj.total
                 if _train_vae_enc and loss_vae_kl is not None:
                     _w_vkl = float(getattr(args, 'w_vae_kl', 1e-5))
                     loss = loss + _w_vkl * loss_vae_kl
@@ -2263,7 +2270,9 @@ def main(args):
                                 train_steps, int(_n_style_rank), float(_n_fm), float(_n_st),
                                 float(args.w_style_rank), 100.0 * _ratio,
                                 float(args.w_style_rank) * (0.075 / max(_ratio, 1e-12)))
-                        loss = loss + getattr(args, 'w_style_rank', 0.0) * loss_style_rank
+                        _obj.add("style_rank", loss_style_rank,
+                                 getattr(args, 'w_style_rank', 0.0))
+                        loss = _obj.total
 
                 # ---- v85B/C: 冻结 critic 的生成端辅助 Loss（方案 §六 ✓）----
                 # L_writer^G = CE(slot(ẑ₀), 目标书家槽) | L_away^G = softplus(−brush(ẑ₀))
@@ -2364,8 +2373,11 @@ def main(args):
                                 100.0 * float(args.w_critic_away) * _r_a,
                                 0.05 / max(_r_w, 1e-12),
                                 0.015 / max(_r_a, 1e-12))
-                        loss = (loss + getattr(args, 'w_critic_writer', 0.0) * loss_critic_writer
-                                + getattr(args, 'w_critic_away', 0.0) * loss_critic_away)
+                        _obj.add("critic_writer", loss_critic_writer,
+                                 getattr(args, 'w_critic_writer', 0.0))
+                        _obj.add("critic_away", loss_critic_away,
+                                 getattr(args, 'w_critic_away', 0.0))
+                        loss = _obj.total
 
                 # ---- DeformSkel 中间监督: 形变后的骨架应逼近**该书家的 GT 骨架** ----
                 # 这是本项目第一个"自带稠密监督"的风格干预: 目标数据(实例骨架)现成,
