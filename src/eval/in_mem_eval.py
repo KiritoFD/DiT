@@ -28,7 +28,6 @@ import time
 
 import numpy as np
 import torch
-from PIL import Image
 
 from src.eval.inference import (build_diffusion, make_eval_cache,
                                 sample_latents, sample_latents_self_cond,
@@ -183,39 +182,8 @@ def _get_cache(csv_path, n, img_root, shards, args):
     return _CACHES[ck]
 
 
-def _poster_canny(img):
-    """从 gen 图现算 canny 边缘列。
-
-    ⚠ 极性: 统一成**白底黑线**, 与数据侧约定一致。
-    库原生输出 (cv2.Canny / 梯度阈值) 是"前景=255/背景=0"(黑底白线), 直接落盘
-    会与 final_canny_base / skel3 PNG 的极性相反 -> 看起来像"数据错了"。
-    这与 2026-09-14 的 E1(canny 黑底未归一)属同一类疏漏: 别把库的原生输出直接当交付格式。
-    """
-    import cv2
-    a = np.asarray(img, dtype=np.float32)
-    gray = 0.299 * a[..., 0] + 0.587 * a[..., 1] + 0.114 * a[..., 2]
-    kx = np.array([[-1, 0, 1], [-2, 0, 2], [-1, 0, 1]], dtype=np.float32)
-    ky = np.array([[-1, -2, -1], [0, 0, 0], [1, 2, 1]], dtype=np.float32)
-    gx = cv2.filter2D(gray, -1, kx, borderType=cv2.BORDER_REFLECT)
-    gy = cv2.filter2D(gray, -1, ky, borderType=cv2.BORDER_REFLECT)
-    edge = np.sqrt(gx ** 2 + gy ** 2) > 150
-    return Image.fromarray(np.where(edge, 0, 255).astype(np.uint8)).convert("RGB")
 
 
-def _poster_skeleton(img):
-    """从 gen 图现算骨架列。
-
-    ⚠ 极性同 `_poster_canny`: 输出**白底黑线**(骨架=0), 而不是 skeletonize 的
-    原生 "骨架=255" —— 否则与 skel3 PNG / 输入 g 的极性相反, 造成误读。
-    """
-    from skimage.morphology import skeletonize
-    a = np.asarray(img, dtype=np.float32)
-    gray = 0.299 * a[..., 0] + 0.587 * a[..., 1] + 0.114 * a[..., 2]
-    bin_b = (gray > 127).astype(np.uint8)
-    if gray.mean() > 127:
-        bin_b = 1 - bin_b
-    sk = skeletonize(bin_b.astype(bool))
-    return Image.fromarray(np.where(sk, 0, 255).astype(np.uint8)).convert("RGB")
 
 
 def save_input_g(results_dir, set_name, skels_latent, vae, sf, batch=16):
@@ -429,225 +397,6 @@ def _train_nn_row(train_csv, eval_csv, n_ev, gen_dir, max_cand=12):
     return _TRAIN_NN_CACHE[key]
 
 
-def render_poster(results_dir, set_name, out=None, cell=224, gap=6,
-                  train_csv=None, eval_csv=None, n_eval=None):
-    """自动 poster (每 set 两张):
-
-    主图 posters/{set}_poster.png:
-      第 1 行 = 输入标准字 (eval_samples_ctrl/{set}_input_g/g{i}.png)
-      中间每行 = 一个 ckpt 的生成结果 (时间升序, 行标签带 ssim)
-      最后 1 行 = GT (最新 step 的 gt{i}.png)
-    结构图 posters/{set}_struct.png (另放, 不挤主图):
-      每 ckpt 一行, 每样本 gen | canny | skel 三列。
-    均为全量重画并覆盖 → 永远是所有 step 的最新版。纯 CPU, 秒级。
-    """
-    from PIL import Image as _Img, ImageDraw
-    sub = "g" if set_name in ("seen", "g") else set_name
-    steps = _steps_scan(results_dir, sub)
-    if not steps:
-        return None
-    n_max = max(s[2] for s in steps)
-    # ★ 2026-10-01 修复: 原实现 cell = 1280//n_max (20 列 -> 64px) 且用 LANCZOS 缩小,
-    #   1~2px 的骨架细线被邻域平均掉 -> poster 整行看起来"全白"(分数是在原生 256
-    #   上算的, 未受影响)。POSTER_CELL / POSTER_NMAX 允许出可判读的大图。
-    _cap = int(os.environ.get("POSTER_NMAX", "0"))
-    if _cap > 0:
-        n_max = min(n_max, _cap)
-    cell = int(os.environ.get("POSTER_CELL", "0")) or max(
-        64, min(224, 1280 // max(n_max, 1)))
-    input_dir = os.path.join(results_dir, "eval_samples_ctrl", f"{set_name}_input_g")
-    has_input = os.path.isdir(input_dir) and bool(glob.glob(os.path.join(input_dir, "g*.png")))
-
-    font = _load_font(r"/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", max(14, cell // 8))
-    font_small = _font_cache.get(cell) or _load_font(
-        r"/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", max(9, cell // 7))
-    _font_cache[cell] = font_small
-    font_big = _load_font(r"/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", max(28, cell // 3))
-    label_h = max(40, cell // 4)
-    hdr_h = 56
-
-    def _cell(path, bg, placeholder_label="N/A"):
-        if path and os.path.exists(path):
-            return _Img.open(path).convert("RGB").resize((cell, cell), _Img.LANCZOS)
-        img = _Img.new("RGB", (cell, cell), bg)
-        d = ImageDraw.Draw(img)
-        d.rectangle([1, 1, cell - 2, cell - 2], outline=(55, 60, 70), width=1)
-        d.line([(4, 4), (cell - 5, cell - 5)], fill=(45, 48, 55), width=1)
-        d.line([(4, cell - 5), (cell - 5, 4)], fill=(45, 48, 55), width=1)
-        lbl = placeholder_label or "N/A"
-        try:
-            bbox = font_small.getbbox(lbl)
-            tw, th = bbox[2] - bbox[0], bbox[3] - bbox[1]
-            d.text(((cell - tw) // 2, (cell - th) // 2), lbl, font=font_small, fill=(140, 145, 155))
-        except Exception:
-            pass
-        return img
-
-    # ── 主图: input 行 + 每 step gen 行 + GT 行 ──────────────────────────
-    _ref = _train_ref_rows(train_csv, eval_csv, n_eval) if train_csv else None
-    # ★ 同字最近邻: 用**最新 step** 的生成图
-    _nn = (_train_nn_row(train_csv, eval_csv, n_eval, steps[-1][1])
-           if (train_csv and steps) else None)
-    W = cell * n_max + gap * 2
-    n_rows = (len(steps) + 1 + (1 if has_input else 0) + (2 if _ref else 0)
-              + (1 if _nn else 0))
-    H = hdr_h + gap + n_rows * (label_h + cell + gap) + gap + 30
-    canvas = _Img.new("RGB", (W, H), (15, 17, 22))
-    draw = ImageDraw.Draw(canvas)
-    y = gap
-    draw.rectangle([0, y, W, y + hdr_h], fill=(0, 0, 0))
-    # ★ 2026-10-05: 无 skel/glyph 条件时 has_input=False, 表头不能写 "input g"
-    _in_lbl = "input g" if has_input else "no skel/glyph cond"
-    _t = f"{set_name} (n={n_max}) — {_in_lbl} / per-ckpt gen / GT"
-    if _ref:
-        _t += " / 训练集类似条件 GT"
-    if _nn:
-        _t += " / 同字最像"
-    draw.text((gap, y + 12), _t, font=font, fill=(255, 200, 120))
-    y += hdr_h + gap
-    if has_input:
-        draw.text((gap, y + 8), "input (标准字 g)", font=font_big, fill=(120, 220, 255))
-        y += label_h
-        for i in range(n_max):
-            canvas.paste(_cell(os.path.join(input_dir, f"g{i}.png"), (30, 40, 60)),
-                         (gap + i * cell, y))
-        y += cell + gap
-    for step, d, n in steps:
-        draw.text((gap, y + 8), f"step {step}  {_step_ssim_txt(results_dir, step, set_name)}",
-                  font=font_big, fill=(160, 200, 255))
-        y += label_h
-        for i in range(n):
-            canvas.paste(_cell(os.path.join(d, f"g{i}.png"), (40, 40, 40)), (gap + i * cell, y))
-        y += cell + gap
-    draw.text((gap, y + 8), "GT", font=font_big, fill=(255, 160, 160))
-    y += label_h
-    gt_dir = steps[-1][1]
-    for i in range(n_max):
-        canvas.paste(_cell(os.path.join(gt_dir, f"gt{i}.png"), (50, 50, 50)), (gap + i * cell, y))
-    y += cell + gap
-    # ★ 训练集「类似条件」参照两行 —— 用来区分"不会这个字的结构"还是"不会这个书家的笔法"
-    if _ref:
-        for _lbl, _paths in zip(("训练集·同书家异字", "训练集·同字异书家"), _ref):
-            draw.text((gap, y + 8), _lbl, font=font_big, fill=(170, 255, 170))
-            y += label_h
-            for i in range(n_max):
-                _pth = _paths[i] if i < len(_paths) else None
-                canvas.paste(_cell(_pth, (25, 25, 25)), (gap + i * cell, y))
-            y += cell + gap
-    # ★ 训练集「同字最像」一行: 格子角上标出 SSIM
-    if _nn:
-        _pnn, _snn, _mnn = _nn
-        _v = [s for s in _snn if s == s]
-        _mean = (sum(_v) / len(_v)) if _v else float("nan")
-        draw.text((gap, y + 8),
-                  f"训练集·同字最像 (SSIM 均值={_mean:.4f}, n={len(_v)})",
-                  font=font_big, fill=(255, 220, 120))
-        y += label_h
-        _tag_h = max(12, cell // 5)
-        for i in range(n_max):
-            _pth = _pnn[i] if i < len(_pnn) else None
-            canvas.paste(_cell(_pth, (25, 25, 25)), (gap + i * cell, y))
-            _s = _snn[i] if i < len(_snn) else float("nan")
-            if _s == _s:
-                _txt = f"{_s:.2f}"
-                draw.rectangle([gap + i * cell, y, gap + i * cell + 6 * len(_txt), y + _tag_h],
-                               fill=(0, 0, 0))
-                draw.text((gap + i * cell + 2, y + 1), _txt, font=font_small,
-                          fill=(255, 220, 120))
-        y += cell + gap
-        # 数值单独落 CSV（poster 上只是角标, 不方便抄）
-        try:
-            _cp = os.path.join(results_dir, "posters",
-                               f"{set_name}_train_samechar_nn.csv")
-            os.makedirs(os.path.dirname(_cp), exist_ok=True)
-            _ev_rows = []
-            if eval_csv and os.path.exists(eval_csv):
-                with open(eval_csv, encoding="utf-8") as _f:
-                    _ev_rows = list(csv.DictReader(_f))[:n_eval]
-            with open(_cp, "w", newline="", encoding="utf-8") as _f:
-                _w = csv.writer(_f)
-                _w.writerow(["idx", "eval_char", "eval_calligrapher",
-                             "nn_ssim", "nn_char", "nn_calligrapher", "nn_image_path"])
-                for i in range(n_max):
-                    _r = _ev_rows[i] if i < len(_ev_rows) else {}
-                    _m = _mnn[i] if i < len(_mnn) else None
-                    _w.writerow([i, _r.get("character", ""), _r.get("calligrapher", ""),
-                                 (f"{_snn[i]:.5f}" if i < len(_snn) and _snn[i] == _snn[i] else ""),
-                                 (_m[0] if _m else ""), (_m[1] if _m else ""),
-                                 (_pnn[i] or "") if i < len(_pnn) else ""])
-            print(f"[poster] 同字最像 SSIM 已落盘: {_cp}")
-        except Exception as _ce:
-            print(f"[poster] 同字最像 CSV 落盘失败: {_ce!r}")
-
-    out = out or os.path.join(results_dir, "posters", f"{set_name}_poster.png")
-    os.makedirs(os.path.dirname(out), exist_ok=True)
-    canvas.save(out)
-
-    # ── 结构图: input 行 + 每 step 行 (gen | 模型预测的 aux) + GT 行 ────────
-    # 展示**模型自己预测的**结构通道 (aux_*{i}.png, 由 run_in_mem_eval 落盘),
-    # 而不是从 gen 图重算 —— 后者只是"生成图的边缘", 无法判断模型是否学对了 aux 目标。
-    _aux_cols = []
-    for f in sorted(glob.glob(os.path.join(steps[-1][1], "aux_*0.png"))):
-        _b = os.path.basename(f)
-        _aux_cols.append(_b[len("aux_"):-len("0.png")])
-    ncol = 1 + (len(_aux_cols) if _aux_cols else 2)
-    W2 = cell * n_max * ncol + gap * 2
-    n_rows2 = len(steps) + (1 if has_input else 0) + 1
-    H2 = hdr_h + gap + n_rows2 * (label_h + cell + gap) + gap + 30
-    canvas2 = _Img.new("RGB", (W2, H2), (15, 17, 22))
-    draw2 = ImageDraw.Draw(canvas2)
-    y = gap
-    draw2.rectangle([0, y, W2, y + hdr_h], fill=(0, 0, 0))
-    draw2.text((gap, y + 12),
-               f"{set_name} structure — "
-               + ("input g / " if has_input else "no skel/glyph cond / ")
-               + "per-ckpt gen|"
-               + ("|".join(_aux_cols) if _aux_cols
-                  else "canny|skel(recomputed from gen, 非输入)")
-               + " / GT",
-               font=font, fill=(255, 200, 120))
-    y += hdr_h + gap
-    if has_input:
-        draw2.text((gap, y + 8), "input (标准字 g)", font=font_big, fill=(120, 220, 255))
-        y += label_h
-        for i in range(n_max):
-            canvas2.paste(_cell(os.path.join(input_dir, f"g{i}.png"), (30, 40, 60)),
-                          (gap + i * ncol * cell, y))
-        y += cell + gap
-    for step, d, n in steps:
-        draw2.text((gap, y + 8), f"step {step}  {_step_ssim_txt(results_dir, step, set_name)}",
-                   font=font_big, fill=(160, 200, 255))
-        y += label_h
-        for i in range(n):
-            x = gap + i * ncol * cell
-            gen = _cell(os.path.join(d, f"g{i}.png"), (40, 40, 40))
-            canvas2.paste(gen, (x, y))
-            if _aux_cols:
-                for k, an in enumerate(_aux_cols):
-                    canvas2.paste(_cell(os.path.join(d, f"aux_{an}{i}.png"), (30, 30, 30)),
-                                  (x + (k + 1) * cell, y))
-            else:   # 兼容: 老 ckpt 没有 aux 落盘时退回"从 gen 现算"
-                canvas2.paste(_poster_canny(gen), (x + cell, y))
-                canvas2.paste(_poster_skeleton(gen), (x + 2 * cell, y))
-        y += cell + gap
-    # GT 行: gt | 目标结构参照 (skel -> 骨架, 其余 -> 边缘; 均从 GT 图现算, 白底黑线)
-    draw2.text((gap, y + 8), "GT", font=font_big, fill=(255, 160, 160))
-    y += label_h
-    _gt_dir2 = steps[-1][1]
-    for i in range(n_max):
-        x = gap + i * ncol * cell
-        gti = _cell(os.path.join(_gt_dir2, f"gt{i}.png"), (50, 50, 50))
-        canvas2.paste(gti, (x, y))
-        if _aux_cols:
-            for k, an in enumerate(_aux_cols):
-                ref = _poster_skeleton(gti) if "skel" in an else _poster_canny(gti)
-                canvas2.paste(ref, (x + (k + 1) * cell, y))
-        else:
-            canvas2.paste(_poster_canny(gti), (x + cell, y))
-            canvas2.paste(_poster_skeleton(gti), (x + 2 * cell, y))
-    out2 = os.path.join(results_dir, "posters", f"{set_name}_struct.png")
-    canvas2.save(out2)
-    return out
 
 
 # ⚠ 系统里**没有** /usr/share/fonts/truetype/ 也没有任何 CJK 字体，
@@ -1077,6 +826,12 @@ def compute_set_metrics(pred_np, gt_np, n, logger=print):
         si_txt=(f" **soft_ink={float(np.mean(_sir)):.3f}**" f" near_blank={float(np.mean(_nb)):.3f}"
                 f" gt_mass={float(np.mean(_gtm)):.4f}" if _sir else ""))
 
+
+
+# ★ 2026-10-14 [重构 PR5] 海报三件已搬到 `src/eval/posters.py` ✓（审查 §4.3 ✓）
+#   这里**再导出** ⇒ 既有 28 处调用点一字不改 ✓（审查 §3: 保留兼容层 ✓）
+from src.eval.posters import (render_poster, _poster_canny,  # noqa: F401,E402
+                              _poster_skeleton)  # noqa: F401,E402
 
 
 def run_in_mem_eval(model, args, step, device, results_dir=None, logger=print):
