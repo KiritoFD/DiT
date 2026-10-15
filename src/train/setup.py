@@ -103,8 +103,42 @@ def setup_runtime(args):
             json.dump(vars(args), _cf, ensure_ascii=False, indent=2)
         _sources = {}
         # ★ 2026-10-13 [审查 P0]: 原块只哈希根目录旧文件名(实际为空 ✗) -> 改为自包含模块 ✓
+        # ★ 2026-10-14 [重构 P1-7]: 扩展为**完整依赖清单** ✗
+        #   ① 代码多根: src + tools ✓（Critic 实现从 tools/ 动态加载 ✗ 只哈希 src 不够 ✗）
+        #   ② 依赖身份: 模型权重 / VAE / 字体 / 数据 manifest / 生成器 / 评测器 各自 SHA256 ✓
+        #   规则: 配置里**非空**的路径才纳入 ✓（空 = 未启用 ✓ 不算缺失 ✗）；
+        #         非空但盘上不存在 ⇒ 显式记入 artifacts_missing ✗（不静默省略 ✗）
         from src.train.manifest import write_source_manifest
-        write_source_manifest(experiment_dir, extra={"config_path": getattr(args, "config", None)})
+        _ART_KEYS = {
+            "vae": "vae_path",
+            "callig_emb_pretrained": "callig_emb_pretrained",
+            "deform_ckpt": "deform_ckpt",
+            "critic_ckpt": "critic_ckpt",
+            "critic_std_bank": "critic_std_bank",
+            "style_rank_ckpt": "style_rank_ckpt",
+            "style_rank_protos": "style_rank_protos",
+            "style_rank_cent": "style_rank_cent",
+            "train_csv": "csv",
+            "eval_csv": "eval_csv",
+            "std_soft_root": "std_soft_root",
+            "repa_cache_dir": "repa_cache_dir",
+            "latent_shards": "shards",
+            "aux_latent_shards_dirs": "aux_latent_shards_dirs",
+            "fonts_dir": None,          # 常量 ✓ 见下
+        }
+        _arts = {"fonts_dir": "tools/fonts"}          # 字体目录是常量 ✓ 始终纳入 ✓
+        for _nm, _attr in _ART_KEYS.items():
+            if _attr is None:
+                continue
+            _v = getattr(args, _attr, None)
+            if isinstance(_v, (list, tuple)):
+                _v = ",".join(str(x) for x in _v if str(x).strip())
+            _v = str(_v or "").strip()
+            if _v:                                     # 非空才纳入 ✓
+                _arts[_nm] = _v
+        write_source_manifest(experiment_dir,
+                              extra={"config_path": getattr(args, "config", None)},
+                              artifacts=_arts)
     else:
         logger = create_logger(None)
 
