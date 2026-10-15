@@ -1,4 +1,8 @@
 #!/usr/bin/env python
+# ★ 2026-10-14 [重构 PR3] **已退役** ✗ —— 本文件自 src/eval/ 移入 legacy/ ✓
+#   退役依据（可复核）: 全仓库真实 import 引用 = 0 ✓；*.json 配置引用 = 0 ✓；
+#     动态 import 通过但无人调用 ✓；替代实现 = src/eval/sampler.py（当前 FM 主线 ✓）。
+#   历史可复现性保留 ✓（文件与 git 历史都在 ✓）；**新代码请勿 import 本文件** ✗。
 # -*- coding: utf-8 -*-
 """gpu_batch_eval_v2.py 鈥?楂樻晥 GPU 鎵归噺璇勬祴銆?
 鏍稿績浼樺寲:
