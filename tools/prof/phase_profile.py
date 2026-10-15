@@ -170,6 +170,46 @@ def install_patches():
     # ⑦ 梯度裁剪
     ok.append(("clip_grad_norm_", _wrap(torch.nn.utils, "clip_grad_norm_", "grad_clip")))
 
+    # ⑧ ★ **REPA 损失**（自动发现 ✓ 名字含 REPA 的类 ✓）
+    for mod in ("src.loss.repa", "src.loss.repa_loss", "src.loss.repa_align"):
+        try:
+            m = __import__(mod, fromlist=["x"])
+        except Exception:                                             # noqa: BLE001
+            continue
+        for cname in dir(m):
+            c = getattr(m, cname)
+            if isinstance(c, type) and "REPA" in cname.upper():
+                for meth in ("forward", "__call__"):
+                    if _wrap(c, meth, "repa_loss"):
+                        ok.append(("%s.%s.%s" % (mod, cname, meth), True))
+                        break
+
+    # ⑨ ★ **EMA 更新**（函数 ✓ 来自 trainer.py `update_ema(...)` ✓）
+    for mod, fn in (("src.train.ema", "update_ema"), ("src.utils.ema", "update_ema")):
+        try:
+            m = __import__(mod, fromlist=[fn])
+            if _wrap(m, fn, "ema_update"):
+                ok.append(("%s.%s" % (mod, fn), True))
+                break
+        except Exception:                                             # noqa: BLE001
+            continue
+
+    # ⑩ ★★ **H2D 搬运** —— 只统计带 `non_blocking=True` 的 `.to()` ✓
+    #    为何这样过滤（良好工程 ✓）: `.to()` 每步被调用**数百次** ✗
+    #    全量包一层会引入巨大开销 ✗；而只有**大批量搬运**（batch→device ✓）
+    #    才显式传 `non_blocking=True` ✓ ⇒ 过滤后每步只剩**几十次** ✓ 开销可忽略 ✓
+    _orig_to = torch.Tensor.to
+
+    def to_prof(self, *a, **kw):
+        if kw.get("non_blocking"):
+            with phase("h2d_nonblocking"):
+                return _orig_to(self, *a, **kw)
+        return _orig_to(self, *a, **kw)
+
+    to_prof._phased = True
+    torch.Tensor.to = to_prof
+    ok.append(("Tensor.to(non_blocking=True)", True))
+
     print("  ═══ 计时钩子安装情况（不静默 ✓）═══")
     for name, good in ok:
         print("     %s %s" % ("✓" if good else "✗", name))
