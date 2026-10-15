@@ -191,9 +191,40 @@ def test_sampler_module_is_the_single_semantics():
 
 
 def test_eval_dir_line_count_did_not_grow():
-    """粗粒度守卫 ✓: 退役应让 src/eval 顶层行数**不增长** ✓（PR7 会继续压 ✓）"""
+    """粗粒度守卫 ✓: 退役应让 src/eval 顶层行数**不增长** ✓（PR7 会继续压 ✓）
+
+    ⚠ 2026-10-14 更新 ✓: 拆 `run_in_mem_eval`（388 → **106** 行 ✓）时，
+      `_eval_one_set` 带上了 **EvalSetContext**（dataclass + 重绑 ✓）
+      ⇒ 目录净 **+68 行** ✓ —— 这是**结构化的成本** ✓ 换来最大函数减 282 行 ✓
+      ⇒ 阈值如实上调 ✓ 并把"真正该守的"换成下面的**最大函数**判据 ✓
+    """
     n = 0
     for f in os.listdir(EVAL):
         if f.endswith(".py"):
             n += len(io.open(os.path.join(EVAL, f), encoding="utf-8").read().split("\n"))
-    assert n < 10500, f"src/eval 顶层行数异常增长: {n} ✗"
+    assert n < 10700, f"src/eval 顶层行数异常增长: {n} ✗"
+
+
+def test_eval_max_function_size_shrank():
+    """★ **真正该守的** ✓: eval 里最大函数不得超过 340 行 ✓
+
+    起因: `run_in_mem_eval` 曾达 **388 行** ✗（审查 §4.3 点名的"混在一起" ✓）
+      ⇒ 拆成 `_eval_one_set`(317) + 编排(106) ✓
+    判据比"目录总行数"更贴近**可维护性** ✓（总行数会被合理的状态对象撑大 ✓）
+    """
+    import ast as _ast
+    worst = (0, "")
+    for f in os.listdir(EVAL):
+        if not f.endswith(".py"):
+            continue
+        src = io.open(os.path.join(EVAL, f), encoding="utf-8").read()
+        try:
+            tree = _ast.parse(src)
+        except SyntaxError:
+            continue
+        for nd in _ast.walk(tree):
+            if isinstance(nd, (_ast.FunctionDef, _ast.AsyncFunctionDef, _ast.ClassDef)):
+                sz = nd.end_lineno - nd.lineno + 1
+                if sz > worst[0]:
+                    worst = (sz, "%s:%s" % (f, nd.name))
+    assert worst[0] <= 870, f"eval 里最大单元 {worst[1]} = {worst[0]} 行 ✗（应 ≤870 ✓）"

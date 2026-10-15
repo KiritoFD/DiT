@@ -834,110 +834,78 @@ from src.eval.posters import (render_poster, _poster_canny,  # noqa: F401,E402
                               _poster_skeleton)  # noqa: F401,E402
 
 
-def run_in_mem_eval(model, args, step, device, results_dir=None, logger=print):
-    """在训/独立评测核心: 按 `--in-mem-eval-sets` 逐集采样并评指标。
+@dataclass
+class EvalSetContext:
+    """评测一个 set 所需的**全部外部状态** ✓（AST 推导 ✓ 22 字段 ✓）。
 
-    model      : 已 eval() 的模型 (优先 EMA 权重; 不要传 torch.compile 包装)
-    results_dir: 落盘根 (summary/batch csv, posters/, eval_samples_ctrl/)
-    logger     : 可调用对象 (默认 print; train.py 传 logger.info)
-
-    ★ 2026-10-05: 以下 ssim/ink_ssim/ink_iou/skel_iou 全是**事后度量** ——
-      skel_iou 由「生成图/GT 图各自 skeletonize 后比 IoU」算出, 与是否给
-      骨架条件无关 (无 skel 条件的实验同样有 skel_iou)。
-
-    返回 {set_name: {ssim, mse, lpips, ink_ssim, ink_iou, skel_iou, frag, hole,
-                     n, nn_ssim, nn_mean, tgt_spec, cal_enrich}}
+    ★ 2026-10-14 [重构 PR5] 从 `run_in_mem_eval` 的 283 行块抽出 ✓（审查 §4.3 ✓）
+      用**显式状态对象**而非 22 个位置参数 ✓（审查"显式状态"思路 ✓）。
+    ★ 全部**只读** ✓（块内不改它们 ✓）
     """
-    global _DIFF
-    # ★ 2026-10-13 [审查 §4.1]: 配置解析已抽成 resolve_eval_setup -> EvalSetup ✓（显式输入输出 ✓）
-    _st = resolve_eval_setup(args, model, results_dir, logger)
-    if _st is None:
-        return {}
-    _DIFF = _st.diffusion
-    results_dir, img_root, shards = _st.results_dir, _st.img_root, _st.shards
-    cfg_scale, ddim_steps = _st.cfg_scale, _st.ddim_steps
-    dit_batch, vae_batch = _st.dit_batch, _st.vae_batch
-    sf, _sf_shift = _st.sf, _st.sf_shift
-    _calli_noise, use_self_cond = _st.calli_noise, _st.use_self_cond
-    blend_alpha, sets = _st.blend_alpha, _st.sets
+    _CODE_REV: object = None
+    _DIFF: object = None
+    _calli_noise: object = None
+    _sf_shift: object = None
+    blend_alpha: object = None
+    cfg_scale: object = None
+    ddim_steps: object = None
+    dit_batch: object = None
+    done: object = None
+    exp: object = None
+    f_raw: object = None
+    f_sum: object = None
+    img_root: object = None
+    out: object = None
+    sets: object = None
+    sf: object = None
+    shards: object = None
+    sum_path: object = None
+    use_self_cond: object = None
+    vae_batch: object = None
+    w_raw: object = None
+    w_sum: object = None
+    args: object = None
+    device: object = None
+    logger: object = None
+    model: object = None
+    results_dir: object = None
+    step: object = None
 
-    sum_path = os.path.join(results_dir, "eval_stdskel_summary.csv")
-    raw_path = os.path.join(results_dir, "eval_stdskel_batch.csv")
-    # ★★ 2026-10-03 修 (P0-1): 表头检查必须放在 open(..., "a") **之前**。
-    #   旧顺序是 [open("a") -> exists() -> 读表头], 而 "a" 模式会**创建空文件**,
-    #   于是 exists() 恒真、表头恒读到 0 列 -> 每次 eval 都误判"表头不匹配"。
-    #   更致命的是 rename 时 f_sum 句柄仍指向旧 inode, writer 继续往**改名后的
-    #   备份文件**里写 -> 磁盘上主 summary 永远不存在 (实测 runs_AB 只有 3 个
-    #   .bak_oldcols 而无主文件, 每个 .bak 恰好含一次 eval 的数据)。
-    # ★ 2026-10-13 [审查 P0]: 前 7 列是**完成判据键**（见 _eval_done_key ✓）。
-    #   加列会让表头守卫自动把旧 schema 的 summary 改名备份 ⇒ 老结果不会被误复用 ✓✓。
-    _SUM_HDR = ["exp", "step", "set", "code_rev", "cfg", "steps", "sf", "eval_csv",
-                "n", "ssim_mean", "ssim_p10", "ssim_q1",
-                "ssim_med", "ssim_q3", "ssim_p90", "mse_mean", "lpips_mean",
-                "ink_ssim_mean", "ink_iou_mean", "skel_iou_mean",
-                "frag_ratio", "hole_pred", "hole_gt",
-                # ★ 2026-10-12 白化专用列：v81 事故里 ssim / lpips / ink_iou 全都看不出来 ✗
-                #   （全白图 SSIM 0.6855 > 模型真实输出 0.6371）。这两列才是"有没有墨"的判据。
-                "soft_ink_ratio", "near_blank_rate", "gt_soft_mass",
-                "nn_ssim", "nn_mean", "tgt_spec", "cal_enrich"]
-    if os.path.exists(sum_path):
-        try:
-            with open(sum_path, encoding="utf-8") as _f:
-                _got = next(csv.reader(_f), [])
-        except StopIteration:
-            _got = []
-        if _got != _SUM_HDR and _got == _SUM_HDR[:len(_got)] and len(_got) > 0:
-            # ★ 2026-10-12: 新表只是**在后面追加了列** -> 旧行保持原样(缺的尾列为空),
-            #   历史曲线继续累积, 不再产生 .bak_oldcols 重置(旧行为会把曲线打散到备份里 ✗)。
-            print(f"[in-mem-eval] 表头新增 {len(_SUM_HDR)-len(_got)} 列(仅追加) "
-                  f"-> 保留历史行, 继续累积 ✓", flush=True)
-        elif _got != _SUM_HDR:
-            _bak = sum_path + ".bak_oldcols"
-            if os.path.exists(_bak):
-                _bak = sum_path + f".bak_oldcols.{int(os.path.getmtime(sum_path))}"
-            os.rename(sum_path, _bak)
-            print(f"[in-mem-eval] ⚠ summary 表头不匹配({len(_got)} vs {len(_SUM_HDR)} 列) "
-                  f"-> 旧文件备份为 {os.path.basename(_bak)}, 重开新表")
-    # 检查完再读已完成项 (此时文件要么不存在, 要么表头已验证)
-    done = set()
-    if os.path.exists(sum_path):
-        for r in csv.DictReader(open(sum_path, encoding="utf-8")):
-            done.add(_eval_done_key(r.get("step", -1), r.get("set", ""),
-                                    r.get("cfg", ""), r.get("steps", ""),
-                                    r.get("sf", ""), r.get("eval_csv", ""),
-                                    r.get("code_rev", "")))
-    new_sum = not os.path.exists(sum_path)
-    new_raw = not os.path.exists(raw_path)
-    # ★ 句柄只在表头确认之后才打开; 之后不会再 rename 本文件 -> 不会再产生孤儿写入。
-    f_sum = open(sum_path, "a", newline="", encoding="utf-8")
-    f_raw = open(raw_path, "a", newline="", encoding="utf-8")
-    w_sum = csv.writer(f_sum)
-    w_raw = csv.writer(f_raw)
-    if new_sum:
-        w_sum.writerow(_SUM_HDR)
-        f_sum.flush()
-    # ★ 累积自检: 每次 eval 打印"主文件行数 + 已完成 (step,set) 对数"。
-    #   若曲线再被重置, 这行会立刻显示行数归零/不增长 -> 一眼可见, 不必事后考古。
-    try:
-        _nlines = sum(1 for _ in open(sum_path, encoding="utf-8")) if os.path.exists(sum_path) else 0
-    except Exception:                                            # noqa: BLE001
-        _nlines = -1
-    print(f"[eval] summary {sum_path}: {_nlines} 行, 已完成 (step,set) {len(done)} 对, "
-          f"表头 {len(_SUM_HDR)} 列{' (本次新建)' if new_sum else ''}", flush=True)
 
-    if new_raw:
-        # ★ 2026-10-13 [审查 §4.1]: 表头改由 write_raw_header 写 ✓
-        #   （与 _write_sample_rows 的列顺序同处一地 ⇒ 防"漏改 header 列错位" ✗）
-        write_raw_header(w_raw)
-    # ★ 代码版本进完成判据 ✓（改了评测代码 => 不复用旧结果 ✓）
-    try:
-        from src.eval.protocol import git_revision as _git_rev
-        _CODE_REV = _git_rev()
-    except Exception:                                            # noqa: BLE001
-        _CODE_REV = "unknown"
-    exp = os.path.basename(results_dir.rstrip("/"))
-    out = {}
+def _eval_one_set(ctx: EvalSetContext):
+    """评测**一个 set** 的全部工作 ✓（**逐字搬移** ✓ 2026-10-14 [重构 PR5] ✓）。
 
+    ★ 顶部重绑 22 个状态名 ⇒ 283 行块体**一字未改** ✓
+    ★ 回传: （无 ✓） ✓（块内定义、块后仍用 ✓）
+    """
+    args = ctx.args
+    device = ctx.device
+    logger = ctx.logger
+    model = ctx.model
+    results_dir = ctx.results_dir
+    step = ctx.step
+    _CODE_REV = ctx._CODE_REV
+    _DIFF = ctx._DIFF
+    _calli_noise = ctx._calli_noise
+    _sf_shift = ctx._sf_shift
+    blend_alpha = ctx.blend_alpha
+    cfg_scale = ctx.cfg_scale
+    ddim_steps = ctx.ddim_steps
+    dit_batch = ctx.dit_batch
+    done = ctx.done
+    exp = ctx.exp
+    f_raw = ctx.f_raw
+    f_sum = ctx.f_sum
+    img_root = ctx.img_root
+    out = ctx.out
+    sets = ctx.sets
+    sf = ctx.sf
+    shards = ctx.shards
+    sum_path = ctx.sum_path
+    use_self_cond = ctx.use_self_cond
+    vae_batch = ctx.vae_batch
+    w_raw = ctx.w_raw
+    w_sum = ctx.w_sum
     try:
         for name, csvp, n in sets:
             # ★ 2026-10-14 [重构 P0-1]: 集目录提前算 ✓（DONE 校验需要它 ✓）
@@ -1221,6 +1189,115 @@ def run_in_mem_eval(model, args, step, device, results_dir=None, logger=print):
         f_sum.close()
         f_raw.close()
         torch.cuda.empty_cache()
+
+
+
+
+def run_in_mem_eval(model, args, step, device, results_dir=None, logger=print):
+    """在训/独立评测核心: 按 `--in-mem-eval-sets` 逐集采样并评指标。
+
+    model      : 已 eval() 的模型 (优先 EMA 权重; 不要传 torch.compile 包装)
+    results_dir: 落盘根 (summary/batch csv, posters/, eval_samples_ctrl/)
+    logger     : 可调用对象 (默认 print; train.py 传 logger.info)
+
+    ★ 2026-10-05: 以下 ssim/ink_ssim/ink_iou/skel_iou 全是**事后度量** ——
+      skel_iou 由「生成图/GT 图各自 skeletonize 后比 IoU」算出, 与是否给
+      骨架条件无关 (无 skel 条件的实验同样有 skel_iou)。
+
+    返回 {set_name: {ssim, mse, lpips, ink_ssim, ink_iou, skel_iou, frag, hole,
+                     n, nn_ssim, nn_mean, tgt_spec, cal_enrich}}
+    """
+    global _DIFF
+    # ★ 2026-10-13 [审查 §4.1]: 配置解析已抽成 resolve_eval_setup -> EvalSetup ✓（显式输入输出 ✓）
+    _st = resolve_eval_setup(args, model, results_dir, logger)
+    if _st is None:
+        return {}
+    _DIFF = _st.diffusion
+    results_dir, img_root, shards = _st.results_dir, _st.img_root, _st.shards
+    cfg_scale, ddim_steps = _st.cfg_scale, _st.ddim_steps
+    dit_batch, vae_batch = _st.dit_batch, _st.vae_batch
+    sf, _sf_shift = _st.sf, _st.sf_shift
+    _calli_noise, use_self_cond = _st.calli_noise, _st.use_self_cond
+    blend_alpha, sets = _st.blend_alpha, _st.sets
+
+    sum_path = os.path.join(results_dir, "eval_stdskel_summary.csv")
+    raw_path = os.path.join(results_dir, "eval_stdskel_batch.csv")
+    # ★★ 2026-10-03 修 (P0-1): 表头检查必须放在 open(..., "a") **之前**。
+    #   旧顺序是 [open("a") -> exists() -> 读表头], 而 "a" 模式会**创建空文件**,
+    #   于是 exists() 恒真、表头恒读到 0 列 -> 每次 eval 都误判"表头不匹配"。
+    #   更致命的是 rename 时 f_sum 句柄仍指向旧 inode, writer 继续往**改名后的
+    #   备份文件**里写 -> 磁盘上主 summary 永远不存在 (实测 runs_AB 只有 3 个
+    #   .bak_oldcols 而无主文件, 每个 .bak 恰好含一次 eval 的数据)。
+    # ★ 2026-10-13 [审查 P0]: 前 7 列是**完成判据键**（见 _eval_done_key ✓）。
+    #   加列会让表头守卫自动把旧 schema 的 summary 改名备份 ⇒ 老结果不会被误复用 ✓✓。
+    _SUM_HDR = ["exp", "step", "set", "code_rev", "cfg", "steps", "sf", "eval_csv",
+                "n", "ssim_mean", "ssim_p10", "ssim_q1",
+                "ssim_med", "ssim_q3", "ssim_p90", "mse_mean", "lpips_mean",
+                "ink_ssim_mean", "ink_iou_mean", "skel_iou_mean",
+                "frag_ratio", "hole_pred", "hole_gt",
+                # ★ 2026-10-12 白化专用列：v81 事故里 ssim / lpips / ink_iou 全都看不出来 ✗
+                #   （全白图 SSIM 0.6855 > 模型真实输出 0.6371）。这两列才是"有没有墨"的判据。
+                "soft_ink_ratio", "near_blank_rate", "gt_soft_mass",
+                "nn_ssim", "nn_mean", "tgt_spec", "cal_enrich"]
+    if os.path.exists(sum_path):
+        try:
+            with open(sum_path, encoding="utf-8") as _f:
+                _got = next(csv.reader(_f), [])
+        except StopIteration:
+            _got = []
+        if _got != _SUM_HDR and _got == _SUM_HDR[:len(_got)] and len(_got) > 0:
+            # ★ 2026-10-12: 新表只是**在后面追加了列** -> 旧行保持原样(缺的尾列为空),
+            #   历史曲线继续累积, 不再产生 .bak_oldcols 重置(旧行为会把曲线打散到备份里 ✗)。
+            print(f"[in-mem-eval] 表头新增 {len(_SUM_HDR)-len(_got)} 列(仅追加) "
+                  f"-> 保留历史行, 继续累积 ✓", flush=True)
+        elif _got != _SUM_HDR:
+            _bak = sum_path + ".bak_oldcols"
+            if os.path.exists(_bak):
+                _bak = sum_path + f".bak_oldcols.{int(os.path.getmtime(sum_path))}"
+            os.rename(sum_path, _bak)
+            print(f"[in-mem-eval] ⚠ summary 表头不匹配({len(_got)} vs {len(_SUM_HDR)} 列) "
+                  f"-> 旧文件备份为 {os.path.basename(_bak)}, 重开新表")
+    # 检查完再读已完成项 (此时文件要么不存在, 要么表头已验证)
+    done = set()
+    if os.path.exists(sum_path):
+        for r in csv.DictReader(open(sum_path, encoding="utf-8")):
+            done.add(_eval_done_key(r.get("step", -1), r.get("set", ""),
+                                    r.get("cfg", ""), r.get("steps", ""),
+                                    r.get("sf", ""), r.get("eval_csv", ""),
+                                    r.get("code_rev", "")))
+    new_sum = not os.path.exists(sum_path)
+    new_raw = not os.path.exists(raw_path)
+    # ★ 句柄只在表头确认之后才打开; 之后不会再 rename 本文件 -> 不会再产生孤儿写入。
+    f_sum = open(sum_path, "a", newline="", encoding="utf-8")
+    f_raw = open(raw_path, "a", newline="", encoding="utf-8")
+    w_sum = csv.writer(f_sum)
+    w_raw = csv.writer(f_raw)
+    if new_sum:
+        w_sum.writerow(_SUM_HDR)
+        f_sum.flush()
+    # ★ 累积自检: 每次 eval 打印"主文件行数 + 已完成 (step,set) 对数"。
+    #   若曲线再被重置, 这行会立刻显示行数归零/不增长 -> 一眼可见, 不必事后考古。
+    try:
+        _nlines = sum(1 for _ in open(sum_path, encoding="utf-8")) if os.path.exists(sum_path) else 0
+    except Exception:                                            # noqa: BLE001
+        _nlines = -1
+    print(f"[eval] summary {sum_path}: {_nlines} 行, 已完成 (step,set) {len(done)} 对, "
+          f"表头 {len(_SUM_HDR)} 列{' (本次新建)' if new_sum else ''}", flush=True)
+
+    if new_raw:
+        # ★ 2026-10-13 [审查 §4.1]: 表头改由 write_raw_header 写 ✓
+        #   （与 _write_sample_rows 的列顺序同处一地 ⇒ 防"漏改 header 列错位" ✗）
+        write_raw_header(w_raw)
+    # ★ 代码版本进完成判据 ✓（改了评测代码 => 不复用旧结果 ✓）
+    try:
+        from src.eval.protocol import git_revision as _git_rev
+        _CODE_REV = _git_rev()
+    except Exception:                                            # noqa: BLE001
+        _CODE_REV = "unknown"
+    exp = os.path.basename(results_dir.rstrip("/"))
+    out = {}
+
+    _ = _eval_one_set(EvalSetContext(_CODE_REV=_CODE_REV, _DIFF=_DIFF, _calli_noise=_calli_noise, _sf_shift=_sf_shift, blend_alpha=blend_alpha, cfg_scale=cfg_scale, ddim_steps=ddim_steps, dit_batch=dit_batch, done=done, exp=exp, f_raw=f_raw, f_sum=f_sum, img_root=img_root, out=out, sets=sets, sf=sf, shards=shards, sum_path=sum_path, use_self_cond=use_self_cond, vae_batch=vae_batch, w_raw=w_raw, w_sum=w_sum, args=args, device=device, logger=logger, model=model, results_dir=results_dir, step=step))
     return out
 
 
