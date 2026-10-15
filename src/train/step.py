@@ -25,9 +25,12 @@
 """
 from __future__ import annotations
 
+from dataclasses import dataclass
+from typing import Optional
+
 import torch
 
-__all__ = ["NonFiniteGuard"]
+__all__ = ["NonFiniteGuard", "StepInputs", "resolve_step_inputs"]
 
 
 class NonFiniteGuard:
@@ -79,3 +82,65 @@ class NonFiniteGuard:
 
     def describe(self) -> str:
         return f"non_finite_skips={self.nan_steps}"
+
+# ══════════════════ 单步输入: batch → (x_latent, x, loss_vae_kl) ══════════════════
+@dataclass
+class StepInputs:
+    """单步训练所需的输入张量 ✓（纯数据 ✓）。"""
+    x_latent: torch.Tensor
+    x: Optional[torch.Tensor]
+    loss_vae_kl: Optional[torch.Tensor]
+
+
+def resolve_step_inputs(batch, vae, device, *, train_vae_enc: bool,
+                        vae_sf: float, vae_shift: float) -> StepInputs:
+    """把 batch 解析成扩散目标 `x_latent`（审查 §4.2 第 1 条: H2D 数据移动 ✓）。
+
+    **逐字搬移**自 `train.py` 的三分支 ✓（连上下文管理器一起 ✓）:
+      ① `train_vae_enc`  —— 实时读图 + VAE `rsample()` ✓
+           ⚠ **必须** `rsample()` ✗: 只有它能让 DiT 梯度穿过高斯采样流回 VAE Encoder ✓
+           ⚠ **不套** `no_grad` ✓（要训 VAE ✓）；latent 合同: `(z_raw - SHIFT) * SF` ✓（合同 I2 ✓）
+      ② `latent` 缓存    —— 预编码 latent ✓（已按 SF 缩放 ✓）+ aux 通道拼接 ✓
+      ③ 其它             —— 实时读图 + VAE `sample()` ✓（`no_grad` + fp32 autocast ✓
+                              VAE 对低精度敏感 ✓）
+    ★ 三条分支的**梯度语义不同** ✗ ⇒ 本函数刻意**不**统一它们 ✓
+    """
+    if train_vae_enc and "image" in batch:
+        # ⭐️ [REPA-E] 必须实时读取真实图像，使用 rsample() 打通反向传播梯度管道
+        x = batch["image"].to(device, non_blocking=True)
+        if x.dtype == torch.uint8:
+            x = x.float().div_(255.0).mul_(2.0).sub_(1.0)
+        with torch.autocast("cuda", dtype=torch.bfloat16):
+            posterior = vae.encode(x).latent_dist
+            # ⚠ 必须使用 rsample() 重参数化采样: z = mu + sigma * eps
+            # 只有 rsample 才能让 DiT 的梯度穿过高斯采样，流回 VAE Encoder 的权重！
+            # ★ 2026-10-10: 必须与 **shards 的存盘约定**一致 ——
+            #   shards = (z_raw - SHIFT) * SF（合同 I2）; 这里原来只 mul_(sf) 漏了 shift,
+            #   与预编码路径不一致(2016-10-10 发现)。加 _vae_shift 保持两条路同约定。
+            x_latent = (posterior.rsample() - vae_shift).mul_(vae_sf).float()
+            # 流形的物理护栏: 计算隐空间高斯 KL 散度
+            loss_vae_kl = -0.5 * torch.sum(
+                1 + posterior.logvar - posterior.mean.pow(2) - posterior.logvar.exp(),
+                dim=[1, 2, 3]
+            ).mean()
+        return StepInputs(x_latent=x_latent, x=x, loss_vae_kl=loss_vae_kl)
+    if "latent" in batch:
+        # Latent-cached training: latent pre-encoded (scaled by vae_scaling_factor).
+        x_latent = batch["latent"].to(device, non_blocking=True)
+        # moyi 式辅助目标通道: aux latents (skel/canny) 与图像 latent 拼成扩散目标
+        _aux = batch.get("aux_latents", None)
+        if _aux is not None and _aux.numel() > 0:
+            x_latent = torch.cat(
+                [x_latent, _aux.to(device, non_blocking=True).float()], dim=1)
+        x = batch.get("image", None)
+        x = x.to(device, non_blocking=True) if x is not None else None
+        return StepInputs(x_latent=x_latent, x=x, loss_vae_kl=None)
+    x = batch["image"].to(device, non_blocking=True)
+    # dataset 现在给的是 uint8（省 H2D 流量），VAE 需要 [-1,1] float
+    if x.dtype == torch.uint8:
+        x = x.float().div_(255.0).mul_(2.0).sub_(1.0)
+    # VAE encode stays in fp32 for numerical stability (VAE is sensitive to low precision).
+    with torch.no_grad(), torch.autocast("cuda", dtype=torch.float32):
+        x_latent = (vae.encode(x).latent_dist.sample() - vae_shift).mul_(vae_sf)
+        x_latent = x_latent.float()
+    return StepInputs(x_latent=x_latent, x=x, loss_vae_kl=None)

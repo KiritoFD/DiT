@@ -77,7 +77,8 @@ from src.train import backward as _bw          # ★ PR4: backward 策略模块 
 from src.train import ema as _ema              # ★ PR4: EMA 组件 ✓
 from src.train.checkpoint import CheckpointManager as _CkptManager   # ★ PR4: 持久化 ✓
 from src.train import optimizer as _opt        # ★ PR4: 优化器装配（纯决策 + 薄工厂）✓
-from src.train.step import NonFiniteGuard as _NonFiniteGuard   # ★ PR4: 单步组件 ✓
+from src.train.step import (NonFiniteGuard as _NonFiniteGuard,   # ★ PR4: 单步组件 ✓
+                            resolve_step_inputs as _resolve_step_inputs)
 from src.train.telemetry import Diagnostics as _Diagnostics    # ★ PR4: 训练期诊断（纯观测）✓
 from src.train import telemetry as _tel         # ★ PR4: 窗口均值汇总（纯计算）✓
 from src.train.objectives import ObjectiveComposer as _ObjComposer   # ★ PR4: 损失装配 ✓
@@ -1944,45 +1945,14 @@ def main(args):
 
                 # 注意: `_ch_w` 与 aux 权重已在**循环外**解析好（见 resolve_aux_channel_weights），
                 # 这里不再重算，也不要把它重置为 None。
-                if _train_vae_enc and 'image' in batch:
-                    # ⭐️ [REPA-E] 必须实时读取真实图像，使用 rsample() 打通反向传播梯度管道
-                    x = batch['image'].to(device, non_blocking=True)
-                    if x.dtype == torch.uint8:
-                        x = x.float().div_(255.0).mul_(2.0).sub_(1.0)
-                    with torch.autocast("cuda", dtype=torch.bfloat16):
-                        posterior = vae.encode(x).latent_dist
-                        # ⚠ 必须使用 rsample() 重参数化采样: z = mu + sigma * eps
-                        # 只有 rsample 才能让 DiT 的梯度穿过高斯采样，流回 VAE Encoder 的权重！
-                        # ★ 2026-10-10: 必须与 **shards 的存盘约定**一致 ——
-                        #   shards = (z_raw - SHIFT) * SF（合同 I2）; 这里原来只 mul_(sf) 漏了 shift,
-                        #   与预编码路径不一致(2016-10-10 发现)。加 _vae_shift 保持两条路同约定。
-                        x_latent = (posterior.rsample() - _vae_shift).mul_(_vae_sf).float()
-                        # 流形的物理护栏: 计算隐空间高斯 KL 散度
-                        loss_vae_kl = -0.5 * torch.sum(
-                            1 + posterior.logvar - posterior.mean.pow(2) - posterior.logvar.exp(),
-                            dim=[1, 2, 3]
-                        ).mean()
-                elif 'latent' in batch:
-                    # Latent-cached training: latent pre-encoded (scaled by vae_scaling_factor).
-                    x_latent = batch['latent'].to(device, non_blocking=True)
-                    # moyi 式辅助目标通道: aux latents (skel/canny) 与图像 latent 拼成扩散目标
-                    _aux = batch.get('aux_latents', None)
-                    if _aux is not None and _aux.numel() > 0:
-                        x_latent = torch.cat(
-                            [x_latent, _aux.to(device, non_blocking=True).float()], dim=1)
-                    x = batch.get('image', None)
-                    x = x.to(device, non_blocking=True) if x is not None else None
-                    loss_vae_kl = None
-                else:
-                    x = batch['image'].to(device, non_blocking=True)
-                    # dataset 现在给的是 uint8（省 H2D 流量），VAE 需要 [-1,1] float
-                    if x.dtype == torch.uint8:
-                        x = x.float().div_(255.0).mul_(2.0).sub_(1.0)
-                    # VAE encode stays in fp32 for numerical stability (VAE is sensitive to low precision).
-                    with torch.no_grad(), torch.autocast("cuda", dtype=torch.float32):
-                        x_latent = (vae.encode(x).latent_dist.sample() - _vae_shift).mul_(_vae_sf)
-                        x_latent = x_latent.float()
-                    loss_vae_kl = None
+                # ★ 2026-10-14 [重构 PR4] 单步输入解析抽到 step.resolve_step_inputs ✓
+                #   （审查 §4.2 第 1 条 "H2D 数据移动" ✓）
+                #   ⚠ 三条分支的**梯度语义不同** ✗（rsample 要训 VAE ✓ / sample+no_grad ✓）
+                #     ⇒ 搬移时**连上下文管理器一起**逐字复制 ✓ 刻意**不**统一 ✗
+                _si = _resolve_step_inputs(batch, vae, device,
+                                           train_vae_enc=_train_vae_enc,
+                                           vae_sf=_vae_sf, vae_shift=_vae_shift)
+                x_latent, x, loss_vae_kl = _si.x_latent, _si.x, _si.loss_vae_kl
 
                 # 统一时间步采样: FlowMatching.sample_t -> t∈[0,1); GaussianDiffusion.sample_t -> t∈{0..T-1}。
                 # 调用方绝不自己分支 (否则会重蹈 flow/randint 错配覆辙)。
