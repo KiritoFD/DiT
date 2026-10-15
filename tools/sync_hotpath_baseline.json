@@ -1,0 +1,13 @@
+{
+  "src/loss/critic_loss.py": 10,
+  "src/loss/flow_matching.py": 14,
+  "src/loss/writer_objectives.py": 0,
+  "src/model/dit_conditioning.py": 30,
+  "src/train/backward.py": 3,
+  "src/train/ema.py": 11,
+  "src/train/gradient_budget.py": 0,
+  "src/train/objectives.py": 4,
+  "src/train/step.py": 7,
+  "src/train/strong_style.py": 17,
+  "src/train/trainer.py": 52
+}

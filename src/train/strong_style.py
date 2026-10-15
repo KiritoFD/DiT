@@ -8,7 +8,7 @@ from torch.nn import functional as F
 
 
 from src.loss.writer_objectives import real_mask, writer_margin, calibrated_hinge, cf_loss
-from src.train.gradient_budget import GradientBudget, norm
+from src.train.gradient_budget import GradientBudget, format_metrics, norm
 
 
 def build_strong_style(args, device, logger):
@@ -222,8 +222,11 @@ class StrongStyle:
         nf = (fm_norm if fm_norm is not None else norm(fm, parameters)) if probe else None
         budget = GradientBudget(args.strong_style_max_weight, self.scale,
                                 self.__dict__.setdefault('weak_probes', {}), self.logger)
-        total, messages = budget.balance(parts, parameters, nf, step)
+        total, metrics = budget.balance(parts, parameters, nf, step)
         if probe or step % 50 == 0:
+            # ★ 唯一一次 CPU 读取 ✓ 只在日志周期 ✓（infra_1015 §二.2 ✓）
+            #   旧实现是 `balance()` 内**每步**对每个 part 做 `%.6g` ✗ ⇒ N 次/步同步 ✗✗
             self.logger.info('[strong-style-step] step=%d active=%d margin=%.4f %s',
-                             step, len(rows), margin.detach().mean(), ' | '.join(messages))
+                             step, len(rows), margin.detach().mean(),
+                             format_metrics(metrics))
         return total

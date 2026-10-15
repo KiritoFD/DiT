@@ -40,8 +40,18 @@ phase range.  ``TIME_SCALE = 1000.0`` matches the DDPM convention.
    - ``heun``  : 二阶 Heun / RK2（trapezoidal），每步 2 次 NFE。
      **同 NFE 预算下严格优于一阶**：Heun@25 步 ≈ Euler@50 步的算力，
      但截断误差从 O(dt) 降到 O(dt²)。默认开启。
-   - ``heun_batch=True`` 时，Heun 的两次评估沿 batch 维拼成一次 forward，
-     显著改善 GPU 利用率（kernel launch / 显存带宽 amortize）。
+   - ``heun_batch`` : **已废弃** ✗（2026-10-16 [infra_1015 §六] 修正 ✓）。
+     ⚠ 旧文档声称"把 Heun 的两次评估沿 batch 维拼成一次 forward，显著改善 GPU 利用率"
+       —— **这是错的** ✗✗。旧实现是:
+         `v1 = _v(x, t)`（B ✓）→ `x_euler = x + dt*v1` → `_v(cat[x, x_euler])`（**2B** ✓）
+         → `v1_, v2 = split(...)` ⇒ **`v1_` 把 `v1` 又算了一遍** ✗
+       ⇒ **B-equivalent NFE = B + 2B = 3** ✗，而正常 Heun 是 **B + B = 2** ✓
+       ⇒ **多算 50% 网络计算量** ✗，且 forward **调用次数并没减少**（都是 2 次 ✗）
+     ★ 现语义: `heun_batch=True` ⇒ **与普通 Heun 完全一致** ✓（复用已算出的 `v1` ✓）
+       ⇒ NFE 回到 **2** ✓，并**打印一次废弃警告** ✓（不静默改变 ✓）
+     ★ 影响面（已实测 ✓）: 主线 `v84A`/`v88` 用 `flow_sampler="heun"` ✓ 但**未开**
+       `heun_batch` ✓ ⇒ **主线不受影响** ✓；开启它的 13 个活跃配置全是历史实验 ✓
+       （另有 36 个在 `configs/archive/` ✓）
 
 3) **timestep shift** ``shift``
    采样端把均匀网格 s∈[0,1] 映射为 t = shift·s / (1 + (shift-1)·s)（SD3）。
@@ -470,15 +480,13 @@ class FlowMatching:
         x = x_T
         use_heun = (self.sampler == "heun")
 
-        # ★ 2026-09-17: 两处"每步重复构造"提到循环外。
-        #   ① t_batch: 原来每步 th.full((B,), float(t_i)) —— 每步一次 host->device 同步
-        #      的标量读取 + 一次分配。改成 ts[i].expand(B)（0-dim 视图，零拷贝）。
-        #   ② kw_cat: _tile_kwargs 的结果**与 i 无关**（只是把 B 维的 y_callig/y_char/
-        #      cond/g 复制成 2B），原来在 heun_batch 分支里每步重算一次 —— 每步都在
-        #      分配并拷贝 cond/g 这些 (B, ...) 张量。移到循环外算一次即可。
-        _kw_cat = None
-        if use_heun and self.heun_batch:
-            _kw_cat = self._tile_kwargs(model_kwargs, B)
+        # ★ 2026-09-17: ① t_batch 提到循环外（原来每步 th.full ⇒ 每步一次标量同步 ✗）
+        # ★ 2026-10-16 [infra_1015 §六]: ② `_kw_cat` **已删除** ✓
+        #   它只为旧的 `heun_batch` 分支服务（把 B 维条件复制成 2B ✓）
+        #   而该分支已修正为复用 `v1`（NFE 2 ✓ 不再做 2B forward ✓）
+        #   ⇒ `_tile_kwargs` 的结果在热路径上**不再被需要** ✗ ⇒ 连带省掉
+        #     每次采样的 cond/g 复制分配 ✓
+        #   （`_tile_kwargs` 静态方法本身保留 ✓ —— 仍是可用的工具 ✓ 外部脚本可能引用 ✓）
 
         for i in range(steps):
             t_i = ts[i]
@@ -533,18 +541,28 @@ class FlowMatching:
                 continue
 
             if use_heun and self.heun_batch:
-                # 把两个 RK stage 沿 batch 维拼成一次 forward（更好摊销 kernel
-                # launch 与显存带宽）。model 对 batch 维无状态，因此语义等价。
-                # 关键：model_kwargs 里的 y_callig/y_char/cond/g 也必须一起复制，
-                # 否则 CFG wrapper 的 "x.shape[0] == y.shape[0]" 假设会被打破。
+                # ★ 2026-10-16 [infra_1015 §六]: **修掉 3-NFE 陷阱** ✓
+                #   旧实现: v1 = _v(x, t)（B）→ x_euler = x + dt*v1
+                #           → _v(cat[x, x_euler])（**2B**）→ v1_, v2 = split(...)
+                #   ⇒ `v1_` 是 `v1` 的**重复计算** ✗ ⇒ NFE = B + 2B = **3** ✗
+                #     而正常 Heun 是 B + B = **2** ✓ ⇒ **白算 50%** ✗✗
+                #     且 forward **调用次数并未减少** ✗（两者都是 2 次 ✓）
+                #   ⇒ 现改为**复用已算出的 `v1`** ✓ ⇒ NFE = 2 ✓ 语义与普通 Heun 一致 ✓
+                #   ⚠ 与旧实现相比数值可能有**极小**差异 ✓（2B 与 B 的 GEMM 分块不同 ✓）
+                #     ⇒ 对开启它的历史配置属于**修正** ✓ 故**显式告警** ✓ 不静默 ✓
+                if not getattr(self, "_heun_batch_warned", False):
+                    self._heun_batch_warned = True
+                    import warnings
+                    warnings.warn(
+                        "[flow_matching] `heun_batch=True` 已废弃 ✗（infra_1015 §六 ✓）: "
+                        "旧实现把 v1 重算了一遍 ⇒ NFE 3 而非 2 ✗（多算 50% ✗）。"
+                        "现改为与普通 Heun 一致（NFE=2 ✓）。如依赖旧数值请显式记录 ✓",
+                        RuntimeWarning, stacklevel=2)
                 v1 = self._v(model, x, t_batch, model_kwargs, C)
                 x_euler = x + dt * v1
                 t2 = ts[i + 1].expand(B)
-                x_cat = th.cat([x, x_euler], dim=0)
-                t_cat = th.cat([t_batch, t2], dim=0)
-                v_cat = self._v(model, x_cat, t_cat, _kw_cat, C)
-                v1_, v2 = th.split(v_cat, B, dim=0)
-                v_eff = 0.5 * (v1_ + v2)
+                v2 = self._v(model, x_euler, t2, model_kwargs, C)
+                v_eff = 0.5 * (v1 + v2)
             elif use_heun:
                 v1 = self._v(model, x, t_batch, model_kwargs, C)
                 x_euler = x + dt * v1
