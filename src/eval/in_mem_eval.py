@@ -20,10 +20,8 @@ in_mem_eval.py — 真·in-mem eval: 训练进程内, 暂停 stepping, 同卡采
 显存: 训练 17G + eval 模型常驻激活 + VAE ~0.6G + dit16/vae16 峰值 ~2G ≈ 19.5G < 24G。
 """
 import csv
-import glob
 from dataclasses import dataclass
 import os
-import re
 import time
 
 import numpy as np
@@ -229,172 +227,17 @@ def save_input_g(results_dir, set_name, skels_latent, vae, sf, batch=16):
 
 
 
-def _steps_scan(results_dir, sub):
-    base = os.path.join(results_dir, "eval_samples_ctrl")
-    steps = []
-    for d in sorted(glob.glob(os.path.join(base, "step*"))):
-        n = 0
-        while os.path.exists(os.path.join(d, sub, f"g{n}.png")):
-            n += 1
-        if n:
-            steps.append((int(re.search(r"step(\d+)", os.path.basename(d)).group(1)),
-                          os.path.join(d, sub), n))
-    return steps
 
 
-import time as _time  # noqa: E402  (poster 计时用)
 from src.eval.decoder import (_get_lpips, _get_vae, _lpips_per_sample,   # noqa: F401
                               _ShiftedVAE, lpips_status)   # VAE/LPIPS 已迁到 decoder ✓
 
-_TRAIN_REF_CACHE = {}
-_font_cache = {}
 
 
-def _train_ref_rows(train_csv, eval_csv, n_ev):
-    """为每一列找两行训练集参照: [同书家·异字, 同字·异书家]。
-
-    同书家优先同书体（结体习惯更可比）；同字取不同书家（看结构有多少种写法）。
-    返回 None 表示不可用（调用方就少画这两行，不影响原 poster）。
-    """
-    key = (train_csv, eval_csv, n_ev)
-    if key in _TRAIN_REF_CACHE:
-        return _TRAIN_REF_CACHE[key]
-
-    def _rows(p, n=0):
-        if not (p and os.path.exists(p)):
-            return []
-        with open(p, encoding="utf-8") as f:
-            r = list(csv.DictReader(f))
-        return r[:n] if n else r
-
-    ev = _rows(eval_csv, n_ev)
-    tr = _rows(train_csv)
-    if not ev or not tr:
-        _TRAIN_REF_CACHE[key] = None
-        return None
-    by_cal, by_char = {}, {}
-    for r in tr:
-        cid, sid = str(r.get("calligrapher_id", "")), str(r.get("script_id", ""))
-        by_cal.setdefault((cid, sid), []).append(r)
-        by_cal.setdefault(("*", cid), []).append(r)
-        by_char.setdefault(str(r.get("character", "")), []).append(r)
-
-    def _img(r):
-        p = (r or {}).get("image_path", "")
-        if not p:
-            return None
-        if not os.path.isabs(p):
-            p = os.path.join(os.getcwd(), p)
-        return p if os.path.exists(p) else None
-
-    out = [[], []]
-    for i, r in enumerate(ev):
-        ch, cid, sid = (r.get("character"), r.get("calligrapher_id"),
-                        r.get("script_id"))
-        c1 = None
-        for k in [(str(cid), str(sid)), ("*", str(cid))]:
-            cand = [x for x in by_cal.get(k, [])
-                    if str(x.get("character", "")) != str(ch)]
-            if cand:
-                c1 = cand[i % len(cand)]
-                break
-        cand2 = [x for x in by_char.get(str(ch), [])
-                 if str(x.get("calligrapher_id", "")) != str(cid)]
-        out[0].append(_img(c1))
-        out[1].append(_img(cand2[i % len(cand2)]) if cand2 else None)
-    _TRAIN_REF_CACHE[key] = out
-    return out
 
 
-_TRAIN_NN_CACHE = {}
 
 
-def _train_nn_row(train_csv, eval_csv, n_ev, gen_dir, max_cand=12):
-    """训练集里**同字**、与生成图 SSIM 最高的那张 GT。
-
-    返回 (paths, ssims, matched) 三个长度 n_ev 的列表；不可用时 None。
-      paths   : 命中那张 GT 的路径（没命中为 None）
-      ssims   : 对应 SSIM（用主评测口径 metrics.ssim, 高斯窗 win=11）
-      matched : 命中行的 (character, calligrapher) 便于核对
-    同字候选太多时按等间隔抽 max_cand 张（保证可复现）。
-    """
-    key = (train_csv, eval_csv, n_ev, gen_dir, max_cand)
-    if key in _TRAIN_NN_CACHE:
-        return _TRAIN_NN_CACHE[key]
-    if not (train_csv and eval_csv and gen_dir and os.path.isdir(gen_dir)):
-        _TRAIN_NN_CACHE[key] = None
-        return None
-
-    def _rows(p, n=0):
-        if not (p and os.path.exists(p)):
-            return []
-        with open(p, encoding="utf-8") as f:
-            r = list(csv.DictReader(f))
-        return r[:n] if n else r
-
-    ev, tr = _rows(eval_csv, n_ev), _rows(train_csv)
-    if not ev or not tr:
-        _TRAIN_NN_CACHE[key] = None
-        return None
-
-    import numpy as _np
-    from PIL import Image as _I
-    from src.eval.metrics import ssim as _ssim_fn
-
-    by_char = {}
-    for r in tr:
-        by_char.setdefault(str(r.get("character", "")), []).append(r)
-
-    def _abs(p):
-        if not p:
-            return None
-        if not os.path.isabs(p):
-            p = os.path.join(os.getcwd(), p)
-        return p if os.path.exists(p) else None
-
-    def _one(i, r):
-        """一列: 载生成图 + 同字候选 -> 取 SSIM 最高那张。"""
-        gp = os.path.join(gen_dir, f"g{i}.png")
-        if not os.path.exists(gp):
-            return None, float("nan"), None
-        with _I.open(gp) as _f:
-            g = _np.asarray(_f.convert("RGB"), dtype=_np.float32) / 255.0
-        cands = by_char.get(str(r.get("character", "")), [])
-        if len(cands) > max_cand:
-            _st = len(cands) / max_cand
-            cands = [cands[int(k * _st)] for k in range(max_cand)]
-        best, bs, bm = None, -2.0, None
-        for c in cands:
-            cp = _abs(c.get("image_path", ""))
-            if not cp:
-                continue
-            with _I.open(cp) as _f:
-                t = _np.asarray(_f.convert("RGB"), dtype=_np.float32) / 255.0
-            if t.shape != g.shape:
-                continue
-            s = float(_ssim_fn(g, t))
-            if s > bs:
-                bs, best = s, cp
-                bm = (c.get("character", ""), c.get("calligrapher", ""))
-        return best, (bs if best else float("nan")), bm
-
-    # ★ 多线程: 列与列独立, 且 SSIM 底层是 scipy 卷积(释放 GIL) -> 线程有真实加速。
-    #   不用多进程: 本函数在**训练进程内**被调用, 进程里有 CUDA, fork 有风险。
-    import concurrent.futures as _cf
-    _nw = int(os.environ.get("DIT_POSTER_NN_WORKERS", "16"))
-    _nw = max(1, min(_nw, len(ev)))
-    _t0 = _time.time()
-    if _nw > 1:
-        with _cf.ThreadPoolExecutor(max_workers=_nw) as _ex:
-            _res = list(_ex.map(lambda _ir: _one(*_ir), enumerate(ev)))
-    else:
-        _res = [_one(i, r) for i, r in enumerate(ev)]
-    paths = [x[0] for x in _res]
-    ssims = [x[1] for x in _res]
-    matched = [x[2] for x in _res]
-    print(f"[poster] 同字最近邻 {len(ev)} 列, {_nw} 线程, {_time.time() - _t0:.1f}s", flush=True)
-    _TRAIN_NN_CACHE[key] = (paths, ssims, matched)
-    return _TRAIN_NN_CACHE[key]
 
 
 
@@ -402,33 +245,10 @@ def _train_nn_row(train_csv, eval_csv, n_ev, gen_dir, max_cand=12):
 # ⚠ 系统里**没有** /usr/share/fonts/truetype/ 也没有任何 CJK 字体，
 #   原实现恒回退 ImageFont.load_default() -> poster 的中文标签全是方块/空白。
 #   项目自带 _fonts/ 有中文字体，优先用它们。
-_FONT_CANDIDATES = (
-    "_fonts/msyh.ttc", "_fonts/Deng.ttf", "_fonts/STSONG.TTF",
-    "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
-    "/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc",
-)
 
 
-def _load_font(fp, size):
-    from PIL import ImageFont
-    for c in [fp] + [x for x in _FONT_CANDIDATES if x != fp]:
-        try:
-            return ImageFont.truetype(c, size)
-        except Exception:
-            continue
-    return ImageFont.load_default()
 
 
-def _step_ssim_txt(results_dir, step, set_name):
-    """poster 标签用: 从 summary csv 读该 (step, set) 的 ssim, 缺失返回 '-'. """
-    _sp = os.path.join(results_dir, "eval_stdskel_summary.csv")
-    try:
-        for _r in csv.DictReader(open(_sp, encoding="utf-8")):
-            if int(_r["step"]) == int(step) and _r["set"] == set_name:
-                return f"ssim={float(_r['ssim_mean']):.4f}"
-    except Exception:                                            # noqa: BLE001
-        pass
-    return "-"
 
 
 @dataclass(frozen=True)
