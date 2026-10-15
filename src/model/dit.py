@@ -513,6 +513,163 @@ class DiT_2Cond(DitConditionMixin, nn.Module):
         self.callig_multi_style_k = int(callig_multi_style_k)
         self.style_ctx_every_layer = False
 
+        self._init_conditioning_block(attn_tau, callig_embed_dim, callig_proj_mode, callig_scale_init, callig_spatial, callig_spatial_rank, callig_style_ca, char_embed_dim, char_id_to_char, char_proj_mode, chars_per_script, class_dropout_prob, cond_fusion_norm, condition_fusion, glyph_inject_layers, glyph_inject_mode, glyph_vec_dim, hidden_size, ids_file, num_calligraphers, num_characters, num_heads, num_script_classes, script_embed_dim, std_dino_table_path, style_ctx_every_layer, style_gain_init, style_ln, style_role_init, style_token_n, style_y_over_t_init, use_ids_char_embedder, use_std_dino_char_embedder)
+
+        num_patches = self.x_embedder.num_patches
+        self.pos_embed = nn.Parameter(torch.zeros(1, num_patches, hidden_size), requires_grad=False)
+
+        # ---- 922/80 改动 2: 风格专用 low-rank adaLN 支路 ----
+        # >0 时每个 block / final_layer 多一条 (LN -> Linear(D,r) -> Linear(r,6D)) 旁路，
+        # 把 e_callig 直接喂给调制量，**不经过** c = t_emb + y_emb 的共享矩阵。
+        # zero-init -> step 0 恒等；rank=0 时不建任何参数 -> 与旧 ckpt 逐位等价。
+        self.style_ada_rank = int(style_ada_rank)
+        # 支路的输入是**原始 e_callig**，其维度 = callig_embed_dim（常 != hidden）
+        _style_in_dim = int(callig_embed_dim or hidden_size)
+
+        # ---- v85A: 解析"哪些层建风格支路" + 零初始化门控开关 ✓ ----
+        # 取值 "8,10,11" / "8,10,11,final" / ""（空=全部层, 保持旧行为 ✓）
+        _at_raw = style_ada_at
+        if isinstance(_at_raw, str):
+            _toks = [s.strip().lower() for s in _at_raw.replace(";", ",").split(",") if s.strip()]
+        else:
+            _toks = [str(s).strip().lower() for s in (_at_raw or ())]
+        self._style_ada_final = ("final" in _toks) or ("last" in _toks) or ("-1" in _toks)
+        _idx = set()
+        for _tk in _toks:
+            if _tk.lstrip("-").isdigit() and int(_tk) >= 0:
+                _idx.add(int(_tk))
+        # "" 或未给 ⇒ 全部层（旧行为 ✓）；给了非空但解析不出索引 ⇒ 全部层并告警 ✓
+        if not _toks:
+            self._style_ada_layers = tuple(range(depth))
+            # ★ 旧行为下 final_layer **也有**支路 ⇒ 这里必须为 True ✗
+            #   （我第一版漏了它 ⇒ 既有 rank>0 的模型会静默丢掉出口的风格支路 ✓）
+            self._style_ada_final = True
+        elif _idx or self._style_ada_final:
+            self._style_ada_layers = tuple(sorted(i for i in _idx if i < depth))
+        else:
+            log.warning("[style_ada] style_ada_at=%r 解析不出层号 ✗ ⇒ 退回全部层 ✓", style_ada_at)
+            self._style_ada_layers = tuple(range(depth))
+        if self.style_ada_rank > 0:
+            _bad = [i for i in _idx if i >= depth]
+            if _bad:
+                raise ValueError("style_ada_at 含越界层号 %s ✗（depth=%d）" % (_bad, depth))
+            log.info("[style_ada] rank=%d 层=%s final=%s gain=%s",
+                     self.style_ada_rank, list(self._style_ada_layers),
+                     self._style_ada_final, bool(style_ada_gain))
+
+        _sl = set(self._style_ada_layers)
+        self.blocks = nn.ModuleList([
+            M.DiTBlock(hidden_size, num_heads, mlp_ratio=mlp_ratio,
+                       norm_type=norm_type, mlp_type=mlp_type, qk_norm=qk_norm,
+                       attn_impl=attn_impl,
+                       # ★ 只在选定层建参数 ⇒ 未选中的层与前代**逐位一致** ✓
+                       style_ada_rank=(self.style_ada_rank if i in _sl else 0),
+                       style_in_dim=_style_in_dim,
+                       style_ada_gain=style_ada_gain)
+            for i in range(depth)
+        ])
+        self.final_layer = M.FinalLayer(hidden_size, patch_size, self.out_channels,
+                                        norm_type=norm_type,
+                                        style_ada_rank=(self.style_ada_rank
+                                                        if self._style_ada_final else 0),
+                                        style_in_dim=_style_in_dim,
+                                        style_ada_gain=style_ada_gain)
+
+        # ---- 2D axial RoPE 缓存 ----
+        # persistent=False：不写进 state_dict，避免任何 ckpt key 变化。
+        self.num_patches = num_patches
+        head_dim = hidden_size // num_heads
+        grid = int(round(num_patches ** 0.5))
+        assert grid * grid == num_patches, "RoPE 目前只支持正方形 token grid"
+        if self.rope:
+            cos, sin = M.precompute_rope_2d(grid, head_dim, theta=self.rope_theta)
+            self.register_buffer("rope_cos", cos.float(), persistent=False)
+            self.register_buffer("rope_sin", sin.float(), persistent=False)
+        else:
+            self.register_buffer("rope_cos", None, persistent=False)
+            self.register_buffer("rope_sin", None, persistent=False)
+        # 骨架辅助头（训练引导用，推理不用）：从 final_layer 前的 block 特征
+        # 并行解出 1×32×32 latent 骨架预测，与 GT latent 骨架对齐。
+        self.skel_head = None
+        if self.skel_head_enabled:
+            self.skel_head = nn.Sequential(
+                M.build_norm(norm_type, hidden_size),
+                nn.Linear(hidden_size, patch_size * patch_size, bias=True),
+            )
+        self._build_glyph_condition(
+            hidden_size=hidden_size, depth=depth, num_heads=num_heads,
+            attn_tau=attn_tau, glyph_in_channels=glyph_in_channels,
+            glyph_inject_layers=glyph_inject_layers, glyph_inject_mode=glyph_inject_mode,
+            glyph_inject_at=glyph_inject_at, glyph_drop_prob=glyph_drop_prob,
+            glyph_embedder_depth=glyph_embedder_depth,
+            glyph_embedder_sep=glyph_embedder_sep, xattn_q_pos=xattn_q_pos)
+        # ↑ 原 125 行内联构造已抽成方法（见 _build_glyph_condition）✓
+
+        self._build_cond_router(cond_inject_at=cond_inject_at, cond_inject_scale=cond_inject_scale, depth=depth)
+        # ↑ 原 19 行内联构造已抽成方法（见 _build_cond_router）✓
+
+        self._build_style_hierarchy(callig_embed_dim=callig_embed_dim, depth=depth, hidden_size=hidden_size, hier_style=hier_style, local_ca_at=local_ca_at, local_ca_heads=local_ca_heads, local_ca_impl=local_ca_impl, local_ca_layers=local_ca_layers, local_ca_q=local_ca_q, local_ca_rank=local_ca_rank, local_ca_window=local_ca_window, lowrank_spatial_rank=lowrank_spatial_rank, num_calligraphers=num_calligraphers, num_pairs=num_pairs, num_scripts=num_scripts, pair_init=pair_init, pair_residual=pair_residual, script_embed_dim=script_embed_dim, script_film=script_film, spatial_film_rank=spatial_film_rank)
+        # ↑ 原 118 行内联构造已抽成方法（见 _build_style_hierarchy）✓
+        self.writer_glyph = None
+        if int(writer_glyph_rank) > 0:
+            if not std_soft_cond or not use_script_cond or int(lowrank_spatial_rank) > 0:
+                raise ValueError('writer_glyph requires STD+script and a separate unstyled structural path')
+            from .writer_glyph import WriterGlyphResidual
+            self.writer_glyph = WriterGlyphResidual(hidden_size,
+                int(callig_embed_dim or hidden_size)+int(script_embed_dim or 64),
+                int(self.x_embedder.num_patches**.5), depth,
+                rank=int(writer_glyph_rank), at=writer_glyph_at)
+        self._build_deform(deform_attn_heads=deform_attn_heads, deform_ckpt=deform_ckpt, deform_coarse=deform_coarse, deform_dt_ch=deform_dt_ch, deform_film_mode=deform_film_mode, deform_grid=deform_grid, deform_max_off=deform_max_off, deform_preserve_amp=deform_preserve_amp, deform_skel=deform_skel, deform_style_ch=deform_style_ch, deform_style_tokens=deform_style_tokens, deform_topo=deform_topo, deform_warp_iters=deform_warp_iters, deform_width=deform_width, gate_radius=gate_radius, res_cap=res_cap, residual=residual, stroke_cap=stroke_cap, stroke_mod=stroke_mod)
+        # ↑ 原 28 行内联构造已抽成方法（见 _build_deform）✓
+
+        # ★ 2026-10-14 [重构 P1-1] **参数集合在此定型** ✗
+        #   `_build_style_hierarchy` 里的 initialize_weights() -> _init_style_gain() ->
+        #   `_style_out()` 已完成 style_in_proj 的**构造期**定型 ✓（此刻仍是 __init__ 内 ✓
+        #   ⇒ 一定早于 optimizer / torch.compile ✓）。
+        #   锁定后 `_style_out` 若再遇维度不符会**直接报错** ✗，绝不在训练前向中造参数 ✓
+        #   （否则新参数不进 optimizer ✗、也可能破坏 compile 捕获 ✗）。
+        self._style_proj_locked = True
+    def _init_conditioning_block(self, attn_tau, callig_embed_dim, callig_proj_mode, callig_scale_init, callig_spatial, callig_spatial_rank, callig_style_ca, char_embed_dim, char_id_to_char, char_proj_mode, chars_per_script, class_dropout_prob, cond_fusion_norm, condition_fusion, glyph_inject_layers, glyph_inject_mode, glyph_vec_dim, hidden_size, ids_file, num_calligraphers, num_characters, num_heads, num_script_classes, script_embed_dim, std_dino_table_path, style_ctx_every_layer, style_gain_init, style_ln, style_role_init, style_token_n, style_y_over_t_init, use_ids_char_embedder, use_std_dino_char_embedder):
+        """条件块（**逐字搬移** ✓ 2026-10-14 [重构 PR5] ✓ 审查 §4.1 ✓）。
+
+        ★ 该块**自足** ✓（AST 实测: 不依赖 `__init__` 的任何先前局部 ✓）
+          ⇒ 只需重绑它用到的参数名 ✓ 块体**一字未改** ✓
+        ★ 用 **mixin 方法**（不是新层级 ✓）⇒ `self.xxx` 属性名不变 ✓
+          ⇒ **state_dict 键与注册顺序都不变** ✓（由双黄金裁决 ✓）
+        """
+        attn_tau = attn_tau
+        callig_embed_dim = callig_embed_dim
+        callig_proj_mode = callig_proj_mode
+        callig_scale_init = callig_scale_init
+        callig_spatial = callig_spatial
+        callig_spatial_rank = callig_spatial_rank
+        callig_style_ca = callig_style_ca
+        char_embed_dim = char_embed_dim
+        char_id_to_char = char_id_to_char
+        char_proj_mode = char_proj_mode
+        chars_per_script = chars_per_script
+        class_dropout_prob = class_dropout_prob
+        cond_fusion_norm = cond_fusion_norm
+        condition_fusion = condition_fusion
+        glyph_inject_layers = glyph_inject_layers
+        glyph_inject_mode = glyph_inject_mode
+        glyph_vec_dim = glyph_vec_dim
+        hidden_size = hidden_size
+        ids_file = ids_file
+        num_calligraphers = num_calligraphers
+        num_characters = num_characters
+        num_heads = num_heads
+        num_script_classes = num_script_classes
+        script_embed_dim = script_embed_dim
+        std_dino_table_path = std_dino_table_path
+        style_ctx_every_layer = style_ctx_every_layer
+        style_gain_init = style_gain_init
+        style_ln = style_ln
+        style_role_init = style_role_init
+        style_token_n = style_token_n
+        style_y_over_t_init = style_y_over_t_init
+        use_ids_char_embedder = use_ids_char_embedder
+        use_std_dino_char_embedder = use_std_dino_char_embedder
         if condition_fusion in ("factorized_add", "factorized_cat"):
             # 二因子可组合条件（V3-A）：calligrapher（风格）× glyph（内容=script×char 合并类）。
             # 每个因子独立低维 embedding。
@@ -852,120 +1009,6 @@ class DiT_2Cond(DitConditionMixin, nn.Module):
             )
             self.callig_proj = self.char_proj = None
 
-        num_patches = self.x_embedder.num_patches
-        self.pos_embed = nn.Parameter(torch.zeros(1, num_patches, hidden_size), requires_grad=False)
-
-        # ---- 922/80 改动 2: 风格专用 low-rank adaLN 支路 ----
-        # >0 时每个 block / final_layer 多一条 (LN -> Linear(D,r) -> Linear(r,6D)) 旁路，
-        # 把 e_callig 直接喂给调制量，**不经过** c = t_emb + y_emb 的共享矩阵。
-        # zero-init -> step 0 恒等；rank=0 时不建任何参数 -> 与旧 ckpt 逐位等价。
-        self.style_ada_rank = int(style_ada_rank)
-        # 支路的输入是**原始 e_callig**，其维度 = callig_embed_dim（常 != hidden）
-        _style_in_dim = int(callig_embed_dim or hidden_size)
-
-        # ---- v85A: 解析"哪些层建风格支路" + 零初始化门控开关 ✓ ----
-        # 取值 "8,10,11" / "8,10,11,final" / ""（空=全部层, 保持旧行为 ✓）
-        _at_raw = style_ada_at
-        if isinstance(_at_raw, str):
-            _toks = [s.strip().lower() for s in _at_raw.replace(";", ",").split(",") if s.strip()]
-        else:
-            _toks = [str(s).strip().lower() for s in (_at_raw or ())]
-        self._style_ada_final = ("final" in _toks) or ("last" in _toks) or ("-1" in _toks)
-        _idx = set()
-        for _tk in _toks:
-            if _tk.lstrip("-").isdigit() and int(_tk) >= 0:
-                _idx.add(int(_tk))
-        # "" 或未给 ⇒ 全部层（旧行为 ✓）；给了非空但解析不出索引 ⇒ 全部层并告警 ✓
-        if not _toks:
-            self._style_ada_layers = tuple(range(depth))
-            # ★ 旧行为下 final_layer **也有**支路 ⇒ 这里必须为 True ✗
-            #   （我第一版漏了它 ⇒ 既有 rank>0 的模型会静默丢掉出口的风格支路 ✓）
-            self._style_ada_final = True
-        elif _idx or self._style_ada_final:
-            self._style_ada_layers = tuple(sorted(i for i in _idx if i < depth))
-        else:
-            log.warning("[style_ada] style_ada_at=%r 解析不出层号 ✗ ⇒ 退回全部层 ✓", style_ada_at)
-            self._style_ada_layers = tuple(range(depth))
-        if self.style_ada_rank > 0:
-            _bad = [i for i in _idx if i >= depth]
-            if _bad:
-                raise ValueError("style_ada_at 含越界层号 %s ✗（depth=%d）" % (_bad, depth))
-            log.info("[style_ada] rank=%d 层=%s final=%s gain=%s",
-                     self.style_ada_rank, list(self._style_ada_layers),
-                     self._style_ada_final, bool(style_ada_gain))
-
-        _sl = set(self._style_ada_layers)
-        self.blocks = nn.ModuleList([
-            M.DiTBlock(hidden_size, num_heads, mlp_ratio=mlp_ratio,
-                       norm_type=norm_type, mlp_type=mlp_type, qk_norm=qk_norm,
-                       attn_impl=attn_impl,
-                       # ★ 只在选定层建参数 ⇒ 未选中的层与前代**逐位一致** ✓
-                       style_ada_rank=(self.style_ada_rank if i in _sl else 0),
-                       style_in_dim=_style_in_dim,
-                       style_ada_gain=style_ada_gain)
-            for i in range(depth)
-        ])
-        self.final_layer = M.FinalLayer(hidden_size, patch_size, self.out_channels,
-                                        norm_type=norm_type,
-                                        style_ada_rank=(self.style_ada_rank
-                                                        if self._style_ada_final else 0),
-                                        style_in_dim=_style_in_dim,
-                                        style_ada_gain=style_ada_gain)
-
-        # ---- 2D axial RoPE 缓存 ----
-        # persistent=False：不写进 state_dict，避免任何 ckpt key 变化。
-        self.num_patches = num_patches
-        head_dim = hidden_size // num_heads
-        grid = int(round(num_patches ** 0.5))
-        assert grid * grid == num_patches, "RoPE 目前只支持正方形 token grid"
-        if self.rope:
-            cos, sin = M.precompute_rope_2d(grid, head_dim, theta=self.rope_theta)
-            self.register_buffer("rope_cos", cos.float(), persistent=False)
-            self.register_buffer("rope_sin", sin.float(), persistent=False)
-        else:
-            self.register_buffer("rope_cos", None, persistent=False)
-            self.register_buffer("rope_sin", None, persistent=False)
-        # 骨架辅助头（训练引导用，推理不用）：从 final_layer 前的 block 特征
-        # 并行解出 1×32×32 latent 骨架预测，与 GT latent 骨架对齐。
-        self.skel_head = None
-        if self.skel_head_enabled:
-            self.skel_head = nn.Sequential(
-                M.build_norm(norm_type, hidden_size),
-                nn.Linear(hidden_size, patch_size * patch_size, bias=True),
-            )
-        self._build_glyph_condition(
-            hidden_size=hidden_size, depth=depth, num_heads=num_heads,
-            attn_tau=attn_tau, glyph_in_channels=glyph_in_channels,
-            glyph_inject_layers=glyph_inject_layers, glyph_inject_mode=glyph_inject_mode,
-            glyph_inject_at=glyph_inject_at, glyph_drop_prob=glyph_drop_prob,
-            glyph_embedder_depth=glyph_embedder_depth,
-            glyph_embedder_sep=glyph_embedder_sep, xattn_q_pos=xattn_q_pos)
-        # ↑ 原 125 行内联构造已抽成方法（见 _build_glyph_condition）✓
-
-        self._build_cond_router(cond_inject_at=cond_inject_at, cond_inject_scale=cond_inject_scale, depth=depth)
-        # ↑ 原 19 行内联构造已抽成方法（见 _build_cond_router）✓
-
-        self._build_style_hierarchy(callig_embed_dim=callig_embed_dim, depth=depth, hidden_size=hidden_size, hier_style=hier_style, local_ca_at=local_ca_at, local_ca_heads=local_ca_heads, local_ca_impl=local_ca_impl, local_ca_layers=local_ca_layers, local_ca_q=local_ca_q, local_ca_rank=local_ca_rank, local_ca_window=local_ca_window, lowrank_spatial_rank=lowrank_spatial_rank, num_calligraphers=num_calligraphers, num_pairs=num_pairs, num_scripts=num_scripts, pair_init=pair_init, pair_residual=pair_residual, script_embed_dim=script_embed_dim, script_film=script_film, spatial_film_rank=spatial_film_rank)
-        # ↑ 原 118 行内联构造已抽成方法（见 _build_style_hierarchy）✓
-        self.writer_glyph = None
-        if int(writer_glyph_rank) > 0:
-            if not std_soft_cond or not use_script_cond or int(lowrank_spatial_rank) > 0:
-                raise ValueError('writer_glyph requires STD+script and a separate unstyled structural path')
-            from .writer_glyph import WriterGlyphResidual
-            self.writer_glyph = WriterGlyphResidual(hidden_size,
-                int(callig_embed_dim or hidden_size)+int(script_embed_dim or 64),
-                int(self.x_embedder.num_patches**.5), depth,
-                rank=int(writer_glyph_rank), at=writer_glyph_at)
-        self._build_deform(deform_attn_heads=deform_attn_heads, deform_ckpt=deform_ckpt, deform_coarse=deform_coarse, deform_dt_ch=deform_dt_ch, deform_film_mode=deform_film_mode, deform_grid=deform_grid, deform_max_off=deform_max_off, deform_preserve_amp=deform_preserve_amp, deform_skel=deform_skel, deform_style_ch=deform_style_ch, deform_style_tokens=deform_style_tokens, deform_topo=deform_topo, deform_warp_iters=deform_warp_iters, deform_width=deform_width, gate_radius=gate_radius, res_cap=res_cap, residual=residual, stroke_cap=stroke_cap, stroke_mod=stroke_mod)
-        # ↑ 原 28 行内联构造已抽成方法（见 _build_deform）✓
-
-        # ★ 2026-10-14 [重构 P1-1] **参数集合在此定型** ✗
-        #   `_build_style_hierarchy` 里的 initialize_weights() -> _init_style_gain() ->
-        #   `_style_out()` 已完成 style_in_proj 的**构造期**定型 ✓（此刻仍是 __init__ 内 ✓
-        #   ⇒ 一定早于 optimizer / torch.compile ✓）。
-        #   锁定后 `_style_out` 若再遇维度不符会**直接报错** ✗，绝不在训练前向中造参数 ✓
-        #   （否则新参数不进 optimizer ✗、也可能破坏 compile 捕获 ✗）。
-        self._style_proj_locked = True
 
 
 
