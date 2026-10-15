@@ -75,9 +75,9 @@ from src.utils.channel_expand import (drop_shape_mismatched,
 from src.model.dit import MultiStyleEmbedder
 from src.train import backward as _bw          # ★ PR4: backward 策略模块 ✓
 from src.train import ema as _ema              # ★ PR4: EMA 组件 ✓
+from src.train.checkpoint import CheckpointManager as _CkptManager   # ★ PR4: 持久化 ✓
 from src.train.objectives import ObjectiveComposer as _ObjComposer   # ★ PR4: 损失装配 ✓
-from src.train.ckpt import (save_checkpoint, prune_checkpoints, drain_ckpt,
-                               restore_rng)
+from src.train.ckpt import (restore_rng)
 from src.train.data_setup import build_data   # ★ PR4: 数据装配 ✓
 from src.train.setup import setup_runtime   # ★ PR4: 运行时装配 ✓
 from src.train.writer_table_tuning import configure_writer_table, split_writer_optimizer_group
@@ -437,6 +437,13 @@ def main(args):
     rank, device, seed, logger = _rt.rank, _rt.device, _rt.seed, _rt.logger
     experiment_dir, checkpoint_dir = _rt.experiment_dir, _rt.checkpoint_dir
     vae_downscale, latent_size = _rt.vae_downscale, _rt.latent_size
+    # ★ 2026-10-14 [重构 PR4] **持久化的状态所有者** ✓（审查 §4.2: CheckpointManager ✓）
+    #   把"目录 / 轮转 / 严格模式 / 上次存到第几步"收成对象 ✓
+    #   实现仍在 src/train/ckpt.py ✓（异步写 + fsync + os.replace + SHA256 manifest 全保留 ✓）
+    _ckpt = _CkptManager(checkpoint_dir,
+                         keep=int(getattr(args, "ckpt_keep", 0) or 0),
+                         logger=logger)
+    logger.info(f"[ckpt] {_ckpt.describe()}")     # 让存盘策略成为**显式身份** ✓
     
     # 注：历史上曾有 cond_mode=3cond（callig + script + char 三条件，模型 DiT_3Cond）。
     # 2026-08-31 清理时删除 —— 三条件模型已废弃，当前只保留 2cond（callig + char）。
@@ -2802,11 +2809,10 @@ def main(args):
 
                 if _save_ckpt and train_steps > 0:
                     if rank == 0:
-                        # 组装(同步搬 CPU) + 异步入队 + 轮转，实现见 src/train/ckpt.py
-                        save_checkpoint(model, opt, ema_model, scheduler, args,
-                                        train_steps, checkpoint_dir, logger)
-                        prune_checkpoints(checkpoint_dir,
-                                          int(getattr(args, 'ckpt_keep', 0)), logger)
+                        # 组装(同步搬 CPU) + 异步入队 + 轮转 ⇒ 见 CheckpointManager ✓
+                        # （实现仍在 src/train/ckpt.py ✓ 临时文件/fsync/os.replace/
+                        #   SHA256 manifest/异步写线程 全部保留 ✓）
+                        _ckpt.save(model, opt, ema_model, scheduler, args, train_steps)
 
                         # 在训评测：是否该跑 / 用哪份权重 / 计时 / 报错 全在 eval 模块里。
                         # 失败只 warning 不中断训练（评测不该把训练带崩）。
@@ -2848,7 +2854,9 @@ def main(args):
     model.eval()
     # 等后台写盘收尾 —— 否则最后一个 ckpt 可能还没落盘进程就退了。
     if dist.get_rank() == 0:
-        drain_ckpt(logger, timeout=600)
+        # ★ PR4: 收尾走 CheckpointManager ✓（内部仍是 drain_ckpt ✓
+        #   strict=None ⇒ 默认**严格** ✓ 写盘失败会让进程非零退出 ✓ P1-3a ✓）
+        _ckpt.finalize(timeout=600)
     if _train_fatal is not None:
         logger.error("训练**异常中止** ✗ —— 不打印 Done!, 并以非零码退出 ✓"
                      "（此前会静默打印 Done! 让失败看起来像成功 ✗）")
