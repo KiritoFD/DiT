@@ -81,21 +81,96 @@ def test_live_cli_entries_are_not_archived():
 def test_main_entries_use_shared_sampler():
     """★ PR3 完成标准的一半 ✓: 主评测入口必须**复用**单一采样语义 ✓
 
-    允许两种取得方式（都是同一份实现 ✓）:
-      · 直接从 `src.eval.sampler` 导入 ✓
-      · 经 `src.eval.inference` 的**兼容再导出** ✓（下一条测试锁定它确实是同一对象 ✓）
+    ★ 判别"自实现"的**正确**标准 ✗（本测试早期版本措辞不准确, 已订正 ✓）:
+        `diffusion.ddim_sample_loop(...)` 是共享采样器的**统一接口** ✓
+        —— `inference.py` 明确写着"采样统一走 `diffusion.ddim_sample_loop(..., clip_denoised=False)`" ✓
+        且 `sampler.py` **自己**也调用它 ✓ ⇒ 它**不是**遗留标记 ✗。
+        真正的判别是: **该入口是否自建 diffusion / 自跑采样循环** ✗
+        （应改为 `build_diffusion` + `sample_latents` ✓）
+
+    实测二分（可复核 ✓）:
+        主入口: create_diffusion(=0 ✓ .ddim_sample_loop(=0 ✓ build_diffusion>0 ✓ sample_latents>0 ✓
+        自实现: create_diffusion(>0 ✗ .ddim_sample_loop(>0 ✗ sample_latents=0 ✗
     """
     for f in MUST_USE_SAMPLER:
         p = os.path.join(EVAL, f)
         if not os.path.isfile(p):
             continue
         s = io.open(p, encoding="utf-8").read()
+        # ① 必须从共享层取得采样函数 ✓
         assert re.search(r"from\s+src\.eval\.(sampler|inference)\s+import", s), \
             f"{f} 未从 sampler/inference 导入采样函数 ✓（审查: 单一采样语义 ✓）"
         assert "sample_latents" in s, f"{f} 未调用 sample_latents ✓"
-        # ★ 不得再出现**遗留 DDPM/DDIM** 采样标记 ✗（这正是两代实现的分界 ✓）
-        for bad in ("ddim_sample_loop", "create_diffusion("):
-            assert bad not in s, f"{f} 仍含遗留 DDPM 采样 `{bad}` ✗（PR3: 收敛到 FM 主线 ✗）"
+        assert "build_diffusion" in s, f"{f} 未使用共享的 build_diffusion ✓"
+        # ② 不得**自建 diffusion / 自跑采样循环** ✗（精确判别 ✓）
+        assert "create_diffusion(" not in s, \
+            f"{f} 仍在**自建** diffusion ✗（应用共享 build_diffusion ✓）"
+        assert ".ddim_sample_loop(" not in s, \
+            f"{f} 仍在**自跑**采样循环 ✗（应调用共享 sample_latents ✓）"
+
+
+def test_self_implementing_entries_are_legacy_only():
+    """★ 反向守卫 ✓: 仍**自实现**采样的入口, 其调用方必须全在 legacy ✗
+    （否则说明有活跃路径绕过了单一采样语义 ✗ —— 那是 PR3 的未完成项 ✓）"""
+    SELF_IMPL = ("in_process_eval.py", "eval_auto.py", "eval_full_3cond.py",
+                 "auto_eval_ctrl.py")
+    # ★ 非源码目录: 备份/拷贝/草稿 ⇒ **不算"活跃调用方"** ✗
+    #   （如 `_backup_cond_refactor/`、`_local_ckpt/from48/`、`_ot_scratch/` ✓
+    #     它们是快照/草稿, 不是运行时树 ✓ —— 但仍不应被当源码引用 ✓）
+    SKIP_DIRS = {"__pycache__", ".git", "legacy", "archive", "node_modules",
+                 "scratch", "assets", "_review", ".venv",
+                 "_backup_cond_refactor", "_ot_scratch", "_local_ckpt"}
+    # ★ 已确认的**孤儿**调用方（0 外部引用 ✓ 待 PR7 归档 ✓）⇒ 有据可查的例外 ✓
+    KNOWN_ORPHANS = {"tools/sweep_cfg_sharpness.py"}
+    # ★★ 已确认的**活跃**重复采样路径 ✗ —— PR3 **待办** ✓（不是"已修好" ✗）
+    #    证据链（2026-10-14 审计 ✓）:
+    #      `src/eval/auto_eval_cpu.py`（**活跃** ✓ 7 处配置引用 ✓）
+    #        L145 `from eval_auto import prepare_gen_cache` ✓
+    #        L241 `from eval_auto import eval_gen_in_memory` ✓✗
+    #      ⇒ 而 `eval_auto.py` L246 `create_diffusion(...)` + L284 `.ddim_sample_loop(...)`
+    #        = **自建 diffusion + 自跑采样循环** ✗✗ ⇒ 活跃路径绕过了单一采样语义 ✓
+    #    ⚠ 迁移**必须**先做 GPU 逐位对比（PR3 完成标准: "与旧版相同的固定采样结果" ✓）
+    #      ⇒ 在 4090 空出前不动它 ✗（改采样却无法验证 = 违反 PR3 标准 ✗）
+    KNOWN_LIVE_SELF_IMPL = {
+        "src/eval/auto_eval_cpu.py -> eval_auto.py",
+        "tools/remote_sync/eval_compose.py -> eval_auto.py",
+        "tools/remote_sync/eval_gen.py -> eval_auto.py",
+        "tools/remote_sync/_eval_quad.py -> eval_auto.py",
+        "tools/cfg_sweep_ctrl.py -> auto_eval_ctrl.py",
+    }
+    live = []
+    for f in SELF_IMPL:
+        p = os.path.join(EVAL, f)
+        if not os.path.isfile(p):
+            continue
+        s = io.open(p, encoding="utf-8").read()
+        # 若哪天它改用共享采样 ⇒ 本项自动失去意义 ✓（属预期 ✓）
+        if ("create_diffusion(" not in s and ".ddim_sample_loop(" not in s) or \
+                "sample_latents" in s:
+            continue
+        for dirpath, dirnames, filenames in os.walk(ROOT):
+            dirnames[:] = [d for d in dirnames if d not in SKIP_DIRS]
+            for fn in filenames:
+                if not fn.endswith(".py") or fn == f:
+                    continue
+                fp = os.path.join(dirpath, fn)
+                try:
+                    t = io.open(fp, encoding="utf-8", errors="ignore").read()
+                except OSError:
+                    continue
+                if re.search(r"^\s*(from|import)\s+.*\b%s\b" % re.escape(f[:-3]), t, re.M):
+                    rel = os.path.relpath(fp, ROOT).replace("\\", "/")
+                    if rel in KNOWN_ORPHANS:
+                        continue
+                    if "legacy" not in rel and "archive" not in rel:
+                        live.append(rel + " -> " + f)
+    new = sorted(set(live) - KNOWN_LIVE_SELF_IMPL)
+    assert not new, ("出现**新的**重复采样路径 ✗（PR3: 单一采样语义 ✓）:\n  "
+                     + "\n  ".join(new[:6]))
+    # 已知项消失 ⇒ 说明已迁移 ✓ ⇒ 应同步更新本清单 ✓（维护信号 ✓）
+    gone = sorted(KNOWN_LIVE_SELF_IMPL - set(live))
+    assert not gone, ("已知重复采样路径已消失 ⇒ 请更新 KNOWN_LIVE_SELF_IMPL ✓:\n  "
+                      + "\n  ".join(gone))
 
 
 def test_inference_reexports_same_objects():
