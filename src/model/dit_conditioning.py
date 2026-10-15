@@ -1002,6 +1002,8 @@ def initialize_weights(cfg, ):
         else:
             with torch.no_grad():
                 cfg.style_gain.fill_(float(_gi))
+    # ★ 2026-10-14 [重构 P1-1] 参数锁由 `apply_post_construction(model, ...)` 设置 ✓
+    #   （本函数只拿到 cfg 视图 ✗ 没有 model ✗ —— 见 src/eval/model_io.py 末尾 ✓）
 
 
 @dataclass(frozen=True)
@@ -1047,6 +1049,8 @@ class ForwardCfg:
     use_glyph_cond: Any
     x_embedder: Any
     y_callig_embedder: Any
+    y_script_embedder: Any
+    writer_glyph: Any
 
     @classmethod
     def from_model(cls, m):
@@ -1055,6 +1059,8 @@ class ForwardCfg:
                    _embed_callig=getattr(m, "_embed_callig", None),
                    _embed_cond=getattr(m, "_embed_cond", None),
                    _embed_glyph=getattr(m, "_embed_glyph", None),
+                   y_script_embedder=getattr(m, "y_script_embedder", None),
+                   writer_glyph=getattr(m, "writer_glyph", None),
                    _fuse_condition=getattr(m, "_fuse_condition", None),
                    _inj_map=getattr(m, "_inj_map", None),
                    _local_ca_map=getattr(m, "_local_ca_map", None),
@@ -1175,6 +1181,17 @@ def forward(cfg, x, t, y_callig, y_char, return_intermediate_layer, return_inter
         _gate = _w.to(x.dtype).view(-1, 1, 1)
     # ★ 2026-10-13: 原 106 行内联字形嵌入已抽成 _embed_glyph ✓
     x, g_tok, e_glyph_vec = cfg._embed_glyph(x, g, keep, y_callig_in, e_style, e_script, style_tokens, _gate)
+    writer_delta = None
+    if cfg.writer_glyph is not None and g_tok is not None:
+        if y_script is None:
+            raise ValueError('writer_glyph needs explicit script IDs')
+        script_in = (torch.where(script_drop, cfg.y_script_embedder.num_classes, y_script)
+                     if script_drop is not None else y_script)
+        style = torch.cat([_e_callig(), cfg.y_script_embedder(script_in, False)], dim=-1)
+        writer_keep = y_callig_in < cfg.y_callig_embedder.num_classes
+        writer_delta = cfg.writer_glyph.residual(g_tok, style, g, writer_keep, keep)
+        if _gate is not None:
+            writer_delta = writer_delta * _gate
 
     t_emb = cfg.t_embedder(t)               # (N, D)
 
@@ -1276,6 +1293,8 @@ def forward(cfg, x, t, y_callig, y_char, return_intermediate_layer, return_inter
             c_main = t_emb
         x = block(x, c_main, rope=rope,
                   c_style=(c_style if i in _style_layers else None))
+        if writer_delta is not None and i in cfg.writer_glyph.at:
+            x = cfg.writer_glyph.inject(x, writer_delta, i)
         if _repa_layers is not None and i in _repa_layers:
             intermediate_feats[i] = x
         elif _repa_single is not None and i == _repa_single:

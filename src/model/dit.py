@@ -327,6 +327,8 @@ class DiT_2Cond(nn.Module):
         # 与 spatial_film 不同: 乘法写死 (s ⊙ q_i), 输出层用 std=0.002
         # 而不是全零 (全零会让 P/Q 的梯度也是 0, 支路永远不动)。
         lowrank_spatial_rank=0,
+        writer_glyph_rank=0,
+        writer_glyph_at="3,7",
         # 通路 B3：局部风格-骨架 cross-attn adapter（Phase 2）
         local_ca_layers=0,      # 插入的 block 数（建议 2，不要 12）
         local_ca_heads=4,
@@ -945,8 +947,25 @@ class DiT_2Cond(nn.Module):
 
         self._build_style_hierarchy(callig_embed_dim=callig_embed_dim, depth=depth, hidden_size=hidden_size, hier_style=hier_style, local_ca_at=local_ca_at, local_ca_heads=local_ca_heads, local_ca_impl=local_ca_impl, local_ca_layers=local_ca_layers, local_ca_q=local_ca_q, local_ca_rank=local_ca_rank, local_ca_window=local_ca_window, lowrank_spatial_rank=lowrank_spatial_rank, num_calligraphers=num_calligraphers, num_pairs=num_pairs, num_scripts=num_scripts, pair_init=pair_init, pair_residual=pair_residual, script_embed_dim=script_embed_dim, script_film=script_film, spatial_film_rank=spatial_film_rank)
         # ↑ 原 118 行内联构造已抽成方法（见 _build_style_hierarchy）✓
+        self.writer_glyph = None
+        if int(writer_glyph_rank) > 0:
+            if not std_soft_cond or not use_script_cond or int(lowrank_spatial_rank) > 0:
+                raise ValueError('writer_glyph requires STD+script and a separate unstyled structural path')
+            from .writer_glyph import WriterGlyphResidual
+            self.writer_glyph = WriterGlyphResidual(hidden_size,
+                int(callig_embed_dim or hidden_size)+int(script_embed_dim or 64),
+                int(self.x_embedder.num_patches**.5), depth,
+                rank=int(writer_glyph_rank), at=writer_glyph_at)
         self._build_deform(deform_attn_heads=deform_attn_heads, deform_ckpt=deform_ckpt, deform_coarse=deform_coarse, deform_dt_ch=deform_dt_ch, deform_film_mode=deform_film_mode, deform_grid=deform_grid, deform_max_off=deform_max_off, deform_preserve_amp=deform_preserve_amp, deform_skel=deform_skel, deform_style_ch=deform_style_ch, deform_style_tokens=deform_style_tokens, deform_topo=deform_topo, deform_warp_iters=deform_warp_iters, deform_width=deform_width, gate_radius=gate_radius, res_cap=res_cap, residual=residual, stroke_cap=stroke_cap, stroke_mod=stroke_mod)
         # ↑ 原 28 行内联构造已抽成方法（见 _build_deform）✓
+
+        # ★ 2026-10-14 [重构 P1-1] **参数集合在此定型** ✗
+        #   `_build_style_hierarchy` 里的 initialize_weights() -> _init_style_gain() ->
+        #   `_style_out()` 已完成 style_in_proj 的**构造期**定型 ✓（此刻仍是 __init__ 内 ✓
+        #   ⇒ 一定早于 optimizer / torch.compile ✓）。
+        #   锁定后 `_style_out` 若再遇维度不符会**直接报错** ✗，绝不在训练前向中造参数 ✓
+        #   （否则新参数不进 optimizer ✗、也可能破坏 compile 捕获 ✗）。
+        self._style_proj_locked = True
 
     def _build_glyph_condition(self, *, hidden_size, depth, num_heads, attn_tau,
                                glyph_in_channels, glyph_inject_layers, glyph_inject_mode, glyph_inject_at,
@@ -1273,27 +1292,40 @@ class DiT_2Cond(nn.Module):
     def _style_out(self, e_callig):
         """风格分支的一次"纯前向"：e_callig -> hidden（不做任何幅度缩放）。
 
-        拆出来是为了让 ``_init_style_gain`` 能在 ``__init__`` 末尾用**同一段代码**
+        拆出来是为了让 ``_init_style_gain`` 能在构造末尾用**同一段代码**
         探测未训练时的输出范数，避免两处实现漂移。
+
+        ★ 2026-10-14 [重构 P1-1] **禁止在前向中创建参数** ✗（审查指出 ✗）:
+            旧实现只要维度不符就 `self.style_in_proj = nn.Linear(...)` ✗ ⇒
+            若首次/再次创建发生在 **optimizer 构造之后**，新参数**不在优化器里** ✗✗；
+            若发生在 `torch.compile` 捕获期，还可能触发重编译/状态异常 ✗。
+            新语义: 构造期（`apply_post_construction` 期间 ✓）允许按真实维度定型 ✓；
+            一旦 `_style_proj_locked=True`（构造完成 ✓）⇒ 维度不符即**报错** ✗，
+            绝不静默造参数 ✓（宁可启动失败, 不要"少训一个参数" ✗）。
         """
         _s = e_callig.to(self.style_ln_mod.weight.dtype)
         _hid = int(self.style_ln_mod.normalized_shape[0])
         _d_in = int(_s.shape[-1])
         _p = getattr(self, "style_in_proj", None)
-        # ★ 懒适配：`e_callig` 的维度因 fusion 而异（见 __init__ 注释），
-        #   构造期无法可靠预知，只能在第一次前向时按真实维度校正。
-        #   三种情况都要处理：
-        #     a) 没建投影（_p is None）且 d_in != hidden -> 建
-        #     b) 是 Identity（callig_embed_dim == hidden 时才这样建）
-        #        但实际 d_in != hidden -> 改成真投影
-        #     c) 是 Linear 但 in_features != d_in -> 重建
+        # 三种情况都要处理（构造期 ✓）:
+        #   a) 没建投影（_p is None）且 d_in != hidden -> 建
+        #   b) 是 Identity（callig_embed_dim == hidden 时才这样建）但实际 d_in != hidden -> 改真投影
+        #   c) 是 Linear 但 in_features != d_in -> 重建
         if _p is None or isinstance(_p, nn.Identity):
             _cur = None if _p is None else _hid
         else:
             _cur = int(_p.in_features)
         if _cur != _d_in:
+            if getattr(self, "_style_proj_locked", False):
+                raise RuntimeError(
+                    "[style_branch] style_in_proj 输入维不符: 期望 %s, 实际 %d ✗ —— "
+                    "**禁止在前向中创建/重建参数** ✗（P1-1: 构造后新建的参数不会进 "
+                    "optimizer ✗，也会破坏 torch.compile 捕获 ✗）。"
+                    "请检查 callig_embed_dim / condition_fusion 与 ckpt 是否匹配 ✓"
+                    % ("None" if _p is None else
+                       ("Identity/%d" % _hid if _cur is not None else "?"), _d_in))
             _new = nn.Linear(_d_in, _hid).to(_s.device, _s.dtype)
-            log.info("[style_branch] style_in_proj 懒重建: %d -> %d (原 %s)",
+            log.info("[style_branch] style_in_proj 构造期定型: %d -> %d (原 %s)",
                      _d_in, _hid, "None" if _p is None else
                      ("Identity/%d" % _hid if _cur is not None else "?"))
             self.style_in_proj = _new

@@ -27,6 +27,7 @@
     drain_ckpt(logger)                            # 训练结束前必须调用
 """
 import os
+from typing import Optional
 
 import torch
 
@@ -246,10 +247,32 @@ def prune_checkpoints(checkpoint_dir, keep, logger=None):
     return n
 
 
-def drain_ckpt(logger=None, timeout=600):
-    """训练结束前调用：等全部落盘 + 停线程 + 报告失败。"""
+def _ckpt_strict_default() -> bool:
+    """严格模式开关 ✓（默认**开** ✓ —— 正式训练"ckpt 写失败"必须让进程失败 ✗）。
+
+    可用 `DSH_CKPT_STRICT=0` 显式关闭（调试/临时环境 ✓）。
+    ★ 2026-10-14 [重构 P1-3a] 审查指出: 旧实现只把异常记进 `_errors` ✗
+    并在 drain 时**打印**一句 ✗ ⇒ 可能出现"训练跑完了, 但最终模型没可靠保存" ✗✗。
+    """
+    return os.environ.get("DSH_CKPT_STRICT", "1").strip().lower() not in ("0", "false", "no", "off")
+
+
+def drain_ckpt(logger=None, timeout=600, strict: Optional[bool] = None):
+    """训练结束前调用：等全部落盘 + 停线程 + 报告失败。
+
+    ★ 2026-10-14 [重构 P1-3a] `strict=True`（默认 ✓）时:
+        任一 ckpt 写盘/校验失败 ⇒ **抛 RuntimeError** ✗ ⇒ 调用方以**非零码**退出 ✓，
+        并在日志里留下明确的失败状态 ✓（而不是"训练完成但模型没存" ✗✗）。
+    """
     n, errs = WRITER.drain(timeout=timeout)
+    _strict = _ckpt_strict_default() if strict is None else bool(strict)
     if logger is not None:
         logger.info(f"[ckpt] async writer drained: {n} 个已落盘"
-                    + (f", **{len(errs)} 个失败**: {errs[:3]}" if errs else ""))
+                    + (f", **{len(errs)} 个失败**: {errs[:3]}" if errs else "")
+                    + ("" if not errs else
+                       (" | strict=ON ⇒ 将失败退出 ✗" if _strict else " | strict=OFF ⇒ 仅告警 ✗")))
+    if errs and _strict:
+        raise RuntimeError(
+            f"[ckpt] {len(errs)} 个 checkpoint **写盘或校验失败** ✗（strict 模式 ✓）: "
+            f"{errs[:3]} —— 拒绝以「成功」收尾 ✗（可用 DSH_CKPT_STRICT=0 临时关闭 ✓）")
     return n, errs
