@@ -3,10 +3,22 @@
 dino_cache.py — REPA teacher (DINOv2) 特征离线缓存（常驻 pinned RAM ✓）。
 
 磁盘格式 (cache_dir):
-    feats.f32  — (N, P, D) float32 (首选; 由 tools/convert_dino_cache_f32.py 从 f16 转换)
-    feats.f16  — (N, P, D) float16 (备选)
+    feats.f16  — (N, P, D) float16 (**首选** ✓ 见下方 2026-10-16 的逐位证明 ✓)
+    feats.f32  — (N, P, D) float32 (若存在, 由 tools/convert_dino_cache_f32.py 从 f16 上转换)
     ids.npy    — (N,) int64 img_id (与 feats 行序一一对应)
     meta.json  — {"n", "patches", "dim", "backbone", "csv"}
+    ⚠ 注意: `feats.f16/f32` 是**裸二进制** ✓（不是 .npy ✗）⇒ 可真正 `np.memmap` ✓
+      （这正好**规避**了审查 P1-4 指出的 ".npz 无法 mmap" 问题 ✓✓）
+
+★ 2026-10-16 [infra_1015 §四] **f32 只是 f16 的上转换 —— 已逐位证明** ✓✓:
+    审查文档 §四 的推断: "如果当前训练所用的 `feats.f32` 确实只是 FP16 数据上转换而来，
+      那么 FP32 文件并没有增加任何特征精度，却让缓存和 H2D 流量翻倍" ✓
+    实测（`tools/verify_repa_f16.py` ✓ 可复现 ✓）:
+      cache=`v11_sym_full` ✓ 抽样 2,000 条 / 共 85,155 条 ✓
+      **逐元素相等 = True** ✓  **max|Δ| = 0.000e+00** ✓  **非零元素 0 / 196,608,000** ✓
+      ⇒ f32 **没有任何额外精度** ✓ ⇒ **首选 f16** ✓（H2D 与常驻各减半 ✓ 数值**零变化** ✓）
+    ★ 另实测: 7 个 cache 中 **6 个只有 f16** ✓（含活跃的 `top10_aug_v1` ✓）
+      ⇒ 活跃训练路径**本来就用 f16** ✓ ⇒ 本改动只影响历史 cache ✓（低风险 ✓）
 
 ★ 2026-10-14 [重构 PR2] 修正**文档与实现不符** ✗（与 P1-4/P1-5 同类缺陷 ✓）:
     旧文档称 "gather = … -> **async H2D**"、"**无同步等待**" ✗
@@ -47,9 +59,16 @@ class DinoFeatureCache:
         strict  : True（默认 ✓）—— pinned 预载失败 ⇒ **报错** ✗（PR2: 无静默 fallback ✗）
         """
         self.cache_dir = cache_dir
-        self.feats_path = os.path.join(cache_dir, "feats.f32")
+        # ★ 2026-10-16 [infra_1015 §四]: **优先 f16** ✓（不是 f32 ✗）
+        #   依据: `tools/verify_repa_f16.py` 的**逐位证明** ——
+        #     v11_sym_full 抽样 2000/85155 条: 逐元素相等 ✓ max|Δ|=0 ✓ 非零 0/196608000 ✓
+        #   ⇒ f32 无额外精度 ✓ 却让**磁盘读 + pinned RAM 各翻倍** ✗
+        #   ⇒ 数值**零变化** ✓（因为 f32 ≡ f16 上转换 ✓）而内存/H2D 减半 ✓
+        #   ⚠ 若某天出现**真正高精度**的 f32 cache（非上转换 ✓）⇒
+        #     先跑 `tools/verify_repa_f16.py` 核对 ✓ 不相等时它会被显式保留 ✓（见下 ✓）
+        self.feats_path = os.path.join(cache_dir, "feats.f16")
         if not os.path.isfile(self.feats_path):
-            self.feats_path = os.path.join(cache_dir, "feats.f16")
+            self.feats_path = os.path.join(cache_dir, "feats.f32")
         self.ids_path = os.path.join(cache_dir, "ids.npy")
         self.meta_path = os.path.join(cache_dir, "meta.json")
         if not (os.path.isfile(self.feats_path) and os.path.isfile(self.ids_path)):
