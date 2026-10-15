@@ -76,6 +76,7 @@ from src.model.dit import MultiStyleEmbedder
 from src.train import backward as _bw          # ★ PR4: backward 策略模块 ✓
 from src.train import ema as _ema              # ★ PR4: EMA 组件 ✓
 from src.train.checkpoint import CheckpointManager as _CkptManager   # ★ PR4: 持久化 ✓
+from src.train import optimizer as _opt        # ★ PR4: 优化器装配（纯决策 + 薄工厂）✓
 from src.train.objectives import ObjectiveComposer as _ObjComposer   # ★ PR4: 损失装配 ✓
 from src.train.ckpt import (restore_rng)
 from src.train.data_setup import build_data   # ★ PR4: 数据装配 ✓
@@ -1387,6 +1388,7 @@ def main(args):
         #   （joint = 图同时存活 ✓ 峰值显存高; sequential = 先释放 FM 图 ✓ 峰值低 ✓）
         logger.info(f"[backward] {_bw.describe(args)}")
         logger.info(f"[ema] {_ema.describe(args)}")     # ★ PR4: interval 属实验身份 ✓
+        logger.info(f"[optim-identity] {_opt.describe(args)}")   # ★ PR4: 优化器身份 ✓
         logger.info(f"[EMA] enabled with decay={args.ema_decay}, interval={getattr(args, 'ema_interval', 1)} "
                     f"(effective per-step decay={args.ema_decay ** max(1, int(getattr(args, 'ema_interval', 1)))})")
     if dist.get_world_size() > 1:
@@ -1539,12 +1541,11 @@ def main(args):
             # Group 3: VAE Encoder (极微小学习率，做流形软着陆)
             {"params": vae_enc_trainable, "lr": vae_lr, "weight_decay": 0.0},
         ]
-        _fused = bool(torch.cuda.is_available()) and float(torch.__version__[:3]) >= 2.0
-        try:
-            opt = torch.optim.AdamW(optim_groups, fused=_fused)
-        except TypeError:
-            opt = torch.optim.AdamW(optim_groups)
-            _fused = False
+        # ★ 2026-10-14 [重构 PR4] fused 判定与 AdamW 构造统一走 src/train/optimizer.py ✓
+        #   （旧代码把 fused 判定**写了两遍** ✗ ⇒ 现在只有一处 ✓ 不会漂移 ✓）
+        #   ⚠ 组内**已自带** lr/wd ✓ ⇒ 工厂绝不得再传 lr/wd ✗
+        #     （传了会把三组的 lr 统一覆盖 ✗✗ —— VAE 双轨就靠各组不同 lr 区分 ✓）
+        opt, _fused = _opt.build_adamw_groups(optim_groups)
         logger.info(f"[optim] REPA-E Two-Speed AdamW: DiT lr={args.lr} wd={args.weight_decay} | "
                     f"REPA lr={args.lr} | VAE Encoder lr={vae_lr} (trainable={len(vae_enc_trainable)} tensors)")
     else:
@@ -1555,29 +1556,16 @@ def main(args):
         _opt_name = getattr(args, "optimizer", "adamw")
         if _opt_name == "muon":
             # Muon: 矩阵权重 NS-正交化 (独立 muon_lr, 典型 0.02-0.05), 向量/embedding 走 AdamW (adamw_lr)
-            try:
-                from src.optim.muon import Muon as _Muon
-            except Exception as e:
-                raise RuntimeError(f"src.optim.muon import failed: {e}")
-            _muon_lr = float(getattr(args, "muon_lr", 0.02))
-            _adamw_lr = float(getattr(args, "lr", 3e-4))
-            _adamw_wd = float(getattr(args, "weight_decay", 0.01))
             # REPA proj 是矩阵 dim=2 -> 自动进 muon 组, 会用它; 向量(embedding标量)进 adamw
-            opt = _Muon(
-                trainable_params_list, lr=_muon_lr, weight_decay=0.0,
-                adamw_lr=_adamw_lr, adamw_weight_decay=_adamw_wd)
-            logger.info(f"[optim] Muon: 矩阵组 lr={_muon_lr} (NS正交) / 向量+embedding组 AdamW lr={_adamw_lr} wd={_adamw_wd}")
+            # ★ 2026-10-14 [重构 PR4] 构造走 src/train/optimizer.py ✓（含导入失败报错文本 ✓）
+            opt = _opt.build_muon(trainable_params_list, args, logger)
         else:
             # [OPTIM-FUSED 2026-09-16] AdamW fused (单内核多张量更新, 省 elementwise 带宽)。
             # 守卫: 仅 CUDA 且 torch 支持 fused 时启用, 否则退回默认实现。
-            _fused = bool(torch.cuda.is_available()) and float(torch.__version__[:3]) >= 2.0
-            try:
-                opt = torch.optim.AdamW(trainable_params_list, lr=args.lr,
-                                        weight_decay=args.weight_decay, fused=_fused)
-            except TypeError:
-                opt = torch.optim.AdamW(trainable_params_list, lr=args.lr, weight_decay=args.weight_decay)
-                _fused = False
-            logger.info(f"[optim] AdamW lr={args.lr} wd={args.weight_decay}")
+            # ★ 2026-10-14 [重构 PR4] 同上（fused 判定与回退都在工厂里 ✓ 只有一处实现 ✓）
+            opt, _fused = _opt.build_adamw(trainable_params_list, lr=args.lr,
+                                           weight_decay=args.weight_decay,
+                                           logger=logger, tag="AdamW")
 
     split_writer_optimizer_group(opt, _writer_table_tuning,
                                  float(getattr(args, 'callig_table_lr', 2e-6)))
