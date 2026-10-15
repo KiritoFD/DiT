@@ -30,7 +30,8 @@ from typing import Optional
 
 import torch
 
-__all__ = ["NonFiniteGuard", "StepInputs", "resolve_step_inputs"]
+__all__ = ["NonFiniteGuard", "StepInputs", "resolve_step_inputs",
+           "clip_and_step"]
 
 
 class NonFiniteGuard:
@@ -144,3 +145,25 @@ def resolve_step_inputs(batch, vae, device, *, train_vae_enc: bool,
         x_latent = (vae.encode(x).latent_dist.sample() - vae_shift).mul_(vae_sf)
         x_latent = x_latent.float()
     return StepInputs(x_latent=x_latent, x=x, loss_vae_kl=None)
+
+def clip_and_step(opt, params, max_norm: float, writer_table=None) -> None:
+    """成功反传后的**三连** ✓（审查 §4.2 第 5–6 条: finite 检查 / clip / 更新 ✓）。
+
+    ★ **顺序即语义** ✗:
+      ① `clip_grad_norm_` 必须在 `opt.step()` **之前** ✓（否则等于没裁 ✓）
+      ② `writer_table.restore_null()` 必须在 `opt.step()` **之后** ✓
+         —— writer table 的 **null 行**会被 step 更新 ✓ ⇒ 必须立刻复原 ✓
+            否则 CFG 的 null token 会跟着漂移 ✗（那是**语义**错误 ✗ 不只是数值问题 ✓）
+
+    ⚠ `max_norm` 是**绝对**阈值 ✓（原注释）:
+        "梯度幅度随数据端 latent 尺度**线性缩放** ⇒ 换 VAE / 改 scaling_factor
+         后必须同步调整, 否则隐性裁剪。默认 1.0 保持历史行为。"
+        （详见 docs/vae_latent_contract.md §2/§5.5 ✓）
+
+    ⚠ 本函数**只**做这三件事 ✓ —— 不含 `zero_grad` ✗ 不含 scheduler/EMA ✗
+      （那些的时机与条件由调用方掌握 ✓ 审查原则 B ✓）
+    """
+    torch.nn.utils.clip_grad_norm_(params, max_norm=float(max_norm))
+    opt.step()
+    if writer_table is not None:
+        writer_table.restore_null()

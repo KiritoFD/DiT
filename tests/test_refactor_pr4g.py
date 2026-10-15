@@ -127,19 +127,24 @@ def test_loss_diff_evaluated_lazily():
 
 # ─────────────── ④ 边界（不撤销 backward / 不清梯度 ✓）───────────────
 def test_guard_does_not_touch_gradients():
-    """★ 本模块**只**回答"要不要 step" ✓ —— 不撤销 backward ✗ 不清梯度 ✗"""
+    """★ `NonFiniteGuard` **只**回答"要不要 step" ✓ —— 不撤销 backward ✗ 不清梯度 ✗
+
+    ⚠ 检查范围必须限定在**该类的函数体** ✗ —— `step.py` 后来又收了
+      `resolve_step_inputs`（VAE/图 ✓）与 `clip_and_step`（**本就该**含
+      `clip_grad_norm_` 与 `.step()` ✓）⇒ 扫全模块会**误报** ✗（实测如此 ✓）。
+    """
+    import re
     src = io.open("src/train/step.py", encoding="utf-8").read()
-    tree = ast.parse(src)
-    for node in ast.walk(tree):
-        if isinstance(node, (ast.Module, ast.FunctionDef, ast.ClassDef)):
-            body = getattr(node, "body", None)
-            if body and isinstance(body[0], ast.Expr) and \
-                    isinstance(body[0].value, ast.Constant) and \
-                    isinstance(body[0].value.value, str):
-                node.body = body[1:] or [ast.Pass()]
-    code = ast.unparse(tree)
+    code = re.sub(r'""".*?"""', '""', src, flags=re.S)
+    code = re.sub(r"'''.*?'''", "''", code, flags=re.S)
+    tree = ast.parse(code)
+    cls = next(n for n in ast.walk(tree)
+               if isinstance(n, ast.ClassDef) and n.name == "NonFiniteGuard")
+    body = ast.unparse(ast.Module(body=cls.body, type_ignores=[]))
     for bad in ("zero_grad", "backward", "clip_grad", "opt.step", "state_dict"):
-        assert bad not in code, f"step.py 不得涉及 `{bad}` ✗（职责边界 ✓）"
+        assert bad not in body, f"NonFiniteGuard 不得涉及 `{bad}` ✗（职责边界 ✓）"
+    # 该类必须仍在 ✓（防测试自身失效 ✗）
+    assert "class NonFiniteGuard" in code
 
 
 def test_stats_and_describe():

@@ -78,7 +78,8 @@ from src.train import ema as _ema              # ★ PR4: EMA 组件 ✓
 from src.train.checkpoint import CheckpointManager as _CkptManager   # ★ PR4: 持久化 ✓
 from src.train import optimizer as _opt        # ★ PR4: 优化器装配（纯决策 + 薄工厂）✓
 from src.train.step import (NonFiniteGuard as _NonFiniteGuard,   # ★ PR4: 单步组件 ✓
-                            resolve_step_inputs as _resolve_step_inputs)
+                            resolve_step_inputs as _resolve_step_inputs,
+                            clip_and_step as _clip_and_step)
 from src.train.telemetry import Diagnostics as _Diagnostics    # ★ PR4: 训练期诊断（纯观测）✓
 from src.train import telemetry as _tel         # ★ PR4: 窗口均值汇总（纯计算）✓
 from src.train.objectives import ObjectiveComposer as _ObjComposer   # ★ PR4: 损失装配 ✓
@@ -2481,14 +2482,15 @@ def main(args):
                 # ★ PR4: 判定与计数都走 _guard ✓（同一表达式 ✓ 同一告警文本 ✓）
                 _finite = _guard.check(loss)
                 if _finite:
-                    # ★ 2026-10-10: max_norm 参数化。它是**绝对**阈值, 而梯度幅度随"数据端 latent 尺度"
-                    #   线性缩放 —— 换 VAE / 改 scaling_factor 后必须同步调整, 否则隐性裁剪。
-                    #   默认 1.0 保持历史行为。详见 docs/vae_latent_contract.md §2/§5.5。
-                    torch.nn.utils.clip_grad_norm_(trainable_params_list,
-                                                   max_norm=float(getattr(args, 'grad_clip', 1.0)))
-                    opt.step()
-                    if _writer_table_tuning is not None:
-                        _writer_table_tuning.restore_null()
+                    # ★ 2026-10-14 [重构 PR4] clip+step+writer-table 复原三连抽到 step.py ✓
+                    #   （审查 §4.2 第 5–6 条 ✓）★ **顺序即语义** ✗:
+                    #     clip 必须在 step 之前 ✓；restore_null 必须在 step 之后 ✓
+                    #     （null 行会被 step 更新 ⇒ 必须立刻复原 ✓ 否则 CFG null token 漂移 ✗）
+                    #   max_norm 是**绝对**阈值 ✓ 换 VAE / 改 scaling_factor 后须同步调整 ✓
+                    #   （详见 docs/vae_latent_contract.md §2/§5.5 ✓）
+                    _clip_and_step(opt, trainable_params_list,
+                                   float(getattr(args, 'grad_clip', 1.0)),
+                                   writer_table=_writer_table_tuning)
                     # ★ 2026-10-11 算子级 profile / 分配历史: 窗口终点 ⇒ 见 telemetry.py ✓
                     #   ⚠ 仍在 `if _finite:` 分支内 ✓（旧语义: 非有限步不计入窗口 ✓ 顺序不变 ✓）
                     _diag.tick()
