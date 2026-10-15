@@ -876,6 +876,99 @@ def _write_sample_rows(w_raw, exp, step, name, n, mt, src_rows, lp):
     return n
 
 
+# ══════════════════ P0-1 评测身份（2026-10-14 [重构 P0-1] 接入 ✓）══════════════════
+# 审查: "主评测仍主要依赖 CSV 的 (step, set, code_rev, cfg, steps, sf, csv_path) ✗ ——
+#   这个键仍缺少 **checkpoint 哈希、VAE 文件哈希、STD 内容哈希、SDE gamma、EMA 状态** ✗"
+# 且 `write_done/is_complete` **从未被主流程调用** ✗（审查已复现: 伪造空 DONE 也判"完整" ✗）
+#
+# 本块把它接上 ✓。两个关键设计:
+#   ① 身份用**权重内容 sha256** ✓（in-training eval 没有 ckpt 文件 ✗ ⇒ 直接哈希 state_dict
+#      ✓ 这比路径更强 ✓✓: 同路径不同权重也能区分 ✓）
+#   ② **DONE 存在即权威** ✓: 有 DONE ⇒ is_complete 裁决（失败强制重跑 ✗）；
+#      无 DONE ⇒ 退回旧 CSV 键判据 ✓（向后兼容 ✓ 不会把历史评测全部重跑 ✗）
+_ID_CACHE: dict = {}
+
+
+def _sha256_tensor_dict(sd):
+    """对 state_dict 做**流式**哈希 ✓（不额外常驻 240MB 副本 ✓）。"""
+    import hashlib as _h
+    h = _h.sha256()
+    for k in sorted(sd.keys()):
+        v = sd[k]
+        h.update(k.encode())
+        try:
+            t = v.detach().to("cpu", torch.float32).contiguous()
+            h.update(t.numpy().tobytes())
+        except Exception:                                        # noqa: BLE001
+            h.update(b"<nohash>")
+    return h.hexdigest()
+
+
+def _model_weight_sha256(model, tag=""):
+    """**权重内容身份** ✓（按 tag 缓存 ✓ —— 同一 step 多集只哈希一次 ✓）。"""
+    if tag and tag in _ID_CACHE:
+        return _ID_CACHE[tag]
+    m = model.module if hasattr(model, "module") else model
+    try:
+        h = _sha256_tensor_dict(m.state_dict())
+    except Exception:                                            # noqa: BLE001
+        return None
+    if tag:
+        _ID_CACHE[tag] = h
+    return h
+
+
+def _vae_sha256(path):
+    """VAE 身份 ✓（目录 ⇒ 全量树哈希 ✓；文件 ⇒ 单文件 ✓；都没有 ⇒ None ✗ 不伪造 ✗）。"""
+    import os as _os
+    if not path:
+        return None
+    key = "vae::" + str(path)
+    if key in _ID_CACHE:
+        return _ID_CACHE[key]
+    try:
+        from src.eval.protocol import sha256_file as _sf, sha256_tree as _st
+        if _os.path.isdir(path):
+            # ⚠ protocol.sha256_tree 返回**单个字符串** ✗（不是 manifest 里那个 3 元组 ✓）
+            #   exts=None ⇒ **连权重文件一起算** ✓（VAE 身份必须含权重 ✗ 只算 config 不够 ✗）
+            h = _st(path, exts=None)
+        elif _os.path.isfile(path):
+            h = _sf(path)
+        else:
+            h = None
+    except Exception:                                            # noqa: BLE001
+        h = None
+    _ID_CACHE[key] = h
+    return h
+
+
+def _build_eval_request(args, model, step, name, n, cfg_scale, ddim_steps, sf,
+                        csvp, code_rev, cond_sha=None, ema=True):
+    """构造不可变 `EvalRequest` ✓；**任何必需身份拿不到 ⇒ 返回 None** ✗（绝不伪造 ✗）。"""
+    try:
+        from src.eval.protocol import EvalRequest, sha256_file as _sf
+    except Exception:                                            # noqa: BLE001
+        return None
+    ck = _model_weight_sha256(model, tag="w::%s" % step)
+    vae = _vae_sha256(str(getattr(args, "eval_vae_path", "") or "data/pretrained/sd-vae-ft-ema"))
+    if not ck or not vae:
+        return None
+    try:
+        ds = _sf(csvp)
+    except Exception:                                            # noqa: BLE001
+        ds = ""
+    return EvalRequest(
+        checkpoint_sha256=ck, vae_sha256=vae,
+        vae_scale=float(sf), vae_shift=float(getattr(args, "vae_shift_factor", 0.0) or 0.0),
+        sampler=str(getattr(_DIFF, "sampler", "") or ""), num_steps=int(ddim_steps),
+        cfg=float(cfg_scale), gamma=float(getattr(_DIFF, "sde_gamma", 0.0) or 0.0),
+        seed=0, ema=bool(ema), code_revision=str(code_rev),
+        dataset_sha256=ds, conditions_sha256=str(cond_sha or ""),
+        sets_spec="%s:%d" % (name, int(n)),
+        extra={"step": int(step), "std_soft_sigma": float(
+            getattr(args, "std_soft_eval_sigma", 0.65))})
+
+
 def _eval_done_key(step, set_name, cfg, steps, sf, csvp, code_rev):
     """评测**已完成**的判据键（2026-10-13 [审查 P0]: "评测的缓存身份必须彻底改" ✓✓）。
 
@@ -1092,8 +1185,28 @@ def run_in_mem_eval(model, args, step, device, results_dir=None, logger=print):
 
     try:
         for name, csvp, n in sets:
-            # ★ 2026-10-13 [审查 P0]: 判据从 (step,set) 加宽到 _eval_done_key ✓
+            # ★ 2026-10-14 [重构 P0-1]: 集目录提前算 ✓（DONE 校验需要它 ✓）
+            _sub = "g" if name in ("seen", "g") else name
+            _sd = os.path.join(results_dir, "eval_samples_ctrl", f"step{int(step):07d}", _sub)
             _dkey = _eval_done_key(step, name, cfg_scale, ddim_steps, sf, csvp, _CODE_REV)
+            # ── P0-1 判据（**DONE 存在即权威** ✓）──────────────────────────────
+            _req = None
+            try:
+                from src.eval import protocol as _proto
+                _req = _build_eval_request(
+                    args, model, step, name, n, cfg_scale, ddim_steps, sf, csvp,
+                    _CODE_REV, cond_sha=None)
+                if _req is not None and os.path.isfile(_proto.done_path(_sd)):
+                    _ok, _why = _proto.is_complete(_req, _sd)
+                    if _ok:
+                        print(f"[in-mem-eval] ✓ protocol DONE 校验通过 ⇒ 跳过 "
+                              f"step={step} set={name}（{_why}）")
+                        continue
+                    print(f"[in-mem-eval] ✗ protocol DONE 校验**失败** ⇒ **强制重跑** "
+                          f"step={step} set={name}: {_why}")
+            except Exception as _pe:                             # noqa: BLE001
+                print(f"[in-mem-eval] ⚠ protocol 判据异常(退回旧判据): {_pe!r}")
+                _req = None
             if _dkey in done:
                 print(f"[in-mem-eval] ⚠ step={step} set={name} 已记录在 {sum_path} 里"
                       f" -> 跳过。同一 results_dir 按 (step,set) 去重，**换数据重跑**时"
@@ -1317,6 +1430,21 @@ def run_in_mem_eval(model, args, step, device, results_dir=None, logger=print):
                          "nn_mean": (float(_scn["nn_mean"]) if _scn else None),
                          "tgt_spec": (float(_scn["tgt_spec"]) if _scn else None),
                          "cal_enrich": (float(_scn["cal_enrich"]) if _scn else None)}
+            # ★ 2026-10-14 [重构 P0-1] **收尾: 写 protocol + 原子 DONE** ✓
+            #   条件: 样本确实落盘了（`_save` ✓）—— 否则 PNG 数无从校验 ✗ 不写 DONE ✓。
+            #   只有到这里（采样 ✓ 解码 ✓ 落图 ✓ 清单 ✓ 指标 ✓）才算"完成" ✓✓
+            if _req is not None and _save:
+                try:
+                    from src.eval import protocol as _proto
+                    _proto.write_protocol(_req, _sd)
+                    _proto.write_done(_req, _sd, n_samples=int(n), png_dir=_sd)
+                    logger(f"[in-mem-eval] ✓ protocol DONE 已写 {_sd} "
+                           f"(n={int(n)}, eval_id={_req.eval_id()[:12]}) —— "
+                           f"此后任何**缺图/换图/改协议/换权重**都会使其失效 ✗")
+                except Exception as _de:                         # noqa: BLE001
+                    logger(f"[in-mem-eval] ⚠ protocol DONE 写入失败(不影响评测): {_de!r}")
+            elif _req is None:
+                logger("[in-mem-eval] ⚠ 身份不完整(权重/VAE 哈希缺失) ⇒ 不写 DONE ✗")
             logger(f"[in-mem-eval] step={step} set={name} n={n} "
                    f"ssim={ssim.mean():.4f} (med={q50:.4f}) mse={mse:.5f}"
                    f"{_lp_txt}{_ink_txt}{_frag_txt}{_hole_txt}{_si_txt}{_scn_txt} "
