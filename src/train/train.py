@@ -74,6 +74,7 @@ from src.utils.channel_expand import (drop_shape_mismatched,
                                       materialize_lazy_params)
 from src.model.dit import MultiStyleEmbedder
 from src.train import backward as _bw          # ★ PR4: backward 策略模块 ✓
+from src.train import ema as _ema              # ★ PR4: EMA 组件 ✓
 from src.train.ckpt import (save_checkpoint, prune_checkpoints, drain_ckpt,
                                restore_rng)
 from src.train.data_setup import build_data   # ★ PR4: 数据装配 ✓
@@ -192,50 +193,10 @@ def _load_new_callig_row(path, dim, n_new):
     return t
 
 
-@torch.no_grad()
-def update_ema(ema_model, model, decay):
-    """Update a full-precision model EMA, including floating-point buffers.
-
-    [INFRA 2026-09-18] 原版对每个参数单独 `mul_().add_()`，并在**每次调用**重建
-    named_parameters / named_buffers 两个 dict —— `ema_interval` 默认 1 时这是每步
-    几百个小 kernel + Python 遍历/建表开销（其他地方都在抠 launch 与同步，这处是漏网）。
-    现在：
-      * 首次调用把 (ema_tensor, src_tensor) 配对**缓存**到 ema_model 上 —— 参数张量对象
-        由优化器就地更新、跨步稳定（detach 与原参数共享 storage，始终读到最新值），故可安全缓存，
-        之后零建表；
-      * 归一后用 `torch._foreach_mul_/add_` 批处理成极少的 multi-tensor kernel。
-    数值口径与原实现一致（同样的 decay / 1-decay、浮点 buffer 做 decay、整型 buffer 做 copy）。
-    """
-    pairs = getattr(ema_model, "_ema_pairs", None)
-    if pairs is None:
-        source = model.module if hasattr(model, "module") else model
-        source_params = dict(source.named_parameters())
-        source_buffers = dict(source.named_buffers())
-        ema_p, src_p = [], []
-        for name, ep in ema_model.named_parameters():
-            sp = source_params.get(name)
-            if sp is not None:
-                ema_p.append(ep); src_p.append(sp.detach())
-        ema_fb, src_fb, ema_cb, src_cb = [], [], [], []
-        for name, eb in ema_model.named_buffers():
-            sb = source_buffers.get(name)
-            if sb is None:
-                continue
-            if torch.is_floating_point(eb):
-                ema_fb.append(eb); src_fb.append(sb.detach())
-            else:
-                ema_cb.append(eb); src_cb.append(sb)
-        pairs = (ema_p, src_p, ema_fb, src_fb, ema_cb, src_cb)
-        ema_model._ema_pairs = pairs
-    ema_p, src_p, ema_fb, src_fb, ema_cb, src_cb = pairs
-    if ema_p:
-        torch._foreach_mul_(ema_p, decay)
-        torch._foreach_add_(ema_p, src_p, alpha=1.0 - decay)
-    if ema_fb:
-        torch._foreach_mul_(ema_fb, decay)
-        torch._foreach_add_(ema_fb, src_fb, alpha=1.0 - decay)
-    for eb, sb in zip(ema_cb, src_cb):
-        eb.copy_(sb)
+# ★ 2026-10-14 [重构 PR4]: `update_ema` 已**逐字搬移**到 src/train/ema.py ✓
+#   这里保留同名**再导出** ✓ ⇒ 既有 `from src.train.train import update_ema` 的
+#   调用点（含测试 ✓）无需改动 ✓。新代码请 `from src.train import ema` ✓。
+from src.train.ema import update_ema            # noqa: E402,F401
 
 # ckpt 相关实现已移到 src/train/ckpt.py（state_to_cpu / AsyncCkptWriter /
 # save_checkpoint / prune_checkpoints / drain_ckpt）
@@ -1417,6 +1378,7 @@ def main(args):
         #   审查 §4.2 要求"分别测量速度与显存" ✓ ⇒ 先要能按策略分组 ✓
         #   （joint = 图同时存活 ✓ 峰值显存高; sequential = 先释放 FM 图 ✓ 峰值低 ✓）
         logger.info(f"[backward] {_bw.describe(args)}")
+        logger.info(f"[ema] {_ema.describe(args)}")     # ★ PR4: interval 属实验身份 ✓
         logger.info(f"[EMA] enabled with decay={args.ema_decay}, interval={getattr(args, 'ema_interval', 1)} "
                     f"(effective per-step decay={args.ema_decay ** max(1, int(getattr(args, 'ema_interval', 1)))})")
     if dist.get_world_size() > 1:
@@ -2607,22 +2569,16 @@ def main(args):
                             _MEM_ON = False
                     if scheduler is not None:
                         scheduler.step()
-                    if ema_model is not None and (train_steps % max(1, int(getattr(args, 'ema_interval', 1))) == 0):
-                        # ★ 2026-10-14 [重构 P1-5] **纠正数学说明** ✗（审查指出旧注释错误 ✗）:
-                        #   旧注释称"每 N 步用 decay**N 更新, 数学上严格等价每步 decay" ✗✗
-                        #   严格式:  EMA_t = β^N·EMA_{t-N} + (1-β)·Σ_{k=0..N-1} β^k·θ_{t-k}
-                        #   间隔式:  EMA_t = β^N·EMA_{t-N} + (1-β^N)·θ_t
-                        #   ⇒ 间隔式把中间 N-1 步的权重**全部贴到最后一步 θ_t** ✗
-                        #   ⇒ 只有参数在窗口内基本不变时才近似相等 ✓ **不是严格等价** ✗
-                        #   处置: 作为**带宽优化保留** ✓（省 46M 参数 × N-1 次显存往返 ✓），
-                        #   但 ① interval 已写入 effective_config/日志(L1414 ✓) ⇒ 属实验身份 ✓
-                        #        ② 跨实验比较**必须固定同一 interval** ✓（后续可测 1/4/8 ✓）
-                        if args.ema_warmup:
-                            current_ema_decay = min(
-                                args.ema_decay, (1.0 + train_steps) / (10.0 + train_steps))
-                        else:
-                            current_ema_decay = args.ema_decay
-                        update_ema(ema_model, model, current_ema_decay ** max(1, int(getattr(args, 'ema_interval', 1))))
+                    # ★ 2026-10-14 [重构 PR4] EMA 调度与更新已抽到 src/train/ema.py ✓
+                    #   （审查 §4.2 把 EMA 列为需要明确生命周期的组件之一 ✓）
+                    #   数学说明（审查 P1-5 已纠正 ✓）见 ema.py 模块文档:
+                    #     间隔式**不是**严格等价每步 decay ✗ 只是带宽优化 ✓
+                    #     interval 属实验身份 ✓ ⇒ 跨实验比较必须固定同一 interval ✓
+                    #   逐字等价 ✓: should_update ≡ step % max(1,interval)==0 ✓
+                    #              effective_decay ≡ warmup 后 ** interval ✓
+                    if ema_model is not None and _ema.should_update(train_steps, args):
+                        current_ema_decay = _ema.effective_decay(train_steps, args)
+                        update_ema(ema_model, model, current_ema_decay)
                         if _writer_table_tuning is not None:
                             _writer_table_tuning.restore_null(ema_model)
                 else:
