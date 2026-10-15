@@ -448,35 +448,7 @@ class DiT_2Cond(DitConditionMixin, nn.Module):
         #   std  : 字形给内容      (use_char_cond=False, std_soft_cond=True)
         # 书家/书体表是**风格/身份**条件，两种模式下都保留（有实验支持其有效性）。
         self.content_cond = None if content_cond is None else str(content_cond).lower()
-        if self.content_cond is not None:
-            if self.content_cond not in ("table", "std", "hybrid"):
-                raise ValueError(
-                    f"content_cond 只能是 'table' / 'std' / 'hybrid'，收到 {content_cond!r}")
-            _has_char_table = bool(self.use_char_cond)
-            _has_std_glyph = bool(std_soft_cond)
-            if self.content_cond == "hybrid" and not (_has_char_table and _has_std_glyph):
-                raise ValueError(
-                    "content_cond='hybrid' 需要字表与 std 字形**同时**开启 "
-                    f"(use_char_cond={_has_char_table}, std_soft_cond={_has_std_glyph})")
-            if self.content_cond == "table" and _has_std_glyph:
-                raise ValueError(
-                    "content_cond='table' 但 std_soft_cond=True —— "
-                    "两种内容条件（字表 / std 字形）不得共存 ✗ 请二选一")
-            if self.content_cond == "std" and _has_char_table:
-                raise ValueError(
-                    "content_cond='std' 但 use_char_cond=True —— "
-                    "两种内容条件（字表 / std 字形）不得共存 ✗ 请设 no_char_cond=True")
-            if self.content_cond == "table" and not _has_char_table:
-                raise ValueError("content_cond='table' 需要 use_char_cond=True")
-            if self.content_cond == "std" and not _has_std_glyph:
-                raise ValueError("content_cond='std' 需要 std_soft_cond=True")
-        else:
-            if self.use_char_cond and bool(std_soft_cond):
-                import warnings
-                warnings.warn(
-                    "[content_cond] 字表与 std 字形**同时开启**（legacy 混合模式）✗ "
-                    "新训练请显式指定 content_cond='table' 或 'std'（二者互斥）",
-                    RuntimeWarning, stacklevel=2)
+        self._validate_content_cond(content_cond, std_soft_cond)
         self.char_proj_mode = char_proj_mode
         self.freeze_char_table = bool(freeze_char_table)
         if self.cond_drop_all_prob < 0 or self.cond_drop_one_prob < 0:
@@ -533,31 +505,7 @@ class DiT_2Cond(DitConditionMixin, nn.Module):
             _toks = [s.strip().lower() for s in _at_raw.replace(";", ",").split(",") if s.strip()]
         else:
             _toks = [str(s).strip().lower() for s in (_at_raw or ())]
-        self._style_ada_final = ("final" in _toks) or ("last" in _toks) or ("-1" in _toks)
-        _idx = set()
-        for _tk in _toks:
-            if _tk.lstrip("-").isdigit() and int(_tk) >= 0:
-                _idx.add(int(_tk))
-        # "" 或未给 ⇒ 全部层（旧行为 ✓）；给了非空但解析不出索引 ⇒ 全部层并告警 ✓
-        if not _toks:
-            self._style_ada_layers = tuple(range(depth))
-            # ★ 旧行为下 final_layer **也有**支路 ⇒ 这里必须为 True ✗
-            #   （我第一版漏了它 ⇒ 既有 rank>0 的模型会静默丢掉出口的风格支路 ✓）
-            self._style_ada_final = True
-        elif _idx or self._style_ada_final:
-            self._style_ada_layers = tuple(sorted(i for i in _idx if i < depth))
-        else:
-            log.warning("[style_ada] style_ada_at=%r 解析不出层号 ✗ ⇒ 退回全部层 ✓", style_ada_at)
-            self._style_ada_layers = tuple(range(depth))
-        if self.style_ada_rank > 0:
-            _bad = [i for i in _idx if i >= depth]
-            if _bad:
-                raise ValueError("style_ada_at 含越界层号 %s ✗（depth=%d）" % (_bad, depth))
-            log.info("[style_ada] rank=%d 层=%s final=%s gain=%s",
-                     self.style_ada_rank, list(self._style_ada_layers),
-                     self._style_ada_final, bool(style_ada_gain))
-
-        _sl = set(self._style_ada_layers)
+        _sl = self._resolve_style_ada(depth, style_ada_at, style_ada_gain, _toks)
         self.blocks = nn.ModuleList([
             M.DiTBlock(hidden_size, num_heads, mlp_ratio=mlp_ratio,
                        norm_type=norm_type, mlp_type=mlp_type, qk_norm=qk_norm,
@@ -629,6 +577,75 @@ class DiT_2Cond(DitConditionMixin, nn.Module):
         #   锁定后 `_style_out` 若再遇维度不符会**直接报错** ✗，绝不在训练前向中造参数 ✓
         #   （否则新参数不进 optimizer ✗、也可能破坏 compile 捕获 ✗）。
         self._style_proj_locked = True
+    def _validate_content_cond(self, content_cond, std_soft_cond):
+        """`content_cond` **纯校验** ✓（逐字搬移 ✓ 2026-10-14 [重构 PR5] ✓）。"""
+        content_cond = content_cond
+        std_soft_cond = std_soft_cond
+        if self.content_cond is not None:
+            if self.content_cond not in ("table", "std", "hybrid"):
+                raise ValueError(
+                    f"content_cond 只能是 'table' / 'std' / 'hybrid'，收到 {content_cond!r}")
+            _has_char_table = bool(self.use_char_cond)
+            _has_std_glyph = bool(std_soft_cond)
+            if self.content_cond == "hybrid" and not (_has_char_table and _has_std_glyph):
+                raise ValueError(
+                    "content_cond='hybrid' 需要字表与 std 字形**同时**开启 "
+                    f"(use_char_cond={_has_char_table}, std_soft_cond={_has_std_glyph})")
+            if self.content_cond == "table" and _has_std_glyph:
+                raise ValueError(
+                    "content_cond='table' 但 std_soft_cond=True —— "
+                    "两种内容条件（字表 / std 字形）不得共存 ✗ 请二选一")
+            if self.content_cond == "std" and _has_char_table:
+                raise ValueError(
+                    "content_cond='std' 但 use_char_cond=True —— "
+                    "两种内容条件（字表 / std 字形）不得共存 ✗ 请设 no_char_cond=True")
+            if self.content_cond == "table" and not _has_char_table:
+                raise ValueError("content_cond='table' 需要 use_char_cond=True")
+            if self.content_cond == "std" and not _has_std_glyph:
+                raise ValueError("content_cond='std' 需要 std_soft_cond=True")
+        else:
+            if self.use_char_cond and bool(std_soft_cond):
+                import warnings
+                warnings.warn(
+                    "[content_cond] 字表与 std 字形**同时开启**（legacy 混合模式）✗ "
+                    "新训练请显式指定 content_cond='table' 或 'std'（二者互斥）",
+                    RuntimeWarning, stacklevel=2)
+
+    def _resolve_style_ada(self, depth, style_ada_at, style_ada_gain, _toks):
+        """风格支路层解析 ✓（逐字搬移 ✓ 2026-10-14 [重构 PR5] ✓）。
+
+        ★ 回传 `_sl, i` ✓（AST 算出: 其后仍被用到 ✓）"""
+        depth = depth
+        style_ada_at = style_ada_at
+        style_ada_gain = style_ada_gain
+        self._style_ada_final = ("final" in _toks) or ("last" in _toks) or ("-1" in _toks)
+        _idx = set()
+        for _tk in _toks:
+            if _tk.lstrip("-").isdigit() and int(_tk) >= 0:
+                _idx.add(int(_tk))
+        # "" 或未给 ⇒ 全部层（旧行为 ✓）；给了非空但解析不出索引 ⇒ 全部层并告警 ✓
+        if not _toks:
+            self._style_ada_layers = tuple(range(depth))
+            # ★ 旧行为下 final_layer **也有**支路 ⇒ 这里必须为 True ✗
+            #   （我第一版漏了它 ⇒ 既有 rank>0 的模型会静默丢掉出口的风格支路 ✓）
+            self._style_ada_final = True
+        elif _idx or self._style_ada_final:
+            self._style_ada_layers = tuple(sorted(i for i in _idx if i < depth))
+        else:
+            log.warning("[style_ada] style_ada_at=%r 解析不出层号 ✗ ⇒ 退回全部层 ✓", style_ada_at)
+            self._style_ada_layers = tuple(range(depth))
+        if self.style_ada_rank > 0:
+            _bad = [i for i in _idx if i >= depth]
+            if _bad:
+                raise ValueError("style_ada_at 含越界层号 %s ✗（depth=%d）" % (_bad, depth))
+            log.info("[style_ada] rank=%d 层=%s final=%s gain=%s",
+                     self.style_ada_rank, list(self._style_ada_layers),
+                     self._style_ada_final, bool(style_ada_gain))
+
+        _sl = set(self._style_ada_layers)
+        return _sl
+
+
     def _init_conditioning_block(self, attn_tau, callig_embed_dim, callig_proj_mode, callig_scale_init, callig_spatial, callig_spatial_rank, callig_style_ca, char_embed_dim, char_id_to_char, char_proj_mode, chars_per_script, class_dropout_prob, cond_fusion_norm, condition_fusion, glyph_inject_layers, glyph_inject_mode, glyph_vec_dim, hidden_size, ids_file, num_calligraphers, num_characters, num_heads, num_script_classes, script_embed_dim, std_dino_table_path, style_ctx_every_layer, style_gain_init, style_ln, style_role_init, style_token_n, style_y_over_t_init, use_ids_char_embedder, use_std_dino_char_embedder):
         """条件块（**逐字搬移** ✓ 2026-10-14 [重构 PR5] ✓ 审查 §4.1 ✓）。
 
