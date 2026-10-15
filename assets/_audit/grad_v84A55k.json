@@ -1,0 +1,15 @@
+{
+  "batch": 2,
+  "ckpt": "0055000.pt",
+  "fseed": 4321,
+  "grad_sha256": "4270a845da278c6da2a92155f5e592810c82e79ae491d48c993acd0a9fa34f36",
+  "group_norms": {
+    "backbone": 5653.8891623801355,
+    "condition": 2012.860657149597
+  },
+  "loss": 30.469741821289062,
+  "n_grad_elements": 59818645,
+  "n_params_with_grad": 160,
+  "seed": 1234,
+  "torch": "2.13.0+cu132"
+}

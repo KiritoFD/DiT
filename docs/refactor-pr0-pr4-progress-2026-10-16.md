@@ -122,8 +122,12 @@
 ## 6. 验证体系（可复现 ✓）
 
 ```bash
-# 全量测试（299 项 ✓）
+# 全量测试（388 项 ✓）
 python -m pytest tests/ -q
+
+# ★★ 梯度黄金（审查 PR0 明确要求 ✓ 2026-10-14 补齐 ✓）
+python tools/verify_grad_parity.py --ckpt _local_ckpt/0055000.pt \
+    --golden assets/_audit/grad_v84A55k.json --check
 
 # 前向黄金（**逐位一致** ✓ 全程保持 ✓）
 python tools/verify_forward_parity.py --ckpt _local_ckpt/0055000.pt \
@@ -139,6 +143,42 @@ python tools/_smoke_dino_cache.py
 python tools/preflight.py --strict
 python tools/audit_configs.py --active --strict
 ```
+
+### 6.1 ★★ 梯度黄金（本轮补齐 ✓ 审查 PR0 的硬要求 ✓）
+
+审查 PR0 原文:
+> **梯度等价测试** —— 在固定 FP32 小 batch 上，检查**主干和条件层**的梯度，
+> 避免"前向看起来正常，实际训练方向变了"。
+
+**为什么必须单独做** ✗: 既有前向黄金跑在 `torch.no_grad()` 里 ✓ ⇒ **管不到反传** ✗；
+而 PR4 的搬移**大量发生在反传与更新路径** ✓（backward 策略 ✓ 损失装配顺序 ✓ clip/EMA ✓）
+⇒ 只有前向黄金**无法**证明"训练方向没变" ✗。
+
+**工具**: `tools/verify_grad_parity.py` ✓ 记录
+① 全参数梯度按**固定顺序**拼接后的 **sha256**（逐位 ✓）
+② 按角色分组的梯度范数（backbone / condition ✓ 便于**定位**是哪一组变了 ✓）
+③ 固定函数值 ✓
+
+**实测（v84A 55k ✓ 本机 CPU ✓ FP32 ✓ batch=2 ✓）**:
+
+| 项 | 值 |
+|---|---|
+| 有梯度的参数数 | 160 ✓ |
+| 梯度元素总数 | **59,818,645** ✓（≈ 审查的 P=59.9M ✓ **交叉吻合** ✓）|
+| `backbone` ‖g‖ | 5.653889e+03 ✓ |
+| `condition` ‖g‖ | 2.012861e+03 ✓ |
+| `grad_sha256` | `4270a845da278c6da2a92155f5e592810c82e79ae491d48c993acd0a9fa34f36` ✓ |
+
+**确定性** ✓: 连跑两次 sha **完全相同** ✓（否则黄金无意义 ✗）。
+
+**★★ 阴性对照**（证明黄金**会失败** ✓ 不是假测试 ✗）:
+微扰**单个** 2D 权重 `+1e-6` ⇒ sha 变为 `0b7325f2…` ✓（`backbone` 范数变化 1.86e-3 ✓）
+⇒ 灵敏度**实测确认** ✓（该对照已固化为测试 ✓ `test_golden_is_sensitive_to_tiny_perturbation` ✓）。
+
+**设计取舍** ✓: 损失用**固定随机泛函** `(out·W).sum()`（W 由固定 seed 生成 ✓）
+而非完整 FM 损失 ✓ ⇒ 黄金**不依赖** diffusion / REPA / 数据集的内部实现 ✓
+⇒ 它们各自的搬移不会**误报** ✓；而模型的**前向 + 反传 + 条件层梯度**仍被**逐位**锁定 ✓
+（这正是 PR4 / PR5 要保护的东西 ✓）。
 
 **守卫测试的定位** ✓: 除功能测试外，每个切片都配了**不变量守卫**（静态扫描 + 行为断言 ✓），
 用于防止后续改动**回退**已修缺陷 ✗ —— 例如:
