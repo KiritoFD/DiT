@@ -31,7 +31,7 @@ from typing import Optional
 import torch
 
 __all__ = ["NonFiniteGuard", "StepInputs", "resolve_step_inputs",
-           "clip_and_step"]
+           "clip_and_step", "build_train_model_kwargs"]
 
 
 class NonFiniteGuard:
@@ -167,3 +167,56 @@ def clip_and_step(opt, params, max_norm: float, writer_table=None) -> None:
     opt.step()
     if writer_table is not None:
         writer_table.restore_null()
+
+def build_train_model_kwargs(args, batch, device, *, cond_mode: str,
+                             std_soft_cond: bool, y_callig, y_char, y_script=None,
+                             ) -> dict:
+    """训练侧**条件装配**（审查 §4.1: 收进 `ConditionBatch` ✓ 2026-10-14 ✓）
+
+    ★ 逐字搬移自 `train.py` 的 `model_kwargs` 初始装配 ✓（抽成函数只为**可测** ✓）
+      后续的**条件 dropout / 形变增强**仍由调用方在同一 `dict` 上突变 ✓ 一字未改 ✓
+
+    ★★ `y_script` 的三种来源是**并集** ✓✗（原代码在 hier 块里**又设了一次** ✓）:
+        `cond_mode == "3cond"` ✓ 或 `use_script_cond` ✓ 或 `hier_style > 0` ✓
+      ⇒ 三者**任一**成立 ⇒ 带上 `y_script` ✓（其余情况**不带** ✓）
+
+    ★ `g` 的三路来源**顺序不变** ✓（首个命中即止 ✓）:
+        ① `std_soft`（`_std_soft_cond` ✓ 且非空 ✓）
+        ② `g`（`w_glyph_cond` ✓ 且非空 ✓）
+        ③ `skel_latent`（`skel_as_glyph_cond` ✓ 且非空 ✓）
+
+    ⚠ 必须用 `kwargs_for_call` ✗ —— **不能**用 `batch_to_kwargs(for_forward=True)` ✓
+      后者**总是**保留 `g`（契约: `g=None` = "条件被丢掉" ✓）
+      ⇒ 会把"没有字形条件"变成"明确传 g=None" ✗ ⇒ **语义改变** ✗（已实测 ✓）
+    """
+    from src.model.conditioning import build_batch, kwargs_for_call
+    _hier = int(getattr(args, "hier_style", 0)) > 0
+    _want_script = (cond_mode == "3cond") or bool(getattr(args, "use_script_cond", False)) or _hier
+    # ★★ y_script 的**优先级** ✗（穷举测试抓到的真 bug ✓）:
+    #   旧代码在 hier 块里**又设了一次** mk['y_script'] = batch['y_script'] ✓
+    #   ⇒ hier 成立时 **batch 的值覆盖**调用方传入的值 ✓（不只是"并集" ✓）
+    #     并且**总是**设（哪怕调用方传 None ✓）✓
+    if _hier and "y_script" in batch:
+        _ys = batch["y_script"].to(device, non_blocking=True)
+    else:
+        _ys = y_script if _want_script else None
+    _g = None
+    if std_soft_cond and "std_soft" in batch and batch["std_soft"].numel() > 0:
+        _g = batch["std_soft"].to(device, non_blocking=True).float()      # (N,1,64,64), ink=1
+    elif getattr(args, "w_glyph_cond", False) and "g" in batch and batch["g"].numel() > 0:
+        _g = batch["g"].to(device, non_blocking=True)                     # (N,4,32,32)
+    elif (getattr(args, "skel_as_glyph_cond", False) and "skel_latent" in batch
+          and batch["skel_latent"].numel() > 0):
+        # v10a: 实例 skel latent 即字条件 (与 ControlNet 的 cond 同源不同路)
+        _g = batch["skel_latent"].to(device, non_blocking=True).float()
+    _batch = build_batch(
+        y_callig=y_callig, y_char=y_char,
+        y_script=_ys,
+        # ── S2: 三层语义分解的三个 id（数据集始终提供，模型按需消费）──
+        # hier_style=0 时 forward 会忽略它们，零副作用。
+        y_callig_raw=(batch["y_callig_raw"].to(device, non_blocking=True)
+                      if _hier and "y_callig_raw" in batch else None),
+        y_pair=(batch["y_pair"].to(device, non_blocking=True)
+                if _hier and "y_pair" in batch else None),
+        g=_g)
+    return kwargs_for_call(_batch)

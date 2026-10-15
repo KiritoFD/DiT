@@ -79,7 +79,8 @@ from src.train.checkpoint import CheckpointManager as _CkptManager   # ★ PR4: 
 from src.train import optimizer as _opt        # ★ PR4: 优化器装配（纯决策 + 薄工厂）✓
 from src.train.step import (NonFiniteGuard as _NonFiniteGuard,   # ★ PR4: 单步组件 ✓
                             resolve_step_inputs as _resolve_step_inputs,
-                            clip_and_step as _clip_and_step)
+                            clip_and_step as _clip_and_step,
+                            build_train_model_kwargs as _build_train_model_kwargs)
 from src.train.telemetry import Diagnostics as _Diagnostics    # ★ PR4: 训练期诊断（纯观测）✓
 from src.train import telemetry as _tel         # ★ PR4: 窗口均值汇总（纯计算）✓
 from src.train.objectives import ObjectiveComposer as _ObjComposer   # ★ PR4: 损失装配 ✓
@@ -1958,30 +1959,17 @@ def main(args):
                 # 统一时间步采样: FlowMatching.sample_t -> t∈[0,1); GaussianDiffusion.sample_t -> t∈{0..T-1}。
                 # 调用方绝不自己分支 (否则会重蹈 flow/randint 错配覆辙)。
                 t = diffusion.sample_t(x_latent.shape[0], device)
-                if cond_mode == "3cond":
-                    model_kwargs = dict(y_callig=y_callig, y_script=y_script, y_char=y_char)
-                else:
-                    model_kwargs = (dict(y_callig=y_callig, y_script=y_script, y_char=y_char)
-                                    if getattr(args, 'use_script_cond', False)
-                                    else dict(y_callig=y_callig, y_char=y_char))
-                # ── S2: 三层语义分解的三个 id（数据集始终提供，模型按需消费）──
-                # hier_style=0 时 forward 会忽略它们，零副作用。
-                if int(getattr(args, 'hier_style', 0)) > 0:
-                    model_kwargs['y_callig_raw'] = batch['y_callig_raw'].to(
-                        device, non_blocking=True)
-                    model_kwargs['y_pair'] = batch['y_pair'].to(device, non_blocking=True)
-                    model_kwargs['y_script'] = batch['y_script'].to(device, non_blocking=True)
-                # 标准字形条件 g(甲2 token-add): batch 由 dataset 提供, None=禁用对应项
-                if _std_soft_cond and 'std_soft' in batch and batch['std_soft'].numel() > 0:
-                    model_kwargs['g'] = batch['std_soft'].to(
-                        device, non_blocking=True).float()  # (N,1,64,64), ink=1
-                elif getattr(args, 'w_glyph_cond', False) and 'g' in batch and batch['g'].numel() > 0:
-                    model_kwargs['g'] = batch['g'].to(device, non_blocking=True)  # (N,4,32,32)
-                elif getattr(args, 'skel_as_glyph_cond', False) and 'skel_latent' in batch \
-                        and batch['skel_latent'].numel() > 0:
-                    # v10a: 实例 skel latent 即字条件 (与 ControlNet 的 cond 同源不同路)
-                    model_kwargs['g'] = batch['skel_latent'].to(
-                        device, non_blocking=True).float()
+                # ★ 2026-10-14 [重构 PR5] 条件装配抽成 step.build_train_model_kwargs ✓
+                #   （审查 §4.1: 收进 ConditionBatch ✓）逐字等价 ✓:
+                #     · y_script 的三种来源是**并集** ✓（3cond / use_script_cond / hier ✓）
+                #     · g 的三路来源顺序不变 ✓（std_soft → g → skel_latent ✓）
+                #     · 用 kwargs_for_call ✓（"存在才加键" ✓ **不是** for_forward=True ✗
+                #       后者总是保留 g ✗ 会把"无字形"变成"明确 g=None" ✗ 语义改变 ✗）
+                #   ⚠ 下面的**条件 dropout / 形变增强**仍操作同一 dict ✓ 一字未改 ✓
+                model_kwargs = _build_train_model_kwargs(
+                    args, batch, device, cond_mode=cond_mode,
+                    std_soft_cond=_std_soft_cond,
+                    y_callig=y_callig, y_char=y_char, y_script=y_script)
 
                 # ── 条件几何形变增强 (Condition Deformation Augmentation) ───────
                 _g_def_prob = float(getattr(args, 'glyph_deform_prob', 0.0))
