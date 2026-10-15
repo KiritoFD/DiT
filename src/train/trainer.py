@@ -115,6 +115,15 @@ def training_loop(s: TrainState):
 
     返回: `_train_fatal` ✓（循环后唯一需要的循环内绑定 ✓ None = 正常结束 ✓）
     """
+    # ★★ 2026-10-16 修 **真 bug**（在真机跑出来 ✓ 本地 smoke 未覆盖 ✗）:
+    #   旧代码只在 `except Exception as e:` 分支里 `_train_fatal = e` ✗
+    #   却在函数末尾**无条件** `return _train_fatal` ✗
+    #   ⇒ **正常退出**（`max_steps` 到达 / `early_stop` / `break` ✓）时该名字
+    #     **从未被赋值** ✗ ⇒ `UnboundLocalError: local variable '_train_fatal'
+    #     referenced before assignment` ✗✗
+    #   实测: `--max-steps 24` 跑完 24 步、打印 "stopping cleanly" 后**崩在 return** ✗
+    #   ⇒ 必须在**任何路径之前**初始化为 None ✓（= 正常结束 ✓ 与原语义一致 ✓）
+    _train_fatal = None
     _SKEL_STRUCT_WARNED = s._SKEL_STRUCT_WARNED
     _acc_c12 = s._acc_c12
     log_steps = s.log_steps

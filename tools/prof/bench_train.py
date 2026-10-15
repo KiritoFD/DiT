@@ -71,7 +71,7 @@ def file_sha(path: str) -> str:
 
 def proxy_mfu(batch: int, steps_per_sec: float) -> float:
     """审查 §6.2 的代理 MFU ✓（**同一个未经校正的公式** ⇒ 只在同套基准内可比 ✓）。"""
-    return (F_SAMPLE_GFLOPS * 1e9 * batch * steps_per_sec) / (PEAK_TFLOP_BF16 * 1e12)
+    return (F_SAMPLE_GFLOPS * 1e9 * batch * steps_per_sec) / (PEAK_TFLOPS_BF16 * 1e12)
 
 
 # ── 日志解析（用真实日志 ✓ 不另造计数器 ✗）──
