@@ -77,16 +77,30 @@ def proxy_mfu(batch: int, steps_per_sec: float) -> float:
 # ── 日志解析（用真实日志 ✓ 不另造计数器 ✗）──
 RE_STEPS = re.compile(r"Steps/Sec:\s*([0-9.]+)")
 RE_MEM = re.compile(r"Mem:\s*([0-9.]+)G/([0-9.]+)G")
-RE_LOSS = re.compile(r"Diff:\s*([0-9.]+)")
+RE_DIFF = re.compile(r"Diff:\s*([0-9.]+)")
 
 
-def parse_log(text: str) -> dict:
+def parse_log(text: str, skip_first: int = 2) -> dict:
+    """从**真实日志**解析吞吐 ✓（`infra_1015.md` §十一 ✓）。
+
+    ★ `skip_first`（默认 2 ✓）: 丢掉**前几步**的日志 ✓
+      实测发现: 首步会打印 `Steps/Sec: 0.02` ✗（compile/预热/首次分配的假值 ✓）
+      ⇒ 若不丢，均值会被严重拉低 ✗ ⇒ 报告失真 ✗
+    ★ 主指标改用**后段中位**（而非全均值 ✓）:
+      与审查 §十一 要求一致（"报告中位 step ms" ✓）；均值对尾部抖动敏感 ✗
+    """
     sps = [float(x) for x in RE_STEPS.findall(text)]
     mem = [(float(a), float(b)) for a, b in RE_MEM.findall(text)]
-    loss = [float(x) for x in RE_LOSS.findall(text)]
+    loss = [float(x) for x in RE_DIFF.findall(text)]
+    sps_use = sps[skip_first:] if len(sps) > skip_first else sps
+    med = sorted(sps_use)[len(sps_use) // 2] if sps_use else 0.0
     return {
         "n_log_lines": len(sps),
-        "steps_per_sec": (sum(sps) / len(sps)) if sps else 0.0,
+        "n_used": len(sps_use),
+        "skipped_warmup": min(skip_first, len(sps)),
+        "steps_per_sec": med,              # ★ 后段**中位** ✓（稳健 ✓）
+        "sps_mean_used": (sum(sps_use) / len(sps_use)) if sps_use else 0.0,
+        "sps_first_raw": sps[0] if sps else 0.0,
         "sps_last": sps[-1] if sps else 0.0,
         "peak_reserved_gb": max((b for _a, b in mem), default=0.0),
         "mem_cur_gb": mem[-1][0] if mem else 0.0,
@@ -194,6 +208,8 @@ def main():
             print("      %.2f steps/s ✓ %.0f samples/s ✓ %.1f ms/step ✓ 峰值 %.2f GB ✓ MFU≈%.1f%%"
                   % (r["steps_per_sec"], r["samples_per_sec"], r["ms_per_step"],
                      r["peak_reserved_gb"], 100 * r["proxy_mfu"]))
+            print("        （统计口径: 已丢前 %d 条 warmup ✓ 用 %d 条的**中位** ✓ 首条原值 %.2f ✓）"
+                  % (r["skipped_warmup"], r["n_used"], r["sps_first_raw"]))
         elif not args.dry_run:
             print("      ✗ 未解析到吞吐（exit=%s ✓ 看 %s）" % (r.get("exit"), r.get("log")))
 
