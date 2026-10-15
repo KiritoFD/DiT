@@ -204,6 +204,33 @@ def batch_to_kwargs(batch: ConditionBatch, *, for_forward: bool = True) -> Dict[
     return kw
 
 
+def kwargs_for_call(batch: ConditionBatch, *, allow_none_glyph: bool = False) -> Dict[str, Any]:
+    """**迁移助手** ✓: 把 ConditionBatch 还原成"**原本存在**的键" ✓（2026-10-14 ✓）
+
+    ★★ 为什么不能用 `batch_to_kwargs(b, for_forward=True)` 直接替换旧代码 ✗✗
+      旧调用点（如 `src/eval/sampler.py`）的写法是"**存在才加键**" ✓::
+
+          mk = dict(y_callig=yc, y_char=yh)
+          if skel is not None:
+              mk["g"] = skel[i:j]          # ← 不存在就**根本不传** g ✓
+
+      而 `for_forward=True` **总是保留** `g` ✓（哪怕它是 None ✓）
+      —— 因为契约上 `g=None` 是"**条件被丢掉**"的语义 ✓ 而不是"不传" ✓
+      ⇒ 直接替换会把"没传 g"变成"明确传 g=None" ✗ ⇒ **语义改变** ✗（**已实测确认** ✓）
+
+    ⇒ 迁移时用本函数 ✓: 默认**只保留原本非 None 的键** ✓（与"存在才加"逐字等价 ✓）
+      只有确实要表达"明确不带字形"时才 `allow_none_glyph=True` ✓
+
+    ⚠ 注意 `cond` 键（ControlNet 包装用 ✓）**不在** ConditionBatch 里 ✗
+      ⇒ 那部分必须留在调用方 ✓（不要硬塞进本层 ✗）
+    """
+    kw = batch.to_kwargs()
+    out = {k: v for k, v in kw.items() if v is not None}
+    if allow_none_glyph:
+        out["g"] = kw.get("g")
+    return out
+
+
 def call_forward(model, x, t, batch: ConditionBatch, **extra):
     """用 ConditionBatch 调 model.forward（**不改签名** ✓）"""
     kw = dict(batch_to_kwargs(batch))
