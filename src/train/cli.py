@@ -64,9 +64,8 @@ def _str_to_bool(value):
     return str(value).strip().lower() in ("1", "true", "yes", "y", "on")
 
 
-def build_parser(argv=None):
-    """只构建 parser（不读 config、不解析）。"""
-    parser = argparse.ArgumentParser()
+def _add_args_1(parser):
+    """build_parser 参数组 1 ✓（原 L70..L160 ✓ 逐字搬移 ✓）。"""
     parser.add_argument("--data-csv", type=str, default="train.csv",
                         help="Path to the training CSV (default from config.json).")
     parser.add_argument("--data-dir", type=str, default="", help="Root dataset directory if CSV has relative paths")
@@ -158,6 +157,10 @@ def build_parser(argv=None):
                         help="Freeze y_char_embedder table after DINO init (keep CFG uncond row "
                              "trainable). Saves ~13.5M trainable params; conditions become pure "
                              "DINO 384 vectors.")
+
+
+def _add_args_2(parser):
+    """build_parser 参数组 2 ✓（原 L161..L475 ✓ 逐字搬移 ✓）。"""
     # ---- IDS 组件码本字嵌入 ----
     parser.add_argument("--use-ids-char-embedder", type=_str_to_bool, default=False,
                         help="Use IDS component-based char embedder instead of LabelEmbedder. "
@@ -280,6 +283,12 @@ def build_parser(argv=None):
                         help="v53 三表解冻但用小学习率: 书家/书体/汉字三张表的 lr = "
                              "主 lr × scale (如 0.1)。0 = 不分组建模 (表仍按主 lr 训)。"
                              "拆组发生在 opt/scheduler 状态恢复之后, 并同步 scheduler.base_lrs。")
+    parser.add_argument('--finetune-callig-table', type=_str_to_bool, default=False,
+                        help='Fine-tune real writer rows only; keep script/char tables and CFG null frozen.')
+    parser.add_argument('--callig-table-lr', type=float, default=2e-6)
+    parser.add_argument('--callig-table-anchor-weight', type=float, default=0.01)
+    parser.add_argument('--callig-table-anchor-file', type=str, default='',
+                        help='Fixed checkpoint-derived writer-row reference, also used on resume.')
     parser.add_argument("--hier-style", type=int, default=0, dest="hier_style",
                         help="[S2] >0 启用三层语义分解:\n"
                              "  e_style  = 书家主效应(既有表) + α · E_pair[pair]\n"
@@ -303,6 +312,8 @@ def build_parser(argv=None):
                              "书体是**结构轴**, 与 g 同域 (g 本就按书体渲染), 因此走调制骨架\n"
                              "而不是进 adaLN (避免'同一信号喂两遍' = 12ch 失败的教训)。\n"
                              "需要 --hier-style > 0。")
+    parser.add_argument("--writer-glyph-rank", type=int, default=0)
+    parser.add_argument("--writer-glyph-at", type=str, default="3,7")
     parser.add_argument("--lowrank-spatial-rank", type=int, default=0,
                         dest="lowrank_spatial_rank",
                         help="低秩逐位置风格×几何乘法的秩 (0=关闭, 与旧 ckpt 逐位等价)。\n"
@@ -465,6 +476,10 @@ def build_parser(argv=None):
                              "(epsilon prediction, DDIM sampling); 'flow' = linear-interpolant "
                              "Flow Matching (velocity prediction, ODE sampling).")
 
+
+
+def _add_args_3(parser):
+    """build_parser 参数组 3 ✓（原 L476..L527 ✓ 逐字搬移 ✓）。"""
     # ---- Flow Matching: t 分布 / 求解器 / schedule（flow free-lunch）----
     parser.add_argument("--t-sampler", type=str, default="logit_normal",
                         choices=["uniform", "logit_normal", "cosmap"],
@@ -517,6 +532,10 @@ def build_parser(argv=None):
                              "(flow has no variance head; leaving it True creates C permanently "
                              "dead zero-initialized output channels), True for ddpm.")
 
+
+
+def _add_args_4(parser):
+    """build_parser 参数组 4 ✓（原 L528..L600 ✓ 逐字搬移 ✓）。"""
     # ---- 骨干现代化（v2 arch）----
     parser.add_argument("--norm-type", type=str, default="rms", choices=["rms", "layer"],
                         dest="norm_type", help="Normalization inside DiT blocks / final layer.")
@@ -590,6 +609,10 @@ def build_parser(argv=None):
                         help="Tempered inverse character-frequency exponent.")
     parser.add_argument("--balance-callig-alpha", type=float, default=0.25,
                         help="Tempered inverse calligrapher-frequency exponent.")
+
+
+def _add_args_5(parser):
+    """build_parser 参数组 5 ✓（原 L601..L835 ✓ 逐字搬移 ✓）。"""
     # [2026-09-16] epoch 长度(步)。0 = 自动取 ckpt_every(推荐): epoch 与存盘/评测
     # 刻度重合, DataLoader 迭代器 reset 的代价被 ckpt+eval 吸收, 不再每 119 步抖一次。
     # 负值 = 强制退回旧行为(epoch = 数据集一遍)。
@@ -825,6 +848,10 @@ def build_parser(argv=None):
                              "单步亚像素插值误差更小。动机: 单次大位移(max_off=6 ≈ 6 个\n"
                              "latent 像素)的双线性重采样会把 1px 骨架线抹开 -> 解码发灰。\n"
                              "⚠ 实验性: K 次重采样也会累加模糊, 是否更好必须实测; K=1 逐位等价旧行为。")
+
+
+def _add_args_6(parser):
+    """build_parser 参数组 6 ✓（原 L836..L937 ✓ 逐字搬移 ✓）。"""
     # ---- [2026-09-29] 形变头正则化 (此前**完全没接**, 是 v27 过拟合的根因) ----
     # 口径与 tools/train_deform_standalone.py 一致。DeformSkel.regularizers() 早就提供
     # 这些量, 但 train.py 从未调用 -> 4.1M 参数零正则直接拟合训练集。
@@ -927,6 +954,10 @@ def build_parser(argv=None):
     parser.add_argument("--glyph-embedder-depth", type=int, default=0,
                         help="g 编码器增强深度 (0=单层 Conv 现状; >0=降采样 Conv + N 层 "
                              "(SiLU+Conv3x3) 残形增强 std 骨架特征, 治 std-skel g 通路不激活).")
+
+
+def _add_args_7(parser):
+    """build_parser 参数组 7 ✓（原 L938..L1103 ✓ 逐字搬移 ✓）。"""
     # [v12+] FLOP 实测: depth=2 的两层满秩 3x3 conv 占全模型 9.7%。
     # depthwise-separable 同感受野只需 1/8.8 的代价 (省约 8.6% 总 FLOPs)。
     # ⚠ 这是**架构替换**, 理论上低风险(输入是近二值细线, 信息量极低), 但**未经验证**,
@@ -960,6 +991,18 @@ def build_parser(argv=None):
                         dest="style_rank_margin", help="[v85B] 排序损失的 margin m ✓")
     parser.add_argument("--style-rank-tau", type=float, default=0.07,
                         dest="style_rank_tau", help="[v85B] 排序损失的温度 τ ✓")
+    parser.add_argument('--strong-style-mode', choices=['off', 'A', 'B', 'C', 'D'], default='off')
+    parser.add_argument('--strong-style-ratio', type=float, default=0.6)
+    parser.add_argument('--strong-style-cf-ratio', type=float, default=0.3)
+    parser.add_argument('--strong-style-brush-ratio', type=float, default=0.05)
+    parser.add_argument('--strong-style-samples', type=int, default=0,
+                        help='0=all eligible batch rows; positive=explicit diagnostic subsample')
+    parser.add_argument('--strong-style-full-batch', type=_str_to_bool, default=False)
+    parser.add_argument('--strong-style-cf-every', type=int, default=4)
+    parser.add_argument('--strong-style-probe-every', type=int, default=50)
+    parser.add_argument('--strong-style-max-weight', type=float, default=0.1)
+    parser.add_argument('--strong-style-quantile', type=float, default=0.25)
+    parser.add_argument('--strong-style-calibration', default='assets/strong_style_real_calibration.json')
     parser.add_argument("--critic-ckpt", default="assets/writer_brush_critic.pt",
                         dest="critic_ckpt", help="[v85C] 冻结双头 critic ckpt ✓")
     parser.add_argument("--critic-std-bank", default="scratch/disc_lat_full.npz",
@@ -1081,6 +1124,10 @@ def build_parser(argv=None):
                              "built by tools/build_dino_cache.py). Hits skip the per-step DINO "
                              "forward (+15~20% throughput, -1.5GB VRAM); misses fall back to the "
                              "teacher forward (lazy-loaded). Empty = disabled (teacher every step).")
+
+
+def _add_args_8(parser):
+    """build_parser 参数组 8 ✓（原 L1104..L1159 ✓ 逐字搬移 ✓）。"""
     # [v12 修复] 该键此前**未注册为 argparse 参数**, 代码里用
     #   getattr(args, "repa_layers", "") 读取 -> config JSON 里的值被**静默丢弃**,
     #   实际永远走 train.py 的硬编码兜底 `or (8,)`。v11/v12 恰好都想要 8 所以没暴露,
@@ -1137,6 +1184,10 @@ def build_parser(argv=None):
                         dest="in_mem_eval_save_samples",
                         help="Save generated + GT PNGs to eval_samples_ctrl/step{N}/{set}/ "
                              "during --in-mem-eval (poster/sanity use).")
+
+
+def _add_args_9(parser):
+    """build_parser 参数组 9 ✓（原 L1160..L1194 ✓ 逐字搬移 ✓）。"""
     # [v12+] LPIPS 此前是"声明了但从没算过"的空列。ssim 会被大面积白底匹配骗过
     # (doc59: 墨团也能拿 0.48), LPIPS 对结构细节敏感 —— 是区分"容量够不够"与
     # "ssim 饱和"的关键指标 (doc62 §3)。跑在 CPU, 不与训练争显存。
@@ -1172,6 +1223,20 @@ def build_parser(argv=None):
                         dest="allow_unknown_config_keys",
                         help="★ 逃生开关(审查 P0): 默认 False ⇒ config JSON 里的**未注册键直接报错** ✓"
                              "(防止配置静默失效)。仅历史配置临时放行时置 True。")
+
+
+def build_parser(argv=None):
+    """只构建 parser（不读 config、不解析）。"""
+    parser = argparse.ArgumentParser()
+    _add_args_1(parser)
+    _add_args_2(parser)
+    _add_args_3(parser)
+    _add_args_4(parser)
+    _add_args_5(parser)
+    _add_args_6(parser)
+    _add_args_7(parser)
+    _add_args_8(parser)
+    _add_args_9(parser)
 
     # Apply config-file defaults first, then CLI overrides.
     config_defaults = {}
