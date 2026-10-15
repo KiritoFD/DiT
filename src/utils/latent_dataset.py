@@ -363,10 +363,13 @@ class MCCDLatentDataset(Dataset):
             shard_path, offset = self._id_to_shard[int(img_id)]
         except KeyError as exc:
             raise KeyError(f"latent not found for img_id={img_id}") from exc
-        # ★ 2026-09-17: 加 mmap_mode="r" —— 原来不带 mmap 会**解压整个 shard**
-        #   只为取一行 (一个 shard 常有上千条 latent)。带 mmap 后只读需要的 slice。
-        #   preload=True 时走不到这条路, 但关掉 preload / 数据大到放不下时,
-        #   不带 mmap 就是每步把整个 shard 解压 N 次。
+        # ★ 2026-10-14 [重构 P1-4] **注释纠正** ✗（审查实测: .npz 不支持内部数组
+        #   memory-map ✗ —— `np.load(compressed_npz, mmap_mode="r")["latents"]`
+        #   返回的是普通 ndarray 而非 np.memmap ✗）。
+        #   ⇒ 本路径**每次访问都会解压整个 shard** ✗（一条 shard 常含上千条 latent ✗）。
+        #   正确做法（后续 PR2）: 用 251GB RAM 常驻（preload=True ✓）或改存**未压缩**
+        #   的 .npy/分片 mmap ✓ —— 绝不再指望 npz + mmap_mode ✗。
+        #   保留 mmap_mode 参数无害（对未压缩 npz 仍有效 ✓），但**不得**据此声称"只读 slice" ✗。
         with np.load(shard_path, mmap_mode="r") as shard:
             latent = np.array(shard["latents"][offset], copy=True)
         return torch.from_numpy(latent)
@@ -380,7 +383,10 @@ class MCCDLatentDataset(Dataset):
         ids = [extract_img_id(r, where="preload") for r in self.samples]
 
         # --- latents: group by shard, load each shard once, scatter into RAM ---
-        self._latents = np.empty((n, self.latent_channels, self.latent_spatial, self.latent_spatial), dtype=np.float32)
+        # ★ 2026-10-14 [重构 P0-2]: np.empty -> np.zeros ✓
+        #   未初始化内存绝不允许进 batch ✗（缺失 id 由 _id_to_shard 直接 KeyError ✓
+        #   本处用 zeros 作**纵深防御** ✓ —— 将来若有人把 KeyError 改成跳过, 也不会喂脏数据 ✓）
+        self._latents = np.zeros((n, self.latent_channels, self.latent_spatial, self.latent_spatial), dtype=np.float32)
         by_shard = defaultdict(list)  # shard_path -> [(csv_idx, j)]
         for i, iid in enumerate(ids):
             sp, j = self._id_to_shard[iid]
@@ -407,7 +413,7 @@ class MCCDLatentDataset(Dataset):
                   f"({out.nbytes / 1024 ** 3:.1f}G)")
 
         if self.load_image:
-            self._imgs = np.empty((n, 256, 256, 3), dtype=np.uint8)
+            self._imgs = np.zeros((n, 256, 256, 3), dtype=np.uint8)   # P0-2② ✓ 同上
             tasks = []
             for i, r in enumerate(self.samples):
                 p = r["image_path"]
@@ -421,7 +427,11 @@ class MCCDLatentDataset(Dataset):
         if self._skel_id_to_shard:
             self._skel_latents_list = []
             for _di, _m in enumerate(self._skel_id_to_shard_list):
-                _arr = np.empty(
+                # ★ 2026-10-14 [重构 P0-2]: **审查点名缺陷** ✗ ——
+                #   旧代码用 np.empty 却打印"这些样本的 g 会是全 0" ✗✗
+                #   np.empty 是**未初始化内存** ✗ 不是 0 ✗ ⇒ 采样到即喂随机条件 ✗
+                #   ⇒ 改 np.zeros: 让那句承诺**成真** ✓（显式定义的 fallback ✓）
+                _arr = np.zeros(
                     (n, self.skel_latent_channels, self.skel_latent_spatial,
                      self.skel_latent_spatial), dtype=np.float32)
                 by_sk = defaultdict(list)
@@ -447,9 +457,9 @@ class MCCDLatentDataset(Dataset):
 
         # --- inst-skel latent shards (结构 loss target) ---
         if self._inst_id_to_shard:
-            self._inst_skel_latents = np.empty(
+            self._inst_skel_latents = np.zeros(
                 (n, self.inst_skel_channels, self.inst_skel_spatial,
-                 self.inst_skel_spatial), dtype=np.float32)
+                 self.inst_skel_spatial), dtype=np.float32)   # P0-2④ ✓ 同上
             by_in = defaultdict(list)
             for i, iid in enumerate(ids):
                 sp, j = self._inst_id_to_shard[iid]
@@ -468,7 +478,7 @@ class MCCDLatentDataset(Dataset):
             self._aux_latents = []
             for _k, _mp in enumerate(self._aux_id_to_shard):
                 _ch, _sp_ = self.aux_meta[_k]
-                _arr = np.empty((n, _ch, _sp_, _sp_), dtype=np.float32)
+                _arr = np.zeros((n, _ch, _sp_, _sp_), dtype=np.float32)   # P0-2⑤ ✓ 同上
                 _by = defaultdict(list)
                 for i, iid in enumerate(ids):
                     _s, _j = _mp[iid]

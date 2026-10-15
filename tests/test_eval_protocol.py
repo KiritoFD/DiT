@@ -85,16 +85,28 @@ def test_missing_identity_is_rejected():
 
 
 # ─────────────────── ④ 完成判定: 不只看 DONE 存在 ✓✓ ───────────────────
+def _mk_samples(d, n):
+    """★ 2026-10-14 [重构 P0-1]: 新契约要求 **manifest + 恰好 n 张 g<数字>.png** ✓
+    （旧契约无此要求 ⇒ 伪造空 DONE 也能判"完整" ✗ 正是被修复的缺陷 ✓）"""
+    import io as _io
+    _io.open(os.path.join(d, "samples.jsonl"), "w", encoding="utf-8").write(
+        "".join('{"idx":%d}\n' % i for i in range(n)))
+    for i in range(n):
+        with open(os.path.join(d, "g%d.png" % i), "wb") as f:
+            f.write(b"\x89PNG" + bytes([i % 256]))
+
+
 def test_completion_requires_matching_identity_and_intact_artifacts():
     req = base_req()
     d = os.path.join(tempfile.mkdtemp(), "evaluations", req.eval_id())
     # (a) 什么都没写 ⇒ 未完成 ✓
     ok, why = is_complete(req, d)
     assert not ok and "DONE" in why, why
-    # (b) 写协议 + 产物 + DONE ⇒ 完成 ✓
+    # (b) 写协议 + 产物 + DONE ⇒ 完成 ✓（P0-1: 必须真有 manifest + 187 张图 ✓）
     write_protocol(req, d)
     import io
     io.open(os.path.join(d, "metrics.json"), "w", encoding="utf-8").write('{"ssim": 0.6}')
+    _mk_samples(d, 187)
     write_done(req, d, n_samples=187)
     ok, why = is_complete(req, d)
     assert ok, why
@@ -107,6 +119,19 @@ def test_completion_requires_matching_identity_and_intact_artifacts():
     assert not ok3 and "哈希不符" in why3, why3
 
 
+def test_write_done_refuses_incomplete_artifacts():
+    """★ 2026-10-14 [重构 P0-1] **新增语义** ✓: 缺 manifest / 图数不符 ⇒ 拒绝写 DONE ✗
+    （审查实测: 旧实现会写出一个"声称 187 张但一张图都没有"的 DONE ✗✗）"""
+    req = base_req()
+    d = os.path.join(tempfile.mkdtemp(), "evaluations", req.eval_id())
+    write_protocol(req, d)
+    try:
+        write_done(req, d, n_samples=187)               # 无 manifest 无图 ⇒ 必须报错 ✗
+        raise AssertionError("缺 manifest/图时 write_done 必须报错 ✗")
+    except RuntimeError:
+        pass
+
+
 # ─────────────────── ⑤ 残留图不被误判（产物缺失 ⇒ 失效 ✓）───────────────────
 def test_missing_artifact_invalidates_completion():
     req = base_req()
@@ -114,11 +139,25 @@ def test_missing_artifact_invalidates_completion():
     write_protocol(req, d)
     import io
     io.open(os.path.join(d, "metrics.json"), "w", encoding="utf-8").write("{}")
+    _mk_samples(d, 3)
     write_done(req, d, n_samples=3)
     assert is_complete(req, d)[0]
     os.remove(os.path.join(d, "metrics.json"))          # 模拟"图/表被清掉但 DONE 还在" ✗
     ok, why = is_complete(req, d)
     assert not ok and "缺失" in why, why
+
+
+def test_deleted_png_invalidates_completion():
+    """★ 2026-10-14 [重构 P0-1] 专家验收标准 ✓: **删一张 PNG ⇒ 缓存必须失效** ✗"""
+    req = base_req()
+    d = os.path.join(tempfile.mkdtemp(), "evaluations", req.eval_id())
+    write_protocol(req, d)
+    _mk_samples(d, 3)
+    write_done(req, d, n_samples=3)
+    assert is_complete(req, d)[0]
+    os.remove(os.path.join(d, "g1.png"))
+    ok, why = is_complete(req, d)
+    assert not ok and "PNG" in why, why
 
 
 # ─────────────────── ⑥ 目录指纹: 内容变 ⇒ 指纹变（数据集身份 ✓）───────────────────

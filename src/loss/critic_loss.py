@@ -11,6 +11,8 @@ L_relSTD^G  = softplus[ ρ·clip(b_real−b_std,0,M) − (b_gen−b_std) ]   （
 """
 from __future__ import annotations
 
+from typing import Dict
+
 import numpy as np
 import torch
 import torch.nn as nn
@@ -44,26 +46,36 @@ class CriticLoss(nn.Module):
         self._g_lookup = None                     # (g_std[T,64,64], key→row dict)
         self.to(device)
 
-    def build_id2slot(self, csv_path, callig_remap=None):
+    def build_id2slot(self, csv_path, callig_remap=None, font_remap=None):
         """(callig_raw_id, script_remap_id) → slot 字符串 ✓。
 
         数据集的 y_callig_raw/y_script 是**重映射后的连续 id** ✓（不是 CSV 原始 id ✗）
-        ⇒ 必须按数据集口径映射 —— 这里按 CSV **出现顺序**建 callig 连续 id ✓，
-        script 同理 ✓（与 _map_callig/_font_remap 的口径一致 ✓）。
+        必须传入与数据集相同的callig/font remap。无remap时书家按原始ID排序，
+        书体保留原始ID；绝不按CSV出现顺序推断连续ID。
         """
         import csv
-        calls, scripts_seen = [], []
-        for r in csv.DictReader(open(csv_path, encoding='utf-8-sig')):
-            if (r.get('aug') or '').strip():
-                continue
-            w = (r.get('calligrapher') or '').strip()
-            s = (r.get('script') or '').strip()
-            if w and w not in calls:
-                calls.append(w)
-            if s and s not in scripts_seen:
-                scripts_seen.append(s)
-        c2i = {w: i for i, w in enumerate(calls)}
-        s2i = {s: i for i, s in enumerate(scripts_seen)}
+        import json
+        def load_map(value):
+            if isinstance(value, str) and value:
+                with open(value, encoding='utf-8') as f:
+                    value = json.load(f)
+            return {int(k): int(v) for k, v in value.items()} if value else None
+        cm, sm = load_map(callig_remap), load_map(font_remap)
+        with open(csv_path, encoding='utf-8-sig') as f:
+            rows = list(csv.DictReader(f))
+        # Dataset defaults use sorted raw writer IDs, NOT CSV appearance order.
+        if cm is None:
+            cm = {raw: i for i, raw in enumerate(sorted({int(r['calligrapher_id']) for r in rows}))}
+        c2i, s2i = {}, {}
+        for r in rows:
+            w, s = r['calligrapher'].strip(), r['script'].strip()
+            wi = cm[int(r['calligrapher_id'])]
+            si = sm[int(r['script_id'])] if sm is not None else int(r['script_id'])
+            if (w in c2i and c2i[w] != wi) or (s in s2i and s2i[s] != si):
+                raise ValueError('inconsistent dataset writer/script mapping')
+            c2i[w], s2i[s] = wi, si
+        if len(set(c2i.values())) != len(c2i) or len(set(s2i.values())) != len(s2i):
+            raise ValueError('non-injective dataset writer/script mapping')
         lut = {}
         for k in self.slots:
             if k.startswith('std·'):
@@ -83,15 +95,50 @@ class CriticLoss(nn.Module):
         self._key2row = {k: i for i, k in enumerate(keys)}
 
     def _g_for(self, script_names, chars, device):
+        """strict 查表 ✓（2026-10-14 [重构 P0-3] ✗: 旧实现 `get(...,-1)` + `np.clip`
+        把**查不到的 (书体,字符) 悄悄映射到 bank 第 0 行** ✗✗ —— 生成「家」却喂了
+        别的字的 STD ✗ ⇒ 判别器收到的 g 与生成内容不符 ✗。
+
+        新语义: 任何缺失 ⇒ **ValueError 并列出缺失样本** ✗（宁可不跑, 不喂错字 ✗）。
+        调用方应在训练前用 `coverage_audit()` 做一次性覆盖率审计 ✓。
+        """
         rows = np.array([self._key2row.get(s + "·" + c, -1)
                          for s, c in zip(script_names, chars)], np.int64)
-        rows = np.clip(rows, 0, len(self.g_std_bank) - 1)
+        bad = np.nonzero(rows < 0)[0]
+        if bad.size:
+            miss = sorted({(script_names[i], chars[i]) for i in bad.tolist()})
+            raise KeyError(
+                f"[critic] std bank 缺 {bad.size}/{len(rows)} 个 (script,char) ✗ "
+                f"示例={miss[:6]} —— strict_lookup 拒绝用第 0 行冒充 ✗")
         return self.g_std_bank[torch.from_numpy(rows)].to(device).unsqueeze(1)
 
     def _g_for_rows(self, std_rows, device):
-        """直接给 std bank 行号 ✓（train.py 用 (script_id,char_id) 反查 ✓）。"""
-        rows = np.clip(np.asarray(std_rows, np.int64), 0, len(self.g_std_bank) - 1)
+        """直接给 std bank 行号 ✓ —— **同样 strict** ✗（旧 np.clip 同罪 ✗）。"""
+        rows = np.asarray(std_rows, np.int64)
+        bad = np.nonzero((rows < 0) | (rows >= len(self.g_std_bank)))[0]
+        if bad.size:
+            raise IndexError(
+                f"[critic] std_rows 越界 {bad.size}/{len(rows)} 个 "
+                f"(示例 rows={rows[bad[:6]].tolist()} bank={len(self.g_std_bank)}) ✗ —— "
+                f"strict_lookup 拒绝 clip 到第 0 行冒充 ✗")
         return self.g_std_bank[torch.from_numpy(rows)].to(device).unsqueeze(1)
+
+    @torch.no_grad()
+    def coverage_audit(self, script_names, chars) -> Dict[str, int]:
+        """一次性覆盖率审计 ✓（训练/评测前调用 ✗ 缺失即报 ✗ 不静默 ✗）。
+
+        返回 {"total", "missing"}; missing>0 时**直接抛 KeyError** ✗。
+        """
+        total = len(script_names)
+        rows = np.array([self._key2row.get(s + "·" + c, -1)
+                         for s, c in zip(script_names, chars)], np.int64)
+        miss = int((rows < 0).sum())
+        if miss:
+            bad = np.nonzero(rows < 0)[0]
+            examples = sorted({(script_names[i], chars[i]) for i in bad.tolist()})
+            raise KeyError(
+                f"[critic] 覆盖率审计失败: {miss}/{total} 缺失 ✗ 示例={examples[:8]}")
+        return {"total": total, "missing": 0}
 
     def set_char_lookup(self, csv_path, roots, scripts, chars_vocab=None):
         """建 (script_id, char_id) → std_bank 行 的映射 ✓。
@@ -105,7 +152,10 @@ class CriticLoss(nn.Module):
         for r in csv.DictReader(open(csv_path, encoding="utf-8-sig")):
             s = (r.get("script") or "").strip()
             c = (r.get("character") or "").strip()
-            k = (s2i.get(s, -1), hash(c))
+            # ★ 2026-10-14 [重构 P1]: 键改为 (script_id, Unicode codepoint) ✓
+            #   旧 hash(c) 依赖 PYTHONHASHSEED ✗ 跨进程不保证一致 ✗ 也不是稳定 ID ✗
+            cp = ord(c) if len(c) == 1 else -1     # 多字符/空 → 无法定位 ⇒ -1 缺失
+            k = (s2i.get(s, -1), cp)
             if k not in lut:
                 lut[k] = self._key2row.get(s + "·" + c, -1)
         self._lut = lut
@@ -118,8 +168,11 @@ class CriticLoss(nn.Module):
         out = self.model(z_pred, g, si)           # ★ 无 no_grad ✓（冻结但可导 ✓）
         l_writer = F.cross_entropy(out["slot_logits"], ys)
         l_away = F.softplus(-out["brush_logit"]).mean()
-        return l_writer, l_away, {"writer": float(l_writer.detach()),
-                                  "away": float(l_away.detach())}
+        # ★ 2026-10-14 [重构 P1-6]: 返回 **detached GPU tensor** ✗
+        #   旧实现 float(detach()) 每步强制 CUDA→CPU 同步 ✗（训练热路径的同步点 ✗）
+        #   ⇒ 调用方只在日志周期才 .item() 转 CPU 数值 ✓
+        return l_writer, l_away, {"writer": l_writer.detach(),
+                                  "away": l_away.detach()}
 
     @torch.no_grad()
     def b_real_b_std(self, z_real, script_names, chars, device):
@@ -143,8 +196,8 @@ class CriticLoss(nn.Module):
         out = self.model(z_pred, g, si)           # ★ 无 no_grad ✓（冻结但可导 ✓）
         l_writer = F.cross_entropy(out["slot_logits"], ys)
         l_away = F.softplus(-out["brush_logit"]).mean()
-        return l_writer, l_away, {"writer": float(l_writer.detach()),
-                                  "away": float(l_away.detach())}
+        return l_writer, l_away, {"writer": l_writer.detach(),
+                                  "away": l_away.detach()}   # P1-6 ✓ detached tensor
 
     def forward(self, z_pred, script_names, chars, target_slots, device):
         """返回 (loss_writer, loss_away, parts)。**必须有梯度** ✓（z_pred 带 graph ✓）。"""
@@ -154,5 +207,5 @@ class CriticLoss(nn.Module):
         out = self.model(z_pred, g, si)           # ★ 无 no_grad ✓（冻结但可导 ✓）
         l_writer = F.cross_entropy(out["slot_logits"], ys)
         l_away = F.softplus(-out["brush_logit"]).mean()
-        return l_writer, l_away, {"writer": float(l_writer.detach()),
-                                  "away": float(l_away.detach())}
+        return l_writer, l_away, {"writer": l_writer.detach(),
+                                  "away": l_away.detach()}   # P1-6 ✓ detached tensor

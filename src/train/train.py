@@ -76,6 +76,7 @@ from src.model.dit import MultiStyleEmbedder
 from src.train.ckpt import save_checkpoint, prune_checkpoints, drain_ckpt
 from src.train.data_setup import build_data   # ★ PR4: 数据装配 ✓
 from src.train.setup import setup_runtime   # ★ PR4: 运行时装配 ✓
+from src.train.writer_table_tuning import configure_writer_table, split_writer_optimizer_group
 
 from src.eval.in_mem_eval import run_in_mem_eval
 from src.train.eval_callback import maybe_run_in_training   # 审查: 训练器决定何时评测 ✓
@@ -355,7 +356,8 @@ def _build_aux_losses(args, device, logger, rank):
         _critic_loss_fn.attach_std_bank(
             getattr(args, 'critic_std_bank', 'scratch/disc_lat_full.npz'))
         _lut = _critic_loss_fn.build_id2slot(
-            getattr(args, 'train_csv', 'exp-std/csv/train.csv'))
+            args.data_csv, getattr(args, 'callig_remap_json', ''),
+            getattr(args, 'font_remap_json', ''))
         logger.info('[critic] id2slot lut: %d 对（callig_raw×script ✓）' % len(_lut))
         logger.info("[critic] frozen writer+brush critic loaded: %s (%d slots) | "
                     "w_writer=%.4g w_away=%.4g t=[%.2f,%.2f]"
@@ -1347,6 +1349,14 @@ def main(args):
                     f"NOTE: pair with freeze_char_table=false, else the table stays frozen "
                     f"(_char_table_frozen={getattr(model, '_char_table_frozen', False)}).")
 
+    # This runs after all initialization/warm-start and freezing policies, and
+    # before DDP, compile and optimizer setup; the checkpoint structure stays intact.
+    _writer_table_tuning = configure_writer_table(model, args)
+    if _writer_table_tuning is not None:
+        logger.info('[writer-table] real rows=%d dim=%d; null fixed; lr=%.3g wd=0 anchor=%.3g',
+                    _writer_table_tuning.n_writers, _writer_table_tuning.weight.shape[1],
+                    args.callig_table_lr, args.callig_table_anchor_weight)
+
     # report trainable counts
     trainable_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
     frozen_params = sum(p.numel() for p in model.parameters() if not p.requires_grad)
@@ -1532,6 +1542,8 @@ def main(args):
     # loss = 1 - cos(f(pred_xstart), centroid[y_pair]); 只在 t∈[t_min,t_max] 生效。
     # ★ 2026-10-13: 原 87 行内联的 aux-loss 构建已抽成函数 ✓（4 个输出供训练循环使用 ✓）
     _style_rank_loss_fn, _skel_struct_loss_fn, _SKEL_STRUCT_WARNED, _mid_struct_loss, _critic_loss_fn = _build_aux_losses(args, device, logger, rank)
+    from src.train.strong_style import build_strong_style
+    _strong_style = build_strong_style(args, device, logger)
 
     _train_vae_enc = bool(getattr(args, "train_vae_encoder", False))
     if _train_vae_enc:
@@ -1590,6 +1602,9 @@ def main(args):
                 opt = torch.optim.AdamW(trainable_params_list, lr=args.lr, weight_decay=args.weight_decay)
                 _fused = False
             logger.info(f"[optim] AdamW lr={args.lr} wd={args.weight_decay}")
+
+    split_writer_optimizer_group(opt, _writer_table_tuning,
+                                 float(getattr(args, 'callig_table_lr', 2e-6)))
 
     # ★ 形变头单独一组 lr（v18-skelnet）。
     #   为什么单独一组: 它是在**另一个目标**(aux_skel3)上预训练好的, 已经在一个好状态;
@@ -2505,7 +2520,25 @@ def main(args):
                 #   故先无脑 backward, 再读 `_finite`, 让 forward+backward 在 GPU 上连跑。
                 #   代价: 极少数 NaN 步白跑一次 backward —— 可忽略（且 NaN 梯度会在下一轮顶部
                 #   `opt.zero_grad(set_to_none=True)` 被清掉, 不会污染 clip/step）。
-                loss.backward()
+                if _writer_table_tuning is not None:
+                    loss = loss + _writer_table_tuning.anchor_weight * _writer_table_tuning.anchor_loss()
+                if _strong_style is not None:
+                    from src.train.strong_style import norm as _style_grad_norm
+                    _probe = (train_steps % args.strong_style_probe_every == 0
+                              or not _strong_style.scale)
+                    _fm_norm = (_style_grad_norm(loss_diff, [p for p in model.parameters() if p.requires_grad])
+                                if _probe else None)
+                    # Same summed gradients, one clip/optimizer step, but release
+                    # FM/REPA saved activations before building the full style graph.
+                    loss.backward()
+                    _aux_style = _strong_style(model, x_latent.detach(), t, model_kwargs,
+                                              batch, loss_diff.detach(), train_steps, fm_norm=_fm_norm)
+                    if _aux_style.requires_grad:
+                        _aux_style.backward()
+                    loss = loss.detach() + _aux_style.detach()
+                    del _aux_style
+                else:
+                    loss.backward()
                 _finite = bool(torch.isfinite(loss))
 
                 # NaN guard: skip clip/step/ema/accumulate if loss is not finite (e.g. a bad sample).
@@ -2516,6 +2549,8 @@ def main(args):
                     torch.nn.utils.clip_grad_norm_(trainable_params_list,
                                                    max_norm=float(getattr(args, 'grad_clip', 1.0)))
                     opt.step()
+                    if _writer_table_tuning is not None:
+                        _writer_table_tuning.restore_null()
                     # ★ 2026-10-11 算子级 profile: 窗口终点（退出并打印逐算子时间表）
                     if _PROF_OBJ is not None:
                         _PROF_CNT += 1
@@ -2558,14 +2593,23 @@ def main(args):
                     if scheduler is not None:
                         scheduler.step()
                     if ema_model is not None and (train_steps % max(1, int(getattr(args, 'ema_interval', 1))) == 0):
-                        # 间隔更新: 每 N 步用 decay**N 更新, 数学上严格等价每步 decay
-                        # (β 连乘 N 次 = β^N), 省 46M 参数 x N-1 次的显存带宽往返
+                        # ★ 2026-10-14 [重构 P1-5] **纠正数学说明** ✗（审查指出旧注释错误 ✗）:
+                        #   旧注释称"每 N 步用 decay**N 更新, 数学上严格等价每步 decay" ✗✗
+                        #   严格式:  EMA_t = β^N·EMA_{t-N} + (1-β)·Σ_{k=0..N-1} β^k·θ_{t-k}
+                        #   间隔式:  EMA_t = β^N·EMA_{t-N} + (1-β^N)·θ_t
+                        #   ⇒ 间隔式把中间 N-1 步的权重**全部贴到最后一步 θ_t** ✗
+                        #   ⇒ 只有参数在窗口内基本不变时才近似相等 ✓ **不是严格等价** ✗
+                        #   处置: 作为**带宽优化保留** ✓（省 46M 参数 × N-1 次显存往返 ✓），
+                        #   但 ① interval 已写入 effective_config/日志(L1414 ✓) ⇒ 属实验身份 ✓
+                        #        ② 跨实验比较**必须固定同一 interval** ✓（后续可测 1/4/8 ✓）
                         if args.ema_warmup:
                             current_ema_decay = min(
                                 args.ema_decay, (1.0 + train_steps) / (10.0 + train_steps))
                         else:
                             current_ema_decay = args.ema_decay
                         update_ema(ema_model, model, current_ema_decay ** max(1, int(getattr(args, 'ema_interval', 1))))
+                        if _writer_table_tuning is not None:
+                            _writer_table_tuning.restore_null(ema_model)
                 else:
                     # 已 backward -> .grad 里留下 NaN，但**不** clip/step/ema -> 参数不被污染；
                     # 这些 NaN 梯度由下一轮顶部的 zero_grad(set_to_none=True) 释放。
@@ -2678,6 +2722,18 @@ def main(args):
 
                     if rank == 0:
                         wr = args.w_repa
+                        from src.train.diagnostics import log_writer_glyph
+                        log_writer_glyph(model, logger, train_steps)
+                        if _writer_table_tuning is not None:
+                            with torch.no_grad():
+                                _wt = _writer_table_tuning
+                                _wg = (_wt.weight.grad[:_wt.n_writers].norm().item()
+                                       if _wt.weight.grad is not None else 0.0)
+                                _wd = (_wt.weight[:_wt.n_writers] - _wt.reference).norm().item()
+                                _wn = (_wt.weight[_wt.n_writers:] - _wt.fixed_tail).abs().max().item()
+                            logger.info('[writer-table-step] step=%d grad=%.4e drift=%.4e null_max=%.4e anchor=%.4e table_lr=%.4e',
+                                        train_steps, _wg, _wd, _wn, _wt.anchor_loss().detach().item(),
+                                        opt.param_groups[-1]['lr'])
                         ema_log = (f"EMA: {current_ema_decay:.6f} | "
                                    if ema_model is not None else "")
                         logger.info(

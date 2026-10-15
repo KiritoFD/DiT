@@ -30,7 +30,14 @@ from typing import Any, Dict, Optional, Tuple
 
 __all__ = ["EvalRequest", "eval_id", "artifact_dir", "protocol_path", "done_path",
            "write_protocol", "write_done", "is_complete", "load_done",
-           "sha256_file", "sha256_tree", "git_revision", "SCHEMA_VERSION"]
+           "sha256_file", "sha256_tree", "git_revision", "SCHEMA_VERSION",
+           "png_inventory"]
+
+
+def png_inventory(png_dir: str) -> Dict[str, str]:
+    """公开封装 ✓（测试与外部审计用 ✓ —— 见 `_png_inventory` ✓）。"""
+    return _png_inventory(png_dir)
+
 
 SCHEMA_VERSION = 1
 
@@ -162,31 +169,83 @@ def write_protocol(req: EvalRequest, eval_dir: str) -> str:
     return p
 
 
+PNG_GLOB_PREFIX = "g"
+
+
+def _png_inventory(png_dir: str) -> Dict[str, str]:
+    """收集目录下全部 `g<数字>.png` ⇒ {文件名: sha256} ✓（排序保证确定性 ✓）。"""
+    import re
+    out: Dict[str, str] = {}
+    if not os.path.isdir(png_dir):
+        return out
+    pat = re.compile(r"^g\d+\.png$")
+    for fn in sorted(os.listdir(png_dir)):
+        if pat.match(fn):
+            out[fn] = sha256_file(os.path.join(png_dir, fn))
+    return out
+
+
 def write_done(req: EvalRequest, eval_dir: str, n_samples: int,
-               metrics_path: Optional[str] = None) -> str:
+               metrics_path: Optional[str] = None,
+               png_dir: Optional[str] = None,
+               manifest_names: Tuple[str, ...] = ("samples.csv", "samples.jsonl")) -> str:
     """**只有跑完、且哈希自校验通过**才写 DONE ✓（审查: "只有在所有样本、评分文件和
     哈希校验成功之后才写入" ✓✓）
 
-    DONE 里同时记下 **协议哈希** + 各产物的 sha256 ⇒ 事后任何篡改/混用都能发现 ✓。
+    ★ 2026-10-14 [重构 P0-1] 修复审查已复现的缺陷 ✗:
+        旧实现只哈希"碰巧存在"的文件 ⇒ 无样本也能写出 DONE ✗✗
+        且 is_complete 只核对已登记产物 ⇒ 伪造的空 DONE 也判"完整" ✗✗
+    新语义（**缺任一必需产物 ⇒ 抛错, 绝不写 DONE** ✗）:
+      ① 样本 manifest（samples.csv / samples.jsonl 任一 ✓）必须存在 ⇒ 否则 raise ✗
+      ② PNG 目录中 `g<数字>.png` 数量必须**恰好等于 n_samples** ⇒ 否则 raise ✗
+      ③ DONE 记录全部 PNG 的 sha256 + manifest/metrics 的 sha256 ✓
+      ④ DONE **原子写入**（tmp + os.replace ✓ —— 半写的 DONE 不会再被当成完整 ✓）
     """
     req = req.validate()
     arts: Dict[str, str] = {}
-    for name in ("samples.csv", "metrics.json", "manifest.json", "encoder_audit.json"):
+
+    # ① manifest 必须存在（任一命名 ✓ —— in_mem_eval 实际写 samples.jsonl ✓）
+    hit = next((m for m in manifest_names
+                if os.path.isfile(os.path.join(eval_dir, m))), None)
+    if hit is None:
+        raise RuntimeError(
+            f"write_done: 样本 manifest 缺失（找过 {manifest_names} @ {eval_dir}）✗ —— "
+            f"采样未完成或产物丢失 ⇒ **拒绝写 DONE** ✗")
+    arts[hit] = sha256_file(os.path.join(eval_dir, hit))
+
+    # ② PNG 清点（必须在写 DONE 前就**恰好等于 n_samples** ✓）
+    pdir = png_dir or eval_dir
+    pngs = _png_inventory(pdir)
+    if len(pngs) != int(n_samples):
+        raise RuntimeError(
+            f"write_done: PNG 数 {len(pngs)} ≠ n_samples={n_samples}（目录 {pdir}）✗ —— "
+            f"缺图/多图/错图 ⇒ **拒绝写 DONE** ✗")
+    for fn, h in pngs.items():
+        arts["png:" + fn] = h
+
+    if metrics_path and os.path.isfile(metrics_path):
+        arts[os.path.basename(metrics_path)] = sha256_file(metrics_path)
+    # 约定命名的产物: 存在即登记 ✓（**保留旧约定** ✓ —— 但**不再**"存在就写 DONE" ✗：
+    #   必须的 manifest/PNG 已在上面**强制校验** ✓ 这里只是把可选产物也纳入哈希链 ✓）
+    for name in ("metrics.json", "manifest.json", "encoder_audit.json"):
         p = os.path.join(eval_dir, name)
         if os.path.isfile(p):
             arts[name] = sha256_file(p)
-    if metrics_path and os.path.isfile(metrics_path):
-        arts[os.path.basename(metrics_path)] = sha256_file(metrics_path)
     done = {
         "eval_id": req.eval_id(),
         "protocol_sha256": sha256_file(protocol_path(eval_dir)),
         "schema_version": req.schema_version,
         "n_samples": int(n_samples),
+        "n_png": len(pngs),
         "artifacts": arts,
     }
     p = done_path(eval_dir)
-    with open(p, "w", encoding="utf-8") as f:
+    tmp = p + ".tmp"
+    with open(tmp, "w", encoding="utf-8") as f:
         json.dump(done, f, ensure_ascii=False, indent=2, sort_keys=True)
+        f.flush()
+        os.fsync(f.fileno())
+    os.replace(tmp, p)                                     # ★ 原子替换 ✓
     return p
 
 
@@ -200,14 +259,24 @@ def load_done(eval_dir: str) -> Optional[Dict[str, Any]]:
         return None
 
 
-def is_complete(req: EvalRequest, eval_dir: str) -> Tuple[bool, str]:
+def is_complete(req: EvalRequest, eval_dir: str,
+                png_dir: Optional[str] = None) -> Tuple[bool, str]:
     """完成判定 —— **不只看 DONE 存在** ✓（这正是历史事故的根因 ✗）
 
+    ★ 2026-10-14 [重构 P0-1] 修复审查已复现的缺陷 ✗:
+        旧实现只核对 DONE **已登记**的产物 ⇒ 未登记的缺失/伪造全放行 ✗✗
+        （实测: 无 PNG 无指标也能返回 True ✗）
+    新增三道**从磁盘重算**的检查（不信任 DONE 的自我申报 ✓）:
+      ⑤ manifest 文件必须在盘上 ✓
+      ⑥ 盘上实际 PNG 集合（数量+文件名集合）必须等于 DONE 记录 ✓
+      ⑦ 每张 PNG 的 sha256 必须与 DONE 记录一致 ✓
+        ⇒ 删一张/换一张/加一张 PNG ⇒ 判未完成 ✗✗（专家验收标准 ✓）
     返回 (是否可复用, 原因)。只有下面**全部**成立才算完成:
       ① DONE.json 存在且可解析
       ② 其中的 `eval_id` **等于本请求**的 id（同 step 不同模型/CFG/TTF ⇒ 不等 ✓✓）
       ③ `protocol.json` 的哈希与 DONE 里记录的一致（协议没被改过 ✓）
       ④ DONE 里记录的每个产物**文件仍在且哈希一致**（防残留/错图 ✗）
+      ⑤⑥⑦ 见上 ✓
     """
     eid = req.validate().eval_id()
     d = load_done(eval_dir)
@@ -223,9 +292,30 @@ def is_complete(req: EvalRequest, eval_dir: str) -> Tuple[bool, str]:
     if sha256_file(pp) != d.get("protocol_sha256"):
         return False, "protocol.json 已被修改（哈希不符 ✗）"
     for name, h in (d.get("artifacts") or {}).items():
+        if name.startswith("png:"):
+            continue                    # ★ PNG 由下面的**磁盘重算**统一校验 ✓（P0-1 ✓）
         p = os.path.join(eval_dir, name)
         if not os.path.isfile(p):
             return False, f"产物缺失: {name}"
         if sha256_file(p) != h:
             return False, f"产物哈希不符: {name}（被改动/覆盖 ✗）"
+    # ⑤ manifest 必须在盘上 ✓（旧 DONE 若没登记 manifest ⇒ 在此显式失败 ✗）
+    arts = d.get("artifacts") or {}
+    if not any(k in arts for k in ("samples.csv", "samples.jsonl")):
+        return False, "DONE 未登记样本 manifest ⇒ 旧协议产物, 不可复用 ✗"
+    # ⑥⑦ PNG 集合**从磁盘重算** ✓（不信任 DONE 的自我申报 ✓）
+    pdir = png_dir or eval_dir
+    now_pngs = _png_inventory(pdir)
+    rec_pngs = {k[len("png:"):]: v for k, v in arts.items() if k.startswith("png:")}
+    n_exp = int(d.get("n_samples", -1))
+    if len(now_pngs) != n_exp or len(rec_pngs) != n_exp:
+        return False, (f"PNG 数不符: 盘上 {len(now_pngs)} / DONE {len(rec_pngs)} / "
+                       f"应有 {n_exp} ✗")
+    if set(now_pngs) != set(rec_pngs):
+        missing = sorted(set(rec_pngs) - set(now_pngs))[:3]
+        extra = sorted(set(now_pngs) - set(rec_pngs))[:3]
+        return False, f"PNG 文件集合不符 ✗ 缺={missing} 多={extra}"
+    for fn in sorted(now_pngs):
+        if now_pngs[fn] != rec_pngs[fn]:
+            return False, f"PNG 哈希不符: {fn}（被替换/重生成 ✗）"
     return True, f"完整可复用 ✓（{d.get('n_samples')} 个样本, eval_id={eid[:12]}）"

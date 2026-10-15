@@ -139,22 +139,22 @@ def apply_post_construction(model, a, verbose=True, expect_ckpt_weights=False):
         #   Error(s) in loading state_dict ✗✗(本 session 实测确认 ✓)。
         #   正确语义: **始终执行冻结以保证键存在** ✓, 缺外部表时只**跳过灌入预训练值**
         #   （值随后由 load_state_dict 覆盖 ✓); 只有从头训练且无表时才当硬错误 ✗。
-        if _cep and os.path.exists(_cep):
-            model.y_callig_embedder.freeze_table()
-            if verbose:
-                print("[model_io] callig 表已冻结 (null_embed 已拆出)")
-        elif expect_ckpt_weights:
-            model.y_callig_embedder.freeze_table()
-            if verbose:
-                print("[model_io] ⚠ freeze_callig_table=True 但未找到 callig_emb_pretrained —— "
-                      "仍执行冻结以生成 null_embed 键 ✓（预训练值缺失, 随后由 ckpt 覆盖 ✓）")
-        else:
+        #
+        # ★ 2026-10-14 [重构 P1-3b]: **只调用一次** freeze_table() ✓
+        #   旧实现三个分支各调一次 + 末尾又无条件调一次 ⇒ 最多 **3 次** ✗✗
+        #   （每次都重建 null_embed Parameter ✗ 无意义开销, 且第二次起可能覆盖已恢复的值 ✗）。
+        _has_ext = bool(_cep and os.path.exists(_cep))
+        if not _has_ext and not expect_ckpt_weights:
             raise ValueError(
                 "freeze_callig_table=True 需要 callig_emb_pretrained（从头训练时否则 "
                 "null_embed 无法确定）")
-        model.y_callig_embedder.freeze_table()
+        model.y_callig_embedder.freeze_table()          # ★ 唯一一次 ✓
         if verbose:
-            print("[model_io] callig 表已冻结 (null_embed 已拆出)")
+            if _has_ext:
+                print("[model_io] callig 表已冻结 (null_embed 已拆出)")
+            else:
+                print("[model_io] ⚠ freeze_callig_table=True 但未找到 callig_emb_pretrained —— "
+                      "仍执行冻结以生成 null_embed 键 ✓（预训练值缺失, 随后由 ckpt 覆盖 ✓）")
 
     # 双轴 CFG 开关（与 train.py 一致，挂模型属性，供 inference.sample_latents 透传）
     model.cfg_glyph_scale = (None if g("cfg_glyph_scale", None) is None
