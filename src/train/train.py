@@ -73,6 +73,7 @@ from src.utils.channel_expand import (drop_shape_mismatched,
                                       expand_ckpt_4ch_to_12ch,
                                       materialize_lazy_params)
 from src.model.dit import MultiStyleEmbedder
+from src.train import backward as _bw          # ★ PR4: backward 策略模块 ✓
 from src.train.ckpt import (save_checkpoint, prune_checkpoints, drain_ckpt,
                                restore_rng)
 from src.train.data_setup import build_data   # ★ PR4: 数据装配 ✓
@@ -1412,6 +1413,10 @@ def main(args):
             if _ema_miss:
                 logger.info(f"[EMA] missing (new modules, kept init): {sorted(set(k.split('.')[0] for k in _ema_miss))[:8]}")
             logger.info("[EMA] restored EMA weights from checkpoint")
+        # ★ 2026-10-14 [重构 PR4] 把**反向传播策略**写进启动日志 ✓
+        #   审查 §4.2 要求"分别测量速度与显存" ✓ ⇒ 先要能按策略分组 ✓
+        #   （joint = 图同时存活 ✓ 峰值显存高; sequential = 先释放 FM 图 ✓ 峰值低 ✓）
+        logger.info(f"[backward] {_bw.describe(args)}")
         logger.info(f"[EMA] enabled with decay={args.ema_decay}, interval={getattr(args, 'ema_interval', 1)} "
                     f"(effective per-step decay={args.ema_decay ** max(1, int(getattr(args, 'ema_interval', 1)))})")
     if dist.get_world_size() > 1:
@@ -2284,15 +2289,10 @@ def main(args):
                         _pstep = int(getattr(args, 'probe_style_grad_steps', 0) or 0)
                         if _pstep and train_steps < _pstep and int(_n_style_rank) > 0:
                             _shared = [p for p in model.parameters() if p.requires_grad]
-                            _g_fm = torch.autograd.grad(
-                                loss, _shared, retain_graph=True, allow_unused=True)
-                            _g_st = torch.autograd.grad(
-                                loss_style_rank, _shared, retain_graph=True,
-                                allow_unused=True)
-                            _n_fm = torch.sqrt(sum((g ** 2).sum() for g in _g_fm
-                                                   if g is not None))
-                            _n_st = torch.sqrt(sum((g ** 2).sum() for g in _g_st
-                                                   if g is not None))
+                            # ★ 2026-10-14 [重构 PR4] 探针原语抽到 backward.grad_norm ✓
+                            #   （数学与旧代码**逐字相同** ✓ 只求范数, 不累积到 .grad ✓）
+                            _n_fm = _bw.grad_norm(loss, _shared)
+                            _n_st = _bw.grad_norm(loss_style_rank, _shared)
                             _ratio = float(_n_st / (_n_fm + 1e-12))
                             logger.info(
                                 "[style-rank-probe] step=%d n=%d | ‖dL_FM/dθ‖=%.4e "
@@ -2382,20 +2382,10 @@ def main(args):
                             _shared = [p for p in model.parameters() if p.requires_grad]
                             # ★ FM 基线用**总 loss 减去 critic 项** ✗ 更简单可靠:
                             #    直接对 loss_diff 求梯度 ✓（它是本步 FM 项 ✓）
-                            _g_fm = torch.autograd.grad(
-                                loss_diff, _shared, retain_graph=True, allow_unused=True)
-                            _g_cw = torch.autograd.grad(
-                                loss_critic_writer, _shared, retain_graph=True,
-                                allow_unused=True)
-                            _g_ca = torch.autograd.grad(
-                                loss_critic_away, _shared, retain_graph=True,
-                                allow_unused=True)
-                            _n_fm = torch.sqrt(sum((g ** 2).sum() for g in _g_fm
-                                                   if g is not None))
-                            _n_cw = torch.sqrt(sum((g ** 2).sum() for g in _g_cw
-                                                   if g is not None))
-                            _n_ca = torch.sqrt(sum((g ** 2).sum() for g in _g_ca
-                                                   if g is not None))
+                            # ★ 2026-10-14 [重构 PR4] 同上, 统一走 backward.grad_norm ✓
+                            _n_fm = _bw.grad_norm(loss_diff, _shared)
+                            _n_cw = _bw.grad_norm(loss_critic_writer, _shared)
+                            _n_ca = _bw.grad_norm(loss_critic_away, _shared)
                             # ★★ 贡献%必须**含 w** ✓（裸比 ✗ 曾致 λ 建议错 w 倍 ✗✗
                             #    ⇒ v85C 以 3e-8 实跑 = 有效贡献 0.00016%% ≈ 空跑 ✗）
                             _r_w = float(_n_cw / (_n_fm + 1e-12))
@@ -2551,15 +2541,19 @@ def main(args):
                                 if _probe else None)
                     # Same summed gradients, one clip/optimizer step, but release
                     # FM/REPA saved activations before building the full style graph.
-                    loss.backward()
+                    # ★ 2026-10-14 [重构 PR4] **明确命名策略** ✓（审查 §4.2 ✓）:
+                    #   这是 sequential_backward ✓ —— 顺序本身就是语义 ✗:
+                    #     先 backward 主 loss（释放 FM/REPA 激活 ✓）
+                    #     再构造辅助 loss 并 backward ✓
+                    #   提前构造会让两张图同时存活 ✗ 完全失去省显存的意义 ✗
+                    _bw.joint_backward(loss)
                     _aux_style = _strong_style(model, x_latent.detach(), t, model_kwargs,
                                               batch, loss_diff.detach(), train_steps, fm_norm=_fm_norm)
-                    if _aux_style.requires_grad:
-                        _aux_style.backward()
+                    _bw.aux_backward(_aux_style)
                     loss = loss.detach() + _aux_style.detach()
                     del _aux_style
                 else:
-                    loss.backward()
+                    _bw.joint_backward(loss)          # ★ PR4: joint_backward ✓
                 _finite = bool(torch.isfinite(loss))
 
                 # NaN guard: skip clip/step/ema/accumulate if loss is not finite (e.g. a bad sample).
