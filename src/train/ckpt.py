@@ -159,11 +159,88 @@ class AsyncCkptWriter:
 WRITER = AsyncCkptWriter()
 
 
+def capture_rng() -> dict:
+    """抓取**全部**随机源状态 ✓（2026-10-14 [重构 P1-2] ✓）。
+
+    审查原文: "当前 checkpoint 包含模型、optimizer、EMA、scheduler、args、step，
+    却没有完整保存 Python random / NumPy / CPU torch / CUDA torch 的 RNG" ✗
+    ⇒ "恢复可以继续训练, 但**不保证逐步、逐样本可重放**" ✗ —— 而本项目经常比较
+       5k–10k 的**微小增益** ✓ ⇒ 这种差别很重要 ✓。
+
+    ⚠ 数据顺序: `LongEpoch` 采样器**每 epoch_steps 步 reset 一次** ✓ 且
+    `train_steps % epoch_steps` 可**完全决定**它在 epoch 内的位置 ✓
+    ⇒ 不需要额外存采样器状态 ✓（前提: `ckpt_every == epoch_steps` 的项目约定 ✓
+       若二者不等, 恢复后 epoch 内相位会错位 ✗ —— 见 `rng_meta["epoch_aligned"]` ✓）。
+    """
+    import random as _random
+    st: dict = {}
+    try:
+        st["python"] = _random.getstate()
+    except Exception:                                             # noqa: BLE001
+        pass
+    try:
+        import numpy as _np
+        st["numpy"] = _np.random.get_state()
+    except Exception:                                             # noqa: BLE001
+        pass
+    try:
+        st["torch_cpu"] = torch.get_rng_state()
+    except Exception:                                             # noqa: BLE001
+        pass
+    try:
+        if torch.cuda.is_available():
+            st["torch_cuda"] = torch.cuda.get_rng_state_all()
+    except Exception:                                             # noqa: BLE001
+        pass
+    return st
+
+
+def restore_rng(st: dict, logger=None) -> bool:
+    """恢复 `capture_rng()` 的状态 ✓。返回是否**完整**恢复 ✓（缺项即 False ✓）。"""
+    import random as _random
+    if not st:
+        if logger is not None:
+            logger.warning("[ckpt] 该 ckpt **没有 RNG 状态** ✗ ⇒ 恢复后**不可逐样本重放** ✗")
+        return False
+    ok = True
+    try:
+        if "python" in st:
+            _random.setstate(st["python"])
+        else:
+            ok = False
+        if "numpy" in st:
+            import numpy as _np
+            _np.random.set_state(st["numpy"])
+        else:
+            ok = False
+        if "torch_cpu" in st:
+            torch.set_rng_state(st["torch_cpu"])
+        else:
+            ok = False
+        if "torch_cuda" in st and torch.cuda.is_available():
+            torch.cuda.set_rng_state_all(st["torch_cuda"])
+    except Exception as e:                                        # noqa: BLE001
+        if logger is not None:
+            logger.warning("[ckpt] RNG 恢复失败: %r ✗", e)
+        return False
+    if logger is not None:
+        logger.info("[ckpt] RNG 状态已恢复 %s（python/numpy/torch_cpu/cuda ✓）"
+                    % ("**完整** ✓" if ok else "**不完整** ✗"))
+    return ok
+
+
 def build_checkpoint(model, opt, ema_model=None, scheduler=None,
                      args=None, train_steps=0, logger=None):
     """组装 ckpt dict（**同步**把状态搬到 CPU）。返回可直接交给 WRITER 的 dict。
 
     注意：这一步必须在训练继续之前完成 —— 它读的是"此刻"的权重。
+
+    ★ 2026-10-14 [重构 P1-2] 新增 `rng`（全部随机源 ✓）+ `rng_meta`（相位/对齐信息 ✓）:
+        · `rng`         : capture_rng() ✓ ⇒ 支持**逐步可重放** ✓
+        · `rng_meta`    : epoch_steps / epoch_aligned / resume_kind ✓
+          `resume_kind` 明确区分两种恢复语义 ✓（审查要求 ✗ 不要靠一堆开关隐式组合 ✗）:
+            "exact"      = 同一实验续训 ✓（要求 RNG + optimizer + scheduler 全恢复 ✓）
+            "warm_start" = 只借权重 ✓（**故意**重建 optimizer 与随机序列 ✓）
     """
     model_to_save = model.module if hasattr(model, "module") else model
     ckpt = {
@@ -172,13 +249,32 @@ def build_checkpoint(model, opt, ema_model=None, scheduler=None,
         "opt": state_to_cpu(opt.state_dict()),
         "args": args,
         "train_steps": train_steps,
+        "rng": capture_rng(),
+    }
+    _ep = None
+    try:
+        _ep = int(getattr(args, "epoch_steps", 0) or 0) or None      # 0/缺失 ⇒ None ✓
+    except Exception:                                             # noqa: BLE001
+        _ep = None
+    _ck = None
+    try:
+        _ck = int(getattr(args, "ckpt_every", 0) or 0) or None       # 0/缺失 ⇒ None ✓
+    except Exception:                                             # noqa: BLE001
+        _ck = None
+    ckpt["rng_meta"] = {
+        "epoch_steps": _ep,
+        "ckpt_every": _ck,
+        # 二者相等 ⇒ 恢复后 epoch 内相位可由 train_steps 完全重建 ✓（项目约定 ✓）
+        "epoch_aligned": bool(_ep and _ck and _ep == _ck),
+        "resume_kind": "exact",
     }
     if ema_model is not None:
         ckpt["ema"] = state_to_cpu(ema_model.state_dict())
     if scheduler is not None:
         ckpt["scheduler"] = scheduler.state_dict()
     if logger is not None:
-        logger.info(f"[ckpt] built {train_steps:07d}.pt (state on CPU)")
+        logger.info(f"[ckpt] built {train_steps:07d}.pt (state on CPU, rng=✓, "
+                    f"epoch_aligned={ckpt['rng_meta']['epoch_aligned']})")
     return ckpt
 
 

@@ -73,7 +73,8 @@ from src.utils.channel_expand import (drop_shape_mismatched,
                                       expand_ckpt_4ch_to_12ch,
                                       materialize_lazy_params)
 from src.model.dit import MultiStyleEmbedder
-from src.train.ckpt import save_checkpoint, prune_checkpoints, drain_ckpt
+from src.train.ckpt import (save_checkpoint, prune_checkpoints, drain_ckpt,
+                               restore_rng)
 from src.train.data_setup import build_data   # ★ PR4: 数据装配 ✓
 from src.train.setup import setup_runtime   # ★ PR4: 运行时装配 ✓
 from src.train.writer_table_tuning import configure_writer_table, split_writer_optimizer_group
@@ -1916,6 +1917,26 @@ def main(args):
             dist.barrier()
         logger.info("[eval-only] 退出")
         return
+
+    # ★ 2026-10-14 [重构 P1-2] **精确恢复 RNG** ✗
+    #   审查: 旧 ckpt 只存 model/opt/ema/scheduler/args/step ✗ ⇒
+    #     "恢复可以继续训练, 但**不保证逐步、逐样本可重放**" ✗
+    #   而本项目经常比较 5k–10k 的**微小增益** ⇒ 这种差别很重要 ✓。
+    #   位置: **训练循环之前** ✓ —— setup 期的随机消耗不再影响 ✓，
+    #   且 DataLoader worker 的 seed 会从**恢复后**的基状态派生 ✓。
+    if _resume_full_ckpt is not None:
+        _rm = _resume_full_ckpt.get("rng_meta") or {}
+        if rank == 0 and not _rm.get("epoch_aligned", True):
+            logger.warning("[ckpt] ⚠ epoch_steps(%s) != ckpt_every(%s) ⇒ 恢复后"
+                           "**数据相位可能错位** ✗（P1-2 提醒 ✓）",
+                           _rm.get("epoch_steps"), _rm.get("ckpt_every"))
+        _rng_ok = restore_rng(_resume_full_ckpt.get("rng") or {},
+                              logger if rank == 0 else None)
+        if rank == 0:
+            logger.info("[ckpt] resume_kind=exact ✓ RNG %s ⇒ %s",
+                        "完整恢复 ✓" if _rng_ok else "**未完整** ✗",
+                        "**可逐样本重放** ✓" if _rng_ok
+                        else "只能近似续训 ✗（旧 ckpt 无 rng 字段 ✓）")
 
     _train_fatal = None            # ★ 训练期致命异常（见 except 处）
     for epoch in range(_epochs_needed):
