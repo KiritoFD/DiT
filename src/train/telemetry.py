@@ -24,10 +24,13 @@
 from __future__ import annotations
 
 import os
+from dataclasses import dataclass
+from typing import Callable, Optional, Sequence
 
 import torch
 
-__all__ = ["StepProfiler", "MemoryHistoryRecorder", "Diagnostics"]
+__all__ = ["StepProfiler", "MemoryHistoryRecorder", "Diagnostics",
+           "WindowAverages", "average_window"]
 
 
 class StepProfiler:
@@ -161,3 +164,77 @@ class Diagnostics:
         if not self.enabled:
             return "diagnostics=off"
         return f"diagnostics: {self.prof.describe()} | {self.mem.describe()}"
+
+
+# ══════════════════════════ 窗口均值汇总（纯计算 ✓） ══════════════════════════
+@dataclass(frozen=True)
+class WindowAverages:
+    """一个日志窗口的**标量化**结果 ✓（纯数据 ✓ 无副作用 ✓）。
+
+    ⚠ 与原内联代码的关系（**逐字等价** ✓）:
+      · 累加器是 **float64 GPU 张量** ✓ ⇒ 除法在 GPU 上 ✓ **只在这一次**取标量 ✓
+        （原注释: "累加器已是 GPU 张量 -> 除法仍在 GPU；**只在这一次**取标量" ✓）
+      · `divisor = max(log_steps, 1)` ✓（防"整个窗口都因非有限 loss 被跳过"时除零 ✓）
+      · `world_size > 1` 时先 `all_reduce(SUM)` 再 `item()/world_size` ✓
+      · 12ch 分组 loss 从累加的 `(C,)` 向量拆出 image/canny/skel ✓
+    """
+    loss: float
+    diff: float
+    repa: float
+    std_mid: float
+    skel: float
+    c12_img: float
+    c12_canny: float
+    c12_skel: float
+    steps: int
+    seconds: float
+    steps_per_sec: float
+
+
+def average_window(running, divisor: int, world_size: int, *,
+                   steps: int = 0, seconds: float = 0.0,
+                   aux_dirs: Sequence[str] = (), acc_c12=None,
+                   all_reduce: Optional[Callable] = None) -> WindowAverages:
+    """把窗口累加器折算成**标量均值** ✓ —— 逐字等价于 `train.py` 里的内联版本 ✓。
+
+    参数:
+      running    : dict ✓ 键 = `loss/diff/repa/std_mid/skel` ✓（float64 张量 ✓）
+      divisor    : 窗口内**有效**步数 ✓（调用方应传 `max(log_steps, 1)` ✓）
+      world_size : 进程数 ✓（>1 时走 all_reduce ✓）
+      all_reduce : 可注入的归约回调 ✓（默认 `torch.distributed.all_reduce` ✓）
+                   ⇒ 让本函数**可单测** ✓ 不硬依赖分布式初始化 ✓
+      acc_c12    : 12ch 逐通道 MSE 累加向量 ✓（None ⇒ 分组全 0 ✓）
+      aux_dirs   : aux 组名 ✓（用于识别 canny / skel ✓）
+    """
+    d = float(max(int(divisor), 1))
+    _ar = all_reduce
+    if _ar is None:
+        import torch.distributed as _dist
+        _ar = _dist.all_reduce
+    out = {}
+    for key in ("loss", "diff", "repa", "std_mid"):
+        v = running[key] / d
+        if world_size > 1:
+            _ar(v, op=torch.distributed.ReduceOp.SUM)
+            v = v.item() / world_size
+        else:
+            v = v.item()
+        out[key] = float(v)
+    skel = float((running["skel"] / d).item())
+    c12i = c12c = c12s = 0.0
+    if acc_c12 is not None:
+        _cm = acc_c12 / d
+        c12i = float(_cm[:4].mean())
+        for _gi, _nm in enumerate(aux_dirs):
+            _gm = float(_cm[4 + 4 * _gi: 8 + 4 * _gi].mean())
+            if "canny" in _nm:
+                c12c = _gm
+            elif "skel" in _nm:
+                c12s = _gm
+    _secs = float(seconds)
+    return WindowAverages(
+        loss=out["loss"], diff=out["diff"], repa=out["repa"], std_mid=out["std_mid"],
+        skel=skel, c12_img=c12i, c12_canny=c12c, c12_skel=c12s,
+        steps=int(steps), seconds=_secs,
+        steps_per_sec=(float(steps) / max(_secs, 1e-9)),
+    )

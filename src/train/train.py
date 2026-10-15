@@ -79,6 +79,7 @@ from src.train.checkpoint import CheckpointManager as _CkptManager   # ★ PR4: 
 from src.train import optimizer as _opt        # ★ PR4: 优化器装配（纯决策 + 薄工厂）✓
 from src.train.step import NonFiniteGuard as _NonFiniteGuard   # ★ PR4: 单步组件 ✓
 from src.train.telemetry import Diagnostics as _Diagnostics    # ★ PR4: 训练期诊断（纯观测）✓
+from src.train import telemetry as _tel         # ★ PR4: 窗口均值汇总（纯计算）✓
 from src.train.objectives import ObjectiveComposer as _ObjComposer   # ★ PR4: 损失装配 ✓
 from src.train.ckpt import (restore_rng)
 from src.train.data_setup import build_data   # ★ PR4: 数据装配 ✓
@@ -2605,40 +2606,21 @@ def main(args):
                     end_time = time()
                     # Guard against a logging window in which every step was skipped due to non-finite loss.
                     divisor = max(log_steps, 1)
-                    steps_per_sec = log_steps / max(end_time - start_time, 1e-9)
-                    
-                    # 累加器已是 GPU 张量 -> 除法仍在 GPU；**只在这一次**取标量
-                    avg_l = running_loss / divisor
-                    avg_d = running_diff / divisor
-                    avg_r = running_repa / divisor
-                    avg_std_mid = running_std_mid / divisor
-                    world_size = dist.get_world_size()
-                    if world_size > 1:
-                        dist.all_reduce(avg_l, op=dist.ReduceOp.SUM)
-                        dist.all_reduce(avg_d, op=dist.ReduceOp.SUM)
-                        dist.all_reduce(avg_r, op=dist.ReduceOp.SUM)
-                        dist.all_reduce(avg_std_mid, op=dist.ReduceOp.SUM)
-                        avg_l, avg_d = avg_l.item()/world_size, avg_d.item()/world_size
-                        avg_r = avg_r.item()/world_size
-                        avg_std_mid = avg_std_mid.item()/world_size
-                    else:
-                        avg_l, avg_d = avg_l.item(), avg_d.item()
-                        avg_r = avg_r.item()
-                        avg_std_mid = avg_std_mid.item()
-
-                    # ref 12ch 分组 loss: 从累加的 (C,) 向量里拆出 image/canny/skel 三组。
-                    # 等权目标下 Diff 即三组均值, 分组打印便于直接看到结构通道在被优化。
-                    avg_skel = (running_skel / divisor).item()
-                    avg_c12i = avg_c12c = avg_c12s = 0.0
-                    if _acc_c12 is not None:
-                        _cm = (_acc_c12 / divisor)
-                        avg_c12i = float(_cm[:4].mean())
-                        for _gi, _nm in enumerate(_aux_dirs):
-                            _gm = float(_cm[4 + 4 * _gi: 8 + 4 * _gi].mean())
-                            if 'canny' in _nm:
-                                avg_c12c = _gm
-                            elif 'skel' in _nm:
-                                avg_c12s = _gm
+                    # ★ 2026-10-14 [重构 PR4] 均值汇总抽到 telemetry.average_window ✓（纯计算 ✓）
+                    #   累加器已是 GPU 张量 -> 除法仍在 GPU ✓ **只在这一次**取标量 ✓
+                    #   world_size>1 时先 all_reduce(SUM) 再 /world_size ✓（逐字等价 ✓）
+                    #   12ch 分组 loss 仍从累加的 (C,) 向量拆出 image/canny/skel ✓
+                    _wa = _tel.average_window(
+                        {"loss": running_loss, "diff": running_diff,
+                         "repa": running_repa, "std_mid": running_std_mid,
+                         "skel": running_skel},
+                        divisor, dist.get_world_size(),
+                        steps=log_steps, seconds=end_time - start_time,
+                        aux_dirs=_aux_dirs, acc_c12=_acc_c12)
+                    avg_l, avg_d, avg_r = _wa.loss, _wa.diff, _wa.repa
+                    avg_std_mid, avg_skel = _wa.std_mid, _wa.skel
+                    steps_per_sec = _wa.steps_per_sec
+                    avg_c12i, avg_c12c, avg_c12s = _wa.c12_img, _wa.c12_canny, _wa.c12_skel
 
                     if rank == 0:
                         wr = args.w_repa

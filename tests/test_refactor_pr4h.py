@@ -205,18 +205,32 @@ def test_maybe_start_order():
 
 # ─────────────── ⑤ 纯观测边界 ───────────────
 def test_module_is_pure_observation():
+    """★ 边界 ✓: **诊断类**（StepProfiler / MemoryHistoryRecorder / Diagnostics）
+    不得涉及训练语义 ✗。
+
+    ⚠ 检查范围必须限定在**这三个类** ✗ —— 模块后来又收了
+      verage_window（**纯计算** ✓），它合法地使用 "loss" 等**字典键** ✓
+      （它只是指标名 ✓ 不是损失计算 ✗）。
+      旧版本扫**全模块** ⇒ 新函数一加就误报 ✗（实测如此 ✓）。
+    """
     src = io.open("src/train/telemetry.py", encoding="utf-8").read()
     tree = ast.parse(src)
+    targets = {"StepProfiler", "MemoryHistoryRecorder", "Diagnostics"}
+    code = []
     for node in ast.walk(tree):
-        if isinstance(node, (ast.Module, ast.FunctionDef, ast.ClassDef)):
-            body = getattr(node, "body", None)
-            if body and isinstance(body[0], ast.Expr) and \
-                    isinstance(body[0].value, ast.Constant) and \
-                    isinstance(body[0].value.value, str):
-                node.body = body[1:] or [ast.Pass()]
-    code = ast.unparse(tree)
-    for bad in ("backward", "zero_grad", "opt.step", "clip_grad", "state_dict", "loss"):
-        assert bad not in code, f"telemetry.py 不得涉及 `{bad}` ✗（纯观测 ✓）"
+        if isinstance(node, ast.ClassDef) and node.name in targets:
+            for sub in ast.walk(node):
+                if isinstance(sub, (ast.FunctionDef, ast.AsyncFunctionDef)):
+                    body = list(sub.body)
+                    if body and isinstance(body[0], ast.Expr) and \
+                            isinstance(body[0].value, ast.Constant) and \
+                            isinstance(body[0].value.value, str):
+                        body = body[1:] or [ast.Pass()]
+                    code.append(ast.unparse(ast.Module(body=body, type_ignores=[])))
+    joined = "\n".join(code)
+    for bad in ("backward", "zero_grad", "opt.step", "clip_grad", "state_dict"):
+        assert bad not in joined, f"诊断类不得涉及 {bad} ✗（纯观测 ✓）"
+    assert code, "未找到诊断类 ✗（测试本身失效 ✗）"
 
 
 def test_train_py_no_longer_owns_profiler_state():
