@@ -77,6 +77,7 @@ from src.train import backward as _bw          # ★ PR4: backward 策略模块 
 from src.train import ema as _ema              # ★ PR4: EMA 组件 ✓
 from src.train.checkpoint import CheckpointManager as _CkptManager   # ★ PR4: 持久化 ✓
 from src.train import optimizer as _opt        # ★ PR4: 优化器装配（纯决策 + 薄工厂）✓
+from src.train.step import NonFiniteGuard as _NonFiniteGuard   # ★ PR4: 单步组件 ✓
 from src.train.objectives import ObjectiveComposer as _ObjComposer   # ★ PR4: 损失装配 ✓
 from src.train.ckpt import (restore_rng)
 from src.train.data_setup import build_data   # ★ PR4: 数据装配 ✓
@@ -1810,7 +1811,9 @@ def main(args):
     _acc_c12 = None          # (C,) 逐通道 MSE 累加，日志步再拆成 image/canny/skel
     # torch.compile warmup 结束后回收显存空洞（见 cli.py --empty-cache-after-warmup）
     _empty_cache_at = int(getattr(args, "empty_cache_after_warmup", 0) or 0)
-    nan_steps = 0
+    # ★ 2026-10-14 [重构 PR4] 非有限 loss 的**跳过策略**收进组件 ✓
+    #   （审查 §4.2 第 5 条 "finite 梯度检查" ✓；它是循环体里少见的**纯状态机** ✓）
+    _guard = _NonFiniteGuard(logger, rank)
     current_ema_decay = args.ema_decay
     start_time = time()
 
@@ -2523,9 +2526,9 @@ def main(args):
                     del _aux_style
                 else:
                     _bw.joint_backward(loss)          # ★ PR4: joint_backward ✓
-                _finite = bool(torch.isfinite(loss))
-
                 # NaN guard: skip clip/step/ema/accumulate if loss is not finite (e.g. a bad sample).
+                # ★ PR4: 判定与计数都走 _guard ✓（同一表达式 ✓ 同一告警文本 ✓）
+                _finite = _guard.check(loss)
                 if _finite:
                     # ★ 2026-10-10: max_norm 参数化。它是**绝对**阈值, 而梯度幅度随"数据端 latent 尺度"
                     #   线性缩放 —— 换 VAE / 改 scaling_factor 后必须同步调整, 否则隐性裁剪。
@@ -2591,13 +2594,8 @@ def main(args):
                 else:
                     # 已 backward -> .grad 里留下 NaN，但**不** clip/step/ema -> 参数不被污染；
                     # 这些 NaN 梯度由下一轮顶部的 zero_grad(set_to_none=True) 释放。
-                    nan_steps += 1
-                    if rank == 0:
-                        # 这里必须取标量（要打出来），但只在**出问题时**才发生 -> 不在热路径
-                        logger.warning(
-                            f"Step {train_steps} skipped: non-finite loss "
-                            f"(diff={float(loss_diff):.4f}). Accumulated skips: {nan_steps}"
-                        )
+                    # ★ PR4: 计数 + 告警（含"只在出问题时才取标量 ⇒ 不在热路径"）都在守卫里 ✓
+                    _guard.note_skipped(train_steps, loss_diff)
                 # === INFRA: release the autograd graph every step, finite or not.
                 # The graph built by training_losses (DiT forward + pred_xstart) must be
                 # freed BEFORE the next forward, otherwise peak = diff_graph + aux_graph.
