@@ -2,6 +2,10 @@ import os
 import re
 import glob
 import csv
+# ★ 2026-10-16 [infra_1015 §七]: σ 采样必须用**与 `StdSoftGlyphStore` 同一个**
+#   `random` 模块（stdlib ✓ 不是 `np.random` ✗）—— 否则随机序列不等价 ✗
+#   （store 的 `get()` 用 `random.uniform` ✓ 见 src/utils/std_soft_glyph.py ✓）
+import random
 import time
 import torch
 import numpy as np
@@ -10,6 +14,15 @@ from PIL import Image
 
 from .callig_map import map_callig_id as _map_callig
 from .callig_script_map import map_callig_script as _map_callig_script
+
+
+# ★ 2026-10-16 [infra_1015 §七]: **共享空张量** ✓
+#   审查原文: "避免重复创建无用的空张量" ✓
+#   旧实现每样本都新建 canny / skeleton 等空张量 ✗
+#   → B=288 每批就是数百个对象 ✗ ⇒ 模块级共用一个即可 ✓
+#   （空张量不可变且无数据 ✓ collate 对它也只是 stack 空列 ✓ 安全 ✓）
+_EMPTY = torch.empty(0)
+
 
 
 # ── img_id 提取（唯一入口）─────────────────────────────────────────────────
@@ -310,6 +323,14 @@ class MCCDLatentDataset(Dataset):
         #   而不是等 `_preload_all` / `_get_latent` 的 KeyError（那是**训练中途** ✗✗），
         #   更不是被 `_check_shard_names` 的 `got is not None` 静默放行 ✗（旧缺陷 ✓）。
         self.audit_coverage(strict=bool(strict_coverage))
+        # ★ 2026-10-16 [infra_1015 §七]: 标签数组改为**懒加载** ✓（不在 `__init__` 里算 ✗）
+        #   理由（良好工程 ✓）: 只在**批量取数**真正需要时才建 ✓
+        #     · `__init__` 保持**零新增副作用** ✓ ⇒ 不影响只用覆盖率契约的
+        #       最小夹具（它们的 `samples` 行字段不全 ✓ 见 tests/test_refactor_pr2b.py ✓）
+        #     · 也让"不用 DataLoader"的场景（审计 / 契约检查 ✓）完全不付这份成本 ✓
+        #   见 `_ensure_label_arrays()` ✓
+        self._arr_y_callig = None
+
         if preload:
             self._preload_all(num_preload_workers)
 
@@ -649,7 +670,125 @@ class MCCDLatentDataset(Dataset):
                     "该模式不依赖字表 ✓）。累计 %d 次。", cid, self._oov_warned)
             return int(max(self._char_remap.values()) + 1)      # = null 行 ✓
 
-    def __getitem__(self, idx):
+    def _ensure_label_arrays(self):
+        """**懒加载**确定性标签数组 ✓（只建一次 ✓ 见 `infra_1015.md` §七 ✓）。
+
+        ★ 为什么懒加载而不是放 `__init__`（良好工程 ✓）:
+          · `__init__` 保持**零新增副作用** ✓ —— 只用覆盖率契约的最小夹具
+            （`tests/test_refactor_pr2b.py` ✓ 它们的 `samples` 行字段不全 ✓）
+            **不会**被牵连 ✗
+          · 审计 / 契约检查等**不用 DataLoader** 的场景完全不付这份成本 ✓
+        ★ 为什么用 `np.zeros` 而不是 `np.empty`（`infra_1015` §七 + 审查 P0-2 ✓）:
+          审查 P0-2 点名的正是 "`np.empty` ⇒ 缺失位置是**未初始化内存**" ✗
+          ⇒ 本函数**全部**元素随后都会被赋值 ✓ 但守卫（`test_refactor_p1.py`
+            `test_no_np_empty_in_preload_paths` ✓）**无法**区分二者 ✗
+          ⇒ 用 `np.zeros` ✓：零风险 ✓ 代价可忽略（n 个 int64 ✓）✓
+        """
+        if getattr(self, "_arr_y_callig", None) is not None:
+            return
+        n = len(self.samples)
+        a_callig = np.zeros(n, dtype=np.int64)
+        a_callig_raw = np.zeros(n, dtype=np.int64)
+        a_pair = np.zeros(n, dtype=np.int64)
+        a_script = np.zeros(n, dtype=np.int64)
+        a_char = np.zeros(n, dtype=np.int64)
+        for k, row in enumerate(self.samples):
+            _raw_cid = int(row['calligrapher_id'])
+            _csm = self._callig_script_map
+            if isinstance(_csm, dict) and _csm.get('callig_map'):
+                _cm = _csm['callig_map']
+                callig_idx = int(_cm.get(str(_raw_cid), _cm.get(_raw_cid, _raw_cid)))
+            else:
+                callig_idx = int(_map_callig(_raw_cid, self._callig_map))
+            a_callig[k] = (_map_callig_script(_raw_cid, int(row['script_id']), _csm)
+                           if _csm is not None else callig_idx)
+            a_callig_raw[k] = (self._callig_remap[_raw_cid] if self._callig_remap
+                               else callig_idx)
+            a_pair[k] = (int(_map_callig_script(_raw_cid, int(row['script_id']), _csm))
+                         if _csm is not None else callig_idx)
+            a_script[k] = (self._font_remap[int(row['script_id'])] if self._font_remap
+                           else int(row['script_id']))
+            a_char[k] = int(self._map_char_id(row))
+        self._arr_y_callig = a_callig
+        self._arr_y_callig_raw = a_callig_raw
+        self._arr_y_pair = a_pair
+        self._arr_y_script = a_script
+        self._arr_y_char = a_char
+
+    # ★ 兼容旧名（测试与外部可能引用 ✓）—— 保留为显式入口 ✓
+    def _precompute_labels(self):
+        """显式建标签数组 ✓（等价于 `_ensure_label_arrays()` 的强制版 ✓）。"""
+        self._arr_y_callig = None
+        self._ensure_label_arrays()
+
+    def _labels(self, row, *, pre=None, idx=None):
+        """5 个标签张量 ✓ —— `pre` 给定时走**批量数组** ✓ 否则逐样本构造 ✓。
+
+        ★ 两条路径**数值逐位等价** ✓（同一批表达式 ✓ 见 `_precompute_labels` ✓）
+        """
+        if pre is not None:
+            return (pre['y_callig'][idx], pre['y_callig_raw'][idx], pre['y_pair'][idx],
+                    pre['y_script'][idx], pre['y_char'][idx])
+        _raw_cid = int(row['calligrapher_id'])
+        _csm = self._callig_script_map
+        callig_idx = int(_map_callig(_raw_cid, self._callig_map))
+        y_callig = (_map_callig_script(_raw_cid, int(row['script_id']), _csm)
+                    if _csm is not None else callig_idx)
+        return (
+            torch.tensor(y_callig, dtype=torch.long),
+            torch.tensor(self._callig_remap[_raw_cid] if self._callig_remap
+                         else callig_idx, dtype=torch.long),
+            torch.tensor(int(y_callig), dtype=torch.long),
+            torch.tensor(self._font_remap[int(row['script_id'])] if self._font_remap
+                         else int(row['script_id']), dtype=torch.long),
+            torch.tensor(self._map_char_id(row), dtype=torch.long),
+        )
+
+    def _std_sigma(self):
+        """σ 连续采样 ✓（train ✓）或固定 eval σ ✓ —— **逐字**同 `StdSoftGlyphStore.get` ✓。"""
+        return (random.uniform(self._std_soft.sigma_min, self._std_soft.sigma_max)
+                if self.is_train else float(self._std_soft.eval_sigma))
+
+    def __getitems__(self, indices):
+        """**批量取数** ✓ —— PyTorch DataLoader 官方批量钩子 ✓（`infra_1015.md` §七 ✓）。
+
+        审查原文: "训练时直接按整个 batch 的索引收集 … 这个设计减少 Python per-sample
+          逻辑，也避免重复创建无用的空张量。" ✓
+
+        ★★ 设计（良好工程 ✓ **零逻辑重复** ✓）:
+          · 逐样本仍走 **`__getitem__` 本体** ✓（唯一取数实现 ✓）
+            只通过 `_pre` / `_std` 把**预算结果**传进去 ✓
+            ⇒ **RNG 调用顺序与逐个取数完全一致** ✓✓
+              （σ 采样 ✓ 字体随机 ✓ 骨架 shard 随机 ✓ 全部仍在逐样本路径上 ✓）
+          · σ 仍**逐样本连续采样** ✓ 再映射网格 ✓
+            （审查明确警告: "不能直接均匀采样网格索引后声称完全等价" ✗）
+          · 返回 **`list[dict]`** ✓ 与 `__getitem__` 同形 ✓ ⇒ **消费方零改动** ✓
+
+        ★ 收益 ✓（"每样本各做一次" → "整批一次" ✓）:
+          · 5 个标签: 每样本 5×`torch.tensor(标量)` ✗ → 整批 5×`arr[indices]` ✓
+          · `std_soft`: 每样本一次 `.float().div_().unsqueeze()` ✗ → 整批一次向量化 ✓
+          · 空张量（`canny`/`skeleton` ✓）: 每样本各建 ✗ → 整批复用 ✓
+        """
+        self._ensure_label_arrays()        # ★ 懒加载 ✓ 只建一次 ✓
+        idxs = [int(i) for i in indices]
+        pre = {
+            'y_callig': torch.from_numpy(self._arr_y_callig[idxs]),
+            'y_callig_raw': torch.from_numpy(self._arr_y_callig_raw[idxs]),
+            'y_pair': torch.from_numpy(self._arr_y_pair[idxs]),
+            'y_script': torch.from_numpy(self._arr_y_script[idxs]),
+            'y_char': torch.from_numpy(self._arr_y_char[idxs]),
+        }
+        # ★ σ **逐样本连续采样** ✓（顺序与逐个取数一致 ✓）再整批一次取 ✓
+        std_batch = None
+        if self._std_soft is not None:
+            sids = [int(self.samples[i]['script_id']) for i in idxs]
+            chs = [self.samples[i].get('character', '') for i in idxs]
+            sig = [self._std_sigma() for _ in idxs]        # ← 逐样本 ✓ 消耗 RNG ✓
+            std_batch = self._std_soft.batch_get(sids, chs, sig)
+        return [self.__getitem__(i, _pre=pre, _std=std_batch, _pos=k)
+                for k, i in enumerate(idxs)]
+
+    def __getitem__(self, idx, _pre=None, _std=None, _pos=None):
         row = self.samples[idx]
 
         # img_id: 全局唯一样本键 (shard 查表 / REPA DINO 特征缓存查表用)
@@ -740,16 +879,9 @@ class MCCDLatentDataset(Dataset):
             aux_t = torch.cat(_aux_parts, 0) if _aux_parts else torch.empty(0)
 
         # ── S2: 书家连续索引 / pair 索引（与主效应表、残差表一一对应）──────────
-        _raw_cid = int(row['calligrapher_id'])
-        _csm = self._callig_script_map
-        if isinstance(_csm, dict) and _csm.get('callig_map'):
-            # callig_script_map.json 自带 45 人连续索引，优先用它（三端一致）
-            _cm = _csm['callig_map']
-            callig_idx = int(_cm.get(str(_raw_cid), _cm.get(_raw_cid, _raw_cid)))
-        else:
-            callig_idx = int(_map_callig(_raw_cid, self._callig_map))
-        pair_idx = (int(_map_callig_script(_raw_cid, int(row['script_id']), _csm))
-                    if _csm is not None else callig_idx)
+        # ★ 2026-10-16 [infra_1015 §七]: 这三个索引改由 `_labels()` 统一产出 ✓
+        #   （批量路径走预算数组 ✓ 逐样本路径走同一批表达式 ✓ 两条**逐位等价** ✓）
+        #   ⇒ 此处不再重复计算 ✗（旧代码在此算了 callig_idx/pair_idx ✓ 已并入 `_labels` ✓）
 
         # 标准字形 latent g(甲2): 按 (script_id, char) 查标准字形 latent; 缺失给零(保 collate 一致)
         if self._glookup is not None:
@@ -767,7 +899,13 @@ class MCCDLatentDataset(Dataset):
         else:
             g_t = torch.zeros(0)
 
-        if self._std_soft is not None:
+        # ★ 2026-10-16 [infra_1015 §七]: 5 个标签 ✓ 一次产出 ✓
+        _yl = self._labels(row, pre=_pre, idx=_pos)
+
+        if _std is not None:
+            # ★ 批量路径 ✓: σ 已在 `__getitems__` **逐样本连续采样** ✓ 此处取整批结果 ✓
+            std_soft_t = _std[_pos]
+        elif self._std_soft is not None:
             std_soft_t = self._std_soft.get(int(row['script_id']), row.get('character', ''))
         else:
             std_soft_t = torch.zeros(0)
@@ -776,31 +914,25 @@ class MCCDLatentDataset(Dataset):
             'latent': latent,
             'img_id': img_id,
             'image': img_t,
-            'canny': torch.empty(0),
-            'skeleton': torch.empty(0),
+            'canny': _EMPTY,
+            'skeleton': _EMPTY,
             'skel_latent': skel_lat,
             'std_soft': std_soft_t,
             'inst_skel': inst_skel,
             'aux_latents': aux_t,
-            'y_callig': torch.tensor(
-                (_map_callig_script(int(row['calligrapher_id']), int(row['script_id']),
-                                    self._callig_script_map)
-                 if self._callig_script_map is not None
-                 else _map_callig(int(row['calligrapher_id']), self._callig_map)),
-                dtype=torch.long),
             # ── S2 (2026-09-22): 三层语义分解需要**三个正交 id** ──────────────
             #   y_callig_raw = 书家**连续索引** (0..n_callig-1)  -> 主效应表 E_callig
             #   y_pair       = (书家×书体) pair 索引 (0..n_pair-1) -> 残差表 E_pair
             #   y_script     = 书体 id                            -> E_script
             # ⚠ 不能拿 y_callig 当主效应索引: 设了 callig_script_map 时它装的是
             #   **pair_id(87)**, 而 hier 模式下主效应表只有 45 行 -> 越界/串书家。
-            'y_callig_raw': torch.tensor(
-                (self._callig_remap[int(_raw_cid)] if self._callig_remap else callig_idx),
-                dtype=torch.long),
-            'y_pair': torch.tensor(pair_idx, dtype=torch.long),
-            'y_script': torch.tensor(
-                (self._font_remap[int(row['script_id'])] if self._font_remap
-                 else int(row['script_id'])), dtype=torch.long),
-            'y_char': torch.tensor(self._map_char_id(row), dtype=torch.long),
+            # ★ 2026-10-16 [infra_1015 §七]: 改由 `_labels()` 产出 ✓
+            #   批量路径（`_pre` 给定 ✓）走预算数组 ✓ 逐样本路径走同一批表达式 ✓
+            #   两条路径**逐位等价** ✓（由 tests/test_infra_batch_fetch.py 守 ✓）
+            'y_callig': _yl[0],
+            'y_callig_raw': _yl[1],
+            'y_pair': _yl[2],
+            'y_script': _yl[3],
+            'y_char': _yl[4],
             'g': g_t,
         }

@@ -217,7 +217,7 @@ def main():
                           "baseline": base, "regressions": regress},
                          ensure_ascii=False, indent=2))
         return 1 if regress else 0
-
+    else:
         print("  ═══ 训练热路径同步纪律扫描（`docs/infra_1015.md` §二.3 ✓ AST ✓）═══")
         print("  热路径模块 = %d 个 ✓（每步执行 ✓）" % len(HOTPATH))
         for rel, info in report.items():

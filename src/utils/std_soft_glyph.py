@@ -302,6 +302,54 @@ class StdSoftGlyphStore:
             raise KeyError(f"std-soft store misses {len(missing)} {label} glyphs: {sample}")
         return missing
 
+    def row_index(self, script_id: int, char: str) -> Optional[int]:
+        """`(script_id, char)` → σ 网格栈的**行号** ✓（`None` = 缺 ✓）。
+
+        ★ 2026-10-16 [infra_1015 §七] 新增 ✓ —— 供 `MCCDLatentDataset` **批量取数**用 ✓:
+          批量路径要一次索引 `self._stack[levels, rows]` ✓ 需要**事先**把每样本的行号
+          预算成连续数组 ✓。若直接碰 `_key_index` 会跨类访问私有成员 ✗（不良实践 ✓）
+          ⇒ 在此提供**公开**访问器 ✓（单一职责 ✓ 也让 store 的实现细节可自由演进 ✓）
+        """
+        if self._key_index is None:
+            return None
+        return self._key_index.get((int(script_id), str(char)))
+
+    def batch_get(self, script_ids, chars, sigmas) -> torch.Tensor:
+        """**批量**取 σ 模糊字形 ✓ 返回 `(B, 1, H, W)` float32 ✓。
+
+        ★ 与逐个 `get()` **数值逐位等价** ✓（2026-10-16 [infra_1015 §七] ✓）:
+          · σ **由调用方逐样本采好** ✓（★ 文档明确警告: 必须**先采连续 σ**
+            再映射到网格 ✓ **不能**直接均匀采样网格索引 ✗ —— 那会改变增强分布 ✗）
+          · 走同一条 `_snap` → 网格层 → 同一切片 ✓ 同样的 `.float() / 255` ✓
+          · 缺行 ⇒ 与 `get()` 一致: strict 时 `KeyError` ✓ 否则给零 ✓
+        ★ 收益 ✓: 旧路径每样本各做一次 `.float().div_(255.0).unsqueeze(0)` ✗
+          ⇒ 批量路径**一次**向量化 ✓（B 次小算子 → 1 次 ✓）
+        """
+        B = len(script_ids)
+        if self._stack is None:
+            # 慢路径（preload=False ✓ 推理/调试）⇒ 退回逐个 ✓ 语义一致 ✓
+            return torch.stack([self.get(int(s), str(c), sigma=float(g))
+                                for s, c, g in zip(script_ids, chars, sigmas)], 0)
+        rows, levels, miss = [], [], []
+        for k in range(B):
+            r = self.row_index(script_ids[k], chars[k])
+            if r is None:
+                if self.strict:
+                    raise KeyError(
+                        f"std-soft glyph missing: script_id={int(script_ids[k])} "
+                        f"char={str(chars[k])!r}")
+                miss.append(k)
+                rows.append(0)
+                levels.append(0)
+                continue
+            rows.append(r)
+            levels.append(self._levels[round(self._snap(float(sigmas[k])), 6)])
+        out = self._stack[torch.as_tensor(levels), torch.as_tensor(rows)] \
+            .float().div_(255.0).unsqueeze(1)
+        if miss:                                    # 缺行 ⇒ 与 get() 一致给零 ✓
+            out[torch.as_tensor(miss)] = 0.0
+        return out
+
     def get(self, script_id: int, char: str, sigma: Optional[float] = None) -> torch.Tensor:
         key = (int(script_id), str(char))
         if key not in self._paths:
