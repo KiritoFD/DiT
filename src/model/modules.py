@@ -170,7 +170,7 @@ class SwiGLUFeedForward(nn.Module):
     只需在新目标列表里补一个 ``mlp.fc_gate``。
     """
 
-    def __init__(self, dim, hidden_dim=None, mlp_ratio=4.0, multiple_of=64, drop=0.0):
+    def __init__(self, dim, hidden_dim=None, mlp_ratio=4.0, multiple_of=64, drop=0.0, use_fused_ops=False):
         super().__init__()
         if hidden_dim is None:
             hidden_dim = int(dim * mlp_ratio)
@@ -181,9 +181,17 @@ class SwiGLUFeedForward(nn.Module):
         self.fc_gate = nn.Linear(dim, hidden_dim, bias=False)
         self.fc2 = nn.Linear(hidden_dim, dim, bias=False)
         self.drop = nn.Dropout(drop)
+        self.use_fused_ops = bool(use_fused_ops)
 
     def forward(self, x):
-        return self.drop(self.fc2(F.silu(self.fc1(x)) * self.fc_gate(x)))
+        h1 = self.fc1(x)
+        h2 = self.fc_gate(x)
+        if self.use_fused_ops and x.is_cuda:
+            from src.model.fused_ops import fused_swiglu
+            act = fused_swiglu(h1, h2)
+        else:
+            act = F.silu(h1) * h2
+        return self.drop(self.fc2(act))
 
 
 def build_mlp(mlp_type, dim, mlp_ratio=4.0, **kwargs):
@@ -474,13 +482,14 @@ class DiTBlock(nn.Module, StyleAdaBranchInitMixin):
     def __init__(self, hidden_size, num_heads, mlp_ratio=4.0,
                  norm_type="rms", mlp_type="swiglu", qk_norm=True,
                  attn_impl="sdpa", style_ada_rank=0, style_in_dim=0,
-                 style_ada_gain=False, **block_kwargs):
+                 style_ada_gain=False, use_fused_ops=False, **block_kwargs):
         super().__init__()
+        self.use_fused_ops = bool(use_fused_ops)
         self.norm1 = build_norm(norm_type, hidden_size)
         self.attn = Attention(hidden_size, num_heads=num_heads, qkv_bias=True,
                               qk_norm=qk_norm, attn_impl=attn_impl, **block_kwargs)
         self.norm2 = build_norm(norm_type, hidden_size)
-        self.mlp = build_mlp(mlp_type, hidden_size, mlp_ratio=mlp_ratio)
+        self.mlp = build_mlp(mlp_type, hidden_size, mlp_ratio=mlp_ratio, use_fused_ops=use_fused_ops)
         self.adaLN_modulation = nn.Sequential(
             nn.SiLU(),
             nn.Linear(hidden_size, 6 * hidden_size, bias=True),
@@ -521,9 +530,22 @@ class DiTBlock(nn.Module, StyleAdaBranchInitMixin):
     def forward(self, x, c, rope=None, c_style=None):
         shift_msa, scale_msa, gate_msa, shift_mlp, scale_mlp, gate_mlp = \
             self._mod6(c, c_style).chunk(6, dim=1)
-        x = x + gate_msa.unsqueeze(1) * self.attn(modulate(self.norm1(x), shift_msa, scale_msa),
-                                                  rope=rope)
-        x = x + gate_mlp.unsqueeze(1) * self.mlp(modulate(self.norm2(x), shift_mlp, scale_mlp))
+
+        if self.use_fused_ops and x.is_cuda and isinstance(self.norm1, RMSNorm) and self.norm1.weight is None:
+            from src.model.fused_ops import fused_adaln_rmsnorm
+            x_norm1 = fused_adaln_rmsnorm(x, scale_msa, shift_msa, eps=self.norm1.eps)
+        else:
+            x_norm1 = modulate(self.norm1(x), shift_msa, scale_msa)
+
+        x = x + gate_msa.unsqueeze(1) * self.attn(x_norm1, rope=rope)
+
+        if self.use_fused_ops and x.is_cuda and isinstance(self.norm2, RMSNorm) and self.norm2.weight is None:
+            from src.model.fused_ops import fused_adaln_rmsnorm
+            x_norm2 = fused_adaln_rmsnorm(x, scale_mlp, shift_mlp, eps=self.norm2.eps)
+        else:
+            x_norm2 = modulate(self.norm2(x), shift_mlp, scale_mlp)
+
+        x = x + gate_mlp.unsqueeze(1) * self.mlp(x_norm2)
         return x
 
 

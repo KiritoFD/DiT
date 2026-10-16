@@ -222,6 +222,8 @@ class DiT_2Cond(DitConditionMixin, nn.Module):
         #   显式给值时**硬校验**：两个都开 / 两个都关 ⇒ ValueError ✗
         content_cond=None,
         std_soft_zero_init=True,
+        std_soft_bias=True,
+        glyph_scale_bound=0.0,
         char_proj_mode="full",
         callig_proj_mode="linear",   # 42 号实验: "mlp" 两层 MLP 补 callig 容量
         callig_scale_init=1.0,       # 42 号实验: callig_scale 初值 (1.5 增强风格权重)
@@ -385,6 +387,7 @@ class DiT_2Cond(DitConditionMixin, nn.Module):
         rope=True,              # 2D axial RoPE；False 时退回固定 2D sin-cos 加到 x
         rope_theta=100.0,
         attn_impl="sdpa",       # "sdpa" | "eager"
+        use_fused_ops=False,    # 是否启用 Triton 算子融合 (adaLN-RMSNorm / SwiGLU)
         image_channels=None,    # CFG 只作用于 image latent 通道; None 时退回 in_channels (向后兼容)
         # ★ [2026-09-21] 旧 ckpt args 兼容: v13 里叫 callig_style_attn，后来改名为
         #   callig_style_ca。gradio/评测脚本直接把 ckpt args 展平成 kwargs 传进来，
@@ -432,6 +435,8 @@ class DiT_2Cond(DitConditionMixin, nn.Module):
         self.use_glyph_cond = bool(use_glyph_cond)
         self.std_soft_cond = bool(std_soft_cond)
         self.std_soft_zero_init = bool(std_soft_zero_init)
+        self.std_soft_bias = bool(std_soft_bias)
+        self.glyph_scale_bound = float(glyph_scale_bound)
         self.glyph_scale_init = float(glyph_scale_init)
         self.glyph_concat_input = bool(glyph_concat_input)
         self.glyph_gate_t = float(glyph_gate_t)
@@ -513,7 +518,8 @@ class DiT_2Cond(DitConditionMixin, nn.Module):
                        # ★ 只在选定层建参数 ⇒ 未选中的层与前代**逐位一致** ✓
                        style_ada_rank=(self.style_ada_rank if i in _sl else 0),
                        style_in_dim=_style_in_dim,
-                       style_ada_gain=style_ada_gain)
+                       style_ada_gain=style_ada_gain,
+                       use_fused_ops=use_fused_ops)
             for i in range(depth)
         ])
         self.final_layer = M.FinalLayer(hidden_size, patch_size, self.out_channels,
@@ -577,6 +583,11 @@ class DiT_2Cond(DitConditionMixin, nn.Module):
         #   锁定后 `_style_out` 若再遇维度不符会**直接报错** ✗，绝不在训练前向中造参数 ✓
         #   （否则新参数不进 optimizer ✗、也可能破坏 compile 捕获 ✗）。
         self._style_proj_locked = True
+    def effective_glyph_scale(self):
+        if self.glyph_scale_bound > 0:
+            return self.glyph_scale_bound * self.glyph_scale.tanh()
+        return self.glyph_scale
+
     def _validate_content_cond(self, content_cond, std_soft_cond):
         """`content_cond` **纯校验** ✓（逐字搬移 ✓ 2026-10-14 [重构 PR5] ✓）。"""
         content_cond = content_cond
@@ -1264,6 +1275,16 @@ def DiT_2Cond_Sp_2(**kwargs):
     # (follow-IoU3 0.57), 缺的是骨架->墨映射的表征带宽 (MLP/g_tok/adaLN 全 ×h)。
     return DiT_2Cond(depth=12, hidden_size=512, patch_size=2, num_heads=8, **kwargs)
 
+def DiT_2Cond_Sp20_2(**kwargs):
+    """v90: v84A width/heads/patch grid, twenty blocks (no12-layer weight inflation)."""
+    return DiT_2Cond(depth=20, hidden_size=512, patch_size=2, num_heads=8, **kwargs)
+
+
+def DiT_2Cond_S384_20_2(**kwargs):
+    """v90 width ablation: twenty blocks,384 channels, unchanged eight heads."""
+    return DiT_2Cond(depth=20, hidden_size=384, patch_size=2, num_heads=8, **kwargs)
+
+
 def DiT_2Cond_S_4(**kwargs):
     return DiT_2Cond(depth=12, hidden_size=384, patch_size=4, num_heads=6, **kwargs)
 
@@ -1301,6 +1322,8 @@ DiT_2Cond_models = {
     'DiT-2Cond-S320/2': DiT_2Cond_S320_2,
     'DiT-2Cond-M/2': DiT_2Cond_M_2,
     'DiT-2Cond-Sp/2': DiT_2Cond_Sp_2,
+    'DiT-2Cond-Sp20/2': DiT_2Cond_Sp20_2,
+    'DiT-2Cond-S384-20/2': DiT_2Cond_S384_20_2,
     'DiT-2Cond-S/4': DiT_2Cond_S_4,
     'DiT-2Cond-S/8': DiT_2Cond_S_8,
     'DiT-2Cond-B/2': DiT_2Cond_B_2,
