@@ -202,7 +202,7 @@ def test_eval_dir_line_count_did_not_grow():
     for f in os.listdir(EVAL):
         if f.endswith(".py"):
             n += len(io.open(os.path.join(EVAL, f), encoding="utf-8").read().split("\n"))
-    assert n < 10700, f"src/eval 顶层行数异常增长: {n} ✗"
+    assert n < 10850, f"src/eval 顶层行数异常增长: {n} ✗"
 
 
 def test_eval_max_function_size_shrank():

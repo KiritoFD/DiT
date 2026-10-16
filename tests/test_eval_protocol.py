@@ -12,6 +12,8 @@
 """
 from __future__ import annotations
 
+import io
+
 import os
 import shutil
 import sys
@@ -153,6 +155,9 @@ def test_deleted_png_invalidates_completion():
     d = os.path.join(tempfile.mkdtemp(), "evaluations", req.eval_id())
     write_protocol(req, d)
     _mk_samples(d, 3)
+    # ★ 2026-10-16 [新版审查 §五-3 ✓]: 新契约 ✓ DONE 必须登记本集 metrics.json ✓
+    #   （与兄弟用例 L108/117/141 的做法一致 ✓ —— 该夹具漏写 ✗ 已补 ✓）
+    io.open(os.path.join(d, "metrics.json"), "w", encoding="utf-8").write('{"ssim": 0.6}')
     write_done(req, d, n_samples=3)
     assert is_complete(req, d)[0]
     os.remove(os.path.join(d, "g1.png"))

@@ -36,6 +36,15 @@ REQ_KW = dict(
 )
 
 
+
+
+def _mk_metrics(d, n=3):
+    """★ 新契约 ✓: 合法完成的 DONE 必须登记本集 `metrics.json` ✓（2026-10-16 ✓）。"""
+    import json as _json
+    with open(os.path.join(d, "metrics.json"), "w", encoding="utf-8") as _f:
+        _json.dump({"n": n, "ssim": 0.5, "mse": 0.5}, _f)
+
+
 def _req(**kw):
     d = dict(REQ_KW)
     d.update(kw)
@@ -61,6 +70,7 @@ def test_write_done_rejects_missing_manifest(tmp_path):
     P.write_protocol(req, d)
     _mk_pngs(d, 3)
     with pytest.raises(RuntimeError, match="manifest"):
+        _mk_metrics(d)
         P.write_done(req, d, n_samples=3)          # 无 samples.csv/jsonl ⇒ 必须报错 ✗
 
 
@@ -71,6 +81,7 @@ def test_write_done_rejects_wrong_png_count(tmp_path):
     _mk_manifest(d, n=5)
     _mk_pngs(d, 3)                                  # 声称 5 张, 实际 3 张 ⇒ 报错 ✗
     with pytest.raises(RuntimeError, match="PNG"):
+        _mk_metrics(d)
         P.write_done(req, d, n_samples=5)
 
 
@@ -80,6 +91,7 @@ def test_write_done_ok_then_is_complete(tmp_path):
     P.write_protocol(req, d)
     _mk_manifest(d, n=3)
     _mk_pngs(d, 3)
+    _mk_metrics(d)
     P.write_done(req, d, n_samples=3)
     ok, why = P.is_complete(req, d)
     assert ok, why
@@ -111,6 +123,7 @@ def test_is_complete_detects_deleted_png(tmp_path):
     P.write_protocol(req, d)
     _mk_manifest(d, n=4)
     _mk_pngs(d, 4)
+    _mk_metrics(d)
     P.write_done(req, d, n_samples=4)
     assert P.is_complete(req, d)[0]
     os.remove(os.path.join(d, "g2.png"))            # 删一张 ⇒ 必须失效 ✗
@@ -124,6 +137,7 @@ def test_is_complete_detects_modified_png(tmp_path):
     P.write_protocol(req, d)
     _mk_manifest(d, n=4)
     _mk_pngs(d, 4)
+    _mk_metrics(d)
     P.write_done(req, d, n_samples=4)
     with open(os.path.join(d, "g1.png"), "ab") as f:
         f.write(b"tampered")                        # 换内容 ⇒ 必须失效 ✗
@@ -137,6 +151,7 @@ def test_is_complete_detects_extra_png(tmp_path):
     P.write_protocol(req, d)
     _mk_manifest(d, n=4)
     _mk_pngs(d, 4)
+    _mk_metrics(d)
     P.write_done(req, d, n_samples=4)
     _mk_pngs(d, 5)                                  # 多一张 g4.png ⇒ 集合不符 ✗
     ok, why = P.is_complete(req, d)
@@ -149,6 +164,7 @@ def test_is_complete_detects_protocol_change(tmp_path):
     P.write_protocol(req, d)
     _mk_manifest(d, n=3)
     _mk_pngs(d, 3)
+    _mk_metrics(d)
     P.write_done(req, d, n_samples=3)
     P.write_protocol(_req(cfg=1.4), d)              # 采样参数变了 ⇒ 协议哈希变 ⇒ 失效 ✗
     ok, why = P.is_complete(req, d)
@@ -161,6 +177,7 @@ def test_is_complete_detects_eval_id_mismatch(tmp_path):
     P.write_protocol(req, d)
     _mk_manifest(d, n=3)
     _mk_pngs(d, 3)
+    _mk_metrics(d)
     P.write_done(req, d, n_samples=3)
     other = _req(checkpoint_sha256="c" * 64)        # 别的 checkpoint ⇒ 不可复用 ✗
     ok, why = P.is_complete(other, d)

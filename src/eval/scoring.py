@@ -49,22 +49,35 @@ def _skel_iou(pred, gt, thresh=0.5):
 
 
 def compute_metrics(dec_dir, gt_dir, tag_prefix, n, use_lpips=True, idx_range=None,
-                    with_lists=False):
+                    with_lists=False, strict=True):
     """Compute MSE/SSIM/skel_iou (optional LPIPS) from PNG pairs on CPU.
 
     dec_dir : dir with {tag_prefix}{i}.png
     gt_dir  : dir with gt{i}.png (== dec_dir in the ctrl eval layout)
     idx_range : (start, end) 只统计该全局下标区间 (分段并行 eval 用); None = 0..n
     with_lists : True 时额外返回逐样本指标列表 (供跨分段精确合并 std/分位数)
+    strict : ★ 2026-10-16 [新版审查 §五-2 ✓] True（默认 ✓）= 预测/GT **缺失即报错** ✗
+
+    ★★ 审查断言（已复核 ✓ 代码属实 ✓）: 旧实现缺失时直接 `continue` ✗
+      ⇒ **指标照常返回** ✗ —— 但算的是**更少的样本** ✗✗
+      ⇒ 数字看似正常 ✗ 实际是残缺评测 ✗（与全量数字**不可比** ✗✗）
+      ⇒ 默认改 **strict=True** ✓: 缺失即列出前几个缺失文件并报错 ✓
+        （调用方若确需宽松语义 ⇒ 显式传 strict=False ✓ **必须声明** ✓）
+      ★ 附带修正 ✓: 全部缺失时旧实现返回**空均值** ✗ —— strict 下此情形随缺失一起报错 ✓
+
     Returns dict of scalar metrics (with_lists 时返回 (dict, lists_dict)).
     """
     lpips_fn = _get_lpips() if use_lpips else None
     mses, ssims, skels, lpips_ = [], [], [], []
     idxs = list(range(n)) if idx_range is None else list(range(*idx_range))
+    _missing = []
     for i in idxs:
         p = os.path.join(dec_dir, f"{tag_prefix}{i}.png")
         g = os.path.join(gt_dir, f"gt{i}.png")
         if not (os.path.exists(p) and os.path.exists(g)):
+            if strict:
+                _missing.append((i, os.path.basename(p) if not os.path.exists(p) else "",
+                                 os.path.basename(g) if not os.path.exists(g) else ""))
             continue
         pred = np.asarray(Image.open(p).convert("RGB"), np.float32) / 255.0
         gt = np.asarray(Image.open(g).convert("RGB"), np.float32) / 255.0
@@ -77,6 +90,13 @@ def compute_metrics(dec_dir, gt_dir, tag_prefix, n, use_lpips=True, idx_range=No
             gg = _t.from_numpy(gt.transpose(2, 0, 1)[None] * 2 - 1)
             with _t.no_grad():
                 lpips_.append(float(lpips_fn(pp, gg).mean().item()))
+    # ★ 2026-10-16 [新版审查 §五-2 ✓]: strict 报错点 ✓（聚合**之前** ✓）
+    if strict and _missing:
+        raise FileNotFoundError(
+            f"compute_metrics: {len(_missing)}/{len(idxs)} 个样本缺失 ✗"
+            f"（前 5 个: {_missing[:5]}）—— tag_prefix={tag_prefix!r} dec={dec_dir} "
+            f"gt={gt_dir}。缺失会使指标基于**更少的样本** ✗ 与全量不可比 ✗✗。"
+            f"若确需宽松语义请显式传 strict=False ✓")
     res = {"n": len(mses)}
     if mses:
         res["mse_mean"] = float(np.mean(mses))

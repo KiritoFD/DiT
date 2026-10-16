@@ -34,12 +34,22 @@ _SAFE = re.compile(r"[^0-9A-Za-z._\-\u4e00-\u9fff]+")
 
 
 def safe_name(sample_id: str, maxlen: int = 48) -> str:
-    """sample_id -> 安全文件名（保留中英文与数字 ✓；过长时截断 + 短哈希保唯一 ✓）"""
+    """sample_id -> 安全文件名（保留中英文与数字 ✓；**始终**附加短哈希 ✓）。
+
+    ★★ 2026-10-16 [新版审查 §三 P1 ✓]: 旧实现**只在过长时**才加哈希 ✗
+      ⇒ `"a/b"` 与 `"a b"` 清洗后**都是** `"a_b"` ✗✗ ⇒ **文件名碰撞** ✗
+        后写的 PNG 覆盖先写的 ✗（审查已做最小复现 ✓）
+    ⇒ 修法（审查建议 ✓ "sample_id 文件名**始终附加**原始 ID 的稳定哈希，
+       而不是仅在超长时附加" ✓）: **无条件**追加 8 位 sha256 ✓
+      ⇒ 任意两个不同 sample_id ⇒ 文件名必不同 ✓✓
+    ★ 副作用（如实 ✓）: 文件名格式变化 ✗ —— 本模块当前 `src` 内无调用方 ✓
+      （新版审查 §六 ✓）⇒ 无存量文件受影响 ✓ 接入前修正正是时机 ✓✓
+    """
     s = _SAFE.sub("_", str(sample_id)).strip("_") or "s"
+    h = hashlib.sha256(str(sample_id).encode("utf-8")).hexdigest()[:8]
     if len(s) > maxlen:
-        h = hashlib.sha256(str(sample_id).encode("utf-8")).hexdigest()[:8]
-        s = s[:maxlen] + "_" + h
-    return s
+        s = s[:maxlen]
+    return f"{s}_{h}"
 
 
 def sample_relpath(sample_id: str, subdir: str = "samples", ext: str = "png") -> str:

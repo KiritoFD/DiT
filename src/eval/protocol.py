@@ -303,6 +303,20 @@ def is_complete(req: EvalRequest, eval_dir: str,
     arts = d.get("artifacts") or {}
     if not any(k in arts for k in ("samples.csv", "samples.jsonl")):
         return False, "DONE 未登记样本 manifest ⇒ 旧协议产物, 不可复用 ✗"
+    # ⑤′ ★ 2026-10-16 [新版审查 §五-3 ✓]: **"生成完成" ≠ "评分完成"** ✓
+    #   审查断言（已给出最小复现 ✓）: "创建一份合法 manifest 和一张 PNG，
+    #     不创建任何指标文件，write_done() 和 is_complete() 仍可成功" ✗✗
+    #   ⇒ 旧 is_complete 无法区分"生成完成"与"评分完成" ✗
+    #     未评分的产物会被当成**已完成实验**引用 ✗✗
+    #   ⇒ 修法: DONE 必须登记 **metrics.json**（本集指标 ✓）
+    #     ⇒ in_mem_eval 主流程已在 write_done **之前**落盘本集 metrics.json ✓
+    #       ⇒ write_done 的既有逻辑自动登记 ✓ ⇒ 此处校验 ✓✓
+    #   ★ 保留优势 ✓: "生成一次、以后反复计算新指标" ⇒ 重算新指标 ⇒ **新 DONE** ✓
+    #     （metrics.json 是那一次评分的身份 ✓ 哈希链保证未被篡改 ✓）
+    if "metrics.json" not in arts:
+        return False, ("DONE 未登记指标产物(metrics.json) ⇒ 只有生成、没有评分 ✗"
+                       "（新版审查 §五-3 ✓ 生成完成 ≠ 评分完成 ✓）")
+
     # ⑥⑦ PNG 集合**从磁盘重算** ✓（不信任 DONE 的自我申报 ✓）
     pdir = png_dir or eval_dir
     now_pngs = _png_inventory(pdir)

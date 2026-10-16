@@ -158,7 +158,24 @@ def _get_cache(csv_path, n, img_root, shards, args):
     _soft_root = (getattr(args, "std_soft_root", "") or ""
                   if bool(getattr(args, "std_soft_cond", False)) else "")
     _soft_sigma = float(getattr(args, "std_soft_eval_sigma", 0.65))
-    ck = (csv_path, n, shards, _soft_root, _soft_sigma)
+    # ★ 2026-10-16 [新版审查 §三 ✓]: **缓存键补齐实际输入** ✗
+    #   审查断言: "数据缓存键仍没有覆盖 `img_root`、映射表、latent scale/shift
+    #     等实际输入" ✗ —— 旧键 `(csv_path, n, shards, _soft_root, _soft_sigma)` ✗
+    #   ⇒ 这些输入变了 ⇒ **复用旧 cache** ✗ ⇒ 条件/图与当前配置不符 ✗✗
+    #   ⇒ 补齐: img_root ✓ 两张映射表路径 ✓ latent_channels ✓ use_script_cond ✓
+    #     sf/sf_shift ✓ **CSV 内容哈希** ✓（同名文件被改内容 ✓ 路径键发现不了 ✗）
+    from src.utils.vae_scaling import resolve_vae_scaling as _rvs
+    _sf_ck, _sf_shift_ck = _rvs(args)
+    _ck_maps = (getattr(args, "callig_id_map", None) or "",
+                getattr(args, "callig_script_map", None) or "")
+    try:
+        from src.eval.protocol import sha256_file as _sf_hash
+        _csv_hash = _sf_hash(csv_path)
+    except Exception:                                            # noqa: BLE001
+        _csv_hash = ""
+    ck = (csv_path, _csv_hash, n, img_root, shards, _soft_root, _soft_sigma,
+          _ck_maps, int(getattr(args, "latent_channels", 4)),
+          bool(getattr(args, "use_script_cond", False)), _sf_ck, _sf_shift_ck)
     if ck not in _CACHES:
         from src.utils.vae_scaling import resolve_vae_scaling
         sf, _sf_shift = resolve_vae_scaling(args)   # ★ 唯一来源（原为硬编码 0.18215 兜底）
@@ -403,7 +420,12 @@ _RAW_HDR = ["exp", "step", "set", "idx", "img_id", "char", "script",
             "calligrapher", "mse", "ssim", "lpips",
             "ink_ssim", "ink_iou", "skel_iou",
             "frag_ratio", "hole_pred", "hole_gt",
-            "soft_ink_ratio", "gt_soft_mass"]
+            "soft_ink_ratio", "gt_soft_mass",
+            # ★ 2026-10-16 [新版审查 §五-1 ✓]: **追加**两列（不改动既有列位 ✓）
+            #   审查断言（已复核 ✓）: "CSV 的 img_id 列**实际写入 image_path**" ✗
+            #   ⇒ 旧第 5 列改为写**真实 img_id** ✓（extract_img_id ✓ 与训练侧同源 ✓）
+            #   ⇒ 另补 **sample_id**（集内唯一 ✓ 可回溯 ✓）与 **image_path** ✓ 三列齐备 ✓
+            "sample_id", "image_path"]
 
 
 def write_raw_header(w_raw):
@@ -427,8 +449,19 @@ def _write_sample_rows(w_raw, exp, step, name, n, mt, src_rows, lp):
     _src = src_rows or []
     for i in range(n):
         _s = _src[i] if i < len(_src) else {}
+        # ★ 2026-10-16 [新版审查 §五-1 ✓]: **img_id 列写真实的 img_id** ✗
+        #   旧实现写 `_s.get("image_path","")` ✗✗ —— 列名 img_id、值却是路径 ✗
+        #   ⇒ 下游按 img_id 关联/去重全部错位 ✗
+        #   ⇒ 改: `extract_img_id` ✓（与训练侧**同一来源** ✓ 单一真相 ✓）
+        try:
+            from src.utils.latent_dataset import extract_img_id as _eii
+            _img_id = _s.get("img_id") or (_eii(_s, where=f"eval-row[{i}]") if _s else "")
+        except Exception:                                            # noqa: BLE001
+            _img_id = _s.get("img_id", "")
+        # ★ sample_id: **集内唯一** ✓ 可回溯 ✓（set + img_id + 序号 ✓）
+        _sample_id = f"{name}:{_img_id or i}#{i}"
         w_raw.writerow([exp, step, name, i,
-                        _s.get("image_path", ""),
+                        _img_id,
                         _s.get("character", ""),
                         _s.get("script", ""),
                         _s.get("calligrapher", ""),
@@ -441,7 +474,10 @@ def _write_sample_rows(w_raw, exp, step, name, n, mt, src_rows, lp):
                         (f"{mt.holes_p[i]:.4f}" if mt.holes_p else ""),
                         (f"{mt.holes_g[i]:.4f}" if mt.holes_g else ""),
                         (f"{mt.sir[i]:.5f}" if mt.sir else ""),
-                        (f"{mt.gtm[i]:.5f}" if mt.gtm else "")])
+                        (f"{mt.gtm[i]:.5f}" if mt.gtm else ""),
+                        # ★ 2026-10-16 追加列 ✓（与 _RAW_HDR 的追加一致 ✓）
+                        _sample_id,
+                        _s.get("image_path", "")])
     return n
 
 
@@ -474,16 +510,23 @@ def _sha256_tensor_dict(sd):
 
 
 def _model_weight_sha256(model, tag=""):
-    """**权重内容身份** ✓（按 tag 缓存 ✓ —— 同一 step 多集只哈希一次 ✓）。"""
-    if tag and tag in _ID_CACHE:
-        return _ID_CACHE[tag]
+    """**权重内容身份** ✓ —— ★★ 2026-10-16 [新版审查 §三 P0-2 ✓]: **不再按 tag 缓存** ✗。
+
+    ★ 审查断言（已独立复核 ✓ 代码属实 ✓）:
+      旧实现 `_ID_CACHE["w::%s" % step] = h` ✗ —— 缓存键是 **step 数** ✗
+      ⇒ 同一进程里**两个内容不同的模型**在同一步评测 ⇒ 第二个拿到**第一个**的哈希 ✗✗
+      ⇒ 评测身份张冠李戴 ✗（正是 V80 被当作 v84A 那类事故的机制 ✓）
+      （审查最小复现: 两个不同权重的 `nn.Linear` ✓ 同 `w::1000` 标签 ✓
+        第二次返回第一次的哈希 ✓）
+    ★ 修法: **每次都按内容实算** ✓（59.2M 参数 ≈ 240 MB ✓ sha256 ≈ 0.5–1 s ✓
+      每 5k 步一次 ✓ 摊销可忽略 ✓）⇒ 身份永远绑定**真实权重** ✓✓
+    ★ `tag` 参数保留 ✓（调用方兼容 ✓）但**只用于日志/追踪** ✗ 不再作缓存键 ✗
+    """
     m = model.module if hasattr(model, "module") else model
     try:
         h = _sha256_tensor_dict(m.state_dict())
     except Exception:                                            # noqa: BLE001
         return None
-    if tag:
-        _ID_CACHE[tag] = h
     return h
 
 
@@ -538,22 +581,28 @@ def _build_eval_request(args, model, step, name, n, cfg_scale, ddim_steps, sf,
             getattr(args, "std_soft_eval_sigma", 0.65))})
 
 
-def _eval_done_key(step, set_name, cfg, steps, sf, csvp, code_rev):
+def _eval_done_key(step, set_name, cfg, steps, sf, csvp, code_rev, ckpt_sha=None):
     """评测**已完成**的判据键（2026-10-13 [审查 P0]: "评测的缓存身份必须彻底改" ✓✓）。
 
     审查原文: "当前仍以 (step, set) 为主要完成判据。这**不足以区分同一步数下的不同模型、
               CFG、TTF 或采样参数**。"
 
-    键 = (step, set, code_rev, cfg, steps, sf, csv) ✓
+    键 = (step, set, code_rev, cfg, steps, sf, csv, **ckpt_sha**) ✓
       · step   : 权重（同一 run 内唯一 ✓）
       · set    : 评测集名 ✓
       · code_rev: 代码版本 ⇒ 改了评测代码不会复用旧结果 ✓
       · cfg/steps: 采样参数 ⇒ 换 CFG/步数必须重算 ✓✓（这正是原实现漏掉的 ✓）
       · sf     : VAE 缩放 ⇒ 换 VAE 必须重算 ✓✓
       · csv    : 评测集 CSV 路径 ⇒ 同名集换数据必须重算 ✓✓
+      · ★ ckpt_sha (2026-10-16 [新版审查 §三 P0-1 ✓]): **权重内容哈希** ✓
+        ⇒ CSV 的 7 元键**不含权重身份** ✗ ⇒ 同目录同一步的**另一个模型**被静默跳过 ✗✗
+          （正是 V80 被当作 v84A 的事故机制 ✓）
+        ⇒ summary 追加该列 ✓；旧行无此列（读到 "" ✓）⇒ 与新键**永不相等** ✓
+          ⇒ 旧行**不再能造成跳过** ✓（安全方向 ✓ 多跑一次评测 ✗ 无损正确性 ✓）
     ⚠ 本函数被**两处共用**（写 done 集合 + 跳过判定 ✓）⇒ 二者不可能漂移 ✓。
     """
-    return (int(step), str(set_name), str(code_rev), str(cfg), str(steps), str(sf), str(csvp))
+    return (int(step), str(set_name), str(code_rev), str(cfg), str(steps), str(sf),
+            str(csvp), str(ckpt_sha))
 
 
 
@@ -731,26 +780,53 @@ def _eval_one_set(ctx: EvalSetContext):
             # ★ 2026-10-14 [重构 P0-1]: 集目录提前算 ✓（DONE 校验需要它 ✓）
             _sub = "g" if name in ("seen", "g") else name
             _sd = os.path.join(results_dir, "eval_samples_ctrl", f"step{int(step):07d}", _sub)
-            _dkey = _eval_done_key(step, name, cfg_scale, ddim_steps, sf, csvp, _CODE_REV)
-            # ── P0-1 判据（**DONE 存在即权威** ✓）──────────────────────────────
+            # ★ 2026-10-16 [新版审查 §三 P0-1 ✓]: `_dkey` **移到 `_req` 之后** ✓
+            #   ⇒ 键里能带上 **`_req.checkpoint_sha256`**（真实权重内容哈希 ✓）
+            #   （旧实现先算 `_dkey` ✗ 键里只有 step ✗ ⇒ 无法区分同一步的不同模型 ✗）
             _req = None
+            _done_verdict = None                          # None=无 DONE ✓ True/False=有 ✓
+            _ck_sha = None
+            # ── P0-1 判据（★ 2026-10-16 [新版审查 §三 P0-1 ✓] **DONE 存在即权威** ✓）──
+            #   审查断言（已复核 ✓ 代码属实 ✓）: "新 DONE 校验**失败**后，
+            #     旧 CSV 判据仍能将评测跳过" ✗✗
+            #   旧逻辑: DONE 校验失败/异常 ⇒ 落到 `if _dkey in done: continue` ✗
+            #     ⇒ CSV 的 (step,set,cfg,steps,sf,csv,code_rev) 键**不含权重身份** ✗
+            #     ⇒ 同目录同一步的**另一个模型**会被 CSV 静默跳过 ✗✗
+            #       （正是 V80 被当作 v84A 的事故机制 ✓）
+            #   ★ 新语义（审查建议 ✓ "旧 CSV 作为历史记录保留，但不再作为完成判据" ✓）:
+            #     · DONE **存在** ⇒ DONE 独裁 ✓: 通过 ⇒ 跳过 ✗ 失败 ⇒ **强制重跑**
+            #       且**绝不**查 CSV ✗✓
+            #     · DONE **不存在**（历史目录 ✓）⇒ 才允许 CSV 去重 ✓
+            #       且 `_eval_done_key` 已把 **ckpt 哈希**并入键 ✓（见下 ✓）
+            #       ⇒ 旧行（无该列 ✗）与新键**永不相等** ✓ ⇒ 不再误跳 ✓
+            _req = None
+            _done_verdict = None                          # None=无 DONE ✓ True/False=有 ✓
+            _ck_sha = None                                # ★ 权重内容哈希 ✓（进 CSV 键 ✓）
             try:
                 from src.eval import protocol as _proto
                 _req = _build_eval_request(
                     args, model, step, name, n, cfg_scale, ddim_steps, sf, csvp,
                     _CODE_REV, cond_sha=None)
+                if _req is not None:
+                    _ck_sha = _req.checkpoint_sha256      # ★ 真实权重身份 ✓
                 if _req is not None and os.path.isfile(_proto.done_path(_sd)):
                     _ok, _why = _proto.is_complete(_req, _sd)
+                    _done_verdict = bool(_ok)
                     if _ok:
                         print(f"[in-mem-eval] ✓ protocol DONE 校验通过 ⇒ 跳过 "
                               f"step={step} set={name}（{_why}）")
                         continue
                     print(f"[in-mem-eval] ✗ protocol DONE 校验**失败** ⇒ **强制重跑** "
-                          f"step={step} set={name}: {_why}")
+                          f"step={step} set={name}: {_why}"
+                          f"（★ DONE 存在即权威 ✗ **不再退回 CSV 判据** ✓）")
             except Exception as _pe:                             # noqa: BLE001
                 print(f"[in-mem-eval] ⚠ protocol 判据异常(退回旧判据): {_pe!r}")
                 _req = None
-            if _dkey in done:
+            # ★ `_dkey` 在 `_req` 之后算 ✓ ⇒ 键含 ckpt 哈希 ✓（见上 ✓）
+            _dkey = _eval_done_key(step, name, cfg_scale, ddim_steps, sf, csvp,
+                                   _CODE_REV, ckpt_sha=_ck_sha)
+            if _done_verdict is not True and _dkey in done:
+                # ★ 只有 **DONE 不存在/不可用** 时才走到这里 ✓（DONE 失败 ✗ 不查 CSV ✓）
                 print(f"[in-mem-eval] ⚠ step={step} set={name} 已记录在 {sum_path} 里"
                       f" -> 跳过。同一 results_dir 按 (step,set) 去重，**换数据重跑**时"
                       f"整轮评测会这样静默跳过；重跑请换一个新的 results_dir。")
@@ -939,7 +1015,11 @@ def _eval_one_set(ctx: EvalSetContext):
                             (f"{_scn['nn_ssim']:.4f}" if _scn else ""),
                             (f"{_scn['nn_mean']:.4f}" if _scn else ""),
                             (f"{_scn['tgt_spec']:+.4f}" if _scn else ""),
-                            (f"{_scn['cal_enrich']:.3f}" if _scn else "")])
+                            (f"{_scn['cal_enrich']:.3f}" if _scn else ""),
+                            # ★ 2026-10-16 [新版审查 §三 P0-1 ✓]: **权重内容哈希** ✓
+                            #   （`_ck_sha` 在本集开头由 `_build_eval_request` 实算 ✓
+                            #     protocol 不可用时为 None ⇒ 写空串 ✓ ⇒ 该行不再可跳 ✓ 安全方向 ✓）
+                            (_ck_sha or "")])
             # ★ 2026-10-03: 必须显式 flush。原来只靠进程退出时刷新 -> 下一次 eval 打开
             #   本文件读表头时读到的是**空文件**, 判定表头不匹配 -> 把 summary 改名备份
             #   (_bak_oldcols.*), 于是训练曲线每次 eval 被重置 (实测一晚上产生 10 个备份,
@@ -979,11 +1059,27 @@ def _eval_one_set(ctx: EvalSetContext):
             if _req is not None and _save:
                 try:
                     from src.eval import protocol as _proto
+                    # ★★ 2026-10-16 [新版审查 §五-3 ✓]: **先写本集 metrics.json** ✓
+                    #   审查断言（已复核 ✓ 并给出最小复现 ✓）: "有 manifest 和 PNG、
+                    #     但没有 metrics 文件，也可能判为完成" ✗✗
+                    #   ⇒ 旧流程 DONE 里**从未登记**指标产物 ✗
+                    #     ⇒ is_complete 无法区分"生成完成"与"评分完成" ✗✗
+                    #   ⇒ 修法: 指标 dict（上面刚构建的 `out[name]` ✓）落盘为本集目录的
+                    #     `metrics.json` ✓ → `write_done` 的既有逻辑会**自动登记**它 ✓
+                    #     （protocol.py L230: "metrics.json 存在即登记" ✓）
+                    #   ⇒ is_complete 随即要求它 ✓ ⇒ 未评分的产物不再被当成已完成实验 ✗✓
+                    #     同时保留"生成一次、以后反复计算新指标"的能力 ✓
+                    #       （metrics.json 是**这一次**评分的身份 ✓ 重算新指标 ⇒ 新 DONE ✓）
+                    with open(os.path.join(_sd, "metrics.json"), "w",
+                              encoding="utf-8") as _mf:
+                        _json_mod = __import__("json")
+                        _json_mod.dump(out[name], _mf, ensure_ascii=False,
+                                       indent=2, sort_keys=True)
                     _proto.write_protocol(_req, _sd)
                     _proto.write_done(_req, _sd, n_samples=int(n), png_dir=_sd)
                     logger(f"[in-mem-eval] ✓ protocol DONE 已写 {_sd} "
                            f"(n={int(n)}, eval_id={_req.eval_id()[:12]}) —— "
-                           f"此后任何**缺图/换图/改协议/换权重**都会使其失效 ✗")
+                           f"此后任何**缺图/换图/改协议/换权重/缺指标**都会使其失效 ✗")
                 except Exception as _de:                         # noqa: BLE001
                     logger(f"[in-mem-eval] ⚠ protocol DONE 写入失败(不影响评测): {_de!r}")
             elif _req is None:
@@ -1058,7 +1154,12 @@ def run_in_mem_eval(model, args, step, device, results_dir=None, logger=print):
                 # ★ 2026-10-12 白化专用列：v81 事故里 ssim / lpips / ink_iou 全都看不出来 ✗
                 #   （全白图 SSIM 0.6855 > 模型真实输出 0.6371）。这两列才是"有没有墨"的判据。
                 "soft_ink_ratio", "near_blank_rate", "gt_soft_mass",
-                "nn_ssim", "nn_mean", "tgt_spec", "cal_enrich"]
+                "nn_ssim", "nn_mean", "tgt_spec", "cal_enrich",
+                # ★ 2026-10-16 [新版审查 §三 P0-1 ✓]: **权重内容哈希列** ✓
+                #   完成键由此区分"同一步的不同模型" ✗（V80 事故机制 ✓）
+                #   ★ 追加列 ✓ —— 表头校验的"仅追加"分支会保留历史行 ✓（旧行该列为空 ✓
+                #     ⇒ 旧行的完成键与新键**永不相等** ✓ ⇒ 旧行不再造成误跳 ✓ 安全方向 ✓）
+                "ckpt_sha256"]
     if os.path.exists(sum_path):
         try:
             with open(sum_path, encoding="utf-8") as _f:
@@ -1084,7 +1185,11 @@ def run_in_mem_eval(model, args, step, device, results_dir=None, logger=print):
             done.add(_eval_done_key(r.get("step", -1), r.get("set", ""),
                                     r.get("cfg", ""), r.get("steps", ""),
                                     r.get("sf", ""), r.get("eval_csv", ""),
-                                    r.get("code_rev", "")))
+                                    r.get("code_rev", ""),
+                                    # ★ 2026-10-16 [新版审查 §三 P0-1 ✓]: 旧行无此列 ⇒ "" ✓
+                                    #   ⇒ 旧行的键与新键（带真实哈希 ✓）**永不相等** ✓
+                                    #   ⇒ 旧行不再造成跳过 ✓（安全方向 ✓ 最多多跑一次评测 ✓）
+                                    ckpt_sha=r.get("ckpt_sha256", "")))
     new_sum = not os.path.exists(sum_path)
     new_raw = not os.path.exists(raw_path)
     # ★ 句柄只在表头确认之后才打开; 之后不会再 rename 本文件 -> 不会再产生孤儿写入。

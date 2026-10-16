@@ -24,6 +24,15 @@ from src.eval import protocol as P                                         # noq
 
 
 # ─────────────── ① 权重内容身份（in-training eval 的关键 ✓）───────────────
+
+
+def _mk_metrics(d, n=3):
+    """★ 新契约 ✓: 合法完成的 DONE 必须登记本集 `metrics.json` ✓（2026-10-16 ✓）。"""
+    import json as _json
+    with open(os.path.join(d, "metrics.json"), "w", encoding="utf-8") as _f:
+        _json.dump({"n": n, "ssim": 0.5, "mse": 0.5}, _f)
+
+
 def test_model_weight_sha256_is_content_addressed():
     m1 = torch.nn.Linear(4, 3)
     m2 = torch.nn.Linear(4, 3)
@@ -136,6 +145,7 @@ def test_real_187_png_protocol_roundtrip(tmp_path):
                         num_steps=50, cfg=1.0, gamma=0.0, seed=0, ema=True,
                         code_revision="rev")
     P.write_protocol(req, d)
+    _mk_metrics(d)
     P.write_done(req, d, n_samples=n, png_dir=d)
     ok, why = P.is_complete(req, d)
     assert ok, why
