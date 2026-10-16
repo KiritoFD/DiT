@@ -100,8 +100,6 @@ class FlowMatching:
         (Kept as ``num_timesteps`` for interface parity with GaussianDiffusion.)
     sigma_min : float
         Noise floor at t=0 (unused in the linear interpolant, kept for parity).
-    use_ot : bool
-        Minibatch Optimal Transport 重排（OT-CFM）。
     t_sampler : str
         "uniform" | "logit_normal" | "cosmap"
     t_mean, t_std : float
@@ -114,14 +112,13 @@ class FlowMatching:
         Heun 的两次评估是否拼成一个 batch 做单次 forward。
     """
 
-    def __init__(self, num_steps=50, sigma_min=1e-4, use_ot=False,
+    def __init__(self, num_steps=50, sigma_min=1e-4,
                  t_sampler="logit_normal", t_mean=0.0, t_std=1.0,
-                 shift=1.0, sampler="heun", heun_batch=False, ot_chunks=1,
+                 shift=1.0, sampler="heun", heun_batch=False,
                  sde_gamma=0.0,
                  sde_tmin=0.0, sde_tmax=1.0, sde_ramp=0.0):
         self.num_timesteps = int(num_steps)
         self.sigma_min = sigma_min
-        self.use_ot = bool(use_ot)
         self.sde_gamma = float(sde_gamma or 0.0)
         self.sde_tmin = float(sde_tmin)
         self.sde_tmax = float(sde_tmax)
@@ -131,10 +128,6 @@ class FlowMatching:
         if not (0 <= self.sde_ramp <= (self.sde_tmax - self.sde_tmin) / 2):
             raise ValueError("sde_ramp must fit inside both ends of the SDE window")
         self.is_flow = True
-        # OT-CFM 分块数: 1 = 整 batch 一次全局匈牙利 (Tong et al. 原版, O(B^3));
-        # >1 时把 batch 均分成 ot_chunks 块, 每块独立做匈牙利 (O((B/k)^3) * k,
-        # 大 batch 下显著降 CPU 匈牙利开销, 质量近似全局匹配)。
-        self.ot_chunks = max(int(ot_chunks or 1), 1)
 
         self.t_sampler = str(t_sampler).lower()
         if self.t_sampler not in ("uniform", "logit_normal", "cosmap"):
@@ -164,7 +157,7 @@ class FlowMatching:
         return (f"FlowMatching(steps={self.num_timesteps}, sampler={self.sampler}, "
                 f"nfe={self.nfe}, t_sampler={self.t_sampler}"
                 + (f"(mean={self.t_mean},std={self.t_std})" if self.t_sampler == "logit_normal" else "")
-                + f", shift={self.shift}, use_ot={self.use_ot}{sde_desc})")
+                + f", shift={self.shift}{sde_desc})")
 
     def _sde_weight(self, t):
         """Time-only envelope. Default 1 preserves the existing bridge sampler.
@@ -219,42 +212,6 @@ class FlowMatching:
             model_kwargs = {}
         if noise is None:
             noise = th.randn_like(x_start)
-
-        # ── Minibatch Optimal Transport（**朴素 OT-CFM** ✓ 可配置 ✓）─────────────
-        # 朴素 OT (Tong et al. 2024): 全局按 L2 欧氏距离重排
-        #   （仅建议无条件生成或单类生成 ✓）
-        # ★★ 2026-10-16: **C2OT 已删除** ✗（实验证伪 ✓ 用户指示直接删 ✓）
-        #   证据（README.md §6 / state.md ✓ 2026-10-11 48 臂同口径对拍 ✓）:
-        #     C2OT @noaug: dSSIM **−0.0114** · dLPIPS +0.0097 · dfrag +0.657 · dink −0.0276
-        #     ⇒ **四指标全负** ⇒ B4「C2OT 改善质量」**已证伪** ⇒ OT 该关 ✓
-        #   ⇒ 删除: `_apply_c2ot` / `_extract_c2ot_keys` / `use_c2ot` / `c2ot_mode`
-        #     （约 100 行 ✓ 且它每步要走**同步 CPU 求解**（SciPy Hungarian ✓）
-        #       ⇒ 也是审查 §五 点名的同步路径 ✓ 删除同时是 infra 收益 ✓）
-        #   ⚠ **`use_ot` 保留** ✓ —— 那是**朴素全局 OT**（另一件事 ✓ 未被证伪 ✓
-        #     且 `s28_std_dino_pretrain.json` 在用 ✓）⇒ 删它会误伤 ✓
-        if self.use_ot and x_start.shape[0] > 1:
-            with th.no_grad():
-                if self.use_ot:
-                    from scipy.optimize import linear_sum_assignment
-                    B = x_start.shape[0]
-                    k = min(self.ot_chunks, B)
-                    if k > 1 and B % k == 0:
-                        _bs = B // k
-                        _perm = th.empty(B, dtype=th.long, device=x_start.device)
-                        for _c in range(k):
-                            sl = slice(_c * _bs, (_c + 1) * _bs)
-                            xf = x_start[sl].reshape(_bs, -1).float()
-                            nf = noise[sl].reshape(_bs, -1).float()
-                            cost = th.cdist(xf, nf, p=2).pow(2)
-                            _r, _cl = linear_sum_assignment(cost.float().cpu().numpy())
-                            _perm[sl] = th.from_numpy(_cl).to(x_start.device) + _c * _bs
-                        noise = noise[_perm]
-                    else:
-                        x_flat = x_start.reshape(B, -1).float()
-                        n_flat = noise.reshape(B, -1).float()
-                        cost = th.cdist(x_flat, n_flat, p=2).pow(2)
-                        _r, _cl = linear_sum_assignment(cost.float().cpu().numpy())
-                        noise = noise[th.from_numpy(_cl).to(noise.device)]
 
         t = t.float()
         x_t = self._interp(x_start, noise, t)
@@ -424,9 +381,7 @@ class FlowMatching:
             #   ⚠ 旧式的误差量级: γ=0.5 时终点方差偏 +4.3%, γ=1.0 时 +26% —— 是真实 bug,
             #     但不是"无 SSIM 增益"的主因（主因见 docs/sde_analysis_brief.md §4/§5）。
             #
-            #   ⚠ 该恒等式要求 x0 与 ε **独立配对**。**C2OT/OT 会改变配对**
-            #     （_apply_c2ot 返回 noise[perm]），此时该式不成立 ——
-            #     **启用 SDE 的模型必须 use_c2ot=False**（见 48 消融: C2OT 四指标全负）。
+            #   ⚠ 该恒等式要求 x0 与 ε **独立配对**（FlowMatching 训练天然独立高斯配对，OT 已彻底删除）。
             #
             #   同时修正 Heun 一致性: 旧实现先做 ODE 的 Heun 平均得 v_eff, 再对 v_eff 施加
             #   修正 —— 而修正是 (x,v) 的非线性函数, 两者不可交换。现改为**对修正后的漂移**
@@ -504,7 +459,7 @@ class FlowMatching:
 #: 用于从 argparse Namespace / config dict 里安全地筛选，避免把 ddpm 专属参数
 #: （noise_schedule / learn_sigma / use_kl ...）误传进来导致 TypeError。
 FLOW_PARAMS = (
-    "num_steps", "sigma_min", "use_ot", "ot_chunks",
+    "num_steps", "sigma_min",
     "sde_gamma", "sde_tmin", "sde_tmax", "sde_ramp",
     "t_sampler", "t_mean", "t_std",
     "shift", "sampler", "heun_batch",
@@ -526,14 +481,14 @@ def _resolve_flow_aliases(kwargs):
     return kwargs
 
 
-def create_flow_matching(timestep_respacing="50", use_ot=False, sde_gamma=0.0, **kwargs):
+def create_flow_matching(timestep_respacing="50", sde_gamma=0.0, **kwargs):
     """Build a FlowMatching instance.
 
     ``timestep_respacing`` may be an int, a str int ("50"), or a comma/space
     separated list (only the count is used here).
 
     额外 kwargs 透传给 FlowMatching:
-        t_sampler, t_mean, t_std, shift, sampler, heun_batch, use_ot, sde_gamma
+        t_sampler, t_mean, t_std, shift, sampler, heun_batch, sde_gamma
 
     未知 kwargs 会被丢弃并打 warning（而不是 TypeError）—— 这样
     ``create_diffusion_or_flow`` 可以无脑把整包训练配置转发过来。
@@ -556,6 +511,5 @@ def create_flow_matching(timestep_respacing="50", use_ot=False, sde_gamma=0.0, *
         import logging
         logging.getLogger(__name__).warning(
             f"[create_flow_matching] ignoring non-flow kwargs: {dropped}")
-    kw.setdefault("use_ot", use_ot)
     kw.setdefault("sde_gamma", sde_gamma)
     return FlowMatching(num_steps=steps, **kw)

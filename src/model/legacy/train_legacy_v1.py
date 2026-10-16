@@ -1926,15 +1926,6 @@ def main_from_cli(argv=None):
                         help="Sampling-side timestep shift (SD3). 1.0 = no shift (default, correct "
                              "for detail-dominated 32x32 glyph latents). >1 concentrates steps near "
                              "t=1 (layout), <1 near t=0 (detail).")
-    parser.add_argument("--use-ot", type=_str_to_bool, default=False, dest="use_ot",
-                        help="Minibatch Optimal Transport (OT-CFM, Tong et al. 2024): per-batch "
-                             "Hungarian reassignment of noise/data pairs so trajectories don't cross "
-                             "and the velocity field is smoother. Cheap (O(B^3) scipy), usually "
-                             "helps convergence. No downside for training.")
-    parser.add_argument("--ot-chunks", type=int, default=1,
-                        help="OT 分块数: 1 = 整 batch 全局匈牙利 (原版); k>1 把 batch 均分 k 块各自 "
-                             "做匈牙利, 大 batch 下 O(B^3)->O(k*(B/k)^3) 显著降 CPU 开销, 质量近似. "
-                             "例: batch 384 + ot_chunks=4 ~= 4x96 https://bit.ly/OT-chunks.")
     parser.add_argument("--learn-sigma", type=int, default=None, choices=[0, 1],
                         help="Force DiT learn_sigma on/off. Default: auto = False for flow "
                              "(flow has no variance head; leaving it True creates C permanently "

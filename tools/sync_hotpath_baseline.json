@@ -1,6 +1,6 @@
 {
   "src/loss/critic_loss.py": 10,
-  "src/loss/flow_matching.py": 14,
+  "src/loss/flow_matching.py": 11,
   "src/loss/writer_objectives.py": 0,
   "src/model/dit_conditioning.py": 30,
   "src/train/backward.py": 3,

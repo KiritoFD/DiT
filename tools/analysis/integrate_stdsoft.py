@@ -103,7 +103,6 @@ print("  -> src/train/configs/v81_stdsoft_vs_v68.json")
 b = json.load(open("src/train/configs/v79_callivae_physics_sp_c2ot.json", encoding="utf-8"))
 b.update(experiment_name="v82-physics-noOT-stdsoft",
          results_dir="assets/results/v82_physics_noOT_stdsoft",
-         use_c2ot=False,
          std_soft_cond=True, std_soft_root=STORE, std_soft_size=64,
          std_soft_sigma_min=0.4, std_soft_sigma_max=1.0, std_soft_eval_sigma=0.65,
          std_soft_zero_init=True, skel_as_glyph_cond=False)

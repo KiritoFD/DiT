@@ -102,7 +102,7 @@ def main():
     diff = FlowMatching(num_steps=int(a.get("eval_steps", 50)), sampler=a.get("flow_sampler", "heun"),
                         t_sampler=a.get("t_sampler", "logit_normal"),
                         t_mean=float(a.get("t_mean", 0.0)), t_std=float(a.get("t_std", 1.0)),
-                        shift=float(a.get("shift", 1.0)), use_ot=bool(a.get("use_ot", False)))
+                        shift=float(a.get("shift", 1.0)))
 
     model.train()
     t0 = time.time()

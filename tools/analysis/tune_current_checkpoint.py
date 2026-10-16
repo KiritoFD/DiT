@@ -137,8 +137,6 @@ def main():
     ckpt = torch.load(args.ckpt, map_location='cpu', weights_only=False, mmap=True)
     raw_args = ckpt['args']
     a = AttrDict(vars(raw_args) if hasattr(raw_args, '__dict__') else raw_args)
-    if a.get('use_ot') or a.get('use_c2ot'):
-        raise ValueError('This corrected SDE score identity requires independent Gaussian pairing')
     if a.get('skel_as_glyph_cond') or a.get('use_glyph_cond') or a.get('w_glyph_cond'):
         raise ValueError('This runner currently supports no-skeleton v80 checkpoints only')
     for key in ['triple_table_prefix', 'callig_remap_json', 'char_remap_json', 'font_remap_json']:

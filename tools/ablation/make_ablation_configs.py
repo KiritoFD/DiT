@@ -94,10 +94,6 @@ def build(base, name, aug, ot, latent, batch, vae_dir, sd_vae_dir, total):
     # 消融统一 pin sde_gamma=0（纯 Heun），其余 (flow_sampler=heun, eval_steps=50,
     # eval_cfg=1.0, shift=1.0) 由 base 逐字继承。
     c["sde_gamma"] = 0.0
-    # OT 轴
-    c["use_c2ot"] = (ot == "c2ot")
-    c["c2ot_mode"] = "slot"
-    c["use_ot"] = (ot == "naive")
     # latent / VAE 轴
     if latent == "calli":
         c["vae_path"] = vae_dir

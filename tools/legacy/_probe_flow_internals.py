@@ -2,15 +2,13 @@
 """
 _probe_flow_internals.py — 验证 flow 模式下若干训练机制的实际可用性。
 
-要查的三件事
+要查的两件事
 ------------
 1. FlowMatching.training_losses 是否返回 pred_xstart？
    （train.py 里 w_std_mid / w_latent_skel / w_latent_canny / latent_struct
      都依赖 loss_dict["pred_xstart"]，若 flow 下没有则全部静默失效）
 
-2. OT-CFM（use_ot）能否正常工作、batch=192 时匈牙利算法的耗时？
-
-3. timestep shift 的 schedule 映射方向是否符合注释描述？
+2. timestep shift 的 schedule 映射方向是否符合注释描述？
 
 不涉及训练，纯前向/数值验证，CPU 可跑。
 """
@@ -79,38 +77,7 @@ except Exception as e:
 
 
 print("\n" + "=" * 74)
-print("2) OT-CFM（use_ot）可用性与耗时")
-print("=" * 74)
-try:
-    from scipy.optimize import linear_sum_assignment
-    have_scipy = True
-except ImportError:
-    have_scipy = False
-    print("  scipy 不可用 -> use_ot 无法启用")
-print(f"  scipy.optimize.linear_sum_assignment 可用: {have_scipy}")
-
-if have_scipy:
-    import numpy as np
-    fm_ot = FlowMatching(num_steps=25, use_ot=True, t_sampler="logit_normal")
-    for bs in (32, 96, 192):
-        torch.manual_seed(0)
-        xb = torch.randn(bs, C, H, W)
-        nb = torch.randn(bs, C, H, W)
-        t0 = time.time()
-        with torch.no_grad():
-            xf = xb.reshape(bs, -1).float()
-            nf = nb.reshape(bs, -1).float()
-            cost = torch.cdist(xf, nf, p=2).pow(2)
-            r, c = linear_sum_assignment(cost.numpy())
-        dt = time.time() - t0
-        print(f"  batch={bs:<4} 匈牙利耗时 {dt*1000:>7.1f} ms  "
-              f"(cost {bs}x{bs})")
-    print("  注：这是纯 CPU 耗时，每 step 一次；训练 step 本身约 300ms，")
-    print("      192 批量下 OT 开销需实测占比。")
-
-
-print("\n" + "=" * 74)
-print("3) timestep shift 的 schedule 方向")
+print("2) timestep shift 的 schedule 方向")
 print("=" * 74)
 print("  t = shift*s / (1 + (shift-1)*s)，s 从 1 降到 0")
 print("  shift<1 应把步数推向低噪声端(t->0)，适合细节主导任务\n")

@@ -33,12 +33,6 @@ def prepare_eval_args(args, gamma, steps, cfg, batch, sets=None):
         raise ValueError("This evaluator requires a std_soft_cond checkpoint")
     if gamma < 0 or steps <= 0 or batch <= 0 or cfg < 0:
         raise ValueError("gamma/cfg must be nonnegative; steps/batch must be positive")
-    # ★ 2026-10-16: C2OT 已删除（实验证伪 ✓ 用户指示直接删 ✓）⇒ 判据去掉 `use_c2ot` ✓
-    #   ★★ **但守卫本身必须保留** ✗ —— `use_ot`（朴素全局 OT ✓）**同样**会置换 x0↔ε 配对 ✗
-    #     ⇒ "corrected score SDE 要求独立高斯配对" 的理由对 `use_ot` **依然成立** ✓
-    #     ⇒ 只改判据 ✓ **不删守卫** ✗（删了会让 SDE+OT 静默给出错误结果 ✗✗）
-    if gamma > 0 and getattr(args, "use_ot", False):
-        raise ValueError("Corrected score SDE requires independent Gaussian pairing; use gamma=0 for OT checkpoints")
     args.sde_gamma = gamma
     args.flow_sampler = "heun"
     args.eval_steps = steps

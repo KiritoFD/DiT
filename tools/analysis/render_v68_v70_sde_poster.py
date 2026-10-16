@@ -76,7 +76,7 @@ def update_v80():
     assert all(r["n"] == 187 and r["set"] == "eval200fix" for r in points)
     config = json.loads((progress / "resolved_config.json").read_text(encoding="utf-8"))
     assert config["sde_gamma"] == 0 and config["eval_cfg"] == 1 and config["eval_steps"] == 50
-    assert config["use_c2ot"] is False
+    assert config.get("use_c2ot", False) is False
     by_step = {p["step"]: p for p in points}
     row_metrics = json.loads((OUT / "row_metrics.json").read_text(encoding="utf-8"))
     required = {r[0] for r in image_rows() + latest_image_rows() if r[0] != "gt"}

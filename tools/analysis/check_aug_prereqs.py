@@ -34,7 +34,7 @@ for c in cfgs:
     d = json.load(open(c, encoding="utf-8"))
     print(f"\n  ── {os.path.basename(c)}")
     for k in ("data_csv", "latent_shards_dir", "repa_cache_dir", "global_batch_size",
-              "max_steps", "use_c2ot", "use_ot", "w_repa", "vae_path"):
+              "max_steps", "w_repa", "vae_path"):
         v = d.get(k)
         if v is None:
             print(f"     {k:20} = (未设)")

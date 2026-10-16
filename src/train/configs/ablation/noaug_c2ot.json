@@ -86,7 +86,6 @@
   "in_mem_eval_batch": 8,
   "eval_dir": "",
   "sde_gamma": 0.0,
-  "use_ot": false,
   "vae_path": "pretrained_models/sd-vae-ft-ema",
   "eval_vae_path": "pretrained_models/sd-vae-ft-ema",
   "calli_decode_noise": false

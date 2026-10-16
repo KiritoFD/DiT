@@ -87,8 +87,6 @@
   "flow_sampler": "heun",
   "heun_batch": 1,
   "shift": 1.0,
-  "use_ot": true,
-  "ot_chunks": 4,
 
   "norm_type": "rms",
   "mlp_type": "swiglu",

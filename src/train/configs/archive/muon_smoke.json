@@ -63,8 +63,6 @@
   "compile_mode": "default",
   "use_ema": true,
   "ema_decay": 0.9999,
-  "use_ot": true,
-  "ot_chunks": 4,
   "preload": true,
   "preload_workers": 16,
   "use_checkpoint": false,

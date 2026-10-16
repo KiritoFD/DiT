@@ -8,7 +8,6 @@ import csv
 import os
 import sys
 
-import numpy as np
 
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 os.chdir(ROOT)
