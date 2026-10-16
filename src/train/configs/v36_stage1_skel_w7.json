@@ -196,7 +196,7 @@
   "skel_latent_shards_dir_pred": "",
   "eval_skel_latent_shards_dir_pred": "",
   "eval_mode": "inline",
-  "in_mem_eval_batch": 16,
+  "in_mem_eval_batch": 64,
   "in_mem_eval_save_samples": true,
   "in_mem_eval_lpips": true,
   "optimizer": "adamw",

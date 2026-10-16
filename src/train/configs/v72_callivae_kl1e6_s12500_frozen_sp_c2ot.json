@@ -94,6 +94,6 @@
   "data_csv": "exp-std/csv/train_top10_noaug.csv",
   "global_batch_size": 288,
   "freeze_triple_tables": true,
-  "in_mem_eval_batch": 8,
+  "in_mem_eval_batch": 64,
   "eval_dir": ""
 }

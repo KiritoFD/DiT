@@ -82,7 +82,7 @@
   "data_csv": "exp-std/csv/train_top10_aug_sym.csv",
   "global_batch_size": 288,
   "freeze_triple_tables": true,
-  "in_mem_eval_batch": 8,
+  "in_mem_eval_batch": 64,
   "eval_dir": "",
   "std_soft_cond": true,
   "std_soft_root": "exp-std/data/std_soft_glyphs_v1",

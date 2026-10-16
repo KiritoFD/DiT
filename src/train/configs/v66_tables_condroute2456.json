@@ -91,6 +91,6 @@
   "data_csv": "exp-std/csv/train.csv",
   "global_batch_size": 256,
   "freeze_triple_tables": true,
-  "in_mem_eval_batch": 8,
+  "in_mem_eval_batch": 64,
   "eval_dir": ""
 }

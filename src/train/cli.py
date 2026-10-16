@@ -1172,6 +1172,12 @@ def _add_args_8(parser):
                              "strict:assets/eval_fame3_strict_clean_v9.csv:50")
     parser.add_argument("--in-mem-eval-batch", type=int, default=16, dest="in_mem_eval_batch",
                         help="DiT sampling batch for --in-mem-eval (VRAM-safe: 16).")
+    # ★ 2026-10-16 [`infra-1015-measurements` §3 ✓]: 补上**缺失的** VAE decode batch 开关 ✓
+    #   代码一直读 `args.in_mem_eval_vae_batch` ✓（in_mem_eval.py 的 `vae_batch` ✓）
+    #   但 CLI 从未暴露 ✗ ⇒ 与 `prefetch_factor` 同类的"代码读但 CLI 无"缺口 ✓
+    parser.add_argument("--in-mem-eval-vae-batch", type=int, default=16,
+                        dest="in_mem_eval_vae_batch",
+                        help="VAE decode batch for --in-mem-eval (default 16).")
     parser.add_argument("--in-mem-eval-save-samples", type=_str_to_bool, default=True,
                         dest="in_mem_eval_save_samples",
                         help="Save generated + GT PNGs to eval_samples_ctrl/step{N}/{set}/ "

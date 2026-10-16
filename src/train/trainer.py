@@ -115,14 +115,23 @@ def training_loop(s: TrainState):
 
     返回: `_train_fatal` ✓（循环后唯一需要的循环内绑定 ✓ None = 正常结束 ✓）
     """
-    # ★★ 2026-10-16 修 **真 bug**（在真机跑出来 ✓ 本地 smoke 未覆盖 ✗）:
-    #   旧代码只在 `except Exception as e:` 分支里 `_train_fatal = e` ✗
-    #   却在函数末尾**无条件** `return _train_fatal` ✗
-    #   ⇒ **正常退出**（`max_steps` 到达 / `early_stop` / `break` ✓）时该名字
-    #     **从未被赋值** ✗ ⇒ `UnboundLocalError: local variable '_train_fatal'
-    #     referenced before assignment` ✗✗
-    #   实测: `--max-steps 24` 跑完 24 步、打印 "stopping cleanly" 后**崩在 return** ✗
-    #   ⇒ 必须在**任何路径之前**初始化为 None ✓（= 正常结束 ✓ 与原语义一致 ✓）
+    # ★★ 2026-10-16 修**两个**未初始化变量（新版审查 §二 的 P0 ✓ 已独立复核 ✓）:
+    #   ① `_train_fatal` —— 只在 `except` 分支赋值 ✗ 却无条件 `return` ✗
+    #   ② `early_stop_stopped` —— 只在早停触发时赋值 ✗ 却在**每次 while 迭代**读 ✗✗
+    #
+    #   ★★★ 为什么真机测试**没发现**（必须记录 ✓）:
+    #     我的所有测试都传了 `--max-steps` ✓ ⇒ `if max_steps ...: break`（L985）
+    #     先执行 ✓ ⇒ **L987 的读取被跳过** ✓ ⇒ bug 被**掩盖** ✗✗
+    #     ⇒ ★ **真实长训练（不设 `--max-steps`）会在第一个 epoch 边界
+    #        `UnboundLocalError` 崩溃** ✗✗✗
+    #     （v88 跑的是**旧代码** ✓ 旧 `train.py` 里这两个变量是初始化过的 ✓
+    #       ⇒ 迁移到 `trainer.py` 时**丢了初始化** ✗）
+    #
+    #   ★ 审查 §二 原文: "这个问题足以说明：迁移说明中的'AST 验证循环状态只读，
+    #     因此逐字搬移等价'并不成立。AST 比对**没有覆盖函数内部变量的控制流
+    #     初始化和异常路径**。" ✓ —— 这个批评**完全成立** ✓
+    #   ⇒ 除了本修复 ✓ 另加 `tests/test_infra_loop_state_init.py` 做**静态数据流守卫** ✓
+    early_stop_stopped = False
     _train_fatal = None
     _SKEL_STRUCT_WARNED = s._SKEL_STRUCT_WARNED
     _acc_c12 = s._acc_c12

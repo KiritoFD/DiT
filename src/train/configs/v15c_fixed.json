@@ -77,6 +77,6 @@
   "callig_style_ca": false,
   "style_ctx_every_layer": true,
   "xattn_q_pos": true,
-  "in_mem_eval_batch": 16,
+  "in_mem_eval_batch": 64,
   "in_mem_eval_vae_batch": 16
 }

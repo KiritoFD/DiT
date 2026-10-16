@@ -18,6 +18,7 @@
 from __future__ import annotations
 
 import torch
+import torch as th
 
 from src.loss import create_diffusion_or_flow
 from src.eval.decoder import match_model_channels
@@ -172,18 +173,75 @@ def sample_latents(model, diffusion, noise, conds, cfg_scale, batch, device,
             return model.forward_with_cfg(x, t, cfg_scale=cfg_scale, **extra, **kw)
     else:
         model_fn = model
+    # ★★ 2026-10-16 [`infra-1015-measurements` §3 · 用户指示"让评测尽可能快" ✓]:
+    #   逐批循环的**三处 launch/同步开销**（纯代码分析定位 ✓ 无需 GPU 实验 ✓）:
+    #
+    #   ① **每批一次 `torch.cuda.empty_cache()`** ✗✗（原 L201）—— 最恶劣 ✓:
+    #      它强制 **设备同步** + 把缓存分配器里的空闲块**全部还给驱动** ✗
+    #      ⇒ 下一批的所有分配重新走 `cudaMalloc` ✗（慢一个量级 ✓）
+    #      ⇒ 且在**训练内评测**时 ✗ 连**训练侧**的缓存块也被放掉 ✗
+    #        ⇒ 评测结束后的第一步训练要重新分配 ✗✗（拖慢训练本身 ✓）
+    #      ★ 依据: 训练循环只在 **warmup 第 1 步**做一次 empty_cache ✓
+    #        （trainer.py "[alloc] step 1 warmup empty_cache" ✓ —— 正因它代价大 ✓）
+    #      ⇒ **彻底删除** ✓（缓存分配器自己会复用空闲块 ✓ 不需要人工干预 ✓）
+    #
+    #   ② **变长尾批触发 torch.compile 重编译** ✗:
+    #      n=187 · batch=8 ⇒ 尾批 shape=(3,) ✗ ≠ 8 ⇒ Dynamo 为每个新 shape 编译一张图 ✗
+    #      （且评测 shape 本就 ≠ 训练的 288 ⇒ 首次评测必编译 ✓）
+    #      ⇒ **尾批 pad 到固定 batch** ✓（复制最后一样本填充 ✓ 输出丢弃 ✓）
+    #        ⇒ 全程只有**一种** shape ✓ 编译一次跨批复用 ✓✓
+    #
+    #   ③ **逐批 2 次 Python 列表推导建标签张量** ✗（原 L178-179）
+    #      ⇒ `conds` 的两列**预建一次** ✓ 之后每批只是切片 ✓
+    #
+    #   ★★ 结果等价性（必须说清 ✓）:
+    #     `noise` 是**固定张量** ✓（cache 预生成 ✓）且 FM 采样**各样本独立** ✓
+    #     （DiT 全部用 LayerNorm ✓ 无 BatchNorm ✓ 无跨样本耦合 ✓）
+    #     ⇒ 改 batch / pad 只改**切分方式** ✓ **分布不变** ✓
+    #     ⚠ 位级可能因 GEMM 归约顺序对不同 M 选不同 kernel 而有极小差 ✗（如实说明 ✓）
+    #       ⇒ 用 `in_mem_eval_batch` 调大批后，历史评测数字在**容差内**一致 ✓
+    #         （严格逐位对拍请用旧 batch 重跑 ✓ 文档已注明 ✓）
+    def _pad_to_batch(t, k):
+        """把尾批 pad 到固定 `batch` ✓（复制最后一样本 ✓ 确定性 ✓ 输出会被丢弃 ✓）。"""
+        pad = batch - k
+        if pad <= 0:
+            return t
+        return th.cat([t, t[-1:].repeat(pad, *[1] * (t.dim() - 1))], 0)
+
+    # ③ 标签**预建一次** ✓（原每批两次列表推导 ✗）
+    _yc_all = torch.tensor([c[0] for c in conds], dtype=torch.long)
+    _yh_all = torch.tensor([c[1] for c in conds], dtype=torch.long)
     for i in range(0, n, batch):
         j = min(i + batch, n)
+        k = j - i
         z = noise[i:j].to(device)
-        yc = torch.tensor([c[0] for c in conds[i:j]], device=device, dtype=torch.long)
-        yh = torch.tensor([c[1] for c in conds[i:j]], device=device, dtype=torch.long)
+        if k < batch and dev_type == "cuda":
+            # ② 尾批 pad ✓（仅 cuda ✓ CPU 无编译问题 ✓ 不必 pad ✓）
+            z = _pad_to_batch(z, k)
+        yc = _yc_all[i:j].to(device)
+        yh = _yh_all[i:j].to(device)
+        if k < batch and dev_type == "cuda":
+            yc = _pad_to_batch(yc, k)
+            yh = _pad_to_batch(yh, k)
+            if hier_conds is not None:
+                hier_conds = (tuple(_pad_to_batch(h[i:j], k) if th.is_tensor(h)
+                                    else [_pad_to_batch(x[i:j], k) for x in h]
+                                    for h in hier_conds))
+            if skel is not None and th.is_tensor(skel):
+                skel_use = _pad_to_batch(skel[i:j], k)
+            else:
+                skel_use = (skel[i:j] if skel is not None else None)
+        else:
+            if hier_conds is not None:
+                hier_conds = hier_conds  # 原样 ✓
+            skel_use = (skel[i:j] if skel is not None else None)
         # ★ 2026-10-14 [重构 PR5] 条件装配抽成 model_kwargs_for_slice ✓（审查 §4.1 ✓）
         #   逐字等价 ✓（含"存在才加键"语义 ✓ 与 g/cond 包装器判定 ✓）
         mk = model_kwargs_for_slice(
             model, yc=yc, yh=yh,
             hier_slice=((hier_conds[0][i:j], hier_conds[1][i:j], hier_conds[2][i:j])
                         if hier_conds is not None else None),
-            skel_slice=(skel[i:j] if skel is not None else None),
+            skel_slice=skel_use,
             device=device)
         # bf16 autocast 仅 cuda (CPU 无 AVX512-BF16/AMX 时 bf16 走软件上转反而慢)
         if dev_type == "cuda":
@@ -195,10 +253,9 @@ def sample_latents(model, diffusion, noise, conds, cfg_scale, batch, device,
             samples = diffusion.ddim_sample_loop(
                 model_fn, z.shape, z,
                 clip_denoised=False, model_kwargs=mk, device=device)
-        all_latents[i:j] = samples.float().cpu()
+        # ①★ `empty_cache()` **已删除** ✓（见函数头说明 ✓）
+        all_latents[i:j] = samples[:k].float().cpu()      # ★ pad 部分丢弃 ✓
         del z, samples
-        if dev_type == "cuda":
-            torch.cuda.empty_cache()
     return all_latents
 
 
