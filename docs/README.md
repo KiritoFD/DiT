@@ -6,6 +6,11 @@
 
 | 文档 | 内容 |
 |---|---|
+| **[infra-1015-measurements.md](infra-1015-measurements.md)** | **Infra 实测剖析报告**：单卡 4090 阶段级吞吐剖析、v88 170k 步收敛分析、**§10 评测 2.4× 提速真机终测**（178s→73s） |
+| [infra_1015.md](infra_1015.md) | 基础设施瓶颈剖析与工程重构建议规范（批次、通信、内存、编译、代码瘦身） |
+| **[experiments/2026-10-16-v89-style-encoder-complete.md](experiments/2026-10-16-v89-style-encoder-complete.md)** | **V89 独立风格编码器完整报告**：20k 训练、留出验证、表征过拟合诊断与决策 |
+| [experiments/2026-10-15-posttraining-and-v88-review.md](experiments/2026-10-15-posttraining-and-v88-review.md) | 后训练（A100/B25/B50/C/D）收尾总结与 v88 基模架构审查 |
+| [refactor-report-2026-10-16.md](refactor-report-2026-10-16.md) | 架构重构与评测正确性修复报告（PR0~PR4 + 六项协议不变量落地） |
 | [system/00_README.md](system/00_README.md) | 总览、管线图、核心事实速查、阅读顺序 |
 | [system/01_code_layout.md](system/01_code_layout.md) | `src/{model,loss,train,eval,utils}` 分层、根 shim 兼容层、tools/ 边界 |
 | [system/02_diffusion.md](system/02_diffusion.md) | 统一时间步设计（flow/ddpm 语义表）、历史 bug 复盘、`sample_t` 铁律 |

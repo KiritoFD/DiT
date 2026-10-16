@@ -44,6 +44,15 @@ import io
 import json
 import os
 import re
+import sys
+
+# ★ Windows 控制台默认 GBK 编码防崩（良好工程实践 ✓）
+if sys.platform == "win32" and hasattr(sys.stdout, "reconfigure"):
+    try:
+        sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+        sys.stderr.reconfigure(encoding="utf-8", errors="replace")
+    except Exception:
+        pass
 
 # ── 训练**热路径**（每步都会执行的模块 ✓ 显式列举 ✓ 便于审阅与维护 ✓）──
 #   ★ 判断标准: 这些模块的代码在 `trainer.training_loop` 的每步路径上 ✓

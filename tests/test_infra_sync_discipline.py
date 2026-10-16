@@ -30,9 +30,10 @@ BASELINE = os.path.join(ROOT, "tools", "sync_hotpath_baseline.json")
 
 
 def _run(*args):
+    env = dict(os.environ, PYTHONUTF8="1", PYTHONIOENCODING="utf-8")
     return subprocess.run([sys.executable, TOOL, *args], cwd=ROOT,
                           capture_output=True, text=True, encoding="utf-8",
-                          errors="replace")
+                          errors="replace", env=env)
 
 
 def test_baseline_file_exists_and_parses():

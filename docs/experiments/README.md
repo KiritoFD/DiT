@@ -1,5 +1,13 @@
 # experiments/ —— 实验数据与报告
 
+## 最近专题报告
+
+- [V89 风格编码器完整实验，2026-10-16](2026-10-16-v89-style-encoder-complete.md)：独立的 20k 编码器训练、最佳点（3k）验收与留出评估；确认训练与泛化差距（训练 CE 99.77% vs 字符测试 30.07% vs 来源测试 13.64%），明确暂不接入作为生成监督。
+- [后训练收尾与v88基模审查，2026-10-15](2026-10-15-posttraining-and-v88-review.md)：A100/B25/B50/C/D实际run来源、统一原生指标、CPU/GPU独立评分边界及v88早期快照；附[v86源码归档](../../archive/experiments/v86_20261015/README.md)和[代码维护说明](../development/recent-training-maintenance.md)。v88 最终在 170k 步平稳收官（SSIM 0.5776，收敛平台期），详见 [Infra Profile 实测报告](../infra-1015-measurements.md) §9。
+- [Infra Profile 实测与评测 2.4× 提速报告，2026-10-16](../infra-1015-measurements.md)：单卡 4090 阶段级吞吐分析、批次/内存/编译开销；§10 真机实测评测耗时由 178–194s 压降至 73–87s（拔除 3 处 empty_cache、批次 8→64、尾批 pad、LPIPS GPU、多线程 CPU 指标）。
+- [架构重构与评测正确性修复报告，2026-10-16](../refactor-report-2026-10-16.md)：PR0~PR4 重构、代码去冗余（瘦身 1000+ 行）以及六大评测协议正确性不变量落地。
+- [从 SkelNet 到字符表与 VAE 的阶段回顾，2026-10-13](2026-10-13-vae-and-related-changes-report.md)：五个阶段、八张海报；补充 SkelNet 实际失败拼图、VAE 各代 DiT run 与跨 run SDE 推理结果墙。详细数据保留在 [技术附录](2026-10-13-vae-and-related-changes-technical-appendix.md)，附 [数据快照](recent_vae_20261013/)。
+
 ## 主面大表（2026-10-09 重抽, 统一 187 协议）★
 
 | 文件 | 说明 |

@@ -8,6 +8,48 @@
 
 ---
 
+## 当前登记 2026年10月16日
+
+**4090 状态：GPU 当前空闲（任务均已收官落盘）。** 
+主要更新涵盖：① `v88_writer_glyph_base` 停机收敛分析；② `v89` 独立风格编码器 20k 实验完整收官；③ 评测 Infra 2.4× 提速与 C2OT 彻底清理。此处更新覆盖下方所有历史登记。
+
+### 1. v88_writer_glyph_base（已收官 @170k）
+
+| 四要素 | 当前登记 |
+|---|---|
+| **变的是什么** | 保留完整 STD token-add，新增 Writer×Glyph rank32 空间残差（block 3/7 注入）；从零初始化，FM+REPA，batch 288 |
+| **基准是谁** | v84A@200k 作为成熟 STD 预训练基准（SSIM 0.5846 / LPIPS 0.3551） |
+| **口径** | eval200fix N=187、EMA、Heun-50、CFG 1.0、γ 0.0、LPIPS-VGG；batch 288，warmup 3k，主 LR 5e-5、书家表 5e-6 |
+| **能读什么** | **收敛确证**：模型自 160k 起进入平稳平台期（120k 0.5698 -> 140k 0.5750 -> 160k 0.5777 -> 165k 峰值 0.5787 -> 170k 0.5776，区间波动 ±0.001）；已在 170,000 步正常收官（`checkpoints/0170000.pt` 0.88 GiB，59.2M 参数）。该架构在 STD 强先验下未展现超越纯 STD 基模（v84A）的超额泛化增益。 |
+
+运行目录：`assets/results/v88_writer_glyph_base/20261015-131555-v88-writer-glyph-base`；停机点为 170k。详见 [`docs/infra-1015-measurements.md`](docs/infra-1015-measurements.md) §9。
+
+### 2. v89 独立风格编码器（已收官 @20k）
+
+| 四要素 | 当前登记 |
+|---|---|
+| **变的是什么** | 独立的 256D 风格表征编码器：SD EMA latent (σ=0.65) + 64×64 STD 引导；CE + 0.3 SupCon + 0.1 STD 分类 |
+| **基准是谁** | 随机书家原型投影与留出集 2AFC / 跨字检索 mAP 基线 |
+| **口径** | 14,981 训练集，23 槽位，固定验证集每 1k 选点（best=3k）；严格隔离 187 张主生成评测字 |
+| **能读什么** | **表征过拟合与域间差距证实**：最佳点（3k）训练集 CE Top1 达 99.77%，但字符测试集 CE 降至 30.07%（原型宏 Top1 24.37%），来源测试集 CE 仅 13.64%（原型宏 Top1 24.05%）；输入探针显示对白图/空STD存在敏感度但缺乏笔法鲁棒性。结论：当前表征不适合直接接入作为生成模型风格教师。 |
+
+产物目录：`assets/style_encoder_v89/latest_20261016_01/`。详见 [`docs/experiments/2026-10-16-v89-style-encoder-complete.md`](docs/experiments/2026-10-16-v89-style-encoder-complete.md)。
+
+### 3. Infra 与评测架构重大优化（实测落地）
+
+| 四要素 | 当前登记 |
+|---|---|
+| **变的是什么** | ① 彻底拔除 eval 热路径 3 处 `empty_cache()`；② `in_mem_eval_batch` 8->64 并引入尾批 padding；③ LPIPS(vgg) 迁移至 CUDA；④ 样本级指标 `ThreadPoolExecutor` 多线程并行；⑤ C2OT 彻底自仓库删除；⑥ 六大评测协议正确性不变量落地 |
+| **基准是谁** | v88/v84A 历史实测评测耗时（178–194 s / 评测）与 48 机 2×2 消融 |
+| **口径** | 真机 RTX 4090，eval200fix N=187，Heun-50，同一模型与配置端到端计时 |
+| **能读什么** | **真机实测 2.4× 提速**：单次评测时间由 178–194 s 压降至 **73–87 s**（batch 8: 87s, batch 64: 73~77s）；评测占 5k 步训练时间比例由 12.4% 降至 ~5%；C2OT 证伪清理完成；评测 DONE 与 CSV 协议一致性严格锁定。 |
+
+详见 [`docs/infra-1015-measurements.md`](docs/infra-1015-measurements.md) §10 与 [`docs/refactor-report-2026-10-16.md`](docs/refactor-report-2026-10-16.md)。
+
+近期后训练：A100实际完成20k；B25按30k调度运行到20k后停止；B50/C完成10k；D约7180步停止，仅有5k评测。C@10k原生SSIM0.5855、LPIPS0.35285，独立风格评价未补齐，不应标为失败或已胜出。完整边界和配置来源见[收尾归档](docs/experiments/2026-10-15-posttraining-and-v88-review.md)。
+
+本轮代码重构仅落本地，未热更新正在训练的远端。旧源码快照、checkpoint、图像和日志保留。
+
 ## 0. v80最新进展（2026-10-12）：200k完成，选190k作v80-best
 
 4090上v80已于**11:57:18正常完成max_steps=200000**，40个checkpoint已落盘、最终评测完成、日志Done。
