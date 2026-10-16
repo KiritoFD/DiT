@@ -238,7 +238,10 @@ def save_input_g(results_dir, set_name, skels_latent, vae, sf, batch=16):
             _Img.fromarray((dec[k] * 255).astype(np.uint8)).save(
                 os.path.join(out_dir, f"g{i + k}.png"))
         del dec
-        torch.cuda.empty_cache()
+        # ★ 2026-10-16 [评测提速 ✓]: `empty_cache()` **已删除** ✗
+        #   理由与 `sampler.py` 相同 ✓（见那里的完整注释 ✓）:
+        #   强制同步 + 释放缓存分配器空闲块 ✗ ⇒ 下一批重新 cudaMalloc ✗
+        #   且在训练内评测时 ✗ 连训练侧缓存块也被放掉 ✗
     return out_dir
 
 
@@ -1104,7 +1107,12 @@ def _eval_one_set(ctx: EvalSetContext):
     finally:
         f_sum.close()
         f_raw.close()
-        torch.cuda.empty_cache()
+        # ★★ 2026-10-16 [评测提速 ✓]: `empty_cache()` **已删除** ✗✗ —— **最恶劣的一处** ✓
+        #   整个评测结束调一次 ⇒ 把**训练侧 20+ GiB 的缓存块全还给驱动** ✗
+        #   ⇒ 评测后的**第一步训练**要重新 cudaMalloc 全部 ✗✗
+        #   ⇒ 每次评测都会**拖慢之后的训练** ✗（5k 步一次 × 34 次评测 ✓）
+        #   ★ 缓存分配器自己会复用 ✓ 不需要人工干预 ✓
+        #     （训练循环的 warmup empty_cache ✓ 已有 ✓ 那是唯一必要的 ✓）
 
 
 
