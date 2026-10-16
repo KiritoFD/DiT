@@ -208,9 +208,17 @@ def test_cache_rejects_legacy_cache_for_std_soft(monkeypatch):
 
 
 def test_standalone_eval_overrides_stored_gamma_and_rejects_ot_sde():
+    """覆盖 stored gamma ✓ + **拒绝 OT+SDE** ✓。
+
+    ★ 2026-10-16 更新（C2OT 已删除 ✓ 实验证伪 ✓）:
+      守卫的**意图**是"corrected score SDE 要求 x0 与 ε 独立配对" ✓
+      该理由对 **`use_ot`**（朴素全局 OT ✓）**依然成立** ✓ ⇒
+      ⇒ 测试改用 `use_ot=True` ✓ **保住测试意图** ✓
+        （而不是把断言删掉了事 ✗ —— 那会让 SDE+OT 能静默给出错误结果 ✗✗）
+    """
     from argparse import Namespace
     from tools.eval_std_soft_checkpoint import prepare_eval_args
-    args = Namespace(std_soft_cond=True, sde_gamma=.5, use_c2ot=True)
+    args = Namespace(std_soft_cond=True, sde_gamma=.5, use_ot=True)
     prepare_eval_args(args, gamma=0.0, steps=50, cfg=1.0, batch=16)
     assert args.sde_gamma == 0.0
     assert args.in_mem_eval_lpips is True

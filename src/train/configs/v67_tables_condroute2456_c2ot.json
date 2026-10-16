@@ -4,8 +4,6 @@
   "results_dir": "assets/results/v67_tables_condroute_c2ot",
   "model": "DiT-2Cond-S/2",
 
-  "use_c2ot": true,
-  "c2ot_mode": "slot",
 
   "cond_inject_at": "2,4,5,6",
   "cond_inject_scale": true,

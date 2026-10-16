@@ -117,13 +117,11 @@ class FlowMatching:
     def __init__(self, num_steps=50, sigma_min=1e-4, use_ot=False,
                  t_sampler="logit_normal", t_mean=0.0, t_std=1.0,
                  shift=1.0, sampler="heun", heun_batch=False, ot_chunks=1,
-                 use_c2ot=False, c2ot_mode="slot", sde_gamma=0.0,
+                 sde_gamma=0.0,
                  sde_tmin=0.0, sde_tmax=1.0, sde_ramp=0.0):
         self.num_timesteps = int(num_steps)
         self.sigma_min = sigma_min
         self.use_ot = bool(use_ot)
-        self.use_c2ot = bool(use_c2ot)
-        self.c2ot_mode = str(c2ot_mode or "slot").lower()
         self.sde_gamma = float(sde_gamma or 0.0)
         self.sde_tmin = float(sde_tmin)
         self.sde_tmax = float(sde_tmax)
@@ -160,14 +158,13 @@ class FlowMatching:
         return self.num_timesteps * (2 if self.sampler == "heun" or self.sde_gamma > 0 else 1)
 
     def describe(self):
-        c2ot_desc = f", use_c2ot={self.use_c2ot}(mode={self.c2ot_mode})" if self.use_c2ot else ""
         sde_desc = (f", sde_gamma={self.sde_gamma}, "
                     f"sde_window=({self.sde_tmin},{self.sde_tmax}), ramp={self.sde_ramp}"
                     if self.sde_gamma > 0 else "")
         return (f"FlowMatching(steps={self.num_timesteps}, sampler={self.sampler}, "
                 f"nfe={self.nfe}, t_sampler={self.t_sampler}"
                 + (f"(mean={self.t_mean},std={self.t_std})" if self.t_sampler == "logit_normal" else "")
-                + f", shift={self.shift}, use_ot={self.use_ot}{c2ot_desc}{sde_desc})")
+                + f", shift={self.shift}, use_ot={self.use_ot}{sde_desc})")
 
     def _sde_weight(self, t):
         """Time-only envelope. Default 1 preserves the existing bridge sampler.
@@ -194,100 +191,6 @@ class FlowMatching:
             u = th.rand(n, device=device).clamp_(1e-6, 1.0 - 1e-6)
             return 1.0 - 1.0 / (th.tan(u * math.pi / 2.0) + 1.0)
         return th.rand(n, device=device)
-
-    def _extract_c2ot_keys(self, model_kwargs, batch_size, device):
-        """提取用于 C2OT 分组的条件张量 (B,) 整数键。"""
-        if not model_kwargs:
-            return None
-
-        # 1. 优先看显式传入的 c2ot_key
-        if "c2ot_key" in model_kwargs and model_kwargs["c2ot_key"] is not None:
-            k = model_kwargs["c2ot_key"]
-            if isinstance(k, th.Tensor) and k.shape[0] == batch_size:
-                return k.view(batch_size).long()
-
-        mode = self.c2ot_mode
-        y_callig = model_kwargs.get("y_callig")
-        y_script = model_kwargs.get("y_script")
-        y_char = model_kwargs.get("y_char")
-
-        if mode == "slot":
-            # 复合槽位: (书家, 书体)
-            if y_callig is not None and y_script is not None:
-                return (y_callig.view(batch_size).long() * 100 + y_script.view(batch_size).long())
-            elif y_callig is not None:
-                return y_callig.view(batch_size).long()
-            elif y_char is not None:
-                return y_char.view(batch_size).long()
-        elif mode == "callig":
-            if y_callig is not None:
-                return y_callig.view(batch_size).long()
-        elif mode == "char":
-            if y_char is not None:
-                return y_char.view(batch_size).long()
-
-        return None
-
-    def _apply_c2ot(self, x_start, noise, model_kwargs):
-        """条件最优传输 (C2OT / Conditional Optimal Transport):
-        
-        仅在条件相同的样本子集内部独立求解 OT 配对。
-        
-        数学保证:
-          1. 块对角置换保证对于任意条件 c, 先验噪声依然严格无偏: q(x1 | c) == N(0, I);
-             彻底消除朴素无条件 OT 导致的 Train-Test Prior Mismatch 与破碎度 (frag) 反弹;
-          2. 同条件流形内部几何拓扑更紧凑，流线大幅拉直，降低速度场方差与训练曲率;
-          3. 复杂度从 O(B^3) 降为 sum O(N_c^3)，计算量暴降 10~100 倍。
-
-        高性能工程实现 (BLAS Level-3 + 单次 D2H 同步):
-          - 全 batch 预计算范数平方 ||x||^2 与 ||n||^2;
-          - 组内欧氏距离代价用 GEMM 矩阵乘法点积替换 (||x-n||^2 = ||x||^2 + ||n||^2 - 2*x@n.T);
-          - 全程仅 1 次批量 CPU 传输与 1 次 (B,) 整数索引回传，零逐循环流同步开销。
-        """
-        import numpy as np
-        from scipy.optimize import linear_sum_assignment
-
-        B = x_start.shape[0]
-        cond_keys = self._extract_c2ot_keys(model_kwargs, B, x_start.device)
-        if cond_keys is None:
-            # 无法识别条件时的安全回退: 若同时开 use_ot 走朴素 OT, 否则保持原样恒等
-            if self.use_ot:
-                x_flat = x_start.reshape(B, -1).float()
-                n_flat = noise.reshape(B, -1).float()
-                cost = th.cdist(x_flat, n_flat, p=2).pow(2)
-                _r, _cl = linear_sum_assignment(cost.float().cpu().numpy())
-                return noise[th.from_numpy(_cl).to(noise.device)]
-            return noise
-
-        # 1. 批量单次拷贝至 CPU (避免循环内频繁 D2H 阻塞)
-        x_np = x_start.reshape(B, -1).float().cpu().numpy()
-        n_np = noise.reshape(B, -1).float().cpu().numpy()
-        cond_np = cond_keys.cpu().numpy()
-
-        # 2. 全 batch 预计算范数平方向量 (B,)
-        x_norm2 = np.sum(x_np ** 2, axis=1)
-        n_norm2 = np.sum(n_np ** 2, axis=1)
-
-        perm_np = np.arange(B)
-        unique_keys = np.unique(cond_np)
-
-        # 3. 在每个条件子集内部执行 BLAS 优化的组内最优传输
-        for u_val in unique_keys:
-            idx_u = np.where(cond_np == u_val)[0]
-            n_u = len(idx_u)
-            if n_u <= 1:
-                continue  # 单样本无需重排，严格保持恒等
-
-            # 高性能 GEMM 代价矩阵计算: ||x - n||^2 = ||x||^2 + ||n||^2 - 2 * x @ n.T
-            cost = (x_norm2[idx_u, None]
-                    + n_norm2[idx_u][None, :]
-                    - 2.0 * np.dot(x_np[idx_u], n_np[idx_u].T))
-            _r, cl = linear_sum_assignment(cost)
-            perm_np[idx_u] = idx_u[cl]
-
-        # 4. 单次整数向量回传 GPU 执行重排
-        perm_th = th.from_numpy(perm_np).to(device=x_start.device)
-        return noise[perm_th]
 
     def _interp(self, x_start, noise, t):
         """Linear interpolant: x_t = (1-t) * x_start + t * noise.  t: [N] float.
@@ -317,14 +220,21 @@ class FlowMatching:
         if noise is None:
             noise = th.randn_like(x_start)
 
-        # ── Minibatch Optimal Transport (C2OT 条件最优传输 / 朴素 OT-CFM, 可配置) ───
-        # C2OT (ICCV 2025): 仅在同条件子集内部做 OT，彻底消除条件先验偏置 (q(x1|c) == N(0,I))。
-        # 朴素 OT (Tong et al. 2024): 全局按 L2 欧氏距离重排 (仅建议无条件生成或单类生成)。
-        if (self.use_c2ot or self.use_ot) and x_start.shape[0] > 1:
+        # ── Minibatch Optimal Transport（**朴素 OT-CFM** ✓ 可配置 ✓）─────────────
+        # 朴素 OT (Tong et al. 2024): 全局按 L2 欧氏距离重排
+        #   （仅建议无条件生成或单类生成 ✓）
+        # ★★ 2026-10-16: **C2OT 已删除** ✗（实验证伪 ✓ 用户指示直接删 ✓）
+        #   证据（README.md §6 / state.md ✓ 2026-10-11 48 臂同口径对拍 ✓）:
+        #     C2OT @noaug: dSSIM **−0.0114** · dLPIPS +0.0097 · dfrag +0.657 · dink −0.0276
+        #     ⇒ **四指标全负** ⇒ B4「C2OT 改善质量」**已证伪** ⇒ OT 该关 ✓
+        #   ⇒ 删除: `_apply_c2ot` / `_extract_c2ot_keys` / `use_c2ot` / `c2ot_mode`
+        #     （约 100 行 ✓ 且它每步要走**同步 CPU 求解**（SciPy Hungarian ✓）
+        #       ⇒ 也是审查 §五 点名的同步路径 ✓ 删除同时是 infra 收益 ✓）
+        #   ⚠ **`use_ot` 保留** ✓ —— 那是**朴素全局 OT**（另一件事 ✓ 未被证伪 ✓
+        #     且 `s28_std_dino_pretrain.json` 在用 ✓）⇒ 删它会误伤 ✓
+        if self.use_ot and x_start.shape[0] > 1:
             with th.no_grad():
-                if self.use_c2ot:
-                    noise = self._apply_c2ot(x_start, noise, model_kwargs)
-                elif self.use_ot:
+                if self.use_ot:
                     from scipy.optimize import linear_sum_assignment
                     B = x_start.shape[0]
                     k = min(self.ot_chunks, B)
@@ -595,7 +505,7 @@ class FlowMatching:
 #: （noise_schedule / learn_sigma / use_kl ...）误传进来导致 TypeError。
 FLOW_PARAMS = (
     "num_steps", "sigma_min", "use_ot", "ot_chunks",
-    "use_c2ot", "c2ot_mode", "sde_gamma", "sde_tmin", "sde_tmax", "sde_ramp",
+    "sde_gamma", "sde_tmin", "sde_tmax", "sde_ramp",
     "t_sampler", "t_mean", "t_std",
     "shift", "sampler", "heun_batch",
 )
@@ -616,14 +526,14 @@ def _resolve_flow_aliases(kwargs):
     return kwargs
 
 
-def create_flow_matching(timestep_respacing="50", use_ot=False, use_c2ot=False, c2ot_mode="slot", sde_gamma=0.0, **kwargs):
+def create_flow_matching(timestep_respacing="50", use_ot=False, sde_gamma=0.0, **kwargs):
     """Build a FlowMatching instance.
 
     ``timestep_respacing`` may be an int, a str int ("50"), or a comma/space
     separated list (only the count is used here).
 
     额外 kwargs 透传给 FlowMatching:
-        t_sampler, t_mean, t_std, shift, sampler, heun_batch, use_ot, use_c2ot, c2ot_mode, sde_gamma
+        t_sampler, t_mean, t_std, shift, sampler, heun_batch, use_ot, sde_gamma
 
     未知 kwargs 会被丢弃并打 warning（而不是 TypeError）—— 这样
     ``create_diffusion_or_flow`` 可以无脑把整包训练配置转发过来。
@@ -647,7 +557,5 @@ def create_flow_matching(timestep_respacing="50", use_ot=False, use_c2ot=False, 
         logging.getLogger(__name__).warning(
             f"[create_flow_matching] ignoring non-flow kwargs: {dropped}")
     kw.setdefault("use_ot", use_ot)
-    kw.setdefault("use_c2ot", use_c2ot)
-    kw.setdefault("c2ot_mode", c2ot_mode)
     kw.setdefault("sde_gamma", sde_gamma)
     return FlowMatching(num_steps=steps, **kw)

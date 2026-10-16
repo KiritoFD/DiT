@@ -5,8 +5,6 @@
   "results_dir": "assets/results/v74_callivae_mode_sp_c2ot",
   "model": "DiT-2Cond-Sp/2",
 
-  "use_c2ot": true,
-  "c2ot_mode": "slot",
 
   "cond_inject_at": "2,4,5,6",
   "cond_inject_scale": true,

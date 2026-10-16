@@ -3,8 +3,6 @@
   "experiment_name": "v83-v68-noREPA",
   "results_dir": "assets/results/v83_v68_noREPA",
   "model": "DiT-2Cond-Sp/2",
-  "use_c2ot": true,
-  "c2ot_mode": "slot",
   "cond_inject_at": "2,4,5,6",
   "cond_inject_scale": true,
   "skel_as_glyph_cond": false,
