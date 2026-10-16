@@ -358,11 +358,12 @@ def render_poster(results_dir, set_name, out=None, cell=224, gap=6,
       每 ckpt 一行, 每样本 gen | canny | skel 三列。
     均为全量重画并覆盖 → 永远是所有 step 的最新版。纯 CPU, 秒级。
     """
-    # ⚠ 临时兼容（2026-10-14 [重构 PR5]）: 这 6 个助手仍在 in_mem_eval.py ✓
-    #   ⇒ 用**函数内导入**打破循环（posters ← in_mem_eval ← posters ✗）✓
-    #   ⇒ 后续把它们也搬走即可删掉本段 ✓
-    from src.eval.in_mem_eval import (  # noqa: E402
-        _steps_scan, _load_font, _font_cache, _train_ref_rows, _train_nn_row, _step_ssim_txt)
+    # ★ 2026-10-16: 旧注释说"这 6 个助手仍在 in_mem_eval.py" ✗ —— **已经搬完了** ✓
+    #   （它们就在本文件下方 ✓ L576 起 ✓）
+    #   ★ 此前 `from src.eval.in_mem_eval import _steps_scan, ...` 是**坏导入** ✗
+    #     ⇒ 每次 eval 都报 `ImportError: cannot import name '_steps_scan'` ✗
+    #     ⇒ **poster 渲染静默失败** ✗（只打一行警告 ✗）
+    #   ⇒ 删掉该导入 ✓（同名函数在本模块 ✓ Python 按定义处解析 ✓）
     from PIL import Image as _Img, ImageDraw
     sub = "g" if set_name in ("seen", "g") else set_name
     steps = _steps_scan(results_dir, sub)

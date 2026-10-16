@@ -88,6 +88,10 @@ def compute_metrics(dec_dir, gt_dir, tag_prefix, n, use_lpips=True, idx_range=No
             import torch as _t
             pp = _t.from_numpy(pred.transpose(2, 0, 1)[None] * 2 - 1)
             gg = _t.from_numpy(gt.transpose(2, 0, 1)[None] * 2 - 1)
+            # ★ 2026-10-16 [评测提速 ✓]: **按 lpips_fn 的设备搬运输入** ✓
+            #   （`_get_lpips` 现在优先 GPU ✓ ⇒ 输入也必须上 GPU ✗ 否则设备不匹配报错 ✗）
+            _ldev = next(lpips_fn.parameters()).device
+            pp, gg = pp.to(_ldev), gg.to(_ldev)
             with _t.no_grad():
                 lpips_.append(float(lpips_fn(pp, gg).mean().item()))
     # ★ 2026-10-16 [新版审查 §五-2 ✓]: strict 报错点 ✓（聚合**之前** ✓）
