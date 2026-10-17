@@ -3,12 +3,13 @@
   "objective": "flow",
   "channels": [192, 384, 576],
   "num_res_blocks": 2,
-  "batch": 1728,
-  "lr": 0.0001,
+  "batch": 512,
+  "lr": 0.00006,
   "max_steps": 200000,
   "std_shape_aug": "strong",
   "compile": true,
   "output": "assets/results/Unet",
   "vae_path": "pretrained_models/sd-vae-ft-ema"
 }
+
 

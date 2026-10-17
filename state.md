@@ -10,6 +10,18 @@
 
 ## 最新产物登记：2026-10-17
 
+### 0. Unet-72M 系列正式起跑（Node 48，Batch 512）
+- **变的是什么**：下一代直接 4x32x32 Latent CNN U-Net 架构 (`LatentUNet` / `Unet-flow`)，`channels=[192, 384, 576]`，每阶段 2 个深层 ResBlock（全网 16 个 ResBlock + 4 个 SDPA 注意力层），总参数量 **72.09M**（与 DiT-24L 65.67M 容量对齐）。
+- **基准是谁**：DiT-20L (`DiT-2Cond-S384-20/2` 55.03M) 及 DiT-24L (`v84D_std_deep24L` 65.67M)。
+- **口径与配置**：Flow Matching 线性插值 ($x_t=(1-t)x_0+t\epsilon$, $v^*=\epsilon-x_0$)，STD 多尺度投影，书家/书体 FiLM 调制；`batch=512`，`lr=6e-5`，`compile=True` (TorchInductor，0 Graph Breaks)，`channels_last`，AMP BF16，Fused AdamW。
+- **FLOPs 与 MFU 严格核算口径**：
+  - 经 `torch.utils.flop_counter.FlopCounterMode` 实测：单图 Forward **22.1502 GFLOPs**，Fwd+Bwd **66.4505 GFLOPs**（旧 33.79M 原型为 29.995 GFLOPs）。
+  - 在 Node 48（RTX 4090 48GB，Dense BF16 峰值 165.15 TFLOPS）实测稳定步频 **2.78 steps/s（1423.4 images/s）**。
+  - 实测模型计算算力：$1423.4 \times 66.4505\text{ GFLOPs} = \mathbf{94.59\text{ TFLOPS}}$。
+  - **实测真实 MFU**：$94.59 / 165.15 = \mathbf{57.27\%}$（纯微基准单步显式同步测得 53.09%）。
+  - 显存分配：Allocated ~11.0 GiB，Reserved 13.35 GiB / 48 GiB。GPU Util 100%，功耗稳定 444W~446W/450W。
+  - 运行目录：`assets/results/Unet/20261017-233321-Unet-flow`。
+
 新增[免训练容量审计](docs/experiments/capacity_audit_20261017/report.md)：V90B 六组归档身份/GT/STD/DONE 对账通过，8例原噪声复现支持没有整行错位；VAE 重建187张 SSIM .97505、LPIPS-alex .01175。12L 与20×384的高噪声 Train/Val FM 差距明显不同；不将其归因为纯深度收益。长跳连/局部残差仅实现、未训练；24L FM因显存空间暂未执行。
 
 此栏覆盖下方历史状态；它是**已取回产物的快照，不是实时进程监控**。不得再引用下方“GPU 当前空闲”作为现在的机器状态。
