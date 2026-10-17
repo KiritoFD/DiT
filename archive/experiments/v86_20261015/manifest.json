@@ -1,0 +1,186 @@
+{
+  "archived_on": "2026-10-15",
+  "reason": "Post-training stopped by user; v88 is active. Source launch recipes, not historical effective configs.",
+  "files": [
+    {
+      "original": "src/train/configs/v86_A100_full_fixed.json",
+      "archived": "archive/experiments/v86_20261015/src/train/configs/v86_A100_full_fixed.json",
+      "sha256": "2b45eb17578c2ae6772640e9e284a09c7988f2d98a7351cfb0df3d6e0dacccb5"
+    },
+    {
+      "original": "src/train/configs/v86_consolidate_low15.json",
+      "archived": "archive/experiments/v86_20261015/src/train/configs/v86_consolidate_low15.json",
+      "sha256": "2074f927d9e3f86723031394baa95481efae81b65b512e54ea3e46227a8f6c73"
+    },
+    {
+      "original": "src/train/configs/v86_consolidate_matched80.json",
+      "archived": "archive/experiments/v86_20261015/src/train/configs/v86_consolidate_matched80.json",
+      "sha256": "255c75594b104fd8c3f8904a7c48f32b6ba608f39d91c87e918273f075070e6e"
+    },
+    {
+      "original": "src/train/configs/v86_diag_brush_5k.json",
+      "archived": "archive/experiments/v86_20261015/src/train/configs/v86_diag_brush_5k.json",
+      "sha256": "0cee8a6ed79936f88764748278207d4569a4ec32e98694ec7cfe0bf391715166"
+    },
+    {
+      "original": "src/train/configs/v86_diag_control_5k.json",
+      "archived": "archive/experiments/v86_20261015/src/train/configs/v86_diag_control_5k.json",
+      "sha256": "1b081bcee1f36b66b3bf45a5e322cf942a8dcf5e60b4e613bdca54315491f48a"
+    },
+    {
+      "original": "src/train/configs/v86_diag_writer_5k.json",
+      "archived": "archive/experiments/v86_20261015/src/train/configs/v86_diag_writer_5k.json",
+      "sha256": "cee7178445c22b89b3354c1c05adcb48f1f17dafdc35bbc446dfa447f129095e"
+    },
+    {
+      "original": "src/train/configs/v86_full_fixed_B25.json",
+      "archived": "archive/experiments/v86_20261015/src/train/configs/v86_full_fixed_B25.json",
+      "sha256": "a76b982656117376927d1ee6c7641ee3c964a0d47f143e1b3f2b1debfc7ebfe9"
+    },
+    {
+      "original": "src/train/configs/v86_full_fixed_B50.json",
+      "archived": "archive/experiments/v86_20261015/src/train/configs/v86_full_fixed_B50.json",
+      "sha256": "108c7d7c5743167e7d67bb99095e121fcff5b3f96eb2a912a9882dec54b72f26"
+    },
+    {
+      "original": "src/train/configs/v86_full_fixed_C.json",
+      "archived": "archive/experiments/v86_20261015/src/train/configs/v86_full_fixed_C.json",
+      "sha256": "ad6bc04be1be9cf829e47a30dcdd52502a31f9727312148896dfd41606cc86f4"
+    },
+    {
+      "original": "src/train/configs/v86_full_fixed_D.json",
+      "archived": "archive/experiments/v86_20261015/src/train/configs/v86_full_fixed_D.json",
+      "sha256": "e346c00a4d4f6f642044d2d9ba1bf212fda666e71b4f5dc23633fbd94a1da193"
+    },
+    {
+      "original": "src/train/configs/v86_strong_A100.json",
+      "archived": "archive/experiments/v86_20261015/src/train/configs/v86_strong_A100.json",
+      "sha256": "1b7a5956bdf4689bcb0adc9643bd25d3b7fc6d049c8e8eaea1e2973705d29c1f"
+    },
+    {
+      "original": "src/train/configs/v86_strong_A30.json",
+      "archived": "archive/experiments/v86_20261015/src/train/configs/v86_strong_A30.json",
+      "sha256": "a7ec69293de2fae5a258c4830622fd6634041229733ad7254eff807b5487c963"
+    },
+    {
+      "original": "src/train/configs/v86_strong_A60.json",
+      "archived": "archive/experiments/v86_20261015/src/train/configs/v86_strong_A60.json",
+      "sha256": "25d8f0586e2c6312146c44b7c631584aaf05a210cfe808f020e18a7db399d6fd"
+    },
+    {
+      "original": "src/train/configs/v86_strong_B25.json",
+      "archived": "archive/experiments/v86_20261015/src/train/configs/v86_strong_B25.json",
+      "sha256": "b9f87a317000c26acf65f2a2fde2c4d3e7f34e85d5dcef57dc5873d7adeba579"
+    },
+    {
+      "original": "src/train/configs/v86_strong_B50.json",
+      "archived": "archive/experiments/v86_20261015/src/train/configs/v86_strong_B50.json",
+      "sha256": "553f41576ac339204c4fca216adbcd5884b8f7a3896370dc7205b0aa3e8cf4b6"
+    },
+    {
+      "original": "src/train/configs/v86_strong_C.json",
+      "archived": "archive/experiments/v86_20261015/src/train/configs/v86_strong_C.json",
+      "sha256": "78bf23d21948521dd159b0b34ee68b41b50550cd9f760d00bd34cc2e9eeeac7c"
+    },
+    {
+      "original": "src/train/configs/v86_strong_control.json",
+      "archived": "archive/experiments/v86_20261015/src/train/configs/v86_strong_control.json",
+      "sha256": "8c7ad416054396a914ec023b3176f857ccea21c5be609b577f09b7d514f3eda7"
+    },
+    {
+      "original": "src/train/configs/v86_strong_D.json",
+      "archived": "archive/experiments/v86_20261015/src/train/configs/v86_strong_D.json",
+      "sha256": "ecfcf173633625731f6ffbcdce5b02ce66fa07c8375a19c4363ed5fb76a1bfb8"
+    },
+    {
+      "original": "src/train/configs/v86A_writer_frozen_20k.json",
+      "archived": "archive/experiments/v86_20261015/src/train/configs/v86A_writer_frozen_20k.json",
+      "sha256": "09b9c0b5e6fdc543ddb79849b2f7786747c324abd364513b8b5625934672c8c8"
+    },
+    {
+      "original": "src/train/configs/v86A_writer_table_20k.json",
+      "archived": "archive/experiments/v86_20261015/src/train/configs/v86A_writer_table_20k.json",
+      "sha256": "15d0a50370d7864cc49f52af4140adc328d33673dd3250d48f8ad19b5d2cc8fd"
+    },
+    {
+      "original": "tools/analysis/prepare_v86A_writer_table.py",
+      "archived": "archive/experiments/v86_20261015/tools/analysis/prepare_v86A_writer_table.py",
+      "sha256": "0764a1633fd41698a3a97717b22c3168ad0350ae4c83e109e600cbe7674c15ae"
+    },
+    {
+      "original": "tools/analysis/prepare_v86_diagnostic_runs.py",
+      "archived": "archive/experiments/v86_20261015/tools/analysis/prepare_v86_diagnostic_runs.py",
+      "sha256": "c987e0e60ad679fb4cc664d17ba746a92dbee0a1dd8f97e85ba1773837c36402"
+    },
+    {
+      "original": "tools/analysis/prepare_strong_style.py",
+      "archived": "archive/experiments/v86_20261015/tools/analysis/prepare_strong_style.py",
+      "sha256": "c2ccd5723da04496acad7b27ff93bb1b1ef42ac5a47386ade85e5cc0e3ae2d3a"
+    },
+    {
+      "original": "tools/analysis/prepare_A100_full.py",
+      "archived": "archive/experiments/v86_20261015/tools/analysis/prepare_A100_full.py",
+      "sha256": "cba9cd25d9cbcd085ece43e49bc2e3146f973bcc29953a2a675e9de03fcc3222"
+    },
+    {
+      "original": "tools/analysis/prepare_full_followups.py",
+      "archived": "archive/experiments/v86_20261015/tools/analysis/prepare_full_followups.py",
+      "sha256": "38fda4bbfdd3d83682732508b4ad9c09c7a2819955e9e9d8c1d379c297dbce45"
+    },
+    {
+      "original": "tools/analysis/prepare_consolidation.py",
+      "archived": "archive/experiments/v86_20261015/tools/analysis/prepare_consolidation.py",
+      "sha256": "2de3c904c44b103b2ae793c2ae119174b961a8713845637b67047dec288d7e30"
+    },
+    {
+      "original": "tools/analysis/run_v86A_writer_table.sh",
+      "archived": "archive/experiments/v86_20261015/tools/analysis/run_v86A_writer_table.sh",
+      "sha256": "80e63d12d91486094b024c5a2fa46ea30ea78cb28fb912172d534fdc2c51eb81"
+    },
+    {
+      "original": "tools/analysis/run_v86_diagnostics.sh",
+      "archived": "archive/experiments/v86_20261015/tools/analysis/run_v86_diagnostics.sh",
+      "sha256": "12b8859f918218857372c6476dc795c44d272adb22024acfb65570591a13a306"
+    },
+    {
+      "original": "tools/analysis/run_strong_style_serial.sh",
+      "archived": "archive/experiments/v86_20261015/tools/analysis/run_strong_style_serial.sh",
+      "sha256": "9388f2c12043704d19cf582e0cf6a7594c5e7908f503c962980e4a818ad5bcb2"
+    },
+    {
+      "original": "tools/analysis/run_full_followups.sh",
+      "archived": "archive/experiments/v86_20261015/tools/analysis/run_full_followups.sh",
+      "sha256": "f19d87f5cb8d75af4223c4e43acaa994bb48d6a3f2d2cf5c8c116cb5fa4e76b4"
+    },
+    {
+      "original": "tools/analysis/wait_then_strong_style.sh",
+      "archived": "archive/experiments/v86_20261015/tools/analysis/wait_then_strong_style.sh",
+      "sha256": "5ccd9da24c6b5382a3dcbc64b6fce85c60c3c925cbd2d7176a21d8129a83f304"
+    },
+    {
+      "original": "tools/analysis/after_CD_consolidation.sh",
+      "archived": "archive/experiments/v86_20261015/tools/analysis/after_CD_consolidation.sh",
+      "sha256": "4adbe842031409bf435e0fcfdd6220f18db1b1fa066ecc03acc28415586cf355"
+    },
+    {
+      "original": "tools/analysis/smoke_strong_style.py",
+      "archived": "archive/experiments/v86_20261015/tools/analysis/smoke_strong_style.py",
+      "sha256": "6718cf895e9bdc8c1386b840906550a3e444a49987f084b0d99d439120bae9d9"
+    },
+    {
+      "original": "tools/analysis/smoke_writer_table_checkpoint.py",
+      "archived": "archive/experiments/v86_20261015/tools/analysis/smoke_writer_table_checkpoint.py",
+      "sha256": "e09236bda36ef75d5e9de122780f7764f9e05473451ff26d77a5a95d5944a6ad"
+    },
+    {
+      "original": "tools/analysis/audit_strong_style_status.py",
+      "archived": "archive/experiments/v86_20261015/tools/analysis/audit_strong_style_status.py",
+      "sha256": "445bf826c539d8cd352809bd348f908922af41a12085edd4f50cd0996c211c85"
+    },
+    {
+      "original": "tools/analysis/summarize_v86_diagnostics.py",
+      "archived": "archive/experiments/v86_20261015/tools/analysis/summarize_v86_diagnostics.py",
+      "sha256": "4e8998ae2a1b8dbf67e3655956d7c0fed9d161d0b6c7935bc6e4f778ca9711cc"
+    }
+  ]
+}

@@ -1,0 +1,2352 @@
+{
+  "selection": "first sample per writer-script slot; then largest GT ink fraction to reach32",
+  "ids": [
+    0,
+    8,
+    15,
+    23,
+    31,
+    40,
+    46,
+    54,
+    62,
+    71,
+    80,
+    88,
+    97,
+    103,
+    111,
+    120,
+    128,
+    137,
+    146,
+    155,
+    163,
+    172,
+    179,
+    94,
+    123,
+    42,
+    96,
+    92,
+    17,
+    95,
+    186,
+    93
+  ],
+  "source_sha256": {
+    "exp-std\\data\\std_fixed_eval200\\022004.png": "5a534315d7da4cbfa1213699b0cb34f2bb06ac0c1973fc773daf71b47f05c158",
+    "assets\\v85_verified_v84A_200k\\gt0.png": "421925695da0c6853483ab57c0f8e546805962df89b1e62d77802b52613ffc71",
+    "assets\\v85_verified_v84A_200k\\g0.png": "6a3051da88d13612d32dfb11159c65ab62108432c2e74cdec90037df0be18feb",
+    "assets\\style_eval_src\\v85A_step0030000\\g0.png": "2113c4f13f9c0a22297838cd8572011ad158555691ddf8cfca3cf3113a422d46",
+    "assets\\style_eval_src\\v85C_step0030000\\g0.png": "5e215bba0eec6f43275d2734d38ce8bcef44a6b088044ab0d24e773deec3a353",
+    "assets\\style_eval_src\\v85E_step0015000\\g0.png": "5cad23622428176eb8e91d1b057f9da8ccc9a8c32ae445f86f3f7852cc321c3f",
+    "assets\\style_eval_src\\v85E_step0030000\\g0.png": "642fad1c1956515c95d69cd348b84f46a201df31cf5e0e68bb8ccf9bcb5f7410",
+    "assets\\v85_verified_control_10k\\g0.png": "4deb4177b78d3c0a55d5759a5c378d51d9b2a4c250f7bcedd68c9da13fa84b07",
+    "exp-std\\data\\std_fixed_eval200\\012419.png": "c2ea3a67fb7d54c8f5f5360b2cb6a007139365f2a9bf144a6d0f3f0614f9cbde",
+    "assets\\v85_verified_v84A_200k\\gt8.png": "b729250e25c97322a24aaa955cfcb9ed6a3d3a221b20b80643be8dcdb2160358",
+    "assets\\v85_verified_v84A_200k\\g8.png": "18be3a4ac16224fbf1391e640313702e29df6b6c71c04e34b5570ec6d483a506",
+    "assets\\style_eval_src\\v85A_step0030000\\g8.png": "3e8aa72989b386eda2ac2865967b2c44a01f6d42138a3844cf957e00b53d1ac4",
+    "assets\\style_eval_src\\v85C_step0030000\\g8.png": "54ad12148bf05846e4217675167225500a9d20f606975d7e57389567304e1db6",
+    "assets\\style_eval_src\\v85E_step0015000\\g8.png": "02be5df5471c964608a63f9cfe4549d80cc4948018c68f7d82b823d71e042af7",
+    "assets\\style_eval_src\\v85E_step0030000\\g8.png": "95398864c7723caf2a00d1adffb1b48bdfb9bedeb5da5e91dd2ce9fc7b3a7181",
+    "assets\\v85_verified_control_10k\\g8.png": "e39a0db2901825432f3b0eedb1551353e437539c15043fb2ea9fb374a42e28b2",
+    "exp-std\\data\\std_fixed_eval200\\005190.png": "ad53f891495a4cdecc9d3c665fcf8197a9049410a7046cfcbec6050dd4d613b8",
+    "assets\\v85_verified_v84A_200k\\gt15.png": "f467b23f56b225c62e764eaa2ca53c39a06f85ecee63099b3485e2f6e39f7dd3",
+    "assets\\v85_verified_v84A_200k\\g15.png": "c38a68c1e8f8378c9dd330da41e02215cd1ead4072e7870cf694c413fe83a32b",
+    "assets\\style_eval_src\\v85A_step0030000\\g15.png": "1e692d04900f58d3a746d831d2292136c54714ada72c69af459b249569b5e7b1",
+    "assets\\style_eval_src\\v85C_step0030000\\g15.png": "763c8a782678cdd9c6668ef2e461894883ec3c5204bc246147b4dbc23b8724f1",
+    "assets\\style_eval_src\\v85E_step0015000\\g15.png": "076718f1255d02f1808e3e6b2350eb96bfe2672d71209e7f4bdcaffbe56ef4ef",
+    "assets\\style_eval_src\\v85E_step0030000\\g15.png": "6c3779de7de2e91d8d609c4d571f654f9ad3e7dcb6db2cdfc8c44c05f5b70fba",
+    "assets\\v85_verified_control_10k\\g15.png": "7fbae8920d1810b1e8cf8eb6ccab0ca8033cd8088b3044ed5b62c5c019ddc52b",
+    "exp-std\\data\\std_fixed_eval200\\022071.png": "3d7096087cffa9c2c824fc304f9df738599fffda45eb430fb9954c24ad9d6463",
+    "assets\\v85_verified_v84A_200k\\gt23.png": "3b721301841174fd147ce76210343497621b84b480e8e1214576d1d9b332172d",
+    "assets\\v85_verified_v84A_200k\\g23.png": "f274cad61dbb264f8de83bd2bf25b331039efa7f11fe0565e13ea27acc04545b",
+    "assets\\style_eval_src\\v85A_step0030000\\g23.png": "cfba3f8d1139ea749086bcac18b801dcb706a5e728f1c50dccd0c8931175870f",
+    "assets\\style_eval_src\\v85C_step0030000\\g23.png": "65581bdc16e29ce904ebab91d347c88c9106eddb0505b906b8b346a6f1761e29",
+    "assets\\style_eval_src\\v85E_step0015000\\g23.png": "6d5e725e787c147b6a8b253eea482379752f0c8bbff3bebde0cb709d8c49bf71",
+    "assets\\style_eval_src\\v85E_step0030000\\g23.png": "b5e68dfb03121dc02a08a87de15e299b29c802b8034cca41c66beb74d3fb5d44",
+    "assets\\v85_verified_control_10k\\g23.png": "26a7aa610072dfaa9800cf661dfd58a7a821e6bee07ff455aa4d2a1760c7df97",
+    "exp-std\\data\\std_fixed_eval200\\004533.png": "b11f667722d60e84e0188c804db7a9377e09413f1d6e7d534cea5f5088ba2fda",
+    "assets\\v85_verified_v84A_200k\\gt31.png": "8982ee0af81e2041647ed977c964f1e9310fc0e2f4a6f3392f87856bf2ace8f3",
+    "assets\\v85_verified_v84A_200k\\g31.png": "140640eb675a802a3470076cb3cfdc99e9b714edbac1390a56ba8535ecc77ede",
+    "assets\\style_eval_src\\v85A_step0030000\\g31.png": "5d26c81326e44b2a8caf9eba00f6bc8f4e1fd578549f0c730908058635f65013",
+    "assets\\style_eval_src\\v85C_step0030000\\g31.png": "e2f145da8067ce6081e4b3352ed3bd6de6cbe76b64bf446edfd6c32d95e7051c",
+    "assets\\style_eval_src\\v85E_step0015000\\g31.png": "76cee2fdabc861a608dce6fb6514b6fa0e492a9ff962dd75e5fda62a22337669",
+    "assets\\style_eval_src\\v85E_step0030000\\g31.png": "033c37a632ab03a8512eb25b78abd810c3455fd20ec03ae9a299c1ab5799c0f3",
+    "assets\\v85_verified_control_10k\\g31.png": "a05ad8627133b3123e014defb4bb1dd2a47a4a14a2e7782baed21c021b948441",
+    "exp-std\\data\\std_fixed_eval200\\006531.png": "4e42964ed675cfba27779b371faad160eb04170160fd88805acbb7eddf87ac54",
+    "assets\\v85_verified_v84A_200k\\gt40.png": "e2d9c1d9b19f8949e9ae018fbd477d7c531a45da1e59b9c621e397c2b0a950fa",
+    "assets\\v85_verified_v84A_200k\\g40.png": "f705254f859f3fed08f9b9a09507c0b71e399519b4b6b663be465a1fb110bbad",
+    "assets\\style_eval_src\\v85A_step0030000\\g40.png": "97506dbd682b74608d474d5bce2e17bc2730bdad9c110d37d331fa4e5df2018b",
+    "assets\\style_eval_src\\v85C_step0030000\\g40.png": "ca2de65a25a77e4dac9366fad99868fafbe146ce2666b63d91132372a617e356",
+    "assets\\style_eval_src\\v85E_step0015000\\g40.png": "49bbca3005c7a135ca7ddc6f38d335a4be9047bd097f1ae04ab812fa601acd7e",
+    "assets\\style_eval_src\\v85E_step0030000\\g40.png": "8666c9e5de4d3e90a9782065944358e7056264bdcef941536415598424a393e3",
+    "assets\\v85_verified_control_10k\\g40.png": "2e7f067359460d2fb0721f36b1cf36c14a9561f567a65d6eaecc807f2da88c5e",
+    "exp-std\\data\\std_fixed_eval200\\010042.png": "44ad1da205c46f9e5077ec55d2517269e39f3fb6323b4fba65ae765d66c94e45",
+    "assets\\v85_verified_v84A_200k\\gt46.png": "5c3348dc53d5c156a5ca2a666e451e98c902074ae2e52e37e686852371a8fae4",
+    "assets\\v85_verified_v84A_200k\\g46.png": "4bd80ddad81f1a33e735180c103b6938a0abecada3e0bc9e514a1b8ac313c025",
+    "assets\\style_eval_src\\v85A_step0030000\\g46.png": "0982298f9f21230fb737a2a1c8b1c5aa219164aafbdf3c6da3e674c7a903a647",
+    "assets\\style_eval_src\\v85C_step0030000\\g46.png": "93662c6ecd5ede22bb794bff866917d73c2ae2f14fb2adb80032117969ed5a8c",
+    "assets\\style_eval_src\\v85E_step0015000\\g46.png": "c82350d8e7f49b768b3f0fc30ce3bf20edd8f3174d04ef9edff1be345ab6d3d3",
+    "assets\\style_eval_src\\v85E_step0030000\\g46.png": "5721b39bbec3b258e029deb301f2f7a3ad3e3260f1d9f75e62b508916f70807b",
+    "assets\\v85_verified_control_10k\\g46.png": "419b6033ec0c1865a7f9c8d45e26a8f44918deda7da3d2330bb72722828af9fd",
+    "exp-std\\data\\std_fixed_eval200\\016234.png": "29b320962f751ec85ee0d1871b4b1ec19ae6f67fa8227f06500bb065f5b96f53",
+    "assets\\v85_verified_v84A_200k\\gt54.png": "d7edaa3bbd21eb61c00304f1595aba2264eb21bec8b58f63a22e378faf12b0e4",
+    "assets\\v85_verified_v84A_200k\\g54.png": "9a0a1201d4c630d90838ba4a479b5c1fed6eb9ddc8f834a0b427d201830a7957",
+    "assets\\style_eval_src\\v85A_step0030000\\g54.png": "4db6aa7b096ad6bbe23ac0f71fe29579bd9dbcdcb7049f863dab11183051081b",
+    "assets\\style_eval_src\\v85C_step0030000\\g54.png": "71c55d55eb0570b92b08218cdd36253f7454ed07ef0da68a81d319c2363f0a42",
+    "assets\\style_eval_src\\v85E_step0015000\\g54.png": "72b866047fef96003bad5a36da7a67fd4a98d195988c1a284c3263f7d54d7bba",
+    "assets\\style_eval_src\\v85E_step0030000\\g54.png": "247fe5ec1a839c633f200b231e6cb327c8aa44add4f0085720a883b31b3ca774",
+    "assets\\v85_verified_control_10k\\g54.png": "a4b34b0e1ce33d623e08c65ca675503f7edc035f1bac9ab8adf79463838dfce5",
+    "exp-std\\data\\std_fixed_eval200\\010745.png": "f3e856fb2c23144870f148347512e538db0bd822016bae15742eab876df2c23d",
+    "assets\\v85_verified_v84A_200k\\gt62.png": "89366ad59e13152eeacc5c24317590bcb2ba62376fb507b8d3923bba055e8c0f",
+    "assets\\v85_verified_v84A_200k\\g62.png": "8a434659bf479f7426e64154e062c62da98f66b063b836fe083d112416e120fc",
+    "assets\\style_eval_src\\v85A_step0030000\\g62.png": "56a8b1ad9c3b370d54ce421881c7cb88bc9e49dca91529f146aa132226532821",
+    "assets\\style_eval_src\\v85C_step0030000\\g62.png": "04bb9c9dc56880613250f5fa2f0c1203bb67a7669648e3971464e5aa6d8cc723",
+    "assets\\style_eval_src\\v85E_step0015000\\g62.png": "0792aad398af0a3ea38b27acf15dfe2ef3c6bcce8958c4763e439e809529f4d1",
+    "assets\\style_eval_src\\v85E_step0030000\\g62.png": "12656f30fcd36ff9b8927351e2acbdab67883ce75c7c4c5b587755c5a24b3f42",
+    "assets\\v85_verified_control_10k\\g62.png": "bd73f2971759cda6f1ea9034e6c17ca16936634a0263d3c9c64c6ecb146fd517",
+    "exp-std\\data\\std_fixed_eval200\\005080.png": "894b26c5c744c9cff6a1e22a4186a02679583c32184f1c211da2ccc280646794",
+    "assets\\v85_verified_v84A_200k\\gt71.png": "36e93fe53b2eefe133c9fa2c3b041ee4e2f19d15307fadb43c388c2149c242cb",
+    "assets\\v85_verified_v84A_200k\\g71.png": "ac9c9d4f16c39bd256279ffcdca2aeb0b73f386053d43474495c3f5b96587f23",
+    "assets\\style_eval_src\\v85A_step0030000\\g71.png": "d98930dbe3fb107970fa4eb207caaab1e2a1dd9387aaf7e58fafc01938a0ae07",
+    "assets\\style_eval_src\\v85C_step0030000\\g71.png": "9d99c4b5fe657d6c1fa9fffc0f23c82f88d5e69ed5cbb706e73cdb66d3be9f15",
+    "assets\\style_eval_src\\v85E_step0015000\\g71.png": "7073fea34baeb9dc0708e518a0ffbd2059de1f6663db63e36c930a3beae2b465",
+    "assets\\style_eval_src\\v85E_step0030000\\g71.png": "5959ea5ebd71f1cbcade63640630e3eb9bfb64690dad1cf7a6fa2dbe7c790f88",
+    "assets\\v85_verified_control_10k\\g71.png": "1061cc2a03ecc58321cca78588971d42c57b48e85a9ba09e478a69cad4ba7fee",
+    "exp-std\\data\\std_fixed_eval200\\017513.png": "296d861b4d7b6d7e2aa70bc4da810ff4a98aaa1dbd7a7ae3fdba8dcb346168c2",
+    "assets\\v85_verified_v84A_200k\\gt80.png": "677ab1033ce725929bbdbe3d84d05b7c5d2c853289468193037975124b15c22c",
+    "assets\\v85_verified_v84A_200k\\g80.png": "dfa252609bb44d649ad88e0d3d78b214241e1a8e70a9e340cf571fca878e02e7",
+    "assets\\style_eval_src\\v85A_step0030000\\g80.png": "d3cd05d77a0517972e29208105f846c7d67d06278afce559d7611bd4a8be4b10",
+    "assets\\style_eval_src\\v85C_step0030000\\g80.png": "88145c9ccf99a29ad6f1c887e920af916c5ed4294a79d733babe7b5ffeab0f0b",
+    "assets\\style_eval_src\\v85E_step0015000\\g80.png": "c9c04f3913a5bef0579b1b741778dafe924d20559ec247a6fe195d1845bb4996",
+    "assets\\style_eval_src\\v85E_step0030000\\g80.png": "b44c9707af8d0ad854cf70228bee0f3d64746653c932128988497d8d484fff23",
+    "assets\\v85_verified_control_10k\\g80.png": "b1c6c30b3a188ea8c086112d295b3af778fcf14095db1e6924a5c046cb0f8bf7",
+    "exp-std\\data\\std_fixed_eval200\\017687.png": "0211c842a5aa02788e35c40be474c38169c96459ec0fa7897b4e4b90a9c45de4",
+    "assets\\v85_verified_v84A_200k\\gt88.png": "f976ceabb3b6d4f0bb8521940d6fe26dfddce8fff0f3a4716744358a70883aa7",
+    "assets\\v85_verified_v84A_200k\\g88.png": "cc499064baa9c21018f15d54d82d917091ec85dda73aff147e2c74d586ba9f76",
+    "assets\\style_eval_src\\v85A_step0030000\\g88.png": "b71c150ab0c0f6757e33e307bc9fc79bf624fe923836e46919f5e946753c9294",
+    "assets\\style_eval_src\\v85C_step0030000\\g88.png": "afda1fb943837aea1bf69be2f18b9458c9f2eaf5b800e3e6635f1f432305e22c",
+    "assets\\style_eval_src\\v85E_step0015000\\g88.png": "d6cc3a6fda555cea151db652a95337873671f1f50c5a3a7b41e210f7c3a65fca",
+    "assets\\style_eval_src\\v85E_step0030000\\g88.png": "82c6fb949de3212aac971a2edf9008ed21912809f433d3cf9bbf15bc11b893e0",
+    "assets\\v85_verified_control_10k\\g88.png": "f6135fe2b4e785b39ab784e5a4d3f76768db2e750b32c145bb509b5ede9be871",
+    "exp-std\\data\\std_fixed_eval200\\003239.png": "cbb63b4d8552524e247c9ed222d2ea5229a047cc98f9b476054c9fb5bb8deb5a",
+    "assets\\v85_verified_v84A_200k\\gt97.png": "85c6200d8ebe499320865b2d48fc0b74dcccd17e3c5c68b7db206166bae0cd6b",
+    "assets\\v85_verified_v84A_200k\\g97.png": "b60bb65115fdf06c4999f81e855da76b817c86c1ed6a58a7449a427caa4d43cd",
+    "assets\\style_eval_src\\v85A_step0030000\\g97.png": "00ac18236ef02f6b23acfb22ae534f5a984f0ec7d1db8c4fd5ed68878534c68d",
+    "assets\\style_eval_src\\v85C_step0030000\\g97.png": "7bf893cc258193d64d08116d8667d394f74c37a1129c04b15548d984e6b7012f",
+    "assets\\style_eval_src\\v85E_step0015000\\g97.png": "d6bc615ba70bc5a1c03bd148fe47737b95f61d51a04cb151247c654bfa09f4ac",
+    "assets\\style_eval_src\\v85E_step0030000\\g97.png": "0c28dfe538d1bc16f2ca03013d5febc9c9482ed8abb742de54e3412c9fb82505",
+    "assets\\v85_verified_control_10k\\g97.png": "4ce27dc1414a6f575a9b95661c9703acdc2c17f0bbfdb5daa2c514e16f192aa5",
+    "exp-std\\data\\std_fixed_eval200\\018038.png": "b4fb0630944be6c5019aff3d7dd23123ea3cea89f89dcc1225a4843528adfe76",
+    "assets\\v85_verified_v84A_200k\\gt103.png": "d8f77e4d2e4377262a7c93093cfde6c2b54aca95d5749e0471faeeef7b409c51",
+    "assets\\v85_verified_v84A_200k\\g103.png": "720aed19bc31cf89ff10a3adf9c0fcdbbe33eb61b9e8b8dbe61eab9edd6d6f3c",
+    "assets\\style_eval_src\\v85A_step0030000\\g103.png": "47d49e0a22e69821d87df9815abbb27d09d9ae22305095c81d116d6223c5ddb2",
+    "assets\\style_eval_src\\v85C_step0030000\\g103.png": "926fb6a24b1412fc871a755d8f954db882c0ac2f23a48b3fd5b5fa8a1c557b4e",
+    "assets\\style_eval_src\\v85E_step0015000\\g103.png": "a9f673c8cb13c05f896c397456a4aee10e017323d5d9652f71dbc08810da53b3",
+    "assets\\style_eval_src\\v85E_step0030000\\g103.png": "f81efc0e00f7310d29c3124dd8d5317a6b43a7b2ad5f278dd6bd32afe830ab3e",
+    "assets\\v85_verified_control_10k\\g103.png": "5e63596ef027e4c897e54677c5d25d0509b9f968dcaef4eb4ab5beac26080278",
+    "exp-std\\data\\std_fixed_eval200\\010899.png": "b0165e1dc74a86cde5a43aaea52aa4921451edaab7b893052b1611fcc9a33686",
+    "assets\\v85_verified_v84A_200k\\gt111.png": "60040a420cb32b75b33108fdfb2426a5cc16b82c8e92a91ed5ce91a518a04b3d",
+    "assets\\v85_verified_v84A_200k\\g111.png": "ae60d7a58aa926967114655029bfbdf6df4222f01e52fdffa8e0c25915288204",
+    "assets\\style_eval_src\\v85A_step0030000\\g111.png": "867a816faeccd190229961bb417094241fd1e819d76c1137468052343df52d2a",
+    "assets\\style_eval_src\\v85C_step0030000\\g111.png": "51ea54650fa0d7e47c52ff79346f5748cdc3878664199998b5ae39ff547d4fa3",
+    "assets\\style_eval_src\\v85E_step0015000\\g111.png": "e6b6279a04293da5694ea85798d390900c104377344403ae92585332e714c17b",
+    "assets\\style_eval_src\\v85E_step0030000\\g111.png": "40276c83e4199c765538938dd9c65619c59ca05406bcc4266b1c48558ebcf1d8",
+    "assets\\v85_verified_control_10k\\g111.png": "266bdc9d08293c7bade6a08755a099671f3f62b0bc5be9633788d1f3d1ebe2f3",
+    "exp-std\\data\\std_fixed_eval200\\018783.png": "e27b0ff48a35bafc92f2556a590402ddd7b0478e74b3f3def1da6609e5251c50",
+    "assets\\v85_verified_v84A_200k\\gt120.png": "e231df50ed662e27fe66723f0992b19345ed36b84ec7ae964d6016ac3335ee32",
+    "assets\\v85_verified_v84A_200k\\g120.png": "2cd9092e7c9e7ab029a653c9a96536586c88124ebe936e16c5abf27342f86da3",
+    "assets\\style_eval_src\\v85A_step0030000\\g120.png": "8a30ff76378579460d5b9ce0b3fd251c04e18ebaf3cc38c49eafb9dc2cf7dd20",
+    "assets\\style_eval_src\\v85C_step0030000\\g120.png": "4759f79c962bc4515b72f9df82cfa7874d4856b77e1ab5c3ccac166126827a0d",
+    "assets\\style_eval_src\\v85E_step0015000\\g120.png": "85068c46a11b58d0050509758b475fdb325a7bd57ecf83c3e30677db72bbf6e3",
+    "assets\\style_eval_src\\v85E_step0030000\\g120.png": "6888ed99f7af4d11f9e4e1ecb68913d03ad14ae8d6e9371c37c533505e70e9e4",
+    "assets\\v85_verified_control_10k\\g120.png": "d47d1957bf799d743e330ee6fbdf050a255ca9445fdb96557086f2d2f82edfa6",
+    "exp-std\\data\\std_fixed_eval200\\019144.png": "55f24404ae9d3ede2b0a54ee9e3122200c5c36c2824e33757de1e13f711426fb",
+    "assets\\v85_verified_v84A_200k\\gt128.png": "b66e96eedc3d90242e44f0dfacceb1704ad112de3267ebeff005e4ebcccd2a73",
+    "assets\\v85_verified_v84A_200k\\g128.png": "fad58e712f0e95b8616bf65c7ce09935f1b523151a97d15507c597eb49c56218",
+    "assets\\style_eval_src\\v85A_step0030000\\g128.png": "e3611b3b164aa1226390bc9d5eb87fac1647469a73d5dad978ac6737df8cf396",
+    "assets\\style_eval_src\\v85C_step0030000\\g128.png": "00797035f12e1a64cc7e9934ea9fba6f01797668db8b37da20026cdfb3990a6d",
+    "assets\\style_eval_src\\v85E_step0015000\\g128.png": "ad8a35e4371488085d8c1fc085c2f391222753083930f814d4eec39b5b1d20bd",
+    "assets\\style_eval_src\\v85E_step0030000\\g128.png": "16c9f87d16b3dd213b48230a8c95daff7f990378ab63697016126715f2d88aab",
+    "assets\\v85_verified_control_10k\\g128.png": "dfaf47bfe4fc4069c8d674f03eaaae8a32cfc9ee549d48e9001be66047149d01",
+    "exp-std\\data\\std_fixed_eval200\\003932.png": "713a08e6377da92b0313f9781e183c5ba9fc40fd4dd2c6c6d0a193650fd95ab5",
+    "assets\\v85_verified_v84A_200k\\gt137.png": "03169a60268a56c0f3a0706f6e652de48ee98ce38739013cf28e1b2ada5d7336",
+    "assets\\v85_verified_v84A_200k\\g137.png": "73f5f9a08705b4c1d581b1e0b26eba4d565ab337f016e2b5778b7323e442dfc7",
+    "assets\\style_eval_src\\v85A_step0030000\\g137.png": "78514f48ccf8873532993f5ac5fa09b6c9d672c999d5eb72de38d6b2aee0529b",
+    "assets\\style_eval_src\\v85C_step0030000\\g137.png": "139741d16ed345395bf3a90209c62b1f4bfe69ca09c06e2a547a14a450921957",
+    "assets\\style_eval_src\\v85E_step0015000\\g137.png": "ef49613b5859adc6a5ab5c261f3d91bbe5924940e015e953abd3112f9fdd4bf7",
+    "assets\\style_eval_src\\v85E_step0030000\\g137.png": "be1142d86832cbba7445f93c2f7b4e2d51be8678e501fddd7cbeb9394e806c61",
+    "assets\\v85_verified_control_10k\\g137.png": "4ee9325a9dd132b1ebc95385343175753e0df92bd9bffe91762086ca9126fb91",
+    "exp-std\\data\\std_fixed_eval200\\019998.png": "b101c522c60dea5fc087a21cf1551b1f26cbbb6c996441634161ba7da74c60ed",
+    "assets\\v85_verified_v84A_200k\\gt146.png": "ce6e9e73b8fe296a263a77e0a659134c2a3acfcf3170f3688319492f842b4443",
+    "assets\\v85_verified_v84A_200k\\g146.png": "d185e72c2a991bff33ea6cc9dc1044e672ca6432493aa63a42c8656b387d0834",
+    "assets\\style_eval_src\\v85A_step0030000\\g146.png": "0a46dfda2925cef41f3b07f82ff823a408d67b5321aa604e08acd03dd7757e52",
+    "assets\\style_eval_src\\v85C_step0030000\\g146.png": "8bdfe909b9ca203a109b86956f1f56ec189cda50439a93d205a52c80ddc793b3",
+    "assets\\style_eval_src\\v85E_step0015000\\g146.png": "944b34c3f497ff2fa76cfd666c80c80098162145a098c33856a00f2fbde5733f",
+    "assets\\style_eval_src\\v85E_step0030000\\g146.png": "0b789ed8c9c75e06a36a54bd94bf45fe55451e46403fbb5b11131e931c996773",
+    "assets\\v85_verified_control_10k\\g146.png": "f72c288e6b137f96461ebb77f3b3ceb53a9700f1a6c2551f859455c0c71df55d",
+    "exp-std\\data\\std_fixed_eval200\\014290.png": "26e2703c6fd20b6a9173549bcc9f67c8886c375dde1bd2fc7b693f76961ebb07",
+    "assets\\v85_verified_v84A_200k\\gt155.png": "29cfe2a7745fb294a1a22ba0669a6ef56321b80252438437936e32d0b4ef9da6",
+    "assets\\v85_verified_v84A_200k\\g155.png": "12e25749ffb2519e9c721e881e1c3e792101adb381c5c9d4f80d3d435880400c",
+    "assets\\style_eval_src\\v85A_step0030000\\g155.png": "04047848ce8f366facc396a03b987c2a50fd7fabe915461fb78ec6f9caf93d34",
+    "assets\\style_eval_src\\v85C_step0030000\\g155.png": "7c38348e6fa36fa30d6b4f0f52c7f3d21e2fa6dcc19b83d298f98cae8ac34779",
+    "assets\\style_eval_src\\v85E_step0015000\\g155.png": "e4c7352af114aba6e5ecd550c11f3d6e8d59d93964a3da4907090d6485b9ac2f",
+    "assets\\style_eval_src\\v85E_step0030000\\g155.png": "4555c50d7ab42d812cfd842089a26c1ff3978b4ff69eb0492503a9ff392cb7d5",
+    "assets\\v85_verified_control_10k\\g155.png": "78a029b1f9be0cca5f13b7ed3301067b587987bd64eb08d9086a87a6db7d64bd",
+    "exp-std\\data\\std_fixed_eval200\\037234.png": "3bad2fb9369450c733be1beaed894254096d71b307ea67708bf4bfb0897d6b69",
+    "assets\\v85_verified_v84A_200k\\gt163.png": "5b06ea29f39543bc915e3d95031df30836acf3dcceab8a6451527139a65e8677",
+    "assets\\v85_verified_v84A_200k\\g163.png": "84933adf39b5dc2298c9ff44048b8d9a044fb894970179e5ede108396788bebd",
+    "assets\\style_eval_src\\v85A_step0030000\\g163.png": "0b9891787f9fccf1cfe23d716d1e1b6bc8936f89760bb6f3eab350a5d84011a1",
+    "assets\\style_eval_src\\v85C_step0030000\\g163.png": "57814de912c467293f0826afe9bd89375c90faf7800b1a9e106aebd3ddb78fc3",
+    "assets\\style_eval_src\\v85E_step0015000\\g163.png": "13e847d03c42d56c27e7aef1ea9925a6a6f74a62f72dd5be15e513d6d70c7210",
+    "assets\\style_eval_src\\v85E_step0030000\\g163.png": "d66bc12057e0d22af663f3d033bc98f4ec2963780723fed0f68e5dbccfdb745a",
+    "assets\\v85_verified_control_10k\\g163.png": "4be529d2f1bee97ddcc1e6b38f037478bee4c28f3b84450f436fc1ab2ed18998",
+    "exp-std\\data\\std_fixed_eval200\\020672.png": "b4cd9afc4c3956a15edb7114e2cbed019238bab1580c3f7d0ab57eaf3e2dff60",
+    "assets\\v85_verified_v84A_200k\\gt172.png": "8b8f05063b29ca335a95b25b35760894075121c14ad6d72e21e904ffa97d40ce",
+    "assets\\v85_verified_v84A_200k\\g172.png": "016b49a87f93d1a1ced1409955abff2b808834302061de52e1a66761e9046eb2",
+    "assets\\style_eval_src\\v85A_step0030000\\g172.png": "9c50564edf5328dfe82cdad024d3cd2819da5513d9ae1aa44af806f16c6a7a2b",
+    "assets\\style_eval_src\\v85C_step0030000\\g172.png": "21755aceefaaa2513c0eca842d295b03a9ef9e289141b0c8e60389aae0381c80",
+    "assets\\style_eval_src\\v85E_step0015000\\g172.png": "4d2537f4f77ff030ad20a87392473772c2da328e52ea6f3a30b3a6bf103d942e",
+    "assets\\style_eval_src\\v85E_step0030000\\g172.png": "26662973f759f57cb35bae7d9c0c6d9465126ac30815a3ccf6cc741f9c781f64",
+    "assets\\v85_verified_control_10k\\g172.png": "dc67ec3771dfe2168ff902e25ac04212560a881f235f4b5ba5d6d74e866807cf",
+    "exp-std\\data\\std_fixed_eval200\\004219.png": "86db2e895347950ea4c657659eaf3bf41e1abb36ce3e374713cfa7d20aaf7da2",
+    "assets\\v85_verified_v84A_200k\\gt179.png": "c166ef713efed16f3163e010f0c45fe5873b618f0e118e939692cdce904b1b81",
+    "assets\\v85_verified_v84A_200k\\g179.png": "4e04c98dbd67571b137f7fde7cbef855e9fbade440f85892c3e8b7180f01f139",
+    "assets\\style_eval_src\\v85A_step0030000\\g179.png": "af3fe40c38200065dc5c1b4c4415ff820c34809e9d53bbfd5ab5ae8d6cde29f5",
+    "assets\\style_eval_src\\v85C_step0030000\\g179.png": "6c32535096a2acc8903e3da7a342303fe7b0ed815cf5b511eb117ea8e760bc4c",
+    "assets\\style_eval_src\\v85E_step0015000\\g179.png": "c2ba1a7063f6436f35d761625eafd06b0b61926a7d8f833c6160e43f7c74a871",
+    "assets\\style_eval_src\\v85E_step0030000\\g179.png": "814323630cc8afbd39d171a693e15fa4fd5c209b229cd69a46bcd823101b77d1",
+    "assets\\v85_verified_control_10k\\g179.png": "de74e0b9976de042f2eef98713de82eac61e76fc47c3d8ee84a737996e001318",
+    "exp-std\\data\\std_fixed_eval200\\010500.png": "0b5cb16e2857254c38d4eb7e05d6b0ba019aab563f5634961877302fead14504",
+    "assets\\v85_verified_v84A_200k\\gt94.png": "c17d16d0c55dc095a3634c12b809bc52755ef1ec25dba1af6179a7b332da45b0",
+    "assets\\v85_verified_v84A_200k\\g94.png": "2907cd2dfbd734c1f785d06c6610102614d1d68b0a97e522e84956a0cfd9756e",
+    "assets\\style_eval_src\\v85A_step0030000\\g94.png": "a9f71ca69aa7b13283b4297aa724106060af1acc1738a8dc91f03065e97cee84",
+    "assets\\style_eval_src\\v85C_step0030000\\g94.png": "d9ee2afd479a9641eed03ead4a034b5558885d74f10a34225772d024c490a458",
+    "assets\\style_eval_src\\v85E_step0015000\\g94.png": "f2de7821607b54ac1a27c7a62bce58c0d471ceda86c4889f3044a5f7f091d139",
+    "assets\\style_eval_src\\v85E_step0030000\\g94.png": "92661183650fa4a0364d8b986d9873d0800b70452e2f164569d04f00f1a7964c",
+    "assets\\v85_verified_control_10k\\g94.png": "bc6e25347c5fff4d14c7bddfad4bf7dca62095894f85282d571e8814c86cdbfb",
+    "exp-std\\data\\std_fixed_eval200\\006316.png": "696d526277aacb8991040e4088cf53b7301d79f86af0ac7357f0cf136e071ae6",
+    "assets\\v85_verified_v84A_200k\\gt123.png": "78bd4766752fab7b0816d320be674a1bf612440ee48a274b24f95d2b1cd698e6",
+    "assets\\v85_verified_v84A_200k\\g123.png": "6f2abbee2bb633344d685a535b5ca5343a107dce3c464ab6689246c662f16486",
+    "assets\\style_eval_src\\v85A_step0030000\\g123.png": "a0dff4af887b7e51352f36d4ef3f0d5bf8d71b6a6c41fc42641bf31a75073a22",
+    "assets\\style_eval_src\\v85C_step0030000\\g123.png": "86709fa3bbbfc17ed1d8a4d639b4a99e90ab820387db1e232efa2f25cccb8bca",
+    "assets\\style_eval_src\\v85E_step0015000\\g123.png": "5825ec154be5054663ed95cfbcb134d443ebf7ac734c11a0a1c56d26767e9687",
+    "assets\\style_eval_src\\v85E_step0030000\\g123.png": "a44e8d8fbbdb1a399cfa853a0dc5d19c8341c0ff257b2f30a539379ec1cab6b1",
+    "assets\\v85_verified_control_10k\\g123.png": "0f31040ce2d281c65ca03e0549ae381d3d95d84e5ed306401697410880f448fa",
+    "exp-std\\data\\std_fixed_eval200\\001515.png": "69e163a3c797e56d33a3c6ba2df8ad7ade8496d081b1629236a3682e5910e5b4",
+    "assets\\v85_verified_v84A_200k\\gt42.png": "b0f0e58b2f1d78b5f98a636a9bf8ca8713dbdffe2aad4d5d04847a393210adae",
+    "assets\\v85_verified_v84A_200k\\g42.png": "e757016ad5b9f21d7b9fa0922a9ff1ab372f996ffa11bf9dfa9df573e8f660fe",
+    "assets\\style_eval_src\\v85A_step0030000\\g42.png": "1c7734fe91a6d1d724578d2ca0640cea48c33cb94915b7a3c55ba4edf42c5c28",
+    "assets\\style_eval_src\\v85C_step0030000\\g42.png": "79acfad23f527fb7921bdd52082a07876ad111e762cb1938f8cfa879a9df3bbb",
+    "assets\\style_eval_src\\v85E_step0015000\\g42.png": "b6f956666155b5fa9d95730069f3b7aa9cbfef127f6837f136494086329b7a34",
+    "assets\\style_eval_src\\v85E_step0030000\\g42.png": "3edd203ebc5ad6da11352afc949ddb2a17a75dd0be6629d3da6eb5b66bccf19e",
+    "assets\\v85_verified_control_10k\\g42.png": "c743158bea09887f15d65cf28229700df445ae91f963e9d887f6c422d8e1d35f",
+    "exp-std\\data\\std_fixed_eval200\\002922.png": "99f55639ab9c2745e217a1b246ab578954913c2c4de740a2c3f4c572f25ae080",
+    "assets\\v85_verified_v84A_200k\\gt96.png": "348639a1ec3b50584f7bdc7e2396a79041555c4db6b57aa4dd96248ee08646b7",
+    "assets\\v85_verified_v84A_200k\\g96.png": "531314f7b34726fbe73044805b44eacded1abb75288d3da9ef57a67e9736208b",
+    "assets\\style_eval_src\\v85A_step0030000\\g96.png": "53510affa4f0b75716b866d01659b934d04558078b005ea3fd86c82cd2bf9fd1",
+    "assets\\style_eval_src\\v85C_step0030000\\g96.png": "009d469d7c82d0cc3bffa8e5e19bd2fbc32f915ce046a186dca99e1d63184a4d",
+    "assets\\style_eval_src\\v85E_step0015000\\g96.png": "e271a5add99dc969334d565ca924c25494384b1c875f9e5fca969d5acaf68069",
+    "assets\\style_eval_src\\v85E_step0030000\\g96.png": "a3cd6b3d6a7ab3d8e6f5eb34f49e17d9a36e484717ab3ea4a17c7dcc187c31d6",
+    "assets\\v85_verified_control_10k\\g96.png": "d0eb4be653aa455574dc26d33c957c0b76c52c86118a10107764e4d22da00081",
+    "exp-std\\data\\std_fixed_eval200\\009252.png": "2211002ad03288e9ff6bbaf45ec390987176bb195765ad173dd0a3a5d17e341c",
+    "assets\\v85_verified_v84A_200k\\gt92.png": "b0c2c5bfa59939d1d3fc088c52f58acf63c5b5a44bfea5a0cce07cd244cd984f",
+    "assets\\v85_verified_v84A_200k\\g92.png": "f7b7de23b08cc4bc6772b109875942af74fd7bdf8f345077551c053f0bcfdfd6",
+    "assets\\style_eval_src\\v85A_step0030000\\g92.png": "c5fe54efe6e7bada8fd1e1c70fa3dba305fcda2f187d7930c2d6299e119b3c71",
+    "assets\\style_eval_src\\v85C_step0030000\\g92.png": "e25d74cb585eed4284c9082616f71bbefb9e1dbe58bcb843ff483e57c2676aa8",
+    "assets\\style_eval_src\\v85E_step0015000\\g92.png": "ce1492822f3bcf3d7f4f4a823834476524a25e3978fed6e21032d610734c75c8",
+    "assets\\style_eval_src\\v85E_step0030000\\g92.png": "ff7f2523d254eeea829265aafea390471ccd85e759048be17ae63d571a3ed251",
+    "assets\\v85_verified_control_10k\\g92.png": "386a8ee007df3a968fb1f8412297d9d9fbf6176d2f7e53162a960be2856e2d29",
+    "exp-std\\data\\std_fixed_eval200\\004949.png": "829a66ce745123bb6cc3c85a805d15c4088231cd61194cc9606655eb1cb30c94",
+    "assets\\v85_verified_v84A_200k\\gt17.png": "3d02e2e2586749e01806de4a22af2aa67b32b1b29537f4bcf14d4243b8df3251",
+    "assets\\v85_verified_v84A_200k\\g17.png": "4192bf40f9a405fe360d6d2c229553c60121f0704230b05ec726c175d0203d07",
+    "assets\\style_eval_src\\v85A_step0030000\\g17.png": "a5e25c8c5efe3280763e730da02c09334739ae6e5f499ef814df0032f8b36088",
+    "assets\\style_eval_src\\v85C_step0030000\\g17.png": "5699c3c89296f6c5b56ff44881844947f7b49a3e08686ce66412d56cffad85a2",
+    "assets\\style_eval_src\\v85E_step0015000\\g17.png": "9de09a7df8e9895c16dbef569c2013cf3ce6f4101b1cbf8a698e2c8c56f13de5",
+    "assets\\style_eval_src\\v85E_step0030000\\g17.png": "ffcfeb7e164e91d8ab8818da467032a3da19b3af4f7aadafcc268db71b2ecf12",
+    "assets\\v85_verified_control_10k\\g17.png": "fee221d3bd19ddd9add2a1ba85767b1f32227344fa3ae3f7e5193489a94daec3",
+    "exp-std\\data\\std_fixed_eval200\\000158.png": "69efb2a71a6d34eb3614a0bb9468e7e1145dad98e01b4ef1288eff77435bd058",
+    "assets\\v85_verified_v84A_200k\\gt95.png": "0a7d2fed84617d769996fdfdff2a730f9d069dac69c8bd7520caeff34e425e85",
+    "assets\\v85_verified_v84A_200k\\g95.png": "f3b5c3cac1921b90c4a5d224698829d351bf412d9037e5234780262bf224fa2a",
+    "assets\\style_eval_src\\v85A_step0030000\\g95.png": "484769db64b9a5c24579437e832d6d8a11ef16da956010e8d0139bdb7ca585fd",
+    "assets\\style_eval_src\\v85C_step0030000\\g95.png": "08a4401f707c25d1df73c3cb5f38350b12b628eed00b8569c0c650ae30642bed",
+    "assets\\style_eval_src\\v85E_step0015000\\g95.png": "a1bdcebb6ffb4a1237df62b0bcb85bfc904660f34898b186e5f3901a074af5b8",
+    "assets\\style_eval_src\\v85E_step0030000\\g95.png": "ffea9480720b2b677402ebd87755e9a14f2e79ac8c8a0b246b0f13e62537d580",
+    "assets\\v85_verified_control_10k\\g95.png": "9b49dd618de2ab901b40c8a9c27a27cc50fdb48626af6fee84a3c58b54fd0ade",
+    "exp-std\\data\\std_fixed_eval200\\021842.png": "afc686178600c6c11d52933eba7d3ecb7bd07da0d3db84be2523436508d623a1",
+    "assets\\v85_verified_v84A_200k\\gt186.png": "64e460b86415ac5c3d76a1605e25b6c2eef809f4cdbd02ec9cfae8c9c7f03c29",
+    "assets\\v85_verified_v84A_200k\\g186.png": "7475381cd5d967ef7468366c5e23668f0b124d15f2fb41b172d35f0b8796827d",
+    "assets\\style_eval_src\\v85A_step0030000\\g186.png": "e3f306461c5c6d6452df8039b84b617815acae733df1b38ed235293107a675f2",
+    "assets\\style_eval_src\\v85C_step0030000\\g186.png": "870b6a02a3000668a3dd6af58f0e917f2274e7a8abc087710f6d1167b6e57202",
+    "assets\\style_eval_src\\v85E_step0015000\\g186.png": "e33b2daf26cde803b1b9efc02b18300685c59614258d94a49eba18fa68fcd325",
+    "assets\\style_eval_src\\v85E_step0030000\\g186.png": "8952077baecc37f0f211304716c0a4df14d1431d8b6a96ffed13d1ef2cd7972c",
+    "assets\\v85_verified_control_10k\\g186.png": "ea1140433996ca107c7371e85d2a57b508311764de65ab5981178fbc7fc2599a",
+    "exp-std\\data\\std_fixed_eval200\\010962.png": "fc14d0d1629d9d232c67e70c010c00be70d503d6501446f8aadc64edb90bf67a",
+    "assets\\v85_verified_v84A_200k\\gt93.png": "9985e5bb08d27fb0ef89a59acee7377d173d6341a15e6477036a3ea5ab45baa7",
+    "assets\\v85_verified_v84A_200k\\g93.png": "83b703d55a29c68a268a655ce8c4b23525abf2c35f833957fd8bc9b84fd4f232",
+    "assets\\style_eval_src\\v85A_step0030000\\g93.png": "7e6a4f683e7a611a0f6aa44d2103abd1548103eb1e48523a1e64b758d71ef281",
+    "assets\\style_eval_src\\v85C_step0030000\\g93.png": "5ac8c5a202b9255067a899f11f50d4d6d65ac7ec626c193a3f836a56e5103b50",
+    "assets\\style_eval_src\\v85E_step0015000\\g93.png": "cf976aabc28e4371764a28cf6a60ae71dd253ebda90ff44e4019b8a556bb7a1a",
+    "assets\\style_eval_src\\v85E_step0030000\\g93.png": "0b9c1a2a485361de19a661f404bc4d742b4370750fd846b44f54817778f05e18",
+    "assets\\v85_verified_control_10k\\g93.png": "f31f632e4b6c3834f808f774836a087248f24819cc7b33cac2f9d14361366330"
+  },
+  "per_image": [
+    {
+      "idx": 0,
+      "model": "STD 原字形",
+      "p10": 8.0,
+      "p50": 12.649110794067383,
+      "p90": 17.92198085784912,
+      "ink": 0.0821990966796875
+    },
+    {
+      "idx": 0,
+      "model": "GT 真迹",
+      "p10": 2.8284270763397217,
+      "p50": 18.439088821411133,
+      "p90": 26.68332862854004,
+      "ink": 0.1612396240234375
+    },
+    {
+      "idx": 0,
+      "model": "v84A 200k",
+      "p10": 10.198039054870605,
+      "p50": 15.231546401977539,
+      "p90": 20.880613327026367,
+      "ink": 0.109130859375
+    },
+    {
+      "idx": 0,
+      "model": "v85A 30k",
+      "p10": 10.198039054870605,
+      "p50": 14.560219764709473,
+      "p90": 20.39607810974121,
+      "ink": 0.108154296875
+    },
+    {
+      "idx": 0,
+      "model": "v85C 30k",
+      "p10": 10.0,
+      "p50": 14.142135620117188,
+      "p90": 20.0,
+      "ink": 0.104766845703125
+    },
+    {
+      "idx": 0,
+      "model": "v85E 15k",
+      "p10": 10.0,
+      "p50": 14.142135620117188,
+      "p90": 20.39607810974121,
+      "ink": 0.1068267822265625
+    },
+    {
+      "idx": 0,
+      "model": "v85E 30k",
+      "p10": 10.0,
+      "p50": 14.142135620117188,
+      "p90": 20.0,
+      "ink": 0.106475830078125
+    },
+    {
+      "idx": 0,
+      "model": "Control 10k",
+      "p10": 10.198039054870605,
+      "p50": 15.231546401977539,
+      "p90": 20.099750518798828,
+      "ink": 0.10986328125
+    },
+    {
+      "idx": 8,
+      "model": "STD 原字形",
+      "p10": 7.033793067932133,
+      "p50": 10.0,
+      "p90": 14.142135620117188,
+      "ink": 0.1045684814453125
+    },
+    {
+      "idx": 8,
+      "model": "GT 真迹",
+      "p10": 8.9442720413208,
+      "p50": 12.649110794067383,
+      "p90": 18.439088821411133,
+      "ink": 0.1253509521484375
+    },
+    {
+      "idx": 8,
+      "model": "v84A 200k",
+      "p10": 8.0,
+      "p50": 15.231546401977539,
+      "p90": 21.260292053222656,
+      "ink": 0.1995391845703125
+    },
+    {
+      "idx": 8,
+      "model": "v85A 30k",
+      "p10": 8.246211051940918,
+      "p50": 15.231546401977539,
+      "p90": 20.39607810974121,
+      "ink": 0.2060699462890625
+    },
+    {
+      "idx": 8,
+      "model": "v85C 30k",
+      "p10": 8.0,
+      "p50": 16.0,
+      "p90": 24.083189010620117,
+      "ink": 0.2332305908203125
+    },
+    {
+      "idx": 8,
+      "model": "v85E 15k",
+      "p10": 5.656854152679443,
+      "p50": 14.142135620117188,
+      "p90": 22.803508758544922,
+      "ink": 0.21282958984375
+    },
+    {
+      "idx": 8,
+      "model": "v85E 30k",
+      "p10": 6.0,
+      "p50": 14.142135620117188,
+      "p90": 24.331050872802734,
+      "ink": 0.2298736572265625
+    },
+    {
+      "idx": 8,
+      "model": "Control 10k",
+      "p10": 6.2596443176269565,
+      "p50": 14.560219764709473,
+      "p90": 22.0,
+      "ink": 0.2080230712890625
+    },
+    {
+      "idx": 15,
+      "model": "STD 原字形",
+      "p10": 4.0,
+      "p50": 4.0,
+      "p90": 4.0,
+      "ink": 0.0587310791015625
+    },
+    {
+      "idx": 15,
+      "model": "GT 真迹",
+      "p10": 10.198039054870605,
+      "p50": 14.0,
+      "p90": 19.697715759277344,
+      "ink": 0.3516693115234375
+    },
+    {
+      "idx": 15,
+      "model": "v84A 200k",
+      "p10": 2.0,
+      "p50": 4.0,
+      "p90": 12.0,
+      "ink": 0.0543060302734375
+    },
+    {
+      "idx": 15,
+      "model": "v85A 30k",
+      "p10": 2.0,
+      "p50": 4.0,
+      "p90": 11.661903381347656,
+      "ink": 0.05889892578125
+    },
+    {
+      "idx": 15,
+      "model": "v85C 30k",
+      "p10": 2.0,
+      "p50": 5.656854152679443,
+      "p90": 12.0,
+      "ink": 0.06109619140625
+    },
+    {
+      "idx": 15,
+      "model": "v85E 15k",
+      "p10": 2.0,
+      "p50": 4.4721360206604,
+      "p90": 11.313708305358887,
+      "ink": 0.080230712890625
+    },
+    {
+      "idx": 15,
+      "model": "v85E 30k",
+      "p10": 2.0,
+      "p50": 6.0,
+      "p90": 11.313708305358887,
+      "ink": 0.0723114013671875
+    },
+    {
+      "idx": 15,
+      "model": "Control 10k",
+      "p10": 2.0,
+      "p50": 4.0,
+      "p90": 12.0,
+      "ink": 0.0595550537109375
+    },
+    {
+      "idx": 23,
+      "model": "STD 原字形",
+      "p10": 5.656854152679443,
+      "p50": 8.0,
+      "p90": 12.0,
+      "ink": 0.1487274169921875
+    },
+    {
+      "idx": 23,
+      "model": "GT 真迹",
+      "p10": 4.0,
+      "p50": 7.211102485656738,
+      "p90": 12.0,
+      "ink": 0.162384033203125
+    },
+    {
+      "idx": 23,
+      "model": "v84A 200k",
+      "p10": 4.0,
+      "p50": 10.770329475402832,
+      "p90": 16.0,
+      "ink": 0.2745819091796875
+    },
+    {
+      "idx": 23,
+      "model": "v85A 30k",
+      "p10": 4.4721360206604,
+      "p50": 10.198039054870605,
+      "p90": 16.0,
+      "ink": 0.267333984375
+    },
+    {
+      "idx": 23,
+      "model": "v85C 30k",
+      "p10": 4.4721360206604,
+      "p50": 11.661903381347656,
+      "p90": 16.0,
+      "ink": 0.2727203369140625
+    },
+    {
+      "idx": 23,
+      "model": "v85E 15k",
+      "p10": 4.4721360206604,
+      "p50": 11.661903381347656,
+      "p90": 16.0,
+      "ink": 0.2735595703125
+    },
+    {
+      "idx": 23,
+      "model": "v85E 30k",
+      "p10": 4.4721360206604,
+      "p50": 11.661903381347656,
+      "p90": 16.012451553344743,
+      "ink": 0.2751007080078125
+    },
+    {
+      "idx": 23,
+      "model": "Control 10k",
+      "p10": 4.0,
+      "p50": 10.198039054870605,
+      "p90": 16.0,
+      "ink": 0.27008056640625
+    },
+    {
+      "idx": 31,
+      "model": "STD 原字形",
+      "p10": 4.0,
+      "p50": 4.0,
+      "p90": 4.4721360206604,
+      "ink": 0.0604248046875
+    },
+    {
+      "idx": 31,
+      "model": "GT 真迹",
+      "p10": 10.0,
+      "p50": 18.0,
+      "p90": 26.0,
+      "ink": 0.31427001953125
+    },
+    {
+      "idx": 31,
+      "model": "v84A 200k",
+      "p10": 6.0,
+      "p50": 13.416407585144043,
+      "p90": 21.55918884277344,
+      "ink": 0.2013702392578125
+    },
+    {
+      "idx": 31,
+      "model": "v85A 30k",
+      "p10": 5.794112491607668,
+      "p50": 14.422204971313477,
+      "p90": 22.803508758544922,
+      "ink": 0.225067138671875
+    },
+    {
+      "idx": 31,
+      "model": "v85C 30k",
+      "p10": 6.0,
+      "p50": 14.0,
+      "p90": 23.704699516296387,
+      "ink": 0.212158203125
+    },
+    {
+      "idx": 31,
+      "model": "v85E 15k",
+      "p10": 4.0,
+      "p50": 14.0,
+      "p90": 22.803508758544922,
+      "ink": 0.2146759033203125
+    },
+    {
+      "idx": 31,
+      "model": "v85E 30k",
+      "p10": 6.324555397033691,
+      "p50": 15.231546401977539,
+      "p90": 25.027799415588373,
+      "ink": 0.2197418212890625
+    },
+    {
+      "idx": 31,
+      "model": "Control 10k",
+      "p10": 7.211102485656738,
+      "p50": 14.422204971313477,
+      "p90": 22.360679626464844,
+      "ink": 0.21368408203125
+    },
+    {
+      "idx": 40,
+      "model": "STD 原字形",
+      "p10": 6.0,
+      "p50": 10.198039054870605,
+      "p90": 16.0,
+      "ink": 0.1356964111328125
+    },
+    {
+      "idx": 40,
+      "model": "GT 真迹",
+      "p10": 14.0,
+      "p50": 24.0,
+      "p90": 30.066593170166016,
+      "ink": 0.4130401611328125
+    },
+    {
+      "idx": 40,
+      "model": "v84A 200k",
+      "p10": 6.0,
+      "p50": 21.540658950805664,
+      "p90": 37.90504913330077,
+      "ink": 0.4111328125
+    },
+    {
+      "idx": 40,
+      "model": "v85A 30k",
+      "p10": 6.324555397033691,
+      "p50": 22.360679626464844,
+      "p90": 39.15552940368654,
+      "ink": 0.4141845703125
+    },
+    {
+      "idx": 40,
+      "model": "v85C 30k",
+      "p10": 6.0,
+      "p50": 19.697715759277344,
+      "p90": 36.0,
+      "ink": 0.400726318359375
+    },
+    {
+      "idx": 40,
+      "model": "v85E 15k",
+      "p10": 7.211102485656738,
+      "p50": 20.880613327026367,
+      "p90": 36.055511474609375,
+      "ink": 0.4155426025390625
+    },
+    {
+      "idx": 40,
+      "model": "v85E 30k",
+      "p10": 7.211102485656738,
+      "p50": 20.0,
+      "p90": 34.928497314453125,
+      "ink": 0.4054412841796875
+    },
+    {
+      "idx": 40,
+      "model": "Control 10k",
+      "p10": 6.324555397033691,
+      "p50": 21.63330841064453,
+      "p90": 40.0,
+      "ink": 0.419952392578125
+    },
+    {
+      "idx": 46,
+      "model": "STD 原字形",
+      "p10": 4.0,
+      "p50": 4.0,
+      "p90": 4.0,
+      "ink": 0.0544586181640625
+    },
+    {
+      "idx": 46,
+      "model": "GT 真迹",
+      "p10": 7.211102485656738,
+      "p50": 12.649110794067383,
+      "p90": 20.59126091003418,
+      "ink": 0.2037200927734375
+    },
+    {
+      "idx": 46,
+      "model": "v84A 200k",
+      "p10": 2.0,
+      "p50": 6.0,
+      "p90": 16.970561981201172,
+      "ink": 0.1372833251953125
+    },
+    {
+      "idx": 46,
+      "model": "v85A 30k",
+      "p10": 2.0,
+      "p50": 6.324555397033691,
+      "p90": 16.492422103881836,
+      "ink": 0.128814697265625
+    },
+    {
+      "idx": 46,
+      "model": "v85C 30k",
+      "p10": 2.0,
+      "p50": 6.324555397033691,
+      "p90": 18.0,
+      "ink": 0.148101806640625
+    },
+    {
+      "idx": 46,
+      "model": "v85E 15k",
+      "p10": 2.0,
+      "p50": 6.0,
+      "p90": 17.8885440826416,
+      "ink": 0.148529052734375
+    },
+    {
+      "idx": 46,
+      "model": "v85E 30k",
+      "p10": 2.0,
+      "p50": 6.324555397033691,
+      "p90": 18.0,
+      "ink": 0.15289306640625
+    },
+    {
+      "idx": 46,
+      "model": "Control 10k",
+      "p10": 2.0,
+      "p50": 6.324555397033691,
+      "p90": 18.0,
+      "ink": 0.1396331787109375
+    },
+    {
+      "idx": 54,
+      "model": "STD 原字形",
+      "p10": 4.0,
+      "p50": 4.0,
+      "p90": 4.4721360206604,
+      "ink": 0.05731201171875
+    },
+    {
+      "idx": 54,
+      "model": "GT 真迹",
+      "p10": 4.0,
+      "p50": 10.0,
+      "p90": 20.59126091003418,
+      "ink": 0.1883697509765625
+    },
+    {
+      "idx": 54,
+      "model": "v84A 200k",
+      "p10": 2.0,
+      "p50": 5.656854152679443,
+      "p90": 11.661903381347656,
+      "ink": 0.1584014892578125
+    },
+    {
+      "idx": 54,
+      "model": "v85A 30k",
+      "p10": 2.0,
+      "p50": 4.4721360206604,
+      "p90": 10.770329475402832,
+      "ink": 0.1508026123046875
+    },
+    {
+      "idx": 54,
+      "model": "v85C 30k",
+      "p10": 2.0,
+      "p50": 4.4721360206604,
+      "p90": 11.313708305358887,
+      "ink": 0.1656646728515625
+    },
+    {
+      "idx": 54,
+      "model": "v85E 15k",
+      "p10": 2.0,
+      "p50": 5.656854152679443,
+      "p90": 11.661903381347656,
+      "ink": 0.1636199951171875
+    },
+    {
+      "idx": 54,
+      "model": "v85E 30k",
+      "p10": 2.0,
+      "p50": 5.656854152679443,
+      "p90": 11.661903381347656,
+      "ink": 0.1669769287109375
+    },
+    {
+      "idx": 54,
+      "model": "Control 10k",
+      "p10": 2.0,
+      "p50": 5.656854152679443,
+      "p90": 11.661903381347656,
+      "ink": 0.1631011962890625
+    },
+    {
+      "idx": 62,
+      "model": "STD 原字形",
+      "p10": 4.0,
+      "p50": 4.0,
+      "p90": 4.0,
+      "ink": 0.0601959228515625
+    },
+    {
+      "idx": 62,
+      "model": "GT 真迹",
+      "p10": 8.0,
+      "p50": 14.0,
+      "p90": 23.323806762695312,
+      "ink": 0.2737884521484375
+    },
+    {
+      "idx": 62,
+      "model": "v84A 200k",
+      "p10": 2.0,
+      "p50": 4.0,
+      "p90": 8.024621105194097,
+      "ink": 0.07373046875
+    },
+    {
+      "idx": 62,
+      "model": "v85A 30k",
+      "p10": 2.0,
+      "p50": 4.0,
+      "p90": 8.0,
+      "ink": 0.07232666015625
+    },
+    {
+      "idx": 62,
+      "model": "v85C 30k",
+      "p10": 2.0,
+      "p50": 4.0,
+      "p90": 8.0,
+      "ink": 0.074859619140625
+    },
+    {
+      "idx": 62,
+      "model": "v85E 15k",
+      "p10": 2.0,
+      "p50": 4.4721360206604,
+      "p90": 8.246211051940918,
+      "ink": 0.0780181884765625
+    },
+    {
+      "idx": 62,
+      "model": "v85E 30k",
+      "p10": 2.0,
+      "p50": 4.0,
+      "p90": 8.0,
+      "ink": 0.069854736328125
+    },
+    {
+      "idx": 62,
+      "model": "Control 10k",
+      "p10": 2.0,
+      "p50": 4.0,
+      "p90": 8.246211051940918,
+      "ink": 0.0753936767578125
+    },
+    {
+      "idx": 71,
+      "model": "STD 原字形",
+      "p10": 6.324555397033691,
+      "p50": 10.0,
+      "p90": 14.0,
+      "ink": 0.15948486328125
+    },
+    {
+      "idx": 71,
+      "model": "GT 真迹",
+      "p10": 14.627352428436286,
+      "p50": 24.331050872802734,
+      "p90": 34.525352478027344,
+      "ink": 0.3977203369140625
+    },
+    {
+      "idx": 71,
+      "model": "v84A 200k",
+      "p10": 2.0,
+      "p50": 8.0,
+      "p90": 16.124515533447266,
+      "ink": 0.1815185546875
+    },
+    {
+      "idx": 71,
+      "model": "v85A 30k",
+      "p10": 2.0,
+      "p50": 8.0,
+      "p90": 16.124515533447266,
+      "ink": 0.1665191650390625
+    },
+    {
+      "idx": 71,
+      "model": "v85C 30k",
+      "p10": 2.0,
+      "p50": 8.0,
+      "p90": 16.08716087341309,
+      "ink": 0.1697540283203125
+    },
+    {
+      "idx": 71,
+      "model": "v85E 15k",
+      "p10": 2.0,
+      "p50": 8.0,
+      "p90": 16.124515533447266,
+      "ink": 0.1719207763671875
+    },
+    {
+      "idx": 71,
+      "model": "v85E 30k",
+      "p10": 2.0,
+      "p50": 7.211102485656738,
+      "p90": 16.0,
+      "ink": 0.1683502197265625
+    },
+    {
+      "idx": 71,
+      "model": "Control 10k",
+      "p10": 2.0,
+      "p50": 8.0,
+      "p90": 16.124515533447266,
+      "ink": 0.1762847900390625
+    },
+    {
+      "idx": 80,
+      "model": "STD 原字形",
+      "p10": 6.324555397033691,
+      "p50": 12.0,
+      "p90": 16.492422103881836,
+      "ink": 0.131744384765625
+    },
+    {
+      "idx": 80,
+      "model": "GT 真迹",
+      "p10": 2.0,
+      "p50": 6.0,
+      "p90": 11.313708305358887,
+      "ink": 0.0821990966796875
+    },
+    {
+      "idx": 80,
+      "model": "v84A 200k",
+      "p10": 6.0,
+      "p50": 17.8885440826416,
+      "p90": 26.68332862854004,
+      "ink": 0.2362518310546875
+    },
+    {
+      "idx": 80,
+      "model": "v85A 30k",
+      "p10": 8.0,
+      "p50": 17.8885440826416,
+      "p90": 26.0,
+      "ink": 0.2229766845703125
+    },
+    {
+      "idx": 80,
+      "model": "v85C 30k",
+      "p10": 8.0,
+      "p50": 18.439088821411133,
+      "p90": 26.713225936889657,
+      "ink": 0.228729248046875
+    },
+    {
+      "idx": 80,
+      "model": "v85E 15k",
+      "p10": 8.0,
+      "p50": 18.11077117919922,
+      "p90": 27.668498229980507,
+      "ink": 0.2386627197265625
+    },
+    {
+      "idx": 80,
+      "model": "v85E 30k",
+      "p10": 8.246211051940918,
+      "p50": 18.11077117919922,
+      "p90": 26.68332862854004,
+      "ink": 0.2286224365234375
+    },
+    {
+      "idx": 80,
+      "model": "Control 10k",
+      "p10": 7.211102485656738,
+      "p50": 16.970561981201172,
+      "p90": 26.0,
+      "ink": 0.2277374267578125
+    },
+    {
+      "idx": 88,
+      "model": "STD 原字形",
+      "p10": 6.0,
+      "p50": 10.0,
+      "p90": 12.806248664855957,
+      "ink": 0.10711669921875
+    },
+    {
+      "idx": 88,
+      "model": "GT 真迹",
+      "p10": 4.4721360206604,
+      "p50": 10.0,
+      "p90": 17.0880069732666,
+      "ink": 0.1299285888671875
+    },
+    {
+      "idx": 88,
+      "model": "v84A 200k",
+      "p10": 4.0,
+      "p50": 12.0,
+      "p90": 22.27969207763673,
+      "ink": 0.25341796875
+    },
+    {
+      "idx": 88,
+      "model": "v85A 30k",
+      "p10": 4.0,
+      "p50": 12.649110794067383,
+      "p90": 22.0,
+      "ink": 0.25030517578125
+    },
+    {
+      "idx": 88,
+      "model": "v85C 30k",
+      "p10": 2.8284270763397217,
+      "p50": 10.0,
+      "p90": 19.697715759277344,
+      "ink": 0.2278594970703125
+    },
+    {
+      "idx": 88,
+      "model": "v85E 15k",
+      "p10": 2.8284270763397217,
+      "p50": 10.198039054870605,
+      "p90": 20.099750518798828,
+      "ink": 0.2472686767578125
+    },
+    {
+      "idx": 88,
+      "model": "v85E 30k",
+      "p10": 2.8284270763397217,
+      "p50": 10.770329475402832,
+      "p90": 20.59126091003418,
+      "ink": 0.2377777099609375
+    },
+    {
+      "idx": 88,
+      "model": "Control 10k",
+      "p10": 4.0,
+      "p50": 12.165525436401367,
+      "p90": 22.090721130371094,
+      "ink": 0.262847900390625
+    },
+    {
+      "idx": 97,
+      "model": "STD 原字形",
+      "p10": 10.198039054870605,
+      "p50": 16.0,
+      "p90": 23.349484443664558,
+      "ink": 0.15924072265625
+    },
+    {
+      "idx": 97,
+      "model": "GT 真迹",
+      "p10": 10.0,
+      "p50": 24.331050872802734,
+      "p90": 32.06243896484375,
+      "ink": 0.2064208984375
+    },
+    {
+      "idx": 97,
+      "model": "v84A 200k",
+      "p10": 6.0,
+      "p50": 14.0,
+      "p90": 24.083189010620117,
+      "ink": 0.172637939453125
+    },
+    {
+      "idx": 97,
+      "model": "v85A 30k",
+      "p10": 6.324555397033691,
+      "p50": 14.422204971313477,
+      "p90": 25.05992889404297,
+      "ink": 0.1726837158203125
+    },
+    {
+      "idx": 97,
+      "model": "v85C 30k",
+      "p10": 8.073863315582274,
+      "p50": 16.124515533447266,
+      "p90": 27.610303688049342,
+      "ink": 0.188385009765625
+    },
+    {
+      "idx": 97,
+      "model": "v85E 15k",
+      "p10": 7.211102485656738,
+      "p50": 16.970561981201172,
+      "p90": 27.20294189453125,
+      "ink": 0.1912689208984375
+    },
+    {
+      "idx": 97,
+      "model": "v85E 30k",
+      "p10": 8.246211051940918,
+      "p50": 16.970561981201172,
+      "p90": 26.68332862854004,
+      "ink": 0.1908416748046875
+    },
+    {
+      "idx": 97,
+      "model": "Control 10k",
+      "p10": 6.0,
+      "p50": 14.142135620117188,
+      "p90": 24.298059082031262,
+      "ink": 0.1756439208984375
+    },
+    {
+      "idx": 103,
+      "model": "STD 原字形",
+      "p10": 6.324555397033691,
+      "p50": 10.0,
+      "p90": 12.165525436401367,
+      "ink": 0.1548919677734375
+    },
+    {
+      "idx": 103,
+      "model": "GT 真迹",
+      "p10": 6.0,
+      "p50": 10.770329475402832,
+      "p90": 16.982306480407733,
+      "ink": 0.2224884033203125
+    },
+    {
+      "idx": 103,
+      "model": "v84A 200k",
+      "p10": 6.0,
+      "p50": 16.0,
+      "p90": 25.05992889404297,
+      "ink": 0.3322601318359375
+    },
+    {
+      "idx": 103,
+      "model": "v85A 30k",
+      "p10": 6.0,
+      "p50": 15.620499610900879,
+      "p90": 24.083189010620117,
+      "ink": 0.3665924072265625
+    },
+    {
+      "idx": 103,
+      "model": "v85C 30k",
+      "p10": 6.324555397033691,
+      "p50": 16.124515533447266,
+      "p90": 24.083189010620117,
+      "ink": 0.3278350830078125
+    },
+    {
+      "idx": 103,
+      "model": "v85E 15k",
+      "p10": 7.28999223709106,
+      "p50": 17.0880069732666,
+      "p90": 25.58106975555423,
+      "ink": 0.325927734375
+    },
+    {
+      "idx": 103,
+      "model": "v85E 30k",
+      "p10": 6.324555397033691,
+      "p50": 16.124515533447266,
+      "p90": 24.331050872802734,
+      "ink": 0.321807861328125
+    },
+    {
+      "idx": 103,
+      "model": "Control 10k",
+      "p10": 7.211102485656738,
+      "p50": 16.970561981201172,
+      "p90": 26.305892944335938,
+      "ink": 0.3413543701171875
+    },
+    {
+      "idx": 111,
+      "model": "STD 原字形",
+      "p10": 7.211102485656738,
+      "p50": 10.0,
+      "p90": 14.142135620117188,
+      "ink": 0.13067626953125
+    },
+    {
+      "idx": 111,
+      "model": "GT 真迹",
+      "p10": 13.416407585144043,
+      "p50": 20.099750518798828,
+      "p90": 30.0,
+      "ink": 0.29022216796875
+    },
+    {
+      "idx": 111,
+      "model": "v84A 200k",
+      "p10": 12.649110794067383,
+      "p50": 20.59126091003418,
+      "p90": 30.528675079345703,
+      "ink": 0.28656005859375
+    },
+    {
+      "idx": 111,
+      "model": "v85A 30k",
+      "p10": 12.806248664855957,
+      "p50": 21.540658950805664,
+      "p90": 31.62277603149414,
+      "ink": 0.2911834716796875
+    },
+    {
+      "idx": 111,
+      "model": "v85C 30k",
+      "p10": 13.416407585144043,
+      "p50": 22.0,
+      "p90": 31.62277603149414,
+      "ink": 0.2904815673828125
+    },
+    {
+      "idx": 111,
+      "model": "v85E 15k",
+      "p10": 12.0,
+      "p50": 21.540658950805664,
+      "p90": 31.048349380493164,
+      "ink": 0.2845306396484375
+    },
+    {
+      "idx": 111,
+      "model": "v85E 30k",
+      "p10": 14.0,
+      "p50": 22.0,
+      "p90": 31.62277603149414,
+      "ink": 0.2908935546875
+    },
+    {
+      "idx": 111,
+      "model": "Control 10k",
+      "p10": 12.806248664855957,
+      "p50": 21.540658950805664,
+      "p90": 30.5941162109375,
+      "ink": 0.2892608642578125
+    },
+    {
+      "idx": 120,
+      "model": "STD 原字形",
+      "p10": 7.211102485656738,
+      "p50": 11.661903381347656,
+      "p90": 16.124515533447266,
+      "ink": 0.1389923095703125
+    },
+    {
+      "idx": 120,
+      "model": "GT 真迹",
+      "p10": 2.0,
+      "p50": 12.0,
+      "p90": 20.39607810974121,
+      "ink": 0.1829833984375
+    },
+    {
+      "idx": 120,
+      "model": "v84A 200k",
+      "p10": 2.0,
+      "p50": 4.0,
+      "p90": 11.313708305358887,
+      "ink": 0.1397857666015625
+    },
+    {
+      "idx": 120,
+      "model": "v85A 30k",
+      "p10": 2.0,
+      "p50": 4.4721360206604,
+      "p90": 12.0,
+      "ink": 0.1698150634765625
+    },
+    {
+      "idx": 120,
+      "model": "v85C 30k",
+      "p10": 2.0,
+      "p50": 7.211102485656738,
+      "p90": 14.0,
+      "ink": 0.141387939453125
+    },
+    {
+      "idx": 120,
+      "model": "v85E 15k",
+      "p10": 2.0,
+      "p50": 6.0,
+      "p90": 12.649110794067383,
+      "ink": 0.1432037353515625
+    },
+    {
+      "idx": 120,
+      "model": "v85E 30k",
+      "p10": 2.0,
+      "p50": 6.324555397033691,
+      "p90": 12.806248664855957,
+      "ink": 0.1310882568359375
+    },
+    {
+      "idx": 120,
+      "model": "Control 10k",
+      "p10": 2.8284270763397217,
+      "p50": 8.0,
+      "p90": 14.422204971313477,
+      "ink": 0.1935882568359375
+    },
+    {
+      "idx": 128,
+      "model": "STD 原字形",
+      "p10": 6.0,
+      "p50": 10.0,
+      "p90": 14.310177230834967,
+      "ink": 0.1268157958984375
+    },
+    {
+      "idx": 128,
+      "model": "GT 真迹",
+      "p10": 5.656854152679443,
+      "p50": 10.0,
+      "p90": 18.5677507400513,
+      "ink": 0.120361328125
+    },
+    {
+      "idx": 128,
+      "model": "v84A 200k",
+      "p10": 4.0,
+      "p50": 8.246211051940918,
+      "p90": 16.345259475708016,
+      "ink": 0.107330322265625
+    },
+    {
+      "idx": 128,
+      "model": "v85A 30k",
+      "p10": 4.0,
+      "p50": 8.0,
+      "p90": 16.124515533447266,
+      "ink": 0.10614013671875
+    },
+    {
+      "idx": 128,
+      "model": "v85C 30k",
+      "p10": 4.0,
+      "p50": 8.0,
+      "p90": 16.124515533447266,
+      "ink": 0.1055908203125
+    },
+    {
+      "idx": 128,
+      "model": "v85E 15k",
+      "p10": 4.0,
+      "p50": 8.0,
+      "p90": 16.124515533447266,
+      "ink": 0.1063995361328125
+    },
+    {
+      "idx": 128,
+      "model": "v85E 30k",
+      "p10": 4.424922418594363,
+      "p50": 8.0,
+      "p90": 16.124515533447266,
+      "ink": 0.107025146484375
+    },
+    {
+      "idx": 128,
+      "model": "Control 10k",
+      "p10": 4.0,
+      "p50": 8.0,
+      "p90": 16.124515533447266,
+      "ink": 0.10626220703125
+    },
+    {
+      "idx": 137,
+      "model": "STD 原字形",
+      "p10": 4.0,
+      "p50": 4.0,
+      "p90": 4.4721360206604,
+      "ink": 0.0618133544921875
+    },
+    {
+      "idx": 137,
+      "model": "GT 真迹",
+      "p10": 6.0,
+      "p50": 12.0,
+      "p90": 19.73822555541992,
+      "ink": 0.1816864013671875
+    },
+    {
+      "idx": 137,
+      "model": "v84A 200k",
+      "p10": 2.0,
+      "p50": 8.0,
+      "p90": 14.142135620117188,
+      "ink": 0.1263580322265625
+    },
+    {
+      "idx": 137,
+      "model": "v85A 30k",
+      "p10": 2.8284270763397217,
+      "p50": 8.246211051940918,
+      "p90": 16.0,
+      "ink": 0.1335906982421875
+    },
+    {
+      "idx": 137,
+      "model": "v85C 30k",
+      "p10": 4.0,
+      "p50": 10.0,
+      "p90": 16.124515533447266,
+      "ink": 0.1414642333984375
+    },
+    {
+      "idx": 137,
+      "model": "v85E 15k",
+      "p10": 2.0,
+      "p50": 8.0,
+      "p90": 15.231546401977539,
+      "ink": 0.13800048828125
+    },
+    {
+      "idx": 137,
+      "model": "v85E 30k",
+      "p10": 2.8284270763397217,
+      "p50": 8.9442720413208,
+      "p90": 16.0,
+      "ink": 0.136962890625
+    },
+    {
+      "idx": 137,
+      "model": "Control 10k",
+      "p10": 2.0,
+      "p50": 8.0,
+      "p90": 16.0,
+      "ink": 0.1463470458984375
+    },
+    {
+      "idx": 146,
+      "model": "STD 原字形",
+      "p10": 4.0,
+      "p50": 4.0,
+      "p90": 4.0,
+      "ink": 0.05474853515625
+    },
+    {
+      "idx": 146,
+      "model": "GT 真迹",
+      "p10": 4.0,
+      "p50": 8.0,
+      "p90": 14.0,
+      "ink": 0.12286376953125
+    },
+    {
+      "idx": 146,
+      "model": "v84A 200k",
+      "p10": 2.0,
+      "p50": 4.0,
+      "p90": 8.9442720413208,
+      "ink": 0.0991363525390625
+    },
+    {
+      "idx": 146,
+      "model": "v85A 30k",
+      "p10": 2.0,
+      "p50": 4.0,
+      "p90": 8.0,
+      "ink": 0.0978546142578125
+    },
+    {
+      "idx": 146,
+      "model": "v85C 30k",
+      "p10": 2.0,
+      "p50": 4.4721360206604,
+      "p90": 10.0,
+      "ink": 0.1133270263671875
+    },
+    {
+      "idx": 146,
+      "model": "v85E 15k",
+      "p10": 2.0,
+      "p50": 6.0,
+      "p90": 11.661903381347656,
+      "ink": 0.1158905029296875
+    },
+    {
+      "idx": 146,
+      "model": "v85E 30k",
+      "p10": 2.0,
+      "p50": 4.0,
+      "p90": 10.0,
+      "ink": 0.1158294677734375
+    },
+    {
+      "idx": 146,
+      "model": "Control 10k",
+      "p10": 2.0,
+      "p50": 6.0,
+      "p90": 11.313708305358887,
+      "ink": 0.110107421875
+    },
+    {
+      "idx": 155,
+      "model": "STD 原字形",
+      "p10": 10.0,
+      "p50": 14.0,
+      "p90": 16.124515533447266,
+      "ink": 0.174896240234375
+    },
+    {
+      "idx": 155,
+      "model": "GT 真迹",
+      "p10": 8.9442720413208,
+      "p50": 17.0880069732666,
+      "p90": 26.0,
+      "ink": 0.2135772705078125
+    },
+    {
+      "idx": 155,
+      "model": "v84A 200k",
+      "p10": 4.0,
+      "p50": 11.661903381347656,
+      "p90": 22.360679626464844,
+      "ink": 0.1876068115234375
+    },
+    {
+      "idx": 155,
+      "model": "v85A 30k",
+      "p10": 4.0,
+      "p50": 11.661903381347656,
+      "p90": 22.360679626464844,
+      "ink": 0.1828460693359375
+    },
+    {
+      "idx": 155,
+      "model": "v85C 30k",
+      "p10": 4.0,
+      "p50": 11.661903381347656,
+      "p90": 22.198704528808587,
+      "ink": 0.1803741455078125
+    },
+    {
+      "idx": 155,
+      "model": "v85E 15k",
+      "p10": 4.0,
+      "p50": 11.661903381347656,
+      "p90": 22.360679626464844,
+      "ink": 0.18109130859375
+    },
+    {
+      "idx": 155,
+      "model": "v85E 30k",
+      "p10": 4.0,
+      "p50": 11.313708305358887,
+      "p90": 22.0,
+      "ink": 0.1771240234375
+    },
+    {
+      "idx": 155,
+      "model": "Control 10k",
+      "p10": 4.0,
+      "p50": 12.0,
+      "p90": 22.360679626464844,
+      "ink": 0.191436767578125
+    },
+    {
+      "idx": 163,
+      "model": "STD 原字形",
+      "p10": 4.0,
+      "p50": 4.0,
+      "p90": 4.0,
+      "ink": 0.044342041015625
+    },
+    {
+      "idx": 163,
+      "model": "GT 真迹",
+      "p10": 12.165525436401367,
+      "p50": 18.0,
+      "p90": 24.0,
+      "ink": 0.2947540283203125
+    },
+    {
+      "idx": 163,
+      "model": "v84A 200k",
+      "p10": 2.0,
+      "p50": 6.324555397033691,
+      "p90": 12.0,
+      "ink": 0.2048187255859375
+    },
+    {
+      "idx": 163,
+      "model": "v85A 30k",
+      "p10": 2.0,
+      "p50": 7.211102485656738,
+      "p90": 12.0,
+      "ink": 0.2194366455078125
+    },
+    {
+      "idx": 163,
+      "model": "v85C 30k",
+      "p10": 2.0,
+      "p50": 6.324555397033691,
+      "p90": 12.0,
+      "ink": 0.2065582275390625
+    },
+    {
+      "idx": 163,
+      "model": "v85E 15k",
+      "p10": 2.0,
+      "p50": 6.0,
+      "p90": 11.661903381347656,
+      "ink": 0.1952362060546875
+    },
+    {
+      "idx": 163,
+      "model": "v85E 30k",
+      "p10": 2.0,
+      "p50": 6.0,
+      "p90": 10.770329475402832,
+      "ink": 0.1883392333984375
+    },
+    {
+      "idx": 163,
+      "model": "Control 10k",
+      "p10": 2.0,
+      "p50": 6.324555397033691,
+      "p90": 12.0,
+      "ink": 0.2127227783203125
+    },
+    {
+      "idx": 172,
+      "model": "STD 原字形",
+      "p10": 8.0,
+      "p50": 10.198039054870605,
+      "p90": 15.231546401977539,
+      "ink": 0.1239013671875
+    },
+    {
+      "idx": 172,
+      "model": "GT 真迹",
+      "p10": 8.0,
+      "p50": 14.0,
+      "p90": 23.409399032592773,
+      "ink": 0.1878509521484375
+    },
+    {
+      "idx": 172,
+      "model": "v84A 200k",
+      "p10": 2.49705624580384,
+      "p50": 10.770329475402832,
+      "p90": 18.11077117919922,
+      "ink": 0.150970458984375
+    },
+    {
+      "idx": 172,
+      "model": "v85A 30k",
+      "p10": 5.725483322143556,
+      "p50": 12.0,
+      "p90": 21.540658950805664,
+      "ink": 0.1712799072265625
+    },
+    {
+      "idx": 172,
+      "model": "v85C 30k",
+      "p10": 4.4721360206604,
+      "p50": 11.661903381347656,
+      "p90": 20.39607810974121,
+      "ink": 0.161956787109375
+    },
+    {
+      "idx": 172,
+      "model": "v85E 15k",
+      "p10": 4.4721360206604,
+      "p50": 12.0,
+      "p90": 20.0,
+      "ink": 0.171661376953125
+    },
+    {
+      "idx": 172,
+      "model": "v85E 30k",
+      "p10": 4.0,
+      "p50": 10.770329475402832,
+      "p90": 20.099750518798828,
+      "ink": 0.159912109375
+    },
+    {
+      "idx": 172,
+      "model": "Control 10k",
+      "p10": 4.0,
+      "p50": 10.770329475402832,
+      "p90": 20.0,
+      "ink": 0.1627349853515625
+    },
+    {
+      "idx": 179,
+      "model": "STD 原字形",
+      "p10": 4.0,
+      "p50": 4.0,
+      "p90": 4.0,
+      "ink": 0.070892333984375
+    },
+    {
+      "idx": 179,
+      "model": "GT 真迹",
+      "p10": 2.0,
+      "p50": 8.0,
+      "p90": 14.422204971313477,
+      "ink": 0.1457061767578125
+    },
+    {
+      "idx": 179,
+      "model": "v84A 200k",
+      "p10": 6.0,
+      "p50": 17.0880069732666,
+      "p90": 26.832815170288086,
+      "ink": 0.4609375
+    },
+    {
+      "idx": 179,
+      "model": "v85A 30k",
+      "p10": 6.0,
+      "p50": 16.492422103881836,
+      "p90": 27.20294189453125,
+      "ink": 0.4792938232421875
+    },
+    {
+      "idx": 179,
+      "model": "v85C 30k",
+      "p10": 6.324555397033691,
+      "p50": 17.8885440826416,
+      "p90": 27.85677719116211,
+      "ink": 0.4827880859375
+    },
+    {
+      "idx": 179,
+      "model": "v85E 15k",
+      "p10": 6.324555397033691,
+      "p50": 17.8885440826416,
+      "p90": 28.0,
+      "ink": 0.4929656982421875
+    },
+    {
+      "idx": 179,
+      "model": "v85E 30k",
+      "p10": 6.0,
+      "p50": 17.8885440826416,
+      "p90": 28.0,
+      "ink": 0.4884185791015625
+    },
+    {
+      "idx": 179,
+      "model": "Control 10k",
+      "p10": 7.211102485656738,
+      "p50": 18.11077117919922,
+      "p90": 28.844409942626953,
+      "ink": 0.4869232177734375
+    },
+    {
+      "idx": 94,
+      "model": "STD 原字形",
+      "p10": 4.0,
+      "p50": 4.0,
+      "p90": 4.0,
+      "ink": 0.0577850341796875
+    },
+    {
+      "idx": 94,
+      "model": "GT 真迹",
+      "p10": 14.0,
+      "p50": 30.0,
+      "p90": 40.49691390991211,
+      "ink": 0.4915008544921875
+    },
+    {
+      "idx": 94,
+      "model": "v84A 200k",
+      "p10": 2.0,
+      "p50": 4.0,
+      "p90": 6.0,
+      "ink": 0.019500732421875
+    },
+    {
+      "idx": 94,
+      "model": "v85A 30k",
+      "p10": 2.0,
+      "p50": 4.0,
+      "p90": 6.0,
+      "ink": 0.01904296875
+    },
+    {
+      "idx": 94,
+      "model": "v85C 30k",
+      "p10": 2.0,
+      "p50": 4.0,
+      "p90": 6.227188777923581,
+      "ink": 0.0186920166015625
+    },
+    {
+      "idx": 94,
+      "model": "v85E 15k",
+      "p10": 2.0,
+      "p50": 4.0,
+      "p90": 7.211102485656738,
+      "ink": 0.0223541259765625
+    },
+    {
+      "idx": 94,
+      "model": "v85E 30k",
+      "p10": 2.0,
+      "p50": 4.0,
+      "p90": 6.324555397033691,
+      "ink": 0.01922607421875
+    },
+    {
+      "idx": 94,
+      "model": "Control 10k",
+      "p10": 2.0,
+      "p50": 4.0,
+      "p90": 6.0,
+      "ink": 0.0202484130859375
+    },
+    {
+      "idx": 123,
+      "model": "STD 原字形",
+      "p10": 7.211102485656738,
+      "p50": 10.0,
+      "p90": 14.560219764709473,
+      "ink": 0.1470947265625
+    },
+    {
+      "idx": 123,
+      "model": "GT 真迹",
+      "p10": 12.649110794067383,
+      "p50": 24.413110733032227,
+      "p90": 43.17406463623047,
+      "ink": 0.449798583984375
+    },
+    {
+      "idx": 123,
+      "model": "v84A 200k",
+      "p10": 2.0,
+      "p50": 8.485280990600586,
+      "p90": 25.08375816345218,
+      "ink": 0.23883056640625
+    },
+    {
+      "idx": 123,
+      "model": "v85A 30k",
+      "p10": 2.0,
+      "p50": 8.246211051940918,
+      "p90": 24.166091918945312,
+      "ink": 0.23345947265625
+    },
+    {
+      "idx": 123,
+      "model": "v85C 30k",
+      "p10": 2.0,
+      "p50": 8.246211051940918,
+      "p90": 28.635643005371094,
+      "ink": 0.2555389404296875
+    },
+    {
+      "idx": 123,
+      "model": "v85E 15k",
+      "p10": 2.0,
+      "p50": 8.246211051940918,
+      "p90": 26.07680892944336,
+      "ink": 0.2473297119140625
+    },
+    {
+      "idx": 123,
+      "model": "v85E 30k",
+      "p10": 2.0,
+      "p50": 8.246211051940918,
+      "p90": 28.0,
+      "ink": 0.2493743896484375
+    },
+    {
+      "idx": 123,
+      "model": "Control 10k",
+      "p10": 2.0,
+      "p50": 8.0,
+      "p90": 24.166091918945312,
+      "ink": 0.2319183349609375
+    },
+    {
+      "idx": 42,
+      "model": "STD 原字形",
+      "p10": 4.0,
+      "p50": 4.0,
+      "p90": 4.0,
+      "ink": 0.042144775390625
+    },
+    {
+      "idx": 42,
+      "model": "GT 真迹",
+      "p10": 20.0,
+      "p50": 26.0,
+      "p90": 34.0,
+      "ink": 0.444610595703125
+    },
+    {
+      "idx": 42,
+      "model": "v84A 200k",
+      "p10": 8.246211051940918,
+      "p50": 16.0,
+      "p90": 22.0,
+      "ink": 0.2828369140625
+    },
+    {
+      "idx": 42,
+      "model": "v85A 30k",
+      "p10": 7.211102485656738,
+      "p50": 15.231546401977539,
+      "p90": 24.0,
+      "ink": 0.2783660888671875
+    },
+    {
+      "idx": 42,
+      "model": "v85C 30k",
+      "p10": 8.246211051940918,
+      "p50": 16.124515533447266,
+      "p90": 22.493528366088846,
+      "ink": 0.2812957763671875
+    },
+    {
+      "idx": 42,
+      "model": "v85E 15k",
+      "p10": 8.0,
+      "p50": 17.0880069732666,
+      "p90": 22.360679626464844,
+      "ink": 0.290802001953125
+    },
+    {
+      "idx": 42,
+      "model": "v85E 30k",
+      "p10": 8.0,
+      "p50": 17.0880069732666,
+      "p90": 23.011627960205125,
+      "ink": 0.2915496826171875
+    },
+    {
+      "idx": 42,
+      "model": "Control 10k",
+      "p10": 6.324555397033691,
+      "p50": 14.560219764709473,
+      "p90": 22.0,
+      "ink": 0.2685546875
+    },
+    {
+      "idx": 96,
+      "model": "STD 原字形",
+      "p10": 4.0,
+      "p50": 4.0,
+      "p90": 4.4721360206604,
+      "ink": 0.0546112060546875
+    },
+    {
+      "idx": 96,
+      "model": "GT 真迹",
+      "p10": 10.198039054870605,
+      "p50": 26.0,
+      "p90": 39.84971618652344,
+      "ink": 0.4360198974609375
+    },
+    {
+      "idx": 96,
+      "model": "v84A 200k",
+      "p10": 4.0,
+      "p50": 12.165525436401367,
+      "p90": 21.540658950805664,
+      "ink": 0.26483154296875
+    },
+    {
+      "idx": 96,
+      "model": "v85A 30k",
+      "p10": 4.0,
+      "p50": 12.806248664855957,
+      "p90": 21.540658950805664,
+      "ink": 0.260009765625
+    },
+    {
+      "idx": 96,
+      "model": "v85C 30k",
+      "p10": 2.8284270763397217,
+      "p50": 13.416407585144043,
+      "p90": 23.409399032592773,
+      "ink": 0.26593017578125
+    },
+    {
+      "idx": 96,
+      "model": "v85E 15k",
+      "p10": 2.8284270763397217,
+      "p50": 12.165525436401367,
+      "p90": 22.52072181701664,
+      "ink": 0.258148193359375
+    },
+    {
+      "idx": 96,
+      "model": "v85E 30k",
+      "p10": 2.8284270763397217,
+      "p50": 12.649110794067383,
+      "p90": 22.803508758544922,
+      "ink": 0.261688232421875
+    },
+    {
+      "idx": 96,
+      "model": "Control 10k",
+      "p10": 2.8284270763397217,
+      "p50": 12.165525436401367,
+      "p90": 20.880613327026367,
+      "ink": 0.270538330078125
+    },
+    {
+      "idx": 92,
+      "model": "STD 原字形",
+      "p10": 6.0,
+      "p50": 10.0,
+      "p90": 12.649110794067383,
+      "ink": 0.1924591064453125
+    },
+    {
+      "idx": 92,
+      "model": "GT 真迹",
+      "p10": 10.0,
+      "p50": 18.439088821411133,
+      "p90": 32.24903106689453,
+      "ink": 0.426727294921875
+    },
+    {
+      "idx": 92,
+      "model": "v84A 200k",
+      "p10": 6.0,
+      "p50": 18.0,
+      "p90": 31.06765384674072,
+      "ink": 0.391845703125
+    },
+    {
+      "idx": 92,
+      "model": "v85A 30k",
+      "p10": 8.0,
+      "p50": 18.11077117919922,
+      "p90": 32.24903106689453,
+      "ink": 0.393890380859375
+    },
+    {
+      "idx": 92,
+      "model": "v85C 30k",
+      "p10": 7.211102485656738,
+      "p50": 18.439088821411133,
+      "p90": 32.557640075683594,
+      "ink": 0.40057373046875
+    },
+    {
+      "idx": 92,
+      "model": "v85E 15k",
+      "p10": 11.661903381347656,
+      "p50": 23.704699516296387,
+      "p90": 38.470767974853516,
+      "ink": 0.4868011474609375
+    },
+    {
+      "idx": 92,
+      "model": "v85E 30k",
+      "p10": 7.211102485656738,
+      "p50": 20.0,
+      "p90": 35.7770881652832,
+      "ink": 0.431060791015625
+    },
+    {
+      "idx": 92,
+      "model": "Control 10k",
+      "p10": 8.246211051940918,
+      "p50": 20.39607810974121,
+      "p90": 34.605981445312516,
+      "ink": 0.4597015380859375
+    },
+    {
+      "idx": 17,
+      "model": "STD 原字形",
+      "p10": 7.211102485656738,
+      "p50": 10.198039054870605,
+      "p90": 14.560219764709473,
+      "ink": 0.1403961181640625
+    },
+    {
+      "idx": 17,
+      "model": "GT 真迹",
+      "p10": 15.620499610900879,
+      "p50": 22.0,
+      "p90": 34.00587730407716,
+      "ink": 0.4077606201171875
+    },
+    {
+      "idx": 17,
+      "model": "v84A 200k",
+      "p10": 10.0,
+      "p50": 16.0,
+      "p90": 22.0,
+      "ink": 0.343780517578125
+    },
+    {
+      "idx": 17,
+      "model": "v85A 30k",
+      "p10": 8.0,
+      "p50": 17.0880069732666,
+      "p90": 24.0,
+      "ink": 0.3822479248046875
+    },
+    {
+      "idx": 17,
+      "model": "v85C 30k",
+      "p10": 8.246211051940918,
+      "p50": 16.124515533447266,
+      "p90": 22.360679626464844,
+      "ink": 0.370452880859375
+    },
+    {
+      "idx": 17,
+      "model": "v85E 15k",
+      "p10": 8.0,
+      "p50": 16.124515533447266,
+      "p90": 23.323806762695312,
+      "ink": 0.3881988525390625
+    },
+    {
+      "idx": 17,
+      "model": "v85E 30k",
+      "p10": 8.9442720413208,
+      "p50": 17.0880069732666,
+      "p90": 23.409399032592773,
+      "ink": 0.384429931640625
+    },
+    {
+      "idx": 17,
+      "model": "Control 10k",
+      "p10": 10.198039054870605,
+      "p50": 18.0,
+      "p90": 24.083189010620117,
+      "ink": 0.392303466796875
+    },
+    {
+      "idx": 95,
+      "model": "STD 原字形",
+      "p10": 8.9442720413208,
+      "p50": 12.649110794067383,
+      "p90": 17.8885440826416,
+      "ink": 0.1186981201171875
+    },
+    {
+      "idx": 95,
+      "model": "GT 真迹",
+      "p10": 18.78218727111817,
+      "p50": 34.0,
+      "p90": 43.26661682128906,
+      "ink": 0.390167236328125
+    },
+    {
+      "idx": 95,
+      "model": "v84A 200k",
+      "p10": 2.0,
+      "p50": 13.708203792572021,
+      "p90": 27.85677719116211,
+      "ink": 0.2566680908203125
+    },
+    {
+      "idx": 95,
+      "model": "v85A 30k",
+      "p10": 2.8284270763397217,
+      "p50": 14.0,
+      "p90": 30.066593170166016,
+      "ink": 0.2821807861328125
+    },
+    {
+      "idx": 95,
+      "model": "v85C 30k",
+      "p10": 2.0,
+      "p50": 16.124515533447266,
+      "p90": 28.65651969909671,
+      "ink": 0.25811767578125
+    },
+    {
+      "idx": 95,
+      "model": "v85E 15k",
+      "p10": 2.8284270763397217,
+      "p50": 16.0,
+      "p90": 29.120439529418945,
+      "ink": 0.266845703125
+    },
+    {
+      "idx": 95,
+      "model": "v85E 30k",
+      "p10": 2.8284270763397217,
+      "p50": 16.0,
+      "p90": 28.635643005371094,
+      "ink": 0.2588348388671875
+    },
+    {
+      "idx": 95,
+      "model": "Control 10k",
+      "p10": 4.4721360206604,
+      "p50": 21.540658950805664,
+      "p90": 36.0,
+      "ink": 0.256622314453125
+    },
+    {
+      "idx": 186,
+      "model": "STD 原字形",
+      "p10": 7.211102485656738,
+      "p50": 11.313708305358887,
+      "p90": 16.492422103881836,
+      "ink": 0.1324920654296875
+    },
+    {
+      "idx": 186,
+      "model": "GT 真迹",
+      "p10": 12.0,
+      "p50": 29.529645919799805,
+      "p90": 38.470767974853516,
+      "ink": 0.38677978515625
+    },
+    {
+      "idx": 186,
+      "model": "v84A 200k",
+      "p10": 4.0,
+      "p50": 14.0,
+      "p90": 20.39607810974121,
+      "ink": 0.263458251953125
+    },
+    {
+      "idx": 186,
+      "model": "v85A 30k",
+      "p10": 4.0,
+      "p50": 16.124515533447266,
+      "p90": 24.413110733032227,
+      "ink": 0.2950286865234375
+    },
+    {
+      "idx": 186,
+      "model": "v85C 30k",
+      "p10": 4.0,
+      "p50": 16.124515533447266,
+      "p90": 26.0,
+      "ink": 0.2980194091796875
+    },
+    {
+      "idx": 186,
+      "model": "v85E 15k",
+      "p10": 2.0,
+      "p50": 14.0,
+      "p90": 20.880613327026367,
+      "ink": 0.25738525390625
+    },
+    {
+      "idx": 186,
+      "model": "v85E 30k",
+      "p10": 4.0,
+      "p50": 15.231546401977539,
+      "p90": 23.323806762695312,
+      "ink": 0.275604248046875
+    },
+    {
+      "idx": 186,
+      "model": "Control 10k",
+      "p10": 4.0,
+      "p50": 14.0,
+      "p90": 21.605513572692875,
+      "ink": 0.2603912353515625
+    },
+    {
+      "idx": 93,
+      "model": "STD 原字形",
+      "p10": 4.0,
+      "p50": 4.0,
+      "p90": 4.4721360206604,
+      "ink": 0.0647430419921875
+    },
+    {
+      "idx": 93,
+      "model": "GT 真迹",
+      "p10": 16.0,
+      "p50": 23.366602897644043,
+      "p90": 30.463092803955078,
+      "ink": 0.377044677734375
+    },
+    {
+      "idx": 93,
+      "model": "v84A 200k",
+      "p10": 2.0,
+      "p50": 12.0,
+      "p90": 21.540658950805664,
+      "ink": 0.230438232421875
+    },
+    {
+      "idx": 93,
+      "model": "v85A 30k",
+      "p10": 2.0,
+      "p50": 11.661903381347656,
+      "p90": 22.090721130371094,
+      "ink": 0.2139892578125
+    },
+    {
+      "idx": 93,
+      "model": "v85C 30k",
+      "p10": 2.0,
+      "p50": 12.165525436401367,
+      "p90": 24.73863410949707,
+      "ink": 0.2275390625
+    },
+    {
+      "idx": 93,
+      "model": "v85E 15k",
+      "p10": 4.0,
+      "p50": 16.0,
+      "p90": 22.803508758544922,
+      "ink": 0.2135467529296875
+    },
+    {
+      "idx": 93,
+      "model": "v85E 30k",
+      "p10": 2.0,
+      "p50": 12.165525436401367,
+      "p90": 22.360679626464844,
+      "ink": 0.2183380126953125
+    },
+    {
+      "idx": 93,
+      "model": "Control 10k",
+      "p10": 2.0,
+      "p50": 12.165525436401367,
+      "p90": 22.0,
+      "ink": 0.2413787841796875
+    }
+  ],
+  "std_display": "raw std_path, model uses sigma0.65 std-soft recorded in protocol",
+  "mislabelled_baseline": {
+    "path": "G:\\GitHub\\DiT\\assets\\style_eval_src\\step0200000",
+    "actual_source": "G:\\GitHub\\DiT\\assets\\results\\v80_callivae_physics_noOT\\20261011-195827-v80-callivae-physics-noOT\\eval_samples_ctrl\\step0200000\\eval200fix",
+    "sha256_matches": 187,
+    "n": 187
+  }
+}
