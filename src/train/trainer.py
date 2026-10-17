@@ -69,7 +69,6 @@ class TrainState:
     _ch_w: object = None
     _ckpt: object = None
     _critic_loss_fn: object = None
-    _empty_cache_at: object = None
     _epoch_steps: object = None
     _epochs_needed: object = None
     _es_check_every: object = None
@@ -149,7 +148,6 @@ def training_loop(s: TrainState):
     _ch_w = s._ch_w
     _ckpt = s._ckpt
     _critic_loss_fn = s._critic_loss_fn
-    _empty_cache_at = s._empty_cache_at
     _epoch_steps = s._epoch_steps
     _epochs_needed = s._epochs_needed
     _es_check_every = s._es_check_every
@@ -211,6 +209,10 @@ def training_loop(s: TrainState):
             for batch_idx, batch in enumerate(loader):
                 # ★ 2026-10-11 算子级 profile / 分配历史: 窗口起点 ⇒ 见 telemetry.py ✓
                 _diag.maybe_start(batch_idx)
+                if repa_loss_fn is not None and args.w_repa > 0 and getattr(args, 'repa_cache_prefetch', True):
+                    cache = getattr(repa_loss_fn, 'feature_cache', None)
+                    if cache is not None and 'img_id' in batch:
+                        cache.prefetch(batch['img_id'], device)
                 # ★ non_blocking=True: DataLoader 已开 pin_memory=True，但**必须显式传**
                 #   这个参数才会走异步拷贝；否则即使源在 pinned 内存里也是同步拷贝，
                 #   主机线程会被阻塞（图像单批 ~283MB，实测代价可观）。见 docs/system/70 §8.6。
@@ -248,6 +250,12 @@ def training_loop(s: TrainState):
                     args, batch, device, cond_mode=cond_mode,
                     std_soft_cond=_std_soft_cond,
                     y_callig=y_callig, y_char=y_char, y_script=y_script)
+
+                if getattr(args,'std_shape_aug','off')!='off':
+                    if '_std_shape' not in locals():
+                        from src.train.std_shape import StdShapeTraining
+                        _std_shape=StdShapeTraining(args,logger)
+                    _std_shape(model,batch,model_kwargs,x_latent,train_steps)
 
                 # ── 条件几何形变增强 (Condition Deformation Augmentation) ───────
                 _g_def_prob = float(getattr(args, 'glyph_deform_prob', 0.0))
@@ -804,41 +812,6 @@ def training_loop(s: TrainState):
                 train_steps += 1
                 _inj_probe.maybe_log(train_steps)
 
-                # ★ 回收 torch.compile 的显存空洞（见 cli.py --empty-cache-after-warmup 的说明）
-                #
-                # ⚠ 必须在 warmup **期间每一步**都回收，不能只在结束后调一次：
-                #   空洞是在前几十步里逐步累积的，而 batch 撑爆时 OOM 就发生在
-                #   **warmup 期间**（实测 batch360 挂在 empty_strided_cuda((360,256,1024))）。
-                #   结束后再回收，峰值已经过去了，救不了 OOM。
-                #   每步调一次 empty_cache() 把高水位钉在当前步的活跃需求上。
-                # 成本: 前 N 步每步多一次 device sync(~1-5ms)，一次性 ~0.2s，可忽略。
-                if _empty_cache_at > 0 and train_steps <= _empty_cache_at:
-                    _r0 = torch.cuda.memory_reserved() / 2 ** 30
-                    _a0 = torch.cuda.memory_allocated() / 2 ** 30
-                    torch.cuda.empty_cache()
-                    if rank == 0 and (train_steps == _empty_cache_at
-                                      or train_steps in (1, 10, 25)):
-                        logger.info(
-                            f"[alloc] step {train_steps} warmup empty_cache: reserved "
-                            f"{_r0:.2f}G -> {torch.cuda.memory_reserved() / 2 ** 30:.2f}G | "
-                            f"活跃 {_a0:.2f}G -> "
-                            f"{torch.cuda.memory_allocated() / 2 ** 30:.2f}G | "
-                            f"高水位 {torch.cuda.max_memory_reserved() / 2 ** 30:.2f}G | "
-                            f"空洞 {_r0 - _a0:.2f}G")
-                        # ★ 空洞 = reserved - allocated（allocator 缓存住、但没有任何
-                        #   活张量在用的块）。要弄清"是谁把它顶上去的"，光看总量不够 ——
-                        #   把按**尺寸分桶**的分配统计打出来，就能看出是"很多个小块"还是
-                        #   "几个巨块"：前者是碎片/内核工作区，后者是某个大张量。
-                        if getattr(args, "alloc_debug", False):
-                            _st = torch.cuda.memory_stats()
-                            _big = {k: v for k, v in _st.items()
-                                    if "allocated_bytes" in k or "segment" in k
-                                    or "num_" in k}
-                            logger.info("[alloc] 尺寸分桶: " + " ".join(
-                                f"{k}={v}" for k, v in sorted(_big.items())))
-                            logger.info("[alloc] memory_summary:\n"
-                                        + torch.cuda.memory_summary())
-
                 if train_steps % args.log_every == 0:
                     torch.cuda.synchronize()
                     end_time = time()
@@ -973,6 +946,9 @@ def training_loop(s: TrainState):
                 if args.max_steps > 0 and train_steps >= args.max_steps:
                     logger.info(f"Reached max_steps={args.max_steps}; stopping cleanly.")
                     break
+                if getattr(args,'stop_at_step',0)>0 and train_steps>=args.stop_at_step:
+                    logger.info('Reached phase stop_at_step=%d; preserve global scheduler for resume-full.',args.stop_at_step)
+                    break
 
                 if (train_steps >= int(getattr(args, 'early_stop_min_steps', 0))
                         and train_steps % _es_check_every == 0
@@ -991,6 +967,8 @@ def training_loop(s: TrainState):
             break
 
         if args.max_steps > 0 and train_steps >= args.max_steps:
+            break
+        if getattr(args,'stop_at_step',0)>0 and train_steps>=args.stop_at_step:
             break
 
         if early_stop_stopped:

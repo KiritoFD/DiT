@@ -42,6 +42,7 @@ class CoreCfg:
     rope: bool = True
     rope_theta: float = 100.0
     attn_impl: str = "sdpa"
+    use_fused_ops: bool = False
 
 
 @dataclass
@@ -82,6 +83,8 @@ class GlyphCfg:
     use_glyph_cond: bool = False
     std_soft_cond: bool = False
     std_soft_zero_init: bool = True
+    std_soft_bias: bool = True
+    glyph_scale_bound: float = 0.0
     glyph_scale_init: float = 0.4
     glyph_concat_input: bool = False
     glyph_gate_t: float = 0.0
@@ -128,6 +131,8 @@ class CalligStyleCfg:
     script_film: bool = False
     spatial_film_rank: int = 0
     lowrank_spatial_rank: int = 0
+    writer_glyph_rank: int = 0
+    writer_glyph_at: str = "3,7"
 
 
 @dataclass
@@ -211,6 +216,7 @@ class DiTConfig:
                 rope=d["rope"],
                 rope_theta=g("rope_theta", 100.0),
                 attn_impl=g("attn_impl", "sdpa"),
+                use_fused_ops=bool(g("use_fused_ops", False)),
             ),
             cond=CondDropCfg(
                 cond_drop_all_prob=g("cond_drop_all_prob"),
@@ -242,6 +248,8 @@ class DiTConfig:
                 use_glyph_cond=d["use_glyph_cond"],
                 std_soft_cond=d["std_soft_cond"],
                 std_soft_zero_init=bool(g("std_soft_zero_init", True)),
+                std_soft_bias=bool(g("std_soft_bias", True)),
+                glyph_scale_bound=gf("glyph_scale_bound", 0.0),
                 glyph_scale_init=gf("glyph_scale_init", 0.4),
                 glyph_concat_input=bool(g("glyph_concat_input", False)),
                 glyph_gate_t=gf("glyph_gate_t", 0.0),
@@ -283,6 +291,8 @@ class DiTConfig:
                 script_film=bool(g("script_film", False)),
                 spatial_film_rank=gi("spatial_film_rank", 0),
                 lowrank_spatial_rank=gi("lowrank_spatial_rank", 0),
+                writer_glyph_rank=gi("writer_glyph_rank", 0),
+                writer_glyph_at=str(g("writer_glyph_at", "3,7")),
             ),
             local_ca=LocalCACfg(
                 local_ca_layers=gi("local_ca_layers", 0),

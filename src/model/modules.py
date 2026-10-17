@@ -103,6 +103,7 @@ class RMSNorm(nn.Module):
         super().__init__()
         self.eps = float(eps)
         self.dim = int(dim)
+        self.elementwise_affine = bool(elementwise_affine)
         if elementwise_affine:
             self.weight = nn.Parameter(torch.ones(dim))
         else:
@@ -176,20 +177,45 @@ class SwiGLUFeedForward(nn.Module):
             hidden_dim = int(dim * mlp_ratio)
         hidden_dim = int(2 * hidden_dim / 3)
         hidden_dim = multiple_of * ((hidden_dim + multiple_of - 1) // multiple_of)
+        self.dim = dim
         self.hidden_dim = hidden_dim
-        self.fc1 = nn.Linear(dim, hidden_dim, bias=False)
-        self.fc_gate = nn.Linear(dim, hidden_dim, bias=False)
-        self.fc2 = nn.Linear(hidden_dim, dim, bias=False)
-        self.drop = nn.Dropout(drop)
         self.use_fused_ops = bool(use_fused_ops)
 
-    def forward(self, x):
-        h1 = self.fc1(x)
-        h2 = self.fc_gate(x)
-        if self.use_fused_ops and x.is_cuda:
-            from src.model.fused_ops import fused_swiglu
-            act = fused_swiglu(h1, h2)
+        if self.use_fused_ops:
+            self.fc1_gate = nn.Linear(dim, 2 * hidden_dim, bias=False)
         else:
+            self.fc1 = nn.Linear(dim, hidden_dim, bias=False)
+            self.fc_gate = nn.Linear(dim, hidden_dim, bias=False)
+        self.fc2 = nn.Linear(hidden_dim, dim, bias=False)
+        self.drop = nn.Dropout(drop)
+
+    def _load_from_state_dict(self, state_dict, prefix, local_metadata, strict,
+                              missing_keys, unexpected_keys, error_msgs):
+        if self.use_fused_ops:
+            k1 = f"{prefix}fc1.weight"
+            k2 = f"{prefix}fc_gate.weight"
+            k_packed = f"{prefix}fc1_gate.weight"
+            if k_packed not in state_dict and k1 in state_dict and k2 in state_dict:
+                state_dict[k_packed] = torch.cat([state_dict.pop(k1), state_dict.pop(k2)], dim=0)
+        else:
+            k_packed = f"{prefix}fc1_gate.weight"
+            k1 = f"{prefix}fc1.weight"
+            k2 = f"{prefix}fc_gate.weight"
+            if k_packed in state_dict and (k1 not in state_dict or k2 not in state_dict):
+                w_packed = state_dict.pop(k_packed)
+                state_dict[k1] = w_packed[:self.hidden_dim]
+                state_dict[k2] = w_packed[self.hidden_dim:]
+        super()._load_from_state_dict(state_dict, prefix, local_metadata, strict,
+                                     missing_keys, unexpected_keys, error_msgs)
+
+    def forward(self, x):
+        if self.use_fused_ops and x.is_cuda:
+            from src.model.fused_ops import fused_swiglu_packed
+            h = self.fc1_gate(x)
+            act = fused_swiglu_packed(h)
+        else:
+            h1 = self.fc1(x)
+            h2 = self.fc_gate(x)
             act = F.silu(h1) * h2
         return self.drop(self.fc2(act))
 
@@ -258,10 +284,11 @@ class Attention(nn.Module):
     """
 
     def __init__(self, hidden_size, num_heads, qkv_bias=True, qk_norm=True,
-                 attn_drop=0.0, proj_drop=0.0, attn_impl="sdpa"):
+                 attn_drop=0.0, proj_drop=0.0, attn_impl="sdpa", use_fused_ops=False):
         super().__init__()
         self.hidden_size = int(hidden_size)
         self.num_heads = int(num_heads)
+        self.use_fused_ops = bool(use_fused_ops)
         if self.hidden_size % self.num_heads != 0:
             raise ValueError(
                 f"hidden_size({self.hidden_size}) must be divisible by num_heads({self.num_heads})")
@@ -287,13 +314,26 @@ class Attention(nn.Module):
         qkv = self.qkv(x).reshape(B, N, 3, self.num_heads, self.head_dim).permute(2, 0, 3, 1, 4)
         q, k, v = qkv.unbind(0)                       # (B, H, N, Dh)
 
-        if self.q_norm is not None:
-            q = self.q_norm(q)
-            k = self.k_norm(k)
-        if rope is not None:
+        if self.use_fused_ops and q.is_cuda and rope is not None and self.q_norm is not None:
+            from src.model.fused_ops import fused_qknorm_rope
             cos, sin = rope
-            q = apply_rope(q, cos, sin)
-            k = apply_rope(k, cos, sin)
+            weight_q = self.q_norm.weight if getattr(self.q_norm, "elementwise_affine", False) or getattr(self.q_norm, "weight", None) is not None else None
+            weight_k = self.k_norm.weight if getattr(self.k_norm, "elementwise_affine", False) or getattr(self.k_norm, "weight", None) is not None else None
+            q = fused_qknorm_rope(q, weight_q, cos, sin, eps=self.q_norm.eps)
+            k = fused_qknorm_rope(k, weight_k, cos, sin, eps=self.k_norm.eps)
+        else:
+            if self.q_norm is not None:
+                q = self.q_norm(q)
+                k = self.k_norm(k)
+            if rope is not None:
+                cos, sin = rope
+                if self.use_fused_ops and q.is_cuda:
+                    from src.model.fused_ops import fused_rope
+                    q = fused_rope(q, cos, sin)
+                    k = fused_rope(k, cos, sin)
+                else:
+                    q = apply_rope(q, cos, sin)
+                    k = apply_rope(k, cos, sin)
 
         if self.attn_impl == "sdpa":
             out = _SDPA(q, k, v, dropout_p=self.attn_drop if self.training else 0.0)
@@ -487,7 +527,8 @@ class DiTBlock(nn.Module, StyleAdaBranchInitMixin):
         self.use_fused_ops = bool(use_fused_ops)
         self.norm1 = build_norm(norm_type, hidden_size)
         self.attn = Attention(hidden_size, num_heads=num_heads, qkv_bias=True,
-                              qk_norm=qk_norm, attn_impl=attn_impl, **block_kwargs)
+                              qk_norm=qk_norm, attn_impl=attn_impl,
+                              use_fused_ops=use_fused_ops, **block_kwargs)
         self.norm2 = build_norm(norm_type, hidden_size)
         self.mlp = build_mlp(mlp_type, hidden_size, mlp_ratio=mlp_ratio, use_fused_ops=use_fused_ops)
         self.adaLN_modulation = nn.Sequential(
@@ -537,15 +578,33 @@ class DiTBlock(nn.Module, StyleAdaBranchInitMixin):
         else:
             x_norm1 = modulate(self.norm1(x), shift_msa, scale_msa)
 
-        x = x + gate_msa.unsqueeze(1) * self.attn(x_norm1, rope=rope)
+        attn_out = self.attn(x_norm1, rope=rope)
 
-        if self.use_fused_ops and x.is_cuda and isinstance(self.norm2, RMSNorm) and self.norm2.weight is None:
-            from src.model.fused_ops import fused_adaln_rmsnorm
-            x_norm2 = fused_adaln_rmsnorm(x, scale_mlp, shift_mlp, eps=self.norm2.eps)
+        if (self.use_fused_ops and x.is_cuda and isinstance(self.norm2, RMSNorm)
+                and self.norm2.weight is None):
+            from src.model.fused_ops import fused_gate_residual_adaln_rmsnorm
+            x, x_norm2 = fused_gate_residual_adaln_rmsnorm(
+                x, attn_out, gate_msa, scale_mlp, shift_mlp, eps=self.norm2.eps
+            )
         else:
-            x_norm2 = modulate(self.norm2(x), shift_mlp, scale_mlp)
+            if self.use_fused_ops and x.is_cuda:
+                from src.model.fused_ops import fused_gate_residual
+                x = fused_gate_residual(x, attn_out, gate_msa)
+            else:
+                x = x + gate_msa.unsqueeze(1) * attn_out
 
-        x = x + gate_mlp.unsqueeze(1) * self.mlp(x_norm2)
+            if self.use_fused_ops and x.is_cuda and isinstance(self.norm2, RMSNorm) and self.norm2.weight is None:
+                from src.model.fused_ops import fused_adaln_rmsnorm
+                x_norm2 = fused_adaln_rmsnorm(x, scale_mlp, shift_mlp, eps=self.norm2.eps)
+            else:
+                x_norm2 = modulate(self.norm2(x), shift_mlp, scale_mlp)
+
+        mlp_out = self.mlp(x_norm2)
+        if self.use_fused_ops and x.is_cuda:
+            from src.model.fused_ops import fused_gate_residual
+            x = fused_gate_residual(x, mlp_out, gate_mlp)
+        else:
+            x = x + gate_mlp.unsqueeze(1) * mlp_out
         return x
 
 
@@ -554,8 +613,9 @@ class DiTBlock(nn.Module, StyleAdaBranchInitMixin):
 # --------------------------------------------------------------------------- #
 class FinalLayer(nn.Module, StyleAdaBranchInitMixin):
     def __init__(self, hidden_size, patch_size, out_channels, norm_type="rms",
-                 style_ada_rank=0, style_in_dim=0, style_ada_gain=False):
+                 style_ada_rank=0, style_in_dim=0, style_ada_gain=False, use_fused_ops=False):
         super().__init__()
+        self.use_fused_ops = bool(use_fused_ops)
         self.norm_final = build_norm(norm_type, hidden_size)
         self.linear = nn.Linear(hidden_size, patch_size * patch_size * out_channels, bias=True)
         self.adaLN_modulation = nn.Sequential(
@@ -593,7 +653,11 @@ class FinalLayer(nn.Module, StyleAdaBranchInitMixin):
 
     def forward(self, x, c, c_style=None):
         shift, scale = self._mod2(c, c_style).chunk(2, dim=1)
-        x = modulate(self.norm_final(x), shift, scale)
+        if self.use_fused_ops and x.is_cuda and isinstance(self.norm_final, RMSNorm) and self.norm_final.weight is None:
+            from src.model.fused_ops import fused_adaln_rmsnorm
+            x = fused_adaln_rmsnorm(x, scale, shift, eps=self.norm_final.eps)
+        else:
+            x = modulate(self.norm_final(x), shift, scale)
         return self.linear(x)
 
 

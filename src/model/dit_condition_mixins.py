@@ -47,6 +47,11 @@ class DitConditionMixin:
         """
         # 甲2 标准字形条件的 token-add 缩放(可学习, 初始 glyph_scale_init, 让字形条件有存在感)
         self.glyph_scale = nn.Parameter(torch.tensor(self.glyph_scale_init))
+        if self.glyph_scale_bound > 0:
+            if not 0 < self.glyph_scale_init < self.glyph_scale_bound:
+                raise ValueError('Bounded glyph scale requires0 < init < bound')
+            with torch.no_grad():
+                self.glyph_scale.copy_(torch.atanh(torch.tensor(self.glyph_scale_init/self.glyph_scale_bound)))
         # 标准字形条件：独立可训练 glyph_embedder。旧路径编码 G(4,32,32)，
         # std-soft 路径编码 raw mask(1,64,64)，两者都输出与 x 同形的 16x16 token。
         # 独立投影而非复用 x_embedder: 保证 g 编码可学习、norm 可控, 不依赖 x_embedder
@@ -72,9 +77,9 @@ class DitConditionMixin:
                 if self.glyph_concat_input:
                     raise ValueError("std_soft_cond is incompatible with glyph_concat_input")
                 self.glyph_embedder = nn.Sequential(
-                    nn.Conv2d(1, 32, kernel_size=3, stride=2, padding=1),
+                    nn.Conv2d(1, 32, kernel_size=3, stride=2, padding=1, bias=self.std_soft_bias),
                     nn.SiLU(),
-                    nn.Conv2d(32, 64, kernel_size=3, stride=2, padding=1),
+                    nn.Conv2d(32, 64, kernel_size=3, stride=2, padding=1, bias=self.std_soft_bias),
                     nn.SiLU(),
                     nn.Conv2d(64, hidden_size, kernel_size=1, bias=False),
                 )

@@ -535,6 +535,9 @@ def _add_args_4(parser):
                         help="RoPE base frequency (SD3/Lumina use 100 for 2D image RoPE).")
     parser.add_argument("--attn-impl", type=str, default="sdpa", choices=["sdpa", "eager"],
                         dest="attn_impl", help="Attention kernel. 'sdpa' = Flash/mem-efficient.")
+    parser.add_argument("--use-fused-ops", "--use_fused_ops", type=_str_to_bool, default=False,
+                        dest="use_fused_ops",
+                        help="Enable Triton fused operators (fused adaLN-RMSNorm, SwiGLU packed GEMM, Gate-Residual, RoPE).")
     parser.add_argument("--compile", type=_str_to_bool, default=False,
                         help="Wrap the whole model with torch.compile before DDP (needs torch>=2.0). "
                              "Speeds up PyTorch 2.x inductor kernels on cu121 env; first step is slow "
@@ -985,6 +988,19 @@ def _add_args_7(parser):
     parser.add_argument('--strong-style-probe-every', type=int, default=50)
     parser.add_argument('--strong-style-max-weight', type=float, default=0.1)
     parser.add_argument('--strong-style-quantile', type=float, default=0.25)
+    parser.add_argument('--std-soft-bias', type=_str_to_bool, default=True)
+    parser.add_argument('--glyph-scale-bound', type=float, default=0.)
+    parser.add_argument('--std-shape-aug', choices=['off','mild','strong'], default='off')
+    parser.add_argument('--std-shape-cache', default='')
+    parser.add_argument('--std-shape-log-every', type=int, default=500)
+    parser.add_argument('--stop-at-step', type=int, default=0,
+                        help='Finite phase boundary, keeping max_steps/LR horizon unchanged for resume-full')
+    parser.add_argument('--pair-fraction', type=float, default=0.)
+    parser.add_argument('--rank-gradient-ratio', type=float, default=0.)
+    parser.add_argument('--rank-t-min', type=float, default=.4)
+    parser.add_argument('--rank-t-max', type=float, default=.8)
+    parser.add_argument('--rank-margin', type=float, default=.01)
+    parser.add_argument('--rank-tau', type=float, default=.1)
     parser.add_argument('--crosschar-bank',default='')
     parser.add_argument('--crosschar-encoder-ckpt',default='')
     parser.add_argument('--crosschar-gradient-ratio',type=float,default=0.)
@@ -1063,31 +1079,20 @@ def _add_args_7(parser):
                         choices=["auto", "always", "never"],
                         help="REPA 是否需要原图: auto=有 repa_cache_dir 时不载图(省 RAM/带宽); "
                              "always=旧行为(总是载图, 兼容); never=强制不载(真 miss 会显式报错)")
+    parser.add_argument('--repa-cache-prefetch', action=argparse.BooleanOptionalAction, default=True,
+                        help='Overlap event-guarded teacher cache H2D with DiT forward')
+    parser.add_argument('--compile-fullgraph', action='store_true',
+                        help='Fail on graph breaks during a dedicated compile diagnostic')
+    parser.add_argument('--compile-pattern-matcher', choices=['legacy','on','off'], default='legacy',
+                        help='Explicit fusion override; legacy preserves existing compile behavior')
     parser.add_argument("--repa-teacher-ckpt", type=str, default="",
                         help="Local path to DINOv2 teacher weights (ModelScope safetensors). "
                              "Empty = auto-detect data/pretrained/dinov2_vits14_pretrain.safetensors or $DINO_WEIGHTS.")
-    # ── 显存"空洞"回收（2026-09-17）────────────────────────────────────────
-    # 背景: `torch.compile` 在前几十步会把 allocator 的高水位顶到远超真实活跃需求
-    #   （实测 xattn @ batch240: 活跃 14.42G, 高水位 20.51G, **空洞 6.09G / 42%**）。
-    #   这个空洞一直白占着，直到某个 `empty_cache()` 才还给驱动。
-    #   后果: 决定能否上更大 batch 的是**高水位**而不是活跃需求 ——
-    #   batch360 的活跃需求(22.2G)其实装得下，但高水位(~31G)装不下 -> OOM。
-    # 修法: warmup 结束后调一次 `torch.cuda.empty_cache()`，把空洞还给驱动。
-    parser.add_argument("--alloc-debug", action="store_true", dest="alloc_debug",
-                        help="在 warmup 的 [alloc] 点额外转储按尺寸分桶的分配统计 + "
-                             "torch.cuda.memory_summary()，用来定位显存空洞里到底是什么"
-                             "（很多小块 = 碎片/内核工作区；几个巨块 = 某个大张量）。")
     # ★ 2026-10-11: 算子级 profile 适配开关（默认关, 不影响任何现有配方）
     parser.add_argument("--profile-steps", type=int, default=0, dest="profile_steps",
                         help="对训练循环中 N 步做 torch.profiler 并打印逐算子 CUDA/CPU 时间表（0=关）")
     parser.add_argument("--profile-skip", type=int, default=20, dest="profile_skip",
                         help="profile 前跳过的 warmup 步数（默认 20）")
-    parser.add_argument("--empty-cache-after-warmup", type=int, default=50,
-                        dest="empty_cache_after_warmup",
-                        help="在第 N 步之后调一次 torch.cuda.empty_cache()，回收 torch.compile "
-                             "warmup 期间 allocator 囤积的显存空洞。0 = 关闭。"
-                             "实测可回收 ~6G（高水位 20.51G -> 14.42G），"
-                             "是把 batch 从 240 提到 360 的前提。")
     # ── 4ch -> 12ch 后训练（2026-09-17）───────────────────────────────────
     # 用 4ch 预训练的 ckpt 起 12ch 训练。**不能用 --resume-full** ——
     # 它走 strict=False，形状不匹配的 3 个张量会被静默跳过、停在随机初始化。

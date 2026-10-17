@@ -1,4 +1,5 @@
 import torch
+import os
 import torch.nn as nn
 import torch.nn.functional as F
 from torchvision.models import resnet18, ResNet18_Weights, resnet34, ResNet34_Weights
@@ -26,7 +27,13 @@ class MultiTaskCalligraphyEvalNet(nn.Module):
         self.is_dinov2 = backbone.startswith("dinov2")
         
         if self.is_dinov2:
-            self.backbone = torch.hub.load('facebookresearch/dinov2', backbone)
+            cached_repo = os.path.join(torch.hub.get_dir(), 'facebookresearch_dinov2_main')
+            if os.path.isfile(os.path.join(cached_repo, 'hubconf.py')):
+                self.backbone = torch.hub.load(cached_repo, backbone, source='local',
+                                              pretrained=pretrained)
+            else:
+                self.backbone = torch.hub.load('facebookresearch/dinov2', backbone,
+                                              pretrained=pretrained)
             in_features = self.backbone.embed_dim # 384 for vits14, 768 for vitb14
             if freeze_backbone:
                 for p in self.backbone.parameters():

@@ -42,6 +42,7 @@ class StepProfiler:
         self.skip = int(getattr(args, "profile_skip", 20) or 20)
         self._obj = None
         self._cnt = 0
+        self._done = False
 
     @property
     def active(self) -> bool:
@@ -49,7 +50,7 @@ class StepProfiler:
 
     def maybe_start(self, batch_idx: int) -> None:
         """窗口起点 ✓（逐字等价于旧内联 ✓）。"""
-        if self.n and self._obj is None and batch_idx >= self.skip:
+        if self.n and not self._done and self._obj is None and batch_idx >= self.skip:
             self._obj = torch.profiler.profile(
                 activities=[torch.profiler.ProfilerActivity.CPU,
                             torch.profiler.ProfilerActivity.CUDA],
@@ -70,15 +71,18 @@ class StepProfiler:
         try:
             self._obj.__exit__(None, None, None)
             _avg = self._obj.key_averages()
-            _cuda = sum(float(getattr(o, "self_cuda_time_total", 0.0))
-                        for o in _avg) / 1e3 / max(self._cnt, 1)
+            # Count device events only: CPU operator aggregates also contain CUDA
+            # time and summing both double-counts the same kernels.
+            _cuda = sum(float(getattr(o, 'self_device_time_total', getattr(o, 'self_cuda_time_total', 0.0)))
+                        for o in self._obj.events()
+                        if o.device_type == torch.autograd.DeviceType.CUDA) / 1e3 / max(self._cnt, 1)
             _cpu = sum(float(getattr(o, "self_cpu_time_total", 0.0))
                        for o in _avg) / 1e3 / max(self._cnt, 1)
             if self.logger is not None:
                 self.logger.info(
                     f"[profile] N={self._cnt} 步 | 排他 CUDA 忙 = {_cuda:.1f} ms/步 | "
                     f"排他 CPU = {_cpu:.1f} ms/步 | "
-                    f"（GPU 占空比 ≈ {_cuda:.0f}ms / 实测步时；两者差 = 启动/等待开销）")
+                    "（kernel 时间之和；多流可能重叠，不等同墙钟占空比）")
                 self.logger.info("[profile] 逐算子 CUDA 时间 TOP20:\n"
                                  + _avg.table(sort_by="self_cuda_time_total", row_limit=20))
                 self.logger.info("[profile] 逐算子 CPU 时间 TOP15:\n"
@@ -87,6 +91,7 @@ class StepProfiler:
             if self.logger is not None:
                 self.logger.warning(f"[profile] 打印失败: {_pe}")
         self._obj = None
+        self._done = True
 
     def describe(self) -> str:
         return f"profile_steps={self.n} skip={self.skip}"

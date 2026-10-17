@@ -86,9 +86,9 @@ class RepaModule(nn.Module):
             * 单张量 (len(layers)==1)
         img: (B,3,H,W) GT 图 [-1,1]
         img_ids: (B,) 样本 id — 配合 feature_cache 查表 (免 DINO 前向)
-        返回: w_eff * loss (标量张量), 当 img 为 None 或缺少特征时返回 0
+        返回: w_eff * loss；完整缓存允许 img=None，缺少学生特征时返回 0。
         """
-        if img is None:
+        if img is None and (self.feature_cache is None or img_ids is None):
             return torch.tensor(0.0, device=next(self.parameters()).device)
         # 收集学生特征
         if isinstance(intermediate_feats, dict):

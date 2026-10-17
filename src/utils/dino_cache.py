@@ -82,6 +82,10 @@ class DinoFeatureCache:
         self._feats = None
         self._feats_mm = None
         self._out_buf = None   # 预分配 pinned 输出缓冲 (index_select out= 避免 pageable 慢路径)
+        self._prefetch_slots = [None, None]
+        self._prefetch_index = 0
+        self._prefetch_stream = None
+        self._pending = None
         self.verbose = bool(verbose)
 
         # ── 磁盘 dtype（显式记录 ✓ 不再"看路径猜" ✗）──
@@ -179,14 +183,51 @@ class DinoFeatureCache:
                 f"out=fp32 ({os.path.getsize(self.feats_path) / 2**30:.1f} GiB)")
 
     @torch.no_grad()
+    def prefetch(self, img_ids, device):
+        """Stage this batch before DiT forward; event-guarded double pinned buffers."""
+        device = torch.device(device)
+        if self._feats is None or device.type != 'cuda':
+            return
+        q = np.asarray(img_ids, dtype=np.int64).copy()
+        pos, valid = self._valid_mask(q)
+        rows = np.where(valid, self._sorted_rows[np.clip(pos, 0, len(self._sorted_ids)-1)], 0)
+        missing = np.flatnonzero(~valid).tolist()
+        if self._prefetch_stream is None:
+            self._prefetch_stream = torch.cuda.Stream(device=device)
+        slot = self._prefetch_slots[self._prefetch_index]
+        if slot is not None:
+            slot[1].synchronize()  # CPU may overwrite pinned bytes only after DMA completes.
+        if slot is None or slot[0].shape[0] != len(rows):
+            slot = (torch.empty(len(rows), self.patches, self.dim,
+                                dtype=self._feats.dtype, pin_memory=True), torch.cuda.Event())
+            self._prefetch_slots[self._prefetch_index] = slot
+        self._prefetch_index = 1-self._prefetch_index
+        torch.index_select(self._feats, 0, torch.from_numpy(rows), out=slot[0])
+        stream = self._prefetch_stream
+        stream.wait_stream(torch.cuda.current_stream(device))
+        with torch.cuda.stream(stream):
+            out = slot[0].to(device=device, dtype=torch.float32, non_blocking=True)
+            slot[1].record(stream)
+        self._pending = (q, out, missing, slot[1])
+
+    @torch.no_grad()
     def gather(self, img_ids, device="cpu"):
         """img_ids: tensor/list of int。返回 (feats(B,P,D) **fp32** on device, missing 位置列表)。
 
-        实现: searchsorted 行号映射 -> index_select（pinned ✓ 预分配 out= ✓）-> **同步** H2D ✓。
-        无 page-fault ✓ 无 CPU 端 dtype 转换 ✓；**不是** async H2D ✗（见模块文档 ✓）。
+        With a matching prefetch, wait only on its CUDA event; otherwise use the
+        synchronous pinned-buffer path. Both return the same FP32 features.
         返回 dtype **恒为 fp32** ✓（pinned/memmap 两条路径一致 ✓ 修掉旧的静默不一致 ✗）。
         """
         q = np.asarray([int(i) for i in img_ids], dtype=np.int64)
+        if self._pending is not None:
+            ids, out, missing, ready = self._pending
+            requested = torch.device(device)
+            same_device = requested.type == out.device.type and (requested.index is None or requested.index == out.device.index)
+            if same_device and np.array_equal(ids, q):
+                current = torch.cuda.current_stream(out.device)
+                current.wait_event(ready)
+                out.record_stream(current)
+                return out, missing
         pos, valid = self._valid_mask(q)
         rows = np.where(valid, self._sorted_rows[np.clip(pos, 0, len(self._sorted_ids) - 1)], 0)
         missing = np.nonzero(~valid)[0].tolist()

@@ -647,6 +647,7 @@ class EmbedGlyphCfg:
     use_glyph_cond: Any
     x_embedder: Any
     y_callig_embedder: Any
+    zero_subtract_vector: bool = False
 
     @classmethod
     def from_model(cls, m):
@@ -659,7 +660,8 @@ class EmbedGlyphCfg:
                    deform_skel=getattr(m, "deform_skel", None),
                    glyph_concat_input=getattr(m, "glyph_concat_input", None),
                    glyph_embedder=getattr(m, "glyph_embedder", None),
-                   glyph_scale=getattr(m, "glyph_scale", None),
+                   glyph_scale=(m.effective_glyph_scale() if hasattr(m, 'effective_glyph_scale') else getattr(m, "glyph_scale", None)),
+                   zero_subtract_vector=bool(getattr(m,'std_soft_cond',False) and not getattr(m,'std_soft_bias',True)),
                    glyph_vec_cond=getattr(m, "glyph_vec_cond", None),
                    glyph_vec_pool=getattr(m, "glyph_vec_pool", None),
                    glyph_vec_proj=getattr(m, "glyph_vec_proj", None),
@@ -796,6 +798,8 @@ def embed_glyph(cfg, x, g, keep, y_callig_in, e_style, e_script, style_tokens, _
             _pooled = torch.zeros(x.shape[0], cfg.x_embedder.hidden_size,
                                   device=x.device, dtype=x.dtype)
         e_glyph_vec = cfg.glyph_vec_proj(_pooled)
+        if cfg.zero_subtract_vector:
+            e_glyph_vec = e_glyph_vec-cfg.glyph_vec_proj(torch.zeros_like(_pooled))
     return x, g_tok, e_glyph_vec
 
 

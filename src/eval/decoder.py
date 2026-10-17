@@ -264,7 +264,7 @@ def _get_lpips():
 def _lpips_per_sample(pred_np, gt_np, enabled=True):
     """pred_np/gt_np: (N,H,W,3) float32 [0,1] -> list[float] 或 None。
 
-    转成 LPIPS 要求的 (N,3,H,W) [-1,1] 后一次批量 forward。
+    转成 LPIPS 要求的 (N,3,H,W) [-1,1]，按网络设备分批运行。
     """
     if not enabled:
         return None
@@ -276,9 +276,15 @@ def _lpips_per_sample(pred_np, gt_np, enabled=True):
         g = torch.from_numpy(np.ascontiguousarray(gt_np)).permute(0, 3, 1, 2).float()
         p = (p * 2.0 - 1.0).clamp(-1, 1)
         g = (g * 2.0 - 1.0).clamp(-1, 1)
+        # _get_lpips may return a CUDA model. Keep CPU arrays off GPU until
+        # their microbatch; otherwise187 VGG pairs exceed a24GB card.
+        parameter = next(fn.parameters(), None)
+        device = parameter.device if parameter is not None else torch.device('cpu')
+        values = []
         with torch.no_grad():
-            d = fn(p, g)
-        d = d.reshape(-1).cpu().numpy().astype(float)
+            for start in range(0, len(p), 8):
+                values.append(fn(p[start:start+8].to(device), g[start:start+8].to(device)).reshape(-1).cpu())
+        d = torch.cat(values).numpy().astype(float)
         return [float(x) for x in d]
     except Exception as _e:                                    # noqa: BLE001
         print(f"[in-mem-eval] LPIPS forward failed ({_e!r}); lpips 列将留空")

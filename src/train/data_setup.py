@@ -70,10 +70,10 @@ def build_data(args, *, rank, world_size, resume_start_step, std_soft_cond,
                                     use_glyph_cond=getattr(args, 'w_glyph_cond', False),
                                     std_soft_root=(getattr(args, 'std_soft_root', '')
                                                    if std_soft_cond else None),
-                                    std_soft_sigma_min=float(getattr(
-                                        args, 'std_soft_sigma_min', 0.4)),
-                                    std_soft_sigma_max=float(getattr(
-                                        args, 'std_soft_sigma_max', 1.0)),
+                                    std_soft_sigma_min=(.65 if getattr(args,'std_shape_aug','off')!='off' else float(getattr(
+                                        args, 'std_soft_sigma_min', 0.4))),
+                                    std_soft_sigma_max=(.65 if getattr(args,'std_shape_aug','off')!='off' else float(getattr(
+                                        args, 'std_soft_sigma_max', 1.0))),
                                     std_soft_eval_sigma=float(getattr(
                                         args, 'std_soft_eval_sigma', 0.65)),
                                     skel_latent_shards_dir=(args.skel_latent_shards_dir
@@ -142,7 +142,19 @@ def build_data(args, *, rank, world_size, resume_start_step, std_soft_cond,
     # deferred 模式下两处 eval 块整段跳过（见 --eval-mode 的 help）。
     # 注: 不再需要"ckpt 周期整除 eval 周期"的护栏 —— 合并刻度后该条件**恒成立**。
     _EVAL_INLINE = str(getattr(args, 'eval_mode', 'inline')) == "inline"
-    if args.sampler == "factor_balanced":
+    if getattr(args,'std_shape_aug','off')!='off':
+        if not std_soft_cond or not use_latent:raise ValueError('STD shape requires raw STD + cached image latents')
+        from src.utils.std_shape_data import StdShapeDataset
+        dataset=StdShapeDataset(dataset,args.std_shape_cache)
+    if getattr(args, 'pair_fraction', 0.) > 0:
+        if world_size != 1 or resume_start_step:
+            raise ValueError('P1 paired sampler requires single-rank fresh optimizer warm-start')
+        from src.train.pair_rank import PairMixtureSampler
+        sampler = PairMixtureSampler(dataset, int(args.global_batch_size), _epoch_steps,
+                                     args.global_seed, args.pair_fraction)
+        logger.info('[pair-sampler] paired=%d/%d, script-stratified cells; natural GT endpoints',
+                    sampler.n_pair, sampler.batch_size)
+    elif args.sampler == "factor_balanced":
         sampler = DistributedFactorBalancedSampler(
             dataset, num_replicas=world_size, rank=rank, seed=args.global_seed,
             char_alpha=args.balance_char_alpha,

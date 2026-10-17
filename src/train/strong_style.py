@@ -14,6 +14,14 @@ from src.train.gradient_budget import GradientBudget, format_metrics, norm
 def build_strong_style(args, device, logger):
     """Keep disabled post-training free of critic/table/checkpoint side effects."""
     mode = getattr(args, 'strong_style_mode', 'off')
+    if getattr(args, 'rank_gradient_ratio', 0) > 0:
+        from src.train.pair_rank import ConditionalRank
+        return ConditionalRank(args, device, logger)
+    if getattr(args,'crosschar_gradient_ratio',0)>0:
+        if mode!='off':
+            raise ValueError('Cross-character supervision cannot overlap strong-style A/B/C/D')
+        from src.train.crosschar_style import CrossCharacterPostTraining
+        return CrossCharacterPostTraining(args,device,logger)
     if mode not in ('off', 'A', 'B', 'C', 'D'):
         raise ValueError("Invalid strong_style_mode; use 'off' to disable, or A/B/C/D")
     return None if mode == 'off' else StrongStyle(args, device, logger)

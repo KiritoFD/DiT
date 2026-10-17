@@ -670,11 +670,9 @@ class LowRankSpatialStyleFiLM(nn.Module):
 
     不加辅助损失, 不加 GT 实例骨架。主干始终吃 ``g_tok'``, 全局 adaLN 不动。
 
-    初始化不能照搬 zero-init。``SpatialStyleFiLM`` 的最后一层全零时,
-    ``∂L/∂net[-1] ≡ 0``, 而且这个零会穿过 ``u_i`` 传到 ``P`` 和 ``Q``,
-    整条支路一步都不会动 (与 style_ada 的 W_up=0 是同一个数学)。
-    所以最后一层用 ``std=0.002``: 第 0 步输出量级约 0.02, 与 DiT final
-    layer 的初始化同级, 既不淹没已训好的主干, 梯度也从第一步就非零。
+    输出层采用小随机初始化，方便梯度传到 P/Q。单独一个零输出层本身仍可
+    收到梯度，只会在首步阻断其上游；不能将它误判为永久死锁。连续的零门控
+    与零残差才可能互相阻断。实际梯度还取决于结构编码器和下游损失。
 
     ``β`` 必须乘 ``keep``。glyph_drop 时 ``g_tok`` 是 0, 乘性 γ 自然消失,
     不加这句的话 β 会把丢弃样本重新灌成有条件, CFG 的 unconditional 分支被污染。
@@ -705,7 +703,7 @@ class LowRankSpatialStyleFiLM(nn.Module):
         nn.init.normal_(self.film_net[-1].weight, std=0.002)
         nn.init.zeros_(self.film_net[-1].bias)
 
-    def forward(self, g_tok, e_style, pos, keep=None):
+    def forward(self, g_tok, e_style, pos, keep=None, *, cache_styled=True):
         B, N, D = g_tok.shape
         if int(e_style.shape[0]) != B:
             raise RuntimeError(
@@ -725,8 +723,10 @@ class LowRankSpatialStyleFiLM(nn.Module):
         gamma, beta = self.film_net(z).chunk(2, dim=-1)
         if keep is not None:
             beta = beta * keep.to(g_tok.dtype).view(-1, 1, 1)
-        self._last_styled = g_tok * (1 + gamma) + beta
-        out = self._last_styled
+        styled = g_tok * (1 + gamma) + beta
+        if cache_styled:
+            self._last_styled = styled
+        out = styled
         if keep is not None:
             # 乘性 γ 在 g_tok=0 时自然消失, 但 β 是加性的。keep=0 的样本
             # 必须整行归零, 否则丢弃的骨架条件被重新灌回来, CFG 的

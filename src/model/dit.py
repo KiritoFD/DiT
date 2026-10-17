@@ -527,7 +527,8 @@ class DiT_2Cond(DitConditionMixin, nn.Module):
                                         style_ada_rank=(self.style_ada_rank
                                                         if self._style_ada_final else 0),
                                         style_in_dim=_style_in_dim,
-                                        style_ada_gain=style_ada_gain)
+                                        style_ada_gain=style_ada_gain,
+                                        use_fused_ops=use_fused_ops)
 
         # ---- 2D axial RoPE 缓存 ----
         # persistent=False：不写进 state_dict，避免任何 ckpt key 变化。
@@ -1280,9 +1281,19 @@ def DiT_2Cond_Sp20_2(**kwargs):
     return DiT_2Cond(depth=20, hidden_size=512, patch_size=2, num_heads=8, **kwargs)
 
 
+def DiT_2Cond_Sp24_2(**kwargs):
+    """Depth-only v84A control: unchanged512 width/eight heads/patch2."""
+    return DiT_2Cond(depth=24, hidden_size=512, patch_size=2, num_heads=8, **kwargs)
+
+
 def DiT_2Cond_S384_20_2(**kwargs):
     """v90 width ablation: twenty blocks,384 channels, unchanged eight heads."""
     return DiT_2Cond(depth=20, hidden_size=384, patch_size=2, num_heads=8, **kwargs)
+
+
+def DiT_2Cond_S384_24_2(**kwargs):
+    """Depth 24 model: twenty-four blocks, 384 channels, eight heads."""
+    return DiT_2Cond(depth=24, hidden_size=384, patch_size=2, num_heads=8, **kwargs)
 
 
 def DiT_2Cond_S_4(**kwargs):
@@ -1323,7 +1334,9 @@ DiT_2Cond_models = {
     'DiT-2Cond-M/2': DiT_2Cond_M_2,
     'DiT-2Cond-Sp/2': DiT_2Cond_Sp_2,
     'DiT-2Cond-Sp20/2': DiT_2Cond_Sp20_2,
+    'DiT-2Cond-Sp24/2': DiT_2Cond_Sp24_2,
     'DiT-2Cond-S384-20/2': DiT_2Cond_S384_20_2,
+    'DiT-2Cond-S384-24/2': DiT_2Cond_S384_24_2,
     'DiT-2Cond-S/4': DiT_2Cond_S_4,
     'DiT-2Cond-S/8': DiT_2Cond_S_8,
     'DiT-2Cond-B/2': DiT_2Cond_B_2,

@@ -1353,10 +1353,17 @@ def main(args):
             # percolate_tags 自递归), 整图编译时把编译卡死: 实测 >30min 无任何输出,
             # faulthandler 栈为上万层同一函数。关闭后同一张图 ~65s 编完, 实测 step
             # 时间无损失 (181.1ms vs 181.2ms)。如需恢复 pattern 融合: DIT_PATTERN_MATCHER=1
-            if os.environ.get("DIT_PATTERN_MATCHER", "0") != "1":
+            _pattern = getattr(args, 'compile_pattern_matcher', 'legacy')
+            _enable_pattern = (_pattern == 'on' or (_pattern == 'legacy' and
+                               os.environ.get('DIT_PATTERN_MATCHER', '0') == '1'))
+            if not _enable_pattern:
                 from torch._inductor import config as _ind_cfg
                 _ind_cfg.pattern_matcher = False
-                logger.info("[compile] pattern_matcher=False (规避 torch 2.1.2 percolate_tags 递归爆炸)")
+                logger.info('[compile] pattern_matcher=False policy=%s torch=%s', _pattern, torch.__version__)
+            else:
+                from torch._inductor import config as _ind_cfg
+                _ind_cfg.pattern_matcher = True
+                logger.info('[compile] pattern_matcher=True torch=%s', torch.__version__)
             logger.info(f"[compile] torch.compile(mode={_compile_mode}) 注入（DDP 之前）...")
             # [infra 2026-10-04] dynamo 缓存上限防御: 默认 256, 打穿后 torch.compile
             # 静默回退 eager (batch192 下 eager ~22G, compiled 14.4G) -> 回退即 OOM,
@@ -1365,7 +1372,8 @@ def main(args):
             _td.config.cache_size_limit = max(    # 变成本函数局部名 -> UnboundLocalError
                 64, _td.config.cache_size_limit)
             _td.config.accumulated_cache_size_limit = 4096
-            model = torch.compile(model, mode=_compile_mode)
+            model = torch.compile(model, mode=_compile_mode,
+                                  fullgraph=getattr(args, 'compile_fullgraph', False))
     ema_model = None
     if getattr(args, "use_ema", False):
         ema_model = copy.deepcopy(model).eval()
@@ -1809,8 +1817,6 @@ def main(args):
     running_std_mid = torch.zeros((), device=device, dtype=torch.float64)
     running_skel = torch.zeros((), device=device, dtype=torch.float64)
     _acc_c12 = None          # (C,) 逐通道 MSE 累加，日志步再拆成 image/canny/skel
-    # torch.compile warmup 结束后回收显存空洞（见 cli.py --empty-cache-after-warmup）
-    _empty_cache_at = int(getattr(args, "empty_cache_after_warmup", 0) or 0)
     # ★ 2026-10-14 [重构 PR4] 非有限 loss 的**跳过策略**收进组件 ✓
     #   （审查 §4.2 第 5 条 "finite 梯度检查" ✓；它是循环体里少见的**纯状态机** ✓）
     _guard = _NonFiniteGuard(logger, rank)
@@ -1925,7 +1931,6 @@ def main(args):
         _ch_w=_ch_w,
         _ckpt=_ckpt,
         _critic_loss_fn=_critic_loss_fn,
-        _empty_cache_at=_empty_cache_at,
         _epoch_steps=_epoch_steps,
         _epochs_needed=_epochs_needed,
         _es_check_every=_es_check_every,

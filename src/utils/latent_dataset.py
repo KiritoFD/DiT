@@ -770,6 +770,13 @@ class MCCDLatentDataset(Dataset):
           · 空张量（`canny`/`skeleton` ✓）: 每样本各建 ✗ → 整批复用 ✓
         """
         self._ensure_label_arrays()        # ★ 懒加载 ✓ 只建一次 ✓
+        # ★★ 2026-10-16 A/B 开关（良好工程 ✓ 便于**归因** ✓）:
+        #   实测: 同步到真机后**稳态吞吐比旧代码慢 ~11%** ✗（3.10 vs 3.50 step/s ✓）
+        #   `__getitems__` 是本轮**唯一**改变"每步数据路径"的改动 ✓
+        #   ⇒ 必须能一键关掉以**隔离归因** ✓（而不是靠猜 ✗）
+        #   用法: CALLIG_NO_BATCH_FETCH=1 python -m src.train.train ...
+        if os.environ.get("CALLIG_NO_BATCH_FETCH"):
+            return [self.__getitem__(i) for i in indices]
         idxs = [int(i) for i in indices]
         pre = {
             'y_callig': torch.from_numpy(self._arr_y_callig[idxs]),
