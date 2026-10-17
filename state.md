@@ -19,6 +19,16 @@
 
 ### 0. Unet-72M 系列正式起跑（Node 48，Batch 512）
 
+**2026-10-18 02:42：25k已完成，当前基线续训+两任务Writer对照已挂**。
+25k有效EMA：SSIM0.583090、LPIPS-VGG0.351470、Ink-IoU0.299185、Frag3.125921，n187。
+当前基线PID3106695，从25k完整恢复，EMA不重置、LR horizon60k，约2.77step/s、13.36GiB。
+原supervisor3101680仅父进程已停止，取消尚未启动的A_control；训练子进程未中断。
+新supervisor3112723，快照`scratch/unet_writer_pair_60k_20261018_01`，状态`queue/status.json`。
+等待当前基线完整60k+最终评测完成后，依次E_combined、F_combined_writer；同25k raw各新增35k至累计60k。
+E/F均Skip32+Decoder[3,3,2]+三尺度STD门控，只差Writer-only rank0/16；均重建optimizer/EMA、B512、每5k评测。
+F为保留旧共享路径的Writer-only残差AdaGN，不是完全移除共享Writer。失败即停止，不自动接入DiT。
+预计基线约06:15完成，两后续各3.8–4.5h，整队约今日14:00–15:30 CST完成；组合版吞吐未实测，此为估算。
+
 **Writer-only调制新增实现（未启动）**：可选`writer_film_rank=16`，每个ResBlock增加
 32→16→2C独立Writer-only残差FiLM，末层零初始化，保留旧融合路径和旧checkpoint前向。
 基线新增203,232参数；单独或与连贯性开关组合的严格迁移、非零输出等价、梯度、

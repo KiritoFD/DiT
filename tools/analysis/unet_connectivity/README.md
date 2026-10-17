@@ -50,3 +50,9 @@ Skip/STD推理干预是OOD，只定位敏感性，不作为训练后提升证据
 Control与组合版同起点/随机状态，完整基线续训不是结构对照；LR horizon统一60k。
 全部B512，每5k保存/统一评测；任何作业失败或缺少最终checkpoint立即中止队列。
 `plan.json`记录源checkpoint哈希与实际配置，`status.json`记录队列状态，独立源码快照运行。
+
+用户随后选择的两任务方案：`--jobs E_combined F_combined_writer`，两者同25k raw暖启动，
+累计到60k（各新增35k），唯一配置差异为`writer_film_rank=0/16`及输出目录。
+`--after-pid/--after-cwd/--after-run`模式只等待现有基线完整结束，不停止它；
+核验最终checkpoint SHA及训练完成标志后再运行。`queued_plan.json`立即记录待执行任务。
+旧supervisor只终止父进程以取消尚未启动任务，当前训练子进程保留；不要kill整个进程组。

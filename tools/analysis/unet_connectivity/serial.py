@@ -54,30 +54,62 @@ def handover(args, folder):
     raise RuntimeError('GPU did not become idle after SIGTERM; queue aborted')
 
 
+def follow_existing(args,folder):
+    """Wait for an already-running baseline, without signalling or restarting it."""
+    process=Path('/proc')/str(args.after_pid)
+    final=Path(args.after_run).resolve()/'checkpoints'/f'{args.max_steps:07d}.pt'
+    write_status(folder,'waiting_baseline',pid=args.after_pid,final_checkpoint=str(final))
+    while process.exists() and (process/'stat').read_text().split()[2]!='Z':
+        command=(process/'cmdline').read_bytes().replace(b'\0',b' ').decode()
+        if (process/'cwd').resolve()!=Path(args.after_cwd).resolve() or '-m src.unet.train' not in command:
+            raise RuntimeError('Baseline PID identity changed')
+        time.sleep(30)
+    if not final.is_file() or not final.with_suffix('.pt.done').is_file():
+        raise RuntimeError('Baseline exited without its final complete checkpoint')
+    if 'DONE checkpoint_step=' not in (Path(args.after_run)/'train.log').read_text()[-8192:]:
+        raise RuntimeError('Baseline did not report clean training completion')
+    with final.open('rb') as handle:
+        digest=hashlib.file_digest(handle,'sha256').hexdigest()
+    marker=json.loads(final.with_suffix('.pt.done').read_text())
+    if marker['sha256']!=digest or marker['step']!=args.max_steps:
+        raise RuntimeError('Baseline final checkpoint identity failed')
+    return Path(args.checkpoint).resolve()
+
+
 def main():
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument('--checkpoint', required=True)
-    p.add_argument('--stop-pid', type=int, required=True)
-    p.add_argument('--stop-cwd', required=True)
-    p.add_argument('--stop-log', required=True)
+    p.add_argument('--stop-pid', type=int)
+    p.add_argument('--stop-cwd')
+    p.add_argument('--stop-log')
+    p.add_argument('--after-pid',type=int)
+    p.add_argument('--after-cwd')
+    p.add_argument('--after-run')
+    p.add_argument('--jobs',nargs='+',choices=['baseline_resume','A_control','E_combined','F_combined_writer'],
+                   default=['baseline_resume','A_control','E_combined'])
     p.add_argument('--handover-step', type=int, required=True)
     p.add_argument('--max-steps', type=int, required=True)
     p.add_argument('--wait-timeout', type=int, default=7200)
     p.add_argument('--log-dir', required=True)
     p.add_argument('--run', action='store_true')
     args = p.parse_args()
+    if bool(args.stop_pid)==bool(args.after_pid):p.error('Specify exactly one of --stop-pid or --after-pid')
+    if args.stop_pid and not (args.stop_cwd and args.stop_log):p.error('Stopping requires cwd and log')
+    if args.after_pid and not (args.after_cwd and args.after_run):p.error('Following requires cwd and run')
     if args.max_steps <= args.handover_step:
         raise ValueError('max-steps must exceed the handover checkpoint')
     base = json.loads((ROOT / 'src/unet/configs/connectivity/A_control.json').read_text())
     base.update(max_steps=args.max_steps, lr_decay_steps=args.max_steps, checkpoint_steps=[], stop_at_step=0)
     # Control matches the expanded model's unavoidable optimizer/EMA restart.
+    combined=dict(skip_gate_scales=[0],decoder_res_blocks=[3,3,2],std_gate_scales=[0,1,2])
     jobs = [('baseline_resume', dict(requires_warm_start=False, ema_start_step=20000), '--resume'),
             ('A_control', {}, '--warm-start'),
-            ('E_combined', dict(skip_gate_scales=[0], decoder_res_blocks=[3, 3, 2],
-                                std_gate_scales=[0, 1, 2]), '--warm-start')]
+            ('E_combined', combined, '--warm-start'),
+            ('F_combined_writer',dict(combined,writer_film_rank=16),'--warm-start')]
     plan = []
     folder = Path(args.log_dir).resolve()
     for name, changes, mode in jobs:
+        if name not in args.jobs:continue
         config = dict(base, **changes)
         config['output'] = f'assets/results/unet_connectivity_{args.max_steps}/{name}'
         plan.append(dict(name=name, config=config, mode=mode))
@@ -85,9 +117,10 @@ def main():
     if not args.run:
         return
     folder.mkdir(parents=True, exist_ok=False)
+    (folder/'queued_plan.json').write_text(json.dumps(dict(source=args.checkpoint,jobs=plan),indent=2))
     os.chdir(ROOT)
     try:
-        source = handover(args, folder)
+        source = follow_existing(args,folder) if args.after_pid else handover(args, folder)
         with source.open('rb') as handle:
             digest = hashlib.file_digest(handle, 'sha256').hexdigest()
         marker = json.loads(source.with_suffix('.pt.done').read_text())
