@@ -52,3 +52,35 @@ def set_scheduler_position(scheduler,optimizer,step):
     for group,rate in zip(optimizer.param_groups,rates):group['lr']=rate
     scheduler._last_lr=rates
     return rates
+
+
+def restore_expanded_optimizer(optimizer,model,source_model,saved):
+    """Keep old Adam slots by parameter NAME; appended branches start with no slots.
+
+    The U-Net trainer owns exactly one optimizer group. Positional loading after
+    inserting modules is unsafe because parameter order changes inside blocks.
+    """
+    current=optimizer.state_dict()
+    if len(saved['param_groups'])!=1 or len(current['param_groups'])!=1:
+        raise ValueError('Expanded resume requires the U-Net single optimizer group')
+    old_params=dict(source_model.named_parameters())
+    new_params=dict(model.named_parameters())
+    old_ids=saved['param_groups'][0]['params']
+    new_ids=current['param_groups'][0]['params']
+    if len(old_params)!=len(old_ids) or len(new_params)!=len(new_ids):
+        raise ValueError('Optimizer parameter inventory mismatch')
+    if not old_params.keys()<=new_params.keys():raise ValueError('Old optimizer parameters disappeared')
+    destination=dict(zip(new_params,new_ids))
+    states={}
+    for (name,parameter),old_id in zip(old_params.items(),old_ids):
+        if parameter.shape!=new_params[name].shape:raise ValueError('Optimizer shape changed: '+name)
+        if old_id not in saved['state']:continue
+        slots=saved['state'][old_id]
+        for key in ('exp_avg','exp_avg_sq','max_exp_avg_sq'):
+            if key in slots and slots[key].shape!=parameter.shape:
+                raise ValueError('Optimizer slot shape mismatch: '+name)
+        states[destination[name]]=slots
+    group=dict(saved['param_groups'][0],params=new_ids)
+    optimizer.load_state_dict(dict(state=states,param_groups=[group]))
+    return dict(restored_slots=len(states),old_parameters=len(old_params),
+                new_parameters=sorted(new_params.keys()-old_params.keys()))

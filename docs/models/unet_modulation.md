@@ -49,7 +49,9 @@ python -m src.unet.train --config src/unet/configs/connectivity/A_control.json -
 ```
 
 JSON使用`writer_film_rank`和`residual_cond_gate`；CLI也支持`--no-residual-cond-gate`覆盖。
-首次增加结构不能用同构`--resume`代替`--warm-start`。新checkpoint保存完整Config，之后严格同构resume/eval。
+首次增加结构不能用同构`--resume`。`--warm-start`重建optimizer/EMA；
+`--resume-expanded`严格迁移新增结构，同时按参数名保留旧Adam slots及旧EMA，新增参数无Adam历史。
+该模式仅支持当前单optimizer group，不以参数位置强行对齐；新checkpoint保存完整Config，之后严格同构resume/eval。
 迁移只允许明确新增的decoder块、gate、Writer分支参数初始化；旧权重缺失、移除已训练gate或改变Writer rank直接失败。
 无新增开关时，不新增state_dict键，不改变原模型的随机数初始化顺序。
 
@@ -68,5 +70,8 @@ JSON使用`writer_film_rank`和`residual_cond_gate`；CLI也支持`--no-residual
 零Conv2启动无死锁、严格迁移与新checkpoint重载、Writer dropout/CFG-null、EMA及原诊断行为。
 另核验CLI开关和Git空白检查。未做完整类型检查或GPU性能实验，不据此承诺提速或质量收益。
 
-部署边界：现有48串行仍为组合版与组合版+Writer-only，条件残差gate不入队；
-远端隔离快照不热更新，4090不动。需要gate实验时另登记同起点、同重置方式对照。
+最新执行口径：旧60k组合任务取消，只跑原基线与原基线+Writer-only至100k。
+同30k checkpoint保留旧optimizer/EMA分叉，两组各新增70k×512=35,840,000次样本曝光，
+累计100k×512=51,200,000；这是重复采样次数，不是去重数据量。LR horizon统一100k。
+不启用Skip门控、Decoder增深、STD门控或条件残差gate；4090不动。
+预先实现的gate仍留作独立候选，需要另登记后才训练。

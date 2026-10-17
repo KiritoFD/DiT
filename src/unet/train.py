@@ -28,10 +28,14 @@ def parse():
     p.add_argument('--ckpt-every',type=int);p.add_argument('--eval-every',type=int)
     p.add_argument('--benchmark',type=int,default=0,help='Synthetic memory/throughput probe; no saved training')
     p.add_argument('--resume','--resume-full',dest='resume',default='')
+    p.add_argument('--resume-expanded',default='',help='Audited expansion preserving old optimizer and EMA slots')
     p.add_argument('--reset-ema',action='store_true',help='Seed a new EMA from resumed raw weights')
     p.add_argument('--warm-start',default='',help='Audited A/B/C expansion; restart optimizer and EMA for every arm')
     p.add_argument('--warm-start-state',choices=['raw','ema'],default='raw')
     a=p.parse_args()
+    if a.resume_expanded:
+        if a.resume or a.warm_start or a.reset_ema:p.error('--resume-expanded cannot combine with resume/warm-start/reset-ema')
+        a.resume=a.resume_expanded
     if a.resume and a.warm_start:p.error('--resume and --warm-start are mutually exclusive')
     if a.reset_ema and not a.resume:p.error('--reset-ema requires --resume')
     config=Config(**json.loads(Path(a.config).read_text(encoding='utf-8')))
@@ -146,12 +150,22 @@ def main():
         log.warning('Controlled warm start step=%d state=%s new_keys=%d; optimizer+EMA reset (same protocol for Control)',
                     start,cli.warm_start_state,len(transfer['new_keys']))
     if resume is not None:
-        state=resume['delta']
-        state={k.removeprefix('_orig_mod.'):v for k,v in state.items()}
-        raw.load_state_dict(state,strict=True)
-        ema_state=raw.state_dict() if cli.reset_ema else {k.removeprefix('_orig_mod.'):v for k,v in resume['ema'].items()}
-        ema.load_state_dict(ema_state,strict=True)
-        opt.load_state_dict(resume['opt']);scheduler.load_state_dict(resume['scheduler'])
+        if cli.resume_expanded:
+            from .variants.transfer import load_expansion,restore_expanded_optimizer
+            transfer=load_expansion(raw,resume,old_config,config,state='raw')
+            load_expansion(ema,resume,old_config,config,state='ema')
+            with torch.device('meta'):source_model=build(old_config)
+            migration=restore_expanded_optimizer(opt,raw,source_model,resume['opt'])
+            transfer.update(optimizer=migration,optimizer_reset=False,ema_reset=False,checkpoint=cli.resume)
+            (run/'expansion_record.json').write_text(json.dumps(transfer,indent=2))
+            log.warning('Expanded resume preserves old optimizer/EMA: %s',migration)
+        else:
+            state={k.removeprefix('_orig_mod.'):v for k,v in resume['delta'].items()}
+            raw.load_state_dict(state,strict=True)
+            ema_state=raw.state_dict() if cli.reset_ema else {k.removeprefix('_orig_mod.'):v for k,v in resume['ema'].items()}
+            ema.load_state_dict(ema_state,strict=True)
+            opt.load_state_dict(resume['opt'])
+        scheduler.load_state_dict(resume['scheduler'])
         if scheduler.last_epoch!=start:raise ValueError('Scheduler step mismatch')
         # The callable has the requested horizon; loaded _last_lr may still use the old one.
         rates=[base*fn(start) for base,fn in zip(scheduler.base_lrs,scheduler.lr_lambdas)]

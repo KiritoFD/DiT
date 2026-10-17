@@ -1,4 +1,4 @@
-"""Checkpoint-safe handover and fail-fast 60k connectivity queue (Linux)."""
+"""Checkpoint-safe handover and fail-fast configurable U-Net queue (Linux)."""
 import argparse
 import hashlib
 import json
@@ -42,9 +42,23 @@ def handover(args, folder):
         if time.monotonic() > deadline:
             raise TimeoutError('Checkpoint handover deadline exceeded; old training untouched')
         time.sleep(15)
-    if os.getpgid(args.stop_pid) != args.stop_pid:
-        raise RuntimeError('Training does not own its process group')
-    os.killpg(args.stop_pid, signal.SIGTERM)
+    group=os.getpgid(args.stop_pid)
+    # A previous scheduler can have exited, leaving its training group orphaned.
+    # Verify every live member before signalling the exact existing group.
+    for member in Path('/proc').iterdir():
+        if not member.name.isdigit():continue
+        try:
+            if os.getpgid(int(member.name))!=group:continue
+            command=(member/'cmdline').read_bytes().replace(b'\0',b' ').decode()
+            if not command:continue  # zombie, no executable resources
+            compile_worker=('/torch/_inductor/compile_worker/__main__.py ' in command
+                            and f'--parent={args.stop_pid} ' in command
+                            and int((member/'stat').read_text().split()[3])==args.stop_pid)
+            if (member/'cwd').resolve()!=expected or not ('-m src.unet.train' in command or compile_worker):
+                raise RuntimeError('Unexpected member of training process group: '+member.name)
+        except ProcessLookupError:continue
+        except FileNotFoundError:continue
+    os.killpg(group, signal.SIGTERM)
     for _ in range(60):
         busy = subprocess.check_output(
             ['nvidia-smi', '--query-compute-apps=pid', '--format=csv,noheader,nounits'], text=True).strip()
@@ -85,7 +99,7 @@ def main():
     p.add_argument('--after-pid',type=int)
     p.add_argument('--after-cwd')
     p.add_argument('--after-run')
-    p.add_argument('--jobs',nargs='+',choices=['baseline_resume','A_control','E_combined','F_combined_writer'],
+    p.add_argument('--jobs',nargs='+',choices=['baseline_resume','A_control','E_combined','F_combined_writer','G_writer_only'],
                    default=['baseline_resume','A_control','E_combined'])
     p.add_argument('--handover-step', type=int, required=True)
     p.add_argument('--max-steps', type=int, required=True)
@@ -105,7 +119,8 @@ def main():
     jobs = [('baseline_resume', dict(requires_warm_start=False, ema_start_step=20000), '--resume'),
             ('A_control', {}, '--warm-start'),
             ('E_combined', combined, '--warm-start'),
-            ('F_combined_writer',dict(combined,writer_film_rank=16),'--warm-start')]
+            ('F_combined_writer',dict(combined,writer_film_rank=16),'--warm-start'),
+            ('G_writer_only',dict(writer_film_rank=16),'--resume-expanded')]
     plan = []
     folder = Path(args.log_dir).resolve()
     for name, changes, mode in jobs:

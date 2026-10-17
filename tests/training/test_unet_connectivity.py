@@ -137,6 +137,41 @@ def test_unit_residual_gate_does_not_block_zero_conv_startup():
     assert ((gains>.5)&(gains<1.5)).all()
 
 
+def test_expanded_resume_preserves_adam_slots_and_old_ema():
+    import copy
+    from src.unet.variants.transfer import restore_expanded_optimizer
+    cfg=Config(channels=(32,64,64),max_steps=100000)
+    base=build(cfg)
+    optimizer=torch.optim.AdamW(base.parameters(),lr=6e-5)
+    for parameter in base.parameters():parameter.grad=torch.full_like(parameter,.001)
+    optimizer.step();optimizer.zero_grad(set_to_none=True)
+    target=replace(cfg,writer_film_rank=16)
+    expanded=build(target)
+    checkpoint=dict(architecture=cfg.architecture,delta=base.state_dict(),ema=base.state_dict())
+    load_expansion(expanded,checkpoint,cfg,target)
+    ema=build(target)
+    load_expansion(ema,checkpoint,cfg,target,state='ema')
+    with torch.device('meta'):source=build(cfg)
+    new_optimizer=torch.optim.AdamW(expanded.parameters(),lr=6e-5)
+    record=restore_expanded_optimizer(new_optimizer,expanded,source,copy.deepcopy(optimizer.state_dict()))
+    assert record['restored_slots']==len(list(base.parameters()))
+    assert record['new_parameters'] and all('.writer_film.' in key for key in record['new_parameters'])
+    new_params=dict(expanded.named_parameters())
+    for name,old in base.named_parameters():
+        for key in ('step','exp_avg','exp_avg_sq'):
+            torch.testing.assert_close(new_optimizer.state[new_params[name]][key],optimizer.state[old][key])
+        torch.testing.assert_close(ema.state_dict()[name],old,rtol=0,atol=0)
+    assert all(parameter not in new_optimizer.state for name,parameter in new_params.items()
+               if '.writer_film.' in name)
+    # A matching next gradient must produce the exact same old-parameter update.
+    for model in (base,expanded):
+        for name,parameter in model.named_parameters():
+            if '.writer_film.' not in name:parameter.grad=torch.full_like(parameter,.002)
+    optimizer.step();new_optimizer.step()
+    for name,old in base.named_parameters():
+        torch.testing.assert_close(new_params[name],old,rtol=0,atol=0)
+
+
 def test_deep_encoder_cannot_be_silently_warm_started():
     cfg=Config(channels=(32,64,64),max_steps=50000)
     deeper=replace(cfg,num_res_blocks=3)

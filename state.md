@@ -19,6 +19,19 @@
 
 ### 0. Unet-72M 系列正式起跑（Node 48，Batch 512）
 
+**最新指令：取消60k组合任务，仅基线与Writer-only，累计上限100k（30k安全切换待执行）**。
+2026-10-18约03:03核验当前29.15k，PID3106695继续至30k完整checkpoint及评测；
+新supervisor3154601等待后自动停止已核验的训练进程组并续训。
+新快照`scratch/unet_writer_pair_100k_20261018_01`，状态`queue_v2/status.json`。
+旧Writer组合队列PID3112723已取消；下方60k方案是历史记录，不能当现行计划。
+仅两个任务：baseline_resume（原结构）→G_writer_only（原结构+rank16 Writer-only）；
+Skip/STD门控、Decoder加深、条件残差gate全部关闭。两组同30k raw/EMA/optimizer分叉到100k，
+各新增70k步×512=35,840,000次曝光，累计51,200,000次；非去重样本数。
+Writer扩展使用`--resume-expanded`，按参数名保留旧Adam slots及旧EMA，仅新参数无历史状态。
+LR horizon两组同步100k；此前共享前缀经历过100k→60k调度，不能称从零全程100k调度。
+每5k保存/评测，20项CPU小型回归（含旧参数下一步优化逐位一致）通过。
+预计整队今日17:30–19:30 CST完成，Writer吞吐未实测；4090不动。
+
 **条件残差门控与整理完成（未部署/未入队）**：新增`residual_cond_gate`，
 所有ResBlock用共享t/w/s条件生成逐通道`1+0.5*tanh(logits)`增益，零logits初始gain=1。
 统一modulation初始化/gain函数及模型扩展入口，保留旧参数名/默认行为与checkpoint严格迁移。

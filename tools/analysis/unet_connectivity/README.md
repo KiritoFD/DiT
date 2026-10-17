@@ -42,7 +42,12 @@ Skip/STD推理干预是OOD，只定位敏感性，不作为训练后提升证据
 
 后续训练配置与严格迁移：[A/B/C说明](../../../src/unet/configs/connectivity/README.md)。
 
-## 60k串行执行（2026-10-18）
+## 串行执行（2026-10-18）
+
+最新指令：`--jobs baseline_resume G_writer_only --max-steps 100000 --handover-step 30000`。
+当前训练等30k完整保存与评测后切换，依次基线完整resume、仅加Writer-only的resume-expanded。
+两组保留同一源checkpoint旧optimizer/EMA，累计100k，各新增70k，B512；LR horizon统一100k。
+旧60k组合版任务取消，下方保留历史配置说明，不是当前计划。
 
 `serial.py --run`：等待指定checkpoint及其评测完成，核对PID/cwd后只停止该训练进程组。
 默认历史计划为基线→Control→组合版；当前按用户选择使用下方E/F两任务方案，原Control已取消。
