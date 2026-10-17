@@ -78,7 +78,7 @@ def main():
     torch.manual_seed(config.seed);torch.cuda.manual_seed_all(config.seed)
     np.random.seed(config.seed);random.seed(config.seed)
     if cli.benchmark:return benchmark(config,cli.benchmark)
-    run=Path(config.output)/(datetime.now().strftime('%Y%m%d-%H%M%S')+'-cnn-unet-'+config.objective)
+    run=Path(config.output)/(datetime.now().strftime('%Y%m%d-%H%M%S')+'-Unet-'+config.objective)
     run.mkdir(parents=True,exist_ok=False);(run/'checkpoints').mkdir()
     (run/'resolved_config.json').write_text(json.dumps(asdict(config),indent=2),encoding='utf-8')
     logging.basicConfig(level=logging.INFO,format='%(asctime)s %(message)s',
