@@ -19,7 +19,15 @@
 
 ### 0. Unet-72M 系列正式起跑（Node 48，Batch 512）
 
-**连贯性下一步：仅实现，尚未启动实验或部署到当前训练。** P0阈值/面积、同checkpoint Raw/EMA、
+**2026-10-18 60k新指令（已挂串行，等待25k安全切换）**：Node48 supervisor PID3101680，
+隔离源码`scratch/unet_connectivity_60k_20261018_01`，状态见其`queue/status.json`。
+等待原PID3050580保存25k并完成当点评测后停止其进程组，完整保留optimizer/EMA续训至60k；
+随后同25k raw依次跑重置optimizer/EMA的Control及组合版，各自总步数60k（新增35k），LR horizon60k。
+组合版启用Skip32门控、Decoder[3,3,2]、三尺度STD门控；不含全网加深或尚未实现的Writer-only调制。
+Control与组合版同起点，当前基线完整续训不冒充结构对照。B512、每5k评测/保存；失败即停队列。
+配置/源checkpoint哈希写入queue/plan.json；4090不动。尚无新结构训练结果。
+
+**此前实现登记（现已部署并按上方60k队列执行，以下50k计划已被替代）**：P0阈值/面积、同checkpoint Raw/EMA、
 Heun50/100、32²Skip/STD×0.8诊断入口；P1 Skip32门控与76.00M Decoder[3,3,2]，
 受控A/B/C从同20k raw、统一重建optimizer/EMA至50k；93.05M全网加深仅留从零候选，Writer独立FiLM暂缓。
 默认基线state_dict不变，严格旧权重迁移、初始化等价/梯度等13项小型回归通过；未宣称连贯性已改善。

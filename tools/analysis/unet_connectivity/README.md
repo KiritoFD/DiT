@@ -41,3 +41,12 @@ Skip/STD推理干预是OOD，只定位敏感性，不作为训练后提升证据
 这组GPU推理尚未执行；当前100k训练未停止、未替换源码。不要未经资源协调直接并跑。
 
 后续训练配置与严格迁移：[A/B/C说明](../../../src/unet/configs/connectivity/README.md)。
+
+## 60k串行执行（2026-10-18）
+
+`serial.py --run`：等待指定checkpoint及其评测完成，核对PID/cwd后只停止该训练进程组。
+依次执行当前基线完整续训至60k、同checkpoint raw重置optimizer/EMA的Control、组合结构版。
+组合版启用Skip32门控、Decoder[3,3,2]、三尺度STD门控；不含全网加深与Writer-only调制。
+Control与组合版同起点/随机状态，完整基线续训不是结构对照；LR horizon统一60k。
+全部B512，每5k保存/统一评测；任何作业失败或缺少最终checkpoint立即中止队列。
+`plan.json`记录源checkpoint哈希与实际配置，`status.json`记录队列状态，独立源码快照运行。
