@@ -15,6 +15,7 @@ class Config:
     architecture:str=ARCHITECTURE
     objective:str='flow'
     channels:tuple=(128,256,384)
+    num_res_blocks:int=2
     num_writers:int=10
     num_scripts:int=3
     batch:int=128
@@ -70,7 +71,8 @@ class Config:
 
 def build(config,initialize_tables=False):
     config.validate(require_budget=False)
-    model=LatentUNet(tuple(config.channels),config.num_writers,config.num_scripts)
+    model=LatentUNet(tuple(config.channels),config.num_writers,config.num_scripts,
+                    num_res_blocks=getattr(config,'num_res_blocks',2))
     if initialize_tables:
         import numpy as np
         for name,embedding in [('callig',model.writer),('font',model.script)]:

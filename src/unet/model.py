@@ -12,10 +12,11 @@ class LatentUNet(nn.Module):
     out_channels=4
 
     def __init__(self,channels=(128,256,384),num_writers=10,num_scripts=3,
-                 drop_all=.05,drop_writer=.08,drop_script=.08):
+                 num_res_blocks=2,drop_all=.05,drop_writer=.08,drop_script=.08):
         super().__init__()
         if len(channels)!=3:raise ValueError('Expected three scales')
         self.num_writers=num_writers;self.num_scripts=num_scripts
+        self.num_res_blocks=num_res_blocks
         self.drop_all=drop_all;self.drop_writer=drop_writer;self.drop_script=drop_script
         self.writer=nn.Embedding(num_writers+1,32)
         self.script=nn.Embedding(num_scripts+1,16)
@@ -28,14 +29,15 @@ class LatentUNet(nn.Module):
                                      nn.Conv2d(128,192,3,stride=2,padding=1)])
         self.std_proj=nn.ModuleList([nn.Conv2d(s,c,1) for s,c in zip((64,128,192),channels)])
         self.input=nn.Conv2d(4,channels[0],3,padding=1)
-        self.encoder=nn.ModuleList([Stage(c,c,i>0) for i,c in enumerate(channels)])
+        self.encoder=nn.ModuleList([Stage(c,c,i>0,num_res_blocks=num_res_blocks) for i,c in enumerate(channels)])
         self.down=nn.ModuleList([nn.Conv2d(channels[i],channels[i+1],3,stride=2,padding=1) for i in range(2)])
         self.middle1=ResBlock(channels[-1],channels[-1]);self.middle_attn=Attention(channels[-1])
         self.middle2=ResBlock(channels[-1],channels[-1])
-        self.decoder=nn.ModuleList([Stage(c*2,c,i>0) for i,c in enumerate(channels)])
+        self.decoder=nn.ModuleList([Stage(c*2,c,i>0,num_res_blocks=num_res_blocks) for i,c in enumerate(channels)])
         self.up=nn.ModuleList([nn.Conv2d(channels[i+1],channels[i],3,padding=1) for i in range(2)])
         self.output=nn.Sequential(norm(channels[0]),nn.SiLU(),nn.Conv2d(channels[0],4,3,padding=1))
         nn.init.zeros_(self.output[-1].weight);nn.init.zeros_(self.output[-1].bias)
+
 
     def forward(self,x,t,y_callig,y_char=None,g=None,y_script=None,y_callig_raw=None,y_pair=None):
         # y_char/raw/pair are accepted only for the shared sampler interface.

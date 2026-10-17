@@ -49,11 +49,12 @@ class Attention(nn.Module):
 
 
 class Stage(nn.Module):
-    def __init__(self,cin,cout,attention):
+    def __init__(self,cin,cout,attention,num_res_blocks=2):
         super().__init__()
-        self.blocks=nn.ModuleList([ResBlock(cin,cout),ResBlock(cout,cout)])
+        self.blocks=nn.ModuleList([ResBlock(cin if i==0 else cout,cout) for i in range(num_res_blocks)])
         self.attn=Attention(cout) if attention else nn.Identity()
 
     def forward(self,x,c):
         for block in self.blocks:x=block(x,c)
         return self.attn(x)
+
