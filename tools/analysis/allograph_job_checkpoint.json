@@ -1,0 +1,20 @@
+{
+  "job_id": "allograph-audit-20261016",
+  "host": "4090",
+  "pid": 1673211,
+  "workspace": "/root/Workspace/xy/DiT/scratch/writer_pixel_d0d1_20261016_01",
+  "output": "/root/Workspace/xy/DiT/assets/allograph_audit_20261016",
+  "log": "/root/Workspace/xy/DiT/logs/allograph_audit_20261016.log",
+  "configuration": {"model": "facebook/dinov2-base", "local_block": 6, "K": 128, "batch": 8, "torch_memory_fraction": 0.12, "observed_process_memory_MiB": 1156},
+  "data_policy": "All Top10 real GT. Dictionaries fit encoder-train tokens only; no heldout token fit. Freeze DINO and Pixel D1. No neural training.",
+  "statistics": "1/4/16/32 distinct glyphs, identical character sets across writer pairs, A/B chars disjoint; separate source holdout; common32 cohort plus full per-K coverage; original hard 847/196 triplets separately.",
+  "distances": "Shape: half cosine dissimilarity of mean features; histogram: JS divergence normalized by ln2; combined equal weighting.",
+  "resource_policy": "Concurrent with existing Latent D0/D1 at user request; small GPU footprint, CPU K-means. Shared GPU compute can reduce training throughput.",
+  "next_steps": [
+    "Check manifest.json/results.json and completion log",
+    "Retrieve JSON and fingerprint caches; render_allograph_audit.py locally",
+    "Report R grouped CIs, eligible writer pairs, same32 cohort trend, single-glyph hard 2AFC",
+    "Do not confuse aggregate pairwise 2AFC with original same-character-hard-negative protocol",
+    "Do not train an Allograph encoder or DiT automatically"
+  ]
+}

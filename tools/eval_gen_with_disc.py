@@ -98,6 +98,8 @@ def main() -> int:
     ap.add_argument("--train-csv", default="exp-std/csv/train.csv",
                     help="建**书家原型库**用 ✓（判别器见过的图 ✓）")
     ap.add_argument("--out", default="assets/style_eval_local/disc_gen_eval.json")
+    ap.add_argument("--per-image-out", default="",
+                    help="Optional paired-evaluation records; leaves the legacy summary unchanged")
     ap.add_argument("--device", default="")
     args = ap.parse_args()
     dev = args.device or ("cuda" if torch.cuda.is_available() else "cpu")
@@ -187,6 +189,7 @@ def main() -> int:
                 r.get("character", "").strip()) for r in rows]
 
     results = {}
+    per_image_results = {}
     # GT 先评 ✓（ceiling ✓）
     sets = [("GT真迹", None)] + [(n, d) for n, d in
                                  (s.split("=", 1) for s in args.gen if "=" in s)]
@@ -207,6 +210,7 @@ def main() -> int:
         sims = E @ P.T                                             # (n, n_slot)
 
         top1 = top5 = n_ok = 0
+        per_image = []
         std_margins, writer_margins = [], []
         slot_script = {k: k.split(chr(183))[1] if chr(183) in k else '' for k in slot_list}
         for j, (row_i, _p) in enumerate(pairs):
@@ -218,21 +222,28 @@ def main() -> int:
             ci = slot_list.index(key)
             order = np.argsort(-sims[j])
             rank = int(np.where(order == ci)[0][0])
+            record = {"row": row_i, "writer": w, "script": s, "character": c,
+                      "source": rows[row_i].get("source", "unknown"),
+                      "top1": rank == 0, "predicted_slot": slot_list[int(order[0])]}
             top1 += int(rank == 0)
             top5 += int(rank < 5)
             # std 同书体原型 ✓
             sk = "std·" + s
             if sk in protos:
-                std_margins.append(float(sims[j][ci] - sims[j][slot_list.index(sk)]))
+                record["std_margin"] = float(sims[j][ci] - sims[j][slot_list.index(sk)])
+                std_margins.append(record["std_margin"])
             others = [sims[j][k2] for k2 in range(len(slot_list))
                       if k2 != ci and slot_script[slot_list[k2]] == s]  # 同书体异书家 ✓
             if others:
-                writer_margins.append(float(sims[j][ci] - max(others)))
+                record["writer_margin"] = float(sims[j][ci] - max(others))
+                writer_margins.append(record["writer_margin"])
+            per_image.append(record)
         res = {"n": n_ok, "top1": top1 / max(1, n_ok), "top5": top5 / max(1, n_ok),
                "chance_top1": 1.0 / len(writer_keys),
                "std_margin_mean": float(np.mean(std_margins)) if std_margins else None,
                "writer_margin_mean": float(np.mean(writer_margins)) if writer_margins else None}
         results[name] = res
+        per_image_results[name] = per_image
         print("  [%s] top1 %.4f (随机 1/%d=%.4f) | top5 %.4f | std-margin %s | writer-margin %s"
               % (name, res["top1"], len(writer_keys), res["chance_top1"], res["top5"],
                  ("%.4f" % res["std_margin_mean"]) if res["std_margin_mean"] is not None else "NA",
@@ -242,6 +253,10 @@ def main() -> int:
     os.makedirs(os.path.dirname(os.path.abspath(args.out)), exist_ok=True)
     import json
     json.dump(results, open(args.out, "w", encoding="utf-8"), ensure_ascii=False, indent=2)
+    if args.per_image_out:
+        os.makedirs(os.path.dirname(os.path.abspath(args.per_image_out)), exist_ok=True)
+        with open(args.per_image_out, "w", encoding="utf-8") as f:
+            json.dump(per_image_results, f, ensure_ascii=False, indent=2)
     print("[done] %s" % args.out)
     return 0
 

@@ -29,9 +29,19 @@ def _run(body: str, port: int = 29541, timeout: int = 180):
         sys.path.insert(0, {REPO!r})
         os.environ.update(MASTER_ADDR="127.0.0.1", MASTER_PORT="{port}",
                           RANK="0", WORLD_SIZE="1", LOCAL_RANK="0")
+        # These tests exercise directory/distributed setup, not CUDA kernels.
+        # Always isolate device selection, even on a GPU host occupied by another job.
+        import torch
+        import torch.distributed as dist
+        dist.is_nccl_available = lambda: False
+        torch.cuda.device_count = lambda: 1
+        torch.cuda.set_device = lambda device: None
     ''') + textwrap.dedent(body)
     return subprocess.run([sys.executable, "-c", code], capture_output=True, text=True,
-                          encoding="utf-8", cwd=REPO, timeout=timeout)
+                          # Native Windows distributed logs can contain locale bytes.
+                          # Preserve them as escapes instead of losing stderr in a reader thread.
+                          encoding="utf-8", errors='backslashreplace', cwd=REPO, timeout=timeout,
+                          env={**os.environ, 'PYTHONUTF8': '1', 'PYTHONIOENCODING': 'utf-8'})
 
 
 def test_rank0_creates_dirs_and_configs():

@@ -22,8 +22,12 @@ import torch.nn.functional as F
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
-from src.model.modules import DiTBlock, RMSNorm, modulate
-from src.model.fused_ops import fused_adaln_rmsnorm, fused_swiglu, HAS_TRITON
+from src.model.modules import DiTBlock, RMSNorm, modulate, apply_rope
+from src.model.fused_ops import (
+    fused_adaln_rmsnorm, fused_swiglu, fused_gate_residual,
+    fused_swiglu_packed, fused_rope, fused_qknorm_rope,
+    fused_gate_residual_adaln_rmsnorm, HAS_TRITON
+)
 from src.model.dit import DiT_2Cond
 
 
@@ -131,6 +135,180 @@ def run_micro_benchmarks(B=192, T=256, D=384, D_mlp=1024, dtype=torch.bfloat16):
 
     print(f"SwiGLU Forward        : Base={t_swiglu_base:6.3f} ms | Fused={t_swiglu_fused:6.3f} ms | Speedup: {t_swiglu_base/t_swiglu_fused:.2f}x")
     print(f"SwiGLU Fwd+Bwd        : Base={t_swiglu_step_base:6.3f} ms | Fused={t_swiglu_step_fused:6.3f} ms | Speedup: {t_swiglu_step_base/t_swiglu_step_fused:.2f}x")
+
+    # --- 1.3 Fused Gate + Residual Add ---
+    res = torch.randn(B, T, D, device=device, dtype=dtype, requires_grad=True)
+    gate = torch.randn(B, D, device=device, dtype=dtype, requires_grad=True)
+
+    def baseline_gate_fwd():
+        return x + gate.unsqueeze(1) * res
+
+    def fused_gate_fwd():
+        return fused_gate_residual(x, res, gate)
+
+    diff_gate = (baseline_gate_fwd() - fused_gate_fwd()).abs().max().item()
+    print(f"-> Gate+Residual Forward Max Diff: {diff_gate:.6e} (Aligned)")
+
+    t_gate_base = bench_fn(baseline_gate_fwd)
+    t_gate_fused = bench_fn(fused_gate_fwd)
+
+    def baseline_gate_step():
+        x.grad = res.grad = gate.grad = None
+        y = baseline_gate_fwd()
+        y.sum().backward()
+
+    def fused_gate_step():
+        x.grad = res.grad = gate.grad = None
+        y = fused_gate_fwd()
+        y.sum().backward()
+
+    t_gate_step_base = bench_fn(baseline_gate_step)
+    t_gate_step_fused = bench_fn(fused_gate_step)
+
+    print(f"Gate+Res Forward      : Base={t_gate_base:6.3f} ms | Fused={t_gate_fused:6.3f} ms | Speedup: {t_gate_base/t_gate_fused:.2f}x")
+    print(f"Gate+Res Fwd+Bwd      : Base={t_gate_step_base:6.3f} ms | Fused={t_gate_step_fused:6.3f} ms | Speedup: {t_gate_step_base/t_gate_step_fused:.2f}x")
+
+    # --- 1.4 Fused 2D RoPE ---
+    H = 8
+    Dh = D // H
+    q = torch.randn(B, H, T, Dh, device=device, dtype=dtype, requires_grad=True)
+    cos = torch.randn(T, Dh, device=device, dtype=dtype)
+    sin = torch.randn(T, Dh, device=device, dtype=dtype)
+
+    def baseline_rope_fwd():
+        return apply_rope(q, cos, sin)
+
+    def fused_rope_fwd():
+        return fused_rope(q, cos, sin)
+
+    diff_rope = (baseline_rope_fwd() - fused_rope_fwd()).abs().max().item()
+    print(f"-> RoPE Forward Max Diff: {diff_rope:.6e} (Aligned)")
+
+    t_rope_base = bench_fn(baseline_rope_fwd)
+    t_rope_fused = bench_fn(fused_rope_fwd)
+
+    def baseline_rope_step():
+        q.grad = None
+        y = baseline_rope_fwd()
+        y.sum().backward()
+
+    def fused_rope_step():
+        q.grad = None
+        y = fused_rope_fwd()
+        y.sum().backward()
+
+    t_rope_step_base = bench_fn(baseline_rope_step)
+    t_rope_step_fused = bench_fn(fused_rope_step)
+
+    print(f"RoPE Forward          : Base={t_rope_base:6.3f} ms | Fused={t_rope_fused:6.3f} ms | Speedup: {t_rope_base/t_rope_fused:.2f}x")
+    print(f"RoPE Fwd+Bwd          : Base={t_rope_step_base:6.3f} ms | Fused={t_rope_step_fused:6.3f} ms | Speedup: {t_rope_step_base/t_rope_step_fused:.2f}x")
+
+    # --- 1.5 FFN GEMM + SwiGLU (2 GEMMs vs 1 Packed GEMM + Fused SwiGLU) ---
+    x_ffn = torch.randn(B, T, D, device=device, dtype=dtype, requires_grad=True)
+    w1 = torch.randn(D_mlp, D, device=device, dtype=dtype, requires_grad=True)
+    w_gate = torch.randn(D_mlp, D, device=device, dtype=dtype, requires_grad=True)
+
+    def baseline_ffn_fwd():
+        h1 = F.linear(x_ffn, w1)
+        h2 = F.linear(x_ffn, w_gate)
+        return F.silu(h1) * h2
+
+    def fused_ffn_fwd():
+        w_packed = torch.cat([w1, w_gate], dim=0)
+        h = F.linear(x_ffn, w_packed)
+        return fused_swiglu_packed(h)
+
+    diff_ffn = (baseline_ffn_fwd() - fused_ffn_fwd()).abs().max().item()
+    print(f"-> FFN GEMM+SwiGLU Forward Max Diff: {diff_ffn:.6e} (Aligned)")
+
+    t_ffn_base = bench_fn(baseline_ffn_fwd)
+    t_ffn_fused = bench_fn(fused_ffn_fwd)
+
+    def baseline_ffn_step():
+        x_ffn.grad = w1.grad = w_gate.grad = None
+        y = baseline_ffn_fwd()
+        y.sum().backward()
+
+    def fused_ffn_step():
+        x_ffn.grad = w1.grad = w_gate.grad = None
+        y = fused_ffn_fwd()
+        y.sum().backward()
+
+    t_ffn_step_base = bench_fn(baseline_ffn_step)
+    t_ffn_step_fused = bench_fn(fused_ffn_step)
+
+    print(f"FFN 2-GEMM+Act Fwd    : Base={t_ffn_base:6.3f} ms | Fused={t_ffn_fused:6.3f} ms | Speedup: {t_ffn_base/t_ffn_fused:.2f}x")
+    print(f"FFN 2-GEMM+Act Fwd+Bwd: Base={t_ffn_step_base:6.3f} ms | Fused={t_ffn_step_fused:6.3f} ms | Speedup: {t_ffn_step_base/t_ffn_step_fused:.2f}x")
+
+    # --- 1.6 Fused QK-Norm + 2D RoPE ---
+    gamma = torch.randn(Dh, device=device, dtype=dtype, requires_grad=True)
+
+    def baseline_qknorm_rope_fwd():
+        var = q.float().pow(2).mean(dim=-1, keepdim=True)
+        normed = (q.float() * torch.rsqrt(var + 1e-6)).to(dtype) * gamma
+        return apply_rope(normed, cos, sin)
+
+    def fused_qknorm_rope_fwd():
+        return fused_qknorm_rope(q, gamma, cos, sin)
+
+    diff_qk = (baseline_qknorm_rope_fwd() - fused_qknorm_rope_fwd()).abs().max().item()
+    print(f"-> QKNorm+RoPE Forward Max Diff: {diff_qk:.6e} (Aligned)")
+
+    t_qk_base = bench_fn(baseline_qknorm_rope_fwd)
+    t_qk_fused = bench_fn(fused_qknorm_rope_fwd)
+
+    def baseline_qk_step():
+        q.grad = gamma.grad = None
+        y = baseline_qknorm_rope_fwd()
+        y.sum().backward()
+
+    def fused_qk_step():
+        q.grad = gamma.grad = None
+        y = fused_qknorm_rope_fwd()
+        y.sum().backward()
+
+    t_qk_step_base = bench_fn(baseline_qk_step)
+    t_qk_step_fused = bench_fn(fused_qk_step)
+
+    print(f"QKNorm+RoPE Forward   : Base={t_qk_base:6.3f} ms | Fused={t_qk_fused:6.3f} ms | Speedup: {t_qk_base/t_qk_fused:.2f}x")
+    print(f"QKNorm+RoPE Fwd+Bwd   : Base={t_qk_step_base:6.3f} ms | Fused={t_qk_step_fused:6.3f} ms | Speedup: {t_qk_step_base/t_qk_step_fused:.2f}x")
+
+    # --- 1.7 Fused Gate+Residual + adaLN-RMSNorm ---
+    scale = torch.randn(B, D, device=device, dtype=dtype, requires_grad=True)
+    shift = torch.randn(B, D, device=device, dtype=dtype, requires_grad=True)
+
+    def baseline_gate_res_adaln_fwd():
+        x_res = x + gate.unsqueeze(1) * res
+        var = x_res.float().pow(2).mean(dim=-1, keepdim=True)
+        normed = (x_res.float() * torch.rsqrt(var + 1e-6)).to(dtype)
+        x_norm = normed * (1.0 + scale.unsqueeze(1)) + shift.unsqueeze(1)
+        return x_res, x_norm
+
+    def fused_gate_res_adaln_fwd():
+        return fused_gate_residual_adaln_rmsnorm(x, res, gate, scale, shift)
+
+    diff_gra1 = (baseline_gate_res_adaln_fwd()[0] - fused_gate_res_adaln_fwd()[0]).abs().max().item()
+    diff_gra2 = (baseline_gate_res_adaln_fwd()[1] - fused_gate_res_adaln_fwd()[1]).abs().max().item()
+    print(f"-> GateRes+adaLN Forward Max Diff: {max(diff_gra1, diff_gra2):.6e} (Aligned)")
+
+    t_gra_base = bench_fn(baseline_gate_res_adaln_fwd)
+    t_gra_fused = bench_fn(fused_gate_res_adaln_fwd)
+
+    def baseline_gra_step():
+        x.grad = res.grad = gate.grad = scale.grad = shift.grad = None
+        y1, y2 = baseline_gate_res_adaln_fwd()
+        (y1.sum() + y2.sum()).backward()
+
+    def fused_gra_step():
+        x.grad = res.grad = gate.grad = scale.grad = shift.grad = None
+        y1, y2 = fused_gate_res_adaln_fwd()
+        (y1.sum() + y2.sum()).backward()
+
+    t_gra_step_base = bench_fn(baseline_gra_step)
+    t_gra_step_fused = bench_fn(fused_gra_step)
+
+    print(f"GateRes+adaLN Forward : Base={t_gra_base:6.3f} ms | Fused={t_gra_fused:6.3f} ms | Speedup: {t_gra_base/t_gra_fused:.2f}x")
+    print(f"GateRes+adaLN Fwd+Bwd : Base={t_gra_step_base:6.3f} ms | Fused={t_gra_step_fused:6.3f} ms | Speedup: {t_gra_step_base/t_gra_step_fused:.2f}x")
 
 
 def run_block_benchmarks(B=192, T=256, D=384, num_heads=8, dtype=torch.bfloat16):
@@ -257,8 +435,8 @@ def run_full_model_benchmarks(B=192, depth=20, D=384, num_heads=8, dtype=torch.b
     t_model_fused = bench_fn(train_step_fused, warmups=5, iters=20)
     mem_fused = torch.cuda.max_memory_allocated() / (1024 ** 3)
 
-    print(f"\nBaseline 20L (Unfused) : {t_model_base:6.2f} ms/step | {1000.0/t_model_base:5.2f} steps/s | Peak VRAM: {mem_base:.2f} GiB")
-    print(f"Fused 20L (Triton)     : {t_model_fused:6.2f} ms/step | {1000.0/t_model_fused:5.2f} steps/s | Peak VRAM: {mem_fused:.2f} GiB")
+    print(f"\nBaseline {depth}L (Unfused) : {t_model_base:6.2f} ms/step | {1000.0/t_model_base:5.2f} steps/s | Peak VRAM: {mem_base:.2f} GiB")
+    print(f"Fused {depth}L (Triton)     : {t_model_fused:6.2f} ms/step | {1000.0/t_model_fused:5.2f} steps/s | Peak VRAM: {mem_fused:.2f} GiB")
     print(f"==> Step Latency Reduced by {(t_model_base - t_model_fused):.2f} ms ({((t_model_base - t_model_fused)/t_model_base)*100:.1f}%)")
     print(f"==> Training Throughput Boost: {((1000.0/t_model_fused) / (1000.0/t_model_base) - 1.0)*100:.1f}%!")
     print(f"==> Peak VRAM Saved: {(mem_base - mem_fused)*1024:.1f} MiB")

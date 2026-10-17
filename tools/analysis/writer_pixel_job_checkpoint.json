@@ -1,0 +1,32 @@
+{
+  "job_id": "writer-pixel-d0d1-20261016-01",
+  "host": "4090",
+  "workspace": "/root/Workspace/xy/DiT/scratch/writer_pixel_d0d1_20261016_01",
+  "task": "Train image-only D0 CE and D1 CE plus cross-character contrastive writer encoders; no DiT training",
+  "configuration": {
+    "parameters": 3808480,
+    "batch": 2048,
+    "steps_per_arm": 10000,
+    "seed": 89,
+    "learning_rate": 0.0001,
+    "eval_every": 500,
+    "cross_weight": 0.5,
+    "cross_margin": 0.1,
+    "cross_temperature": 0.1,
+    "matched_validation_pairs": 353,
+    "matched_test_char_pairs": 847,
+    "matched_test_source_pairs": 196
+  },
+  "benchmark": {"median_step_seconds": 0.3336643, "peak_allocated_gib": 18.213, "estimated_total_hours": "about 2, including evaluation"},
+  "runner": "tools/analysis/run_writer_pixel_d0d1.sh",
+  "log": "/root/Workspace/xy/DiT/logs/writer_pixel_d0d1_20261016.log",
+  "next_steps": [
+    "Check process and log summary; avoid claiming final metrics during training",
+    "Runner trains both models before evaluating held-out tests",
+    "Compare identical initialization and paired_input_trace hashes between D0 and D1",
+    "Retrieve D0 and D1 best.pt, config.json, metrics.jsonl, validation.jsonl, acceptance.json",
+    "Review source generalization, matched triplets, retrieval, prototypes, blur and ink-gain robustness",
+    "Do not launch DiT even if research gate passes; first review whether gradients are valid in generated-image domain"
+  ],
+  "resume": "python tools/train_writer_style_pixel.py --data-root assets/data --out assets/D0 --arm D0 --batch 2048 --steps 10000 --eval-every 500 --resume assets/D0/last.pt (use D1 paths/arm for D1)"
+}
