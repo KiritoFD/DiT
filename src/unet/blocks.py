@@ -22,11 +22,23 @@ class ResBlock(nn.Module):
         self.norm2=norm(cout);self.film=nn.Linear(cond_dim,2*cout)
         self.conv2=nn.Conv2d(cout,cout,3,padding=1)
         self.shortcut=nn.Conv2d(cin,cout,1) if cin!=cout else nn.Identity()
+        self.writer_film=None
         nn.init.zeros_(self.conv2.weight);nn.init.zeros_(self.conv2.bias)
 
-    def forward(self,x,c):
+    def enable_writer_film(self,rank):
+        if self.writer_film is not None:raise ValueError('Writer FiLM already enabled')
+        self.writer_film=nn.Sequential(nn.Linear(32,rank),nn.SiLU(),
+                                       nn.Linear(rank,2*self.conv2.in_channels))
+        nn.init.zeros_(self.writer_film[-1].weight)
+        nn.init.zeros_(self.writer_film[-1].bias)
+
+    def forward(self,x,c,writer=None):
         h=self.conv1(F.silu(self.norm1(x)))
         scale,shift=self.film(F.silu(c)).to(h.dtype).chunk(2,dim=1)
+        if self.writer_film is not None:
+            if writer is None:raise ValueError('Writer embedding required for independent FiLM')
+            writer_scale,writer_shift=self.writer_film(writer).to(h.dtype).chunk(2,dim=1)
+            scale=scale+writer_scale;shift=shift+writer_shift
         h=self.norm2(h)*(1+scale[:,:,None,None])+shift[:,:,None,None]
         return self.shortcut(x)+self.conv2(F.silu(h))
 
@@ -54,7 +66,7 @@ class Stage(nn.Module):
         self.blocks=nn.ModuleList([ResBlock(cin if i==0 else cout,cout) for i in range(num_res_blocks)])
         self.attn=Attention(cout) if attention else nn.Identity()
 
-    def forward(self,x,c):
-        for block in self.blocks:x=block(x,c)
+    def forward(self,x,c,writer=None):
+        for block in self.blocks:x=block(x,c,writer)
         return self.attn(x)
 

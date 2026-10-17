@@ -48,6 +48,66 @@ def test_baseline_and_inference_interventions():
     with pytest.raises(RuntimeError):m.set_inference_scales()
 
 
+@pytest.mark.parametrize('combined',[False,True])
+def test_writer_only_film_identity_gradient_and_strict_roundtrip(combined,tmp_path):
+    from src.unet.blocks import ResBlock
+    from src.unet.io import load
+    from dataclasses import asdict
+    torch.set_num_threads(2)
+    cfg=Config(channels=(32,64,64),max_steps=60000)
+    base=build(cfg).eval()
+    # A trained checkpoint has nonzero residual/output convolutions; a zero-head
+    # test would conceal disconnected modulation gradients.
+    with torch.no_grad():
+        base.output[-1].weight.normal_(std=.02)
+        for block in base.modules():
+            if isinstance(block,ResBlock):block.conv2.weight.normal_(std=.01)
+    target=replace(cfg,writer_film_rank=16,
+                   **(dict(skip_gate_scales=(0,),std_gate_scales=(0,1,2),
+                           decoder_res_blocks=(3,3,2)) if combined else {}))
+    upgraded=build(target).eval()
+    audit=load_expansion(upgraded,{'delta':base.state_dict()},cfg,target)
+    assert any('.writer_film.' in key for key in audit['new_keys'])
+    x=torch.randn(2,4,32,32);t=torch.tensor([.2,.8])
+    kw=dict(y_callig=torch.tensor([0,1]),y_script=torch.tensor([0,1]),g=torch.rand(2,1,64,64))
+    actual=upgraded(x,t,**kw)
+    torch.testing.assert_close(actual,base(x,t,**kw),rtol=0,atol=0)
+    actual.square().mean().backward()
+    branch=upgraded.encoder[0].blocks[0].writer_film
+    assert branch[-1].weight.grad.abs().sum()>0
+    # A zero output projection learns first, then its input projection learns.
+    with torch.no_grad():branch[-1].weight.add_(-.1*branch[-1].weight.grad)
+    upgraded.zero_grad(set_to_none=True)
+    upgraded(x,t,**kw).square().mean().backward()
+    assert branch[0].weight.grad.abs().sum()>0
+    checkpoint=tmp_path/'writer.pt'
+    torch.save(dict(architecture=target.architecture,config=asdict(target),
+                    delta=upgraded.state_dict(),ema=upgraded.state_dict()),checkpoint)
+    restored,_,_=load(checkpoint,use_ema=False)
+    torch.testing.assert_close(restored(x,t,**kw),upgraded(x,t,**kw),rtol=0,atol=0)
+    without_writer=replace(target,writer_film_rank=0)
+    with pytest.raises(ValueError,match='Writer FiLM'):
+        load_expansion(build(without_writer),{'delta':upgraded.state_dict()},target,without_writer)
+
+
+def test_writer_film_uses_dropped_writer_and_cfg_null():
+    cfg=Config(channels=(32,64,64),writer_film_rank=16,max_steps=60000)
+    model=build(cfg)
+    seen=[]
+    hook=model.encoder[0].blocks[0].writer_film.register_forward_pre_hook(
+        lambda module,inputs:seen.append(inputs[0].detach().clone()))
+    x=torch.randn(2,4,32,32);t=torch.tensor([.2,.8]);writers=torch.tensor([0,1])
+    kw=dict(g=torch.rand(2,1,64,64),y_script=torch.tensor([0,1]))
+    model.drop_writer=1.
+    model(x,t,writers,**kw)
+    null=model.writer.weight[model.num_writers].expand(2,-1)
+    torch.testing.assert_close(seen[-1],null)
+    model.eval();model.forward_with_cfg(x,t,writers,cfg_scale=2.,**kw)
+    torch.testing.assert_close(seen[-2],model.writer(writers))
+    torch.testing.assert_close(seen[-1],null)
+    hook.remove()
+
+
 def test_deep_encoder_cannot_be_silently_warm_started():
     cfg=Config(channels=(32,64,64),max_steps=50000)
     deeper=replace(cfg,num_res_blocks=3)

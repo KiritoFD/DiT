@@ -19,11 +19,16 @@
 
 ### 0. Unet-72M 系列正式起跑（Node 48，Batch 512）
 
+**Writer-only调制新增实现（未启动）**：可选`writer_film_rank=16`，每个ResBlock增加
+32→16→2C独立Writer-only残差FiLM，末层零初始化，保留旧融合路径和旧checkpoint前向。
+基线新增203,232参数；单独或与连贯性开关组合的严格迁移、非零输出等价、梯度、
+checkpoint重载、dropout/CFG-null等16项小型CPU回归通过。当前远端60k队列不变，尚无质量/吞吐结果。
+
 **2026-10-18 60k新指令（已挂串行，等待25k安全切换）**：Node48 supervisor PID3101680，
 隔离源码`scratch/unet_connectivity_60k_20261018_01`，状态见其`queue/status.json`。
 等待原PID3050580保存25k并完成当点评测后停止其进程组，完整保留optimizer/EMA续训至60k；
 随后同25k raw依次跑重置optimizer/EMA的Control及组合版，各自总步数60k（新增35k），LR horizon60k。
-组合版启用Skip32门控、Decoder[3,3,2]、三尺度STD门控；不含全网加深或尚未实现的Writer-only调制。
+组合版启用Skip32门控、Decoder[3,3,2]、三尺度STD门控；不含全网加深或Writer-only调制（后者已实现但未入队）。
 Control与组合版同起点，当前基线完整续训不冒充结构对照。B512、每5k评测/保存；失败即停队列。
 配置/源checkpoint哈希写入queue/plan.json；4090不动。尚无新结构训练结果。
 

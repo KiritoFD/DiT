@@ -13,9 +13,11 @@ class LatentUNet(nn.Module):
 
     def __init__(self,channels=(128,256,384),num_writers=10,num_scripts=3,
                  num_res_blocks=2,drop_all=.05,drop_writer=.08,drop_script=.08,
-                 decoder_res_blocks=None,skip_gate_scales=(),std_gate_scales=()):
+                 decoder_res_blocks=None,skip_gate_scales=(),std_gate_scales=(),writer_film_rank=0):
         super().__init__()
         if len(channels)!=3:raise ValueError('Expected three scales')
+        if not isinstance(writer_film_rank,int) or writer_film_rank<0:
+            raise ValueError('writer_film_rank must be a nonnegative integer')
         self.num_writers=num_writers;self.num_scripts=num_scripts
         self.num_res_blocks=num_res_blocks
         decoder_depth=tuple(decoder_res_blocks) if decoder_res_blocks is not None else (num_res_blocks,)*3
@@ -45,6 +47,10 @@ class LatentUNet(nn.Module):
         self.up=nn.ModuleList([nn.Conv2d(channels[i+1],channels[i],3,padding=1) for i in range(2)])
         self.output=nn.Sequential(norm(channels[0]),nn.SiLU(),nn.Conv2d(channels[0],4,3,padding=1))
         nn.init.zeros_(self.output[-1].weight);nn.init.zeros_(self.output[-1].bias)
+        # Build extensions last: rank=0 keeps baseline state keys and RNG unchanged.
+        if writer_film_rank:
+            for block in list(self.modules()):
+                if isinstance(block,ResBlock):block.enable_writer_film(writer_film_rank)
 
     @staticmethod
     def _scale_parameters(active):
@@ -80,19 +86,20 @@ class LatentUNet(nn.Module):
             y_callig=torch.where(wd,self.num_writers,y_callig)
             y_script=torch.where(sd,self.num_scripts,y_script)
         # Match the DiT route: all/style dropout never blanks the STD spatial input.
+        writer=self.writer(y_callig)
         c=self.condition(self.time_proj(timestep_embedding(t))+
-                         self.writer_proj(self.writer(y_callig))+
+                         self.writer_proj(writer)+
                          self.script_proj(self.script(y_script)))
         glyph=self.std_stem(g);h=self.input(x);skips=[]
         for i,stage in enumerate(self.encoder):
             if i:glyph=F.silu(self.std_down[i-1](glyph))
             projected=self._scaled(self.std_proj[i](glyph),self.std_gates,i,self.inference_std_scales)
-            h=stage(h+projected,c);skips.append(h)
+            h=stage(h+projected,c,writer);skips.append(h)
             if i<2:h=self.down[i](h)
-        h=self.middle2(self.middle_attn(self.middle1(h,c)),c)
+        h=self.middle2(self.middle_attn(self.middle1(h,c,writer)),c,writer)
         for i in (2,1,0):
             skip=self._scaled(skips[i],self.skip_gates,i,self.inference_skip_scales)
-            h=self.decoder[i](torch.cat([h,skip],dim=1),c)
+            h=self.decoder[i](torch.cat([h,skip],dim=1),c,writer)
             if i:h=self.up[i-1](F.interpolate(h,scale_factor=2,mode='nearest'))
         return self.output(h)
 

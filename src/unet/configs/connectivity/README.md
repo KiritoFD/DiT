@@ -24,7 +24,10 @@ Decoder新增块位于原Stage的blocks尾部、Attention之前；同通道short
 
 P2提供独立`std_gate_scales`同型门控，默认关闭；诊断支持单尺度STD=0.8。
 没有同时改STD增强分布，避免与Skip/Decoder收益混杂。
-P3 Writer独立FiLM暂缓：当前没有后期风格退化证据，不增加这一变量。
+P3 Writer独立FiLM现已按用户指令实现：`writer_film_rank=16`（默认0），
+保留旧融合FiLM，新增逐ResBlock的Writer-only低秩scale/shift残差，末层零初始化。
+72M基线增加203,232参数；可与全部连贯性开关组合，严格加载和dropout/CFG语义保持一致。
+只完成实现，未插入已登记的60k串行；见[使用说明](../../../../docs/models/unet.md)。
 
 ## 受控加载、优化器和阶段预算
 

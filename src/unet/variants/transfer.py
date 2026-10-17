@@ -15,6 +15,11 @@ def load_expansion(model,checkpoint,source_config,target_config,*,state='raw'):
     if any(new<old for old,new in zip(old_depth,new_depth)):
         raise ValueError('Cannot drop trained decoder blocks')
     prefixes=[f'decoder.{i}.blocks.{j}.' for i,(old,new) in enumerate(zip(old_depth,new_depth)) for j in range(old,new)]
+    old_rank,new_rank=source_config.writer_film_rank,target_config.writer_film_rank
+    if old_rank and old_rank!=new_rank:raise ValueError('Cannot remove or resize trained Writer FiLM')
+    if not old_rank and new_rank:
+        prefixes.extend(name+'.writer_film.' for name,block in model.named_modules()
+                        if getattr(block,'writer_film',None) is not None)
     for key,prefix in [('skip_gate_scales','skip_gates.'),('std_gate_scales','std_gates.')]:
         old,new=getattr(source_config,key),getattr(target_config,key)
         if old and not new:raise ValueError(f'Cannot remove {key}')
