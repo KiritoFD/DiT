@@ -1,0 +1,175 @@
+{
+  "selected_step": 3000,
+  "best_sha256": "93dcd35fdae82a1df451864a20ec82c6f6be38b06af355e2588084f631cf39df",
+  "acceptance_tool_sha256": "8a7e93cc2db992cbac8541c4c177cffb9423d05a56c89fec9414e44e9ba775b2",
+  "prototype_sha256": "9c0557c6151a8a8d6dfd4311a612d0e2c103e7c8b3a20196acdba6ed2e93f20e",
+  "checkpoint_and_prototype_replay": "passed",
+  "capped_metric_replay": {
+    "val_char": {
+      "n": 1641,
+      "matches_training_final_report": true
+    },
+    "test_char": {
+      "n": 2323,
+      "matches_training_final_report": true
+    },
+    "test_source": {
+      "n": 1318,
+      "matches_training_final_report": true
+    }
+  },
+  "full_holdout_exported_prototypes": {
+    "val_char": {
+      "cross_char_map": 0.4356821153524515,
+      "prototype_top1": 0.3310598111227702,
+      "prototype_macro_top1": 0.2613652423386085,
+      "script_conditioned_chance": 0.12509618747813925,
+      "n_valid": 1906,
+      "n_total": 1906,
+      "per_slot_top1": {
+        "0": 0.07142857142857142,
+        "1": 0.02127659574468085,
+        "2": 0.6627906976744186,
+        "3": 0.14814814814814814,
+        "4": 0.22580645161290322,
+        "5": 0.16666666666666666,
+        "6": 0.19148936170212766,
+        "7": 0.1111111111111111,
+        "8": 0.22448979591836735,
+        "9": 0.2222222222222222,
+        "10": 0.2903225806451613,
+        "11": 0.23580786026200873,
+        "12": 0.0,
+        "13": 0.4349775784753363,
+        "14": 0.4375,
+        "15": 0.1896551724137931,
+        "16": 0.39759036144578314,
+        "17": 0.35135135135135137,
+        "18": 0.1388888888888889,
+        "19": 0.08928571428571429,
+        "20": 0.7168141592920354,
+        "21": 0.5220125786163522,
+        "22": 0.16176470588235295
+      },
+      "slot_ce_top1": 0.3405036726128017,
+      "same_char_2afc": {
+        "accuracy": 0.6775106082036775,
+        "n_valid": 1414,
+        "n_skipped": 492,
+        "mean_margin": 0.17241480734276346,
+        "chance": 0.5,
+        "definition": "prototype-targeted, same-character/script alternative writer; ties score 0.5"
+      }
+    },
+    "test_char": {
+      "cross_char_map": 0.40678646441158517,
+      "prototype_top1": 0.2977872567315383,
+      "prototype_macro_top1": 0.24371853363195078,
+      "script_conditioned_chance": 0.1209010930418555,
+      "n_valid": 3751,
+      "n_total": 3751,
+      "per_slot_top1": {
+        "0": 0.047619047619047616,
+        "1": 0.043010752688172046,
+        "2": 0.6578947368421053,
+        "3": 0.10344827586206896,
+        "4": 0.22797927461139897,
+        "5": 0.0,
+        "6": 0.30851063829787234,
+        "7": 0.1375,
+        "8": 0.34782608695652173,
+        "9": 0.1643192488262911,
+        "10": 0.22388059701492538,
+        "11": 0.18110236220472442,
+        "12": 0.0,
+        "13": 0.41708542713567837,
+        "14": 0.32941176470588235,
+        "15": 0.14838709677419354,
+        "16": 0.3057324840764331,
+        "17": 0.3670886075949367,
+        "18": 0.1262135922330097,
+        "19": 0.11956521739130435,
+        "20": 0.712707182320442,
+        "21": 0.4483985765124555,
+        "22": 0.1878453038674033
+      },
+      "slot_ce_top1": 0.30071980805118637,
+      "same_char_2afc": {
+        "accuracy": 0.6886092287834785,
+        "n_valid": 3099,
+        "n_skipped": 652,
+        "mean_margin": 0.1631948825391295,
+        "chance": 0.5,
+        "definition": "prototype-targeted, same-character/script alternative writer; ties score 0.5"
+      }
+    },
+    "test_source": {
+      "cross_char_map": 0.22769499509444585,
+      "prototype_top1": 0.13484611371935315,
+      "prototype_macro_top1": 0.24046914676048475,
+      "script_conditioned_chance": 0.10103460267779518,
+      "n_valid": 3834,
+      "n_total": 3834,
+      "per_slot_top1": {
+        "0": 0.3333333333333333,
+        "2": 0.125,
+        "3": 0.009900990099009901,
+        "4": 0.11349693251533742,
+        "6": 0.7092198581560284,
+        "7": 0.0,
+        "8": 0.08151382823871907,
+        "9": 0.15384615384615385,
+        "10": 0.14754098360655737,
+        "11": 0.7037037037037037,
+        "13": 0.37962962962962965,
+        "14": 0.0,
+        "15": 0.04220779220779221,
+        "16": 0.0,
+        "17": 0.390625,
+        "18": 0.11151736745886655,
+        "20": 0.8888888888888888,
+        "21": 0.23563218390804597,
+        "22": 0.14285714285714285
+      },
+      "slot_ce_top1": 0.1364110589462702,
+      "same_char_2afc": {
+        "accuracy": 0.5652482269503546,
+        "n_valid": 1410,
+        "n_skipped": 2424,
+        "mean_margin": 0.05667545290908228,
+        "chance": 0.5,
+        "definition": "prototype-targeted, same-character/script alternative writer; ties score 0.5"
+      }
+    }
+  },
+  "train_slot_ce_top1": 0.9976637073626594,
+  "embedding_covariance_effective_rank": 9.67420394038373,
+  "same_script_prototype_cosine_mean": 0.2523691952228546,
+  "same_script_prototype_cosine_max": 0.6237690448760986,
+  "input_probes": {
+    "white_latent": {
+      "prototype_top1": 0.16573396470081792,
+      "cross_char_map": 0.27186641808597695,
+      "mean_cosine_to_normal": 0.5571597218513489
+    },
+    "no_std": {
+      "prototype_top1": 0.27421437795953507,
+      "cross_char_map": 0.37649280396804896,
+      "mean_cosine_to_normal": 0.7744620442390442
+    },
+    "wrong_std_same_script": {
+      "prototype_top1": 0.2686181661644425,
+      "cross_char_map": 0.375064435900918,
+      "mean_cosine_to_normal": 0.8410491347312927
+    }
+  },
+  "frozen_encoder_input_gradient_rms": 0.003249125089496374,
+  "limitations": [
+    "work metadata is a SOURCE DIRECTORY PROXY, NOT verified artwork IDs",
+    "old critic historical probe may have seen held-out characters and sources",
+    "prototypes use training split only; test sets never used for checkpoint selection",
+    "Input corruption probes are OOD sensitivity tests, not image-quality measurements",
+    "full_holdout uses exported ALL-train prototypes; training final_report used capped-gallery prototypes",
+    "same-character 2AFC is prototype-targeted, not the old critic logit-based T1 protocol; not directly comparable"
+  ]
+}

@@ -1,0 +1,17 @@
+{
+  "host": "4090",
+  "local_git_base_at_snapshot": "21df797",
+  "includes_local_working_tree_changes": true,
+  "remote_snapshot": "/root/Workspace/xy/DiT/scratch/v89_encoder_latest_20261016_01",
+  "remote_run": "/root/Workspace/xy/DiT/scratch/v89_encoder_latest_20261016_01/assets/encoder",
+  "remote_log": "/root/Workspace/xy/DiT/logs/v89_encoder_latest_20261016_01.log",
+  "source_archive_sha256": "ca74c377b94475f80b4b3634d576797e0fcbfc14ef78e031446874e08af79271",
+  "post_training_acceptance_tool_sha256": "b832091931d2e19dbbc97b7edc91e74f7b995e6c257aeb6a1e186730f4ef9948",
+  "acceptance_delta": "Diagnostic-only NPZ metadata materialization fix and matched normal-input control; training modules and training manifest unchanged. Three added regression tests pass; 10 tests total.",
+  "protocol": "20k steps; batch512; fresh initialization; seed89; validation-only checkpoint selection; full held-out evaluation and exported-prototype replay",
+  "status": "complete; training reached 20000, acceptance completed, best/last/prototypes and raw metrics downloaded",
+  "selected_step": 3000,
+  "best_sha256": "12ee8acbce548071734210fec80566d79c45816fd0e8b3332bd38f808ee336a2",
+  "prototype_sha256": "00626c09f4154e3cc81f186da643aa58122cecbdfee3930c857e6c40483eef70",
+  "representation_accepted_for_generator_training": false
+}

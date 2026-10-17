@@ -1,0 +1,679 @@
+{
+  "data_sha256": "0d3c633053859e2798b03c701b448a0ed50468728c1c4d11d33aeadf3279fab9",
+  "csv_sha256": "935cc552a65a8cf2ae8c18bcb583311c4d0c2b8a6156bd89749dbb4ad907b617",
+  "split_sha256": "373d3964a25e82cf5d853bd7525ad41e5943dadc06288f60618e3cb074f24945",
+  "stats_sha256": "cc423ea2202e158a1c7c49ae6432725d5b1f3c03bf2cfaa8529c8dc94e2adb4f",
+  "slots": [
+    [
+      "何绍基",
+      "楷"
+    ],
+    [
+      "何绍基",
+      "行"
+    ],
+    [
+      "何绍基",
+      "隶"
+    ],
+    [
+      "文徵明",
+      "楷"
+    ],
+    [
+      "文徵明",
+      "行"
+    ],
+    [
+      "文徵明",
+      "隶"
+    ],
+    [
+      "柳公权",
+      "楷"
+    ],
+    [
+      "柳公权",
+      "行"
+    ],
+    [
+      "欧阳询",
+      "楷"
+    ],
+    [
+      "欧阳询",
+      "行"
+    ],
+    [
+      "王羲之",
+      "楷"
+    ],
+    [
+      "王羲之",
+      "行"
+    ],
+    [
+      "米芾",
+      "楷"
+    ],
+    [
+      "米芾",
+      "行"
+    ],
+    [
+      "苏轼",
+      "楷"
+    ],
+    [
+      "苏轼",
+      "行"
+    ],
+    [
+      "褚遂良",
+      "楷"
+    ],
+    [
+      "褚遂良",
+      "行"
+    ],
+    [
+      "赵孟頫",
+      "楷"
+    ],
+    [
+      "赵孟頫",
+      "行"
+    ],
+    [
+      "赵孟頫",
+      "隶"
+    ],
+    [
+      "颜真卿",
+      "楷"
+    ],
+    [
+      "颜真卿",
+      "行"
+    ]
+  ],
+  "scripts": [
+    "楷",
+    "行",
+    "隶"
+  ],
+  "split_sizes": {
+    "train": 14981,
+    "val_char": 1906,
+    "test_char": 3751,
+    "test_source": 3834
+  },
+  "matched_counts": {
+    "val_char": 353,
+    "test_char": 847,
+    "test_source": 196
+  },
+  "quartet_coverage": {
+    "full_writer_pairs": 93,
+    "fallback_writer_pairs": 0,
+    "unique_metadata_rectangles": 994047,
+    "full_pairs": [
+      {
+        "a": 0,
+        "b": 3,
+        "shared_characters": 26
+      },
+      {
+        "a": 0,
+        "b": 6,
+        "shared_characters": 75
+      },
+      {
+        "a": 0,
+        "b": 8,
+        "shared_characters": 36
+      },
+      {
+        "a": 0,
+        "b": 10,
+        "shared_characters": 24
+      },
+      {
+        "a": 0,
+        "b": 12,
+        "shared_characters": 6
+      },
+      {
+        "a": 0,
+        "b": 14,
+        "shared_characters": 43
+      },
+      {
+        "a": 0,
+        "b": 16,
+        "shared_characters": 74
+      },
+      {
+        "a": 0,
+        "b": 18,
+        "shared_characters": 36
+      },
+      {
+        "a": 0,
+        "b": 21,
+        "shared_characters": 96
+      },
+      {
+        "a": 1,
+        "b": 4,
+        "shared_characters": 99
+      },
+      {
+        "a": 1,
+        "b": 7,
+        "shared_characters": 35
+      },
+      {
+        "a": 1,
+        "b": 9,
+        "shared_characters": 115
+      },
+      {
+        "a": 1,
+        "b": 11,
+        "shared_characters": 142
+      },
+      {
+        "a": 1,
+        "b": 13,
+        "shared_characters": 158
+      },
+      {
+        "a": 1,
+        "b": 15,
+        "shared_characters": 70
+      },
+      {
+        "a": 1,
+        "b": 17,
+        "shared_characters": 86
+      },
+      {
+        "a": 1,
+        "b": 19,
+        "shared_characters": 57
+      },
+      {
+        "a": 1,
+        "b": 22,
+        "shared_characters": 72
+      },
+      {
+        "a": 2,
+        "b": 5,
+        "shared_characters": 4
+      },
+      {
+        "a": 2,
+        "b": 20,
+        "shared_characters": 165
+      },
+      {
+        "a": 3,
+        "b": 6,
+        "shared_characters": 44
+      },
+      {
+        "a": 3,
+        "b": 8,
+        "shared_characters": 42
+      },
+      {
+        "a": 3,
+        "b": 10,
+        "shared_characters": 18
+      },
+      {
+        "a": 3,
+        "b": 12,
+        "shared_characters": 5
+      },
+      {
+        "a": 3,
+        "b": 14,
+        "shared_characters": 32
+      },
+      {
+        "a": 3,
+        "b": 16,
+        "shared_characters": 52
+      },
+      {
+        "a": 3,
+        "b": 18,
+        "shared_characters": 48
+      },
+      {
+        "a": 3,
+        "b": 21,
+        "shared_characters": 62
+      },
+      {
+        "a": 4,
+        "b": 7,
+        "shared_characters": 62
+      },
+      {
+        "a": 4,
+        "b": 9,
+        "shared_characters": 148
+      },
+      {
+        "a": 4,
+        "b": 11,
+        "shared_characters": 231
+      },
+      {
+        "a": 4,
+        "b": 13,
+        "shared_characters": 244
+      },
+      {
+        "a": 4,
+        "b": 15,
+        "shared_characters": 103
+      },
+      {
+        "a": 4,
+        "b": 17,
+        "shared_characters": 136
+      },
+      {
+        "a": 4,
+        "b": 19,
+        "shared_characters": 84
+      },
+      {
+        "a": 4,
+        "b": 22,
+        "shared_characters": 105
+      },
+      {
+        "a": 5,
+        "b": 20,
+        "shared_characters": 7
+      },
+      {
+        "a": 6,
+        "b": 8,
+        "shared_characters": 132
+      },
+      {
+        "a": 6,
+        "b": 10,
+        "shared_characters": 93
+      },
+      {
+        "a": 6,
+        "b": 12,
+        "shared_characters": 25
+      },
+      {
+        "a": 6,
+        "b": 14,
+        "shared_characters": 213
+      },
+      {
+        "a": 6,
+        "b": 16,
+        "shared_characters": 331
+      },
+      {
+        "a": 6,
+        "b": 18,
+        "shared_characters": 96
+      },
+      {
+        "a": 6,
+        "b": 21,
+        "shared_characters": 402
+      },
+      {
+        "a": 7,
+        "b": 9,
+        "shared_characters": 78
+      },
+      {
+        "a": 7,
+        "b": 11,
+        "shared_characters": 108
+      },
+      {
+        "a": 7,
+        "b": 13,
+        "shared_characters": 111
+      },
+      {
+        "a": 7,
+        "b": 15,
+        "shared_characters": 56
+      },
+      {
+        "a": 7,
+        "b": 17,
+        "shared_characters": 65
+      },
+      {
+        "a": 7,
+        "b": 19,
+        "shared_characters": 34
+      },
+      {
+        "a": 7,
+        "b": 22,
+        "shared_characters": 44
+      },
+      {
+        "a": 8,
+        "b": 10,
+        "shared_characters": 54
+      },
+      {
+        "a": 8,
+        "b": 12,
+        "shared_characters": 5
+      },
+      {
+        "a": 8,
+        "b": 14,
+        "shared_characters": 105
+      },
+      {
+        "a": 8,
+        "b": 16,
+        "shared_characters": 156
+      },
+      {
+        "a": 8,
+        "b": 18,
+        "shared_characters": 109
+      },
+      {
+        "a": 8,
+        "b": 21,
+        "shared_characters": 171
+      },
+      {
+        "a": 9,
+        "b": 11,
+        "shared_characters": 307
+      },
+      {
+        "a": 9,
+        "b": 13,
+        "shared_characters": 282
+      },
+      {
+        "a": 9,
+        "b": 15,
+        "shared_characters": 155
+      },
+      {
+        "a": 9,
+        "b": 17,
+        "shared_characters": 159
+      },
+      {
+        "a": 9,
+        "b": 19,
+        "shared_characters": 120
+      },
+      {
+        "a": 9,
+        "b": 22,
+        "shared_characters": 144
+      },
+      {
+        "a": 10,
+        "b": 12,
+        "shared_characters": 8
+      },
+      {
+        "a": 10,
+        "b": 14,
+        "shared_characters": 74
+      },
+      {
+        "a": 10,
+        "b": 16,
+        "shared_characters": 101
+      },
+      {
+        "a": 10,
+        "b": 18,
+        "shared_characters": 45
+      },
+      {
+        "a": 10,
+        "b": 21,
+        "shared_characters": 126
+      },
+      {
+        "a": 11,
+        "b": 13,
+        "shared_characters": 388
+      },
+      {
+        "a": 11,
+        "b": 15,
+        "shared_characters": 215
+      },
+      {
+        "a": 11,
+        "b": 17,
+        "shared_characters": 222
+      },
+      {
+        "a": 11,
+        "b": 19,
+        "shared_characters": 163
+      },
+      {
+        "a": 11,
+        "b": 22,
+        "shared_characters": 204
+      },
+      {
+        "a": 12,
+        "b": 14,
+        "shared_characters": 19
+      },
+      {
+        "a": 12,
+        "b": 16,
+        "shared_characters": 29
+      },
+      {
+        "a": 12,
+        "b": 18,
+        "shared_characters": 3
+      },
+      {
+        "a": 12,
+        "b": 21,
+        "shared_characters": 35
+      },
+      {
+        "a": 13,
+        "b": 15,
+        "shared_characters": 225
+      },
+      {
+        "a": 13,
+        "b": 17,
+        "shared_characters": 202
+      },
+      {
+        "a": 13,
+        "b": 19,
+        "shared_characters": 140
+      },
+      {
+        "a": 13,
+        "b": 22,
+        "shared_characters": 185
+      },
+      {
+        "a": 14,
+        "b": 16,
+        "shared_characters": 231
+      },
+      {
+        "a": 14,
+        "b": 18,
+        "shared_characters": 96
+      },
+      {
+        "a": 14,
+        "b": 21,
+        "shared_characters": 278
+      },
+      {
+        "a": 15,
+        "b": 17,
+        "shared_characters": 114
+      },
+      {
+        "a": 15,
+        "b": 19,
+        "shared_characters": 91
+      },
+      {
+        "a": 15,
+        "b": 22,
+        "shared_characters": 107
+      },
+      {
+        "a": 16,
+        "b": 18,
+        "shared_characters": 117
+      },
+      {
+        "a": 16,
+        "b": 21,
+        "shared_characters": 451
+      },
+      {
+        "a": 17,
+        "b": 19,
+        "shared_characters": 86
+      },
+      {
+        "a": 17,
+        "b": 22,
+        "shared_characters": 98
+      },
+      {
+        "a": 18,
+        "b": 21,
+        "shared_characters": 139
+      },
+      {
+        "a": 19,
+        "b": 22,
+        "shared_characters": 58
+      }
+    ],
+    "slots_without_full_rectangles": []
+  },
+  "source_limitations": "Source directories are proxies, not verified artworks; nested writer/source effects are not identifiable.",
+  "model_inputs": "canonical z0 [4,32,32] only, no STD/script/writer inputs",
+  "data_cache_sha256": "1f25aaf49697350def42b0de147fa974b26d7b6e40c420358487c3a01d779317",
+  "domain": "latent",
+  "source_pixel_manifest_sha256": "16a2f9f7152de83123b381094c626c9b25fba629b6a2607d0e32fa8557c95583",
+  "latent_source": "exact v84A target shards_img_aug, no extra VAE encoding/scaling/shift",
+  "shards": [
+    {
+      "path": "exp-std/data/shards_img_aug/shard_00000.npz",
+      "sha256": "8fa9a50b0bb1ca26dbc731ea3bbeb6737c8677e69893018a82fa18e52cc904fe",
+      "selected_rows": 1707
+    },
+    {
+      "path": "exp-std/data/shards_img_aug/shard_00001.npz",
+      "sha256": "4d8bfaca1bfad1ea611b79106c1f9e6ac5e273404218c08eb1776f7124c18b01",
+      "selected_rows": 1707
+    },
+    {
+      "path": "exp-std/data/shards_img_aug/shard_00002.npz",
+      "sha256": "5b476b027d222cac4fc8dc701238d25f9c25d25b729171ca9f3b1d8935ccb154",
+      "selected_rows": 1707
+    },
+    {
+      "path": "exp-std/data/shards_img_aug/shard_00003.npz",
+      "sha256": "7773e9bc8befb4d5837bea4ff6c89496ebeb5785688d750e4d0b4c9b837ca39a",
+      "selected_rows": 1711
+    },
+    {
+      "path": "exp-std/data/shards_img_aug/shard_00004.npz",
+      "sha256": "cc6e4f22730ba2939bca6bf09c3745ea8857dae1c514a13374905dbc829ec487",
+      "selected_rows": 1721
+    },
+    {
+      "path": "exp-std/data/shards_img_aug/shard_00005.npz",
+      "sha256": "5690d949d93877837ac6736cc4ea38cbc3c7e951507d7d9b9293a6e34f6dd43a",
+      "selected_rows": 1723
+    },
+    {
+      "path": "exp-std/data/shards_img_aug/shard_00006.npz",
+      "sha256": "ea9ee21e663f9b45de4186fc7f5293e635a9e8832832280957a139904129b251",
+      "selected_rows": 1708
+    },
+    {
+      "path": "exp-std/data/shards_img_aug/shard_00007.npz",
+      "sha256": "b0b2108ad209e314a7e83cd08a20fc3d3f4579ed62883527f36ccb5174df64a1",
+      "selected_rows": 1712
+    },
+    {
+      "path": "exp-std/data/shards_img_aug/shard_00008.npz",
+      "sha256": "28bbee1237e704c3689b22fd67befc6887255448d7da655fd4b05b26f0992539",
+      "selected_rows": 1708
+    },
+    {
+      "path": "exp-std/data/shards_img_aug/shard_00009.npz",
+      "sha256": "fe9d04f136923a0335b3e1870aa67ad411ce8af0690d7fda0bd80c7b3e603fd2",
+      "selected_rows": 1707
+    },
+    {
+      "path": "exp-std/data/shards_img_aug/shard_00010.npz",
+      "sha256": "b5a1db61ff89c7bdfcf1759333d0571eb003b87825de5ef6a7bf30ecb3ec08e3",
+      "selected_rows": 1707
+    },
+    {
+      "path": "exp-std/data/shards_img_aug/shard_00011.npz",
+      "sha256": "8139653a3590f20bd626dfdd251b6fa49ea70c392a7008f0a768b71050a7e9e5",
+      "selected_rows": 1715
+    },
+    {
+      "path": "exp-std/data/shards_img_aug/shard_00012.npz",
+      "sha256": "b6b4adfa47a47a3b91807c058dba2ded511dc3fcf6ec261fc3223f08a3ae6676",
+      "selected_rows": 1709
+    },
+    {
+      "path": "exp-std/data/shards_img_aug/shard_00013.npz",
+      "sha256": "c1c0985ebb0227768808dff5834899ff61596142d9a5818563f94687da012253",
+      "selected_rows": 1708
+    },
+    {
+      "path": "exp-std/data/shards_img_aug/shard_00014.npz",
+      "sha256": "f3a44af6eed9644c9192f02559e42e9ef2bf2be5ae3993d46dad846735d37d48",
+      "selected_rows": 1711
+    },
+    {
+      "path": "exp-std/data/shards_img_aug/shard_00015.npz",
+      "sha256": "59f6717d7055c5c33f18af7f8e29ff648e3ce460298c28e00c99e4af337bafd6",
+      "selected_rows": 341
+    }
+  ],
+  "mode_cache_relative_rms": 0.0009362481520567643,
+  "mode_cache_max_abs_difference": 0.21435546875
+}

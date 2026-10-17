@@ -1,0 +1,81 @@
+{
+  "ckpt_sha256": "e4f0b81dfb98ccfe9ed5a219996cd31406e9896e26ed06d019fba046189879f4",
+  "data_sha256": "0d3c633053859e2798b03c701b448a0ed50468728c1c4d11d33aeadf3279fab9",
+  "historical_results": {
+    "T1_pair_2afc": 0.784741144414169,
+    "T1_ci95": [
+      0.7438692098092643,
+      0.8283378746594006
+    ],
+    "n_pairs_holdout": 367,
+    "T1_slot_top1": 0.2625345440189499,
+    "T1_slot_top5": 0.6474536123174102,
+    "chance_1ofK": 0.038461538461538464,
+    "chance_2afc": 0.5,
+    "T2_map": 0.4487601993735108,
+    "T2_map_same_script_base": 0.9485662554202041,
+    "T3_brush_real_pos": 0.9988156336360048,
+    "T3_brush_std_neg": 1.0,
+    "T3_probes": {
+      "white_b": -4.318406581878662,
+      "noise_b": -8.198575019836426
+    },
+    "n_holdout": 2533
+  },
+  "protocol": "native Critic source holdout reconstructed from original script defaults",
+  "limitations": [
+    "Checkpoint does not save split/seed; reconstructed split is NOT independently verified.",
+    "Sources are directory proxies, not verified artworks.",
+    "No clean character-heldout claim: historical Critic may have trained on those characters.",
+    "Pair-level Wilson intervals reuse references; not independent trials.",
+    "No DINO/CLIP superiority claim without identical-protocol baselines."
+  ],
+  "seed": 0,
+  "holdout_frac": 0.3,
+  "n_train": 23469,
+  "n_query": 2533,
+  "retrieval": {
+    "cross_char_map": 0.2507357833788238,
+    "prototype_top1": 0.2463482037110146,
+    "prototype_macro_top1": 0.329484678787062,
+    "script_conditioned_chance": 0.1096723253059613,
+    "n_valid": 2533,
+    "n_total": 2533,
+    "per_slot_top1": {
+      "3": 0.3333333333333333,
+      "4": 0.2777777777777778,
+      "5": 0.0,
+      "6": 0.18181818181818182,
+      "7": 0.6555555555555556,
+      "8": 0.14262023217247097,
+      "9": 0.48412698412698413,
+      "11": 0.5061728395061729,
+      "14": 0.18609406952965235,
+      "15": 0.16475972540045766,
+      "18": 0.44339622641509435,
+      "20": 0.7745098039215687,
+      "22": 0.13313609467455623
+    }
+  },
+  "matched_crosschar": {
+    "n": 67,
+    "accuracy": 0.43283582089552236,
+    "ci95": [
+      0.32104123341736546,
+      0.5519147698349607
+    ],
+    "mean_margin": -0.04498143866658211,
+    "cross_source_positive_n": 67
+  },
+  "brush_real_positive": 0.9988156336360048,
+  "paired_std": {
+    "n": 128,
+    "real_brush_above_std": 1.0
+  },
+  "gradient": {
+    "loss": -0.905559778213501,
+    "norm": 0.007181116845458746,
+    "finite": true,
+    "frozen_parameter_grads": true
+  }
+}

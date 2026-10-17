@@ -1,0 +1,592 @@
+{
+  "data_sha256": "0d3c633053859e2798b03c701b448a0ed50468728c1c4d11d33aeadf3279fab9",
+  "csv_sha256": "935cc552a65a8cf2ae8c18bcb583311c4d0c2b8a6156bd89749dbb4ad907b617",
+  "split_sha256": "373d3964a25e82cf5d853bd7525ad41e5943dadc06288f60618e3cb074f24945",
+  "stats_sha256": "cc423ea2202e158a1c7c49ae6432725d5b1f3c03bf2cfaa8529c8dc94e2adb4f",
+  "slots": [
+    [
+      "何绍基",
+      "楷"
+    ],
+    [
+      "何绍基",
+      "行"
+    ],
+    [
+      "何绍基",
+      "隶"
+    ],
+    [
+      "文徵明",
+      "楷"
+    ],
+    [
+      "文徵明",
+      "行"
+    ],
+    [
+      "文徵明",
+      "隶"
+    ],
+    [
+      "柳公权",
+      "楷"
+    ],
+    [
+      "柳公权",
+      "行"
+    ],
+    [
+      "欧阳询",
+      "楷"
+    ],
+    [
+      "欧阳询",
+      "行"
+    ],
+    [
+      "王羲之",
+      "楷"
+    ],
+    [
+      "王羲之",
+      "行"
+    ],
+    [
+      "米芾",
+      "楷"
+    ],
+    [
+      "米芾",
+      "行"
+    ],
+    [
+      "苏轼",
+      "楷"
+    ],
+    [
+      "苏轼",
+      "行"
+    ],
+    [
+      "褚遂良",
+      "楷"
+    ],
+    [
+      "褚遂良",
+      "行"
+    ],
+    [
+      "赵孟頫",
+      "楷"
+    ],
+    [
+      "赵孟頫",
+      "行"
+    ],
+    [
+      "赵孟頫",
+      "隶"
+    ],
+    [
+      "颜真卿",
+      "楷"
+    ],
+    [
+      "颜真卿",
+      "行"
+    ]
+  ],
+  "scripts": [
+    "楷",
+    "行",
+    "隶"
+  ],
+  "split_sizes": {
+    "train": 14981,
+    "val_char": 1906,
+    "test_char": 3751,
+    "test_source": 3834
+  },
+  "matched_counts": {
+    "val_char": 353,
+    "test_char": 847,
+    "test_source": 196
+  },
+  "quartet_coverage": {
+    "full_writer_pairs": 93,
+    "fallback_writer_pairs": 0,
+    "unique_metadata_rectangles": 994047,
+    "full_pairs": [
+      {
+        "a": 0,
+        "b": 3,
+        "shared_characters": 26
+      },
+      {
+        "a": 0,
+        "b": 6,
+        "shared_characters": 75
+      },
+      {
+        "a": 0,
+        "b": 8,
+        "shared_characters": 36
+      },
+      {
+        "a": 0,
+        "b": 10,
+        "shared_characters": 24
+      },
+      {
+        "a": 0,
+        "b": 12,
+        "shared_characters": 6
+      },
+      {
+        "a": 0,
+        "b": 14,
+        "shared_characters": 43
+      },
+      {
+        "a": 0,
+        "b": 16,
+        "shared_characters": 74
+      },
+      {
+        "a": 0,
+        "b": 18,
+        "shared_characters": 36
+      },
+      {
+        "a": 0,
+        "b": 21,
+        "shared_characters": 96
+      },
+      {
+        "a": 1,
+        "b": 4,
+        "shared_characters": 99
+      },
+      {
+        "a": 1,
+        "b": 7,
+        "shared_characters": 35
+      },
+      {
+        "a": 1,
+        "b": 9,
+        "shared_characters": 115
+      },
+      {
+        "a": 1,
+        "b": 11,
+        "shared_characters": 142
+      },
+      {
+        "a": 1,
+        "b": 13,
+        "shared_characters": 158
+      },
+      {
+        "a": 1,
+        "b": 15,
+        "shared_characters": 70
+      },
+      {
+        "a": 1,
+        "b": 17,
+        "shared_characters": 86
+      },
+      {
+        "a": 1,
+        "b": 19,
+        "shared_characters": 57
+      },
+      {
+        "a": 1,
+        "b": 22,
+        "shared_characters": 72
+      },
+      {
+        "a": 2,
+        "b": 5,
+        "shared_characters": 4
+      },
+      {
+        "a": 2,
+        "b": 20,
+        "shared_characters": 165
+      },
+      {
+        "a": 3,
+        "b": 6,
+        "shared_characters": 44
+      },
+      {
+        "a": 3,
+        "b": 8,
+        "shared_characters": 42
+      },
+      {
+        "a": 3,
+        "b": 10,
+        "shared_characters": 18
+      },
+      {
+        "a": 3,
+        "b": 12,
+        "shared_characters": 5
+      },
+      {
+        "a": 3,
+        "b": 14,
+        "shared_characters": 32
+      },
+      {
+        "a": 3,
+        "b": 16,
+        "shared_characters": 52
+      },
+      {
+        "a": 3,
+        "b": 18,
+        "shared_characters": 48
+      },
+      {
+        "a": 3,
+        "b": 21,
+        "shared_characters": 62
+      },
+      {
+        "a": 4,
+        "b": 7,
+        "shared_characters": 62
+      },
+      {
+        "a": 4,
+        "b": 9,
+        "shared_characters": 148
+      },
+      {
+        "a": 4,
+        "b": 11,
+        "shared_characters": 231
+      },
+      {
+        "a": 4,
+        "b": 13,
+        "shared_characters": 244
+      },
+      {
+        "a": 4,
+        "b": 15,
+        "shared_characters": 103
+      },
+      {
+        "a": 4,
+        "b": 17,
+        "shared_characters": 136
+      },
+      {
+        "a": 4,
+        "b": 19,
+        "shared_characters": 84
+      },
+      {
+        "a": 4,
+        "b": 22,
+        "shared_characters": 105
+      },
+      {
+        "a": 5,
+        "b": 20,
+        "shared_characters": 7
+      },
+      {
+        "a": 6,
+        "b": 8,
+        "shared_characters": 132
+      },
+      {
+        "a": 6,
+        "b": 10,
+        "shared_characters": 93
+      },
+      {
+        "a": 6,
+        "b": 12,
+        "shared_characters": 25
+      },
+      {
+        "a": 6,
+        "b": 14,
+        "shared_characters": 213
+      },
+      {
+        "a": 6,
+        "b": 16,
+        "shared_characters": 331
+      },
+      {
+        "a": 6,
+        "b": 18,
+        "shared_characters": 96
+      },
+      {
+        "a": 6,
+        "b": 21,
+        "shared_characters": 402
+      },
+      {
+        "a": 7,
+        "b": 9,
+        "shared_characters": 78
+      },
+      {
+        "a": 7,
+        "b": 11,
+        "shared_characters": 108
+      },
+      {
+        "a": 7,
+        "b": 13,
+        "shared_characters": 111
+      },
+      {
+        "a": 7,
+        "b": 15,
+        "shared_characters": 56
+      },
+      {
+        "a": 7,
+        "b": 17,
+        "shared_characters": 65
+      },
+      {
+        "a": 7,
+        "b": 19,
+        "shared_characters": 34
+      },
+      {
+        "a": 7,
+        "b": 22,
+        "shared_characters": 44
+      },
+      {
+        "a": 8,
+        "b": 10,
+        "shared_characters": 54
+      },
+      {
+        "a": 8,
+        "b": 12,
+        "shared_characters": 5
+      },
+      {
+        "a": 8,
+        "b": 14,
+        "shared_characters": 105
+      },
+      {
+        "a": 8,
+        "b": 16,
+        "shared_characters": 156
+      },
+      {
+        "a": 8,
+        "b": 18,
+        "shared_characters": 109
+      },
+      {
+        "a": 8,
+        "b": 21,
+        "shared_characters": 171
+      },
+      {
+        "a": 9,
+        "b": 11,
+        "shared_characters": 307
+      },
+      {
+        "a": 9,
+        "b": 13,
+        "shared_characters": 282
+      },
+      {
+        "a": 9,
+        "b": 15,
+        "shared_characters": 155
+      },
+      {
+        "a": 9,
+        "b": 17,
+        "shared_characters": 159
+      },
+      {
+        "a": 9,
+        "b": 19,
+        "shared_characters": 120
+      },
+      {
+        "a": 9,
+        "b": 22,
+        "shared_characters": 144
+      },
+      {
+        "a": 10,
+        "b": 12,
+        "shared_characters": 8
+      },
+      {
+        "a": 10,
+        "b": 14,
+        "shared_characters": 74
+      },
+      {
+        "a": 10,
+        "b": 16,
+        "shared_characters": 101
+      },
+      {
+        "a": 10,
+        "b": 18,
+        "shared_characters": 45
+      },
+      {
+        "a": 10,
+        "b": 21,
+        "shared_characters": 126
+      },
+      {
+        "a": 11,
+        "b": 13,
+        "shared_characters": 388
+      },
+      {
+        "a": 11,
+        "b": 15,
+        "shared_characters": 215
+      },
+      {
+        "a": 11,
+        "b": 17,
+        "shared_characters": 222
+      },
+      {
+        "a": 11,
+        "b": 19,
+        "shared_characters": 163
+      },
+      {
+        "a": 11,
+        "b": 22,
+        "shared_characters": 204
+      },
+      {
+        "a": 12,
+        "b": 14,
+        "shared_characters": 19
+      },
+      {
+        "a": 12,
+        "b": 16,
+        "shared_characters": 29
+      },
+      {
+        "a": 12,
+        "b": 18,
+        "shared_characters": 3
+      },
+      {
+        "a": 12,
+        "b": 21,
+        "shared_characters": 35
+      },
+      {
+        "a": 13,
+        "b": 15,
+        "shared_characters": 225
+      },
+      {
+        "a": 13,
+        "b": 17,
+        "shared_characters": 202
+      },
+      {
+        "a": 13,
+        "b": 19,
+        "shared_characters": 140
+      },
+      {
+        "a": 13,
+        "b": 22,
+        "shared_characters": 185
+      },
+      {
+        "a": 14,
+        "b": 16,
+        "shared_characters": 231
+      },
+      {
+        "a": 14,
+        "b": 18,
+        "shared_characters": 96
+      },
+      {
+        "a": 14,
+        "b": 21,
+        "shared_characters": 278
+      },
+      {
+        "a": 15,
+        "b": 17,
+        "shared_characters": 114
+      },
+      {
+        "a": 15,
+        "b": 19,
+        "shared_characters": 91
+      },
+      {
+        "a": 15,
+        "b": 22,
+        "shared_characters": 107
+      },
+      {
+        "a": 16,
+        "b": 18,
+        "shared_characters": 117
+      },
+      {
+        "a": 16,
+        "b": 21,
+        "shared_characters": 451
+      },
+      {
+        "a": 17,
+        "b": 19,
+        "shared_characters": 86
+      },
+      {
+        "a": 17,
+        "b": 22,
+        "shared_characters": 98
+      },
+      {
+        "a": 18,
+        "b": 21,
+        "shared_characters": 139
+      },
+      {
+        "a": 19,
+        "b": 22,
+        "shared_characters": 58
+      }
+    ],
+    "slots_without_full_rectangles": []
+  },
+  "source_limitations": "Source directories are proxies, not verified artworks; nested writer/source effects are not identifiable.",
+  "model_inputs": "GT grayscale only. No writer/script/STD inputs. Labels are losses only.",
+  "data_cache_sha256": "e635382bfa23b7b27409902ca015111fcaf919f2fe367a8e41345989629253b9"
+}

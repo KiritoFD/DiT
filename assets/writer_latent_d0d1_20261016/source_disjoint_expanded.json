@@ -1,0 +1,10 @@
+{
+  "n": 100,
+  "eligible_anchors": 196,
+  "n_characters": 96,
+  "n_sources": 10,
+  "selection": "200 seeded feature-blind greedy trials, maximum cardinality",
+  "note": "Auxiliary protocol: different triplets from original 196; same source pool/constraints, no repeated images, no claim of independent artworks.",
+  "exact_anchor_negative_matching_upper_bound": 100,
+  "upper_bound_note": "Upper bound under the fixed query pool/matching rules, even before unique-positive constraints."
+}

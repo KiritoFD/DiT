@@ -1,0 +1,27 @@
+{
+  "hashes": {
+    "gts": "85a07db188455588d483",
+    "noise": "74ded1b31c91f5ff1b0c",
+    "skels": "2aae7dc846aaf25f1cad"
+  },
+  "shapes": {
+    "gts": [
+      3,
+      3,
+      64,
+      64
+    ],
+    "noise": [
+      3,
+      4,
+      8,
+      8
+    ],
+    "skels": [
+      3,
+      1,
+      64,
+      64
+    ]
+  }
+}

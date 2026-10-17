@@ -1,0 +1,101 @@
+{
+  "args": {
+    "data": "scratch/disc_lat_full.npz",
+    "csv": "exp-std/csv/train.csv",
+    "out": "assets/encoder",
+    "steps": 20000,
+    "batch": 512,
+    "lr": 0.0001,
+    "eval_every": 1000,
+    "seed": 89,
+    "arch": "local_stats",
+    "hard_weight": 1.0,
+    "ink_width_stats": "/root/Workspace/xy/DiT/scratch/v89_encoder_v2_20261016_01/assets/encoder/ink_width_stats.npz",
+    "device": "cuda",
+    "skip_vae_replay": false
+  },
+  "slots": [
+    "何绍基·楷",
+    "何绍基·行",
+    "何绍基·隶",
+    "文徵明·楷",
+    "文徵明·行",
+    "文徵明·隶",
+    "柳公权·楷",
+    "柳公权·行",
+    "欧阳询·楷",
+    "欧阳询·行",
+    "王羲之·楷",
+    "王羲之·行",
+    "米芾·楷",
+    "米芾·行",
+    "苏轼·楷",
+    "苏轼·行",
+    "褚遂良·楷",
+    "褚遂良·行",
+    "赵孟頫·楷",
+    "赵孟頫·行",
+    "赵孟頫·隶",
+    "颜真卿·楷",
+    "颜真卿·行",
+    "std·楷",
+    "std·行",
+    "std·隶"
+  ],
+  "scripts": [
+    "楷",
+    "行",
+    "隶"
+  ],
+  "embedding_dim": 256,
+  "architecture": "local_stats",
+  "regularization": "joint affine + latent gain/noise + STD dropout + dropout.2 + cosine CE label_smoothing.05; source-balanced anchors",
+  "explicit_same_char_hard_nce_weight": 1.0,
+  "selection": "ink/width-matched val cross-character triplet 2AFC, then prototype macro Top1",
+  "loss": "CE(all real+STD) + 0.3 SupCon(real full batch, same-script negatives, different-char positives) + 0.1 matched-STD triplet(margin=.2)",
+  "init": "fresh; old critic never used to initialize training",
+  "data_sha256": "0d3c633053859e2798b03c701b448a0ed50468728c1c4d11d33aeadf3279fab9",
+  "csv_sha256": "935cc552a65a8cf2ae8c18bcb583311c4d0c2b8a6156bd89749dbb4ad907b617",
+  "vae_replay": [
+    {
+      "row": 0,
+      "max_abs_error": 0.005264163017272949,
+      "relative_rms_error": 0.00030747862183488905
+    },
+    {
+      "row": 13001,
+      "max_abs_error": 0.004820823669433594,
+      "relative_rms_error": 0.00029379173065535724
+    },
+    {
+      "row": 26001,
+      "max_abs_error": 0.004606485366821289,
+      "relative_rms_error": 0.0003016614937223494
+    }
+  ],
+  "latent_contract": "SD-EMA posterior.mode()*0.18215; shift=0",
+  "std_contract": "ink=1 background=0,64x64,sigma=.65; encoder internally converts to legacy white=1",
+  "split_sizes": {
+    "train": 14981,
+    "val_char": 1906,
+    "test_char": 3751,
+    "test_source": 3834
+  },
+  "eval_sizes": {
+    "val_char": 1641,
+    "test_char": 2323,
+    "test_source": 1318
+  },
+  "duplicate_train_rows_excluded": 165,
+  "limitations": [
+    "work metadata is a SOURCE DIRECTORY PROXY, NOT verified artwork IDs",
+    "old critic historical probe may have seen held-out characters and sources",
+    "prototypes use training split only; test sets never used for checkpoint selection"
+  ],
+  "source_sha256": {
+    "tools/train_prototype_style_encoder.py": "21a2a94184d468f3e63bfc8dee139e954674fd8b342ffbd94f6a75fac4b3a761",
+    "src/model/style_encoder.py": "eecac573e8a5885495871a098489d128840227d9c2b3fb6bddd0d4229014becc",
+    "src/utils/style_encoder_data.py": "d606542f25da6a37a4c57c39f712732bf183af91ef44cbb8cbaeca9c6f6f1704",
+    "src/loss/style_encoder_loss.py": "8b83bc929a0e340b47056d780dc4b284eeadb9b9ba7fa34dabe4e9c33133782c"
+  }
+}

@@ -1,0 +1,94 @@
+{
+  "args": {
+    "data": "scratch/disc_lat_full.npz",
+    "csv": "exp-std/csv/train.csv",
+    "out": "assets/encoder",
+    "steps": 20000,
+    "batch": 512,
+    "lr": 0.0001,
+    "eval_every": 1000,
+    "seed": 89,
+    "device": "cuda",
+    "skip_vae_replay": false
+  },
+  "slots": [
+    "何绍基·楷",
+    "何绍基·行",
+    "何绍基·隶",
+    "文徵明·楷",
+    "文徵明·行",
+    "文徵明·隶",
+    "柳公权·楷",
+    "柳公权·行",
+    "欧阳询·楷",
+    "欧阳询·行",
+    "王羲之·楷",
+    "王羲之·行",
+    "米芾·楷",
+    "米芾·行",
+    "苏轼·楷",
+    "苏轼·行",
+    "褚遂良·楷",
+    "褚遂良·行",
+    "赵孟頫·楷",
+    "赵孟頫·行",
+    "赵孟頫·隶",
+    "颜真卿·楷",
+    "颜真卿·行",
+    "std·楷",
+    "std·行",
+    "std·隶"
+  ],
+  "scripts": [
+    "楷",
+    "行",
+    "隶"
+  ],
+  "embedding_dim": 256,
+  "loss": "CE(all real+STD) + 0.3 SupCon(real full batch, same-script negatives, different-char positives) + 0.1 matched-STD triplet(margin=.2)",
+  "init": "fresh; old critic never used to initialize training",
+  "data_sha256": "0d3c633053859e2798b03c701b448a0ed50468728c1c4d11d33aeadf3279fab9",
+  "csv_sha256": "935cc552a65a8cf2ae8c18bcb583311c4d0c2b8a6156bd89749dbb4ad907b617",
+  "vae_replay": [
+    {
+      "row": 0,
+      "max_abs_error": 0.005264163017272949,
+      "relative_rms_error": 0.00030747862183488905
+    },
+    {
+      "row": 13001,
+      "max_abs_error": 0.004820823669433594,
+      "relative_rms_error": 0.00029379173065535724
+    },
+    {
+      "row": 26001,
+      "max_abs_error": 0.004606485366821289,
+      "relative_rms_error": 0.0003016614937223494
+    }
+  ],
+  "latent_contract": "SD-EMA posterior.mode()*0.18215; shift=0",
+  "std_contract": "ink=1 background=0,64x64,sigma=.65; encoder internally converts to legacy white=1",
+  "split_sizes": {
+    "train": 14981,
+    "val_char": 1906,
+    "test_char": 3751,
+    "test_source": 3834
+  },
+  "eval_sizes": {
+    "val_char": 1641,
+    "test_char": 2323,
+    "test_source": 1318
+  },
+  "duplicate_train_rows_excluded": 165,
+  "limitations": [
+    "work metadata is a SOURCE DIRECTORY PROXY, NOT verified artwork IDs",
+    "old critic historical probe may have seen held-out characters and sources",
+    "prototypes use training split only; test sets never used for checkpoint selection"
+  ],
+  "source_sha256": {
+    "tools/train_prototype_style_encoder.py": "d7039cfed0b22d8e1fa7ca0a5ec504b3e8120ef7e68de4e5b02a8f455cdafadc",
+    "src/model/style_encoder.py": "bc7924333e5777a28c2c2cf9ea78a90c4f3eb741f9b4c181a198c343371e0568",
+    "src/utils/style_encoder_data.py": "470c1171ab106b6025bf881837c5a4a4c4d7fbe48af96b07bfe96f09fc382dce",
+    "src/loss/style_encoder_loss.py": "4bb6bbe05e70367398b0084b51db1a18475852f5d910e705cac8a5b8edea5fe2"
+  }
+}

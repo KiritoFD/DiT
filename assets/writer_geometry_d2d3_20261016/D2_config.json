@@ -1,0 +1,33 @@
+{
+  "prepare": false,
+  "data_root": "assets/data",
+  "split_root": "/root/Workspace/xy/DiT/scratch/v89_teacher_v3_20261016_01/assets/encoder",
+  "out": "assets/D2",
+  "arm": "D2",
+  "batch": 2048,
+  "steps": 10000,
+  "lr": 0.0001,
+  "seed": 89,
+  "eval_every": 500,
+  "benchmark": false,
+  "resume": "",
+  "domain": "latent",
+  "architecture": "geometry",
+  "geometry_weight": 0.0,
+  "sdf_cache": "assets/sdf32",
+  "parameters": 1655697,
+  "data_manifest_sha256": "be8eb04e526f624f36bfcdc6dadda9299843a43ab13e5df4e8fd9b877fe2f4b2",
+  "initial_parameter_sha256": "240571d6e85702ce58252c8e0c10d17db5d2e5e7a6390cea8305a346e8b9eea4",
+  "warmup_ce_epochs": 3,
+  "cross_ramp_epochs": 10,
+  "source_hashes": {
+    "/root/Workspace/xy/DiT/scratch/writer_geometry_d2d3_20261016_01/tools/train_writer_style_pixel.py": "15eb1919a46165b683d2f4aa2c57a2374392e68cdef051d703bc8367b774b2cd",
+    "src/model/writer_style_pixel.py": "f591d9c6326737807c5358565c923c7dead8e34f745ada017ab9dd00056c07cc",
+    "src/utils/writer_quartets.py": "c9576e49f5278314574b30dcab5207ba892ed276884b5bb5c02511a905fc12d4",
+    "src/model/writer_style_latent.py": "42f0aab609eff029bd75dd4f29ff2d22ae9c4d2e0e88abcfd7e4e7cd47c5ed56",
+    "src/model/writer_style_geometry.py": "2a891e7ed515a9b8ffdb7c5901be3dbba801e0e6a6ff0ab122b71eb0d7d86ace"
+  },
+  "selection": "validation matched cross-character accuracy, tie validation crosschar mAP; tests only after completion",
+  "augmentation": "latent affine +-3deg/4pct translation/5pct scale, border padding, gain .95..1.05, noise .01",
+  "sdf_manifest_sha256": "eacd50bf8403c1b8810dee1ac4d7f30d67ce7fbd6066d97fb911ce5f1ae77b25"
+}

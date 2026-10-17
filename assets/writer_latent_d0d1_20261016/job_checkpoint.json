@@ -1,0 +1,20 @@
+{
+  "job_id": "writer-latent-d0d1-20261016-01",
+  "host": "4090",
+  "workspace": "/root/Workspace/xy/DiT/scratch/writer_latent_d0d1_20261016_01",
+  "task": "Train fresh Latent D0 CE and D1 CE plus cross-character loss. Keep Pixel D1 frozen. No DiT training.",
+  "runner": "tools/analysis/run_writer_latent_d0d1.sh",
+  "log": "/root/Workspace/xy/DiT/logs/writer_latent_d0d1_20261016.log",
+  "configuration": {"parameters": 1537824, "domain": "latent", "batch": 2048, "steps_per_arm": 10000, "seed": 89, "learning_rate": 0.0001, "cross_weight": 0.5, "margin": 0.1, "temperature": 0.1},
+  "data": "Exact original Top10 GT rows joined to v84A exp-std/data/shards_img_aug by img_id, no new encoding or scaling. Same Pixel D0/D1 split and quartet sampler.",
+  "bridge_result": {"actual_shard_reconstruction_matched_char": 0.6127508854781583, "actual_shard_reconstruction_matched_source": 0.6122448979591837, "n_triplet_union_decoded": 1936},
+  "benchmark": {"median_step_seconds": 0.19372084, "peak_allocated_gib": 10.71899, "training_seconds_two_arms": 3874.42},
+  "next_steps": [
+    "Inspect completion log and comparison.json, including paired D1-D0 grouped intervals",
+    "Check Pixel D0/D1 and Latent D0/D1 on the same supplementary source-disjoint subset",
+    "Retrieve best/last checkpoints, metrics, validation and acceptance reports",
+    "Only if results justify it, freeze Latent D1 for gradient audit with independent Pixel D1",
+    "No automatic DiT post-training is wired in; gradient/domain validation required first"
+  ],
+  "resume": "python tools/train_writer_style_pixel.py --domain latent --data-root assets/data --out assets/D0 --arm D0 --batch 2048 --steps 10000 --eval-every 500 --resume assets/D0/last.pt (substitute D1 paths and arm for D1)"
+}

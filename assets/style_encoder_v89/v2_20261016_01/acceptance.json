@@ -1,0 +1,184 @@
+{
+  "selected_step": 8000,
+  "best_sha256": "ea874c7571ef533001d1c18ebd15939718f405da876deda4bd301738093757c9",
+  "acceptance_tool_sha256": "4a071cff48415d58f2a84f3ad6281e5d90ef806c6d398a293cc613d31858519c",
+  "prototype_sha256": "3138937d50ff2f746df06bfed234f3dc6a33b69accf8ee7fb9e8cafe320dca03",
+  "checkpoint_and_prototype_replay": "passed",
+  "capped_metric_replay": {
+    "val_char": {
+      "n": 1641,
+      "matches_training_final_report": true
+    },
+    "test_char": {
+      "n": 2323,
+      "matches_training_final_report": true
+    },
+    "test_source": {
+      "n": 1318,
+      "matches_training_final_report": true
+    }
+  },
+  "full_holdout_exported_prototypes": {
+    "val_char": {
+      "cross_char_map": 0.3566247268676181,
+      "prototype_top1": 0.5383001049317944,
+      "prototype_macro_top1": 0.5653860124844245,
+      "script_conditioned_chance": 0.12509618747813925,
+      "n_valid": 1906,
+      "n_total": 1906,
+      "per_slot_top1": {
+        "0": 0.5357142857142857,
+        "1": 0.6382978723404256,
+        "2": 0.9418604651162791,
+        "3": 0.3333333333333333,
+        "4": 0.5053763440860215,
+        "5": 0.6666666666666666,
+        "6": 0.48936170212765956,
+        "7": 0.5,
+        "8": 0.5306122448979592,
+        "9": 0.6203703703703703,
+        "10": 0.45161290322580644,
+        "11": 0.2576419213973799,
+        "12": 0.6666666666666666,
+        "13": 0.3452914798206278,
+        "14": 0.825,
+        "15": 0.6206896551724138,
+        "16": 0.6265060240963856,
+        "17": 0.6351351351351351,
+        "18": 0.5,
+        "19": 0.5535714285714286,
+        "20": 0.9734513274336283,
+        "21": 0.5220125786163522,
+        "22": 0.2647058823529412
+      },
+      "slot_ce_top1": 0.48111227701993703,
+      "same_char_2afc": {
+        "accuracy": 0.7942008486562943,
+        "n_valid": 1414,
+        "n_skipped": 492,
+        "mean_margin": 0.14128613866347942,
+        "chance": 0.5,
+        "definition": "prototype-targeted, same-character/script alternative writer; ties score 0.5"
+      }
+    },
+    "test_char": {
+      "cross_char_map": 0.3323171868034059,
+      "prototype_top1": 0.4769394828045854,
+      "prototype_macro_top1": 0.5178465888035041,
+      "script_conditioned_chance": 0.1209010930418555,
+      "n_valid": 3751,
+      "n_total": 3751,
+      "per_slot_top1": {
+        "0": 0.5396825396825397,
+        "1": 0.7204301075268817,
+        "2": 0.9013157894736842,
+        "3": 0.5172413793103449,
+        "4": 0.43005181347150256,
+        "5": 1.0,
+        "6": 0.5319148936170213,
+        "7": 0.3125,
+        "8": 0.4608695652173913,
+        "9": 0.5492957746478874,
+        "10": 0.3880597014925373,
+        "11": 0.21653543307086615,
+        "12": 0.21428571428571427,
+        "13": 0.2989949748743719,
+        "14": 0.6941176470588235,
+        "15": 0.44516129032258067,
+        "16": 0.5573248407643312,
+        "17": 0.5063291139240507,
+        "18": 0.34951456310679613,
+        "19": 0.5543478260869565,
+        "20": 0.9392265193370166,
+        "21": 0.5622775800711743,
+        "22": 0.22099447513812154
+      },
+      "slot_ce_top1": 0.45267928552386033,
+      "same_char_2afc": {
+        "accuracy": 0.7921910293643111,
+        "n_valid": 3099,
+        "n_skipped": 652,
+        "mean_margin": 0.13663866696924346,
+        "chance": 0.5,
+        "definition": "prototype-targeted, same-character/script alternative writer; ties score 0.5"
+      }
+    },
+    "test_source": {
+      "cross_char_map": 0.20243999631140183,
+      "prototype_top1": 0.2853416797078769,
+      "prototype_macro_top1": 0.4447991586579649,
+      "script_conditioned_chance": 0.10103460267779518,
+      "n_valid": 3834,
+      "n_total": 3834,
+      "per_slot_top1": {
+        "0": 0.6666666666666666,
+        "2": 0.75,
+        "3": 0.009900990099009901,
+        "4": 0.3006134969325153,
+        "6": 0.7801418439716312,
+        "7": 1.0,
+        "8": 0.09170305676855896,
+        "9": 0.3333333333333333,
+        "10": 0.2,
+        "11": 0.24074074074074073,
+        "13": 0.2777777777777778,
+        "14": 1.0,
+        "15": 0.3344155844155844,
+        "16": 0.3333333333333333,
+        "17": 0.421875,
+        "18": 0.3180987202925046,
+        "20": 0.8888888888888888,
+        "21": 0.39655172413793105,
+        "22": 0.10714285714285714
+      },
+      "slot_ce_top1": 0.1609285341679708,
+      "same_char_2afc": {
+        "accuracy": 0.6936170212765957,
+        "n_valid": 1410,
+        "n_skipped": 2424,
+        "mean_margin": 0.08331419168905428,
+        "chance": 0.5,
+        "definition": "prototype-targeted, same-character/script alternative writer; ties score 0.5"
+      }
+    }
+  },
+  "train_slot_ce_top1": 0.6517588945998265,
+  "embedding_covariance_effective_rank": 29.075473957129738,
+  "same_script_prototype_cosine_mean": 0.6309215426445007,
+  "same_script_prototype_cosine_max": 0.9240446090698242,
+  "input_probes": {
+    "normal": {
+      "prototype_top1": 0.5139905294877314,
+      "cross_char_map": 0.3579011459667831,
+      "mean_cosine_to_normal": 1.0,
+      "n": 2323
+    },
+    "white_latent": {
+      "prototype_top1": 0.10331467929401636,
+      "cross_char_map": 0.16824581282743656,
+      "mean_cosine_to_normal": 0.48702892661094666,
+      "n": 2323
+    },
+    "no_std": {
+      "prototype_top1": 0.524321997417133,
+      "cross_char_map": 0.36003517485380027,
+      "mean_cosine_to_normal": 0.9449654817581177,
+      "n": 2323
+    },
+    "wrong_std_same_script": {
+      "prototype_top1": 0.49504950495049505,
+      "cross_char_map": 0.3437255258560323,
+      "mean_cosine_to_normal": 0.9423935413360596,
+      "n": 2323
+    }
+  },
+  "frozen_encoder_input_gradient_rms": 0.0010156006319448352,
+  "limitations": [
+    "work metadata is a SOURCE DIRECTORY PROXY, NOT verified artwork IDs",
+    "old critic historical probe may have seen held-out characters and sources",
+    "prototypes use training split only; test sets never used for checkpoint selection",
+    "Input corruption probes are OOD sensitivity tests, not image-quality measurements",
+    "full_holdout uses exported ALL-train prototypes; training final_report used capped-gallery prototypes",
+    "same-character 2AFC is prototype-targeted, not the old critic logit-based T1 protocol; not directly comparable"
+  ]
+}

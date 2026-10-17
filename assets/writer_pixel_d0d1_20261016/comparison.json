@@ -1,0 +1,675 @@
+{
+  "paired_control_checks_passed": true,
+  "trace_steps": [
+    1,
+    500,
+    1000
+  ],
+  "best_steps": [
+    9000,
+    9500
+  ],
+  "paired_matched_improvement": {
+    "test_char": {
+      "definition": "mean D1-D0 accuracy difference; interval accuracy field is a difference, not a probability",
+      "by_char": {
+        "n": 847,
+        "accuracy": 0.049586776859504134,
+        "ci95": [
+          0.01653549160042326,
+          0.07829201398011257
+        ],
+        "n_groups": 183
+      },
+      "by_source": {
+        "n": 847,
+        "accuracy": 0.049586776859504134,
+        "ci95": [
+          0.011699667256562147,
+          0.07289421036235129
+        ],
+        "n_groups": 45
+      }
+    },
+    "test_source": {
+      "definition": "mean D1-D0 accuracy difference; interval accuracy field is a difference, not a probability",
+      "by_char": {
+        "n": 196,
+        "accuracy": 0.04591836734693878,
+        "ci95": [
+          -0.015157342657342657,
+          0.10660391306490562
+        ],
+        "n_groups": 96
+      },
+      "by_source": {
+        "n": 196,
+        "accuracy": 0.04591836734693878,
+        "ci95": [
+          -0.021130506442912797,
+          0.14953770803138586
+        ],
+        "n_groups": 11
+      }
+    }
+  },
+  "arms": {
+    "D0": {
+      "step": 9000,
+      "checkpoint_sha256": "84dc40df5d0bd4811ffe096dfda83245b7553abe51589aee3dbc05b83e6794ca",
+      "data_manifest_sha256": "16a2f9f7152de83123b381094c626c9b25fba629b6a2607d0e32fa8557c95583",
+      "arm": "D0",
+      "conditions": "gray only; no STD/reference/writer/script input",
+      "limitations": [
+        "Source directories are proxies, not verified artwork identity.",
+        "Grouped bootstrap separately by query character/source; gallery references reused.",
+        "Old 78.47% Critic T1 uses a different split and sampling; not an apples-to-apples benchmark.",
+        "These are GT encoder metrics, not evidence of usefulness for generated images."
+      ],
+      "conditions_evaluated": {
+        "clean": {
+          "test_char": {
+            "crosschar_map": 0.5186395967054976,
+            "prototype_top1": 0.5334577446014396,
+            "slot_ce_top1": 0.47640629165555853,
+            "prototype_targeted_samechar_2afc": 0.8012262020006453,
+            "note_samechar": "Prototype-targeted, not directly comparable to historical 78.47% logit-based T1.",
+            "matched": {
+              "by_char": {
+                "n": 847,
+                "accuracy": 0.5608028335301063,
+                "ci95": [
+                  0.5214146359556395,
+                  0.6026448240219733
+                ],
+                "n_groups": 183
+              },
+              "by_source": {
+                "n": 847,
+                "accuracy": 0.5608028335301063,
+                "ci95": [
+                  0.5287617793089473,
+                  0.62195267825884
+                ],
+                "n_groups": 45
+              },
+              "image_disjoint": {
+                "n": 364,
+                "accuracy": 0.5714285714285714,
+                "ci95": [
+                  0.518105010571534,
+                  0.6242945487860742
+                ],
+                "n_groups": 182
+              },
+              "mean_margin": 0.06668870896100998
+            },
+            "samechar_target_head_2afc": {
+              "n": 3099,
+              "accuracy": 0.8038076798967408,
+              "ci95": [
+                0.7848001388534218,
+                0.822047749632064
+              ],
+              "n_groups": 374
+            }
+          },
+          "test_source": {
+            "crosschar_map": 0.3171369516497555,
+            "prototype_top1": 0.33568075117370894,
+            "slot_ce_top1": 0.27803860198226393,
+            "prototype_targeted_samechar_2afc": 0.7390070921985815,
+            "note_samechar": "Prototype-targeted, not directly comparable to historical 78.47% logit-based T1.",
+            "matched": {
+              "by_char": {
+                "n": 196,
+                "accuracy": 0.5612244897959183,
+                "ci95": [
+                  0.4925335252670657,
+                  0.634922619047619
+                ],
+                "n_groups": 96
+              },
+              "by_source": {
+                "n": 196,
+                "accuracy": 0.5612244897959183,
+                "ci95": [
+                  0.4751935348885867,
+                  0.7375204439252336
+                ],
+                "n_groups": 11
+              },
+              "image_disjoint": {
+                "n": 100,
+                "accuracy": 0.55,
+                "ci95": [
+                  0.45454545454545453,
+                  0.6494974226804123
+                ],
+                "n_groups": 96
+              },
+              "mean_margin": 0.07852005213499069
+            },
+            "samechar_target_head_2afc": {
+              "n": 1410,
+              "accuracy": 0.7368794326241135,
+              "ci95": [
+                0.7134913744644173,
+                0.7607637012390857
+              ],
+              "n_groups": 504
+            }
+          },
+          "train_slot_ce_top1": 0.8927975435551699
+        },
+        "blur": {
+          "test_char": {
+            "crosschar_map": 0.5151014297663611,
+            "prototype_top1": 0.530258597707278,
+            "slot_ce_top1": 0.4700079978672354,
+            "prototype_targeted_samechar_2afc": 0.8025169409486931,
+            "note_samechar": "Prototype-targeted, not directly comparable to historical 78.47% logit-based T1.",
+            "matched": {
+              "by_char": {
+                "n": 847,
+                "accuracy": 0.5844155844155844,
+                "ci95": [
+                  0.540849449324315,
+                  0.6285178832348643
+                ],
+                "n_groups": 183
+              },
+              "by_source": {
+                "n": 847,
+                "accuracy": 0.5844155844155844,
+                "ci95": [
+                  0.5475981620718463,
+                  0.6458392121116042
+                ],
+                "n_groups": 45
+              },
+              "image_disjoint": {
+                "n": 364,
+                "accuracy": 0.5686813186813187,
+                "ci95": [
+                  0.5155763721919363,
+                  0.6233134648762217
+                ],
+                "n_groups": 182
+              },
+              "mean_margin": 0.0698484554886818
+            },
+            "samechar_target_head_2afc": {
+              "n": 3099,
+              "accuracy": 0.803162310422717,
+              "ci95": [
+                0.7848156595771493,
+                0.8208418442500794
+              ],
+              "n_groups": 374
+            }
+          },
+          "test_source": {
+            "crosschar_map": 0.3210436428907973,
+            "prototype_top1": 0.34089723526343246,
+            "slot_ce_top1": 0.28508085550339074,
+            "prototype_targeted_samechar_2afc": 0.7368794326241135,
+            "note_samechar": "Prototype-targeted, not directly comparable to historical 78.47% logit-based T1.",
+            "matched": {
+              "by_char": {
+                "n": 196,
+                "accuracy": 0.5867346938775511,
+                "ci95": [
+                  0.518130065098977,
+                  0.6600384615384616
+                ],
+                "n_groups": 96
+              },
+              "by_source": {
+                "n": 196,
+                "accuracy": 0.5867346938775511,
+                "ci95": [
+                  0.5017857142857143,
+                  0.7231999999999998
+                ],
+                "n_groups": 11
+              },
+              "image_disjoint": {
+                "n": 100,
+                "accuracy": 0.58,
+                "ci95": [
+                  0.48999489795918366,
+                  0.6804812697764622
+                ],
+                "n_groups": 96
+              },
+              "mean_margin": 0.09020451456308365
+            },
+            "samechar_target_head_2afc": {
+              "n": 1410,
+              "accuracy": 0.7347517730496453,
+              "ci95": [
+                0.7119138607969573,
+                0.75991637467218
+              ],
+              "n_groups": 504
+            }
+          },
+          "train_slot_ce_top1": 0.8919297777184434
+        },
+        "ink_gain": {
+          "test_char": {
+            "crosschar_map": 0.5171529072501908,
+            "prototype_top1": 0.5315915755798454,
+            "slot_ce_top1": 0.47480671820847775,
+            "prototype_targeted_samechar_2afc": 0.8009035172636334,
+            "note_samechar": "Prototype-targeted, not directly comparable to historical 78.47% logit-based T1.",
+            "matched": {
+              "by_char": {
+                "n": 847,
+                "accuracy": 0.5619834710743802,
+                "ci95": [
+                  0.5201368696572415,
+                  0.6049401131441704
+                ],
+                "n_groups": 183
+              },
+              "by_source": {
+                "n": 847,
+                "accuracy": 0.5619834710743802,
+                "ci95": [
+                  0.5203498629473142,
+                  0.6241670948267557
+                ],
+                "n_groups": 45
+              },
+              "image_disjoint": {
+                "n": 364,
+                "accuracy": 0.5604395604395604,
+                "ci95": [
+                  0.5052091688663973,
+                  0.615819209039548
+                ],
+                "n_groups": 182
+              },
+              "mean_margin": 0.061967041343450546
+            },
+            "samechar_target_head_2afc": {
+              "n": 3099,
+              "accuracy": 0.8044530493707648,
+              "ci95": [
+                0.7862755114584729,
+                0.8220840796029462
+              ],
+              "n_groups": 374
+            }
+          },
+          "test_source": {
+            "crosschar_map": 0.31818018355112554,
+            "prototype_top1": 0.3393322900365154,
+            "slot_ce_top1": 0.2827334376630151,
+            "prototype_targeted_samechar_2afc": 0.7418439716312056,
+            "note_samechar": "Prototype-targeted, not directly comparable to historical 78.47% logit-based T1.",
+            "matched": {
+              "by_char": {
+                "n": 196,
+                "accuracy": 0.5357142857142857,
+                "ci95": [
+                  0.4663034240754448,
+                  0.609375
+                ],
+                "n_groups": 96
+              },
+              "by_source": {
+                "n": 196,
+                "accuracy": 0.5357142857142857,
+                "ci95": [
+                  0.4438116756228627,
+                  0.7019638290098648
+                ],
+                "n_groups": 11
+              },
+              "image_disjoint": {
+                "n": 100,
+                "accuracy": 0.54,
+                "ci95": [
+                  0.44554455445544555,
+                  0.6428571428571429
+                ],
+                "n_groups": 96
+              },
+              "mean_margin": 0.06788028031587601
+            },
+            "samechar_target_head_2afc": {
+              "n": 1410,
+              "accuracy": 0.7397163120567376,
+              "ci95": [
+                0.7169478085351788,
+                0.7622427253371186
+              ],
+              "n_groups": 504
+            }
+          },
+          "train_slot_ce_top1": 0.892263533809492
+        }
+      },
+      "gradient_probe": {
+        "norm": 0.05864625796675682,
+        "finite": true,
+        "frozen_parameters": true,
+        "domain": "pixels, not VAE latent"
+      },
+      "research_gate_passed": false,
+      "next_action": "Research review only. No automatic DiT training, including on pass."
+    },
+    "D1": {
+      "step": 9500,
+      "checkpoint_sha256": "0cfa07c29c74c3e8131616878bda7064c18b7fbd96f50ef00ca6892ea244a0e6",
+      "data_manifest_sha256": "16a2f9f7152de83123b381094c626c9b25fba629b6a2607d0e32fa8557c95583",
+      "arm": "D1",
+      "conditions": "gray only; no STD/reference/writer/script input",
+      "limitations": [
+        "Source directories are proxies, not verified artwork identity.",
+        "Grouped bootstrap separately by query character/source; gallery references reused.",
+        "Old 78.47% Critic T1 uses a different split and sampling; not an apples-to-apples benchmark.",
+        "These are GT encoder metrics, not evidence of usefulness for generated images."
+      ],
+      "conditions_evaluated": {
+        "clean": {
+          "test_char": {
+            "crosschar_map": 0.5354138098755706,
+            "prototype_top1": 0.5331911490269261,
+            "slot_ce_top1": 0.4750733137829912,
+            "prototype_targeted_samechar_2afc": 0.8147789609551468,
+            "note_samechar": "Prototype-targeted, not directly comparable to historical 78.47% logit-based T1.",
+            "matched": {
+              "by_char": {
+                "n": 847,
+                "accuracy": 0.6103896103896104,
+                "ci95": [
+                  0.5677845292604905,
+                  0.6499171669430289
+                ],
+                "n_groups": 183
+              },
+              "by_source": {
+                "n": 847,
+                "accuracy": 0.6103896103896104,
+                "ci95": [
+                  0.5796172873436856,
+                  0.6612029007177034
+                ],
+                "n_groups": 45
+              },
+              "image_disjoint": {
+                "n": 364,
+                "accuracy": 0.6071428571428571,
+                "ci95": [
+                  0.551449954380687,
+                  0.6603798608678244
+                ],
+                "n_groups": 182
+              },
+              "mean_margin": 0.11412032693624496
+            },
+            "samechar_target_head_2afc": {
+              "n": 3099,
+              "accuracy": 0.8151016456921588,
+              "ci95": [
+                0.7989408446073687,
+                0.8309117266665011
+              ],
+              "n_groups": 374
+            }
+          },
+          "test_source": {
+            "crosschar_map": 0.328770584167246,
+            "prototype_top1": 0.32994261867501307,
+            "slot_ce_top1": 0.2608242044861763,
+            "prototype_targeted_samechar_2afc": 0.7595744680851064,
+            "note_samechar": "Prototype-targeted, not directly comparable to historical 78.47% logit-based T1.",
+            "matched": {
+              "by_char": {
+                "n": 196,
+                "accuracy": 0.6071428571428571,
+                "ci95": [
+                  0.5343566191281928,
+                  0.6811332619748461
+                ],
+                "n_groups": 96
+              },
+              "by_source": {
+                "n": 196,
+                "accuracy": 0.6071428571428571,
+                "ci95": [
+                  0.5174307862679957,
+                  0.7546054292929292
+                ],
+                "n_groups": 11
+              },
+              "image_disjoint": {
+                "n": 100,
+                "accuracy": 0.53,
+                "ci95": [
+                  0.4329149484536083,
+                  0.6311075886665346
+                ],
+                "n_groups": 96
+              },
+              "mean_margin": 0.16517440974712372
+            },
+            "samechar_target_head_2afc": {
+              "n": 1410,
+              "accuracy": 0.7439716312056738,
+              "ci95": [
+                0.7211166200755257,
+                0.7692862832778421
+              ],
+              "n_groups": 504
+            }
+          },
+          "train_slot_ce_top1": 0.8920632801548628
+        },
+        "blur": {
+          "test_char": {
+            "crosschar_map": 0.5320587846169624,
+            "prototype_top1": 0.5273260463876299,
+            "slot_ce_top1": 0.4670754465475873,
+            "prototype_targeted_samechar_2afc": 0.8112294288480155,
+            "note_samechar": "Prototype-targeted, not directly comparable to historical 78.47% logit-based T1.",
+            "matched": {
+              "by_char": {
+                "n": 847,
+                "accuracy": 0.6127508854781583,
+                "ci95": [
+                  0.5715920785094817,
+                  0.6556111973809543
+                ],
+                "n_groups": 183
+              },
+              "by_source": {
+                "n": 847,
+                "accuracy": 0.6127508854781583,
+                "ci95": [
+                  0.5670561292471685,
+                  0.6569988716236864
+                ],
+                "n_groups": 45
+              },
+              "image_disjoint": {
+                "n": 364,
+                "accuracy": 0.6126373626373627,
+                "ci95": [
+                  0.557732435669737,
+                  0.6648052366627786
+                ],
+                "n_groups": 182
+              },
+              "mean_margin": 0.12000264972448349
+            },
+            "samechar_target_head_2afc": {
+              "n": 3099,
+              "accuracy": 0.8128428525330752,
+              "ci95": [
+                0.797875189311292,
+                0.8277014793061431
+              ],
+              "n_groups": 374
+            }
+          },
+          "test_source": {
+            "crosschar_map": 0.3304977435063863,
+            "prototype_top1": 0.33437663015127805,
+            "slot_ce_top1": 0.2655190401669275,
+            "prototype_targeted_samechar_2afc": 0.7546099290780142,
+            "note_samechar": "Prototype-targeted, not directly comparable to historical 78.47% logit-based T1.",
+            "matched": {
+              "by_char": {
+                "n": 196,
+                "accuracy": 0.6173469387755102,
+                "ci95": [
+                  0.5416559278350516,
+                  0.6907408422899759
+                ],
+                "n_groups": 96
+              },
+              "by_source": {
+                "n": 196,
+                "accuracy": 0.6173469387755102,
+                "ci95": [
+                  0.5293976244343892,
+                  0.7515548248284821
+                ],
+                "n_groups": 11
+              },
+              "image_disjoint": {
+                "n": 100,
+                "accuracy": 0.57,
+                "ci95": [
+                  0.46464646464646464,
+                  0.6700025773195877
+                ],
+                "n_groups": 96
+              },
+              "mean_margin": 0.17847366631031036
+            },
+            "samechar_target_head_2afc": {
+              "n": 1410,
+              "accuracy": 0.7375886524822695,
+              "ci95": [
+                0.7129528515770845,
+                0.763692979495657
+              ],
+              "n_groups": 504
+            }
+          },
+          "train_slot_ce_top1": 0.891262265536346
+        },
+        "ink_gain": {
+          "test_char": {
+            "crosschar_map": 0.5335616029548335,
+            "prototype_top1": 0.5286590242601973,
+            "slot_ce_top1": 0.46894161556918157,
+            "prototype_targeted_samechar_2afc": 0.8170377541142304,
+            "note_samechar": "Prototype-targeted, not directly comparable to historical 78.47% logit-based T1.",
+            "matched": {
+              "by_char": {
+                "n": 847,
+                "accuracy": 0.6068476977567887,
+                "ci95": [
+                  0.5615176600441502,
+                  0.6461276817312088
+                ],
+                "n_groups": 183
+              },
+              "by_source": {
+                "n": 847,
+                "accuracy": 0.6068476977567887,
+                "ci95": [
+                  0.571745850959974,
+                  0.6550204394481348
+                ],
+                "n_groups": 45
+              },
+              "image_disjoint": {
+                "n": 364,
+                "accuracy": 0.6181318681318682,
+                "ci95": [
+                  0.5632168784029038,
+                  0.6676314692891074
+                ],
+                "n_groups": 182
+              },
+              "mean_margin": 0.10666313022375107
+            },
+            "samechar_target_head_2afc": {
+              "n": 3099,
+              "accuracy": 0.8147789609551468,
+              "ci95": [
+                0.798808313286785,
+                0.8308397057151437
+              ],
+              "n_groups": 374
+            }
+          },
+          "test_source": {
+            "crosschar_map": 0.3293731660288197,
+            "prototype_top1": 0.3351591027647366,
+            "slot_ce_top1": 0.261867501304121,
+            "prototype_targeted_samechar_2afc": 0.7539007092198582,
+            "note_samechar": "Prototype-targeted, not directly comparable to historical 78.47% logit-based T1.",
+            "matched": {
+              "by_char": {
+                "n": 196,
+                "accuracy": 0.6173469387755102,
+                "ci95": [
+                  0.5444797959457646,
+                  0.6868686868686869
+                ],
+                "n_groups": 96
+              },
+              "by_source": {
+                "n": 196,
+                "accuracy": 0.6173469387755102,
+                "ci95": [
+                  0.5300353335871324,
+                  0.7647058823529411
+                ],
+                "n_groups": 11
+              },
+              "image_disjoint": {
+                "n": 100,
+                "accuracy": 0.54,
+                "ci95": [
+                  0.43564356435643564,
+                  0.6363636363636364
+                ],
+                "n_groups": 96
+              },
+              "mean_margin": 0.1566103845834732
+            },
+            "samechar_target_head_2afc": {
+              "n": 1410,
+              "accuracy": 0.7475177304964539,
+              "ci95": [
+                0.7228344856918726,
+                0.772826887233605
+              ],
+              "n_groups": 504
+            }
+          },
+          "train_slot_ce_top1": 0.8908617582270877
+        }
+      },
+      "gradient_probe": {
+        "norm": 0.06343963742256165,
+        "finite": true,
+        "frozen_parameters": true,
+        "domain": "pixels, not VAE latent"
+      },
+      "research_gate_passed": true,
+      "next_action": "Research review only. No automatic DiT training, including on pass."
+    }
+  },
+  "next_action": "Research review only. No automatic DiT training."
+}

@@ -198,6 +198,11 @@ assets/aligned_eval200_top10/
 assets/historical_strict_common/
 assets/poster_tree/
 assets/v54_eval200fix/
+assets/style_eval_src/
+assets/style_eval_local/
+assets/v85_verified_control_10k/
+assets/v85_verified_v84A_200k/
+assets/writer_counterfactual_20261014/
 
 
 # quarantine area (reversible, never committed)

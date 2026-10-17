@@ -74,8 +74,10 @@ def main():
     parser.add_argument('--out',required=True)
     parser.add_argument('--seeds',type=int,default=3)
     parser.add_argument('--batch',type=int,default=16)
+    parser.add_argument('--memory-fraction',type=float,default=1.)
     args=parser.parse_args();out=Path(args.out);out.mkdir(parents=True,exist_ok=False)
     torch.set_num_threads(4);torch.set_grad_enabled(False)
+    if args.memory_fraction<1:torch.cuda.set_per_process_memory_fraction(args.memory_fraction)
     train=read_rows('exp-std/csv/train_top10_aug_sym.csv')
     rows=read_rows('exp-std/csv/eval200_fixed.csv')
     overlap={}

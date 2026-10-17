@@ -1,0 +1,19 @@
+{
+  "host": "4090",
+  "remote_repo": "/root/Workspace/xy/DiT",
+  "pid_at_launch": 1656882,
+  "run": "assets/style_encoder_v89/20261016-132915",
+  "log": "logs/v89_encoder_20261016_main_retry.log",
+  "task": "Train standalone 256D latent+STD cross-character style encoder; do not train DiT",
+  "steps": 20000,
+  "batch": 512,
+  "eval_every": 1000,
+  "status_at_last_check": "completed previous run; 20000 steps, best=3000; final_results and full acceptance retrieved. Latest-code rerun is recorded separately in ../latest_20261016_01/execution.json",
+  "next_checks": [
+    "Read log tail for completion or error; verify process identity before any signal",
+    "Download final_results.json, metrics.jsonl, best.pt and prototypes.pt",
+    "Compare character holdout and source-proxy holdout; do not call source proxies verified artworks",
+    "Do not use the encoder for DiT supervision until representation quality is accepted"
+  ],
+  "notes": "The earlier 20261016-132732 run was intentionally terminated during startup to replace the slow sampler; not the active run. Historical critic scores may be contaminated by its prior training and are not clean holdout baselines."
+}

@@ -1,0 +1,39 @@
+{
+  "cases": {
+    "flag=False": [
+      true,
+      0
+    ],
+    "inline=False": [
+      true,
+      0
+    ],
+    "is_eval_step=False": [
+      false,
+      1
+    ],
+    "无 EMA": [
+      true,
+      1,
+      false
+    ],
+    "跑": [
+      true,
+      1,
+      true,
+      true,
+      false
+    ]
+  },
+  "json_flat": {
+    "ink_iou": 0.2483,
+    "lpips": 0.3742,
+    "mse": 0.9162,
+    "n": 187,
+    "set": "eval200fix",
+    "skel_iou": 0.0155,
+    "ssim": 0.559,
+    "step": 6000
+  },
+  "log_has_早停数据源": true
+}

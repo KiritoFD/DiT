@@ -1,0 +1,59 @@
+{
+  "task": "D2/D3 geometry/brush controlled ablation",
+  "pid": 1678315,
+  "started_utc": "2026-10-16T14:08:37.729268+00:00",
+  "work": "/root/Workspace/xy/DiT/scratch/writer_geometry_d2d3_20261016_01",
+  "configuration": {
+    "batch": 2048,
+    "steps_each": 10000,
+    "seed": 89,
+    "lr": 0.0001,
+    "cross_weight": 0.5,
+    "D2_geometry_weight": 0.0,
+    "D3_geometry_weight": 0.01,
+    "checkpoint_steps": [
+      1000,
+      2000,
+      3000,
+      4000,
+      5000,
+      6000,
+      8000,
+      10000
+    ],
+    "gradient_bank": "48 distinct heldout characters x 3 seeds; same bank for D1/D2/D3",
+    "negative_protocol": "train-only writer prototypes, query character excluded; NOT heldout GT hard negatives"
+  },
+  "completed_stages": [
+    "tests"
+  ],
+  "no_dit_training": true,
+  "status": "running",
+  "stage": "train_D2",
+  "current_command": [
+    "/opt/conda/envs/cu121/bin/python",
+    "-u",
+    "tools/train_writer_style_pixel.py",
+    "--domain",
+    "latent",
+    "--architecture",
+    "geometry",
+    "--arm",
+    "D2",
+    "--geometry-weight",
+    "0",
+    "--data-root",
+    "assets/data",
+    "--sdf-cache",
+    "assets/sdf32",
+    "--out",
+    "assets/D2",
+    "--batch",
+    "2048",
+    "--steps",
+    "10000",
+    "--eval-every",
+    "500"
+  ],
+  "elapsed_seconds": 4.03226375579834
+}

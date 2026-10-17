@@ -1,0 +1,26 @@
+{
+  "prepare": false,
+  "data_root": "assets/data",
+  "split_root": "/root/Workspace/xy/DiT/scratch/v89_teacher_v3_20261016_01/assets/encoder",
+  "out": "assets/D0",
+  "arm": "D0",
+  "batch": 2048,
+  "steps": 10000,
+  "lr": 0.0001,
+  "seed": 89,
+  "eval_every": 500,
+  "benchmark": false,
+  "resume": "",
+  "parameters": 3808480,
+  "data_manifest_sha256": "16a2f9f7152de83123b381094c626c9b25fba629b6a2607d0e32fa8557c95583",
+  "initial_parameter_sha256": "299920531c762a5fcb24ba105626b87d94cd7175c4dbc58ee123a72fc9918dac",
+  "warmup_ce_epochs": 3,
+  "cross_ramp_epochs": 10,
+  "source_hashes": {
+    "/root/Workspace/xy/DiT/scratch/writer_pixel_d0d1_20261016_01/tools/train_writer_style_pixel.py": "cc9e11ef43e653ec64c4db92c0334c8973e859b9dd8d79feed9ff2bec14b4478",
+    "src/model/writer_style_pixel.py": "f591d9c6326737807c5358565c923c7dead8e34f745ada017ab9dd00056c07cc",
+    "src/utils/writer_quartets.py": "c9576e49f5278314574b30dcab5207ba892ed276884b5bb5c02511a905fc12d4"
+  },
+  "selection": "validation matched cross-character accuracy, tie validation crosschar mAP; tests only after completion",
+  "augmentation": "affine +-3deg/4pct translation/5pct scale, ink gain .85..1.15, background .03, noise .005, blur sigma.65 p.25"
+}

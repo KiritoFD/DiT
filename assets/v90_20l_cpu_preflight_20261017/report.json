@@ -1,0 +1,78 @@
+{
+  "status": "passed",
+  "device": "cpu",
+  "test_batch": 2,
+  "configured_training_batch": 128,
+  "parameters": 97064630,
+  "depth": 20,
+  "hidden_size": 512,
+  "heads": 8,
+  "strict_reload": true,
+  "history": [
+    {
+      "step": 0,
+      "fm": 2.026862144470215,
+      "glyph_output_grad": 0.0,
+      "augmentation_fallback": 0.0
+    },
+    {
+      "step": 1,
+      "fm": 2.018697738647461,
+      "glyph_output_grad": 1.1001382517861202e-05,
+      "augmentation_fallback": 0.0
+    },
+    {
+      "step": 2,
+      "fm": 2.0078506469726562,
+      "glyph_output_grad": 0.007899370975792408,
+      "augmentation_fallback": 0.0
+    }
+  ],
+  "health": {
+    "f0_norm": 0.0,
+    "fg_rms": 7.433891005348414e-05,
+    "delta_rms": 7.433891005348414e-05,
+    "content_background_ratio": 1.986939549446106,
+    "glyph_scale": 0.2000225931406021,
+    "injection_over_GT_stem_rms": 5.951659113634378e-05
+  },
+  "layers": {
+    "0": {
+      "hidden_rms": 0.24983736872673035,
+      "condition_rms": 0.05609969049692154,
+      "adaln_rms": 0.0007581673562526703
+    },
+    "3": {
+      "hidden_rms": 0.2498362809419632,
+      "condition_rms": 0.8154394030570984,
+      "adaln_rms": 0.006386843044310808
+    },
+    "6": {
+      "hidden_rms": 0.24987736344337463,
+      "condition_rms": 0.8154393434524536,
+      "adaln_rms": 0.006218417547643185
+    },
+    "9": {
+      "hidden_rms": 0.2498958259820938,
+      "condition_rms": 0.8154393434524536,
+      "adaln_rms": 0.00626458041369915
+    },
+    "12": {
+      "hidden_rms": 0.2499864101409912,
+      "condition_rms": 0.8154391646385193,
+      "adaln_rms": 0.006256760563701391
+    },
+    "15": {
+      "hidden_rms": 0.2500181198120117,
+      "condition_rms": 0.8154388070106506,
+      "adaln_rms": 0.006241971626877785
+    },
+    "19": {
+      "hidden_rms": 0.25000935792922974,
+      "condition_rms": 0.05609969049692154,
+      "adaln_rms": 0.000753421219997108
+    }
+  },
+  "elapsed_seconds": 6.797000000005937,
+  "limitations": "Synthetic FM and real-font STD CPU check only. No real REPA loss, style quality, GPU peak or throughput conclusion."
+}

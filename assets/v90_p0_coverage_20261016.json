@@ -1,0 +1,5767 @@
+{
+  "train_csv_sha256": "935cc552a65a8cf2ae8c18bcb583311c4d0c2b8a6156bd89749dbb4ad907b617",
+  "augmented_train_csv_sha256": "3264e89623fb7073dc440b2269cce5464298428d4035aaa0d8c6fc1f40506fb8",
+  "primary": {
+    "rows": 26002,
+    "writers": 10,
+    "characters": 4677,
+    "legal_cells": 22399,
+    "writer_script_pairs": 93,
+    "baseline_sampling_rows": 77823,
+    "pairs_with_fewer_than_32_characters": 8,
+    "pair_eligible_row_fraction": 0.8133605107299439,
+    "source_endpoint_cell_counts": {
+      "hcsu_bei": 2307,
+      "hcsu_wild": 15047,
+      "final_imgs_fame_v8": 39890,
+      "calli_tongji_imgs": 2475,
+      "hcsu_wild_salvage": 964,
+      "mccd_salvage": 7594,
+      "hcsu_tie": 1654
+    },
+    "pairs": [
+      {
+        "script": "楷",
+        "writers": [
+          "何绍基",
+          "文徵明"
+        ],
+        "unique_characters": 42,
+        "distinct_endpoint_rows": 128,
+        "row_pair_products": 103,
+        "source_endpoint_cell_counts": {
+          "hcsu_bei": 39,
+          "hcsu_wild": 63,
+          "final_imgs_fame_v8": 25,
+          "mccd_salvage": 1
+        }
+      },
+      {
+        "script": "楷",
+        "writers": [
+          "何绍基",
+          "柳公权"
+        ],
+        "unique_characters": 103,
+        "distinct_endpoint_rows": 297,
+        "row_pair_products": 222,
+        "source_endpoint_cell_counts": {
+          "final_imgs_fame_v8": 142,
+          "hcsu_wild": 92,
+          "hcsu_bei": 34,
+          "hcsu_tie": 10,
+          "calli_tongji_imgs": 17,
+          "hcsu_wild_salvage": 1,
+          "mccd_salvage": 1
+        }
+      },
+      {
+        "script": "楷",
+        "writers": [
+          "何绍基",
+          "欧阳询"
+        ],
+        "unique_characters": 130,
+        "distinct_endpoint_rows": 370,
+        "row_pair_products": 278,
+        "source_endpoint_cell_counts": {
+          "hcsu_bei": 52,
+          "hcsu_wild": 137,
+          "final_imgs_fame_v8": 155,
+          "calli_tongji_imgs": 19,
+          "mccd_salvage": 7
+        }
+      },
+      {
+        "script": "楷",
+        "writers": [
+          "何绍基",
+          "王羲之"
+        ],
+        "unique_characters": 64,
+        "distinct_endpoint_rows": 173,
+        "row_pair_products": 119,
+        "source_endpoint_cell_counts": {
+          "final_imgs_fame_v8": 48,
+          "hcsu_wild": 89,
+          "hcsu_bei": 30,
+          "hcsu_wild_salvage": 3,
+          "mccd_salvage": 3
+        }
+      },
+      {
+        "script": "楷",
+        "writers": [
+          "何绍基",
+          "米芾"
+        ],
+        "unique_characters": 7,
+        "distinct_endpoint_rows": 21,
+        "row_pair_products": 14,
+        "source_endpoint_cell_counts": {
+          "hcsu_wild": 7,
+          "final_imgs_fame_v8": 10,
+          "hcsu_bei": 4
+        }
+      },
+      {
+        "script": "楷",
+        "writers": [
+          "何绍基",
+          "苏轼"
+        ],
+        "unique_characters": 68,
+        "distinct_endpoint_rows": 174,
+        "row_pair_products": 114,
+        "source_endpoint_cell_counts": {
+          "final_imgs_fame_v8": 87,
+          "hcsu_wild": 63,
+          "hcsu_bei": 17,
+          "hcsu_tie": 3,
+          "hcsu_wild_salvage": 1,
+          "mccd_salvage": 3
+        }
+      },
+      {
+        "script": "楷",
+        "writers": [
+          "何绍基",
+          "褚遂良"
+        ],
+        "unique_characters": 110,
+        "distinct_endpoint_rows": 332,
+        "row_pair_products": 252,
+        "source_endpoint_cell_counts": {
+          "hcsu_bei": 36,
+          "hcsu_wild": 75,
+          "final_imgs_fame_v8": 201,
+          "hcsu_tie": 6,
+          "mccd_salvage": 9,
+          "calli_tongji_imgs": 5
+        }
+      },
+      {
+        "script": "楷",
+        "writers": [
+          "何绍基",
+          "赵孟頫"
+        ],
+        "unique_characters": 102,
+        "distinct_endpoint_rows": 283,
+        "row_pair_products": 211,
+        "source_endpoint_cell_counts": {
+          "hcsu_bei": 45,
+          "hcsu_wild": 109,
+          "mccd_salvage": 70,
+          "hcsu_wild_salvage": 5,
+          "final_imgs_fame_v8": 43,
+          "calli_tongji_imgs": 11
+        }
+      },
+      {
+        "script": "楷",
+        "writers": [
+          "何绍基",
+          "颜真卿"
+        ],
+        "unique_characters": 146,
+        "distinct_endpoint_rows": 393,
+        "row_pair_products": 277,
+        "source_endpoint_cell_counts": {
+          "hcsu_bei": 57,
+          "hcsu_wild": 115,
+          "final_imgs_fame_v8": 208,
+          "hcsu_wild_salvage": 1,
+          "mccd_salvage": 6,
+          "calli_tongji_imgs": 6
+        }
+      },
+      {
+        "script": "楷",
+        "writers": [
+          "文徵明",
+          "柳公权"
+        ],
+        "unique_characters": 88,
+        "distinct_endpoint_rows": 242,
+        "row_pair_products": 164,
+        "source_endpoint_cell_counts": {
+          "hcsu_wild": 85,
+          "final_imgs_fame_v8": 101,
+          "mccd_salvage": 3,
+          "hcsu_bei": 33,
+          "hcsu_tie": 9,
+          "calli_tongji_imgs": 11
+        }
+      },
+      {
+        "script": "楷",
+        "writers": [
+          "文徵明",
+          "欧阳询"
+        ],
+        "unique_characters": 124,
+        "distinct_endpoint_rows": 335,
+        "row_pair_products": 232,
+        "source_endpoint_cell_counts": {
+          "hcsu_wild": 143,
+          "hcsu_bei": 52,
+          "final_imgs_fame_v8": 122,
+          "hcsu_wild_salvage": 2,
+          "mccd_salvage": 3,
+          "calli_tongji_imgs": 13
+        }
+      },
+      {
+        "script": "楷",
+        "writers": [
+          "文徵明",
+          "王羲之"
+        ],
+        "unique_characters": 62,
+        "distinct_endpoint_rows": 165,
+        "row_pair_products": 110,
+        "source_endpoint_cell_counts": {
+          "hcsu_wild": 87,
+          "hcsu_bei": 33,
+          "hcsu_wild_salvage": 8,
+          "final_imgs_fame_v8": 36,
+          "mccd_salvage": 1
+        }
+      },
+      {
+        "script": "楷",
+        "writers": [
+          "文徵明",
+          "米芾"
+        ],
+        "unique_characters": 7,
+        "distinct_endpoint_rows": 17,
+        "row_pair_products": 10,
+        "source_endpoint_cell_counts": {
+          "hcsu_wild": 6,
+          "final_imgs_fame_v8": 8,
+          "hcsu_bei": 3
+        }
+      },
+      {
+        "script": "楷",
+        "writers": [
+          "文徵明",
+          "苏轼"
+        ],
+        "unique_characters": 69,
+        "distinct_endpoint_rows": 176,
+        "row_pair_products": 113,
+        "source_endpoint_cell_counts": {
+          "hcsu_wild": 77,
+          "hcsu_bei": 20,
+          "final_imgs_fame_v8": 73,
+          "mccd_salvage": 3,
+          "hcsu_tie": 3
+        }
+      },
+      {
+        "script": "楷",
+        "writers": [
+          "文徵明",
+          "褚遂良"
+        ],
+        "unique_characters": 105,
+        "distinct_endpoint_rows": 299,
+        "row_pair_products": 220,
+        "source_endpoint_cell_counts": {
+          "hcsu_wild": 83,
+          "calli_tongji_imgs": 6,
+          "hcsu_tie": 15,
+          "final_imgs_fame_v8": 157,
+          "hcsu_bei": 32,
+          "mccd_salvage": 5,
+          "hcsu_wild_salvage": 1
+        }
+      },
+      {
+        "script": "楷",
+        "writers": [
+          "文徵明",
+          "赵孟頫"
+        ],
+        "unique_characters": 121,
+        "distinct_endpoint_rows": 327,
+        "row_pair_products": 226,
+        "source_endpoint_cell_counts": {
+          "hcsu_wild": 151,
+          "hcsu_bei": 55,
+          "calli_tongji_imgs": 16,
+          "mccd_salvage": 63,
+          "hcsu_wild_salvage": 3,
+          "final_imgs_fame_v8": 39
+        }
+      },
+      {
+        "script": "楷",
+        "writers": [
+          "文徵明",
+          "颜真卿"
+        ],
+        "unique_characters": 144,
+        "distinct_endpoint_rows": 389,
+        "row_pair_products": 263,
+        "source_endpoint_cell_counts": {
+          "hcsu_wild": 123,
+          "final_imgs_fame_v8": 190,
+          "hcsu_bei": 61,
+          "mccd_salvage": 2,
+          "calli_tongji_imgs": 10,
+          "hcsu_wild_salvage": 3
+        }
+      },
+      {
+        "script": "楷",
+        "writers": [
+          "柳公权",
+          "欧阳询"
+        ],
+        "unique_characters": 485,
+        "distinct_endpoint_rows": 1247,
+        "row_pair_products": 828,
+        "source_endpoint_cell_counts": {
+          "final_imgs_fame_v8": 828,
+          "hcsu_wild": 236,
+          "hcsu_bei": 31,
+          "calli_tongji_imgs": 93,
+          "mccd_salvage": 21,
+          "hcsu_tie": 29,
+          "hcsu_wild_salvage": 9
+        }
+      },
+      {
+        "script": "楷",
+        "writers": [
+          "柳公权",
+          "王羲之"
+        ],
+        "unique_characters": 242,
+        "distinct_endpoint_rows": 616,
+        "row_pair_products": 393,
+        "source_endpoint_cell_counts": {
+          "final_imgs_fame_v8": 310,
+          "hcsu_wild": 191,
+          "hcsu_bei": 42,
+          "hcsu_tie": 18,
+          "calli_tongji_imgs": 31,
+          "hcsu_wild_salvage": 21,
+          "mccd_salvage": 3
+        }
+      },
+      {
+        "script": "楷",
+        "writers": [
+          "柳公权",
+          "米芾"
+        ],
+        "unique_characters": 36,
+        "distinct_endpoint_rows": 79,
+        "row_pair_products": 44,
+        "source_endpoint_cell_counts": {
+          "final_imgs_fame_v8": 74,
+          "mccd_salvage": 2,
+          "hcsu_tie": 1,
+          "hcsu_wild": 1,
+          "calli_tongji_imgs": 1
+        }
+      },
+      {
+        "script": "楷",
+        "writers": [
+          "柳公权",
+          "苏轼"
+        ],
+        "unique_characters": 303,
+        "distinct_endpoint_rows": 757,
+        "row_pair_products": 482,
+        "source_endpoint_cell_counts": {
+          "final_imgs_fame_v8": 489,
+          "hcsu_wild": 172,
+          "hcsu_tie": 43,
+          "mccd_salvage": 15,
+          "calli_tongji_imgs": 36,
+          "hcsu_wild_salvage": 2
+        }
+      },
+      {
+        "script": "楷",
+        "writers": [
+          "柳公权",
+          "褚遂良"
+        ],
+        "unique_characters": 482,
+        "distinct_endpoint_rows": 1394,
+        "row_pair_products": 994,
+        "source_endpoint_cell_counts": {
+          "final_imgs_fame_v8": 1073,
+          "mccd_salvage": 25,
+          "calli_tongji_imgs": 82,
+          "hcsu_wild": 145,
+          "hcsu_wild_salvage": 3,
+          "hcsu_tie": 66
+        }
+      },
+      {
+        "script": "楷",
+        "writers": [
+          "柳公权",
+          "赵孟頫"
+        ],
+        "unique_characters": 342,
+        "distinct_endpoint_rows": 870,
+        "row_pair_products": 576,
+        "source_endpoint_cell_counts": {
+          "final_imgs_fame_v8": 311,
+          "calli_tongji_imgs": 71,
+          "mccd_salvage": 249,
+          "hcsu_wild": 183,
+          "hcsu_bei": 34,
+          "hcsu_tie": 18,
+          "hcsu_wild_salvage": 4
+        }
+      },
+      {
+        "script": "楷",
+        "writers": [
+          "柳公权",
+          "颜真卿"
+        ],
+        "unique_characters": 582,
+        "distinct_endpoint_rows": 1446,
+        "row_pair_products": 916,
+        "source_endpoint_cell_counts": {
+          "final_imgs_fame_v8": 1124,
+          "hcsu_wild": 151,
+          "hcsu_bei": 42,
+          "mccd_salvage": 21,
+          "hcsu_tie": 27,
+          "calli_tongji_imgs": 75,
+          "hcsu_wild_salvage": 6
+        }
+      },
+      {
+        "script": "楷",
+        "writers": [
+          "欧阳询",
+          "王羲之"
+        ],
+        "unique_characters": 323,
+        "distinct_endpoint_rows": 860,
+        "row_pair_products": 570,
+        "source_endpoint_cell_counts": {
+          "hcsu_wild": 382,
+          "final_imgs_fame_v8": 327,
+          "hcsu_bei": 75,
+          "calli_tongji_imgs": 25,
+          "hcsu_wild_salvage": 38,
+          "mccd_salvage": 13
+        }
+      },
+      {
+        "script": "楷",
+        "writers": [
+          "欧阳询",
+          "米芾"
+        ],
+        "unique_characters": 28,
+        "distinct_endpoint_rows": 70,
+        "row_pair_products": 43,
+        "source_endpoint_cell_counts": {
+          "final_imgs_fame_v8": 54,
+          "hcsu_wild": 11,
+          "calli_tongji_imgs": 3,
+          "hcsu_bei": 1,
+          "mccd_salvage": 1
+        }
+      },
+      {
+        "script": "楷",
+        "writers": [
+          "欧阳询",
+          "苏轼"
+        ],
+        "unique_characters": 359,
+        "distinct_endpoint_rows": 965,
+        "row_pair_products": 658,
+        "source_endpoint_cell_counts": {
+          "hcsu_bei": 29,
+          "hcsu_wild": 321,
+          "final_imgs_fame_v8": 519,
+          "hcsu_tie": 42,
+          "calli_tongji_imgs": 19,
+          "mccd_salvage": 27,
+          "hcsu_wild_salvage": 8
+        }
+      },
+      {
+        "script": "楷",
+        "writers": [
+          "欧阳询",
+          "褚遂良"
+        ],
+        "unique_characters": 563,
+        "distinct_endpoint_rows": 1648,
+        "row_pair_products": 1227,
+        "source_endpoint_cell_counts": {
+          "final_imgs_fame_v8": 1176,
+          "hcsu_wild": 259,
+          "hcsu_bei": 36,
+          "calli_tongji_imgs": 97,
+          "mccd_salvage": 41,
+          "hcsu_tie": 32,
+          "hcsu_wild_salvage": 7
+        }
+      },
+      {
+        "script": "楷",
+        "writers": [
+          "欧阳询",
+          "赵孟頫"
+        ],
+        "unique_characters": 457,
+        "distinct_endpoint_rows": 1198,
+        "row_pair_products": 819,
+        "source_endpoint_cell_counts": {
+          "hcsu_wild": 385,
+          "final_imgs_fame_v8": 320,
+          "calli_tongji_imgs": 88,
+          "mccd_salvage": 315,
+          "hcsu_bei": 79,
+          "hcsu_wild_salvage": 11
+        }
+      },
+      {
+        "script": "楷",
+        "writers": [
+          "欧阳询",
+          "颜真卿"
+        ],
+        "unique_characters": 676,
+        "distinct_endpoint_rows": 1777,
+        "row_pair_products": 1199,
+        "source_endpoint_cell_counts": {
+          "hcsu_wild": 373,
+          "hcsu_bei": 98,
+          "final_imgs_fame_v8": 1171,
+          "calli_tongji_imgs": 74,
+          "mccd_salvage": 44,
+          "hcsu_wild_salvage": 17
+        }
+      },
+      {
+        "script": "楷",
+        "writers": [
+          "王羲之",
+          "米芾"
+        ],
+        "unique_characters": 22,
+        "distinct_endpoint_rows": 51,
+        "row_pair_products": 29,
+        "source_endpoint_cell_counts": {
+          "hcsu_wild": 15,
+          "final_imgs_fame_v8": 29,
+          "hcsu_wild_salvage": 4,
+          "hcsu_bei": 3
+        }
+      },
+      {
+        "script": "楷",
+        "writers": [
+          "王羲之",
+          "苏轼"
+        ],
+        "unique_characters": 224,
+        "distinct_endpoint_rows": 582,
+        "row_pair_products": 386,
+        "source_endpoint_cell_counts": {
+          "final_imgs_fame_v8": 198,
+          "hcsu_wild": 291,
+          "hcsu_wild_salvage": 19,
+          "hcsu_tie": 24,
+          "hcsu_bei": 36,
+          "mccd_salvage": 14
+        }
+      },
+      {
+        "script": "楷",
+        "writers": [
+          "王羲之",
+          "褚遂良"
+        ],
+        "unique_characters": 264,
+        "distinct_endpoint_rows": 772,
+        "row_pair_products": 573,
+        "source_endpoint_cell_counts": {
+          "hcsu_wild": 207,
+          "calli_tongji_imgs": 35,
+          "hcsu_wild_salvage": 28,
+          "final_imgs_fame_v8": 422,
+          "mccd_salvage": 17,
+          "hcsu_tie": 18,
+          "hcsu_bei": 45
+        }
+      },
+      {
+        "script": "楷",
+        "writers": [
+          "王羲之",
+          "赵孟頫"
+        ],
+        "unique_characters": 259,
+        "distinct_endpoint_rows": 674,
+        "row_pair_products": 450,
+        "source_endpoint_cell_counts": {
+          "hcsu_wild": 305,
+          "calli_tongji_imgs": 38,
+          "mccd_salvage": 150,
+          "hcsu_bei": 67,
+          "hcsu_wild_salvage": 29,
+          "final_imgs_fame_v8": 85
+        }
+      },
+      {
+        "script": "楷",
+        "writers": [
+          "王羲之",
+          "颜真卿"
+        ],
+        "unique_characters": 351,
+        "distinct_endpoint_rows": 938,
+        "row_pair_products": 634,
+        "source_endpoint_cell_counts": {
+          "hcsu_wild": 320,
+          "final_imgs_fame_v8": 441,
+          "hcsu_bei": 97,
+          "hcsu_wild_salvage": 46,
+          "mccd_salvage": 13,
+          "calli_tongji_imgs": 21
+        }
+      },
+      {
+        "script": "楷",
+        "writers": [
+          "米芾",
+          "苏轼"
+        ],
+        "unique_characters": 25,
+        "distinct_endpoint_rows": 67,
+        "row_pair_products": 43,
+        "source_endpoint_cell_counts": {
+          "final_imgs_fame_v8": 48,
+          "hcsu_wild": 16,
+          "hcsu_tie": 2,
+          "mccd_salvage": 1
+        }
+      },
+      {
+        "script": "楷",
+        "writers": [
+          "米芾",
+          "褚遂良"
+        ],
+        "unique_characters": 37,
+        "distinct_endpoint_rows": 109,
+        "row_pair_products": 74,
+        "source_endpoint_cell_counts": {
+          "final_imgs_fame_v8": 104,
+          "hcsu_tie": 1,
+          "hcsu_wild": 3,
+          "calli_tongji_imgs": 1
+        }
+      },
+      {
+        "script": "楷",
+        "writers": [
+          "米芾",
+          "赵孟頫"
+        ],
+        "unique_characters": 26,
+        "distinct_endpoint_rows": 56,
+        "row_pair_products": 30,
+        "source_endpoint_cell_counts": {
+          "final_imgs_fame_v8": 26,
+          "mccd_salvage": 23,
+          "hcsu_wild": 6,
+          "calli_tongji_imgs": 1
+        }
+      },
+      {
+        "script": "楷",
+        "writers": [
+          "米芾",
+          "颜真卿"
+        ],
+        "unique_characters": 46,
+        "distinct_endpoint_rows": 109,
+        "row_pair_products": 63,
+        "source_endpoint_cell_counts": {
+          "final_imgs_fame_v8": 94,
+          "hcsu_bei": 5,
+          "hcsu_wild": 6,
+          "hcsu_wild_salvage": 1,
+          "calli_tongji_imgs": 1,
+          "mccd_salvage": 2
+        }
+      },
+      {
+        "script": "楷",
+        "writers": [
+          "苏轼",
+          "褚遂良"
+        ],
+        "unique_characters": 335,
+        "distinct_endpoint_rows": 1013,
+        "row_pair_products": 775,
+        "source_endpoint_cell_counts": {
+          "hcsu_wild": 189,
+          "calli_tongji_imgs": 37,
+          "final_imgs_fame_v8": 711,
+          "mccd_salvage": 24,
+          "hcsu_tie": 50,
+          "hcsu_wild_salvage": 2
+        }
+      },
+      {
+        "script": "楷",
+        "writers": [
+          "苏轼",
+          "赵孟頫"
+        ],
+        "unique_characters": 273,
+        "distinct_endpoint_rows": 712,
+        "row_pair_products": 466,
+        "source_endpoint_cell_counts": {
+          "hcsu_wild": 264,
+          "calli_tongji_imgs": 31,
+          "hcsu_tie": 40,
+          "final_imgs_fame_v8": 164,
+          "mccd_salvage": 182,
+          "hcsu_bei": 28,
+          "hcsu_wild_salvage": 3
+        }
+      },
+      {
+        "script": "楷",
+        "writers": [
+          "苏轼",
+          "颜真卿"
+        ],
+        "unique_characters": 414,
+        "distinct_endpoint_rows": 1092,
+        "row_pair_products": 742,
+        "source_endpoint_cell_counts": {
+          "hcsu_wild": 272,
+          "final_imgs_fame_v8": 688,
+          "hcsu_tie": 38,
+          "hcsu_bei": 35,
+          "mccd_salvage": 32,
+          "hcsu_wild_salvage": 7,
+          "calli_tongji_imgs": 20
+        }
+      },
+      {
+        "script": "楷",
+        "writers": [
+          "褚遂良",
+          "赵孟頫"
+        ],
+        "unique_characters": 406,
+        "distinct_endpoint_rows": 1146,
+        "row_pair_products": 810,
+        "source_endpoint_cell_counts": {
+          "final_imgs_fame_v8": 501,
+          "calli_tongji_imgs": 79,
+          "hcsu_wild": 198,
+          "mccd_salvage": 307,
+          "hcsu_tie": 26,
+          "hcsu_bei": 30,
+          "hcsu_wild_salvage": 5
+        }
+      },
+      {
+        "script": "楷",
+        "writers": [
+          "褚遂良",
+          "颜真卿"
+        ],
+        "unique_characters": 655,
+        "distinct_endpoint_rows": 1887,
+        "row_pair_products": 1427,
+        "source_endpoint_cell_counts": {
+          "final_imgs_fame_v8": 1503,
+          "calli_tongji_imgs": 78,
+          "hcsu_wild": 180,
+          "hcsu_bei": 46,
+          "mccd_salvage": 40,
+          "hcsu_tie": 31,
+          "hcsu_wild_salvage": 9
+        }
+      },
+      {
+        "script": "楷",
+        "writers": [
+          "赵孟頫",
+          "颜真卿"
+        ],
+        "unique_characters": 532,
+        "distinct_endpoint_rows": 1363,
+        "row_pair_products": 884,
+        "source_endpoint_cell_counts": {
+          "hcsu_wild": 290,
+          "hcsu_bei": 83,
+          "calli_tongji_imgs": 87,
+          "final_imgs_fame_v8": 492,
+          "mccd_salvage": 399,
+          "hcsu_wild_salvage": 12
+        }
+      },
+      {
+        "script": "行",
+        "writers": [
+          "何绍基",
+          "文徵明"
+        ],
+        "unique_characters": 177,
+        "distinct_endpoint_rows": 491,
+        "row_pair_products": 342,
+        "source_endpoint_cell_counts": {
+          "final_imgs_fame_v8": 393,
+          "mccd_salvage": 44,
+          "hcsu_wild": 44,
+          "hcsu_tie": 7,
+          "hcsu_wild_salvage": 3
+        }
+      },
+      {
+        "script": "行",
+        "writers": [
+          "何绍基",
+          "柳公权"
+        ],
+        "unique_characters": 54,
+        "distinct_endpoint_rows": 146,
+        "row_pair_products": 97,
+        "source_endpoint_cell_counts": {
+          "final_imgs_fame_v8": 79,
+          "hcsu_wild": 43,
+          "hcsu_bei": 17,
+          "mccd_salvage": 5,
+          "hcsu_wild_salvage": 2
+        }
+      },
+      {
+        "script": "行",
+        "writers": [
+          "何绍基",
+          "欧阳询"
+        ],
+        "unique_characters": 165,
+        "distinct_endpoint_rows": 442,
+        "row_pair_products": 292,
+        "source_endpoint_cell_counts": {
+          "final_imgs_fame_v8": 321,
+          "hcsu_wild": 50,
+          "mccd_salvage": 36,
+          "hcsu_wild_salvage": 13,
+          "calli_tongji_imgs": 12,
+          "hcsu_tie": 10
+        }
+      },
+      {
+        "script": "行",
+        "writers": [
+          "何绍基",
+          "王羲之"
+        ],
+        "unique_characters": 211,
+        "distinct_endpoint_rows": 882,
+        "row_pair_products": 769,
+        "source_endpoint_cell_counts": {
+          "final_imgs_fame_v8": 706,
+          "mccd_salvage": 145,
+          "hcsu_wild": 15,
+          "calli_tongji_imgs": 11,
+          "hcsu_tie": 4,
+          "hcsu_wild_salvage": 1
+        }
+      },
+      {
+        "script": "行",
+        "writers": [
+          "何绍基",
+          "米芾"
+        ],
+        "unique_characters": 242,
+        "distinct_endpoint_rows": 828,
+        "row_pair_products": 675,
+        "source_endpoint_cell_counts": {
+          "final_imgs_fame_v8": 683,
+          "mccd_salvage": 72,
+          "hcsu_wild": 50,
+          "calli_tongji_imgs": 10,
+          "hcsu_wild_salvage": 6,
+          "hcsu_tie": 7
+        }
+      },
+      {
+        "script": "行",
+        "writers": [
+          "何绍基",
+          "苏轼"
+        ],
+        "unique_characters": 266,
+        "distinct_endpoint_rows": 877,
+        "row_pair_products": 706,
+        "source_endpoint_cell_counts": {
+          "final_imgs_fame_v8": 703,
+          "calli_tongji_imgs": 8,
+          "hcsu_wild": 52,
+          "hcsu_bei": 13,
+          "mccd_salvage": 95,
+          "hcsu_wild_salvage": 6
+        }
+      },
+      {
+        "script": "行",
+        "writers": [
+          "何绍基",
+          "褚遂良"
+        ],
+        "unique_characters": 125,
+        "distinct_endpoint_rows": 327,
+        "row_pair_products": 220,
+        "source_endpoint_cell_counts": {
+          "final_imgs_fame_v8": 211,
+          "hcsu_wild": 73,
+          "hcsu_bei": 15,
+          "mccd_salvage": 19,
+          "hcsu_wild_salvage": 9
+        }
+      },
+      {
+        "script": "行",
+        "writers": [
+          "何绍基",
+          "赵孟頫"
+        ],
+        "unique_characters": 84,
+        "distinct_endpoint_rows": 200,
+        "row_pair_products": 118,
+        "source_endpoint_cell_counts": {
+          "final_imgs_fame_v8": 93,
+          "mccd_salvage": 98,
+          "calli_tongji_imgs": 9
+        }
+      },
+      {
+        "script": "行",
+        "writers": [
+          "何绍基",
+          "颜真卿"
+        ],
+        "unique_characters": 115,
+        "distinct_endpoint_rows": 313,
+        "row_pair_products": 211,
+        "source_endpoint_cell_counts": {
+          "final_imgs_fame_v8": 247,
+          "hcsu_wild": 35,
+          "mccd_salvage": 18,
+          "hcsu_tie": 11,
+          "hcsu_wild_salvage": 2
+        }
+      },
+      {
+        "script": "行",
+        "writers": [
+          "文徵明",
+          "柳公权"
+        ],
+        "unique_characters": 132,
+        "distinct_endpoint_rows": 385,
+        "row_pair_products": 285,
+        "source_endpoint_cell_counts": {
+          "mccd_salvage": 23,
+          "final_imgs_fame_v8": 135,
+          "hcsu_wild": 180,
+          "hcsu_bei": 33,
+          "hcsu_tie": 9,
+          "hcsu_wild_salvage": 5
+        }
+      },
+      {
+        "script": "行",
+        "writers": [
+          "文徵明",
+          "欧阳询"
+        ],
+        "unique_characters": 304,
+        "distinct_endpoint_rows": 874,
+        "row_pair_products": 647,
+        "source_endpoint_cell_counts": {
+          "hcsu_wild_salvage": 37,
+          "hcsu_wild": 245,
+          "mccd_salvage": 52,
+          "final_imgs_fame_v8": 461,
+          "hcsu_tie": 46,
+          "calli_tongji_imgs": 33
+        }
+      },
+      {
+        "script": "行",
+        "writers": [
+          "文徵明",
+          "王羲之"
+        ],
+        "unique_characters": 442,
+        "distinct_endpoint_rows": 1846,
+        "row_pair_products": 1859,
+        "source_endpoint_cell_counts": {
+          "final_imgs_fame_v8": 1169,
+          "mccd_salvage": 256,
+          "hcsu_wild": 289,
+          "calli_tongji_imgs": 46,
+          "hcsu_tie": 68,
+          "hcsu_wild_salvage": 18
+        }
+      },
+      {
+        "script": "行",
+        "writers": [
+          "文徵明",
+          "米芾"
+        ],
+        "unique_characters": 530,
+        "distinct_endpoint_rows": 1787,
+        "row_pair_products": 1593,
+        "source_endpoint_cell_counts": {
+          "hcsu_wild_salvage": 35,
+          "final_imgs_fame_v8": 1070,
+          "mccd_salvage": 135,
+          "hcsu_wild": 431,
+          "hcsu_tie": 77,
+          "calli_tongji_imgs": 39
+        }
+      },
+      {
+        "script": "行",
+        "writers": [
+          "文徵明",
+          "苏轼"
+        ],
+        "unique_characters": 516,
+        "distinct_endpoint_rows": 1734,
+        "row_pair_products": 1549,
+        "source_endpoint_cell_counts": {
+          "mccd_salvage": 162,
+          "final_imgs_fame_v8": 1048,
+          "hcsu_wild": 393,
+          "hcsu_bei": 33,
+          "calli_tongji_imgs": 45,
+          "hcsu_tie": 32,
+          "hcsu_wild_salvage": 21
+        }
+      },
+      {
+        "script": "行",
+        "writers": [
+          "文徵明",
+          "褚遂良"
+        ],
+        "unique_characters": 277,
+        "distinct_endpoint_rows": 798,
+        "row_pair_products": 577,
+        "source_endpoint_cell_counts": {
+          "hcsu_wild_salvage": 19,
+          "final_imgs_fame_v8": 399,
+          "hcsu_wild": 286,
+          "hcsu_bei": 39,
+          "mccd_salvage": 41,
+          "hcsu_tie": 14
+        }
+      },
+      {
+        "script": "行",
+        "writers": [
+          "文徵明",
+          "赵孟頫"
+        ],
+        "unique_characters": 179,
+        "distinct_endpoint_rows": 479,
+        "row_pair_products": 318,
+        "source_endpoint_cell_counts": {
+          "hcsu_wild_salvage": 4,
+          "calli_tongji_imgs": 40,
+          "final_imgs_fame_v8": 161,
+          "hcsu_wild": 72,
+          "mccd_salvage": 188,
+          "hcsu_tie": 14
+        }
+      },
+      {
+        "script": "行",
+        "writers": [
+          "文徵明",
+          "颜真卿"
+        ],
+        "unique_characters": 234,
+        "distinct_endpoint_rows": 715,
+        "row_pair_products": 564,
+        "source_endpoint_cell_counts": {
+          "mccd_salvage": 57,
+          "final_imgs_fame_v8": 412,
+          "hcsu_wild": 189,
+          "hcsu_tie": 52,
+          "hcsu_wild_salvage": 5
+        }
+      },
+      {
+        "script": "行",
+        "writers": [
+          "柳公权",
+          "欧阳询"
+        ],
+        "unique_characters": 119,
+        "distinct_endpoint_rows": 330,
+        "row_pair_products": 231,
+        "source_endpoint_cell_counts": {
+          "hcsu_wild": 148,
+          "final_imgs_fame_v8": 108,
+          "hcsu_bei": 36,
+          "hcsu_tie": 9,
+          "hcsu_wild_salvage": 8,
+          "calli_tongji_imgs": 14,
+          "mccd_salvage": 7
+        }
+      },
+      {
+        "script": "行",
+        "writers": [
+          "柳公权",
+          "王羲之"
+        ],
+        "unique_characters": 151,
+        "distinct_endpoint_rows": 687,
+        "row_pair_products": 671,
+        "source_endpoint_cell_counts": {
+          "hcsu_wild": 159,
+          "hcsu_bei": 38,
+          "final_imgs_fame_v8": 386,
+          "mccd_salvage": 76,
+          "hcsu_wild_salvage": 8,
+          "calli_tongji_imgs": 10,
+          "hcsu_tie": 10
+        }
+      },
+      {
+        "script": "行",
+        "writers": [
+          "柳公权",
+          "米芾"
+        ],
+        "unique_characters": 168,
+        "distinct_endpoint_rows": 569,
+        "row_pair_products": 463,
+        "source_endpoint_cell_counts": {
+          "hcsu_wild": 199,
+          "hcsu_bei": 46,
+          "final_imgs_fame_v8": 274,
+          "mccd_salvage": 31,
+          "hcsu_tie": 10,
+          "calli_tongji_imgs": 6,
+          "hcsu_wild_salvage": 3
+        }
+      },
+      {
+        "script": "行",
+        "writers": [
+          "柳公权",
+          "苏轼"
+        ],
+        "unique_characters": 181,
+        "distinct_endpoint_rows": 590,
+        "row_pair_products": 489,
+        "source_endpoint_cell_counts": {
+          "hcsu_wild": 213,
+          "hcsu_bei": 55,
+          "final_imgs_fame_v8": 265,
+          "calli_tongji_imgs": 9,
+          "mccd_salvage": 42,
+          "hcsu_wild_salvage": 6
+        }
+      },
+      {
+        "script": "行",
+        "writers": [
+          "柳公权",
+          "褚遂良"
+        ],
+        "unique_characters": 100,
+        "distinct_endpoint_rows": 275,
+        "row_pair_products": 185,
+        "source_endpoint_cell_counts": {
+          "hcsu_wild": 160,
+          "final_imgs_fame_v8": 61,
+          "mccd_salvage": 2,
+          "hcsu_bei": 45,
+          "hcsu_wild_salvage": 7
+        }
+      },
+      {
+        "script": "行",
+        "writers": [
+          "柳公权",
+          "赵孟頫"
+        ],
+        "unique_characters": 50,
+        "distinct_endpoint_rows": 120,
+        "row_pair_products": 73,
+        "source_endpoint_cell_counts": {
+          "hcsu_wild": 45,
+          "mccd_salvage": 50,
+          "hcsu_bei": 10,
+          "final_imgs_fame_v8": 8,
+          "calli_tongji_imgs": 6,
+          "hcsu_wild_salvage": 1
+        }
+      },
+      {
+        "script": "行",
+        "writers": [
+          "柳公权",
+          "颜真卿"
+        ],
+        "unique_characters": 78,
+        "distinct_endpoint_rows": 236,
+        "row_pair_products": 184,
+        "source_endpoint_cell_counts": {
+          "hcsu_wild": 99,
+          "hcsu_bei": 20,
+          "final_imgs_fame_v8": 97,
+          "hcsu_tie": 9,
+          "mccd_salvage": 7,
+          "hcsu_wild_salvage": 4
+        }
+      },
+      {
+        "script": "行",
+        "writers": [
+          "欧阳询",
+          "王羲之"
+        ],
+        "unique_characters": 444,
+        "distinct_endpoint_rows": 1808,
+        "row_pair_products": 1768,
+        "source_endpoint_cell_counts": {
+          "calli_tongji_imgs": 79,
+          "final_imgs_fame_v8": 1174,
+          "mccd_salvage": 229,
+          "hcsu_wild": 241,
+          "hcsu_tie": 58,
+          "hcsu_wild_salvage": 27
+        }
+      },
+      {
+        "script": "行",
+        "writers": [
+          "欧阳询",
+          "米芾"
+        ],
+        "unique_characters": 445,
+        "distinct_endpoint_rows": 1507,
+        "row_pair_products": 1285,
+        "source_endpoint_cell_counts": {
+          "hcsu_wild_salvage": 52,
+          "calli_tongji_imgs": 68,
+          "hcsu_wild": 307,
+          "hcsu_tie": 62,
+          "final_imgs_fame_v8": 914,
+          "mccd_salvage": 104
+        }
+      },
+      {
+        "script": "行",
+        "writers": [
+          "欧阳询",
+          "苏轼"
+        ],
+        "unique_characters": 452,
+        "distinct_endpoint_rows": 1471,
+        "row_pair_products": 1208,
+        "source_endpoint_cell_counts": {
+          "hcsu_wild_salvage": 46,
+          "final_imgs_fame_v8": 850,
+          "calli_tongji_imgs": 76,
+          "hcsu_wild": 320,
+          "hcsu_bei": 30,
+          "mccd_salvage": 117,
+          "hcsu_tie": 32
+        }
+      },
+      {
+        "script": "行",
+        "writers": [
+          "欧阳询",
+          "褚遂良"
+        ],
+        "unique_characters": 252,
+        "distinct_endpoint_rows": 697,
+        "row_pair_products": 474,
+        "source_endpoint_cell_counts": {
+          "calli_tongji_imgs": 29,
+          "hcsu_wild": 237,
+          "final_imgs_fame_v8": 330,
+          "hcsu_bei": 25,
+          "hcsu_tie": 27,
+          "mccd_salvage": 26,
+          "hcsu_wild_salvage": 23
+        }
+      },
+      {
+        "script": "行",
+        "writers": [
+          "欧阳询",
+          "赵孟頫"
+        ],
+        "unique_characters": 180,
+        "distinct_endpoint_rows": 479,
+        "row_pair_products": 317,
+        "source_endpoint_cell_counts": {
+          "calli_tongji_imgs": 49,
+          "mccd_salvage": 199,
+          "hcsu_wild": 70,
+          "hcsu_tie": 15,
+          "final_imgs_fame_v8": 134,
+          "hcsu_wild_salvage": 12
+        }
+      },
+      {
+        "script": "行",
+        "writers": [
+          "欧阳询",
+          "颜真卿"
+        ],
+        "unique_characters": 221,
+        "distinct_endpoint_rows": 671,
+        "row_pair_products": 501,
+        "source_endpoint_cell_counts": {
+          "hcsu_wild_salvage": 17,
+          "final_imgs_fame_v8": 394,
+          "calli_tongji_imgs": 30,
+          "hcsu_wild": 156,
+          "hcsu_tie": 42,
+          "mccd_salvage": 32
+        }
+      },
+      {
+        "script": "行",
+        "writers": [
+          "王羲之",
+          "米芾"
+        ],
+        "unique_characters": 562,
+        "distinct_endpoint_rows": 2583,
+        "row_pair_products": 3330,
+        "source_endpoint_cell_counts": {
+          "final_imgs_fame_v8": 1787,
+          "hcsu_wild_salvage": 25,
+          "mccd_salvage": 356,
+          "hcsu_wild": 274,
+          "calli_tongji_imgs": 82,
+          "hcsu_tie": 59
+        }
+      },
+      {
+        "script": "行",
+        "writers": [
+          "王羲之",
+          "苏轼"
+        ],
+        "unique_characters": 634,
+        "distinct_endpoint_rows": 2784,
+        "row_pair_products": 3308,
+        "source_endpoint_cell_counts": {
+          "final_imgs_fame_v8": 1830,
+          "hcsu_wild": 328,
+          "hcsu_bei": 45,
+          "calli_tongji_imgs": 89,
+          "mccd_salvage": 418,
+          "hcsu_tie": 41,
+          "hcsu_wild_salvage": 33
+        }
+      },
+      {
+        "script": "行",
+        "writers": [
+          "王羲之",
+          "褚遂良"
+        ],
+        "unique_characters": 342,
+        "distinct_endpoint_rows": 1481,
+        "row_pair_products": 1402,
+        "source_endpoint_cell_counts": {
+          "final_imgs_fame_v8": 909,
+          "mccd_salvage": 183,
+          "hcsu_wild": 265,
+          "calli_tongji_imgs": 36,
+          "hcsu_bei": 41,
+          "hcsu_tie": 20,
+          "hcsu_wild_salvage": 27
+        }
+      },
+      {
+        "script": "行",
+        "writers": [
+          "王羲之",
+          "赵孟頫"
+        ],
+        "unique_characters": 245,
+        "distinct_endpoint_rows": 917,
+        "row_pair_products": 781,
+        "source_endpoint_cell_counts": {
+          "final_imgs_fame_v8": 426,
+          "mccd_salvage": 386,
+          "calli_tongji_imgs": 54,
+          "hcsu_wild": 38,
+          "hcsu_tie": 12,
+          "hcsu_wild_salvage": 1
+        }
+      },
+      {
+        "script": "行",
+        "writers": [
+          "王羲之",
+          "颜真卿"
+        ],
+        "unique_characters": 316,
+        "distinct_endpoint_rows": 1381,
+        "row_pair_products": 1432,
+        "source_endpoint_cell_counts": {
+          "final_imgs_fame_v8": 925,
+          "mccd_salvage": 184,
+          "hcsu_wild": 178,
+          "hcsu_tie": 70,
+          "calli_tongji_imgs": 20,
+          "hcsu_wild_salvage": 4
+        }
+      },
+      {
+        "script": "行",
+        "writers": [
+          "米芾",
+          "苏轼"
+        ],
+        "unique_characters": 709,
+        "distinct_endpoint_rows": 2712,
+        "row_pair_products": 2807,
+        "source_endpoint_cell_counts": {
+          "hcsu_wild_salvage": 41,
+          "calli_tongji_imgs": 89,
+          "final_imgs_fame_v8": 1812,
+          "mccd_salvage": 239,
+          "hcsu_wild": 441,
+          "hcsu_bei": 44,
+          "hcsu_tie": 46
+        }
+      },
+      {
+        "script": "行",
+        "writers": [
+          "米芾",
+          "褚遂良"
+        ],
+        "unique_characters": 328,
+        "distinct_endpoint_rows": 1129,
+        "row_pair_products": 965,
+        "source_endpoint_cell_counts": {
+          "hcsu_wild": 305,
+          "mccd_salvage": 66,
+          "final_imgs_fame_v8": 654,
+          "hcsu_bei": 37,
+          "hcsu_tie": 21,
+          "calli_tongji_imgs": 19,
+          "hcsu_wild_salvage": 27
+        }
+      },
+      {
+        "script": "行",
+        "writers": [
+          "米芾",
+          "赵孟頫"
+        ],
+        "unique_characters": 220,
+        "distinct_endpoint_rows": 688,
+        "row_pair_products": 515,
+        "source_endpoint_cell_counts": {
+          "hcsu_wild": 73,
+          "calli_tongji_imgs": 58,
+          "final_imgs_fame_v8": 300,
+          "mccd_salvage": 238,
+          "hcsu_tie": 12,
+          "hcsu_wild_salvage": 7
+        }
+      },
+      {
+        "script": "行",
+        "writers": [
+          "米芾",
+          "颜真卿"
+        ],
+        "unique_characters": 308,
+        "distinct_endpoint_rows": 1121,
+        "row_pair_products": 1047,
+        "source_endpoint_cell_counts": {
+          "final_imgs_fame_v8": 754,
+          "mccd_salvage": 76,
+          "hcsu_wild_salvage": 12,
+          "hcsu_wild": 202,
+          "hcsu_tie": 57,
+          "calli_tongji_imgs": 20
+        }
+      },
+      {
+        "script": "行",
+        "writers": [
+          "苏轼",
+          "褚遂良"
+        ],
+        "unique_characters": 365,
+        "distinct_endpoint_rows": 1183,
+        "row_pair_products": 933,
+        "source_endpoint_cell_counts": {
+          "hcsu_wild": 347,
+          "final_imgs_fame_v8": 624,
+          "mccd_salvage": 97,
+          "hcsu_bei": 66,
+          "calli_tongji_imgs": 23,
+          "hcsu_wild_salvage": 26
+        }
+      },
+      {
+        "script": "行",
+        "writers": [
+          "苏轼",
+          "赵孟頫"
+        ],
+        "unique_characters": 258,
+        "distinct_endpoint_rows": 790,
+        "row_pair_products": 585,
+        "source_endpoint_cell_counts": {
+          "hcsu_wild": 91,
+          "calli_tongji_imgs": 64,
+          "final_imgs_fame_v8": 304,
+          "mccd_salvage": 309,
+          "hcsu_bei": 17,
+          "hcsu_wild_salvage": 5
+        }
+      },
+      {
+        "script": "行",
+        "writers": [
+          "苏轼",
+          "颜真卿"
+        ],
+        "unique_characters": 337,
+        "distinct_endpoint_rows": 1227,
+        "row_pair_products": 1180,
+        "source_endpoint_cell_counts": {
+          "hcsu_wild": 254,
+          "hcsu_bei": 24,
+          "final_imgs_fame_v8": 776,
+          "calli_tongji_imgs": 23,
+          "mccd_salvage": 98,
+          "hcsu_tie": 42,
+          "hcsu_wild_salvage": 10
+        }
+      },
+      {
+        "script": "行",
+        "writers": [
+          "褚遂良",
+          "赵孟頫"
+        ],
+        "unique_characters": 131,
+        "distinct_endpoint_rows": 343,
+        "row_pair_products": 223,
+        "source_endpoint_cell_counts": {
+          "hcsu_wild": 74,
+          "mccd_salvage": 145,
+          "calli_tongji_imgs": 17,
+          "final_imgs_fame_v8": 84,
+          "hcsu_wild_salvage": 11,
+          "hcsu_bei": 12
+        }
+      },
+      {
+        "script": "行",
+        "writers": [
+          "褚遂良",
+          "颜真卿"
+        ],
+        "unique_characters": 165,
+        "distinct_endpoint_rows": 497,
+        "row_pair_products": 378,
+        "source_endpoint_cell_counts": {
+          "hcsu_wild": 168,
+          "final_imgs_fame_v8": 254,
+          "mccd_salvage": 23,
+          "hcsu_tie": 23,
+          "hcsu_bei": 21,
+          "hcsu_wild_salvage": 8
+        }
+      },
+      {
+        "script": "行",
+        "writers": [
+          "赵孟頫",
+          "颜真卿"
+        ],
+        "unique_characters": 97,
+        "distinct_endpoint_rows": 265,
+        "row_pair_products": 179,
+        "source_endpoint_cell_counts": {
+          "mccd_salvage": 106,
+          "hcsu_wild": 32,
+          "final_imgs_fame_v8": 104,
+          "calli_tongji_imgs": 14,
+          "hcsu_tie": 8,
+          "hcsu_wild_salvage": 1
+        }
+      },
+      {
+        "script": "隶",
+        "writers": [
+          "何绍基",
+          "文徵明"
+        ],
+        "unique_characters": 8,
+        "distinct_endpoint_rows": 17,
+        "row_pair_products": 9,
+        "source_endpoint_cell_counts": {
+          "hcsu_wild": 5,
+          "final_imgs_fame_v8": 12
+        }
+      },
+      {
+        "script": "隶",
+        "writers": [
+          "何绍基",
+          "赵孟頫"
+        ],
+        "unique_characters": 230,
+        "distinct_endpoint_rows": 606,
+        "row_pair_products": 399,
+        "source_endpoint_cell_counts": {
+          "hcsu_wild": 289,
+          "mccd_salvage": 134,
+          "final_imgs_fame_v8": 113,
+          "hcsu_tie": 64,
+          "hcsu_wild_salvage": 6
+        }
+      },
+      {
+        "script": "隶",
+        "writers": [
+          "文徵明",
+          "赵孟頫"
+        ],
+        "unique_characters": 11,
+        "distinct_endpoint_rows": 24,
+        "row_pair_products": 13,
+        "source_endpoint_cell_counts": {
+          "final_imgs_fame_v8": 9,
+          "hcsu_wild": 5,
+          "mccd_salvage": 7,
+          "hcsu_tie": 2,
+          "hcsu_wild_salvage": 1
+        }
+      }
+    ],
+    "expected_25pct_pair_distribution": {
+      "uniform_cell": {
+        "calligrapher": {
+          "js_nats": 0.0001360640040503206,
+          "pair_top10_mass": 1.0000000000000064,
+          "pair_effective_categories": 9.475933859267805,
+          "largest_upweight": [
+            {
+              "key": "柳公权",
+              "original": 0.067756318826054,
+              "pair_only": 0.08250368320014329,
+              "mixed_25pct": 0.07144315991957632,
+              "mixed_ratio": 1.054413243774168
+            },
+            {
+              "key": "欧阳询",
+              "original": 0.10800149056191614,
+              "pair_only": 0.12784052859502773,
+              "mixed_25pct": 0.11296125007019403,
+              "mixed_ratio": 1.0459230653435705
+            },
+            {
+              "key": "文徵明",
+              "original": 0.07285763848733665,
+              "pair_only": 0.07973570248671853,
+              "mixed_25pct": 0.07457715448718212,
+              "mixed_ratio": 1.0236010394454982
+            },
+            {
+              "key": "颜真卿",
+              "original": 0.11064852293023913,
+              "pair_only": 0.1209205768114656,
+              "mixed_25pct": 0.11321653640054576,
+              "mixed_ratio": 1.0232087460573305
+            },
+            {
+              "key": "褚遂良",
+              "original": 0.10464772625059429,
+              "pair_only": 0.11254966739586643,
+              "mixed_25pct": 0.10662321153691233,
+              "mixed_ratio": 1.0188774793022015
+            },
+            {
+              "key": "苏轼",
+              "original": 0.13212032432571347,
+              "pair_only": 0.12920219652663156,
+              "mixed_25pct": 0.13139079237594298,
+              "mixed_ratio": 0.9944782761206975
+            },
+            {
+              "key": "米芾",
+              "original": 0.09272323092144996,
+              "pair_only": 0.08361980445555654,
+              "mixed_25pct": 0.09044737430497661,
+              "mixed_ratio": 0.9754553784002487
+            },
+            {
+              "key": "王羲之",
+              "original": 0.13203037662387726,
+              "pair_only": 0.11513906870842538,
+              "mixed_25pct": 0.12780754964501428,
+              "mixed_ratio": 0.9680162468149827
+            },
+            {
+              "key": "赵孟頫",
+              "original": 0.11279441810261748,
+              "pair_only": 0.09382115273003293,
+              "mixed_25pct": 0.10805110175947134,
+              "mixed_ratio": 0.9579472422222988
+            },
+            {
+              "key": "何绍基",
+              "original": 0.06641995297020162,
+              "pair_only": 0.05466761909013842,
+              "mixed_25pct": 0.06348186950018582,
+              "mixed_ratio": 0.9557650474198027
+            }
+          ],
+          "largest_downweight": [
+            {
+              "key": "何绍基",
+              "original": 0.06641995297020162,
+              "pair_only": 0.05466761909013842,
+              "mixed_25pct": 0.06348186950018582,
+              "mixed_ratio": 0.9557650474198027
+            },
+            {
+              "key": "赵孟頫",
+              "original": 0.11279441810261748,
+              "pair_only": 0.09382115273003293,
+              "mixed_25pct": 0.10805110175947134,
+              "mixed_ratio": 0.9579472422222988
+            },
+            {
+              "key": "王羲之",
+              "original": 0.13203037662387726,
+              "pair_only": 0.11513906870842538,
+              "mixed_25pct": 0.12780754964501428,
+              "mixed_ratio": 0.9680162468149827
+            },
+            {
+              "key": "米芾",
+              "original": 0.09272323092144996,
+              "pair_only": 0.08361980445555654,
+              "mixed_25pct": 0.09044737430497661,
+              "mixed_ratio": 0.9754553784002487
+            },
+            {
+              "key": "苏轼",
+              "original": 0.13212032432571347,
+              "pair_only": 0.12920219652663156,
+              "mixed_25pct": 0.13139079237594298,
+              "mixed_ratio": 0.9944782761206975
+            },
+            {
+              "key": "褚遂良",
+              "original": 0.10464772625059429,
+              "pair_only": 0.11254966739586643,
+              "mixed_25pct": 0.10662321153691233,
+              "mixed_ratio": 1.0188774793022015
+            },
+            {
+              "key": "颜真卿",
+              "original": 0.11064852293023913,
+              "pair_only": 0.1209205768114656,
+              "mixed_25pct": 0.11321653640054576,
+              "mixed_ratio": 1.0232087460573305
+            },
+            {
+              "key": "文徵明",
+              "original": 0.07285763848733665,
+              "pair_only": 0.07973570248671853,
+              "mixed_25pct": 0.07457715448718212,
+              "mixed_ratio": 1.0236010394454982
+            },
+            {
+              "key": "欧阳询",
+              "original": 0.10800149056191614,
+              "pair_only": 0.12784052859502773,
+              "mixed_25pct": 0.11296125007019403,
+              "mixed_ratio": 1.0459230653435705
+            },
+            {
+              "key": "柳公权",
+              "original": 0.067756318826054,
+              "pair_only": 0.08250368320014329,
+              "mixed_25pct": 0.07144315991957632,
+              "mixed_ratio": 1.054413243774168
+            }
+          ]
+        },
+        "script": {
+          "js_nats": 0.0005218955406931748,
+          "pair_top10_mass": 0.9999999999999738,
+          "pair_effective_categories": 2.033120235262073,
+          "largest_upweight": [
+            {
+              "key": "楷",
+              "original": 0.4060624751037611,
+              "pair_only": 0.45711862136701736,
+              "mixed_25pct": 0.41882651166957513,
+              "mixed_ratio": 1.0314336767083747
+            },
+            {
+              "key": "行",
+              "original": 0.5196921218662863,
+              "pair_only": 0.531764810929041,
+              "mixed_25pct": 0.522710294131975,
+              "mixed_ratio": 1.0058076159685663
+            },
+            {
+              "key": "隶",
+              "original": 0.07424540302995258,
+              "pair_only": 0.01111656770391538,
+              "mixed_25pct": 0.058463194198443286,
+              "mixed_ratio": 0.7874318383706217
+            }
+          ],
+          "largest_downweight": [
+            {
+              "key": "隶",
+              "original": 0.07424540302995258,
+              "pair_only": 0.01111656770391538,
+              "mixed_25pct": 0.058463194198443286,
+              "mixed_ratio": 0.7874318383706217
+            },
+            {
+              "key": "行",
+              "original": 0.5196921218662863,
+              "pair_only": 0.531764810929041,
+              "mixed_25pct": 0.522710294131975,
+              "mixed_ratio": 1.0058076159685663
+            },
+            {
+              "key": "楷",
+              "original": 0.4060624751037611,
+              "pair_only": 0.45711862136701736,
+              "mixed_25pct": 0.41882651166957513,
+              "mixed_ratio": 1.0314336767083747
+            }
+          ]
+        },
+        "character": {
+          "js_nats": 0.0030232097504224982,
+          "pair_top10_mass": 0.023751060315192644,
+          "pair_effective_categories": 1112.527027356648,
+          "largest_upweight": [
+            {
+              "key": "耳",
+              "original": 0.0005782352260899734,
+              "pair_only": 0.001696504308228046,
+              "mixed_25pct": 0.0008578024966244916,
+              "mixed_ratio": 1.4834836376623957
+            },
+            {
+              "key": "惠",
+              "original": 0.0006424835845444149,
+              "pair_only": 0.0017857940086611014,
+              "mixed_25pct": 0.0009283111905735866,
+              "mixed_ratio": 1.4448792356801645
+            },
+            {
+              "key": "百",
+              "original": 0.0006938822713079681,
+              "pair_only": 0.0019197285593106832,
+              "mixed_25pct": 0.0010003438433086468,
+              "mixed_ratio": 1.4416622021816448
+            },
+            {
+              "key": "主",
+              "original": 0.0006938822713079681,
+              "pair_only": 0.0018750837090941563,
+              "mixed_25pct": 0.0009891826307545152,
+              "mixed_ratio": 1.4255770346890486
+            },
+            {
+              "key": "弟",
+              "original": 0.0008095293165259628,
+              "pair_only": 0.002187597660609849,
+              "mixed_25pct": 0.0011540464025469343,
+              "mixed_ratio": 1.4255770346890486
+            },
+            {
+              "key": "遠",
+              "original": 0.00046258818087197874,
+              "pair_only": 0.0012500558060627707,
+              "mixed_25pct": 0.0006594550871696767,
+              "mixed_ratio": 1.4255770346890486
+            },
+            {
+              "key": "與",
+              "original": 0.0005268365393264203,
+              "pair_only": 0.0013839903567123535,
+              "mixed_25pct": 0.0007411249936729036,
+              "mixed_ratio": 1.4067456190879604
+            },
+            {
+              "key": "丘",
+              "original": 0.0006167842411626382,
+              "pair_only": 0.0016072146077949908,
+              "mixed_25pct": 0.0008643918328207264,
+              "mixed_ratio": 1.401449283450154
+            },
+            {
+              "key": "夢",
+              "original": 0.0006167842411626382,
+              "pair_only": 0.0016072146077949906,
+              "mixed_25pct": 0.0008643918328207264,
+              "mixed_ratio": 1.401449283450154
+            },
+            {
+              "key": "發",
+              "original": 0.0006167842411626382,
+              "pair_only": 0.0016072146077949908,
+              "mixed_25pct": 0.0008643918328207264,
+              "mixed_ratio": 1.401449283450154
+            },
+            {
+              "key": "丈",
+              "original": 0.00026984310550865425,
+              "pair_only": 0.0006696727532479127,
+              "mixed_25pct": 0.00036980051744346887,
+              "mixed_ratio": 1.3704278890001467
+            },
+            {
+              "key": "靈",
+              "original": 0.0008480783315986276,
+              "pair_only": 0.0020983079601767938,
+              "mixed_25pct": 0.0011606357387431692,
+              "mixed_ratio": 1.3685478044880253
+            },
+            {
+              "key": "女",
+              "original": 0.0008866273466712926,
+              "pair_only": 0.0021875976606098484,
+              "mixed_25pct": 0.0012118699251559314,
+              "mixed_ratio": 1.3668312055856529
+            },
+            {
+              "key": "景",
+              "original": 0.0006553332562353032,
+              "pair_only": 0.0016072146077949908,
+              "mixed_25pct": 0.0008933035941252252,
+              "mixed_ratio": 1.363128737364851
+            },
+            {
+              "key": "謂",
+              "original": 0.00046258818087197874,
+              "pair_only": 0.0011161212554131879,
+              "mixed_25pct": 0.000625971449507281,
+              "mixed_ratio": 1.3531937809723646
+            },
+            {
+              "key": "勢",
+              "original": 0.0005011371959446436,
+              "pair_only": 0.0012054109558462432,
+              "mixed_25pct": 0.0006772056359200435,
+              "mixed_ratio": 1.3513378001078347
+            },
+            {
+              "key": "海",
+              "original": 0.0008095293165259628,
+              "pair_only": 0.0019197285593106834,
+              "mixed_25pct": 0.0010870791272221429,
+              "mixed_ratio": 1.3428533161556957
+            },
+            {
+              "key": "到",
+              "original": 0.0004240391657993138,
+              "pair_only": 0.0009821867047636057,
+              "mixed_25pct": 0.0005635760505403869,
+              "mixed_ratio": 1.3290660297334707
+            },
+            {
+              "key": "立",
+              "original": 0.0010022743918892871,
+              "pair_only": 0.0023215322112594317,
+              "mixed_25pct": 0.0013320888467318233,
+              "mixed_ratio": 1.3290660297334704
+            },
+            {
+              "key": "内",
+              "original": 0.0006938822713079681,
+              "pair_only": 0.0016072146077949908,
+              "mixed_25pct": 0.0009222153554297237,
+              "mixed_ratio": 1.3290660297334702
+            }
+          ],
+          "largest_downweight": [
+            {
+              "key": "㐲",
+              "original": 7.709803014532978e-05,
+              "pair_only": 0.0,
+              "mixed_25pct": 5.7823522608997336e-05,
+              "mixed_ratio": 0.75
+            },
+            {
+              "key": "㒵",
+              "original": 3.854901507266489e-05,
+              "pair_only": 0.0,
+              "mixed_25pct": 2.8911761304498668e-05,
+              "mixed_ratio": 0.75
+            },
+            {
+              "key": "㗛",
+              "original": 3.854901507266489e-05,
+              "pair_only": 0.0,
+              "mixed_25pct": 2.8911761304498668e-05,
+              "mixed_ratio": 0.75
+            },
+            {
+              "key": "㙒",
+              "original": 3.854901507266489e-05,
+              "pair_only": 0.0,
+              "mixed_25pct": 2.8911761304498668e-05,
+              "mixed_ratio": 0.75
+            },
+            {
+              "key": "㙜",
+              "original": 3.854901507266489e-05,
+              "pair_only": 0.0,
+              "mixed_25pct": 2.8911761304498668e-05,
+              "mixed_ratio": 0.75
+            },
+            {
+              "key": "㙯",
+              "original": 3.854901507266489e-05,
+              "pair_only": 0.0,
+              "mixed_25pct": 2.8911761304498668e-05,
+              "mixed_ratio": 0.75
+            },
+            {
+              "key": "㝍",
+              "original": 3.854901507266489e-05,
+              "pair_only": 0.0,
+              "mixed_25pct": 2.8911761304498668e-05,
+              "mixed_ratio": 0.75
+            },
+            {
+              "key": "㝢",
+              "original": 3.854901507266489e-05,
+              "pair_only": 0.0,
+              "mixed_25pct": 2.8911761304498668e-05,
+              "mixed_ratio": 0.75
+            },
+            {
+              "key": "㞐",
+              "original": 3.854901507266489e-05,
+              "pair_only": 0.0,
+              "mixed_25pct": 2.8911761304498668e-05,
+              "mixed_ratio": 0.75
+            },
+            {
+              "key": "㢘",
+              "original": 0.00011564704521799469,
+              "pair_only": 0.0,
+              "mixed_25pct": 8.673528391349601e-05,
+              "mixed_ratio": 0.75
+            },
+            {
+              "key": "㤁",
+              "original": 3.854901507266489e-05,
+              "pair_only": 0.0,
+              "mixed_25pct": 2.8911761304498668e-05,
+              "mixed_ratio": 0.75
+            },
+            {
+              "key": "㤙",
+              "original": 3.854901507266489e-05,
+              "pair_only": 0.0,
+              "mixed_25pct": 2.8911761304498668e-05,
+              "mixed_ratio": 0.75
+            },
+            {
+              "key": "㦤",
+              "original": 3.854901507266489e-05,
+              "pair_only": 0.0,
+              "mixed_25pct": 2.8911761304498668e-05,
+              "mixed_ratio": 0.75
+            },
+            {
+              "key": "㦲",
+              "original": 3.854901507266489e-05,
+              "pair_only": 0.0,
+              "mixed_25pct": 2.8911761304498668e-05,
+              "mixed_ratio": 0.75
+            },
+            {
+              "key": "㧑",
+              "original": 3.854901507266489e-05,
+              "pair_only": 0.0,
+              "mixed_25pct": 2.8911761304498668e-05,
+              "mixed_ratio": 0.75
+            },
+            {
+              "key": "㧝",
+              "original": 3.854901507266489e-05,
+              "pair_only": 0.0,
+              "mixed_25pct": 2.8911761304498668e-05,
+              "mixed_ratio": 0.75
+            },
+            {
+              "key": "㨫",
+              "original": 7.709803014532978e-05,
+              "pair_only": 0.0,
+              "mixed_25pct": 5.7823522608997336e-05,
+              "mixed_ratio": 0.75
+            },
+            {
+              "key": "㩀",
+              "original": 3.854901507266489e-05,
+              "pair_only": 0.0,
+              "mixed_25pct": 2.8911761304498668e-05,
+              "mixed_ratio": 0.75
+            },
+            {
+              "key": "㫖",
+              "original": 3.854901507266489e-05,
+              "pair_only": 0.0,
+              "mixed_25pct": 2.8911761304498668e-05,
+              "mixed_ratio": 0.75
+            },
+            {
+              "key": "㫪",
+              "original": 3.854901507266489e-05,
+              "pair_only": 0.0,
+              "mixed_25pct": 2.8911761304498668e-05,
+              "mixed_ratio": 0.75
+            }
+          ]
+        },
+        "source": {
+          "js_nats": 9.451534961172275e-05,
+          "pair_top10_mass": 0.9999999999999817,
+          "pair_effective_categories": 2.648720467974901,
+          "largest_upweight": [
+            {
+              "key": "final_imgs_fame_v8",
+              "original": 0.5167495470490729,
+              "pair_only": 0.5516276342018408,
+              "mixed_25pct": 0.5254690688372649,
+              "mixed_ratio": 1.0168737869979474
+            },
+            {
+              "key": "mccd_salvage",
+              "original": 0.11317990825334413,
+              "pair_only": 0.1159162176063541,
+              "mixed_25pct": 0.11386398559159663,
+              "mixed_ratio": 1.0060441587982316
+            },
+            {
+              "key": "hcsu_wild",
+              "original": 0.2511468331984118,
+              "pair_only": 0.2396491373783916,
+              "mixed_25pct": 0.24827240924340677,
+              "mixed_ratio": 0.9885548070887512
+            },
+            {
+              "key": "calli_tongji_imgs",
+              "original": 0.03804787787672025,
+              "pair_only": 0.03428742696009099,
+              "mixed_25pct": 0.037107765147562935,
+              "mixed_ratio": 0.9752913228905066
+            },
+            {
+              "key": "hcsu_bei",
+              "original": 0.029952584711460624,
+              "pair_only": 0.025873125713520382,
+              "mixed_25pct": 0.028932719961975564,
+              "mixed_ratio": 0.9659506930934467
+            },
+            {
+              "key": "hcsu_wild_salvage",
+              "original": 0.01827223314444316,
+              "pair_only": 0.015452610200143596,
+              "mixed_25pct": 0.01756732740836827,
+              "mixed_ratio": 0.9614220259503824
+            },
+            {
+              "key": "hcsu_tie",
+              "original": 0.032651015766547165,
+              "pair_only": 0.017193847939640204,
+              "mixed_25pct": 0.028786723809820426,
+              "mixed_ratio": 0.8816486450419736
+            }
+          ],
+          "largest_downweight": [
+            {
+              "key": "hcsu_tie",
+              "original": 0.032651015766547165,
+              "pair_only": 0.017193847939640204,
+              "mixed_25pct": 0.028786723809820426,
+              "mixed_ratio": 0.8816486450419736
+            },
+            {
+              "key": "hcsu_wild_salvage",
+              "original": 0.01827223314444316,
+              "pair_only": 0.015452610200143596,
+              "mixed_25pct": 0.01756732740836827,
+              "mixed_ratio": 0.9614220259503824
+            },
+            {
+              "key": "hcsu_bei",
+              "original": 0.029952584711460624,
+              "pair_only": 0.025873125713520382,
+              "mixed_25pct": 0.028932719961975564,
+              "mixed_ratio": 0.9659506930934467
+            },
+            {
+              "key": "calli_tongji_imgs",
+              "original": 0.03804787787672025,
+              "pair_only": 0.03428742696009099,
+              "mixed_25pct": 0.037107765147562935,
+              "mixed_ratio": 0.9752913228905066
+            },
+            {
+              "key": "hcsu_wild",
+              "original": 0.2511468331984118,
+              "pair_only": 0.2396491373783916,
+              "mixed_25pct": 0.24827240924340677,
+              "mixed_ratio": 0.9885548070887512
+            },
+            {
+              "key": "mccd_salvage",
+              "original": 0.11317990825334413,
+              "pair_only": 0.1159162176063541,
+              "mixed_25pct": 0.11386398559159663,
+              "mixed_ratio": 1.0060441587982316
+            },
+            {
+              "key": "final_imgs_fame_v8",
+              "original": 0.5167495470490729,
+              "pair_only": 0.5516276342018408,
+              "mixed_25pct": 0.5254690688372649,
+              "mixed_ratio": 1.0168737869979474
+            }
+          ]
+        }
+      },
+      "uniform_writer_pair_then_character": {
+        "calligrapher": {
+          "js_nats": 0.0005821329686631254,
+          "pair_top10_mass": 1.0,
+          "pair_effective_categories": 9.975778546712801,
+          "largest_upweight": [
+            {
+              "key": "何绍基",
+              "original": 0.06641995297020162,
+              "pair_only": 0.10752688172043015,
+              "mixed_25pct": 0.07669668515775875,
+              "mixed_ratio": 1.1547235691685547
+            },
+            {
+              "key": "文徵明",
+              "original": 0.07285763848733665,
+              "pair_only": 0.10752688172043001,
+              "mixed_25pct": 0.08152494929561,
+              "mixed_ratio": 1.1189622802526027
+            },
+            {
+              "key": "柳公权",
+              "original": 0.067756318826054,
+              "pair_only": 0.09677419354838736,
+              "mixed_25pct": 0.07501078750663734,
+              "mixed_ratio": 1.107067042694678
+            },
+            {
+              "key": "米芾",
+              "original": 0.09272323092144996,
+              "pair_only": 0.09677419354838662,
+              "mixed_25pct": 0.09373597157818413,
+              "mixed_ratio": 1.0109221890422704
+            },
+            {
+              "key": "赵孟頫",
+              "original": 0.11279441810261748,
+              "pair_only": 0.10752688172043053,
+              "mixed_25pct": 0.11147753400707074,
+              "mixed_ratio": 0.9883249178665147
+            },
+            {
+              "key": "褚遂良",
+              "original": 0.10464772625059429,
+              "pair_only": 0.09677419354838682,
+              "mixed_25pct": 0.10267934307504242,
+              "mixed_ratio": 0.9811903875404011
+            },
+            {
+              "key": "欧阳询",
+              "original": 0.10800149056191614,
+              "pair_only": 0.09677419354838729,
+              "mixed_25pct": 0.10519466630853393,
+              "mixed_ratio": 0.974011245226536
+            },
+            {
+              "key": "颜真卿",
+              "original": 0.11064852293023913,
+              "pair_only": 0.09677419354838712,
+              "mixed_25pct": 0.10717994058477613,
+              "mixed_ratio": 0.9686522489988425
+            },
+            {
+              "key": "王羲之",
+              "original": 0.13203037662387726,
+              "pair_only": 0.09677419354838682,
+              "mixed_25pct": 0.12321633085500464,
+              "mixed_ratio": 0.9332422886743578
+            },
+            {
+              "key": "苏轼",
+              "original": 0.13212032432571347,
+              "pair_only": 0.09677419354838736,
+              "mixed_25pct": 0.12328379163138194,
+              "mixed_ratio": 0.9331175370675975
+            }
+          ],
+          "largest_downweight": [
+            {
+              "key": "苏轼",
+              "original": 0.13212032432571347,
+              "pair_only": 0.09677419354838736,
+              "mixed_25pct": 0.12328379163138194,
+              "mixed_ratio": 0.9331175370675975
+            },
+            {
+              "key": "王羲之",
+              "original": 0.13203037662387726,
+              "pair_only": 0.09677419354838682,
+              "mixed_25pct": 0.12321633085500464,
+              "mixed_ratio": 0.9332422886743578
+            },
+            {
+              "key": "颜真卿",
+              "original": 0.11064852293023913,
+              "pair_only": 0.09677419354838712,
+              "mixed_25pct": 0.10717994058477613,
+              "mixed_ratio": 0.9686522489988425
+            },
+            {
+              "key": "欧阳询",
+              "original": 0.10800149056191614,
+              "pair_only": 0.09677419354838729,
+              "mixed_25pct": 0.10519466630853393,
+              "mixed_ratio": 0.974011245226536
+            },
+            {
+              "key": "褚遂良",
+              "original": 0.10464772625059429,
+              "pair_only": 0.09677419354838682,
+              "mixed_25pct": 0.10267934307504242,
+              "mixed_ratio": 0.9811903875404011
+            },
+            {
+              "key": "赵孟頫",
+              "original": 0.11279441810261748,
+              "pair_only": 0.10752688172043053,
+              "mixed_25pct": 0.11147753400707074,
+              "mixed_ratio": 0.9883249178665147
+            },
+            {
+              "key": "米芾",
+              "original": 0.09272323092144996,
+              "pair_only": 0.09677419354838662,
+              "mixed_25pct": 0.09373597157818413,
+              "mixed_ratio": 1.0109221890422704
+            },
+            {
+              "key": "柳公权",
+              "original": 0.067756318826054,
+              "pair_only": 0.09677419354838736,
+              "mixed_25pct": 0.07501078750663734,
+              "mixed_ratio": 1.107067042694678
+            },
+            {
+              "key": "文徵明",
+              "original": 0.07285763848733665,
+              "pair_only": 0.10752688172043001,
+              "mixed_25pct": 0.08152494929561,
+              "mixed_ratio": 1.1189622802526027
+            },
+            {
+              "key": "何绍基",
+              "original": 0.06641995297020162,
+              "pair_only": 0.10752688172043015,
+              "mixed_25pct": 0.07669668515775875,
+              "mixed_ratio": 1.1547235691685547
+            }
+          ]
+        },
+        "script": {
+          "js_nats": 0.0003330326547866134,
+          "pair_top10_mass": 1.0000000000000013,
+          "pair_effective_categories": 2.1308203991130763,
+          "largest_upweight": [
+            {
+              "key": "楷",
+              "original": 0.4060624751037611,
+              "pair_only": 0.4838709677419368,
+              "mixed_25pct": 0.425514598263305,
+              "mixed_ratio": 1.0479042619108632
+            },
+            {
+              "key": "行",
+              "original": 0.5196921218662863,
+              "pair_only": 0.4838709677419355,
+              "mixed_25pct": 0.5107368333351986,
+              "mixed_ratio": 0.9827680887312126
+            },
+            {
+              "key": "隶",
+              "original": 0.07424540302995258,
+              "pair_only": 0.03225806451612915,
+              "mixed_25pct": 0.06374856840149673,
+              "mixed_ratio": 0.8586197367098789
+            }
+          ],
+          "largest_downweight": [
+            {
+              "key": "隶",
+              "original": 0.07424540302995258,
+              "pair_only": 0.03225806451612915,
+              "mixed_25pct": 0.06374856840149673,
+              "mixed_ratio": 0.8586197367098789
+            },
+            {
+              "key": "行",
+              "original": 0.5196921218662863,
+              "pair_only": 0.4838709677419355,
+              "mixed_25pct": 0.5107368333351986,
+              "mixed_ratio": 0.9827680887312126
+            },
+            {
+              "key": "楷",
+              "original": 0.4060624751037611,
+              "pair_only": 0.4838709677419368,
+              "mixed_25pct": 0.425514598263305,
+              "mixed_ratio": 1.0479042619108632
+            }
+          ]
+        },
+        "character": {
+          "js_nats": 0.00614669069348996,
+          "pair_top10_mass": 0.050970033936953235,
+          "pair_effective_categories": 771.9237243954977,
+          "largest_upweight": [
+            {
+              "key": "剛",
+              "original": 0.00011564704521799469,
+              "pair_only": 0.0018445238466276337,
+              "mixed_25pct": 0.0005478662455704044,
+              "mixed_ratio": 4.737399425447287
+            },
+            {
+              "key": "敦",
+              "original": 0.00019274507536332447,
+              "pair_only": 0.0023683539461940586,
+              "mixed_25pct": 0.000736647293071008,
+              "mixed_ratio": 3.8218734859110035
+            },
+            {
+              "key": "徹",
+              "original": 0.00034694113565398406,
+              "pair_only": 0.003141088933231994,
+              "mixed_25pct": 0.0010454780850484866,
+              "mixed_ratio": 3.0134163338047544
+            },
+            {
+              "key": "報",
+              "original": 0.0006553332562353032,
+              "pair_only": 0.005654622249412921,
+              "mixed_25pct": 0.0019051555045297075,
+              "mixed_ratio": 2.907155231941479
+            },
+            {
+              "key": "丈",
+              "original": 0.00026984310550865425,
+              "pair_only": 0.0021003947260558233,
+              "mixed_25pct": 0.0007274810106454465,
+              "mixed_ratio": 2.6959406995933612
+            },
+            {
+              "key": "寶",
+              "original": 0.0006167842411626382,
+              "pair_only": 0.004315602976670729,
+              "mixed_25pct": 0.001541488925039661,
+              "mixed_ratio": 2.4992352627783654
+            },
+            {
+              "key": "發",
+              "original": 0.0006167842411626382,
+              "pair_only": 0.004126536137941825,
+              "mixed_25pct": 0.001494222215357435,
+              "mixed_ratio": 2.4226011555367015
+            },
+            {
+              "key": "文",
+              "original": 0.0010408234069619522,
+              "pair_only": 0.006891888201862513,
+              "mixed_25pct": 0.0025035896056870926,
+              "mixed_ratio": 2.4053932578195876
+            },
+            {
+              "key": "志",
+              "original": 0.0006553332562353032,
+              "pair_only": 0.004094071547324307,
+              "mixed_25pct": 0.001515017829007554,
+              "mixed_ratio": 2.3118280883697033
+            },
+            {
+              "key": "詞",
+              "original": 0.00023129409043598937,
+              "pair_only": 0.0013719550877094313,
+              "mixed_25pct": 0.0005164593397543498,
+              "mixed_ratio": 2.232911955427931
+            },
+            {
+              "key": "扶",
+              "original": 0.00034694113565398406,
+              "pair_only": 0.0020219676269336555,
+              "mixed_25pct": 0.0007656977584739019,
+              "mixed_ratio": 2.206996172507943
+            },
+            {
+              "key": "升",
+              "original": 0.001079372422034617,
+              "pair_only": 0.006159634184209919,
+              "mixed_25pct": 0.0023494378625784425,
+              "mixed_ratio": 2.176670271183835
+            },
+            {
+              "key": "字",
+              "original": 0.0006938822713079681,
+              "pair_only": 0.0037799260528212854,
+              "mixed_25pct": 0.0014653932166862975,
+              "mixed_ratio": 2.111875857447736
+            },
+            {
+              "key": "賜",
+              "original": 0.00019274507536332447,
+              "pair_only": 0.0010289613826142505,
+              "mixed_25pct": 0.000401799152176056,
+              "mixed_ratio": 2.084614361319814
+            },
+            {
+              "key": "裕",
+              "original": 0.00011564704521799469,
+              "pair_only": 0.0006116074580804872,
+              "mixed_25pct": 0.0002396371484336178,
+              "mixed_ratio": 2.072142422505493
+            },
+            {
+              "key": "司",
+              "original": 0.0006938822713079681,
+              "pair_only": 0.003610314704079312,
+              "mixed_25pct": 0.001422990379500804,
+              "mixed_ratio": 2.050766301923909
+            },
+            {
+              "key": "静",
+              "original": 0.0005396862110173085,
+              "pair_only": 0.002787079418347254,
+              "mixed_25pct": 0.001101534512849795,
+              "mixed_ratio": 2.041064771274038
+            },
+            {
+              "key": "幄",
+              "original": 0.00023129409043598937,
+              "pair_only": 0.0011937033386254002,
+              "mixed_25pct": 0.0004718964024833421,
+              "mixed_ratio": 2.0402440961367296
+            },
+            {
+              "key": "厚",
+              "original": 0.0005525358827081968,
+              "pair_only": 0.0028243920580116304,
+              "mixed_25pct": 0.0011204999265340553,
+              "mixed_ratio": 2.0279224600618555
+            },
+            {
+              "key": "林",
+              "original": 0.0008095293165259628,
+              "pair_only": 0.00410768736154567,
+              "mixed_25pct": 0.0016340688277808896,
+              "mixed_ratio": 2.018541879117336
+            }
+          ],
+          "largest_downweight": [
+            {
+              "key": "㐲",
+              "original": 7.709803014532978e-05,
+              "pair_only": 0.0,
+              "mixed_25pct": 5.7823522608997336e-05,
+              "mixed_ratio": 0.75
+            },
+            {
+              "key": "㒵",
+              "original": 3.854901507266489e-05,
+              "pair_only": 0.0,
+              "mixed_25pct": 2.8911761304498668e-05,
+              "mixed_ratio": 0.75
+            },
+            {
+              "key": "㗛",
+              "original": 3.854901507266489e-05,
+              "pair_only": 0.0,
+              "mixed_25pct": 2.8911761304498668e-05,
+              "mixed_ratio": 0.75
+            },
+            {
+              "key": "㙒",
+              "original": 3.854901507266489e-05,
+              "pair_only": 0.0,
+              "mixed_25pct": 2.8911761304498668e-05,
+              "mixed_ratio": 0.75
+            },
+            {
+              "key": "㙜",
+              "original": 3.854901507266489e-05,
+              "pair_only": 0.0,
+              "mixed_25pct": 2.8911761304498668e-05,
+              "mixed_ratio": 0.75
+            },
+            {
+              "key": "㙯",
+              "original": 3.854901507266489e-05,
+              "pair_only": 0.0,
+              "mixed_25pct": 2.8911761304498668e-05,
+              "mixed_ratio": 0.75
+            },
+            {
+              "key": "㝍",
+              "original": 3.854901507266489e-05,
+              "pair_only": 0.0,
+              "mixed_25pct": 2.8911761304498668e-05,
+              "mixed_ratio": 0.75
+            },
+            {
+              "key": "㝢",
+              "original": 3.854901507266489e-05,
+              "pair_only": 0.0,
+              "mixed_25pct": 2.8911761304498668e-05,
+              "mixed_ratio": 0.75
+            },
+            {
+              "key": "㞐",
+              "original": 3.854901507266489e-05,
+              "pair_only": 0.0,
+              "mixed_25pct": 2.8911761304498668e-05,
+              "mixed_ratio": 0.75
+            },
+            {
+              "key": "㢘",
+              "original": 0.00011564704521799469,
+              "pair_only": 0.0,
+              "mixed_25pct": 8.673528391349601e-05,
+              "mixed_ratio": 0.75
+            },
+            {
+              "key": "㤁",
+              "original": 3.854901507266489e-05,
+              "pair_only": 0.0,
+              "mixed_25pct": 2.8911761304498668e-05,
+              "mixed_ratio": 0.75
+            },
+            {
+              "key": "㤙",
+              "original": 3.854901507266489e-05,
+              "pair_only": 0.0,
+              "mixed_25pct": 2.8911761304498668e-05,
+              "mixed_ratio": 0.75
+            },
+            {
+              "key": "㦤",
+              "original": 3.854901507266489e-05,
+              "pair_only": 0.0,
+              "mixed_25pct": 2.8911761304498668e-05,
+              "mixed_ratio": 0.75
+            },
+            {
+              "key": "㦲",
+              "original": 3.854901507266489e-05,
+              "pair_only": 0.0,
+              "mixed_25pct": 2.8911761304498668e-05,
+              "mixed_ratio": 0.75
+            },
+            {
+              "key": "㧑",
+              "original": 3.854901507266489e-05,
+              "pair_only": 0.0,
+              "mixed_25pct": 2.8911761304498668e-05,
+              "mixed_ratio": 0.75
+            },
+            {
+              "key": "㧝",
+              "original": 3.854901507266489e-05,
+              "pair_only": 0.0,
+              "mixed_25pct": 2.8911761304498668e-05,
+              "mixed_ratio": 0.75
+            },
+            {
+              "key": "㨫",
+              "original": 7.709803014532978e-05,
+              "pair_only": 0.0,
+              "mixed_25pct": 5.7823522608997336e-05,
+              "mixed_ratio": 0.75
+            },
+            {
+              "key": "㩀",
+              "original": 3.854901507266489e-05,
+              "pair_only": 0.0,
+              "mixed_25pct": 2.8911761304498668e-05,
+              "mixed_ratio": 0.75
+            },
+            {
+              "key": "㫖",
+              "original": 3.854901507266489e-05,
+              "pair_only": 0.0,
+              "mixed_25pct": 2.8911761304498668e-05,
+              "mixed_ratio": 0.75
+            },
+            {
+              "key": "㫪",
+              "original": 3.854901507266489e-05,
+              "pair_only": 0.0,
+              "mixed_25pct": 2.8911761304498668e-05,
+              "mixed_ratio": 0.75
+            }
+          ]
+        },
+        "source": {
+          "js_nats": 0.00013172345675109955,
+          "pair_top10_mass": 1.0000000000000004,
+          "pair_effective_categories": 2.7737869440811616,
+          "largest_upweight": [
+            {
+              "key": "hcsu_bei",
+              "original": 0.029952584711460624,
+              "pair_only": 0.0381096970870083,
+              "mixed_25pct": 0.03199186280534755,
+              "mixed_ratio": 1.0680835431576843
+            },
+            {
+              "key": "hcsu_wild",
+              "original": 0.2511468331984118,
+              "pair_only": 0.26348810990278876,
+              "mixed_25pct": 0.254232152374506,
+              "mixed_ratio": 1.0122849216802856
+            },
+            {
+              "key": "mccd_salvage",
+              "original": 0.11317990825334413,
+              "pair_only": 0.11665772161112746,
+              "mixed_25pct": 0.11404936159278997,
+              "mixed_ratio": 1.0076820466888843
+            },
+            {
+              "key": "final_imgs_fame_v8",
+              "original": 0.5167495470490729,
+              "pair_only": 0.5242318662685156,
+              "mixed_25pct": 0.5186201268539335,
+              "mixed_ratio": 1.0036198963609018
+            },
+            {
+              "key": "hcsu_wild_salvage",
+              "original": 0.01827223314444316,
+              "pair_only": 0.014898535389314613,
+              "mixed_25pct": 0.017428808705661023,
+              "mixed_ratio": 0.9538411954294358
+            },
+            {
+              "key": "calli_tongji_imgs",
+              "original": 0.03804787787672025,
+              "pair_only": 0.027694666397016118,
+              "mixed_25pct": 0.03545957500679422,
+              "mixed_ratio": 0.9319724774582054
+            },
+            {
+              "key": "hcsu_tie",
+              "original": 0.032651015766547165,
+              "pair_only": 0.014919403344229542,
+              "mixed_25pct": 0.02821811266096776,
+              "mixed_ratio": 0.8642338377073963
+            }
+          ],
+          "largest_downweight": [
+            {
+              "key": "hcsu_tie",
+              "original": 0.032651015766547165,
+              "pair_only": 0.014919403344229542,
+              "mixed_25pct": 0.02821811266096776,
+              "mixed_ratio": 0.8642338377073963
+            },
+            {
+              "key": "calli_tongji_imgs",
+              "original": 0.03804787787672025,
+              "pair_only": 0.027694666397016118,
+              "mixed_25pct": 0.03545957500679422,
+              "mixed_ratio": 0.9319724774582054
+            },
+            {
+              "key": "hcsu_wild_salvage",
+              "original": 0.01827223314444316,
+              "pair_only": 0.014898535389314613,
+              "mixed_25pct": 0.017428808705661023,
+              "mixed_ratio": 0.9538411954294358
+            },
+            {
+              "key": "final_imgs_fame_v8",
+              "original": 0.5167495470490729,
+              "pair_only": 0.5242318662685156,
+              "mixed_25pct": 0.5186201268539335,
+              "mixed_ratio": 1.0036198963609018
+            },
+            {
+              "key": "mccd_salvage",
+              "original": 0.11317990825334413,
+              "pair_only": 0.11665772161112746,
+              "mixed_25pct": 0.11404936159278997,
+              "mixed_ratio": 1.0076820466888843
+            },
+            {
+              "key": "hcsu_wild",
+              "original": 0.2511468331984118,
+              "pair_only": 0.26348810990278876,
+              "mixed_25pct": 0.254232152374506,
+              "mixed_ratio": 1.0122849216802856
+            },
+            {
+              "key": "hcsu_bei",
+              "original": 0.029952584711460624,
+              "pair_only": 0.0381096970870083,
+              "mixed_25pct": 0.03199186280534755,
+              "mixed_ratio": 1.0680835431576843
+            }
+          ]
+        }
+      }
+    },
+    "limitations": "source is a dataset/source label, not a verified artwork ID. Natural non-augmented rows only; augmented variants must never be counted as new characters."
+  },
+  "natural_image_reference": {
+    "rows": 26002,
+    "writers": 10,
+    "characters": 4677,
+    "legal_cells": 22399,
+    "writer_script_pairs": 93,
+    "baseline_sampling_rows": 26002,
+    "pairs_with_fewer_than_32_characters": 8,
+    "pair_eligible_row_fraction": 0.8133605107299439,
+    "source_endpoint_cell_counts": {
+      "hcsu_bei": 2307,
+      "hcsu_wild": 15047,
+      "final_imgs_fame_v8": 39890,
+      "calli_tongji_imgs": 2475,
+      "hcsu_wild_salvage": 964,
+      "mccd_salvage": 7594,
+      "hcsu_tie": 1654
+    },
+    "pairs": [
+      {
+        "script": "楷",
+        "writers": [
+          "何绍基",
+          "文徵明"
+        ],
+        "unique_characters": 42,
+        "distinct_endpoint_rows": 128,
+        "row_pair_products": 103,
+        "source_endpoint_cell_counts": {
+          "hcsu_bei": 39,
+          "hcsu_wild": 63,
+          "final_imgs_fame_v8": 25,
+          "mccd_salvage": 1
+        }
+      },
+      {
+        "script": "楷",
+        "writers": [
+          "何绍基",
+          "柳公权"
+        ],
+        "unique_characters": 103,
+        "distinct_endpoint_rows": 297,
+        "row_pair_products": 222,
+        "source_endpoint_cell_counts": {
+          "final_imgs_fame_v8": 142,
+          "hcsu_wild": 92,
+          "hcsu_bei": 34,
+          "hcsu_tie": 10,
+          "calli_tongji_imgs": 17,
+          "hcsu_wild_salvage": 1,
+          "mccd_salvage": 1
+        }
+      },
+      {
+        "script": "楷",
+        "writers": [
+          "何绍基",
+          "欧阳询"
+        ],
+        "unique_characters": 130,
+        "distinct_endpoint_rows": 370,
+        "row_pair_products": 278,
+        "source_endpoint_cell_counts": {
+          "hcsu_bei": 52,
+          "hcsu_wild": 137,
+          "final_imgs_fame_v8": 155,
+          "calli_tongji_imgs": 19,
+          "mccd_salvage": 7
+        }
+      },
+      {
+        "script": "楷",
+        "writers": [
+          "何绍基",
+          "王羲之"
+        ],
+        "unique_characters": 64,
+        "distinct_endpoint_rows": 173,
+        "row_pair_products": 119,
+        "source_endpoint_cell_counts": {
+          "final_imgs_fame_v8": 48,
+          "hcsu_wild": 89,
+          "hcsu_bei": 30,
+          "hcsu_wild_salvage": 3,
+          "mccd_salvage": 3
+        }
+      },
+      {
+        "script": "楷",
+        "writers": [
+          "何绍基",
+          "米芾"
+        ],
+        "unique_characters": 7,
+        "distinct_endpoint_rows": 21,
+        "row_pair_products": 14,
+        "source_endpoint_cell_counts": {
+          "hcsu_wild": 7,
+          "final_imgs_fame_v8": 10,
+          "hcsu_bei": 4
+        }
+      },
+      {
+        "script": "楷",
+        "writers": [
+          "何绍基",
+          "苏轼"
+        ],
+        "unique_characters": 68,
+        "distinct_endpoint_rows": 174,
+        "row_pair_products": 114,
+        "source_endpoint_cell_counts": {
+          "final_imgs_fame_v8": 87,
+          "hcsu_wild": 63,
+          "hcsu_bei": 17,
+          "hcsu_tie": 3,
+          "hcsu_wild_salvage": 1,
+          "mccd_salvage": 3
+        }
+      },
+      {
+        "script": "楷",
+        "writers": [
+          "何绍基",
+          "褚遂良"
+        ],
+        "unique_characters": 110,
+        "distinct_endpoint_rows": 332,
+        "row_pair_products": 252,
+        "source_endpoint_cell_counts": {
+          "hcsu_bei": 36,
+          "hcsu_wild": 75,
+          "final_imgs_fame_v8": 201,
+          "hcsu_tie": 6,
+          "mccd_salvage": 9,
+          "calli_tongji_imgs": 5
+        }
+      },
+      {
+        "script": "楷",
+        "writers": [
+          "何绍基",
+          "赵孟頫"
+        ],
+        "unique_characters": 102,
+        "distinct_endpoint_rows": 283,
+        "row_pair_products": 211,
+        "source_endpoint_cell_counts": {
+          "hcsu_bei": 45,
+          "hcsu_wild": 109,
+          "mccd_salvage": 70,
+          "hcsu_wild_salvage": 5,
+          "final_imgs_fame_v8": 43,
+          "calli_tongji_imgs": 11
+        }
+      },
+      {
+        "script": "楷",
+        "writers": [
+          "何绍基",
+          "颜真卿"
+        ],
+        "unique_characters": 146,
+        "distinct_endpoint_rows": 393,
+        "row_pair_products": 277,
+        "source_endpoint_cell_counts": {
+          "hcsu_bei": 57,
+          "hcsu_wild": 115,
+          "final_imgs_fame_v8": 208,
+          "hcsu_wild_salvage": 1,
+          "mccd_salvage": 6,
+          "calli_tongji_imgs": 6
+        }
+      },
+      {
+        "script": "楷",
+        "writers": [
+          "文徵明",
+          "柳公权"
+        ],
+        "unique_characters": 88,
+        "distinct_endpoint_rows": 242,
+        "row_pair_products": 164,
+        "source_endpoint_cell_counts": {
+          "hcsu_wild": 85,
+          "final_imgs_fame_v8": 101,
+          "mccd_salvage": 3,
+          "hcsu_bei": 33,
+          "hcsu_tie": 9,
+          "calli_tongji_imgs": 11
+        }
+      },
+      {
+        "script": "楷",
+        "writers": [
+          "文徵明",
+          "欧阳询"
+        ],
+        "unique_characters": 124,
+        "distinct_endpoint_rows": 335,
+        "row_pair_products": 232,
+        "source_endpoint_cell_counts": {
+          "hcsu_wild": 143,
+          "hcsu_bei": 52,
+          "final_imgs_fame_v8": 122,
+          "hcsu_wild_salvage": 2,
+          "mccd_salvage": 3,
+          "calli_tongji_imgs": 13
+        }
+      },
+      {
+        "script": "楷",
+        "writers": [
+          "文徵明",
+          "王羲之"
+        ],
+        "unique_characters": 62,
+        "distinct_endpoint_rows": 165,
+        "row_pair_products": 110,
+        "source_endpoint_cell_counts": {
+          "hcsu_wild": 87,
+          "hcsu_bei": 33,
+          "hcsu_wild_salvage": 8,
+          "final_imgs_fame_v8": 36,
+          "mccd_salvage": 1
+        }
+      },
+      {
+        "script": "楷",
+        "writers": [
+          "文徵明",
+          "米芾"
+        ],
+        "unique_characters": 7,
+        "distinct_endpoint_rows": 17,
+        "row_pair_products": 10,
+        "source_endpoint_cell_counts": {
+          "hcsu_wild": 6,
+          "final_imgs_fame_v8": 8,
+          "hcsu_bei": 3
+        }
+      },
+      {
+        "script": "楷",
+        "writers": [
+          "文徵明",
+          "苏轼"
+        ],
+        "unique_characters": 69,
+        "distinct_endpoint_rows": 176,
+        "row_pair_products": 113,
+        "source_endpoint_cell_counts": {
+          "hcsu_wild": 77,
+          "hcsu_bei": 20,
+          "final_imgs_fame_v8": 73,
+          "mccd_salvage": 3,
+          "hcsu_tie": 3
+        }
+      },
+      {
+        "script": "楷",
+        "writers": [
+          "文徵明",
+          "褚遂良"
+        ],
+        "unique_characters": 105,
+        "distinct_endpoint_rows": 299,
+        "row_pair_products": 220,
+        "source_endpoint_cell_counts": {
+          "hcsu_wild": 83,
+          "calli_tongji_imgs": 6,
+          "hcsu_tie": 15,
+          "final_imgs_fame_v8": 157,
+          "hcsu_bei": 32,
+          "mccd_salvage": 5,
+          "hcsu_wild_salvage": 1
+        }
+      },
+      {
+        "script": "楷",
+        "writers": [
+          "文徵明",
+          "赵孟頫"
+        ],
+        "unique_characters": 121,
+        "distinct_endpoint_rows": 327,
+        "row_pair_products": 226,
+        "source_endpoint_cell_counts": {
+          "hcsu_wild": 151,
+          "hcsu_bei": 55,
+          "calli_tongji_imgs": 16,
+          "mccd_salvage": 63,
+          "hcsu_wild_salvage": 3,
+          "final_imgs_fame_v8": 39
+        }
+      },
+      {
+        "script": "楷",
+        "writers": [
+          "文徵明",
+          "颜真卿"
+        ],
+        "unique_characters": 144,
+        "distinct_endpoint_rows": 389,
+        "row_pair_products": 263,
+        "source_endpoint_cell_counts": {
+          "hcsu_wild": 123,
+          "final_imgs_fame_v8": 190,
+          "hcsu_bei": 61,
+          "mccd_salvage": 2,
+          "calli_tongji_imgs": 10,
+          "hcsu_wild_salvage": 3
+        }
+      },
+      {
+        "script": "楷",
+        "writers": [
+          "柳公权",
+          "欧阳询"
+        ],
+        "unique_characters": 485,
+        "distinct_endpoint_rows": 1247,
+        "row_pair_products": 828,
+        "source_endpoint_cell_counts": {
+          "final_imgs_fame_v8": 828,
+          "hcsu_wild": 236,
+          "hcsu_bei": 31,
+          "calli_tongji_imgs": 93,
+          "mccd_salvage": 21,
+          "hcsu_tie": 29,
+          "hcsu_wild_salvage": 9
+        }
+      },
+      {
+        "script": "楷",
+        "writers": [
+          "柳公权",
+          "王羲之"
+        ],
+        "unique_characters": 242,
+        "distinct_endpoint_rows": 616,
+        "row_pair_products": 393,
+        "source_endpoint_cell_counts": {
+          "final_imgs_fame_v8": 310,
+          "hcsu_wild": 191,
+          "hcsu_bei": 42,
+          "hcsu_tie": 18,
+          "calli_tongji_imgs": 31,
+          "hcsu_wild_salvage": 21,
+          "mccd_salvage": 3
+        }
+      },
+      {
+        "script": "楷",
+        "writers": [
+          "柳公权",
+          "米芾"
+        ],
+        "unique_characters": 36,
+        "distinct_endpoint_rows": 79,
+        "row_pair_products": 44,
+        "source_endpoint_cell_counts": {
+          "final_imgs_fame_v8": 74,
+          "mccd_salvage": 2,
+          "hcsu_tie": 1,
+          "hcsu_wild": 1,
+          "calli_tongji_imgs": 1
+        }
+      },
+      {
+        "script": "楷",
+        "writers": [
+          "柳公权",
+          "苏轼"
+        ],
+        "unique_characters": 303,
+        "distinct_endpoint_rows": 757,
+        "row_pair_products": 482,
+        "source_endpoint_cell_counts": {
+          "final_imgs_fame_v8": 489,
+          "hcsu_wild": 172,
+          "hcsu_tie": 43,
+          "mccd_salvage": 15,
+          "calli_tongji_imgs": 36,
+          "hcsu_wild_salvage": 2
+        }
+      },
+      {
+        "script": "楷",
+        "writers": [
+          "柳公权",
+          "褚遂良"
+        ],
+        "unique_characters": 482,
+        "distinct_endpoint_rows": 1394,
+        "row_pair_products": 994,
+        "source_endpoint_cell_counts": {
+          "final_imgs_fame_v8": 1073,
+          "mccd_salvage": 25,
+          "calli_tongji_imgs": 82,
+          "hcsu_wild": 145,
+          "hcsu_wild_salvage": 3,
+          "hcsu_tie": 66
+        }
+      },
+      {
+        "script": "楷",
+        "writers": [
+          "柳公权",
+          "赵孟頫"
+        ],
+        "unique_characters": 342,
+        "distinct_endpoint_rows": 870,
+        "row_pair_products": 576,
+        "source_endpoint_cell_counts": {
+          "final_imgs_fame_v8": 311,
+          "calli_tongji_imgs": 71,
+          "mccd_salvage": 249,
+          "hcsu_wild": 183,
+          "hcsu_bei": 34,
+          "hcsu_tie": 18,
+          "hcsu_wild_salvage": 4
+        }
+      },
+      {
+        "script": "楷",
+        "writers": [
+          "柳公权",
+          "颜真卿"
+        ],
+        "unique_characters": 582,
+        "distinct_endpoint_rows": 1446,
+        "row_pair_products": 916,
+        "source_endpoint_cell_counts": {
+          "final_imgs_fame_v8": 1124,
+          "hcsu_wild": 151,
+          "hcsu_bei": 42,
+          "mccd_salvage": 21,
+          "hcsu_tie": 27,
+          "calli_tongji_imgs": 75,
+          "hcsu_wild_salvage": 6
+        }
+      },
+      {
+        "script": "楷",
+        "writers": [
+          "欧阳询",
+          "王羲之"
+        ],
+        "unique_characters": 323,
+        "distinct_endpoint_rows": 860,
+        "row_pair_products": 570,
+        "source_endpoint_cell_counts": {
+          "hcsu_wild": 382,
+          "final_imgs_fame_v8": 327,
+          "hcsu_bei": 75,
+          "calli_tongji_imgs": 25,
+          "hcsu_wild_salvage": 38,
+          "mccd_salvage": 13
+        }
+      },
+      {
+        "script": "楷",
+        "writers": [
+          "欧阳询",
+          "米芾"
+        ],
+        "unique_characters": 28,
+        "distinct_endpoint_rows": 70,
+        "row_pair_products": 43,
+        "source_endpoint_cell_counts": {
+          "final_imgs_fame_v8": 54,
+          "hcsu_wild": 11,
+          "calli_tongji_imgs": 3,
+          "hcsu_bei": 1,
+          "mccd_salvage": 1
+        }
+      },
+      {
+        "script": "楷",
+        "writers": [
+          "欧阳询",
+          "苏轼"
+        ],
+        "unique_characters": 359,
+        "distinct_endpoint_rows": 965,
+        "row_pair_products": 658,
+        "source_endpoint_cell_counts": {
+          "hcsu_bei": 29,
+          "hcsu_wild": 321,
+          "final_imgs_fame_v8": 519,
+          "hcsu_tie": 42,
+          "calli_tongji_imgs": 19,
+          "mccd_salvage": 27,
+          "hcsu_wild_salvage": 8
+        }
+      },
+      {
+        "script": "楷",
+        "writers": [
+          "欧阳询",
+          "褚遂良"
+        ],
+        "unique_characters": 563,
+        "distinct_endpoint_rows": 1648,
+        "row_pair_products": 1227,
+        "source_endpoint_cell_counts": {
+          "final_imgs_fame_v8": 1176,
+          "hcsu_wild": 259,
+          "hcsu_bei": 36,
+          "calli_tongji_imgs": 97,
+          "mccd_salvage": 41,
+          "hcsu_tie": 32,
+          "hcsu_wild_salvage": 7
+        }
+      },
+      {
+        "script": "楷",
+        "writers": [
+          "欧阳询",
+          "赵孟頫"
+        ],
+        "unique_characters": 457,
+        "distinct_endpoint_rows": 1198,
+        "row_pair_products": 819,
+        "source_endpoint_cell_counts": {
+          "hcsu_wild": 385,
+          "final_imgs_fame_v8": 320,
+          "calli_tongji_imgs": 88,
+          "mccd_salvage": 315,
+          "hcsu_bei": 79,
+          "hcsu_wild_salvage": 11
+        }
+      },
+      {
+        "script": "楷",
+        "writers": [
+          "欧阳询",
+          "颜真卿"
+        ],
+        "unique_characters": 676,
+        "distinct_endpoint_rows": 1777,
+        "row_pair_products": 1199,
+        "source_endpoint_cell_counts": {
+          "hcsu_wild": 373,
+          "hcsu_bei": 98,
+          "final_imgs_fame_v8": 1171,
+          "calli_tongji_imgs": 74,
+          "mccd_salvage": 44,
+          "hcsu_wild_salvage": 17
+        }
+      },
+      {
+        "script": "楷",
+        "writers": [
+          "王羲之",
+          "米芾"
+        ],
+        "unique_characters": 22,
+        "distinct_endpoint_rows": 51,
+        "row_pair_products": 29,
+        "source_endpoint_cell_counts": {
+          "hcsu_wild": 15,
+          "final_imgs_fame_v8": 29,
+          "hcsu_wild_salvage": 4,
+          "hcsu_bei": 3
+        }
+      },
+      {
+        "script": "楷",
+        "writers": [
+          "王羲之",
+          "苏轼"
+        ],
+        "unique_characters": 224,
+        "distinct_endpoint_rows": 582,
+        "row_pair_products": 386,
+        "source_endpoint_cell_counts": {
+          "final_imgs_fame_v8": 198,
+          "hcsu_wild": 291,
+          "hcsu_wild_salvage": 19,
+          "hcsu_tie": 24,
+          "hcsu_bei": 36,
+          "mccd_salvage": 14
+        }
+      },
+      {
+        "script": "楷",
+        "writers": [
+          "王羲之",
+          "褚遂良"
+        ],
+        "unique_characters": 264,
+        "distinct_endpoint_rows": 772,
+        "row_pair_products": 573,
+        "source_endpoint_cell_counts": {
+          "hcsu_wild": 207,
+          "calli_tongji_imgs": 35,
+          "hcsu_wild_salvage": 28,
+          "final_imgs_fame_v8": 422,
+          "mccd_salvage": 17,
+          "hcsu_tie": 18,
+          "hcsu_bei": 45
+        }
+      },
+      {
+        "script": "楷",
+        "writers": [
+          "王羲之",
+          "赵孟頫"
+        ],
+        "unique_characters": 259,
+        "distinct_endpoint_rows": 674,
+        "row_pair_products": 450,
+        "source_endpoint_cell_counts": {
+          "hcsu_wild": 305,
+          "calli_tongji_imgs": 38,
+          "mccd_salvage": 150,
+          "hcsu_bei": 67,
+          "hcsu_wild_salvage": 29,
+          "final_imgs_fame_v8": 85
+        }
+      },
+      {
+        "script": "楷",
+        "writers": [
+          "王羲之",
+          "颜真卿"
+        ],
+        "unique_characters": 351,
+        "distinct_endpoint_rows": 938,
+        "row_pair_products": 634,
+        "source_endpoint_cell_counts": {
+          "hcsu_wild": 320,
+          "final_imgs_fame_v8": 441,
+          "hcsu_bei": 97,
+          "hcsu_wild_salvage": 46,
+          "mccd_salvage": 13,
+          "calli_tongji_imgs": 21
+        }
+      },
+      {
+        "script": "楷",
+        "writers": [
+          "米芾",
+          "苏轼"
+        ],
+        "unique_characters": 25,
+        "distinct_endpoint_rows": 67,
+        "row_pair_products": 43,
+        "source_endpoint_cell_counts": {
+          "final_imgs_fame_v8": 48,
+          "hcsu_wild": 16,
+          "hcsu_tie": 2,
+          "mccd_salvage": 1
+        }
+      },
+      {
+        "script": "楷",
+        "writers": [
+          "米芾",
+          "褚遂良"
+        ],
+        "unique_characters": 37,
+        "distinct_endpoint_rows": 109,
+        "row_pair_products": 74,
+        "source_endpoint_cell_counts": {
+          "final_imgs_fame_v8": 104,
+          "hcsu_tie": 1,
+          "hcsu_wild": 3,
+          "calli_tongji_imgs": 1
+        }
+      },
+      {
+        "script": "楷",
+        "writers": [
+          "米芾",
+          "赵孟頫"
+        ],
+        "unique_characters": 26,
+        "distinct_endpoint_rows": 56,
+        "row_pair_products": 30,
+        "source_endpoint_cell_counts": {
+          "final_imgs_fame_v8": 26,
+          "mccd_salvage": 23,
+          "hcsu_wild": 6,
+          "calli_tongji_imgs": 1
+        }
+      },
+      {
+        "script": "楷",
+        "writers": [
+          "米芾",
+          "颜真卿"
+        ],
+        "unique_characters": 46,
+        "distinct_endpoint_rows": 109,
+        "row_pair_products": 63,
+        "source_endpoint_cell_counts": {
+          "final_imgs_fame_v8": 94,
+          "hcsu_bei": 5,
+          "hcsu_wild": 6,
+          "hcsu_wild_salvage": 1,
+          "calli_tongji_imgs": 1,
+          "mccd_salvage": 2
+        }
+      },
+      {
+        "script": "楷",
+        "writers": [
+          "苏轼",
+          "褚遂良"
+        ],
+        "unique_characters": 335,
+        "distinct_endpoint_rows": 1013,
+        "row_pair_products": 775,
+        "source_endpoint_cell_counts": {
+          "hcsu_wild": 189,
+          "calli_tongji_imgs": 37,
+          "final_imgs_fame_v8": 711,
+          "mccd_salvage": 24,
+          "hcsu_tie": 50,
+          "hcsu_wild_salvage": 2
+        }
+      },
+      {
+        "script": "楷",
+        "writers": [
+          "苏轼",
+          "赵孟頫"
+        ],
+        "unique_characters": 273,
+        "distinct_endpoint_rows": 712,
+        "row_pair_products": 466,
+        "source_endpoint_cell_counts": {
+          "hcsu_wild": 264,
+          "calli_tongji_imgs": 31,
+          "hcsu_tie": 40,
+          "final_imgs_fame_v8": 164,
+          "mccd_salvage": 182,
+          "hcsu_bei": 28,
+          "hcsu_wild_salvage": 3
+        }
+      },
+      {
+        "script": "楷",
+        "writers": [
+          "苏轼",
+          "颜真卿"
+        ],
+        "unique_characters": 414,
+        "distinct_endpoint_rows": 1092,
+        "row_pair_products": 742,
+        "source_endpoint_cell_counts": {
+          "hcsu_wild": 272,
+          "final_imgs_fame_v8": 688,
+          "hcsu_tie": 38,
+          "hcsu_bei": 35,
+          "mccd_salvage": 32,
+          "hcsu_wild_salvage": 7,
+          "calli_tongji_imgs": 20
+        }
+      },
+      {
+        "script": "楷",
+        "writers": [
+          "褚遂良",
+          "赵孟頫"
+        ],
+        "unique_characters": 406,
+        "distinct_endpoint_rows": 1146,
+        "row_pair_products": 810,
+        "source_endpoint_cell_counts": {
+          "final_imgs_fame_v8": 501,
+          "calli_tongji_imgs": 79,
+          "hcsu_wild": 198,
+          "mccd_salvage": 307,
+          "hcsu_tie": 26,
+          "hcsu_bei": 30,
+          "hcsu_wild_salvage": 5
+        }
+      },
+      {
+        "script": "楷",
+        "writers": [
+          "褚遂良",
+          "颜真卿"
+        ],
+        "unique_characters": 655,
+        "distinct_endpoint_rows": 1887,
+        "row_pair_products": 1427,
+        "source_endpoint_cell_counts": {
+          "final_imgs_fame_v8": 1503,
+          "calli_tongji_imgs": 78,
+          "hcsu_wild": 180,
+          "hcsu_bei": 46,
+          "mccd_salvage": 40,
+          "hcsu_tie": 31,
+          "hcsu_wild_salvage": 9
+        }
+      },
+      {
+        "script": "楷",
+        "writers": [
+          "赵孟頫",
+          "颜真卿"
+        ],
+        "unique_characters": 532,
+        "distinct_endpoint_rows": 1363,
+        "row_pair_products": 884,
+        "source_endpoint_cell_counts": {
+          "hcsu_wild": 290,
+          "hcsu_bei": 83,
+          "calli_tongji_imgs": 87,
+          "final_imgs_fame_v8": 492,
+          "mccd_salvage": 399,
+          "hcsu_wild_salvage": 12
+        }
+      },
+      {
+        "script": "行",
+        "writers": [
+          "何绍基",
+          "文徵明"
+        ],
+        "unique_characters": 177,
+        "distinct_endpoint_rows": 491,
+        "row_pair_products": 342,
+        "source_endpoint_cell_counts": {
+          "final_imgs_fame_v8": 393,
+          "mccd_salvage": 44,
+          "hcsu_wild": 44,
+          "hcsu_tie": 7,
+          "hcsu_wild_salvage": 3
+        }
+      },
+      {
+        "script": "行",
+        "writers": [
+          "何绍基",
+          "柳公权"
+        ],
+        "unique_characters": 54,
+        "distinct_endpoint_rows": 146,
+        "row_pair_products": 97,
+        "source_endpoint_cell_counts": {
+          "final_imgs_fame_v8": 79,
+          "hcsu_wild": 43,
+          "hcsu_bei": 17,
+          "mccd_salvage": 5,
+          "hcsu_wild_salvage": 2
+        }
+      },
+      {
+        "script": "行",
+        "writers": [
+          "何绍基",
+          "欧阳询"
+        ],
+        "unique_characters": 165,
+        "distinct_endpoint_rows": 442,
+        "row_pair_products": 292,
+        "source_endpoint_cell_counts": {
+          "final_imgs_fame_v8": 321,
+          "hcsu_wild": 50,
+          "mccd_salvage": 36,
+          "hcsu_wild_salvage": 13,
+          "calli_tongji_imgs": 12,
+          "hcsu_tie": 10
+        }
+      },
+      {
+        "script": "行",
+        "writers": [
+          "何绍基",
+          "王羲之"
+        ],
+        "unique_characters": 211,
+        "distinct_endpoint_rows": 882,
+        "row_pair_products": 769,
+        "source_endpoint_cell_counts": {
+          "final_imgs_fame_v8": 706,
+          "mccd_salvage": 145,
+          "hcsu_wild": 15,
+          "calli_tongji_imgs": 11,
+          "hcsu_tie": 4,
+          "hcsu_wild_salvage": 1
+        }
+      },
+      {
+        "script": "行",
+        "writers": [
+          "何绍基",
+          "米芾"
+        ],
+        "unique_characters": 242,
+        "distinct_endpoint_rows": 828,
+        "row_pair_products": 675,
+        "source_endpoint_cell_counts": {
+          "final_imgs_fame_v8": 683,
+          "mccd_salvage": 72,
+          "hcsu_wild": 50,
+          "calli_tongji_imgs": 10,
+          "hcsu_wild_salvage": 6,
+          "hcsu_tie": 7
+        }
+      },
+      {
+        "script": "行",
+        "writers": [
+          "何绍基",
+          "苏轼"
+        ],
+        "unique_characters": 266,
+        "distinct_endpoint_rows": 877,
+        "row_pair_products": 706,
+        "source_endpoint_cell_counts": {
+          "final_imgs_fame_v8": 703,
+          "calli_tongji_imgs": 8,
+          "hcsu_wild": 52,
+          "hcsu_bei": 13,
+          "mccd_salvage": 95,
+          "hcsu_wild_salvage": 6
+        }
+      },
+      {
+        "script": "行",
+        "writers": [
+          "何绍基",
+          "褚遂良"
+        ],
+        "unique_characters": 125,
+        "distinct_endpoint_rows": 327,
+        "row_pair_products": 220,
+        "source_endpoint_cell_counts": {
+          "final_imgs_fame_v8": 211,
+          "hcsu_wild": 73,
+          "hcsu_bei": 15,
+          "mccd_salvage": 19,
+          "hcsu_wild_salvage": 9
+        }
+      },
+      {
+        "script": "行",
+        "writers": [
+          "何绍基",
+          "赵孟頫"
+        ],
+        "unique_characters": 84,
+        "distinct_endpoint_rows": 200,
+        "row_pair_products": 118,
+        "source_endpoint_cell_counts": {
+          "final_imgs_fame_v8": 93,
+          "mccd_salvage": 98,
+          "calli_tongji_imgs": 9
+        }
+      },
+      {
+        "script": "行",
+        "writers": [
+          "何绍基",
+          "颜真卿"
+        ],
+        "unique_characters": 115,
+        "distinct_endpoint_rows": 313,
+        "row_pair_products": 211,
+        "source_endpoint_cell_counts": {
+          "final_imgs_fame_v8": 247,
+          "hcsu_wild": 35,
+          "mccd_salvage": 18,
+          "hcsu_tie": 11,
+          "hcsu_wild_salvage": 2
+        }
+      },
+      {
+        "script": "行",
+        "writers": [
+          "文徵明",
+          "柳公权"
+        ],
+        "unique_characters": 132,
+        "distinct_endpoint_rows": 385,
+        "row_pair_products": 285,
+        "source_endpoint_cell_counts": {
+          "mccd_salvage": 23,
+          "final_imgs_fame_v8": 135,
+          "hcsu_wild": 180,
+          "hcsu_bei": 33,
+          "hcsu_tie": 9,
+          "hcsu_wild_salvage": 5
+        }
+      },
+      {
+        "script": "行",
+        "writers": [
+          "文徵明",
+          "欧阳询"
+        ],
+        "unique_characters": 304,
+        "distinct_endpoint_rows": 874,
+        "row_pair_products": 647,
+        "source_endpoint_cell_counts": {
+          "hcsu_wild_salvage": 37,
+          "hcsu_wild": 245,
+          "mccd_salvage": 52,
+          "final_imgs_fame_v8": 461,
+          "hcsu_tie": 46,
+          "calli_tongji_imgs": 33
+        }
+      },
+      {
+        "script": "行",
+        "writers": [
+          "文徵明",
+          "王羲之"
+        ],
+        "unique_characters": 442,
+        "distinct_endpoint_rows": 1846,
+        "row_pair_products": 1859,
+        "source_endpoint_cell_counts": {
+          "final_imgs_fame_v8": 1169,
+          "mccd_salvage": 256,
+          "hcsu_wild": 289,
+          "calli_tongji_imgs": 46,
+          "hcsu_tie": 68,
+          "hcsu_wild_salvage": 18
+        }
+      },
+      {
+        "script": "行",
+        "writers": [
+          "文徵明",
+          "米芾"
+        ],
+        "unique_characters": 530,
+        "distinct_endpoint_rows": 1787,
+        "row_pair_products": 1593,
+        "source_endpoint_cell_counts": {
+          "hcsu_wild_salvage": 35,
+          "final_imgs_fame_v8": 1070,
+          "mccd_salvage": 135,
+          "hcsu_wild": 431,
+          "hcsu_tie": 77,
+          "calli_tongji_imgs": 39
+        }
+      },
+      {
+        "script": "行",
+        "writers": [
+          "文徵明",
+          "苏轼"
+        ],
+        "unique_characters": 516,
+        "distinct_endpoint_rows": 1734,
+        "row_pair_products": 1549,
+        "source_endpoint_cell_counts": {
+          "mccd_salvage": 162,
+          "final_imgs_fame_v8": 1048,
+          "hcsu_wild": 393,
+          "hcsu_bei": 33,
+          "calli_tongji_imgs": 45,
+          "hcsu_tie": 32,
+          "hcsu_wild_salvage": 21
+        }
+      },
+      {
+        "script": "行",
+        "writers": [
+          "文徵明",
+          "褚遂良"
+        ],
+        "unique_characters": 277,
+        "distinct_endpoint_rows": 798,
+        "row_pair_products": 577,
+        "source_endpoint_cell_counts": {
+          "hcsu_wild_salvage": 19,
+          "final_imgs_fame_v8": 399,
+          "hcsu_wild": 286,
+          "hcsu_bei": 39,
+          "mccd_salvage": 41,
+          "hcsu_tie": 14
+        }
+      },
+      {
+        "script": "行",
+        "writers": [
+          "文徵明",
+          "赵孟頫"
+        ],
+        "unique_characters": 179,
+        "distinct_endpoint_rows": 479,
+        "row_pair_products": 318,
+        "source_endpoint_cell_counts": {
+          "hcsu_wild_salvage": 4,
+          "calli_tongji_imgs": 40,
+          "final_imgs_fame_v8": 161,
+          "hcsu_wild": 72,
+          "mccd_salvage": 188,
+          "hcsu_tie": 14
+        }
+      },
+      {
+        "script": "行",
+        "writers": [
+          "文徵明",
+          "颜真卿"
+        ],
+        "unique_characters": 234,
+        "distinct_endpoint_rows": 715,
+        "row_pair_products": 564,
+        "source_endpoint_cell_counts": {
+          "mccd_salvage": 57,
+          "final_imgs_fame_v8": 412,
+          "hcsu_wild": 189,
+          "hcsu_tie": 52,
+          "hcsu_wild_salvage": 5
+        }
+      },
+      {
+        "script": "行",
+        "writers": [
+          "柳公权",
+          "欧阳询"
+        ],
+        "unique_characters": 119,
+        "distinct_endpoint_rows": 330,
+        "row_pair_products": 231,
+        "source_endpoint_cell_counts": {
+          "hcsu_wild": 148,
+          "final_imgs_fame_v8": 108,
+          "hcsu_bei": 36,
+          "hcsu_tie": 9,
+          "hcsu_wild_salvage": 8,
+          "calli_tongji_imgs": 14,
+          "mccd_salvage": 7
+        }
+      },
+      {
+        "script": "行",
+        "writers": [
+          "柳公权",
+          "王羲之"
+        ],
+        "unique_characters": 151,
+        "distinct_endpoint_rows": 687,
+        "row_pair_products": 671,
+        "source_endpoint_cell_counts": {
+          "hcsu_wild": 159,
+          "hcsu_bei": 38,
+          "final_imgs_fame_v8": 386,
+          "mccd_salvage": 76,
+          "hcsu_wild_salvage": 8,
+          "calli_tongji_imgs": 10,
+          "hcsu_tie": 10
+        }
+      },
+      {
+        "script": "行",
+        "writers": [
+          "柳公权",
+          "米芾"
+        ],
+        "unique_characters": 168,
+        "distinct_endpoint_rows": 569,
+        "row_pair_products": 463,
+        "source_endpoint_cell_counts": {
+          "hcsu_wild": 199,
+          "hcsu_bei": 46,
+          "final_imgs_fame_v8": 274,
+          "mccd_salvage": 31,
+          "hcsu_tie": 10,
+          "calli_tongji_imgs": 6,
+          "hcsu_wild_salvage": 3
+        }
+      },
+      {
+        "script": "行",
+        "writers": [
+          "柳公权",
+          "苏轼"
+        ],
+        "unique_characters": 181,
+        "distinct_endpoint_rows": 590,
+        "row_pair_products": 489,
+        "source_endpoint_cell_counts": {
+          "hcsu_wild": 213,
+          "hcsu_bei": 55,
+          "final_imgs_fame_v8": 265,
+          "calli_tongji_imgs": 9,
+          "mccd_salvage": 42,
+          "hcsu_wild_salvage": 6
+        }
+      },
+      {
+        "script": "行",
+        "writers": [
+          "柳公权",
+          "褚遂良"
+        ],
+        "unique_characters": 100,
+        "distinct_endpoint_rows": 275,
+        "row_pair_products": 185,
+        "source_endpoint_cell_counts": {
+          "hcsu_wild": 160,
+          "final_imgs_fame_v8": 61,
+          "mccd_salvage": 2,
+          "hcsu_bei": 45,
+          "hcsu_wild_salvage": 7
+        }
+      },
+      {
+        "script": "行",
+        "writers": [
+          "柳公权",
+          "赵孟頫"
+        ],
+        "unique_characters": 50,
+        "distinct_endpoint_rows": 120,
+        "row_pair_products": 73,
+        "source_endpoint_cell_counts": {
+          "hcsu_wild": 45,
+          "mccd_salvage": 50,
+          "hcsu_bei": 10,
+          "final_imgs_fame_v8": 8,
+          "calli_tongji_imgs": 6,
+          "hcsu_wild_salvage": 1
+        }
+      },
+      {
+        "script": "行",
+        "writers": [
+          "柳公权",
+          "颜真卿"
+        ],
+        "unique_characters": 78,
+        "distinct_endpoint_rows": 236,
+        "row_pair_products": 184,
+        "source_endpoint_cell_counts": {
+          "hcsu_wild": 99,
+          "hcsu_bei": 20,
+          "final_imgs_fame_v8": 97,
+          "hcsu_tie": 9,
+          "mccd_salvage": 7,
+          "hcsu_wild_salvage": 4
+        }
+      },
+      {
+        "script": "行",
+        "writers": [
+          "欧阳询",
+          "王羲之"
+        ],
+        "unique_characters": 444,
+        "distinct_endpoint_rows": 1808,
+        "row_pair_products": 1768,
+        "source_endpoint_cell_counts": {
+          "calli_tongji_imgs": 79,
+          "final_imgs_fame_v8": 1174,
+          "mccd_salvage": 229,
+          "hcsu_wild": 241,
+          "hcsu_tie": 58,
+          "hcsu_wild_salvage": 27
+        }
+      },
+      {
+        "script": "行",
+        "writers": [
+          "欧阳询",
+          "米芾"
+        ],
+        "unique_characters": 445,
+        "distinct_endpoint_rows": 1507,
+        "row_pair_products": 1285,
+        "source_endpoint_cell_counts": {
+          "hcsu_wild_salvage": 52,
+          "calli_tongji_imgs": 68,
+          "hcsu_wild": 307,
+          "hcsu_tie": 62,
+          "final_imgs_fame_v8": 914,
+          "mccd_salvage": 104
+        }
+      },
+      {
+        "script": "行",
+        "writers": [
+          "欧阳询",
+          "苏轼"
+        ],
+        "unique_characters": 452,
+        "distinct_endpoint_rows": 1471,
+        "row_pair_products": 1208,
+        "source_endpoint_cell_counts": {
+          "hcsu_wild_salvage": 46,
+          "final_imgs_fame_v8": 850,
+          "calli_tongji_imgs": 76,
+          "hcsu_wild": 320,
+          "hcsu_bei": 30,
+          "mccd_salvage": 117,
+          "hcsu_tie": 32
+        }
+      },
+      {
+        "script": "行",
+        "writers": [
+          "欧阳询",
+          "褚遂良"
+        ],
+        "unique_characters": 252,
+        "distinct_endpoint_rows": 697,
+        "row_pair_products": 474,
+        "source_endpoint_cell_counts": {
+          "calli_tongji_imgs": 29,
+          "hcsu_wild": 237,
+          "final_imgs_fame_v8": 330,
+          "hcsu_bei": 25,
+          "hcsu_tie": 27,
+          "mccd_salvage": 26,
+          "hcsu_wild_salvage": 23
+        }
+      },
+      {
+        "script": "行",
+        "writers": [
+          "欧阳询",
+          "赵孟頫"
+        ],
+        "unique_characters": 180,
+        "distinct_endpoint_rows": 479,
+        "row_pair_products": 317,
+        "source_endpoint_cell_counts": {
+          "calli_tongji_imgs": 49,
+          "mccd_salvage": 199,
+          "hcsu_wild": 70,
+          "hcsu_tie": 15,
+          "final_imgs_fame_v8": 134,
+          "hcsu_wild_salvage": 12
+        }
+      },
+      {
+        "script": "行",
+        "writers": [
+          "欧阳询",
+          "颜真卿"
+        ],
+        "unique_characters": 221,
+        "distinct_endpoint_rows": 671,
+        "row_pair_products": 501,
+        "source_endpoint_cell_counts": {
+          "hcsu_wild_salvage": 17,
+          "final_imgs_fame_v8": 394,
+          "calli_tongji_imgs": 30,
+          "hcsu_wild": 156,
+          "hcsu_tie": 42,
+          "mccd_salvage": 32
+        }
+      },
+      {
+        "script": "行",
+        "writers": [
+          "王羲之",
+          "米芾"
+        ],
+        "unique_characters": 562,
+        "distinct_endpoint_rows": 2583,
+        "row_pair_products": 3330,
+        "source_endpoint_cell_counts": {
+          "final_imgs_fame_v8": 1787,
+          "hcsu_wild_salvage": 25,
+          "mccd_salvage": 356,
+          "hcsu_wild": 274,
+          "calli_tongji_imgs": 82,
+          "hcsu_tie": 59
+        }
+      },
+      {
+        "script": "行",
+        "writers": [
+          "王羲之",
+          "苏轼"
+        ],
+        "unique_characters": 634,
+        "distinct_endpoint_rows": 2784,
+        "row_pair_products": 3308,
+        "source_endpoint_cell_counts": {
+          "final_imgs_fame_v8": 1830,
+          "hcsu_wild": 328,
+          "hcsu_bei": 45,
+          "calli_tongji_imgs": 89,
+          "mccd_salvage": 418,
+          "hcsu_tie": 41,
+          "hcsu_wild_salvage": 33
+        }
+      },
+      {
+        "script": "行",
+        "writers": [
+          "王羲之",
+          "褚遂良"
+        ],
+        "unique_characters": 342,
+        "distinct_endpoint_rows": 1481,
+        "row_pair_products": 1402,
+        "source_endpoint_cell_counts": {
+          "final_imgs_fame_v8": 909,
+          "mccd_salvage": 183,
+          "hcsu_wild": 265,
+          "calli_tongji_imgs": 36,
+          "hcsu_bei": 41,
+          "hcsu_tie": 20,
+          "hcsu_wild_salvage": 27
+        }
+      },
+      {
+        "script": "行",
+        "writers": [
+          "王羲之",
+          "赵孟頫"
+        ],
+        "unique_characters": 245,
+        "distinct_endpoint_rows": 917,
+        "row_pair_products": 781,
+        "source_endpoint_cell_counts": {
+          "final_imgs_fame_v8": 426,
+          "mccd_salvage": 386,
+          "calli_tongji_imgs": 54,
+          "hcsu_wild": 38,
+          "hcsu_tie": 12,
+          "hcsu_wild_salvage": 1
+        }
+      },
+      {
+        "script": "行",
+        "writers": [
+          "王羲之",
+          "颜真卿"
+        ],
+        "unique_characters": 316,
+        "distinct_endpoint_rows": 1381,
+        "row_pair_products": 1432,
+        "source_endpoint_cell_counts": {
+          "final_imgs_fame_v8": 925,
+          "mccd_salvage": 184,
+          "hcsu_wild": 178,
+          "hcsu_tie": 70,
+          "calli_tongji_imgs": 20,
+          "hcsu_wild_salvage": 4
+        }
+      },
+      {
+        "script": "行",
+        "writers": [
+          "米芾",
+          "苏轼"
+        ],
+        "unique_characters": 709,
+        "distinct_endpoint_rows": 2712,
+        "row_pair_products": 2807,
+        "source_endpoint_cell_counts": {
+          "hcsu_wild_salvage": 41,
+          "calli_tongji_imgs": 89,
+          "final_imgs_fame_v8": 1812,
+          "mccd_salvage": 239,
+          "hcsu_wild": 441,
+          "hcsu_bei": 44,
+          "hcsu_tie": 46
+        }
+      },
+      {
+        "script": "行",
+        "writers": [
+          "米芾",
+          "褚遂良"
+        ],
+        "unique_characters": 328,
+        "distinct_endpoint_rows": 1129,
+        "row_pair_products": 965,
+        "source_endpoint_cell_counts": {
+          "hcsu_wild": 305,
+          "mccd_salvage": 66,
+          "final_imgs_fame_v8": 654,
+          "hcsu_bei": 37,
+          "hcsu_tie": 21,
+          "calli_tongji_imgs": 19,
+          "hcsu_wild_salvage": 27
+        }
+      },
+      {
+        "script": "行",
+        "writers": [
+          "米芾",
+          "赵孟頫"
+        ],
+        "unique_characters": 220,
+        "distinct_endpoint_rows": 688,
+        "row_pair_products": 515,
+        "source_endpoint_cell_counts": {
+          "hcsu_wild": 73,
+          "calli_tongji_imgs": 58,
+          "final_imgs_fame_v8": 300,
+          "mccd_salvage": 238,
+          "hcsu_tie": 12,
+          "hcsu_wild_salvage": 7
+        }
+      },
+      {
+        "script": "行",
+        "writers": [
+          "米芾",
+          "颜真卿"
+        ],
+        "unique_characters": 308,
+        "distinct_endpoint_rows": 1121,
+        "row_pair_products": 1047,
+        "source_endpoint_cell_counts": {
+          "final_imgs_fame_v8": 754,
+          "mccd_salvage": 76,
+          "hcsu_wild_salvage": 12,
+          "hcsu_wild": 202,
+          "hcsu_tie": 57,
+          "calli_tongji_imgs": 20
+        }
+      },
+      {
+        "script": "行",
+        "writers": [
+          "苏轼",
+          "褚遂良"
+        ],
+        "unique_characters": 365,
+        "distinct_endpoint_rows": 1183,
+        "row_pair_products": 933,
+        "source_endpoint_cell_counts": {
+          "hcsu_wild": 347,
+          "final_imgs_fame_v8": 624,
+          "mccd_salvage": 97,
+          "hcsu_bei": 66,
+          "calli_tongji_imgs": 23,
+          "hcsu_wild_salvage": 26
+        }
+      },
+      {
+        "script": "行",
+        "writers": [
+          "苏轼",
+          "赵孟頫"
+        ],
+        "unique_characters": 258,
+        "distinct_endpoint_rows": 790,
+        "row_pair_products": 585,
+        "source_endpoint_cell_counts": {
+          "hcsu_wild": 91,
+          "calli_tongji_imgs": 64,
+          "final_imgs_fame_v8": 304,
+          "mccd_salvage": 309,
+          "hcsu_bei": 17,
+          "hcsu_wild_salvage": 5
+        }
+      },
+      {
+        "script": "行",
+        "writers": [
+          "苏轼",
+          "颜真卿"
+        ],
+        "unique_characters": 337,
+        "distinct_endpoint_rows": 1227,
+        "row_pair_products": 1180,
+        "source_endpoint_cell_counts": {
+          "hcsu_wild": 254,
+          "hcsu_bei": 24,
+          "final_imgs_fame_v8": 776,
+          "calli_tongji_imgs": 23,
+          "mccd_salvage": 98,
+          "hcsu_tie": 42,
+          "hcsu_wild_salvage": 10
+        }
+      },
+      {
+        "script": "行",
+        "writers": [
+          "褚遂良",
+          "赵孟頫"
+        ],
+        "unique_characters": 131,
+        "distinct_endpoint_rows": 343,
+        "row_pair_products": 223,
+        "source_endpoint_cell_counts": {
+          "hcsu_wild": 74,
+          "mccd_salvage": 145,
+          "calli_tongji_imgs": 17,
+          "final_imgs_fame_v8": 84,
+          "hcsu_wild_salvage": 11,
+          "hcsu_bei": 12
+        }
+      },
+      {
+        "script": "行",
+        "writers": [
+          "褚遂良",
+          "颜真卿"
+        ],
+        "unique_characters": 165,
+        "distinct_endpoint_rows": 497,
+        "row_pair_products": 378,
+        "source_endpoint_cell_counts": {
+          "hcsu_wild": 168,
+          "final_imgs_fame_v8": 254,
+          "mccd_salvage": 23,
+          "hcsu_tie": 23,
+          "hcsu_bei": 21,
+          "hcsu_wild_salvage": 8
+        }
+      },
+      {
+        "script": "行",
+        "writers": [
+          "赵孟頫",
+          "颜真卿"
+        ],
+        "unique_characters": 97,
+        "distinct_endpoint_rows": 265,
+        "row_pair_products": 179,
+        "source_endpoint_cell_counts": {
+          "mccd_salvage": 106,
+          "hcsu_wild": 32,
+          "final_imgs_fame_v8": 104,
+          "calli_tongji_imgs": 14,
+          "hcsu_tie": 8,
+          "hcsu_wild_salvage": 1
+        }
+      },
+      {
+        "script": "隶",
+        "writers": [
+          "何绍基",
+          "文徵明"
+        ],
+        "unique_characters": 8,
+        "distinct_endpoint_rows": 17,
+        "row_pair_products": 9,
+        "source_endpoint_cell_counts": {
+          "hcsu_wild": 5,
+          "final_imgs_fame_v8": 12
+        }
+      },
+      {
+        "script": "隶",
+        "writers": [
+          "何绍基",
+          "赵孟頫"
+        ],
+        "unique_characters": 230,
+        "distinct_endpoint_rows": 606,
+        "row_pair_products": 399,
+        "source_endpoint_cell_counts": {
+          "hcsu_wild": 289,
+          "mccd_salvage": 134,
+          "final_imgs_fame_v8": 113,
+          "hcsu_tie": 64,
+          "hcsu_wild_salvage": 6
+        }
+      },
+      {
+        "script": "隶",
+        "writers": [
+          "文徵明",
+          "赵孟頫"
+        ],
+        "unique_characters": 11,
+        "distinct_endpoint_rows": 24,
+        "row_pair_products": 13,
+        "source_endpoint_cell_counts": {
+          "final_imgs_fame_v8": 9,
+          "hcsu_wild": 5,
+          "mccd_salvage": 7,
+          "hcsu_tie": 2,
+          "hcsu_wild_salvage": 1
+        }
+      }
+    ],
+    "expected_25pct_pair_distribution": {
+      "uniform_cell": {
+        "calligrapher": {
+          "js_nats": 0.0001378732354086476,
+          "pair_top10_mass": 1.0000000000000064,
+          "pair_effective_categories": 9.475933859267805,
+          "largest_upweight": [
+            {
+              "key": "柳公权",
+              "original": 0.06764864241212215,
+              "pair_only": 0.08250368320014329,
+              "mixed_25pct": 0.07136240260912743,
+              "mixed_ratio": 1.0548977786483975
+            },
+            {
+              "key": "欧阳询",
+              "original": 0.10791477578647796,
+              "pair_only": 0.12784052859502773,
+              "mixed_25pct": 0.11289621398861541,
+              "mixed_ratio": 1.0461608539315674
+            },
+            {
+              "key": "文徵明",
+              "original": 0.07268671640643028,
+              "pair_only": 0.07973570248671853,
+              "mixed_25pct": 0.07444896292650234,
+              "mixed_ratio": 1.0242444095317005
+            },
+            {
+              "key": "颜真卿",
+              "original": 0.11060687639412353,
+              "pair_only": 0.1209205768114656,
+              "mixed_25pct": 0.11318530149845905,
+              "mixed_ratio": 1.0233116166769582
+            },
+            {
+              "key": "褚遂良",
+              "original": 0.1047227136374125,
+              "pair_only": 0.11254966739586643,
+              "mixed_25pct": 0.10667945207702599,
+              "mixed_ratio": 1.0186849478174183
+            },
+            {
+              "key": "苏轼",
+              "original": 0.13183601261441427,
+              "pair_only": 0.12920219652663156,
+              "mixed_25pct": 0.1311775585924686,
+              "mixed_ratio": 0.9950055071532581
+            },
+            {
+              "key": "米芾",
+              "original": 0.09276209522344435,
+              "pair_only": 0.08361980445555654,
+              "mixed_25pct": 0.0904765225314724,
+              "mixed_ratio": 0.9753609199267601
+            },
+            {
+              "key": "王羲之",
+              "original": 0.1329128528574725,
+              "pair_only": 0.11513906870842538,
+              "mixed_25pct": 0.12846940682021074,
+              "mixed_ratio": 0.966568725734699
+            },
+            {
+              "key": "赵孟頫",
+              "original": 0.11264518113991231,
+              "pair_only": 0.09382115273003293,
+              "mixed_25pct": 0.10793917403744248,
+              "mixed_ratio": 0.9582227392699144
+            },
+            {
+              "key": "何绍基",
+              "original": 0.06626413352819013,
+              "pair_only": 0.05466761909013842,
+              "mixed_25pct": 0.0633650049186772,
+              "mixed_ratio": 0.956248901854582
+            }
+          ],
+          "largest_downweight": [
+            {
+              "key": "何绍基",
+              "original": 0.06626413352819013,
+              "pair_only": 0.05466761909013842,
+              "mixed_25pct": 0.0633650049186772,
+              "mixed_ratio": 0.956248901854582
+            },
+            {
+              "key": "赵孟頫",
+              "original": 0.11264518113991231,
+              "pair_only": 0.09382115273003293,
+              "mixed_25pct": 0.10793917403744248,
+              "mixed_ratio": 0.9582227392699144
+            },
+            {
+              "key": "王羲之",
+              "original": 0.1329128528574725,
+              "pair_only": 0.11513906870842538,
+              "mixed_25pct": 0.12846940682021074,
+              "mixed_ratio": 0.966568725734699
+            },
+            {
+              "key": "米芾",
+              "original": 0.09276209522344435,
+              "pair_only": 0.08361980445555654,
+              "mixed_25pct": 0.0904765225314724,
+              "mixed_ratio": 0.9753609199267601
+            },
+            {
+              "key": "苏轼",
+              "original": 0.13183601261441427,
+              "pair_only": 0.12920219652663156,
+              "mixed_25pct": 0.1311775585924686,
+              "mixed_ratio": 0.9950055071532581
+            },
+            {
+              "key": "褚遂良",
+              "original": 0.1047227136374125,
+              "pair_only": 0.11254966739586643,
+              "mixed_25pct": 0.10667945207702599,
+              "mixed_ratio": 1.0186849478174183
+            },
+            {
+              "key": "颜真卿",
+              "original": 0.11060687639412353,
+              "pair_only": 0.1209205768114656,
+              "mixed_25pct": 0.11318530149845905,
+              "mixed_ratio": 1.0233116166769582
+            },
+            {
+              "key": "文徵明",
+              "original": 0.07268671640643028,
+              "pair_only": 0.07973570248671853,
+              "mixed_25pct": 0.07444896292650234,
+              "mixed_ratio": 1.0242444095317005
+            },
+            {
+              "key": "欧阳询",
+              "original": 0.10791477578647796,
+              "pair_only": 0.12784052859502773,
+              "mixed_25pct": 0.11289621398861541,
+              "mixed_ratio": 1.0461608539315674
+            },
+            {
+              "key": "柳公权",
+              "original": 0.06764864241212215,
+              "pair_only": 0.08250368320014329,
+              "mixed_25pct": 0.07136240260912743,
+              "mixed_ratio": 1.0548977786483975
+            }
+          ]
+        },
+        "script": {
+          "js_nats": 0.0005193252839833197,
+          "pair_top10_mass": 0.9999999999999738,
+          "pair_effective_categories": 2.033120235262073,
+          "largest_upweight": [
+            {
+              "key": "楷",
+              "original": 0.40666102607491733,
+              "pair_only": 0.45711862136701736,
+              "mixed_25pct": 0.41927542489794234,
+              "mixed_ratio": 1.0310194437484677
+            },
+            {
+              "key": "行",
+              "original": 0.5192677486347204,
+              "pair_only": 0.531764810929041,
+              "mixed_25pct": 0.5223920142083005,
+              "mixed_ratio": 1.0060166755624522
+            },
+            {
+              "key": "隶",
+              "original": 0.07407122529036228,
+              "pair_only": 0.01111656770391538,
+              "mixed_25pct": 0.05833256089375056,
+              "mixed_ratio": 0.787519858961216
+            }
+          ],
+          "largest_downweight": [
+            {
+              "key": "隶",
+              "original": 0.07407122529036228,
+              "pair_only": 0.01111656770391538,
+              "mixed_25pct": 0.05833256089375056,
+              "mixed_ratio": 0.787519858961216
+            },
+            {
+              "key": "行",
+              "original": 0.5192677486347204,
+              "pair_only": 0.531764810929041,
+              "mixed_25pct": 0.5223920142083005,
+              "mixed_ratio": 1.0060166755624522
+            },
+            {
+              "key": "楷",
+              "original": 0.40666102607491733,
+              "pair_only": 0.45711862136701736,
+              "mixed_25pct": 0.41927542489794234,
+              "mixed_ratio": 1.0310194437484677
+            }
+          ]
+        },
+        "character": {
+          "js_nats": 0.0030270543804230728,
+          "pair_top10_mass": 0.023751060315192644,
+          "pair_effective_categories": 1112.527027356648,
+          "largest_upweight": [
+            {
+              "key": "耳",
+              "original": 0.0005768787016383355,
+              "pair_only": 0.001696504308228046,
+              "mixed_25pct": 0.0008567851032857632,
+              "mixed_ratio": 1.4852084170424276
+            },
+            {
+              "key": "百",
+              "original": 0.0006922544419660026,
+              "pair_only": 0.0019197285593106832,
+              "mixed_25pct": 0.0009991229713021727,
+              "mixed_ratio": 1.4432886388777273
+            },
+            {
+              "key": "惠",
+              "original": 0.0006537958618567803,
+              "pair_only": 0.0017857940086611014,
+              "mixed_25pct": 0.0009367953985578606,
+              "mixed_ratio": 1.4328561149000876
+            },
+            {
+              "key": "主",
+              "original": 0.0006922544419660026,
+              "pair_only": 0.0018750837090941563,
+              "mixed_25pct": 0.000987961758748041,
+              "mixed_ratio": 1.4271656472759202
+            },
+            {
+              "key": "遠",
+              "original": 0.0004615029613106684,
+              "pair_only": 0.0012500558060627707,
+              "mixed_25pct": 0.000658641172498694,
+              "mixed_ratio": 1.4271656472759202
+            },
+            {
+              "key": "弟",
+              "original": 0.0008076301822936697,
+              "pair_only": 0.002187597660609849,
+              "mixed_25pct": 0.0011526220518727143,
+              "mixed_ratio": 1.42716564727592
+            },
+            {
+              "key": "丘",
+              "original": 0.0006153372817475579,
+              "pair_only": 0.0016072146077949908,
+              "mixed_25pct": 0.0008633066132594161,
+              "mixed_ratio": 1.4029811598732087
+            },
+            {
+              "key": "發",
+              "original": 0.0006153372817475579,
+              "pair_only": 0.0016072146077949908,
+              "mixed_25pct": 0.0008633066132594161,
+              "mixed_ratio": 1.4029811598732087
+            },
+            {
+              "key": "夢",
+              "original": 0.0006153372817475579,
+              "pair_only": 0.0016072146077949906,
+              "mixed_25pct": 0.000863306613259416,
+              "mixed_ratio": 1.4029811598732085
+            },
+            {
+              "key": "與",
+              "original": 0.0005384201215291131,
+              "pair_only": 0.0013839903567123535,
+              "mixed_25pct": 0.0007498126803249232,
+              "mixed_ratio": 1.392616379557761
+            },
+            {
+              "key": "丈",
+              "original": 0.00026921006076455656,
+              "pair_only": 0.0006696727532479127,
+              "mixed_25pct": 0.0003693257338853956,
+              "mixed_ratio": 1.3718868189268651
+            },
+            {
+              "key": "靈",
+              "original": 0.0008460887624028921,
+              "pair_only": 0.0020983079601767938,
+              "mixed_25pct": 0.0011591435618463675,
+              "mixed_ratio": 1.3700023134149657
+            },
+            {
+              "key": "女",
+              "original": 0.0008845473425121144,
+              "pair_only": 0.0021875976606098484,
+              "mixed_25pct": 0.001210309922036548,
+              "mixed_ratio": 1.368281677947579
+            },
+            {
+              "key": "景",
+              "original": 0.0006537958618567803,
+              "pair_only": 0.0016072146077949908,
+              "mixed_25pct": 0.0008921505483413328,
+              "mixed_ratio": 1.3645705034100786
+            },
+            {
+              "key": "謂",
+              "original": 0.0004615029613106684,
+              "pair_only": 0.0011161212554131879,
+              "mixed_25pct": 0.0006251575348362983,
+              "mixed_ratio": 1.3546121850677857
+            },
+            {
+              "key": "勢",
+              "original": 0.0004999615414198907,
+              "pair_only": 0.0012054109558462432,
+              "mixed_25pct": 0.0006763238950264789,
+              "mixed_ratio": 1.3527518398829619
+            },
+            {
+              "key": "海",
+              "original": 0.0008076301822936697,
+              "pair_only": 0.0019197285593106834,
+              "mixed_25pct": 0.001085654776547923,
+              "mixed_ratio": 1.344247404752338
+            },
+            {
+              "key": "立",
+              "original": 0.0009999230828397815,
+              "pair_only": 0.0023215322112594317,
+              "mixed_25pct": 0.001330325364944694,
+              "mixed_ratio": 1.3304276976650746
+            },
+            {
+              "key": "匠",
+              "original": 0.00019229290054611182,
+              "pair_only": 0.0004464485021652752,
+              "mixed_25pct": 0.0002558318009509027,
+              "mixed_ratio": 1.3304276976650744
+            },
+            {
+              "key": "志",
+              "original": 0.0006537958618567803,
+              "pair_only": 0.0015179249073619357,
+              "mixed_25pct": 0.0008698281232330692,
+              "mixed_ratio": 1.3304276976650744
+            }
+          ],
+          "largest_downweight": [
+            {
+              "key": "㐲",
+              "original": 7.691716021844474e-05,
+              "pair_only": 0.0,
+              "mixed_25pct": 5.768787016383355e-05,
+              "mixed_ratio": 0.75
+            },
+            {
+              "key": "㒵",
+              "original": 3.845858010922237e-05,
+              "pair_only": 0.0,
+              "mixed_25pct": 2.8843935081916776e-05,
+              "mixed_ratio": 0.75
+            },
+            {
+              "key": "㗛",
+              "original": 3.845858010922237e-05,
+              "pair_only": 0.0,
+              "mixed_25pct": 2.8843935081916776e-05,
+              "mixed_ratio": 0.75
+            },
+            {
+              "key": "㙒",
+              "original": 3.845858010922237e-05,
+              "pair_only": 0.0,
+              "mixed_25pct": 2.8843935081916776e-05,
+              "mixed_ratio": 0.75
+            },
+            {
+              "key": "㙜",
+              "original": 3.845858010922237e-05,
+              "pair_only": 0.0,
+              "mixed_25pct": 2.8843935081916776e-05,
+              "mixed_ratio": 0.75
+            },
+            {
+              "key": "㙯",
+              "original": 3.845858010922237e-05,
+              "pair_only": 0.0,
+              "mixed_25pct": 2.8843935081916776e-05,
+              "mixed_ratio": 0.75
+            },
+            {
+              "key": "㝍",
+              "original": 3.845858010922237e-05,
+              "pair_only": 0.0,
+              "mixed_25pct": 2.8843935081916776e-05,
+              "mixed_ratio": 0.75
+            },
+            {
+              "key": "㝢",
+              "original": 3.845858010922237e-05,
+              "pair_only": 0.0,
+              "mixed_25pct": 2.8843935081916776e-05,
+              "mixed_ratio": 0.75
+            },
+            {
+              "key": "㞐",
+              "original": 3.845858010922237e-05,
+              "pair_only": 0.0,
+              "mixed_25pct": 2.8843935081916776e-05,
+              "mixed_ratio": 0.75
+            },
+            {
+              "key": "㢘",
+              "original": 0.0001153757403276671,
+              "pair_only": 0.0,
+              "mixed_25pct": 8.653180524575033e-05,
+              "mixed_ratio": 0.75
+            },
+            {
+              "key": "㤁",
+              "original": 3.845858010922237e-05,
+              "pair_only": 0.0,
+              "mixed_25pct": 2.8843935081916776e-05,
+              "mixed_ratio": 0.75
+            },
+            {
+              "key": "㤙",
+              "original": 3.845858010922237e-05,
+              "pair_only": 0.0,
+              "mixed_25pct": 2.8843935081916776e-05,
+              "mixed_ratio": 0.75
+            },
+            {
+              "key": "㦤",
+              "original": 3.845858010922237e-05,
+              "pair_only": 0.0,
+              "mixed_25pct": 2.8843935081916776e-05,
+              "mixed_ratio": 0.75
+            },
+            {
+              "key": "㦲",
+              "original": 3.845858010922237e-05,
+              "pair_only": 0.0,
+              "mixed_25pct": 2.8843935081916776e-05,
+              "mixed_ratio": 0.75
+            },
+            {
+              "key": "㧑",
+              "original": 3.845858010922237e-05,
+              "pair_only": 0.0,
+              "mixed_25pct": 2.8843935081916776e-05,
+              "mixed_ratio": 0.75
+            },
+            {
+              "key": "㧝",
+              "original": 3.845858010922237e-05,
+              "pair_only": 0.0,
+              "mixed_25pct": 2.8843935081916776e-05,
+              "mixed_ratio": 0.75
+            },
+            {
+              "key": "㨫",
+              "original": 7.691716021844474e-05,
+              "pair_only": 0.0,
+              "mixed_25pct": 5.768787016383355e-05,
+              "mixed_ratio": 0.75
+            },
+            {
+              "key": "㩀",
+              "original": 3.845858010922237e-05,
+              "pair_only": 0.0,
+              "mixed_25pct": 2.8843935081916776e-05,
+              "mixed_ratio": 0.75
+            },
+            {
+              "key": "㫖",
+              "original": 3.845858010922237e-05,
+              "pair_only": 0.0,
+              "mixed_25pct": 2.8843935081916776e-05,
+              "mixed_ratio": 0.75
+            },
+            {
+              "key": "㫪",
+              "original": 3.845858010922237e-05,
+              "pair_only": 0.0,
+              "mixed_25pct": 2.8843935081916776e-05,
+              "mixed_ratio": 0.75
+            }
+          ]
+        },
+        "source": {
+          "js_nats": 0.00010162193594619466,
+          "pair_top10_mass": 0.9999999999999817,
+          "pair_effective_categories": 2.648720467974901,
+          "largest_upweight": [
+            {
+              "key": "final_imgs_fame_v8",
+              "original": 0.5155372663641259,
+              "pair_only": 0.5516276342018408,
+              "mixed_25pct": 0.5245598583235546,
+              "mixed_ratio": 1.017501338017834
+            },
+            {
+              "key": "mccd_salvage",
+              "original": 0.11291439120067687,
+              "pair_only": 0.1159162176063541,
+              "mixed_25pct": 0.11366484780209618,
+              "mixed_ratio": 1.0066462440565753
+            },
+            {
+              "key": "hcsu_wild",
+              "original": 0.2505576494115837,
+              "pair_only": 0.2396491373783916,
+              "mixed_25pct": 0.24783052140328565,
+              "mixed_ratio": 0.9891157663128525
+            },
+            {
+              "key": "calli_tongji_imgs",
+              "original": 0.03795861856780248,
+              "pair_only": 0.03428742696009099,
+              "mixed_25pct": 0.03704082066587461,
+              "mixed_ratio": 0.9758210931652194
+            },
+            {
+              "key": "hcsu_bei",
+              "original": 0.02988231674486578,
+              "pair_only": 0.025873125713520382,
+              "mixed_25pct": 0.02888001898702943,
+              "mixed_ratio": 0.9664584989713504
+            },
+            {
+              "key": "hcsu_wild_salvage",
+              "original": 0.020575340358433968,
+              "pair_only": 0.015452610200143596,
+              "mixed_25pct": 0.019294657818861374,
+              "mixed_ratio": 0.9377564347776326
+            },
+            {
+              "key": "hcsu_tie",
+              "original": 0.03257441735251135,
+              "pair_only": 0.017193847939640204,
+              "mixed_25pct": 0.028729274999293564,
+              "mixed_ratio": 0.8819582155036968
+            }
+          ],
+          "largest_downweight": [
+            {
+              "key": "hcsu_tie",
+              "original": 0.03257441735251135,
+              "pair_only": 0.017193847939640204,
+              "mixed_25pct": 0.028729274999293564,
+              "mixed_ratio": 0.8819582155036968
+            },
+            {
+              "key": "hcsu_wild_salvage",
+              "original": 0.020575340358433968,
+              "pair_only": 0.015452610200143596,
+              "mixed_25pct": 0.019294657818861374,
+              "mixed_ratio": 0.9377564347776326
+            },
+            {
+              "key": "hcsu_bei",
+              "original": 0.02988231674486578,
+              "pair_only": 0.025873125713520382,
+              "mixed_25pct": 0.02888001898702943,
+              "mixed_ratio": 0.9664584989713504
+            },
+            {
+              "key": "calli_tongji_imgs",
+              "original": 0.03795861856780248,
+              "pair_only": 0.03428742696009099,
+              "mixed_25pct": 0.03704082066587461,
+              "mixed_ratio": 0.9758210931652194
+            },
+            {
+              "key": "hcsu_wild",
+              "original": 0.2505576494115837,
+              "pair_only": 0.2396491373783916,
+              "mixed_25pct": 0.24783052140328565,
+              "mixed_ratio": 0.9891157663128525
+            },
+            {
+              "key": "mccd_salvage",
+              "original": 0.11291439120067687,
+              "pair_only": 0.1159162176063541,
+              "mixed_25pct": 0.11366484780209618,
+              "mixed_ratio": 1.0066462440565753
+            },
+            {
+              "key": "final_imgs_fame_v8",
+              "original": 0.5155372663641259,
+              "pair_only": 0.5516276342018408,
+              "mixed_25pct": 0.5245598583235546,
+              "mixed_ratio": 1.017501338017834
+            }
+          ]
+        }
+      },
+      "uniform_writer_pair_then_character": {
+        "calligrapher": {
+          "js_nats": 0.0005881826397139783,
+          "pair_top10_mass": 1.0,
+          "pair_effective_categories": 9.975778546712801,
+          "largest_upweight": [
+            {
+              "key": "何绍基",
+              "original": 0.06626413352819013,
+              "pair_only": 0.10752688172043015,
+              "mixed_25pct": 0.07657982057625014,
+              "mixed_ratio": 1.1556752725616113
+            },
+            {
+              "key": "文徵明",
+              "original": 0.07268671640643028,
+              "pair_only": 0.10752688172043001,
+              "mixed_25pct": 0.08139675773493021,
+              "mixed_ratio": 1.1198298913352673
+            },
+            {
+              "key": "柳公权",
+              "original": 0.06764864241212215,
+              "pair_only": 0.09677419354838736,
+              "mixed_25pct": 0.07493003019618845,
+              "mixed_ratio": 1.107635386674981
+            },
+            {
+              "key": "米芾",
+              "original": 0.09276209522344435,
+              "pair_only": 0.09677419354838662,
+              "mixed_25pct": 0.09376511980467991,
+              "mixed_ratio": 1.0108128711282285
+            },
+            {
+              "key": "赵孟頫",
+              "original": 0.11264518113991231,
+              "pair_only": 0.10752688172043053,
+              "mixed_25pct": 0.11136560628504187,
+              "mixed_ratio": 0.9886406605065411
+            },
+            {
+              "key": "褚遂良",
+              "original": 0.1047227136374125,
+              "pair_only": 0.09677419354838682,
+              "mixed_25pct": 0.10273558361515608,
+              "mixed_ratio": 0.9810248421451665
+            },
+            {
+              "key": "欧阳询",
+              "original": 0.10791477578647796,
+              "pair_only": 0.09677419354838729,
+              "mixed_25pct": 0.10512963022695529,
+              "mixed_ratio": 0.974191249166533
+            },
+            {
+              "key": "颜真卿",
+              "original": 0.11060687639412353,
+              "pair_only": 0.09677419354838712,
+              "mixed_25pct": 0.10714870568268943,
+              "mixed_ratio": 0.9687345775943291
+            },
+            {
+              "key": "苏轼",
+              "original": 0.13183601261441427,
+              "pair_only": 0.09677419354838736,
+              "mixed_25pct": 0.12307055784790755,
+              "mixed_ratio": 0.9335124402454178
+            },
+            {
+              "key": "王羲之",
+              "original": 0.1329128528574725,
+              "pair_only": 0.09677419354838682,
+              "mixed_25pct": 0.12387818803020109,
+              "mixed_ratio": 0.9320256496415765
+            }
+          ],
+          "largest_downweight": [
+            {
+              "key": "王羲之",
+              "original": 0.1329128528574725,
+              "pair_only": 0.09677419354838682,
+              "mixed_25pct": 0.12387818803020109,
+              "mixed_ratio": 0.9320256496415765
+            },
+            {
+              "key": "苏轼",
+              "original": 0.13183601261441427,
+              "pair_only": 0.09677419354838736,
+              "mixed_25pct": 0.12307055784790755,
+              "mixed_ratio": 0.9335124402454178
+            },
+            {
+              "key": "颜真卿",
+              "original": 0.11060687639412353,
+              "pair_only": 0.09677419354838712,
+              "mixed_25pct": 0.10714870568268943,
+              "mixed_ratio": 0.9687345775943291
+            },
+            {
+              "key": "欧阳询",
+              "original": 0.10791477578647796,
+              "pair_only": 0.09677419354838729,
+              "mixed_25pct": 0.10512963022695529,
+              "mixed_ratio": 0.974191249166533
+            },
+            {
+              "key": "褚遂良",
+              "original": 0.1047227136374125,
+              "pair_only": 0.09677419354838682,
+              "mixed_25pct": 0.10273558361515608,
+              "mixed_ratio": 0.9810248421451665
+            },
+            {
+              "key": "赵孟頫",
+              "original": 0.11264518113991231,
+              "pair_only": 0.10752688172043053,
+              "mixed_25pct": 0.11136560628504187,
+              "mixed_ratio": 0.9886406605065411
+            },
+            {
+              "key": "米芾",
+              "original": 0.09276209522344435,
+              "pair_only": 0.09677419354838662,
+              "mixed_25pct": 0.09376511980467991,
+              "mixed_ratio": 1.0108128711282285
+            },
+            {
+              "key": "柳公权",
+              "original": 0.06764864241212215,
+              "pair_only": 0.09677419354838736,
+              "mixed_25pct": 0.07493003019618845,
+              "mixed_ratio": 1.107635386674981
+            },
+            {
+              "key": "文徵明",
+              "original": 0.07268671640643028,
+              "pair_only": 0.10752688172043001,
+              "mixed_25pct": 0.08139675773493021,
+              "mixed_ratio": 1.1198298913352673
+            },
+            {
+              "key": "何绍基",
+              "original": 0.06626413352819013,
+              "pair_only": 0.10752688172043015,
+              "mixed_25pct": 0.07657982057625014,
+              "mixed_ratio": 1.1556752725616113
+            }
+          ]
+        },
+        "script": {
+          "js_nats": 0.0003294869752486708,
+          "pair_top10_mass": 1.0000000000000013,
+          "pair_effective_categories": 2.1308203991130763,
+          "largest_upweight": [
+            {
+              "key": "楷",
+              "original": 0.40666102607491733,
+              "pair_only": 0.4838709677419368,
+              "mixed_25pct": 0.4259635114916722,
+              "mixed_ratio": 1.0474657864390449
+            },
+            {
+              "key": "行",
+              "original": 0.5192677486347204,
+              "pair_only": 0.4838709677419355,
+              "mixed_25pct": 0.5104185534115242,
+              "mixed_ratio": 0.982958319197634
+            },
+            {
+              "key": "隶",
+              "original": 0.07407122529036228,
+              "pair_only": 0.03225806451612915,
+              "mixed_25pct": 0.063617935096804,
+              "mixed_ratio": 0.8588751549258035
+            }
+          ],
+          "largest_downweight": [
+            {
+              "key": "隶",
+              "original": 0.07407122529036228,
+              "pair_only": 0.03225806451612915,
+              "mixed_25pct": 0.063617935096804,
+              "mixed_ratio": 0.8588751549258035
+            },
+            {
+              "key": "行",
+              "original": 0.5192677486347204,
+              "pair_only": 0.4838709677419355,
+              "mixed_25pct": 0.5104185534115242,
+              "mixed_ratio": 0.982958319197634
+            },
+            {
+              "key": "楷",
+              "original": 0.40666102607491733,
+              "pair_only": 0.4838709677419368,
+              "mixed_25pct": 0.4259635114916722,
+              "mixed_ratio": 1.0474657864390449
+            }
+          ]
+        },
+        "character": {
+          "js_nats": 0.006152383759582097,
+          "pair_top10_mass": 0.050970033936953235,
+          "pair_effective_categories": 771.9237243954977,
+          "largest_upweight": [
+            {
+              "key": "剛",
+              "original": 0.0001153757403276671,
+              "pair_only": 0.0018445238466276337,
+              "mixed_25pct": 0.0005476627669026588,
+              "mixed_ratio": 4.746775755000978
+            },
+            {
+              "key": "敦",
+              "original": 0.00019229290054611182,
+              "pair_only": 0.0023683539461940586,
+              "mixed_25pct": 0.0007363081619580985,
+              "mixed_ratio": 3.8290969654468956
+            },
+            {
+              "key": "徹",
+              "original": 0.0003461272209830013,
+              "pair_only": 0.003141088933231994,
+              "mixed_25pct": 0.0010448676490452495,
+              "mixed_ratio": 3.018738734497175
+            },
+            {
+              "key": "報",
+              "original": 0.0006537958618567803,
+              "pair_only": 0.005654622249412921,
+              "mixed_25pct": 0.0019040024587458153,
+              "mixed_ratio": 2.9122277607240403
+            },
+            {
+              "key": "丈",
+              "original": 0.00026921006076455656,
+              "pair_only": 0.0021003947260558233,
+              "mixed_25pct": 0.0007270062270873733,
+              "mixed_ratio": 2.700516559532269
+            },
+            {
+              "key": "寶",
+              "original": 0.0006153372817475579,
+              "pair_only": 0.004315602976670729,
+              "mixed_25pct": 0.0015404037054783505,
+              "mixed_ratio": 2.503348571865504
+            },
+            {
+              "key": "發",
+              "original": 0.0006153372817475579,
+              "pair_only": 0.004126536137941825,
+              "mixed_25pct": 0.0014931369957961245,
+              "mixed_ratio": 2.426534260293177
+            },
+            {
+              "key": "文",
+              "original": 0.001038381662949004,
+              "pair_only": 0.006891888201862513,
+              "mixed_25pct": 0.002501758297677381,
+              "mixed_ratio": 2.4092858983780467
+            },
+            {
+              "key": "志",
+              "original": 0.0006537958618567803,
+              "pair_only": 0.004094071547324307,
+              "mixed_25pct": 0.0015138647832236619,
+              "mixed_ratio": 2.3155007113753916
+            },
+            {
+              "key": "詞",
+              "original": 0.0002307514806553342,
+              "pair_only": 0.0013719550877094313,
+              "mixed_25pct": 0.0005160523824188584,
+              "mixed_ratio": 2.236399007942526
+            },
+            {
+              "key": "扶",
+              "original": 0.0003461272209830013,
+              "pair_only": 0.0020219676269336555,
+              "mixed_25pct": 0.0007650873224706649,
+              "mixed_ratio": 2.2104222843202477
+            },
+            {
+              "key": "升",
+              "original": 0.0010768402430582262,
+              "pair_only": 0.006159634184209919,
+              "mixed_25pct": 0.0023475387283461496,
+              "mixed_ratio": 2.180025071944878
+            },
+            {
+              "key": "字",
+              "original": 0.0006922544419660026,
+              "pair_only": 0.0037799260528212854,
+              "mixed_25pct": 0.0014641723446798234,
+              "mixed_ratio": 2.1150782947980424
+            },
+            {
+              "key": "賜",
+              "original": 0.00019229290054611182,
+              "pair_only": 0.0010289613826142505,
+              "mixed_25pct": 0.00040146002106314653,
+              "mixed_ratio": 2.087752693536787
+            },
+            {
+              "key": "裕",
+              "original": 0.0001153757403276671,
+              "pair_only": 0.0006116074580804872,
+              "mixed_25pct": 0.00023943366976587213,
+              "mixed_ratio": 2.075251427084069
+            },
+            {
+              "key": "司",
+              "original": 0.0006922544419660026,
+              "pair_only": 0.003610314704079312,
+              "mixed_25pct": 0.00142176950749433,
+              "mixed_ratio": 2.0538250407704206
+            },
+            {
+              "key": "静",
+              "original": 0.0005384201215291131,
+              "pair_only": 0.002787079418347254,
+              "mixed_25pct": 0.0011005849457336484,
+              "mixed_ratio": 2.0441006970690236
+            },
+            {
+              "key": "幄",
+              "original": 0.0002307514806553342,
+              "pair_only": 0.0011937033386254002,
+              "mixed_25pct": 0.0004714894451478507,
+              "mixed_ratio": 2.0432780921224025
+            },
+            {
+              "key": "林",
+              "original": 0.0008076301822936697,
+              "pair_only": 0.00410768736154567,
+              "mixed_25pct": 0.0016326444771066696,
+              "mixed_ratio": 2.0215248425584584
+            },
+            {
+              "key": "獻",
+              "original": 0.0002307514806553342,
+              "pair_only": 0.001173415247734753,
+              "mixed_25pct": 0.0004664174224251889,
+              "mixed_ratio": 2.021297636316627
+            }
+          ],
+          "largest_downweight": [
+            {
+              "key": "㐲",
+              "original": 7.691716021844474e-05,
+              "pair_only": 0.0,
+              "mixed_25pct": 5.768787016383355e-05,
+              "mixed_ratio": 0.75
+            },
+            {
+              "key": "㒵",
+              "original": 3.845858010922237e-05,
+              "pair_only": 0.0,
+              "mixed_25pct": 2.8843935081916776e-05,
+              "mixed_ratio": 0.75
+            },
+            {
+              "key": "㗛",
+              "original": 3.845858010922237e-05,
+              "pair_only": 0.0,
+              "mixed_25pct": 2.8843935081916776e-05,
+              "mixed_ratio": 0.75
+            },
+            {
+              "key": "㙒",
+              "original": 3.845858010922237e-05,
+              "pair_only": 0.0,
+              "mixed_25pct": 2.8843935081916776e-05,
+              "mixed_ratio": 0.75
+            },
+            {
+              "key": "㙜",
+              "original": 3.845858010922237e-05,
+              "pair_only": 0.0,
+              "mixed_25pct": 2.8843935081916776e-05,
+              "mixed_ratio": 0.75
+            },
+            {
+              "key": "㙯",
+              "original": 3.845858010922237e-05,
+              "pair_only": 0.0,
+              "mixed_25pct": 2.8843935081916776e-05,
+              "mixed_ratio": 0.75
+            },
+            {
+              "key": "㝍",
+              "original": 3.845858010922237e-05,
+              "pair_only": 0.0,
+              "mixed_25pct": 2.8843935081916776e-05,
+              "mixed_ratio": 0.75
+            },
+            {
+              "key": "㝢",
+              "original": 3.845858010922237e-05,
+              "pair_only": 0.0,
+              "mixed_25pct": 2.8843935081916776e-05,
+              "mixed_ratio": 0.75
+            },
+            {
+              "key": "㞐",
+              "original": 3.845858010922237e-05,
+              "pair_only": 0.0,
+              "mixed_25pct": 2.8843935081916776e-05,
+              "mixed_ratio": 0.75
+            },
+            {
+              "key": "㢘",
+              "original": 0.0001153757403276671,
+              "pair_only": 0.0,
+              "mixed_25pct": 8.653180524575033e-05,
+              "mixed_ratio": 0.75
+            },
+            {
+              "key": "㤁",
+              "original": 3.845858010922237e-05,
+              "pair_only": 0.0,
+              "mixed_25pct": 2.8843935081916776e-05,
+              "mixed_ratio": 0.75
+            },
+            {
+              "key": "㤙",
+              "original": 3.845858010922237e-05,
+              "pair_only": 0.0,
+              "mixed_25pct": 2.8843935081916776e-05,
+              "mixed_ratio": 0.75
+            },
+            {
+              "key": "㦤",
+              "original": 3.845858010922237e-05,
+              "pair_only": 0.0,
+              "mixed_25pct": 2.8843935081916776e-05,
+              "mixed_ratio": 0.75
+            },
+            {
+              "key": "㦲",
+              "original": 3.845858010922237e-05,
+              "pair_only": 0.0,
+              "mixed_25pct": 2.8843935081916776e-05,
+              "mixed_ratio": 0.75
+            },
+            {
+              "key": "㧑",
+              "original": 3.845858010922237e-05,
+              "pair_only": 0.0,
+              "mixed_25pct": 2.8843935081916776e-05,
+              "mixed_ratio": 0.75
+            },
+            {
+              "key": "㧝",
+              "original": 3.845858010922237e-05,
+              "pair_only": 0.0,
+              "mixed_25pct": 2.8843935081916776e-05,
+              "mixed_ratio": 0.75
+            },
+            {
+              "key": "㨫",
+              "original": 7.691716021844474e-05,
+              "pair_only": 0.0,
+              "mixed_25pct": 5.768787016383355e-05,
+              "mixed_ratio": 0.75
+            },
+            {
+              "key": "㩀",
+              "original": 3.845858010922237e-05,
+              "pair_only": 0.0,
+              "mixed_25pct": 2.8843935081916776e-05,
+              "mixed_ratio": 0.75
+            },
+            {
+              "key": "㫖",
+              "original": 3.845858010922237e-05,
+              "pair_only": 0.0,
+              "mixed_25pct": 2.8843935081916776e-05,
+              "mixed_ratio": 0.75
+            },
+            {
+              "key": "㫪",
+              "original": 3.845858010922237e-05,
+              "pair_only": 0.0,
+              "mixed_25pct": 2.8843935081916776e-05,
+              "mixed_ratio": 0.75
+            }
+          ]
+        },
+        "source": {
+          "js_nats": 0.00013978164237366854,
+          "pair_top10_mass": 1.0000000000000004,
+          "pair_effective_categories": 2.7737869440811616,
+          "largest_upweight": [
+            {
+              "key": "hcsu_bei",
+              "original": 0.02988231674486578,
+              "pair_only": 0.0381096970870083,
+              "mixed_25pct": 0.03193916183040141,
+              "mixed_ratio": 1.0688315134029567
+            },
+            {
+              "key": "hcsu_wild",
+              "original": 0.2505576494115837,
+              "pair_only": 0.26348810990278876,
+              "mixed_25pct": 0.25379026453438497,
+              "mixed_ratio": 1.012901682029636
+            },
+            {
+              "key": "mccd_salvage",
+              "original": 0.11291439120067687,
+              "pair_only": 0.11665772161112746,
+              "mixed_25pct": 0.11385022380328952,
+              "mixed_ratio": 1.008287983424092
+            },
+            {
+              "key": "final_imgs_fame_v8",
+              "original": 0.5155372663641259,
+              "pair_only": 0.5242318662685156,
+              "mixed_25pct": 0.5177109163402233,
+              "mixed_ratio": 1.004216280990562
+            },
+            {
+              "key": "calli_tongji_imgs",
+              "original": 0.03795861856780248,
+              "pair_only": 0.027694666397016118,
+              "mixed_25pct": 0.03539263052510589,
+              "mixed_ratio": 0.9324003839045627
+            },
+            {
+              "key": "hcsu_wild_salvage",
+              "original": 0.020575340358433968,
+              "pair_only": 0.014898535389314613,
+              "mixed_25pct": 0.01915613911615413,
+              "mixed_ratio": 0.9310241669125975
+            },
+            {
+              "key": "hcsu_tie",
+              "original": 0.03257441735251135,
+              "pair_only": 0.014919403344229542,
+              "mixed_25pct": 0.028160663850440897,
+              "mixed_ratio": 0.8645024574252234
+            }
+          ],
+          "largest_downweight": [
+            {
+              "key": "hcsu_tie",
+              "original": 0.03257441735251135,
+              "pair_only": 0.014919403344229542,
+              "mixed_25pct": 0.028160663850440897,
+              "mixed_ratio": 0.8645024574252234
+            },
+            {
+              "key": "hcsu_wild_salvage",
+              "original": 0.020575340358433968,
+              "pair_only": 0.014898535389314613,
+              "mixed_25pct": 0.01915613911615413,
+              "mixed_ratio": 0.9310241669125975
+            },
+            {
+              "key": "calli_tongji_imgs",
+              "original": 0.03795861856780248,
+              "pair_only": 0.027694666397016118,
+              "mixed_25pct": 0.03539263052510589,
+              "mixed_ratio": 0.9324003839045627
+            },
+            {
+              "key": "final_imgs_fame_v8",
+              "original": 0.5155372663641259,
+              "pair_only": 0.5242318662685156,
+              "mixed_25pct": 0.5177109163402233,
+              "mixed_ratio": 1.004216280990562
+            },
+            {
+              "key": "mccd_salvage",
+              "original": 0.11291439120067687,
+              "pair_only": 0.11665772161112746,
+              "mixed_25pct": 0.11385022380328952,
+              "mixed_ratio": 1.008287983424092
+            },
+            {
+              "key": "hcsu_wild",
+              "original": 0.2505576494115837,
+              "pair_only": 0.26348810990278876,
+              "mixed_25pct": 0.25379026453438497,
+              "mixed_ratio": 1.012901682029636
+            },
+            {
+              "key": "hcsu_bei",
+              "original": 0.02988231674486578,
+              "pair_only": 0.0381096970870083,
+              "mixed_25pct": 0.03193916183040141,
+              "mixed_ratio": 1.0688315134029567
+            }
+          ]
+        }
+      }
+    },
+    "limitations": "source is a dataset/source label, not a verified artwork ID. Natural non-augmented rows only; augmented variants must never be counted as new characters."
+  },
+  "gate": "P1/P2 NOT started; pair coverage alone cannot authorize training."
+}

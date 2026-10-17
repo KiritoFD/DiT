@@ -1,0 +1,31 @@
+{
+  "date": "2026-10-17",
+  "device": "RTX4090",
+  "torch": "2.5.1+cu121",
+  "driver": "590.48.01",
+  "model": "20 layers, width384, batch192",
+  "protocol": "Same160k EMA warm start and seed90;80 steps per variant. Throughput uses windows21-40 and41-60, excluding compilation and profiler window61-70. No scientific checkpoints produced.",
+  "variants": {
+    "current_repa0": {"steps_per_second": [5.40,5.39], "peak_reserved_gib":20.26},
+    "repa_sync": {"steps_per_second":[4.25,4.25], "peak_reserved_gib":20.32},
+    "repa_async": {"steps_per_second":[5.12,5.12], "peak_reserved_gib":20.49},
+    "pattern_matcher_on_repa0": {"steps_per_second":[5.37,5.37], "peak_reserved_gib":20.96},
+    "fullgraph_max_autotune_no_cudagraphs_repa0": {"steps_per_second":[5.72,5.71], "peak_reserved_gib":20.93, "first_compile_approximately_minutes":8}
+  },
+  "repa_async_throughput_improvement_percent":20.47,
+  "guided_compile_throughput_improvement_percent":5.93,
+  "validation": {
+    "cache_tensor_equality":"20 GPU batches: reorder, duplicates, missing IDs and double-buffer reuse, exact FP32 equality",
+    "loss_comparison":"Sync/async rounded FM and REPA losses agree through60 steps; final FM window differs by0.0001. This is not a claim of bitwise-identical training trajectories.",
+    "cache_only_repa":"Fixed outer wrapper returning zero when image=None despite a valid feature cache. Both REPA profiles include this fix.",
+    "fullgraph":"Guided run completed80 training steps with fullgraph=True. No graph-break fallback allowed."
+  },
+  "decisions": {
+    "repa_prefetch":"Enabled by default for cache-backed positive-weight REPA; independent CUDA stream, two pinned host buffers, DMA events and consumer record_stream.",
+    "pattern_matcher":"Keep legacy default; enabling it alone did not improve speed.",
+    "guided_compile":"Opt-in for long fixed-shape runs; higher initial compilation cost and memory. Benchmark is short, not long-run/eval-transition validation.",
+    "std_sampling":"Reuse clean condition already copied by condition assembly.",
+    "profiler":"Single bounded capture; CUDA kernel time excludes duplicate CPU-side aggregates."
+  },
+  "remote_workspace":"/root/Workspace/xy/DiT/scratch/v90_infra_profile_20261017"
+}

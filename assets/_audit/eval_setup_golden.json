@@ -1,0 +1,29 @@
+{
+  "empty_sets_returns_empty_dict": true,
+  "normal": {
+    "blend_alpha": 0.0,
+    "calli_noise": false,
+    "cfg_scale": 1.0,
+    "ddim_steps": 50,
+    "diffusion_desc": "FlowMatching(steps=50, sampler=heun, nfe=100, t_sampler=logit_normal(mean=0.0,std=1.0), shift=1.0, use_ot=False, use_c2ot=True(mode=slot))",
+    "dit_batch": 8,
+    "results_dir": "C:\\Users\\xy\\AppData\\Local\\Temp\\tmpr5sieacx",
+    "sets": [
+      [
+        "eval200fix",
+        "exp-std/csv/eval200_fixed.csv",
+        187
+      ],
+      [
+        "seen",
+        "exp-std/csv/seen20.csv",
+        20
+      ]
+    ],
+    "sf": 0.18215,
+    "sf_shift": 0.0,
+    "shards": "",
+    "use_self_cond": false,
+    "vae_batch": 16
+  }
+}
