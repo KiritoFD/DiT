@@ -12,11 +12,19 @@ class LatentUNet(nn.Module):
     out_channels=4
 
     def __init__(self,channels=(128,256,384),num_writers=10,num_scripts=3,
-                 num_res_blocks=2,drop_all=.05,drop_writer=.08,drop_script=.08):
+                 num_res_blocks=2,drop_all=.05,drop_writer=.08,drop_script=.08,
+                 decoder_res_blocks=None,skip_gate_scales=(),std_gate_scales=()):
         super().__init__()
         if len(channels)!=3:raise ValueError('Expected three scales')
         self.num_writers=num_writers;self.num_scripts=num_scripts
         self.num_res_blocks=num_res_blocks
+        decoder_depth=tuple(decoder_res_blocks) if decoder_res_blocks is not None else (num_res_blocks,)*3
+        if len(decoder_depth)!=3 or min(decoder_depth)<1:raise ValueError('Expected three positive decoder depths')
+        self.skip_gates=self._scale_parameters(skip_gate_scales)
+        self.std_gates=self._scale_parameters(std_gate_scales)
+        # Explicit, nonpersistent OOD interventions; no effect in normal training.
+        self.inference_skip_scales=(1.,1.,1.)
+        self.inference_std_scales=(1.,1.,1.)
         self.drop_all=drop_all;self.drop_writer=drop_writer;self.drop_script=drop_script
         self.writer=nn.Embedding(num_writers+1,32)
         self.script=nn.Embedding(num_scripts+1,16)
@@ -33,10 +41,29 @@ class LatentUNet(nn.Module):
         self.down=nn.ModuleList([nn.Conv2d(channels[i],channels[i+1],3,stride=2,padding=1) for i in range(2)])
         self.middle1=ResBlock(channels[-1],channels[-1]);self.middle_attn=Attention(channels[-1])
         self.middle2=ResBlock(channels[-1],channels[-1])
-        self.decoder=nn.ModuleList([Stage(c*2,c,i>0,num_res_blocks=num_res_blocks) for i,c in enumerate(channels)])
+        self.decoder=nn.ModuleList([Stage(c*2,c,i>0,num_res_blocks=decoder_depth[i]) for i,c in enumerate(channels)])
         self.up=nn.ModuleList([nn.Conv2d(channels[i+1],channels[i],3,padding=1) for i in range(2)])
         self.output=nn.Sequential(norm(channels[0]),nn.SiLU(),nn.Conv2d(channels[0],4,3,padding=1))
         nn.init.zeros_(self.output[-1].weight);nn.init.zeros_(self.output[-1].bias)
+
+    @staticmethod
+    def _scale_parameters(active):
+        active=tuple(active)
+        if any(i not in (0,1,2) for i in active):raise ValueError('Scale indices are 0:32,1:16,2:8')
+        # No parameters added for a baseline: its old state_dict remains strict-loadable.
+        return nn.ParameterList([nn.Parameter(torch.zeros(()),requires_grad=i in active) for i in range(3)]) if active else nn.ParameterList()
+
+    def set_inference_scales(self,*,skip=(1.,1.,1.),std=(1.,1.,1.)):
+        if self.training:raise RuntimeError('Inference interventions require eval mode')
+        if len(skip)!=3 or len(std)!=3 or any(not 0<float(v)<float('inf') for v in (*skip,*std)):
+            raise ValueError('Expected three finite positive scales')
+        self.inference_skip_scales=tuple(map(float,skip))
+        self.inference_std_scales=tuple(map(float,std))
+
+    @staticmethod
+    def _scaled(value,gates,i,override):
+        if gates:value=value*(1.+.5*torch.tanh(gates[i]))
+        return value*override[i] if override[i]!=1. else value
 
 
     def forward(self,x,t,y_callig,y_char=None,g=None,y_script=None,y_callig_raw=None,y_pair=None):
@@ -59,11 +86,13 @@ class LatentUNet(nn.Module):
         glyph=self.std_stem(g);h=self.input(x);skips=[]
         for i,stage in enumerate(self.encoder):
             if i:glyph=F.silu(self.std_down[i-1](glyph))
-            h=stage(h+self.std_proj[i](glyph),c);skips.append(h)
+            projected=self._scaled(self.std_proj[i](glyph),self.std_gates,i,self.inference_std_scales)
+            h=stage(h+projected,c);skips.append(h)
             if i<2:h=self.down[i](h)
         h=self.middle2(self.middle_attn(self.middle1(h,c)),c)
         for i in (2,1,0):
-            h=self.decoder[i](torch.cat([h,skips[i]],dim=1),c)
+            skip=self._scaled(skips[i],self.skip_gates,i,self.inference_skip_scales)
+            h=self.decoder[i](torch.cat([h,skip],dim=1),c)
             if i:h=self.up[i-1](F.interpolate(h,scale_factor=2,mode='nearest'))
         return self.output(h)
 

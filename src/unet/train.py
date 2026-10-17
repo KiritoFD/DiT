@@ -26,13 +26,19 @@ def parse():
     p.add_argument('--benchmark',type=int,default=0,help='Synthetic memory/throughput probe; no saved training')
     p.add_argument('--resume','--resume-full',dest='resume',default='')
     p.add_argument('--reset-ema',action='store_true',help='Seed a new EMA from resumed raw weights')
+    p.add_argument('--warm-start',default='',help='Audited A/B/C expansion; restart optimizer and EMA for every arm')
+    p.add_argument('--warm-start-state',choices=['raw','ema'],default='raw')
     a=p.parse_args()
+    if a.resume and a.warm_start:p.error('--resume and --warm-start are mutually exclusive')
     if a.reset_ema and not a.resume:p.error('--reset-ema requires --resume')
     config=Config(**json.loads(Path(a.config).read_text(encoding='utf-8')))
     for key in ('batch','max_steps','stop_at_step','lr_decay_steps','lr','warmup','ckpt_every','eval_every'):
         value=getattr(a,key)
         if value is not None:setattr(config,key,value)
-    config.validate();return config,a
+    config.validate()
+    if config.requires_warm_start and not (a.warm_start or a.resume):
+        p.error('This ablation requires --warm-start (or --resume), not a fresh run')
+    return config,a
 
 
 def loss_for(model,process,z,g,writer,script,objective):
@@ -81,7 +87,15 @@ def main():
     torch.manual_seed(config.seed);torch.cuda.manual_seed_all(config.seed)
     np.random.seed(config.seed);random.seed(config.seed)
     if cli.benchmark:return benchmark(config,cli.benchmark)
-    resume=None;start=0
+    resume=None;warm=None;start=0
+    if cli.warm_start:
+        warm=torch.load(cli.warm_start,map_location='cpu',weights_only=False)
+        old_config=checkpoint_config(warm)
+        if old_config.objective!=config.objective:raise ValueError('Objective changed on warm start')
+        if cli.warm_start_state=='ema' and 'architecture' not in warm:
+            raise ValueError('Legacy EMA is invalid; warm start from raw')
+        start=int(warm['train_steps'])
+        config.ema_start_step=start
     if cli.resume:
         resume=torch.load(cli.resume,map_location='cpu',weights_only=False)
         old_config=checkpoint_config(resume)
@@ -108,12 +122,25 @@ def main():
     dataset,sampler,batches,tick,inline=loader(config,args,log,start)
     bank=StdBank(config)
     layout=torch.channels_last if config.memory_format=='channels_last' else torch.contiguous_format
-    raw=build(config,initialize_tables=resume is None).cuda().to(memory_format=layout)
+    raw=build(config,initialize_tables=resume is None and warm is None).cuda().to(memory_format=layout)
     ema=copy.deepcopy(raw).eval().requires_grad_(False)
     opt=torch.optim.AdamW(raw.parameters(),lr=config.lr,weight_decay=config.weight_decay,fused=True)
     from src.train.step import build_cosine_scheduler,NonFiniteGuard
     scheduler=build_cosine_scheduler(opt,warmup_steps=config.warmup,
         total_steps=config.lr_decay_steps or config.max_steps,min_lr_ratio=config.min_lr_ratio)
+    if warm is not None:
+        from .variants.transfer import load_expansion,set_scheduler_position
+        transfer=load_expansion(raw,warm,old_config,config,state=cli.warm_start_state)
+        ema.load_state_dict(raw.state_dict(),strict=True)
+        rates=set_scheduler_position(scheduler,opt,start)
+        from src.train.ckpt import restore_rng
+        if not restore_rng(warm.get('rng',{}),log):raise ValueError('Controlled warm start requires full RNG state')
+        from src.train.manifest import sha256_file
+        transfer.update(checkpoint=cli.warm_start,checkpoint_sha256=sha256_file(cli.warm_start),
+                        start_step=start,optimizer_reset=True,ema_reset=True,lr=rates)
+        (run/'warm_start_record.json').write_text(json.dumps(transfer,indent=2))
+        log.warning('Controlled warm start step=%d state=%s new_keys=%d; optimizer+EMA reset (same protocol for Control)',
+                    start,cli.warm_start_state,len(transfer['new_keys']))
     if resume is not None:
         state=resume['delta']
         state={k.removeprefix('_orig_mod.'):v for k,v in state.items()}

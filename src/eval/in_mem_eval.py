@@ -578,11 +578,12 @@ def _build_eval_request(args, model, step, name, n, cfg_scale, ddim_steps, sf,
         vae_scale=float(sf), vae_shift=float(getattr(args, "vae_shift_factor", 0.0) or 0.0),
         sampler=str(getattr(_DIFF, "sampler", "") or ""), num_steps=int(ddim_steps),
         cfg=float(cfg_scale), gamma=float(getattr(_DIFF, "sde_gamma", 0.0) or 0.0),
-        seed=0, ema=bool(ema), code_revision=str(code_rev),
+        seed=0, ema=bool(getattr(args, 'eval_use_ema', ema)), code_revision=str(code_rev),
         dataset_sha256=ds, conditions_sha256=str(cond_sha or ""),
         sets_spec="%s:%d" % (name, int(n)),
         extra={"step": int(step), "std_soft_sigma": float(
-            getattr(args, "std_soft_eval_sigma", 0.65))})
+            getattr(args, "std_soft_eval_sigma", 0.65)),
+            **({'diagnostic': args.eval_protocol_extra} if getattr(args, 'eval_protocol_extra', None) else {})})
 
 
 def _eval_done_key(step, set_name, cfg, steps, sf, csvp, code_rev, ckpt_sha=None):

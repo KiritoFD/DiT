@@ -1,6 +1,5 @@
 """Strict raw U-Net evaluation, including legacy checkpoint identity audit."""
 import argparse
-from dataclasses import replace
 import gc
 import json
 from pathlib import Path
@@ -22,14 +21,6 @@ def main():
     parser.add_argument('--steps', nargs='+', type=int, required=True)
     cli = parser.parse_args()
     torch.set_num_threads(4)
-    # The shared evaluator otherwise labels every request EMA, even for raw.
-    original_request = evaluator._build_eval_request
-
-    def raw_request(*args, **kwargs):
-        req = original_request(*args, **kwargs)
-        return replace(req, ema=False) if req is not None else None
-
-    evaluator._build_eval_request = raw_request
     for step in cli.steps:
         path = Path(cli.run) / 'checkpoints' / f'{step:07d}.pt'
         manifest = json.loads(Path(str(path) + '.done').read_text())
@@ -44,6 +35,7 @@ def main():
         model = build(config).cuda().eval()
         model.load_state_dict({k.removeprefix('_orig_mod.'): v for k, v in ck['delta'].items()}, strict=True)
         args = eval_args(config)
+        args.eval_use_ema = False
         args.eval_vae_path = config.vae_path  # Explicit decoder AND identity path.
         args.in_mem_eval_poster = False
         directory = Path(cli.out) / f'unet_raw{step}'

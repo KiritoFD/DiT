@@ -19,6 +19,12 @@
 
 ### 0. Unet-72M 系列正式起跑（Node 48，Batch 512）
 
+**连贯性下一步：仅实现，尚未启动实验或部署到当前训练。** P0阈值/面积、同checkpoint Raw/EMA、
+Heun50/100、32²Skip/STD×0.8诊断入口；P1 Skip32门控与76.00M Decoder[3,3,2]，
+受控A/B/C从同20k raw、统一重建optimizer/EMA至50k；93.05M全网加深仅留从零候选，Writer独立FiLM暂缓。
+默认基线state_dict不变，严格旧权重迁移、初始化等价/梯度等13项小型回归通过；未宣称连贯性已改善。
+见[实现说明](src/unet/configs/connectivity/README.md)。
+
 **2026-10-18 02:05：EMA已修正并从20k raw续训，总上限100k。**
 新PID3050580，隔离目录`scratch/unet_ema_20261018_01`，run`Unet_ema_fixed_100k/20261018-020505-Unet-flow`。
 EMA完整配对214/214，从raw重建并以20k为warmup起点；优化器/RNG/global step保留，LR horizon显式改100k，
@@ -36,7 +42,7 @@ raw15k/20k重新采样，权重/VAE/raw标志与DONE校验通过；与DiT40k/50k
 见[正式对照报告](ANALYSIS/unet_vs_dit_20261018.md)及[实际图片](assets/audits/unet_vs_dit_20261018/poster.png)。
 
 **2026-10-18审计纠正**：约19.8k，Diff0.2145、2.75–2.79step/s；发现compile训练模型与裸EMA命名不匹配，EMA匹配为空，5k/10k/15k历史评测均为初始化模型，不能读作架构结果。raw15k补评187字SSIM.5005/LPIPS-VGG.40647/Ink-IoU.27548，但断笔明显；因VAE路径参数未映射，DONE身份验收未通过，仅作诊断。另发现远端ckpt缺顶层architecture/config（args内仍有）。本轮未修改或重启U-Net。见[审计报告](ANALYSIS/unet_20261018.md)。
-- **变的是什么**：下一代直接 4x32x32 Latent CNN U-Net 架构 (`LatentUNet` / `Unet-flow`)，`channels=[192, 384, 576]`，每阶段 2 个深层 ResBlock（全网 16 个 ResBlock + 4 个 SDPA 注意力层），总参数量 **72.09M**（与 DiT-24L 65.67M 容量对齐）。
+- **变的是什么**：下一代直接 4x32x32 Latent CNN U-Net 架构 (`LatentUNet` / `Unet-flow`)，`channels=[192, 384, 576]`，每阶段 2 个深层 ResBlock（按代码复核为全网14个ResBlock + 5个SDPA注意力层，纠正旧16/4误计），总参数量 **72.09M**（与 DiT-24L 65.67M 容量相近，并非严格相等）。
 - **基准是谁**：DiT-20L (`DiT-2Cond-S384-20/2` 55.03M) 及 DiT-24L (`v84D_std_deep24L` 65.67M)。
 - **口径与配置**：Flow Matching 线性插值 ($x_t=(1-t)x_0+t\epsilon$, $v^*=\epsilon-x_0$)，STD 多尺度投影，书家/书体 FiLM 调制；`batch=512`，`lr=6e-5`，`compile=True` (TorchInductor，0 Graph Breaks)，`channels_last`，AMP BF16，Fused AdamW。
 - **FLOPs 与 MFU 严格核算口径**：

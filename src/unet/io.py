@@ -16,6 +16,10 @@ class Config:
     objective:str='flow'
     channels:tuple=(128,256,384)
     num_res_blocks:int=2
+    decoder_res_blocks:tuple|None=None  # 32/16/8 order; None inherits encoder depth.
+    skip_gate_scales:tuple=()
+    std_gate_scales:tuple=()
+    requires_warm_start:bool=False
     num_writers:int=10
     num_scripts:int=3
     batch:int=128
@@ -73,7 +77,9 @@ class Config:
 def build(config,initialize_tables=False):
     config.validate(require_budget=False)
     model=LatentUNet(tuple(config.channels),config.num_writers,config.num_scripts,
-                    num_res_blocks=getattr(config,'num_res_blocks',2))
+                    num_res_blocks=getattr(config,'num_res_blocks',2),
+                    decoder_res_blocks=config.decoder_res_blocks,
+                    skip_gate_scales=config.skip_gate_scales,std_gate_scales=config.std_gate_scales)
     if initialize_tables:
         import numpy as np
         for name,embedding in [('callig',model.writer),('font',model.script)]:
@@ -142,12 +148,16 @@ def load(path,device='cpu',use_ema=True):
 def load_model_from_ckpt(path,device='cpu',use_ema=True):
     """Same public loading interface as the DiT evaluator, separate strict builder."""
     model,config,_=load(path,device,use_ema)
-    return model,eval_args(config)
+    args=eval_args(config)
+    args.eval_use_ema=use_ema
+    return model,args
 
 
-def evaluate(model,config,step,directory):
+def evaluate(model,config,step,directory,*,use_ema=True):
     from src.eval.in_mem_eval import run_in_mem_eval
-    return run_in_mem_eval(model,eval_args(config),step,next(model.parameters()).device,
+    args=eval_args(config)
+    args.eval_use_ema=use_ema
+    return run_in_mem_eval(model,args,step,next(model.parameters()).device,
         results_dir=str(directory),diffusion_override=diffusion(config,evaluation=True))
 
 

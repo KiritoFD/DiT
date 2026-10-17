@@ -1,6 +1,7 @@
 # CNN U-Net：独立模型，共用训练器
 
-状态：实现阶段，**未启动正式训练**。48 上旧 L24 已按要求停止，最近完整 checkpoint 为45k；旧产物保留。之前的 batch 短测属于旧实现，不能直接作为本版最终性能验收。
+状态：72M基线已完成GPU训练/保存/评测闭环，修复EMA后从20k续训，累计目标100k；运行快照见[state.md](../../state.md)。
+本轮新增Skip/Decoder/STD开关与诊断入口**只实现、未启动新训练、未热更新远端在训源码**。
 
 ## 边界
 
@@ -43,7 +44,8 @@ python -m src.unet.train --config src/unet/configs/fm_48.json --max-steps 80000 
 
 ## 模型和条件
 
-- 128/256/384 三尺度，32²/16²/8²；ResBlock、GroupNorm、SiLU、标准 encoder–decoder skip；16²/8² SDPA Attention。
+- 默认128/256/384三尺度，72M配置为192/384/576；空间尺度32²/16²/8²。
+- 基线实际14个ResBlock、5个Attention，GroupNorm/SiLU、标准encoder–decoder skip；16²/8² SDPA Attention。
 - Time、Writer、Script 各自投影后相加，再经 MLP 调制所有 ResBlock；STD 仅经空间卷积编码注入，不直连输出。
 - 初始 Writer/Script 从现有 `callig_table.npy`、`font_table.npy` 加载，映射沿用原表；恢复 checkpoint 时不要求再次加载这些初始化文件。
 - `y_char` 只作接口兼容，不参与预测。GT 仅为 FM 目标。
@@ -60,4 +62,13 @@ python -m src.unet.train --config src/unet/configs/fm_48.json --max-steps 80000 
 
 已验证：模型前后向、Writer/Script/STD 梯度、时间尺度、CFG=1、Writer-null 语义、严格加载；共用循环的 CPU 小批次优化、周期存盘、阶段停止存盘和不缩短 horizon。
 
-未做：本版完整 GPU 训练/评测闭环、NCHW/Channels Last 与编译的最终 profile、长训稳定性、条件推理缓存和生成质量验收。不把旧短测速度或结构正确性当作这些工作已经通过。
+基线另已验证真实B512训练、compile、EMA214/214配对、20.1k新checkpoint严格加载与有效评测DONE。
+新结构尚未做GPU batch/profile或质量实验，不把CPU等价性当作连贯性提升证据。
+
+## 连贯性改进（单变量候选）
+
+默认模型不新增任何state_dict key。可选三尺度Skip/STD门控使用`1+.5*tanh(a)`，从1起步；
+首轮Skip只训练32²。Decoder可独立指定深度[3,3,2]，新增块零初始化、暖启动前向等价。
+严格迁移只允许明确的新参数初始化，旧权重缺失即失败；受控A/B/C全部重建优化器与EMA。
+P0包含阈值/小组件、同点Raw/EMA、Heun50/100及0.8尺度干预，后者只作OOD敏感性诊断。
+见[配置与预算](../../src/unet/configs/connectivity/README.md)及[诊断入口](../../tools/analysis/unet_connectivity/README.md)。
