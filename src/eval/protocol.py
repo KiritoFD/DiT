@@ -227,7 +227,7 @@ def write_done(req: EvalRequest, eval_dir: str, n_samples: int,
         arts[os.path.basename(metrics_path)] = sha256_file(metrics_path)
     # 约定命名的产物: 存在即登记 ✓（**保留旧约定** ✓ —— 但**不再**"存在就写 DONE" ✗：
     #   必须的 manifest/PNG 已在上面**强制校验** ✓ 这里只是把可选产物也纳入哈希链 ✓）
-    for name in ("metrics.json", "manifest.json", "encoder_audit.json"):
+    for name in ("metrics.json", "manifest.json", "encoder_audit.json", "png_index.jsonl"):
         p = os.path.join(eval_dir, name)
         if os.path.isfile(p):
             arts[name] = sha256_file(p)

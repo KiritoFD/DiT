@@ -66,6 +66,10 @@ def _str_to_bool(value):
 
 def _add_args_1(parser):
     """build_parser 参数组 1 ✓（原 L70..L160 ✓ 逐字搬移 ✓）。"""
+    parser.add_argument('--train-path', choices=('legacy', 'latent-std'), default='legacy',
+                        help='Select once: isolated cached FM/STD/REPA or historical objectives.')
+    parser.add_argument('--spatial-probe', choices=('off','long-skip','local-residual'),
+                        default='off', help='Opt-in zero-init spatial ablation; warm start with prepared weights.')
     parser.add_argument("--data-csv", type=str, default="train.csv",
                         help="Path to the training CSV (default from config.json).")
     parser.add_argument("--data-dir", type=str, default="", help="Root dataset directory if CSV has relative paths")

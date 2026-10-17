@@ -220,27 +220,25 @@ def sample_latents(model, diffusion, noise, conds, cfg_scale, batch, device,
             z = _pad_to_batch(z, k)
         yc = _yc_all[i:j].to(device)
         yh = _yh_all[i:j].to(device)
+        # Slice once, pad local tensors, never replace the full condition arrays.
+        hier_use = (tuple(th.as_tensor(axis[i:j], dtype=th.long, device=device)
+                          for axis in hier_conds) if hier_conds is not None else None)
         if k < batch and dev_type == "cuda":
             yc = _pad_to_batch(yc, k)
             yh = _pad_to_batch(yh, k)
-            if hier_conds is not None:
-                hier_conds = (tuple(_pad_to_batch(h[i:j], k) if th.is_tensor(h)
-                                    else [_pad_to_batch(x[i:j], k) for x in h]
-                                    for h in hier_conds))
+            if hier_use is not None:
+                hier_use = tuple(_pad_to_batch(axis, k) for axis in hier_use)
             if skel is not None and th.is_tensor(skel):
                 skel_use = _pad_to_batch(skel[i:j], k)
             else:
                 skel_use = (skel[i:j] if skel is not None else None)
         else:
-            if hier_conds is not None:
-                hier_conds = hier_conds  # 原样 ✓
             skel_use = (skel[i:j] if skel is not None else None)
         # ★ 2026-10-14 [重构 PR5] 条件装配抽成 model_kwargs_for_slice ✓（审查 §4.1 ✓）
         #   逐字等价 ✓（含"存在才加键"语义 ✓ 与 g/cond 包装器判定 ✓）
         mk = model_kwargs_for_slice(
             model, yc=yc, yh=yh,
-            hier_slice=((hier_conds[0][i:j], hier_conds[1][i:j], hier_conds[2][i:j])
-                        if hier_conds is not None else None),
+            hier_slice=hier_use,
             skel_slice=skel_use,
             device=device)
         # bf16 autocast 仅 cuda (CPU 无 AVX512-BF16/AMX 时 bf16 走软件上转反而慢)

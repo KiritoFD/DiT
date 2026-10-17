@@ -30,6 +30,39 @@ __all__ = ["SAMPLES_JSONL", "safe_name", "sample_relpath", "iter_generated",
            "next_index", "write_png", "GenerationWriter", "read_manifest"]
 
 SAMPLES_JSONL = "samples.jsonl"
+
+
+def write_png_index(directory, ordered_samples, conds, hier_conds, std_conditions):
+    """Explicit PNG-order index; canonical samples.jsonl stays ID-sorted.
+
+    Contains generation identity and the actual cached model inputs, no GT.
+    """
+    records=[]
+    if len(ordered_samples) != len(conds):
+        raise ValueError('PNG/sample/condition count mismatch')
+    for i,sample in enumerate(ordered_samples):
+        filename=f'g{i}.png';path=os.path.join(directory,filename)
+        digest=hashlib.sha256()
+        with open(path,'rb') as f:
+            for block in iter(lambda:f.read(2**20),b''):digest.update(block)
+        record=dict(index=i,png=filename,png_sha256=digest.hexdigest(),
+                    sample_id=sample.sample_id,writer_id=sample.writer_id,
+                    script_id=sample.script_id,char_id=sample.char_id,glyph_key=sample.glyph_key,
+                    runtime_condition_ids=[int(v) for v in conds[i]])
+        if hier_conds is not None:
+            record['runtime_hier_ids']=[int(axis[i]) for axis in hier_conds]
+        if std_conditions is not None:
+            value=std_conditions[i].detach().cpu().contiguous().numpy()
+            record['std_tensor_sha256']=hashlib.sha256(value.tobytes()).hexdigest()
+            record['std_tensor_dtype']=str(value.dtype)
+            record['std_tensor_shape']=list(value.shape)
+        records.append(record)
+    path=os.path.join(directory,'png_index.jsonl');tmp=path+'.tmp'
+    with open(tmp,'w',encoding='utf-8') as f:
+        for record in records:f.write(json.dumps(record,ensure_ascii=False)+'\n')
+        f.flush();os.fsync(f.fileno())
+    os.replace(tmp,path)
+    return path
 _SAFE = re.compile(r"[^0-9A-Za-z._\-\u4e00-\u9fff]+")
 
 

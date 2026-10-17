@@ -1723,17 +1723,9 @@ def main(args):
         _step_offset = resume_start_step if (getattr(args, 'fresh_scheduler', False)
                                              and _resume_full_ckpt is not None) else 0
 
-        def _lr_scale(step):
-            step = step + _step_offset
-            if warmup_steps > 0 and step < warmup_steps:
-                return max((step + 1) / warmup_steps, 1e-8)
-            progress = ((step - warmup_steps)
-                        / max(total_planned_steps - warmup_steps, 1))
-            progress = min(max(progress, 0.0), 1.0)
-            cosine = 0.5 * (1.0 + math.cos(math.pi * progress))
-            return args.min_lr_ratio + (1.0 - args.min_lr_ratio) * cosine
-
-        scheduler = torch.optim.lr_scheduler.LambdaLR(opt, lr_lambda=_lr_scale)
+        from src.train.step import build_cosine_scheduler
+        scheduler = build_cosine_scheduler(opt,warmup_steps=warmup_steps,
+            total_steps=total_planned_steps,min_lr_ratio=args.min_lr_ratio,step_offset=_step_offset)
         if (_resume_full_ckpt is not None and _resume_full_ckpt.get("scheduler") is not None
                 and not getattr(args, 'fresh_scheduler', False)):
             scheduler.load_state_dict(_resume_full_ckpt["scheduler"])

@@ -1,5 +1,6 @@
 """Pinned-RAM STD bank sampling and low-frequency encoder health telemetry."""
 import torch
+from contextlib import nullcontext
 from torch.nn import functional as F
 from src.utils.std_shape_aug import mixture
 
@@ -10,6 +11,7 @@ class StdShapeTraining:
         if data['version']!=2:raise ValueError('Offline STD bank required')
         self.bank=data['variants'].pin_memory()
         self.mode=args.std_shape_aug
+        self.profile = getattr(args, 'profile_steps', 0) > 0
         self.logger=logger
         logger.info('[std-shape] offline bank preloaded in pinned RAM: %.2f GiB, %d variants/tier',
                     self.bank.numel()*self.bank.element_size()/2**30,self.bank.shape[2])
@@ -28,8 +30,13 @@ class StdShapeTraining:
         tiers=torch.multinomial(torch.tensor(mixture(step)),len(indices),replacement=True)
         effective=torch.where(tiers>0,torch.ones_like(tiers),tiers) if self.mode=='mild' else tiers
         variants=torch.randint(self.bank.shape[2],(len(indices),))
-        selected=self.bank[indices,(effective-1).clamp_min(0),variants].pin_memory()
-        sampled=selected.to(x0.device,non_blocking=True).float()
+        region = torch.profiler.record_function if self.profile else lambda name: nullcontext()
+        with region('std_bank.select'):
+            selected=self.bank[indices,(effective-1).clamp_min(0),variants]
+        with region('std_bank.pin'):
+            selected=selected.pin_memory()
+        with region('std_bank.h2d'):
+            sampled=selected.to(x0.device,non_blocking=True).float()
         g=torch.where((effective==0).to(x0.device)[:,None,None,None],clean,sampled)
         kwargs['g']=g
         if step%self.interval==0:

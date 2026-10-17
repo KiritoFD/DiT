@@ -42,6 +42,7 @@ from .dit import (
 ControlConditionEncoder = None
 ControlNetDiT = None
 load_main_model = None
+from .fm_unet import FMUNet
 from . import modules
 from .modules import (
     RMSNorm, SwiGLUFeedForward, Attention as ModernAttention,
@@ -50,6 +51,7 @@ from .modules import (
 )
 
 __all__ = [
+    "FMUNet",
     "TimestepEmbedder", "LabelEmbedder",
     "StyleHierarchy", "ScriptGlyphFiLM", "SpatialStyleFiLM", "LocalStyleGlyphAdapter",
     "DiT_2Cond", "DiT_2Cond_models",

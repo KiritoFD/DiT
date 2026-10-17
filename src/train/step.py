@@ -27,8 +27,21 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from typing import Optional
+import math
 
 import torch
+
+
+def build_cosine_scheduler(optimizer, *, warmup_steps, total_steps, min_lr_ratio, step_offset=0):
+    """Shared DiT/U-Net schedule; phase stop does not change the horizon."""
+    warmup_steps=min(warmup_steps,max(total_steps-1,0))
+    def scale(step):
+        step=step+step_offset
+        if warmup_steps>0 and step<warmup_steps:
+            return max((step+1)/warmup_steps,1e-8)
+        progress=min(max((step-warmup_steps)/max(total_steps-warmup_steps,1),0.),1.)
+        return min_lr_ratio+(1.-min_lr_ratio)*.5*(1.+math.cos(math.pi*progress))
+    return torch.optim.lr_scheduler.LambdaLR(optimizer,lr_lambda=scale)
 
 __all__ = ["NonFiniteGuard", "StepInputs", "resolve_step_inputs",
            "clip_and_step", "build_train_model_kwargs"]
@@ -94,7 +107,7 @@ class StepInputs:
 
 
 def resolve_step_inputs(batch, vae, device, *, train_vae_enc: bool,
-                        vae_sf: float, vae_shift: float) -> StepInputs:
+                        vae_sf: float, vae_shift: float, memory_format=None) -> StepInputs:
     """把 batch 解析成扩散目标 `x_latent`（审查 §4.2 第 1 条: H2D 数据移动 ✓）。
 
     **逐字搬移**自 `train.py` 的三分支 ✓（连上下文管理器一起 ✓）:
@@ -128,6 +141,9 @@ def resolve_step_inputs(batch, vae, device, *, train_vae_enc: bool,
     if "latent" in batch:
         # Latent-cached training: latent pre-encoded (scaled by vae_scaling_factor).
         x_latent = batch["latent"].to(device, non_blocking=True)
+        if memory_format is not None:
+            layout = torch.channels_last if memory_format == 'channels_last' else torch.contiguous_format
+            x_latent = x_latent.to(memory_format=layout)
         # moyi 式辅助目标通道: aux latents (skel/canny) 与图像 latent 拼成扩散目标
         _aux = batch.get("aux_latents", None)
         if _aux is not None and _aux.numel() > 0:

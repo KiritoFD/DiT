@@ -251,6 +251,9 @@ def build_checkpoint(model, opt, ema_model=None, scheduler=None,
         "train_steps": train_steps,
         "rng": capture_rng(),
     }
+    if getattr(args, 'architecture', None) is not None:
+        ckpt['architecture'] = args.architecture
+        ckpt['config'] = dict(args.architecture_config)
     _ep = None
     try:
         _ep = int(getattr(args, "epoch_steps", 0) or 0) or None      # 0/缺失 ⇒ None ✓

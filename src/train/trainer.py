@@ -1,28 +1,7 @@
 # -*- coding: utf-8 -*-
-"""trainer.py —— **训练循环**（2026-10-14 [重构 PR4 收官] ✓ 大刀阔斧版 ✓）
+"""Shared training lifecycle: logging, optimizer, EMA, checkpoints and evaluation.
 
-审查 §4.2 原文:
-  "建议改为: `def main(): spec = load_and_validate_config(); runtime = setup_runtime(spec);
-   data = build_data(spec, runtime); state = build_train_state(spec, runtime);
-   preflight(spec, data, state); trainer = Trainer(...); trainer.run()`" ✓
-  "尤其不要把所有功能都塞进一个通用 `Trainer` 类。我的目标是：`Trainer` 控制循环，
-   `TrainStep` 完成一次更新，`ObjectiveComposer` 组合损失，`CheckpointManager` 负责持久化，
-   各自保持小而清晰。" ✓
-
-★ 本模块做的是"**把循环搬出来**"这一步 ✓（审查 §4.2 的形态 ✓）:
-  · `TrainState`  = 循环所需的**全部外部状态**（44 个字段 ✓）
-  · `training_loop(s)` = 训练循环本体 ✓（**逐字搬移** ✓ 顶部重绑 44 个名字 ✓）
-
-★★ 为什么可以"逐字搬移"而不改一行 ✗:
-  已用 AST 逐名验证 ✓:
-    ① 44 个状态在循环内**只读** ✓（零写入 ⇒ **无需写回** ✓）
-    ② 循环后只需 `_train_fatal` 一个回传值 ✓
-  ⇒ 函数顶部 `x = s.x` 重绑后，**810 行循环体一字不改** ✓✓
-  ⇒ 等价性是**构造性**的 ✓ 不靠逐行核对 ✓
-
-★ 下一步（审查 §4.2 的"单步" ✓）: 把循环体内的
-  H2D → FM forward → 辅助损失 → backward → finite/clip → optimizer/scheduler/EMA
-  继续切成 `TrainStep` ✓ —— 本轮先把**整体**搬出来 ✓（一次减 810 行 ✓）
+The latent-std objective is selected once; legacy objectives remain reproducible.
 """
 from __future__ import annotations
 
@@ -49,10 +28,7 @@ __all__ = ["TrainState", "training_loop"]
 
 @dataclass
 class TrainState:
-    """训练循环的**全部外部状态** ✓（44 个字段 ✓ AST 推导 ✓）。
-
-    ⚠ 全部为**只读** ✓（循环内零写入 ✓ 已验证 ✓）⇒ 不需要写回 ✓
-    """
+    """Shared lifecycle inputs for DiT/U-Net; legacy objective components are optional."""
     _SKEL_STRUCT_WARNED: object = None
     _acc_c12: object = None
     log_steps: object = None
@@ -107,6 +83,7 @@ class TrainState:
     scheduler: object = None
     trainable_params_list: object = None
     vae: object = None
+    condition_transform: object = None  # Optional architecture adapter; no optimizer ownership.
 
 
 def training_loop(s: TrainState):
@@ -186,6 +163,26 @@ def training_loop(s: TrainState):
     scheduler = s.scheduler
     trainable_params_list = s.trainable_params_list
     vae = s.vae
+    from src.train.runtime.mainline import LatentStdObjective
+    from src.train.runtime.record import RunRecord
+    from src.loss.flow_matching import TIME_SCALE
+    _mainline = (LatentStdObjective(s)
+                 if getattr(args, 'train_path', 'legacy') == 'latent-std' else None)
+    _record = (RunRecord(__import__('os').path.dirname(checkpoint_dir), args, model,
+                         ema_model, diffusion, train_steps,
+                         latent_contract={'scale': _vae_sf, 'shift': _vae_shift,
+                                          'cached_latent': '(z_raw-shift)*scale',
+                                          'flow_model_time_scale': TIME_SCALE
+                                          if getattr(diffusion, 'is_flow', False) else None,
+                                          'train_dataset_length': len(loader.dataset)})
+               if rank == 0 else None)
+    logger.info('[train-path] %s; immutable launch=%s',
+                getattr(args, 'train_path', 'legacy'), _record.id if _record else 'rank0')
+    _std_shape = s.condition_transform
+    if _std_shape is None and getattr(args, 'std_shape_aug', 'off') != 'off':
+        from src.train.std_shape import StdShapeTraining
+        _std_shape = StdShapeTraining(args, logger)
+    _extra_ckpt_steps = set(getattr(args, 'checkpoint_steps', ()) or ())
     for epoch in range(_epochs_needed):
         sampler.set_epoch(epoch)
         if rank == 0:
@@ -233,7 +230,8 @@ def training_loop(s: TrainState):
                 #     ⇒ 搬移时**连上下文管理器一起**逐字复制 ✓ 刻意**不**统一 ✗
                 _si = _resolve_step_inputs(batch, vae, device,
                                            train_vae_enc=_train_vae_enc,
-                                           vae_sf=_vae_sf, vae_shift=_vae_shift)
+                                           vae_sf=_vae_sf, vae_shift=_vae_shift,
+                                           memory_format=getattr(args, 'memory_format', None))
                 x_latent, x, loss_vae_kl = _si.x_latent, _si.x, _si.loss_vae_kl
 
                 # 统一时间步采样: FlowMatching.sample_t -> t∈[0,1); GaussianDiffusion.sample_t -> t∈{0..T-1}。
@@ -251,472 +249,479 @@ def training_loop(s: TrainState):
                     std_soft_cond=_std_soft_cond,
                     y_callig=y_callig, y_char=y_char, y_script=y_script)
 
-                if getattr(args,'std_shape_aug','off')!='off':
-                    if '_std_shape' not in locals():
-                        from src.train.std_shape import StdShapeTraining
-                        _std_shape=StdShapeTraining(args,logger)
+                if _std_shape is not None:
                     _std_shape(model,batch,model_kwargs,x_latent,train_steps)
 
-                # ── 条件几何形变增强 (Condition Deformation Augmentation) ───────
-                _g_def_prob = float(getattr(args, 'glyph_deform_prob', 0.0))
-                if 'g' in model_kwargs and _g_def_prob > 0:
-                    from src.utils.deform_aug import random_skeleton_deformation
-                    _g_def_scale = float(getattr(args, 'glyph_deform_scale', 1.0))
-                    model_kwargs['g'] = random_skeleton_deformation(
-                        model_kwargs['g'], prob=_g_def_prob,
-                        max_rot_deg=5.0 * _g_def_scale,
-                        max_scale=0.08 * _g_def_scale,
-                        max_shear=0.06 * _g_def_scale,
-                        max_trans_px=1.5 * _g_def_scale,
-                        max_elastic_px=1.5 * _g_def_scale,
-                        preserve_amplitude=not _std_soft_cond,
-                    )
+                _repa_called = False
+                if _mainline is not None:
+                    loss_dict, loss_diff, loss_repa = _mainline(
+                        model, x_latent, t, model_kwargs, batch, x, train_steps)
+                    loss = loss_diff + loss_repa
+                    _repa_called = _mainline.repa is not None
+                    loss_std_mid = loss_x0lat = loss_skel_struct = loss_diff.new_zeros(())
+                    pred_xstart_latent = None
+                else:
+                    # ── 条件几何形变增强 (Condition Deformation Augmentation) ───────
+                    _g_def_prob = float(getattr(args, 'glyph_deform_prob', 0.0))
+                    if 'g' in model_kwargs and _g_def_prob > 0:
+                        from src.utils.deform_aug import random_skeleton_deformation
+                        _g_def_scale = float(getattr(args, 'glyph_deform_scale', 1.0))
+                        model_kwargs['g'] = random_skeleton_deformation(
+                            model_kwargs['g'], prob=_g_def_prob,
+                            max_rot_deg=5.0 * _g_def_scale,
+                            max_scale=0.08 * _g_def_scale,
+                            max_shear=0.06 * _g_def_scale,
+                            max_trans_px=1.5 * _g_def_scale,
+                            max_elastic_px=1.5 * _g_def_scale,
+                            preserve_amplitude=not _std_soft_cond,
+                        )
 
-                # ── 条件噪声增强 (Condition Noise Augmentation) ───────────
-                # 标准骨架 g 是固定的印刷体 latent (cos=0.902 to GT)。加噪声迫使
-                # 模型学会从「不完美的结构条件」中提取拓扑信息，避免对 g 精确数值过拟合。
-                _gn_scale = float(getattr(args, 'glyph_noise_scale', 0.0))
-                _gn_prob = float(getattr(args, 'glyph_noise_prob', 0.0))
-                _gpd = float(getattr(args, 'glyph_patch_drop', 0.0))
-                if 'g' in model_kwargs and (_gn_scale > 0 or _gpd > 0):
-                    _g = model_kwargs['g']
-                    if _gn_scale > 0 and _gn_prob > 0:
-                        _mask = (torch.rand(_g.shape[0], 1, 1, 1, device=device) < _gn_prob).to(_g.dtype)
-                        _scales = torch.rand(_g.shape[0], 1, 1, 1, device=device) * _gn_scale
-                        _g = _g + _mask * torch.randn_like(_g) * _scales
-                    if _gpd > 0:
-                        _pmask = (torch.rand(_g.shape[0], 1, _g.shape[2], _g.shape[3],
-                                             device=device) > _gpd).to(_g.dtype)
+                    # ── 条件噪声增强 (Condition Noise Augmentation) ───────────
+                    # 标准骨架 g 是固定的印刷体 latent (cos=0.902 to GT)。加噪声迫使
+                    # 模型学会从「不完美的结构条件」中提取拓扑信息，避免对 g 精确数值过拟合。
+                    _gn_scale = float(getattr(args, 'glyph_noise_scale', 0.0))
+                    _gn_prob = float(getattr(args, 'glyph_noise_prob', 0.0))
+                    _gpd = float(getattr(args, 'glyph_patch_drop', 0.0))
+                    if 'g' in model_kwargs and (_gn_scale > 0 or _gpd > 0):
+                        _g = model_kwargs['g']
+                        if _gn_scale > 0 and _gn_prob > 0:
+                            _mask = (torch.rand(_g.shape[0], 1, 1, 1, device=device) < _gn_prob).to(_g.dtype)
+                            _scales = torch.rand(_g.shape[0], 1, 1, 1, device=device) * _gn_scale
+                            _g = _g + _mask * torch.randn_like(_g) * _scales
+                        if _gpd > 0:
+                            _pmask = (torch.rand(_g.shape[0], 1, _g.shape[2], _g.shape[3],
+                                                 device=device) > _gpd).to(_g.dtype)
+                            if _std_soft_cond:
+                                _z_bg = torch.zeros(1, 1, 1, 1, device=device, dtype=_g.dtype)
+                            else:
+                                from src.utils.deform_aug import Z_BG_VEC
+                                _z_bg = Z_BG_VEC.to(device=device, dtype=_g.dtype)
+                            _g = _g * _pmask + _z_bg * (1.0 - _pmask)
+                        model_kwargs['g'] = _g
+
+                    # ── 条件「整块抹白」增强 (2026-10-01) ──────────────────────
+                    # 动机: 推理时喂给 stage2 的是 **stage1 预测出的骨架**, 它的失效模式
+                    #   不是"加点噪", 而是**整段笔画没了 / 整块糊掉**。上面的逐格
+                    #   patch_drop 只产生散点, 模拟不了"少一笔"; 这里按**连续区域**
+                    #   抹成纯白背景 (Z_BG_VEC), 才对得上那个失效模式。
+                    #   两种形状: 细长条(≈少了一笔) / 方块(≈一块糊掉)。
+                    _gm_prob = float(getattr(args, 'glyph_mask_prob', 0.0))
+                    if 'g' in model_kwargs and _gm_prob > 0:
+                        _g = model_kwargs['g']
                         if _std_soft_cond:
                             _z_bg = torch.zeros(1, 1, 1, 1, device=device, dtype=_g.dtype)
                         else:
                             from src.utils.deform_aug import Z_BG_VEC
                             _z_bg = Z_BG_VEC.to(device=device, dtype=_g.dtype)
-                        _g = _g * _pmask + _z_bg * (1.0 - _pmask)
-                    model_kwargs['g'] = _g
+                        _B, _C, _H, _W = _g.shape
+                        _hit = torch.rand(_B, device=device) < _gm_prob
+                        # 尺度: 1 个 latent 格 = 8px, 默认 4 格 = 32x32 px (2026-10-01 指定)
+                        _sz = int(getattr(args, 'glyph_mask_size', 4))
+                        _jit = int(getattr(args, 'glyph_mask_jitter', 1))
+                        _nmax = int(getattr(args, 'glyph_mask_n', 3))
+                        _lo, _hi = max(2, _sz - _jit), max(2, _sz + _jit)
+                        _msk = torch.zeros(_B, 1, _H, _W, device=device, dtype=torch.bool)
+                        for _b in range(_B):
+                            if not bool(_hit[_b]):
+                                continue
+                            for _ in range(_nmax):
+                                _h = int(torch.randint(_lo, _hi + 1, (1,)).item())
+                                _w = int(torch.randint(_lo, _hi + 1, (1,)).item())
+                                _y = int(torch.randint(0, _H - _h + 1, (1,)).item())
+                                _x = int(torch.randint(0, _W - _w + 1, (1,)).item())
+                                _msk[_b, 0, _y:_y + _h, _x:_x + _w] = True
+                        model_kwargs['g'] = torch.where(_msk, _z_bg, _g)
 
-                # ── 条件「整块抹白」增强 (2026-10-01) ──────────────────────
-                # 动机: 推理时喂给 stage2 的是 **stage1 预测出的骨架**, 它的失效模式
-                #   不是"加点噪", 而是**整段笔画没了 / 整块糊掉**。上面的逐格
-                #   patch_drop 只产生散点, 模拟不了"少一笔"; 这里按**连续区域**
-                #   抹成纯白背景 (Z_BG_VEC), 才对得上那个失效模式。
-                #   两种形状: 细长条(≈少了一笔) / 方块(≈一块糊掉)。
-                _gm_prob = float(getattr(args, 'glyph_mask_prob', 0.0))
-                if 'g' in model_kwargs and _gm_prob > 0:
-                    _g = model_kwargs['g']
-                    if _std_soft_cond:
-                        _z_bg = torch.zeros(1, 1, 1, 1, device=device, dtype=_g.dtype)
-                    else:
-                        from src.utils.deform_aug import Z_BG_VEC
-                        _z_bg = Z_BG_VEC.to(device=device, dtype=_g.dtype)
-                    _B, _C, _H, _W = _g.shape
-                    _hit = torch.rand(_B, device=device) < _gm_prob
-                    # 尺度: 1 个 latent 格 = 8px, 默认 4 格 = 32x32 px (2026-10-01 指定)
-                    _sz = int(getattr(args, 'glyph_mask_size', 4))
-                    _jit = int(getattr(args, 'glyph_mask_jitter', 1))
-                    _nmax = int(getattr(args, 'glyph_mask_n', 3))
-                    _lo, _hi = max(2, _sz - _jit), max(2, _sz + _jit)
-                    _msk = torch.zeros(_B, 1, _H, _W, device=device, dtype=torch.bool)
-                    for _b in range(_B):
-                        if not bool(_hit[_b]):
-                            continue
-                        for _ in range(_nmax):
-                            _h = int(torch.randint(_lo, _hi + 1, (1,)).item())
-                            _w = int(torch.randint(_lo, _hi + 1, (1,)).item())
-                            _y = int(torch.randint(0, _H - _h + 1, (1,)).item())
-                            _x = int(torch.randint(0, _W - _w + 1, (1,)).item())
-                            _msk[_b, 0, _y:_y + _h, _x:_x + _w] = True
-                    model_kwargs['g'] = torch.where(_msk, _z_bg, _g)
-            
-                # REPA: 请求多层中间特征 (统一 infra, 多层 dict / 单层兼容)
-                if args.w_repa > 0 and repa_loss_fn is not None:
-                    if len(repa_loss_fn.layers) > 1:
-                        model_kwargs['return_intermediate_layers'] = repa_loss_fn.layers
-                    else:
-                        model_kwargs['return_intermediate_layer'] = repa_loss_fn.layers[0]
-
-                # Forward pass under bf16 autocast (same exponent range as fp32, no overflow).
-                #
-                # return_pred_xstart: flow 分支默认**不返回** pred_xstart（避免
-                # autograd 图膨胀），但下面 w_std_mid 依赖它。若这里不请求，flow
-                # 模式下该机制会因 `loss_dict.get("pred_xstart", None)` 恒为 None 而
-                # **静默失效** —— 不报错、loss 正常下降、但从未生效。w_std_mid 正是
-                # 「把去噪中段预测的 x0 拉向标准字形 latent」的预训练改进项。
-                # gaussian_diffusion 不接受该参数，故用 try/except 兼容。
-                _need_x0 = (getattr(args, 'w_std_mid', 0.0) > 0
-                            or getattr(args, 'w_latent_skel', 0.0) > 0
-                            or getattr(args, 'w_style_rank', 0.0) > 0
-                            or getattr(args, 'w_critic_writer', 0.0) > 0
-                            or getattr(args, 'w_critic_away', 0.0) > 0)
-                with torch.autocast("cuda", dtype=torch.bfloat16):
-                    if _need_x0:
-                        try:
-                            loss_dict = diffusion.training_losses(
-                                model, x_latent, t, model_kwargs,
-                                return_pred_xstart=True, channel_weights=_ch_w)
-                        except TypeError:
-                            # gaussian_diffusion 不支持该参数，本身就会返回 pred_xstart
-                            loss_dict = diffusion.training_losses(
-                                model, x_latent, t, model_kwargs)
-                    else:
-                        loss_dict = diffusion.training_losses(
-                            model, x_latent, t, model_kwargs, channel_weights=_ch_w)
-                    loss_diff = loss_dict["loss"].mean()
-
-                loss_repa = torch.tensor(0.0, device=device)
-                loss_x0lat = torch.tensor(0.0, device=device)
-                loss_skel_struct = torch.tensor(0.0, device=device)
-
-                # === INFRA FIX: pred_xstart from training_losses carries the ENTIRE DiT
-                # forward graph (every block's activations are kept alive because the
-                # graph flows back through _predict_xstart_from_eps → model_output).
-                # This is THE memory leak: the 256-token × 384-dim × 12-block activation
-                # graph stays pinned until backward() runs, and struct decoders build
-                # ADDITIONAL 256×256 activations on top of it. When t<=500 (~50% of steps)
-                # the decoder runs → graph doubles; when t>500 the graph lingers but
-                # decoders don't run → the cycling 20G→22G→14G pattern.
-                #
-                # FIX: extract pred_xstart WITH the graph only when we actually need it
-                # for a differentiable struct loss (t<=max_t). For t>500 steps, detach
-                # immediately so the full graph is freed at the next zero_grad. We also
-                # break the reference in loss_dict so no stale graph survives the loop.
-                _need_x0_grad = (getattr(args, 'w_std_mid', 0.0) > 0
-                                 or getattr(args, 'w_latent_skel', 0.0) > 0
-                                 or getattr(args, 'w_style_rank', 0.0) > 0
-                                 or getattr(args, 'w_critic_writer', 0.0) > 0
-                                 or getattr(args, 'w_critic_away', 0.0) > 0)
-                pred_xstart_latent = loss_dict.get("pred_xstart", None)
-                if pred_xstart_latent is not None and not _need_x0_grad:
-                    # No struct loss this run at all — drop the graph immediately.
-                    pred_xstart_latent = pred_xstart_latent.detach()
-                # Clear the heavy reference inside loss_dict so the dict can't keep
-                # the graph alive after we exit this step.
-                loss_dict.pop("pred_xstart", None)
-
-                # ---- MIDSTEP_STD (已抽到 src/loss/structure_mid.py: MidStructureLoss) ----
-                # 旧内联是 MSE(x0_pred, 细骨架 g), 与中程软墨迹形态冲突 -> 换成
-                # 载体粗化 + 低通子空间 + 通道归一。gt=GT图像latent(现成), skel=g。
-                loss_std_mid = torch.tensor(0.0, device=device)
-                if (_mid_struct_loss is not None
-                        and pred_xstart_latent is not None):
-                    _lc = int(getattr(args, 'latent_channels', 4))
-                    _gt = x_latent[:, :_lc]
-                    # 膨胀后的 GT 实例骨架 (20px)。不用标准骨架 g, 那是条件本身。
-                    _gsk = batch.get('inst_skel', None)
-                    if _gsk is None or _gsk.numel() == 0:
-                        if not getattr(_mid_struct_loss, "_empty_warned", False):
-                            _mid_struct_loss._empty_warned = True
-                            logger.warning(
-                                "[std_mid] batch['inst_skel'] 为空, 中程监督未生效。"
-                                "需要 --inst-skel-shards-dir 指向膨胀后的 GT 骨架。")
-                        loss_std_mid = torch.tensor(0.0, device=device)
-                    else:
-                        loss_std_mid = _mid_struct_loss(
-                            pred_xstart_latent, _gt,
-                            _gsk.to(device, non_blocking=True).float(),
-                            t.to(device))
-
-                intermediate_feats = loss_dict.get("intermediate_feats", None)
-                # ★ 2026-10-11: 不再要求 `x is not None` —— 有 REPA 特征缓存时按 img_ids 查表即可,
-                #   真图只在缓存 miss 的行才需要(见 losses.py)。若 x=None 却真 miss,
-                #   REPALoss 会**显式抛错**, 绝不静默失去 REPA。
-                if intermediate_feats is not None and repa_loss_fn is not None and args.w_repa > 0:
-                    # 统一 REPA (公共 infra): 多层 dict / 单层张量 + warmup 渐进
-                    # img_ids: 配合 --repa-cache-dir 查表 (命中免 DINO 前向)
-                    _img_ids = batch.get('img_id', None)
-                    loss_repa = repa_loss_fn(intermediate_feats, x, step=train_steps,
-                                             img_ids=_img_ids)
-
-                # ---- 实例骨架结构 loss (辅助, 冻结 probe, 零可训练参数) ----
-                # 见 src/train/latent_structure.py:LatentSkelStructureLoss 的 docstring:
-                # 与 12ch 的区别是"不在扩散目标里" —— 4ch 主干 / CFG 作用域 / 推理成本
-                # 全部不受影响, 新增可训练参数 0(当前主要矛盾是过拟合, 这是决定性优势)。
-                # target = batch['skel_latent'] **必须是实例骨架**; 若指到标准字形就是纯重复 g。
-                if _skel_struct_loss_fn is not None and pred_xstart_latent is not None:
-                    # [inst-skel 2026-09-16] target 现在读 **inst_skel**(实例骨架, GT 图派生),
-                    # 与条件 g (skel_latent=shards_std) 解耦。不再读 skel_latent。
-                    _sk = batch.get('inst_skel', None)
-                    if _sk is None or _sk.numel() == 0:
-                        if not _SKEL_STRUCT_WARNED:
-                            _SKEL_STRUCT_WARNED = True
-                            logger.warning(
-                                "[skel-struct] w_latent_skel>0 但 batch['inst_skel'] 为空 "
-                                "(需配置 --inst-skel-shards-dir 指向实例骨架 shards) "
-                                "-> 本项静默失效。这类静默失效已踩过多次, 故只在首次告警。")
-                        loss_skel_struct = torch.tensor(0.0, device=device)
-                    else:
-                        loss_skel_struct = _skel_struct_loss_fn(
-                            pred_xstart_latent,
-                            _sk.to(device, non_blocking=True).float(),
-                            t.to(device))
-
-                # ★ 2026-10-14 [重构 PR4] 损失装配抽到 ObjectiveComposer ✓
-                #   ⚠ **注册顺序 = 原加法顺序** ✗（浮点加法不满足结合律 ✓
-                #     顺序变了 ⇒ 末位不同 ⇒ 训练轨迹不同 ✗）
-                _obj = _ObjComposer(loss_diff, base_name="fm")
-                # 统一 REPA: w × (1 - cos) 已在 RepaModule.forward 内含 warmup
-                _obj.add("repa", loss_repa, 1.0)
-                _obj.add("std_mid", loss_std_mid, getattr(args, 'w_std_mid', 0.0))
-                _obj.add("latent_skel", loss_skel_struct,
-                         getattr(args, 'w_latent_skel', 0.0))
-                loss = _obj.total
-                if _train_vae_enc and loss_vae_kl is not None:
-                    _w_vkl = float(getattr(args, 'w_vae_kl', 1e-5))
-                    loss = loss + _w_vkl * loss_vae_kl
-
-                # ---- style-rank loss (t 门控在模块内) ----
-                loss_style_rank = torch.tensor(0.0, device=device)
-                if _style_rank_loss_fn is not None and getattr(args, 'w_style_rank', 0.0) > 0:
-                    if pred_xstart_latent is not None:
-                        _yp = batch['y_pair'].to(device, non_blocking=True)
-                        loss_style_rank, _n_style_rank = _style_rank_loss_fn(
-                            pred_xstart_latent, _yp, t.to(device))
-                        # ★★ v85B: **梯度范数比探针**（方案 §三.3 明确要求的标定方式 ✓）
-                        #   方案原文: "建议按**共享 DiT 参数的梯度范数**确定权重，使新风格损失
-                        #   在启用样本上贡献约 **FM 梯度的 5–10%**，而**不是仅根据两个标量
-                        #   loss 的数值**选择权重 ✓"。
-                        #   为什么: 两个 loss 的**标量数值不可比** ✗（一个在 latent MSE 尺度、
-                        #   一个在 logsumexp 尺度 ✓）⇒ 只有**对同一组参数的梯度**可比 ✓。
-                        #   实现: 用 autograd.grad 分别对两组 loss 求同一组共享参数（可训练 ✓）
-                        #   的梯度（retain_graph=True ✓），只在**前几步**做以免拖慢训练 ✓。
-                        _pstep = int(getattr(args, 'probe_style_grad_steps', 0) or 0)
-                        if _pstep and train_steps < _pstep and int(_n_style_rank) > 0:
-                            _shared = [p for p in model.parameters() if p.requires_grad]
-                            # ★ 2026-10-14 [重构 PR4] 探针原语抽到 backward.grad_norm ✓
-                            #   （数学与旧代码**逐字相同** ✓ 只求范数, 不累积到 .grad ✓）
-                            _n_fm = _bw.grad_norm(loss, _shared)
-                            _n_st = _bw.grad_norm(loss_style_rank, _shared)
-                            _ratio = float(_n_st / (_n_fm + 1e-12))
-                            logger.info(
-                                "[style-rank-probe] step=%d n=%d | ‖dL_FM/dθ‖=%.4e "
-                                "‖dL_style/dθ‖=%.4e | λ=%.5g 时贡献比=%.2f%% | "
-                                "目标 5-10%% ⇒ 建议 λ≈%.5g",
-                                train_steps, int(_n_style_rank), float(_n_fm), float(_n_st),
-                                float(args.w_style_rank), 100.0 * _ratio,
-                                float(args.w_style_rank) * (0.075 / max(_ratio, 1e-12)))
-                        _obj.add("style_rank", loss_style_rank,
-                                 getattr(args, 'w_style_rank', 0.0))
-                        loss = _obj.total
-
-                # ---- v85B/C: 冻结 critic 的生成端辅助 Loss（方案 §六 ✓）----
-                # L_writer^G = CE(slot(ẑ₀), 目标书家槽) | L_away^G = softplus(−brush(ẑ₀))
-                # 全程 latent ✓（ẑ₀ 直接喂 ✓ 不挂 decoder ✓）critic 冻结但**不套 no_grad** ✓
-                # 只对 t∈[t_min,t_max] 的样本计算 ✓（方案建议 ✓）
-                loss_critic_writer = torch.tensor(0.0, device=device)
-                loss_critic_away = torch.tensor(0.0, device=device)
-                # ★ 活性计数器（静默失效必须可观测 ✓ —— 本会话第 3 次同类坑 ✓）
-                _cw = globals().setdefault('_CRITIC_CNT', {'n': 0, 'hit': 0, 'warned': False})
-                _cw['n'] += 1
-                if _critic_loss_fn is not None and pred_xstart_latent is not None \
-                        and (getattr(args, 'w_critic_writer', 0.0) > 0
-                             or getattr(args, 'w_critic_away', 0.0) > 0):
-                    # ★ flow matching 的 t 本来就是 [0,1] 连续值 ✓（实测 0.042-0.965,
-                    #   num_timesteps=50 只是档位数 ✗ —— 除它就把窗口错位 50 倍 ✗✗）
-                    _ct = t.to(device).float()
-                    _cmask = ((_ct >= getattr(args, 'critic_t_min', 0.05))
-                              & (_ct <= getattr(args, 'critic_t_max', 0.30)))
-                    if _cmask.any():
-                        _cw['hit'] += 1
-                    if train_steps % 100 == 0 and not _cw['warned']:
-                        _cw['warned'] = True
-                        logger.info("[critic-activity] steps=%d hit=%d | "
-                                    "pred_xstart=%s w=(%.4g,%.4g) | t 原始: min=%.4g "
-                                    "max=%.4g num_ts=%s | _ct: min=%.4g max=%.4g ⇒ %s",
-                                    _cw['n'], _cw['hit'],
-                                    '有' if pred_xstart_latent is not None else 'None!',
-                                    args.w_critic_writer, args.w_critic_away,
-                                    float(t.min()), float(t.max()),
-                                    str(getattr(diffusion, 'num_timesteps', '?')),
-                                    float(_ct.min()), float(_ct.max()),
-                                    '正常' if _cw['hit'] else '**未命中 ✗**')
-                    if _cmask.any():
-                        _zs = pred_xstart_latent[_cmask].float()
-                        # ★ g = batch['std_soft'] ✓（现成 per-sample [1,64,64] ✓
-                        #   σ=eval 0.65 ✓ —— 与 critic 的 g_std bank 同源同分布 ✓
-                        #   **不需要任何字符反查** ✓（y_script/y_char 是整数索引 ✗
-                        #   str() 会得到 'tensor(1)' ⇒ KeyError: 'tensor(1)' ✗✗ 实测 ✓））
-                        _ss = batch['std_soft'][_cmask.cpu()]
-                        if _ss.dim() == 3:
-                            _ss = _ss.unsqueeze(1)                # [B,1,64,64] ✓
-                        _g_direct = _ss.float().to(device) / 255.0 \
-                            if _ss.float().max() > 1.5 else _ss.float().to(device)
-                        # 目标槽 = 书家×书体（y_callig_raw + y_script **都是 id** ✓）
-                        _cmask_cpu = _cmask.cpu()          # batch 张量在 CPU ✓
-                        _sc_id = batch['y_script'][_cmask_cpu].long().to(device)
-                        _cw_id = batch['y_callig_raw'][_cmask_cpu].long().to(device)
-                        # slots 表按 "writer·script" 存 ✗ 但 id 空间不同 ⇒ 用 critic 的
-                        # **writer_ids/scripts** 反查 ✓（critic 存了训练 CSV 的 slot 字符串 ✓
-                        # 但 batch 只有 id ⇒ 需要 id→str 映射 —— 由 _build_aux_losses 建好 ✓）
-                        _lut = getattr(_critic_loss_fn, 'id2slot', None)
-                        if _lut is None:
-                            _cw['warned'] = False
-                            logger.info("[critic-missing-lut] id→slot 映射缺失 ⇒ 本步跳过 ✗")
+                    # REPA: 请求多层中间特征 (统一 infra, 多层 dict / 单层兼容)
+                    if args.w_repa > 0 and repa_loss_fn is not None:
+                        if len(repa_loss_fn.layers) > 1:
+                            model_kwargs['return_intermediate_layers'] = repa_loss_fn.layers
                         else:
-                            _keys = [_lut.get((int(w), int(s)), None)
-                                     for w, s in zip(_cw_id.tolist(), _sc_id.tolist())]
-                            _valid = [k is not None for k in _keys]
-                            if any(_valid):
-                                _zi = [i for i, v in enumerate(_valid) if v]
-                                _zs = _zs[_zi]
-                                _g_direct = _g_direct[_zi]
-                                _si = torch.tensor(
-                                    [_critic_loss_fn.s2i[
-                                        _lut[(int(_cw_id[i]), int(_sc_id[i]))].split('·')[1]]
-                                     for i in _zi], dtype=torch.long, device=device)
-                                _ys = torch.tensor(
-                                    [_critic_loss_fn.slots.index(
-                                        _lut[(int(_cw_id[i]), int(_sc_id[i]))])
-                                     for i in _zi], dtype=torch.long, device=device)
-                                _lw, _la, _cp = _critic_loss_fn.forward_g(
-                                    _zs, _g_direct, _si, _ys)
-                                loss_critic_writer = _lw
-                                loss_critic_away = _la
-                        # ★ 梯度范数比探针 ✓（与 style-rank 探针同一机制 ✓）
-                        _pstep = int(getattr(args, 'probe_style_grad_steps', 0) or 0)
-                        if _pstep and train_steps < _pstep:
-                            _shared = [p for p in model.parameters() if p.requires_grad]
-                            # ★ FM 基线用**总 loss 减去 critic 项** ✗ 更简单可靠:
-                            #    直接对 loss_diff 求梯度 ✓（它是本步 FM 项 ✓）
-                            # ★ 2026-10-14 [重构 PR4] 同上, 统一走 backward.grad_norm ✓
-                            _n_fm = _bw.grad_norm(loss_diff, _shared)
-                            _n_cw = _bw.grad_norm(loss_critic_writer, _shared)
-                            _n_ca = _bw.grad_norm(loss_critic_away, _shared)
-                            # ★★ 贡献%必须**含 w** ✓（裸比 ✗ 曾致 λ 建议错 w 倍 ✗✗
-                            #    ⇒ v85C 以 3e-8 实跑 = 有效贡献 0.00016%% ≈ 空跑 ✗）
-                            _r_w = float(_n_cw / (_n_fm + 1e-12))
-                            _r_a = float(_n_ca / (_n_fm + 1e-12))
-                            logger.info(
-                                "[critic-probe] step=%d n=%d | ‖dL_FM/dθ‖=%.4e "
-                                "‖dL_writer/dθ‖=%.4e ‖dL_away/dθ‖=%.4e | "
-                                "w=(%.4g,%.4g) ⇒ 实际贡献 %.2f%% / %.2f%% | "
-                                "目标 5%%/1-2%% ⇒ 建议 w_writer≈%.4g w_away≈%.4g",
-                                train_steps, int(_cmask.sum()), float(_n_fm), float(_n_cw),
-                                float(_n_ca), float(args.w_critic_writer),
-                                float(args.w_critic_away),
-                                100.0 * float(args.w_critic_writer) * _r_w,
-                                100.0 * float(args.w_critic_away) * _r_a,
-                                0.05 / max(_r_w, 1e-12),
-                                0.015 / max(_r_a, 1e-12))
-                        _obj.add("critic_writer", loss_critic_writer,
-                                 getattr(args, 'w_critic_writer', 0.0))
-                        _obj.add("critic_away", loss_critic_away,
-                                 getattr(args, 'w_critic_away', 0.0))
-                        loss = _obj.total
+                            model_kwargs['return_intermediate_layer'] = repa_loss_fn.layers[0]
 
-                # ---- DeformSkel 中间监督: 形变后的骨架应逼近**该书家的 GT 骨架** ----
-                # 这是本项目第一个"自带稠密监督"的风格干预: 目标数据(实例骨架)现成,
-                # 且 step0 时 g'=g_std != g_gt -> 立刻有梯度, 不像其它风格模块那样学不动。
-                loss_deform = torch.tensor(0.0, device=device)
-                _DEFORM_EMA = globals().setdefault('_DEFORM_EMA', {'loss': None, 'off': None})
-                if getattr(args, 'w_deform_skel', 0.0) > 0:
-                    _dm = getattr(model, 'deform_skel', None)
-                    if _dm is None:
-                        if not globals().get('_WARNED_DEFORM', False):
-                            globals()['_WARNED_DEFORM'] = True
-                            logger.warning("[deform] w_deform_skel>0 但模型没有 deform_skel "
-                                           "-> 本项静默失效(已踩过多次, 故只首次告警)")
-                    elif getattr(_dm, 'last_out', None) is None:
-                        if not globals().get('_WARNED_DEFORM2', False):
-                            globals()['_WARNED_DEFORM2'] = True
-                            logger.warning("[deform] deform_skel.last_out 为空 -> 形变没被调用"
-                                           "(compile 下属性写入可能被吞) -> 本项静默失效")
-                    else:
+                    # Forward pass under bf16 autocast (same exponent range as fp32, no overflow).
+                    #
+                    # return_pred_xstart: flow 分支默认**不返回** pred_xstart（避免
+                    # autograd 图膨胀），但下面 w_std_mid 依赖它。若这里不请求，flow
+                    # 模式下该机制会因 `loss_dict.get("pred_xstart", None)` 恒为 None 而
+                    # **静默失效** —— 不报错、loss 正常下降、但从未生效。w_std_mid 正是
+                    # 「把去噪中段预测的 x0 拉向标准字形 latent」的预训练改进项。
+                    # gaussian_diffusion 不接受该参数，故用 try/except 兼容。
+                    _need_x0 = (getattr(args, 'w_std_mid', 0.0) > 0
+                                or getattr(args, 'w_latent_skel', 0.0) > 0
+                                or getattr(args, 'w_style_rank', 0.0) > 0
+                                or getattr(args, 'w_critic_writer', 0.0) > 0
+                                or getattr(args, 'w_critic_away', 0.0) > 0)
+                    with torch.autocast("cuda", dtype=torch.bfloat16):
+                        if _need_x0:
+                            try:
+                                loss_dict = diffusion.training_losses(
+                                    model, x_latent, t, model_kwargs,
+                                    return_pred_xstart=True, channel_weights=_ch_w)
+                            except TypeError:
+                                # gaussian_diffusion 不支持该参数，本身就会返回 pred_xstart
+                                loss_dict = diffusion.training_losses(
+                                    model, x_latent, t, model_kwargs)
+                        else:
+                            loss_dict = diffusion.training_losses(
+                                model, x_latent, t, model_kwargs, channel_weights=_ch_w)
+                        loss_diff = loss_dict["loss"].mean()
+
+                    loss_repa = torch.tensor(0.0, device=device)
+                    loss_x0lat = torch.tensor(0.0, device=device)
+                    loss_skel_struct = torch.tensor(0.0, device=device)
+
+                    # === INFRA FIX: pred_xstart from training_losses carries the ENTIRE DiT
+                    # forward graph (every block's activations are kept alive because the
+                    # graph flows back through _predict_xstart_from_eps → model_output).
+                    # This is THE memory leak: the 256-token × 384-dim × 12-block activation
+                    # graph stays pinned until backward() runs, and struct decoders build
+                    # ADDITIONAL 256×256 activations on top of it. When t<=500 (~50% of steps)
+                    # the decoder runs → graph doubles; when t>500 the graph lingers but
+                    # decoders don't run → the cycling 20G→22G→14G pattern.
+                    #
+                    # FIX: extract pred_xstart WITH the graph only when we actually need it
+                    # for a differentiable struct loss (t<=max_t). For t>500 steps, detach
+                    # immediately so the full graph is freed at the next zero_grad. We also
+                    # break the reference in loss_dict so no stale graph survives the loop.
+                    _need_x0_grad = (getattr(args, 'w_std_mid', 0.0) > 0
+                                     or getattr(args, 'w_latent_skel', 0.0) > 0
+                                     or getattr(args, 'w_style_rank', 0.0) > 0
+                                     or getattr(args, 'w_critic_writer', 0.0) > 0
+                                     or getattr(args, 'w_critic_away', 0.0) > 0)
+                    pred_xstart_latent = loss_dict.get("pred_xstart", None)
+                    if pred_xstart_latent is not None and not _need_x0_grad:
+                        # No struct loss this run at all — drop the graph immediately.
+                        pred_xstart_latent = pred_xstart_latent.detach()
+                    # Clear the heavy reference inside loss_dict so the dict can't keep
+                    # the graph alive after we exit this step.
+                    loss_dict.pop("pred_xstart", None)
+
+                    # ---- MIDSTEP_STD (已抽到 src/loss/structure_mid.py: MidStructureLoss) ----
+                    # 旧内联是 MSE(x0_pred, 细骨架 g), 与中程软墨迹形态冲突 -> 换成
+                    # 载体粗化 + 低通子空间 + 通道归一。gt=GT图像latent(现成), skel=g。
+                    loss_std_mid = torch.tensor(0.0, device=device)
+                    if (_mid_struct_loss is not None
+                            and pred_xstart_latent is not None):
+                        _lc = int(getattr(args, 'latent_channels', 4))
+                        _gt = x_latent[:, :_lc]
+                        # 膨胀后的 GT 实例骨架 (20px)。不用标准骨架 g, 那是条件本身。
                         _gsk = batch.get('inst_skel', None)
-                        if _gsk is None:
-                            if not globals().get('_WARNED_DEFORM3', False):
-                                globals()['_WARNED_DEFORM3'] = True
-                                logger.warning("[deform] batch['inst_skel'] 为空 "
-                                               "(需 --inst-skel-shards-dir 指向 GT 骨架) "
-                                               "-> 中间监督静默失效")
-                        else:
-                            _g2 = _dm.last_out
-                            _tgt = _gsk.to(device, non_blocking=True).float()
-                            # ★ 只在"真的做了形变"的样本上算: 条件被 drop 的样本用的是
-                            #   null 风格向量, 形变头产出的是垃圾, 不该进监督。
-                            #   (第一版只改前向没改 loss, 实测 loss 一模一样 0.3687)
-                            _m = getattr(_dm, 'last_mask', None)
-                            if _m is not None and not bool(_m.all()):
-                                if bool(_m.any()):
-                                    _g2 = _g2[_m]
-                                    _tgt = _tgt[_m]
-                                else:
-                                    _g2 = None
-                            if _g2 is not None and _g2.shape == _tgt.shape:
-                                loss_deform = (_g2 - _tgt).pow(2).mean()
-                                loss = loss + getattr(args, 'w_deform_skel', 0.0) * loss_deform
-                                _v = float(loss_deform.detach())
-                                _DEFORM_EMA['loss'] = (_v if _DEFORM_EMA['loss'] is None else 0.9 * _DEFORM_EMA['loss'] + 0.1 * _v)
-                                _os = _dm.offset_stats()
-                                if _os:
-                                    _DEFORM_EMA['off'] = (_os['mean_abs'] if _DEFORM_EMA['off'] is None else 0.9 * _DEFORM_EMA['off'] + 0.1 * _os['mean_abs'])
-                            else:
-                                if not globals().get('_WARNED_DEFORM4', False):
-                                    globals()['_WARNED_DEFORM4'] = True
-                                    logger.warning(f"[deform] 形状不匹配 g'={tuple(_g2.shape)} "
-                                                   f"target={tuple(_tgt.shape)} -> 跳过")
-
-                # ★★ [2026-09-29] 形变头正则化 —— **此前完全没接, 是 v27 过拟合的根因** ★★
-                #   `DeformSkel.regularizers()` 早就提供了 TV(偏移场平滑) + Jacobian(防折叠)
-                #   + tv_out/tv_res(压输出与残差的高频) + l1_prune/l1_lig(topo 掩码稀疏),
-                #   但**主训练路径从未调用** —— grep 'regularizers' train.py 曾为空。
-                #   后果: v27 的 SkelNet 在「4.1M 参数 + 零正则 + weight_decay=0」下直接
-                #   拟合训练集, 实测 seen 全指标单调上升而 strict ssim 单调下降
-                #   (0.6069→0.5899→0.5850) = 明确过拟合。
-                #   尤其 residual/topo 是**无约束的加墨头**(warp 只能移动笔画、必然泛化;
-                #   残差/拓扑能在任意位置画任意墨 -> 能记住训练字符的骨架), 最需要正则。
-                #   口径与 tools/train_deform_standalone.py 完全一致。
-                _dm_reg = getattr(model, 'deform_skel', None)
-                if _dm_reg is not None and getattr(_dm_reg, 'last_off', None) is not None:
-                    _rr = _dm_reg.regularizers()
-                    if _rr is not None:
-                        _reg_used = {}
-                        for _rk, _rw in (
-                            ('tv', float(getattr(args, 'w_tv', 0.0) or 0.0)),
-                            ('fold', float(getattr(args, 'w_fold', 0.0) or 0.0)),
-                            ('tv_out', float(getattr(args, 'w_tv_out', 0.0) or 0.0)),
-                            ('tv_res', float(getattr(args, 'w_tv_res', 0.0) or 0.0)),
-                            ('tv_stroke', float(getattr(args, 'w_tv_stroke', 0.0) or 0.0)),
-                            ('l1_prune', float(getattr(args, 'w_prune_l1', 0.0) or 0.0)),
-                            ('l1_lig', float(getattr(args, 'w_lig_l1', 0.0) or 0.0)),
-                        ):
-                            if _rw > 0 and _rk in _rr:
-                                loss = loss + _rw * _rr[_rk]
-                                _reg_used[_rk] = (_rw, float(_rr[_rk].detach()))
-                        # 一次性回显: 确认正则化**真的接上了**(否则只是静默无效)
-                        if not globals().get('_REG_LOGGED', False):
-                            globals()['_REG_LOGGED'] = True
-                            if _reg_used:
-                                logger.info("[deform-reg] ✅ 已接入正则化: " + ", ".join(
-                                    f"{k}(w={v[0]:g}, val={v[1]:.4g})"
-                                    for k, v in _reg_used.items()))
-                            else:
+                        if _gsk is None or _gsk.numel() == 0:
+                            if not getattr(_mid_struct_loss, "_empty_warned", False):
+                                _mid_struct_loss._empty_warned = True
                                 logger.warning(
-                                    "[deform-reg] ⚠ 形变正则化**全部为 0** -> 未生效! "
-                                    "检查 --w-tv/--w-fold/--w-tv-res/--w-prune-l1 等")
+                                    "[std_mid] batch['inst_skel'] 为空, 中程监督未生效。"
+                                    "需要 --inst-skel-shards-dir 指向膨胀后的 GT 骨架。")
+                            loss_std_mid = torch.tensor(0.0, device=device)
+                        else:
+                            loss_std_mid = _mid_struct_loss(
+                                pred_xstart_latent, _gt,
+                                _gsk.to(device, non_blocking=True).float(),
+                                t.to(device))
 
-                # Stage 3 / v15 锚定正则: 把书家风格参数拉向预训练目标, 防"冻主干
-                # 只训风格"时塌缩/漂移 (styletok 实测无护栏则 strict 掉头)。
-                # λ 由 --style-anchor-weight 控制, 口径由 --style-anchor-mode 决定。
-                if _style_anchor_w > 0 and _style_table_param is not None \
-                        and _style_anchor_target is not None:
-                    _Ecur = _style_table_param[:_style_anchor_target.shape[0]]
-                    if _style_anchor_mode == "mean":
-                        _Ecur = _Ecur.view(_style_anchor_target.shape[0],
-                                           _style_anchor_k, -1).mean(dim=1)
-                    loss = loss + _style_anchor_w * ((_Ecur - _style_anchor_target) ** 2).mean()
+                    intermediate_feats = loss_dict.get("intermediate_feats", None)
+                    # ★ 2026-10-11: 不再要求 `x is not None` —— 有 REPA 特征缓存时按 img_ids 查表即可,
+                    #   真图只在缓存 miss 的行才需要(见 losses.py)。若 x=None 却真 miss,
+                    #   REPALoss 会**显式抛错**, 绝不静默失去 REPA。
+                    if intermediate_feats is not None and repa_loss_fn is not None and args.w_repa > 0:
+                        # 统一 REPA (公共 infra): 多层 dict / 单层张量 + warmup 渐进
+                        # img_ids: 配合 --repa-cache-dir 查表 (命中免 DINO 前向)
+                        _img_ids = batch.get('img_id', None)
+                        loss_repa = repa_loss_fn(intermediate_feats, x, step=train_steps,
+                                                 img_ids=_img_ids)
+                        _repa_called = True
 
-                # ★ 2026-10-03 正交正则 (方案三): 惩罚非对角余弦平方 λ·mean_{i≠j} cos²(t_i,t_j)。
-                #   目的: 让"多模态"在训练全程保持真正交, 而不是被 MSE 挤回共线。
-                #   仅对真实类别行生效 —— MultiStyleEmbedder 的 CFG null 是独立 Parameter, 天然排除。
-                if _style_ortho_w > 0 and _style_table_param is not None \
-                        and _style_anchor_k > 1:
-                    _T = _style_table_param.view(_style_table_param.shape[0],
-                                                 _style_anchor_k, -1)
-                    _Tn = torch.nn.functional.normalize(_T, dim=-1)
-                    _S = _Tn @ _Tn.transpose(1, 2)
-                    _off = ~torch.eye(_style_anchor_k, dtype=torch.bool,
-                                      device=_S.device)
-                    loss = loss + _style_ortho_w * (_S[:, _off] ** 2).mean()
+                    # ---- 实例骨架结构 loss (辅助, 冻结 probe, 零可训练参数) ----
+                    # 见 src/train/latent_structure.py:LatentSkelStructureLoss 的 docstring:
+                    # 与 12ch 的区别是"不在扩散目标里" —— 4ch 主干 / CFG 作用域 / 推理成本
+                    # 全部不受影响, 新增可训练参数 0(当前主要矛盾是过拟合, 这是决定性优势)。
+                    # target = batch['skel_latent'] **必须是实例骨架**; 若指到标准字形就是纯重复 g。
+                    if _skel_struct_loss_fn is not None and pred_xstart_latent is not None:
+                        # [inst-skel 2026-09-16] target 现在读 **inst_skel**(实例骨架, GT 图派生),
+                        # 与条件 g (skel_latent=shards_std) 解耦。不再读 skel_latent。
+                        _sk = batch.get('inst_skel', None)
+                        if _sk is None or _sk.numel() == 0:
+                            if not _SKEL_STRUCT_WARNED:
+                                _SKEL_STRUCT_WARNED = True
+                                logger.warning(
+                                    "[skel-struct] w_latent_skel>0 但 batch['inst_skel'] 为空 "
+                                    "(需配置 --inst-skel-shards-dir 指向实例骨架 shards) "
+                                    "-> 本项静默失效。这类静默失效已踩过多次, 故只在首次告警。")
+                            loss_skel_struct = torch.tensor(0.0, device=device)
+                        else:
+                            loss_skel_struct = _skel_struct_loss_fn(
+                                pred_xstart_latent,
+                                _sk.to(device, non_blocking=True).float(),
+                                t.to(device))
+
+                    # ★ 2026-10-14 [重构 PR4] 损失装配抽到 ObjectiveComposer ✓
+                    #   ⚠ **注册顺序 = 原加法顺序** ✗（浮点加法不满足结合律 ✓
+                    #     顺序变了 ⇒ 末位不同 ⇒ 训练轨迹不同 ✗）
+                    _obj = _ObjComposer(loss_diff, base_name="fm")
+                    # 统一 REPA: w × (1 - cos) 已在 RepaModule.forward 内含 warmup
+                    _obj.add("repa", loss_repa, 1.0)
+                    _obj.add("std_mid", loss_std_mid, getattr(args, 'w_std_mid', 0.0))
+                    _obj.add("latent_skel", loss_skel_struct,
+                             getattr(args, 'w_latent_skel', 0.0))
+                    loss = _obj.total
+                    if _train_vae_enc and loss_vae_kl is not None:
+                        _w_vkl = float(getattr(args, 'w_vae_kl', 1e-5))
+                        loss = loss + _w_vkl * loss_vae_kl
+
+                    # ---- style-rank loss (t 门控在模块内) ----
+                    loss_style_rank = torch.tensor(0.0, device=device)
+                    if _style_rank_loss_fn is not None and getattr(args, 'w_style_rank', 0.0) > 0:
+                        if pred_xstart_latent is not None:
+                            _yp = batch['y_pair'].to(device, non_blocking=True)
+                            loss_style_rank, _n_style_rank = _style_rank_loss_fn(
+                                pred_xstart_latent, _yp, t.to(device))
+                            # ★★ v85B: **梯度范数比探针**（方案 §三.3 明确要求的标定方式 ✓）
+                            #   方案原文: "建议按**共享 DiT 参数的梯度范数**确定权重，使新风格损失
+                            #   在启用样本上贡献约 **FM 梯度的 5–10%**，而**不是仅根据两个标量
+                            #   loss 的数值**选择权重 ✓"。
+                            #   为什么: 两个 loss 的**标量数值不可比** ✗（一个在 latent MSE 尺度、
+                            #   一个在 logsumexp 尺度 ✓）⇒ 只有**对同一组参数的梯度**可比 ✓。
+                            #   实现: 用 autograd.grad 分别对两组 loss 求同一组共享参数（可训练 ✓）
+                            #   的梯度（retain_graph=True ✓），只在**前几步**做以免拖慢训练 ✓。
+                            _pstep = int(getattr(args, 'probe_style_grad_steps', 0) or 0)
+                            if _pstep and train_steps < _pstep and int(_n_style_rank) > 0:
+                                _shared = [p for p in model.parameters() if p.requires_grad]
+                                # ★ 2026-10-14 [重构 PR4] 探针原语抽到 backward.grad_norm ✓
+                                #   （数学与旧代码**逐字相同** ✓ 只求范数, 不累积到 .grad ✓）
+                                _n_fm = _bw.grad_norm(loss, _shared)
+                                _n_st = _bw.grad_norm(loss_style_rank, _shared)
+                                _ratio = float(_n_st / (_n_fm + 1e-12))
+                                logger.info(
+                                    "[style-rank-probe] step=%d n=%d | ‖dL_FM/dθ‖=%.4e "
+                                    "‖dL_style/dθ‖=%.4e | λ=%.5g 时贡献比=%.2f%% | "
+                                    "目标 5-10%% ⇒ 建议 λ≈%.5g",
+                                    train_steps, int(_n_style_rank), float(_n_fm), float(_n_st),
+                                    float(args.w_style_rank), 100.0 * _ratio,
+                                    float(args.w_style_rank) * (0.075 / max(_ratio, 1e-12)))
+                            _obj.add("style_rank", loss_style_rank,
+                                     getattr(args, 'w_style_rank', 0.0))
+                            loss = _obj.total
+
+                    # ---- v85B/C: 冻结 critic 的生成端辅助 Loss（方案 §六 ✓）----
+                    # L_writer^G = CE(slot(ẑ₀), 目标书家槽) | L_away^G = softplus(−brush(ẑ₀))
+                    # 全程 latent ✓（ẑ₀ 直接喂 ✓ 不挂 decoder ✓）critic 冻结但**不套 no_grad** ✓
+                    # 只对 t∈[t_min,t_max] 的样本计算 ✓（方案建议 ✓）
+                    loss_critic_writer = torch.tensor(0.0, device=device)
+                    loss_critic_away = torch.tensor(0.0, device=device)
+                    # ★ 活性计数器（静默失效必须可观测 ✓ —— 本会话第 3 次同类坑 ✓）
+                    _cw = globals().setdefault('_CRITIC_CNT', {'n': 0, 'hit': 0, 'warned': False})
+                    _cw['n'] += 1
+                    if _critic_loss_fn is not None and pred_xstart_latent is not None \
+                            and (getattr(args, 'w_critic_writer', 0.0) > 0
+                                 or getattr(args, 'w_critic_away', 0.0) > 0):
+                        # ★ flow matching 的 t 本来就是 [0,1] 连续值 ✓（实测 0.042-0.965,
+                        #   num_timesteps=50 只是档位数 ✗ —— 除它就把窗口错位 50 倍 ✗✗）
+                        _ct = t.to(device).float()
+                        _cmask = ((_ct >= getattr(args, 'critic_t_min', 0.05))
+                                  & (_ct <= getattr(args, 'critic_t_max', 0.30)))
+                        if _cmask.any():
+                            _cw['hit'] += 1
+                        if train_steps % 100 == 0 and not _cw['warned']:
+                            _cw['warned'] = True
+                            logger.info("[critic-activity] steps=%d hit=%d | "
+                                        "pred_xstart=%s w=(%.4g,%.4g) | t 原始: min=%.4g "
+                                        "max=%.4g num_ts=%s | _ct: min=%.4g max=%.4g ⇒ %s",
+                                        _cw['n'], _cw['hit'],
+                                        '有' if pred_xstart_latent is not None else 'None!',
+                                        args.w_critic_writer, args.w_critic_away,
+                                        float(t.min()), float(t.max()),
+                                        str(getattr(diffusion, 'num_timesteps', '?')),
+                                        float(_ct.min()), float(_ct.max()),
+                                        '正常' if _cw['hit'] else '**未命中 ✗**')
+                        if _cmask.any():
+                            _zs = pred_xstart_latent[_cmask].float()
+                            # ★ g = batch['std_soft'] ✓（现成 per-sample [1,64,64] ✓
+                            #   σ=eval 0.65 ✓ —— 与 critic 的 g_std bank 同源同分布 ✓
+                            #   **不需要任何字符反查** ✓（y_script/y_char 是整数索引 ✗
+                            #   str() 会得到 'tensor(1)' ⇒ KeyError: 'tensor(1)' ✗✗ 实测 ✓））
+                            _ss = batch['std_soft'][_cmask.cpu()]
+                            if _ss.dim() == 3:
+                                _ss = _ss.unsqueeze(1)                # [B,1,64,64] ✓
+                            _g_direct = _ss.float().to(device) / 255.0 \
+                                if _ss.float().max() > 1.5 else _ss.float().to(device)
+                            # 目标槽 = 书家×书体（y_callig_raw + y_script **都是 id** ✓）
+                            _cmask_cpu = _cmask.cpu()          # batch 张量在 CPU ✓
+                            _sc_id = batch['y_script'][_cmask_cpu].long().to(device)
+                            _cw_id = batch['y_callig_raw'][_cmask_cpu].long().to(device)
+                            # slots 表按 "writer·script" 存 ✗ 但 id 空间不同 ⇒ 用 critic 的
+                            # **writer_ids/scripts** 反查 ✓（critic 存了训练 CSV 的 slot 字符串 ✓
+                            # 但 batch 只有 id ⇒ 需要 id→str 映射 —— 由 _build_aux_losses 建好 ✓）
+                            _lut = getattr(_critic_loss_fn, 'id2slot', None)
+                            if _lut is None:
+                                _cw['warned'] = False
+                                logger.info("[critic-missing-lut] id→slot 映射缺失 ⇒ 本步跳过 ✗")
+                            else:
+                                _keys = [_lut.get((int(w), int(s)), None)
+                                         for w, s in zip(_cw_id.tolist(), _sc_id.tolist())]
+                                _valid = [k is not None for k in _keys]
+                                if any(_valid):
+                                    _zi = [i for i, v in enumerate(_valid) if v]
+                                    _zs = _zs[_zi]
+                                    _g_direct = _g_direct[_zi]
+                                    _si = torch.tensor(
+                                        [_critic_loss_fn.s2i[
+                                            _lut[(int(_cw_id[i]), int(_sc_id[i]))].split('·')[1]]
+                                         for i in _zi], dtype=torch.long, device=device)
+                                    _ys = torch.tensor(
+                                        [_critic_loss_fn.slots.index(
+                                            _lut[(int(_cw_id[i]), int(_sc_id[i]))])
+                                         for i in _zi], dtype=torch.long, device=device)
+                                    _lw, _la, _cp = _critic_loss_fn.forward_g(
+                                        _zs, _g_direct, _si, _ys)
+                                    loss_critic_writer = _lw
+                                    loss_critic_away = _la
+                            # ★ 梯度范数比探针 ✓（与 style-rank 探针同一机制 ✓）
+                            _pstep = int(getattr(args, 'probe_style_grad_steps', 0) or 0)
+                            if _pstep and train_steps < _pstep:
+                                _shared = [p for p in model.parameters() if p.requires_grad]
+                                # ★ FM 基线用**总 loss 减去 critic 项** ✗ 更简单可靠:
+                                #    直接对 loss_diff 求梯度 ✓（它是本步 FM 项 ✓）
+                                # ★ 2026-10-14 [重构 PR4] 同上, 统一走 backward.grad_norm ✓
+                                _n_fm = _bw.grad_norm(loss_diff, _shared)
+                                _n_cw = _bw.grad_norm(loss_critic_writer, _shared)
+                                _n_ca = _bw.grad_norm(loss_critic_away, _shared)
+                                # ★★ 贡献%必须**含 w** ✓（裸比 ✗ 曾致 λ 建议错 w 倍 ✗✗
+                                #    ⇒ v85C 以 3e-8 实跑 = 有效贡献 0.00016%% ≈ 空跑 ✗）
+                                _r_w = float(_n_cw / (_n_fm + 1e-12))
+                                _r_a = float(_n_ca / (_n_fm + 1e-12))
+                                logger.info(
+                                    "[critic-probe] step=%d n=%d | ‖dL_FM/dθ‖=%.4e "
+                                    "‖dL_writer/dθ‖=%.4e ‖dL_away/dθ‖=%.4e | "
+                                    "w=(%.4g,%.4g) ⇒ 实际贡献 %.2f%% / %.2f%% | "
+                                    "目标 5%%/1-2%% ⇒ 建议 w_writer≈%.4g w_away≈%.4g",
+                                    train_steps, int(_cmask.sum()), float(_n_fm), float(_n_cw),
+                                    float(_n_ca), float(args.w_critic_writer),
+                                    float(args.w_critic_away),
+                                    100.0 * float(args.w_critic_writer) * _r_w,
+                                    100.0 * float(args.w_critic_away) * _r_a,
+                                    0.05 / max(_r_w, 1e-12),
+                                    0.015 / max(_r_a, 1e-12))
+                            _obj.add("critic_writer", loss_critic_writer,
+                                     getattr(args, 'w_critic_writer', 0.0))
+                            _obj.add("critic_away", loss_critic_away,
+                                     getattr(args, 'w_critic_away', 0.0))
+                            loss = _obj.total
+
+                    # ---- DeformSkel 中间监督: 形变后的骨架应逼近**该书家的 GT 骨架** ----
+                    # 这是本项目第一个"自带稠密监督"的风格干预: 目标数据(实例骨架)现成,
+                    # 且 step0 时 g'=g_std != g_gt -> 立刻有梯度, 不像其它风格模块那样学不动。
+                    loss_deform = torch.tensor(0.0, device=device)
+                    _DEFORM_EMA = globals().setdefault('_DEFORM_EMA', {'loss': None, 'off': None})
+                    if getattr(args, 'w_deform_skel', 0.0) > 0:
+                        _dm = getattr(model, 'deform_skel', None)
+                        if _dm is None:
+                            if not globals().get('_WARNED_DEFORM', False):
+                                globals()['_WARNED_DEFORM'] = True
+                                logger.warning("[deform] w_deform_skel>0 但模型没有 deform_skel "
+                                               "-> 本项静默失效(已踩过多次, 故只首次告警)")
+                        elif getattr(_dm, 'last_out', None) is None:
+                            if not globals().get('_WARNED_DEFORM2', False):
+                                globals()['_WARNED_DEFORM2'] = True
+                                logger.warning("[deform] deform_skel.last_out 为空 -> 形变没被调用"
+                                               "(compile 下属性写入可能被吞) -> 本项静默失效")
+                        else:
+                            _gsk = batch.get('inst_skel', None)
+                            if _gsk is None:
+                                if not globals().get('_WARNED_DEFORM3', False):
+                                    globals()['_WARNED_DEFORM3'] = True
+                                    logger.warning("[deform] batch['inst_skel'] 为空 "
+                                                   "(需 --inst-skel-shards-dir 指向 GT 骨架) "
+                                                   "-> 中间监督静默失效")
+                            else:
+                                _g2 = _dm.last_out
+                                _tgt = _gsk.to(device, non_blocking=True).float()
+                                # ★ 只在"真的做了形变"的样本上算: 条件被 drop 的样本用的是
+                                #   null 风格向量, 形变头产出的是垃圾, 不该进监督。
+                                #   (第一版只改前向没改 loss, 实测 loss 一模一样 0.3687)
+                                _m = getattr(_dm, 'last_mask', None)
+                                if _m is not None and not bool(_m.all()):
+                                    if bool(_m.any()):
+                                        _g2 = _g2[_m]
+                                        _tgt = _tgt[_m]
+                                    else:
+                                        _g2 = None
+                                if _g2 is not None and _g2.shape == _tgt.shape:
+                                    loss_deform = (_g2 - _tgt).pow(2).mean()
+                                    loss = loss + getattr(args, 'w_deform_skel', 0.0) * loss_deform
+                                    _v = float(loss_deform.detach())
+                                    _DEFORM_EMA['loss'] = (_v if _DEFORM_EMA['loss'] is None else 0.9 * _DEFORM_EMA['loss'] + 0.1 * _v)
+                                    _os = _dm.offset_stats()
+                                    if _os:
+                                        _DEFORM_EMA['off'] = (_os['mean_abs'] if _DEFORM_EMA['off'] is None else 0.9 * _DEFORM_EMA['off'] + 0.1 * _os['mean_abs'])
+                                else:
+                                    if not globals().get('_WARNED_DEFORM4', False):
+                                        globals()['_WARNED_DEFORM4'] = True
+                                        logger.warning(f"[deform] 形状不匹配 g'={tuple(_g2.shape)} "
+                                                       f"target={tuple(_tgt.shape)} -> 跳过")
+
+                    # ★★ [2026-09-29] 形变头正则化 —— **此前完全没接, 是 v27 过拟合的根因** ★★
+                    #   `DeformSkel.regularizers()` 早就提供了 TV(偏移场平滑) + Jacobian(防折叠)
+                    #   + tv_out/tv_res(压输出与残差的高频) + l1_prune/l1_lig(topo 掩码稀疏),
+                    #   但**主训练路径从未调用** —— grep 'regularizers' train.py 曾为空。
+                    #   后果: v27 的 SkelNet 在「4.1M 参数 + 零正则 + weight_decay=0」下直接
+                    #   拟合训练集, 实测 seen 全指标单调上升而 strict ssim 单调下降
+                    #   (0.6069→0.5899→0.5850) = 明确过拟合。
+                    #   尤其 residual/topo 是**无约束的加墨头**(warp 只能移动笔画、必然泛化;
+                    #   残差/拓扑能在任意位置画任意墨 -> 能记住训练字符的骨架), 最需要正则。
+                    #   口径与 tools/train_deform_standalone.py 完全一致。
+                    _dm_reg = getattr(model, 'deform_skel', None)
+                    if _dm_reg is not None and getattr(_dm_reg, 'last_off', None) is not None:
+                        _rr = _dm_reg.regularizers()
+                        if _rr is not None:
+                            _reg_used = {}
+                            for _rk, _rw in (
+                                ('tv', float(getattr(args, 'w_tv', 0.0) or 0.0)),
+                                ('fold', float(getattr(args, 'w_fold', 0.0) or 0.0)),
+                                ('tv_out', float(getattr(args, 'w_tv_out', 0.0) or 0.0)),
+                                ('tv_res', float(getattr(args, 'w_tv_res', 0.0) or 0.0)),
+                                ('tv_stroke', float(getattr(args, 'w_tv_stroke', 0.0) or 0.0)),
+                                ('l1_prune', float(getattr(args, 'w_prune_l1', 0.0) or 0.0)),
+                                ('l1_lig', float(getattr(args, 'w_lig_l1', 0.0) or 0.0)),
+                            ):
+                                if _rw > 0 and _rk in _rr:
+                                    loss = loss + _rw * _rr[_rk]
+                                    _reg_used[_rk] = (_rw, float(_rr[_rk].detach()))
+                            # 一次性回显: 确认正则化**真的接上了**(否则只是静默无效)
+                            if not globals().get('_REG_LOGGED', False):
+                                globals()['_REG_LOGGED'] = True
+                                if _reg_used:
+                                    logger.info("[deform-reg] ✅ 已接入正则化: " + ", ".join(
+                                        f"{k}(w={v[0]:g}, val={v[1]:.4g})"
+                                        for k, v in _reg_used.items()))
+                                else:
+                                    logger.warning(
+                                        "[deform-reg] ⚠ 形变正则化**全部为 0** -> 未生效! "
+                                        "检查 --w-tv/--w-fold/--w-tv-res/--w-prune-l1 等")
+
+                    # Stage 3 / v15 锚定正则: 把书家风格参数拉向预训练目标, 防"冻主干
+                    # 只训风格"时塌缩/漂移 (styletok 实测无护栏则 strict 掉头)。
+                    # λ 由 --style-anchor-weight 控制, 口径由 --style-anchor-mode 决定。
+                    if _style_anchor_w > 0 and _style_table_param is not None \
+                            and _style_anchor_target is not None:
+                        _Ecur = _style_table_param[:_style_anchor_target.shape[0]]
+                        if _style_anchor_mode == "mean":
+                            _Ecur = _Ecur.view(_style_anchor_target.shape[0],
+                                               _style_anchor_k, -1).mean(dim=1)
+                        loss = loss + _style_anchor_w * ((_Ecur - _style_anchor_target) ** 2).mean()
+
+                    # ★ 2026-10-03 正交正则 (方案三): 惩罚非对角余弦平方 λ·mean_{i≠j} cos²(t_i,t_j)。
+                    #   目的: 让"多模态"在训练全程保持真正交, 而不是被 MSE 挤回共线。
+                    #   仅对真实类别行生效 —— MultiStyleEmbedder 的 CFG null 是独立 Parameter, 天然排除。
+                    if _style_ortho_w > 0 and _style_table_param is not None \
+                            and _style_anchor_k > 1:
+                        _T = _style_table_param.view(_style_table_param.shape[0],
+                                                     _style_anchor_k, -1)
+                        _Tn = torch.nn.functional.normalize(_T, dim=-1)
+                        _S = _Tn @ _Tn.transpose(1, 2)
+                        _off = ~torch.eye(_style_anchor_k, dtype=torch.bool,
+                                          device=_S.device)
+                        loss = loss + _style_ortho_w * (_S[:, _off] ** 2).mean()
 
                 opt.zero_grad(set_to_none=True)  # INFRA: set_to_none 释放梯度tensor, 比 zero_() 快且省内存
 
@@ -805,15 +810,23 @@ def training_loop(s: TrainState):
                         _acc_c12 = _cm if _acc_c12 is None else (_acc_c12 + _cm)
                     log_steps += 1
 
+                if _record is not None and _record.due(train_steps):
+                    _record.observe(train_steps, batch, t, loss_diff, loss_repa, repa_loss_fn,
+                                    updated=_finite,
+                                    repa_called=_repa_called,
+                                    ema_updated=bool(_finite and ema_model is not None
+                                                     and _ema.should_update(train_steps, args)))
                 del loss, loss_dict, loss_diff, pred_xstart_latent
                 del loss_repa, loss_std_mid, loss_x0lat, loss_skel_struct
                 _mse_ch = None
 
                 train_steps += 1
-                _inj_probe.maybe_log(train_steps)
+                if _inj_probe is not None:
+                    _inj_probe.maybe_log(train_steps)
 
                 if train_steps % args.log_every == 0:
-                    torch.cuda.synchronize()
+                    if torch.device(device).type == 'cuda':
+                        torch.cuda.synchronize()
                     end_time = time()
                     # Guard against a logging window in which every step was skipped due to non-finite loss.
                     divisor = max(log_steps, 1)
@@ -825,7 +838,7 @@ def training_loop(s: TrainState):
                         {"loss": running_loss, "diff": running_diff,
                          "repa": running_repa, "std_mid": running_std_mid,
                          "skel": running_skel},
-                        divisor, dist.get_world_size(),
+                        divisor, dist.get_world_size() if dist.is_initialized() else 1,
                         steps=log_steps, seconds=end_time - start_time,
                         aux_dirs=_aux_dirs, acc_c12=_acc_c12)
                     avg_l, avg_d, avg_r = _wa.loss, _wa.diff, _wa.repa
@@ -926,7 +939,11 @@ def training_loop(s: TrainState):
                 #   现在 epoch 长度 / 存盘点 / 评测点已合并为同一个刻度
                 #   （见上面的 `_epoch_steps`），存盘条件就是一行。
                 #   顺带省掉开头 1000/2000/3000/4000 四次存盘（每次 592MB）。
-                _save_ckpt = _epoch_steps > 0 and train_steps % _epoch_steps == 0
+                _save_ckpt = ((_epoch_steps > 0 and train_steps % _epoch_steps == 0)
+                              or train_steps in _extra_ckpt_steps
+                              or (args.max_steps > 0 and train_steps == args.max_steps)
+                              or (getattr(args, 'stop_at_step', 0) > 0
+                                  and train_steps == args.stop_at_step))
 
                 if _save_ckpt and train_steps > 0:
                     if rank == 0:
@@ -953,7 +970,7 @@ def training_loop(s: TrainState):
                 if (train_steps >= int(getattr(args, 'early_stop_min_steps', 0))
                         and train_steps % _es_check_every == 0
                         and rank == 0
-                        and _stopper.check()):      # 内部已判 early_stop 开关
+                        and _stopper is not None and _stopper.check()):
                     early_stop_stopped = True
                     break
         except Exception as e:
@@ -974,6 +991,6 @@ def training_loop(s: TrainState):
         if early_stop_stopped:
             break
     
-        if dist.get_world_size() > 1:
+        if dist.is_initialized() and dist.get_world_size() > 1:
             dist.barrier()
     return _train_fatal

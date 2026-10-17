@@ -366,7 +366,7 @@ def _sample_set_latents(model, diffusion, cache, cfg_scale, dit_batch, device,
         hier_conds=cache.get("hier_conds"))
 
 
-def resolve_eval_setup(args, model, results_dir, logger=print):
+def resolve_eval_setup(args, model, results_dir, logger=print, diffusion_override=None):
     """解析本次评测的配置 ✓；sets 为空时按**原语义**打印并返回 None（调用方 return {} ✓）。
 
     ⚠ 与原文**逐行等价**（只把结果装进 EvalSetup 而不是散落的局部变量 ✓）:
@@ -397,8 +397,9 @@ def resolve_eval_setup(args, model, results_dir, logger=print):
     _calli_noise = bool(getattr(args, "calli_decode_noise", False))
     use_self_cond = bool(getattr(args, "eval_self_cond", False))
     blend_alpha = float(getattr(args, "eval_blend_alpha", 0.0))
-    _DIFF_LOCAL = build_diffusion(ddim_steps, str(getattr(args, "diffusion_type", "flow")),
-                                  flow_kwargs=flow_kwargs_from(args))
+    _DIFF_LOCAL = (diffusion_override if diffusion_override is not None else
+                   build_diffusion(ddim_steps, str(getattr(args, "diffusion_type", "flow")),
+                                   flow_kwargs=flow_kwargs_from(args)))
     logger(f"[in-mem-eval] sampler={_DIFF_LOCAL.describe() if hasattr(_DIFF_LOCAL, 'describe') else type(_DIFF_LOCAL).__name__} "
            f"cfg={cfg_scale} std_soft={bool(getattr(args, 'std_soft_cond', False))}")
     sets = []
@@ -974,6 +975,9 @@ def _eval_one_set(ctx: EvalSetContext):
                             glyph_key=(str(_r.get("glyph_id")) or None),
                             seed=int(getattr(args, "global_seed", 0) or 0)))
                     _mp = write_samples_jsonl(os.path.join(_sd, "samples.jsonl"), _gs)
+                    from src.eval.artifacts import write_png_index
+                    write_png_index(_sd, _gs, cache['conds'], cache.get('hier_conds'),
+                                    cache.get('skels_latent'))
                     logger(f"[in-mem-eval] 生成清单已写 {_mp}（{len(_gs)} 条 ✓ 供离线重算 ✓）")
                 except Exception as _ge:                              # noqa: BLE001
                     logger(f"[in-mem-eval] ⚠ 生成清单写入失败(不影响评测): {_ge!r}")
@@ -1135,7 +1139,7 @@ def _eval_one_set(ctx: EvalSetContext):
 
 
 
-def run_in_mem_eval(model, args, step, device, results_dir=None, logger=print):
+def run_in_mem_eval(model, args, step, device, results_dir=None, logger=print, diffusion_override=None):
     """在训/独立评测核心: 按 `--in-mem-eval-sets` 逐集采样并评指标。
 
     model      : 已 eval() 的模型 (优先 EMA 权重; 不要传 torch.compile 包装)
@@ -1151,7 +1155,7 @@ def run_in_mem_eval(model, args, step, device, results_dir=None, logger=print):
     """
     global _DIFF
     # ★ 2026-10-13 [审查 §4.1]: 配置解析已抽成 resolve_eval_setup -> EvalSetup ✓（显式输入输出 ✓）
-    _st = resolve_eval_setup(args, model, results_dir, logger)
+    _st = resolve_eval_setup(args, model, results_dir, logger, diffusion_override=diffusion_override)
     if _st is None:
         return {}
     _DIFF = _st.diffusion

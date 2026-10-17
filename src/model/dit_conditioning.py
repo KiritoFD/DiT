@@ -1055,6 +1055,7 @@ class ForwardCfg:
     y_callig_embedder: Any
     y_script_embedder: Any
     writer_glyph: Any
+    spatial_probe: Any = None
 
     @classmethod
     def from_model(cls, m):
@@ -1065,6 +1066,7 @@ class ForwardCfg:
                    _embed_glyph=getattr(m, "_embed_glyph", None),
                    y_script_embedder=getattr(m, "y_script_embedder", None),
                    writer_glyph=getattr(m, "writer_glyph", None),
+                   spatial_probe=getattr(m, "spatial_probe", None),
                    _fuse_condition=getattr(m, "_fuse_condition", None),
                    _inj_map=getattr(m, "_inj_map", None),
                    _local_ca_map=getattr(m, "_local_ca_map", None),
@@ -1288,7 +1290,11 @@ def forward(cfg, x, t, y_callig, y_char, return_intermediate_layer, return_inter
         _style_layers = tuple(i for i, b in enumerate(cfg.blocks)
                               if getattr(b, "style_ada_up", None) is not None)
     _style_layers = set(_style_layers)
+    _shallow = None
     for i, block in enumerate(cfg.blocks):
+        if cfg.spatial_probe is not None and cfg.spatial_probe.mode == 'long-skip':
+            if i == cfg.spatial_probe.target:
+                x = cfg.spatial_probe.skip(x, _shallow)
         if _router is None:
             c_main = c
         elif _router.allows(i):
@@ -1313,6 +1319,9 @@ def forward(cfg, x, t, y_callig, y_char, return_intermediate_layer, return_inter
         if i in _lc_map:
             x = cfg.local_ca[_lc_map[i]](x, g_tok, _e_cond_local,
                                           cfg.local_pos, keep)
+        if (cfg.spatial_probe is not None and cfg.spatial_probe.mode == 'long-skip'
+                and i == cfg.spatial_probe.source):
+            _shallow = x
 
     # 骨架头：从 final_layer 前的 block 输出特征并行解码 latent 骨架 (N,1,32,32)
     skel_pred = None
@@ -1329,6 +1338,8 @@ def forward(cfg, x, t, y_callig, y_char, return_intermediate_layer, return_inter
 
     x = cfg.final_layer(x, c, c_style=c_style)
     x = cfg.unpatchify(x)
+    if cfg.spatial_probe is not None and cfg.spatial_probe.mode == 'local-residual':
+        x = cfg.spatial_probe.refine(x)
     if cfg.skel_head_enabled and skel_pred is not None:
         # 返回 (主输出, skel_pred)；gaussian_diffusion.training_losses 会把第二元素
         # 当作 intermediate_feats 存入 loss_dict['intermediate_feats']

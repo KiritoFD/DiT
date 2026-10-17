@@ -25,7 +25,7 @@ from __future__ import annotations
 import os
 from typing import Any, Dict, Optional
 
-__all__ = ["aux_dirs_of", "derive", "resolve_content_cond", "dit_kwargs", "build_dit_from_args"]
+__all__ = ["aux_dirs_of", "derive", "resolve_content_cond", "dit_kwargs", "build_dit_from_args", "build_unet_from_args", "build_model_from_args"]
 
 _DEFAULT_MODEL = "DiT-2Cond-Sp/2"
 
@@ -116,7 +116,49 @@ def build_dit_from_args(a, device=None, *, ids_char_id_to_char=None,
     if name not in DiT_2Cond_models:
         raise KeyError(f"未知模型 {name!r}; 可用: {list(DiT_2Cond_models.keys())}")
     model = DiT_2Cond_models[name](**kwargs)
+    mode = (overrides or {}).get('spatial_probe', getattr(a, 'spatial_probe', 'off'))
+    if mode != 'off':
+        from src.model.spatial_probe import attach_spatial_probe
+        attach_spatial_probe(model, mode)
     if device is not None:
         model = model.to(device)
     model.eval() if eval_mode else None
     return model
+
+
+def build_unet_from_args(a, device=None, *, overrides: Optional[Dict[str, Any]] = None, eval_mode: bool = False):
+    """Flow Matching U-Net (FM-UNet) 统一构造入口。"""
+    from src.model.fm_unet import FMUNet
+    ov = overrides or {}
+    g = lambda k, d=None: ov.get(k, getattr(a, k, d))
+    model = FMUNet(
+        in_channels=int(g("latent_channels", 4)),
+        out_channels=int(g("latent_channels", 4)),
+        base_channels=int(g("unet_base_channels", 128)),
+        channel_mult=tuple(g("unet_channel_mult", (1, 2, 3))),
+        cond_dim=int(g("cond_dim", 512)),
+        num_calligraphers=int(g("num_calligraphers", 10)),
+        callig_embed_dim=int(g("callig_embed_dim", 32)),
+        num_script_classes=int(g("num_script_classes", 3)),
+        script_embed_dim=int(g("script_embed_dim", 16)),
+        time_freq_dim=int(g("time_freq_dim", 256)),
+        num_res_blocks=int(g("unet_res_blocks", 2)),
+        attn_resolutions=tuple(g("unet_attn_res", (16, 8))),
+        num_groups=int(g("unet_num_groups", 32)),
+    )
+    if device is not None:
+        model = model.to(device)
+    if eval_mode:
+        model.eval()
+    return model
+
+
+def build_model_from_args(a, device=None, *, ids_char_id_to_char=None,
+                         overrides: Optional[Dict[str, Any]] = None, eval_mode: bool = False):
+    """统一模型工厂：根据 a.model 自动分发 DiT 或 FM-UNet。"""
+    name = str((overrides or {}).get("model", getattr(a, "model", None)) or _DEFAULT_MODEL)
+    if name.startswith("FM-UNet") or name.startswith("UNet") or "unet" in name.lower():
+        return build_unet_from_args(a, device=device, overrides=overrides, eval_mode=eval_mode)
+    return build_dit_from_args(a, device=device, ids_char_id_to_char=ids_char_id_to_char,
+                               overrides=overrides, eval_mode=eval_mode)
+
