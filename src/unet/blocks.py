@@ -3,6 +3,7 @@ import math
 import torch
 from torch import nn
 from torch.nn import functional as F
+from .variants.modulation import bounded_gain, zero_linear
 
 
 def norm(channels):
@@ -16,6 +17,10 @@ def timestep_embedding(t, dim=128):
 
 
 class ResBlock(nn.Module):
+    """Shared AdaGN plus optional Writer-only affine and conditional residual gain.
+
+    Historical `film`/`writer_film` names are retained as checkpoint keys.
+    """
     def __init__(self, cin, cout, cond_dim=512):
         super().__init__()
         self.norm1=norm(cin);self.conv1=nn.Conv2d(cin,cout,3,padding=1)
@@ -23,24 +28,33 @@ class ResBlock(nn.Module):
         self.conv2=nn.Conv2d(cout,cout,3,padding=1)
         self.shortcut=nn.Conv2d(cin,cout,1) if cin!=cout else nn.Identity()
         self.writer_film=None
+        self.residual_gate=None
         nn.init.zeros_(self.conv2.weight);nn.init.zeros_(self.conv2.bias)
 
     def enable_writer_film(self,rank):
         if self.writer_film is not None:raise ValueError('Writer FiLM already enabled')
         self.writer_film=nn.Sequential(nn.Linear(32,rank),nn.SiLU(),
-                                       nn.Linear(rank,2*self.conv2.in_channels))
-        nn.init.zeros_(self.writer_film[-1].weight)
-        nn.init.zeros_(self.writer_film[-1].bias)
+                                       zero_linear(rank,2*self.conv2.in_channels))
+
+    def enable_residual_gate(self):
+        """Conditioned channel gains; zero logits mean gain=1, never a dead gate."""
+        if self.residual_gate is not None:raise ValueError('Residual gate already enabled')
+        self.residual_gate=zero_linear(self.film.in_features,self.conv2.out_channels)
 
     def forward(self,x,c,writer=None):
         h=self.conv1(F.silu(self.norm1(x)))
-        scale,shift=self.film(F.silu(c)).to(h.dtype).chunk(2,dim=1)
+        condition=F.silu(c)
+        scale,shift=self.film(condition).to(h.dtype).chunk(2,dim=1)
         if self.writer_film is not None:
             if writer is None:raise ValueError('Writer embedding required for independent FiLM')
             writer_scale,writer_shift=self.writer_film(writer).to(h.dtype).chunk(2,dim=1)
             scale=scale+writer_scale;shift=shift+writer_shift
         h=self.norm2(h)*(1+scale[:,:,None,None])+shift[:,:,None,None]
-        return self.shortcut(x)+self.conv2(F.silu(h))
+        residual=self.conv2(F.silu(h))
+        if self.residual_gate is not None:
+            gain=bounded_gain(self.residual_gate(condition).to(residual.dtype))
+            residual=residual*gain[:,:,None,None]
+        return self.shortcut(x)+residual
 
 
 class Attention(nn.Module):

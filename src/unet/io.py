@@ -20,6 +20,7 @@ class Config:
     skip_gate_scales:tuple=()
     std_gate_scales:tuple=()
     writer_film_rank:int=0  # 0=legacy shared FiLM only; >0 adds Writer-only residual FiLM.
+    residual_cond_gate:bool=False  # Per-channel residual gains conditioned on shared t/w/s.
     requires_warm_start:bool=False
     num_writers:int=10
     num_scripts:int=3
@@ -67,6 +68,7 @@ class Config:
         if self.architecture!=ARCHITECTURE:raise ValueError('Not a CNN U-Net configuration')
         if not isinstance(self.writer_film_rank,int) or self.writer_film_rank<0:
             raise ValueError('writer_film_rank must be a nonnegative integer')
+        if not isinstance(self.residual_cond_gate,bool):raise ValueError('residual_cond_gate must be boolean')
         if self.memory_format not in ('channels_last','nchw'):raise ValueError(self.memory_format)
         if self.objective!='flow':raise ValueError('First U-Net training line supports FM only')
         if self.std_shape_aug not in ('off','mild','strong'):raise ValueError(self.std_shape_aug)
@@ -83,7 +85,7 @@ def build(config,initialize_tables=False):
                     num_res_blocks=getattr(config,'num_res_blocks',2),
                     decoder_res_blocks=config.decoder_res_blocks,
                     skip_gate_scales=config.skip_gate_scales,std_gate_scales=config.std_gate_scales,
-                    writer_film_rank=config.writer_film_rank)
+                    writer_film_rank=config.writer_film_rank,residual_cond_gate=config.residual_cond_gate)
     if initialize_tables:
         import numpy as np
         for name,embedding in [('callig',model.writer),('font',model.script)]:

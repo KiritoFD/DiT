@@ -3,6 +3,7 @@ import torch
 from torch import nn
 from torch.nn import functional as F
 from .blocks import Stage, ResBlock, Attention, norm, timestep_embedding
+from .variants.modulation import bounded_gain
 
 
 class LatentUNet(nn.Module):
@@ -13,11 +14,13 @@ class LatentUNet(nn.Module):
 
     def __init__(self,channels=(128,256,384),num_writers=10,num_scripts=3,
                  num_res_blocks=2,drop_all=.05,drop_writer=.08,drop_script=.08,
-                 decoder_res_blocks=None,skip_gate_scales=(),std_gate_scales=(),writer_film_rank=0):
+                 decoder_res_blocks=None,skip_gate_scales=(),std_gate_scales=(),writer_film_rank=0,
+                 residual_cond_gate=False):
         super().__init__()
         if len(channels)!=3:raise ValueError('Expected three scales')
         if not isinstance(writer_film_rank,int) or writer_film_rank<0:
             raise ValueError('writer_film_rank must be a nonnegative integer')
+        if not isinstance(residual_cond_gate,bool):raise ValueError('residual_cond_gate must be boolean')
         self.num_writers=num_writers;self.num_scripts=num_scripts
         self.num_res_blocks=num_res_blocks
         decoder_depth=tuple(decoder_res_blocks) if decoder_res_blocks is not None else (num_res_blocks,)*3
@@ -47,10 +50,15 @@ class LatentUNet(nn.Module):
         self.up=nn.ModuleList([nn.Conv2d(channels[i+1],channels[i],3,padding=1) for i in range(2)])
         self.output=nn.Sequential(norm(channels[0]),nn.SiLU(),nn.Conv2d(channels[0],4,3,padding=1))
         nn.init.zeros_(self.output[-1].weight);nn.init.zeros_(self.output[-1].bias)
-        # Build extensions last: rank=0 keeps baseline state keys and RNG unchanged.
-        if writer_film_rank:
-            for block in list(self.modules()):
-                if isinstance(block,ResBlock):block.enable_writer_film(writer_film_rank)
+        self._configure_modulation(writer_film_rank,residual_cond_gate)
+
+    def _configure_modulation(self,writer_rank,residual_gate):
+        # Build optional modules last, preserving historical keys and initialization.
+        blocks=[block for block in self.modules() if isinstance(block,ResBlock)]
+        if writer_rank:
+            for block in blocks:block.enable_writer_film(writer_rank)
+        if residual_gate:
+            for block in blocks:block.enable_residual_gate()
 
     @staticmethod
     def _scale_parameters(active):
@@ -68,7 +76,7 @@ class LatentUNet(nn.Module):
 
     @staticmethod
     def _scaled(value,gates,i,override):
-        if gates:value=value*(1.+.5*torch.tanh(gates[i]))
+        if gates:value=value*bounded_gain(gates[i])
         return value*override[i] if override[i]!=1. else value
 
 

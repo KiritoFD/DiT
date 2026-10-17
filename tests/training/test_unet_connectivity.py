@@ -8,15 +8,21 @@ from src.unet.io import Config,build
 from src.unet.variants.transfer import load_expansion
 
 
-@pytest.mark.parametrize('variant',['skip','decoder','std'])
+@pytest.mark.parametrize('variant',['skip','decoder','std','residual'])
 def test_extension_is_identity_and_has_gradient(variant):
     torch.set_num_threads(2)
     cfg=Config(channels=(32,64,64),max_steps=50000)
     base=build(cfg).eval()
     with torch.no_grad():base.output[-1].weight.normal_(std=.02)
+    if variant=='residual':
+        from src.unet.blocks import ResBlock
+        with torch.no_grad():
+            for block in base.modules():
+                if isinstance(block,ResBlock):block.conv2.weight.normal_(std=.01)
     target=replace(cfg,**{'skip':dict(skip_gate_scales=(0,)),
                           'decoder':dict(decoder_res_blocks=(3,3,2)),
-                          'std':dict(std_gate_scales=(0,))}[variant])
+                          'std':dict(std_gate_scales=(0,)),
+                          'residual':dict(residual_cond_gate=True)}[variant])
     upgraded=build(target).eval()
     ck={'delta':base.state_dict()}
     audit=load_expansion(upgraded,ck,cfg,target)
@@ -28,7 +34,8 @@ def test_extension_is_identity_and_has_gradient(variant):
     actual.square().mean().backward()
     parameter={'skip':lambda:upgraded.skip_gates[0],
                'decoder':lambda:upgraded.decoder[0].blocks[2].conv2.weight,
-               'std':lambda:upgraded.std_gates[0]}[variant]()
+               'std':lambda:upgraded.std_gates[0],
+               'residual':lambda:upgraded.encoder[0].blocks[0].residual_gate.weight}[variant]()
     assert parameter.grad is not None and parameter.grad.abs().sum()>0
     if variant=='skip':
         assert not upgraded.skip_gates[1].requires_grad and not upgraded.skip_gates[2].requires_grad
@@ -36,6 +43,9 @@ def test_extension_is_identity_and_has_gradient(variant):
     with pytest.raises(ValueError,match='Unapproved'):
         load_expansion(upgraded,{'delta':broken},cfg,target)
     upgraded.load_state_dict(upgraded.state_dict(),strict=True)
+    if variant=='residual':
+        with pytest.raises(ValueError,match='residual gates'):
+            load_expansion(build(cfg),{'delta':upgraded.state_dict()},target,cfg)
 
 
 def test_baseline_and_inference_interventions():
@@ -48,8 +58,8 @@ def test_baseline_and_inference_interventions():
     with pytest.raises(RuntimeError):m.set_inference_scales()
 
 
-@pytest.mark.parametrize('combined',[False,True])
-def test_writer_only_film_identity_gradient_and_strict_roundtrip(combined,tmp_path):
+@pytest.mark.parametrize('combined,gate',[(False,False),(True,False),(True,True)])
+def test_writer_only_film_identity_gradient_and_strict_roundtrip(combined,gate,tmp_path):
     from src.unet.blocks import ResBlock
     from src.unet.io import load
     from dataclasses import asdict
@@ -62,7 +72,7 @@ def test_writer_only_film_identity_gradient_and_strict_roundtrip(combined,tmp_pa
         base.output[-1].weight.normal_(std=.02)
         for block in base.modules():
             if isinstance(block,ResBlock):block.conv2.weight.normal_(std=.01)
-    target=replace(cfg,writer_film_rank=16,
+    target=replace(cfg,writer_film_rank=16,residual_cond_gate=gate,
                    **(dict(skip_gate_scales=(0,),std_gate_scales=(0,1,2),
                            decoder_res_blocks=(3,3,2)) if combined else {}))
     upgraded=build(target).eval()
@@ -106,6 +116,25 @@ def test_writer_film_uses_dropped_writer_and_cfg_null():
     torch.testing.assert_close(seen[-2],model.writer(writers))
     torch.testing.assert_close(seen[-1],null)
     hook.remove()
+
+
+def test_unit_residual_gate_does_not_block_zero_conv_startup():
+    from src.unet.blocks import ResBlock
+    from src.unet.variants.modulation import bounded_gain
+    block=ResBlock(32,32)
+    block.enable_residual_gate()
+    x=torch.randn(2,32,8,8);condition=torch.randn(2,512)
+    result=block(x,condition)
+    torch.testing.assert_close(result,x,rtol=0,atol=0)
+    result.square().mean().backward()
+    assert block.conv2.weight.grad.abs().sum()>0
+    with torch.no_grad():block.conv2.weight.add_(-.1*block.conv2.weight.grad)
+    block.zero_grad(set_to_none=True)
+    block(x,condition).square().mean().backward()
+    assert block.residual_gate.weight.grad.abs().sum()>0
+    torch.testing.assert_close(bounded_gain(torch.zeros(3)),torch.ones(3))
+    gains=bounded_gain(torch.tensor([-1.,0.,1.]))
+    assert ((gains>.5)&(gains<1.5)).all()
 
 
 def test_deep_encoder_cannot_be_silently_warm_started():

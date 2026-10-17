@@ -19,6 +19,12 @@
 
 ### 0. Unet-72M 系列正式起跑（Node 48，Batch 512）
 
+**条件残差门控与整理完成（未部署/未入队）**：新增`residual_cond_gate`，
+所有ResBlock用共享t/w/s条件生成逐通道`1+0.5*tanh(logits)`增益，零logits初始gain=1。
+统一modulation初始化/gain函数及模型扩展入口，保留旧参数名/默认行为与checkpoint严格迁移。
+19项小型CPU回归通过；文档集中到`docs/models/unet_modulation.md`。
+不热改48在训或队列快照，不新增训练，未宣称GPU性能/质量收益。
+
 **2026-10-18 02:42：25k已完成，当前基线续训+两任务Writer对照已挂**。
 25k有效EMA：SSIM0.583090、LPIPS-VGG0.351470、Ink-IoU0.299185、Frag3.125921，n187。
 当前基线PID3106695，从25k完整恢复，EMA不重置、LR horizon60k，约2.77step/s、13.36GiB。

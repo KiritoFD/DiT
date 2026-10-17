@@ -20,6 +20,11 @@ def load_expansion(model,checkpoint,source_config,target_config,*,state='raw'):
     if not old_rank and new_rank:
         prefixes.extend(name+'.writer_film.' for name,block in model.named_modules()
                         if getattr(block,'writer_film',None) is not None)
+    if source_config.residual_cond_gate and not target_config.residual_cond_gate:
+        raise ValueError('Cannot remove trained conditional residual gates')
+    if not source_config.residual_cond_gate and target_config.residual_cond_gate:
+        prefixes.extend(name+'.residual_gate.' for name,block in model.named_modules()
+                        if getattr(block,'residual_gate',None) is not None)
     for key,prefix in [('skip_gate_scales','skip_gates.'),('std_gate_scales','std_gates.')]:
         old,new=getattr(source_config,key),getattr(target_config,key)
         if old and not new:raise ValueError(f'Cannot remove {key}')

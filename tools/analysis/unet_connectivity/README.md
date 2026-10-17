@@ -38,16 +38,15 @@ Skip/STD推理干预是OOD，只定位敏感性，不作为训练后提升证据
 训练不注册这些hooks，不引入热路径同步或CPU/GPU往返。
 
 执行环境：在包含新src/tools的完整工作目录运行，需VAE、数据缓存、holdout CE及相应感知模型缓存。
-这组GPU推理尚未执行；当前100k训练未停止、未替换源码。不要未经资源协调直接并跑。
+这组P0 GPU推理尚未执行；历史100k目标已改为60k，当前训练及队列见下节。不要未经资源协调直接并跑。
 
 后续训练配置与严格迁移：[A/B/C说明](../../../src/unet/configs/connectivity/README.md)。
 
 ## 60k串行执行（2026-10-18）
 
 `serial.py --run`：等待指定checkpoint及其评测完成，核对PID/cwd后只停止该训练进程组。
-依次执行当前基线完整续训至60k、同checkpoint raw重置optimizer/EMA的Control、组合结构版。
-组合版启用Skip32门控、Decoder[3,3,2]、三尺度STD门控；不含全网加深与Writer-only调制。
-Control与组合版同起点/随机状态，完整基线续训不是结构对照；LR horizon统一60k。
+默认历史计划为基线→Control→组合版；当前按用户选择使用下方E/F两任务方案，原Control已取消。
+组合版启用Skip32门控、Decoder[3,3,2]、三尺度STD门控。LR horizon统一60k。
 全部B512，每5k保存/统一评测；任何作业失败或缺少最终checkpoint立即中止队列。
 `plan.json`记录源checkpoint哈希与实际配置，`status.json`记录队列状态，独立源码快照运行。
 
@@ -56,3 +55,4 @@ Control与组合版同起点/随机状态，完整基线续训不是结构对照
 `--after-pid/--after-cwd/--after-run`模式只等待现有基线完整结束，不停止它；
 核验最终checkpoint SHA及训练完成标志后再运行。`queued_plan.json`立即记录待执行任务。
 旧supervisor只终止父进程以取消尚未启动任务，当前训练子进程保留；不要kill整个进程组。
+条件残差门控已实现但默认关闭，不插入此队列；见[调制说明](../../../docs/models/unet_modulation.md)。

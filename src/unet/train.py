@@ -22,6 +22,8 @@ def parse():
     p.add_argument('--max-steps',type=int);p.add_argument('--stop-at-step',type=int)
     p.add_argument('--lr-decay-steps',type=int);p.add_argument('--lr',type=float)
     p.add_argument('--writer-film-rank',type=int,help='0 disables the independent Writer-only residual FiLM')
+    p.add_argument('--residual-cond-gate',action=argparse.BooleanOptionalAction,default=None,
+                   help='Enable unit-initialized conditional residual gains in all ResBlocks')
     p.add_argument('--warmup','--warmup-steps',dest='warmup',type=int)
     p.add_argument('--ckpt-every',type=int);p.add_argument('--eval-every',type=int)
     p.add_argument('--benchmark',type=int,default=0,help='Synthetic memory/throughput probe; no saved training')
@@ -33,7 +35,8 @@ def parse():
     if a.resume and a.warm_start:p.error('--resume and --warm-start are mutually exclusive')
     if a.reset_ema and not a.resume:p.error('--reset-ema requires --resume')
     config=Config(**json.loads(Path(a.config).read_text(encoding='utf-8')))
-    for key in ('batch','max_steps','stop_at_step','lr_decay_steps','lr','warmup','ckpt_every','eval_every','writer_film_rank'):
+    for key in ('batch','max_steps','stop_at_step','lr_decay_steps','lr','warmup','ckpt_every','eval_every',
+                'writer_film_rank','residual_cond_gate'):
         value=getattr(a,key)
         if value is not None:setattr(config,key,value)
     config.validate()

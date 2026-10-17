@@ -1,7 +1,8 @@
 # CNN U-Net：独立模型，共用训练器
 
-状态：72M基线已完成GPU训练/保存/评测闭环，修复EMA后从20k续训，累计目标100k；运行快照见[state.md](../../state.md)。
-本轮新增Skip/Decoder/STD开关与诊断入口**只实现、未启动新训练、未热更新远端在训源码**。
+状态：72M基线已完成GPU训练/保存/评测闭环，修复EMA后完成25k并续至累计60k；
+随后排组合版及组合版+Writer-only两组，各由25k暖启动至60k。登记快照见[state.md](../../state.md)。
+条件残差门控已预先实现、默认关闭，**不修改已在训或排队的远端源码快照**。
 
 ## 边界
 
@@ -74,18 +75,8 @@ python -m src.unet.train --config src/unet/configs/fm_48.json --max-steps 80000 
 P0包含阈值/小组件、同点Raw/EMA、Heun50/100及0.8尺度干预，后者只作OOD敏感性诊断。
 见[配置与预算](../../src/unet/configs/connectivity/README.md)及[诊断入口](../../tools/analysis/unet_connectivity/README.md)。
 
-## Writer-only残差调制
+## 调制与门控
 
-rank=16的72M基线为72,291,908参数（增加203,232），叠加Skip32/Decoder[3,3,2]/STD门控后为76,224,746。
-每块末层weight/bias零初始化，无额外零门控，避免双重零初始化阻断新支路学习；第一步末层收到梯度，随后输入投影学习。
-从零训练时仍遵循原ResBlock/output零初始化，最初梯度推进顺序与基线一致。
-分支读取dropout后的Writer embedding，CFG无条件分支也使用同一Writer-null，不泄漏真实Writer。
-配置写入checkpoint，完整resume/eval严格按架构加载；旧模型升级只允许新增writer_film参数缺失，禁止删除或改变已训练rank。
-
-```bash
-# 配置rank=16或CLI覆盖；结构升级必须warm-start，不可用严格同构resume。
-python -m src.unet.train --config src/unet/configs/connectivity/A_control.json --warm-start /path/to/0025000.pt --writer-film-rank 16 --max-steps 60000 --lr-decay-steps 60000
-```
-
-此命令演示Writer-only单变量配置；与重建optimizer/EMA的同起点Control比较。
-本轮只实现并测试，未更改48上已挂的60k队列，也未启动Writer调制训练或GPU吞吐测试。
+GroupNorm后的条件scale/shift称为AdaGN；历史`film`/`writer_film`参数名保持不变。
+Writer-only残差AdaGN与条件残差门控独立配置；前者不等于从共享条件中删除Writer。
+公式、开关、初始化、参数量、迁移约束与本轮整理记录统一见[调制说明](unet_modulation.md)。
