@@ -6,11 +6,16 @@
 
 | 文档 | 内容 |
 |---|---|
-| **[infra-1015-measurements.md](infra-1015-measurements.md)** | **Infra 实测剖析报告**：单卡 4090 阶段级吞吐剖析、v88 170k 步收敛分析、**§10 评测 2.4× 提速真机终测**（178s→73s） |
+| **[infra-1015-measurements.md](infra-1015-measurements.md)** | **Infra 实测剖析报告**：单卡 4090 阶段级吞吐剖析、v88 170k 步收敛分析、**§10 评测快链路 2.44× 提速真机终测**（178s→73s） |
 | [infra_1015.md](infra_1015.md) | 基础设施瓶颈剖析与工程重构建议规范（批次、通信、内存、编译、代码瘦身） |
 | **[experiments/2026-10-16-v89-style-encoder-complete.md](experiments/2026-10-16-v89-style-encoder-complete.md)** | **V89 独立风格编码器完整报告**：20k 训练、留出验证、表征过拟合诊断与决策 |
 | [experiments/2026-10-15-posttraining-and-v88-review.md](experiments/2026-10-15-posttraining-and-v88-review.md) | 后训练（A100/B25/B50/C/D）收尾总结与 v88 基模架构审查 |
-| [refactor-report-2026-10-16.md](refactor-report-2026-10-16.md) | 架构重构与评测正确性修复报告（PR0~PR4 + 六项协议不变量落地） |
+| [refactor-report-2026-10-16.md](refactor-report-2026-10-16.md) | 架构重构与评测正确性修复报告（PR0~PR4 + 六项协议不变量落地 + OT 全链路连根拔除） |
+| [v85e-final-report-2026-10-14.md](v85e-final-report-2026-10-14.md) | **v85e 最终评测报告**：风格判别器（Critic）引导与独立 Style 指标体系验证 |
+| [v85-diagnostics-2026-10-14.md](v85-diagnostics-2026-10-14.md) | v85 诊断分析报告：模型容量、数据先验与生成稳定性诊断 |
+| [v86A-writer-table-diagnostics-2026-10-14.md](v86A-writer-table-diagnostics-2026-10-14.md) | v86A 书家表微调诊断与梯度行为分析 |
+| [c2ot_technical_specification.md](c2ot_technical_specification.md) | **C2OT 技术规范与证伪归档**：48 臂消融四指标全负实证复盘、SDE 独立配对理论冲突与 OT 连根切除记录 |
+| [sde_analysis_brief.md](sde_analysis_brief.md) | **SDE 采样器与恒等式分析**：纯 Heun 与 Langevin 漂移纠偏 SDE、独立高斯配对解析 |
 | [system/00_README.md](system/00_README.md) | 总览、管线图、核心事实速查、阅读顺序 |
 | [system/01_code_layout.md](system/01_code_layout.md) | `src/{model,loss,train,eval,utils}` 分层、根 shim 兼容层、tools/ 边界 |
 | [system/02_diffusion.md](system/02_diffusion.md) | 统一时间步设计（flow/ddpm 语义表）、历史 bug 复盘、`sample_t` 铁律 |
@@ -18,7 +23,7 @@
 | [system/04_controlnet.md](system/04_controlnet.md) | ControlNet 骨架分支、zero-init warm-start、两种训练模式 |
 | [system/05_dataset.md](system/05_dataset.md) | mid-clean 增广流水线（Phase A/B/C）、latent shards、数据事实 |
 | [system/06_training.md](system/06_training.md) | train.py / train_controlnet.py、优化器/EMA、**配置字段全解**、resolved_config |
-| [system/07_eval.md](system/07_eval.md) | 评测体系：inference 唯一核心 + 薄壳 + CPU daemon、指标约定 |
+| [system/07_eval.md](system/07_eval.md) | 评测体系：**§8 现代评测快链路（batch 64 / GPU LPIPS / 2.44x 提速）**、指标约定 |
 | [system/08_experiments.md](system/08_experiments.md) | 实验史与关键决策（**当前状态以 76 为准**） |
 | [system/09_ops.md](system/09_ops.md) | 远程部署、SSH 运维、GPU 纪律、踩坑清单 |
 | **[system/76_experiments_20261005.md](system/76_experiments_20261005.md)** | **全量实验整理与结论**（三目录 499 run → CSV → 同协议对照结论） |

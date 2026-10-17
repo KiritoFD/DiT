@@ -68,68 +68,106 @@ $$\frac{\partial out}{\partial x_2} = \text{SiLU}(x_1) = x_1 \cdot \sigma(x_1)$$
 $$\frac{\partial out}{\partial x_1} = dout \cdot x_2 \cdot \left[ \sigma(x_1) + x_1 \sigma(x_1)(1 - \sigma(x_1)) \right]$$
 
 - **显存与计算优势**：
-  在标准 PyTorch 实现中，Autograd 引擎必须在显存中暂存 $x_1, x_2$ 以及 Sigmoid/SiLU 的激活张量；而在 Fused Kernel 中，所有中间激活完全保留在寄存器中，反向传播直接复用输入指针与 64-bit 地址对齐访存。
+  在标准 PyTorch 实现中，Autograd 引擎必须在显存中暂存 $x_1, x_2$ 以及 Sigmoid/SiLU 的激活张量；而在 Fused Kernel 中，所有中间激活完全保留在寄存器中，反向传播直接复用输入指针与 64-bit 地址对齐访存。此外，配合 `fc1_gate` 打包 GEMM 权重，MLP 子层的前向 GEMM 数量由 3 次砍减至 2 次。
+
+---
+
+### 2.3 Fused QK-Norm + 2D RoPE（跨层注意力特征级融合）
+
+在现代 DiT 架构中，QK-Norm（对 Q 和 K 做 RMSNorm 稳定注意力 logits）与 2D RoPE（轴向旋转位置编码）紧密级联：
+$$\tilde{q} = \text{RMSNorm}(q, \gamma)$$
+$$q_{rope} = \text{RoPE}(\tilde{q}, \cos, \sin)$$
+
+- **原生实现的缺陷**：
+  RMSNorm 计算出 $\tilde{q}$ 后完整写回显存；紧接着 `apply_rope` 再从显存读出 $\tilde{q}$，执行 `chunk(2)`、`cat`、广播乘法再写回显存。
+- **Fused QKNorm+RoPE 算子**：
+  将 RMSNorm 的二范数归一化、可选 affine 参数 $\gamma$ 缩放与 2D 复数旋转完全在片上 registers 中流水线完成。**中间无任何未旋转或未归一化的 Q/K 张量落盘**。
+  - 前向加速比：**3.42x**
+  - 前反向加速比：**1.64x**
+
+---
+
+### 2.4 Fused Gate-Residual + Pre-Norm（残差门控加法与跨块预归一化深度融合）
+
+在 DiTBlock 中，Attention 输出经过门控累加回主残差流，紧接着作为下一个 MLP 子层的输入进行 adaLN 归一化：
+$$x_{res} = x + gate \cdot res$$
+$$x_{norm} = \text{RMSNorm}(x_{res}) \cdot (1 + scale) + shift$$
+
+- **Fused 算子架构**：
+  单个 Kernel 同时载入 $x, res, gate, scale, shift$，在片上一次性产出残差分支结果 $x_{res}$ 与预归一化分支结果 $x_{norm}$，反向闭式求解所有五个张量的解析梯度。
+  - 前向加速比：**6.20x**
+  - 前反向加速比：**4.19x**
 
 ---
 
 ## 三、48 机器 (RTX 4090 48G) 实机基准测试报告
 
-测试脚本位于 [`tools/analysis/bench_operator_fusion.py`](../tools/analysis/bench_operator_fusion.py) 与 [`tools/analysis/profile_power_48.py`](../tools/analysis/profile_power_48.py)。测试配置完全对齐 v90 正式训练规格：$B=192, T=256, D=384, \text{heads}=8, \text{depth}=20$。
+测试脚本位于 [`tools/analysis/bench_operator_fusion.py`](../tools/analysis/bench_operator_fusion.py)。测试配置完全对齐 v90 正式训练规格：$B=192, T=256, D=384, \text{heads}=8, \text{depth}=24$。
 
-### 3.1 微基准压测对比（Micro-benchmarks）
+### 3.1 算子级微基准压测对比（Micro-benchmarks）
 
-| 算子 | 阶段 | Baseline (Unfused) | Fused (Triton) | 性能提升 (Speedup) |
+| 算子类别 | 阶段 | Baseline (Unfused) | Fused (Triton) | 性能提升 (Speedup) |
 | :--- | :--- | :---: | :---: | :---: |
-| **adaLN-RMSNorm** | 前向 (Forward) | 0.179 ms | **0.051 ms** | **3.55x** 🚀 |
-| **adaLN-RMSNorm** | 前反向 (Fwd + Bwd) | 0.452 ms | **0.239 ms** | **1.89x** 🚀 |
-| **SwiGLU** | 前向 (Forward) | 0.533 ms | **0.318 ms** | **1.67x** 🚀 |
+| **adaLN-RMSNorm** | 前向 (Forward) | 0.180 ms | **0.051 ms** | **3.53x** 🚀 |
+| **adaLN-RMSNorm** | 前反向 (Fwd + Bwd) | 0.452 ms | **0.238 ms** | **1.90x** 🚀 |
+| **SwiGLU** | 前向 (Forward) | 0.533 ms | **0.318 ms** | **1.68x** 🚀 |
 | **SwiGLU** | 前反向 (Fwd + Bwd) | 1.374 ms | **1.070 ms** | **1.28x** 🚀 |
+| **Gate + Residual** | 前向 (Forward) | 0.172 ms | **0.118 ms** | **1.46x** 🚀 |
+| **Gate + Residual** | 前反向 (Fwd + Bwd) | 0.343 ms | **0.286 ms** | **1.20x** 🚀 |
+| **2D RoPE** | 前向 (Forward) | 0.384 ms | **0.218 ms** | **1.76x** 🚀 |
+| **2D RoPE** | 前反向 (Fwd + Bwd) | 0.705 ms | **0.482 ms** | **1.46x** 🚀 |
+| **FFN GEMM + SwiGLU** | 前向 (Forward) | 1.037 ms | **0.828 ms** | **1.25x** 🚀 |
+| **FFN GEMM + SwiGLU** | 前反向 (Fwd + Bwd) | 3.050 ms | **2.556 ms** | **1.19x** 🚀 |
+| **QKNorm + 2D RoPE** | 前向 (Forward) | 1.141 ms | **0.333 ms** | **3.42x** 🚀 |
+| **QKNorm + 2D RoPE** | 前反向 (Fwd + Bwd) | 3.276 ms | **1.999 ms** | **1.64x** 🚀 |
+| **GateRes + adaLN-RMSNorm** | 前向 (Forward) | 1.013 ms | **0.164 ms** | **6.20x** 🚀 |
+| **GateRes + adaLN-RMSNorm** | 前反向 (Fwd + Bwd) | 3.099 ms | **0.739 ms** | **4.19x** 🚀 |
 
-> **精度校验**：Max Abs Diff 严格处于 FP16/BF16 理论量化误差下限内（$1.25 \times 10^{-1}$ 在 bf16 动态范围内等效于 0 扰动），单元测试 14 项全数通过。
+> **精度校验**：全部 32 项 pytest 测试在 float32、float16、bfloat16 下 100% 通过，解析反向与 PyTorch Autograd 严格闭式对齐。
 
 ---
 
-### 3.2 模块级压测对比（Block-level: DiTBlock）
+### 3.2 整网 24 层模型端到端压测对比（Full 24-Layer DiT-2Cond Model, Batch=192）
 
-| 模块 (B=192, T=256, D=384) | Baseline (Unfused) | Fused (Triton) | 单 Block 节省 | 20 层累积单步节省 |
-| :--- | :---: | :---: | :---: | :---: |
-| **DiTBlock 前向耗时** | 3.225 ms | **2.801 ms** | -0.424 ms | **-8.48 ms** |
-| **DiTBlock 前反向耗时** | 10.422 ms | **9.252 ms** | **-1.170 ms** | **-23.40 ms** |
-
----
-
-### 3.3 整网端到端与显存占用对比（Full 20-Layer DiT-2Cond Model）
-
-| 评测维度 (Batch=192, 20L) | Baseline (Unfused) | Fused (Triton) | 优化收益 |
+| 评测维度 (Batch=192, Depth=24) | Baseline (Unfused) | Fused (Triton) | 优化收益 |
 | :--- | :---: | :---: | :---: |
-| **单步训练延迟** | 386.79 ms/step | **384.40 ms/step** | 减少 2.39 ms |
-| **单步吞吐量** | 2.59 steps/s | **2.60 steps/s** | +0.6% |
-| **显存峰值占用 (Peak VRAM)** | **25.41 GiB** (24G卡将 OOM!) | **19.53 GiB** | **暴降 6,021.4 MiB (~6.0 GiB)** 💥 |
-
-> **关键工程突破**：在 $B=192$ 时，原生 PyTorch 实现的显存开销高达 **25.41 GiB**，在标准 24GB RTX 4090 上会直接报 CUDA OOM（这也是为什么该批次之前只能在 48G 改装卡上测试）。**算子融合消除了大量中间激活落盘，使得峰值显存直降 6.0 GiB 至 19.53 GiB，成功让 Batch 192 在标配 24GB 4090 上稳稳运行，并保留 4.5 GiB 的绝对安全余量！**
+| **单步训练延迟** | 463.68 ms/step | **282.12 ms/step** | **大幅降低 181.56 ms (-39.2%)** 💥 |
+| **单步吞吐量** | 2.16 steps/s | **3.54 steps/s** | **吞吐量暴涨 +64.4%** 🚀 |
+| **显存峰值占用 (Peak VRAM)** | **30.41 GiB** | **20.66 GiB** | **节省 9,979.5 MiB (~10.0 GiB)** 💥 |
 
 ---
 
-### 3.4 持续训练步长与 GPU 功率波形分析（NVML 高频采样）
+### 3.3 大 Batch 缩放测试（吞食 40G 显存极限配置）
 
-通过调用 `libnvidia-ml.so` 对 RTX 4090 进行了 40 步连续前向反向更新的高频功耗轮询：
+48 机器配有 48GB 显存改版 RTX 4090（可用空间 49,140 MiB）。开启极致算子融合后，模型在 Batch 192 下仅需 20.66 GiB。为彻底压榨 48G 显卡潜力，我们进行了逐级 Batch 梯度扩充实测：
 
-```
-[BASELINE (Unfused)] 40 步实测：
-  平均功率 (Average Power) : 383.4 W
-  最小功率 (Min Power)     : 371.1 W
-  最大功率 (Max Power)     : 392.1 W
-  波动范围 (Power Jitter)  : 21.0 W
+| Global Batch Size | 显存峰值 (Peak VRAM) | 显存利用率 (占 48G) | 运行状态 |
+| :---: | :---: | :---: | :---: |
+| **256** | 26.74 GiB | 55.7% | 充裕 |
+| **320** | 33.32 GiB | 69.4% | 健康 |
+| **352** | 36.61 GiB | 76.3% | 健康 |
+| **384** | **39.90 GiB** (运行时实际稳态 41.55 GiB) | **83.1% ~ 86.5%** | **完美命中 ~40G 靶心** 🎯 |
+| **416** | 43.20 GiB | 90.0% | 接近余量极限 |
 
-[FUSED (Triton)] 40 步实测：
-  平均功率 (Average Power) : 388.2 W (+4.8 W, Tensor Core 占空比显著提升)
-  最小功率 (Min Power)     : 383.1 W
-  最大功率 (Max Power)     : 390.9 W
-  波动范围 (Power Jitter)  : 7.8 W (波动收窄 -13.2 W, 纹波降幅 63%!)
-```
+#### 样本量对齐策略（38.4M 样本预算）
+4090 机器当前正在以 Batch=192、200,000 steps 进行正式基准训练：
+$$\text{Total Samples} = 192 \times 200{,}000 = 38{,}400{,}000 \text{ 样本 (38.4M)}$$
+在 48 机器上将 Batch 扩至 **384**，总步数精确对齐为 **100,000 steps**：
+$$\text{Matched Steps} = \frac{38{,}400{,}000}{384} = 100{,}000 \text{ steps}$$
+实现样本总量严格 1:1 对齐，且学习率按平方根准则微调（7e-5），余弦退火周期设为 100k。
 
-**结论**：
-算子融合显著改善了芯片执行流水线中的“显存饥渴态”，使得 GPU 核心在各层切换时无需等待散碎 Kernel 的启动与显存往返。平均功率有效提升 4.8W，功耗震荡范围由 21.0W 缩窄到 7.8W，GPU 供电与核心发热状态更加平稳。
+---
+
+### 3.4 系统 RAM 健康度审计
+
+通过 `/proc/meminfo` 与 `ps` 深入核查 48 机器主机内存状态：
+- **物理内存总量**：125 GiB
+- **系统可用内存**：115 GiB（无内存压力）
+- **训练进程 RSS**：~5.8 GiB
+  - 预加载 Latents 缓存：1.2 GiB
+  - Pinned RAM 离线字形扰动库（Bank）：1.55 GiB
+  - Dataloader Workers 与 Python 运行时：约 3.0 GiB
+- **健康结论**：内存开销平稳，无内存泄漏与页交换抖动（Swap 几乎未使用）。
 
 ---
 

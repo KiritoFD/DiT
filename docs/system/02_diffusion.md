@@ -98,3 +98,4 @@ diffusion = create_diffusion_or_flow("50", diffusion_type="ddpm")   # ddpm, DDIM
 - 配置字段 `"diffusion_type": "flow" | "ddpm"`（主模型在训练配置 root；ControlNet 在 ctrl 配置）。
 - 默认推理 cfg=1.7（flow 的最佳引导强度，4.0 会过强；s6 ddpm 时代曾用 4.0）。
 - flow 相关的训练辅助项（canny/skel 像素损失、x0 结构损失等 DDPM 专属机制）会被 `_flow_disabled` 机制自动关闭，避免语义错配。
+- **最优传输（OT / C2OT）已彻底废弃与切除**：Flow Matching 严格使用规范的独立高斯对 $(x_0, x_1) \sim p(x_0) \otimes \mathcal{N}(0, I)$ 线性插值。代码库已连根移除所有 `use_ot`、`ot_chunks` 及 Hungarian 求解器同步开销，保证与 SDE 纠偏采样器的独立性假定严密自洽。

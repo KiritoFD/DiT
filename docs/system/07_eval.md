@@ -94,3 +94,14 @@ with torch.autocast("cuda", dtype=torch.bfloat16):
 | ctrl（s19 收敛后重训） | 预期 skel IoU 大幅提升 | — | — |
 
 > ControlNet 的判别标准是 **ctrl(base 差异) 与 skel IoU**：结构控制有效 ⇔ ctrl 组 skel IoU 显著高于 base 组，且 LPIPS 不劣化。
+
+## 8. 现代评测快链路（Eval Fast Path，2026-10 落地）
+
+为消除大模型评测阶段拖慢整体训练吞吐的严重瓶颈，评测系统在 `src/eval/` 落地了完整的「快链路」流水线：
+
+1. **批处理规模扩大至 64**：`--in-mem-eval-batch` 与 `--in-mem-eval-vae-batch` 默认由 16 提升至 **64**。针对 187 张固定样本，DiT 与 VAE 批循环由 12~24 次压缩为仅 3 次，充分饱和 GPU TensorCore。
+2. **GPU 加速 LPIPS 计算**：`_get_lpips()` 移至 GPU 显存执行，单对图像打分耗时由 CPU 端的 ~200ms 降至 GPU 端的 ~3ms。
+3. **尾批填充防动态重编译 (`_pad_to_batch`)**：尾部不完整批次通过最后一个样本做常数补齐至满 batch 64，保证前向张量形状严格不变，从根源杜绝 `torch.compile` 频繁触发动态图重编译（OOM/严重卡顿）。
+4. **杜绝循环内强制同步**：彻底清理了评测批循环内部的 `torch.cuda.empty_cache()`，避免显存反复释放/申请抖动。
+5. **CPU 多线程并行度**：`compute_set_metrics` 采用 `ThreadPoolExecutor` 并行评估 skimage/numpy 的二值化与骨架形态学分析（释放 GIL），使得 187 样本的形态学统计时间从 30s 缩减至 5s。
+6. **实测收益**：在 4090 显卡上，187 样本全套指标评估耗时从历史的 **178s 骤降至 73s（提速 2.44×）**，详细真机对比实测见 `docs/infra-1015-measurements.md` §10。

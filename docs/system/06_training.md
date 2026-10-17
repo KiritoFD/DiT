@@ -85,13 +85,13 @@ with torch.autocast("cuda", dtype=torch.bfloat16):
 | `sampler` / `balance_char_alpha` / `balance_callig_alpha` | factor_balanced / 0.35 / 0.15 | 平衡采样 |
 | `use_ema` / `ema_decay` / `ema_warmup` | true / 0.9999 / true | EMA |
 | `vae` / `vae_path` | ema / data/pretrained/sd-vae-ft-ema | 解码用 VAE |
-| `autoeval*`（`eval_csv` / `eval_n` / `eval_steps` / `eval_cfg` / `eval_seed` / `eval_batch` / `eval_vae_batch`） | eval_strict_top6.csv / 271 / 50 / **1.7** / 0 / 100 / 32 | in-process GPU eval 参数（`07_eval.md`） |
+| `autoeval*`（`eval_csv` / `eval_n` / `eval_steps` / `eval_cfg` / `eval_seed` / `in_mem_eval_batch` / `in_mem_eval_vae_batch`） | eval_strict_top6.csv / 271 / 50 / **1.7** / 0 / **64** / **64** | in-process GPU eval 参数（现代快链路默认批次 64，详见 `07_eval.md`） |
 | `early_stop*` | combo / patience 3 / min 30000 | 早停（依赖 CPU daemon 出的指标 json） |
 | `latent_shards_dir` | data/latents/final_latents_mid_clean | latent 缓存 |
-| `diffusion_type` | **flow** | 扩散框架（`02_diffusion.md`） |
+| `diffusion_type` | **flow** | 扩散框架（`02_diffusion.md`，OT/C2OT 已彻底切除，全量走标准独立 CFM） |
 | `ckpt_every` / `ckpt_keep` / `log_every` / `num_workers` / `preload*` | 2500 / 0 / 20 / 8 / true+48 | 训练节奏 |
 | `use_lora` / `reset_cond_head` / `train_cond_head` | false / false / false | 微调开关（当前预训练关闭） |
-| `w_canny*` / `w_skel*` / `w_repa` / `use_canny` / `use_skel` | 0（关闭） | 结构/辅助损失（flow 下禁用） |
+| `w_canny*` / `w_skel*` / `w_repa` / `use_canny` / `use_skel` | 0（关闭） | 结构/辅助损失（flow 下禁用；OT/C2OT 参数已删除） |
 
 **ControlNet 专属字段**（`src/train/configs/ctrl_skel_s18_flow.json`）：
 

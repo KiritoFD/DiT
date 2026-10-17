@@ -32,7 +32,7 @@
 | 主干 | DiT（depth 12, hidden 512, heads 8, **patch 2** → 256 tokens），58.57M 可训练参数 |
 | 条件 | 3 张冻结表（calligrapher / script / character）+ `factorized_cat` + `split` 归一化 + 路由注入 2,4,5,6 层；4 路 dropout 0.05/0.08；表冻结 |
 | 目标 | **Flow Matching**：`x_t = (1−t)·x₀ + t·x₁`，`x₁ ~ N(0,I)`，速度目标 `v = x₁ − x₀`；`t ~ logit-normal` |
-| 辅助损失 | REPA `w=0.03`（对齐冻结 DINOv2 ViT-S/14 **第 8 层**，图像域缓存）；C2OT `w=1.0`（同条件子集内噪声配对的最优传输） |
+| 辅助损失 | REPA `w=0.03`（对齐冻结 DINOv2 ViT-S/14 **第 8 层**，图像域缓存）；C2OT（历史 v68 曾探索；后在 48 臂消融中证伪并已连根删除，当前基线统一为标准 CFM 独立配对） |
 | 求解器 | `heun`（RK2，trapezoidal），**50 步**（NFE=100） |
 | CFG | 训练内评测 **cfg=1.0**；抽样扫描用过 0.4~1.3 |
 

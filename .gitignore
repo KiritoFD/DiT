@@ -212,4 +212,40 @@ experiments/
 _sync_48/
 expert_pack/
 ANALYSIS/std_soft_preview/
+ANALYSIS/*.png
+!ANALYSIS/aug_family_100k.png
+!ANALYSIS/v81_ckpt_sweep_poster_20261012.png
+!ANALYSIS/v81_ckpt_sweep_poster_v2.png
+_backup_cond_refactor/
+temp_*_cfg.json
+assets/*.tar
+
+# 本次专题报告与小型证据快照；保持其它未跟踪实验产物的忽略行为。
+!docs/experiments/
+docs/experiments/*
+!docs/experiments/*.md
+!docs/experiments/recent_vae_20261013/
+!docs/experiments/recent_vae_20261013/*.json
+!docs/experiments/phase_review_20261013/
+docs/experiments/phase_review_20261013/*
+!docs/experiments/phase_review_20261013/0[1-5]_*.png
+!docs/experiments/phase_review_20261013/sources.json
+
+# Curated source archive and small evidence snapshots only; no weights/images.
+!/archive/
+/archive/*
+!/archive/experiments/
+/archive/experiments/*
+!/archive/experiments/v86_20261015/
+!/archive/experiments/v86_20261015/**/
+!/archive/experiments/v86_20261015/**/*.py
+!/archive/experiments/v86_20261015/**/*.sh
+!/archive/experiments/v86_20261015/**/*.json
+!/archive/experiments/v86_20261015/README.md
+!docs/experiments/2026-10-15-posttraining-and-v88-review.md
+!docs/experiments/posttraining_20261015/
+!docs/experiments/posttraining_20261015/**/
+!docs/experiments/posttraining_20261015/**/*.json
+!docs/experiments/posttraining_20261015/**/*.csv
+!docs/experiments/posttraining_20261015/posters/regressions_0[1-3].png
 
