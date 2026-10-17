@@ -10,7 +10,32 @@
 
 ## 最新产物登记：2026-10-17
 
+### 2026-10-18：v92A 32×256 阶段A（已启动）
+
+- **变的是什么**：32L×256、4heads、patch2，路由改为零基5/10/15/20/25；参数38,810,806。不启用新风格支路。
+- **基准是谁**：4090在跑的v90B 20×256实际配置，已取回原始配置快照，而非20×384模板。
+- **口径是什么**：沿用LR5e-5/warmup1500/EMA、STD-strong、FM/VAE，REPA/Critic关闭；用户已延长至200k，LR horizon始终200k。当前进程到100k后由PID1731714自动核验checkpoint并resume-full续至200k。B192预检80步通过，稳态6.03step/s、日志显存21.43GiB；与B288基线需按曝光量对齐。
+- **现在能不能读结论**：不能；01:26 CST已从零启动，PID1731049，远端`scratch/v92_32l_20261018_01/logs/train_stage_a.log`。经用户授权停止v90B（最后日志159800，完整ckpt150000），U-Net不动。部署继承远端v90B源码，仅增加32层注册，不混入本地训练器重构。见[实施说明](src/train/configs/v92_32l/README.md)。
+
 ### 0. Unet-72M 系列正式起跑（Node 48，Batch 512）
+
+**2026-10-18 02:05：EMA已修正并从20k raw续训，总上限100k。**
+新PID3050580，隔离目录`scratch/unet_ema_20261018_01`，run`Unet_ema_fixed_100k/20261018-020505-Unet-flow`。
+EMA完整配对214/214，从raw重建并以20k为warmup起点；优化器/RNG/global step保留，LR horizon显式改100k，
+起始LR5.54347e-5。B512不变；20.1k额外保存并评测一次，之后每5k。
+checkpoint架构信息与VAE评测路径同步修正。见[修复记录](ANALYSIS/unet_ema_fix_20261018.md)。
+20.1k已真实保存并严格加载：214项EMA均变化，首次有效EMA评测SSIM.57444/LPIPS-VGG.35783/IoU.28588/Frag2.3996；
+这是原生浮点指标，不混用此前统一PNG重评。训练继续至100k。
+
+**此前的对照评测状态：按用户指令停止。** 最后日志21700，完整ckpt20000；后按新指令从20k修复续训，见上。
+raw15k/20k重新采样，权重/VAE/raw标志与DONE校验通过；与DiT40k/50k/60k的GT、实际STD逐张对齐。
+精确768万张曝光（15kB512 vs40kB192）：统一PNG重评Writer44.39% vs34.22%、IoU.2755 vs.1892，
+但SSIM.5037 vs.5238、Frag5.517 vs1.927；不是全面更强。raw20k SSIM.5531/LPIPS-VGG.3738/IoU.2966/Writer49.20%，
+多数内容指标优于曝光量更多的DiT60k，但Writer差值不显著，Frag仍更差。
+实际训练CSV全局未见字符仅13个，未沿用无固定索引的历史62标签。
+见[正式对照报告](ANALYSIS/unet_vs_dit_20261018.md)及[实际图片](assets/audits/unet_vs_dit_20261018/poster.png)。
+
+**2026-10-18审计纠正**：约19.8k，Diff0.2145、2.75–2.79step/s；发现compile训练模型与裸EMA命名不匹配，EMA匹配为空，5k/10k/15k历史评测均为初始化模型，不能读作架构结果。raw15k补评187字SSIM.5005/LPIPS-VGG.40647/Ink-IoU.27548，但断笔明显；因VAE路径参数未映射，DONE身份验收未通过，仅作诊断。另发现远端ckpt缺顶层architecture/config（args内仍有）。本轮未修改或重启U-Net。见[审计报告](ANALYSIS/unet_20261018.md)。
 - **变的是什么**：下一代直接 4x32x32 Latent CNN U-Net 架构 (`LatentUNet` / `Unet-flow`)，`channels=[192, 384, 576]`，每阶段 2 个深层 ResBlock（全网 16 个 ResBlock + 4 个 SDPA 注意力层），总参数量 **72.09M**（与 DiT-24L 65.67M 容量对齐）。
 - **基准是谁**：DiT-20L (`DiT-2Cond-S384-20/2` 55.03M) 及 DiT-24L (`v84D_std_deep24L` 65.67M)。
 - **口径与配置**：Flow Matching 线性插值 ($x_t=(1-t)x_0+t\epsilon$, $v^*=\epsilon-x_0$)，STD 多尺度投影，书家/书体 FiLM 调制；`batch=512`，`lr=6e-5`，`compile=True` (TorchInductor，0 Graph Breaks)，`channels_last`，AMP BF16，Fused AdamW。

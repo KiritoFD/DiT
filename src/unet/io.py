@@ -36,6 +36,7 @@ class Config:
     ema_decay:float=.999
     ema_interval:int=2
     ema_warmup:bool=True
+    ema_start_step:int=0
     log_every:int=50
     eval_every:int=5000
     ckpt_every:int=5000
@@ -89,6 +90,7 @@ def eval_args(config):
         in_mem_eval_sets=f'eval200fix:{config.eval_csv}:187',in_mem_eval_save=True,
         in_mem_eval_batch=config.eval_batch,in_mem_eval_vae_batch=4,std_soft_eval_sigma=.65,
         results_dir=config.output,eval_dir=config.output,w_repa=0.,
+        eval_vae_path=config.vae_path,
         t_sampler='logit_normal',t_mean=0.,t_std=1.)
 
 
@@ -113,10 +115,24 @@ def diffusion(config,evaluation=False):
     return FlowMatching(num_steps=config.eval_steps,sampler='heun')
 
 
+def checkpoint_config(ck):
+    """Legacy U-Net identity lives in args; never guess an unknown architecture."""
+    saved=ck.get('args')
+    get=lambda key: saved.get(key) if isinstance(saved,dict) else getattr(saved,key,None)
+    architecture=ck.get('architecture') or get('architecture')
+    if architecture!=ARCHITECTURE:raise ValueError('Refuse a DiT/unknown checkpoint')
+    values=ck.get('config') or get('architecture_config')
+    config=Config(**values)
+    config.validate(require_budget=False)
+    return config
+
+
 def load(path,device='cpu',use_ema=True):
     ck=torch.load(path,map_location='cpu',weights_only=False)
-    if ck.get('architecture')!=ARCHITECTURE:raise ValueError('Refuse a DiT/unknown checkpoint')
-    config=Config(**ck['config']);model=build(config).to(device)
+    config=checkpoint_config(ck)
+    if use_ema and 'architecture' not in ck:
+        raise ValueError('Legacy EMA is unverified; explicitly load raw instead')
+    model=build(config).to(device)
     key='ema' if use_ema else 'delta'
     weights={name.removeprefix('_orig_mod.'):value for name,value in ck[key].items()}
     model.load_state_dict(weights,strict=True);model.eval()

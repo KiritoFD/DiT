@@ -46,6 +46,7 @@ def effective_decay(step: int, args) -> float:
     ⚠ 返回的是**已经乘方**的值 ✓（即直接传给 `update_ema` 的那个 decay ✓）
     """
     base = float(getattr(args, "ema_decay", 0.999))
+    step = max(0, int(step) - int(getattr(args, 'ema_start_step', 0)))
     if bool(getattr(args, "ema_warmup", False)):
         cur = min(base, (1.0 + float(step)) / (10.0 + float(step)))
     else:
@@ -75,20 +76,27 @@ def update_ema(ema_model, model, decay):
     """
     pairs = getattr(ema_model, "_ema_pairs", None)
     if pairs is None:
-        source = model.module if hasattr(model, "module") else model
+        def unwrap(module):
+            while isinstance(module, torch.nn.parallel.DistributedDataParallel) or hasattr(module, '_orig_mod'):
+                module = module.module if isinstance(module, torch.nn.parallel.DistributedDataParallel) else module._orig_mod
+            return module
+        source, target = unwrap(model), unwrap(ema_model)
         source_params = dict(source.named_parameters())
         source_buffers = dict(source.named_buffers())
+        target_params = dict(target.named_parameters())
+        target_buffers = dict(target.named_buffers())
+        if source_params.keys() != target_params.keys() or source_buffers.keys() != target_buffers.keys():
+            raise ValueError('EMA/source parameter or buffer keys differ after unwrap')
         ema_p, src_p = [], []
-        for name, ep in ema_model.named_parameters():
-            sp = source_params.get(name)
-            if sp is not None:
-                ema_p.append(ep)
-                src_p.append(sp.detach())
+        for name, ep in target_params.items():
+            sp = source_params[name]
+            if ep.shape != sp.shape:
+                raise ValueError(f'EMA shape mismatch: {name}')
+            ema_p.append(ep)
+            src_p.append(sp.detach())
         ema_fb, src_fb, ema_cb, src_cb = [], [], [], []
-        for name, eb in ema_model.named_buffers():
-            sb = source_buffers.get(name)
-            if sb is None:
-                continue
+        for name, eb in target_buffers.items():
+            sb = source_buffers[name]
             if torch.is_floating_point(eb):
                 ema_fb.append(eb)
                 src_fb.append(sb.detach())

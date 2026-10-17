@@ -1296,6 +1296,16 @@ def DiT_2Cond_S384_24_2(**kwargs):
     return DiT_2Cond(depth=24, hidden_size=384, patch_size=2, num_heads=8, **kwargs)
 
 
+def DiT_2Cond_S256_20_2(**kwargs):
+    """Actual v90B narrow baseline (also needed to restore its checkpoints)."""
+    return DiT_2Cond(depth=20, hidden_size=256, patch_size=2, num_heads=4, **kwargs)
+
+
+def DiT_2Cond_S256_32_2(**kwargs):
+    """v92A depth-only extension of the twenty-layer narrow baseline."""
+    return DiT_2Cond(depth=32, hidden_size=256, patch_size=2, num_heads=4, **kwargs)
+
+
 def DiT_2Cond_S_4(**kwargs):
     return DiT_2Cond(depth=12, hidden_size=384, patch_size=4, num_heads=6, **kwargs)
 
@@ -1337,6 +1347,8 @@ DiT_2Cond_models = {
     'DiT-2Cond-Sp24/2': DiT_2Cond_Sp24_2,
     'DiT-2Cond-S384-20/2': DiT_2Cond_S384_20_2,
     'DiT-2Cond-S384-24/2': DiT_2Cond_S384_24_2,
+    'DiT-2Cond-S256-20/2': DiT_2Cond_S256_20_2,
+    'DiT-2Cond-S256-32/2': DiT_2Cond_S256_32_2,
     'DiT-2Cond-S/4': DiT_2Cond_S_4,
     'DiT-2Cond-S/8': DiT_2Cond_S_8,
     'DiT-2Cond-B/2': DiT_2Cond_B_2,

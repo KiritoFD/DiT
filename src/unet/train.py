@@ -12,7 +12,7 @@ from time import perf_counter
 import numpy as np
 import torch
 from .data import loader,StdBank
-from .io import Config,ARCHITECTURE,build,eval_args,diffusion,evaluate
+from .io import Config,ARCHITECTURE,build,eval_args,diffusion,evaluate,checkpoint_config
 
 
 def parse():
@@ -24,7 +24,10 @@ def parse():
     p.add_argument('--warmup','--warmup-steps',dest='warmup',type=int)
     p.add_argument('--ckpt-every',type=int);p.add_argument('--eval-every',type=int)
     p.add_argument('--benchmark',type=int,default=0,help='Synthetic memory/throughput probe; no saved training')
-    p.add_argument('--resume','--resume-full',dest='resume',default='');a=p.parse_args()
+    p.add_argument('--resume','--resume-full',dest='resume',default='')
+    p.add_argument('--reset-ema',action='store_true',help='Seed a new EMA from resumed raw weights')
+    a=p.parse_args()
+    if a.reset_ema and not a.resume:p.error('--reset-ema requires --resume')
     config=Config(**json.loads(Path(a.config).read_text(encoding='utf-8')))
     for key in ('batch','max_steps','stop_at_step','lr_decay_steps','lr','warmup','ckpt_every','eval_every'):
         value=getattr(a,key)
@@ -78,6 +81,15 @@ def main():
     torch.manual_seed(config.seed);torch.cuda.manual_seed_all(config.seed)
     np.random.seed(config.seed);random.seed(config.seed)
     if cli.benchmark:return benchmark(config,cli.benchmark)
+    resume=None;start=0
+    if cli.resume:
+        resume=torch.load(cli.resume,map_location='cpu',weights_only=False)
+        old_config=checkpoint_config(resume)
+        if old_config.objective!=config.objective:raise ValueError('Objective changed on resume')
+        if 'architecture' not in resume and not cli.reset_ema:
+            raise ValueError('Legacy U-Net EMA is invalid; resume with --reset-ema')
+        start=int(resume['train_steps'])
+        config.ema_start_step=start if cli.reset_ema else old_config.ema_start_step
     run=Path(config.output)/(datetime.now().strftime('%Y%m%d-%H%M%S')+'-Unet-'+config.objective)
     run.mkdir(parents=True,exist_ok=False);(run/'checkpoints').mkdir()
     (run/'resolved_config.json').write_text(json.dumps(asdict(config),indent=2),encoding='utf-8')
@@ -93,14 +105,6 @@ def main():
     for name in ('callig','font'):
         artifacts[name+'_table']=str(Path(config.condition_tables_root)/f'{name}_table.npy')
     write_source_manifest(str(run),artifacts=artifacts)
-    resume=None;start=0
-    if cli.resume:
-        resume=torch.load(cli.resume,map_location='cpu',weights_only=False)
-        if resume.get('architecture')!=ARCHITECTURE:
-            raise ValueError('Refuse a non-U-Net checkpoint')
-        if resume['config']['objective']!=config.objective:
-            raise ValueError('Objective changed on resume')
-        start=int(resume['train_steps'])
     dataset,sampler,batches,tick,inline=loader(config,args,log,start)
     bank=StdBank(config)
     layout=torch.channels_last if config.memory_format=='channels_last' else torch.contiguous_format
@@ -113,11 +117,26 @@ def main():
     if resume is not None:
         state=resume['delta']
         state={k.removeprefix('_orig_mod.'):v for k,v in state.items()}
-        raw.load_state_dict(state,strict=True);ema.load_state_dict(resume['ema'],strict=True)
+        raw.load_state_dict(state,strict=True)
+        ema_state=raw.state_dict() if cli.reset_ema else {k.removeprefix('_orig_mod.'):v for k,v in resume['ema'].items()}
+        ema.load_state_dict(ema_state,strict=True)
         opt.load_state_dict(resume['opt']);scheduler.load_state_dict(resume['scheduler'])
+        if scheduler.last_epoch!=start:raise ValueError('Scheduler step mismatch')
+        # The callable has the requested horizon; loaded _last_lr may still use the old one.
+        rates=[base*fn(start) for base,fn in zip(scheduler.base_lrs,scheduler.lr_lambdas)]
+        for group,rate in zip(opt.param_groups,rates):group['lr']=rate
+        scheduler._last_lr=rates
         from src.train.ckpt import restore_rng
         restore_rng(resume.get('rng',{}),log)
+        log.warning('Resume raw/optimizer/scheduler at step=%d; EMA reset=%s start=%d; LR horizon=%d lr=%s',
+                    start,cli.reset_ema,config.ema_start_step,config.lr_decay_steps or config.max_steps,rates)
+        (run/'resume_record.json').write_text(json.dumps(dict(checkpoint=cli.resume,start_step=start,
+            ema_reset=cli.reset_ema,ema_start_step=config.ema_start_step,old_horizon=old_config.lr_decay_steps or old_config.max_steps,
+            new_horizon=config.lr_decay_steps or config.max_steps,lr=rates),indent=2))
         log.warning('Shared optimizer/RNG resume; do not claim exact DataLoader replay')
+    from src.train.ema import update_ema
+    update_ema(ema,raw,decay=1.)  # Validate/cache full pairing before any optimizer step.
+    log.info('EMA paired=%d/%d parameters; start_step=%d',len(ema._ema_pairs[0]),len(list(raw.parameters())),config.ema_start_step)
     limit=config.stop_at_step or config.max_steps
     if start>=limit:raise ValueError('Resume is already at the requested stop')
     from src.train.trainer import TrainState,training_loop
