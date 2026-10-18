@@ -1,0 +1,578 @@
+{
+  "checked_at": "2026-10-18T19:03:41.855623+08:00",
+  "root": "/home/ds/Workspace/DiT/assets/results/cfg_sweep",
+  "writer_results": {
+    "GT真迹": {
+      "n": 181,
+      "micro_top1": 0.7182320441988951,
+      "writer_macro_top1": 0.7006172496869428,
+      "margin": 0.19074610480781418
+    },
+    "Base_cfg1.0": {
+      "n": 181,
+      "micro_top1": 0.5469613259668509,
+      "writer_macro_top1": 0.5245949500201419,
+      "margin": 0.05734785057563149
+    },
+    "Base_cfg1.2": {
+      "n": 181,
+      "micro_top1": 0.6298342541436464,
+      "writer_macro_top1": 0.61031764377992,
+      "margin": 0.10143710384711377
+    },
+    "Base_cfg1.4": {
+      "n": 181,
+      "micro_top1": 0.6408839779005525,
+      "writer_macro_top1": 0.6155102637487548,
+      "margin": 0.12999839858455553
+    },
+    "Base_cfg1.6": {
+      "n": 181,
+      "micro_top1": 0.6408839779005525,
+      "writer_macro_top1": 0.6184715508276889,
+      "margin": 0.15162111151942892
+    },
+    "Gate_cfg1.0": {
+      "n": 181,
+      "micro_top1": 0.5966850828729282,
+      "writer_macro_top1": 0.5794351112797405,
+      "margin": 0.09236808878611465
+    },
+    "Gate_cfg1.2": {
+      "n": 181,
+      "micro_top1": 0.6353591160220995,
+      "writer_macro_top1": 0.6138377770283141,
+      "margin": 0.1325651860039537
+    },
+    "Gate_cfg1.4": {
+      "n": 181,
+      "micro_top1": 0.6629834254143646,
+      "writer_macro_top1": 0.6485244777955775,
+      "margin": 0.1476025235587062
+    },
+    "Gate_cfg1.6": {
+      "n": 181,
+      "micro_top1": 0.6519337016574586,
+      "writer_macro_top1": 0.6390819187206656,
+      "margin": 0.15376178920269012
+    },
+    "DiC768_cfg1.0": {
+      "n": 181,
+      "micro_top1": 0.5580110497237569,
+      "writer_macro_top1": 0.5503476457472621,
+      "margin": 0.06258898512434564
+    },
+    "DiC768_cfg1.2": {
+      "n": 181,
+      "micro_top1": 0.6022099447513812,
+      "writer_macro_top1": 0.5876339705335869,
+      "margin": 0.11078942670018634
+    },
+    "DiC768_cfg1.4": {
+      "n": 181,
+      "micro_top1": 0.6243093922651933,
+      "writer_macro_top1": 0.6065275708945785,
+      "margin": 0.14616984054857854
+    },
+    "DiC768_cfg1.6": {
+      "n": 181,
+      "micro_top1": 0.6629834254143646,
+      "writer_macro_top1": 0.6531773902426077,
+      "margin": 0.16134314378980774
+    }
+  },
+  "swap": {
+    "Base_55k_cfg1.0": {
+      "content_preservation_rate": 55.00000000000001,
+      "swap_top1_accuracy": 33,
+      "counterfactual_flip_rate": 32.22222222222222,
+      "target_margin_mean": -0.0716819067299366,
+      "target_margin_median": -0.09457442164421082,
+      "visual_divergence_l1": 0.15742324367165567
+    },
+    "Base_55k_cfg1.4": {
+      "content_preservation_rate": 55.00000000000001,
+      "swap_top1_accuracy": 42,
+      "counterfactual_flip_rate": 40,
+      "target_margin_mean": 0.011001019179821015,
+      "target_margin_median": -0.01723116636276245,
+      "visual_divergence_l1": 0.18257839326539801
+    },
+    "Gate_75k_cfg1.0": {
+      "content_preservation_rate": 45,
+      "swap_top1_accuracy": 42,
+      "counterfactual_flip_rate": 38.88888888888889,
+      "target_margin_mean": -0.00028141062706708907,
+      "target_margin_median": -0.03133994899690151,
+      "visual_divergence_l1": 0.1752525155308346
+    },
+    "Gate_75k_cfg1.4": {
+      "content_preservation_rate": 46,
+      "swap_top1_accuracy": 45,
+      "counterfactual_flip_rate": 41.11111111111111,
+      "target_margin_mean": 0.05062038391828537,
+      "target_margin_median": 0.05496542900800705,
+      "visual_divergence_l1": 0.1960250252733628
+    },
+    "DiC768_50k_cfg1.0": {
+      "content_preservation_rate": 51,
+      "swap_top1_accuracy": 40,
+      "counterfactual_flip_rate": 38.88888888888889,
+      "target_margin_mean": -0.05242391638457775,
+      "target_margin_median": -0.034722208976745605,
+      "visual_divergence_l1": 0.16889950822624894
+    },
+    "DiC768_50k_cfg1.4": {
+      "content_preservation_rate": 53,
+      "swap_top1_accuracy": 47,
+      "counterfactual_flip_rate": 45.55555555555556,
+      "target_margin_mean": 0.03202833563089371,
+      "target_margin_median": 0.08063065260648727,
+      "visual_divergence_l1": 0.18810416909348635
+    }
+  },
+  "protocol_files": {
+    "Baseline_55k_cfg1.0": [
+      {
+        "directory": "/home/ds/Workspace/DiT/assets/results/cfg_sweep/Baseline_55k_cfg1.0/eval_samples_ctrl/step0055000/eval200fix",
+        "metadata_files": [
+          "protocol.json",
+          "metrics.json",
+          "DONE.json"
+        ]
+      },
+      {
+        "file": "/home/ds/Workspace/DiT/assets/results/cfg_sweep/Baseline_55k_cfg1.0/eval_samples_ctrl/step0055000/eval200fix/protocol.json",
+        "top_keys": [
+          "cfg",
+          "checkpoint_sha256",
+          "code_revision",
+          "conditions_sha256",
+          "dataset_sha256",
+          "ema",
+          "eval_id",
+          "extra",
+          "gamma",
+          "num_steps",
+          "sampler",
+          "schema_version",
+          "seed",
+          "sets_spec",
+          "vae_scale",
+          "vae_sha256",
+          "vae_shift"
+        ]
+      },
+      {
+        "file": "/home/ds/Workspace/DiT/assets/results/cfg_sweep/Baseline_55k_cfg1.0/eval_samples_ctrl/step0055000/eval200fix/metrics.json",
+        "top_keys": [
+          "cal_enrich",
+          "frag",
+          "gt_soft_mass",
+          "hole",
+          "hole_gt",
+          "ink_iou",
+          "ink_ssim",
+          "lpips",
+          "mse",
+          "n",
+          "near_blank_rate",
+          "nn_mean",
+          "nn_ssim",
+          "skel_iou",
+          "soft_ink_ratio",
+          "ssim",
+          "tgt_spec"
+        ]
+      },
+      {
+        "file": "/home/ds/Workspace/DiT/assets/results/cfg_sweep/Baseline_55k_cfg1.0/eval_samples_ctrl/step0055000/eval200fix/DONE.json",
+        "top_keys": [
+          "artifacts",
+          "eval_id",
+          "n_png",
+          "n_samples",
+          "protocol_sha256",
+          "schema_version"
+        ]
+      }
+    ],
+    "DiC768_50k_cfg1.0": [
+      {
+        "directory": "/home/ds/Workspace/DiT/assets/results/cfg_sweep/DiC768_50k_cfg1.0/eval_samples_ctrl/step0050000/eval200fix",
+        "metadata_files": [
+          "protocol.json",
+          "metrics.json",
+          "DONE.json"
+        ]
+      },
+      {
+        "file": "/home/ds/Workspace/DiT/assets/results/cfg_sweep/DiC768_50k_cfg1.0/eval_samples_ctrl/step0050000/eval200fix/protocol.json",
+        "top_keys": [
+          "cfg",
+          "checkpoint_sha256",
+          "code_revision",
+          "conditions_sha256",
+          "dataset_sha256",
+          "ema",
+          "eval_id",
+          "extra",
+          "gamma",
+          "num_steps",
+          "sampler",
+          "schema_version",
+          "seed",
+          "sets_spec",
+          "vae_scale",
+          "vae_sha256",
+          "vae_shift"
+        ]
+      },
+      {
+        "file": "/home/ds/Workspace/DiT/assets/results/cfg_sweep/DiC768_50k_cfg1.0/eval_samples_ctrl/step0050000/eval200fix/metrics.json",
+        "top_keys": [
+          "cal_enrich",
+          "frag",
+          "gt_soft_mass",
+          "hole",
+          "hole_gt",
+          "ink_iou",
+          "ink_ssim",
+          "lpips",
+          "mse",
+          "n",
+          "near_blank_rate",
+          "nn_mean",
+          "nn_ssim",
+          "skel_iou",
+          "soft_ink_ratio",
+          "ssim",
+          "tgt_spec"
+        ]
+      },
+      {
+        "file": "/home/ds/Workspace/DiT/assets/results/cfg_sweep/DiC768_50k_cfg1.0/eval_samples_ctrl/step0050000/eval200fix/DONE.json",
+        "top_keys": [
+          "artifacts",
+          "eval_id",
+          "n_png",
+          "n_samples",
+          "protocol_sha256",
+          "schema_version"
+        ]
+      }
+    ]
+  },
+  "protocols": {
+    "Arm1_Gate_75k_cfg1.0": {
+      "protocol": {
+        "ema": true,
+        "seed": 0,
+        "checkpoint_sha256": "17ecfed7055a79de71e223429e02572d6fce3f5ebd97cc3922b8eb5b44b5e7ab",
+        "conditions_sha256": "",
+        "dataset_sha256": "f2205eb2fbd34b03915d4dd26b379a107183606683cf3389b5264bcdd6d45a27",
+        "cfg": 1,
+        "sampler": "heun",
+        "num_steps": 50,
+        "gamma": 0,
+        "vae_scale": 0.18215,
+        "vae_shift": 0,
+        "eval_id": "e7f0d0531a3375f76e997a782288dfcd9386020621d42ba1d1f2317af3171e8b"
+      },
+      "metrics": {
+        "n": 187,
+        "ssim": 0.6050961148542832,
+        "lpips": 0.3293412633359751,
+        "ink_iou": 0.3204918327417354,
+        "frag": 2.5048936756678364,
+        "soft_ink_ratio": 1.05233340563561
+      }
+    },
+    "Arm1_Gate_75k_cfg1.2": {
+      "protocol": {
+        "ema": true,
+        "seed": 0,
+        "checkpoint_sha256": "17ecfed7055a79de71e223429e02572d6fce3f5ebd97cc3922b8eb5b44b5e7ab",
+        "conditions_sha256": "",
+        "dataset_sha256": "f2205eb2fbd34b03915d4dd26b379a107183606683cf3389b5264bcdd6d45a27",
+        "cfg": 1.2,
+        "sampler": "heun",
+        "num_steps": 50,
+        "gamma": 0,
+        "vae_scale": 0.18215,
+        "vae_shift": 0,
+        "eval_id": "7630d9bc9bc95efc8e7729a24c62d3e3ed6620bf337d6b146fdcd3d28caa09b1"
+      },
+      "metrics": {
+        "n": 187,
+        "ssim": 0.6037874456313641,
+        "lpips": 0.3298639815479995,
+        "ink_iou": 0.3231062553951726,
+        "frag": 2.46835796985896,
+        "soft_ink_ratio": 1.0721856096501952
+      }
+    },
+    "Arm1_Gate_75k_cfg1.4": {
+      "protocol": {
+        "ema": true,
+        "seed": 0,
+        "checkpoint_sha256": "17ecfed7055a79de71e223429e02572d6fce3f5ebd97cc3922b8eb5b44b5e7ab",
+        "conditions_sha256": "",
+        "dataset_sha256": "f2205eb2fbd34b03915d4dd26b379a107183606683cf3389b5264bcdd6d45a27",
+        "cfg": 1.4,
+        "sampler": "heun",
+        "num_steps": 50,
+        "gamma": 0,
+        "vae_scale": 0.18215,
+        "vae_shift": 0,
+        "eval_id": "394a34c818f8f2d7cb51a2d3132e3c9e64a819d55b0fe9f185e568438a49eaef"
+      },
+      "metrics": {
+        "n": 187,
+        "ssim": 0.6045265631081499,
+        "lpips": 0.3288664844305439,
+        "ink_iou": 0.32982002361775536,
+        "frag": 2.3016237649481828,
+        "soft_ink_ratio": 1.0916961491059607
+      }
+    },
+    "Arm1_Gate_75k_cfg1.6": {
+      "protocol": {
+        "ema": true,
+        "seed": 0,
+        "checkpoint_sha256": "17ecfed7055a79de71e223429e02572d6fce3f5ebd97cc3922b8eb5b44b5e7ab",
+        "conditions_sha256": "",
+        "dataset_sha256": "f2205eb2fbd34b03915d4dd26b379a107183606683cf3389b5264bcdd6d45a27",
+        "cfg": 1.6,
+        "sampler": "heun",
+        "num_steps": 50,
+        "gamma": 0,
+        "vae_scale": 0.18215,
+        "vae_shift": 0,
+        "eval_id": "fabb9a5e7f382f80ff962f4c2c30052a7421e1c2d68fc2e821177b2fb640e9b9"
+      },
+      "metrics": {
+        "n": 187,
+        "ssim": 0.604721134190759,
+        "lpips": 0.3281069352904106,
+        "ink_iou": 0.3342703387554738,
+        "frag": 2.072462603142155,
+        "soft_ink_ratio": 1.1148485434635298
+      }
+    },
+    "Baseline_55k_cfg1.0": {
+      "protocol": {
+        "ema": true,
+        "seed": 0,
+        "checkpoint_sha256": "95da794bf4f255ce9b44dba60ee8712e0f5c1a3442a5352102989a584638c889",
+        "conditions_sha256": "",
+        "dataset_sha256": "f2205eb2fbd34b03915d4dd26b379a107183606683cf3389b5264bcdd6d45a27",
+        "cfg": 1,
+        "sampler": "heun",
+        "num_steps": 50,
+        "gamma": 0,
+        "vae_scale": 0.18215,
+        "vae_shift": 0,
+        "eval_id": "3e2af498294f386cc3598317856f6c9464718fd10f4c303db6f0754e2170d298"
+      },
+      "metrics": {
+        "n": 187,
+        "ssim": 0.6001170733221055,
+        "lpips": 0.3341203426772898,
+        "ink_iou": 0.3138431894086297,
+        "frag": 3.0346411702932787,
+        "soft_ink_ratio": 1.0932767093657847
+      }
+    },
+    "Baseline_55k_cfg1.2": {
+      "protocol": {
+        "ema": true,
+        "seed": 0,
+        "checkpoint_sha256": "95da794bf4f255ce9b44dba60ee8712e0f5c1a3442a5352102989a584638c889",
+        "conditions_sha256": "",
+        "dataset_sha256": "f2205eb2fbd34b03915d4dd26b379a107183606683cf3389b5264bcdd6d45a27",
+        "cfg": 1.2,
+        "sampler": "heun",
+        "num_steps": 50,
+        "gamma": 0,
+        "vae_scale": 0.18215,
+        "vae_shift": 0,
+        "eval_id": "52567ae6ec15ef5ee3c51156cdb992936e895dc73a597b29498827700e297a44"
+      },
+      "metrics": {
+        "n": 187,
+        "ssim": 0.6009675302210544,
+        "lpips": 0.33239190611131686,
+        "ink_iou": 0.3216166677342496,
+        "frag": 2.843644440983378,
+        "soft_ink_ratio": 1.1142673855050325
+      }
+    },
+    "Baseline_55k_cfg1.4": {
+      "protocol": {
+        "ema": true,
+        "seed": 0,
+        "checkpoint_sha256": "95da794bf4f255ce9b44dba60ee8712e0f5c1a3442a5352102989a584638c889",
+        "conditions_sha256": "",
+        "dataset_sha256": "f2205eb2fbd34b03915d4dd26b379a107183606683cf3389b5264bcdd6d45a27",
+        "cfg": 1.4,
+        "sampler": "heun",
+        "num_steps": 50,
+        "gamma": 0,
+        "vae_scale": 0.18215,
+        "vae_shift": 0,
+        "eval_id": "31183b1be63d388d677dd15f19b2f9273c24c1e6cfcb6727a8f6d46768390e90"
+      },
+      "metrics": {
+        "n": 187,
+        "ssim": 0.6002290264947933,
+        "lpips": 0.33228373961812036,
+        "ink_iou": 0.3275423891270625,
+        "frag": 2.6304111524321496,
+        "soft_ink_ratio": 1.1439212120667976
+      }
+    },
+    "Baseline_55k_cfg1.6": {
+      "protocol": {
+        "ema": true,
+        "seed": 0,
+        "checkpoint_sha256": "95da794bf4f255ce9b44dba60ee8712e0f5c1a3442a5352102989a584638c889",
+        "conditions_sha256": "",
+        "dataset_sha256": "f2205eb2fbd34b03915d4dd26b379a107183606683cf3389b5264bcdd6d45a27",
+        "cfg": 1.6,
+        "sampler": "heun",
+        "num_steps": 50,
+        "gamma": 0,
+        "vae_scale": 0.18215,
+        "vae_shift": 0,
+        "eval_id": "dd01c0b084fa3f5f689ecbf95c370e038114f9aeace094b4d37745b3a9bcc839"
+      },
+      "metrics": {
+        "n": 187,
+        "ssim": 0.5986643978056565,
+        "lpips": 0.33352418925194816,
+        "ink_iou": 0.33059128535534194,
+        "frag": 2.3730966548338532,
+        "soft_ink_ratio": 1.1701579904745363
+      }
+    },
+    "DiC768_50k_cfg1.0": {
+      "protocol": {
+        "ema": true,
+        "seed": 0,
+        "checkpoint_sha256": "081f1a2db2d3e692d3725cd67c43984354e01b33e00e075dce8363315d427c22",
+        "conditions_sha256": "",
+        "dataset_sha256": "f2205eb2fbd34b03915d4dd26b379a107183606683cf3389b5264bcdd6d45a27",
+        "cfg": 1,
+        "sampler": "heun",
+        "num_steps": 50,
+        "gamma": 0,
+        "vae_scale": 0.18215,
+        "vae_shift": 0,
+        "eval_id": "9e986b2e805941751db9884fd3a60d8c1afbf507196309a6e0dc712fc5394879"
+      },
+      "metrics": {
+        "n": 187,
+        "ssim": 0.6043398885852499,
+        "lpips": 0.3295011112197516,
+        "ink_iou": 0.32346157933061176,
+        "frag": 2.3332436890608426,
+        "soft_ink_ratio": 1.0497664878012192
+      }
+    },
+    "DiC768_50k_cfg1.2": {
+      "protocol": {
+        "ema": true,
+        "seed": 0,
+        "checkpoint_sha256": "081f1a2db2d3e692d3725cd67c43984354e01b33e00e075dce8363315d427c22",
+        "conditions_sha256": "",
+        "dataset_sha256": "f2205eb2fbd34b03915d4dd26b379a107183606683cf3389b5264bcdd6d45a27",
+        "cfg": 1.2,
+        "sampler": "heun",
+        "num_steps": 50,
+        "gamma": 0,
+        "vae_scale": 0.18215,
+        "vae_shift": 0,
+        "eval_id": "6535d2819fe00511598451cfc054fe4bac13c393daaaf1d4d19f496fd9c6dc86"
+      },
+      "metrics": {
+        "n": 187,
+        "ssim": 0.6046907512802657,
+        "lpips": 0.32839036746857003,
+        "ink_iou": 0.3296144975847218,
+        "frag": 2.1385633930940644,
+        "soft_ink_ratio": 1.0685230899668952
+      }
+    },
+    "DiC768_50k_cfg1.4": {
+      "protocol": {
+        "ema": true,
+        "seed": 0,
+        "checkpoint_sha256": "081f1a2db2d3e692d3725cd67c43984354e01b33e00e075dce8363315d427c22",
+        "conditions_sha256": "",
+        "dataset_sha256": "f2205eb2fbd34b03915d4dd26b379a107183606683cf3389b5264bcdd6d45a27",
+        "cfg": 1.4,
+        "sampler": "heun",
+        "num_steps": 50,
+        "gamma": 0,
+        "vae_scale": 0.18215,
+        "vae_shift": 0,
+        "eval_id": "ec835cb18d543e0ff942ba4ff688d6dcfd23fb70c12fa172f85d0a03b7156fda"
+      },
+      "metrics": {
+        "n": 187,
+        "ssim": 0.6053345331437873,
+        "lpips": 0.3271391913095579,
+        "ink_iou": 0.33456935942249805,
+        "frag": 2.1341217827089474,
+        "soft_ink_ratio": 1.0872616248872686
+      }
+    },
+    "DiC768_50k_cfg1.6": {
+      "protocol": {
+        "ema": true,
+        "seed": 0,
+        "checkpoint_sha256": "081f1a2db2d3e692d3725cd67c43984354e01b33e00e075dce8363315d427c22",
+        "conditions_sha256": "",
+        "dataset_sha256": "f2205eb2fbd34b03915d4dd26b379a107183606683cf3389b5264bcdd6d45a27",
+        "cfg": 1.6,
+        "sampler": "heun",
+        "num_steps": 50,
+        "gamma": 0,
+        "vae_scale": 0.18215,
+        "vae_shift": 0,
+        "eval_id": "d2883cc3e987d7165e962df6505295faf9462b62666c6e6275b7b668601e375d"
+      },
+      "metrics": {
+        "n": 187,
+        "ssim": 0.605192064170899,
+        "lpips": 0.3270111491176534,
+        "ink_iou": 0.3372202728302635,
+        "frag": 2.059439241216906,
+        "soft_ink_ratio": 1.1028189647635611
+      }
+    }
+  },
+  "limitations": [
+    "Read-only audit; no new sampling or training.",
+    "Macro recomputed by grouping existing per-image top1 hits by writer, then equal-weight averaging writers.",
+    "Local sampling code loads Base/Gate raw while DiC-specific branch loads EMA; saved protocol ema=true for all models is not independent proof of actual loaded state.",
+    "conditions_sha256 is empty in inspected saved protocols; no complete condition-identity audit yet.",
+    "Old-versus-new CFG1 baseline drift is unresolved; same-model sweep is more informative than mixed-model or mixed-run ranking."
+  ],
+  "current_runtime": {
+    "host": "4090",
+    "checked_at": "2026-10-18T19:09:15.341961+08:00",
+    "run": "/root/Workspace/xy/DiT/assets/results/unet_dic_100k_b768/20261018-063716-Unet-flow",
+    "metrics": null,
+    "last_step": 76600,
+    "pid": 1738543,
+    "batch": 768,
+    "speed_steps_s": 1.71
+  },
+  "node48_runtime": {
+    "checked_at": "2026-10-18T19:08:33+08:00",
+    "gpu_compute_pids": [],
+    "previous_supervisor_3540850_exists": false
+  }
+}

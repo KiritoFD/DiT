@@ -232,6 +232,12 @@ assets/*.tar
 !docs/experiments/
 docs/experiments/*
 !docs/experiments/*.md
+!docs/experiments/ledger/
+docs/experiments/ledger/*
+!docs/experiments/ledger/*.md
+!docs/experiments/ledger/live_snapshot_20261018.json
+!docs/experiments/ledger/writer_cfg_snapshot_20261018.json
+!docs/experiments/ledger/unet_35000_poster.png
 !docs/experiments/recent_vae_20261013/
 !docs/experiments/recent_vae_20261013/*.json
 !docs/experiments/phase_review_20261013/
