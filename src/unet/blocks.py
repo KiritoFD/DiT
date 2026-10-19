@@ -10,6 +10,12 @@ def norm(channels):
     return nn.GroupNorm(math.gcd(channels, 32), channels, eps=1e-6)
 
 
+def get_activation(act: str = 'silu'):
+    if act == 'silu': return F.silu
+    if act == 'gelu': return F.gelu
+    raise ValueError(f'Unsupported activation: {act}')
+
+
 def timestep_embedding(t, dim=128):
     freq=torch.exp(-math.log(10000)*torch.arange(dim//2,device=t.device)/ (dim//2))
     phase=t.float()[:,None]*freq[None]
@@ -21,8 +27,9 @@ class ResBlock(nn.Module):
 
     Historical `film`/`writer_film` names are retained as checkpoint keys.
     """
-    def __init__(self, cin, cout, cond_dim=512):
+    def __init__(self, cin, cout, cond_dim=512, act_fn='silu'):
         super().__init__()
+        self.act=get_activation(act_fn)
         self.norm1=norm(cin);self.conv1=nn.Conv2d(cin,cout,3,padding=1)
         self.norm2=norm(cout);self.film=nn.Linear(cond_dim,2*cout)
         self.conv2=nn.Conv2d(cout,cout,3,padding=1)
@@ -42,15 +49,15 @@ class ResBlock(nn.Module):
         self.residual_gate=zero_linear(self.film.in_features,self.conv2.out_channels)
 
     def forward(self,x,c,writer=None):
-        h=self.conv1(F.silu(self.norm1(x)))
-        condition=F.silu(c)
+        h=self.conv1(self.act(self.norm1(x)))
+        condition=self.act(c)
         scale,shift=self.film(condition).to(h.dtype).chunk(2,dim=1)
         if self.writer_film is not None:
             if writer is None:raise ValueError('Writer embedding required for independent FiLM')
             writer_scale,writer_shift=self.writer_film(writer).to(h.dtype).chunk(2,dim=1)
             scale=scale+writer_scale;shift=shift+writer_shift
         h=self.norm2(h)*(1+scale[:,:,None,None])+shift[:,:,None,None]
-        residual=self.conv2(F.silu(h))
+        residual=self.conv2(self.act(h))
         if self.residual_gate is not None:
             gain=bounded_gain(self.residual_gate(condition).to(residual.dtype))
             residual=residual*gain[:,:,None,None]
@@ -75,9 +82,9 @@ class Attention(nn.Module):
 
 
 class Stage(nn.Module):
-    def __init__(self,cin,cout,attention,num_res_blocks=2):
+    def __init__(self,cin,cout,attention,num_res_blocks=2,act_fn='silu'):
         super().__init__()
-        self.blocks=nn.ModuleList([ResBlock(cin if i==0 else cout,cout) for i in range(num_res_blocks)])
+        self.blocks=nn.ModuleList([ResBlock(cin if i==0 else cout,cout,act_fn=act_fn) for i in range(num_res_blocks)])
         self.attn=Attention(cout) if attention else nn.Identity()
 
     def forward(self,x,c,writer=None):

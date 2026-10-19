@@ -25,12 +25,36 @@ def load_expansion(model,checkpoint,source_config,target_config,*,state='raw'):
     if not source_config.residual_cond_gate and target_config.residual_cond_gate:
         prefixes.extend(name+'.residual_gate.' for name,block in model.named_modules()
                         if getattr(block,'residual_gate',None) is not None)
+    old_stage=getattr(source_config,'stage_specific_cond',False)
+    new_stage=getattr(target_config,'stage_specific_cond',False)
+    if old_stage and not new_stage:
+        raise ValueError('Cannot remove trained stage-specific conditioning')
+    if not old_stage and new_stage:
+        mode=getattr(target_config,'stage_cond_mode','adapter')
+        if mode=='adapter':
+            prefixes.append('stage_adapters.')
+        elif mode=='independent':
+            prefixes.extend(['stage_time_proj.','stage_writer_proj.','stage_script_proj.','stage_condition.'])
     for key,prefix in [('skip_gate_scales','skip_gates.'),('std_gate_scales','std_gates.')]:
         old,new=getattr(source_config,key),getattr(target_config,key)
         if old and not new:raise ValueError(f'Cannot remove {key}')
         if not old and new:prefixes.append(prefix)
     source=checkpoint['delta' if state=='raw' else 'ema']
     source={k.removeprefix('_orig_mod.'):v for k,v in source.items()}
+    if not old_stage and new_stage and getattr(target_config,'stage_cond_mode','adapter')=='independent':
+        for i in range(3):
+            source[f'stage_time_proj.{i}.weight']=source['time_proj.weight'].clone()
+            source[f'stage_time_proj.{i}.bias']=source['time_proj.bias'].clone()
+            source[f'stage_writer_proj.{i}.weight']=source['writer_proj.weight'].clone()
+            source[f'stage_writer_proj.{i}.bias']=source['writer_proj.bias'].clone()
+            source[f'stage_script_proj.{i}.weight']=source['script_proj.weight'].clone()
+            source[f'stage_script_proj.{i}.bias']=source['script_proj.bias'].clone()
+            source[f'stage_condition.{i}.1.weight']=source['condition.1.weight'].clone()
+            source[f'stage_condition.{i}.1.bias']=source['condition.1.bias'].clone()
+        for k in list(source.keys()):
+            if any(k.startswith(p) for p in ('time_proj.','writer_proj.','script_proj.','condition.')):
+                del source[k]
+        prefixes=[p for p in prefixes if not any(p.startswith(x) for x in ('stage_time_proj.','stage_writer_proj.','stage_script_proj.','stage_condition.'))]
     target=model.state_dict()
     expected_new={k for k in target if any(k.startswith(p) for p in prefixes)}
     missing=set(target)-set(source)

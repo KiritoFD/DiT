@@ -220,6 +220,7 @@ class FlowMatching:
         model_output = model(x_t, t * TIME_SCALE, **model_kwargs)
 
         terms = {}
+        intermediate_feats = None
         if isinstance(model_output, tuple):
             model_output, intermediate_feats = model_output
             terms["intermediate_feats"] = intermediate_feats
@@ -241,6 +242,17 @@ class FlowMatching:
             # mean 仍在全部通道上做 -> 图像通道的梯度权重与不加权时完全一致。
             loss = loss * channel_weights.view(1, -1, 1, 1).to(loss.dtype)
         loss = loss.mean(dim=list(range(1, loss.ndim)))
+
+        if isinstance(intermediate_feats, dict) and "v_base" in intermediate_feats:
+            v_base = intermediate_feats["v_base"].float()
+            w_base = float(intermediate_feats.get("w_base", 0.5))
+            loss_base = F.mse_loss(v_base, v_target.float(), reduction="none").mean(dim=list(range(1, v_base.ndim)))
+            terms["loss_full"] = loss.detach()
+            terms["loss_base"] = loss_base.detach()
+            if "delta_v" in intermediate_feats:
+                terms["delta_v_norm"] = intermediate_feats["delta_v"].detach().norm(dim=1).mean()
+            loss = loss + w_base * loss_base
+
         terms["loss"] = loss
 
         # ── 从预测速度反推 x0 ───────────────────────────────────────────

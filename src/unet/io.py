@@ -20,7 +20,11 @@ class Config:
     skip_gate_scales:tuple=()
     std_gate_scales:tuple=()
     writer_film_rank:int=0  # 0=legacy shared FiLM only; >0 adds Writer-only residual FiLM.
+    writer_film_layers:tuple=()  # Layer name patterns, e.g. ('decoder.1', 'decoder.2'); empty means all.
     residual_cond_gate:bool=False  # Per-channel residual gains conditioned on shared t/w/s.
+    stage_specific_cond:bool=False  # DiC-style multi-scale condition injection (32/16/8).
+    stage_cond_mode:str='adapter'  # 'adapter' (zero-init delta) or 'independent'
+    act_fn:str='silu'  # 'silu' or 'gelu'
     requires_warm_start:bool=False
     num_writers:int=10
     num_scripts:int=3
@@ -65,10 +69,16 @@ class Config:
     compile:bool=False
 
     def validate(self,require_budget=True):
-        if self.architecture!=ARCHITECTURE:raise ValueError('Not a CNN U-Net configuration')
+        if self.architecture not in (ARCHITECTURE, 'calliflow_v2'):
+            raise ValueError(f'Unsupported architecture: {self.architecture}')
         if not isinstance(self.writer_film_rank,int) or self.writer_film_rank<0:
             raise ValueError('writer_film_rank must be a nonnegative integer')
+        if self.writer_film_layers is not None and not isinstance(self.writer_film_layers,(tuple,list)):
+            raise ValueError('writer_film_layers must be a tuple/list of strings or empty')
         if not isinstance(self.residual_cond_gate,bool):raise ValueError('residual_cond_gate must be boolean')
+        if not isinstance(self.stage_specific_cond,bool):raise ValueError('stage_specific_cond must be boolean')
+        if self.stage_cond_mode not in ('adapter','independent'):raise ValueError(f'Invalid stage_cond_mode: {self.stage_cond_mode}')
+        if self.act_fn not in ('silu','gelu'):raise ValueError(f'Invalid act_fn: {self.act_fn}')
         if self.memory_format not in ('channels_last','nchw'):raise ValueError(self.memory_format)
         if self.objective!='flow':raise ValueError('First U-Net training line supports FM only')
         if self.std_shape_aug not in ('off','mild','strong'):raise ValueError(self.std_shape_aug)
@@ -81,11 +91,38 @@ class Config:
 
 def build(config,initialize_tables=False):
     config.validate(require_budget=False)
+    if config.architecture == 'calliflow_v2':
+        from .calliflow_v2 import CalliFlowV2
+        model = CalliFlowV2(
+            channels=tuple(config.channels),
+            writer_channels=(64, 96, 128),
+            num_res_blocks=getattr(config, 'num_res_blocks', 4),
+            middle_res_blocks=3,
+            num_writers=config.num_writers,
+            num_scripts=config.num_scripts,
+            cond_dim=512,
+            act_fn=getattr(config, 'act_fn', 'gelu'),
+        )
+        if initialize_tables:
+            import numpy as np
+            for name, embedding in [('callig', model.writer_branch.writer), ('font', model.script)]:
+                p = Path(config.condition_tables_root) / f'{name}_table.npy'
+                if p.exists():
+                    values = torch.from_numpy(np.load(p))
+                    if values.shape == embedding.weight[:-1].shape:
+                        with torch.no_grad():
+                            embedding.weight[:-1].copy_(values)
+        return model
     model=LatentUNet(tuple(config.channels),config.num_writers,config.num_scripts,
                     num_res_blocks=getattr(config,'num_res_blocks',2),
                     decoder_res_blocks=config.decoder_res_blocks,
                     skip_gate_scales=config.skip_gate_scales,std_gate_scales=config.std_gate_scales,
-                    writer_film_rank=config.writer_film_rank,residual_cond_gate=config.residual_cond_gate)
+                    writer_film_rank=config.writer_film_rank,
+                    writer_film_layers=getattr(config,'writer_film_layers',()),
+                    residual_cond_gate=config.residual_cond_gate,
+                    stage_specific_cond=getattr(config,'stage_specific_cond',False),
+                    stage_cond_mode=getattr(config,'stage_cond_mode','adapter'),
+                    act_fn=getattr(config,'act_fn','silu'))
     if initialize_tables:
         import numpy as np
         for name,embedding in [('callig',model.writer),('font',model.script)]:
@@ -132,7 +169,8 @@ def checkpoint_config(ck):
     saved=ck.get('args')
     get=lambda key: saved.get(key) if isinstance(saved,dict) else getattr(saved,key,None)
     architecture=ck.get('architecture') or get('architecture')
-    if architecture!=ARCHITECTURE:raise ValueError('Refuse a DiT/unknown checkpoint')
+    if architecture not in (ARCHITECTURE, 'calliflow_v2'):
+        raise ValueError(f'Refuse a DiT/unknown checkpoint: {architecture}')
     values=ck.get('config') or get('architecture_config')
     config=Config(**values)
     config.validate(require_budget=False)

@@ -48,11 +48,30 @@ python -m src.unet.train --config src/unet/configs/fm_48.json --max-steps 80000 
 - 默认128/256/384三尺度，72M配置为192/384/576；空间尺度32²/16²/8²。
 - 基线实际14个ResBlock、5个Attention，GroupNorm/SiLU、标准encoder–decoder skip；16²/8² SDPA Attention。
 - Time、Writer、Script 各自投影后相加，再经 MLP 调制所有 ResBlock；STD 仅经空间卷积编码注入，不直连输出。
-- 可选`writer_film_rank=16`：每个ResBlock额外读取32D Writer embedding，经32→rank→2C输出独立scale/shift，叠加到原FiLM；不读取time/script。默认0关闭，保留旧融合路径以支持等价暖启动，不是删除旧路径里的Writer。
+- 可选`writer_film_rank=16`：每个ResBlock额外读取32D Writer embedding，经32→rank→2C输出独立scale/shift，叠加到原FiLM；不读取time/script。默认0关闭。
+- **DiC (CVPR 2025) 扩展开关**：
+  - `residual_cond_gate=true`（75.04M）：逐通道有界残差门控 $g(c) = 1 + 0.5\tanh(W_g c) \in [0.5, 1.5]$，零初始化保证步 0 恒等。
+  - `stage_specific_cond=true`：多尺度解耦条件路由（32²/16²/8²），支持 `adapter`（72.88M，零初始化残差）与 `independent`（72.80M，全独立投影层）。
+  - `act_fn='gelu'`：全网激活函数升级为高阶光滑 GELU。
+  - 全功能 DiC 组合版：`DiC_U100_b768`（75.83M），Batch=768，TorchInductor 0-break 编译，MFU 达到 26.43%。
+- **U100-Deep-Sym4 (114M) 规模加深突破版（当前 SOTA 基模）**：
+  - 参数量：**114,003,044（114.00M）**；
+  - 骨干通道：保持宽底 `[192, 384, 576]`；
+  - 深度倍增：`num_res_blocks=4`，Encoder 与 Decoder 对称加深至每尺度 4 个 ResBlock（全网共 26 个 ResBlock）；
+  - 核心设计原则：**彻底关闭 Gate 门控（`residual_cond_gate=false`）**，释放纯净恒等残差流 $x + \text{residual}$；采用原生 SiLU 激活；
+  - 性能表现：SSIM Mean 达到 **0.6132**，LPIPS 降至 **0.3207**，Ink-IoU 达 **0.3381**，Frag 压低至 **2.14**，全面刷新项目历史纪录。详见 [U100-Deep-Sym4 加深收敛报告](../experiments/2026-10-19-unet-deepening-114m-and-convergence.md)。
 - 初始 Writer/Script 从现有 `callig_table.npy`、`font_table.npy` 加载，映射沿用原表；恢复 checkpoint 时不要求再次加载这些初始化文件。
 - `y_char` 只作接口兼容，不参与预测。GT 仅为 FM 目标。
 - style CFG 保持与 DiT 一致：unconditional 分支仅置 Writer-null，保留 STD 和 Script；CFG=1 只算一次条件前向。训练的 all/style dropout 不抹白 STD。
 - 首版只开放 FM，不启动 DDPM 或新辅助监督。
+
+## 算力复杂度与 MFU 基准（RTX 4090）
+
+- **单样本前向 FLOPs**：22.158 GFLOPs（其中 Conv2D 占 99.5%）；
+- **单样本训练 FLOPs (fwd+bwd)**：66.473 GFLOPs（标准 $3\times$ 前向计算量）；
+- **Node 4090 (Batch 768 @ 1.71 step/s)**：Achieved 87.30 TFLOPS $\implies$ **MFU 26.43%**（显存 22.18 GiB / 24.56 GiB）；
+- **Node 48 (Batch 512 @ 2.76 step/s)**：Achieved 93.93 TFLOPS $\implies$ **MFU 28.44%**（显存 14.74 GiB / 49.14 GiB）。
+- 完整推导与演化全景参见 [U-Net 演化与 DiC 扩展报告](../experiments/2026-10-18-unet-progress-and-dic-scaling.md)。
 
 ## 恢复与评测接口
 

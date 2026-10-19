@@ -24,6 +24,10 @@ def parse():
     p.add_argument('--writer-film-rank',type=int,help='0 disables the independent Writer-only residual FiLM')
     p.add_argument('--residual-cond-gate',action=argparse.BooleanOptionalAction,default=None,
                    help='Enable unit-initialized conditional residual gains in all ResBlocks')
+    p.add_argument('--stage-specific-cond',action=argparse.BooleanOptionalAction,default=None,
+                   help='Enable stage-specific multi-scale condition embeddings')
+    p.add_argument('--stage-cond-mode',choices=['adapter','independent'],default=None)
+    p.add_argument('--act-fn',choices=['silu','gelu'],default=None)
     p.add_argument('--warmup','--warmup-steps',dest='warmup',type=int)
     p.add_argument('--ckpt-every',type=int);p.add_argument('--eval-every',type=int)
     p.add_argument('--benchmark',type=int,default=0,help='Synthetic memory/throughput probe; no saved training')
@@ -40,7 +44,7 @@ def parse():
     if a.reset_ema and not a.resume:p.error('--reset-ema requires --resume')
     config=Config(**json.loads(Path(a.config).read_text(encoding='utf-8')))
     for key in ('batch','max_steps','stop_at_step','lr_decay_steps','lr','warmup','ckpt_every','eval_every',
-                'writer_film_rank','residual_cond_gate'):
+                'writer_film_rank','residual_cond_gate','stage_specific_cond','stage_cond_mode','act_fn'):
         value=getattr(a,key)
         if value is not None:setattr(config,key,value)
     config.validate()
