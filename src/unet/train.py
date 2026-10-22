@@ -48,6 +48,8 @@ def parse():
         value=getattr(a,key)
         if value is not None:setattr(config,key,value)
     config.validate()
+    if config.initialize_from and a.warm_start:
+        p.error('Stage initialization cannot combine with expansion warm-start')
     if config.requires_warm_start and not (a.warm_start or a.resume):
         p.error('This ablation requires --warm-start (or --resume), not a fresh run')
     return config,a
@@ -68,7 +70,11 @@ def benchmark(config,steps):
     model=build(config,initialize_tables=True).cuda().to(memory_format=layout)
     ema=copy.deepcopy(model).eval().requires_grad_(False)
     from src.train.ema import update_ema
-    opt=torch.optim.AdamW(model.parameters(),lr=config.lr,fused=True)
+    from .variants.regularization import optimizer_parameters
+    opt=torch.optim.AdamW(optimizer_parameters(model,config),lr=config.lr,weight_decay=config.weight_decay,fused=True)
+    if config.writer_table_file:
+        from .table_contract import install_writer_table
+        install_writer_table(model,ema,opt,config)
     process=diffusion(config);b=config.batch
     compile_start=perf_counter()
     forward=torch.compile(model,mode='default') if config.compile else model
@@ -112,7 +118,8 @@ def main():
         resume=torch.load(cli.resume,map_location='cpu',weights_only=False)
         old_config=checkpoint_config(resume)
         if old_config.objective!=config.objective:raise ValueError('Objective changed on resume')
-        if 'architecture' not in resume and not cli.reset_ema:
+        arch=resume.get('architecture') or getattr(resume.get('args',None),'architecture',None)
+        if not arch and not cli.reset_ema:
             raise ValueError('Legacy U-Net EMA is invalid; resume with --reset-ema')
         start=int(resume['train_steps'])
         config.ema_start_step=start if cli.reset_ema else old_config.ema_start_step
@@ -127,7 +134,7 @@ def main():
     from src.train.manifest import write_source_manifest
     artifacts={k:getattr(config,k) for k in
         ('data_csv','eval_csv','vae_path','std_shape_cache','latent_shards_dir','std_soft_root',
-         'callig_remap_json','font_remap_json','char_remap_json')}
+         'callig_remap_json','font_remap_json','char_remap_json','writer_table_file')}
     for name in ('callig','font'):
         artifacts[name+'_table']=str(Path(config.condition_tables_root)/f'{name}_table.npy')
     write_source_manifest(str(run),artifacts=artifacts)
@@ -135,8 +142,17 @@ def main():
     bank=StdBank(config)
     layout=torch.channels_last if config.memory_format=='channels_last' else torch.contiguous_format
     raw=build(config,initialize_tables=resume is None and warm is None).cuda().to(memory_format=layout)
+    if config.initialize_from and resume is None:
+        from .curriculum.transfer import initialize
+        transfer=initialize(raw,config)
+        (run/'stage_transfer.json').write_text(json.dumps(transfer,indent=2))
+        log.info('STAGE_TRANSFER new_clock=0 source_step=%d',transfer['source_step'])
     ema=copy.deepcopy(raw).eval().requires_grad_(False)
-    opt=torch.optim.AdamW(raw.parameters(),lr=config.lr,weight_decay=config.weight_decay,fused=True)
+    from .variants.regularization import optimizer_parameters
+    opt=torch.optim.AdamW(optimizer_parameters(raw,config),lr=config.lr,weight_decay=config.weight_decay,fused=True)
+    log.info('Regularization droppath_max=%s ramp=%s-%s grouped_decay=%s group_sizes=%s',
+        config.drop_path_max,config.drop_path_start,config.drop_path_end,config.grouped_weight_decay,
+        [(len(g['params']),g['weight_decay']) for g in opt.param_groups])
     from src.train.step import build_cosine_scheduler,NonFiniteGuard
     scheduler=build_cosine_scheduler(opt,warmup_steps=config.warmup,
         total_steps=config.lr_decay_steps or config.max_steps,min_lr_ratio=config.min_lr_ratio)
@@ -183,9 +199,21 @@ def main():
             ema_reset=cli.reset_ema,ema_start_step=config.ema_start_step,old_horizon=old_config.lr_decay_steps or old_config.max_steps,
             new_horizon=config.lr_decay_steps or config.max_steps,lr=rates),indent=2))
         log.warning('Shared optimizer/RNG resume; do not claim exact DataLoader replay')
+    if config.writer_table_file:
+        from .table_contract import install_writer_table
+        table_record=install_writer_table(raw,ema,opt,config)
+        (run/'writer_table_record.json').write_text(json.dumps(table_record,indent=2))
+        log.info('FROZEN_WRITER_TABLE %s',table_record)
+    transform=bank.transform
+    if config.writer_mode=='film':
+        from .curriculum.runtime import Adaptation
+        adaptation=Adaptation(raw,ema,config,log,start)
+        transform=adaptation
     from src.train.ema import update_ema
     update_ema(ema,raw,decay=1.)  # Validate/cache full pairing before any optimizer step.
     log.info('EMA paired=%d/%d parameters; start_step=%d',len(ema._ema_pairs[0]),len(list(raw.parameters())),config.ema_start_step)
+    if config.eval_before_training:
+        with torch.inference_mode():evaluate(ema,config,start,run)
     limit=config.stop_at_step or config.max_steps
     if start>=limit:raise ValueError('Resume is already at the requested stop')
     from src.train.trainer import TrainState,training_loop
@@ -203,7 +231,7 @@ def main():
         _inj_stats={},cond_mode='2cond',train_steps=start,resume_start_step=start,
         log_steps=0,running_loss=zero(),running_diff=zero(),running_repa=zero(),
         running_skel=zero(),running_std_mid=zero(),start_time=__import__('time').time(),
-        trainable_params_list=list(raw.parameters()),condition_transform=bank.transform)
+        trainable_params_list=list(raw.parameters()),condition_transform=transform)
     log.info('RUN=%s params=%d batch=%d max_steps=%d stop_at=%d shared=TrainState/training_loop',
         run,sum(p.numel() for p in raw.parameters()),config.batch,config.max_steps,limit)
     try:
@@ -211,6 +239,11 @@ def main():
         if fatal is not None:raise fatal
     finally:
         checkpoint.finalize()
+    if config.writer_table_file:
+        expected=torch.from_numpy(np.load(config.writer_table_file)).to(raw.writer.weight)
+        if not torch.equal(raw.writer.weight[:-1],expected) or not torch.equal(ema.writer.weight[:-1],expected):
+            raise RuntimeError('Frozen writer table changed during generator training')
+        log.info('FROZEN_WRITER_TABLE_UNCHANGED raw+EMA verified')
     log.info('DONE checkpoint_step=%s',checkpoint.last_saved)
 
 

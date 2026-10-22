@@ -4,6 +4,7 @@ import torch
 from torch import nn
 from torch.nn import functional as F
 from .variants.modulation import bounded_gain, zero_linear
+from .variants.regularization import drop_residual
 
 
 def norm(channels):
@@ -36,31 +37,38 @@ class ResBlock(nn.Module):
         self.shortcut=nn.Conv2d(cin,cout,1) if cin!=cout else nn.Identity()
         self.writer_film=None
         self.residual_gate=None
+        self.drop_path_rate=0.
         nn.init.zeros_(self.conv2.weight);nn.init.zeros_(self.conv2.bias)
 
-    def enable_writer_film(self,rank):
+    def enable_writer_film(self,rank,max_amp=None):
         if self.writer_film is not None:raise ValueError('Writer FiLM already enabled')
         self.writer_film=nn.Sequential(nn.Linear(32,rank),nn.SiLU(),
                                        zero_linear(rank,2*self.conv2.in_channels))
+        self.writer_film_max_amp=float(max_amp) if max_amp is not None else None
 
     def enable_residual_gate(self):
         """Conditioned channel gains; zero logits mean gain=1, never a dead gate."""
         if self.residual_gate is not None:raise ValueError('Residual gate already enabled')
         self.residual_gate=zero_linear(self.film.in_features,self.conv2.out_channels)
 
-    def forward(self,x,c,writer=None):
+    def forward(self,x,c,writer=None,drop_path_scale=None,writer_mask=None):
         h=self.conv1(self.act(self.norm1(x)))
         condition=self.act(c)
         scale,shift=self.film(condition).to(h.dtype).chunk(2,dim=1)
         if self.writer_film is not None:
             if writer is None:raise ValueError('Writer embedding required for independent FiLM')
-            writer_scale,writer_shift=self.writer_film(writer).to(h.dtype).chunk(2,dim=1)
+            delta=self.writer_film(writer)
+            if writer_mask is not None:delta=delta*writer_mask[:,None].to(delta.dtype)
+            if getattr(self,'writer_film_max_amp',None) is not None and self.writer_film_max_amp>0:
+                delta=self.writer_film_max_amp*torch.tanh(delta)
+            writer_scale,writer_shift=delta.to(h.dtype).chunk(2,dim=1)
             scale=scale+writer_scale;shift=shift+writer_shift
         h=self.norm2(h)*(1+scale[:,:,None,None])+shift[:,:,None,None]
         residual=self.conv2(self.act(h))
         if self.residual_gate is not None:
             gain=bounded_gain(self.residual_gate(condition).to(residual.dtype))
             residual=residual*gain[:,:,None,None]
+        residual=drop_residual(residual,self.drop_path_rate,drop_path_scale,self.training)
         return self.shortcut(x)+residual
 
 
@@ -87,7 +95,7 @@ class Stage(nn.Module):
         self.blocks=nn.ModuleList([ResBlock(cin if i==0 else cout,cout,act_fn=act_fn) for i in range(num_res_blocks)])
         self.attn=Attention(cout) if attention else nn.Identity()
 
-    def forward(self,x,c,writer=None):
-        for block in self.blocks:x=block(x,c,writer)
+    def forward(self,x,c,writer=None,drop_path_scale=None,writer_mask=None):
+        for block in self.blocks:x=block(x,c,writer,drop_path_scale,writer_mask)
         return self.attn(x)
 

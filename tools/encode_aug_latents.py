@@ -126,7 +126,7 @@ def main():
     a = ap.parse_args()
 
     os.makedirs(a.out, exist_ok=True)
-    rows = list(csv.DictReader(open(a.csv, encoding="utf-8")))
+    rows = list(csv.DictReader(open(a.csv, encoding="utf-8-sig")))
     total = len(rows)
     print("=" * 78)
     print(f"[encode] csv={a.csv} rows={total:,}")

@@ -21,12 +21,30 @@ class Config:
     std_gate_scales:tuple=()
     writer_film_rank:int=0  # 0=legacy shared FiLM only; >0 adds Writer-only residual FiLM.
     writer_film_layers:tuple=()  # Layer name patterns, e.g. ('decoder.1', 'decoder.2'); empty means all.
+    writer_film_spec:dict|None=None  # Explicit mapping: {pattern: max_amp}, e.g. {'middle': 0.3, 'decoder.2': 0.3, ...}
+    decouple_writer_condition:bool=False  # Base condition is purely MLP(t + script); Writer is exclusively in FiLM.
+    decoder_std_residual:bool=False  # Direct 16² & 32² lightweight STD residual into Decoder.
+    decoder_std_scale:float=0.2  # Scaling factor for Decoder STD residual.
     residual_cond_gate:bool=False  # Per-channel residual gains conditioned on shared t/w/s.
     stage_specific_cond:bool=False  # DiC-style multi-scale condition injection (32/16/8).
     stage_cond_mode:str='adapter'  # 'adapter' (zero-init delta) or 'independent'
     act_fn:str='silu'  # 'silu' or 'gelu'
     requires_warm_start:bool=False
     num_writers:int=10
+    freeze_writer_table:bool=True
+    writer_mode:str='shared'  # none=generic; film=Writer-only, hard-zero for CFG-null/replay
+    initialize_from:str=''  # model-only stage transfer; new optimizer/scheduler/step clock
+    initialize_state:str='ema'
+    adapter_only_steps:int=0
+    finetune_backbone_patterns:tuple=('decoder.','middle','up.','output.')
+    backbone_lr_scale:float=.2
+    generic_replay_fraction:float=0.
+    writer_table_file:str=''
+    eval_before_training:bool=False
+    drop_path_max:float=0.
+    drop_path_start:int=2000
+    drop_path_end:int=5000
+    grouped_weight_decay:bool=False
     num_scripts:int=3
     batch:int=128
     reference_batch:int=192
@@ -55,6 +73,9 @@ class Config:
     latent_shards_dir:str='exp-std/data/shards_img_aug'
     img_root:str='data/top10_style23/imgs'
     std_soft_root:str='exp-std/data/std_soft_glyphs_v1'
+    std_soft_sigma_min:float=.4
+    std_soft_sigma_max:float=1.
+    std_soft_eval_sigma:float=.65
     std_shape_cache:str='assets/std_shape_bank_64.pt'
     std_shape_aug:str='strong'
     char_remap_json:str='assets/triple_tables_best_minimal/char_remap.json'
@@ -69,12 +90,38 @@ class Config:
     compile:bool=False
 
     def validate(self,require_budget=True):
+        if self.writer_mode not in ('shared','none','film'):raise ValueError('Invalid writer_mode')
+        if self.writer_mode!='shared':
+            if self.architecture!=ARCHITECTURE or not self.decouple_writer_condition:
+                raise ValueError('Generic/Writer-only route requires decoupled plain U-Net')
+            if self.writer_mode=='none' and self.writer_film_rank:raise ValueError('Generic stage may not contain Writer FiLM')
+            if self.writer_mode=='film' and not self.writer_film_rank:raise ValueError('Writer-only stage needs Writer FiLM')
+            if not self.freeze_writer_table:raise ValueError('Writer tables remain independently pretrained and frozen')
+            if self.stage_specific_cond:raise ValueError('Two-stage baseline does not change stage-specific conditioning')
+        if self.adapter_only_steps<0 or not 0<self.backbone_lr_scale<=1:raise ValueError('Invalid adaptation schedule')
+        if not 0<=self.generic_replay_fraction<1:raise ValueError('Invalid generic replay fraction')
+        if self.initialize_state not in ('raw','ema'):raise ValueError('Invalid initialization state')
+        if (self.adapter_only_steps or self.generic_replay_fraction) and self.writer_mode!='film':
+            raise ValueError('Adaptation/replay require Writer-only route')
+        if not 0<=self.std_soft_sigma_min<=self.std_soft_sigma_max or self.std_soft_eval_sigma<0:
+            raise ValueError('Invalid STD blur range')
+        if not 0<=self.drop_path_max<1 or not 0<=self.drop_path_start<self.drop_path_end:
+            raise ValueError('Invalid DropPath configuration')
+        if not isinstance(self.freeze_writer_table,bool):raise ValueError('freeze_writer_table must be boolean')
+        if self.writer_table_file and (not self.freeze_writer_table or self.architecture!=ARCHITECTURE):
+            raise ValueError('External writer table requires frozen latent_cnn_unet_v1 writer rows')
         if self.architecture not in (ARCHITECTURE, 'calliflow_v2'):
             raise ValueError(f'Unsupported architecture: {self.architecture}')
         if not isinstance(self.writer_film_rank,int) or self.writer_film_rank<0:
             raise ValueError('writer_film_rank must be a nonnegative integer')
         if self.writer_film_layers is not None and not isinstance(self.writer_film_layers,(tuple,list)):
             raise ValueError('writer_film_layers must be a tuple/list of strings or empty')
+        if self.writer_film_spec is not None and not isinstance(self.writer_film_spec,dict):
+            raise ValueError('writer_film_spec must be a dict {pattern: max_amp} or None')
+        if not isinstance(self.decouple_writer_condition,bool):
+            raise ValueError('decouple_writer_condition must be boolean')
+        if not isinstance(self.decoder_std_residual,bool):
+            raise ValueError('decoder_std_residual must be boolean')
         if not isinstance(self.residual_cond_gate,bool):raise ValueError('residual_cond_gate must be boolean')
         if not isinstance(self.stage_specific_cond,bool):raise ValueError('stage_specific_cond must be boolean')
         if self.stage_cond_mode not in ('adapter','independent'):raise ValueError(f'Invalid stage_cond_mode: {self.stage_cond_mode}')
@@ -119,25 +166,41 @@ def build(config,initialize_tables=False):
                     skip_gate_scales=config.skip_gate_scales,std_gate_scales=config.std_gate_scales,
                     writer_film_rank=config.writer_film_rank,
                     writer_film_layers=getattr(config,'writer_film_layers',()),
+                    writer_film_spec=getattr(config,'writer_film_spec',None),
+                    decouple_writer_condition=getattr(config,'decouple_writer_condition',False),
+                    decoder_std_residual=getattr(config,'decoder_std_residual',False),
+                    decoder_std_scale=getattr(config,'decoder_std_scale',0.2),
                     residual_cond_gate=config.residual_cond_gate,
                     stage_specific_cond=getattr(config,'stage_specific_cond',False),
                     stage_cond_mode=getattr(config,'stage_cond_mode','adapter'),
-                    act_fn=getattr(config,'act_fn','silu'))
+                    act_fn=getattr(config,'act_fn','silu'),drop_path_max=config.drop_path_max,writer_mode=config.writer_mode)
     if initialize_tables:
         import numpy as np
         for name,embedding in [('callig',model.writer),('font',model.script)]:
             values=torch.from_numpy(np.load(Path(config.condition_tables_root)/f'{name}_table.npy'))
             if values.shape!=embedding.weight[:-1].shape:raise ValueError(f'{name} table shape mismatch')
             with torch.no_grad():embedding.weight[:-1].copy_(values)
+    model.writer.weight.requires_grad_(not config.freeze_writer_table)
+    if config.writer_mode!='shared':
+        for name,p in model.named_parameters():
+            if name.startswith('writer_proj.'):p.requires_grad_(False)
     return model
 
 
 def eval_args(config):
+    n_eval = 187
+    if getattr(config, 'eval_csv', None) and Path(config.eval_csv).exists():
+        try:
+            import csv
+            with open(config.eval_csv, encoding='utf-8') as f:
+                n_eval = len(list(csv.DictReader(f)))
+        except Exception:
+            pass
     return SimpleNamespace(**asdict(config),model=ARCHITECTURE,global_seed=config.seed,
         std_soft_cond=True,use_script_cond=True,latent_channels=4,image_size=256,
         diffusion_type=config.objective,eval_cfg=1.,flow_sampler='heun',sde_gamma=0.,shift=1.,
-        in_mem_eval_sets=f'eval200fix:{config.eval_csv}:187',in_mem_eval_save=True,
-        in_mem_eval_batch=config.eval_batch,in_mem_eval_vae_batch=4,std_soft_eval_sigma=.65,
+        in_mem_eval_sets=f'eval200fix:{config.eval_csv}:{n_eval}',in_mem_eval_save=True,
+        in_mem_eval_batch=config.eval_batch,in_mem_eval_vae_batch=4,
         results_dir=config.output,eval_dir=config.output,w_repa=0.,
         eval_vae_path=config.vae_path,
         t_sampler='logit_normal',t_mean=0.,t_std=1.)
@@ -172,6 +235,8 @@ def checkpoint_config(ck):
     if architecture not in (ARCHITECTURE, 'calliflow_v2'):
         raise ValueError(f'Refuse a DiT/unknown checkpoint: {architecture}')
     values=ck.get('config') or get('architecture_config')
+    values=dict(values)
+    values.setdefault('freeze_writer_table',False)  # historical U-Net runs trained their embeddings
     config=Config(**values)
     config.validate(require_budget=False)
     return config
@@ -202,7 +267,7 @@ def evaluate(model,config,step,directory,*,use_ema=True):
     args=eval_args(config)
     args.eval_use_ema=use_ema
     return run_in_mem_eval(model,args,step,next(model.parameters()).device,
-        results_dir=str(directory),diffusion_override=diffusion(config,evaluation=True))
+        results_dir=str(directory))
 
 
 if __name__=='__main__':

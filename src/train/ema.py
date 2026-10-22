@@ -88,12 +88,14 @@ def update_ema(ema_model, model, decay):
         if source_params.keys() != target_params.keys() or source_buffers.keys() != target_buffers.keys():
             raise ValueError('EMA/source parameter or buffer keys differ after unwrap')
         ema_p, src_p = [], []
+        fixed_pairs=[]
         for name, ep in target_params.items():
             sp = source_params[name]
             if ep.shape != sp.shape:
                 raise ValueError(f'EMA shape mismatch: {name}')
             ema_p.append(ep)
             src_p.append(sp.detach())
+            if not sp.requires_grad:fixed_pairs.append((ep,sp.detach()))
         ema_fb, src_fb, ema_cb, src_cb = [], [], [], []
         for name, eb in target_buffers.items():
             sb = source_buffers[name]
@@ -105,6 +107,7 @@ def update_ema(ema_model, model, decay):
                 src_cb.append(sb)
         pairs = (ema_p, src_p, ema_fb, src_fb, ema_cb, src_cb)
         ema_model._ema_pairs = pairs
+        ema_model._ema_fixed_pairs = fixed_pairs
     ema_p, src_p, ema_fb, src_fb, ema_cb, src_cb = pairs
     if ema_p:
         torch._foreach_mul_(ema_p, decay)
@@ -114,6 +117,9 @@ def update_ema(ema_model, model, decay):
         torch._foreach_add_(ema_fb, src_fb, alpha=1.0 - decay)
     for eb, sb in zip(ema_cb, src_cb):
         eb.copy_(sb)
+    # Frozen condition tables must remain bit-identical, not accumulate EMA roundoff.
+    for ep,sp in getattr(ema_model,'_ema_fixed_pairs',()):
+        ep.copy_(sp)
 
 
 def interval_approximation_error(interval: int, decay: float,

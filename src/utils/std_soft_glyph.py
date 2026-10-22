@@ -132,16 +132,38 @@ class FontCoverage:
         return next((face for face in faces if self.supports(face, char)), None)
 
 
+def fit_ink_bbox(image: Image.Image, size: int = 256) -> Image.Image:
+    """Crop actual nonzero ink, fit its longest side to size, center without stretching."""
+    image=image.convert('L');bbox=image.getbbox()
+    if bbox is None:raise ValueError('Cannot normalize an empty ink mask')
+    if size<1:raise ValueError('Invalid bbox output size')
+    crop=image.crop(bbox);scale=size/max(crop.size)
+    shape=tuple(max(1,min(size,round(v*scale))) for v in crop.size)
+    fitted=crop.resize(shape,Image.Resampling.LANCZOS)
+    canvas=Image.new('L',(size,size),0)
+    canvas.paste(fitted,((size-shape[0])//2,(size-shape[1])//2))
+    return canvas
+
+
 def render_base_mask(char: str, face: FontFace, render_size: int = 512,
-                     output_size: int = 64, font_ratio: float = 0.79) -> Image.Image:
-    """Render one fixed-em-size glyph and BOX-downsample it without bbox scaling."""
+                     output_size: int = 64, font_ratio: float = 0.79,
+                     bbox_normalize: bool = True) -> Image.Image:
+    """Default: true ink bbox -> fit256 -> BOX output; false reproduces legacy em sizing."""
     if len(char) != 1:
         raise ValueError(f"expected one Unicode character, got {char!r}")
     font_px = max(1, int(round(render_size * float(font_ratio))))
     font = ImageFont.truetype(face.path, font_px, index=face.face)
+    if bbox_normalize:
+        # Render into complete font bounds first: no clipping by the old fixed em canvas.
+        bounds=font.getbbox(char);pad=4
+        tight=Image.new('L',(max(1,bounds[2]-bounds[0])+2*pad,
+                             max(1,bounds[3]-bounds[1])+2*pad),0)
+        ImageDraw.Draw(tight).text((pad-bounds[0],pad-bounds[1]),char,font=font,fill=255)
+        canonical=fit_ink_bbox(tight,256)
+        return canonical if output_size==256 else canonical.resize((output_size,output_size),Image.Resampling.BOX)
     canvas = Image.new("L", (render_size, render_size), 0)
     draw = ImageDraw.Draw(canvas)
-    # Fixed em size; only center the glyph.  We never resize its tight bbox.
+    # Explicit legacy reproduction only; new caches use bbox normalization above.
     bbox = draw.textbbox((0, 0), char, font=font)
     if bbox is None:
         raise ValueError(f"font {face.label} produced no bbox for U+{ord(char):04X}")

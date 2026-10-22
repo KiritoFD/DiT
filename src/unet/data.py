@@ -11,16 +11,31 @@ def remap(path):
 
 def loader(config,args,logger=None,resume_start_step=0):
     maps={name:remap(getattr(config,f'{name}_remap_json')) for name in ('char','callig','font')}
-    if set(maps['callig'].values())!=set(range(config.num_writers)):raise ValueError('Writer mapping mismatch')
+    real={k:v for k,v in maps['callig'].items() if v!=config.num_writers}
+    if set(real.values())!=set(range(config.num_writers)):raise ValueError('Writer mapping mismatch')
+    if config.writer_mode=='shared' and len(real)!=len(maps['callig']):raise ValueError('Legacy route cannot map generic replay to null')
+    if any(not 0<=v<=config.num_writers for v in maps['callig'].values()):raise ValueError('Invalid writer row')
     if set(maps['font'].values())!=set(range(config.num_scripts)):raise ValueError('Script mapping mismatch')
+    if config.writer_mode=='film':
+        import csv
+        with open(config.data_csv,encoding='utf-8-sig') as f:
+            for row in csv.DictReader(f):
+                if (row.get('generic','0')=='1')!=(maps['callig'][int(row['calligrapher_id'])]==config.num_writers):
+                    raise ValueError('Generic replay flag and hard-null writer mapping disagree')
     from src.train.data_setup import build_data
-    return build_data(args,rank=0,world_size=1,resume_start_step=resume_start_step,
+    result=build_data(args,rank=0,world_size=1,resume_start_step=resume_start_step,
                       std_soft_cond=True,char_remaps=maps,aux_dirs=[],logger=logger)
+    if config.generic_replay_fraction:
+        from .curriculum.data import replay_loader
+        return replay_loader(result,config,resume_start_step)
+    return result
 
 
 class StdBank:
     def __init__(self,config):
         self.mode=config.std_shape_aug
+        self.drop_path_max=config.drop_path_max
+        self.drop_path_start=config.drop_path_start;self.drop_path_end=config.drop_path_end
         self.bank=None
         if self.mode!='off':
             data=torch.load(config.std_shape_cache,map_location='cpu',weights_only=True,mmap=True)
@@ -42,3 +57,6 @@ class StdBank:
     def transform(self,model,batch,kwargs,x0,step):
         """Same condition-transform signature as StdShapeTraining, no DiT health probes."""
         kwargs['g']=self(batch,x0.device,step,clean=kwargs['g'])
+        if self.drop_path_max:
+            from .variants.regularization import schedule_scale
+            kwargs['drop_path_scale']=x0.new_tensor(schedule_scale(step,self.drop_path_start,self.drop_path_end))

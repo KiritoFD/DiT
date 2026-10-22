@@ -28,26 +28,27 @@
       "key": "xing",
       "label": "行",
       "fonts": [
-        "STXINGKA.TTF",
         "ZhiMangXing-Regular.ttf",
-        "NotoSerifSC-VF.ttf",
-        "NotoSerifCJK-Regular.ttc",
+        "FZSTK.TTF",
+        "STXINGKA.TTF",
+        "LongCang-Regular.ttf",
+        "MaShanZheng-Regular.ttf",
+        "STXINWEI.TTF",
         "simkai.ttf",
         "simsunb.ttf"
       ],
-      "reason": "STXINGKA is the neutral first-round running-script prior. OFL ZhiMangXing is an explicit same-coverage style alternative; neutral serif/regular fallbacks are mandatory and recorded per glyph. Licensed FangZheng Wang Xizhi may replace the primary after its actual TTF passes this same cmap audit."
+      "reason": "Prioritize ZhiMangXing and FZSTK for running-script shape priors, then other configured style fonts. Regular-script fallbacks remain explicit and are recorded per glyph; coverage is not a claim of uniform style matching."
     },
     "4": {
       "key": "li",
       "label": "隶",
       "fonts": [
         "SIMLI.TTF",
-        "NotoSerifSC-VF.ttf",
-        "NotoSerifCJK-Regular.ttc",
+        "STLITI.TTF",
         "simkai.ttf",
         "simsunb.ttf"
       ],
-      "reason": "SIMLI covers substantially more of the current corpus than STLITI while retaining a clear clerical-script shape."
+      "reason": "Prioritize SIMLI and STLITI for clerical-script shapes; regular-script fallbacks cover rare glyphs and are recorded per glyph."
     }
   }
 }

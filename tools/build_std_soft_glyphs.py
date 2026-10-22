@@ -50,6 +50,7 @@ def parse_args():
     parser.add_argument("--render-size", type=int, default=512)
     parser.add_argument("--size", type=int, default=64)
     parser.add_argument("--font-ratio", type=float, default=0.79)
+    parser.add_argument("--legacy-em",action="store_true",help="Reproduce old non-bbox geometry; default uses fit256")
     parser.add_argument("--preview-sigma", type=float, default=0.65)
     parser.add_argument("--preview-max-chars", type=int, default=12,
                         help="Cap preview width; the glyph store itself is never truncated.")
@@ -160,7 +161,7 @@ def main():
         try:
             image = render_base_mask(
                 char, face, render_size=args.render_size,
-                output_size=args.size, font_ratio=args.font_ratio)
+                output_size=args.size, font_ratio=args.font_ratio,bbox_normalize=not args.legacy_em)
             image.save(path)
         except Exception as exc:  # keep all failures visible in missing.txt
             render_failures.append((sid, char, f"{type(exc).__name__}: {exc}"))
@@ -196,6 +197,7 @@ def main():
         "render_size": args.render_size,
         "output_size": args.size,
         "font_ratio": args.font_ratio,
+        "geometry": "legacy_fixed_em" if args.legacy_em else "true_ink_bbox_fit256_aspect_preserved",
         "stored_blur_sigma": 0.0,
         "preview_sigma": args.preview_sigma,
         "polarity": "ink=255,background=0",

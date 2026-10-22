@@ -94,7 +94,7 @@ class MCCDLatentDataset(Dataset):
                  std_soft_sigma_max=1.0, std_soft_eval_sigma=0.65,
                  std_soft_preload=True, strict_coverage=True):
         self.samples = []
-        with open(csv_file, 'r', encoding='utf-8') as f:
+        with open(csv_file, 'r', encoding='utf-8-sig') as f:
             for row in csv.DictReader(f):
                 self.samples.append(row)
         # 书家词表收紧: 稀疏 raw calligrapher_id -> 连续索引 (见 callig_map.py)

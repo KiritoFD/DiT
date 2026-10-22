@@ -15,8 +15,9 @@ class LatentUNet(nn.Module):
     def __init__(self,channels=(128,256,384),num_writers=10,num_scripts=3,
                  num_res_blocks=2,drop_all=.05,drop_writer=.08,drop_script=.08,
                  decoder_res_blocks=None,skip_gate_scales=(),std_gate_scales=(),writer_film_rank=0,
-                 writer_film_layers=(),residual_cond_gate=False,stage_specific_cond=False,
-                 stage_cond_mode='adapter',act_fn='silu'):
+                 writer_film_layers=(),writer_film_spec=None,decouple_writer_condition=False,
+                 decoder_std_residual=False,decoder_std_scale=0.2,residual_cond_gate=False,
+                 stage_specific_cond=False,stage_cond_mode='adapter',act_fn='silu',drop_path_max=0.,writer_mode='shared'):
         super().__init__()
         if len(channels)!=3:raise ValueError('Expected three scales')
         if not isinstance(writer_film_rank,int) or writer_film_rank<0:
@@ -26,9 +27,13 @@ class LatentUNet(nn.Module):
         if stage_cond_mode not in ('adapter','independent'):raise ValueError(f'Invalid stage_cond_mode: {stage_cond_mode}')
         if act_fn not in ('silu','gelu'):raise ValueError(f'Invalid act_fn: {act_fn}')
         self.num_writers=num_writers;self.num_scripts=num_scripts
+        self.writer_mode=writer_mode
         self.num_res_blocks=num_res_blocks
         self.stage_specific_cond=stage_specific_cond
         self.stage_cond_mode=stage_cond_mode
+        self.decouple_writer_condition=decouple_writer_condition
+        self.decoder_std_residual=decoder_std_residual
+        self.decoder_std_scale=float(decoder_std_scale)
         self.act_fn=act_fn
         self.act=get_activation(act_fn)
         act_layer=nn.SiLU if act_fn=='silu' else nn.GELU
@@ -62,6 +67,10 @@ class LatentUNet(nn.Module):
         self.std_down=nn.ModuleList([nn.Conv2d(64,128,3,stride=2,padding=1),
                                      nn.Conv2d(128,192,3,stride=2,padding=1)])
         self.std_proj=nn.ModuleList([nn.Conv2d(s,c,1) for s,c in zip((64,128,192),channels)])
+        if decoder_std_residual:
+            self.dec_std_proj=nn.ModuleList([nn.Conv2d(64,channels[0],1),nn.Conv2d(128,channels[1],1)])
+            for p in self.dec_std_proj:
+                nn.init.zeros_(p.weight);nn.init.zeros_(p.bias)
         self.input=nn.Conv2d(4,channels[0],3,padding=1)
         self.encoder=nn.ModuleList([Stage(c,c,i>0,num_res_blocks=num_res_blocks,act_fn=act_fn) for i,c in enumerate(channels)])
         self.down=nn.ModuleList([nn.Conv2d(channels[i],channels[i+1],3,stride=2,padding=1) for i in range(2)])
@@ -71,16 +80,30 @@ class LatentUNet(nn.Module):
         self.up=nn.ModuleList([nn.Conv2d(channels[i+1],channels[i],3,padding=1) for i in range(2)])
         self.output=nn.Sequential(norm(channels[0]),act_layer(),nn.Conv2d(channels[0],4,3,padding=1))
         nn.init.zeros_(self.output[-1].weight);nn.init.zeros_(self.output[-1].bias)
-        self._configure_modulation(writer_film_rank,residual_cond_gate,writer_film_layers)
+        self._configure_modulation(writer_film_rank,residual_cond_gate,writer_film_layers,writer_film_spec)
+        blocks=[b for stage in self.encoder for b in stage.blocks]
+        blocks += [self.middle1,self.middle2]
+        blocks += [b for i in (2,1,0) for b in self.decoder[i].blocks]
+        for i,block in enumerate(blocks):block.drop_path_rate=drop_path_max*i/max(1,len(blocks)-1)
 
-    def _configure_modulation(self,writer_rank,residual_gate,writer_film_layers=()):
+    def _configure_modulation(self,writer_rank,residual_gate,writer_film_layers=(),writer_film_spec=None):
         # Build optional modules last, preserving historical keys and initialization.
         if writer_rank:
-            patterns=tuple(writer_film_layers) if writer_film_layers else ()
-            for name,block in self.named_modules():
-                if isinstance(block,ResBlock):
-                    if not patterns or any(pat in name for pat in patterns):
-                        block.enable_writer_film(writer_rank)
+            if writer_film_spec:
+                for name,block in self.named_modules():
+                    if isinstance(block,ResBlock):
+                        matched_amp=None
+                        for pat,amp in sorted(writer_film_spec.items(),key=lambda kv:len(kv[0]),reverse=True):
+                            if pat in name:
+                                matched_amp=amp;break
+                        if matched_amp is not None:
+                            block.enable_writer_film(writer_rank,max_amp=matched_amp)
+            else:
+                patterns=tuple(writer_film_layers) if writer_film_layers else ()
+                for name,block in self.named_modules():
+                    if isinstance(block,ResBlock):
+                        if not patterns or any(pat in name for pat in patterns):
+                            block.enable_writer_film(writer_rank)
         if residual_gate:
             blocks=[block for block in self.modules() if isinstance(block,ResBlock)]
             for block in blocks:block.enable_residual_gate()
@@ -104,16 +127,17 @@ class LatentUNet(nn.Module):
         return value*override[i] if override[i]!=1. else value
 
     def _compute_stage_conditions(self,t_emb,writer,script):
+        wp = 0 if self.decouple_writer_condition else self.writer_proj(writer)
         if not self.stage_specific_cond:
-            c=self.condition(self.time_proj(t_emb)+self.writer_proj(writer)+self.script_proj(script))
+            c=self.condition(self.time_proj(t_emb)+wp+self.script_proj(script))
             return (c,c,c)
         if self.stage_cond_mode=='adapter':
-            c=self.condition(self.time_proj(t_emb)+self.writer_proj(writer)+self.script_proj(script))
+            c=self.condition(self.time_proj(t_emb)+wp+self.script_proj(script))
             return tuple(c+adapter(c) for adapter in self.stage_adapters)
-        return tuple(cond(tp(t_emb)+wp(writer)+sp(script)) for tp,wp,sp,cond in
+        return tuple(cond(tp(t_emb)+(0 if self.decouple_writer_condition else swp(writer))+sp(script)) for tp,swp,sp,cond in
                      zip(self.stage_time_proj,self.stage_writer_proj,self.stage_script_proj,self.stage_condition))
 
-    def forward(self,x,t,y_callig,y_char=None,g=None,y_script=None,y_callig_raw=None,y_pair=None):
+    def forward(self,x,t,y_callig,y_char=None,g=None,y_script=None,y_callig_raw=None,y_pair=None,drop_path_scale=None):
         # y_char/raw/pair are accepted only for the shared sampler interface.
         # Character IDs are never embedded or used as an inference condition.
         if x.ndim!=4 or x.shape[1:]!=(4,32,32):raise ValueError('Expected latent [B,4,32,32]')
@@ -124,31 +148,38 @@ class LatentUNet(nn.Module):
             all_drop=torch.rand(len(x),device=x.device)<self.drop_all
             wd=all_drop|(torch.rand(len(x),device=x.device)<self.drop_writer)
             sd=all_drop|(torch.rand(len(x),device=x.device)<self.drop_script)
-            y_callig=torch.where(wd,self.num_writers,y_callig)
+            if self.writer_mode!='none':y_callig=torch.where(wd,self.num_writers,y_callig)
             y_script=torch.where(sd,self.num_scripts,y_script)
         # Match the DiT route: all/style dropout never blanks the STD spatial input.
-        writer=self.writer(y_callig)
+        writer=(x.new_zeros((len(x),32)) if self.writer_mode=='none' else self.writer(y_callig))
+        writer_mask=(y_callig!=self.num_writers) if self.writer_mode=='film' else None
         script=self.script(y_script)
         t_emb=timestep_embedding(t)
         conds=self._compute_stage_conditions(t_emb,writer,script)
 
         glyph=self.std_stem(g);h=self.input(x);skips=[]
+        std_glyphs=[glyph]
         for i,stage in enumerate(self.encoder):
-            if i:glyph=self.act(self.std_down[i-1](glyph))
+            if i:
+                glyph=self.act(self.std_down[i-1](glyph))
+                std_glyphs.append(glyph)
             projected=self._scaled(self.std_proj[i](glyph),self.std_gates,i,self.inference_std_scales)
-            h=stage(h+projected,conds[i],writer);skips.append(h)
+            enc_writer=writer if self.writer_mode=='film' else (None if self.decouple_writer_condition else writer)
+            h=stage(h+projected,conds[i],enc_writer,drop_path_scale,writer_mask);skips.append(h)
             if i<2:h=self.down[i](h)
-        h=self.middle2(self.middle_attn(self.middle1(h,conds[2],writer)),conds[2],writer)
+        h=self.middle2(self.middle_attn(self.middle1(h,conds[2],writer,drop_path_scale,writer_mask)),conds[2],writer,drop_path_scale,writer_mask)
         for i in (2,1,0):
             skip=self._scaled(skips[i],self.skip_gates,i,self.inference_skip_scales)
-            h=self.decoder[i](torch.cat([h,skip],dim=1),conds[i],writer)
+            h=self.decoder[i](torch.cat([h,skip],dim=1),conds[i],writer,drop_path_scale,writer_mask)
+            if getattr(self,'decoder_std_residual',False) and i in (1,0):
+                h=h+self.decoder_std_scale*self.dec_std_proj[i](std_glyphs[i])
             if i:h=self.up[i-1](F.interpolate(h,scale_factor=2,mode='nearest'))
         return self.output(h)
 
     def forward_with_cfg(self,x,t,y_callig,y_char=None,cfg_scale=1.,g=None,y_script=None,**unused):
         if self.training:raise RuntimeError('CFG sampling requires eval mode')
         conditional=self(x,t,y_callig,y_char,g=g,y_script=y_script)
-        if cfg_scale==1:return conditional
+        if cfg_scale==1 or self.writer_mode=='none':return conditional
         unconditional=self(x,t,torch.full_like(y_callig,self.num_writers),
                            g=g,y_script=y_script)
         return unconditional+float(cfg_scale)*(conditional-unconditional)
