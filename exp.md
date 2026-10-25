@@ -1,5 +1,375 @@
 # 实验总账
 
+## 2026-10-25：P1/P2 writer-aware 混合训练验收（假设成立，路线锁定）
+
+设计：P0=kxl-100k 75k EMA（复用，40 万池替代已记录）→ P1 10k（70% 通用 null 行 +30% Top10，主干 LR1e-5/条件组 LR5e-5，
+drop_writer .25）→ P2 20k（Top10，PairMixtureSampler 30% 同字同书体异书家配对，纯 FM 采样，drop_writer .10）。
+B512/EMA/强增强沿用/全解冻/每5k存评。实现 `tools/u100_pretrain/run_p1p2.py`（null_writer_rows、writer_cond_lr 参数组、
+mainline 放行 pair_fraction 仅采样）。
+
+| 预算 | 路线 | val100 SSIM/LPIPS/IoU/Frag |
+| --- | --- | --- |
+| 20k | 直 FT | .5800/.3603/.2632/2.27 |
+| 20k | **P1+P2@10k** | **.5864/.3535/.2725/2.02** |
+| 30k | 直 FT 延长 | .5829/.3581/.2638/1.91 |
+| 30k | **P1+P2@20k** | **.5908/.3497/.2814/2.18** |
+| 50k | 直 FT 终态 | .5844/.3558/.2660 |
+
+离线：eval200fix σ.65 .5834/.3488/.2918/2.79；test200 σ0 .5895/.3466/.2874/2.87。
+**假设成立**：同预算 P1/P2 全面优于直 FT，且 30k 预算超过直 FT 50k 终态。路线锁定（详见
+`ANALYSIS/p1p2_writer_aware_20261025.md`）；P0 用 kxl-100k 替代 40 万池（偏差已记录）。
+
+## 2026-10-25：风格结构诊断系列（决定上述路线）
+
+纯分析六轮（DINOv2-B，17,569 图/1,609 字/10 书家；严格留字；方法三轮自我修正）：
+方差分解（主效应 .5%/交互 5.6%/共享项相关=基线 0.4987 vs 0.500）、patch 谱+ridge（无结构、零增量）、
+多尺度 G/C/S/L（G .436 留字 Top1；C/S 零增益；L +1.9pp）、分类器阶梯（质心.284<LDA.328<QDA.361<logistic.426，
+MLP 无增益）、结构测量（K90≥32、交互留字负增益、d_eff95=7、QDA log-loss 更差）、M1/M2 双线性（ΔR²_test≈0）。
+**结论：书家风格=跨字稳定、线性可读、弥散于 ~7 维+协方差的分布；无可泛化的字形条件调制；参考路线与
+字形调制路线关闭；Writer Embedding 容量足够。**方法修正与全部数字：
+`ANALYSIS/style_structure_diagnosis_20261025.md`、`ANALYSIS/results_20261025/`。
+
+## 2026-10-25：eval200fix 极性损坏样本（数据质量）
+
+idx16「留」（何绍基隶书）外框极性错误、笔画粘连不可读；poster 自 v5 剔除该列；
+`ANALYSIS/eval200fix_polarity_corrupted_gt_20261025.md`；final_imgs_fame_v8 来源待极性全量审查。
+
+## 2026-10-25：4090 深度磁盘清理（DiT 992G→399G）
+
+旧代 ckpt 487 个（423G）、dino_cache 108G、v90 scratch 70G、归档白名单外 330 个（260.6G）、
+_quarantine/_models/baseline/dataset 等；保留 19 个代表性归档 ckpt + 现行基线终版。
+清单：`assets/disk_cleanup_*.json`；代表 ckpt 索引：`docs/experiments/archive_representative_checkpoints_20261024.md`。
+
+## 2026-10-24：U100 纯通用预训练 75k → Top10 后训练 25k 完赛报告
+
+管线 `tools/u100_pretrain`（4090 单卡 10.7h 全程，含三次可查修复：FT 导入层级/离线评测 inference_mode/eval200fix char 映射扩展）。
+
+**最终指标（FT 25k EMA，三口径）**：
+
+| 集 | SSIM | LPIPS | Ink-IoU | Frag | 空白 |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| val100（σ0，可比 0.56 系） | **.5817** | .3579 | .2654 | 2.12 | 0 |
+| test200（σ0） | .5826 | .3527 | .2804 | 2.84 | 0 |
+| eval200fix（σ.65，可比 U100） | .5771 | .3536 | .2790 | 2.50 | 0 |
+
+**横向**：val100 超过 reference 25k（.5775/.3612/IoU .2631/Frag 2.72）与 generic48 全解冻（.5612）；eval200fix 低于 U100 从零 .6132 约 .036（对方 60M 曝光、纯 Top10-aug 数据、18.6h@48；本线 25.6M、纯通用预训练、10.7h@4090——预算与数据构成双重不同，不能归因单一变量）。
+**FT 动力学**：0步 .4916 → 5k .5712 → 10k .5767 → 25k .5817；增益 92% 在前 5k（行 0-9 安装 + 轻适配），此后缓升无回落。
+**预训练段**（val100 σ.65、行 0-9 未训练＝近内容基线）：.4291@5k → .4974@55k 峰 → .495@75k；Frag 20.6→5.3、零空白。
+**机制结论**：(1) 通用预训练+可训练行 0-9 的路线在 1/2 预算下达到与最强域内从零线可比较的水平并全面超越此前所有课程方案；(2) 行 0-9 从 SupCon 初始化在 5k 步内即完成安装，验证了"读取器预训练+FT 训行"的修正后设计；(3) 距 0.6132 的差距是预算还是路线，需等预算延长实验（FT 50k / 预训练 150k）分离。
+配置与产物：`assets/u100_pretrain_20261024`（manifest/config/15+5 ckpt/离线评测）。
+
+## 2026-10-24：U100 纯通用预训练 → Top10 后训练管线（4090，进行中）
+
+决策链：Reference 线单向量注入证伪（0步.5586→25k仅.5775）→ 回归 U100-Deep-Sym4 114M 设计
+→ 用户修正"书家表可独立对比学习训练"，推翻"Top10 行必须进预训练"的论证（行=320参数可FT学；难学的是读取器通路，
+读取器由 248 通用组预训练解决）→ 最终单臂方案：**纯通用 100k 预训练 75k + Top10 后训练 25k，drop_writer 统一 0.25，ckpt/评测每5k**。
+对比论证与根因分析见 [设计文档](ANALYSIS/u100_generic_pretrain_design_20261024.md)；实现契约见 [管线README](tools/u100_pretrain/README.md)。
+
+关键实现事实：
+- 书家编号 259 行：0-9 Top10 预留（SupCon 冻结表初始化，预训练不训练）、10-257 通用 source-scoped 组（≥32图）、258 OTHER（3,604行）、259 null。
+- STD：std_bbox64 store，clean σ.65 + strong 形变增强（14,999 字 bank，256 raster 与缓存逐位一致后才生成）。
+- 114,011,012 参数，B256，LR6e-5，实测 3.21 step/s / 10.78GiB（远轻于 reference 线 22.5GiB——其含 DINO 银行与 SupCon 开销）。
+- 预训练 75k ≈ 6.5h；FT 25k（全权 EMA 初始化、整表可训练、20% 通用回放、LR1.5e-5、eval σ0、0步基线）≈ 2.5h；离线 eval200fix(σ.65)/test200(σ0)。
+- 判读锚点：FT 后 eval200fix vs U100 从零线 0.6132；val100(σ0) vs 课程线 0.56 系；val100 内联（预训练期）兼测读取器×SupCon 方向互操作性。
+
+## 2026-10-24：Reference Top10 10k→30k续训（已停止）
+
+实际停于25,375/30k。续训段：15k .5661/.3702/.2511 → 20k .5713/.3662/.2542 → 25k .5775/.3612/.2631（SSIM +0.001/k，
+增益微弱且注入机制单向量加法已定性为弱）；不再续训。0步 .5586、5k .5631、10k .5651 同前。
+
+## 2026-10-24：Reference Top10 10k→30k完整续训
+
+输出4090 `assets/reference_top10_30k_20261024`，runner1832859。
+恢复原后训练10k的raw/EMA/Adam/scheduler/RNG；保持数据23485/100/200、参考库和FM+.05SupCon不变。
+总30k、额外20k，B256，每5k保存评测，无EMA/optimizer重置。
+LR显式延长原余弦horizon10k→30k，base2e-5、min_ratio.1不变，10k恢复点约1.56e-5。
+旧run保留，新run单独归档；不声称DataLoader逐位重放，不声称LR轨迹未变。
+原10k验证SSIM.5651/LPIPS.37204/IoU.24681/Frag3.2969作为续训前基线；0步SSIM.5586/LPIPS.39050。
+活动run `runs/20261024-025517-Unet-flow`，trainer1832923；已执行10025步。
+resume_record确认EMA未重置、完整RNG恢复、LR1.560911e-5；FM.1541、SupCon约3.91。
+
+## 2026-10-24：显式书家/书体Prompt，停止训练后同字重评
+
+非Turbo runner1642156/trainer1645256已停止于270步，无已保存LoRA；因此本组非Turbo严格标作未微调基模。
+新增前缀`书法家：{calligrapher}。书体：{script}。请用该书法家的{script}风格书写。`，保留原字符Prompt。
+六字：博、縱、願、衣、難、蜿；颜真卿/智永/赵佶，均楷；seed90，512输出统一LANCZOS至256，对同GT评测，无GT输入。
+非Turbo40步；Turbo LoRA@6000为8步并加载原条件投影。Turbo旧组复用保存输出，其余三组共新生成18图。
+
+| 模型与Prompt | SSIM↑ | LPIPS↓ | Ink-IoU↑ |
+| --- | ---: | ---: | ---: |
+| 非Turbo基模，原Prompt | .50776 | .54429 | .19006 |
+| 非Turbo基模，显式书家/书体 | .51621 | .53641 | .22447 |
+| Turbo LoRA@6000，原Prompt | .49015 | .45414 | .29938 |
+| Turbo LoRA@6000，显式书家/书体 | .49239 | .45130 | .31781 |
+
+只解释各模型内部Prompt变化，不将跨模型差异归因于Prompt。读图：颜真卿部分字墨量更接近GT；Turbo縱改善较明显，其他字微变或局部退化，尚不能确认风格迁移成功。
+48路径`/home/ds/Workspace/xy/qwen-prompt-explicit-20261024`，状态completed；未接续训练。
+[海报](assets/qwen_prompt_explicit_20261024/poster.jpg)、[汇总](assets/qwen_prompt_explicit_20261024/summary.json)、[代码](tools/qwen_lora/prompt_eval.py)。
+
+## 2026-10-24：Qwen非Turbo vs Turbo条件LoRA
+
+非Turbo新run：48 qwen-lora-base-20261024，trainer1645256，正式首步已验证。
+模型为已SHA校验的Qwen-Image-2.1；LoRA/条件MLP从零初始化，同seed/冻结3×32表、数据2730/18/38。
+2786图posterior与1694字符文本特征用本基模重新缓存，按源图SHA验证；与Turbo缓存隔离。
+rank16 Attention q/k/v/out，512/B8，目标6000更新，保存/同6字验证每500。
+LR完全复现Turbo训练历史，见tools/qwen_lora/base6000.json；40步原生采样，Turbo为8步，质量与采样墙钟分开解释。
+LoRA16,777,216+条件4,749,712参数，初步峰值18.4GiB；尚无检查点质量结果。
+
+## 2026-10-24：Reference FM 25k EMA → Top10 10k
+
+路径4090 `assets/reference_top10_20261024`；启动`tools/reference_style/finetune.py`。
+源`reference_kxl_20261023/runs/20261023-195603-Unet-flow/checkpoints/0025000.pt`的EMA；
+全部权重strict加载并逐张量核对，不新增模块，局部step重置0，optimizer/EMA新建。
+数据train23485、validation100、test200，复用generic48 curriculum中Top10标签行的审计ID及VAE缓存；
+不混入generic行，不使用val/test图片作为参考；以named writer标签仅进行采样/SupCon。
+114298852参数U-Net+投影头全量微调，DINOv2冻结；STD+Script+Reference条件，无Writer-ID。
+LR2e-5、warmup200、B256、10k附加步数，每5k保存/评测；FM+.05 SupCon。
+0步先评validation100，后续只与同集同参考协议比较；test200留存，不参与优化。
+runner1831644、trainer1831960，run `runs/20261024-010707-Unet-flow`；340张量strict且逐张量相等校验通过。
+0步验证100图SSIM.5586/LPIPS.39050/IoU.23333/Frag3.0614/SoftInk1.1580；这不是后训练收益。
+已完成25步，FM.3373、SupCon约4.56、有效anchor256，PyTorch显存22.47GiB；尚无后训练质量结论。
+
+## 2026-10-23：K/X/L 100k Reference FM，DINOv2 + 114M U-Net
+
+4090：`assets/reference_kxl_20261023/runs/20261023-195603-Unet-flow`；配置`config.json`，
+数据/缓存契约`audit.json`、`features.json`、`run_manifest.json`，外层日志`training.log`。
+训练100095，楷35935/行35057/隶29103；不引入其他书体或Top10额外数据。
+source-scoped Writer标签仅用于采样和监督；参考严格同组同书体异字，1–2张，训练库独占。
+冻结DINOv2-B/14最终CLS768D，MLP256→128，参考归一化平均，输入STD+Script+Reference。
+U-Net192/384/576、每尺度4块，114298852参数；无Writer条件、无Brush、无REPA。
+B256、LR6e-5、warmup500、30k步、每5k保存/评测；FM+.05 SupCon、tau.1、硬负分母权重2。
+采样50%同书体2×2四元组，50%同书体writer-balanced跨字对；后者覆盖非共享字符。
+验证固定训练参考，仅1044/1046有合格参考，不能与历史1046行指标直接比较。
+失败B512 run保留；正式B256于10-24 00:38完成30k/6轮评测，末段FM.2037、SupCon约2.20。
+25k：SSIM.4558、LPIPS.46147、IoU.23664、Frag5.039；30k：.4551/.46107/.23702/6.665。
+30k Frag中位数1.183、P90为6.5，均值受极端碎墨样本影响；仍缺独立Writer与reference-swap验收。
+图片`assets/reference_kxl_20261023/progress_10k_25k_30k.png`，后训练选择25k EMA。
+[实现说明](tools/reference_style/README.md)。
+
+## 2026-10-23：Turbo LoRA 2k→6k续训
+
+从checkpoints/0002000完整恢复LoRA、条件适配、AdamW两组状态和随机状态，逐张量校验加载结果。
+trainer927137，已执行2001步；原512/B8/rank16/冻结表/数据划分不变，额外4000步，每500保存验证。
+续训LR：当前1e-5→100步升到5e-5→余弦降回1e-5。调度变化单独留档，不声称与未改LR纯续训等价。
+配置tools/qwen_lora/turbo_extend6000.json，48日志qwen-lora-turbo-20261023/train_extend6000.log。
+首轮6字指标仅显示后期形态与粗细继续变化，尚无0步/完整test/独立Writer验收；延长训练不是确认风格已成功。
+
+## 2026-10-23：Turbo条件LoRA正式首轮
+
+按用户要求切换Turbo，不再等待非Turbo。48任务`qwen-lora-turbo-20261023`，trainer614522。
+GT/冻结书家表/划分不变：2730训练、18验证、38测试，仅颜真卿/智永/赵佶楷书。
+完整VAE posterior缓存2786图、文本缓存1694字；输入只有目标字符及writer/script条件，无STD或GT输入。
+rank16、LoRA16,777,216参数、条件4,749,712参数；512、B8、不累积、LR1e-4、warmup100、2000步。
+每500步保存及6字8步验证，并检查实际采样步数。沿用原生1000时间步FM监督，是否保留蒸馏八步质量由验证决定。
+60步实测4.10秒/步、18.58GiB峰值；不是生成质量收益。旧非Turbo改为仅下载，GPU编码与训练均停掉。
+
+## 2026-10-23：BC FM Top10新路线
+
+`assets/brush114_top10_20261023`，114M+5维Brush条件，P0固定VAE重建属性审计运行中。
+源为旧楷行隶通用池与冻结Top10，非Top20；数据只声明实际约10万候选，首轮不引入其他书体。去重复、严格未见字符留出后记录最终规模。
+P1 B512/LR6e-5/warmup1500/60k调度停5k/75%通用25%Top10，Brush dropout.1/noise.075，FM-only。控制只用独立指定属性，不从测试GT取属性。
+P0及P1（含人工读图）通过后才resume60k并Top10微调30k；分支LR8e-5/其余1e-5，Writer表冻结，每5k保存评估。
+与原40万、Top20泛称严格区分；不同时启动从零/无Brush对照，不能预先宣称正迁移。[完整门槛](tools/brush_fm/README.md)。
+
+## 2026-10-23：Qwen-Image-2.1冻结书家条件LoRA
+
+48 `/home/ds/Workspace/xy/qwen-lora-20261023`，不占4090当前训练GPU。
+三位楷书writer，冻结Top20划分及独立SupCon表按raw-ID取行；保留2730/18/38，规则剔除444/3/4，逐图SHA与源CSV SHA留档。
+输入为目标字符文本特征+冻结writer表投影4 tokens+1个楷书token，无STD、参考图或GT条件。
+GT经Qwen原生RGBA VAE编码，posterior mean/std缓存、训练中重新采样；标准化沿模型latents_mean/std。
+非Turbo正式底模下载33.13GB，与GT编码/文本编码阶段依赖并行；完整校验和缓存后启动2000步FM。
+rank16 Attention q/k/v/out LoRA，512、B8、LR1e-4、warmup100、cosine至10%、writer-null10%，每500步存LoRA/条件/优化器/RNG并生成6字验证。
+Turbo仅做两步反向可训练性预检：通过，峰值18.56GiB；不将短测loss下降视为生成改善，也不保证蒸馏8步能力保持。
+PEFT0.21.2装任务vendor，复用现有pytorch环境；GT传输用临时SSH agent转发直传，不复制私钥、不永久授权新密钥。
+当前无正式LoRA生成质量结果，状态及限制见[README](tools/qwen_lora/README.md)。
+
+## 2026-10-23：P1全解冻Top10迁移对照
+
+用户停止部分解冻50k续训（末次确认18,450步），改从通用预训练50k EMA重新起10k。
+全网可训练，唯独冻结独立书家表与无效共享writer_proj；取消Writer-only阶段。
+Writer分支/主干/STD与Script峰值LR=1e-4/2e-5/1e-5，warmup200，10k余弦，B512，每5k保存评估。
+其余复用原Top10验证100张、10%回放、bbox STD sigma0和SD VAE。配置top10_full_unfreeze_config.json，目录top10_full_unfreeze_runs。
+这组同时修改解冻范围、组LR与取消1k冻结，属于迁移策略组合对照，不是纯单变量冻结消融。附件中的迁移前向等价性已在前轮CPU检查通过。
+
+## 2026-10-23：48M Top10微调10k延长至50k
+
+停止114M预训练及串行；最后日志34,950步，保留已保存权重，不自动微调114M。
+从`generic48_kxl_top10_20261022/top10_runs/20261023-055043-Unet-flow/checkpoints/0010000.pt`完整resume，额外40k。
+配置top10_extend_50k_config.json：max/stop/LR horizon均50k，保存评估间隔5k；其余微调设定不变。
+新output top10_extended_runs，log top10_extend_50k.log，status extension_status.json，不覆盖5k/10k已有结果。
+延长余弦使10k处LR回升到约4.6e-5（分支）、9.1e-6（主干）；保留优化器和EMA，不重做Writer-only warmup。
+
+## 2026-10-23：114.003M同口径通用预训练与Top10微调排队
+
+4090 `assets/generic114_kxl_top10_20261023`，持久runner PID1821400，02:15确认waiting_for_48m_complete。
+先等48M两阶段完成，再B512编译短预检→114M从零预训练50k→Top10 Writer-only微调10k，每5k保存/评估。
+channels192/384/576、每尺度4块，通用模型114,003,044参数；其余直接复制48M最新两阶段配置及缓存路径，不重新切分数据、不加载48M权重。
+LR、STD bbox/sigma0/增强off、SD VAE、独立冻结表、回放与阶段解冻设置一致。容量/ETA待空闲后的预检实测；失败不静默降低batch。
+入口[queue_wide.py](tools/generic_pretrain/queue_wide.py)，预训练曲线与Top10条件拟合曲线不宜直接作为容量证据。
+
+## 2026-10-22：48M通用楷行隶→Top10两阶段（GPU缓存中）
+
+**最新修订**：用户要求预训练50k→Top10微调10k，两阶段每5k保存/评估。
+预训练实际已启动，缓存全部124,894行/25分片、0读取失败；稳定2.66step/s、约15GiB。
+不丢弃当前进度：活动30k进程正常结束后完整状态续至50k，原50k LR调度不变，之后加载50k EMA微调。
+串行接管入口 `tools.generic_pretrain.full --extend-running`；新配置 `pretrain_50k_config.json` 与 `top10_50k_config.json`。
+以下原30k配置与“缓存中”记录为历史启动状态，不代表最新预算。
+
+4090目录 `assets/generic48_kxl_top10_20261022`；runner.log位于同名目录外。
+候选101,678张；保留101,309张，train100,263/validation1,046，排除369张留出近重复。保护Top20与legacy留出；不做新的审美过滤。
+预训练48M/B512/LR7e-5/warmup1500/30k停止/50k余弦调度，每5k保存评估。无Writer、保留Script。
+Top10 train23,485/validation100/test200；独立对比学习表按raw-ID取10×32并冻结。
+自动加载预训练30k EMA，新优化器和步数；新增rank16 Writer-only FiLM，前1k仅分支、后9k联合低LR微调，10%通用回放。
+STD真实墨迹bbox等比fit256→64，sigma0/增强off，VAE SD EMA/mode/scale0.18215；无REPA。
+当前GPU编码124,894行（含Top10训练/验证，独立CSV避免预训练混入），FM步数0，暂无质量指标或生成poster。
+模型构建确认generic48,325,668参数，Writer-only48,504,772参数。[完整设定](tools/generic_pretrain/README.md)、[冻结清单](assets/generic48_kxl_top10_20261022/manifest.json)。
+
+
+## 2026-10-22：Qwen-Image-2.1-Turbo跨字合成小样（准备中）
+
+暂停原数据诊断路线，用户授权32张pilot。48GB主机复用现有pytorch环境；只在任务vendor加载diffusers0.41，原torch/transformers/diffusers安装不改。
+目录 `/home/ds/Workspace/xy/qwen-calli-20261022`。官方32.45GB权重ModelScope下载，SHA与HF fc13ba1986fcb905854dc8de2f52eee395f49b5b权重一致；下载完成后再做全文件校验。
+最终输入 `assets/synthetic/qwen32_20261022_final`，3书家（颜真卿/智永/赵佶）×4共享目标（泉梅岳霞）×2seed=24，另STD-only8张。
+只给新bbox STD及同书家其他字训练真迹，不给目标GT；保持同书体，目标排除所有相关留出字符。
+模型设置1024/BF16/CPU model offload/CFG1/官方8步sigmas/KV cache，无量化。推理已挂等待下载，尚无质量或成功率结果。
+原始输出、白底256、逐图身份、人工review.csv和匿名海报将分别保存，不自动混入真迹数据。
+[代码与许可记录](tools/synthetic32/README.md)。
+
+## 2026-10-22：STD bbox几何修复，训练/推理暂停
+
+无随机模糊训练已启动于20:56、用户随后叫停，最后确认300步；保留日志，无5k权重，不当作完整实验。
+旧STD形变本已off，仍存在sigma0.4–1随机模糊；随后sigma0推理也因用户要求优先修正bbox而停止。
+旧STD固定em、未按实际墨迹缩放，最长边覆盖中位70.3%、最小35.9%。
+已按原font index重绘8945字：bbox等比fit256，最长边顶满、短边居中，再BOX64用于模型；新缓存std_bbox_v1，不覆盖旧std_soft_final。
+[对照图](assets/audits/std_bbox_20261022/preview.png)、[审计](assets/audits/std_bbox_20261022/audit.json)、[代码说明](tools/std_bbox/README.md)。
+全量跨度256/64检查与3项CPU回归通过。这里只修复缓存，尚未对新几何进行生成评测，不能据此解释旧模型全部质量差距。
+
+## 2026-10-22：48.33M@25k/30k seen/test补评
+
+训练20:37:41正常完成30k，书家表raw/EMA不变核验通过；X2未启动。
+固定Top20 train_half200张与test400张，25k/30k共4项，EMA/CFG1/Heun50，与旧114M同路径和噪声比较。
+[完整结果](assets/audits/extreme48m_seen_20261022/comparison.csv)、[拟合差距](assets/audits/extreme48m_seen_20261022/gaps.csv)。
+30k新48.33M：seen/test SSIM0.7753/0.5646、LPIPS0.16194/0.35732、IoU0.70894/0.29258。
+旧114M：seen/test SSIM0.83018/0.57033、LPIPS0.12474/0.35396、IoU0.77715/0.29073。
+SSIM gap缩小18.9%、LPIPS gap缩小14.8%，但主要来自seen拟合下降；test SSIM/LPIPS没有改善，IoU仅略高。
+25k→30k新模型SSIM gap0.1888→0.2107，LPIPS gap0.17936→0.19538，仍有拟合收益无法转移到留出样本的问题。
+架构和独立表冻结同时变化，不单独归因于变窄；训练/测试内容并非逐字难度匹配，属于拟合差距诊断而非严格因果证明。
+
+## 2026-10-22：Top5/10/20@30k代表性海报
+
+[海报](assets/posters/cohort_20261022/poster.png)：19组原图，EMA/CFG1/Heun50，同字同GT/STD/噪声。
+共同Top5测试10组（每书家P50/P90）、训练5组（P50）、Top10及Top20新增书家各2组。
+顶栏展示共同Top5完整测试100张/训练50张指标，逐生成格附SSIM/LPIPS/软墨量比。
+不调粗细、不裁切字形；按selection.json确定选样，89张原PNG及SHA保留。只读取已有CPU/磁盘产物，未启动新推理或干预当前训练。
+
+## 2026-10-22 17:22：X1最终正式配置为B512
+
+复核发现编译路径显存显著低于eager；不再用eager预检否定B512。
+完整compiled优化/EMA短测：B512、13.61GiB allocated、14.94GiB reserved、2.69step/s。
+停止B256短跑并保留日志；正式从零运行 `assets/results/extreme48m_top20_x1/20261022-172221-Unet-flow`。
+runner/训练PID1812862/1814666；实际配置、预检、日志和状态 `assets/results/extreme48m_top20_x1_launch_20261022_compiled`。
+原B512/LR7e-5/warmup1500/50k调度/先30k，15.36M曝光保持不变；X2未启动。
+独立书家表冻结与EMA574/574已确认；17:24正式到100步，Diff2.0921，首个编译后区间2.67step/s、显存14.67GiB、GPU100%。
+初估剩余约3.2–3.5小时含评测；不是长期稳定吞吐保证。
+
+## 2026-10-22 17:16：48.326M X1正式启动（B256）
+
+按最新用户指令在4090从零启动X1，输出 `assets/results/extreme48m_top20_x1/20261022-171554-Unet-flow`。
+runner/训练PID1810203/1810350，日志与实际配置 `assets/results/extreme48m_top20_x1_launch_20261022_b256`。
+B512前向容量预检OOM；B256完整优化/EMA短测通过，峰值allocated17.90GiB、reserved18.15GiB，eager3.05step/s。
+正式配置开启compile，首次编译尚无稳定吞吐；短测不作为长训ETA或架构加速结论。
+LR7e-5、warmup1500、50k调度、首阶段30k；样本曝光7.68M而非B512的15.36M，不进行等曝光误比较。
+独立表冻结/映射和完整EMA配对574/574已由启动日志确认；X2未启动，旧30k换表续训亦未启动。
+
+## 2026-10-22：独立Top20 SupCon表与48.33M架构准备
+
+确认旧FM训练更新书家表违反契约；额外10个书家的旧初始行未独立预训练。
+独立预训练 `assets/writer_table_repair_top20_20261022/table_v2` 完成5000步；冻结DINOv2-small CLS，
+仅train30386优化，validation200选点，test400不进入；20书家均衡跨字采样，双向table-feature SupCon及排斥项。
+选中2250步，训练Top-1 50.19%、验证52.00%，异类最大余弦0.19639。
+正式原表 `assets/data_cohorts/top20_20261021_v1/writer_tables_supcon_v1`：20×32单位范数，无旧生成器坐标对齐。
+provenance/audit记录输入与映射身份；这不是跨作品可靠性或生成梯度有效性的证明。
+首次DINO输出类型错误保留pretrain.log；修复后成功日志pretrain_v2.log，不覆盖失败记录。
+
+下一代X1/X2已实现，均48.326M（96/192/256、每尺度8块、50 ResBlock/5 Attention），
+冻结独立Writer表、无REPA/Critic/额外条件支路，STD形变off；X2加入DropPath0.08与分组WD0.05。
+配置 `src/unet/configs/extreme48m`；B512、LR7e-5、warmup1500、50k调度、先停30k。
+6项轻量测试通过；尚未GPU定batch或启动训练，没有速度/质量结果。
+旧114M表契约同时被修正，不能把新旧比较的全部差异归因于架构。
+旧Top20@30k→33k换表续训仅实现、未启动，服从用户最新“先正确训练表、准备下一架构”指令。
+
+## 2026-10-22：112项完整结果与阶段报告
+
+全部评测16:07:37结束（本批15:39:06启动，复用3组已有完整test），112/112项，20个checkpoint。
+[阶段报告](ANALYSIS/cohort_generalization_20261022/README.md)按Top2/5/10/20四个集合组织，含训练探针/测试曲线、统一10k比较、配对区间与解释边界。
+完整CSV及逐图指标本地同步至`assets/audits/cohort_all_ckpt_20261022`。
+训练拟合明显强于测试，但不同线路走势不同：Top5后期回退，Top10仍改善，Top20趋平台；不能概括为全部模型越训越坏。
+后续Top20书家表训练请求：先核实writer表实际是否已训练，避免将无效解冻登记为新消融。
+核查完成：requires_grad=True，进入AdamW，slot step30000，exp_avg范数0.00068784，相对初始表L2变化2.18253、最大变化0.28801。
+证据`assets/audits/cohort_all_ckpt_20261022/writer_table_audit.json`。不启动无效“解冻”；仅训练表需另明确，不冒充原请求。
+
+## 2026-10-22：全部20个已保存checkpoint的test/half-seen评估
+
+用户要求停止Top2训练并优先全面评估。已在约13k停止；仅5k/10k完整权重纳入。
+另三条线各6个5k间隔checkpoint至30k；20个checkpoint×支持档位×test/train_half=112项。
+队列产物：`assets/audits/cohort_all_ckpt_20261022`，固定EMA/CFG1/Heun50，batch32/VAE8。
+不运行train_equal。half-seen指冻结的train_half探针，严格是训练样本，不是混合seen/unseen集合。
+最新权重优先；已有30k test验证权重SHA、源CSV及原生产物完整性后复用。
+每个checkpoint完整生成对应最大档位，再按嵌套样本路径、seed及逐图指标汇总所有较小档位。
+结果来源为原生4–5位小数逐图CSV；保留原始PNG/完整汇总供追溯，不声称未舍入精确值。
+增量结果results.csv/json，拟合差距fit_gaps.csv；计划plan.json，进度status.json。
+旧10组runner标记superseded并停止，不与新队列竞争GPU，不删除旧结果。
+15:42首批20项完成。最新最大档位train_half/test SSIM分别为Top20@30k 0.8302/0.5703、
+Top10@30k 0.8509/0.6022、Top5@30k 0.8461/0.6009、Top2@10k 0.7825/0.6227；
+LPIPS分别0.12474/0.35396、0.11558/0.33733、0.12884/0.34990、0.18333/0.33372。
+属于各自不同档位的诊断，不作为跨模型横向排名；等待全部checkpoint曲线和同列比较。
+
+## 2026-10-22：训练拟合探针（数据准备，未启动额外GPU实验）
+
+固定训练探针 `assets/data_cohorts/top20_20261021_v1/train_probes_v1`；从冻结train.csv选取，
+不改变原划分。Top20/10/5/2等量集=400/200/100/40，减半集=200/100/50/20。
+以书家均衡和接近对应test的书体比例抽样，seed90，半量集及跨级集合嵌套。
+8份CSV及manifest记录源/输出SHA，均严格属于相应训练集且与全局验证/测试路径不交叠。
+工具 [tools/cohort_eval](tools/cohort_eval/README.md) 支持单checkpoint+任意集合，
+每次输出独立身份、有效CSV、PNG、逐图指标、原生协议及汇总，不静默覆盖已有目录。
+仅用于诊断拟合，不用于验证选点。3项CPU测试通过；本轮不额外启动20组train GPU评测。
+
+## 2026-10-22：30k正式测试矩阵（10组）
+
+前三组30k训练已完成：Top20/Top10/Top5分别于02:54:56/08:06:32/13:16:23正常结束。
+Top2仍在训。测试固定checkpoint30k EMA，CFG1，Heun50；测试量Top20/10/5/2为400/200/100/40。
+矩阵：模型20→测试20/10/5/2；模型10→测试10/5/2；模型5→测试5/2；模型2→测试2。
+正式产物：远端 `assets/audits/cohort_matrix_30k_20261022_v2`，逐组权重文件SHA/测试CSV SHA/协议/PNG/逐图指标齐备后才写RESULT.json。
+父任务自动汇总10行至results.csv/results.json，Top2未完成时等待，不使用中途checkpoint。
+初次尝试目录（无v2后缀）因本地/远端公共评测接口参数差异失败，未产生有效结果，保留追溯。
+修复仅在新增独立工具tools/data_cohorts/evaluate.py内，不修改在训模型或训练循环。
+比较以相同测试列为准；训练内验证指标不替代本次测试结果。
+
+## 2026-10-21 21:41：预算修订，先各30k，LR适度提高
+
+用户将70k改为50k，再指定各组先跑30k。执行：max_steps=lr_decay_steps=50000，stop_at_step=30000，LR6e-5→7e-5（+16.7%），warmup1500不变。
+旧队列在Top20约600步warmup时停止，无checkpoint；保留旧日志，各组按新配置统一从零开始。
+新持久队列：`assets/data_cohorts/top20_20261021_v1/launch_30k_lr7e5`；顺序20/10/5/2。
+每组首阶段15.36M曝光；30k后自动切换下一组，不自动训练到50k。
+输出：`assets/results/clean_cohorts_20261021/launch_30k_lr7e5/topN_u114/`。
+数据、架构、batch512、EMA及5k验证间隔不变。初估总21–23h。
+下面70k登记为被本修订替代的历史计划。
+
+## 2026-10-21：固定清洗数据，Top20 → Top10 → Top5 → Top2
+
+- Host：4090；21:32 CST 启动持久队列，先运行Top20，其他三个排队。
+- 21:35:48首段验证：150步，Diff1.8185，稳定1.63step/s、显存19.10GiB；未发生OOM/NaN。
+- 初始ETA：每组纯训练11.9h，含评测/存盘约12–13h；总49–52h。仅早期估算，不是完整墙钟实测。
+- 同配置从零训练：普通114M FM U-Net、channels192/384/576、对称4ResBlocks、共享Writer/Script条件。
+- B512，max/lr_decay=70000，LR6e-5，warmup1500，EMA0.999，每5k保存及验证；每组35.84M曝光。
+- 不启用REPA/Critic、Writer硬分离、独立Writer分支、Gate、DiC或STD形状强增强；保留软STD模糊。
+- 数据：`assets/data_cohorts/top20_20261021_v1/datasets_final`；Top20/10/5/2训练量30386/23485/14069/6226。
+- 相应验证量200/100/50/20，测试量400/200/100/40；跨级嵌套、全局保留组隔离、逐图固定评测噪声。
+- 目标latent缓存：同根`shards_img`；STD：`std_soft_final`；接口核验：`ready_final/READY.json`。
+- 完整配置、SHA、运行PID/状态/日志：同根`launch_70k`；输出：`assets/results/clean_cohorts_20261021/topN_u114_70k/`。
+- 新划分结果不能直接与旧187字评测数字混排。尚未有新训练评测结果；不把历史结果填进本轮。
+- 原图保留；细线边框不再扩大清洗。协议及工具见 [说明](tools/data_cohorts/README.md)。
+
 核对日期：2026-10-18 05:15 CST（Asia/Shanghai）。本文记录所有实验身份、详细设定、数据与模型路径、评测数据结果、可视化图表链接与结论边界；实时执行快照见 [state.md](state.md)。
 
 ## 0. 覆盖范围与查找入口
