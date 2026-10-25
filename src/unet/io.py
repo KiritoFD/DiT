@@ -33,11 +33,31 @@ class Config:
     num_writers:int=10
     freeze_writer_table:bool=True
     writer_mode:str='shared'  # none=generic; film=Writer-only, hard-zero for CFG-null/replay
+    reference_dim:int=0
+    reference_cache:str=''
+    reference_max_refs:int=2
+    reference_con_weight:float=.05
+    reference_temperature:float=.1
+    reference_hard_weight:float=2.
+    reference_injection:str='add'  # 'add' legacy single-vector; 'writer_slot' rides the FiLM reader pathway.
+    reference_dropout:float=0.  # Probability of zeroing the aggregate style (trains the null-style path).
+    reference_runtime:str='default'  # 'default' legacy style_writer_* labels; 'group' pipeline group ids.
+    reference_extra_cache:str=''  # optional second bank (e.g. Top10) merged for group runtime refs.
+    brush_dim:int=0
+    brush_dropout:float=.1
+    brush_noise:float=.075
+    brush_cache:str=''
+    brush_generic_fraction:float=.75
+    drop_writer:float=.08
+    writer_cond_lr:float=0.  # >0: writer embedding + condition projections use this LR
+    pair_fraction:float=0.  # >0: PairMixtureSampler same-char cross-writer pairs share of batch
+    null_writer_rows:bool=False  # allow training rows explicitly mapped to the null writer row
     initialize_from:str=''  # model-only stage transfer; new optimizer/scheduler/step clock
     initialize_state:str='ema'
     adapter_only_steps:int=0
     finetune_backbone_patterns:tuple=('decoder.','middle','up.','output.')
     backbone_lr_scale:float=.2
+    finetune_condition_lr_scale:float|None=None  # Optional separate STD/Script group relative to adapter LR.
     generic_replay_fraction:float=0.
     writer_table_file:str=''
     eval_before_training:bool=False
@@ -90,15 +110,44 @@ class Config:
     compile:bool=False
 
     def validate(self,require_budget=True):
+        if self.reference_dim:
+            if self.reference_dim!=128 or self.brush_dim:
+                raise ValueError('Reference route requires 128D style, no Brush condition')
+            if self.writer_mode=='shared' and self.reference_injection!='writer_slot':
+                raise ValueError('Reference on a shared-writer model requires writer_slot injection')
+            if self.writer_mode not in ('none','shared'):
+                raise ValueError('Reference route requires writer_mode none or shared')
+            if not self.reference_cache or not 1<=self.reference_max_refs<=4 or self.batch%4:
+                raise ValueError('Reference route needs feature bank, K=1..4, batch multiple of 4')
+            if self.reference_con_weight<=0 or self.reference_temperature<=0 or self.reference_hard_weight<1:
+                raise ValueError('Invalid reference contrastive settings')
+            if self.reference_injection not in ('add','writer_slot'):
+                raise ValueError('Invalid reference_injection')
+            if not 0<=self.reference_dropout<1:raise ValueError('Invalid reference dropout')
+            if self.generic_replay_fraction:
+                raise ValueError('Reference route does not use legacy Writer-ID replay')
         if self.writer_mode not in ('shared','none','film'):raise ValueError('Invalid writer_mode')
+        if self.brush_dim not in (0,5) or not 0<=self.brush_dropout<1 or self.brush_noise<0:
+            raise ValueError('Invalid Brush condition')
+        if not 0<=self.drop_writer<1:raise ValueError('Invalid writer drop probability')
+        if not 0<=self.pair_fraction<0.5:raise ValueError('Invalid pair fraction')
+        if self.writer_cond_lr<0:raise ValueError('Invalid writer condition LR')
+        if self.null_writer_rows and self.writer_mode!='shared':raise ValueError('null_writer_rows needs shared route')
+        slot=self.reference_dim and self.reference_injection=='writer_slot'
         if self.writer_mode!='shared':
-            if self.architecture!=ARCHITECTURE or not self.decouple_writer_condition:
+            if self.architecture!=ARCHITECTURE:raise ValueError('Plain U-Net architecture required')
+            if slot:
+                if self.decouple_writer_condition:
+                    raise ValueError('writer_slot injection needs coupled conditions so writer_proj stays live')
+            elif not self.decouple_writer_condition:
                 raise ValueError('Generic/Writer-only route requires decoupled plain U-Net')
             if self.writer_mode=='none' and self.writer_film_rank:raise ValueError('Generic stage may not contain Writer FiLM')
             if self.writer_mode=='film' and not self.writer_film_rank:raise ValueError('Writer-only stage needs Writer FiLM')
             if not self.freeze_writer_table:raise ValueError('Writer tables remain independently pretrained and frozen')
             if self.stage_specific_cond:raise ValueError('Two-stage baseline does not change stage-specific conditioning')
         if self.adapter_only_steps<0 or not 0<self.backbone_lr_scale<=1:raise ValueError('Invalid adaptation schedule')
+        if self.finetune_condition_lr_scale is not None and not 0<self.finetune_condition_lr_scale<=1:
+            raise ValueError('Invalid STD/Script learning-rate scale')
         if not 0<=self.generic_replay_fraction<1:raise ValueError('Invalid generic replay fraction')
         if self.initialize_state not in ('raw','ema'):raise ValueError('Invalid initialization state')
         if (self.adapter_only_steps or self.generic_replay_fraction) and self.writer_mode!='film':
@@ -173,7 +222,11 @@ def build(config,initialize_tables=False):
                     residual_cond_gate=config.residual_cond_gate,
                     stage_specific_cond=getattr(config,'stage_specific_cond',False),
                     stage_cond_mode=getattr(config,'stage_cond_mode','adapter'),
-                    act_fn=getattr(config,'act_fn','silu'),drop_path_max=config.drop_path_max,writer_mode=config.writer_mode)
+                    act_fn=getattr(config,'act_fn','silu'),drop_path_max=config.drop_path_max,writer_mode=config.writer_mode,
+                    brush_dim=config.brush_dim,brush_dropout=config.brush_dropout,brush_noise=config.brush_noise,
+                    reference_dim=config.reference_dim,drop_writer=getattr(config,'drop_writer',.08),
+                    reference_injection=getattr(config,'reference_injection','add'),
+                    reference_dropout=getattr(config,'reference_dropout',0.))
     if initialize_tables:
         import numpy as np
         for name,embedding in [('callig',model.writer),('font',model.script)]:
@@ -181,7 +234,7 @@ def build(config,initialize_tables=False):
             if values.shape!=embedding.weight[:-1].shape:raise ValueError(f'{name} table shape mismatch')
             with torch.no_grad():embedding.weight[:-1].copy_(values)
     model.writer.weight.requires_grad_(not config.freeze_writer_table)
-    if config.writer_mode!='shared':
+    if config.writer_mode!='shared' and not config.reference_dim:
         for name,p in model.named_parameters():
             if name.startswith('writer_proj.'):p.requires_grad_(False)
     return model
@@ -216,6 +269,7 @@ def training_args(config,run):
     args.preload=True;args.preload_workers=8
     args.repa_need_image='never'
     args.sampler='uniform';args.epoch_steps=config.ckpt_every
+    args.pair_fraction=getattr(config,'pair_fraction',0.)
     args.eval_mode='inline';args.in_mem_eval=True
     args.eval_dir=str(run);args.results_dir=str(run)
     return args
@@ -251,6 +305,13 @@ def load(path,device='cpu',use_ema=True):
     key='ema' if use_ema else 'delta'
     weights={name.removeprefix('_orig_mod.'):value for name,value in ck[key].items()}
     model.load_state_dict(weights,strict=True);model.eval()
+    if config.reference_dim:
+        if config.reference_runtime=='group':
+            from .reference.group_runtime import MergedBank,bind_group_evaluation
+            bind_group_evaluation(model,config,MergedBank(config.reference_cache,config.reference_extra_cache) if config.reference_extra_cache else MergedBank(config.reference_cache))
+        else:
+            from .reference.runtime import bind_evaluation
+            bind_evaluation(model,config)
     return model,config,ck
 
 

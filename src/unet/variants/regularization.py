@@ -20,6 +20,15 @@ def optimizer_parameters(model,config):
     if config.writer_mode=='film':
         from ..curriculum.runtime import groups
         return groups(model,config)
+    cond_lr=getattr(config,'writer_cond_lr',0.)
+    if cond_lr and config.writer_mode=='shared':
+        cond_names=('writer.','writer_proj.','script.')
+        cond=[];back=[]
+        for n,p_ in model.named_parameters():
+            if not p_.requires_grad:continue
+            (cond if n.startswith(cond_names) else back).append(p_)
+        return [dict(params=back,lr=config.lr),
+                dict(params=cond,lr=cond_lr)]
     if not config.grouped_weight_decay:return model.parameters()
     embedding={id(module.weight) for module in model.modules() if isinstance(module,nn.Embedding)}
     decay=[];no_decay=[]

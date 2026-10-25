@@ -1,4 +1,9 @@
-"""FM + optional REPA objective. Legacy experiments are not dispatched here."""
+"""FM + optional REPA objective. Legacy experiments are not dispatched here.
+
+pair_fraction is deliberately allowed here: it only shapes batch composition
+(same-char cross-writer pairs via PairMixtureSampler); the objective stays
+plain FM with no pair-ranking auxiliary.
+"""
 import torch
 
 
@@ -8,7 +13,7 @@ class LatentStdObjective:
         # Fail at selection, not halfway through training or via silent fallback.
         unsupported = ('w_std_mid', 'w_latent_skel', 'w_style_rank', 'w_critic_writer',
                        'w_critic_away', 'w_deform_skel', 'style_anchor_weight',
-                       'w_style_ortho', 'pair_fraction', 'rank_gradient_ratio',
+                       'w_style_ortho', 'rank_gradient_ratio',
                        'crosschar_gradient_ratio', 'glyph_deform_prob',
                        'glyph_noise_scale', 'glyph_patch_drop', 'glyph_mask_prob',
                        'w_tv', 'w_fold', 'w_tv_out', 'w_tv_res', 'w_tv_stroke',

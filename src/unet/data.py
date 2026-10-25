@@ -13,7 +13,8 @@ def loader(config,args,logger=None,resume_start_step=0):
     maps={name:remap(getattr(config,f'{name}_remap_json')) for name in ('char','callig','font')}
     real={k:v for k,v in maps['callig'].items() if v!=config.num_writers}
     if set(real.values())!=set(range(config.num_writers)):raise ValueError('Writer mapping mismatch')
-    if config.writer_mode=='shared' and len(real)!=len(maps['callig']):raise ValueError('Legacy route cannot map generic replay to null')
+    if config.writer_mode=='shared' and len(real)!=len(maps['callig']) and not getattr(config,'null_writer_rows',False):
+        raise ValueError('Legacy route cannot map generic replay to null')
     if any(not 0<=v<=config.num_writers for v in maps['callig'].values()):raise ValueError('Invalid writer row')
     if set(maps['font'].values())!=set(range(config.num_scripts)):raise ValueError('Script mapping mismatch')
     if config.writer_mode=='film':
@@ -25,9 +26,21 @@ def loader(config,args,logger=None,resume_start_step=0):
     from src.train.data_setup import build_data
     result=build_data(args,rank=0,world_size=1,resume_start_step=resume_start_step,
                       std_soft_cond=True,char_remaps=maps,aux_dirs=[],logger=logger)
+    if config.reference_dim:
+        from .reference.data import reference_loader
+        if getattr(config,'reference_extra_cache',''):
+            from .reference.group_runtime import MergedBank
+            bank=MergedBank(config.reference_cache,config.reference_extra_cache)
+            return reference_loader(result,config,resume_start_step,bank=bank)
+        return reference_loader(result,config,resume_start_step)
     if config.generic_replay_fraction:
         from .curriculum.data import replay_loader
         return replay_loader(result,config,resume_start_step)
+    if config.brush_dim and config.writer_mode=='none':
+        import copy
+        from .curriculum.data import replay_loader
+        mixture=copy.copy(config);mixture.generic_replay_fraction=config.brush_generic_fraction
+        return replay_loader(result,mixture,resume_start_step)
     return result
 
 

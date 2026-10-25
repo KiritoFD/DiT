@@ -17,7 +17,9 @@ class LatentUNet(nn.Module):
                  decoder_res_blocks=None,skip_gate_scales=(),std_gate_scales=(),writer_film_rank=0,
                  writer_film_layers=(),writer_film_spec=None,decouple_writer_condition=False,
                  decoder_std_residual=False,decoder_std_scale=0.2,residual_cond_gate=False,
-                 stage_specific_cond=False,stage_cond_mode='adapter',act_fn='silu',drop_path_max=0.,writer_mode='shared'):
+                 stage_specific_cond=False,stage_cond_mode='adapter',act_fn='silu',drop_path_max=0.,writer_mode='shared',
+                 brush_dim=0,brush_dropout=.1,brush_noise=.075,reference_dim=0,
+                 reference_injection='add',reference_dropout=0.):
         super().__init__()
         if len(channels)!=3:raise ValueError('Expected three scales')
         if not isinstance(writer_film_rank,int) or writer_film_rank<0:
@@ -27,7 +29,23 @@ class LatentUNet(nn.Module):
         if stage_cond_mode not in ('adapter','independent'):raise ValueError(f'Invalid stage_cond_mode: {stage_cond_mode}')
         if act_fn not in ('silu','gelu'):raise ValueError(f'Invalid act_fn: {act_fn}')
         self.num_writers=num_writers;self.num_scripts=num_scripts
+        self.reference_dim=reference_dim
+        self.reference_injection=reference_injection
+        self.reference_dropout=reference_dropout
+        if reference_dim:
+            if reference_injection not in ('add','writer_slot'):
+                raise ValueError('reference_injection must be add or writer_slot')
+            if writer_mode not in ('none','shared') or brush_dim:
+                raise ValueError('Reference route requires writer_mode none/shared (writer_slot) or none, and no Brush condition')
+            from .reference.encoder import StyleHead
+            self.reference_head=StyleHead(style_dim=reference_dim)
+            if reference_injection=='writer_slot':
+                # Continuous style rides the same FiLM pathway the discrete-ID line validated.
+                self.reference_bridge=nn.Linear(reference_dim,32)
+            else:
+                self.reference_proj=nn.Linear(reference_dim,512)
         self.writer_mode=writer_mode
+        self.brush_dim=brush_dim;self.brush_dropout=brush_dropout;self.brush_noise=brush_noise
         self.num_res_blocks=num_res_blocks
         self.stage_specific_cond=stage_specific_cond
         self.stage_cond_mode=stage_cond_mode
@@ -81,6 +99,12 @@ class LatentUNet(nn.Module):
         self.output=nn.Sequential(norm(channels[0]),act_layer(),nn.Conv2d(channels[0],4,3,padding=1))
         nn.init.zeros_(self.output[-1].weight);nn.init.zeros_(self.output[-1].bias)
         self._configure_modulation(writer_film_rank,residual_cond_gate,writer_film_layers,writer_film_spec)
+        if brush_dim:
+            self.brush_mlp=nn.Sequential(nn.Linear(brush_dim,128),nn.SiLU(),nn.Linear(128,256))
+            self.register_buffer('brush_defaults',torch.zeros(num_writers+1,num_scripts+1,brush_dim))
+            for name,block in self.named_modules():
+                if isinstance(block,ResBlock) and name.startswith(('middle','decoder.')):
+                    block.brush_film=zero_linear(256,2*block.conv2.in_channels)
         blocks=[b for stage in self.encoder for b in stage.blocks]
         blocks += [self.middle1,self.middle2]
         blocks += [b for i in (2,1,0) for b in self.decoder[i].blocks]
@@ -137,13 +161,24 @@ class LatentUNet(nn.Module):
         return tuple(cond(tp(t_emb)+(0 if self.decouple_writer_condition else swp(writer))+sp(script)) for tp,swp,sp,cond in
                      zip(self.stage_time_proj,self.stage_writer_proj,self.stage_script_proj,self.stage_condition))
 
-    def forward(self,x,t,y_callig,y_char=None,g=None,y_script=None,y_callig_raw=None,y_pair=None,drop_path_scale=None):
+    def forward(self,x,t,y_callig,y_char=None,g=None,y_script=None,y_callig_raw=None,y_pair=None,drop_path_scale=None,
+                brush_attrs=None,brush_valid=None,reference_features=None,reference_mask=None):
         # y_char/raw/pair are accepted only for the shared sampler interface.
         # Character IDs are never embedded or used as an inference condition.
         if x.ndim!=4 or x.shape[1:]!=(4,32,32):raise ValueError('Expected latent [B,4,32,32]')
         if y_script is None:raise ValueError('Script condition required')
         if g is None:g=x.new_zeros((len(x),1,64,64))
         if g.shape!=(len(x),1,64,64):raise ValueError('Expected STD [B,1,64,64]')
+        brush=None
+        if self.brush_dim:
+            if brush_attrs is None:
+                ids=torch.full_like(y_script,self.num_writers) if self.writer_mode=='none' else y_callig
+                brush_attrs=self.brush_defaults[ids,y_script]
+            if brush_valid is None:brush_valid=torch.ones(len(x),device=x.device,dtype=torch.bool)
+            if self.training:
+                brush_attrs=brush_attrs+torch.randn_like(brush_attrs)*self.brush_noise
+                brush_valid=brush_valid&(torch.rand(len(x),device=x.device)>=self.brush_dropout)
+            brush=(self.brush_mlp(brush_attrs),brush_valid)
         if self.training:
             all_drop=torch.rand(len(x),device=x.device)<self.drop_all
             wd=all_drop|(torch.rand(len(x),device=x.device)<self.drop_writer)
@@ -155,7 +190,19 @@ class LatentUNet(nn.Module):
         writer_mask=(y_callig!=self.num_writers) if self.writer_mode=='film' else None
         script=self.script(y_script)
         t_emb=timestep_embedding(t)
+        style=None
+        if self.reference_dim:
+            if reference_features is None:raise ValueError('Reference model requires cross-character reference features')
+            style=self.reference_head.aggregate(reference_features,reference_mask)
+            if self.training and self.reference_dropout>0:
+                # Zeroed aggregate is the learned null style (bridge bias absorbs the null slot).
+                keep=torch.rand(len(x),device=x.device)>=self.reference_dropout
+                style=style*keep[:,None]
+            if self.reference_injection=='writer_slot':
+                writer=self.reference_bridge(style)
         conds=self._compute_stage_conditions(t_emb,writer,script)
+        if style is not None and self.reference_injection!='writer_slot':
+            conds=tuple(c+self.reference_proj(style) for c in conds)
 
         glyph=self.std_stem(g);h=self.input(x);skips=[]
         std_glyphs=[glyph]
@@ -167,19 +214,25 @@ class LatentUNet(nn.Module):
             enc_writer=writer if self.writer_mode=='film' else (None if self.decouple_writer_condition else writer)
             h=stage(h+projected,conds[i],enc_writer,drop_path_scale,writer_mask);skips.append(h)
             if i<2:h=self.down[i](h)
-        h=self.middle2(self.middle_attn(self.middle1(h,conds[2],writer,drop_path_scale,writer_mask)),conds[2],writer,drop_path_scale,writer_mask)
+        h=self.middle2(self.middle_attn(self.middle1(h,conds[2],writer,drop_path_scale,writer_mask,brush)),conds[2],writer,drop_path_scale,writer_mask,brush)
         for i in (2,1,0):
             skip=self._scaled(skips[i],self.skip_gates,i,self.inference_skip_scales)
-            h=self.decoder[i](torch.cat([h,skip],dim=1),conds[i],writer,drop_path_scale,writer_mask)
+            h=self.decoder[i](torch.cat([h,skip],dim=1),conds[i],writer,drop_path_scale,writer_mask,brush)
             if getattr(self,'decoder_std_residual',False) and i in (1,0):
                 h=h+self.decoder_std_scale*self.dec_std_proj[i](std_glyphs[i])
             if i:h=self.up[i-1](F.interpolate(h,scale_factor=2,mode='nearest'))
         return self.output(h)
 
-    def forward_with_cfg(self,x,t,y_callig,y_char=None,cfg_scale=1.,g=None,y_script=None,**unused):
+    def forward_with_cfg(self,x,t,y_callig,y_char=None,cfg_scale=1.,g=None,y_script=None,brush_attrs=None,brush_valid=None,
+                         reference_features=None,reference_mask=None,**unused):
         if self.training:raise RuntimeError('CFG sampling requires eval mode')
-        conditional=self(x,t,y_callig,y_char,g=g,y_script=y_script)
+        if self.brush_dim and brush_attrs is None:
+            ids=torch.full_like(y_script,self.num_writers) if self.writer_mode=='none' else y_callig
+            brush_attrs=self.brush_defaults[ids,y_script]
+        if self.reference_dim and cfg_scale!=1:raise ValueError('Reference CFG is not trained; use cfg_scale=1')
+        conditional=self(x,t,y_callig,y_char,g=g,y_script=y_script,brush_attrs=brush_attrs,brush_valid=brush_valid,
+                         reference_features=reference_features,reference_mask=reference_mask)
         if cfg_scale==1 or self.writer_mode=='none':return conditional
         unconditional=self(x,t,torch.full_like(y_callig,self.num_writers),
-                           g=g,y_script=y_script)
+                           g=g,y_script=y_script,brush_attrs=brush_attrs,brush_valid=brush_valid)
         return unconditional+float(cfg_scale)*(conditional-unconditional)

@@ -55,11 +55,11 @@ def parse():
     return config,a
 
 
-def loss_for(model,process,z,g,writer,script,objective):
+def loss_for(model,process,z,g,writer,script,objective,extra=None):
     if objective!='flow':raise ValueError('U-Net entry is FM only')
     t=process.sample_t(len(z),z.device)
     with torch.autocast(z.device.type,dtype=torch.bfloat16,enabled=z.is_cuda):
-        terms=process.training_losses(model,z,t,model_kwargs={'g':g,'y_callig':writer,'y_script':script})
+        terms=process.training_losses(model,z,t,model_kwargs={'g':g,'y_callig':writer,'y_script':script,**(extra or {})})
         loss=terms['loss'].mean()
     return loss,t
 
@@ -81,11 +81,16 @@ def benchmark(config,steps):
     z=torch.randn(b,4,32,32,device='cuda').to(memory_format=layout)
     g=torch.rand(b,1,64,64,device='cuda')
     w=torch.arange(b,device='cuda')%config.num_writers;s=w%config.num_scripts
+    extra=None
+    if config.reference_dim:
+        # Synthetic references: benchmark is a capacity probe, not training.
+        extra=dict(reference_features=torch.randn(b,config.reference_max_refs,768,device='cuda'),
+                   reference_mask=torch.ones(b,config.reference_max_refs,device='cuda',dtype=torch.bool))
     start=None
     for i in range(steps+3):
         if i==3:torch.cuda.synchronize();start=perf_counter();torch.cuda.reset_peak_memory_stats()
         opt.zero_grad(set_to_none=True)
-        loss,_=loss_for(forward,process,z,g,w,s,config.objective)
+        loss,_=loss_for(forward,process,z,g,w,s,config.objective,extra=extra)
         loss.backward();torch.nn.utils.clip_grad_norm_(model.parameters(),config.grad_clip,error_if_nonfinite=True)
         opt.step()
         if i%config.ema_interval==0:update_ema(ema,model,config.ema_decay**config.ema_interval)
@@ -134,7 +139,7 @@ def main():
     from src.train.manifest import write_source_manifest
     artifacts={k:getattr(config,k) for k in
         ('data_csv','eval_csv','vae_path','std_shape_cache','latent_shards_dir','std_soft_root',
-         'callig_remap_json','font_remap_json','char_remap_json','writer_table_file')}
+         'callig_remap_json','font_remap_json','char_remap_json','writer_table_file','brush_cache','reference_cache')}
     for name in ('callig','font'):
         artifacts[name+'_table']=str(Path(config.condition_tables_root)/f'{name}_table.npy')
     write_source_manifest(str(run),artifacts=artifacts)
@@ -143,7 +148,12 @@ def main():
     layout=torch.channels_last if config.memory_format=='channels_last' else torch.contiguous_format
     raw=build(config,initialize_tables=resume is None and warm is None).cuda().to(memory_format=layout)
     if config.initialize_from and resume is None:
-        from .curriculum.transfer import initialize
+        if config.reference_dim:
+            from .reference.transfer import initialize
+        elif config.writer_mode=='shared' and config.writer_film_rank==0 and not config.decouple_writer_condition:
+            from .transfer_shared import initialize
+        else:
+            from .curriculum.transfer import initialize
         transfer=initialize(raw,config)
         (run/'stage_transfer.json').write_text(json.dumps(transfer,indent=2))
         log.info('STAGE_TRANSFER new_clock=0 source_step=%d',transfer['source_step'])
@@ -209,6 +219,23 @@ def main():
         from .curriculum.runtime import Adaptation
         adaptation=Adaptation(raw,ema,config,log,start)
         transform=adaptation
+    if config.brush_dim:
+        from .brush.runtime import BrushTraining
+        transform=BrushTraining(raw,ema,config,transform)
+    reference=None
+    if config.reference_dim:
+        if config.reference_runtime=='group':
+            from .reference.group_runtime import StyleTraining,bind_group_evaluation
+            reference=StyleTraining(config,transform,top10_cache=config.reference_extra_cache)
+            transform=reference
+            bind_group_evaluation(raw,config,reference.bank)
+            bind_group_evaluation(ema,config,reference.bank)
+        else:
+            from .reference.runtime import ReferenceTraining,bind_evaluation
+            reference=ReferenceTraining(config,transform)
+            transform=reference
+            bind_evaluation(raw,config,reference.bank)
+            bind_evaluation(ema,config,reference.bank)
     from src.train.ema import update_ema
     update_ema(ema,raw,decay=1.)  # Validate/cache full pairing before any optimizer step.
     log.info('EMA paired=%d/%d parameters; start_step=%d',len(ema._ema_pairs[0]),len(list(raw.parameters())),config.ema_start_step)
@@ -231,7 +258,8 @@ def main():
         _inj_stats={},cond_mode='2cond',train_steps=start,resume_start_step=start,
         log_steps=0,running_loss=zero(),running_diff=zero(),running_repa=zero(),
         running_skel=zero(),running_std_mid=zero(),start_time=__import__('time').time(),
-        trainable_params_list=list(raw.parameters()),condition_transform=transform)
+        trainable_params_list=list(raw.parameters()),condition_transform=transform,
+        auxiliary_objective=reference.loss if reference else None)
     log.info('RUN=%s params=%d batch=%d max_steps=%d stop_at=%d shared=TrainState/training_loop',
         run,sum(p.numel() for p in raw.parameters()),config.batch,config.max_steps,limit)
     try:
