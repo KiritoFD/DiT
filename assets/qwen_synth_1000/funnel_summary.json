@@ -1,0 +1,50 @@
+{
+  "total_generated": 1000,
+  "pass_stage1_total": 390,
+  "pass_stage1_rate": 0.39,
+  "pass_stage2_verified_writer": 75,
+  "pass_stage2_rate": 0.075,
+  "degraded_to_null_writer": 315,
+  "degraded_rate": 0.315,
+  "discarded": 610,
+  "discarded_rate": 0.61,
+  "rejection_reasons": {
+    "frag_broken": 354,
+    "hollow_holes": 387,
+    "misaligned": 32
+  },
+  "per_writer_verified": {
+    "何绍基": 24,
+    "柳公权": 9,
+    "欧阳询": 10,
+    "米芾": 3,
+    "苏轼": 2,
+    "褚遂良": 10,
+    "赵孟頫": 14,
+    "颜真卿": 3
+  },
+  "per_writer_degraded": {
+    "何绍基": 25,
+    "文徵明": 38,
+    "柳公权": 25,
+    "欧阳询": 29,
+    "王羲之": 27,
+    "米芾": 36,
+    "苏轼": 37,
+    "褚遂良": 31,
+    "赵孟頫": 31,
+    "颜真卿": 36
+  },
+  "per_writer_discarded": {
+    "何绍基": 51,
+    "文徵明": 62,
+    "柳公权": 66,
+    "欧阳询": 61,
+    "王羲之": 73,
+    "米芾": 61,
+    "苏轼": 61,
+    "褚遂良": 59,
+    "赵孟頫": 55,
+    "颜真卿": 61
+  }
+}

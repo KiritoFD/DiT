@@ -1,0 +1,9002 @@
+[
+  {
+    "task_id": 0,
+    "calligrapher": "何绍基",
+    "script": "隶",
+    "character": "使",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0000_何绍基_隶_使_s20261026.png"
+  },
+  {
+    "task_id": 1,
+    "calligrapher": "何绍基",
+    "script": "隶",
+    "character": "使",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0001_何绍基_隶_使_s20261027.png"
+  },
+  {
+    "task_id": 2,
+    "calligrapher": "何绍基",
+    "script": "隶",
+    "character": "次",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0002_何绍基_隶_次_s20261026.png"
+  },
+  {
+    "task_id": 3,
+    "calligrapher": "何绍基",
+    "script": "隶",
+    "character": "次",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0003_何绍基_隶_次_s20261027.png"
+  },
+  {
+    "task_id": 4,
+    "calligrapher": "何绍基",
+    "script": "隶",
+    "character": "相",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0004_何绍基_隶_相_s20261026.png"
+  },
+  {
+    "task_id": 5,
+    "calligrapher": "何绍基",
+    "script": "隶",
+    "character": "相",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0005_何绍基_隶_相_s20261027.png"
+  },
+  {
+    "task_id": 6,
+    "calligrapher": "何绍基",
+    "script": "隶",
+    "character": "分",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0006_何绍基_隶_分_s20261026.png"
+  },
+  {
+    "task_id": 7,
+    "calligrapher": "何绍基",
+    "script": "隶",
+    "character": "分",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0007_何绍基_隶_分_s20261027.png"
+  },
+  {
+    "task_id": 8,
+    "calligrapher": "何绍基",
+    "script": "隶",
+    "character": "如",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0008_何绍基_隶_如_s20261026.png"
+  },
+  {
+    "task_id": 9,
+    "calligrapher": "何绍基",
+    "script": "隶",
+    "character": "如",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0009_何绍基_隶_如_s20261027.png"
+  },
+  {
+    "task_id": 10,
+    "calligrapher": "何绍基",
+    "script": "隶",
+    "character": "仁",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0010_何绍基_隶_仁_s20261026.png"
+  },
+  {
+    "task_id": 11,
+    "calligrapher": "何绍基",
+    "script": "隶",
+    "character": "仁",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0011_何绍基_隶_仁_s20261027.png"
+  },
+  {
+    "task_id": 12,
+    "calligrapher": "何绍基",
+    "script": "隶",
+    "character": "左",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0012_何绍基_隶_左_s20261026.png"
+  },
+  {
+    "task_id": 13,
+    "calligrapher": "何绍基",
+    "script": "隶",
+    "character": "左",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0013_何绍基_隶_左_s20261027.png"
+  },
+  {
+    "task_id": 14,
+    "calligrapher": "何绍基",
+    "script": "隶",
+    "character": "秋",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0014_何绍基_隶_秋_s20261026.png"
+  },
+  {
+    "task_id": 15,
+    "calligrapher": "何绍基",
+    "script": "隶",
+    "character": "秋",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0015_何绍基_隶_秋_s20261027.png"
+  },
+  {
+    "task_id": 16,
+    "calligrapher": "何绍基",
+    "script": "隶",
+    "character": "宇",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0016_何绍基_隶_宇_s20261026.png"
+  },
+  {
+    "task_id": 17,
+    "calligrapher": "何绍基",
+    "script": "隶",
+    "character": "宇",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0017_何绍基_隶_宇_s20261027.png"
+  },
+  {
+    "task_id": 18,
+    "calligrapher": "何绍基",
+    "script": "隶",
+    "character": "乃",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0018_何绍基_隶_乃_s20261026.png"
+  },
+  {
+    "task_id": 19,
+    "calligrapher": "何绍基",
+    "script": "隶",
+    "character": "乃",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0019_何绍基_隶_乃_s20261027.png"
+  },
+  {
+    "task_id": 20,
+    "calligrapher": "何绍基",
+    "script": "隶",
+    "character": "悲",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0020_何绍基_隶_悲_s20261026.png"
+  },
+  {
+    "task_id": 21,
+    "calligrapher": "何绍基",
+    "script": "隶",
+    "character": "悲",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0021_何绍基_隶_悲_s20261027.png"
+  },
+  {
+    "task_id": 22,
+    "calligrapher": "何绍基",
+    "script": "隶",
+    "character": "長",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0022_何绍基_隶_長_s20261026.png"
+  },
+  {
+    "task_id": 23,
+    "calligrapher": "何绍基",
+    "script": "隶",
+    "character": "長",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0023_何绍基_隶_長_s20261027.png"
+  },
+  {
+    "task_id": 24,
+    "calligrapher": "何绍基",
+    "script": "隶",
+    "character": "見",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0024_何绍基_隶_見_s20261026.png"
+  },
+  {
+    "task_id": 25,
+    "calligrapher": "何绍基",
+    "script": "隶",
+    "character": "見",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0025_何绍基_隶_見_s20261027.png"
+  },
+  {
+    "task_id": 26,
+    "calligrapher": "何绍基",
+    "script": "隶",
+    "character": "婦",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0026_何绍基_隶_婦_s20261026.png"
+  },
+  {
+    "task_id": 27,
+    "calligrapher": "何绍基",
+    "script": "隶",
+    "character": "婦",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0027_何绍基_隶_婦_s20261027.png"
+  },
+  {
+    "task_id": 28,
+    "calligrapher": "何绍基",
+    "script": "隶",
+    "character": "形",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0028_何绍基_隶_形_s20261026.png"
+  },
+  {
+    "task_id": 29,
+    "calligrapher": "何绍基",
+    "script": "隶",
+    "character": "形",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0029_何绍基_隶_形_s20261027.png"
+  },
+  {
+    "task_id": 30,
+    "calligrapher": "何绍基",
+    "script": "隶",
+    "character": "兮",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0030_何绍基_隶_兮_s20261026.png"
+  },
+  {
+    "task_id": 31,
+    "calligrapher": "何绍基",
+    "script": "隶",
+    "character": "兮",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0031_何绍基_隶_兮_s20261027.png"
+  },
+  {
+    "task_id": 32,
+    "calligrapher": "何绍基",
+    "script": "隶",
+    "character": "小",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0032_何绍基_隶_小_s20261026.png"
+  },
+  {
+    "task_id": 33,
+    "calligrapher": "何绍基",
+    "script": "隶",
+    "character": "小",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0033_何绍基_隶_小_s20261027.png"
+  },
+  {
+    "task_id": 34,
+    "calligrapher": "何绍基",
+    "script": "隶",
+    "character": "增",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0034_何绍基_隶_增_s20261026.png"
+  },
+  {
+    "task_id": 35,
+    "calligrapher": "何绍基",
+    "script": "隶",
+    "character": "增",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0035_何绍基_隶_增_s20261027.png"
+  },
+  {
+    "task_id": 36,
+    "calligrapher": "何绍基",
+    "script": "隶",
+    "character": "非",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0036_何绍基_隶_非_s20261026.png"
+  },
+  {
+    "task_id": 37,
+    "calligrapher": "何绍基",
+    "script": "隶",
+    "character": "非",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0037_何绍基_隶_非_s20261027.png"
+  },
+  {
+    "task_id": 38,
+    "calligrapher": "何绍基",
+    "script": "隶",
+    "character": "歲",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0038_何绍基_隶_歲_s20261026.png"
+  },
+  {
+    "task_id": 39,
+    "calligrapher": "何绍基",
+    "script": "隶",
+    "character": "歲",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0039_何绍基_隶_歲_s20261027.png"
+  },
+  {
+    "task_id": 40,
+    "calligrapher": "何绍基",
+    "script": "隶",
+    "character": "殊",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0040_何绍基_隶_殊_s20261026.png"
+  },
+  {
+    "task_id": 41,
+    "calligrapher": "何绍基",
+    "script": "隶",
+    "character": "殊",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0041_何绍基_隶_殊_s20261027.png"
+  },
+  {
+    "task_id": 42,
+    "calligrapher": "何绍基",
+    "script": "隶",
+    "character": "白",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0042_何绍基_隶_白_s20261026.png"
+  },
+  {
+    "task_id": 43,
+    "calligrapher": "何绍基",
+    "script": "隶",
+    "character": "白",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0043_何绍基_隶_白_s20261027.png"
+  },
+  {
+    "task_id": 44,
+    "calligrapher": "何绍基",
+    "script": "隶",
+    "character": "久",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0044_何绍基_隶_久_s20261026.png"
+  },
+  {
+    "task_id": 45,
+    "calligrapher": "何绍基",
+    "script": "隶",
+    "character": "久",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0045_何绍基_隶_久_s20261027.png"
+  },
+  {
+    "task_id": 46,
+    "calligrapher": "何绍基",
+    "script": "隶",
+    "character": "取",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0046_何绍基_隶_取_s20261026.png"
+  },
+  {
+    "task_id": 47,
+    "calligrapher": "何绍基",
+    "script": "隶",
+    "character": "取",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0047_何绍基_隶_取_s20261027.png"
+  },
+  {
+    "task_id": 48,
+    "calligrapher": "何绍基",
+    "script": "隶",
+    "character": "始",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0048_何绍基_隶_始_s20261026.png"
+  },
+  {
+    "task_id": 49,
+    "calligrapher": "何绍基",
+    "script": "隶",
+    "character": "始",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0049_何绍基_隶_始_s20261027.png"
+  },
+  {
+    "task_id": 50,
+    "calligrapher": "何绍基",
+    "script": "隶",
+    "character": "想",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0050_何绍基_隶_想_s20261026.png"
+  },
+  {
+    "task_id": 51,
+    "calligrapher": "何绍基",
+    "script": "隶",
+    "character": "想",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0051_何绍基_隶_想_s20261027.png"
+  },
+  {
+    "task_id": 52,
+    "calligrapher": "何绍基",
+    "script": "隶",
+    "character": "右",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0052_何绍基_隶_右_s20261026.png"
+  },
+  {
+    "task_id": 53,
+    "calligrapher": "何绍基",
+    "script": "隶",
+    "character": "右",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0053_何绍基_隶_右_s20261027.png"
+  },
+  {
+    "task_id": 54,
+    "calligrapher": "何绍基",
+    "script": "隶",
+    "character": "信",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0054_何绍基_隶_信_s20261026.png"
+  },
+  {
+    "task_id": 55,
+    "calligrapher": "何绍基",
+    "script": "隶",
+    "character": "信",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0055_何绍基_隶_信_s20261027.png"
+  },
+  {
+    "task_id": 56,
+    "calligrapher": "何绍基",
+    "script": "隶",
+    "character": "咸",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0056_何绍基_隶_咸_s20261026.png"
+  },
+  {
+    "task_id": 57,
+    "calligrapher": "何绍基",
+    "script": "隶",
+    "character": "咸",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0057_何绍基_隶_咸_s20261027.png"
+  },
+  {
+    "task_id": 58,
+    "calligrapher": "何绍基",
+    "script": "隶",
+    "character": "主",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0058_何绍基_隶_主_s20261026.png"
+  },
+  {
+    "task_id": 59,
+    "calligrapher": "何绍基",
+    "script": "隶",
+    "character": "主",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0059_何绍基_隶_主_s20261027.png"
+  },
+  {
+    "task_id": 60,
+    "calligrapher": "何绍基",
+    "script": "隶",
+    "character": "俯",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0060_何绍基_隶_俯_s20261026.png"
+  },
+  {
+    "task_id": 61,
+    "calligrapher": "何绍基",
+    "script": "隶",
+    "character": "俯",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0061_何绍基_隶_俯_s20261027.png"
+  },
+  {
+    "task_id": 62,
+    "calligrapher": "何绍基",
+    "script": "隶",
+    "character": "威",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0062_何绍基_隶_威_s20261026.png"
+  },
+  {
+    "task_id": 63,
+    "calligrapher": "何绍基",
+    "script": "隶",
+    "character": "威",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0063_何绍基_隶_威_s20261027.png"
+  },
+  {
+    "task_id": 64,
+    "calligrapher": "何绍基",
+    "script": "隶",
+    "character": "百",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0064_何绍基_隶_百_s20261026.png"
+  },
+  {
+    "task_id": 65,
+    "calligrapher": "何绍基",
+    "script": "隶",
+    "character": "百",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0065_何绍基_隶_百_s20261027.png"
+  },
+  {
+    "task_id": 66,
+    "calligrapher": "何绍基",
+    "script": "隶",
+    "character": "頓",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0066_何绍基_隶_頓_s20261026.png"
+  },
+  {
+    "task_id": 67,
+    "calligrapher": "何绍基",
+    "script": "隶",
+    "character": "頓",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0067_何绍基_隶_頓_s20261027.png"
+  },
+  {
+    "task_id": 68,
+    "calligrapher": "何绍基",
+    "script": "隶",
+    "character": "射",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0068_何绍基_隶_射_s20261026.png"
+  },
+  {
+    "task_id": 69,
+    "calligrapher": "何绍基",
+    "script": "隶",
+    "character": "射",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0069_何绍基_隶_射_s20261027.png"
+  },
+  {
+    "task_id": 70,
+    "calligrapher": "何绍基",
+    "script": "隶",
+    "character": "多",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0070_何绍基_隶_多_s20261026.png"
+  },
+  {
+    "task_id": 71,
+    "calligrapher": "何绍基",
+    "script": "隶",
+    "character": "多",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0071_何绍基_隶_多_s20261027.png"
+  },
+  {
+    "task_id": 72,
+    "calligrapher": "何绍基",
+    "script": "隶",
+    "character": "妙",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0072_何绍基_隶_妙_s20261026.png"
+  },
+  {
+    "task_id": 73,
+    "calligrapher": "何绍基",
+    "script": "隶",
+    "character": "妙",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0073_何绍基_隶_妙_s20261027.png"
+  },
+  {
+    "task_id": 74,
+    "calligrapher": "何绍基",
+    "script": "隶",
+    "character": "委",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0074_何绍基_隶_委_s20261026.png"
+  },
+  {
+    "task_id": 75,
+    "calligrapher": "何绍基",
+    "script": "隶",
+    "character": "委",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0075_何绍基_隶_委_s20261027.png"
+  },
+  {
+    "task_id": 76,
+    "calligrapher": "何绍基",
+    "script": "隶",
+    "character": "寄",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0076_何绍基_隶_寄_s20261026.png"
+  },
+  {
+    "task_id": 77,
+    "calligrapher": "何绍基",
+    "script": "隶",
+    "character": "寄",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0077_何绍基_隶_寄_s20261027.png"
+  },
+  {
+    "task_id": 78,
+    "calligrapher": "何绍基",
+    "script": "隶",
+    "character": "厥",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0078_何绍基_隶_厥_s20261026.png"
+  },
+  {
+    "task_id": 79,
+    "calligrapher": "何绍基",
+    "script": "隶",
+    "character": "厥",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0079_何绍基_隶_厥_s20261027.png"
+  },
+  {
+    "task_id": 80,
+    "calligrapher": "何绍基",
+    "script": "隶",
+    "character": "賢",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0080_何绍基_隶_賢_s20261026.png"
+  },
+  {
+    "task_id": 81,
+    "calligrapher": "何绍基",
+    "script": "隶",
+    "character": "賢",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0081_何绍基_隶_賢_s20261027.png"
+  },
+  {
+    "task_id": 82,
+    "calligrapher": "何绍基",
+    "script": "隶",
+    "character": "病",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0082_何绍基_隶_病_s20261026.png"
+  },
+  {
+    "task_id": 83,
+    "calligrapher": "何绍基",
+    "script": "隶",
+    "character": "病",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0083_何绍基_隶_病_s20261027.png"
+  },
+  {
+    "task_id": 84,
+    "calligrapher": "何绍基",
+    "script": "隶",
+    "character": "集",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0084_何绍基_隶_集_s20261026.png"
+  },
+  {
+    "task_id": 85,
+    "calligrapher": "何绍基",
+    "script": "隶",
+    "character": "集",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0085_何绍基_隶_集_s20261027.png"
+  },
+  {
+    "task_id": 86,
+    "calligrapher": "何绍基",
+    "script": "隶",
+    "character": "唐",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0086_何绍基_隶_唐_s20261026.png"
+  },
+  {
+    "task_id": 87,
+    "calligrapher": "何绍基",
+    "script": "隶",
+    "character": "唐",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0087_何绍基_隶_唐_s20261027.png"
+  },
+  {
+    "task_id": 88,
+    "calligrapher": "何绍基",
+    "script": "隶",
+    "character": "崇",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0088_何绍基_隶_崇_s20261026.png"
+  },
+  {
+    "task_id": 89,
+    "calligrapher": "何绍基",
+    "script": "隶",
+    "character": "崇",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0089_何绍基_隶_崇_s20261027.png"
+  },
+  {
+    "task_id": 90,
+    "calligrapher": "何绍基",
+    "script": "隶",
+    "character": "華",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0090_何绍基_隶_華_s20261026.png"
+  },
+  {
+    "task_id": 91,
+    "calligrapher": "何绍基",
+    "script": "隶",
+    "character": "華",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0091_何绍基_隶_華_s20261027.png"
+  },
+  {
+    "task_id": 92,
+    "calligrapher": "何绍基",
+    "script": "隶",
+    "character": "意",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0092_何绍基_隶_意_s20261026.png"
+  },
+  {
+    "task_id": 93,
+    "calligrapher": "何绍基",
+    "script": "隶",
+    "character": "意",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0093_何绍基_隶_意_s20261027.png"
+  },
+  {
+    "task_id": 94,
+    "calligrapher": "何绍基",
+    "script": "隶",
+    "character": "孝",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0094_何绍基_隶_孝_s20261026.png"
+  },
+  {
+    "task_id": 95,
+    "calligrapher": "何绍基",
+    "script": "隶",
+    "character": "孝",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0095_何绍基_隶_孝_s20261027.png"
+  },
+  {
+    "task_id": 96,
+    "calligrapher": "何绍基",
+    "script": "隶",
+    "character": "彼",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0096_何绍基_隶_彼_s20261026.png"
+  },
+  {
+    "task_id": 97,
+    "calligrapher": "何绍基",
+    "script": "隶",
+    "character": "彼",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0097_何绍基_隶_彼_s20261027.png"
+  },
+  {
+    "task_id": 98,
+    "calligrapher": "何绍基",
+    "script": "隶",
+    "character": "合",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0098_何绍基_隶_合_s20261026.png"
+  },
+  {
+    "task_id": 99,
+    "calligrapher": "何绍基",
+    "script": "隶",
+    "character": "合",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0099_何绍基_隶_合_s20261027.png"
+  },
+  {
+    "task_id": 100,
+    "calligrapher": "文徵明",
+    "script": "行",
+    "character": "可",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0100_文徵明_行_可_s20261026.png"
+  },
+  {
+    "task_id": 101,
+    "calligrapher": "文徵明",
+    "script": "行",
+    "character": "可",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0101_文徵明_行_可_s20261027.png"
+  },
+  {
+    "task_id": 102,
+    "calligrapher": "文徵明",
+    "script": "行",
+    "character": "能",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0102_文徵明_行_能_s20261026.png"
+  },
+  {
+    "task_id": 103,
+    "calligrapher": "文徵明",
+    "script": "行",
+    "character": "能",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0103_文徵明_行_能_s20261027.png"
+  },
+  {
+    "task_id": 104,
+    "calligrapher": "文徵明",
+    "script": "行",
+    "character": "天",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0104_文徵明_行_天_s20261026.png"
+  },
+  {
+    "task_id": 105,
+    "calligrapher": "文徵明",
+    "script": "行",
+    "character": "天",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0105_文徵明_行_天_s20261027.png"
+  },
+  {
+    "task_id": 106,
+    "calligrapher": "文徵明",
+    "script": "行",
+    "character": "所",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0106_文徵明_行_所_s20261026.png"
+  },
+  {
+    "task_id": 107,
+    "calligrapher": "文徵明",
+    "script": "行",
+    "character": "所",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0107_文徵明_行_所_s20261027.png"
+  },
+  {
+    "task_id": 108,
+    "calligrapher": "文徵明",
+    "script": "行",
+    "character": "日",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0108_文徵明_行_日_s20261026.png"
+  },
+  {
+    "task_id": 109,
+    "calligrapher": "文徵明",
+    "script": "行",
+    "character": "日",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0109_文徵明_行_日_s20261027.png"
+  },
+  {
+    "task_id": 110,
+    "calligrapher": "文徵明",
+    "script": "行",
+    "character": "使",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0110_文徵明_行_使_s20261026.png"
+  },
+  {
+    "task_id": 111,
+    "calligrapher": "文徵明",
+    "script": "行",
+    "character": "使",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0111_文徵明_行_使_s20261027.png"
+  },
+  {
+    "task_id": 112,
+    "calligrapher": "文徵明",
+    "script": "行",
+    "character": "復",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0112_文徵明_行_復_s20261026.png"
+  },
+  {
+    "task_id": 113,
+    "calligrapher": "文徵明",
+    "script": "行",
+    "character": "復",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0113_文徵明_行_復_s20261027.png"
+  },
+  {
+    "task_id": 114,
+    "calligrapher": "文徵明",
+    "script": "行",
+    "character": "次",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0114_文徵明_行_次_s20261026.png"
+  },
+  {
+    "task_id": 115,
+    "calligrapher": "文徵明",
+    "script": "行",
+    "character": "次",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0115_文徵明_行_次_s20261027.png"
+  },
+  {
+    "task_id": 116,
+    "calligrapher": "文徵明",
+    "script": "行",
+    "character": "相",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0116_文徵明_行_相_s20261026.png"
+  },
+  {
+    "task_id": 117,
+    "calligrapher": "文徵明",
+    "script": "行",
+    "character": "相",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0117_文徵明_行_相_s20261027.png"
+  },
+  {
+    "task_id": 118,
+    "calligrapher": "文徵明",
+    "script": "行",
+    "character": "足",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0118_文徵明_行_足_s20261026.png"
+  },
+  {
+    "task_id": 119,
+    "calligrapher": "文徵明",
+    "script": "行",
+    "character": "足",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0119_文徵明_行_足_s20261027.png"
+  },
+  {
+    "task_id": 120,
+    "calligrapher": "文徵明",
+    "script": "行",
+    "character": "和",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0120_文徵明_行_和_s20261026.png"
+  },
+  {
+    "task_id": 121,
+    "calligrapher": "文徵明",
+    "script": "行",
+    "character": "和",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0121_文徵明_行_和_s20261027.png"
+  },
+  {
+    "task_id": 122,
+    "calligrapher": "文徵明",
+    "script": "行",
+    "character": "世",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0122_文徵明_行_世_s20261026.png"
+  },
+  {
+    "task_id": 123,
+    "calligrapher": "文徵明",
+    "script": "行",
+    "character": "世",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0123_文徵明_行_世_s20261027.png"
+  },
+  {
+    "task_id": 124,
+    "calligrapher": "文徵明",
+    "script": "行",
+    "character": "雲",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0124_文徵明_行_雲_s20261026.png"
+  },
+  {
+    "task_id": 125,
+    "calligrapher": "文徵明",
+    "script": "行",
+    "character": "雲",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0125_文徵明_行_雲_s20261027.png"
+  },
+  {
+    "task_id": 126,
+    "calligrapher": "文徵明",
+    "script": "行",
+    "character": "秋",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0126_文徵明_行_秋_s20261026.png"
+  },
+  {
+    "task_id": 127,
+    "calligrapher": "文徵明",
+    "script": "行",
+    "character": "秋",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0127_文徵明_行_秋_s20261027.png"
+  },
+  {
+    "task_id": 128,
+    "calligrapher": "文徵明",
+    "script": "行",
+    "character": "流",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0128_文徵明_行_流_s20261026.png"
+  },
+  {
+    "task_id": 129,
+    "calligrapher": "文徵明",
+    "script": "行",
+    "character": "流",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0129_文徵明_行_流_s20261027.png"
+  },
+  {
+    "task_id": 130,
+    "calligrapher": "文徵明",
+    "script": "行",
+    "character": "乃",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0130_文徵明_行_乃_s20261026.png"
+  },
+  {
+    "task_id": 131,
+    "calligrapher": "文徵明",
+    "script": "行",
+    "character": "乃",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0131_文徵明_行_乃_s20261027.png"
+  },
+  {
+    "task_id": 132,
+    "calligrapher": "文徵明",
+    "script": "行",
+    "character": "悲",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0132_文徵明_行_悲_s20261026.png"
+  },
+  {
+    "task_id": 133,
+    "calligrapher": "文徵明",
+    "script": "行",
+    "character": "悲",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0133_文徵明_行_悲_s20261027.png"
+  },
+  {
+    "task_id": 134,
+    "calligrapher": "文徵明",
+    "script": "行",
+    "character": "無",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0134_文徵明_行_無_s20261026.png"
+  },
+  {
+    "task_id": 135,
+    "calligrapher": "文徵明",
+    "script": "行",
+    "character": "無",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0135_文徵明_行_無_s20261027.png"
+  },
+  {
+    "task_id": 136,
+    "calligrapher": "文徵明",
+    "script": "行",
+    "character": "長",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0136_文徵明_行_長_s20261026.png"
+  },
+  {
+    "task_id": 137,
+    "calligrapher": "文徵明",
+    "script": "行",
+    "character": "長",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0137_文徵明_行_長_s20261027.png"
+  },
+  {
+    "task_id": 138,
+    "calligrapher": "文徵明",
+    "script": "行",
+    "character": "軍",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0138_文徵明_行_軍_s20261026.png"
+  },
+  {
+    "task_id": 139,
+    "calligrapher": "文徵明",
+    "script": "行",
+    "character": "軍",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0139_文徵明_行_軍_s20261027.png"
+  },
+  {
+    "task_id": 140,
+    "calligrapher": "文徵明",
+    "script": "行",
+    "character": "女",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0140_文徵明_行_女_s20261026.png"
+  },
+  {
+    "task_id": 141,
+    "calligrapher": "文徵明",
+    "script": "行",
+    "character": "女",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0141_文徵明_行_女_s20261027.png"
+  },
+  {
+    "task_id": 142,
+    "calligrapher": "文徵明",
+    "script": "行",
+    "character": "即",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0142_文徵明_行_即_s20261026.png"
+  },
+  {
+    "task_id": 143,
+    "calligrapher": "文徵明",
+    "script": "行",
+    "character": "即",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0143_文徵明_行_即_s20261027.png"
+  },
+  {
+    "task_id": 144,
+    "calligrapher": "文徵明",
+    "script": "行",
+    "character": "夫",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0144_文徵明_行_夫_s20261026.png"
+  },
+  {
+    "task_id": 145,
+    "calligrapher": "文徵明",
+    "script": "行",
+    "character": "夫",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0145_文徵明_行_夫_s20261027.png"
+  },
+  {
+    "task_id": 146,
+    "calligrapher": "文徵明",
+    "script": "行",
+    "character": "此",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0146_文徵明_行_此_s20261026.png"
+  },
+  {
+    "task_id": 147,
+    "calligrapher": "文徵明",
+    "script": "行",
+    "character": "此",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0147_文徵明_行_此_s20261027.png"
+  },
+  {
+    "task_id": 148,
+    "calligrapher": "文徵明",
+    "script": "行",
+    "character": "命",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0148_文徵明_行_命_s20261026.png"
+  },
+  {
+    "task_id": 149,
+    "calligrapher": "文徵明",
+    "script": "行",
+    "character": "命",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0149_文徵明_行_命_s20261027.png"
+  },
+  {
+    "task_id": 150,
+    "calligrapher": "文徵明",
+    "script": "行",
+    "character": "令",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0150_文徵明_行_令_s20261026.png"
+  },
+  {
+    "task_id": 151,
+    "calligrapher": "文徵明",
+    "script": "行",
+    "character": "令",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0151_文徵明_行_令_s20261027.png"
+  },
+  {
+    "task_id": 152,
+    "calligrapher": "文徵明",
+    "script": "行",
+    "character": "息",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0152_文徵明_行_息_s20261026.png"
+  },
+  {
+    "task_id": 153,
+    "calligrapher": "文徵明",
+    "script": "行",
+    "character": "息",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0153_文徵明_行_息_s20261027.png"
+  },
+  {
+    "task_id": 154,
+    "calligrapher": "文徵明",
+    "script": "行",
+    "character": "成",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0154_文徵明_行_成_s20261026.png"
+  },
+  {
+    "task_id": 155,
+    "calligrapher": "文徵明",
+    "script": "行",
+    "character": "成",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0155_文徵明_行_成_s20261027.png"
+  },
+  {
+    "task_id": 156,
+    "calligrapher": "文徵明",
+    "script": "行",
+    "character": "殊",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0156_文徵明_行_殊_s20261026.png"
+  },
+  {
+    "task_id": 157,
+    "calligrapher": "文徵明",
+    "script": "行",
+    "character": "殊",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0157_文徵明_行_殊_s20261027.png"
+  },
+  {
+    "task_id": 158,
+    "calligrapher": "文徵明",
+    "script": "行",
+    "character": "周",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0158_文徵明_行_周_s20261026.png"
+  },
+  {
+    "task_id": 159,
+    "calligrapher": "文徵明",
+    "script": "行",
+    "character": "周",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0159_文徵明_行_周_s20261027.png"
+  },
+  {
+    "task_id": 160,
+    "calligrapher": "文徵明",
+    "script": "行",
+    "character": "善",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0160_文徵明_行_善_s20261026.png"
+  },
+  {
+    "task_id": 161,
+    "calligrapher": "文徵明",
+    "script": "行",
+    "character": "善",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0161_文徵明_行_善_s20261027.png"
+  },
+  {
+    "task_id": 162,
+    "calligrapher": "文徵明",
+    "script": "行",
+    "character": "或",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0162_文徵明_行_或_s20261026.png"
+  },
+  {
+    "task_id": 163,
+    "calligrapher": "文徵明",
+    "script": "行",
+    "character": "或",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0163_文徵明_行_或_s20261027.png"
+  },
+  {
+    "task_id": 164,
+    "calligrapher": "文徵明",
+    "script": "行",
+    "character": "哀",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0164_文徵明_行_哀_s20261026.png"
+  },
+  {
+    "task_id": 165,
+    "calligrapher": "文徵明",
+    "script": "行",
+    "character": "哀",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0165_文徵明_行_哀_s20261027.png"
+  },
+  {
+    "task_id": 166,
+    "calligrapher": "文徵明",
+    "script": "行",
+    "character": "慶",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0166_文徵明_行_慶_s20261026.png"
+  },
+  {
+    "task_id": 167,
+    "calligrapher": "文徵明",
+    "script": "行",
+    "character": "慶",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0167_文徵明_行_慶_s20261027.png"
+  },
+  {
+    "task_id": 168,
+    "calligrapher": "文徵明",
+    "script": "行",
+    "character": "平",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0168_文徵明_行_平_s20261026.png"
+  },
+  {
+    "task_id": 169,
+    "calligrapher": "文徵明",
+    "script": "行",
+    "character": "平",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0169_文徵明_行_平_s20261027.png"
+  },
+  {
+    "task_id": 170,
+    "calligrapher": "文徵明",
+    "script": "行",
+    "character": "想",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0170_文徵明_行_想_s20261026.png"
+  },
+  {
+    "task_id": 171,
+    "calligrapher": "文徵明",
+    "script": "行",
+    "character": "想",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0171_文徵明_行_想_s20261027.png"
+  },
+  {
+    "task_id": 172,
+    "calligrapher": "文徵明",
+    "script": "行",
+    "character": "右",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0172_文徵明_行_右_s20261026.png"
+  },
+  {
+    "task_id": 173,
+    "calligrapher": "文徵明",
+    "script": "行",
+    "character": "右",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0173_文徵明_行_右_s20261027.png"
+  },
+  {
+    "task_id": 174,
+    "calligrapher": "文徵明",
+    "script": "行",
+    "character": "觀",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0174_文徵明_行_觀_s20261026.png"
+  },
+  {
+    "task_id": 175,
+    "calligrapher": "文徵明",
+    "script": "行",
+    "character": "觀",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0175_文徵明_行_觀_s20261027.png"
+  },
+  {
+    "task_id": 176,
+    "calligrapher": "文徵明",
+    "script": "行",
+    "character": "信",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0176_文徵明_行_信_s20261026.png"
+  },
+  {
+    "task_id": 177,
+    "calligrapher": "文徵明",
+    "script": "行",
+    "character": "信",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0177_文徵明_行_信_s20261027.png"
+  },
+  {
+    "task_id": 178,
+    "calligrapher": "文徵明",
+    "script": "行",
+    "character": "尋",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0178_文徵明_行_尋_s20261026.png"
+  },
+  {
+    "task_id": 179,
+    "calligrapher": "文徵明",
+    "script": "行",
+    "character": "尋",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0179_文徵明_行_尋_s20261027.png"
+  },
+  {
+    "task_id": 180,
+    "calligrapher": "文徵明",
+    "script": "行",
+    "character": "威",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0180_文徵明_行_威_s20261026.png"
+  },
+  {
+    "task_id": 181,
+    "calligrapher": "文徵明",
+    "script": "行",
+    "character": "威",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0181_文徵明_行_威_s20261027.png"
+  },
+  {
+    "task_id": 182,
+    "calligrapher": "文徵明",
+    "script": "行",
+    "character": "察",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0182_文徵明_行_察_s20261026.png"
+  },
+  {
+    "task_id": 183,
+    "calligrapher": "文徵明",
+    "script": "行",
+    "character": "察",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0183_文徵明_行_察_s20261027.png"
+  },
+  {
+    "task_id": 184,
+    "calligrapher": "文徵明",
+    "script": "行",
+    "character": "士",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0184_文徵明_行_士_s20261026.png"
+  },
+  {
+    "task_id": 185,
+    "calligrapher": "文徵明",
+    "script": "行",
+    "character": "士",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0185_文徵明_行_士_s20261027.png"
+  },
+  {
+    "task_id": 186,
+    "calligrapher": "文徵明",
+    "script": "行",
+    "character": "刑",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0186_文徵明_行_刑_s20261026.png"
+  },
+  {
+    "task_id": 187,
+    "calligrapher": "文徵明",
+    "script": "行",
+    "character": "刑",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0187_文徵明_行_刑_s20261027.png"
+  },
+  {
+    "task_id": 188,
+    "calligrapher": "文徵明",
+    "script": "行",
+    "character": "動",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0188_文徵明_行_動_s20261026.png"
+  },
+  {
+    "task_id": 189,
+    "calligrapher": "文徵明",
+    "script": "行",
+    "character": "動",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0189_文徵明_行_動_s20261027.png"
+  },
+  {
+    "task_id": 190,
+    "calligrapher": "文徵明",
+    "script": "行",
+    "character": "頓",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0190_文徵明_行_頓_s20261026.png"
+  },
+  {
+    "task_id": 191,
+    "calligrapher": "文徵明",
+    "script": "行",
+    "character": "頓",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0191_文徵明_行_頓_s20261027.png"
+  },
+  {
+    "task_id": 192,
+    "calligrapher": "文徵明",
+    "script": "行",
+    "character": "妙",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0192_文徵明_行_妙_s20261026.png"
+  },
+  {
+    "task_id": 193,
+    "calligrapher": "文徵明",
+    "script": "行",
+    "character": "妙",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0193_文徵明_行_妙_s20261027.png"
+  },
+  {
+    "task_id": 194,
+    "calligrapher": "文徵明",
+    "script": "行",
+    "character": "賢",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0194_文徵明_行_賢_s20261026.png"
+  },
+  {
+    "task_id": 195,
+    "calligrapher": "文徵明",
+    "script": "行",
+    "character": "賢",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0195_文徵明_行_賢_s20261027.png"
+  },
+  {
+    "task_id": 196,
+    "calligrapher": "文徵明",
+    "script": "行",
+    "character": "向",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0196_文徵明_行_向_s20261026.png"
+  },
+  {
+    "task_id": 197,
+    "calligrapher": "文徵明",
+    "script": "行",
+    "character": "向",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0197_文徵明_行_向_s20261027.png"
+  },
+  {
+    "task_id": 198,
+    "calligrapher": "文徵明",
+    "script": "行",
+    "character": "病",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0198_文徵明_行_病_s20261026.png"
+  },
+  {
+    "task_id": 199,
+    "calligrapher": "文徵明",
+    "script": "行",
+    "character": "病",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0199_文徵明_行_病_s20261027.png"
+  },
+  {
+    "task_id": 200,
+    "calligrapher": "柳公权",
+    "script": "楷",
+    "character": "可",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0200_柳公权_楷_可_s20261026.png"
+  },
+  {
+    "task_id": 201,
+    "calligrapher": "柳公权",
+    "script": "楷",
+    "character": "可",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0201_柳公权_楷_可_s20261027.png"
+  },
+  {
+    "task_id": 202,
+    "calligrapher": "柳公权",
+    "script": "楷",
+    "character": "老",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0202_柳公权_楷_老_s20261026.png"
+  },
+  {
+    "task_id": 203,
+    "calligrapher": "柳公权",
+    "script": "楷",
+    "character": "老",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0203_柳公权_楷_老_s20261027.png"
+  },
+  {
+    "task_id": 204,
+    "calligrapher": "柳公权",
+    "script": "楷",
+    "character": "文",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0204_柳公权_楷_文_s20261026.png"
+  },
+  {
+    "task_id": 205,
+    "calligrapher": "柳公权",
+    "script": "楷",
+    "character": "文",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0205_柳公权_楷_文_s20261027.png"
+  },
+  {
+    "task_id": 206,
+    "calligrapher": "柳公权",
+    "script": "楷",
+    "character": "升",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0206_柳公权_楷_升_s20261026.png"
+  },
+  {
+    "task_id": 207,
+    "calligrapher": "柳公权",
+    "script": "楷",
+    "character": "升",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0207_柳公权_楷_升_s20261027.png"
+  },
+  {
+    "task_id": 208,
+    "calligrapher": "柳公权",
+    "script": "楷",
+    "character": "萬",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0208_柳公权_楷_萬_s20261026.png"
+  },
+  {
+    "task_id": 209,
+    "calligrapher": "柳公权",
+    "script": "楷",
+    "character": "萬",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0209_柳公权_楷_萬_s20261027.png"
+  },
+  {
+    "task_id": 210,
+    "calligrapher": "柳公权",
+    "script": "楷",
+    "character": "夷",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0210_柳公权_楷_夷_s20261026.png"
+  },
+  {
+    "task_id": 211,
+    "calligrapher": "柳公权",
+    "script": "楷",
+    "character": "夷",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0211_柳公权_楷_夷_s20261027.png"
+  },
+  {
+    "task_id": 212,
+    "calligrapher": "柳公权",
+    "script": "楷",
+    "character": "常",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0212_柳公权_楷_常_s20261026.png"
+  },
+  {
+    "task_id": 213,
+    "calligrapher": "柳公权",
+    "script": "楷",
+    "character": "常",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0213_柳公权_楷_常_s20261027.png"
+  },
+  {
+    "task_id": 214,
+    "calligrapher": "柳公权",
+    "script": "楷",
+    "character": "秋",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0214_柳公权_楷_秋_s20261026.png"
+  },
+  {
+    "task_id": 215,
+    "calligrapher": "柳公权",
+    "script": "楷",
+    "character": "秋",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0215_柳公权_楷_秋_s20261027.png"
+  },
+  {
+    "task_id": 216,
+    "calligrapher": "柳公权",
+    "script": "楷",
+    "character": "長",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0216_柳公权_楷_長_s20261026.png"
+  },
+  {
+    "task_id": 217,
+    "calligrapher": "柳公权",
+    "script": "楷",
+    "character": "長",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0217_柳公权_楷_長_s20261027.png"
+  },
+  {
+    "task_id": 218,
+    "calligrapher": "柳公权",
+    "script": "楷",
+    "character": "興",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0218_柳公权_楷_興_s20261026.png"
+  },
+  {
+    "task_id": 219,
+    "calligrapher": "柳公权",
+    "script": "楷",
+    "character": "興",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0219_柳公权_楷_興_s20261027.png"
+  },
+  {
+    "task_id": 220,
+    "calligrapher": "柳公权",
+    "script": "楷",
+    "character": "行",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0220_柳公权_楷_行_s20261026.png"
+  },
+  {
+    "task_id": 221,
+    "calligrapher": "柳公权",
+    "script": "楷",
+    "character": "行",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0221_柳公权_楷_行_s20261027.png"
+  },
+  {
+    "task_id": 222,
+    "calligrapher": "柳公权",
+    "script": "楷",
+    "character": "同",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0222_柳公权_楷_同_s20261026.png"
+  },
+  {
+    "task_id": 223,
+    "calligrapher": "柳公权",
+    "script": "楷",
+    "character": "同",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0223_柳公权_楷_同_s20261027.png"
+  },
+  {
+    "task_id": 224,
+    "calligrapher": "柳公权",
+    "script": "楷",
+    "character": "女",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0224_柳公权_楷_女_s20261026.png"
+  },
+  {
+    "task_id": 225,
+    "calligrapher": "柳公权",
+    "script": "楷",
+    "character": "女",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0225_柳公权_楷_女_s20261027.png"
+  },
+  {
+    "task_id": 226,
+    "calligrapher": "柳公权",
+    "script": "楷",
+    "character": "乾",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0226_柳公权_楷_乾_s20261026.png"
+  },
+  {
+    "task_id": 227,
+    "calligrapher": "柳公权",
+    "script": "楷",
+    "character": "乾",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0227_柳公权_楷_乾_s20261027.png"
+  },
+  {
+    "task_id": 228,
+    "calligrapher": "柳公权",
+    "script": "楷",
+    "character": "定",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0228_柳公权_楷_定_s20261026.png"
+  },
+  {
+    "task_id": 229,
+    "calligrapher": "柳公权",
+    "script": "楷",
+    "character": "定",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0229_柳公权_楷_定_s20261027.png"
+  },
+  {
+    "task_id": 230,
+    "calligrapher": "柳公权",
+    "script": "楷",
+    "character": "外",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0230_柳公权_楷_外_s20261026.png"
+  },
+  {
+    "task_id": 231,
+    "calligrapher": "柳公权",
+    "script": "楷",
+    "character": "外",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0231_柳公权_楷_外_s20261027.png"
+  },
+  {
+    "task_id": 232,
+    "calligrapher": "柳公权",
+    "script": "楷",
+    "character": "彭",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0232_柳公权_楷_彭_s20261026.png"
+  },
+  {
+    "task_id": 233,
+    "calligrapher": "柳公权",
+    "script": "楷",
+    "character": "彭",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0233_柳公权_楷_彭_s20261027.png"
+  },
+  {
+    "task_id": 234,
+    "calligrapher": "柳公权",
+    "script": "楷",
+    "character": "形",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0234_柳公权_楷_形_s20261026.png"
+  },
+  {
+    "task_id": 235,
+    "calligrapher": "柳公权",
+    "script": "楷",
+    "character": "形",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0235_柳公权_楷_形_s20261027.png"
+  },
+  {
+    "task_id": 236,
+    "calligrapher": "柳公权",
+    "script": "楷",
+    "character": "兮",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0236_柳公权_楷_兮_s20261026.png"
+  },
+  {
+    "task_id": 237,
+    "calligrapher": "柳公权",
+    "script": "楷",
+    "character": "兮",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0237_柳公权_楷_兮_s20261027.png"
+  },
+  {
+    "task_id": 238,
+    "calligrapher": "柳公权",
+    "script": "楷",
+    "character": "石",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0238_柳公权_楷_石_s20261026.png"
+  },
+  {
+    "task_id": 239,
+    "calligrapher": "柳公权",
+    "script": "楷",
+    "character": "石",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0239_柳公权_楷_石_s20261027.png"
+  },
+  {
+    "task_id": 240,
+    "calligrapher": "柳公权",
+    "script": "楷",
+    "character": "周",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0240_柳公权_楷_周_s20261026.png"
+  },
+  {
+    "task_id": 241,
+    "calligrapher": "柳公权",
+    "script": "楷",
+    "character": "周",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0241_柳公权_楷_周_s20261027.png"
+  },
+  {
+    "task_id": 242,
+    "calligrapher": "柳公权",
+    "script": "楷",
+    "character": "善",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0242_柳公权_楷_善_s20261026.png"
+  },
+  {
+    "task_id": 243,
+    "calligrapher": "柳公权",
+    "script": "楷",
+    "character": "善",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0243_柳公权_楷_善_s20261027.png"
+  },
+  {
+    "task_id": 244,
+    "calligrapher": "柳公权",
+    "script": "楷",
+    "character": "飛",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0244_柳公权_楷_飛_s20261026.png"
+  },
+  {
+    "task_id": 245,
+    "calligrapher": "柳公权",
+    "script": "楷",
+    "character": "飛",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0245_柳公权_楷_飛_s20261027.png"
+  },
+  {
+    "task_id": 246,
+    "calligrapher": "柳公权",
+    "script": "楷",
+    "character": "久",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0246_柳公权_楷_久_s20261026.png"
+  },
+  {
+    "task_id": 247,
+    "calligrapher": "柳公权",
+    "script": "楷",
+    "character": "久",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0247_柳公权_楷_久_s20261027.png"
+  },
+  {
+    "task_id": 248,
+    "calligrapher": "柳公权",
+    "script": "楷",
+    "character": "取",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0248_柳公权_楷_取_s20261026.png"
+  },
+  {
+    "task_id": 249,
+    "calligrapher": "柳公权",
+    "script": "楷",
+    "character": "取",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0249_柳公权_楷_取_s20261027.png"
+  },
+  {
+    "task_id": 250,
+    "calligrapher": "柳公权",
+    "script": "楷",
+    "character": "居",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0250_柳公权_楷_居_s20261026.png"
+  },
+  {
+    "task_id": 251,
+    "calligrapher": "柳公权",
+    "script": "楷",
+    "character": "居",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0251_柳公权_楷_居_s20261027.png"
+  },
+  {
+    "task_id": 252,
+    "calligrapher": "柳公权",
+    "script": "楷",
+    "character": "想",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0252_柳公权_楷_想_s20261026.png"
+  },
+  {
+    "task_id": 253,
+    "calligrapher": "柳公权",
+    "script": "楷",
+    "character": "想",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0253_柳公权_楷_想_s20261027.png"
+  },
+  {
+    "task_id": 254,
+    "calligrapher": "柳公权",
+    "script": "楷",
+    "character": "君",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0254_柳公权_楷_君_s20261026.png"
+  },
+  {
+    "task_id": 255,
+    "calligrapher": "柳公权",
+    "script": "楷",
+    "character": "君",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0255_柳公权_楷_君_s20261027.png"
+  },
+  {
+    "task_id": 256,
+    "calligrapher": "柳公权",
+    "script": "楷",
+    "character": "少",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0256_柳公权_楷_少_s20261026.png"
+  },
+  {
+    "task_id": 257,
+    "calligrapher": "柳公权",
+    "script": "楷",
+    "character": "少",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0257_柳公权_楷_少_s20261027.png"
+  },
+  {
+    "task_id": 258,
+    "calligrapher": "柳公权",
+    "script": "楷",
+    "character": "尋",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0258_柳公权_楷_尋_s20261026.png"
+  },
+  {
+    "task_id": 259,
+    "calligrapher": "柳公权",
+    "script": "楷",
+    "character": "尋",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0259_柳公权_楷_尋_s20261027.png"
+  },
+  {
+    "task_id": 260,
+    "calligrapher": "柳公权",
+    "script": "楷",
+    "character": "吾",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0260_柳公权_楷_吾_s20261026.png"
+  },
+  {
+    "task_id": 261,
+    "calligrapher": "柳公权",
+    "script": "楷",
+    "character": "吾",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0261_柳公权_楷_吾_s20261027.png"
+  },
+  {
+    "task_id": 262,
+    "calligrapher": "柳公权",
+    "script": "楷",
+    "character": "交",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0262_柳公权_楷_交_s20261026.png"
+  },
+  {
+    "task_id": 263,
+    "calligrapher": "柳公权",
+    "script": "楷",
+    "character": "交",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0263_柳公权_楷_交_s20261027.png"
+  },
+  {
+    "task_id": 264,
+    "calligrapher": "柳公权",
+    "script": "楷",
+    "character": "雨",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0264_柳公权_楷_雨_s20261026.png"
+  },
+  {
+    "task_id": 265,
+    "calligrapher": "柳公权",
+    "script": "楷",
+    "character": "雨",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0265_柳公权_楷_雨_s20261027.png"
+  },
+  {
+    "task_id": 266,
+    "calligrapher": "柳公权",
+    "script": "楷",
+    "character": "刑",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0266_柳公权_楷_刑_s20261026.png"
+  },
+  {
+    "task_id": 267,
+    "calligrapher": "柳公权",
+    "script": "楷",
+    "character": "刑",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0267_柳公权_楷_刑_s20261027.png"
+  },
+  {
+    "task_id": 268,
+    "calligrapher": "柳公权",
+    "script": "楷",
+    "character": "頓",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0268_柳公权_楷_頓_s20261026.png"
+  },
+  {
+    "task_id": 269,
+    "calligrapher": "柳公权",
+    "script": "楷",
+    "character": "頓",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0269_柳公权_楷_頓_s20261027.png"
+  },
+  {
+    "task_id": 270,
+    "calligrapher": "柳公权",
+    "script": "楷",
+    "character": "射",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0270_柳公权_楷_射_s20261026.png"
+  },
+  {
+    "task_id": 271,
+    "calligrapher": "柳公权",
+    "script": "楷",
+    "character": "射",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0271_柳公权_楷_射_s20261027.png"
+  },
+  {
+    "task_id": 272,
+    "calligrapher": "柳公权",
+    "script": "楷",
+    "character": "寄",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0272_柳公权_楷_寄_s20261026.png"
+  },
+  {
+    "task_id": 273,
+    "calligrapher": "柳公权",
+    "script": "楷",
+    "character": "寄",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0273_柳公权_楷_寄_s20261027.png"
+  },
+  {
+    "task_id": 274,
+    "calligrapher": "柳公权",
+    "script": "楷",
+    "character": "向",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0274_柳公权_楷_向_s20261026.png"
+  },
+  {
+    "task_id": 275,
+    "calligrapher": "柳公权",
+    "script": "楷",
+    "character": "向",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0275_柳公权_楷_向_s20261027.png"
+  },
+  {
+    "task_id": 276,
+    "calligrapher": "柳公权",
+    "script": "楷",
+    "character": "痛",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0276_柳公权_楷_痛_s20261026.png"
+  },
+  {
+    "task_id": 277,
+    "calligrapher": "柳公权",
+    "script": "楷",
+    "character": "痛",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0277_柳公权_楷_痛_s20261027.png"
+  },
+  {
+    "task_id": 278,
+    "calligrapher": "柳公权",
+    "script": "楷",
+    "character": "手",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0278_柳公权_楷_手_s20261026.png"
+  },
+  {
+    "task_id": 279,
+    "calligrapher": "柳公权",
+    "script": "楷",
+    "character": "手",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0279_柳公权_楷_手_s20261027.png"
+  },
+  {
+    "task_id": 280,
+    "calligrapher": "柳公权",
+    "script": "楷",
+    "character": "愛",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0280_柳公权_楷_愛_s20261026.png"
+  },
+  {
+    "task_id": 281,
+    "calligrapher": "柳公权",
+    "script": "楷",
+    "character": "愛",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0281_柳公权_楷_愛_s20261027.png"
+  },
+  {
+    "task_id": 282,
+    "calligrapher": "柳公权",
+    "script": "楷",
+    "character": "列",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0282_柳公权_楷_列_s20261026.png"
+  },
+  {
+    "task_id": 283,
+    "calligrapher": "柳公权",
+    "script": "楷",
+    "character": "列",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0283_柳公权_楷_列_s20261027.png"
+  },
+  {
+    "task_id": 284,
+    "calligrapher": "柳公权",
+    "script": "楷",
+    "character": "春",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0284_柳公权_楷_春_s20261026.png"
+  },
+  {
+    "task_id": 285,
+    "calligrapher": "柳公权",
+    "script": "楷",
+    "character": "春",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0285_柳公权_楷_春_s20261027.png"
+  },
+  {
+    "task_id": 286,
+    "calligrapher": "柳公权",
+    "script": "楷",
+    "character": "並",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0286_柳公权_楷_並_s20261026.png"
+  },
+  {
+    "task_id": 287,
+    "calligrapher": "柳公权",
+    "script": "楷",
+    "character": "並",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0287_柳公权_楷_並_s20261027.png"
+  },
+  {
+    "task_id": 288,
+    "calligrapher": "柳公权",
+    "script": "楷",
+    "character": "陽",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0288_柳公权_楷_陽_s20261026.png"
+  },
+  {
+    "task_id": 289,
+    "calligrapher": "柳公权",
+    "script": "楷",
+    "character": "陽",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0289_柳公权_楷_陽_s20261027.png"
+  },
+  {
+    "task_id": 290,
+    "calligrapher": "柳公权",
+    "script": "楷",
+    "character": "詩",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0290_柳公权_楷_詩_s20261026.png"
+  },
+  {
+    "task_id": 291,
+    "calligrapher": "柳公权",
+    "script": "楷",
+    "character": "詩",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0291_柳公权_楷_詩_s20261027.png"
+  },
+  {
+    "task_id": 292,
+    "calligrapher": "柳公权",
+    "script": "楷",
+    "character": "國",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0292_柳公权_楷_國_s20261026.png"
+  },
+  {
+    "task_id": 293,
+    "calligrapher": "柳公权",
+    "script": "楷",
+    "character": "國",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0293_柳公权_楷_國_s20261027.png"
+  },
+  {
+    "task_id": 294,
+    "calligrapher": "柳公权",
+    "script": "楷",
+    "character": "仕",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0294_柳公权_楷_仕_s20261026.png"
+  },
+  {
+    "task_id": 295,
+    "calligrapher": "柳公权",
+    "script": "楷",
+    "character": "仕",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0295_柳公权_楷_仕_s20261027.png"
+  },
+  {
+    "task_id": 296,
+    "calligrapher": "柳公权",
+    "script": "楷",
+    "character": "實",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0296_柳公权_楷_實_s20261026.png"
+  },
+  {
+    "task_id": 297,
+    "calligrapher": "柳公权",
+    "script": "楷",
+    "character": "實",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0297_柳公权_楷_實_s20261027.png"
+  },
+  {
+    "task_id": 298,
+    "calligrapher": "柳公权",
+    "script": "楷",
+    "character": "再",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0298_柳公权_楷_再_s20261026.png"
+  },
+  {
+    "task_id": 299,
+    "calligrapher": "柳公权",
+    "script": "楷",
+    "character": "再",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0299_柳公权_楷_再_s20261027.png"
+  },
+  {
+    "task_id": 300,
+    "calligrapher": "欧阳询",
+    "script": "楷",
+    "character": "世",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0300_欧阳询_楷_世_s20261026.png"
+  },
+  {
+    "task_id": 301,
+    "calligrapher": "欧阳询",
+    "script": "楷",
+    "character": "世",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0301_欧阳询_楷_世_s20261027.png"
+  },
+  {
+    "task_id": 302,
+    "calligrapher": "欧阳询",
+    "script": "楷",
+    "character": "州",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0302_欧阳询_楷_州_s20261026.png"
+  },
+  {
+    "task_id": 303,
+    "calligrapher": "欧阳询",
+    "script": "楷",
+    "character": "州",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0303_欧阳询_楷_州_s20261027.png"
+  },
+  {
+    "task_id": 304,
+    "calligrapher": "欧阳询",
+    "script": "楷",
+    "character": "下",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0304_欧阳询_楷_下_s20261026.png"
+  },
+  {
+    "task_id": 305,
+    "calligrapher": "欧阳询",
+    "script": "楷",
+    "character": "下",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0305_欧阳询_楷_下_s20261027.png"
+  },
+  {
+    "task_id": 306,
+    "calligrapher": "欧阳询",
+    "script": "楷",
+    "character": "久",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0306_欧阳询_楷_久_s20261026.png"
+  },
+  {
+    "task_id": 307,
+    "calligrapher": "欧阳询",
+    "script": "楷",
+    "character": "久",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0307_欧阳询_楷_久_s20261027.png"
+  },
+  {
+    "task_id": 308,
+    "calligrapher": "欧阳询",
+    "script": "楷",
+    "character": "頓",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0308_欧阳询_楷_頓_s20261026.png"
+  },
+  {
+    "task_id": 309,
+    "calligrapher": "欧阳询",
+    "script": "楷",
+    "character": "頓",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0309_欧阳询_楷_頓_s20261027.png"
+  },
+  {
+    "task_id": 310,
+    "calligrapher": "欧阳询",
+    "script": "楷",
+    "character": "異",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0310_欧阳询_楷_異_s20261026.png"
+  },
+  {
+    "task_id": 311,
+    "calligrapher": "欧阳询",
+    "script": "楷",
+    "character": "異",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0311_欧阳询_楷_異_s20261027.png"
+  },
+  {
+    "task_id": 312,
+    "calligrapher": "欧阳询",
+    "script": "楷",
+    "character": "病",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0312_欧阳询_楷_病_s20261026.png"
+  },
+  {
+    "task_id": 313,
+    "calligrapher": "欧阳询",
+    "script": "楷",
+    "character": "病",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0313_欧阳询_楷_病_s20261027.png"
+  },
+  {
+    "task_id": 314,
+    "calligrapher": "欧阳询",
+    "script": "楷",
+    "character": "集",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0314_欧阳询_楷_集_s20261026.png"
+  },
+  {
+    "task_id": 315,
+    "calligrapher": "欧阳询",
+    "script": "楷",
+    "character": "集",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0315_欧阳询_楷_集_s20261027.png"
+  },
+  {
+    "task_id": 316,
+    "calligrapher": "欧阳询",
+    "script": "楷",
+    "character": "親",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0316_欧阳询_楷_親_s20261026.png"
+  },
+  {
+    "task_id": 317,
+    "calligrapher": "欧阳询",
+    "script": "楷",
+    "character": "親",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0317_欧阳询_楷_親_s20261027.png"
+  },
+  {
+    "task_id": 318,
+    "calligrapher": "欧阳询",
+    "script": "楷",
+    "character": "舟",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0318_欧阳询_楷_舟_s20261026.png"
+  },
+  {
+    "task_id": 319,
+    "calligrapher": "欧阳询",
+    "script": "楷",
+    "character": "舟",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0319_欧阳询_楷_舟_s20261027.png"
+  },
+  {
+    "task_id": 320,
+    "calligrapher": "欧阳询",
+    "script": "楷",
+    "character": "列",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0320_欧阳询_楷_列_s20261026.png"
+  },
+  {
+    "task_id": 321,
+    "calligrapher": "欧阳询",
+    "script": "楷",
+    "character": "列",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0321_欧阳询_楷_列_s20261027.png"
+  },
+  {
+    "task_id": 322,
+    "calligrapher": "欧阳询",
+    "script": "楷",
+    "character": "春",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0322_欧阳询_楷_春_s20261026.png"
+  },
+  {
+    "task_id": 323,
+    "calligrapher": "欧阳询",
+    "script": "楷",
+    "character": "春",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0323_欧阳询_楷_春_s20261027.png"
+  },
+  {
+    "task_id": 324,
+    "calligrapher": "欧阳询",
+    "script": "楷",
+    "character": "詩",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0324_欧阳询_楷_詩_s20261026.png"
+  },
+  {
+    "task_id": 325,
+    "calligrapher": "欧阳询",
+    "script": "楷",
+    "character": "詩",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0325_欧阳询_楷_詩_s20261027.png"
+  },
+  {
+    "task_id": 326,
+    "calligrapher": "欧阳询",
+    "script": "楷",
+    "character": "坡",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0326_欧阳询_楷_坡_s20261026.png"
+  },
+  {
+    "task_id": 327,
+    "calligrapher": "欧阳询",
+    "script": "楷",
+    "character": "坡",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0327_欧阳询_楷_坡_s20261027.png"
+  },
+  {
+    "task_id": 328,
+    "calligrapher": "欧阳询",
+    "script": "楷",
+    "character": "具",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0328_欧阳询_楷_具_s20261026.png"
+  },
+  {
+    "task_id": 329,
+    "calligrapher": "欧阳询",
+    "script": "楷",
+    "character": "具",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0329_欧阳询_楷_具_s20261027.png"
+  },
+  {
+    "task_id": 330,
+    "calligrapher": "欧阳询",
+    "script": "楷",
+    "character": "勝",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0330_欧阳询_楷_勝_s20261026.png"
+  },
+  {
+    "task_id": 331,
+    "calligrapher": "欧阳询",
+    "script": "楷",
+    "character": "勝",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0331_欧阳询_楷_勝_s20261027.png"
+  },
+  {
+    "task_id": 332,
+    "calligrapher": "欧阳询",
+    "script": "楷",
+    "character": "喜",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0332_欧阳询_楷_喜_s20261026.png"
+  },
+  {
+    "task_id": 333,
+    "calligrapher": "欧阳询",
+    "script": "楷",
+    "character": "喜",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0333_欧阳询_楷_喜_s20261027.png"
+  },
+  {
+    "task_id": 334,
+    "calligrapher": "欧阳询",
+    "script": "楷",
+    "character": "李",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0334_欧阳询_楷_李_s20261026.png"
+  },
+  {
+    "task_id": 335,
+    "calligrapher": "欧阳询",
+    "script": "楷",
+    "character": "李",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0335_欧阳询_楷_李_s20261027.png"
+  },
+  {
+    "task_id": 336,
+    "calligrapher": "欧阳询",
+    "script": "楷",
+    "character": "間",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0336_欧阳询_楷_間_s20261026.png"
+  },
+  {
+    "task_id": 337,
+    "calligrapher": "欧阳询",
+    "script": "楷",
+    "character": "間",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0337_欧阳询_楷_間_s20261027.png"
+  },
+  {
+    "task_id": 338,
+    "calligrapher": "欧阳询",
+    "script": "楷",
+    "character": "竹",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0338_欧阳询_楷_竹_s20261026.png"
+  },
+  {
+    "task_id": 339,
+    "calligrapher": "欧阳询",
+    "script": "楷",
+    "character": "竹",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0339_欧阳询_楷_竹_s20261027.png"
+  },
+  {
+    "task_id": 340,
+    "calligrapher": "欧阳询",
+    "script": "楷",
+    "character": "修",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0340_欧阳询_楷_修_s20261026.png"
+  },
+  {
+    "task_id": 341,
+    "calligrapher": "欧阳询",
+    "script": "楷",
+    "character": "修",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0341_欧阳询_楷_修_s20261027.png"
+  },
+  {
+    "task_id": 342,
+    "calligrapher": "欧阳询",
+    "script": "楷",
+    "character": "慰",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0342_欧阳询_楷_慰_s20261026.png"
+  },
+  {
+    "task_id": 343,
+    "calligrapher": "欧阳询",
+    "script": "楷",
+    "character": "慰",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0343_欧阳询_楷_慰_s20261027.png"
+  },
+  {
+    "task_id": 344,
+    "calligrapher": "欧阳询",
+    "script": "楷",
+    "character": "露",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0344_欧阳询_楷_露_s20261026.png"
+  },
+  {
+    "task_id": 345,
+    "calligrapher": "欧阳询",
+    "script": "楷",
+    "character": "露",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0345_欧阳询_楷_露_s20261027.png"
+  },
+  {
+    "task_id": 346,
+    "calligrapher": "欧阳询",
+    "script": "楷",
+    "character": "雅",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0346_欧阳询_楷_雅_s20261026.png"
+  },
+  {
+    "task_id": 347,
+    "calligrapher": "欧阳询",
+    "script": "楷",
+    "character": "雅",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0347_欧阳询_楷_雅_s20261027.png"
+  },
+  {
+    "task_id": 348,
+    "calligrapher": "欧阳询",
+    "script": "楷",
+    "character": "良",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0348_欧阳询_楷_良_s20261026.png"
+  },
+  {
+    "task_id": 349,
+    "calligrapher": "欧阳询",
+    "script": "楷",
+    "character": "良",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0349_欧阳询_楷_良_s20261027.png"
+  },
+  {
+    "task_id": 350,
+    "calligrapher": "欧阳询",
+    "script": "楷",
+    "character": "團",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0350_欧阳询_楷_團_s20261026.png"
+  },
+  {
+    "task_id": 351,
+    "calligrapher": "欧阳询",
+    "script": "楷",
+    "character": "團",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0351_欧阳询_楷_團_s20261027.png"
+  },
+  {
+    "task_id": 352,
+    "calligrapher": "欧阳询",
+    "script": "楷",
+    "character": "脩",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0352_欧阳询_楷_脩_s20261026.png"
+  },
+  {
+    "task_id": 353,
+    "calligrapher": "欧阳询",
+    "script": "楷",
+    "character": "脩",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0353_欧阳询_楷_脩_s20261027.png"
+  },
+  {
+    "task_id": 354,
+    "calligrapher": "欧阳询",
+    "script": "楷",
+    "character": "希",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0354_欧阳询_楷_希_s20261026.png"
+  },
+  {
+    "task_id": 355,
+    "calligrapher": "欧阳询",
+    "script": "楷",
+    "character": "希",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0355_欧阳询_楷_希_s20261027.png"
+  },
+  {
+    "task_id": 356,
+    "calligrapher": "欧阳询",
+    "script": "楷",
+    "character": "孫",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0356_欧阳询_楷_孫_s20261026.png"
+  },
+  {
+    "task_id": 357,
+    "calligrapher": "欧阳询",
+    "script": "楷",
+    "character": "孫",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0357_欧阳询_楷_孫_s20261027.png"
+  },
+  {
+    "task_id": 358,
+    "calligrapher": "欧阳询",
+    "script": "楷",
+    "character": "塵",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0358_欧阳询_楷_塵_s20261026.png"
+  },
+  {
+    "task_id": 359,
+    "calligrapher": "欧阳询",
+    "script": "楷",
+    "character": "塵",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0359_欧阳询_楷_塵_s20261027.png"
+  },
+  {
+    "task_id": 360,
+    "calligrapher": "欧阳询",
+    "script": "楷",
+    "character": "崔",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0360_欧阳询_楷_崔_s20261026.png"
+  },
+  {
+    "task_id": 361,
+    "calligrapher": "欧阳询",
+    "script": "楷",
+    "character": "崔",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0361_欧阳询_楷_崔_s20261027.png"
+  },
+  {
+    "task_id": 362,
+    "calligrapher": "欧阳询",
+    "script": "楷",
+    "character": "朝",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0362_欧阳询_楷_朝_s20261026.png"
+  },
+  {
+    "task_id": 363,
+    "calligrapher": "欧阳询",
+    "script": "楷",
+    "character": "朝",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0363_欧阳询_楷_朝_s20261027.png"
+  },
+  {
+    "task_id": 364,
+    "calligrapher": "欧阳询",
+    "script": "楷",
+    "character": "姓",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0364_欧阳询_楷_姓_s20261026.png"
+  },
+  {
+    "task_id": 365,
+    "calligrapher": "欧阳询",
+    "script": "楷",
+    "character": "姓",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0365_欧阳询_楷_姓_s20261027.png"
+  },
+  {
+    "task_id": 366,
+    "calligrapher": "欧阳询",
+    "script": "楷",
+    "character": "賦",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0366_欧阳询_楷_賦_s20261026.png"
+  },
+  {
+    "task_id": 367,
+    "calligrapher": "欧阳询",
+    "script": "楷",
+    "character": "賦",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0367_欧阳询_楷_賦_s20261027.png"
+  },
+  {
+    "task_id": 368,
+    "calligrapher": "欧阳询",
+    "script": "楷",
+    "character": "隨",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0368_欧阳询_楷_隨_s20261026.png"
+  },
+  {
+    "task_id": 369,
+    "calligrapher": "欧阳询",
+    "script": "楷",
+    "character": "隨",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0369_欧阳询_楷_隨_s20261027.png"
+  },
+  {
+    "task_id": 370,
+    "calligrapher": "欧阳询",
+    "script": "楷",
+    "character": "欲",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0370_欧阳询_楷_欲_s20261026.png"
+  },
+  {
+    "task_id": 371,
+    "calligrapher": "欧阳询",
+    "script": "楷",
+    "character": "欲",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0371_欧阳询_楷_欲_s20261027.png"
+  },
+  {
+    "task_id": 372,
+    "calligrapher": "欧阳询",
+    "script": "楷",
+    "character": "斷",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0372_欧阳询_楷_斷_s20261026.png"
+  },
+  {
+    "task_id": 373,
+    "calligrapher": "欧阳询",
+    "script": "楷",
+    "character": "斷",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0373_欧阳询_楷_斷_s20261027.png"
+  },
+  {
+    "task_id": 374,
+    "calligrapher": "欧阳询",
+    "script": "楷",
+    "character": "兒",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0374_欧阳询_楷_兒_s20261026.png"
+  },
+  {
+    "task_id": 375,
+    "calligrapher": "欧阳询",
+    "script": "楷",
+    "character": "兒",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0375_欧阳询_楷_兒_s20261027.png"
+  },
+  {
+    "task_id": 376,
+    "calligrapher": "欧阳询",
+    "script": "楷",
+    "character": "還",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0376_欧阳询_楷_還_s20261026.png"
+  },
+  {
+    "task_id": 377,
+    "calligrapher": "欧阳询",
+    "script": "楷",
+    "character": "還",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0377_欧阳询_楷_還_s20261027.png"
+  },
+  {
+    "task_id": 378,
+    "calligrapher": "欧阳询",
+    "script": "楷",
+    "character": "變",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0378_欧阳询_楷_變_s20261026.png"
+  },
+  {
+    "task_id": 379,
+    "calligrapher": "欧阳询",
+    "script": "楷",
+    "character": "變",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0379_欧阳询_楷_變_s20261027.png"
+  },
+  {
+    "task_id": 380,
+    "calligrapher": "欧阳询",
+    "script": "楷",
+    "character": "解",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0380_欧阳询_楷_解_s20261026.png"
+  },
+  {
+    "task_id": 381,
+    "calligrapher": "欧阳询",
+    "script": "楷",
+    "character": "解",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0381_欧阳询_楷_解_s20261027.png"
+  },
+  {
+    "task_id": 382,
+    "calligrapher": "欧阳询",
+    "script": "楷",
+    "character": "抱",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0382_欧阳询_楷_抱_s20261026.png"
+  },
+  {
+    "task_id": 383,
+    "calligrapher": "欧阳询",
+    "script": "楷",
+    "character": "抱",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0383_欧阳询_楷_抱_s20261027.png"
+  },
+  {
+    "task_id": 384,
+    "calligrapher": "欧阳询",
+    "script": "楷",
+    "character": "愚",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0384_欧阳询_楷_愚_s20261026.png"
+  },
+  {
+    "task_id": 385,
+    "calligrapher": "欧阳询",
+    "script": "楷",
+    "character": "愚",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0385_欧阳询_楷_愚_s20261027.png"
+  },
+  {
+    "task_id": 386,
+    "calligrapher": "欧阳询",
+    "script": "楷",
+    "character": "句",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0386_欧阳询_楷_句_s20261026.png"
+  },
+  {
+    "task_id": 387,
+    "calligrapher": "欧阳询",
+    "script": "楷",
+    "character": "句",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0387_欧阳询_楷_句_s20261027.png"
+  },
+  {
+    "task_id": 388,
+    "calligrapher": "欧阳询",
+    "script": "楷",
+    "character": "都",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0388_欧阳询_楷_都_s20261026.png"
+  },
+  {
+    "task_id": 389,
+    "calligrapher": "欧阳询",
+    "script": "楷",
+    "character": "都",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0389_欧阳询_楷_都_s20261027.png"
+  },
+  {
+    "task_id": 390,
+    "calligrapher": "欧阳询",
+    "script": "楷",
+    "character": "領",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0390_欧阳询_楷_領_s20261026.png"
+  },
+  {
+    "task_id": 391,
+    "calligrapher": "欧阳询",
+    "script": "楷",
+    "character": "領",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0391_欧阳询_楷_領_s20261027.png"
+  },
+  {
+    "task_id": 392,
+    "calligrapher": "欧阳询",
+    "script": "楷",
+    "character": "座",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0392_欧阳询_楷_座_s20261026.png"
+  },
+  {
+    "task_id": 393,
+    "calligrapher": "欧阳询",
+    "script": "楷",
+    "character": "座",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0393_欧阳询_楷_座_s20261027.png"
+  },
+  {
+    "task_id": 394,
+    "calligrapher": "欧阳询",
+    "script": "楷",
+    "character": "奏",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0394_欧阳询_楷_奏_s20261026.png"
+  },
+  {
+    "task_id": 395,
+    "calligrapher": "欧阳询",
+    "script": "楷",
+    "character": "奏",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0395_欧阳询_楷_奏_s20261027.png"
+  },
+  {
+    "task_id": 396,
+    "calligrapher": "欧阳询",
+    "script": "楷",
+    "character": "倉",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0396_欧阳询_楷_倉_s20261026.png"
+  },
+  {
+    "task_id": 397,
+    "calligrapher": "欧阳询",
+    "script": "楷",
+    "character": "倉",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0397_欧阳询_楷_倉_s20261027.png"
+  },
+  {
+    "task_id": 398,
+    "calligrapher": "欧阳询",
+    "script": "楷",
+    "character": "慨",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0398_欧阳询_楷_慨_s20261026.png"
+  },
+  {
+    "task_id": 399,
+    "calligrapher": "欧阳询",
+    "script": "楷",
+    "character": "慨",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0399_欧阳询_楷_慨_s20261027.png"
+  },
+  {
+    "task_id": 400,
+    "calligrapher": "王羲之",
+    "script": "行",
+    "character": "定",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0400_王羲之_行_定_s20261026.png"
+  },
+  {
+    "task_id": 401,
+    "calligrapher": "王羲之",
+    "script": "行",
+    "character": "定",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0401_王羲之_行_定_s20261027.png"
+  },
+  {
+    "task_id": 402,
+    "calligrapher": "王羲之",
+    "script": "行",
+    "character": "俗",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0402_王羲之_行_俗_s20261026.png"
+  },
+  {
+    "task_id": 403,
+    "calligrapher": "王羲之",
+    "script": "行",
+    "character": "俗",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0403_王羲之_行_俗_s20261027.png"
+  },
+  {
+    "task_id": 404,
+    "calligrapher": "王羲之",
+    "script": "行",
+    "character": "唐",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0404_王羲之_行_唐_s20261026.png"
+  },
+  {
+    "task_id": 405,
+    "calligrapher": "王羲之",
+    "script": "行",
+    "character": "唐",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0405_王羲之_行_唐_s20261027.png"
+  },
+  {
+    "task_id": 406,
+    "calligrapher": "王羲之",
+    "script": "行",
+    "character": "舟",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0406_王羲之_行_舟_s20261026.png"
+  },
+  {
+    "task_id": 407,
+    "calligrapher": "王羲之",
+    "script": "行",
+    "character": "舟",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0407_王羲之_行_舟_s20261027.png"
+  },
+  {
+    "task_id": 408,
+    "calligrapher": "王羲之",
+    "script": "行",
+    "character": "彼",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0408_王羲之_行_彼_s20261026.png"
+  },
+  {
+    "task_id": 409,
+    "calligrapher": "王羲之",
+    "script": "行",
+    "character": "彼",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0409_王羲之_行_彼_s20261027.png"
+  },
+  {
+    "task_id": 410,
+    "calligrapher": "王羲之",
+    "script": "行",
+    "character": "詩",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0410_王羲之_行_詩_s20261026.png"
+  },
+  {
+    "task_id": 411,
+    "calligrapher": "王羲之",
+    "script": "行",
+    "character": "詩",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0411_王羲之_行_詩_s20261027.png"
+  },
+  {
+    "task_id": 412,
+    "calligrapher": "王羲之",
+    "script": "行",
+    "character": "坡",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0412_王羲之_行_坡_s20261026.png"
+  },
+  {
+    "task_id": 413,
+    "calligrapher": "王羲之",
+    "script": "行",
+    "character": "坡",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0413_王羲之_行_坡_s20261027.png"
+  },
+  {
+    "task_id": 414,
+    "calligrapher": "王羲之",
+    "script": "行",
+    "character": "宣",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0414_王羲之_行_宣_s20261026.png"
+  },
+  {
+    "task_id": 415,
+    "calligrapher": "王羲之",
+    "script": "行",
+    "character": "宣",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0415_王羲之_行_宣_s20261027.png"
+  },
+  {
+    "task_id": 416,
+    "calligrapher": "王羲之",
+    "script": "行",
+    "character": "弗",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0416_王羲之_行_弗_s20261026.png"
+  },
+  {
+    "task_id": 417,
+    "calligrapher": "王羲之",
+    "script": "行",
+    "character": "弗",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0417_王羲之_行_弗_s20261027.png"
+  },
+  {
+    "task_id": 418,
+    "calligrapher": "王羲之",
+    "script": "行",
+    "character": "傾",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0418_王羲之_行_傾_s20261026.png"
+  },
+  {
+    "task_id": 419,
+    "calligrapher": "王羲之",
+    "script": "行",
+    "character": "傾",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0419_王羲之_行_傾_s20261027.png"
+  },
+  {
+    "task_id": 420,
+    "calligrapher": "王羲之",
+    "script": "行",
+    "character": "美",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0420_王羲之_行_美_s20261026.png"
+  },
+  {
+    "task_id": 421,
+    "calligrapher": "王羲之",
+    "script": "行",
+    "character": "美",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0421_王羲之_行_美_s20261027.png"
+  },
+  {
+    "task_id": 422,
+    "calligrapher": "王羲之",
+    "script": "行",
+    "character": "李",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0422_王羲之_行_李_s20261026.png"
+  },
+  {
+    "task_id": 423,
+    "calligrapher": "王羲之",
+    "script": "行",
+    "character": "李",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0423_王羲之_行_李_s20261027.png"
+  },
+  {
+    "task_id": 424,
+    "calligrapher": "王羲之",
+    "script": "行",
+    "character": "求",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0424_王羲之_行_求_s20261026.png"
+  },
+  {
+    "task_id": 425,
+    "calligrapher": "王羲之",
+    "script": "行",
+    "character": "求",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0425_王羲之_行_求_s20261027.png"
+  },
+  {
+    "task_id": 426,
+    "calligrapher": "王羲之",
+    "script": "行",
+    "character": "間",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0426_王羲之_行_間_s20261026.png"
+  },
+  {
+    "task_id": 427,
+    "calligrapher": "王羲之",
+    "script": "行",
+    "character": "間",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0427_王羲之_行_間_s20261027.png"
+  },
+  {
+    "task_id": 428,
+    "calligrapher": "王羲之",
+    "script": "行",
+    "character": "余",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0428_王羲之_行_余_s20261026.png"
+  },
+  {
+    "task_id": 429,
+    "calligrapher": "王羲之",
+    "script": "行",
+    "character": "余",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0429_王羲之_行_余_s20261027.png"
+  },
+  {
+    "task_id": 430,
+    "calligrapher": "王羲之",
+    "script": "行",
+    "character": "兵",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0430_王羲之_行_兵_s20261026.png"
+  },
+  {
+    "task_id": 431,
+    "calligrapher": "王羲之",
+    "script": "行",
+    "character": "兵",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0431_王羲之_行_兵_s20261027.png"
+  },
+  {
+    "task_id": 432,
+    "calligrapher": "王羲之",
+    "script": "行",
+    "character": "星",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0432_王羲之_行_星_s20261026.png"
+  },
+  {
+    "task_id": 433,
+    "calligrapher": "王羲之",
+    "script": "行",
+    "character": "星",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0433_王羲之_行_星_s20261027.png"
+  },
+  {
+    "task_id": 434,
+    "calligrapher": "王羲之",
+    "script": "行",
+    "character": "吏",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0434_王羲之_行_吏_s20261026.png"
+  },
+  {
+    "task_id": 435,
+    "calligrapher": "王羲之",
+    "script": "行",
+    "character": "吏",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0435_王羲之_行_吏_s20261027.png"
+  },
+  {
+    "task_id": 436,
+    "calligrapher": "王羲之",
+    "script": "行",
+    "character": "代",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0436_王羲之_行_代_s20261026.png"
+  },
+  {
+    "task_id": 437,
+    "calligrapher": "王羲之",
+    "script": "行",
+    "character": "代",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0437_王羲之_行_代_s20261027.png"
+  },
+  {
+    "task_id": 438,
+    "calligrapher": "王羲之",
+    "script": "行",
+    "character": "寶",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0438_王羲之_行_寶_s20261026.png"
+  },
+  {
+    "task_id": 439,
+    "calligrapher": "王羲之",
+    "script": "行",
+    "character": "寶",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0439_王羲之_行_寶_s20261027.png"
+  },
+  {
+    "task_id": 440,
+    "calligrapher": "王羲之",
+    "script": "行",
+    "character": "武",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0440_王羲之_行_武_s20261026.png"
+  },
+  {
+    "task_id": 441,
+    "calligrapher": "王羲之",
+    "script": "行",
+    "character": "武",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0441_王羲之_行_武_s20261027.png"
+  },
+  {
+    "task_id": 442,
+    "calligrapher": "王羲之",
+    "script": "行",
+    "character": "場",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0442_王羲之_行_場_s20261026.png"
+  },
+  {
+    "task_id": 443,
+    "calligrapher": "王羲之",
+    "script": "行",
+    "character": "場",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0443_王羲之_行_場_s20261027.png"
+  },
+  {
+    "task_id": 444,
+    "calligrapher": "王羲之",
+    "script": "行",
+    "character": "團",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0444_王羲之_行_團_s20261026.png"
+  },
+  {
+    "task_id": 445,
+    "calligrapher": "王羲之",
+    "script": "行",
+    "character": "團",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0445_王羲之_行_團_s20261027.png"
+  },
+  {
+    "task_id": 446,
+    "calligrapher": "王羲之",
+    "script": "行",
+    "character": "身",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0446_王羲之_行_身_s20261026.png"
+  },
+  {
+    "task_id": 447,
+    "calligrapher": "王羲之",
+    "script": "行",
+    "character": "身",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0447_王羲之_行_身_s20261027.png"
+  },
+  {
+    "task_id": 448,
+    "calligrapher": "王羲之",
+    "script": "行",
+    "character": "執",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0448_王羲之_行_執_s20261026.png"
+  },
+  {
+    "task_id": 449,
+    "calligrapher": "王羲之",
+    "script": "行",
+    "character": "執",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0449_王羲之_行_執_s20261027.png"
+  },
+  {
+    "task_id": 450,
+    "calligrapher": "王羲之",
+    "script": "行",
+    "character": "夙",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0450_王羲之_行_夙_s20261026.png"
+  },
+  {
+    "task_id": 451,
+    "calligrapher": "王羲之",
+    "script": "行",
+    "character": "夙",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0451_王羲之_行_夙_s20261027.png"
+  },
+  {
+    "task_id": 452,
+    "calligrapher": "王羲之",
+    "script": "行",
+    "character": "史",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0452_王羲之_行_史_s20261026.png"
+  },
+  {
+    "task_id": 453,
+    "calligrapher": "王羲之",
+    "script": "行",
+    "character": "史",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0453_王羲之_行_史_s20261027.png"
+  },
+  {
+    "task_id": 454,
+    "calligrapher": "王羲之",
+    "script": "行",
+    "character": "題",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0454_王羲之_行_題_s20261026.png"
+  },
+  {
+    "task_id": 455,
+    "calligrapher": "王羲之",
+    "script": "行",
+    "character": "題",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0455_王羲之_行_題_s20261027.png"
+  },
+  {
+    "task_id": 456,
+    "calligrapher": "王羲之",
+    "script": "行",
+    "character": "賦",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0456_王羲之_行_賦_s20261026.png"
+  },
+  {
+    "task_id": 457,
+    "calligrapher": "王羲之",
+    "script": "行",
+    "character": "賦",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0457_王羲之_行_賦_s20261027.png"
+  },
+  {
+    "task_id": 458,
+    "calligrapher": "王羲之",
+    "script": "行",
+    "character": "郎",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0458_王羲之_行_郎_s20261026.png"
+  },
+  {
+    "task_id": 459,
+    "calligrapher": "王羲之",
+    "script": "行",
+    "character": "郎",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0459_王羲之_行_郎_s20261027.png"
+  },
+  {
+    "task_id": 460,
+    "calligrapher": "王羲之",
+    "script": "行",
+    "character": "歌",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0460_王羲之_行_歌_s20261026.png"
+  },
+  {
+    "task_id": 461,
+    "calligrapher": "王羲之",
+    "script": "行",
+    "character": "歌",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0461_王羲之_行_歌_s20261027.png"
+  },
+  {
+    "task_id": 462,
+    "calligrapher": "王羲之",
+    "script": "行",
+    "character": "馬",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0462_王羲之_行_馬_s20261026.png"
+  },
+  {
+    "task_id": 463,
+    "calligrapher": "王羲之",
+    "script": "行",
+    "character": "馬",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0463_王羲之_行_馬_s20261027.png"
+  },
+  {
+    "task_id": 464,
+    "calligrapher": "王羲之",
+    "script": "行",
+    "character": "藏",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0464_王羲之_行_藏_s20261026.png"
+  },
+  {
+    "task_id": 465,
+    "calligrapher": "王羲之",
+    "script": "行",
+    "character": "藏",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0465_王羲之_行_藏_s20261027.png"
+  },
+  {
+    "task_id": 466,
+    "calligrapher": "王羲之",
+    "script": "行",
+    "character": "嶽",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0466_王羲之_行_嶽_s20261026.png"
+  },
+  {
+    "task_id": 467,
+    "calligrapher": "王羲之",
+    "script": "行",
+    "character": "嶽",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0467_王羲之_行_嶽_s20261027.png"
+  },
+  {
+    "task_id": 468,
+    "calligrapher": "王羲之",
+    "script": "行",
+    "character": "弱",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0468_王羲之_行_弱_s20261026.png"
+  },
+  {
+    "task_id": 469,
+    "calligrapher": "王羲之",
+    "script": "行",
+    "character": "弱",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0469_王羲之_行_弱_s20261027.png"
+  },
+  {
+    "task_id": 470,
+    "calligrapher": "王羲之",
+    "script": "行",
+    "character": "溪",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0470_王羲之_行_溪_s20261026.png"
+  },
+  {
+    "task_id": 471,
+    "calligrapher": "王羲之",
+    "script": "行",
+    "character": "溪",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0471_王羲之_行_溪_s20261027.png"
+  },
+  {
+    "task_id": 472,
+    "calligrapher": "王羲之",
+    "script": "行",
+    "character": "懸",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0472_王羲之_行_懸_s20261026.png"
+  },
+  {
+    "task_id": 473,
+    "calligrapher": "王羲之",
+    "script": "行",
+    "character": "懸",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0473_王羲之_行_懸_s20261027.png"
+  },
+  {
+    "task_id": 474,
+    "calligrapher": "王羲之",
+    "script": "行",
+    "character": "乘",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0474_王羲之_行_乘_s20261026.png"
+  },
+  {
+    "task_id": 475,
+    "calligrapher": "王羲之",
+    "script": "行",
+    "character": "乘",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0475_王羲之_行_乘_s20261027.png"
+  },
+  {
+    "task_id": 476,
+    "calligrapher": "王羲之",
+    "script": "行",
+    "character": "影",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0476_王羲之_行_影_s20261026.png"
+  },
+  {
+    "task_id": 477,
+    "calligrapher": "王羲之",
+    "script": "行",
+    "character": "影",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0477_王羲之_行_影_s20261027.png"
+  },
+  {
+    "task_id": 478,
+    "calligrapher": "王羲之",
+    "script": "行",
+    "character": "嶺",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0478_王羲之_行_嶺_s20261026.png"
+  },
+  {
+    "task_id": 479,
+    "calligrapher": "王羲之",
+    "script": "行",
+    "character": "嶺",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0479_王羲之_行_嶺_s20261027.png"
+  },
+  {
+    "task_id": 480,
+    "calligrapher": "王羲之",
+    "script": "行",
+    "character": "商",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0480_王羲之_行_商_s20261026.png"
+  },
+  {
+    "task_id": 481,
+    "calligrapher": "王羲之",
+    "script": "行",
+    "character": "商",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0481_王羲之_行_商_s20261027.png"
+  },
+  {
+    "task_id": 482,
+    "calligrapher": "王羲之",
+    "script": "行",
+    "character": "姿",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0482_王羲之_行_姿_s20261026.png"
+  },
+  {
+    "task_id": 483,
+    "calligrapher": "王羲之",
+    "script": "行",
+    "character": "姿",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0483_王羲之_行_姿_s20261027.png"
+  },
+  {
+    "task_id": 484,
+    "calligrapher": "王羲之",
+    "script": "行",
+    "character": "垣",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0484_王羲之_行_垣_s20261026.png"
+  },
+  {
+    "task_id": 485,
+    "calligrapher": "王羲之",
+    "script": "行",
+    "character": "垣",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0485_王羲之_行_垣_s20261027.png"
+  },
+  {
+    "task_id": 486,
+    "calligrapher": "王羲之",
+    "script": "行",
+    "character": "聞",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0486_王羲之_行_聞_s20261026.png"
+  },
+  {
+    "task_id": 487,
+    "calligrapher": "王羲之",
+    "script": "行",
+    "character": "聞",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0487_王羲之_行_聞_s20261027.png"
+  },
+  {
+    "task_id": 488,
+    "calligrapher": "王羲之",
+    "script": "行",
+    "character": "焉",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0488_王羲之_行_焉_s20261026.png"
+  },
+  {
+    "task_id": 489,
+    "calligrapher": "王羲之",
+    "script": "行",
+    "character": "焉",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0489_王羲之_行_焉_s20261027.png"
+  },
+  {
+    "task_id": 490,
+    "calligrapher": "王羲之",
+    "script": "行",
+    "character": "龍",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0490_王羲之_行_龍_s20261026.png"
+  },
+  {
+    "task_id": 491,
+    "calligrapher": "王羲之",
+    "script": "行",
+    "character": "龍",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0491_王羲之_行_龍_s20261027.png"
+  },
+  {
+    "task_id": 492,
+    "calligrapher": "王羲之",
+    "script": "行",
+    "character": "壁",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0492_王羲之_行_壁_s20261026.png"
+  },
+  {
+    "task_id": 493,
+    "calligrapher": "王羲之",
+    "script": "行",
+    "character": "壁",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0493_王羲之_行_壁_s20261027.png"
+  },
+  {
+    "task_id": 494,
+    "calligrapher": "王羲之",
+    "script": "行",
+    "character": "江",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0494_王羲之_行_江_s20261026.png"
+  },
+  {
+    "task_id": 495,
+    "calligrapher": "王羲之",
+    "script": "行",
+    "character": "江",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0495_王羲之_行_江_s20261027.png"
+  },
+  {
+    "task_id": 496,
+    "calligrapher": "王羲之",
+    "script": "行",
+    "character": "屢",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0496_王羲之_行_屢_s20261026.png"
+  },
+  {
+    "task_id": 497,
+    "calligrapher": "王羲之",
+    "script": "行",
+    "character": "屢",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0497_王羲之_行_屢_s20261027.png"
+  },
+  {
+    "task_id": 498,
+    "calligrapher": "王羲之",
+    "script": "行",
+    "character": "帶",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0498_王羲之_行_帶_s20261026.png"
+  },
+  {
+    "task_id": 499,
+    "calligrapher": "王羲之",
+    "script": "行",
+    "character": "帶",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0499_王羲之_行_帶_s20261027.png"
+  },
+  {
+    "task_id": 500,
+    "calligrapher": "米芾",
+    "script": "行",
+    "character": "可",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0500_米芾_行_可_s20261026.png"
+  },
+  {
+    "task_id": 501,
+    "calligrapher": "米芾",
+    "script": "行",
+    "character": "可",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0501_米芾_行_可_s20261027.png"
+  },
+  {
+    "task_id": 502,
+    "calligrapher": "米芾",
+    "script": "行",
+    "character": "日",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0502_米芾_行_日_s20261026.png"
+  },
+  {
+    "task_id": 503,
+    "calligrapher": "米芾",
+    "script": "行",
+    "character": "日",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0503_米芾_行_日_s20261027.png"
+  },
+  {
+    "task_id": 504,
+    "calligrapher": "米芾",
+    "script": "行",
+    "character": "師",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0504_米芾_行_師_s20261026.png"
+  },
+  {
+    "task_id": 505,
+    "calligrapher": "米芾",
+    "script": "行",
+    "character": "師",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0505_米芾_行_師_s20261027.png"
+  },
+  {
+    "task_id": 506,
+    "calligrapher": "米芾",
+    "script": "行",
+    "character": "分",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0506_米芾_行_分_s20261026.png"
+  },
+  {
+    "task_id": 507,
+    "calligrapher": "米芾",
+    "script": "行",
+    "character": "分",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0507_米芾_行_分_s20261027.png"
+  },
+  {
+    "task_id": 508,
+    "calligrapher": "米芾",
+    "script": "行",
+    "character": "足",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0508_米芾_行_足_s20261026.png"
+  },
+  {
+    "task_id": 509,
+    "calligrapher": "米芾",
+    "script": "行",
+    "character": "足",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0509_米芾_行_足_s20261027.png"
+  },
+  {
+    "task_id": 510,
+    "calligrapher": "米芾",
+    "script": "行",
+    "character": "如",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0510_米芾_行_如_s20261026.png"
+  },
+  {
+    "task_id": 511,
+    "calligrapher": "米芾",
+    "script": "行",
+    "character": "如",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0511_米芾_行_如_s20261027.png"
+  },
+  {
+    "task_id": 512,
+    "calligrapher": "米芾",
+    "script": "行",
+    "character": "己",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0512_米芾_行_己_s20261026.png"
+  },
+  {
+    "task_id": 513,
+    "calligrapher": "米芾",
+    "script": "行",
+    "character": "己",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0513_米芾_行_己_s20261027.png"
+  },
+  {
+    "task_id": 514,
+    "calligrapher": "米芾",
+    "script": "行",
+    "character": "散",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0514_米芾_行_散_s20261026.png"
+  },
+  {
+    "task_id": 515,
+    "calligrapher": "米芾",
+    "script": "行",
+    "character": "散",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0515_米芾_行_散_s20261027.png"
+  },
+  {
+    "task_id": 516,
+    "calligrapher": "米芾",
+    "script": "行",
+    "character": "倫",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0516_米芾_行_倫_s20261026.png"
+  },
+  {
+    "task_id": 517,
+    "calligrapher": "米芾",
+    "script": "行",
+    "character": "倫",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0517_米芾_行_倫_s20261027.png"
+  },
+  {
+    "task_id": 518,
+    "calligrapher": "米芾",
+    "script": "行",
+    "character": "乾",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0518_米芾_行_乾_s20261026.png"
+  },
+  {
+    "task_id": 519,
+    "calligrapher": "米芾",
+    "script": "行",
+    "character": "乾",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0519_米芾_行_乾_s20261027.png"
+  },
+  {
+    "task_id": 520,
+    "calligrapher": "米芾",
+    "script": "行",
+    "character": "功",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0520_米芾_行_功_s20261026.png"
+  },
+  {
+    "task_id": 521,
+    "calligrapher": "米芾",
+    "script": "行",
+    "character": "功",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0521_米芾_行_功_s20261027.png"
+  },
+  {
+    "task_id": 522,
+    "calligrapher": "米芾",
+    "script": "行",
+    "character": "外",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0522_米芾_行_外_s20261026.png"
+  },
+  {
+    "task_id": 523,
+    "calligrapher": "米芾",
+    "script": "行",
+    "character": "外",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0523_米芾_行_外_s20261027.png"
+  },
+  {
+    "task_id": 524,
+    "calligrapher": "米芾",
+    "script": "行",
+    "character": "增",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0524_米芾_行_增_s20261026.png"
+  },
+  {
+    "task_id": 525,
+    "calligrapher": "米芾",
+    "script": "行",
+    "character": "增",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0525_米芾_行_增_s20261027.png"
+  },
+  {
+    "task_id": 526,
+    "calligrapher": "米芾",
+    "script": "行",
+    "character": "於",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0526_米芾_行_於_s20261026.png"
+  },
+  {
+    "task_id": 527,
+    "calligrapher": "米芾",
+    "script": "行",
+    "character": "於",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0527_米芾_行_於_s20261027.png"
+  },
+  {
+    "task_id": 528,
+    "calligrapher": "米芾",
+    "script": "行",
+    "character": "周",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0528_米芾_行_周_s20261026.png"
+  },
+  {
+    "task_id": 529,
+    "calligrapher": "米芾",
+    "script": "行",
+    "character": "周",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0529_米芾_行_周_s20261027.png"
+  },
+  {
+    "task_id": 530,
+    "calligrapher": "米芾",
+    "script": "行",
+    "character": "皆",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0530_米芾_行_皆_s20261026.png"
+  },
+  {
+    "task_id": 531,
+    "calligrapher": "米芾",
+    "script": "行",
+    "character": "皆",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0531_米芾_行_皆_s20261027.png"
+  },
+  {
+    "task_id": 532,
+    "calligrapher": "米芾",
+    "script": "行",
+    "character": "哉",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0532_米芾_行_哉_s20261026.png"
+  },
+  {
+    "task_id": 533,
+    "calligrapher": "米芾",
+    "script": "行",
+    "character": "哉",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0533_米芾_行_哉_s20261027.png"
+  },
+  {
+    "task_id": 534,
+    "calligrapher": "米芾",
+    "script": "行",
+    "character": "少",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0534_米芾_行_少_s20261026.png"
+  },
+  {
+    "task_id": 535,
+    "calligrapher": "米芾",
+    "script": "行",
+    "character": "少",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0535_米芾_行_少_s20261027.png"
+  },
+  {
+    "task_id": 536,
+    "calligrapher": "米芾",
+    "script": "行",
+    "character": "益",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0536_米芾_行_益_s20261026.png"
+  },
+  {
+    "task_id": 537,
+    "calligrapher": "米芾",
+    "script": "行",
+    "character": "益",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0537_米芾_行_益_s20261027.png"
+  },
+  {
+    "task_id": 538,
+    "calligrapher": "米芾",
+    "script": "行",
+    "character": "俯",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0538_米芾_行_俯_s20261026.png"
+  },
+  {
+    "task_id": 539,
+    "calligrapher": "米芾",
+    "script": "行",
+    "character": "俯",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0539_米芾_行_俯_s20261027.png"
+  },
+  {
+    "task_id": 540,
+    "calligrapher": "米芾",
+    "script": "行",
+    "character": "臨",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0540_米芾_行_臨_s20261026.png"
+  },
+  {
+    "task_id": 541,
+    "calligrapher": "米芾",
+    "script": "行",
+    "character": "臨",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0541_米芾_行_臨_s20261027.png"
+  },
+  {
+    "task_id": 542,
+    "calligrapher": "米芾",
+    "script": "行",
+    "character": "士",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0542_米芾_行_士_s20261026.png"
+  },
+  {
+    "task_id": 543,
+    "calligrapher": "米芾",
+    "script": "行",
+    "character": "士",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0543_米芾_行_士_s20261027.png"
+  },
+  {
+    "task_id": 544,
+    "calligrapher": "米芾",
+    "script": "行",
+    "character": "動",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0544_米芾_行_動_s20261026.png"
+  },
+  {
+    "task_id": 545,
+    "calligrapher": "米芾",
+    "script": "行",
+    "character": "動",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0545_米芾_行_動_s20261027.png"
+  },
+  {
+    "task_id": 546,
+    "calligrapher": "米芾",
+    "script": "行",
+    "character": "像",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0546_米芾_行_像_s20261026.png"
+  },
+  {
+    "task_id": 547,
+    "calligrapher": "米芾",
+    "script": "行",
+    "character": "像",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0547_米芾_行_像_s20261027.png"
+  },
+  {
+    "task_id": 548,
+    "calligrapher": "米芾",
+    "script": "行",
+    "character": "委",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0548_米芾_行_委_s20261026.png"
+  },
+  {
+    "task_id": 549,
+    "calligrapher": "米芾",
+    "script": "行",
+    "character": "委",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0549_米芾_行_委_s20261027.png"
+  },
+  {
+    "task_id": 550,
+    "calligrapher": "米芾",
+    "script": "行",
+    "character": "痛",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0550_米芾_行_痛_s20261026.png"
+  },
+  {
+    "task_id": 551,
+    "calligrapher": "米芾",
+    "script": "行",
+    "character": "痛",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0551_米芾_行_痛_s20261027.png"
+  },
+  {
+    "task_id": 552,
+    "calligrapher": "米芾",
+    "script": "行",
+    "character": "應",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0552_米芾_行_應_s20261026.png"
+  },
+  {
+    "task_id": 553,
+    "calligrapher": "米芾",
+    "script": "行",
+    "character": "應",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0553_米芾_行_應_s20261027.png"
+  },
+  {
+    "task_id": 554,
+    "calligrapher": "米芾",
+    "script": "行",
+    "character": "崇",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0554_米芾_行_崇_s20261026.png"
+  },
+  {
+    "task_id": 555,
+    "calligrapher": "米芾",
+    "script": "行",
+    "character": "崇",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0555_米芾_行_崇_s20261027.png"
+  },
+  {
+    "task_id": 556,
+    "calligrapher": "米芾",
+    "script": "行",
+    "character": "手",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0556_米芾_行_手_s20261026.png"
+  },
+  {
+    "task_id": 557,
+    "calligrapher": "米芾",
+    "script": "行",
+    "character": "手",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0557_米芾_行_手_s20261027.png"
+  },
+  {
+    "task_id": 558,
+    "calligrapher": "米芾",
+    "script": "行",
+    "character": "孝",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0558_米芾_行_孝_s20261026.png"
+  },
+  {
+    "task_id": 559,
+    "calligrapher": "米芾",
+    "script": "行",
+    "character": "孝",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0559_米芾_行_孝_s20261027.png"
+  },
+  {
+    "task_id": 560,
+    "calligrapher": "米芾",
+    "script": "行",
+    "character": "臣",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0560_米芾_行_臣_s20261026.png"
+  },
+  {
+    "task_id": 561,
+    "calligrapher": "米芾",
+    "script": "行",
+    "character": "臣",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0561_米芾_行_臣_s20261027.png"
+  },
+  {
+    "task_id": 562,
+    "calligrapher": "米芾",
+    "script": "行",
+    "character": "實",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0562_米芾_行_實_s20261026.png"
+  },
+  {
+    "task_id": 563,
+    "calligrapher": "米芾",
+    "script": "行",
+    "character": "實",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0563_米芾_行_實_s20261027.png"
+  },
+  {
+    "task_id": 564,
+    "calligrapher": "米芾",
+    "script": "行",
+    "character": "期",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0564_米芾_行_期_s20261026.png"
+  },
+  {
+    "task_id": 565,
+    "calligrapher": "米芾",
+    "script": "行",
+    "character": "期",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0565_米芾_行_期_s20261027.png"
+  },
+  {
+    "task_id": 566,
+    "calligrapher": "米芾",
+    "script": "行",
+    "character": "問",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0566_米芾_行_問_s20261026.png"
+  },
+  {
+    "task_id": 567,
+    "calligrapher": "米芾",
+    "script": "行",
+    "character": "問",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0567_米芾_行_問_s20261027.png"
+  },
+  {
+    "task_id": 568,
+    "calligrapher": "米芾",
+    "script": "行",
+    "character": "充",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0568_米芾_行_充_s20261026.png"
+  },
+  {
+    "task_id": 569,
+    "calligrapher": "米芾",
+    "script": "行",
+    "character": "充",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0569_米芾_行_充_s20261027.png"
+  },
+  {
+    "task_id": 570,
+    "calligrapher": "米芾",
+    "script": "行",
+    "character": "弗",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0570_米芾_行_弗_s20261026.png"
+  },
+  {
+    "task_id": 571,
+    "calligrapher": "米芾",
+    "script": "行",
+    "character": "弗",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0571_米芾_行_弗_s20261027.png"
+  },
+  {
+    "task_id": 572,
+    "calligrapher": "米芾",
+    "script": "行",
+    "character": "傷",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0572_米芾_行_傷_s20261026.png"
+  },
+  {
+    "task_id": 573,
+    "calligrapher": "米芾",
+    "script": "行",
+    "character": "傷",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0573_米芾_行_傷_s20261027.png"
+  },
+  {
+    "task_id": 574,
+    "calligrapher": "米芾",
+    "script": "行",
+    "character": "壽",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0574_米芾_行_壽_s20261026.png"
+  },
+  {
+    "task_id": 575,
+    "calligrapher": "米芾",
+    "script": "行",
+    "character": "壽",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0575_米芾_行_壽_s20261027.png"
+  },
+  {
+    "task_id": 576,
+    "calligrapher": "米芾",
+    "script": "行",
+    "character": "寫",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0576_米芾_行_寫_s20261026.png"
+  },
+  {
+    "task_id": 577,
+    "calligrapher": "米芾",
+    "script": "行",
+    "character": "寫",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0577_米芾_行_寫_s20261027.png"
+  },
+  {
+    "task_id": 578,
+    "calligrapher": "米芾",
+    "script": "行",
+    "character": "夢",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0578_米芾_行_夢_s20261026.png"
+  },
+  {
+    "task_id": 579,
+    "calligrapher": "米芾",
+    "script": "行",
+    "character": "夢",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0579_米芾_行_夢_s20261027.png"
+  },
+  {
+    "task_id": 580,
+    "calligrapher": "米芾",
+    "script": "行",
+    "character": "御",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0580_米芾_行_御_s20261026.png"
+  },
+  {
+    "task_id": 581,
+    "calligrapher": "米芾",
+    "script": "行",
+    "character": "御",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0581_米芾_行_御_s20261027.png"
+  },
+  {
+    "task_id": 582,
+    "calligrapher": "米芾",
+    "script": "行",
+    "character": "基",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0582_米芾_行_基_s20261026.png"
+  },
+  {
+    "task_id": 583,
+    "calligrapher": "米芾",
+    "script": "行",
+    "character": "基",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0583_米芾_行_基_s20261027.png"
+  },
+  {
+    "task_id": 584,
+    "calligrapher": "米芾",
+    "script": "行",
+    "character": "表",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0584_米芾_行_表_s20261026.png"
+  },
+  {
+    "task_id": 585,
+    "calligrapher": "米芾",
+    "script": "行",
+    "character": "表",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0585_米芾_行_表_s20261027.png"
+  },
+  {
+    "task_id": 586,
+    "calligrapher": "米芾",
+    "script": "行",
+    "character": "美",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0586_米芾_行_美_s20261026.png"
+  },
+  {
+    "task_id": 587,
+    "calligrapher": "米芾",
+    "script": "行",
+    "character": "美",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0587_米芾_行_美_s20261027.png"
+  },
+  {
+    "task_id": 588,
+    "calligrapher": "米芾",
+    "script": "行",
+    "character": "卿",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0588_米芾_行_卿_s20261026.png"
+  },
+  {
+    "task_id": 589,
+    "calligrapher": "米芾",
+    "script": "行",
+    "character": "卿",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0589_米芾_行_卿_s20261027.png"
+  },
+  {
+    "task_id": 590,
+    "calligrapher": "米芾",
+    "script": "行",
+    "character": "由",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0590_米芾_行_由_s20261026.png"
+  },
+  {
+    "task_id": 591,
+    "calligrapher": "米芾",
+    "script": "行",
+    "character": "由",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0591_米芾_行_由_s20261027.png"
+  },
+  {
+    "task_id": 592,
+    "calligrapher": "米芾",
+    "script": "行",
+    "character": "未",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0592_米芾_行_未_s20261026.png"
+  },
+  {
+    "task_id": 593,
+    "calligrapher": "米芾",
+    "script": "行",
+    "character": "未",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0593_米芾_行_未_s20261027.png"
+  },
+  {
+    "task_id": 594,
+    "calligrapher": "米芾",
+    "script": "行",
+    "character": "典",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0594_米芾_行_典_s20261026.png"
+  },
+  {
+    "task_id": 595,
+    "calligrapher": "米芾",
+    "script": "行",
+    "character": "典",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0595_米芾_行_典_s20261027.png"
+  },
+  {
+    "task_id": 596,
+    "calligrapher": "米芾",
+    "script": "行",
+    "character": "容",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0596_米芾_行_容_s20261026.png"
+  },
+  {
+    "task_id": 597,
+    "calligrapher": "米芾",
+    "script": "行",
+    "character": "容",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0597_米芾_行_容_s20261027.png"
+  },
+  {
+    "task_id": 598,
+    "calligrapher": "米芾",
+    "script": "行",
+    "character": "務",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0598_米芾_行_務_s20261026.png"
+  },
+  {
+    "task_id": 599,
+    "calligrapher": "米芾",
+    "script": "行",
+    "character": "務",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0599_米芾_行_務_s20261027.png"
+  },
+  {
+    "task_id": 600,
+    "calligrapher": "苏轼",
+    "script": "行",
+    "character": "廣",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0600_苏轼_行_廣_s20261026.png"
+  },
+  {
+    "task_id": 601,
+    "calligrapher": "苏轼",
+    "script": "行",
+    "character": "廣",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0601_苏轼_行_廣_s20261027.png"
+  },
+  {
+    "task_id": 602,
+    "calligrapher": "苏轼",
+    "script": "行",
+    "character": "仁",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0602_苏轼_行_仁_s20261026.png"
+  },
+  {
+    "task_id": 603,
+    "calligrapher": "苏轼",
+    "script": "行",
+    "character": "仁",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0603_苏轼_行_仁_s20261027.png"
+  },
+  {
+    "task_id": 604,
+    "calligrapher": "苏轼",
+    "script": "行",
+    "character": "備",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0604_苏轼_行_備_s20261026.png"
+  },
+  {
+    "task_id": 605,
+    "calligrapher": "苏轼",
+    "script": "行",
+    "character": "備",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0605_苏轼_行_備_s20261027.png"
+  },
+  {
+    "task_id": 606,
+    "calligrapher": "苏轼",
+    "script": "行",
+    "character": "興",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0606_苏轼_行_興_s20261026.png"
+  },
+  {
+    "task_id": 607,
+    "calligrapher": "苏轼",
+    "script": "行",
+    "character": "興",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0607_苏轼_行_興_s20261027.png"
+  },
+  {
+    "task_id": 608,
+    "calligrapher": "苏轼",
+    "script": "行",
+    "character": "彭",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0608_苏轼_行_彭_s20261026.png"
+  },
+  {
+    "task_id": 609,
+    "calligrapher": "苏轼",
+    "script": "行",
+    "character": "彭",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0609_苏轼_行_彭_s20261027.png"
+  },
+  {
+    "task_id": 610,
+    "calligrapher": "苏轼",
+    "script": "行",
+    "character": "任",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0610_苏轼_行_任_s20261026.png"
+  },
+  {
+    "task_id": 611,
+    "calligrapher": "苏轼",
+    "script": "行",
+    "character": "任",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0611_苏轼_行_任_s20261027.png"
+  },
+  {
+    "task_id": 612,
+    "calligrapher": "苏轼",
+    "script": "行",
+    "character": "王",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0612_苏轼_行_王_s20261026.png"
+  },
+  {
+    "task_id": 613,
+    "calligrapher": "苏轼",
+    "script": "行",
+    "character": "王",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0613_苏轼_行_王_s20261027.png"
+  },
+  {
+    "task_id": 614,
+    "calligrapher": "苏轼",
+    "script": "行",
+    "character": "威",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0614_苏轼_行_威_s20261026.png"
+  },
+  {
+    "task_id": 615,
+    "calligrapher": "苏轼",
+    "script": "行",
+    "character": "威",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0615_苏轼_行_威_s20261027.png"
+  },
+  {
+    "task_id": 616,
+    "calligrapher": "苏轼",
+    "script": "行",
+    "character": "吾",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0616_苏轼_行_吾_s20261026.png"
+  },
+  {
+    "task_id": 617,
+    "calligrapher": "苏轼",
+    "script": "行",
+    "character": "吾",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0617_苏轼_行_吾_s20261027.png"
+  },
+  {
+    "task_id": 618,
+    "calligrapher": "苏轼",
+    "script": "行",
+    "character": "官",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0618_苏轼_行_官_s20261026.png"
+  },
+  {
+    "task_id": 619,
+    "calligrapher": "苏轼",
+    "script": "行",
+    "character": "官",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0619_苏轼_行_官_s20261027.png"
+  },
+  {
+    "task_id": 620,
+    "calligrapher": "苏轼",
+    "script": "行",
+    "character": "射",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0620_苏轼_行_射_s20261026.png"
+  },
+  {
+    "task_id": 621,
+    "calligrapher": "苏轼",
+    "script": "行",
+    "character": "射",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0621_苏轼_行_射_s20261027.png"
+  },
+  {
+    "task_id": 622,
+    "calligrapher": "苏轼",
+    "script": "行",
+    "character": "佳",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0622_苏轼_行_佳_s20261026.png"
+  },
+  {
+    "task_id": 623,
+    "calligrapher": "苏轼",
+    "script": "行",
+    "character": "佳",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0623_苏轼_行_佳_s20261027.png"
+  },
+  {
+    "task_id": 624,
+    "calligrapher": "苏轼",
+    "script": "行",
+    "character": "委",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0624_苏轼_行_委_s20261026.png"
+  },
+  {
+    "task_id": 625,
+    "calligrapher": "苏轼",
+    "script": "行",
+    "character": "委",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0625_苏轼_行_委_s20261027.png"
+  },
+  {
+    "task_id": 626,
+    "calligrapher": "苏轼",
+    "script": "行",
+    "character": "會",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0626_苏轼_行_會_s20261026.png"
+  },
+  {
+    "task_id": 627,
+    "calligrapher": "苏轼",
+    "script": "行",
+    "character": "會",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0627_苏轼_行_會_s20261027.png"
+  },
+  {
+    "task_id": 628,
+    "calligrapher": "苏轼",
+    "script": "行",
+    "character": "集",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0628_苏轼_行_集_s20261026.png"
+  },
+  {
+    "task_id": 629,
+    "calligrapher": "苏轼",
+    "script": "行",
+    "character": "集",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0629_苏轼_行_集_s20261027.png"
+  },
+  {
+    "task_id": 630,
+    "calligrapher": "苏轼",
+    "script": "行",
+    "character": "痛",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0630_苏轼_行_痛_s20261026.png"
+  },
+  {
+    "task_id": 631,
+    "calligrapher": "苏轼",
+    "script": "行",
+    "character": "痛",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0631_苏轼_行_痛_s20261027.png"
+  },
+  {
+    "task_id": 632,
+    "calligrapher": "苏轼",
+    "script": "行",
+    "character": "並",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0632_苏轼_行_並_s20261026.png"
+  },
+  {
+    "task_id": 633,
+    "calligrapher": "苏轼",
+    "script": "行",
+    "character": "並",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0633_苏轼_行_並_s20261027.png"
+  },
+  {
+    "task_id": 634,
+    "calligrapher": "苏轼",
+    "script": "行",
+    "character": "志",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0634_苏轼_行_志_s20261026.png"
+  },
+  {
+    "task_id": 635,
+    "calligrapher": "苏轼",
+    "script": "行",
+    "character": "志",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0635_苏轼_行_志_s20261027.png"
+  },
+  {
+    "task_id": 636,
+    "calligrapher": "苏轼",
+    "script": "行",
+    "character": "氏",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0636_苏轼_行_氏_s20261026.png"
+  },
+  {
+    "task_id": 637,
+    "calligrapher": "苏轼",
+    "script": "行",
+    "character": "氏",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0637_苏轼_行_氏_s20261027.png"
+  },
+  {
+    "task_id": 638,
+    "calligrapher": "苏轼",
+    "script": "行",
+    "character": "盛",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0638_苏轼_行_盛_s20261026.png"
+  },
+  {
+    "task_id": 639,
+    "calligrapher": "苏轼",
+    "script": "行",
+    "character": "盛",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0639_苏轼_行_盛_s20261027.png"
+  },
+  {
+    "task_id": 640,
+    "calligrapher": "苏轼",
+    "script": "行",
+    "character": "充",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0640_苏轼_行_充_s20261026.png"
+  },
+  {
+    "task_id": 641,
+    "calligrapher": "苏轼",
+    "script": "行",
+    "character": "充",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0641_苏轼_行_充_s20261027.png"
+  },
+  {
+    "task_id": 642,
+    "calligrapher": "苏轼",
+    "script": "行",
+    "character": "弗",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0642_苏轼_行_弗_s20261026.png"
+  },
+  {
+    "task_id": 643,
+    "calligrapher": "苏轼",
+    "script": "行",
+    "character": "弗",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0643_苏轼_行_弗_s20261027.png"
+  },
+  {
+    "task_id": 644,
+    "calligrapher": "苏轼",
+    "script": "行",
+    "character": "視",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0644_苏轼_行_視_s20261026.png"
+  },
+  {
+    "task_id": 645,
+    "calligrapher": "苏轼",
+    "script": "行",
+    "character": "視",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0645_苏轼_行_視_s20261027.png"
+  },
+  {
+    "task_id": 646,
+    "calligrapher": "苏轼",
+    "script": "行",
+    "character": "基",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0646_苏轼_行_基_s20261026.png"
+  },
+  {
+    "task_id": 647,
+    "calligrapher": "苏轼",
+    "script": "行",
+    "character": "基",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0647_苏轼_行_基_s20261027.png"
+  },
+  {
+    "task_id": 648,
+    "calligrapher": "苏轼",
+    "script": "行",
+    "character": "丹",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0648_苏轼_行_丹_s20261026.png"
+  },
+  {
+    "task_id": 649,
+    "calligrapher": "苏轼",
+    "script": "行",
+    "character": "丹",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0649_苏轼_行_丹_s20261027.png"
+  },
+  {
+    "task_id": 650,
+    "calligrapher": "苏轼",
+    "script": "行",
+    "character": "優",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0650_苏轼_行_優_s20261026.png"
+  },
+  {
+    "task_id": 651,
+    "calligrapher": "苏轼",
+    "script": "行",
+    "character": "優",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0651_苏轼_行_優_s20261027.png"
+  },
+  {
+    "task_id": 652,
+    "calligrapher": "苏轼",
+    "script": "行",
+    "character": "星",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0652_苏轼_行_星_s20261026.png"
+  },
+  {
+    "task_id": 653,
+    "calligrapher": "苏轼",
+    "script": "行",
+    "character": "星",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0653_苏轼_行_星_s20261027.png"
+  },
+  {
+    "task_id": 654,
+    "calligrapher": "苏轼",
+    "script": "行",
+    "character": "宙",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0654_苏轼_行_宙_s20261026.png"
+  },
+  {
+    "task_id": 655,
+    "calligrapher": "苏轼",
+    "script": "行",
+    "character": "宙",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0655_苏轼_行_宙_s20261027.png"
+  },
+  {
+    "task_id": 656,
+    "calligrapher": "苏轼",
+    "script": "行",
+    "character": "將",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0656_苏轼_行_將_s20261026.png"
+  },
+  {
+    "task_id": 657,
+    "calligrapher": "苏轼",
+    "script": "行",
+    "character": "將",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0657_苏轼_行_將_s20261027.png"
+  },
+  {
+    "task_id": 658,
+    "calligrapher": "苏轼",
+    "script": "行",
+    "character": "諸",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0658_苏轼_行_諸_s20261026.png"
+  },
+  {
+    "task_id": 659,
+    "calligrapher": "苏轼",
+    "script": "行",
+    "character": "諸",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0659_苏轼_行_諸_s20261027.png"
+  },
+  {
+    "task_id": 660,
+    "calligrapher": "苏轼",
+    "script": "行",
+    "character": "理",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0660_苏轼_行_理_s20261026.png"
+  },
+  {
+    "task_id": 661,
+    "calligrapher": "苏轼",
+    "script": "行",
+    "character": "理",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0661_苏轼_行_理_s20261027.png"
+  },
+  {
+    "task_id": 662,
+    "calligrapher": "苏轼",
+    "script": "行",
+    "character": "度",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0662_苏轼_行_度_s20261026.png"
+  },
+  {
+    "task_id": 663,
+    "calligrapher": "苏轼",
+    "script": "行",
+    "character": "度",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0663_苏轼_行_度_s20261027.png"
+  },
+  {
+    "task_id": 664,
+    "calligrapher": "苏轼",
+    "script": "行",
+    "character": "執",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0664_苏轼_行_執_s20261026.png"
+  },
+  {
+    "task_id": 665,
+    "calligrapher": "苏轼",
+    "script": "行",
+    "character": "執",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0665_苏轼_行_執_s20261027.png"
+  },
+  {
+    "task_id": 666,
+    "calligrapher": "苏轼",
+    "script": "行",
+    "character": "夙",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0666_苏轼_行_夙_s20261026.png"
+  },
+  {
+    "task_id": 667,
+    "calligrapher": "苏轼",
+    "script": "行",
+    "character": "夙",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0667_苏轼_行_夙_s20261027.png"
+  },
+  {
+    "task_id": 668,
+    "calligrapher": "苏轼",
+    "script": "行",
+    "character": "序",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0668_苏轼_行_序_s20261026.png"
+  },
+  {
+    "task_id": 669,
+    "calligrapher": "苏轼",
+    "script": "行",
+    "character": "序",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0669_苏轼_行_序_s20261027.png"
+  },
+  {
+    "task_id": 670,
+    "calligrapher": "苏轼",
+    "script": "行",
+    "character": "兒",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0670_苏轼_行_兒_s20261026.png"
+  },
+  {
+    "task_id": 671,
+    "calligrapher": "苏轼",
+    "script": "行",
+    "character": "兒",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0671_苏轼_行_兒_s20261027.png"
+  },
+  {
+    "task_id": 672,
+    "calligrapher": "苏轼",
+    "script": "行",
+    "character": "欣",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0672_苏轼_行_欣_s20261026.png"
+  },
+  {
+    "task_id": 673,
+    "calligrapher": "苏轼",
+    "script": "行",
+    "character": "欣",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0673_苏轼_行_欣_s20261027.png"
+  },
+  {
+    "task_id": 674,
+    "calligrapher": "苏轼",
+    "script": "行",
+    "character": "丑",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0674_苏轼_行_丑_s20261026.png"
+  },
+  {
+    "task_id": 675,
+    "calligrapher": "苏轼",
+    "script": "行",
+    "character": "丑",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0675_苏轼_行_丑_s20261027.png"
+  },
+  {
+    "task_id": 676,
+    "calligrapher": "苏轼",
+    "script": "行",
+    "character": "資",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0676_苏轼_行_資_s20261026.png"
+  },
+  {
+    "task_id": 677,
+    "calligrapher": "苏轼",
+    "script": "行",
+    "character": "資",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0677_苏轼_行_資_s20261027.png"
+  },
+  {
+    "task_id": 678,
+    "calligrapher": "苏轼",
+    "script": "行",
+    "character": "室",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0678_苏轼_行_室_s20261026.png"
+  },
+  {
+    "task_id": 679,
+    "calligrapher": "苏轼",
+    "script": "行",
+    "character": "室",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0679_苏轼_行_室_s20261027.png"
+  },
+  {
+    "task_id": 680,
+    "calligrapher": "苏轼",
+    "script": "行",
+    "character": "重",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0680_苏轼_行_重_s20261026.png"
+  },
+  {
+    "task_id": 681,
+    "calligrapher": "苏轼",
+    "script": "行",
+    "character": "重",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0681_苏轼_行_重_s20261027.png"
+  },
+  {
+    "task_id": 682,
+    "calligrapher": "苏轼",
+    "script": "行",
+    "character": "皇",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0682_苏轼_行_皇_s20261026.png"
+  },
+  {
+    "task_id": 683,
+    "calligrapher": "苏轼",
+    "script": "行",
+    "character": "皇",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0683_苏轼_行_皇_s20261027.png"
+  },
+  {
+    "task_id": 684,
+    "calligrapher": "苏轼",
+    "script": "行",
+    "character": "慕",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0684_苏轼_行_慕_s20261026.png"
+  },
+  {
+    "task_id": 685,
+    "calligrapher": "苏轼",
+    "script": "行",
+    "character": "慕",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0685_苏轼_行_慕_s20261027.png"
+  },
+  {
+    "task_id": 686,
+    "calligrapher": "苏轼",
+    "script": "行",
+    "character": "都",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0686_苏轼_行_都_s20261026.png"
+  },
+  {
+    "task_id": 687,
+    "calligrapher": "苏轼",
+    "script": "行",
+    "character": "都",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0687_苏轼_行_都_s20261027.png"
+  },
+  {
+    "task_id": 688,
+    "calligrapher": "苏轼",
+    "script": "行",
+    "character": "領",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0688_苏轼_行_領_s20261026.png"
+  },
+  {
+    "task_id": 689,
+    "calligrapher": "苏轼",
+    "script": "行",
+    "character": "領",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0689_苏轼_行_領_s20261027.png"
+  },
+  {
+    "task_id": 690,
+    "calligrapher": "苏轼",
+    "script": "行",
+    "character": "坤",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0690_苏轼_行_坤_s20261026.png"
+  },
+  {
+    "task_id": 691,
+    "calligrapher": "苏轼",
+    "script": "行",
+    "character": "坤",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0691_苏轼_行_坤_s20261027.png"
+  },
+  {
+    "task_id": 692,
+    "calligrapher": "苏轼",
+    "script": "行",
+    "character": "奏",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0692_苏轼_行_奏_s20261026.png"
+  },
+  {
+    "task_id": 693,
+    "calligrapher": "苏轼",
+    "script": "行",
+    "character": "奏",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0693_苏轼_行_奏_s20261027.png"
+  },
+  {
+    "task_id": 694,
+    "calligrapher": "苏轼",
+    "script": "行",
+    "character": "倉",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0694_苏轼_行_倉_s20261026.png"
+  },
+  {
+    "task_id": 695,
+    "calligrapher": "苏轼",
+    "script": "行",
+    "character": "倉",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0695_苏轼_行_倉_s20261027.png"
+  },
+  {
+    "task_id": 696,
+    "calligrapher": "苏轼",
+    "script": "行",
+    "character": "勤",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0696_苏轼_行_勤_s20261026.png"
+  },
+  {
+    "task_id": 697,
+    "calligrapher": "苏轼",
+    "script": "行",
+    "character": "勤",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0697_苏轼_行_勤_s20261027.png"
+  },
+  {
+    "task_id": 698,
+    "calligrapher": "苏轼",
+    "script": "行",
+    "character": "宫",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0698_苏轼_行_宫_s20261026.png"
+  },
+  {
+    "task_id": 699,
+    "calligrapher": "苏轼",
+    "script": "行",
+    "character": "宫",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0699_苏轼_行_宫_s20261027.png"
+  },
+  {
+    "task_id": 700,
+    "calligrapher": "褚遂良",
+    "script": "楷",
+    "character": "老",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0700_褚遂良_楷_老_s20261026.png"
+  },
+  {
+    "task_id": 701,
+    "calligrapher": "褚遂良",
+    "script": "楷",
+    "character": "老",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0701_褚遂良_楷_老_s20261027.png"
+  },
+  {
+    "task_id": 702,
+    "calligrapher": "褚遂良",
+    "script": "楷",
+    "character": "一",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0702_褚遂良_楷_一_s20261026.png"
+  },
+  {
+    "task_id": 703,
+    "calligrapher": "褚遂良",
+    "script": "楷",
+    "character": "一",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0703_褚遂良_楷_一_s20261027.png"
+  },
+  {
+    "task_id": 704,
+    "calligrapher": "褚遂良",
+    "script": "楷",
+    "character": "友",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0704_褚遂良_楷_友_s20261026.png"
+  },
+  {
+    "task_id": 705,
+    "calligrapher": "褚遂良",
+    "script": "楷",
+    "character": "友",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0705_褚遂良_楷_友_s20261027.png"
+  },
+  {
+    "task_id": 706,
+    "calligrapher": "褚遂良",
+    "script": "楷",
+    "character": "左",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0706_褚遂良_楷_左_s20261026.png"
+  },
+  {
+    "task_id": 707,
+    "calligrapher": "褚遂良",
+    "script": "楷",
+    "character": "左",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0707_褚遂良_楷_左_s20261027.png"
+  },
+  {
+    "task_id": 708,
+    "calligrapher": "褚遂良",
+    "script": "楷",
+    "character": "行",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0708_褚遂良_楷_行_s20261026.png"
+  },
+  {
+    "task_id": 709,
+    "calligrapher": "褚遂良",
+    "script": "楷",
+    "character": "行",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0709_褚遂良_楷_行_s20261027.png"
+  },
+  {
+    "task_id": 710,
+    "calligrapher": "褚遂良",
+    "script": "楷",
+    "character": "夫",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0710_褚遂良_楷_夫_s20261026.png"
+  },
+  {
+    "task_id": 711,
+    "calligrapher": "褚遂良",
+    "script": "楷",
+    "character": "夫",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0711_褚遂良_楷_夫_s20261027.png"
+  },
+  {
+    "task_id": 712,
+    "calligrapher": "褚遂良",
+    "script": "楷",
+    "character": "弟",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0712_褚遂良_楷_弟_s20261026.png"
+  },
+  {
+    "task_id": 713,
+    "calligrapher": "褚遂良",
+    "script": "楷",
+    "character": "弟",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0713_褚遂良_楷_弟_s20261027.png"
+  },
+  {
+    "task_id": 714,
+    "calligrapher": "褚遂良",
+    "script": "楷",
+    "character": "任",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0714_褚遂良_楷_任_s20261026.png"
+  },
+  {
+    "task_id": 715,
+    "calligrapher": "褚遂良",
+    "script": "楷",
+    "character": "任",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0715_褚遂良_楷_任_s20261027.png"
+  },
+  {
+    "task_id": 716,
+    "calligrapher": "褚遂良",
+    "script": "楷",
+    "character": "勿",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0716_褚遂良_楷_勿_s20261026.png"
+  },
+  {
+    "task_id": 717,
+    "calligrapher": "褚遂良",
+    "script": "楷",
+    "character": "勿",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0717_褚遂良_楷_勿_s20261027.png"
+  },
+  {
+    "task_id": 718,
+    "calligrapher": "褚遂良",
+    "script": "楷",
+    "character": "兮",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0718_褚遂良_楷_兮_s20261026.png"
+  },
+  {
+    "task_id": 719,
+    "calligrapher": "褚遂良",
+    "script": "楷",
+    "character": "兮",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0719_褚遂良_楷_兮_s20261027.png"
+  },
+  {
+    "task_id": 720,
+    "calligrapher": "褚遂良",
+    "script": "楷",
+    "character": "感",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0720_褚遂良_楷_感_s20261026.png"
+  },
+  {
+    "task_id": 721,
+    "calligrapher": "褚遂良",
+    "script": "楷",
+    "character": "感",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0721_褚遂良_楷_感_s20261027.png"
+  },
+  {
+    "task_id": 722,
+    "calligrapher": "褚遂良",
+    "script": "楷",
+    "character": "封",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0722_褚遂良_楷_封_s20261026.png"
+  },
+  {
+    "task_id": 723,
+    "calligrapher": "褚遂良",
+    "script": "楷",
+    "character": "封",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0723_褚遂良_楷_封_s20261027.png"
+  },
+  {
+    "task_id": 724,
+    "calligrapher": "褚遂良",
+    "script": "楷",
+    "character": "取",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0724_褚遂良_楷_取_s20261026.png"
+  },
+  {
+    "task_id": 725,
+    "calligrapher": "褚遂良",
+    "script": "楷",
+    "character": "取",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0725_褚遂良_楷_取_s20261027.png"
+  },
+  {
+    "task_id": 726,
+    "calligrapher": "褚遂良",
+    "script": "楷",
+    "character": "想",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0726_褚遂良_楷_想_s20261026.png"
+  },
+  {
+    "task_id": 727,
+    "calligrapher": "褚遂良",
+    "script": "楷",
+    "character": "想",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0727_褚遂良_楷_想_s20261027.png"
+  },
+  {
+    "task_id": 728,
+    "calligrapher": "褚遂良",
+    "script": "楷",
+    "character": "威",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0728_褚遂良_楷_威_s20261026.png"
+  },
+  {
+    "task_id": 729,
+    "calligrapher": "褚遂良",
+    "script": "楷",
+    "character": "威",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0729_褚遂良_楷_威_s20261027.png"
+  },
+  {
+    "task_id": 730,
+    "calligrapher": "褚遂良",
+    "script": "楷",
+    "character": "吾",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0730_褚遂良_楷_吾_s20261026.png"
+  },
+  {
+    "task_id": 731,
+    "calligrapher": "褚遂良",
+    "script": "楷",
+    "character": "吾",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0731_褚遂良_楷_吾_s20261027.png"
+  },
+  {
+    "task_id": 732,
+    "calligrapher": "褚遂良",
+    "script": "楷",
+    "character": "官",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0732_褚遂良_楷_官_s20261026.png"
+  },
+  {
+    "task_id": 733,
+    "calligrapher": "褚遂良",
+    "script": "楷",
+    "character": "官",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0733_褚遂良_楷_官_s20261027.png"
+  },
+  {
+    "task_id": 734,
+    "calligrapher": "褚遂良",
+    "script": "楷",
+    "character": "像",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0734_褚遂良_楷_像_s20261026.png"
+  },
+  {
+    "task_id": 735,
+    "calligrapher": "褚遂良",
+    "script": "楷",
+    "character": "像",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0735_褚遂良_楷_像_s20261027.png"
+  },
+  {
+    "task_id": 736,
+    "calligrapher": "褚遂良",
+    "script": "楷",
+    "character": "佳",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0736_褚遂良_楷_佳_s20261026.png"
+  },
+  {
+    "task_id": 737,
+    "calligrapher": "褚遂良",
+    "script": "楷",
+    "character": "佳",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0737_褚遂良_楷_佳_s20261027.png"
+  },
+  {
+    "task_id": 738,
+    "calligrapher": "褚遂良",
+    "script": "楷",
+    "character": "厥",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0738_褚遂良_楷_厥_s20261026.png"
+  },
+  {
+    "task_id": 739,
+    "calligrapher": "褚遂良",
+    "script": "楷",
+    "character": "厥",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0739_褚遂良_楷_厥_s20261027.png"
+  },
+  {
+    "task_id": 740,
+    "calligrapher": "褚遂良",
+    "script": "楷",
+    "character": "愛",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0740_褚遂良_楷_愛_s20261026.png"
+  },
+  {
+    "task_id": 741,
+    "calligrapher": "褚遂良",
+    "script": "楷",
+    "character": "愛",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0741_褚遂良_楷_愛_s20261027.png"
+  },
+  {
+    "task_id": 742,
+    "calligrapher": "褚遂良",
+    "script": "楷",
+    "character": "憂",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0742_褚遂良_楷_憂_s20261026.png"
+  },
+  {
+    "task_id": 743,
+    "calligrapher": "褚遂良",
+    "script": "楷",
+    "character": "憂",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0743_褚遂良_楷_憂_s20261027.png"
+  },
+  {
+    "task_id": 744,
+    "calligrapher": "褚遂良",
+    "script": "楷",
+    "character": "舟",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0744_褚遂良_楷_舟_s20261026.png"
+  },
+  {
+    "task_id": 745,
+    "calligrapher": "褚遂良",
+    "script": "楷",
+    "character": "舟",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0745_褚遂良_楷_舟_s20261027.png"
+  },
+  {
+    "task_id": 746,
+    "calligrapher": "褚遂良",
+    "script": "楷",
+    "character": "意",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0746_褚遂良_楷_意_s20261026.png"
+  },
+  {
+    "task_id": 747,
+    "calligrapher": "褚遂良",
+    "script": "楷",
+    "character": "意",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0747_褚遂良_楷_意_s20261027.png"
+  },
+  {
+    "task_id": 748,
+    "calligrapher": "褚遂良",
+    "script": "楷",
+    "character": "春",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0748_褚遂良_楷_春_s20261026.png"
+  },
+  {
+    "task_id": 749,
+    "calligrapher": "褚遂良",
+    "script": "楷",
+    "character": "春",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0749_褚遂良_楷_春_s20261027.png"
+  },
+  {
+    "task_id": 750,
+    "calligrapher": "褚遂良",
+    "script": "楷",
+    "character": "詩",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0750_褚遂良_楷_詩_s20261026.png"
+  },
+  {
+    "task_id": 751,
+    "calligrapher": "褚遂良",
+    "script": "楷",
+    "character": "詩",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0751_褚遂良_楷_詩_s20261027.png"
+  },
+  {
+    "task_id": 752,
+    "calligrapher": "褚遂良",
+    "script": "楷",
+    "character": "仕",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0752_褚遂良_楷_仕_s20261026.png"
+  },
+  {
+    "task_id": 753,
+    "calligrapher": "褚遂良",
+    "script": "楷",
+    "character": "仕",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0753_褚遂良_楷_仕_s20261027.png"
+  },
+  {
+    "task_id": 754,
+    "calligrapher": "褚遂良",
+    "script": "楷",
+    "character": "宣",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0754_褚遂良_楷_宣_s20261026.png"
+  },
+  {
+    "task_id": 755,
+    "calligrapher": "褚遂良",
+    "script": "楷",
+    "character": "宣",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0755_褚遂良_楷_宣_s20261027.png"
+  },
+  {
+    "task_id": 756,
+    "calligrapher": "褚遂良",
+    "script": "楷",
+    "character": "具",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0756_褚遂良_楷_具_s20261026.png"
+  },
+  {
+    "task_id": 757,
+    "calligrapher": "褚遂良",
+    "script": "楷",
+    "character": "具",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0757_褚遂良_楷_具_s20261027.png"
+  },
+  {
+    "task_id": 758,
+    "calligrapher": "褚遂良",
+    "script": "楷",
+    "character": "顧",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0758_褚遂良_楷_顧_s20261026.png"
+  },
+  {
+    "task_id": 759,
+    "calligrapher": "褚遂良",
+    "script": "楷",
+    "character": "顧",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0759_褚遂良_楷_顧_s20261027.png"
+  },
+  {
+    "task_id": 760,
+    "calligrapher": "褚遂良",
+    "script": "楷",
+    "character": "時",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0760_褚遂良_楷_時_s20261026.png"
+  },
+  {
+    "task_id": 761,
+    "calligrapher": "褚遂良",
+    "script": "楷",
+    "character": "時",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0761_褚遂良_楷_時_s20261027.png"
+  },
+  {
+    "task_id": 762,
+    "calligrapher": "褚遂良",
+    "script": "楷",
+    "character": "壽",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0762_褚遂良_楷_壽_s20261026.png"
+  },
+  {
+    "task_id": 763,
+    "calligrapher": "褚遂良",
+    "script": "楷",
+    "character": "壽",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0763_褚遂良_楷_壽_s20261027.png"
+  },
+  {
+    "task_id": 764,
+    "calligrapher": "褚遂良",
+    "script": "楷",
+    "character": "傾",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0764_褚遂良_楷_傾_s20261026.png"
+  },
+  {
+    "task_id": 765,
+    "calligrapher": "褚遂良",
+    "script": "楷",
+    "character": "傾",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0765_褚遂良_楷_傾_s20261027.png"
+  },
+  {
+    "task_id": 766,
+    "calligrapher": "褚遂良",
+    "script": "楷",
+    "character": "持",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0766_褚遂良_楷_持_s20261026.png"
+  },
+  {
+    "task_id": 767,
+    "calligrapher": "褚遂良",
+    "script": "楷",
+    "character": "持",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0767_褚遂良_楷_持_s20261027.png"
+  },
+  {
+    "task_id": 768,
+    "calligrapher": "褚遂良",
+    "script": "楷",
+    "character": "丹",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0768_褚遂良_楷_丹_s20261026.png"
+  },
+  {
+    "task_id": 769,
+    "calligrapher": "褚遂良",
+    "script": "楷",
+    "character": "丹",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0769_褚遂良_楷_丹_s20261027.png"
+  },
+  {
+    "task_id": 770,
+    "calligrapher": "褚遂良",
+    "script": "楷",
+    "character": "卿",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0770_褚遂良_楷_卿_s20261026.png"
+  },
+  {
+    "task_id": 771,
+    "calligrapher": "褚遂良",
+    "script": "楷",
+    "character": "卿",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0771_褚遂良_楷_卿_s20261027.png"
+  },
+  {
+    "task_id": 772,
+    "calligrapher": "褚遂良",
+    "script": "楷",
+    "character": "喜",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0772_褚遂良_楷_喜_s20261026.png"
+  },
+  {
+    "task_id": 773,
+    "calligrapher": "褚遂良",
+    "script": "楷",
+    "character": "喜",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0773_褚遂良_楷_喜_s20261027.png"
+  },
+  {
+    "task_id": 774,
+    "calligrapher": "褚遂良",
+    "script": "楷",
+    "character": "他",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0774_褚遂良_楷_他_s20261026.png"
+  },
+  {
+    "task_id": 775,
+    "calligrapher": "褚遂良",
+    "script": "楷",
+    "character": "他",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0775_褚遂良_楷_他_s20261027.png"
+  },
+  {
+    "task_id": 776,
+    "calligrapher": "褚遂良",
+    "script": "楷",
+    "character": "尊",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0776_褚遂良_楷_尊_s20261026.png"
+  },
+  {
+    "task_id": 777,
+    "calligrapher": "褚遂良",
+    "script": "楷",
+    "character": "尊",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0777_褚遂良_楷_尊_s20261027.png"
+  },
+  {
+    "task_id": 778,
+    "calligrapher": "褚遂良",
+    "script": "楷",
+    "character": "余",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0778_褚遂良_楷_余_s20261026.png"
+  },
+  {
+    "task_id": 779,
+    "calligrapher": "褚遂良",
+    "script": "楷",
+    "character": "余",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0779_褚遂良_楷_余_s20261027.png"
+  },
+  {
+    "task_id": 780,
+    "calligrapher": "褚遂良",
+    "script": "楷",
+    "character": "養",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0780_褚遂良_楷_養_s20261026.png"
+  },
+  {
+    "task_id": 781,
+    "calligrapher": "褚遂良",
+    "script": "楷",
+    "character": "養",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0781_褚遂良_楷_養_s20261027.png"
+  },
+  {
+    "task_id": 782,
+    "calligrapher": "褚遂良",
+    "script": "楷",
+    "character": "竹",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0782_褚遂良_楷_竹_s20261026.png"
+  },
+  {
+    "task_id": 783,
+    "calligrapher": "褚遂良",
+    "script": "楷",
+    "character": "竹",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0783_褚遂良_楷_竹_s20261027.png"
+  },
+  {
+    "task_id": 784,
+    "calligrapher": "褚遂良",
+    "script": "楷",
+    "character": "首",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0784_褚遂良_楷_首_s20261026.png"
+  },
+  {
+    "task_id": 785,
+    "calligrapher": "褚遂良",
+    "script": "楷",
+    "character": "首",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0785_褚遂良_楷_首_s20261027.png"
+  },
+  {
+    "task_id": 786,
+    "calligrapher": "褚遂良",
+    "script": "楷",
+    "character": "務",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0786_褚遂良_楷_務_s20261026.png"
+  },
+  {
+    "task_id": 787,
+    "calligrapher": "褚遂良",
+    "script": "楷",
+    "character": "務",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0787_褚遂良_楷_務_s20261027.png"
+  },
+  {
+    "task_id": 788,
+    "calligrapher": "褚遂良",
+    "script": "楷",
+    "character": "語",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0788_褚遂良_楷_語_s20261026.png"
+  },
+  {
+    "task_id": 789,
+    "calligrapher": "褚遂良",
+    "script": "楷",
+    "character": "語",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0789_褚遂良_楷_語_s20261027.png"
+  },
+  {
+    "task_id": 790,
+    "calligrapher": "褚遂良",
+    "script": "楷",
+    "character": "吏",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0790_褚遂良_楷_吏_s20261026.png"
+  },
+  {
+    "task_id": 791,
+    "calligrapher": "褚遂良",
+    "script": "楷",
+    "character": "吏",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0791_褚遂良_楷_吏_s20261027.png"
+  },
+  {
+    "task_id": 792,
+    "calligrapher": "褚遂良",
+    "script": "楷",
+    "character": "葉",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0792_褚遂良_楷_葉_s20261026.png"
+  },
+  {
+    "task_id": 793,
+    "calligrapher": "褚遂良",
+    "script": "楷",
+    "character": "葉",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0793_褚遂良_楷_葉_s20261027.png"
+  },
+  {
+    "task_id": 794,
+    "calligrapher": "褚遂良",
+    "script": "楷",
+    "character": "寶",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0794_褚遂良_楷_寶_s20261026.png"
+  },
+  {
+    "task_id": 795,
+    "calligrapher": "褚遂良",
+    "script": "楷",
+    "character": "寶",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0795_褚遂良_楷_寶_s20261027.png"
+  },
+  {
+    "task_id": 796,
+    "calligrapher": "褚遂良",
+    "script": "楷",
+    "character": "存",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0796_褚遂良_楷_存_s20261026.png"
+  },
+  {
+    "task_id": 797,
+    "calligrapher": "褚遂良",
+    "script": "楷",
+    "character": "存",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0797_褚遂良_楷_存_s20261027.png"
+  },
+  {
+    "task_id": 798,
+    "calligrapher": "褚遂良",
+    "script": "楷",
+    "character": "庶",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0798_褚遂良_楷_庶_s20261026.png"
+  },
+  {
+    "task_id": 799,
+    "calligrapher": "褚遂良",
+    "script": "楷",
+    "character": "庶",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0799_褚遂良_楷_庶_s20261027.png"
+  },
+  {
+    "task_id": 800,
+    "calligrapher": "赵孟頫",
+    "script": "楷",
+    "character": "復",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0800_赵孟頫_楷_復_s20261026.png"
+  },
+  {
+    "task_id": 801,
+    "calligrapher": "赵孟頫",
+    "script": "楷",
+    "character": "復",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0801_赵孟頫_楷_復_s20261027.png"
+  },
+  {
+    "task_id": 802,
+    "calligrapher": "赵孟頫",
+    "script": "楷",
+    "character": "至",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0802_赵孟頫_楷_至_s20261026.png"
+  },
+  {
+    "task_id": 803,
+    "calligrapher": "赵孟頫",
+    "script": "楷",
+    "character": "至",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0803_赵孟頫_楷_至_s20261027.png"
+  },
+  {
+    "task_id": 804,
+    "calligrapher": "赵孟頫",
+    "script": "楷",
+    "character": "子",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0804_赵孟頫_楷_子_s20261026.png"
+  },
+  {
+    "task_id": 805,
+    "calligrapher": "赵孟頫",
+    "script": "楷",
+    "character": "子",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0805_赵孟頫_楷_子_s20261027.png"
+  },
+  {
+    "task_id": 806,
+    "calligrapher": "赵孟頫",
+    "script": "楷",
+    "character": "十",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0806_赵孟頫_楷_十_s20261026.png"
+  },
+  {
+    "task_id": 807,
+    "calligrapher": "赵孟頫",
+    "script": "楷",
+    "character": "十",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0807_赵孟頫_楷_十_s20261027.png"
+  },
+  {
+    "task_id": 808,
+    "calligrapher": "赵孟頫",
+    "script": "楷",
+    "character": "東",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0808_赵孟頫_楷_東_s20261026.png"
+  },
+  {
+    "task_id": 809,
+    "calligrapher": "赵孟頫",
+    "script": "楷",
+    "character": "東",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0809_赵孟頫_楷_東_s20261027.png"
+  },
+  {
+    "task_id": 810,
+    "calligrapher": "赵孟頫",
+    "script": "楷",
+    "character": "行",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0810_赵孟頫_楷_行_s20261026.png"
+  },
+  {
+    "task_id": 811,
+    "calligrapher": "赵孟頫",
+    "script": "楷",
+    "character": "行",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0811_赵孟頫_楷_行_s20261027.png"
+  },
+  {
+    "task_id": 812,
+    "calligrapher": "赵孟頫",
+    "script": "楷",
+    "character": "自",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0812_赵孟頫_楷_自_s20261026.png"
+  },
+  {
+    "task_id": 813,
+    "calligrapher": "赵孟頫",
+    "script": "楷",
+    "character": "自",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0813_赵孟頫_楷_自_s20261027.png"
+  },
+  {
+    "task_id": 814,
+    "calligrapher": "赵孟頫",
+    "script": "楷",
+    "character": "元",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0814_赵孟頫_楷_元_s20261026.png"
+  },
+  {
+    "task_id": 815,
+    "calligrapher": "赵孟頫",
+    "script": "楷",
+    "character": "元",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0815_赵孟頫_楷_元_s20261027.png"
+  },
+  {
+    "task_id": 816,
+    "calligrapher": "赵孟頫",
+    "script": "楷",
+    "character": "彭",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0816_赵孟頫_楷_彭_s20261026.png"
+  },
+  {
+    "task_id": 817,
+    "calligrapher": "赵孟頫",
+    "script": "楷",
+    "character": "彭",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0817_赵孟頫_楷_彭_s20261027.png"
+  },
+  {
+    "task_id": 818,
+    "calligrapher": "赵孟頫",
+    "script": "楷",
+    "character": "固",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0818_赵孟頫_楷_固_s20261026.png"
+  },
+  {
+    "task_id": 819,
+    "calligrapher": "赵孟頫",
+    "script": "楷",
+    "character": "固",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0819_赵孟頫_楷_固_s20261027.png"
+  },
+  {
+    "task_id": 820,
+    "calligrapher": "赵孟頫",
+    "script": "楷",
+    "character": "非",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0820_赵孟頫_楷_非_s20261026.png"
+  },
+  {
+    "task_id": 821,
+    "calligrapher": "赵孟頫",
+    "script": "楷",
+    "character": "非",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0821_赵孟頫_楷_非_s20261027.png"
+  },
+  {
+    "task_id": 822,
+    "calligrapher": "赵孟頫",
+    "script": "楷",
+    "character": "先",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0822_赵孟頫_楷_先_s20261026.png"
+  },
+  {
+    "task_id": 823,
+    "calligrapher": "赵孟頫",
+    "script": "楷",
+    "character": "先",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0823_赵孟頫_楷_先_s20261027.png"
+  },
+  {
+    "task_id": 824,
+    "calligrapher": "赵孟頫",
+    "script": "楷",
+    "character": "成",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0824_赵孟頫_楷_成_s20261026.png"
+  },
+  {
+    "task_id": 825,
+    "calligrapher": "赵孟頫",
+    "script": "楷",
+    "character": "成",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0825_赵孟頫_楷_成_s20261027.png"
+  },
+  {
+    "task_id": 826,
+    "calligrapher": "赵孟頫",
+    "script": "楷",
+    "character": "感",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0826_赵孟頫_楷_感_s20261026.png"
+  },
+  {
+    "task_id": 827,
+    "calligrapher": "赵孟頫",
+    "script": "楷",
+    "character": "感",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0827_赵孟頫_楷_感_s20261027.png"
+  },
+  {
+    "task_id": 828,
+    "calligrapher": "赵孟頫",
+    "script": "楷",
+    "character": "白",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0828_赵孟頫_楷_白_s20261026.png"
+  },
+  {
+    "task_id": 829,
+    "calligrapher": "赵孟頫",
+    "script": "楷",
+    "character": "白",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0829_赵孟頫_楷_白_s20261027.png"
+  },
+  {
+    "task_id": 830,
+    "calligrapher": "赵孟頫",
+    "script": "楷",
+    "character": "或",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0830_赵孟頫_楷_或_s20261026.png"
+  },
+  {
+    "task_id": 831,
+    "calligrapher": "赵孟頫",
+    "script": "楷",
+    "character": "或",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0831_赵孟頫_楷_或_s20261027.png"
+  },
+  {
+    "task_id": 832,
+    "calligrapher": "赵孟頫",
+    "script": "楷",
+    "character": "平",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0832_赵孟頫_楷_平_s20261026.png"
+  },
+  {
+    "task_id": 833,
+    "calligrapher": "赵孟頫",
+    "script": "楷",
+    "character": "平",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0833_赵孟頫_楷_平_s20261027.png"
+  },
+  {
+    "task_id": 834,
+    "calligrapher": "赵孟頫",
+    "script": "楷",
+    "character": "君",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0834_赵孟頫_楷_君_s20261026.png"
+  },
+  {
+    "task_id": 835,
+    "calligrapher": "赵孟頫",
+    "script": "楷",
+    "character": "君",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0835_赵孟頫_楷_君_s20261027.png"
+  },
+  {
+    "task_id": 836,
+    "calligrapher": "赵孟頫",
+    "script": "楷",
+    "character": "俯",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0836_赵孟頫_楷_俯_s20261026.png"
+  },
+  {
+    "task_id": 837,
+    "calligrapher": "赵孟頫",
+    "script": "楷",
+    "character": "俯",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0837_赵孟頫_楷_俯_s20261027.png"
+  },
+  {
+    "task_id": 838,
+    "calligrapher": "赵孟頫",
+    "script": "楷",
+    "character": "司",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0838_赵孟頫_楷_司_s20261026.png"
+  },
+  {
+    "task_id": 839,
+    "calligrapher": "赵孟頫",
+    "script": "楷",
+    "character": "司",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0839_赵孟頫_楷_司_s20261027.png"
+  },
+  {
+    "task_id": 840,
+    "calligrapher": "赵孟頫",
+    "script": "楷",
+    "character": "痛",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0840_赵孟頫_楷_痛_s20261026.png"
+  },
+  {
+    "task_id": 841,
+    "calligrapher": "赵孟頫",
+    "script": "楷",
+    "character": "痛",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0841_赵孟頫_楷_痛_s20261027.png"
+  },
+  {
+    "task_id": 842,
+    "calligrapher": "赵孟頫",
+    "script": "楷",
+    "character": "應",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0842_赵孟頫_楷_應_s20261026.png"
+  },
+  {
+    "task_id": 843,
+    "calligrapher": "赵孟頫",
+    "script": "楷",
+    "character": "應",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0843_赵孟頫_楷_應_s20261027.png"
+  },
+  {
+    "task_id": 844,
+    "calligrapher": "赵孟頫",
+    "script": "楷",
+    "character": "依",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0844_赵孟頫_楷_依_s20261026.png"
+  },
+  {
+    "task_id": 845,
+    "calligrapher": "赵孟頫",
+    "script": "楷",
+    "character": "依",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0845_赵孟頫_楷_依_s20261027.png"
+  },
+  {
+    "task_id": 846,
+    "calligrapher": "赵孟頫",
+    "script": "楷",
+    "character": "春",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0846_赵孟頫_楷_春_s20261026.png"
+  },
+  {
+    "task_id": 847,
+    "calligrapher": "赵孟頫",
+    "script": "楷",
+    "character": "春",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0847_赵孟頫_楷_春_s20261027.png"
+  },
+  {
+    "task_id": 848,
+    "calligrapher": "赵孟頫",
+    "script": "楷",
+    "character": "陽",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0848_赵孟頫_楷_陽_s20261026.png"
+  },
+  {
+    "task_id": 849,
+    "calligrapher": "赵孟頫",
+    "script": "楷",
+    "character": "陽",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0849_赵孟頫_楷_陽_s20261027.png"
+  },
+  {
+    "task_id": 850,
+    "calligrapher": "赵孟頫",
+    "script": "楷",
+    "character": "清",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0850_赵孟頫_楷_清_s20261026.png"
+  },
+  {
+    "task_id": 851,
+    "calligrapher": "赵孟頫",
+    "script": "楷",
+    "character": "清",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0851_赵孟頫_楷_清_s20261027.png"
+  },
+  {
+    "task_id": 852,
+    "calligrapher": "赵孟頫",
+    "script": "楷",
+    "character": "然",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0852_赵孟頫_楷_然_s20261026.png"
+  },
+  {
+    "task_id": 853,
+    "calligrapher": "赵孟頫",
+    "script": "楷",
+    "character": "然",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0853_赵孟頫_楷_然_s20261027.png"
+  },
+  {
+    "task_id": 854,
+    "calligrapher": "赵孟頫",
+    "script": "楷",
+    "character": "期",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0854_赵孟頫_楷_期_s20261026.png"
+  },
+  {
+    "task_id": 855,
+    "calligrapher": "赵孟頫",
+    "script": "楷",
+    "character": "期",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0855_赵孟頫_楷_期_s20261027.png"
+  },
+  {
+    "task_id": 856,
+    "calligrapher": "赵孟頫",
+    "script": "楷",
+    "character": "二",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0856_赵孟頫_楷_二_s20261026.png"
+  },
+  {
+    "task_id": 857,
+    "calligrapher": "赵孟頫",
+    "script": "楷",
+    "character": "二",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0857_赵孟頫_楷_二_s20261027.png"
+  },
+  {
+    "task_id": 858,
+    "calligrapher": "赵孟頫",
+    "script": "楷",
+    "character": "五",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0858_赵孟頫_楷_五_s20261026.png"
+  },
+  {
+    "task_id": 859,
+    "calligrapher": "赵孟頫",
+    "script": "楷",
+    "character": "五",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0859_赵孟頫_楷_五_s20261027.png"
+  },
+  {
+    "task_id": 860,
+    "calligrapher": "赵孟頫",
+    "script": "楷",
+    "character": "懷",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0860_赵孟頫_楷_懷_s20261026.png"
+  },
+  {
+    "task_id": 861,
+    "calligrapher": "赵孟頫",
+    "script": "楷",
+    "character": "懷",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0861_赵孟頫_楷_懷_s20261027.png"
+  },
+  {
+    "task_id": 862,
+    "calligrapher": "赵孟頫",
+    "script": "楷",
+    "character": "喜",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0862_赵孟頫_楷_喜_s20261026.png"
+  },
+  {
+    "task_id": 863,
+    "calligrapher": "赵孟頫",
+    "script": "楷",
+    "character": "喜",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0863_赵孟頫_楷_喜_s20261027.png"
+  },
+  {
+    "task_id": 864,
+    "calligrapher": "赵孟頫",
+    "script": "楷",
+    "character": "聖",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0864_赵孟頫_楷_聖_s20261026.png"
+  },
+  {
+    "task_id": 865,
+    "calligrapher": "赵孟頫",
+    "script": "楷",
+    "character": "聖",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0865_赵孟頫_楷_聖_s20261027.png"
+  },
+  {
+    "task_id": 866,
+    "calligrapher": "赵孟頫",
+    "script": "楷",
+    "character": "由",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0866_赵孟頫_楷_由_s20261026.png"
+  },
+  {
+    "task_id": 867,
+    "calligrapher": "赵孟頫",
+    "script": "楷",
+    "character": "由",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0867_赵孟頫_楷_由_s20261027.png"
+  },
+  {
+    "task_id": 868,
+    "calligrapher": "赵孟頫",
+    "script": "楷",
+    "character": "未",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0868_赵孟頫_楷_未_s20261026.png"
+  },
+  {
+    "task_id": 869,
+    "calligrapher": "赵孟頫",
+    "script": "楷",
+    "character": "未",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0869_赵孟頫_楷_未_s20261027.png"
+  },
+  {
+    "task_id": 870,
+    "calligrapher": "赵孟頫",
+    "script": "楷",
+    "character": "忘",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0870_赵孟頫_楷_忘_s20261026.png"
+  },
+  {
+    "task_id": 871,
+    "calligrapher": "赵孟頫",
+    "script": "楷",
+    "character": "忘",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0871_赵孟頫_楷_忘_s20261027.png"
+  },
+  {
+    "task_id": 872,
+    "calligrapher": "赵孟頫",
+    "script": "楷",
+    "character": "竹",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0872_赵孟頫_楷_竹_s20261026.png"
+  },
+  {
+    "task_id": 873,
+    "calligrapher": "赵孟頫",
+    "script": "楷",
+    "character": "竹",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0873_赵孟頫_楷_竹_s20261027.png"
+  },
+  {
+    "task_id": 874,
+    "calligrapher": "赵孟頫",
+    "script": "楷",
+    "character": "慰",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0874_赵孟頫_楷_慰_s20261026.png"
+  },
+  {
+    "task_id": 875,
+    "calligrapher": "赵孟頫",
+    "script": "楷",
+    "character": "慰",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0875_赵孟頫_楷_慰_s20261027.png"
+  },
+  {
+    "task_id": 876,
+    "calligrapher": "赵孟頫",
+    "script": "楷",
+    "character": "則",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0876_赵孟頫_楷_則_s20261026.png"
+  },
+  {
+    "task_id": 877,
+    "calligrapher": "赵孟頫",
+    "script": "楷",
+    "character": "則",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0877_赵孟頫_楷_則_s20261027.png"
+  },
+  {
+    "task_id": 878,
+    "calligrapher": "赵孟頫",
+    "script": "楷",
+    "character": "代",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0878_赵孟頫_楷_代_s20261026.png"
+  },
+  {
+    "task_id": 879,
+    "calligrapher": "赵孟頫",
+    "script": "楷",
+    "character": "代",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0879_赵孟頫_楷_代_s20261027.png"
+  },
+  {
+    "task_id": 880,
+    "calligrapher": "赵孟頫",
+    "script": "楷",
+    "character": "原",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0880_赵孟頫_楷_原_s20261026.png"
+  },
+  {
+    "task_id": 881,
+    "calligrapher": "赵孟頫",
+    "script": "楷",
+    "character": "原",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0881_赵孟頫_楷_原_s20261027.png"
+  },
+  {
+    "task_id": 882,
+    "calligrapher": "赵孟頫",
+    "script": "楷",
+    "character": "將",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0882_赵孟頫_楷_將_s20261026.png"
+  },
+  {
+    "task_id": 883,
+    "calligrapher": "赵孟頫",
+    "script": "楷",
+    "character": "將",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0883_赵孟頫_楷_將_s20261027.png"
+  },
+  {
+    "task_id": 884,
+    "calligrapher": "赵孟頫",
+    "script": "楷",
+    "character": "度",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0884_赵孟頫_楷_度_s20261026.png"
+  },
+  {
+    "task_id": 885,
+    "calligrapher": "赵孟頫",
+    "script": "楷",
+    "character": "度",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0885_赵孟頫_楷_度_s20261027.png"
+  },
+  {
+    "task_id": 886,
+    "calligrapher": "赵孟頫",
+    "script": "楷",
+    "character": "唯",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0886_赵孟頫_楷_唯_s20261026.png"
+  },
+  {
+    "task_id": 887,
+    "calligrapher": "赵孟頫",
+    "script": "楷",
+    "character": "唯",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0887_赵孟頫_楷_唯_s20261027.png"
+  },
+  {
+    "task_id": 888,
+    "calligrapher": "赵孟頫",
+    "script": "楷",
+    "character": "忽",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0888_赵孟頫_楷_忽_s20261026.png"
+  },
+  {
+    "task_id": 889,
+    "calligrapher": "赵孟頫",
+    "script": "楷",
+    "character": "忽",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0889_赵孟頫_楷_忽_s20261027.png"
+  },
+  {
+    "task_id": 890,
+    "calligrapher": "赵孟頫",
+    "script": "楷",
+    "character": "市",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0890_赵孟頫_楷_市_s20261026.png"
+  },
+  {
+    "task_id": 891,
+    "calligrapher": "赵孟頫",
+    "script": "楷",
+    "character": "市",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0891_赵孟頫_楷_市_s20261027.png"
+  },
+  {
+    "task_id": 892,
+    "calligrapher": "赵孟頫",
+    "script": "楷",
+    "character": "斯",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0892_赵孟頫_楷_斯_s20261026.png"
+  },
+  {
+    "task_id": 893,
+    "calligrapher": "赵孟頫",
+    "script": "楷",
+    "character": "斯",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0893_赵孟頫_楷_斯_s20261027.png"
+  },
+  {
+    "task_id": 894,
+    "calligrapher": "赵孟頫",
+    "script": "楷",
+    "character": "郎",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0894_赵孟頫_楷_郎_s20261026.png"
+  },
+  {
+    "task_id": 895,
+    "calligrapher": "赵孟頫",
+    "script": "楷",
+    "character": "郎",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0895_赵孟頫_楷_郎_s20261027.png"
+  },
+  {
+    "task_id": 896,
+    "calligrapher": "赵孟頫",
+    "script": "楷",
+    "character": "欲",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0896_赵孟頫_楷_欲_s20261026.png"
+  },
+  {
+    "task_id": 897,
+    "calligrapher": "赵孟頫",
+    "script": "楷",
+    "character": "欲",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0897_赵孟頫_楷_欲_s20261027.png"
+  },
+  {
+    "task_id": 898,
+    "calligrapher": "赵孟頫",
+    "script": "楷",
+    "character": "馬",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0898_赵孟頫_楷_馬_s20261026.png"
+  },
+  {
+    "task_id": 899,
+    "calligrapher": "赵孟頫",
+    "script": "楷",
+    "character": "馬",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0899_赵孟頫_楷_馬_s20261027.png"
+  },
+  {
+    "task_id": 900,
+    "calligrapher": "颜真卿",
+    "script": "楷",
+    "character": "安",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0900_颜真卿_楷_安_s20261026.png"
+  },
+  {
+    "task_id": 901,
+    "calligrapher": "颜真卿",
+    "script": "楷",
+    "character": "安",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0901_颜真卿_楷_安_s20261027.png"
+  },
+  {
+    "task_id": 902,
+    "calligrapher": "颜真卿",
+    "script": "楷",
+    "character": "足",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0902_颜真卿_楷_足_s20261026.png"
+  },
+  {
+    "task_id": 903,
+    "calligrapher": "颜真卿",
+    "script": "楷",
+    "character": "足",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0903_颜真卿_楷_足_s20261027.png"
+  },
+  {
+    "task_id": 904,
+    "calligrapher": "颜真卿",
+    "script": "楷",
+    "character": "悲",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0904_颜真卿_楷_悲_s20261026.png"
+  },
+  {
+    "task_id": 905,
+    "calligrapher": "颜真卿",
+    "script": "楷",
+    "character": "悲",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0905_颜真卿_楷_悲_s20261027.png"
+  },
+  {
+    "task_id": 906,
+    "calligrapher": "颜真卿",
+    "script": "楷",
+    "character": "難",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0906_颜真卿_楷_難_s20261026.png"
+  },
+  {
+    "task_id": 907,
+    "calligrapher": "颜真卿",
+    "script": "楷",
+    "character": "難",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0907_颜真卿_楷_難_s20261027.png"
+  },
+  {
+    "task_id": 908,
+    "calligrapher": "颜真卿",
+    "script": "楷",
+    "character": "東",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0908_颜真卿_楷_東_s20261026.png"
+  },
+  {
+    "task_id": 909,
+    "calligrapher": "颜真卿",
+    "script": "楷",
+    "character": "東",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0909_颜真卿_楷_東_s20261027.png"
+  },
+  {
+    "task_id": 910,
+    "calligrapher": "颜真卿",
+    "script": "楷",
+    "character": "亭",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0910_颜真卿_楷_亭_s20261026.png"
+  },
+  {
+    "task_id": 911,
+    "calligrapher": "颜真卿",
+    "script": "楷",
+    "character": "亭",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0911_颜真卿_楷_亭_s20261027.png"
+  },
+  {
+    "task_id": 912,
+    "calligrapher": "颜真卿",
+    "script": "楷",
+    "character": "幽",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0912_颜真卿_楷_幽_s20261026.png"
+  },
+  {
+    "task_id": 913,
+    "calligrapher": "颜真卿",
+    "script": "楷",
+    "character": "幽",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0913_颜真卿_楷_幽_s20261027.png"
+  },
+  {
+    "task_id": 914,
+    "calligrapher": "颜真卿",
+    "script": "楷",
+    "character": "即",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0914_颜真卿_楷_即_s20261026.png"
+  },
+  {
+    "task_id": 915,
+    "calligrapher": "颜真卿",
+    "script": "楷",
+    "character": "即",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0915_颜真卿_楷_即_s20261027.png"
+  },
+  {
+    "task_id": 916,
+    "calligrapher": "颜真卿",
+    "script": "楷",
+    "character": "坐",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0916_颜真卿_楷_坐_s20261026.png"
+  },
+  {
+    "task_id": 917,
+    "calligrapher": "颜真卿",
+    "script": "楷",
+    "character": "坐",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0917_颜真卿_楷_坐_s20261027.png"
+  },
+  {
+    "task_id": 918,
+    "calligrapher": "颜真卿",
+    "script": "楷",
+    "character": "形",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0918_颜真卿_楷_形_s20261026.png"
+  },
+  {
+    "task_id": 919,
+    "calligrapher": "颜真卿",
+    "script": "楷",
+    "character": "形",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0919_颜真卿_楷_形_s20261027.png"
+  },
+  {
+    "task_id": 920,
+    "calligrapher": "颜真卿",
+    "script": "楷",
+    "character": "感",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0920_颜真卿_楷_感_s20261026.png"
+  },
+  {
+    "task_id": 921,
+    "calligrapher": "颜真卿",
+    "script": "楷",
+    "character": "感",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0921_颜真卿_楷_感_s20261027.png"
+  },
+  {
+    "task_id": 922,
+    "calligrapher": "颜真卿",
+    "script": "楷",
+    "character": "慶",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0922_颜真卿_楷_慶_s20261026.png"
+  },
+  {
+    "task_id": 923,
+    "calligrapher": "颜真卿",
+    "script": "楷",
+    "character": "慶",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0923_颜真卿_楷_慶_s20261027.png"
+  },
+  {
+    "task_id": 924,
+    "calligrapher": "颜真卿",
+    "script": "楷",
+    "character": "居",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0924_颜真卿_楷_居_s20261026.png"
+  },
+  {
+    "task_id": 925,
+    "calligrapher": "颜真卿",
+    "script": "楷",
+    "character": "居",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0925_颜真卿_楷_居_s20261027.png"
+  },
+  {
+    "task_id": 926,
+    "calligrapher": "颜真卿",
+    "script": "楷",
+    "character": "觀",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0926_颜真卿_楷_觀_s20261026.png"
+  },
+  {
+    "task_id": 927,
+    "calligrapher": "颜真卿",
+    "script": "楷",
+    "character": "觀",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0927_颜真卿_楷_觀_s20261027.png"
+  },
+  {
+    "task_id": 928,
+    "calligrapher": "颜真卿",
+    "script": "楷",
+    "character": "臨",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0928_颜真卿_楷_臨_s20261026.png"
+  },
+  {
+    "task_id": 929,
+    "calligrapher": "颜真卿",
+    "script": "楷",
+    "character": "臨",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0929_颜真卿_楷_臨_s20261027.png"
+  },
+  {
+    "task_id": 930,
+    "calligrapher": "颜真卿",
+    "script": "楷",
+    "character": "察",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0930_颜真卿_楷_察_s20261026.png"
+  },
+  {
+    "task_id": 931,
+    "calligrapher": "颜真卿",
+    "script": "楷",
+    "character": "察",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0931_颜真卿_楷_察_s20261027.png"
+  },
+  {
+    "task_id": 932,
+    "calligrapher": "颜真卿",
+    "script": "楷",
+    "character": "雨",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0932_颜真卿_楷_雨_s20261026.png"
+  },
+  {
+    "task_id": 933,
+    "calligrapher": "颜真卿",
+    "script": "楷",
+    "character": "雨",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0933_颜真卿_楷_雨_s20261027.png"
+  },
+  {
+    "task_id": 934,
+    "calligrapher": "颜真卿",
+    "script": "楷",
+    "character": "頓",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0934_颜真卿_楷_頓_s20261026.png"
+  },
+  {
+    "task_id": 935,
+    "calligrapher": "颜真卿",
+    "script": "楷",
+    "character": "頓",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0935_颜真卿_楷_頓_s20261027.png"
+  },
+  {
+    "task_id": 936,
+    "calligrapher": "颜真卿",
+    "script": "楷",
+    "character": "妙",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0936_颜真卿_楷_妙_s20261026.png"
+  },
+  {
+    "task_id": 937,
+    "calligrapher": "颜真卿",
+    "script": "楷",
+    "character": "妙",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0937_颜真卿_楷_妙_s20261027.png"
+  },
+  {
+    "task_id": 938,
+    "calligrapher": "颜真卿",
+    "script": "楷",
+    "character": "委",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0938_颜真卿_楷_委_s20261026.png"
+  },
+  {
+    "task_id": 939,
+    "calligrapher": "颜真卿",
+    "script": "楷",
+    "character": "委",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0939_颜真卿_楷_委_s20261027.png"
+  },
+  {
+    "task_id": 940,
+    "calligrapher": "颜真卿",
+    "script": "楷",
+    "character": "寄",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0940_颜真卿_楷_寄_s20261026.png"
+  },
+  {
+    "task_id": 941,
+    "calligrapher": "颜真卿",
+    "script": "楷",
+    "character": "寄",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0941_颜真卿_楷_寄_s20261027.png"
+  },
+  {
+    "task_id": 942,
+    "calligrapher": "颜真卿",
+    "script": "楷",
+    "character": "賢",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0942_颜真卿_楷_賢_s20261026.png"
+  },
+  {
+    "task_id": 943,
+    "calligrapher": "颜真卿",
+    "script": "楷",
+    "character": "賢",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0943_颜真卿_楷_賢_s20261027.png"
+  },
+  {
+    "task_id": 944,
+    "calligrapher": "颜真卿",
+    "script": "楷",
+    "character": "痛",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0944_颜真卿_楷_痛_s20261026.png"
+  },
+  {
+    "task_id": 945,
+    "calligrapher": "颜真卿",
+    "script": "楷",
+    "character": "痛",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0945_颜真卿_楷_痛_s20261027.png"
+  },
+  {
+    "task_id": 946,
+    "calligrapher": "颜真卿",
+    "script": "楷",
+    "character": "問",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0946_颜真卿_楷_問_s20261026.png"
+  },
+  {
+    "task_id": 947,
+    "calligrapher": "颜真卿",
+    "script": "楷",
+    "character": "問",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0947_颜真卿_楷_問_s20261027.png"
+  },
+  {
+    "task_id": 948,
+    "calligrapher": "颜真卿",
+    "script": "楷",
+    "character": "二",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0948_颜真卿_楷_二_s20261026.png"
+  },
+  {
+    "task_id": 949,
+    "calligrapher": "颜真卿",
+    "script": "楷",
+    "character": "二",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0949_颜真卿_楷_二_s20261027.png"
+  },
+  {
+    "task_id": 950,
+    "calligrapher": "颜真卿",
+    "script": "楷",
+    "character": "懷",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0950_颜真卿_楷_懷_s20261026.png"
+  },
+  {
+    "task_id": 951,
+    "calligrapher": "颜真卿",
+    "script": "楷",
+    "character": "懷",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0951_颜真卿_楷_懷_s20261027.png"
+  },
+  {
+    "task_id": 952,
+    "calligrapher": "颜真卿",
+    "script": "楷",
+    "character": "刻",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0952_颜真卿_楷_刻_s20261026.png"
+  },
+  {
+    "task_id": 953,
+    "calligrapher": "颜真卿",
+    "script": "楷",
+    "character": "刻",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0953_颜真卿_楷_刻_s20261027.png"
+  },
+  {
+    "task_id": 954,
+    "calligrapher": "颜真卿",
+    "script": "楷",
+    "character": "喜",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0954_颜真卿_楷_喜_s20261026.png"
+  },
+  {
+    "task_id": 955,
+    "calligrapher": "颜真卿",
+    "script": "楷",
+    "character": "喜",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0955_颜真卿_楷_喜_s20261027.png"
+  },
+  {
+    "task_id": 956,
+    "calligrapher": "颜真卿",
+    "script": "楷",
+    "character": "經",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0956_颜真卿_楷_經_s20261026.png"
+  },
+  {
+    "task_id": 957,
+    "calligrapher": "颜真卿",
+    "script": "楷",
+    "character": "經",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0957_颜真卿_楷_經_s20261027.png"
+  },
+  {
+    "task_id": 958,
+    "calligrapher": "颜真卿",
+    "script": "楷",
+    "character": "宿",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0958_颜真卿_楷_宿_s20261026.png"
+  },
+  {
+    "task_id": 959,
+    "calligrapher": "颜真卿",
+    "script": "楷",
+    "character": "宿",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0959_颜真卿_楷_宿_s20261027.png"
+  },
+  {
+    "task_id": 960,
+    "calligrapher": "颜真卿",
+    "script": "楷",
+    "character": "竹",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0960_颜真卿_楷_竹_s20261026.png"
+  },
+  {
+    "task_id": 961,
+    "calligrapher": "颜真卿",
+    "script": "楷",
+    "character": "竹",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0961_颜真卿_楷_竹_s20261027.png"
+  },
+  {
+    "task_id": 962,
+    "calligrapher": "颜真卿",
+    "script": "楷",
+    "character": "星",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0962_颜真卿_楷_星_s20261026.png"
+  },
+  {
+    "task_id": 963,
+    "calligrapher": "颜真卿",
+    "script": "楷",
+    "character": "星",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0963_颜真卿_楷_星_s20261027.png"
+  },
+  {
+    "task_id": 964,
+    "calligrapher": "颜真卿",
+    "script": "楷",
+    "character": "務",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0964_颜真卿_楷_務_s20261026.png"
+  },
+  {
+    "task_id": 965,
+    "calligrapher": "颜真卿",
+    "script": "楷",
+    "character": "務",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0965_颜真卿_楷_務_s20261027.png"
+  },
+  {
+    "task_id": 966,
+    "calligrapher": "颜真卿",
+    "script": "楷",
+    "character": "孟",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0966_颜真卿_楷_孟_s20261026.png"
+  },
+  {
+    "task_id": 967,
+    "calligrapher": "颜真卿",
+    "script": "楷",
+    "character": "孟",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0967_颜真卿_楷_孟_s20261027.png"
+  },
+  {
+    "task_id": 968,
+    "calligrapher": "颜真卿",
+    "script": "楷",
+    "character": "葉",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0968_颜真卿_楷_葉_s20261026.png"
+  },
+  {
+    "task_id": 969,
+    "calligrapher": "颜真卿",
+    "script": "楷",
+    "character": "葉",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0969_颜真卿_楷_葉_s20261027.png"
+  },
+  {
+    "task_id": 970,
+    "calligrapher": "颜真卿",
+    "script": "楷",
+    "character": "巳",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0970_颜真卿_楷_巳_s20261026.png"
+  },
+  {
+    "task_id": 971,
+    "calligrapher": "颜真卿",
+    "script": "楷",
+    "character": "巳",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0971_颜真卿_楷_巳_s20261027.png"
+  },
+  {
+    "task_id": 972,
+    "calligrapher": "颜真卿",
+    "script": "楷",
+    "character": "理",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0972_颜真卿_楷_理_s20261026.png"
+  },
+  {
+    "task_id": 973,
+    "calligrapher": "颜真卿",
+    "script": "楷",
+    "character": "理",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0973_颜真卿_楷_理_s20261027.png"
+  },
+  {
+    "task_id": 974,
+    "calligrapher": "颜真卿",
+    "script": "楷",
+    "character": "脩",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0974_颜真卿_楷_脩_s20261026.png"
+  },
+  {
+    "task_id": 975,
+    "calligrapher": "颜真卿",
+    "script": "楷",
+    "character": "脩",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0975_颜真卿_楷_脩_s20261027.png"
+  },
+  {
+    "task_id": 976,
+    "calligrapher": "颜真卿",
+    "script": "楷",
+    "character": "聽",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0976_颜真卿_楷_聽_s20261026.png"
+  },
+  {
+    "task_id": 977,
+    "calligrapher": "颜真卿",
+    "script": "楷",
+    "character": "聽",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0977_颜真卿_楷_聽_s20261027.png"
+  },
+  {
+    "task_id": 978,
+    "calligrapher": "颜真卿",
+    "script": "楷",
+    "character": "比",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0978_颜真卿_楷_比_s20261026.png"
+  },
+  {
+    "task_id": 979,
+    "calligrapher": "颜真卿",
+    "script": "楷",
+    "character": "比",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0979_颜真卿_楷_比_s20261027.png"
+  },
+  {
+    "task_id": 980,
+    "calligrapher": "颜真卿",
+    "script": "楷",
+    "character": "巾",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0980_颜真卿_楷_巾_s20261026.png"
+  },
+  {
+    "task_id": 981,
+    "calligrapher": "颜真卿",
+    "script": "楷",
+    "character": "巾",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0981_颜真卿_楷_巾_s20261027.png"
+  },
+  {
+    "task_id": 982,
+    "calligrapher": "颜真卿",
+    "script": "楷",
+    "character": "河",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0982_颜真卿_楷_河_s20261026.png"
+  },
+  {
+    "task_id": 983,
+    "calligrapher": "颜真卿",
+    "script": "楷",
+    "character": "河",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0983_颜真卿_楷_河_s20261027.png"
+  },
+  {
+    "task_id": 984,
+    "calligrapher": "颜真卿",
+    "script": "楷",
+    "character": "夕",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0984_颜真卿_楷_夕_s20261026.png"
+  },
+  {
+    "task_id": 985,
+    "calligrapher": "颜真卿",
+    "script": "楷",
+    "character": "夕",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0985_颜真卿_楷_夕_s20261027.png"
+  },
+  {
+    "task_id": 986,
+    "calligrapher": "颜真卿",
+    "script": "楷",
+    "character": "市",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0986_颜真卿_楷_市_s20261026.png"
+  },
+  {
+    "task_id": 987,
+    "calligrapher": "颜真卿",
+    "script": "楷",
+    "character": "市",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0987_颜真卿_楷_市_s20261027.png"
+  },
+  {
+    "task_id": 988,
+    "calligrapher": "颜真卿",
+    "script": "楷",
+    "character": "隨",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0988_颜真卿_楷_隨_s20261026.png"
+  },
+  {
+    "task_id": 989,
+    "calligrapher": "颜真卿",
+    "script": "楷",
+    "character": "隨",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0989_颜真卿_楷_隨_s20261027.png"
+  },
+  {
+    "task_id": 990,
+    "calligrapher": "颜真卿",
+    "script": "楷",
+    "character": "陳",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0990_颜真卿_楷_陳_s20261026.png"
+  },
+  {
+    "task_id": 991,
+    "calligrapher": "颜真卿",
+    "script": "楷",
+    "character": "陳",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0991_颜真卿_楷_陳_s20261027.png"
+  },
+  {
+    "task_id": 992,
+    "calligrapher": "颜真卿",
+    "script": "楷",
+    "character": "屈",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0992_颜真卿_楷_屈_s20261026.png"
+  },
+  {
+    "task_id": 993,
+    "calligrapher": "颜真卿",
+    "script": "楷",
+    "character": "屈",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0993_颜真卿_楷_屈_s20261027.png"
+  },
+  {
+    "task_id": 994,
+    "calligrapher": "颜真卿",
+    "script": "楷",
+    "character": "嶽",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0994_颜真卿_楷_嶽_s20261026.png"
+  },
+  {
+    "task_id": 995,
+    "calligrapher": "颜真卿",
+    "script": "楷",
+    "character": "嶽",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0995_颜真卿_楷_嶽_s20261027.png"
+  },
+  {
+    "task_id": 996,
+    "calligrapher": "颜真卿",
+    "script": "楷",
+    "character": "欣",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0996_颜真卿_楷_欣_s20261026.png"
+  },
+  {
+    "task_id": 997,
+    "calligrapher": "颜真卿",
+    "script": "楷",
+    "character": "欣",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0997_颜真卿_楷_欣_s20261027.png"
+  },
+  {
+    "task_id": 998,
+    "calligrapher": "颜真卿",
+    "script": "楷",
+    "character": "川",
+    "seed": 20261026,
+    "seed_idx": 0,
+    "filename": "0998_颜真卿_楷_川_s20261026.png"
+  },
+  {
+    "task_id": 999,
+    "calligrapher": "颜真卿",
+    "script": "楷",
+    "character": "川",
+    "seed": 20261027,
+    "seed_idx": 1,
+    "filename": "0999_颜真卿_楷_川_s20261027.png"
+  }
+]
