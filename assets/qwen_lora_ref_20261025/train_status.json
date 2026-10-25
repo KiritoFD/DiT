@@ -1,0 +1,14 @@
+{
+  "pid": 816011,
+  "phase": "completed",
+  "step": 4000,
+  "max_steps": 4000,
+  "lora_parameters": 33554432,
+  "train_rows": 23485,
+  "conditioning": "prompt+std_glyph_image",
+  "initial_grad_norm": 0.3440100775206176,
+  "loss": 0.11672005616128445,
+  "seconds_per_step": 3.20319371919075,
+  "lr": 1e-05,
+  "peak_GiB": 36.149024963378906
+}

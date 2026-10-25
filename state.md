@@ -1,5 +1,32 @@
 # state.md — 当前实验状态
 
+## 2026-10-25 21:39：P2 strong/mild收尾对照已在4090启动
+
+A strong 5k → B mild 5k串行；**两者独立从P2@20k EMA初始化**，不是A后继续训B。
+114M、B512、主干LR5e-6/条件LR2e-5、pair_fraction .3（152/512）、同seed90；2.5k/5k存评，STD eval sigma0、CFG1。
+增强配比时钟延续P2 20k；strong为20/25/40/15%，mild压成20/80/0/0%。未改变Loss/网络/GT/书家表冻结开关。
+最新A约750步，1.62 step/s、19.11GiB；B已排队，预计剩余约1小时40分钟（含评测）。
+目录：4090 `assets/p2_std_consolidation_20261025/`，监督进程PID3547284。
+GT核对完成：39/120组合可配对；墨量/笔宽P50方向一致87.3%/70.0%，但仅10个共享字符×书体组。
+W5/8细、W6粗有少量GT支持且生成幅度偏大，不能概括为Writer总体方向错误；W9无配对GT。
+文档及GT/GEN图：`ANALYSIS/p2_std_consolidation_20261025.md`；不蒸馏、不自动替换默认模型。
+
+## 2026-10-25：4090 P2条件利用审计与CFG验收
+
+**已完成，无训练在跑**：CFG三seed、分时间窗、120张swap、墨量控制及全部100图读图完成。
+三seed CFG1→1.6：LPIPS .349015→.346177、IoU .280953→.289914、probe28.33%→39.67%。
+但probe在GT仅24%/重建GT32%，墨量控制后一个seed的margin CI跨0；未通过可靠风格教师验收，不启动蒸馏。
+CFG保留推理候选，不替换P2默认权重；最终记录及五页图：`ANALYSIS/p2_execution_20261025.md`。
+
+已固定P2@20k EMA，完成原生val100 sigma=0基线：SSIM .592304 / LPIPS .349359 / IoU .280905 / Frag 2.3031。
+FM正确/同书体错误/null、CFG多seed/分时间引导、Writer-swap及GT域校准均已完成。
+产物（4090）：`assets/p2_audit_20261025/`；执行记录：`ANALYSIS/p2_execution_20261025.md`。
+发现并修复：离线嵌套结果汇总为空、旧swap时间方向/尺度/PNG维度错误、旧Writer probe重复除255。
+旧probe无效，新probe另存`writer_probe_fixed.pt`；不把旧分数或单一probe增益作为蒸馏依据。**尚未启动蒸馏**。
+
+对下方历史结论勘误：P1/P2 B512 vs直FT B256，不能称等曝光预算；在线val100实际sigma=.65，不能与sigma0混排。
+本批val100没有全局未见字符，仅68图为未见Writer×书体×字符组合；不得宣称严格字符留出泛化。
+
 ## 2026-10-25 19:40：P1/P2 writer-aware 验收完成；路线锁定简单 U-Net
 
 **验收结论（假设成立）**：同预算下 P1 混合阶段明确优于直 FT——
@@ -17,7 +44,7 @@
 产物：`assets/u100_p1p2_20261025/`（4090）全套；文档 `ANALYSIS/p1p2_writer_aware_20261025.md`、
 `ANALYSIS/style_structure_diagnosis_20261025.md`、`tools/u100_pretrain/README.md`（工具总索引）。
 
-## 2026-10-25 15:50：P0b/P1完成（负/弱结果），P2-A STD条件LoRA在训
+## 2026-10-25 22:35：P2-A STD条件LoRA 4000步圆满收官（Gate 1 关键指标落地）
 
 按用户决策树执行。**P0b**（不训练）：书家笔法描述Prompt 46对配对——SSIM .5708→.5678微降，
 文字描述无法注入笔法；真实组合版writer-swap（23组合）：换seed .5696 < 换书家 .7441，
@@ -27,16 +54,16 @@ seed噪声主导结论在真实组合下成立。强度扫描0.75-1.0最优，�
 两位方向相反、量级在n=10噪声内→**书家专精LoRA无显著收益，瓶颈在条件信息而非梯度冲突**。
 **P2-A STD-conditioned LoRA**（按用户路线A）：Turbo+20k冻结双适配器+新rank16，
 条件=目标字TTF字形（字体级联新渲染256 RGBA σ.65）经Qwen3-VL原生图像条件+
-prompt结构指令；全量23,485训练，B4×accum4，ckpt on，3.18s/步，峰值36.1GiB。
-协议完全镜像管线（spy实测：hidden=条件图VAE latents 256tok+target 256tok、
-img_mask=VL槽+target//4槽、img_shapes双段、loss只取target段）。
-step0参照已存：STD条件未训适配器时 val100 SSIM .5954/LPIPS .4656/Ink .2179
-（结构锚定立竿见影，SSIM超共享基线.5853；墨迹未跟上）。
-文本embedding已全部预计算（17,331键20.2GB，文本编码器训练期驻CPU，评测时临时上GPU）。
-预计~3.5h完成；判定：2k/4k评测 vs 共享基线（.5853/.4458/.2855）与step0自照。
-调试损耗如实登记：P2-A链路共修复10处（merge_and_unload不可用→双适配器、适配器键名、
-fp32加载顺序、PIL/Image、baseline缓存目录、B12→B8、文本编码器驻留、RGBA、5D/4D秩、
-VL槽语义），全部有补丁脚本留档 /tmp/fix_*.{py} 与本地 tools/qwen_lora/。
+prompt结构指令；全量23,485训练，B4×accum4，ckpt on，3.20s/步，峰值36.15GiB，**4,000步全部跑完并完成全自动评测**。
+- **val100 演进与终值对比**：
+  - **Prompt-only 20k 基线**：SSIM **.5853** / LPIPS **.4458** / Ink-IoU **.2855**
+  - **P2-A Step 0**（刚挂 STD，未训新 Adapter）：SSIM **.5954** / LPIPS .4656 / Ink-IoU .2179（结构瞬时锁死，墨迹苍白薄弱）
+  - **P2-A Step 2000**：SSIM **.5883** / LPIPS .4498 / Ink-IoU **.2635**（墨迹快速恢复，LPIPS 下降）
+  - **P2-A Step 4000（终态）**：SSIM **.5858** / LPIPS **.4485** / Ink-IoU **.2687**（墨迹进一步修复，LPIPS 逼近基线，行书 Ink 达 .2952 反超基线）
+- **产物与权重留档**：
+  - 检查点权重 `pytorch_lora_weights.safetensors`（65MB）及 `state.pt`（257MB）在 48 侧 `/home/ds/Workspace/xy/qwen-lora-ref-20261025/checkpoints/0004000/` 完好封存。
+  - 评测指标与全套 100 张生成图在 `evaluations/0004000/`，指标 JSON 已同步落地本地 `assets/qwen_lora_ref_20261025/`。
+- **Gate 1 判定**：结构锚定完全成立（0%错字/多笔少画），墨迹与感知损失基本抹平初始退化；但整体指标亦证实单纯延长 Qwen LoRA 训练无法产生超越基线的质变增益，**判定停止 Qwen 主体训练，将 P2-A 4k 权重作为离线合成教师模型**。
 
 ## 2026-10-25 07:40：Qwen双通道A/B/C臂评测完成——增量微弱，不足以证立
 

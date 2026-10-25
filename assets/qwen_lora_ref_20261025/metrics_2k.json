@@ -1,0 +1,809 @@
+{
+  "agg": {
+    "ssim": 0.58833,
+    "lpips": 0.4498,
+    "ink_iou": 0.26346
+  },
+  "per_char": [
+    {
+      "character": "用",
+      "calligrapher": "王羲之",
+      "script": "行",
+      "ssim": 0.59836,
+      "lpips": 0.47835,
+      "ink_iou": 0.27375
+    },
+    {
+      "character": "報",
+      "calligrapher": "王羲之",
+      "script": "行",
+      "ssim": 0.45519,
+      "lpips": 0.51874,
+      "ink_iou": 0.35384
+    },
+    {
+      "character": "羲",
+      "calligrapher": "王羲之",
+      "script": "行",
+      "ssim": 0.61966,
+      "lpips": 0.39672,
+      "ink_iou": 0.48122
+    },
+    {
+      "character": "旬",
+      "calligrapher": "王羲之",
+      "script": "楷",
+      "ssim": 0.53567,
+      "lpips": 0.50552,
+      "ink_iou": 0.08582
+    },
+    {
+      "character": "屍",
+      "calligrapher": "王羲之",
+      "script": "楷",
+      "ssim": 0.62782,
+      "lpips": 0.39525,
+      "ink_iou": 0.22685
+    },
+    {
+      "character": "吴",
+      "calligrapher": "王羲之",
+      "script": "行",
+      "ssim": 0.68864,
+      "lpips": 0.40449,
+      "ink_iou": 0.26576
+    },
+    {
+      "character": "好",
+      "calligrapher": "王羲之",
+      "script": "行",
+      "ssim": 0.62488,
+      "lpips": 0.40511,
+      "ink_iou": 0.20211
+    },
+    {
+      "character": "何",
+      "calligrapher": "王羲之",
+      "script": "行",
+      "ssim": 0.65022,
+      "lpips": 0.44186,
+      "ink_iou": 0.11551
+    },
+    {
+      "character": "閒",
+      "calligrapher": "王羲之",
+      "script": "行",
+      "ssim": 0.42363,
+      "lpips": 0.55059,
+      "ink_iou": 0.34485
+    },
+    {
+      "character": "咽",
+      "calligrapher": "王羲之",
+      "script": "楷",
+      "ssim": 0.58669,
+      "lpips": 0.41558,
+      "ink_iou": 0.15055
+    },
+    {
+      "character": "兀",
+      "calligrapher": "苏轼",
+      "script": "楷",
+      "ssim": 0.71646,
+      "lpips": 0.33807,
+      "ink_iou": 0.27229
+    },
+    {
+      "character": "桑",
+      "calligrapher": "苏轼",
+      "script": "行",
+      "ssim": 0.5621,
+      "lpips": 0.49984,
+      "ink_iou": 0.14406
+    },
+    {
+      "character": "匹",
+      "calligrapher": "苏轼",
+      "script": "行",
+      "ssim": 0.61627,
+      "lpips": 0.50037,
+      "ink_iou": 0.30002
+    },
+    {
+      "character": "剥",
+      "calligrapher": "苏轼",
+      "script": "行",
+      "ssim": 0.72419,
+      "lpips": 0.30723,
+      "ink_iou": 0.35669
+    },
+    {
+      "character": "巩",
+      "calligrapher": "苏轼",
+      "script": "楷",
+      "ssim": 0.58535,
+      "lpips": 0.54842,
+      "ink_iou": 0.22101
+    },
+    {
+      "character": "巫",
+      "calligrapher": "苏轼",
+      "script": "行",
+      "ssim": 0.63928,
+      "lpips": 0.47347,
+      "ink_iou": 0.27991
+    },
+    {
+      "character": "冒",
+      "calligrapher": "苏轼",
+      "script": "行",
+      "ssim": 0.53129,
+      "lpips": 0.56595,
+      "ink_iou": 0.19596
+    },
+    {
+      "character": "啟",
+      "calligrapher": "苏轼",
+      "script": "行",
+      "ssim": 0.64695,
+      "lpips": 0.39191,
+      "ink_iou": 0.4712
+    },
+    {
+      "character": "永",
+      "calligrapher": "苏轼",
+      "script": "楷",
+      "ssim": 0.67022,
+      "lpips": 0.4077,
+      "ink_iou": 0.26864
+    },
+    {
+      "character": "廿",
+      "calligrapher": "苏轼",
+      "script": "楷",
+      "ssim": 0.69993,
+      "lpips": 0.40599,
+      "ink_iou": 0.37264
+    },
+    {
+      "character": "速",
+      "calligrapher": "欧阳询",
+      "script": "楷",
+      "ssim": 0.52917,
+      "lpips": 0.47763,
+      "ink_iou": 0.28066
+    },
+    {
+      "character": "潛",
+      "calligrapher": "欧阳询",
+      "script": "行",
+      "ssim": 0.50017,
+      "lpips": 0.44965,
+      "ink_iou": 0.35981
+    },
+    {
+      "character": "謙",
+      "calligrapher": "欧阳询",
+      "script": "楷",
+      "ssim": 0.49128,
+      "lpips": 0.43318,
+      "ink_iou": 0.19242
+    },
+    {
+      "character": "丸",
+      "calligrapher": "欧阳询",
+      "script": "楷",
+      "ssim": 0.76394,
+      "lpips": 0.36663,
+      "ink_iou": 0.4239
+    },
+    {
+      "character": "辰",
+      "calligrapher": "欧阳询",
+      "script": "行",
+      "ssim": 0.67786,
+      "lpips": 0.37177,
+      "ink_iou": 0.40437
+    },
+    {
+      "character": "楚",
+      "calligrapher": "欧阳询",
+      "script": "行",
+      "ssim": 0.58508,
+      "lpips": 0.42922,
+      "ink_iou": 0.34934
+    },
+    {
+      "character": "事",
+      "calligrapher": "欧阳询",
+      "script": "行",
+      "ssim": 0.72448,
+      "lpips": 0.28912,
+      "ink_iou": 0.51867
+    },
+    {
+      "character": "勲",
+      "calligrapher": "欧阳询",
+      "script": "楷",
+      "ssim": 0.56803,
+      "lpips": 0.43562,
+      "ink_iou": 0.15939
+    },
+    {
+      "character": "恩",
+      "calligrapher": "欧阳询",
+      "script": "楷",
+      "ssim": 0.65682,
+      "lpips": 0.44797,
+      "ink_iou": 0.32446
+    },
+    {
+      "character": "寐",
+      "calligrapher": "欧阳询",
+      "script": "行",
+      "ssim": 0.64211,
+      "lpips": 0.37636,
+      "ink_iou": 0.33937
+    },
+    {
+      "character": "聲",
+      "calligrapher": "颜真卿",
+      "script": "楷",
+      "ssim": 0.47995,
+      "lpips": 0.49621,
+      "ink_iou": 0.16962
+    },
+    {
+      "character": "雍",
+      "calligrapher": "颜真卿",
+      "script": "楷",
+      "ssim": 0.43007,
+      "lpips": 0.47963,
+      "ink_iou": 0.2592
+    },
+    {
+      "character": "夏",
+      "calligrapher": "颜真卿",
+      "script": "行",
+      "ssim": 0.66586,
+      "lpips": 0.34826,
+      "ink_iou": 0.37775
+    },
+    {
+      "character": "博",
+      "calligrapher": "颜真卿",
+      "script": "楷",
+      "ssim": 0.59626,
+      "lpips": 0.48491,
+      "ink_iou": 0.39511
+    },
+    {
+      "character": "蹤",
+      "calligrapher": "颜真卿",
+      "script": "楷",
+      "ssim": 0.46093,
+      "lpips": 0.50609,
+      "ink_iou": 0.22862
+    },
+    {
+      "character": "憲",
+      "calligrapher": "颜真卿",
+      "script": "行",
+      "ssim": 0.50951,
+      "lpips": 0.47871,
+      "ink_iou": 0.19206
+    },
+    {
+      "character": "妄",
+      "calligrapher": "颜真卿",
+      "script": "楷",
+      "ssim": 0.67347,
+      "lpips": 0.34039,
+      "ink_iou": 0.37252
+    },
+    {
+      "character": "住",
+      "calligrapher": "颜真卿",
+      "script": "行",
+      "ssim": 0.64796,
+      "lpips": 0.50518,
+      "ink_iou": 0.0968
+    },
+    {
+      "character": "滄",
+      "calligrapher": "颜真卿",
+      "script": "楷",
+      "ssim": 0.42007,
+      "lpips": 0.55174,
+      "ink_iou": 0.22339
+    },
+    {
+      "character": "故",
+      "calligrapher": "颜真卿",
+      "script": "行",
+      "ssim": 0.58171,
+      "lpips": 0.51917,
+      "ink_iou": 0.18982
+    },
+    {
+      "character": "薪",
+      "calligrapher": "赵孟頫",
+      "script": "隶",
+      "ssim": 0.59434,
+      "lpips": 0.34286,
+      "ink_iou": 0.35528
+    },
+    {
+      "character": "卧",
+      "calligrapher": "赵孟頫",
+      "script": "楷",
+      "ssim": 0.54162,
+      "lpips": 0.55718,
+      "ink_iou": 0.30055
+    },
+    {
+      "character": "厖",
+      "calligrapher": "赵孟頫",
+      "script": "楷",
+      "ssim": 0.63536,
+      "lpips": 0.48427,
+      "ink_iou": 0.05235
+    },
+    {
+      "character": "火",
+      "calligrapher": "赵孟頫",
+      "script": "行",
+      "ssim": 0.67017,
+      "lpips": 0.4411,
+      "ink_iou": 0.29692
+    },
+    {
+      "character": "穡",
+      "calligrapher": "赵孟頫",
+      "script": "行",
+      "ssim": 0.58309,
+      "lpips": 0.35277,
+      "ink_iou": 0.41538
+    },
+    {
+      "character": "肥",
+      "calligrapher": "赵孟頫",
+      "script": "隶",
+      "ssim": 0.71423,
+      "lpips": 0.26472,
+      "ink_iou": 0.32016
+    },
+    {
+      "character": "化",
+      "calligrapher": "赵孟頫",
+      "script": "隶",
+      "ssim": 0.75588,
+      "lpips": 0.29663,
+      "ink_iou": 0.3235
+    },
+    {
+      "character": "宋",
+      "calligrapher": "赵孟頫",
+      "script": "楷",
+      "ssim": 0.59267,
+      "lpips": 0.47886,
+      "ink_iou": 0.18589
+    },
+    {
+      "character": "兜",
+      "calligrapher": "赵孟頫",
+      "script": "楷",
+      "ssim": 0.61702,
+      "lpips": 0.43144,
+      "ink_iou": 0.27883
+    },
+    {
+      "character": "纨",
+      "calligrapher": "赵孟頫",
+      "script": "隶",
+      "ssim": 0.66556,
+      "lpips": 0.3557,
+      "ink_iou": 0.32705
+    },
+    {
+      "character": "朽",
+      "calligrapher": "褚遂良",
+      "script": "行",
+      "ssim": 0.64172,
+      "lpips": 0.43682,
+      "ink_iou": 0.16537
+    },
+    {
+      "character": "盡",
+      "calligrapher": "褚遂良",
+      "script": "行",
+      "ssim": 0.34741,
+      "lpips": 1.01135,
+      "ink_iou": 0.30628
+    },
+    {
+      "character": "品",
+      "calligrapher": "褚遂良",
+      "script": "行",
+      "ssim": 0.70021,
+      "lpips": 0.45799,
+      "ink_iou": 0.25259
+    },
+    {
+      "character": "徇",
+      "calligrapher": "褚遂良",
+      "script": "楷",
+      "ssim": 0.52383,
+      "lpips": 0.4645,
+      "ink_iou": 0.16234
+    },
+    {
+      "character": "諦",
+      "calligrapher": "褚遂良",
+      "script": "楷",
+      "ssim": 0.5803,
+      "lpips": 0.35725,
+      "ink_iou": 0.26226
+    },
+    {
+      "character": "及",
+      "calligrapher": "褚遂良",
+      "script": "楷",
+      "ssim": 0.68758,
+      "lpips": 0.30895,
+      "ink_iou": 0.36574
+    },
+    {
+      "character": "覆",
+      "calligrapher": "褚遂良",
+      "script": "楷",
+      "ssim": 0.44916,
+      "lpips": 0.43366,
+      "ink_iou": 0.22183
+    },
+    {
+      "character": "協",
+      "calligrapher": "褚遂良",
+      "script": "楷",
+      "ssim": 0.61553,
+      "lpips": 0.35478,
+      "ink_iou": 0.20351
+    },
+    {
+      "character": "怏",
+      "calligrapher": "褚遂良",
+      "script": "行",
+      "ssim": 0.65222,
+      "lpips": 0.43637,
+      "ink_iou": 0.09396
+    },
+    {
+      "character": "大",
+      "calligrapher": "褚遂良",
+      "script": "楷",
+      "ssim": 0.6993,
+      "lpips": 0.33379,
+      "ink_iou": 0.29275
+    },
+    {
+      "character": "与",
+      "calligrapher": "米芾",
+      "script": "行",
+      "ssim": 0.57659,
+      "lpips": 0.52193,
+      "ink_iou": 0.24553
+    },
+    {
+      "character": "惟",
+      "calligrapher": "米芾",
+      "script": "行",
+      "ssim": 0.44592,
+      "lpips": 0.5416,
+      "ink_iou": 0.2853
+    },
+    {
+      "character": "慈",
+      "calligrapher": "米芾",
+      "script": "楷",
+      "ssim": 0.51748,
+      "lpips": 0.51431,
+      "ink_iou": 0.27297
+    },
+    {
+      "character": "霜",
+      "calligrapher": "米芾",
+      "script": "行",
+      "ssim": 0.51275,
+      "lpips": 0.5298,
+      "ink_iou": 0.35961
+    },
+    {
+      "character": "嬋",
+      "calligrapher": "米芾",
+      "script": "行",
+      "ssim": 0.61747,
+      "lpips": 0.46012,
+      "ink_iou": 0.21129
+    },
+    {
+      "character": "已",
+      "calligrapher": "米芾",
+      "script": "楷",
+      "ssim": 0.59968,
+      "lpips": 0.51631,
+      "ink_iou": 0.10826
+    },
+    {
+      "character": "陰",
+      "calligrapher": "米芾",
+      "script": "行",
+      "ssim": 0.51961,
+      "lpips": 0.49597,
+      "ink_iou": 0.30096
+    },
+    {
+      "character": "利",
+      "calligrapher": "米芾",
+      "script": "行",
+      "ssim": 0.50953,
+      "lpips": 0.55624,
+      "ink_iou": 0.27089
+    },
+    {
+      "character": "仙",
+      "calligrapher": "米芾",
+      "script": "行",
+      "ssim": 0.58115,
+      "lpips": 0.48553,
+      "ink_iou": 0.22046
+    },
+    {
+      "character": "才",
+      "calligrapher": "米芾",
+      "script": "行",
+      "ssim": 0.65276,
+      "lpips": 0.47501,
+      "ink_iou": 0.17295
+    },
+    {
+      "character": "地",
+      "calligrapher": "文徵明",
+      "script": "行",
+      "ssim": 0.69214,
+      "lpips": 0.32142,
+      "ink_iou": 0.42644
+    },
+    {
+      "character": "記",
+      "calligrapher": "文徵明",
+      "script": "隶",
+      "ssim": 0.48385,
+      "lpips": 0.51497,
+      "ink_iou": 0.26266
+    },
+    {
+      "character": "儔",
+      "calligrapher": "文徵明",
+      "script": "楷",
+      "ssim": 0.60785,
+      "lpips": 0.39328,
+      "ink_iou": 0.22965
+    },
+    {
+      "character": "事",
+      "calligrapher": "文徵明",
+      "script": "行",
+      "ssim": 0.7129,
+      "lpips": 0.33522,
+      "ink_iou": 0.38514
+    },
+    {
+      "character": "公",
+      "calligrapher": "文徵明",
+      "script": "隶",
+      "ssim": 0.49552,
+      "lpips": 0.58811,
+      "ink_iou": 0.16757
+    },
+    {
+      "character": "丙",
+      "calligrapher": "文徵明",
+      "script": "行",
+      "ssim": 0.6938,
+      "lpips": 0.34245,
+      "ink_iou": 0.53968
+    },
+    {
+      "character": "但",
+      "calligrapher": "文徵明",
+      "script": "行",
+      "ssim": 0.66094,
+      "lpips": 0.35089,
+      "ink_iou": 0.39142
+    },
+    {
+      "character": "宅",
+      "calligrapher": "文徵明",
+      "script": "行",
+      "ssim": 0.60311,
+      "lpips": 0.47318,
+      "ink_iou": 0.22984
+    },
+    {
+      "character": "墨",
+      "calligrapher": "文徵明",
+      "script": "楷",
+      "ssim": 0.56318,
+      "lpips": 0.5039,
+      "ink_iou": 0.32519
+    },
+    {
+      "character": "㩜",
+      "calligrapher": "文徵明",
+      "script": "楷",
+      "ssim": 0.62749,
+      "lpips": 0.43354,
+      "ink_iou": 0.15186
+    },
+    {
+      "character": "兼",
+      "calligrapher": "柳公权",
+      "script": "行",
+      "ssim": 0.67601,
+      "lpips": 0.38555,
+      "ink_iou": 0.27656
+    },
+    {
+      "character": "氛",
+      "calligrapher": "柳公权",
+      "script": "楷",
+      "ssim": 0.52364,
+      "lpips": 0.41084,
+      "ink_iou": 0.22489
+    },
+    {
+      "character": "荷",
+      "calligrapher": "柳公权",
+      "script": "行",
+      "ssim": 0.62393,
+      "lpips": 0.4682,
+      "ink_iou": 0.17406
+    },
+    {
+      "character": "秩",
+      "calligrapher": "柳公权",
+      "script": "楷",
+      "ssim": 0.61512,
+      "lpips": 0.42107,
+      "ink_iou": 0.29655
+    },
+    {
+      "character": "高",
+      "calligrapher": "柳公权",
+      "script": "楷",
+      "ssim": 0.54478,
+      "lpips": 0.44938,
+      "ink_iou": 0.23
+    },
+    {
+      "character": "包",
+      "calligrapher": "柳公权",
+      "script": "楷",
+      "ssim": 0.57811,
+      "lpips": 0.4766,
+      "ink_iou": 0.09897
+    },
+    {
+      "character": "粲",
+      "calligrapher": "柳公权",
+      "script": "行",
+      "ssim": 0.53464,
+      "lpips": 0.54017,
+      "ink_iou": 0.15006
+    },
+    {
+      "character": "傳",
+      "calligrapher": "柳公权",
+      "script": "楷",
+      "ssim": 0.57353,
+      "lpips": 0.38479,
+      "ink_iou": 0.18092
+    },
+    {
+      "character": "激",
+      "calligrapher": "柳公权",
+      "script": "行",
+      "ssim": 0.53439,
+      "lpips": 0.54619,
+      "ink_iou": 0.16683
+    },
+    {
+      "character": "綏",
+      "calligrapher": "柳公权",
+      "script": "楷",
+      "ssim": 0.51029,
+      "lpips": 0.43848,
+      "ink_iou": 0.16218
+    },
+    {
+      "character": "極",
+      "calligrapher": "何绍基",
+      "script": "行",
+      "ssim": 0.43286,
+      "lpips": 0.51553,
+      "ink_iou": 0.28912
+    },
+    {
+      "character": "掣",
+      "calligrapher": "何绍基",
+      "script": "隶",
+      "ssim": 0.58304,
+      "lpips": 0.4616,
+      "ink_iou": 0.23648
+    },
+    {
+      "character": "儀",
+      "calligrapher": "何绍基",
+      "script": "楷",
+      "ssim": 0.59854,
+      "lpips": 0.40655,
+      "ink_iou": 0.17629
+    },
+    {
+      "character": "术",
+      "calligrapher": "何绍基",
+      "script": "隶",
+      "ssim": 0.58985,
+      "lpips": 0.45856,
+      "ink_iou": 0.21077
+    },
+    {
+      "character": "寵",
+      "calligrapher": "何绍基",
+      "script": "楷",
+      "ssim": 0.52925,
+      "lpips": 0.50768,
+      "ink_iou": 0.19933
+    },
+    {
+      "character": "覽",
+      "calligrapher": "何绍基",
+      "script": "隶",
+      "ssim": 0.41335,
+      "lpips": 0.55415,
+      "ink_iou": 0.22361
+    },
+    {
+      "character": "游",
+      "calligrapher": "何绍基",
+      "script": "隶",
+      "ssim": 0.53939,
+      "lpips": 0.45446,
+      "ink_iou": 0.20242
+    },
+    {
+      "character": "事",
+      "calligrapher": "何绍基",
+      "script": "行",
+      "ssim": 0.69197,
+      "lpips": 0.31208,
+      "ink_iou": 0.37304
+    },
+    {
+      "character": "愬",
+      "calligrapher": "何绍基",
+      "script": "行",
+      "ssim": 0.40393,
+      "lpips": 0.5776,
+      "ink_iou": 0.19946
+    },
+    {
+      "character": "豈",
+      "calligrapher": "何绍基",
+      "script": "楷",
+      "ssim": 0.58798,
+      "lpips": 0.51758,
+      "ink_iou": 0.2942
+    }
+  ]
+}
