@@ -264,3 +264,27 @@ docs/experiments/phase_review_20261013/*
 !docs/experiments/posttraining_20261015/posters/regressions_0[1-3].png
 
 *.flac
+
+# ---- 2026-10-25 整理：远端大资产的本地镜像/中间产物，不入库（4090 为权威副本）----
+artifacts/
+cache_poster_imgs/
+exp_img/
+assets/aligned_eval_results/
+assets/audits/
+assets/brush114_top10_20261023/
+assets/data_clean/
+assets/data_cohorts/
+assets/generic48_kxl_top10_20261022/
+assets/qwen_lora_top10_20261024/
+assets/qwen_lora_top10_base_20261024/
+assets/qwen_lora_turbo_20261023/
+assets/qwen_prompt_explicit_20261024/
+assets/reference_kxl_20261023*
+assets/reference_top10_20261024/
+assets/synthetic/
+assets/writer_table_repair_sources/
+assets/posters/cohort_20261022/
+assets/posters/poster_check_header.png
+assets/posters/poster_top5_30_*.png
+assets/posters/top2_crop_preview.png
+assets/posters/u100_pipeline_20261024/
