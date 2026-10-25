@@ -1,0 +1,15 @@
+{
+  "title": "Top2 / Top5 / Top10：原始生成与粗细测量（20字子集）",
+  "index_csv": "exp-std/csv/eval200_fixed.csv",
+  "image_size": 256,
+  "selection": {"indices": [80,81,82,84,87,88,89,90,91,96,111,112,115,116,117,121,122,123,124,126]},
+  "columns": [
+    {"label":"STD", "kind":"std", "dir":"artifacts/DiC_U100_review_20261020/images/reference/std"},
+    {"label":"GT", "kind":"gt", "dir":"artifacts/DiC_U100_review_20261020/images/reference/gt"},
+    {"label":"Top2 30k", "kind":"model", "dir":"assets/results/top2_u100_base_30k", "csv":"exp-std/csv/eval_top2_100.csv", "architecture":"U100-72M", "step":30000, "state":"UNKNOWN", "cfg":null},
+    {"label":"Top2 50k", "kind":"model", "dir":"assets/results/top2_u100_base_50k", "csv":"exp-std/csv/eval_top2_100.csv", "architecture":"U100-72M", "step":50000, "state":"UNKNOWN", "cfg":null},
+    {"label":"Top5 50k", "kind":"model", "dir":"assets/results/top5_u100_base_50k", "csv":"exp-std/csv/eval_top5_fixed.csv", "architecture":"U100-72M", "step":50000, "state":"UNKNOWN", "cfg":null},
+    {"label":"Top10-A114M", "kind":"model", "dir":"artifacts/DiC_U100_review_20261020/images/originals/decA_70k", "architecture":"Dec114M", "step":70000, "state":"UNKNOWN", "cfg":null},
+    {"label":"Deep114M", "kind":"model", "dir":"artifacts/DiC_U100_review_20261020/images/originals/deep_70k", "architecture":"Deep114M", "step":70000, "state":"UNKNOWN", "cfg":null}
+  ]
+}

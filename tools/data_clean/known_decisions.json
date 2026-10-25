@@ -1,0 +1,12 @@
+{
+  "data/top10_style23/imgs/010900.png": {
+    "action": "exclude",
+    "file_sha256": "ec133bcbc72f40e2881ddfc701b8748723f78617f441e725b0748b6cc8cde211",
+    "reason": "2026-10-21 visually confirmed: Su Shi xing Qing crop includes a tall right-side foreign ink strip; preserve original, exclude this target."
+  },
+  "data/top10_style23/imgs/036217.png": {
+    "action": "exclude",
+    "file_sha256": "b1d4b059592b9773e90b92bf9e5ae862158fb43fb668b29f5033614d6fbec9fe",
+    "reason": "2026-10-21 visually confirmed: right-side adjacent ink/edge contaminates Qing; Top5 generation reproduces it with grayscale SSIM 0.97181."
+  }
+}

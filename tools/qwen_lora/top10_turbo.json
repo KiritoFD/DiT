@@ -1,0 +1,16 @@
+{
+  "model": "Qwen/Qwen-Image-2.1-Turbo",
+  "resolution": 256,
+  "rank": 16,
+  "lr": 0.0001,
+  "warmup": 100,
+  "max_steps": 20000,
+  "min_lr": 0.00001,
+  "batch": 12,
+  "accumulation": 1,
+  "save_every": 4000,
+  "eval_steps": 8,
+  "eval_per_slot": 1,
+  "seed": 20261024,
+  "gradient_checkpointing": false
+}

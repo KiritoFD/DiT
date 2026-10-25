@@ -1,0 +1,14 @@
+{
+  "model": "Qwen/Qwen-Image-2.1",
+  "resolution": 512,
+  "rank": 16,
+  "lr": 0.0001,
+  "condition_lr": 0.0001,
+  "warmup": 100,
+  "max_steps": 2000,
+  "batch": 8,
+  "accumulation": 1,
+  "save_every": 500,
+  "writer_table_frozen": true,
+  "seed": 20261023
+}

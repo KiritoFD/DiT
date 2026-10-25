@@ -1,0 +1,13 @@
+{
+  "title": "粗细校准前后：GT-oracle诊断（非无参考成绩）",
+  "index_csv": "exp-std/csv/eval200_fixed.csv",
+  "image_size": 256,
+  "selection": {"indices": [80,81,82,84,87,88,89,90,91,96,111,112,115,116,117,121,122,123,124,126]},
+  "columns": [
+    {"label":"GT", "kind":"gt", "dir":"artifacts/DiC_U100_review_20261020/images/reference/gt"},
+    {"label":"Top5 原图", "kind":"model", "dir":"assets/results/top5_u100_base_50k", "csv":"exp-std/csv/eval_top5_fixed.csv", "architecture":"U100-72M", "step":50000, "state":"UNKNOWN", "cfg":null},
+    {"label":"Top5 校准", "kind":"model", "dir":"artifacts/glyph_review/top5_oracle", "csv":"exp-std/csv/eval_top5_fixed.csv", "architecture":"U100-72M", "step":50000, "state":"UNKNOWN", "cfg":null},
+    {"label":"Top10-A 原图", "kind":"model", "dir":"artifacts/DiC_U100_review_20261020/images/originals/decA_70k", "architecture":"Dec114M", "step":70000, "state":"UNKNOWN", "cfg":null},
+    {"label":"Top10-A 校准", "kind":"model", "dir":"artifacts/glyph_review/top10a_oracle", "architecture":"Dec114M", "step":70000, "state":"UNKNOWN", "cfg":null}
+  ]
+}
