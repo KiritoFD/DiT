@@ -363,7 +363,8 @@ def _sample_set_latents(model, diffusion, cache, cfg_scale, dit_batch, device,
         model, diffusion, cache["noise"], cache["conds"],
         cfg_scale, dit_batch, device,
         skel=cache["skels_latent"], seed=0,
-        hier_conds=cache.get("hier_conds"))
+        hier_conds=cache.get("hier_conds"),
+        extra_conditions=model.reference_eval_provider(cache['rows']) if getattr(model,'reference_dim',0) else None)
 
 
 def resolve_eval_setup(args, model, results_dir, logger=print, diffusion_override=None):

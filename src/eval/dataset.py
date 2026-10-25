@@ -29,6 +29,21 @@ _ID_WARNED = [False]
 __all__ = ["make_eval_cache"]
 
 
+def fixed_eval_noise(rows, latent_channels, latent_spatial):
+    """Optional per-image seeds keep nested cohorts paired; old CSVs are unchanged."""
+    seeds = [str(row.get('eval_noise_seed', '')).strip() for row in rows]
+    if not any(seeds):
+        return torch.randn(len(rows), latent_channels, latent_spatial, latent_spatial,
+                           generator=torch.Generator().manual_seed(0))
+    if not all(seeds):
+        raise ValueError('eval_noise_seed must be supplied for every row or none')
+    values = [int(seed) for seed in seeds]
+    if any(seed < 0 or seed >= 2**63 for seed in values):
+        raise ValueError('eval_noise_seed outside [0, 2**63)')
+    return torch.stack([torch.randn(latent_channels, latent_spatial, latent_spatial,
+                       generator=torch.Generator().manual_seed(seed)) for seed in values])
+
+
 def make_eval_cache(eval_csv, img_root, skel_root, image_size, n,
                     vae_downscale, latent_channels, scaling_factor,
                     skel_latent_shards_dir=None, callig_id_map=None,
@@ -39,7 +54,7 @@ def make_eval_cache(eval_csv, img_root, skel_root, image_size, n,
     g 条件三选一: std_soft_root 的 raw mask (N,1,64,64)、
     skel_latent_shards_dir 的 VAE latent (N,4,32,32)、或 skel_root PNG。
     """
-    rows = list(csv.DictReader(open(eval_csv, encoding="utf-8")))
+    rows = list(csv.DictReader(open(eval_csv, encoding="utf-8-sig")))
     if n > len(rows):
         n = len(rows)
     rows = rows[:n]
@@ -201,8 +216,7 @@ def make_eval_cache(eval_csv, img_root, skel_root, image_size, n,
             sk = Image.open(os.path.join(skel_root, f"{img_id}.png")).convert("L")
             sk = sk.resize((image_size, image_size), Image.NEAREST)
             skels[i, 0] = torch.from_numpy(np.asarray(sk, np.float32) / 255.0)
-    g = torch.Generator().manual_seed(0)
-    noise = torch.randn(n, latent_channels, latent_spatial, latent_spatial, generator=g)
+    noise = fixed_eval_noise(rows, latent_channels, latent_spatial)
     if skels_latent is not None and missing_skel:
         # ★ 2026-09-17: 从"只打一行 WARNING 继续跑"改为**启动即失败**。
         #   原行为的问题（doc68 §2.2 实际踩过）: shard 目录配错 -> strict 命中 0/237
@@ -220,7 +234,7 @@ def make_eval_cache(eval_csv, img_root, skel_root, image_size, n,
                       "eval_skel_latent_shards_dir），或确认 id 一致。\n"
                       "  若确实要容忍少量缺失，请显式降低阈值——不要静默继续。")
         print(msg + "  (比例低, 继续)", flush=True)
-    return {"gts": gts, "conds": conds, "noise": noise, "skels": skels,
+    return {"rows": rows, "gts": gts, "conds": conds, "noise": noise, "skels": skels,
             "hier_conds": (raw_conds, pair_conds, script_conds),
             "skels_latent": skels_latent, "missing_skel": missing_skel,
             "n": n, "latent_channels": latent_channels,

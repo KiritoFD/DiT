@@ -132,7 +132,7 @@ def model_kwargs_for_slice(model, *, yc, yh, hier_slice=None, skel_slice=None,
     return mk
 
 def sample_latents(model, diffusion, noise, conds, cfg_scale, batch, device,
-                   skel=None, seed=0, hier_conds=None):
+                   skel=None, seed=0, hier_conds=None,extra_conditions=None):
     """Run diffusion sampling (DDIM for ddpm / Euler for flow) → CPU latents.
 
     model       : callable(x, t, y_callig, y_char, cfg_scale=..., cond=...) —
@@ -241,6 +241,11 @@ def sample_latents(model, diffusion, noise, conds, cfg_scale, batch, device,
             hier_slice=hier_use,
             skel_slice=skel_use,
             device=device)
+        if extra_conditions:
+            for name,value in extra_conditions.items():
+                piece=value[i:j].to(device)
+                if k<batch and dev_type=='cuda':piece=_pad_to_batch(piece,k)
+                mk[name]=piece
         # bf16 autocast 仅 cuda (CPU 无 AVX512-BF16/AMX 时 bf16 走软件上转反而慢)
         if dev_type == "cuda":
             with torch.autocast("cuda", dtype=torch.bfloat16):

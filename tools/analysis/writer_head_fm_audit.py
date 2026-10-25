@@ -75,6 +75,7 @@ def main():
     parser.add_argument('--seeds',type=int,default=3)
     parser.add_argument('--batch',type=int,default=16)
     parser.add_argument('--memory-fraction',type=float,default=1.)
+    parser.add_argument('--reuse-latents',default='',help='Path to existing gt_latents.pt')
     args=parser.parse_args();out=Path(args.out);out.mkdir(parents=True,exist_ok=False)
     torch.set_num_threads(4);torch.set_grad_enabled(False)
     if args.memory_fraction<1:torch.cuda.set_per_process_memory_fraction(args.memory_fraction)
@@ -95,21 +96,28 @@ def main():
     # Resolve the actual VAE scale contract from the first checkpoint.
     first=torch.load(next(iter(checkpoints.values())),map_location='cpu',weights_only=False)
     sf,shift=resolve_vae_scaling(first['args']);del first
-    from diffusers import AutoencoderKL
-    from PIL import Image
-    vae=AutoencoderKL.from_pretrained('data/pretrained/sd-vae-ft-ema').cuda().eval().requires_grad_(False)
-    generator=torch.Generator(device='cuda').manual_seed(9001)
-    zz=[]
-    for start in range(0,len(rows),args.batch):
-        images=[]
-        for row in rows[start:start+args.batch]:
-            image=Image.open(row['image_path']).convert('RGB').resize((256,256),Image.Resampling.BICUBIC)
-            images.append(torch.from_numpy(np.array(image,copy=True)).permute(2,0,1))
-        x=torch.stack(images).cuda().float()/127.5-1
-        posterior=vae.encode(x).latent_dist
-        zz.append(((posterior.sample(generator=generator)-shift)*sf).cpu())
-    z=torch.cat(zz);torch.save(z,out/'gt_latents.pt')
-    del vae,x,posterior
+    if args.reuse_latents and Path(args.reuse_latents).exists():
+        raw_z = torch.load(args.reuse_latents, map_location='cpu', weights_only=True)
+        # If raw_z contains both train and val, slice the validation rows
+        z = raw_z[-len(rows):] if len(raw_z) > len(rows) else raw_z
+        assert len(z) == len(rows), f"Expected {len(rows)} latents, got {len(z)}"
+        torch.save(z, out/'gt_latents.pt')
+    else:
+        from diffusers import AutoencoderKL
+        from PIL import Image
+        vae=AutoencoderKL.from_pretrained('data/pretrained/sd-vae-ft-ema').cuda().eval().requires_grad_(False)
+        generator=torch.Generator(device='cuda').manual_seed(9001)
+        zz=[]
+        for start in range(0,len(rows),args.batch):
+            images=[]
+            for row in rows[start:start+args.batch]:
+                image=Image.open(row['image_path']).convert('RGB').resize((256,256),Image.Resampling.BICUBIC)
+                images.append(torch.from_numpy(np.array(image,copy=True)).permute(2,0,1))
+            x=torch.stack(images).cuda().float()/127.5-1
+            posterior=vae.encode(x).latent_dist
+            zz.append(((posterior.sample(generator=generator)-shift)*sf).cpu())
+        z=torch.cat(zz);torch.save(z,out/'gt_latents.pt')
+        del vae,x,posterior
     report=dict(n_gt=len(rows),overlap=overlap,seeds=args.seeds,times=[.25,.4,.6,.8],
                 convention='xt=(1-t)*GT+t*noise; target=noise-GT; network_t=1000*t',
                 posterior='fixed FP32 VAE posterior sample, seed9001',sf=sf,shift=shift,

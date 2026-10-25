@@ -55,3 +55,16 @@ Original launch configs/manifests are preserved as historical identities.
 
 The [condition-path audit](../../ANALYSIS/generic48_top10_condition_contract_20261022.md)
 explains STD/Script/Writer semantics, zero-equivalent transfer, null masking and CPU checks.
+
+## Queued114M comparison
+
+`python -u -m tools.generic_pretrain.queue_wide` snapshots the current50k/10k configs,
+changes only channels to192/384/576 and depth to4 blocks/scale, and waits for the
+**entire48M curriculum** to report completed. Output: `assets/generic114_kxl_top10_20261023`.
+It reuses identical CSVs, Script/Writer mappings, frozen tables, bbox STD and VAE cache.
+B512, LR7e-5 pretraining50k, Writer-only adaptation10k and5k saves/evals remain unchanged.
+No114M weights are transferred from48M:114M pretraining starts from scratch.
+GPU precheck runs only after48M completion (three timed synthetic steps plus warmup).
+OOM fails visibly rather than silently lowering batch/exposure; actual capacity and ETA
+are not claimed until that queued precheck runs. Upstream failure blocks downstream GPU work.
+Queue status, manifest, configs and logs are persistent; no new data preparation/encoding.

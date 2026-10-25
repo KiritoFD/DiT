@@ -14,7 +14,7 @@ def initialize(model,config):
     for key in ('channels','num_res_blocks','decoder_res_blocks','num_writers','num_scripts',
                 'vae_path','vae_scaling_factor','vae_shift_factor','std_soft_root','std_soft_sigma_min',
                 'std_soft_sigma_max','std_soft_eval_sigma','act_fn','skip_gate_scales','std_gate_scales','std_shape_aug',
-                'residual_cond_gate','decoder_std_residual','decoder_std_scale','stage_specific_cond'):
+                'residual_cond_gate','decoder_std_residual','decoder_std_scale','stage_specific_cond','brush_dim'):
         a,b=getattr(old,key),getattr(config,key)
         if isinstance(a,(list,tuple)):a=tuple(a)
         if isinstance(b,(list,tuple)):b=tuple(b)

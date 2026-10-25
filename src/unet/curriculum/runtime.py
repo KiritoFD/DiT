@@ -12,9 +12,16 @@ def is_backbone(name,config):
 
 def groups(model,config):
     adapter=[p for n,p in model.named_parameters() if is_adapter(n)]
-    backbone=[p for n,p in model.named_parameters() if is_backbone(n,config)]
+    condition_scale=config.finetune_condition_lr_scale
+    def separate(name):return condition_scale is not None and name.startswith(('std_','script.','script_proj.'))
+    backbone=[p for n,p in model.named_parameters() if is_backbone(n,config) and not separate(n)]
     if not adapter or not backbone:raise ValueError('Adaptation needs Writer branches AND a nonempty joint backbone subset')
-    return [dict(params=adapter,lr=config.lr),dict(params=backbone,lr=config.lr*config.backbone_lr_scale)]
+    result=[dict(params=adapter,lr=config.lr),dict(params=backbone,lr=config.lr*config.backbone_lr_scale)]
+    if condition_scale is not None:
+        condition=[p for n,p in model.named_parameters() if is_backbone(n,config) and separate(n)]
+        if not condition:raise ValueError('Separate STD/Script LR group is empty')
+        result.append(dict(params=condition,lr=config.lr*condition_scale))
+    return result
 
 
 class Adaptation:

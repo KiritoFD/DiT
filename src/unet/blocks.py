@@ -36,6 +36,7 @@ class ResBlock(nn.Module):
         self.conv2=nn.Conv2d(cout,cout,3,padding=1)
         self.shortcut=nn.Conv2d(cin,cout,1) if cin!=cout else nn.Identity()
         self.writer_film=None
+        self.brush_film=None
         self.residual_gate=None
         self.drop_path_rate=0.
         nn.init.zeros_(self.conv2.weight);nn.init.zeros_(self.conv2.bias)
@@ -51,10 +52,16 @@ class ResBlock(nn.Module):
         if self.residual_gate is not None:raise ValueError('Residual gate already enabled')
         self.residual_gate=zero_linear(self.film.in_features,self.conv2.out_channels)
 
-    def forward(self,x,c,writer=None,drop_path_scale=None,writer_mask=None):
+    def forward(self,x,c,writer=None,drop_path_scale=None,writer_mask=None,brush=None):
         h=self.conv1(self.act(self.norm1(x)))
         condition=self.act(c)
         scale,shift=self.film(condition).to(h.dtype).chunk(2,dim=1)
+        if self.brush_film is not None:
+            if brush is None:raise ValueError('Brush feature required')
+            feature,valid=brush
+            delta=self.brush_film(feature)*valid[:,None].to(feature.dtype)
+            bs,bt=delta.to(h.dtype).chunk(2,dim=1)
+            scale=scale+bs;shift=shift+bt
         if self.writer_film is not None:
             if writer is None:raise ValueError('Writer embedding required for independent FiLM')
             delta=self.writer_film(writer)
@@ -95,7 +102,7 @@ class Stage(nn.Module):
         self.blocks=nn.ModuleList([ResBlock(cin if i==0 else cout,cout,act_fn=act_fn) for i in range(num_res_blocks)])
         self.attn=Attention(cout) if attention else nn.Identity()
 
-    def forward(self,x,c,writer=None,drop_path_scale=None,writer_mask=None):
-        for block in self.blocks:x=block(x,c,writer,drop_path_scale,writer_mask)
+    def forward(self,x,c,writer=None,drop_path_scale=None,writer_mask=None,brush=None):
+        for block in self.blocks:x=block(x,c,writer,drop_path_scale,writer_mask,brush)
         return self.attn(x)
 

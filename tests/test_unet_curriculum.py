@@ -58,7 +58,7 @@ class Curriculum(unittest.TestCase):
     def test_strict_transfer_zero_equivalence_and_null_mask(self):
         with tempfile.TemporaryDirectory() as tmp:
             path=Path(tmp);mapping=path/'map.json';mapping.write_text('{}')
-            old=self.config(font_remap_json=str(mapping),char_remap_json=str(mapping))
+            old=self.config(font_remap_json=str(mapping),char_remap_json=str(mapping),brush_dim=5)
             source=build(old).eval()
             # Nontrivial pretrained residuals/output; otherwise zero head hides a broken transfer.
             for name,p in source.named_parameters():

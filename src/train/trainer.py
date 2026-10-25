@@ -84,6 +84,7 @@ class TrainState:
     trainable_params_list: object = None
     vae: object = None
     condition_transform: object = None  # Optional architecture adapter; no optimizer ownership.
+    auxiliary_objective: object = None  # Optional joint loss; optimizer remains owned by trainer.
 
 
 def training_loop(s: TrainState):
@@ -723,6 +724,8 @@ def training_loop(s: TrainState):
                                           device=_S.device)
                         loss = loss + _style_ortho_w * (_S[:, _off] ** 2).mean()
 
+                if s.auxiliary_objective is not None:
+                    loss = loss + s.auxiliary_objective(model,batch)
                 opt.zero_grad(set_to_none=True)  # INFRA: set_to_none 释放梯度tensor, 比 zero_() 快且省内存
 
                 # ★ 2026-09-17: 这里**不再**逐项 `.item()`（原来 7 次全 GPU 同步 -> 现在 1 次）。

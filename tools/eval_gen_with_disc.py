@@ -1,265 +1,266 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-"""eval_gen_with_disc.py —— 用 CE 判别器评**生成图** ✓（判别器的真正用武之地 ✓）。
+"""eval_gen_with_disc.py —— 严格对齐的生成图风格评测工具（接入 PixelWriterV2 与 ResNet 判别器）。
 
-★ 要回答的问题
-    v85A 的风格支路到底学到了什么？
-      → 生成图的嵌入离**目标书家**近，还是离 **std** 近？ ✓✓
-      → 判别器能把生成图**归对书家**吗（vs 1/23 随机 ✓）？ ✓
-
-★ 评测内容（对每个生成集 ✓）
-    ① K 路辨认: 生成图 → 23 个书家槽原型 ⇒ top1/top5（随机 = 1/23 ✓ 用户口径 ✓）
-    ② 2AFC: 生成图(anchor) vs 同书家异字真迹(正) vs 异书家同字真迹(负)（随机 = 0.5 ✓）
-    ③ **std-margin**: cos(gen, 目标书家原型) − cos(gen, std·同书体原型) ✓✓
-       （>0 = 比标准字形更像目标书家 ✓ —— v85 的核心问题 ✓）
-    ④ GT 对照: 用真迹同字图做同样的 ①②③ ✓（判别器对真图的 ceiling ✓）
-
-★ 基线口径（用户指出 ✓）: 同时报 **1/23**（K 路 ✓）与 **0.5**（2AFC ✓）两种随机线 ✓
+Core Features:
+1. Strict Sample-ID alignment with ground truth eval CSV (NO silent truncation).
+2. Source-balanced real calligraphy prototype bank (averaged per artwork source).
+3. Same-script prototype competition for Micro/Macro Top-1 and Target Margin.
+4. Auto-detects PixelWriterV2 vs. legacy ResNet style discriminators.
 """
 from __future__ import annotations
-
 import argparse
 import csv
+import json
 import os
-import re
+from pathlib import Path
 import sys
 from collections import defaultdict
-
 import numpy as np
+from PIL import Image
 import torch
-import torch.nn as nn
 import torch.nn.functional as F
 
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-
-from src.eval.style.bank import resolve                                    # noqa: E402
-
-IMG = 160
-MEAN = (0.485, 0.456, 0.406)
-STD = (0.229, 0.224, 0.225)
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from src.eval.style.bank import resolve
+from src.model.writer_style_pixel import PixelWriterV2
 
 
-def _posix(p):
-    return str(p).replace("\\", "/")
+def load_evaluator_model(ckpt_path, device='cuda'):
+    """Load evaluator model from checkpoint, automatically handling PixelWriterV2 vs. ResNet."""
+    ck = torch.load(ckpt_path, map_location='cpu', weights_only=False)
+    
+    # Check if checkpoint is PixelWriterV2
+    if 'config' in ck and 'haar_mode' in ck['config']:
+        cfg = ck['config']
+        n_slots = len(ck.get('slots', [None] * 23))
+        haar_mode = cfg.get('haar_mode', 'none')
+        model = PixelWriterV2(n_slots=n_slots, haar_mode=haar_mode).to(device)
+        model.load_state_dict(ck['model'], strict=True)
+        model.eval()
+        return model, 'pixel_writer_v2', 128
+    
+    # Check if legacy ResNet discriminator
+    if 'model' in ck and 'n_cls' in ck:
+        from tools.eval_gen_with_disc import Enc as LegacyEnc
+        model = LegacyEnc(d=ck['d'], n_cls=ck['n_cls']).to(device)
+        model.load_state_dict(ck['model'])
+        model.eval()
+        return model, 'resnet18', 160
+
+    # Default fallback
+    raise ValueError(f"Unrecognized checkpoint format at {ckpt_path}")
 
 
-class Enc(nn.Module):
-    def __init__(self, d=256, n_cls=26):
-        super().__init__()
-        from torchvision.models import resnet18, ResNet18_Weights
-        base = resnet18(weights=ResNet18_Weights.DEFAULT)
-        self.body = nn.Sequential(*list(base.children())[:-1])
-        self.head = nn.Sequential(nn.Flatten(), nn.Linear(512, d))
-        self.cls = nn.Linear(d, n_cls)
+def build_source_balanced_prototypes(model, model_type, img_size, train_csv, roots, device='cuda'):
+    """Compute 256D normalized prototypes for each (writer, script) slot, balanced across sources."""
+    tr = list(csv.DictReader(open(train_csv, encoding='utf-8-sig')))
+    by_slot_source = defaultdict(lambda: defaultdict(list))
+    paths = []
 
-    def emb(self, x):
-        return F.normalize(self.head(self.body(x)), dim=-1)
-
-    def forward(self, x):
-        return self.cls(self.head(self.body(x)))
-
-
-class ImgSet:
-    def __init__(self, paths, size=IMG, tag=""):
-        from PIL import Image
-        self.paths = paths
-        self.arr = np.zeros((len(paths), size, size, 3), np.uint8)
-        for i, p in enumerate(paths):
-            a = np.asarray(Image.open(_posix(p)).convert("RGB"))
-            if a.shape[:2] != (size, size):
-                a = np.asarray(Image.fromarray(a).resize((size, size), Image.BICUBIC))
-            self.arr[i] = a
-        print("  [img %s] %d 张" % (tag, len(paths)), flush=True)
-
-    def emb_all(self, model, dev, bs=64):
-        o = []
-        with torch.no_grad():
-            for s in range(0, len(self.arr), bs):
-                x = self.batch(list(range(s, min(s + bs, len(self.arr)))), dev)
-                o.append(model.emb(x).cpu().numpy())
-        return np.concatenate(o)
-
-    def batch(self, idx, device):
-        a = self.arr[idx]
-        x = torch.from_numpy(a).to(device).permute(0, 3, 1, 2).float() / 255.0
-        m = torch.tensor(MEAN, device=device).view(1, 3, 1, 1)
-        s = torch.tensor(STD, device=device).view(1, 3, 1, 1)
-        return (x - m) / s
-
-
-def main() -> int:
-    ap = argparse.ArgumentParser(description=__doc__,
-                                 formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("--ckpt", default="assets/style_disc_ce_holdout.pt")
-    ap.add_argument("--csv", default="exp-std/csv/eval200_fixed.csv")
-    ap.add_argument("--root", action="append", default=[])
-    ap.add_argument("--gen", action="append", default=[],
-                    help="name=dir（含 g*.png ✓）可多次 ✓")
-    ap.add_argument("--train-csv", default="exp-std/csv/train.csv",
-                    help="建**书家原型库**用 ✓（判别器见过的图 ✓）")
-    ap.add_argument("--out", default="assets/style_eval_local/disc_gen_eval.json")
-    ap.add_argument("--per-image-out", default="",
-                    help="Optional paired-evaluation records; leaves the legacy summary unchanged")
-    ap.add_argument("--device", default="")
-    args = ap.parse_args()
-    dev = args.device or ("cuda" if torch.cuda.is_available() else "cpu")
-    roots = args.root or [".", "data", "exp-std"]
-
-    # ── ① 判别器 ──
-    ck = torch.load(args.ckpt, map_location="cpu", weights_only=False)
-    all_keys = ck["all_keys"]
-    n_cls = ck["n_cls"]
-    model = Enc(d=ck["d"], n_cls=n_cls).to(dev)
-    model.load_state_dict(ck["model"])
-    model.eval()                                   # ★ BN running stats ✓
-    writer_keys = [k for k in all_keys if not k[0].startswith("std·")]
-    std_keys = [k for k in all_keys if k[0].startswith("std·")]
-    print("[disc] %d 类 = %d 书家 + %d std" % (n_cls, len(writer_keys), len(std_keys)),
-          flush=True)
-    key2cls = {k: i for i, k in enumerate(all_keys)}
-
-    # ── ② 书家原型库（从训练 CSV ✓ 判别器见过的图 ✓）──
-    import random
-    rng = random.Random(0)
-    by_slot = defaultdict(list)
-    std_by_slot = defaultdict(list)
-    tr = list(csv.DictReader(open(args.train_csv, encoding="utf-8-sig")))
-    rng.shuffle(tr)
-    tr = tr[:6000]                                 # 每槽限流 ✓（够稳 ✓）
-    tr_paths, tr_meta = [], []
     for r in tr:
         if (r.get("aug") or "").strip():
             continue
-        p = resolve(_posix(r.get("image_path", "")), roots)
+        p = resolve(r.get("image_path", ""), roots)
         if not p:
             continue
-        w, s, c = (r.get("calligrapher") or "").strip(), (r.get("script") or "").strip(), \
-            (r.get("character") or "").strip()
-        tr_paths.append(p)
-        tr_meta.append((w, s, c))
-        by_slot[(w, s)].append(len(tr_paths) - 1)
-        sp = resolve(_posix(r.get("std_path", "")), roots)
-        if sp and s and c and (s, c) not in {x for x in
-                                             [(m[1], m[2]) for m in std_by_slot.get("std·" + s, [])]}:
-            pass
-    IS_tr = ImgSet(tr_paths, tag="bank")
-    E_tr = IS_tr.emb_all(model, dev)
-    protos = {}
-    for k, idxs in sorted(by_slot.items()):
-        protos[k[0] + u'·' + k[1]] = E_tr[idxs].mean(0)   # 字符串键 ✓
-    protos = {k: v / np.linalg.norm(v) for k, v in protos.items()}
-    print("[bank] %d 槽原型 ✓（来自 %d 张训练图 ✓）" % (len(protos), len(tr_paths)), flush=True)
+        w = r.get("calligrapher", "").strip()
+        s = r.get("script", "").strip()
+        src = r.get("source", "").strip() or os.path.dirname(p)
+        slot_key = f"{w}·{s}"
+        paths.append(p)
+        by_slot_source[slot_key][src].append(len(paths) - 1)
 
-    rows = list(csv.DictReader(open(args.csv, encoding="utf-8-sig")))
+    print(f"  [prototype bank] Extracting features for {len(paths)} real reference images...", flush=True)
 
-    # ── ②-b std 原型（用 **评测 CSV 的 std_path** ✓ —— 正是所评字符的标准字形 ✓）
-    std_paths, std_seen = [], set()
-    for r in rows:
-        s, c = (r.get("script") or "").strip(), (r.get("character") or "").strip()
-        key = (s, c)
-        if key in std_seen:
-            continue
-        sp = resolve(_posix(r.get("std_path", "")), roots)
-        if sp and s:
-            std_seen.add(key)
-            std_paths.append((sp, s))
-    std_by_slot = defaultdict(list)
-    if std_paths:
-        IS_std = ImgSet([p for p, _ in std_paths], tag="std")
-        E_std = IS_std.emb_all(model, dev)
-        for q, (_p, s) in enumerate(std_paths):
-            std_by_slot["std·" + s].append(q)
-        for k, idxs in std_by_slot.items():
-            v = E_std[idxs].mean(0)
-            protos[k] = v / np.linalg.norm(v)
-    print("[bank] std 原型 %d 槽 ✓（%d 张 ✓）" % (len(std_by_slot), len(std_paths)), flush=True)
+    # Batch extraction
+    features = []
+    bs = 128
+    for start in range(0, len(paths), bs):
+        batch_paths = paths[start:start + bs]
+        batch_imgs = []
+        for p in batch_paths:
+            im = Image.open(p)
+            if model_type == 'pixel_writer_v2':
+                im = im.convert('L').resize((img_size, img_size), Image.Resampling.BICUBIC)
+                batch_imgs.append(np.asarray(im, dtype=np.float32)[None, ...] / 255.0)
+            else:
+                im = im.convert('RGB').resize((img_size, img_size), Image.Resampling.BICUBIC)
+                arr = np.asarray(im, dtype=np.float32).transpose(2, 0, 1) / 255.0
+                mean = np.array([0.485, 0.456, 0.406]).reshape(3, 1, 1)
+                std = np.array([0.229, 0.224, 0.225]).reshape(3, 1, 1)
+                batch_imgs.append((arr - mean) / std)
 
-    # ── ③ 生成图 + GT ──
-    print("[eval-csv] %d 行" % len(rows), flush=True)
+        x = torch.from_numpy(np.stack(batch_imgs)).float().to(device)
+        with torch.no_grad():
+            with torch.autocast(device, dtype=torch.bfloat16):
+                if model_type == 'pixel_writer_v2':
+                    emb = model.extract_features(x).cpu().numpy()
+                else:
+                    emb = model.emb(x).cpu().numpy()
+        features.append(emb)
 
-    def load_gen(d):
-        fs = [f for f in os.listdir(d) if re.match(r"^g\d+\.png$", f)]
-        fs.sort(key=lambda f: int(re.findall(r"\d+", f)[0]))
-        return [os.path.join(d, f) for f in fs]
+    all_embs = np.concatenate(features, axis=0)
 
-    # GT 真迹（同 CSV ✓ —— 判别器 ceiling ✓）
-    gt_paths = [resolve(_posix(r.get("image_path", "")), roots) for r in rows]
-    gt_ok = [(i, p) for i, p in enumerate(gt_paths) if p]
-    gt_meta = [(r.get("calligrapher", "").strip(), r.get("script", "").strip(),
-                r.get("character", "").strip()) for r in rows]
+    # Balanced prototype computation: mean of source-level normalized means
+    prototypes = {}
+    slot_scripts = {}
+    for slot_key, sources in sorted(by_slot_source.items()):
+        source_means = []
+        for src, idxs in sources.items():
+            src_vec = all_embs[idxs].mean(axis=0)
+            src_vec = src_vec / max(np.linalg.norm(src_vec), 1e-12)
+            source_means.append(src_vec)
+        proto_vec = np.mean(source_means, axis=0)
+        prototypes[slot_key] = proto_vec / max(np.linalg.norm(proto_vec), 1e-12)
+        slot_scripts[slot_key] = slot_key.split('·')[1] if '·' in slot_key else ''
 
-    results = {}
-    per_image_results = {}
-    # GT 先评 ✓（ceiling ✓）
-    sets = [("GT真迹", None)] + [(n, d) for n, d in
-                                 (s.split("=", 1) for s in args.gen if "=" in s)]
-    for name, d in sets:
-        if d is None:
-            pairs = gt_ok
-            IS = ImgSet([p for _, p in pairs], tag=name)
+    slot_list = sorted(prototypes.keys())
+    P = np.stack([prototypes[k] for k in slot_list])
+    return slot_list, P, slot_scripts
+
+
+def evaluate_generated_images(model, model_type, img_size, gen_dir, eval_csv, slot_list, P, slot_scripts,
+                               device='cuda', max_samples=187):
+    """Evaluate generated images against source-balanced prototypes with strict ID matching."""
+    gdir = Path(gen_dir)
+    eval_rows = list(csv.DictReader(open(eval_csv, encoding='utf-8-sig')))[:max_samples]
+
+    gen_imgs = []
+    valid_indices = []
+
+    for idx, r in enumerate(eval_rows):
+        # Look for g{idx}.png or {idx:05d}.png
+        candidates = [gdir / f"g{idx}.png", gdir / f"{idx:05d}.png", gdir / f"{idx}.png"]
+        found = None
+        for c in candidates:
+            if c.exists():
+                found = c
+                break
+
+        if not found:
+            raise FileNotFoundError(f"[eval-disc] Strict check failed: Image for sample index {idx} not found in {gdir}!")
+
+        slot_key = f"{r.get('calligrapher', '').strip()}·{r.get('script', '').strip()}"
+        if slot_key not in slot_list:
+            continue  # Skip slots not in prototype bank (e.g. Wen Zhengming Li)
+
+        im = Image.open(found)
+        if model_type == 'pixel_writer_v2':
+            im = im.convert('L').resize((img_size, img_size), Image.Resampling.BICUBIC)
+            gen_imgs.append(np.asarray(im, dtype=np.float32)[None, ...] / 255.0)
         else:
-            ps = load_gen(d)
-            if len(ps) != len(rows):
-                print("  ⚠ %s: %d 张 ≠ CSV %d 行 ⇒ 按序截齐 ✓" % (name, len(ps), len(rows)))
-            pairs = list(enumerate(ps[:len(rows)]))
-            IS = ImgSet([p for _, p in pairs], tag=name)
-        E = IS.emb_all(model, dev)
-        E = E / np.linalg.norm(E, axis=1, keepdims=True)
-        P = np.stack([protos[k] for k in sorted(protos)])          # (n_slot, d)
-        slot_list = sorted(protos)
-        sims = E @ P.T                                             # (n, n_slot)
+            im = im.convert('RGB').resize((img_size, img_size), Image.Resampling.BICUBIC)
+            arr = np.asarray(im, dtype=np.float32).transpose(2, 0, 1) / 255.0
+            mean = np.array([0.485, 0.456, 0.406]).reshape(3, 1, 1)
+            std = np.array([0.229, 0.224, 0.225]).reshape(3, 1, 1)
+            gen_imgs.append((arr - mean) / std)
+        valid_indices.append(idx)
 
-        top1 = top5 = n_ok = 0
-        per_image = []
-        std_margins, writer_margins = [], []
-        slot_script = {k: k.split(chr(183))[1] if chr(183) in k else '' for k in slot_list}
-        for j, (row_i, _p) in enumerate(pairs):
-            w, s, c = gt_meta[row_i]
-            key = w + chr(183) + s
-            if key not in protos:
-                continue
-            n_ok += 1
-            ci = slot_list.index(key)
-            order = np.argsort(-sims[j])
-            rank = int(np.where(order == ci)[0][0])
-            record = {"row": row_i, "writer": w, "script": s, "character": c,
-                      "source": rows[row_i].get("source", "unknown"),
-                      "top1": rank == 0, "predicted_slot": slot_list[int(order[0])]}
-            top1 += int(rank == 0)
-            top5 += int(rank < 5)
-            # std 同书体原型 ✓
-            sk = "std·" + s
-            if sk in protos:
-                record["std_margin"] = float(sims[j][ci] - sims[j][slot_list.index(sk)])
-                std_margins.append(record["std_margin"])
-            others = [sims[j][k2] for k2 in range(len(slot_list))
-                      if k2 != ci and slot_script[slot_list[k2]] == s]  # 同书体异书家 ✓
-            if others:
-                record["writer_margin"] = float(sims[j][ci] - max(others))
-                writer_margins.append(record["writer_margin"])
-            per_image.append(record)
-        res = {"n": n_ok, "top1": top1 / max(1, n_ok), "top5": top5 / max(1, n_ok),
-               "chance_top1": 1.0 / len(writer_keys),
-               "std_margin_mean": float(np.mean(std_margins)) if std_margins else None,
-               "writer_margin_mean": float(np.mean(writer_margins)) if writer_margins else None}
-        results[name] = res
-        per_image_results[name] = per_image
-        print("  [%s] top1 %.4f (随机 1/%d=%.4f) | top5 %.4f | std-margin %s | writer-margin %s"
-              % (name, res["top1"], len(writer_keys), res["chance_top1"], res["top5"],
-                 ("%.4f" % res["std_margin_mean"]) if res["std_margin_mean"] is not None else "NA",
-                 ("%.4f" % res["writer_margin_mean"]) if res["writer_margin_mean"] is not None
-                 else "NA"), flush=True)
+    if not gen_imgs:
+        raise ValueError(f"[eval-disc] No valid images found in {gdir} matching prototypes!")
 
-    os.makedirs(os.path.dirname(os.path.abspath(args.out)), exist_ok=True)
-    import json
-    json.dump(results, open(args.out, "w", encoding="utf-8"), ensure_ascii=False, indent=2)
-    if args.per_image_out:
-        os.makedirs(os.path.dirname(os.path.abspath(args.per_image_out)), exist_ok=True)
-        with open(args.per_image_out, "w", encoding="utf-8") as f:
-            json.dump(per_image_results, f, ensure_ascii=False, indent=2)
-    print("[done] %s" % args.out)
-    return 0
+    x = torch.from_numpy(np.stack(gen_imgs)).float().to(device)
+    with torch.no_grad():
+        with torch.autocast(device, dtype=torch.bfloat16):
+            if model_type == 'pixel_writer_v2':
+                emb = model.extract_features(x).cpu().numpy()
+            else:
+                emb = model.emb(x).cpu().numpy()
+
+    emb = emb / np.linalg.norm(emb, axis=1, keepdims=True)
+    sims = emb @ P.T  # [N_valid, N_slots]
+
+    top1_hits = []
+    margins = []
+    by_writer = defaultdict(list)
+
+    for i, idx in enumerate(valid_indices):
+        r = eval_rows[idx]
+        slot_key = f"{r.get('calligrapher', '').strip()}·{r.get('script', '').strip()}"
+        target_ci = slot_list.index(slot_key)
+        target_script = slot_scripts[slot_key]
+
+        # Restrict competition to same script
+        same_script_slots = [k for k in range(len(slot_list)) if slot_scripts[slot_list[k]] == target_script]
+        same_script_sims = sims[i, same_script_slots]
+        best_slot_in_script = same_script_slots[int(np.argmax(same_script_sims))]
+
+        is_hit = (best_slot_in_script == target_ci)
+        top1_hits.append(1 if is_hit else 0)
+        by_writer[r.get('calligrapher', '').strip()].append(1 if is_hit else 0)
+
+        # Margin: target_sim - max_{other in same script} other_sim
+        competitor_sims = [sims[i, k] for k in same_script_slots if k != target_ci]
+        if competitor_sims:
+            margins.append(float(sims[i, target_ci] - max(competitor_sims)))
+
+    micro_top1 = float(np.mean(top1_hits)) * 100.0
+    macro_top1 = float(np.mean([np.mean(by_writer[w]) for w in by_writer])) * 100.0
+    margin_mean = float(np.mean(margins)) if margins else 0.0
+    margin_med = float(np.median(margins)) if margins else 0.0
+
+    return {
+        'n_eval': len(valid_indices),
+        'micro_top1': micro_top1,
+        'macro_top1': macro_top1,
+        'margin_mean': margin_mean,
+        'margin_median': margin_med,
+        'by_writer': {w: float(np.mean(hits)) * 100.0 for w, hits in by_writer.items()}
+    }
 
 
-if __name__ == "__main__":
-    sys.exit(main())
+def main():
+    p = argparse.ArgumentParser(description="Evaluate generated images with Pixel Style Evaluator")
+    p.add_argument('--ckpt', default='assets/style_disc_ce_holdout.pt')
+    p.add_argument('--eval-csv', default='exp-std/csv/eval200_fixed.csv')
+    p.add_argument('--train-csv', default='exp-std/csv/train_top10_aug_sym.csv')
+    p.add_argument('--gen-dir', required=True, help="Directory containing generated g*.png images")
+    p.add_argument('--proto-cache', default='', help="Path to cached prototypes .pt")
+    p.add_argument('--device', default='cuda')
+    p.add_argument('--out', default='')
+    args = p.parse_args()
+
+    roots = [str(Path('.')), 'data', 'exp-std']
+    print(f"Loading evaluator model from {args.ckpt}...")
+    model, model_type, img_size = load_evaluator_model(args.ckpt, device=args.device)
+    print(f"Evaluator loaded: type={model_type}, input_size={img_size}")
+
+    if args.proto_cache and os.path.exists(args.proto_cache):
+        print(f"Loading cached prototypes from {args.proto_cache}...")
+        cache_data = torch.load(args.proto_cache, map_location='cpu', weights_only=False)
+        slot_list = cache_data['slot_list']
+        P = cache_data['P']
+        slot_scripts = cache_data['slot_scripts']
+    else:
+        slot_list, P, slot_scripts = build_source_balanced_prototypes(
+            model, model_type, img_size, args.train_csv, roots, device=args.device
+        )
+        if args.proto_cache:
+            Path(args.proto_cache).parent.mkdir(parents=True, exist_ok=True)
+            torch.save({'slot_list': slot_list, 'P': P, 'slot_scripts': slot_scripts}, args.proto_cache)
+            print(f"Saved prototype cache to {args.proto_cache}")
+    print(f"Prototypes ready for {len(slot_list)} slots.")
+
+    results = evaluate_generated_images(
+        model, model_type, img_size, args.gen_dir, args.eval_csv, slot_list, P, slot_scripts,
+        device=args.device
+    )
+
+    print("\n" + "=" * 80)
+    print(f"Evaluated Dir: {args.gen_dir} (N={results['n_eval']})")
+    print(f"Micro Top-1  : {results['micro_top1']:.2f}%")
+    print(f"Macro Top-1  : {results['macro_top1']:.2f}%")
+    print(f"Margin Mean  : {results['margin_mean']:+.4f}")
+    print(f"Margin Median: {results['margin_median']:+.4f}")
+    print("=" * 80)
+
+    if args.out:
+        Path(args.out).parent.mkdir(parents=True, exist_ok=True)
+        with open(args.out, 'w', encoding='utf-8') as f:
+            json.dump(results, f, ensure_ascii=False, indent=2)
+        print(f"Saved evaluation results to {args.out}")
+
+
+if __name__ == '__main__':
+    main()
