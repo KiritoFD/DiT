@@ -1,0 +1,84 @@
+{
+  "arm": "R2I0_microsearch",
+  "machine": "4090",
+  "global_batch": 512,
+  "microbatch": 224,
+  "accum": 3,
+  "microbatch_sizes": [
+    224,
+    224,
+    64
+  ],
+  "gradient_checkpointing": false,
+  "step_s": 1.032812231424893,
+  "measured_steps": 15,
+  "elapsed": 14.523453095927835,
+  "startup_seconds": 8.130240527912974,
+  "peak_allocated_GiB": 19.831738471984863,
+  "peak_reserved_GiB": 20.37890625,
+  "compile": false,
+  "parameters": {
+    "backbone": 114011012,
+    "style_representation": 236832,
+    "style_injections": 149760
+  },
+  "diagnostics": {
+    "legacy_writer_leakage": false,
+    "disabled_matches_source_null": true,
+    "swap_rms": 0.007021365221589804,
+    "null_gap": 0.03730884939432144,
+    "output_rms": 1.0766758918762207,
+    "layers": [
+      {
+        "parameter_spatial_variance": 0.0,
+        "base_rms": 0.840142548084259,
+        "delta_rms": 0.08382726460695267,
+        "spatial_variance": 0.0013501639477908611,
+        "shared_energy": 0.0056781647726893425
+      },
+      {
+        "parameter_spatial_variance": 0.0,
+        "base_rms": 1.686204433441162,
+        "delta_rms": 0.16869734227657318,
+        "spatial_variance": 0.00829767994582653,
+        "shared_energy": 0.020193524658679962
+      },
+      {
+        "parameter_spatial_variance": 0.0,
+        "base_rms": 2.0663230419158936,
+        "delta_rms": 0.2066323161125183,
+        "spatial_variance": 0.013885126449167728,
+        "shared_energy": 0.029028739780187607
+      }
+    ],
+    "tokens_effective_rank": 1.003309726715088,
+    "tokens_off_diagonal_cosine": 0.9999041557312012
+  },
+  "gradient": {
+    "style_representation": 0.003486013039946556,
+    "style_injections": 0.19248566031455994,
+    "backbone": 0.4119817316532135
+  },
+  "transfer": {
+    "source": "assets/u100_p1p2_20261025/p1_runs/20261025-113332-Unet-flow/checkpoints/0010000.pt",
+    "source_step": 10000,
+    "copied": 334,
+    "strict_backbone_equal": true,
+    "r4_table": "",
+    "r4_sha256": null
+  },
+  "capacity_only": false,
+  "real_data_smoke": true,
+  "scientific_checkpoint_saved": false,
+  "final_loss": 0.272148072719574,
+  "final_grad": 0.3744679391384125,
+  "torch_version": "2.5.1+cu121",
+  "samples_s": 528.7998624895453,
+  "gpu_utilization_mean": 100.0,
+  "gpu_ms": {
+    "forward": 347.2693550109863,
+    "backward": 607.1264633178711,
+    "clip_optimizer": 8.181713104248047,
+    "ema": 2.5580650011698407
+  }
+}

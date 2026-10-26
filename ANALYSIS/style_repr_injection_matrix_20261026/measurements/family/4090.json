@@ -1,0 +1,869 @@
+[
+  {
+    "injection": 0,
+    "chosen": {
+      "arm": "R2I0_microsearch",
+      "machine": "4090",
+      "global_batch": 512,
+      "microbatch": 224,
+      "accum": 3,
+      "microbatch_sizes": [
+        224,
+        224,
+        64
+      ],
+      "gradient_checkpointing": false,
+      "step_s": 1.0333392405205855,
+      "measured_steps": 100,
+      "elapsed": 96.77364032901824,
+      "startup_seconds": 7.497049883008003,
+      "peak_allocated_GiB": 19.809605598449707,
+      "peak_reserved_GiB": 20.365234375,
+      "compile": false,
+      "parameters": {
+        "backbone": 114011012,
+        "style_representation": 236832,
+        "style_injections": 149760
+      },
+      "diagnostics": {
+        "legacy_writer_leakage": false,
+        "disabled_matches_source_null": true,
+        "swap_rms": 0.00013167558063287288,
+        "null_gap": 0.00029597434331662953,
+        "output_rms": 0.02347586676478386,
+        "layers": [
+          {
+            "parameter_spatial_variance": 0.0,
+            "base_rms": 1.0077035427093506,
+            "delta_rms": 0.10077133774757385,
+            "spatial_variance": 0.004173259250819683,
+            "shared_energy": 0.005985678173601627
+          },
+          {
+            "parameter_spatial_variance": 0.0,
+            "base_rms": 1.0226061344146729,
+            "delta_rms": 0.10226406157016754,
+            "spatial_variance": 0.004279222805052996,
+            "shared_energy": 0.006195431109517813
+          },
+          {
+            "parameter_spatial_variance": 0.0,
+            "base_rms": 1.0105479955673218,
+            "delta_rms": 0.10105479508638382,
+            "spatial_variance": 0.004210449755191803,
+            "shared_energy": 0.006067411042749882
+          }
+        ],
+        "tokens_effective_rank": 1.0033214092254639,
+        "tokens_off_diagonal_cosine": 0.9998169541358948
+      },
+      "gradient": {
+        "style_representation": 2.238497654616367e-05,
+        "style_injections": 0.0013796619605273008,
+        "backbone": 0.1312263309955597
+      },
+      "transfer": {},
+      "capacity_only": true,
+      "final_loss": 1.8237924575805664,
+      "final_grad": 1.4280685186386108,
+      "torch_version": "2.5.1+cu121",
+      "samples_s": 529.0696911465398,
+      "gpu_utilization_mean": 99.89583333333333,
+      "gpu_ms": {
+        "forward": 347.41953113555905,
+        "backward": 609.4731045532227,
+        "clip_optimizer": 8.200275506973266,
+        "ema": 2.556015603542328
+      }
+    },
+    "criterion": "fastest within 90% of target memory, below safe cap; no gradient checkpointing",
+    "candidates": [
+      {
+        "arm": "R2I0_microsearch",
+        "machine": "4090",
+        "global_batch": 512,
+        "microbatch": 192,
+        "accum": 3,
+        "microbatch_sizes": [
+          192,
+          192,
+          128
+        ],
+        "gradient_checkpointing": false,
+        "step_s": 1.031909019252063,
+        "measured_steps": 100,
+        "elapsed": 96.90776816010475,
+        "startup_seconds": 7.5006980039179325,
+        "peak_allocated_GiB": 17.344372272491455,
+        "peak_reserved_GiB": 17.765625,
+        "compile": false,
+        "parameters": {
+          "backbone": 114011012,
+          "style_representation": 236832,
+          "style_injections": 149760
+        },
+        "diagnostics": {
+          "legacy_writer_leakage": false,
+          "disabled_matches_source_null": true,
+          "swap_rms": 0.00013133166066836566,
+          "null_gap": 0.0002958039112854749,
+          "output_rms": 0.023476053029298782,
+          "layers": [
+            {
+              "parameter_spatial_variance": 0.0,
+              "base_rms": 1.007703423500061,
+              "delta_rms": 0.10077130049467087,
+              "spatial_variance": 0.004173216409981251,
+              "shared_energy": 0.005985714495182037
+            },
+            {
+              "parameter_spatial_variance": 0.0,
+              "base_rms": 1.0226019620895386,
+              "delta_rms": 0.1022631898522377,
+              "spatial_variance": 0.004279125016182661,
+              "shared_energy": 0.006195351015776396
+            },
+            {
+              "parameter_spatial_variance": 0.0,
+              "base_rms": 1.0105489492416382,
+              "delta_rms": 0.10105489194393158,
+              "spatial_variance": 0.004210273269563913,
+              "shared_energy": 0.006067603826522827
+            }
+          ],
+          "tokens_effective_rank": 1.0033221244812012,
+          "tokens_off_diagonal_cosine": 0.9998169541358948
+        },
+        "gradient": {
+          "style_representation": 2.2367781639331952e-05,
+          "style_injections": 0.0013792004901915789,
+          "backbone": 0.13122788071632385
+        },
+        "transfer": {},
+        "capacity_only": true,
+        "final_loss": 1.8775994777679443,
+        "final_grad": 0.695498526096344,
+        "torch_version": "2.5.1+cu121",
+        "samples_s": 528.3374178570563,
+        "gpu_utilization_mean": 99.875,
+        "gpu_ms": {
+          "forward": 348.5595967102051,
+          "backward": 609.670874633789,
+          "clip_optimizer": 8.185720329284669,
+          "ema": 2.5752236151695254
+        }
+      },
+      {
+        "arm": "R2I0_microsearch",
+        "machine": "4090",
+        "global_batch": 512,
+        "microbatch": 224,
+        "accum": 3,
+        "microbatch_sizes": [
+          224,
+          224,
+          64
+        ],
+        "gradient_checkpointing": false,
+        "step_s": 1.0333392405205855,
+        "measured_steps": 100,
+        "elapsed": 96.77364032901824,
+        "startup_seconds": 7.497049883008003,
+        "peak_allocated_GiB": 19.809605598449707,
+        "peak_reserved_GiB": 20.365234375,
+        "compile": false,
+        "parameters": {
+          "backbone": 114011012,
+          "style_representation": 236832,
+          "style_injections": 149760
+        },
+        "diagnostics": {
+          "legacy_writer_leakage": false,
+          "disabled_matches_source_null": true,
+          "swap_rms": 0.00013167558063287288,
+          "null_gap": 0.00029597434331662953,
+          "output_rms": 0.02347586676478386,
+          "layers": [
+            {
+              "parameter_spatial_variance": 0.0,
+              "base_rms": 1.0077035427093506,
+              "delta_rms": 0.10077133774757385,
+              "spatial_variance": 0.004173259250819683,
+              "shared_energy": 0.005985678173601627
+            },
+            {
+              "parameter_spatial_variance": 0.0,
+              "base_rms": 1.0226061344146729,
+              "delta_rms": 0.10226406157016754,
+              "spatial_variance": 0.004279222805052996,
+              "shared_energy": 0.006195431109517813
+            },
+            {
+              "parameter_spatial_variance": 0.0,
+              "base_rms": 1.0105479955673218,
+              "delta_rms": 0.10105479508638382,
+              "spatial_variance": 0.004210449755191803,
+              "shared_energy": 0.006067411042749882
+            }
+          ],
+          "tokens_effective_rank": 1.0033214092254639,
+          "tokens_off_diagonal_cosine": 0.9998169541358948
+        },
+        "gradient": {
+          "style_representation": 2.238497654616367e-05,
+          "style_injections": 0.0013796619605273008,
+          "backbone": 0.1312263309955597
+        },
+        "transfer": {},
+        "capacity_only": true,
+        "final_loss": 1.8237924575805664,
+        "final_grad": 1.4280685186386108,
+        "torch_version": "2.5.1+cu121",
+        "samples_s": 529.0696911465398,
+        "gpu_utilization_mean": 99.89583333333333,
+        "gpu_ms": {
+          "forward": 347.41953113555905,
+          "backward": 609.4731045532227,
+          "clip_optimizer": 8.200275506973266,
+          "ema": 2.556015603542328
+        }
+      }
+    ]
+  },
+  {
+    "injection": 1,
+    "chosen": {
+      "arm": "R2I1_microsearch",
+      "machine": "4090",
+      "global_batch": 512,
+      "microbatch": 192,
+      "accum": 3,
+      "microbatch_sizes": [
+        192,
+        192,
+        128
+      ],
+      "gradient_checkpointing": false,
+      "step_s": 0.9995884598135057,
+      "measured_steps": 100,
+      "elapsed": 100.04117096215487,
+      "startup_seconds": 7.977371847257018,
+      "peak_allocated_GiB": 17.859922885894775,
+      "peak_reserved_GiB": 18.54296875,
+      "compile": false,
+      "parameters": {
+        "backbone": 114011012,
+        "style_representation": 236832,
+        "style_injections": 1440192
+      },
+      "diagnostics": {
+        "legacy_writer_leakage": false,
+        "disabled_matches_source_null": true,
+        "swap_rms": 0.00011952745262533426,
+        "null_gap": 0.00034884875640273094,
+        "output_rms": 0.023477116599678993,
+        "layers": [
+          {
+            "parameter_spatial_variance": 2.901884727180004e-05,
+            "base_rms": 1.007686734199524,
+            "delta_rms": 0.10076792538166046,
+            "spatial_variance": 0.008778411895036697,
+            "shared_energy": 0.0013843346387147903
+          },
+          {
+            "parameter_spatial_variance": 2.879442945413757e-05,
+            "base_rms": 1.0226043462753296,
+            "delta_rms": 0.10223850607872009,
+            "spatial_variance": 0.009097013622522354,
+            "shared_energy": 0.00139123375993222
+          },
+          {
+            "parameter_spatial_variance": 2.9615548555739224e-05,
+            "base_rms": 1.0105465650558472,
+            "delta_rms": 0.10105466097593307,
+            "spatial_variance": 0.0084712328389287,
+            "shared_energy": 0.0018731736345216632
+          }
+        ],
+        "tokens_effective_rank": 1.003321647644043,
+        "tokens_off_diagonal_cosine": 0.9998169541358948
+      },
+      "gradient": {
+        "style_representation": 1.1462549991847482e-05,
+        "style_injections": 0.0011198836145922542,
+        "backbone": 0.1313745379447937
+      },
+      "transfer": {},
+      "capacity_only": true,
+      "final_loss": 1.9812291860580444,
+      "final_grad": 0.5809581279754639,
+      "torch_version": "2.5.1+cu121",
+      "samples_s": 511.78929142451494,
+      "gpu_utilization_mean": 100.0,
+      "gpu_ms": {
+        "forward": 361.62853492736815,
+        "backward": 627.9376553344727,
+        "clip_optimizer": 8.176181755065919,
+        "ema": 2.583569622039795
+      }
+    },
+    "criterion": "fastest within 90% of target memory, below safe cap; no gradient checkpointing",
+    "candidates": [
+      {
+        "arm": "R2I1_microsearch",
+        "machine": "4090",
+        "global_batch": 512,
+        "microbatch": 192,
+        "accum": 3,
+        "microbatch_sizes": [
+          192,
+          192,
+          128
+        ],
+        "gradient_checkpointing": false,
+        "step_s": 0.9995884598135057,
+        "measured_steps": 100,
+        "elapsed": 100.04117096215487,
+        "startup_seconds": 7.977371847257018,
+        "peak_allocated_GiB": 17.859922885894775,
+        "peak_reserved_GiB": 18.54296875,
+        "compile": false,
+        "parameters": {
+          "backbone": 114011012,
+          "style_representation": 236832,
+          "style_injections": 1440192
+        },
+        "diagnostics": {
+          "legacy_writer_leakage": false,
+          "disabled_matches_source_null": true,
+          "swap_rms": 0.00011952745262533426,
+          "null_gap": 0.00034884875640273094,
+          "output_rms": 0.023477116599678993,
+          "layers": [
+            {
+              "parameter_spatial_variance": 2.901884727180004e-05,
+              "base_rms": 1.007686734199524,
+              "delta_rms": 0.10076792538166046,
+              "spatial_variance": 0.008778411895036697,
+              "shared_energy": 0.0013843346387147903
+            },
+            {
+              "parameter_spatial_variance": 2.879442945413757e-05,
+              "base_rms": 1.0226043462753296,
+              "delta_rms": 0.10223850607872009,
+              "spatial_variance": 0.009097013622522354,
+              "shared_energy": 0.00139123375993222
+            },
+            {
+              "parameter_spatial_variance": 2.9615548555739224e-05,
+              "base_rms": 1.0105465650558472,
+              "delta_rms": 0.10105466097593307,
+              "spatial_variance": 0.0084712328389287,
+              "shared_energy": 0.0018731736345216632
+            }
+          ],
+          "tokens_effective_rank": 1.003321647644043,
+          "tokens_off_diagonal_cosine": 0.9998169541358948
+        },
+        "gradient": {
+          "style_representation": 1.1462549991847482e-05,
+          "style_injections": 0.0011198836145922542,
+          "backbone": 0.1313745379447937
+        },
+        "transfer": {},
+        "capacity_only": true,
+        "final_loss": 1.9812291860580444,
+        "final_grad": 0.5809581279754639,
+        "torch_version": "2.5.1+cu121",
+        "samples_s": 511.78929142451494,
+        "gpu_utilization_mean": 100.0,
+        "gpu_ms": {
+          "forward": 361.62853492736815,
+          "backward": 627.9376553344727,
+          "clip_optimizer": 8.176181755065919,
+          "ema": 2.583569622039795
+        }
+      }
+    ]
+  },
+  {
+    "injection": 2,
+    "chosen": {
+      "arm": "R2I2_microsearch",
+      "machine": "4090",
+      "global_batch": 512,
+      "microbatch": 224,
+      "accum": 3,
+      "microbatch_sizes": [
+        224,
+        224,
+        64
+      ],
+      "gradient_checkpointing": false,
+      "step_s": 1.0261150097519876,
+      "measured_steps": 100,
+      "elapsed": 97.45496269874275,
+      "startup_seconds": 7.6677947379648685,
+      "peak_allocated_GiB": 19.821104526519775,
+      "peak_reserved_GiB": 20.34765625,
+      "compile": false,
+      "parameters": {
+        "backbone": 114011012,
+        "style_representation": 236832,
+        "style_injections": 346368
+      },
+      "diagnostics": {
+        "legacy_writer_leakage": false,
+        "disabled_matches_source_null": true,
+        "swap_rms": 0.00013054815644863993,
+        "null_gap": 0.00031206163112074137,
+        "output_rms": 0.023477230221033096,
+        "layers": [
+          {
+            "attention_entropy": 2.079436779022217,
+            "attention_spatial_variance": 1.260754629583971e-07,
+            "base_rms": 1.0076998472213745,
+            "delta_rms": 0.10055908560752869,
+            "spatial_variance": 3.2522933679501875e-08,
+            "shared_energy": 0.010112096555531025
+          },
+          {
+            "attention_entropy": 2.079435348510742,
+            "attention_spatial_variance": 1.3479373706104525e-07,
+            "base_rms": 1.0226033926010132,
+            "delta_rms": 0.10241333395242691,
+            "spatial_variance": 3.9485989589138626e-08,
+            "shared_energy": 0.010488452389836311
+          },
+          {
+            "attention_entropy": 2.079437255859375,
+            "attention_spatial_variance": 1.2289206097193528e-07,
+            "base_rms": 1.0105469226837158,
+            "delta_rms": 0.10097424685955048,
+            "spatial_variance": 3.137613546755347e-08,
+            "shared_energy": 0.010195768438279629
+          }
+        ],
+        "tokens_effective_rank": 1.0033211708068848,
+        "tokens_off_diagonal_cosine": 0.9998169541358948
+      },
+      "gradient": {
+        "style_representation": 2.0377259716042317e-05,
+        "style_injections": 0.001319001312367618,
+        "backbone": 0.1312049925327301
+      },
+      "transfer": {},
+      "capacity_only": true,
+      "final_loss": 1.8438366651535034,
+      "final_grad": 1.3631281852722168,
+      "torch_version": "2.5.1+cu121",
+      "samples_s": 525.3708849930176,
+      "gpu_utilization_mean": 99.85416666666667,
+      "gpu_ms": {
+        "forward": 349.6234993362427,
+        "backward": 614.0731111907959,
+        "clip_optimizer": 8.204592924118042,
+        "ema": 2.561572434902191
+      }
+    },
+    "criterion": "fastest within 90% of target memory, below safe cap; no gradient checkpointing",
+    "candidates": [
+      {
+        "arm": "R2I2_microsearch",
+        "machine": "4090",
+        "global_batch": 512,
+        "microbatch": 192,
+        "accum": 3,
+        "microbatch_sizes": [
+          192,
+          192,
+          128
+        ],
+        "gradient_checkpointing": false,
+        "step_s": 1.0252468633373615,
+        "measured_steps": 100,
+        "elapsed": 97.53748445957899,
+        "startup_seconds": 7.762903856113553,
+        "peak_allocated_GiB": 17.35597801208496,
+        "peak_reserved_GiB": 17.68359375,
+        "compile": false,
+        "parameters": {
+          "backbone": 114011012,
+          "style_representation": 236832,
+          "style_injections": 346368
+        },
+        "diagnostics": {
+          "legacy_writer_leakage": false,
+          "disabled_matches_source_null": true,
+          "swap_rms": 0.0001297748094657436,
+          "null_gap": 0.00031134524033404887,
+          "output_rms": 0.02347627468407154,
+          "layers": [
+            {
+              "attention_entropy": 2.079436779022217,
+              "attention_spatial_variance": 1.2600303023191373e-07,
+              "base_rms": 1.007698893547058,
+              "delta_rms": 0.1005578339099884,
+              "spatial_variance": 3.4092206391278523e-08,
+              "shared_energy": 0.010111845098435879
+            },
+            {
+              "attention_entropy": 2.079435348510742,
+              "attention_spatial_variance": 1.3452967095872737e-07,
+              "base_rms": 1.022599697113037,
+              "delta_rms": 0.10241147875785828,
+              "spatial_variance": 3.938486514698525e-08,
+              "shared_energy": 0.010488070547580719
+            },
+            {
+              "attention_entropy": 2.079437255859375,
+              "attention_spatial_variance": 1.2346654898465204e-07,
+              "base_rms": 1.0105477571487427,
+              "delta_rms": 0.10096921771764755,
+              "spatial_variance": 3.202997689299991e-08,
+              "shared_energy": 0.010194752365350723
+            }
+          ],
+          "tokens_effective_rank": 1.003321647644043,
+          "tokens_off_diagonal_cosine": 0.9998169541358948
+        },
+        "gradient": {
+          "style_representation": 2.0378494809847325e-05,
+          "style_injections": 0.0013191455509513617,
+          "backbone": 0.13120675086975098
+        },
+        "transfer": {},
+        "capacity_only": true,
+        "final_loss": 1.8381664752960205,
+        "final_grad": 0.9857408404350281,
+        "torch_version": "2.5.1+cu121",
+        "samples_s": 524.9263940287291,
+        "gpu_utilization_mean": 99.89583333333333,
+        "gpu_ms": {
+          "forward": 350.10039443969725,
+          "backward": 614.3272650146484,
+          "clip_optimizer": 8.288808917999267,
+          "ema": 2.570236427783966
+        }
+      },
+      {
+        "arm": "R2I2_microsearch",
+        "machine": "4090",
+        "global_batch": 512,
+        "microbatch": 224,
+        "accum": 3,
+        "microbatch_sizes": [
+          224,
+          224,
+          64
+        ],
+        "gradient_checkpointing": false,
+        "step_s": 1.0261150097519876,
+        "measured_steps": 100,
+        "elapsed": 97.45496269874275,
+        "startup_seconds": 7.6677947379648685,
+        "peak_allocated_GiB": 19.821104526519775,
+        "peak_reserved_GiB": 20.34765625,
+        "compile": false,
+        "parameters": {
+          "backbone": 114011012,
+          "style_representation": 236832,
+          "style_injections": 346368
+        },
+        "diagnostics": {
+          "legacy_writer_leakage": false,
+          "disabled_matches_source_null": true,
+          "swap_rms": 0.00013054815644863993,
+          "null_gap": 0.00031206163112074137,
+          "output_rms": 0.023477230221033096,
+          "layers": [
+            {
+              "attention_entropy": 2.079436779022217,
+              "attention_spatial_variance": 1.260754629583971e-07,
+              "base_rms": 1.0076998472213745,
+              "delta_rms": 0.10055908560752869,
+              "spatial_variance": 3.2522933679501875e-08,
+              "shared_energy": 0.010112096555531025
+            },
+            {
+              "attention_entropy": 2.079435348510742,
+              "attention_spatial_variance": 1.3479373706104525e-07,
+              "base_rms": 1.0226033926010132,
+              "delta_rms": 0.10241333395242691,
+              "spatial_variance": 3.9485989589138626e-08,
+              "shared_energy": 0.010488452389836311
+            },
+            {
+              "attention_entropy": 2.079437255859375,
+              "attention_spatial_variance": 1.2289206097193528e-07,
+              "base_rms": 1.0105469226837158,
+              "delta_rms": 0.10097424685955048,
+              "spatial_variance": 3.137613546755347e-08,
+              "shared_energy": 0.010195768438279629
+            }
+          ],
+          "tokens_effective_rank": 1.0033211708068848,
+          "tokens_off_diagonal_cosine": 0.9998169541358948
+        },
+        "gradient": {
+          "style_representation": 2.0377259716042317e-05,
+          "style_injections": 0.001319001312367618,
+          "backbone": 0.1312049925327301
+        },
+        "transfer": {},
+        "capacity_only": true,
+        "final_loss": 1.8438366651535034,
+        "final_grad": 1.3631281852722168,
+        "torch_version": "2.5.1+cu121",
+        "samples_s": 525.3708849930176,
+        "gpu_utilization_mean": 99.85416666666667,
+        "gpu_ms": {
+          "forward": 349.6234993362427,
+          "backward": 614.0731111907959,
+          "clip_optimizer": 8.204592924118042,
+          "ema": 2.561572434902191
+        }
+      }
+    ]
+  },
+  {
+    "injection": 3,
+    "chosen": {
+      "arm": "R2I3_microsearch",
+      "machine": "4090",
+      "global_batch": 512,
+      "microbatch": 224,
+      "accum": 3,
+      "microbatch_sizes": [
+        224,
+        224,
+        64
+      ],
+      "gradient_checkpointing": false,
+      "step_s": 1.026472997384737,
+      "measured_steps": 100,
+      "elapsed": 97.42097478918731,
+      "startup_seconds": 7.860209543257952,
+      "peak_allocated_GiB": 19.922702312469482,
+      "peak_reserved_GiB": 20.421875,
+      "compile": false,
+      "parameters": {
+        "backbone": 114011012,
+        "style_representation": 236832,
+        "style_injections": 351768
+      },
+      "diagnostics": {
+        "legacy_writer_leakage": false,
+        "disabled_matches_source_null": true,
+        "swap_rms": 0.00013193760241847485,
+        "null_gap": 0.000328140304191038,
+        "output_rms": 0.023477351292967796,
+        "layers": [
+          {
+            "dynamic_alpha_rms": 0.41528621315956116,
+            "parameter_spatial_variance": 0.0033850795589387417,
+            "base_rms": 1.0076982975006104,
+            "delta_rms": 0.10044421255588531,
+            "spatial_variance": 0.009078165516257286,
+            "shared_energy": 0.0010197401279583573
+          },
+          {
+            "dynamic_alpha_rms": 0.3476674258708954,
+            "parameter_spatial_variance": 0.00036573526449501514,
+            "base_rms": 1.022602915763855,
+            "delta_rms": 0.10242879390716553,
+            "spatial_variance": 0.008448328822851181,
+            "shared_energy": 0.0020763305947184563
+          },
+          {
+            "dynamic_alpha_rms": 0.4411437511444092,
+            "parameter_spatial_variance": 3.317937080282718e-05,
+            "base_rms": 1.0105485916137695,
+            "delta_rms": 0.10086415708065033,
+            "spatial_variance": 0.00824719201773405,
+            "shared_energy": 0.0020552475471049547
+          }
+        ],
+        "tokens_effective_rank": 1.0033204555511475,
+        "tokens_off_diagonal_cosine": 0.9998169541358948
+      },
+      "gradient": {
+        "style_representation": 1.8150347386836074e-05,
+        "style_injections": 0.0009747064905241132,
+        "backbone": 0.13126014173030853
+      },
+      "transfer": {},
+      "capacity_only": true,
+      "final_loss": 1.8417508602142334,
+      "final_grad": 0.6884728670120239,
+      "torch_version": "2.5.1+cu121",
+      "samples_s": 525.5541746609854,
+      "gpu_utilization_mean": 99.91666666666667,
+      "gpu_ms": {
+        "forward": 349.8725248336792,
+        "backward": 613.5566542053223,
+        "clip_optimizer": 8.139223384857178,
+        "ema": 2.5557336831092834
+      }
+    },
+    "criterion": "fastest within 90% of target memory, below safe cap; no gradient checkpointing",
+    "candidates": [
+      {
+        "arm": "R2I3_microsearch",
+        "machine": "4090",
+        "global_batch": 512,
+        "microbatch": 192,
+        "accum": 3,
+        "microbatch_sizes": [
+          192,
+          192,
+          128
+        ],
+        "gradient_checkpointing": false,
+        "step_s": 1.025705999368245,
+        "measured_steps": 100,
+        "elapsed": 97.49382382631302,
+        "startup_seconds": 8.036654967814684,
+        "peak_allocated_GiB": 17.45267343521118,
+        "peak_reserved_GiB": 17.751953125,
+        "compile": false,
+        "parameters": {
+          "backbone": 114011012,
+          "style_representation": 236832,
+          "style_injections": 351768
+        },
+        "diagnostics": {
+          "legacy_writer_leakage": false,
+          "disabled_matches_source_null": true,
+          "swap_rms": 0.0001317847491009161,
+          "null_gap": 0.0003282031393609941,
+          "output_rms": 0.02347627282142639,
+          "layers": [
+            {
+              "dynamic_alpha_rms": 0.41528621315956116,
+              "parameter_spatial_variance": 0.0033850795589387417,
+              "base_rms": 1.0076990127563477,
+              "delta_rms": 0.10044486820697784,
+              "spatial_variance": 0.009078212082386017,
+              "shared_energy": 0.001019825111143291
+            },
+            {
+              "dynamic_alpha_rms": 0.3476674258708954,
+              "parameter_spatial_variance": 0.00036573526449501514,
+              "base_rms": 1.022602915763855,
+              "delta_rms": 0.10242879390716553,
+              "spatial_variance": 0.008448328822851181,
+              "shared_energy": 0.0020763305947184563
+            },
+            {
+              "dynamic_alpha_rms": 0.4411437511444092,
+              "parameter_spatial_variance": 3.317937080282718e-05,
+              "base_rms": 1.0105485916137695,
+              "delta_rms": 0.10086415708065033,
+              "spatial_variance": 0.00824719201773405,
+              "shared_energy": 0.0020552475471049547
+            }
+          ],
+          "tokens_effective_rank": 1.0033204555511475,
+          "tokens_off_diagonal_cosine": 0.9998169541358948
+        },
+        "gradient": {
+          "style_representation": 1.8190596165368333e-05,
+          "style_injections": 0.0009746326832100749,
+          "backbone": 0.13125811517238617
+        },
+        "transfer": {},
+        "capacity_only": true,
+        "final_loss": 1.8299041986465454,
+        "final_grad": 1.4013055562973022,
+        "torch_version": "2.5.1+cu121",
+        "samples_s": 525.1614716765414,
+        "gpu_utilization_mean": 99.85416666666667,
+        "gpu_ms": {
+          "forward": 350.13346771240236,
+          "backward": 613.9124348449707,
+          "clip_optimizer": 8.251220502853393,
+          "ema": 2.5575756072998046
+        }
+      },
+      {
+        "arm": "R2I3_microsearch",
+        "machine": "4090",
+        "global_batch": 512,
+        "microbatch": 224,
+        "accum": 3,
+        "microbatch_sizes": [
+          224,
+          224,
+          64
+        ],
+        "gradient_checkpointing": false,
+        "step_s": 1.026472997384737,
+        "measured_steps": 100,
+        "elapsed": 97.42097478918731,
+        "startup_seconds": 7.860209543257952,
+        "peak_allocated_GiB": 19.922702312469482,
+        "peak_reserved_GiB": 20.421875,
+        "compile": false,
+        "parameters": {
+          "backbone": 114011012,
+          "style_representation": 236832,
+          "style_injections": 351768
+        },
+        "diagnostics": {
+          "legacy_writer_leakage": false,
+          "disabled_matches_source_null": true,
+          "swap_rms": 0.00013193760241847485,
+          "null_gap": 0.000328140304191038,
+          "output_rms": 0.023477351292967796,
+          "layers": [
+            {
+              "dynamic_alpha_rms": 0.41528621315956116,
+              "parameter_spatial_variance": 0.0033850795589387417,
+              "base_rms": 1.0076982975006104,
+              "delta_rms": 0.10044421255588531,
+              "spatial_variance": 0.009078165516257286,
+              "shared_energy": 0.0010197401279583573
+            },
+            {
+              "dynamic_alpha_rms": 0.3476674258708954,
+              "parameter_spatial_variance": 0.00036573526449501514,
+              "base_rms": 1.022602915763855,
+              "delta_rms": 0.10242879390716553,
+              "spatial_variance": 0.008448328822851181,
+              "shared_energy": 0.0020763305947184563
+            },
+            {
+              "dynamic_alpha_rms": 0.4411437511444092,
+              "parameter_spatial_variance": 3.317937080282718e-05,
+              "base_rms": 1.0105485916137695,
+              "delta_rms": 0.10086415708065033,
+              "spatial_variance": 0.00824719201773405,
+              "shared_energy": 0.0020552475471049547
+            }
+          ],
+          "tokens_effective_rank": 1.0033204555511475,
+          "tokens_off_diagonal_cosine": 0.9998169541358948
+        },
+        "gradient": {
+          "style_representation": 1.8150347386836074e-05,
+          "style_injections": 0.0009747064905241132,
+          "backbone": 0.13126014173030853
+        },
+        "transfer": {},
+        "capacity_only": true,
+        "final_loss": 1.8417508602142334,
+        "final_grad": 0.6884728670120239,
+        "torch_version": "2.5.1+cu121",
+        "samples_s": 525.5541746609854,
+        "gpu_utilization_mean": 99.91666666666667,
+        "gpu_ms": {
+          "forward": 349.8725248336792,
+          "backward": 613.5566542053223,
+          "clip_optimizer": 8.139223384857178,
+          "ema": 2.5557336831092834
+        }
+      }
+    ]
+  }
+]

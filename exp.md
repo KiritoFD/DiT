@@ -1,5 +1,12 @@
 # 实验总账
 
+## 2026-10-26 最新：S/J风格表征与注入消融（实现、容量短测，未正式训练）
+
+[设定/每步状态/数据路径/原始JSON](ANALYSIS/style_repr_injection_matrix_20261026/README.md) · [代码入口](tools/style_matrix/README.md)。S0–S8+S2-large从P1@10k EMA比较表征/注入；J0–J3从P2@20k EMA独立比较冻结/训练Decoder及有/无生成图像loss。R4与旧20格长训不执行。
+有效B512、无检查点重计算；batch以安全吞吐最快为准。两端4类搜索完成；4090真实缓存短测1.0328step/s、reserved20.379GiB。J3容量测试0.4285step/s、46.145GiB，梯度连通而显存配置未定型。所有这些均为短测，无新质量指标/生成海报；正式步数和64h总ETA未锁定。
+实现包含唯一Writer路由、累积、顺序反向、两类参数独立裁剪、Decoder raw/EMA保存；严格累积、真实J配对、联合loss校准、完整恢复/成套评测、鲁棒串行仍需完成。
+
+
 ## 2026-10-25：P1/P2 writer-aware 混合训练验收（假设成立，路线锁定）
 
 设计：P0=kxl-100k 75k EMA（复用，40 万池替代已记录）→ P1 10k（70% 通用 null 行 +30% Top10，主干 LR1e-5/条件组 LR5e-5，

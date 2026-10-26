@@ -108,8 +108,22 @@ class Config:
     eval_batch:int=16
     eval_steps:int=50
     compile:bool=False
+    style_matrix_repr:int=-1
+    style_matrix_injection:int=0
+    style_matrix_table:str=''
+    style_matrix_vector_dim:int=32
+    microbatch:int=0  # 0 = global batch; matrix runtime accumulates optimizer steps.
 
     def validate(self,require_budget=True):
+        if self.style_matrix_repr>=0:
+            if self.style_matrix_repr not in range(5) or self.style_matrix_injection not in range(4):
+                raise ValueError('Matrix requires R0..R4 and I0..I3')
+            if self.reference_dim or self.brush_dim or self.writer_film_rank or self.stage_specific_cond:
+                raise ValueError('Matrix requires a plain common content backbone')
+            if self.writer_mode!='shared' or self.decouple_writer_condition or self.decoder_std_residual or self.skip_gate_scales or self.std_gate_scales:
+                raise ValueError('Matrix content route must preserve the plain P1 topology')
+            if self.microbatch and (self.microbatch>self.batch or self.microbatch<1):
+                raise ValueError('Matrix microbatch must be in [1, global batch]')
         if self.reference_dim:
             if self.reference_dim!=128 or self.brush_dim:
                 raise ValueError('Reference route requires 128D style, no Brush condition')
@@ -208,7 +222,11 @@ def build(config,initialize_tables=False):
                     if values.shape == embedding.weight[:-1].shape:
                         with torch.no_grad():
                             embedding.weight[:-1].copy_(values)
-        return model
+        if config.style_matrix_repr>=0:
+        from .style.interface import MatrixUNet
+        model=MatrixUNet(model,config.style_matrix_repr,config.style_matrix_injection,
+                         vector_dim=config.style_matrix_vector_dim)
+    return model
     model=LatentUNet(tuple(config.channels),config.num_writers,config.num_scripts,
                     num_res_blocks=getattr(config,'num_res_blocks',2),
                     decoder_res_blocks=config.decoder_res_blocks,

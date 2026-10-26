@@ -48,6 +48,10 @@ def parse():
         value=getattr(a,key)
         if value is not None:setattr(config,key,value)
     config.validate()
+    if config.style_matrix_repr>=0:
+        p.error('Style matrix uses tools.style_matrix.runtime.train, with optimizer-step accumulation')
+    if config.microbatch not in (0,config.batch):
+        p.error('Legacy U-Net loop has no accumulation; use the matrix FM runner')
     if config.initialize_from and a.warm_start:
         p.error('Stage initialization cannot combine with expansion warm-start')
     if config.requires_warm_start and not (a.warm_start or a.resume):

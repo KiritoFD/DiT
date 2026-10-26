@@ -52,7 +52,7 @@ class ResBlock(nn.Module):
         if self.residual_gate is not None:raise ValueError('Residual gate already enabled')
         self.residual_gate=zero_linear(self.film.in_features,self.conv2.out_channels)
 
-    def forward(self,x,c,writer=None,drop_path_scale=None,writer_mask=None,brush=None):
+    def forward(self,x,c,writer=None,drop_path_scale=None,writer_mask=None,brush=None,style_context=None):
         h=self.conv1(self.act(self.norm1(x)))
         condition=self.act(c)
         scale,shift=self.film(condition).to(h.dtype).chunk(2,dim=1)
@@ -71,6 +71,9 @@ class ResBlock(nn.Module):
             writer_scale,writer_shift=delta.to(h.dtype).chunk(2,dim=1)
             scale=scale+writer_scale;shift=shift+writer_shift
         h=self.norm2(h)*(1+scale[:,:,None,None])+shift[:,:,None,None]
+        if style_context is not None:
+            injection,state,std,site=style_context
+            h=injection(h,state,std,site)
         residual=self.conv2(self.act(h))
         if self.residual_gate is not None:
             gain=bounded_gain(self.residual_gate(condition).to(residual.dtype))
@@ -102,7 +105,9 @@ class Stage(nn.Module):
         self.blocks=nn.ModuleList([ResBlock(cin if i==0 else cout,cout,act_fn=act_fn) for i in range(num_res_blocks)])
         self.attn=Attention(cout) if attention else nn.Identity()
 
-    def forward(self,x,c,writer=None,drop_path_scale=None,writer_mask=None,brush=None):
-        for block in self.blocks:x=block(x,c,writer,drop_path_scale,writer_mask,brush)
+    def forward(self,x,c,writer=None,drop_path_scale=None,writer_mask=None,brush=None,style_context=None):
+        for i,block in enumerate(self.blocks):
+            x=block(x,c,writer,drop_path_scale,writer_mask,brush,
+                    style_context=style_context if i==len(self.blocks)-1 else None)
         return self.attn(x)
 

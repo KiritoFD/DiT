@@ -162,7 +162,7 @@ class LatentUNet(nn.Module):
                      zip(self.stage_time_proj,self.stage_writer_proj,self.stage_script_proj,self.stage_condition))
 
     def forward(self,x,t,y_callig,y_char=None,g=None,y_script=None,y_callig_raw=None,y_pair=None,drop_path_scale=None,
-                brush_attrs=None,brush_valid=None,reference_features=None,reference_mask=None):
+                brush_attrs=None,brush_valid=None,reference_features=None,reference_mask=None,condition_dropped=False):
         # y_char/raw/pair are accepted only for the shared sampler interface.
         # Character IDs are never embedded or used as an inference condition.
         if x.ndim!=4 or x.shape[1:]!=(4,32,32):raise ValueError('Expected latent [B,4,32,32]')
@@ -179,7 +179,7 @@ class LatentUNet(nn.Module):
                 brush_attrs=brush_attrs+torch.randn_like(brush_attrs)*self.brush_noise
                 brush_valid=brush_valid&(torch.rand(len(x),device=x.device)>=self.brush_dropout)
             brush=(self.brush_mlp(brush_attrs),brush_valid)
-        if self.training:
+        if self.training and not condition_dropped:
             all_drop=torch.rand(len(x),device=x.device)<self.drop_all
             wd=all_drop|(torch.rand(len(x),device=x.device)<self.drop_writer)
             sd=all_drop|(torch.rand(len(x),device=x.device)<self.drop_script)

@@ -1,0 +1,54 @@
+{
+  "arm": "J3",
+  "global_batch": 512,
+  "fm_microbatch": 448,
+  "fm_microbatch_sizes": [
+    448,
+    64
+  ],
+  "image_batch": 16,
+  "image_microbatch": 16,
+  "optimizer_steps": 3,
+  "step_s": 0.4284649441374246,
+  "samples_s": 219.3740513983614,
+  "startup_seconds": 71.72766842899728,
+  "peak_allocated_GiB": 46.0420036315918,
+  "peak_reserved_GiB": 46.14453125,
+  "gradient_checkpointing": false,
+  "image_gradient": {
+    "unet_image_delta": 0.04008331149816513,
+    "decoder_output_grad": 1.947008728981018
+  },
+  "unet_grad_norm": 0.09835582226514816,
+  "decoder_grad_norm": 2.504204511642456,
+  "frozen_encoder_unchanged": true,
+  "capacity_only": true,
+  "scientific_checkpoint_saved": false,
+  "loss_weights_for_capacity_only": {
+    "image": 0.1,
+    "reconstruction": 1.0,
+    "l1": 1.0,
+    "lpips": 0.1,
+    "edge": 0.1
+  },
+  "gpu_ms": {
+    "fm": 972.3528645833334,
+    "image_and_reconstruction": 1349.5702311197917,
+    "clip_optimizer_scheduler_ema": 11.977386792500814
+  },
+  "last_aux": {
+    "image_samples": 16,
+    "reconstruction_samples": 16,
+    "image": {
+      "l1": 0.6893815994262695,
+      "lpips": 1.4486286640167236,
+      "edge": 0.20040541887283325
+    },
+    "reconstruction": {
+      "l1": 0.7708430290222168,
+      "lpips": 1.4905531406402588,
+      "edge": 0.23901012539863586
+    }
+  },
+  "torch_version": "2.14.0+cu126"
+}
