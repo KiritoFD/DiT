@@ -1,5 +1,9 @@
 # state.md — 当前实验状态
 
+## 2026-10-27：统一训练、权重与双机日计划入口
+
+持续进度以[training.md](training.md)为准，权重登记见[ckpts.md](ckpts.md)，当天双机计划见[1027.md](1027.md)。00:49核查：48 J0正常计步；4090 S0日志停在1,350、GPU 0%，进程存在，已明确标记停滞待排查，不能仅凭status.json中的training视为正常。以下条目保留为历史执行记录。
+
 ## 2026-10-27：48启动Deep85 Decoder三组各5k
 
 48串行J0（FM，Decoder冻结）→J1（FM+Image，Decoder冻结）→J2（FM+Image+GT重建，Decoder训练），三组同Deep85 EMA起点、原VAE和Writer语义映射，B512、compile开启、无梯度检查点。J2已先完成正式前50步并保存，区间约0.51step/s、峰值39.812GiB、冻结编码指纹通过，后续从50恢复至5k。队列已进入J0；从00:44起保守估计剩余6–7h。图像梯度权重重新校准为0.0212917，约FM的10%。[文档与路径](ANALYSIS/style_repr_injection_matrix_20261026/decoder_deep85_20261027.md)。代码提交da2ce77。
