@@ -1,5 +1,9 @@
 # state.md — 当前实验状态
 
+## 2026-10-27：4090恢复compile，启动S组随机初始化50k串行
+
+新入口误将compile禁用，已恢复torch.compile(default)，保留BF16、channels_last、fused AdamW、缓存latent/STD及异步checkpoint，不开梯度检查点。4090队列S0→S1→S4→S6，各50k，B512/micro512，完全随机初始化，非P1/P2续训。日志已进入首次编译，稳定速度待实测；历史1.7step/s估算每组8.2h，含开销四组约37h。48及Deep85起点的J组本次未启动。[阶段文档](ANALYSIS/style_repr_injection_matrix_20261026/compile_cold50k_20261027.md)。实现提交34e06e4。
+
 ## 2026-10-26 23:54：澄清从头训练，停止旧S/J续训队列
 
 旧计划沿用S从P1、J从P2，和用户本轮要求的生成器从头训练不一致。4090 S0已SIGTERM，在569步原子保存checkpoint后退出，串行状态stopped/75；48未启动训练，相关传输已停止。保留全部产物，不将该段用于从零训练比较。后续需改随机初始化、重设对应校准/训练配方；无需P1/P2权重。48已有原图与VAE，先核查缓存路径/版本复用。旧续训ETA不作为从头训练的收敛预算。

@@ -1,5 +1,9 @@
 # 实验总账
 
+## 2026-10-27：S组恢复编译，从零50k（4090已启动）
+
+[完整设定、队列与infra纠正](ANALYSIS/style_repr_injection_matrix_20261026/compile_cold50k_20261027.md)。S0 R0/I0、S1 R0/I1、S4 R2/I1、S6 R0/I3依次50k；同seed90、B512/micro512、LR6e-5/warmup1500、WD0.02、EMA0.999。全部随机初始化，旧Writer路径固定null，无梯度检查点。运行根目录`assets/style_matrix_20261027/cold50k/4090/execution`；各组checkpoint/日志/统一评测独立保存。新入口曾强制eager，已修正；旧eager耗时不再用于删实验。当前S0首次编译中，无生成质量结论。历史编译吞吐估算四组约37h，待稳定计步核实。提交34e06e4。
+
 ## 2026-10-26 续实施：S/J预检、真实校准和串行落地（未长训）
 
 [逐步证据与预算](ANALYSIS/style_repr_injection_matrix_20261026/README.md#7-续实施最快安全batch真实恢复串行方案)。首个实现提交`ae14347`。48 J0/J1/J2/J3分别1.0213/0.6541/0.6069/0.4264step/s，图像micro8与4短测后选8，J3峰值40.279GiB；四臂梯度连通/隔离均符合设计。4090 FP32非等长累积与B512检查通过，BF16仍有0.226%梯度/1.90%更新差；S2-large容量与真实P1两步保存恢复通过。
