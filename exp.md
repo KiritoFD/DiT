@@ -2,7 +2,7 @@
 
 ## 2026-10-27：S组恢复编译，从零50k（4090已启动）
 
-[完整设定、队列与infra纠正](ANALYSIS/style_repr_injection_matrix_20261026/compile_cold50k_20261027.md)。S0 R0/I0、S1 R0/I1、S4 R2/I1、S6 R0/I3依次50k；同seed90、B512/micro512、LR6e-5/warmup1500、WD0.02、EMA0.999。全部随机初始化，旧Writer路径固定null，无梯度检查点。运行根目录`assets/style_matrix_20261027/cold50k/4090/execution`；各组checkpoint/日志/统一评测独立保存。新入口曾强制eager，已修正；旧eager耗时不再用于删实验。当前S0首次编译中，无生成质量结论。历史编译吞吐估算四组约37h，待稳定计步核实。提交34e06e4。
+[完整设定、队列与infra纠正](ANALYSIS/style_repr_injection_matrix_20261026/compile_cold50k_20261027.md)。S0 R0/I0、S1 R0/I1、S4 R2/I1、S6 R0/I3依次50k；同seed90、B512/micro512、LR6e-5/warmup1500、WD0.02、EMA0.999。全部随机初始化，旧Writer路径固定null，无梯度检查点。运行根目录`assets/style_matrix_20261027/cold50k/4090/execution`；各组checkpoint/日志/统一评测独立保存。新入口曾强制eager，已修正；旧eager耗时不再用于删实验。S0已完成50步，峰值allocated19.166GiB，首次编译约97秒，之后49步约30秒；四组含开销暂估37–39h，无生成质量结论。提交34e06e4。
 
 ## 2026-10-26 续实施：S/J预检、真实校准和串行落地（未长训）
 

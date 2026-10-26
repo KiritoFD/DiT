@@ -2,7 +2,7 @@
 
 ## 2026-10-27：4090恢复compile，启动S组随机初始化50k串行
 
-新入口误将compile禁用，已恢复torch.compile(default)，保留BF16、channels_last、fused AdamW、缓存latent/STD及异步checkpoint，不开梯度检查点。4090队列S0→S1→S4→S6，各50k，B512/micro512，完全随机初始化，非P1/P2续训。日志已进入首次编译，稳定速度待实测；历史1.7step/s估算每组8.2h，含开销四组约37h。48及Deep85起点的J组本次未启动。[阶段文档](ANALYSIS/style_repr_injection_matrix_20261026/compile_cold50k_20261027.md)。实现提交34e06e4。
+新入口误将compile禁用，已恢复torch.compile(default)，保留BF16、channels_last、fused AdamW、缓存latent/STD及异步checkpoint，不开梯度检查点。4090队列S0→S1→S4→S6，各50k，B512/micro512，完全随机初始化，非P1/P2续训。S0已完成50步，首次编译约97秒，峰值allocated19.166GiB；第1至50步约1.6step/s。四组含开销暂估37–39h。48及Deep85起点的J组本次未启动。[阶段文档](ANALYSIS/style_repr_injection_matrix_20261026/compile_cold50k_20261027.md)。实现提交34e06e4。
 
 ## 2026-10-26 23:54：澄清从头训练，停止旧S/J续训队列
 
