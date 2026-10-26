@@ -38,6 +38,18 @@ SHA256 e93dc2142629749fb682c0137c5c4ed3e6b71c5bf4ba966c868119b62164281a
 - S组50k checkpoint同样作为75k延长起点，raw/EMA不得混用。
 - S8从零随机初始化（seed90）；J3从Deep85 85k EMA与原始VAE独立初始化，禁止从J2任何checkpoint热启动。
 
+## 成熟模型与参考权重
+
+| 机器 | 模型 | 现存步数 | 本轮用途 |
+|---|---|---|---|
+| 48 | Deep-Sym4 114M | 50k、75k、85k | **J组统一起点85k EMA**；三个checkpoint全部保留（未移动） |
+| 48 | U100 Base 72M | 55k | 历史视觉参考（未移动） |
+| 48 | Qwen condition A / C | 90k | 历史条件消融（未移动） |
+| 4090 | P1 | 10k | 保留；S组从零训练不加载。**2026-10-27归档至`assets/_archive_20261027/u100_p1p2_20261025/p1_runs/`，永不删除** |
+| 4090 | P2 | 20k | 保留；J组从Deep85开始不加载。**同上位于`_archive_20261027/u100_p1p2_20261025/p2_runs/`** |
+
+归档明细与清理确认门见[Disk.md](Disk.md)；数据资产与重建配方见[Data.md](Data.md)。
+
 ## 数据资产与配对
 
 - `p2_train.csv`两机SHA一致（`976b573d…`）；`generic48_kxl_top10_20261022/std_bbox64/index.csv`两机SHA一致（`c02cef37…`）——S组协议同源。
@@ -46,4 +58,4 @@ SHA256 e93dc2142629749fb682c0137c5c4ed3e6b71c5bf4ba966c868119b62164281a
 
 ## 排除项（沿用）
 
-旧计划目录（`cold50k/4090`、`deep85_decoder/48_v2`、`48/`失败目录、`plan_final/*`warm-start产物）全部保留不删除；`matrix64`计划的probe探测目录（含200步临时checkpoint）在封存后可清理，不计入正式产物。
+旧计划目录已按[Disk.md](Disk.md)归档：`cold50k/4090`、`deep85_decoder/48_v2`（calibration与CSV留原位）、`48/`失败目录、`style_matrix_20261026/plan_final` warm-start产物，全部位于两机`assets/_archive_20261027/`下，保留不删除。`matrix64`计划的probe探测目录（日志与train.jsonl）留作吞吐证据，临时checkpoint已清理。
