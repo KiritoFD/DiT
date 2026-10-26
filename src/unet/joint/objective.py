@@ -1,4 +1,4 @@
-"""J0--J3: sequential image backward, preserving the frozen latent interface."""
+"""J0--J4: sequential image backward, preserving the frozen latent interface."""
 import copy
 import hashlib
 from pathlib import Path
@@ -35,16 +35,19 @@ class JointDecoderObjective:
     def __init__(self,arm,config,image_micro=16,image_batch=16,img_weight=.1,rec_weight=1.):
         from diffusers import AutoencoderKL
         import lpips
-        if arm not in ('J0','J1','J2','J3'):raise ValueError(arm)
-        self.arm=arm;self.image=arm in ('J1','J3');self.reconstruction=arm in ('J2','J3')
+        if arm not in ('J0','J1','J2','J3','J4'):raise ValueError(arm)
+        self.arm=arm;self.image=arm in ('J1','J3','J4');self.reconstruction=arm in ('J2','J3')
+        # J4 is the decomposition control for J3: decoder trains on generated
+        # latents through the image branch only, with no GT reconstruction anchor.
+        self.train_decoder=arm in ('J3','J4')
         self.sf=config.vae_scaling_factor;self.shift=config.vae_shift_factor
         self.seed=config.seed;self.micro=image_micro;self.count=image_batch
         self.img_weight=float(img_weight);self.rec_weight=float(rec_weight)
         self.vae=AutoencoderKL.from_pretrained(config.vae_path,local_files_only=True).cuda().eval().requires_grad_(False)
-        self.vae.decoder.requires_grad_(self.reconstruction)
-        if self.reconstruction:self.vae.decoder.train()
+        self.vae.decoder.requires_grad_(self.train_decoder)
+        if self.train_decoder:self.vae.decoder.train()
         self.perceptual=lpips.LPIPS(net='alex',verbose=False).cuda().eval().requires_grad_(False)
-        self.decoder_ema=copy.deepcopy(self.vae.decoder).eval().requires_grad_(False) if self.reconstruction else None
+        self.decoder_ema=copy.deepcopy(self.vae.decoder).eval().requires_grad_(False) if self.train_decoder else None
         assert not any(getattr(m,'gradient_checkpointing',False) for m in self.vae.modules())
         assert all(n.startswith('decoder.') for n,p in self.vae.named_parameters() if p.requires_grad)
         self.frozen_sha=frozen_fingerprint(self.vae)
@@ -98,7 +101,7 @@ class JointDecoderObjective:
         return stats
 
     def clip_decoder(self):
-        if not self.reconstruction:return 0.
+        if not self.train_decoder:return 0.
         return float(torch.nn.utils.clip_grad_norm_(self.vae.decoder.parameters(),1.,error_if_nonfinite=True))
 
     def update_ema(self):

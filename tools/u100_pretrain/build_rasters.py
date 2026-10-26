@@ -23,7 +23,16 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--store', required=True)
     parser.add_argument('--out', required=True)
+    parser.add_argument('--path-remap', action='append', default=[],
+                        help='OLD=NEW prefix rewrite for absolute font paths recorded in the store index '
+                             '(machine-local fonts; the store index itself is never modified)')
     args = parser.parse_args()
+    def fix(path):
+        for item in args.path_remap:
+            old, _, new = item.partition('=')
+            if path.startswith(old):
+                return new + path[len(old):]
+        return path
     store = Path(args.store); out = Path(args.out)
     if out.exists(): raise FileExistsError(out)
     rows = list(csv.DictReader((store / 'index.csv').open(encoding='utf-8-sig')))
@@ -31,7 +40,10 @@ def main():
     masks = torch.empty(len(rows), 1, 256, 256, dtype=torch.uint8)
     mismatch = []
     for i, row in enumerate(rows):
-        face = FontFace(row['font_path'], int(row['font_face'] or 0))
+        font = fix(row['font_path'])
+        if not Path(font).is_file():
+            raise FileNotFoundError(f'font missing for row {i}: {font} (use --path-remap for machine-local fonts)')
+        face = FontFace(font, int(row['font_face'] or 0))
         full = render_base_mask(row['character'], face, output_size=256)
         masks[i, 0] = torch.from_numpy(np.asarray(full, dtype=np.uint8))
         stored = Image.open(store / row['path'])

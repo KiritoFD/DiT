@@ -11,7 +11,7 @@ import torch
 from torch.utils.data import DataLoader,Sampler
 from src.unet.io import Config,training_args,diffusion
 from src.unet.data import loader,StdBank
-from src.train.step import build_cosine_scheduler
+from src.train.step import build_cosine_scheduler,build_restart_scheduler
 from src.train.ema import update_ema
 from src.train.ckpt import build_checkpoint,WRITER,restore_rng,capture_rng,drain_ckpt
 from src.unet.style.diagnostics import inspect,gradient_report
@@ -33,7 +33,8 @@ def main():
     if getattr(cfg,'study_spec',''):raise ValueError('S/J runtime does not mix legacy study adapters')
     run=Path(a.run);run.mkdir(parents=True,exist_ok=True)
     if not 0<a.stop<=cfg.lr_decay_steps:raise ValueError('Stop outside fixed LR horizon')
-    if (run/'identity.json').exists() and json.loads((run/'identity.json').read_text())!=spec['identity']:
+    if (run/'identity.json').exists() and json.loads((run/'identity.json').read_text()) not in (
+            spec['identity'],spec.get('continues_identity')):
         raise ValueError('Run directory belongs to another experiment')
     if not a.resume and any((run/'checkpoints').glob('*.pt')):
         raise FileExistsError('Existing checkpoint: resume explicitly, never restart over it')
@@ -43,7 +44,7 @@ def main():
     resume=torch.load(a.resume,map_location='cpu',weights_only=False) if a.resume else None
     start=int(resume['train_steps']) if resume else 0
     if resume:
-        assert resume['matrix_identity']==spec['identity'], 'Scientific run identity changed'
+        assert resume['matrix_identity']==spec.get('continues_identity',spec['identity']), 'Scientific run identity changed'
         assert start<a.stop, 'Resume already reached the requested boundary'
         raw.load_state_dict(resume['delta'],strict=True)
     else:
@@ -63,10 +64,21 @@ def main():
         if resume:auxiliary.restore(resume)
     ema=copy.deepcopy(raw).eval().requires_grad_(False)
     opt=optimizer(raw,cfg,auxiliary.vae.decoder if auxiliary else None,scratch=spec.get('initialization')=='scratch')
-    scheduler=build_cosine_scheduler(opt,warmup_steps=cfg.warmup,total_steps=cfg.lr_decay_steps,min_lr_ratio=cfg.min_lr_ratio)
+    restart=spec.get('schedule_restart')
+    if restart and not resume:raise ValueError('Controlled LR restart requires --resume')
     if resume:
         ema.load_state_dict(resume['ema'],strict=True);opt.load_state_dict(resume['opt'])
-        scheduler.load_state_dict(resume['scheduler']);assert scheduler.last_epoch==start
+    if restart:
+        scheduler=build_restart_scheduler(opt,start_step=start,horizon=restart['horizon'],
+            warmup_steps=restart['warmup'],peak_scale=restart['peak_scale'],min_lr_ratio=cfg.min_lr_ratio)
+        scheduler.last_epoch=start;assert scheduler.last_epoch==start
+        # The first restarted step keeps the pre-restart LR for exact continuity,
+        # then the fresh warmup takes over on the next scheduler tick.
+        for group,lr in zip(opt.param_groups,resume['scheduler']['last_lr']):group['lr']=lr
+    else:
+        scheduler=build_cosine_scheduler(opt,warmup_steps=cfg.warmup,total_steps=cfg.lr_decay_steps,min_lr_ratio=cfg.min_lr_ratio)
+        if resume:
+            scheduler.load_state_dict(resume['scheduler']);assert scheduler.last_epoch==start
     args=training_args(cfg,run);args.ckpt_every=1000;args.epoch_steps=1000
     dataset,sampler,_,_,_=loader(cfg,args,log,0)
     bank=StdBank(cfg);process=diffusion(cfg)

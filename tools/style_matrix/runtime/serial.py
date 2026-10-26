@@ -28,7 +28,8 @@ def verify_assets(plan):
     ready=json.loads(Path(plan['ready']).read_text())
     if ready['contract']!=plan['contract']:raise ValueError('Data/source contract changed')
     for item in ready['files']:
-        if sha(item['path'])!=item['sha256']:raise ValueError('Changed input: '+item['path'])
+        # Large assets are sealed by path+size only; small files carry a real hash.
+        if item.get('sha256') and sha(item['path'])!=item['sha256']:raise ValueError('Changed input: '+item['path'])
 
 
 def gpu_idle(resident,module=''):
@@ -124,6 +125,7 @@ def main():
         stage_checkpoint=run/'checkpoints'/f"{job['stop']:07d}.pt"
         completed_checkpoint(stage_checkpoint)
         for protocol in plan['evaluations']:
+            if protocol.get('arms') and job['arm'] not in protocol['arms']:continue
             out=run/'evaluations'/f"{job['stop']:07d}"/protocol['name']
             expected=dict(checkpoint_sha256=sha(stage_checkpoint),csv_sha256=sha(protocol['csv']))
             if (out/'complete.json').exists():

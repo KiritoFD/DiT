@@ -1,0 +1,44 @@
+=== PID 3035255 comm=python ===
+wchan: futex_wait_queue
+kernel stack:
+threads: 29; main-thread kstack: 
+=== PID 3056036 comm=pt_data_worker ===
+wchan: futex_wait_queue
+kernel stack:
+threads: 3; main-thread kstack: 
+=== PID 3056037 comm=pt_data_worker ===
+wchan: futex_wait_queue
+kernel stack:
+threads: 3; main-thread kstack: 
+=== PID 3056038 comm=pt_data_worker ===
+wchan: futex_wait_queue
+kernel stack:
+threads: 3; main-thread kstack: 
+=== PID 3056039 comm=pt_data_worker ===
+wchan: futex_wait_queue
+kernel stack:
+threads: 3; main-thread kstack: 
+=== PID 3056040 comm=pt_data_worker ===
+wchan: futex_wait_queue
+kernel stack:
+threads: 3; main-thread kstack: 
+=== PID 3056041 comm=pt_data_worker ===
+wchan: futex_wait_queue
+kernel stack:
+threads: 3; main-thread kstack: 
+=== PID 3056042 comm=pt_data_worker ===
+wchan: futex_wait_queue
+kernel stack:
+threads: 3; main-thread kstack: 
+=== PID 3056043 comm=pt_data_worker ===
+wchan: futex_wait_queue
+kernel stack:
+threads: 3; main-thread kstack: 
+=== PID 3198487 comm=bash ===
+wchan: pipe_read
+kernel stack:
+threads: 1; main-thread kstack: 
+=== PID 3198488 comm= ===
+wchan: 
+kernel stack:
+threads: 0; main-thread kstack: 

@@ -43,6 +43,25 @@ def build_cosine_scheduler(optimizer, *, warmup_steps, total_steps, min_lr_ratio
         return min_lr_ratio+(1.-min_lr_ratio)*.5*(1.+math.cos(math.pi*progress))
     return torch.optim.lr_scheduler.LambdaLR(optimizer,lr_lambda=scale)
 
+
+def build_restart_scheduler(optimizer, *, start_step, horizon, warmup_steps, peak_scale, min_lr_ratio):
+    """Controlled two-phase LR restart anchored at absolute optimizer steps.
+
+    Phase 2 never pretends the original horizon was longer: peak LR restarts at
+    peak_scale of the original, warms up over warmup_steps, then cosines over
+    `horizon` steps counted from start_step.
+    """
+    warmup_steps=min(warmup_steps,max(horizon-1,0))
+    def scale(step):
+        rel=step-start_step
+        if warmup_steps>0 and 0<=rel<warmup_steps:
+            return peak_scale*max((rel+1)/warmup_steps,1e-8)
+        progress=min(max((rel-warmup_steps)/max(horizon-warmup_steps,1),0.),1.)
+        return peak_scale*(min_lr_ratio+(1.-min_lr_ratio)*.5*(1.+math.cos(math.pi*progress)))
+    scheduler=torch.optim.lr_scheduler.LambdaLR(optimizer,lr_lambda=scale)
+    scheduler.last_epoch=start_step
+    return scheduler
+
 __all__ = ["NonFiniteGuard", "StepInputs", "resolve_step_inputs",
            "clip_and_step", "build_train_model_kwargs"]
 
