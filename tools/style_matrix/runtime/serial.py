@@ -4,6 +4,7 @@ import fcntl
 import json
 from pathlib import Path
 import signal
+import shutil
 import subprocess
 import sys
 import time
@@ -30,18 +31,27 @@ def verify_assets(plan):
         if sha(item['path'])!=item['sha256']:raise ValueError('Changed input: '+item['path'])
 
 
-def gpu_idle(resident):
+def gpu_idle(resident,module=''):
     lines=subprocess.check_output(['nvidia-smi','--query-compute-apps=pid,used_memory',
         '--format=csv,noheader,nounits'],text=True).strip()
-    for line in lines.splitlines():
+    known=False
+    if module:
+        needle=b'-m\0'+module.encode()+b'\0'
+        for path in Path('/proc').glob('[0-9]*/cmdline'):
+            try:known=known or needle in path.read_bytes()
+            except (FileNotFoundError,PermissionError):pass
+    entries=lines.splitlines()
+    for line in entries:
         pid,mb=map(int,line.split(','))
-        if pid!=resident or mb>1536:raise RuntimeError('Unexpected GPU owner: '+lines)
+        if mb>1536 or (pid!=resident and not (known and len(entries)==1)):
+            raise RuntimeError('Unexpected GPU owner: '+lines)
 
 
 def main():
     p=argparse.ArgumentParser();p.add_argument('--plan',required=True)
     p.add_argument('--stage',type=int,choices=[1,2,3],default=1);p.add_argument('--selection',default='')
     p.add_argument('--execute',action='store_true');p.add_argument('--resident-pid',type=int,default=0)
+    p.add_argument('--resident-module',default='',help='Exact known python -m module, <=1.5GiB only')
     a=p.parse_args();plan=json.loads(Path(a.plan).read_text());root=Path(plan['root'])
     jobs=plan['stages'][str(a.stage)]
     if a.stage>1:
@@ -65,6 +75,7 @@ def main():
         print(json.dumps(dict(mode='dry',machine=plan['machine'],stage=a.stage,jobs=jobs,
             estimated_upper_hours=plan['estimated_upper_hours'],requires_ready=plan['ready']),indent=2));return
     verify_assets(plan)
+    ready=json.loads(Path(plan['ready']).read_text())
     lock=open('/tmp/dit_gpu0.lock','a+');fcntl.flock(lock,fcntl.LOCK_EX|fcntl.LOCK_NB)
     root.mkdir(parents=True,exist_ok=True);clock=root/'clock.json'
     if clock.exists():
@@ -81,7 +92,12 @@ def main():
     signal.signal(signal.SIGTERM,terminate);signal.signal(signal.SIGINT,terminate)
     def call(command,log):
         nonlocal child
-        gpu_idle(a.resident_pid)
+        for item in ready['files']:
+            if item['path'].endswith('.py') and sha(item['path'])!=item['sha256']:
+                raise ValueError('Sealed source changed: '+item['path'])
+        free=shutil.disk_usage(root).free/2**30
+        if free<25:raise RuntimeError(f'Only {free:.1f}GiB free; preserve checkpoints and stop before disk exhaustion')
+        gpu_idle(a.resident_pid,a.resident_module)
         with log.open('a') as stream:
             child=subprocess.Popen(command,stdout=stream,stderr=subprocess.STDOUT)
             while child.poll() is None:
