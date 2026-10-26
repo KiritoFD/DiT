@@ -1,6 +1,6 @@
 # Checkpoint登记
 
-更新时间：2026-10-27 00:49（Asia/Shanghai）。登记当前训练、关键对照及明确不能使用的权重；完整历史实验索引见[exp.md](exp.md)，实时训练状态见[training.md](training.md)。
+更新时间：2026-10-27 01:11（Asia/Shanghai）。00:53延长轮决策对S8/J3初始化与5k checkpoint内容提出要求，见下文专节。登记当前训练、关键对照及明确不能使用的权重；完整历史实验索引见[exp.md](exp.md)，实时训练状态见[training.md](training.md)。
 
 ## 路径与检查口径
 
@@ -15,7 +15,7 @@
 | 4090 | S0@1,000 | 1.827 | ZIP结构及`.done`大小相符；当前S0最新持久化恢复点；无完整生成评测 |
 | 48 | J2@50 | 2.617 | ZIP结构及`.done`大小相符；含配套Decoder raw/EMA及优化器；串行到J2时从这里恢复至5k |
 | 48 | J0@450日志位置 | — | **尚无checkpoint**；当前训练内存状态，不是可加载权重 |
-| 两端 | S1/S4/S6、J1 | — | 排队，未产生本轮checkpoint |
+| 两端 | S1/S4/S6/S8、J1/J3 | — | 排队/延长轮新增，未产生本轮checkpoint |
 
 S0@1k：
 
@@ -32,6 +32,15 @@ SHA256 2962f1c8cbb46f2a4cdc63f6fa1ea34c5254ef412484ed93394820482019c0f0
 ```
 
 本轮外部J2的checkpoint内部`joint_arm`为旧代码代号J3，外部实验名见`matrix_identity`；它是完整图像监督+Decoder重建联训，不是旧“仅重建J2”。
+
+## 延长轮权重要求（尚未落盘）
+
+00:53决策对S8/J3及J延长提出的权重要求，排入训练前逐项验收：
+
+- J3必须从Deep85 85k EMA（上文`0085000.pt`，SHA256 `f80304d7…`）与原始VAE独立初始化，**禁止从J2@50或J2@5k热启动**；λ_rec=0，Decoder LR保持U-Net一半。
+- J0–J3的5k checkpoint必须完整包含Optimizer/EMA/RNG状态，供5k→12k两阶段LR restart恢复；若现有保存格式缺少任一状态，须在J2结束前修正保存配置。
+- S8从零随机初始化（seed90），与S组其余成员同口径；成对延长的75k起点为对应模型@50k checkpoint，raw/EMA不得混用。
+- 延长产物登记时按本文口径补齐：机器、模型、步数、路径、`.done`、SHA、raw/EMA及Decoder配套，并标注两阶段起点。
 
 ## 成熟模型与参考权重
 
