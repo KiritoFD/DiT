@@ -1,5 +1,12 @@
 # 实验总账
 
+## 2026-10-26 续实施：S/J预检、真实校准和串行落地（未长训）
+
+[逐步证据与预算](ANALYSIS/style_repr_injection_matrix_20261026/README.md#7-续实施最快安全batch真实恢复串行方案)。首个实现提交`ae14347`。48 J0/J1/J2/J3分别1.0213/0.6541/0.6069/0.4264step/s，图像micro8与4短测后选8，J3峰值40.279GiB；四臂梯度连通/隔离均符合设计。4090 FP32非等长累积与B512检查通过，BF16仍有0.226%梯度/1.90%更新差；S2-large容量与真实P1两步保存恢复通过。
+J3从实际P2 EMA及配对GT标定初始Image梯度为FM的10%，真实两步保存恢复、Decoder raw/EMA/优化器状态与独立VAE导出加载已核对；只做预检，不形成质量实验。
+路径两端`assets/style_matrix_20261026/plan_final/`；S=10k→29k→43.5k、J=4k→11.5k→19k，模型分配/源权重与CSV哈希/spec/阶段任务入计划。默认dry、ready未封存；自然墙钟预测63.95h含8h余量。正式长训、测试集生成和风格比较均未进行。
+
+
 ## 2026-10-26 最新：S/J风格表征与注入消融（实现、容量短测，未正式训练）
 
 [设定/每步状态/数据路径/原始JSON](ANALYSIS/style_repr_injection_matrix_20261026/README.md) · [代码入口](tools/style_matrix/README.md)。S0–S8+S2-large从P1@10k EMA比较表征/注入；J0–J3从P2@20k EMA独立比较冻结/训练Decoder及有/无生成图像loss。R4与旧20格长训不执行。

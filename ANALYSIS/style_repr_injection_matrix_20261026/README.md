@@ -2,6 +2,8 @@
 
 更新时间：2026-10-26；本报告区分代码、短测和正式训练。**截至本次提交，正式 S/J 长训均未启动，没有新的生成质量结论。**
 
+**最新进度：见第7节。** 第2–6节保留首个提交`ae14347`的阶段快照，未完成项已在续实施中补齐的，以第7节为准。
+
 ## 1. 执行范围与变更
 
 最初实现 R0–R4 × I0–I3 的20格及4个跨机复测。后续按新方案缩为 S0–S8 + S2-large，并独立比较 J0–J3；R4预训练暂缓。旧20格测试仅作为运行容量证据，不能冒充新方案已经全验收。
@@ -99,3 +101,62 @@ J检查点保存U-Net与Decoder各自raw/EMA及共同优化器状态；验收必
 5. 在“只准备、不长跑”的停点交付。任何长训ETA必须包含评测/保存/加载与余量，不用短测step/s直接承诺64h完成。
 
 公共资产打包代码已写但未执行；48的数据就绪不能视为已完成。一次远程转传因过慢被停止，未解包覆盖原资产；后续使用紧凑、原值校验的数据包。现有checkpoint不删除。
+
+## 7. 续实施：最快安全batch、真实恢复、串行方案
+
+本节记录用户“先提交，再继续实现；batch最快且不爆即可”的后续实施，不覆盖历史结果。
+
+### 7.1 复用候选，未重跑全矩阵
+
+`prepare/select_batches.py`从已有结果按安全上限内最高step/s重选。结果未改变：4090 I0/I2/I3为224、I1为192；48均448。[4090](measurements/family/4090_fastest.json) / [48](measurements/family/48_fastest.json)。后续搜索代码也已移除显存填满条件。
+
+J组只比较J3图像micro8/4，再对J0/J1/J2各做一次5步测量。FM有效512/micro448，图像有效16；每个进程另预热3步，不开检查点。**这是有限候选里的较快选择，不是穷尽搜索得到的理论最优。**
+
+| 实验 | 图像micro | reserved GiB | optimizer step/s | 图像梯度到U-Net | 梯度到Decoder |
+|---|---:|---:|---:|---|---|
+| J0 | 不使用 | 37.031 | 1.0213 | 无 | 无 |
+| J1 | 8 | 39.039 | 0.6541 | 有 | 无 |
+| J2 | 8 | 39.637 | 0.6069 | 无 | 有 |
+| J3 | 8 | 40.279 | 0.4264 | 有 | 有 |
+| J3候选 | 4 | 37.893 | 0.4229 | 有 | 有 |
+
+[原始四臂结果](measurements/joint/selected.json)。micro8比4约快0.8%，短测噪声不支持宣称显著优势；两者均安全，采用8，不再为这点差距加测。图像micro16的旧46.14GiB结果保留，但不采用。
+
+### 7.2 两项累积检查与真实训练保存/恢复
+
+- [FP32](measurements/verification/accumulation_fp32.json)：固定32张，micro32对21+11，TF32关闭。相对梯度误差7.10e-7，Adam更新误差1.21e-4，通过严格阈值。这是算法加权/更新次数的检查，不是吞吐标定。
+- [B512 BF16](measurements/verification/accumulation_b512.json)：micro224对128，相对梯度误差0.2257%，Adam更新误差1.8993%，loss误差5.96e-8。不同切分仍非逐位等价。
+- [S2-large容量](measurements/verification/S2-large.json)：4090完整114M图、B512/micro224，含前反向、Adam、EMA，5步短测通过；不据此评价生成质量。
+- [真实P1恢复](measurements/verification/runner.json)：真实23,485样本缓存与P1@10k EMA，运行1步保存，再恢复到第2步，严格加载raw/EMA/优化器/Scheduler/RNG，优化器和调度均为2次更新。仅2步预检，不是正式S2-large训练。
+
+### 7.3 J3真实GT配对、校准与配套Decoder
+
+4090以FM micro128、图像micro2累计16张做低显存的真实链路验证；不将该预检速度混入48的正式吞吐预算。按`img_id`读取未经额外增强的256图，与缓存latent检查后验mean和重建误差；冻结编码侧hash一致。
+
+[`joint/calibrate.py`](../../../tools/style_matrix/joint/calibrate.py)只做前反向，不优化参数。以原P2@20k EMA计算FM与Image梯度范数，将共同图像权重定为初始FM梯度的10%（上限1），J0–J3复用同一文件；重建权重1单独记录其Decoder梯度。[校准实测](measurements/joint/calibration.json)。这是初始单批次标定，不承诺整个训练期间始终10%。
+
+实测FM梯度0.34434、未加权Image梯度0.82726，因此共同`lambda_img=0.0416239`、`lambda_rec=1`。Decoder侧Image/重建梯度分别3.2913/3.2318，加权后前者约为后者4.24%；这意味着初期Decoder以保重建为主，不能把“U-Net侧10%”误读成Decoder侧同样10%。L1/LPIPS(Alex)/多尺度Sobel比例1/0.1/0.1，全部臂共用。
+
+[真实J3保存恢复](measurements/joint/runner.json)：从P2做1步、保存、恢复第2步；验证U-Net/Decoder优化器状态、Scheduler、raw/EMA和RNG字段。随后导出独立VAE目录，再加载并逐张量核对Decoder EMA，编码侧指纹与scale/shift保持一致。临时外部检查脚本曾因`/tmp`导入路径退出；修正路径后仅补CPU导出验证，没有重跑已经通过的训练步。
+
+[`runtime/evaluate.py`](../../../tools/style_matrix/runtime/evaluate.py)通过checkpoint哈希和raw/EMA标签生成独立VAE目录，校验导出文件哈希，再交给统一评测器。因此VAE路径缓存与评测身份会跟随对应Decoder变化。该导出/加载已经核对；尚未为这两个预检步生成完整测试集图片，不能称为生成质量验收完成。
+
+### 7.4 两端串行与64h预算提案
+
+脚本生成器：[`prepare/specs.py`](../../../tools/style_matrix/prepare/specs.py)；执行器：[`runtime/serial.py`](../../../tools/style_matrix/runtime/serial.py)。生成的两端入口均为`assets/style_matrix_20261026/plan_final/{4090,48}/run_stage.sh`，**默认dry，不启动训练**。
+
+- 4090：S0/S2/S3/S4/S5/S7/S2-large；48：S1/S6/S8及J0–J3。
+- S阶梯：**10k → 29k → 43.5k**；J阶梯：**4k → 11.5k → 19k**。从各自最终horizon开始固定LR调度，阶段只改变stop。
+- 第二阶段S每端最多2个，保留4种机制时应人工联合比较；J四臂必须都到第二阶段。第三阶段S每端最多1个、J最多2个且保留冻结Decoder对照。不会自动按单一SSIM淘汰模型。
+- [预算JSON](measurements/plan/budget.json)显式计入三阶段跨机等待：每阶段取两端较慢耗时再求和，另留**8h**用于准备、保存/加载、评测和余量，预测自然墙钟约**63.95h**。仅按短测推算，不是保证；新权重、GT读取和长训吞吐仍可能改变实际耗时。
+- [4090计划](measurements/plan/4090.json) / [48计划](measurements/plan/48.json)。旧`plan_v1/v2`是预算推导产物，不用于执行。
+
+执行器具备：全局GPU锁、外来GPU进程检查、源/数据/代码hash校验、不可变spec/计划、原子checkpoint的`.done`大小+SHA核验、恢复到最新完整checkpoint、阶段评测完成校验、SIGTERM边界保存、失败停止与不自动重试。所有checkpoint保留，每5k及1k/3k和阶段边界保存，不进行自动删除。跨阶段要显式提供晋级文件，原队列不会因新脚本存在而自动恢复。
+
+两端实际`--stage 1` dry入口均已通过，打印`mode=dry`；没有执行`--execute`。[完整生成规格与脚本快照](measurements/plan/specs.tar)保留相同相对路径。训练/评测工具不依赖本工作区尚未提交的旧实验辅助脚本。
+
+### 7.5 仍未执行的工作与当前停点
+
+48所需新资产的紧凑打包/安装，以及两端`ready.json`封存尚未完成。`prepare/ready.py`要求实际资产、严格累积证明、S2-large容量、真实恢复证明及J配对校准/Decoder证明；缺一即报错，不能直接`--execute`。
+
+正式计划尚未启动，未恢复旧V1/三日训练队列，也没有新的模型优劣结论。后续晋级还需要独立Writer/跨字风格评价与实际读图，当前统一评测代码覆盖的是既有生成内容指标，不能凭它自动认定风格改善。

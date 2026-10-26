@@ -44,12 +44,9 @@ def main():
             cap=21. if a.machine=='4090' else 42.
             if report['peak_reserved_GiB']<=cap:candidates.append(report)
         if not candidates:raise RuntimeError(f'I{injection}: no measured candidate below cap')
-        target=20. if a.machine=='4090' else 40.
-        near=[v for v in candidates if v['peak_reserved_GiB']>=target*.9]
-        if not near:near=candidates
-        best=max(near,key=lambda v:v['step_s'])
+        best=max(candidates,key=lambda v:v['step_s'])
         selected.append(dict(injection=injection,chosen=best,
-                             criterion='fastest within 90% of target memory, below safe cap; no gradient checkpointing',candidates=candidates))
+                             criterion='fastest measured below safe cap; no memory-fill target or gradient checkpointing',candidates=candidates))
         save(out/'selected.json',selected)
         print('FASTEST_MICROBATCH',injection,best['microbatch'],best['step_s'],flush=True)
     save(out/'status.json',dict(state='complete',families=4,scientific_training_started=False))

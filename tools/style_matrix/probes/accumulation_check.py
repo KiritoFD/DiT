@@ -22,6 +22,7 @@ def main():
     p=argparse.ArgumentParser();p.add_argument('--spec',required=True);p.add_argument('--out',required=True)
     p.add_argument('--fp32',action='store_true')
     p.add_argument('--batch',type=int,default=256)
+    p.add_argument('--micros',default='',help='Explicit small validation set, e.g. 32,21')
     a=p.parse_args();spec=json.loads(Path(a.spec).read_text());model,cfg,_=construct(spec,initialize_source=False)
     torch.set_num_threads(8)
     if a.fp32:
@@ -32,7 +33,8 @@ def main():
     with torch.autocast('cuda',dtype=torch.bfloat16,enabled=not a.fp32):inspect(model,synthetic(cfg),calibrate=True)
     initial={n:p.detach().cpu().clone() for n,p in model.state_dict().items()}
     inputs=synthetic(cfg,a.batch);z,_,g,w,s=inputs;reference=None;reports=[]
-    choices=(512,448,256,224,128) if a.batch==512 else (256,192,128,64)
+    choices=tuple(map(int,a.micros.split(','))) if a.micros else ((512,448,256,224,128) if a.batch==512 else (256,192,128,64))
+    if any(v<1 or v>a.batch for v in choices):raise ValueError('Microbatch outside effective batch')
     for micro in choices:
         model.load_state_dict(initial,strict=True);model.train()
         ema=copy.deepcopy(model).eval().requires_grad_(False)

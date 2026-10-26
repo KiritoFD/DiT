@@ -1,0 +1,102 @@
+[
+  {
+    "injection": 0,
+    "chosen": {
+      "arm": "R2I0_microsearch",
+      "machine": "48",
+      "global_batch": 512,
+      "microbatch": 448,
+      "microbatch_sizes": [
+        448,
+        64
+      ],
+      "step_s": 0.9932961924648155,
+      "samples_s": 508.56765054198553,
+      "peak_allocated_GiB": 36.80804204940796,
+      "peak_reserved_GiB": 39.111328125,
+      "measured_steps": 100,
+      "gradient_checkpointing": false,
+      "compile": false
+    },
+    "criterion": "fastest measured below safety cap; existing results only",
+    "safe_cap_GiB": 42.0,
+    "source_file": "ANALYSIS/style_repr_injection_matrix_20261026/measurements/family/48.json",
+    "source_sha256": "2ce5969999bf2b2f5b66b3ab70218c9c8914f27ef24ca8633d7384ed1d5fe7d9",
+    "safe_candidates": 2
+  },
+  {
+    "injection": 1,
+    "chosen": {
+      "arm": "R2I1_microsearch",
+      "machine": "48",
+      "global_batch": 512,
+      "microbatch": 448,
+      "microbatch_sizes": [
+        448,
+        64
+      ],
+      "step_s": 0.9622852437699345,
+      "samples_s": 492.6900448102065,
+      "peak_allocated_GiB": 37.845773696899414,
+      "peak_reserved_GiB": 40.81640625,
+      "measured_steps": 100,
+      "gradient_checkpointing": false,
+      "compile": false
+    },
+    "criterion": "fastest measured below safety cap; existing results only",
+    "safe_cap_GiB": 42.0,
+    "source_file": "ANALYSIS/style_repr_injection_matrix_20261026/measurements/family/48.json",
+    "source_sha256": "2ce5969999bf2b2f5b66b3ab70218c9c8914f27ef24ca8633d7384ed1d5fe7d9",
+    "safe_candidates": 2
+  },
+  {
+    "injection": 2,
+    "chosen": {
+      "arm": "R2I2_microsearch",
+      "machine": "48",
+      "global_batch": 512,
+      "microbatch": 448,
+      "microbatch_sizes": [
+        448,
+        64
+      ],
+      "step_s": 0.986324403537258,
+      "samples_s": 504.9980946110761,
+      "peak_allocated_GiB": 36.83338212966919,
+      "peak_reserved_GiB": 39.099609375,
+      "measured_steps": 100,
+      "gradient_checkpointing": false,
+      "compile": false
+    },
+    "criterion": "fastest measured below safety cap; existing results only",
+    "safe_cap_GiB": 42.0,
+    "source_file": "ANALYSIS/style_repr_injection_matrix_20261026/measurements/family/48.json",
+    "source_sha256": "2ce5969999bf2b2f5b66b3ab70218c9c8914f27ef24ca8633d7384ed1d5fe7d9",
+    "safe_candidates": 2
+  },
+  {
+    "injection": 3,
+    "chosen": {
+      "arm": "R2I3_microsearch",
+      "machine": "48",
+      "global_batch": 512,
+      "microbatch": 448,
+      "microbatch_sizes": [
+        448,
+        64
+      ],
+      "step_s": 0.9874785442867434,
+      "samples_s": 505.58901467481263,
+      "peak_allocated_GiB": 36.93502616882324,
+      "peak_reserved_GiB": 39.314453125,
+      "measured_steps": 100,
+      "gradient_checkpointing": false,
+      "compile": false
+    },
+    "criterion": "fastest measured below safety cap; existing results only",
+    "safe_cap_GiB": 42.0,
+    "source_file": "ANALYSIS/style_repr_injection_matrix_20261026/measurements/family/48.json",
+    "source_sha256": "2ce5969999bf2b2f5b66b3ab70218c9c8914f27ef24ca8633d7384ed1d5fe7d9",
+    "safe_candidates": 2
+  }
+]

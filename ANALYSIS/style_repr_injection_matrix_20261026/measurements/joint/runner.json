@@ -1,0 +1,1 @@
+{"resume_passed": true, "step": 2, "optimizer_steps": 2, "scheduler_steps": 2, "ema_present": true, "rng_present": true, "paired_decoder_verified": true, "joint_arm": "J3", "scientific_training_started": false}

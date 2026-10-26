@@ -1,0 +1,33 @@
+{
+  "passed": true,
+  "precision": "BF16 forward, FP32 master/Adam",
+  "batch": 512,
+  "capacity_only": true,
+  "tolerances": {
+    "gradient_relative_L2": 0.03,
+    "update_relative_L2": 0.1,
+    "loss_relative": 0.002
+  },
+  "results": [
+    {
+      "microbatch": 224,
+      "accum": 3,
+      "fm": 1.9990495443344116,
+      "optimizer_steps": 1,
+      "scheduler_steps": 1,
+      "ema_updates": 1
+    },
+    {
+      "microbatch": 128,
+      "accum": 4,
+      "fm": 1.9990496635437012,
+      "optimizer_steps": 1,
+      "scheduler_steps": 1,
+      "ema_updates": 1,
+      "relative_gradient_error": 0.0022568924087828963,
+      "relative_update_error": 0.01899311496592013,
+      "relative_ema_error": 0.023200281212718415,
+      "relative_loss_error": 5.963298402915385e-08
+    }
+  ]
+}

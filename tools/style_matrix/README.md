@@ -7,7 +7,8 @@
 ## 当前执行边界
 
 两端有效batch统一512，禁止梯度检查点。最新策略：**安全范围内吞吐最快为准，不必填满20/40GiB，不重复大规模搜索**。
-当前正式训练均未启动。普通FM四类batch搜索已在两端完成，真实P1数据短测通过；J3反向链通过但图像micro16占46.14GiB，较小micro及其余臂待验收。串行脚本和正式步数预算尚未完成。
+当前正式训练均未启动。普通FM四类batch搜索、S2-large容量、严格FP32/B512累积、真实P1保存恢复、J四臂梯度和J3真实GT校准/保存恢复/成套Decoder导出检查已完成。[最新记录见第7节](../../ANALYSIS/style_repr_injection_matrix_20261026/README.md#7-续实施最快安全batch真实恢复串行方案)。
+串行脚本已生成，默认dry；尚未封存两端资产ready记录，不直接开长训。48选FM micro448，图像有效16/micro8；J3为40.28GiB、0.4264step/s。
 
 ## 模型与唯一 Writer 路由
 
@@ -59,7 +60,7 @@ R3全部几何来自当前输入STD，包含方向/置信度、宽度代理及�
 R4的运行时结构与R1相同，容量探针使用同形状Token；这不代表真迹Token已经预训练完成。
 测试默认eager/BF16，未将未经测量的compile收益算入ETA。数据读取、STD bank取样、评测和长期稳定性的开销要另外预留。
 
-短测试入口：
+以下是旧矩阵的历史测试入口，新S/J计划不需要再跑一遍：
 
 ```bash
 python -m tools.style_matrix.probes.micro_search --machine 4090 --resident-pid <已核验的空闲常驻PID>
@@ -89,4 +90,29 @@ python -m tools.style_matrix.probes.batch_sweep --machine 48 --selected-defaults
 
 `src/unet/joint/objective.py`提供冻结编码侧的可选图像反向和Decoder重建；`losses.py`是独立连续Sobel损失，不依赖历史VAE工具目录。`joint/profile.py`只测容量与梯度连通性。
 J0冻结Decoder/FM；J1冻结Decoder/FM+图像；J2可训练Decoder/FM+独立GT重建；J3可训练Decoder/FM+图像+GT重建。统一P2@20k EMA，与S组的P1起点区分。
-图像分支有效样本数独立记录，FM仍为全有效512。正式loss系数校准、配对Decoder评测和端到端恢复仍待实现/验收；此版本不可直接认定为可长训版本。
+图像分支有效样本数独立记录，FM仍为全有效512。`joint/calibrate.py`按初始真实FM梯度的10%定共同图像系数，J3真实配对及保存恢复通过。`runtime/evaluate.py`导出并使用对应raw/EMA Decoder，已验证加载逐张量一致；完整测试集生成质量尚未验收。
+
+## 当前准备与执行接口
+
+1. `prepare/select_batches.py`只读取已有候选，选安全范围内最快值。
+2. `joint/sweep.py`有限J容量/梯度预检；已完成，无须重复。`joint/calibrate.py`只做真实GT前反向，不更新参数。
+3. `prepare/specs.py`读取实际P2配置、P1/P2源文件及测量，生成两端spec、plan和`run_stage.sh`，不训练。
+4. `prepare/ready.py`封存实际数据、VAE、源权重和代码hash，要求已完成累积、容量、恢复及J配对证明。
+5. `runtime/serial.py`默认dry，只有显式`--execute`且ready校验通过才启动；阶段2/3还需明确的selection JSON。外来GPU进程或失败即停止，不删除checkpoint。
+
+已生成方案为`assets/style_matrix_20261026/plan_final/`，S=10k/29k/43.5k，J=4k/11.5k/19k；含三阶段等待和8h预留的预测自然墙钟63.95h。短测估计不能当作保证。
+
+```bash
+# 在各机器repo根目录；默认仅检查计划，不启动GPU训练
+bash assets/style_matrix_20261026/plan_final/4090/run_stage.sh --stage 1
+bash assets/style_matrix_20261026/plan_final/48/run_stage.sh --stage 1
+```
+
+晋级文件示例（需要实际指标和读图后决定；不自动创建）：
+
+```json
+{"2":{"4090":["S0","S2"],"48":["S6","S8","J0","J1","J2","J3"]},
+ "3":{"4090":["S2"],"48":["S6","J1","J3"]}}
+```
+
+每端第二阶段最多2个S、第三阶段最多1个S；J第二阶段保持四臂完整，第三阶段保留冻结Decoder对照。评测沿用固定CSV/Noise/Heun/EMA口径，额外独立Writer指标和人工图像核验是晋级依据，不能只按内容指标自动晋级。

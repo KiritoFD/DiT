@@ -1,0 +1,189 @@
+{
+  "machine": "4090",
+  "root": "assets/style_matrix_20261026/plan_final/4090/execution",
+  "ready": "assets/style_matrix_20261026/plan_final/4090/ready.json",
+  "contract": {
+    "p1_sha256": "e768cd89e3276c910faf3a4517ab1ebbbdf3320a6e5266fa22dae2105df1a262",
+    "p2_sha256": "f40980d9d218861046a99818c67b82334e6d25a41fca6fe1f71885dfbf674f9b",
+    "train_csv_sha256": "976b573d76fbdf8f7bb34aff4c2e21b740cbf811e6be3bf4dbd020493bd825ad",
+    "eval_csv_sha256": "41d2ad62dc4c175b28e93431bfcb54d8b90f746b343ec45b299af8f3bea1fa1f",
+    "global_batch": 512,
+    "seed": 90,
+    "gradient_checkpointing": false
+  },
+  "wall_hours": 64.0,
+  "estimated_upper_hours": 63.94917477057461,
+  "reserve_hours": 8.0,
+  "promotion_limits": {
+    "2": {
+      "S": 2,
+      "J": 0
+    },
+    "3": {
+      "S": 1,
+      "J": 0
+    }
+  },
+  "stages": {
+    "1": [
+      {
+        "arm": "S0",
+        "spec": "assets/style_matrix_20261026/plan_final/4090/specs/S0.json",
+        "spec_sha256": "41eba7ec61b3cb4b68b4cbe05f4e7941e1f0f93db2711b0a0ce22d8e65c8e82b",
+        "stop": 10000,
+        "previous_stop": 0
+      },
+      {
+        "arm": "S2",
+        "spec": "assets/style_matrix_20261026/plan_final/4090/specs/S2.json",
+        "spec_sha256": "8b2f785b4beb6ddfe42d4579a592a18ef0460b5dd794a258b2d57e6a3c6982ce",
+        "stop": 10000,
+        "previous_stop": 0
+      },
+      {
+        "arm": "S3",
+        "spec": "assets/style_matrix_20261026/plan_final/4090/specs/S3.json",
+        "spec_sha256": "f1113e430cefc0614c337608deebe49809d356e01d7c49e018e310f650ce1d87",
+        "stop": 10000,
+        "previous_stop": 0
+      },
+      {
+        "arm": "S4",
+        "spec": "assets/style_matrix_20261026/plan_final/4090/specs/S4.json",
+        "spec_sha256": "74e8c9261dddbc89cac84367ca2949c096155fdad4867f73d9d56a290f7ba7a5",
+        "stop": 10000,
+        "previous_stop": 0
+      },
+      {
+        "arm": "S5",
+        "spec": "assets/style_matrix_20261026/plan_final/4090/specs/S5.json",
+        "spec_sha256": "98cae03f3916f29f1999a624bcb833d09d501214095245b99294ee5c68d81cd8",
+        "stop": 10000,
+        "previous_stop": 0
+      },
+      {
+        "arm": "S7",
+        "spec": "assets/style_matrix_20261026/plan_final/4090/specs/S7.json",
+        "spec_sha256": "fa3d32cf6a00e253b215a67cb0d1f357628fb4bd85ee01198a927a7808de8899",
+        "stop": 10000,
+        "previous_stop": 0
+      },
+      {
+        "arm": "S2-large",
+        "spec": "assets/style_matrix_20261026/plan_final/4090/specs/S2-large.json",
+        "spec_sha256": "a766af8d4a0c6864a97254c4f1219cbecf80ade24650040845023e5a9f5d53e1",
+        "stop": 10000,
+        "previous_stop": 0
+      }
+    ],
+    "2": [
+      {
+        "arm": "S0",
+        "spec": "assets/style_matrix_20261026/plan_final/4090/specs/S0.json",
+        "spec_sha256": "41eba7ec61b3cb4b68b4cbe05f4e7941e1f0f93db2711b0a0ce22d8e65c8e82b",
+        "stop": 29000,
+        "previous_stop": 10000
+      },
+      {
+        "arm": "S2",
+        "spec": "assets/style_matrix_20261026/plan_final/4090/specs/S2.json",
+        "spec_sha256": "8b2f785b4beb6ddfe42d4579a592a18ef0460b5dd794a258b2d57e6a3c6982ce",
+        "stop": 29000,
+        "previous_stop": 10000
+      },
+      {
+        "arm": "S3",
+        "spec": "assets/style_matrix_20261026/plan_final/4090/specs/S3.json",
+        "spec_sha256": "f1113e430cefc0614c337608deebe49809d356e01d7c49e018e310f650ce1d87",
+        "stop": 29000,
+        "previous_stop": 10000
+      },
+      {
+        "arm": "S4",
+        "spec": "assets/style_matrix_20261026/plan_final/4090/specs/S4.json",
+        "spec_sha256": "74e8c9261dddbc89cac84367ca2949c096155fdad4867f73d9d56a290f7ba7a5",
+        "stop": 29000,
+        "previous_stop": 10000
+      },
+      {
+        "arm": "S5",
+        "spec": "assets/style_matrix_20261026/plan_final/4090/specs/S5.json",
+        "spec_sha256": "98cae03f3916f29f1999a624bcb833d09d501214095245b99294ee5c68d81cd8",
+        "stop": 29000,
+        "previous_stop": 10000
+      },
+      {
+        "arm": "S7",
+        "spec": "assets/style_matrix_20261026/plan_final/4090/specs/S7.json",
+        "spec_sha256": "fa3d32cf6a00e253b215a67cb0d1f357628fb4bd85ee01198a927a7808de8899",
+        "stop": 29000,
+        "previous_stop": 10000
+      },
+      {
+        "arm": "S2-large",
+        "spec": "assets/style_matrix_20261026/plan_final/4090/specs/S2-large.json",
+        "spec_sha256": "a766af8d4a0c6864a97254c4f1219cbecf80ade24650040845023e5a9f5d53e1",
+        "stop": 29000,
+        "previous_stop": 10000
+      }
+    ],
+    "3": [
+      {
+        "arm": "S0",
+        "spec": "assets/style_matrix_20261026/plan_final/4090/specs/S0.json",
+        "spec_sha256": "41eba7ec61b3cb4b68b4cbe05f4e7941e1f0f93db2711b0a0ce22d8e65c8e82b",
+        "stop": 43500,
+        "previous_stop": 29000
+      },
+      {
+        "arm": "S2",
+        "spec": "assets/style_matrix_20261026/plan_final/4090/specs/S2.json",
+        "spec_sha256": "8b2f785b4beb6ddfe42d4579a592a18ef0460b5dd794a258b2d57e6a3c6982ce",
+        "stop": 43500,
+        "previous_stop": 29000
+      },
+      {
+        "arm": "S3",
+        "spec": "assets/style_matrix_20261026/plan_final/4090/specs/S3.json",
+        "spec_sha256": "f1113e430cefc0614c337608deebe49809d356e01d7c49e018e310f650ce1d87",
+        "stop": 43500,
+        "previous_stop": 29000
+      },
+      {
+        "arm": "S4",
+        "spec": "assets/style_matrix_20261026/plan_final/4090/specs/S4.json",
+        "spec_sha256": "74e8c9261dddbc89cac84367ca2949c096155fdad4867f73d9d56a290f7ba7a5",
+        "stop": 43500,
+        "previous_stop": 29000
+      },
+      {
+        "arm": "S5",
+        "spec": "assets/style_matrix_20261026/plan_final/4090/specs/S5.json",
+        "spec_sha256": "98cae03f3916f29f1999a624bcb833d09d501214095245b99294ee5c68d81cd8",
+        "stop": 43500,
+        "previous_stop": 29000
+      },
+      {
+        "arm": "S7",
+        "spec": "assets/style_matrix_20261026/plan_final/4090/specs/S7.json",
+        "spec_sha256": "fa3d32cf6a00e253b215a67cb0d1f357628fb4bd85ee01198a927a7808de8899",
+        "stop": 43500,
+        "previous_stop": 29000
+      },
+      {
+        "arm": "S2-large",
+        "spec": "assets/style_matrix_20261026/plan_final/4090/specs/S2-large.json",
+        "spec_sha256": "a766af8d4a0c6864a97254c4f1219cbecf80ade24650040845023e5a9f5d53e1",
+        "stop": 43500,
+        "previous_stop": 29000
+      }
+    ]
+  },
+  "evaluations": [
+    {
+      "name": "heldout",
+      "csv": "assets/u100_pretrain_20261024/validation_val100.csv",
+      "writer_space": "top10-row"
+    }
+  ]
+}

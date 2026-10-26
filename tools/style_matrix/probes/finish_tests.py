@@ -1,4 +1,4 @@
-"""Wait only for an existing short search, then validate 12 assigned batch cases."""
+"""Historical 24-cell capacity controller; not used by the current S/J plan."""
 import argparse
 import json
 from pathlib import Path

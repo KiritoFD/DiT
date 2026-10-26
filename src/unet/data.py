@@ -47,6 +47,7 @@ def loader(config,args,logger=None,resume_start_step=0):
 class StdBank:
     def __init__(self,config):
         self.mode=config.std_shape_aug
+        self.step_offset=config.std_shape_step_offset
         self.drop_path_max=config.drop_path_max
         self.drop_path_start=config.drop_path_start;self.drop_path_end=config.drop_path_end
         self.bank=None
@@ -60,7 +61,7 @@ class StdBank:
         if clean.ndim==3:clean=clean[:,None]
         if self.bank is None:return clean
         ids=batch['std_shape_index'].cpu()
-        tiers=torch.multinomial(torch.tensor(mixture(step)),len(ids),replacement=True)
+        tiers=torch.multinomial(torch.tensor(mixture(step+self.step_offset)),len(ids),replacement=True)
         if self.mode=='mild':tiers=tiers.clamp_max(1)
         variants=torch.randint(self.bank.shape[2],(len(ids),))
         selected=self.bank[ids,(tiers-1).clamp_min(0),variants].pin_memory()

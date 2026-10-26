@@ -1,0 +1,33 @@
+{
+  "passed": true,
+  "precision": "FP32, TF32 disabled",
+  "batch": 32,
+  "capacity_only": true,
+  "tolerances": {
+    "gradient_relative_L2": 0.0001,
+    "update_relative_L2": 0.005,
+    "loss_relative": 0.002
+  },
+  "results": [
+    {
+      "microbatch": 32,
+      "accum": 1,
+      "fm": 1.9779086112976074,
+      "optimizer_steps": 1,
+      "scheduler_steps": 1,
+      "ema_updates": 1
+    },
+    {
+      "microbatch": 21,
+      "accum": 2,
+      "fm": 1.9779084920883179,
+      "optimizer_steps": 1,
+      "scheduler_steps": 1,
+      "ema_updates": 1,
+      "relative_gradient_error": 7.095001407182003e-07,
+      "relative_update_error": 0.00012058787327212843,
+      "relative_ema_error": 0.0005344446539956998,
+      "relative_loss_error": 6.027037289279709e-08
+    }
+  ]
+}

@@ -1,0 +1,80 @@
+{
+  "arm": "S2-large",
+  "machine": "4090",
+  "global_batch": 512,
+  "microbatch": 224,
+  "accum": 3,
+  "microbatch_sizes": [
+    224,
+    224,
+    64
+  ],
+  "gradient_checkpointing": false,
+  "step_s": 1.0375631358666042,
+  "measured_steps": 5,
+  "elapsed": 4.818983854725957,
+  "startup_seconds": 7.438447069376707,
+  "peak_allocated_GiB": 19.558282375335693,
+  "peak_reserved_GiB": 20.080078125,
+  "compile": false,
+  "parameters": {
+    "backbone": 114011012,
+    "style_representation": 268288,
+    "style_injections": 346368
+  },
+  "diagnostics": {
+    "legacy_writer_leakage": false,
+    "disabled_matches_source_null": true,
+    "swap_rms": 0.00022923623328097165,
+    "null_gap": 0.000342221581377089,
+    "output_rms": 0.02347642369568348,
+    "layers": [
+      {
+        "attention_entropy": 2.0291452407836914,
+        "attention_spatial_variance": 0.0014301019255071878,
+        "base_rms": 1.0076954364776611,
+        "delta_rms": 0.10078282654285431,
+        "spatial_variance": 0.0008856853237375617,
+        "shared_energy": 0.009272357448935509
+      },
+      {
+        "attention_entropy": 2.0352296829223633,
+        "attention_spatial_variance": 0.0012602931819856167,
+        "base_rms": 1.022597074508667,
+        "delta_rms": 0.10252635926008224,
+        "spatial_variance": 0.000647751847282052,
+        "shared_energy": 0.009866432286798954
+      },
+      {
+        "attention_entropy": 2.026144027709961,
+        "attention_spatial_variance": 0.0013145410921424627,
+        "base_rms": 1.0105479955673218,
+        "delta_rms": 0.10093855857849121,
+        "spatial_variance": 0.0007495205500163138,
+        "shared_energy": 0.009450783021748066
+      }
+    ],
+    "tokens_effective_rank": 7.589070796966553,
+    "tokens_off_diagonal_cosine": -0.008577278815209866
+  },
+  "gradient": {
+    "style_representation": 6.215435860212892e-05,
+    "style_injections": 0.001397887826897204,
+    "backbone": 0.13224539160728455
+  },
+  "transfer": {},
+  "capacity_only": true,
+  "real_data_smoke": false,
+  "scientific_checkpoint_saved": false,
+  "final_loss": 1.999349594116211,
+  "final_grad": 0.12663520872592926,
+  "torch_version": "2.5.1+cu121",
+  "samples_s": 531.2323255637014,
+  "gpu_utilization_mean": 100.0,
+  "gpu_ms": {
+    "forward": 346.9819923400879,
+    "backward": 605.4979598999023,
+    "clip_optimizer": 8.114175796508789,
+    "ema": 2.559999942779541
+  }
+}
