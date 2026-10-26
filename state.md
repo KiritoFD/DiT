@@ -1,5 +1,9 @@
 # state.md — 当前实验状态
 
+## 2026-10-27：48启动Deep85 Decoder三组各5k
+
+48串行J0（FM，Decoder冻结）→J1（FM+Image，Decoder冻结）→J2（FM+Image+GT重建，Decoder训练），三组同Deep85 EMA起点、原VAE和Writer语义映射，B512、compile开启、无梯度检查点。J2已先完成正式前50步并保存，区间约0.51step/s、峰值39.812GiB、冻结编码指纹通过，后续从50恢复至5k。队列已进入J0；从00:44起保守估计剩余6–7h。图像梯度权重重新校准为0.0212917，约FM的10%。[文档与路径](ANALYSIS/style_repr_injection_matrix_20261026/decoder_deep85_20261027.md)。代码提交da2ce77。
+
 ## 2026-10-27：4090恢复compile，启动S组随机初始化50k串行
 
 新入口误将compile禁用，已恢复torch.compile(default)，保留BF16、channels_last、fused AdamW、缓存latent/STD及异步checkpoint，不开梯度检查点。4090队列S0→S1→S4→S6，各50k，B512/micro512，完全随机初始化，非P1/P2续训。S0已完成50步，首次编译约97秒，峰值allocated19.166GiB；第1至50步约1.6step/s。四组含开销暂估37–39h。48及Deep85起点的J组本次未启动。[阶段文档](ANALYSIS/style_repr_injection_matrix_20261026/compile_cold50k_20261027.md)。实现提交34e06e4。

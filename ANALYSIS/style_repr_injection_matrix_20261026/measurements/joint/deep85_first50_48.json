@@ -1,0 +1,73 @@
+{
+  "arm": "J2",
+  "interval_step_s": 0.5099660946709405,
+  "peak_allocated_GiB": 39.812111377716064,
+  "first": {
+    "step": 1,
+    "fm": 0.051636215299367905,
+    "grad_norm": 0.30311623215675354,
+    "clipped": false,
+    "step_s": 0.006937060415737418,
+    "lr": [
+      1.3333333333333336e-07,
+      6.666666666666668e-08
+    ],
+    "peak_GiB": 39.812111377716064,
+    "auxiliary": {
+      "image_samples": 16,
+      "reconstruction_samples": 16,
+      "image": {
+        "l1": 0.02482966147363186,
+        "lpips": 0.01726979948580265,
+        "edge": 0.010189387015998363
+      },
+      "reconstruction": {
+        "l1": 0.019898684695363045,
+        "lpips": 0.00907041970640421,
+        "edge": 0.005907509941607714
+      }
+    },
+    "decoder_grad_norm": 3.4796416759490967
+  },
+  "last": {
+    "step": 50,
+    "fm": 0.05614040791988373,
+    "grad_norm": 0.31212127208709717,
+    "clipped": false,
+    "step_s": 0.20812685641037845,
+    "lr": [
+      3.4000000000000005e-06,
+      1.7000000000000002e-06
+    ],
+    "peak_GiB": 39.812111377716064,
+    "auxiliary": {
+      "image_samples": 16,
+      "reconstruction_samples": 16,
+      "image": {
+        "l1": 0.016855480149388313,
+        "lpips": 0.023440690711140633,
+        "edge": 0.008717636577785015
+      },
+      "reconstruction": {
+        "l1": 0.012489264830946922,
+        "lpips": 0.014326822012662888,
+        "edge": 0.00534448679536581
+      }
+    },
+    "decoder_grad_norm": 1.3162262439727783
+  },
+  "completion": {
+    "step": 50,
+    "requested": 50,
+    "stopped": false,
+    "checkpoint": "assets/style_matrix_20261027/deep85_decoder/48_v2/execution/runs/J2/checkpoints/0000050.pt",
+    "checkpoint_sha256": "2962f1c8cbb46f2a4cdc63f6fa1ea34c5254ef412484ed93394820482019c0f0",
+    "seconds": 244.00683223600208
+  },
+  "current_status": {
+    "state": "training",
+    "stage": 1,
+    "arm": "J0",
+    "stop": 5000
+  }
+}

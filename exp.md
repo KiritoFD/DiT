@@ -1,5 +1,9 @@
 # 实验总账
 
+## 2026-10-27：Deep85 Decoder联训，48串行J0/J1/J2
+
+[设定、数据契约、校准与启动实测](ANALYSIS/style_repr_injection_matrix_20261026/decoder_deep85_20261027.md)。三组同Deep-Sym4@85k EMA重建优化器，各5k，B512/compile，无梯度检查点；J0仅FM，J1增加图像监督但Decoder冻结，J2同时解冻Decoder并加GT重建。外部J2对应旧内部J3，旧仅重建组不运行。共同26,002条未做图像增强的GT，复用原latent及原Writer remap；image每步16/micro8。图像权重0.0212917，初始图像/FM梯度10%。J2前50步通过（计入5k），0.51step/s、39.812GiB，编码指纹不变，checkpoint已完整落盘；正式串行已进入J0。根目录`assets/style_matrix_20261027/deep85_decoder/48_v2`，包含源码/数据SHA清单、校准、各组checkpoint、raw/EMA配套Decoder与统一187字评测。00:44起剩余ETA约6–7h，暂无生成质量结论。代码提交da2ce77。
+
 ## 2026-10-27：S组恢复编译，从零50k（4090已启动）
 
 [完整设定、队列与infra纠正](ANALYSIS/style_repr_injection_matrix_20261026/compile_cold50k_20261027.md)。S0 R0/I0、S1 R0/I1、S4 R2/I1、S6 R0/I3依次50k；同seed90、B512/micro512、LR6e-5/warmup1500、WD0.02、EMA0.999。全部随机初始化，旧Writer路径固定null，无梯度检查点。运行根目录`assets/style_matrix_20261027/cold50k/4090/execution`；各组checkpoint/日志/统一评测独立保存。新入口曾强制eager，已修正；旧eager耗时不再用于删实验。S0已完成50步，峰值allocated19.166GiB，首次编译约97秒，之后49步约30秒；四组含开销暂估37–39h，无生成质量结论。提交34e06e4。
