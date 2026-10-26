@@ -52,6 +52,8 @@ class Config:
     writer_cond_lr:float=0.  # >0: writer embedding + condition projections use this LR
     pair_fraction:float=0.  # >0: PairMixtureSampler same-char cross-writer pairs share of batch
     null_writer_rows:bool=False  # allow training rows explicitly mapped to the null writer row
+    semantic_writer_rows:dict|None=None  # raw semantic Writer ID -> checkpoint embedding row; never infer from 0..9.
+    study_spec:str=''  # opt-in experiment adapter; legacy/mainline behavior unchanged when empty.
     initialize_from:str=''  # model-only stage transfer; new optimizer/scheduler/step clock
     initialize_state:str='ema'
     adapter_only_steps:int=0
@@ -98,6 +100,7 @@ class Config:
     std_soft_eval_sigma:float=.65
     std_shape_cache:str='assets/std_shape_bank_64.pt'
     std_shape_aug:str='strong'
+    std_shape_step_offset:int=0  # Preserve the source-stage augmentation schedule on model-only transfer.
     char_remap_json:str='assets/triple_tables_best_minimal/char_remap.json'
     callig_remap_json:str='assets/triple_tables_best_minimal/callig_remap.json'
     font_remap_json:str='assets/triple_tables_best_minimal/font_remap.json'
@@ -146,6 +149,10 @@ class Config:
         if not 0<=self.drop_writer<1:raise ValueError('Invalid writer drop probability')
         if not 0<=self.pair_fraction<0.5:raise ValueError('Invalid pair fraction')
         if self.writer_cond_lr<0:raise ValueError('Invalid writer condition LR')
+        if self.semantic_writer_rows is not None:
+            rows=[int(v) for v in self.semantic_writer_rows.values()]
+            if len(set(rows))!=len(rows) or any(v<0 or v>=self.num_writers for v in rows):
+                raise ValueError('Invalid checkpoint semantic Writer mapping')
         if self.null_writer_rows and self.writer_mode!='shared':raise ValueError('null_writer_rows needs shared route')
         slot=self.reference_dim and self.reference_injection=='writer_slot'
         if self.writer_mode!='shared':
@@ -192,6 +199,7 @@ class Config:
         if self.memory_format not in ('channels_last','nchw'):raise ValueError(self.memory_format)
         if self.objective!='flow':raise ValueError('First U-Net training line supports FM only')
         if self.std_shape_aug not in ('off','mild','strong'):raise ValueError(self.std_shape_aug)
+        if self.std_shape_step_offset<0:raise ValueError('Negative STD augmentation clock')
         sizes=(self.batch,self.log_every,self.ema_interval,self.ckpt_every,self.eval_every)
         if min(sizes+((self.max_steps,) if require_budget else ()))<=0:
             raise ValueError('Batch, budget and intervals must be positive')
@@ -222,11 +230,7 @@ def build(config,initialize_tables=False):
                     if values.shape == embedding.weight[:-1].shape:
                         with torch.no_grad():
                             embedding.weight[:-1].copy_(values)
-        if config.style_matrix_repr>=0:
-        from .style.interface import MatrixUNet
-        model=MatrixUNet(model,config.style_matrix_repr,config.style_matrix_injection,
-                         vector_dim=config.style_matrix_vector_dim)
-    return model
+        return model
     model=LatentUNet(tuple(config.channels),config.num_writers,config.num_scripts,
                     num_res_blocks=getattr(config,'num_res_blocks',2),
                     decoder_res_blocks=config.decoder_res_blocks,
@@ -255,6 +259,10 @@ def build(config,initialize_tables=False):
     if config.writer_mode!='shared' and not config.reference_dim:
         for name,p in model.named_parameters():
             if name.startswith('writer_proj.'):p.requires_grad_(False)
+    if config.style_matrix_repr>=0:
+        from .style.interface import MatrixUNet
+        model=MatrixUNet(model,config.style_matrix_repr,config.style_matrix_injection,
+                         vector_dim=config.style_matrix_vector_dim)
     return model
 
 
