@@ -61,8 +61,9 @@ def main():
         assert cal['vae_frozen_sha256']==auxiliary.frozen_sha
         reader=GTImages(list(csv.DictReader(open(cfg.data_csv,encoding='utf-8-sig'))))
         if resume:auxiliary.restore(resume)
-    ema=copy.deepcopy(raw).eval().requires_grad_(False);opt=optimizer(raw,cfg,auxiliary.vae.decoder if auxiliary else None)
-    scheduler=build_cosine_scheduler(opt,warmup_steps=300,total_steps=cfg.lr_decay_steps,min_lr_ratio=.1)
+    ema=copy.deepcopy(raw).eval().requires_grad_(False)
+    opt=optimizer(raw,cfg,auxiliary.vae.decoder if auxiliary else None,scratch=spec.get('initialization')=='scratch')
+    scheduler=build_cosine_scheduler(opt,warmup_steps=cfg.warmup,total_steps=cfg.lr_decay_steps,min_lr_ratio=cfg.min_lr_ratio)
     if resume:
         ema.load_state_dict(resume['ema'],strict=True);opt.load_state_dict(resume['opt'])
         scheduler.load_state_dict(resume['scheduler']);assert scheduler.last_epoch==start
@@ -72,8 +73,9 @@ def main():
     save(run/'resolved_config.json',spec['config']);save(run/'identity.json',spec['identity'])
     if resume:assert restore_rng(resume['rng'],log)
     else:seed(cfg.seed+10000)
-    if cfg.compile:raise ValueError('This measured study uses eager execution')
-    forward=raw
+    forward=torch.compile(raw,mode='default') if cfg.compile else raw
+    log.info('Training initialization=%s compile=%s batch=%s microbatch=%s; no gradient checkpointing',
+             spec.get('initialization','source'),cfg.compile,cfg.batch,cfg.microbatch or cfg.batch)
     raw.train();metrics=open(run/'train.jsonl','a',buffering=1)
     stop_requested=False
     def request_stop(*_):

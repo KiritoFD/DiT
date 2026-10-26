@@ -31,26 +31,31 @@ def construct(spec,device='cuda',initialize_source=True):
     config=Config(**spec['config']);seed(config.seed)
     model=build(config).to(device).to(memory_format=torch.channels_last)
     transfer={}
-    if initialize_source:
+    if initialize_source and spec.get('initialization')!='scratch':
         if config.style_matrix_repr>=0:transfer=initialize(model,spec['source'],table=config.style_matrix_table)
         else:
             ck=torch.load(spec['source'],map_location='cpu',weights_only=False)
             weights={k.removeprefix('_orig_mod.'):v for k,v in ck['ema'].items()}
             model.load_state_dict(weights,strict=True)
             transfer=dict(source=spec['source'],source_step=int(ck['train_steps']),strict_model_equal=True)
+    if spec.get('initialization')=='scratch':
+        if spec.get('source'):raise ValueError('Scratch study must not load a checkpoint')
+        transfer=dict(initialization='scratch',seed=config.seed,source=None)
     return model,config,transfer
 
 
-def optimizer(model,config,decoder=None):
+def optimizer(model,config,decoder=None,*,scratch=False):
     groups=[]
     if config.style_matrix_repr<0:
         groups=[dict(params=[p for p in model.parameters() if p.requires_grad],lr=2e-5,name='unet')]
         if decoder is not None:groups.append(dict(params=list(decoder.parameters()),lr=1e-5,name='decoder',weight_decay=0.))
         return torch.optim.AdamW(groups,weight_decay=.01,fused=True)
-    for name,rate in [('backbone',2e-5),('style_representation',1e-4),('style_injections',1e-4)]:
+    for name,rate in [('backbone',config.lr if scratch else 2e-5),
+                      ('style_representation',config.lr if scratch else 1e-4),
+                      ('style_injections',config.lr if scratch else 1e-4)]:
         parameters=[p for n,p in model.named_parameters() if n.startswith(name+'.') and p.requires_grad]
         groups.append(dict(params=parameters,lr=rate,name=name))
-    return torch.optim.AdamW(groups,weight_decay=.01,fused=True)
+    return torch.optim.AdamW(groups,weight_decay=config.weight_decay,fused=True)
 
 
 def synthetic(config,batch=8):
