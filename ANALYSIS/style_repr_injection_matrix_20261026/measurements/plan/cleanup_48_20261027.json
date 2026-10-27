@@ -1,0 +1,57 @@
+{
+  "time": "2026-10-27T15:27:47.931808+08:00",
+  "machine": "48",
+  "candidates": [
+    {
+      "path": "/home/ds/Workspace/DiT/assets/_archive_20261027/48",
+      "bytes": 4972580
+    },
+    {
+      "path": "/home/ds/Workspace/DiT/assets/_archive_20261027/48_v2_execution_runs",
+      "bytes": 11848485512
+    },
+    {
+      "path": "/home/ds/Workspace/DiT/assets/_archive_20261027/audits",
+      "bytes": 186000933
+    },
+    {
+      "path": "/home/ds/Workspace/DiT/assets/_archive_20261027/capacity_audit_test",
+      "bytes": 390673711
+    },
+    {
+      "path": "/home/ds/Workspace/DiT/assets/_archive_20261027/results_nonkey",
+      "bytes": 22587255329
+    },
+    {
+      "path": "/home/ds/Workspace/DiT/assets/_archive_20261027/stroke_writer_20261026",
+      "bytes": 76392142
+    },
+    {
+      "path": "/home/ds/Workspace/DiT/assets/_archive_20261027/style_24h48_20261026",
+      "bytes": 166958134
+    },
+    {
+      "path": "/home/ds/Workspace/DiT/assets/_archive_20261027/style_space_audit_20261026",
+      "bytes": 126302468
+    },
+    {
+      "path": "/home/ds/Workspace/DiT/assets/_archive_20261027/three_day_20261026",
+      "bytes": 433951739
+    },
+    {
+      "path": "/home/ds/Workspace/DiT/assets/_archive_20261027/writer_latent_data_20261016",
+      "bytes": 217324418
+    },
+    {
+      "path": "/home/ds/Workspace/DiT/assets/u100_p1p2_20261025/p1_runs/20261025-113332-Unet-flow/checkpoints/0010000.pt",
+      "bytes": 1323630592
+    }
+  ],
+  "protected_count": 49782,
+  "duplicate_manifest_pairs": 5,
+  "archive_open_files": [],
+  "deleted": true,
+  "prior_free_bytes": 108271501312,
+  "after_free_bytes": 145709641728,
+  "freed_bytes_net": 37438140416
+}

@@ -1,6 +1,6 @@
 # Checkpoint登记
 
-更新时间：2026-10-27 15:18（Asia/Shanghai）。延长轮已实现并重新拉起：实施记录见[延长轮记录](ANALYSIS/style_repr_injection_matrix_20261026/extension_round_20261027.md)，实时状态见[training.md](training.md)，完整历史索引见[exp.md](exp.md)。
+更新时间：2026-10-27 15:31（Asia/Shanghai）。延长轮已实现并重新拉起：实施记录见[延长轮记录](ANALYSIS/style_repr_injection_matrix_20261026/extension_round_20261027.md)，实时状态见[training.md](training.md)，完整历史索引见[exp.md](exp.md)。
 
 ## 路径与检查口径
 
@@ -8,21 +8,21 @@
 
 封存口径变更（2026-10-27）：>1MB大资产在ready.json只记path+size不哈希；小文件（spec/代码/remap/CSV头/calibration）保留SHA256并在每次启动及每任务前校验。旧计划`cold50k/4090`、`deep85_decoder/48_v2`的ready为全量哈希口径，均已停止、保留存档。
 
-## 当前实验已保存（2026-10-27 15:18，matrix64计划）
+## 当前实验已保存（2026-10-27 15:31，matrix64计划）
 
 | 机器 | 实验 | 进度与已落盘权重 | 用途 |
 |---|---|---|---|
 | 4090 | S0 | 已完成50k；1k及每5k checkpoint保留 | 50k EMA已评测100字 |
-| 4090 | S1 | 训练至23,900；最新完整checkpoint 20k | 继续至50k，日志步数不等于已持久化步数 |
+| 4090 | S1 | 训练至25,650；最新完整checkpoint 25k | 继续至50k，日志步数不等于已持久化步数 |
 | 48 | J0/J1/J2/J3 | 各完成5k并有`.done`与187字EMA评测 | J2/J3评测使用各自checkpoint的Decoder EMA |
-| 48 | S2 | 训练至36,900；最新完整checkpoint 25k | 继续至50k；保存节奏为5k/10k/25k/50k |
+| 48 | S2 | 训练至38,850；最新完整checkpoint 25k | 继续至50k；保存节奏为5k/10k/25k/50k |
 
 精确路径均相对对应机器仓库：
 
 ```text
 # 4090
 assets/style_matrix_20261027/matrix64/4090/execution/runs/S0/checkpoints/0050000.pt
-assets/style_matrix_20261027/matrix64/4090/execution/runs/S1/checkpoints/0020000.pt
+assets/style_matrix_20261027/matrix64/4090/execution/runs/S1/checkpoints/0025000.pt
 # 48（将J0替换为J1/J2/J3可得到对应路径）
 assets/style_matrix_20261027/matrix64/48/execution/runs/J0/checkpoints/0005000.pt
 assets/style_matrix_20261027/matrix64/48/execution/runs/S2/checkpoints/0025000.pt
@@ -54,4 +54,4 @@ J0@5k的评测随旧计划迁移：`complete.json`内仍保留旧`48_v2`目录�
 
 ## 排除项（沿用）
 
-旧计划目录已按[Disk.md](Disk.md)归档：`cold50k/4090`、`deep85_decoder/48_v2`（calibration与CSV留原位）、`48/`失败目录、`style_matrix_20261026/plan_final` warm-start产物，全部位于两机`assets/_archive_20261027/`下，保留不删除。`matrix64`计划的probe探测目录（日志与train.jsonl）留作吞吐证据，临时checkpoint已清理。
+旧计划目录曾按[Disk.md](Disk.md)归档。4090的`cold50k/4090`及P1/P2关键归档仍保留；48旧归档已于15:27按用户确认删除，但`deep85_decoder/48_v2/calibration.json`与`train_unaugmented.csv`始终留在原位，当前`matrix64`中的J checkpoint副本也完整保留。48不完整P1传输残片已删除，4090完整P1@10k/P2@20k不受影响。`matrix64`计划的probe日志继续留作吞吐证据。

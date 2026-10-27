@@ -1,5 +1,7 @@
 # 2026-10-27 J组Loss与48磁盘审计
 
+> 15:27更新：用户确认后，48整份旧archive及不完整P1残片已删除，净释放34.87GiB；下文磁盘候选是15:18的历史审计快照，Loss分析未改变。最新整盘及工作区盘点见[Disk.md](../../Disk.md)。
+
 数据时间：15:18，Asia/Shanghai。来源为48机`assets/style_matrix_20261027/matrix64/48/execution/runs/J{0,1,2,3}/train.jsonl`、各组5k的`heldout187/result.json`、`df`、`du`和当前`ready.json`。
 
 ## Loss窗口
