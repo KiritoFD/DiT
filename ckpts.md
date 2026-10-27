@@ -1,6 +1,6 @@
 # Checkpoint登记
 
-更新时间：2026-10-27 15:45（Asia/Shanghai）。延长轮已实现并重新拉起：实施记录见[延长轮记录](ANALYSIS/style_repr_injection_matrix_20261026/extension_round_20261027.md)，实时状态见[training.md](training.md)，完整历史索引见[exp.md](exp.md)。
+更新时间：2026-10-27 16:05（Asia/Shanghai）。延长轮已实现并重新拉起：实施记录见[延长轮记录](ANALYSIS/style_repr_injection_matrix_20261026/extension_round_20261027.md)，实时状态见[training.md](training.md)，完整历史索引见[exp.md](exp.md)。
 
 ## 路径与检查口径
 
@@ -45,6 +45,10 @@ J0@5k的评测随旧计划迁移：`complete.json`内仍保留旧`48_v2`目录�
 | 4090 | P2 | 20k | 保留；J组从Deep85开始不加载。**同上位于`_archive_20261027/u100_p1p2_20261025/p2_runs/`** |
 
 归档明细与清理确认门见[Disk.md](Disk.md)；数据资产与重建配方见[Data.md](Data.md)。
+
+## 48→本地关键权重备份（2026-10-27）
+
+本地目标为`G:\DiT-48-artifacts-20261027`，完整白名单及远端绝对路径见[下载清单](ANALYSIS/remote48_backup_20261027/manifest.json)。已纳入：Deep-Sym4 50k/75k/85k、U100-Base 55k、J0/J1/J2/J3各5k、Qwen-condition A/C各90k，以及69MB紧凑元数据包；总计20,020,117,802 bytes。未纳入可重建数据、cache、逐样本PNG和普通中间权重。后台下载支持断点续传与尺寸校验，未生成`completed.json`前不得视为本地备份完成。S2@50k和J组@12k属于后续追加项。
 
 ## 数据资产与配对
 

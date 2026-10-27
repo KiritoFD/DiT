@@ -1,6 +1,6 @@
 # 训练进度
 
-更新时间：2026-10-27 15:45（Asia/Shanghai），以下为双机日志与评测快照。计划见 [1027.md](1027.md)，权重见 [ckpts.md](ckpts.md)，资产和空间见 [Data.md](Data.md)、[Disk.md](Disk.md)。
+更新时间：2026-10-27 16:05（Asia/Shanghai），以下为双机日志与评测快照。计划见 [1027.md](1027.md)，权重见 [ckpts.md](ckpts.md)，资产和空间见 [Data.md](Data.md)、[Disk.md](Disk.md)。
 
 | 机器 | 当前任务 | 步数 / 目标 | 状态 | 速度 | GPU |
 |---|---|---|---|---|---|
@@ -47,3 +47,7 @@ S1仅把注入从Global AdaGN改为空间AdaGN，当前26.2k尚无正式生成�
 远端仓库：4090 `/root/Workspace/xy/DiT`；48 `/home/ds/Workspace/DiT`。计划均在`assets/style_matrix_20261027/matrix64/{4090,48}/`，其中`execution/status.json`、`execution/runs/<arm>/train.jsonl`、`checkpoints/`与`evaluations/`为当前事实来源。两机compile、BF16、有效batch512，禁止梯度检查点。
 
 48旧归档、损坏P1残片及普通版QwenImage21基础模型清理后可用磁盘约167G（df快照），串行每任务启动前有25 GiB空闲空间门槛；之后checkpoint和评测仍会增长，需持续核对。4090仓库盘约1.5T可用。禁止自动删除旧checkpoint。48整盘及各工作区归属见[Disk.md](Disk.md)；详细配置、LR restart、数据配对和历史事故见[延长轮记录](ANALYSIS/style_repr_injection_matrix_20261026/extension_round_20261027.md)。
+
+## 48关键结果本地备份
+
+2026-10-27 16:01已启动48→本地后台串行下载，不占GPU。清单为[manifest.json](ANALYSIS/remote48_backup_20261027/manifest.json)，目标目录`G:\DiT-48-artifacts-20261027`，总量18.65GiB。实测短窗口约0.65MiB/s，对应约8.2h；这是网络瞬时估算，不是完成承诺。下载器支持`.part`断点续传、完成字节数校验和单实例锁。S2只在50k完成后补抓，J组12k完成后另补最终权重。

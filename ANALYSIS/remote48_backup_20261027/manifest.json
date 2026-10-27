@@ -1,0 +1,93 @@
+{
+  "created_at": "2026-10-27T16:05:00+08:00",
+  "source_host": "48",
+  "source_repo": "/home/ds/Workspace/DiT",
+  "local_root": "G:/DiT-48-artifacts-20261027",
+  "selection_rule": "final or scientifically important checkpoints plus compact metrics/posters; exclude reconstructible data, caches, per-sample PNG copies, and intermediate checkpoints",
+  "total_bytes": 20020117802,
+  "files": [
+    {
+      "priority": 0,
+      "label": "results_metadata_bundle",
+      "remote": "/home/ds/Workspace/DiT/assets/transfer_staging/remote48_results_metadata_20261027.tar.gz",
+      "relative": "metadata/remote48_results_metadata_20261027.tar.gz",
+      "size": 69321928
+    },
+    {
+      "priority": 1,
+      "label": "DeepSym4_85k",
+      "remote": "/home/ds/Workspace/DiT/assets/results/unet_deep_sym4_114m_60m/20261019-011647-Unet-flow/checkpoints/0085000.pt",
+      "relative": "checkpoints/DeepSym4/0085000.pt",
+      "size": 1824546895
+    },
+    {
+      "priority": 2,
+      "label": "U100_Base_55k",
+      "remote": "/home/ds/Workspace/DiT/assets/results/unet_connectivity_100000/baseline_resume/20261018-030921-Unet-flow/checkpoints/0055000.pt",
+      "relative": "checkpoints/U100-Base/0055000.pt",
+      "size": 1153743591
+    },
+    {
+      "priority": 3,
+      "label": "DeepSym4_75k_best_ssim",
+      "remote": "/home/ds/Workspace/DiT/assets/results/unet_deep_sym4_114m_60m/20261019-011647-Unet-flow/checkpoints/0075000.pt",
+      "relative": "checkpoints/DeepSym4/0075000.pt",
+      "size": 1824546895
+    },
+    {
+      "priority": 4,
+      "label": "DeepSym4_50k_equal_budget",
+      "remote": "/home/ds/Workspace/DiT/assets/results/unet_deep_sym4_114m_60m/20261019-011647-Unet-flow/checkpoints/0050000.pt",
+      "relative": "checkpoints/DeepSym4/0050000.pt",
+      "size": 1824546895
+    },
+    {
+      "priority": 5,
+      "label": "J2_5k_decoder_trainable_with_rec",
+      "remote": "/home/ds/Workspace/DiT/assets/style_matrix_20261027/matrix64/48/execution/runs/J2/checkpoints/0005000.pt",
+      "relative": "checkpoints/matrix64/J2/0005000.pt",
+      "size": 2616594013
+    },
+    {
+      "priority": 6,
+      "label": "J3_5k_decoder_trainable_no_rec",
+      "remote": "/home/ds/Workspace/DiT/assets/style_matrix_20261027/matrix64/48/execution/runs/J3/checkpoints/0005000.pt",
+      "relative": "checkpoints/matrix64/J3/0005000.pt",
+      "size": 2616593949
+    },
+    {
+      "priority": 7,
+      "label": "J0_5k_decoder_frozen",
+      "remote": "/home/ds/Workspace/DiT/assets/style_matrix_20261027/matrix64/48/execution/runs/J0/checkpoints/0005000.pt",
+      "relative": "checkpoints/matrix64/J0/0005000.pt",
+      "size": 2220559867
+    },
+    {
+      "priority": 8,
+      "label": "J1_5k_decoder_only_reconstruction",
+      "remote": "/home/ds/Workspace/DiT/assets/style_matrix_20261027/matrix64/48/execution/runs/J1/checkpoints/0005000.pt",
+      "relative": "checkpoints/matrix64/J1/0005000.pt",
+      "size": 2220559931
+    },
+    {
+      "priority": 9,
+      "label": "Qwen_condition_A_90k",
+      "remote": "/home/ds/Workspace/DiT/assets/results/qwen_cond_arm_a/20261025-033733-Unet-flow/checkpoints/0090000.pt",
+      "relative": "checkpoints/Qwen-condition-A/0090000.pt",
+      "size": 1824547279
+    },
+    {
+      "priority": 10,
+      "label": "Qwen_condition_C_90k",
+      "remote": "/home/ds/Workspace/DiT/assets/results/qwen_cond_arm_c/20261025-042652-Unet-flow/checkpoints/0090000.pt",
+      "relative": "checkpoints/Qwen-condition-C/0090000.pt",
+      "size": 1824556559
+    }
+  ],
+  "deferred": [
+    "S2 is still training; add its 50k checkpoint after completion instead of copying 25k",
+    "J0-J3 are scheduled to extend to 12k; preserve 5k now and add 12k later",
+    "per-sample generated PNG trees are excluded; posters and metric tables are in the metadata bundle",
+    "latent shards, STD banks, VAE and other reconstructible assets are excluded"
+  ]
+}

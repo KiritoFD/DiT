@@ -92,6 +92,7 @@
 
 ## 变更记录
 
+- 2026-10-27 16:05：启动48关键checkpoint向本地`G:\DiT-48-artifacts-20261027`的白名单备份，总量18.65GiB；本地启动前可用83.9GiB。48仅新增69MB元数据压缩包`assets/transfer_staging/remote48_results_metadata_20261027.tar.gz`，训练权重未移动、未删除。
 - 2026-10-27 15:45：删除普通版QwenImage21基础模型，释放30.85GiB；Turbo模型及当前DiT训练完整保留。
 - 2026-10-27 15:31：完成 48 全盘刷新；确认 DiT 99G、`Workspace/xy` 72G、ERV 1.2T、RealSR 69G、VCP 57G、Conda 约 37G、共享缓存 23G。
 - 2026-10-27 15:27：经用户确认删除 48 旧 `_archive_20261027` 与损坏 P1 残片，净释放 34.87GiB；当前训练未中断。
