@@ -1,0 +1,40 @@
+{
+  "date": "2026-10-27T15:55:00+08:00",
+  "model": "S0@50k EMA",
+  "generated_png_root": "assets/style_matrix_20261027/matrix64/4090/execution/runs/S0/evaluations/0050000/heldout/eval_samples_ctrl/step0050000/eval200fix",
+  "actual_eval_csv": "assets/u100_pretrain_20261024/validation_val100.csv",
+  "reported_set_label": "eval200fix",
+  "n": 100,
+  "finding": "reported set label is misleading; exact 1px skeleton IoU is threshold-stable but extremely displacement-sensitive",
+  "threshold_sweep_exact_skeleton_iou": {
+    "0.3": 0.025077202360194385,
+    "0.4": 0.025280869686695864,
+    "0.5": 0.02529810358225799,
+    "0.6": 0.02482570782231524,
+    "0.7": 0.02518245971607674
+  },
+  "threshold_0.5_tolerant_metrics": {
+    "radius_1": {
+      "symmetric_f1": 0.12381178133187395,
+      "dilated_skeleton_iou": 0.06908073536383583
+    },
+    "radius_2": {
+      "symmetric_f1": 0.19143801302508834,
+      "dilated_skeleton_iou": 0.10974390464437063
+    },
+    "radius_3": {
+      "symmetric_f1": 0.25641702799822225,
+      "dilated_skeleton_iou": 0.14891718225515507
+    }
+  },
+  "same_csv_exact_skeleton_iou_references": {
+    "P1_10k": 0.01555,
+    "P2_20k": 0.01856,
+    "generic_pretrain_ft_25k": 0.01790
+  },
+  "different_csv_references_not_for_direct_ranking": {
+    "DeepSym4_50k_eval200_fixed_187": 0.0391,
+    "DeepSym4_85k_eval200_fixed_187": 0.04498,
+    "VAE_round_trip_and_skeleton_conditioned_historical_values": "not comparable: same-image reconstruction or explicit skeleton conditioning"
+  }
+}
