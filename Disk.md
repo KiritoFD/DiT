@@ -90,9 +90,19 @@
 3. 大数据优先本机重建；不为清盘把 GB 资产跨机搬运。
 4. 其他项目只提供候选范围，不因目录名含 `work`、`decoded`、`cache` 就直接删除。
 
+## 4090 磁盘（2026-10-28 00:15 补充）
+
+| 项目 | 当前值 | 说明 |
+|---|---:|---|
+| **仓库所在盘 `/root/Workspace`（nvme1n1p1）** | 3.5T 总量，**1.6T 可用（53%）** | 仓库在独立NVMe上，空间充裕 |
+| 容器根 `df /`（overlay 1.8T） | 230G 可用 | **系统盘，与仓库无关**——此前误把 254G/230G 当仓库余量 |
+
+2026-10-28 00:15 经确认执行清理：archive 中非关键项已删除（runs_legacy 49G、20261026 矩阵时代 14G、three_day/generic114/style_24h 等共约 119G）；archive 仅保留 `u100_p1p2_20261025`（P1@10k、P2@20k，永不删除）。仓库 `assets/` 自占用 190G→114G（含当日新增 checkpoint 约 45G）。清理后训练正常（S4 计步中）。
+
 ## 变更记录
 
-- 2026-10-27 16:05：启动48关键checkpoint向本地`G:\DiT-48-artifacts-20261027`的白名单备份，总量18.65GiB；本地启动前可用83.9GiB。48仅新增69MB元数据压缩包`assets/transfer_staging/remote48_results_metadata_20261027.tar.gz`，训练权重未移动、未删除。
+- 2026-10-28 00:15：4090 执行 archive 非关键项删除（约119G，P1/P2保留）；确认仓库实际位于独立3.5T盘（1.6T可用），此前df误读为容器overlay系统盘。48侧复核：16:05清理后全部保护项（calibration/CSV/matrix64/Deep85 85k/bank）原位完好。
+- 2026-10-27 16:05：启动48关键checkpoint向本地`G:\DiT-48-artifacts-20261027`的白名单备份，总量18.65GiB；本地启动前可用83.9GiB。48仅新增69MB元数据压缩包`assets/transfer_staging/remote48_results_metadata_20261027.tar.gz`，训练权重未移动、未删除。（23:52记录：下载器曾因ssh无keepalive停滞5.5h，已恢复，详见ANALYSIS/remote48_backup_20261027/README.md）
 - 2026-10-27 15:45：删除普通版QwenImage21基础模型，释放30.85GiB；Turbo模型及当前DiT训练完整保留。
 - 2026-10-27 15:31：完成 48 全盘刷新；确认 DiT 99G、`Workspace/xy` 72G、ERV 1.2T、RealSR 69G、VCP 57G、Conda 约 37G、共享缓存 23G。
 - 2026-10-27 15:27：经用户确认删除 48 旧 `_archive_20261027` 与损坏 P1 残片，净释放 34.87GiB；当前训练未中断。
