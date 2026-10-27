@@ -32,6 +32,8 @@ S0@50k评测清单记录checkpoint SHA256 `50d41ee21091f865f3b7315297adeafbba113
 
 外部J2映射内部目标J3；外部J3映射内部目标J4（图像监督+可训练Decoder、无GT重建）。J2/J3的raw/EMA Decoder保存在对应checkpoint中；后续延长必须恢复模型、Optimizer、EMA、RNG并保留身份映射。
 
+J0@5k的评测随旧计划迁移：`complete.json`内仍保留旧`48_v2`目录的Decoder路径，该旧路径现已失效。配套Decoder文件已位于当前J0评测目录的`paired_vae/c7e005c1…/decoder_ema`，其`identity.json`中的checkpoint SHA与当前J0 `.done`一致；后续使用时按当前checkpoint重新导出或解析现有目录，不要直接打开旧路径。本次未重新哈希Decoder大文件。
+
 ## 成熟模型与参考权重
 
 | 机器 | 模型 | 现存步数 | 本轮用途 |
