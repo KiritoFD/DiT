@@ -19,3 +19,9 @@
 - 下载器逐文件写`.part`，完成后核对字节数再原子改名；重复运行会跳过大小一致的完成文件。
 
 48到本地的实测链路较慢，下载采用单流后台串行，优先顺序为metadata → Deep85 → U100 Base55 → Deep75/50 → J2/J3/J0/J1 → Qwen A/C。
+
+## 2026-10-27 23:52 停滞恢复记录
+
+75k传输字节于18:15完成（约0.62MiB/s，与估算一致），但脚本后续的`ssh test .done`/`scp`步骤无ServerAliveInterval，连接挂起导致进程停滞约5.5h、无日志推进。处置：本地0075000.pt与远端SHA256比对一致（fcd8939b…）→杀掉PID 58104→删除download.lock→手工补拉0075000.pt.done→重启下载器。重启后SKIP 85k/55k/75k，从DeepSym4@50k继续（新PID 62500）。教训：脚本内ssh/scp调用应加`-o ServerAliveInterval=30 -o ServerAliveCountMax=3`，与sftp调用一致；待下次改动时补上。
+
+进度口径（23:52）：已完成4.53/18.65GiB（24%），有效速率约0.62MiB/s，剩余约14.1GiB约需6.4h，预计10-28 ~06:15完成（Qwen A/C两个大件在队尾）。
