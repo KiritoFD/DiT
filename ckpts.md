@@ -1,6 +1,6 @@
 # Checkpoint登记
 
-更新时间：2026-10-27 15:11（Asia/Shanghai）。延长轮已实现并重新拉起：实施记录见[延长轮记录](ANALYSIS/style_repr_injection_matrix_20261026/extension_round_20261027.md)，实时状态见[training.md](training.md)，完整历史索引见[exp.md](exp.md)。
+更新时间：2026-10-27 15:18（Asia/Shanghai）。延长轮已实现并重新拉起：实施记录见[延长轮记录](ANALYSIS/style_repr_injection_matrix_20261026/extension_round_20261027.md)，实时状态见[training.md](training.md)，完整历史索引见[exp.md](exp.md)。
 
 ## 路径与检查口径
 
@@ -8,14 +8,14 @@
 
 封存口径变更（2026-10-27）：>1MB大资产在ready.json只记path+size不哈希；小文件（spec/代码/remap/CSV头/calibration）保留SHA256并在每次启动及每任务前校验。旧计划`cold50k/4090`、`deep85_decoder/48_v2`的ready为全量哈希口径，均已停止、保留存档。
 
-## 当前实验已保存（2026-10-27 15:11，matrix64计划）
+## 当前实验已保存（2026-10-27 15:18，matrix64计划）
 
 | 机器 | 实验 | 进度与已落盘权重 | 用途 |
 |---|---|---|---|
 | 4090 | S0 | 已完成50k；1k及每5k checkpoint保留 | 50k EMA已评测100字 |
-| 4090 | S1 | 训练至23,200；最新完整checkpoint 20k | 继续至50k，日志步数不等于已持久化步数 |
+| 4090 | S1 | 训练至23,900；最新完整checkpoint 20k | 继续至50k，日志步数不等于已持久化步数 |
 | 48 | J0/J1/J2/J3 | 各完成5k并有`.done`与187字EMA评测 | J2/J3评测使用各自checkpoint的Decoder EMA |
-| 48 | S2 | 训练至36,150；最新完整checkpoint 25k | 继续至50k；保存节奏为5k/10k/25k/50k |
+| 48 | S2 | 训练至36,900；最新完整checkpoint 25k | 继续至50k；保存节奏为5k/10k/25k/50k |
 
 精确路径均相对对应机器仓库：
 
