@@ -1,11 +1,11 @@
 # 训练进度
 
-更新时间：2026-10-27 15:31（Asia/Shanghai），以下为双机日志与评测快照。计划见 [1027.md](1027.md)，权重见 [ckpts.md](ckpts.md)，资产和空间见 [Data.md](Data.md)、[Disk.md](Disk.md)。
+更新时间：2026-10-27 15:45（Asia/Shanghai），以下为双机日志与评测快照。计划见 [1027.md](1027.md)，权重见 [ckpts.md](ckpts.md)，资产和空间见 [Data.md](Data.md)、[Disk.md](Disk.md)。
 
 | 机器 | 当前任务 | 步数 / 目标 | 状态 | 速度 | GPU |
 |---|---|---|---|---|---|
-| 4090 24GB | S1，Vector / Spatial AdaGN | 25,650 / 50,000（51.3%） | 正常训练 | 约1.54 step/s | 总占用约22,367 MiB，利用率100%；峰值allocated 20.76 GiB |
-| 48GB | S2，Vector / Cross-Attention | 38,850 / 50,000（77.7%） | 正常训练 | 约1.71 step/s | 总占用约21,223 MiB，利用率100%；峰值allocated 19.13 GiB |
+| 4090 24GB | S1，Vector / Spatial AdaGN | 26,200 / 50,000（52.4%） | 正常训练 | 约1.54 step/s | 总占用约22,367 MiB，利用率100%；峰值allocated 20.76 GiB |
+| 48GB | S2，Vector / Cross-Attention | 39,600 / 50,000（79.2%） | 正常训练 | 约1.71 step/s | 总占用约21,223 MiB，利用率100%；峰值allocated 19.13 GiB |
 
 速度取正式训练较长窗口，累计速度仍包含少量启动、保存开销。4090此前S0停在1,350，从1k恢复后已完成50k；当时futex等待的根因未定位，不应称为已明确修复。
 
@@ -34,8 +34,14 @@ J0–J3训练FM末千步日志均值均约0.0402，首千步约0.0525；J2/J3 Im
 
 J2/J3相较J0/J1有初步SSIM和LPIPS收益，J2与J3差距很小；尚需同协议多seed、实际读图、交叉Decoder和12k评测，无法确认重建锚是否带来稳定收益。S0为不同测试集及训练起点，不能与J组直接排名。
 
+## S组当前对照结论
+
+S0是从零训练的`Vector + Global AdaGN`基线，也是目前唯一完成50k正式评测的S模型。S0@50k：SSIM 0.60275、LPIPS 0.33950、Ink-IoU 0.28587、Frag 2.627、SoftInk 1.0249、near-blank 0%。实际海报显示已学会清晰的书法化映射且整体墨量接近GT，但仍有局部粘连、缺/错笔、过粗墨块和结体漂移；Skel-IoU仅0.0253也提示拓扑尚弱。
+
+S1仅把注入从Global AdaGN改为空间AdaGN，当前26.2k尚无正式生成评测。同期训练FM与S0几乎重合但略高：S0在20–21k/25–26k窗口约0.11/0.09，S1约0.12/0.10。这只说明空间注入没有带来明显优化速度优势，不能据此判定生成质量或Writer控制更差。必须等S1@50k同协议评测后，才可得出S1−S0的单变量结论；S4/S6/S8尚未开始，更不能提前比较局部表征和DynamicConv。
+
 ## 路径与运行约定
 
 远端仓库：4090 `/root/Workspace/xy/DiT`；48 `/home/ds/Workspace/DiT`。计划均在`assets/style_matrix_20261027/matrix64/{4090,48}/`，其中`execution/status.json`、`execution/runs/<arm>/train.jsonl`、`checkpoints/`与`evaluations/`为当前事实来源。两机compile、BF16、有效batch512，禁止梯度检查点。
 
-48旧归档和损坏P1残片清理后可用磁盘约136G（df快照），串行每任务启动前有25 GiB空闲空间门槛；之后checkpoint和评测仍会增长，需持续核对。4090仓库盘约1.5T可用。禁止自动删除旧checkpoint。48整盘及各工作区归属见[Disk.md](Disk.md)；详细配置、LR restart、数据配对和历史事故见[延长轮记录](ANALYSIS/style_repr_injection_matrix_20261026/extension_round_20261027.md)。
+48旧归档、损坏P1残片及普通版QwenImage21基础模型清理后可用磁盘约167G（df快照），串行每任务启动前有25 GiB空闲空间门槛；之后checkpoint和评测仍会增长，需持续核对。4090仓库盘约1.5T可用。禁止自动删除旧checkpoint。48整盘及各工作区归属见[Disk.md](Disk.md)；详细配置、LR restart、数据配对和历史事故见[延长轮记录](ANALYSIS/style_repr_injection_matrix_20261026/extension_round_20261027.md)。

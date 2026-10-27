@@ -1,0 +1,16 @@
+{
+  "time": "2026-10-27T15:44:42.668244+08:00",
+  "target": "/home/ds/Workspace/xy/qwen-lora-20261023/base",
+  "size_bytes": 33131614857,
+  "identity": "QwenImage21Pipeline without Turbo sample_sigmas",
+  "preserved_turbo": "/home/ds/Workspace/xy/qwen-calli-20261022/model",
+  "dependent_symlinks_left_broken_after_delete": [
+    "/home/ds/Workspace/xy/qwen-lora-base-20261024/base",
+    "/home/ds/Workspace/xy/qwen-lora-top10-base-20261024/base"
+  ],
+  "open_files": [],
+  "free_bytes_before": 145527037952,
+  "deleted": true,
+  "free_bytes_after": 178658811904,
+  "freed_bytes_net": 33131773952
+}

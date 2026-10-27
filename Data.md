@@ -1,6 +1,6 @@
 # 数据资产与重建
 
-2026-10-27 15:31复核：两机仍在使用matrix64既有S/J数据配置。48清理仅删除旧归档与损坏P1残片，没有删除当前`ready.json`引用、训练数据、原始VAE、GT/STD或`deep85_decoder/48_v2/{calibration.json,train_unaugmented.csv}`；没有进行GB级跨机传输。下方配方与身份约束继续适用，磁盘证据见[Disk.md](Disk.md)。
+2026-10-27 15:45复核：两机仍在使用matrix64既有S/J数据配置。48清理删除旧归档、损坏P1残片及其他工作区的普通版QwenImage21基础模型，没有删除当前`ready.json`引用、训练数据、原始VAE、GT/STD或`deep85_decoder/48_v2/{calibration.json,train_unaugmented.csv}`；没有进行GB级跨机传输。下方配方与身份约束继续适用，磁盘证据见[Disk.md](Disk.md)。
 
 更新：2026-10-27。原则见[AGENTS.md](AGENTS.md)：**数据缺了先搜索本机、再本地重建；跨机传输几乎不考虑**（本文件登记每个资产的重建配方与配对校验）。
 

@@ -1,17 +1,19 @@
 # 磁盘台账
 
-最后更新：2026-10-27 15:31（Asia/Shanghai）。本页以 48 机器的实时 `df` / `du -x` 为准。`du` 的父子目录不可相加，表内 GiB/TiB 为文件系统显示的近似值；`df` 是整盘容量的权威口径。
+最后更新：2026-10-27 15:45（Asia/Shanghai）。本页以 48 机器的实时 `df` / `du -x` 为准。`du` 的父子目录不可相加，表内 GiB/TiB 为文件系统显示的近似值；`df` 是整盘容量的权威口径。
 
 ## 48 整盘结论
 
 | 项目 | 当前值 | 说明 |
 |---|---:|---|
-| 持久盘 `/dev/nvme0n1p2` | 1.8T 总量，1.6T 已用，136G 可用，93% | `/`、`/home`、仓库和数据均在同一 ext4 分区 |
+| 持久盘 `/dev/nvme0n1p2` | 1.8T 总量，1.6T 已用，167G 可用，91% | `/`、`/home`、仓库和数据均在同一 ext4 分区 |
 | `/home/ds` | 约 1.5T | 用户可见项目、数据、环境和缓存的主体 |
 | 系统目录 | `/usr` 49G，`/var` 7.1G | 当前用户权限下的近似盘点，不作为用户目录清理范围 |
 | `/tmp`、`/dev/shm` | tmpfs | 属于内存文件系统，不能计入 136G 持久盘余量 |
 
 2026-10-27 15:27 已按用户确认删除 48 的旧归档和损坏的 P1 残片，整盘可用空间由约 101G 增至 136G，净释放 **37,438,140,416 bytes（34.87 GiB）**。详细清单见 [cleanup_48_20261027.json](ANALYSIS/style_repr_injection_matrix_20261026/measurements/plan/cleanup_48_20261027.json)。其中旧 `results_nonkey` 约 22G 可能包含唯一的历史非关键结果，现已删除；当前矩阵中的 J checkpoint 副本、关键基线、训练数据和正在运行的任务均保留。
+
+2026-10-27 15:44 又删除了明确不用的普通版 QwenImage21 基础模型 `/home/ds/Workspace/xy/qwen-lora-20261023/base`，释放 **33,131,773,952 bytes（30.85 GiB）**，可用空间升至167G。Turbo版 `/home/ds/Workspace/xy/qwen-calli-20261022/model` 完整保留。删除证据见 [cleanup_qwen_image_nonturbo_20261027.json](ANALYSIS/style_repr_injection_matrix_20261026/measurements/plan/cleanup_qwen_image_nonturbo_20261027.json)。
 
 ## 工作区归属
 
@@ -34,21 +36,22 @@
 
 ### 同一 Workspace 下的其他工作区
 
-`/home/ds/Workspace` 合计约 **170G**：
+`/home/ds/Workspace` 清理后合计约 **139–140G**：
 
 | 工作区 | 大小 | 主要内容 | 清理判断 |
 |---|---:|---|---|
 | `Workspace/DiT` | 99G | 本项目代码、数据、当前矩阵和关键结果 | 当前只允许逐项审计，不整体清理 |
-| `Workspace/xy` | 72G | Qwen 书法/LoRA 系列实验 | 属于其他工作区，需确认引用后再动 |
+| `Workspace/xy` | 41G | Qwen 书法/LoRA 系列实验 | 普通版基础模型已删，Turbo版保留 |
 
-`Workspace/xy` 的主要占用为：
+`Workspace/xy` 清理后的主要占用为：
 
-- `qwen-calli-20261022/model`：31G；
-- `qwen-lora-20261023/base`：31G；
+- `qwen-calli-20261022/model`：31G，Turbo版基础模型，保留；
 - `qwen-lora-turbo-20261023`：4.3G；
-- 其余 Top10、reference、writer-res 等 LoRA 目录：约 6G。
+- `qwen-lora-base-20261024`：1.4G，普通版LoRA，基础模型链接现已失效；
+- `qwen-lora-top10-base-20261024`：982M，普通版Top10 LoRA，基础模型链接现已失效；
+- 其余 Turbo/Top10/reference/writer-res 等目录：约3–4G。
 
-前两个 31G 目录是这里最有价值的清理候选，但很可能是基础模型或独立实验的唯一副本；在确认其他项目不再引用、或可以可靠重建/重下之前不删除。
+两个普通版LoRA目录的小权重仍被保留，避免把本次“删除非Turbo基础模型”扩大成删除实验历史；若确认这些普通版实验也无价值，可再释放约2.4G。它们当前的`base`软链接已失效，不能直接推理。
 
 ## 其他项目占用
 
@@ -72,7 +75,7 @@
 |---|---|---:|---|
 | P0 | `ERV_mouse/work/preG` | 280G | 确认是可重建中间产物、无活动进程打开、最终结果已验收 |
 | P0 | `ERV_mouse/work/preG_v3` | 90G | 同上；需与当前 ERV 进程及下游结果逐项核对 |
-| P1 | `Workspace/xy` 两个 31G Qwen 基础目录 | 最多约 62G | 确认无唯一权重、无软链接/配置引用，并评估重新下载成本 |
+| P1 | `Workspace/xy` 两个普通版LoRA实验目录 | 约2.4G | 基础模型已删除；确认不保留checkpoint和评测历史后可删 |
 | P1 | `realsr/data/decoded` | 32G | 有确定性重建路径且原始输入完整 |
 | P1 | `realsr/experiments/diffusion` | 15G | 项目负责人确认不再需要 checkpoint/指标/图像 |
 | P2 | Hugging Face Qwen 缓存 | 约 16G | 确认各 Qwen 项目不再离线依赖；删除后需要重新下载 |
@@ -82,13 +85,14 @@
 
 ## 清理与保护规则
 
-1. 当前队列每个任务启动前检查至少 25GiB 持久盘余量；136G 目前足够，但 checkpoint 会继续增长。
+1. 当前队列每个任务启动前检查至少 25GiB 持久盘余量；167G 目前足够，但 checkpoint 会继续增长。
 2. 删除前必须确认目标不在 `ready.json`、[ckpts.md](ckpts.md) 关键权重表和活动进程打开文件中。
 3. 大数据优先本机重建；不为清盘把 GB 资产跨机搬运。
 4. 其他项目只提供候选范围，不因目录名含 `work`、`decoded`、`cache` 就直接删除。
 
 ## 变更记录
 
+- 2026-10-27 15:45：删除普通版QwenImage21基础模型，释放30.85GiB；Turbo模型及当前DiT训练完整保留。
 - 2026-10-27 15:31：完成 48 全盘刷新；确认 DiT 99G、`Workspace/xy` 72G、ERV 1.2T、RealSR 69G、VCP 57G、Conda 约 37G、共享缓存 23G。
 - 2026-10-27 15:27：经用户确认删除 48 旧 `_archive_20261027` 与损坏 P1 残片，净释放 34.87GiB；当前训练未中断。
 - 2026-10-27 03:40：旧实验首次同盘归档；归档本身不释放空间。
