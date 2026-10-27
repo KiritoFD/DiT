@@ -1,6 +1,6 @@
 # Checkpoint登记
 
-更新时间：2026-10-27 02:45（Asia/Shanghai）。延长轮已实现并重新拉起：实施记录见[延长轮记录](ANALYSIS/style_repr_injection_matrix_20261026/extension_round_20261027.md)，实时状态见[training.md](training.md)，完整历史索引见[exp.md](exp.md)。
+更新时间：2026-10-27 15:11（Asia/Shanghai）。延长轮已实现并重新拉起：实施记录见[延长轮记录](ANALYSIS/style_repr_injection_matrix_20261026/extension_round_20261027.md)，实时状态见[training.md](training.md)，完整历史索引见[exp.md](exp.md)。
 
 ## 路径与检查口径
 
@@ -8,35 +8,29 @@
 
 封存口径变更（2026-10-27）：>1MB大资产在ready.json只记path+size不哈希；小文件（spec/代码/remap/CSV头/calibration）保留SHA256并在每次启动及每任务前校验。旧计划`cold50k/4090`、`deep85_decoder/48_v2`的ready为全量哈希口径，均已停止、保留存档。
 
-## 当前实验已保存（matrix64计划）
+## 当前实验已保存（2026-10-27 15:11，matrix64计划）
 
-| 机器 | 实验 / 步数 | 来源 | 用途 |
+| 机器 | 实验 | 进度与已落盘权重 | 用途 |
 |---|---|---|---|
-| 4090 | S0@1,000 | 从旧cold50k计划原样迁移（含`.done`清单） | 当前串行从1k续训，已越过旧停滞点 |
-| 48 | J0@5,000 + heldout187评测 | 从旧48_v2计划原样迁移 | stage1首个任务，到点直接进入评测 |
-| 48 | J1@575 | 旧48_v2计划J1优雅中断点 | stage1第二任务从575续训至5k |
-| 48 | J2@50 | 旧48_v2计划预检点 | stage1第三任务从50续训至5k |
+| 4090 | S0 | 已完成50k；1k及每5k checkpoint保留 | 50k EMA已评测100字 |
+| 4090 | S1 | 训练至23,200；最新完整checkpoint 20k | 继续至50k，日志步数不等于已持久化步数 |
+| 48 | J0/J1/J2/J3 | 各完成5k并有`.done`与187字EMA评测 | J2/J3评测使用各自checkpoint的Decoder EMA |
+| 48 | S2 | 训练至36,150；最新完整checkpoint 25k | 继续至50k；保存节奏为5k/10k/25k/50k |
 
-迁移由`matrix64.py`完成并登记在各计划目录`migrations.json`；旧spec字节级复用，identity严格匹配，续训断言可通过。
-
-身份映射登记：外部J3对应**内部目标臂`J4`**（图像监督+可训练Decoder、无GT重建分支），见`matrix_identity.internal_objective`；外部J2仍对应内部J3。延长spec（`*_ext75.json`/`*_ext12.json`）携带`continues_identity`指向对应5k/50k spec的身份，其自身identity仅用于延长段新checkpoint。
-
-关键权重（未变更）：
+精确路径均相对对应机器仓库：
 
 ```text
-# 48：Deep85 85k EMA，J组统一起点，1,824,546,895 bytes
-assets/results/unet_deep_sym4_114m_60m/20261019-011647-Unet-flow/checkpoints/0085000.pt
-SHA256 f80304d7de17f334ebf57dfda312988dbd5e994a18f68e6d36f8cb30d5696349
-# 4090：S0@1k（迁移前原文件）
-assets/style_matrix_20261027/cold50k/4090/execution/runs/S0/checkpoints/0001000.pt
-SHA256 e93dc2142629749fb682c0137c5c4ed3e6b71c5bf4ba966c868119b62164281a
+# 4090
+assets/style_matrix_20261027/matrix64/4090/execution/runs/S0/checkpoints/0050000.pt
+assets/style_matrix_20261027/matrix64/4090/execution/runs/S1/checkpoints/0020000.pt
+# 48（将J0替换为J1/J2/J3可得到对应路径）
+assets/style_matrix_20261027/matrix64/48/execution/runs/J0/checkpoints/0005000.pt
+assets/style_matrix_20261027/matrix64/48/execution/runs/S2/checkpoints/0025000.pt
 ```
 
-## 延长轮权重要求
+S0@50k评测清单记录checkpoint SHA256 `50d41ee21091f865f3b7315297adeafbba113d934d3094e7203c1e0017a2cccc`；J2@5k为 `30487452a1a790d9e7083dc3e28e1aa7f9242e087f723add516188b2fa11b65c`。本次核查`.done`与评测完成清单，未对GB级文件重新哈希。
 
-- J0–J3的5k checkpoint必须完整携带Optimizer/EMA/RNG/scheduler状态（现有`build_checkpoint`口径已满足），供5k→12k两阶段restart恢复；延长spec经`continues_identity`校验身份。
-- S组50k checkpoint同样作为75k延长起点，raw/EMA不得混用。
-- S8从零随机初始化（seed90）；J3从Deep85 85k EMA与原始VAE独立初始化，禁止从J2任何checkpoint热启动。
+外部J2映射内部目标J3；外部J3映射内部目标J4（图像监督+可训练Decoder、无GT重建）。J2/J3的raw/EMA Decoder保存在对应checkpoint中；后续延长必须恢复模型、Optimizer、EMA、RNG并保留身份映射。
 
 ## 成熟模型与参考权重
 
