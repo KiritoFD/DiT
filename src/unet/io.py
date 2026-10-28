@@ -116,6 +116,7 @@ class Config:
     style_matrix_table:str=''
     style_matrix_vector_dim:int=32
     microbatch:int=0  # 0 = global batch; matrix runtime accumulates optimizer steps.
+    writer_velocity:str=''  # cnn=S9, geometry=S10, attention=S11
 
     def validate(self,require_budget=True):
         if self.style_matrix_repr>=0:
@@ -263,6 +264,10 @@ def build(config,initialize_tables=False):
         from .style.interface import MatrixUNet
         model=MatrixUNet(model,config.style_matrix_repr,config.style_matrix_injection,
                          vector_dim=config.style_matrix_vector_dim)
+    if config.writer_velocity:
+        if config.style_matrix_repr>=0:raise ValueError('Velocity branch cannot wrap the old matrix')
+        from .velocity import WriterVelocityUNet
+        model=WriterVelocityUNet(model,config.writer_velocity)
     return model
 
 

@@ -35,16 +35,23 @@ class JointDecoderObjective:
     def __init__(self,arm,config,image_micro=16,image_batch=16,img_weight=.1,rec_weight=1.):
         from diffusers import AutoencoderKL
         import lpips
-        if arm not in ('J0','J1','J2','J3','J4'):raise ValueError(arm)
+        if arm not in ('J0','J1','J2','J3','J4','G2J4','G2J5','G2J6','G2J7'):raise ValueError(arm)
         self.arm=arm;self.image=arm in ('J1','J3','J4');self.reconstruction=arm in ('J2','J3')
         # J4 is the decomposition control for J3: decoder trains on generated
         # latents through the image branch only, with no GT reconstruction anchor.
         self.train_decoder=arm in ('J3','J4')
+        self.detach_image=arm in ('G2J4','G2J5','G2J6')
+        if arm.startswith('G2'):
+            self.image=True;self.reconstruction=False;self.train_decoder=True
         self.sf=config.vae_scaling_factor;self.shift=config.vae_shift_factor
         self.seed=config.seed;self.micro=image_micro;self.count=image_batch
         self.img_weight=float(img_weight);self.rec_weight=float(rec_weight)
         self.vae=AutoencoderKL.from_pretrained(config.vae_path,local_files_only=True).cuda().eval().requires_grad_(False)
         self.vae.decoder.requires_grad_(self.train_decoder)
+        if arm in ('G2J5','G2J6','G2J7'):
+            from .conditioned import ConditionedDecoder
+            self.vae.decoder=ConditionedDecoder(self.vae.decoder,config.num_writers,config.num_scripts,
+                                                spatial=arm in ('G2J6','G2J7')).cuda()
         if self.train_decoder:self.vae.decoder.train()
         self.perceptual=lpips.LPIPS(net='alex',verbose=False).cuda().eval().requires_grad_(False)
         self.decoder_ema=copy.deepcopy(self.vae.decoder).eval().requires_grad_(False) if self.train_decoder else None
@@ -53,7 +60,11 @@ class JointDecoderObjective:
         self.frozen_sha=frozen_fingerprint(self.vae)
         self.pair_checked=False
 
-    def decode(self,z):return self.vae.decode(z.float()/self.sf+self.shift).sample
+    def decode(self,z,w=None,s=None,g=None):
+        if self.arm in ('G2J5','G2J6','G2J7'):
+            if w is None:raise ValueError('Conditional decoder requires explicit Writer, Script and STD')
+            return self.vae.decoder(self.vae.post_quant_conv(z.float()/self.sf+self.shift),w,s,g)
+        return self.vae.decode(z.float()/self.sf+self.shift).sample
 
     def image_loss(self,pred,target):
         l1=F.l1_loss(pred,target);perceptual=self.perceptual(pred,target).mean();edge=edge_loss(pred,target)
@@ -71,7 +82,7 @@ class JointDecoderObjective:
                 with torch.no_grad():
                     mean=(self.vae.encode(truth[:2]).latent_dist.mode()-self.shift)*self.sf
                     latent_error=float((mean-z[ids[:2]]).abs().mean())
-                    reconstruction_error=float((self.decode(z[ids[:2]])-truth[:2]).abs().mean())
+                    reconstruction_error=float((self.decode(z[ids[:2]],conditions[0][ids[:2]],conditions[1][ids[:2]],g[ids[:2]])-truth[:2]).abs().mean())
                 if latent_error>.15 or reconstruction_error>.10:
                     raise ValueError(f'GT/latent crop or VAE mismatch: latent={latent_error}, reconstruction={reconstruction_error}')
                 self.pair_checked=True
@@ -87,7 +98,8 @@ class JointDecoderObjective:
                     with torch.autocast('cuda',dtype=torch.bfloat16):
                         velocity=model(zt,t*1000.,w[selected],g=g[selected],y_script=s[selected],condition_dropped=True)
                     zhat=zt-t[:,None,None,None]*velocity.float()
-                    pred=self.decode(zhat)  # NO no_grad: J1 still needs dD/dz.
+                    if self.detach_image:zhat=zhat.detach()
+                    pred=self.decode(zhat,w[selected],s[selected],g[selected])
                     loss,detail=self.image_loss(pred,truth[part])
                     (self.img_weight*weight*loss).backward()
                     stats['image']=detail

@@ -1,5 +1,7 @@
 # Checkpoint登记
 
+2026-10-28 22:28：旧J0延长已安全停止，48保存`assets/style_matrix_20261027/matrix64/48/execution/runs/J0/checkpoints/0011654.pt`，SHA `9920864ca489ce98633cf13483d1df4f1b9c13c4ef298a0616400dcb3f7b13ab`。J3@5k与全部历史权重保留。新轮smoke权重仅为链路验证，不作科学训练结果或正式起点；S9随机初始化，J4–J7均独立加载Deep85 EMA和原VAE。
+
 更新时间：2026-10-28 21:30（Asia/Shanghai）。延长轮结果聚合见[docs/1028](docs/1028/README.md)，实时状态见[training.md](training.md)，完整历史索引见[exp.md](exp.md)。
 
 ## 路径与检查口径

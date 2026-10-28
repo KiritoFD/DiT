@@ -295,7 +295,7 @@ class EvalSetup:
 
 
 def _decode_set_latents(vae, lat, sf, preds, *, device, vae_batch, n_img, aux_names,
-                        sd=None, save=False, zero_white=False, calli_noise=False):
+                        sd=None, save=False, zero_white=False, calli_noise=False,conditioned_decode=None,cache=None):
     """把一集的 latents **解码进 preds**（+ 可选 aux 通道 PNG 落盘）✓。
 
     2026-10-13 [审查 §4.1] 从 `run_in_mem_eval` 抽出（原 L1138-1167, 30 行）——
@@ -318,7 +318,9 @@ def _decode_set_latents(vae, lat, sf, preds, *, device, vae_batch, n_img, aux_na
         # 白底归零 (aux_zero_white): 统一走 maybe_add_white, 勿内联 (防漂移/漏改)
         _lat = maybe_add_white(_lat, zero_white)
         with torch.autocast("cuda", dtype=torch.bfloat16):
-            if calli_noise:
+            if conditioned_decode is not None:
+                dec=conditioned_decode(_lat,cache,i,j)
+            elif calli_noise:
                 from src.utils.calli_decode_noise import decode_calli_latent
                 dec = decode_calli_latent(vae, _lat, sf, add_noise=True)
             else:
@@ -941,7 +943,8 @@ def _eval_one_set(ctx: EvalSetContext):
             # ★ 2026-10-13 [审查 §4.1]: 解码落盘抽成 _decode_set_latents ✓（逐行等价 ✓）
             _decode_set_latents(vae, lat, sf, preds, device=device, vae_batch=vae_batch,
                                 n_img=_n_img, aux_names=_aux_names, sd=_sd, save=_save,
-                                zero_white=_zw, calli_noise=_calli_noise)
+                                zero_white=_zw, calli_noise=_calli_noise,
+                                conditioned_decode=getattr(model,'conditioned_decode',None),cache=cache)
             pred_np = preds.cpu().numpy().transpose(0, 2, 3, 1)
             gt_np = gts.cpu().numpy().transpose(0, 2, 3, 1)
 

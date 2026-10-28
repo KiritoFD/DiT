@@ -47,7 +47,7 @@ def construct(spec,device='cuda',initialize_source=True):
 def optimizer(model,config,decoder=None,*,scratch=False):
     groups=[]
     if config.style_matrix_repr<0:
-        groups=[dict(params=[p for p in model.parameters() if p.requires_grad],lr=2e-5,name='unet')]
+        groups=[dict(params=[p for p in model.parameters() if p.requires_grad],lr=config.lr if scratch else 2e-5,name='unet')]
         if decoder is not None:groups.append(dict(params=list(decoder.parameters()),lr=1e-5,name='decoder',weight_decay=0.))
         return torch.optim.AdamW(groups,weight_decay=.01,fused=True)
     for name,rate in [('backbone',config.lr if scratch else 2e-5),

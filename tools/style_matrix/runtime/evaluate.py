@@ -42,7 +42,23 @@ def main():
     p.add_argument('--writer-space',choices=['raw','top10-row'],required=True)
     a=p.parse_args();out=Path(a.out);out.mkdir(parents=True,exist_ok=True)
     model,cfg,ck=load(a.checkpoint,'cuda',use_ema=not a.raw)
-    path=paired_vae(a.checkpoint,ck,cfg,out,not a.raw)
+    if ck.get('joint_arm') in ('G2J5','G2J6','G2J7'):
+        from diffusers import AutoencoderKL
+        from src.unet.joint.conditioned import ConditionedDecoder
+        from src.unet.joint.objective import frozen_fingerprint
+        vae=AutoencoderKL.from_pretrained(cfg.vae_path,local_files_only=True).cuda().eval().requires_grad_(False)
+        if frozen_fingerprint(vae)!=ck['vae_frozen_sha256']:raise ValueError('Frozen VAE contract changed')
+        decoder=ConditionedDecoder(vae.decoder,cfg.num_writers,cfg.num_scripts,
+            spatial=ck['joint_arm'] in ('G2J6','G2J7')).cuda().eval().requires_grad_(False)
+        decoder.load_state_dict(ck['decoder'] if a.raw else ck['decoder_ema'],strict=True)
+        def decode(lat,cache,i,j):
+            w=torch.tensor([row[0] for row in cache['conds'][i:j]],device=lat.device)
+            s=torch.tensor(cache['hier_conds'][2][i:j],device=lat.device)
+            g=cache['skels_latent'][i:j].to(lat.device)
+            return decoder(vae.post_quant_conv(lat.float()/cfg.vae_scaling_factor+cfg.vae_shift_factor),w,s,g)
+        model.conditioned_decode=decode
+        path=cfg.vae_path
+    else:path=paired_vae(a.checkpoint,ck,cfg,out,not a.raw)
     callig=cfg.callig_remap_json
     if a.writer_space=='top10-row':
         # Explicit protocol, never guess semantic IDs from their magnitude.

@@ -87,6 +87,10 @@ def main():
             scheduler.load_state_dict(resume['scheduler']);assert scheduler.last_epoch==start
     args=training_args(cfg,run);args.ckpt_every=1000;args.epoch_steps=1000
     dataset,sampler,_,_,_=loader(cfg,args,log,0)
+    pair_weight=float(spec.get('velocity_pair_weight',0.))
+    if pair_weight:
+        import csv
+        pair_rows={int(r['img_id']):r for r in csv.DictReader(open(cfg.data_csv,encoding='utf-8-sig'))}
     bank=StdBank(cfg);process=diffusion(cfg)
     save(run/'resolved_config.json',spec['config']);save(run/'identity.json',spec['identity'])
     if resume:assert restore_rng(resume['rng'],log)
@@ -122,6 +126,11 @@ def main():
                     img_ids=batch['img_id'].tolist(),reader=reader)
                 decoder_norm=auxiliary.clip_decoder()
             else:loss=step(forward,process,z,g,w,s,cfg.microbatch or cfg.batch)
+            pair_loss=None
+            if pair_weight:
+                from tools.style_matrix.velocity_pair import backward_pair
+                pair_loss=backward_pair(forward,z,g,w,s,batch,pair_rows,cfg.pair_fraction,pair_weight,
+                                        cfg.microbatch or cfg.batch)
             norm=torch.nn.utils.clip_grad_norm_(raw.parameters(),1.,error_if_nonfinite=True)
             opt.step();scheduler.step();step_number+=1;update_ema(ema,raw,.999)
             if auxiliary:auxiliary.update_ema()
@@ -130,6 +139,7 @@ def main():
                     step_s=(step_number-start)/(time.monotonic()-begun),lr=scheduler.get_last_lr(),
                     peak_GiB=torch.cuda.max_memory_allocated()/2**30)
                 if auxiliary:rec.update(auxiliary=aux_stats,decoder_grad_norm=decoder_norm)
+                if pair_loss is not None:rec['velocity_pair']=pair_loss
                 metrics.write(json.dumps(rec)+'\n');print(json.dumps(rec),flush=True)
             if step_number in milestones or step_number in (100,500):
                 rng=capture_rng()
