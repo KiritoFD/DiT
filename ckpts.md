@@ -17,7 +17,8 @@
 | 4090 | S6 | 训练至26,650；最新完整checkpoint 25k | DynamicConv进行中 |
 | 48 | J0/J1/J2/J3 | 各完成5k并有`.done`与187字EMA评测 | J2/J3评测使用各自checkpoint的Decoder EMA |
 | 48 | S2 / S3 | 均完成50k且`.done`、100字EMA评测齐全 | Vector/Multi-Token的Cross-Attention对照 |
-| 48 | S5 | 训练至49,900；最新完整checkpoint 25k | 局部表征+Cross-Attention，50k即将落盘 |
+| 48 | S5 | 已完成50k、`.done`及100字EMA评测 | 局部表征+Cross-Attention |
+| 48 | S7 | 已启动，首个日志step=50 | Multi-Token+DynamicConv，稳态速度待测 |
 
 精确路径均相对对应机器仓库：
 
@@ -30,6 +31,7 @@ assets/style_matrix_20261027/matrix64/4090/execution/runs/S4/checkpoints/0050000
 assets/style_matrix_20261027/matrix64/48/execution/runs/J0/checkpoints/0005000.pt
 assets/style_matrix_20261027/matrix64/48/execution/runs/S2/checkpoints/0050000.pt
 assets/style_matrix_20261027/matrix64/48/execution/runs/S3/checkpoints/0050000.pt
+assets/style_matrix_20261027/matrix64/48/execution/runs/S5/checkpoints/0050000.pt
 ```
 
 S0@50k评测清单记录checkpoint SHA256 `50d41ee21091f865f3b7315297adeafbba113d934d3094e7203c1e0017a2cccc`；J2@5k为 `30487452a1a790d9e7083dc3e28e1aa7f9242e087f723add516188b2fa11b65c`。本次核查`.done`与评测完成清单，未对GB级文件重新哈希。
