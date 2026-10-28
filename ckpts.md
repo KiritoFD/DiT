@@ -1,6 +1,6 @@
 # Checkpoint登记
 
-更新时间：2026-10-27 16:05（Asia/Shanghai）。延长轮已实现并重新拉起：实施记录见[延长轮记录](ANALYSIS/style_repr_injection_matrix_20261026/extension_round_20261027.md)，实时状态见[training.md](training.md)，完整历史索引见[exp.md](exp.md)。
+更新时间：2026-10-28 09:52（Asia/Shanghai）。延长轮已实现并重新拉起：实施记录见[延长轮记录](ANALYSIS/style_repr_injection_matrix_20261026/extension_round_20261027.md)，实时状态见[training.md](training.md)，完整历史索引见[exp.md](exp.md)。
 
 ## 路径与检查口径
 
@@ -8,24 +8,28 @@
 
 封存口径变更（2026-10-27）：>1MB大资产在ready.json只记path+size不哈希；小文件（spec/代码/remap/CSV头/calibration）保留SHA256并在每次启动及每任务前校验。旧计划`cold50k/4090`、`deep85_decoder/48_v2`的ready为全量哈希口径，均已停止、保留存档。
 
-## 当前实验已保存（2026-10-27 15:45，matrix64计划）
+## 当前实验已保存（2026-10-28 09:52，matrix64计划）
 
 | 机器 | 实验 | 进度与已落盘权重 | 用途 |
 |---|---|---|---|
 | 4090 | S0 | 已完成50k；1k及每5k checkpoint保留 | 50k EMA已评测100字 |
-| 4090 | S1 | 训练至26,200；最新完整checkpoint 25k | 继续至50k，日志步数不等于已持久化步数 |
+| 4090 | S1 / S4 | 均完成50k且`.done`、100字EMA评测齐全 | S1空间AdaGN；S4局部表征+空间AdaGN |
+| 4090 | S6 | 训练至26,650；最新完整checkpoint 25k | DynamicConv进行中 |
 | 48 | J0/J1/J2/J3 | 各完成5k并有`.done`与187字EMA评测 | J2/J3评测使用各自checkpoint的Decoder EMA |
-| 48 | S2 | 训练至39,600；最新完整checkpoint 25k | 继续至50k；保存节奏为5k/10k/25k/50k |
+| 48 | S2 / S3 | 均完成50k且`.done`、100字EMA评测齐全 | Vector/Multi-Token的Cross-Attention对照 |
+| 48 | S5 | 训练至49,900；最新完整checkpoint 25k | 局部表征+Cross-Attention，50k即将落盘 |
 
 精确路径均相对对应机器仓库：
 
 ```text
 # 4090
 assets/style_matrix_20261027/matrix64/4090/execution/runs/S0/checkpoints/0050000.pt
-assets/style_matrix_20261027/matrix64/4090/execution/runs/S1/checkpoints/0025000.pt
+assets/style_matrix_20261027/matrix64/4090/execution/runs/S1/checkpoints/0050000.pt
+assets/style_matrix_20261027/matrix64/4090/execution/runs/S4/checkpoints/0050000.pt
 # 48（将J0替换为J1/J2/J3可得到对应路径）
 assets/style_matrix_20261027/matrix64/48/execution/runs/J0/checkpoints/0005000.pt
-assets/style_matrix_20261027/matrix64/48/execution/runs/S2/checkpoints/0025000.pt
+assets/style_matrix_20261027/matrix64/48/execution/runs/S2/checkpoints/0050000.pt
+assets/style_matrix_20261027/matrix64/48/execution/runs/S3/checkpoints/0050000.pt
 ```
 
 S0@50k评测清单记录checkpoint SHA256 `50d41ee21091f865f3b7315297adeafbba113d934d3094e7203c1e0017a2cccc`；J2@5k为 `30487452a1a790d9e7083dc3e28e1aa7f9242e087f723add516188b2fa11b65c`。本次核查`.done`与评测完成清单，未对GB级文件重新哈希。
