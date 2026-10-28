@@ -60,3 +60,12 @@ GPU占用分钟级；build_rasters为CPU渲染约万五千键。**不要**用别
 用户明确要求将48的重要实验结果与历史关键checkpoint下载到本地。checkpoint属于不可重建的实验产物，因此允许传输；可重建的latent、STD bank、VAE、数据集与逐样本PNG仍排除。白名单见[48备份清单](ANALYSIS/remote48_backup_20261027/manifest.json)，总量18.65GiB；结果配置、日志、指标和poster压成69MB元数据包，避免复制大量零散文件。目标目录在仓库外`G:\DiT-48-artifacts-20261027`，不会进入Git。
 
 完成状态（2026-10-28 12:42）：11/11项、20,020,117,802 bytes全部落盘并逐项通过登记尺寸核对，`G:\DiT-48-artifacts-20261027\completed.json`已生成。该状态只证明传输完整性，不替代checkpoint内部加载测试；S组新50k与J组12k不在首批白名单内。
+
+## S/J 全面评测资产（2026-10-28 16:30）
+
+- 本地报告根：`ANALYSIS/style_repr_injection_matrix_20261026/full_eval_20261028/`。
+- `raw/<arm>/batch.csv`来自各远端评测目录的逐样本表；`geometry.json`由现有生成/GT PNG在远端CPU确定性重算，包含笔宽、结体、重心、BSD与三阈值2px容差骨架F1。
+- 原始单模型poster镜像位于`ANALYSIS/style_repr_injection_matrix_20261026/progress_posters_20261028/`，共25,238,176 bytes；跨模型poster为`S_comparison.png`（2,181,795 bytes）和`J_comparison.png`（1,400,038 bytes）。这些>1MB图片不纳入Git，只在报告登记路径和大小。
+- 该传输仅含小型CSV/JSON和评测PNG，不含checkpoint、latent shard、STD bank或数据集；生成数据仍以远端评测目录为事实来源。
+
+聚合更新（21:30）：S7的`result.json`、逐样本CSV、CPU几何统计、独立Writer JSON及单臂poster已拉回；跨模型S海报重生为包含S0–S7的8臂版本。规范入口为`docs/1028/`，其中大于1MiB海报在`manifest.json`只登记path+size，小型Markdown/JSON登记SHA256。没有传输S7 checkpoint、latent、bank或训练数据。

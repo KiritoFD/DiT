@@ -1,0 +1,18 @@
+{
+  "generated_at": "2026-10-28T21:30:00+08:00",
+  "large_asset_policy": "Files above 1 MiB are recorded by path and size only.",
+  "files": [
+    {"path":"docs/1028/README.md","size":7391,"sha256":"e5355550e87e1d20e237b900ec8fba43a186d536b1c730f84b4e67a8ed8513a0"},
+    {"path":"docs/1028/metrics/S.md","size":2079,"sha256":"5912b53bbdbb0733b73bf74f1b46f39a44cc46f8b6e12814ff2f356713ebcf4f"},
+    {"path":"docs/1028/metrics/S_full.md","size":2635,"sha256":"5e175442b47d1a22d1eefe15ebeea709fc61e8c661b4ae60ab8a3a7dbb3e3e0c"},
+    {"path":"docs/1028/metrics/S.json","size":39503,"sha256":"be451ec68923c2049206adec31cadde50de9780320d7d1dbff87f9d4bf4c6e68"},
+    {"path":"docs/1028/metrics/J.md","size":996,"sha256":"63aeb192652cd97ce6053bc9ee597691b343e370a90290514c665ac9388ec33c"},
+    {"path":"docs/1028/metrics/J_full.md","size":1462,"sha256":"7a476a9587063d8f3b5c581cfd9ac7c6e4d8f9bdb5fd7ece0e07c6646b391de8"},
+    {"path":"docs/1028/metrics/J.json","size":21456,"sha256":"45ea17c251e3ac0ff8476bfa91fe3ecb45ecfdf3e633768ac48554b29f35b1c5"},
+    {"path":"docs/1028/metrics/writer.md","size":2042,"sha256":"5bbaa9874fff7a4ad74f859a620e9e90dfc033d8d876e7285b8d39e90a713643"},
+    {"path":"docs/1028/posters/S_comparison.indices.json","size":849,"sha256":"bf7a5749161662c0db80f59569ea3c74c792a80a0fa01e6c20c4ba0762e86fef"},
+    {"path":"docs/1028/posters/S_comparison.png","size":2418893,"sha256":null},
+    {"path":"docs/1028/posters/J_comparison.indices.json","size":880,"sha256":"8c2bcab55fd28a5cd9c87d8ed05b4e9a37c72eda3847618a02ab2d0c5b01c421"},
+    {"path":"docs/1028/posters/J_comparison.png","size":1400038,"sha256":null}
+  ]
+}

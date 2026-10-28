@@ -19,11 +19,34 @@ from collections import defaultdict
 import numpy as np
 from PIL import Image
 import torch
+import torch.nn as nn
 import torch.nn.functional as F
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from src.eval.style.bank import resolve
 from src.model.writer_style_pixel import PixelWriterV2
+
+
+class LegacyEnc(nn.Module):
+    """Checkpoint-compatible ResNet18 writer evaluator.
+
+    Kept local so the evaluation tool also works on compact remote checkouts
+    that intentionally omit training-only scripts.
+    """
+
+    def __init__(self, d=256, n_cls=13):
+        super().__init__()
+        from torchvision.models import resnet18
+        base = resnet18(weights=None)
+        self.body = nn.Sequential(*list(base.children())[:-1])
+        self.head = nn.Sequential(nn.Flatten(), nn.Linear(512, d))
+        self.cls = nn.Linear(d, n_cls)
+
+    def emb(self, x):
+        return F.normalize(self.head(self.body(x)), dim=-1)
+
+    def forward(self, x):
+        return self.cls(self.head(self.body(x)))
 
 
 def load_evaluator_model(ckpt_path, device='cuda'):
@@ -42,7 +65,6 @@ def load_evaluator_model(ckpt_path, device='cuda'):
     
     # Check if legacy ResNet discriminator
     if 'model' in ck and 'n_cls' in ck:
-        from tools.eval_gen_with_disc import Enc as LegacyEnc
         model = LegacyEnc(d=ck['d'], n_cls=ck['n_cls']).to(device)
         model.load_state_dict(ck['model'])
         model.eval()
@@ -95,9 +117,9 @@ def build_source_balanced_prototypes(model, model_type, img_size, train_csv, roo
         with torch.no_grad():
             with torch.autocast(device, dtype=torch.bfloat16):
                 if model_type == 'pixel_writer_v2':
-                    emb = model.extract_features(x).cpu().numpy()
+                    emb = model.extract_features(x).float().cpu().numpy()
                 else:
-                    emb = model.emb(x).cpu().numpy()
+                    emb = model.emb(x).float().cpu().numpy()
         features.append(emb)
 
     all_embs = np.concatenate(features, axis=0)
@@ -121,7 +143,7 @@ def build_source_balanced_prototypes(model, model_type, img_size, train_csv, roo
 
 
 def evaluate_generated_images(model, model_type, img_size, gen_dir, eval_csv, slot_list, P, slot_scripts,
-                               device='cuda', max_samples=187):
+                               device='cuda', max_samples=187, image_prefix='g'):
     """Evaluate generated images against source-balanced prototypes with strict ID matching."""
     gdir = Path(gen_dir)
     eval_rows = list(csv.DictReader(open(eval_csv, encoding='utf-8-sig')))[:max_samples]
@@ -130,8 +152,11 @@ def evaluate_generated_images(model, model_type, img_size, gen_dir, eval_csv, sl
     valid_indices = []
 
     for idx, r in enumerate(eval_rows):
-        # Look for g{idx}.png or {idx:05d}.png
-        candidates = [gdir / f"g{idx}.png", gdir / f"{idx:05d}.png", gdir / f"{idx}.png"]
+        # Generated images use g{idx}; passing ``gt`` provides the necessary
+        # evaluator sanity ceiling on the exact same sample set.
+        candidates = [gdir / f"{image_prefix}{idx}.png"]
+        if image_prefix == 'g':
+            candidates += [gdir / f"{idx:05d}.png", gdir / f"{idx}.png"]
         found = None
         for c in candidates:
             if c.exists():
@@ -164,9 +189,9 @@ def evaluate_generated_images(model, model_type, img_size, gen_dir, eval_csv, sl
     with torch.no_grad():
         with torch.autocast(device, dtype=torch.bfloat16):
             if model_type == 'pixel_writer_v2':
-                emb = model.extract_features(x).cpu().numpy()
+                emb = model.extract_features(x).float().cpu().numpy()
             else:
-                emb = model.emb(x).cpu().numpy()
+                emb = model.emb(x).float().cpu().numpy()
 
     emb = emb / np.linalg.norm(emb, axis=1, keepdims=True)
     sims = emb @ P.T  # [N_valid, N_slots]
@@ -218,6 +243,7 @@ def main():
     p.add_argument('--gen-dir', required=True, help="Directory containing generated g*.png images")
     p.add_argument('--proto-cache', default='', help="Path to cached prototypes .pt")
     p.add_argument('--device', default='cuda')
+    p.add_argument('--image-prefix', choices=['g', 'gt'], default='g')
     p.add_argument('--out', default='')
     args = p.parse_args()
 
@@ -244,7 +270,7 @@ def main():
 
     results = evaluate_generated_images(
         model, model_type, img_size, args.gen_dir, args.eval_csv, slot_list, P, slot_scripts,
-        device=args.device
+        device=args.device, image_prefix=args.image_prefix
     )
 
     print("\n" + "=" * 80)

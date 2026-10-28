@@ -74,7 +74,13 @@ def main():
         scheduler.last_epoch=start;assert scheduler.last_epoch==start
         # The first restarted step keeps the pre-restart LR for exact continuity,
         # then the fresh warmup takes over on the next scheduler tick.
-        for group,lr in zip(opt.param_groups,resume['scheduler']['last_lr']):group['lr']=lr
+        scheduler_state=resume['scheduler']
+        previous_lrs=scheduler_state.get('_last_lr',scheduler_state.get('last_lr'))
+        if previous_lrs is None:
+            raise KeyError('Checkpoint scheduler state has neither _last_lr nor last_lr')
+        if len(previous_lrs)!=len(opt.param_groups):
+            raise ValueError(f'Checkpoint LR groups ({len(previous_lrs)}) do not match optimizer groups ({len(opt.param_groups)})')
+        for group,lr in zip(opt.param_groups,previous_lrs):group['lr']=lr
     else:
         scheduler=build_cosine_scheduler(opt,warmup_steps=cfg.warmup,total_steps=cfg.lr_decay_steps,min_lr_ratio=cfg.min_lr_ratio)
         if resume:
