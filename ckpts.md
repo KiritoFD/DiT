@@ -1,6 +1,6 @@
 # Checkpoint登记
 
-更新时间：2026-10-28 09:52（Asia/Shanghai）。延长轮已实现并重新拉起：实施记录见[延长轮记录](ANALYSIS/style_repr_injection_matrix_20261026/extension_round_20261027.md)，实时状态见[training.md](training.md)，完整历史索引见[exp.md](exp.md)。
+更新时间：2026-10-28 15:55（Asia/Shanghai）。延长轮已实现并重新拉起：实施记录见[延长轮记录](ANALYSIS/style_repr_injection_matrix_20261026/extension_round_20261027.md)，实时状态见[training.md](training.md)，完整历史索引见[exp.md](exp.md)。
 
 ## 路径与检查口径
 
@@ -8,17 +8,18 @@
 
 封存口径变更（2026-10-27）：>1MB大资产在ready.json只记path+size不哈希；小文件（spec/代码/remap/CSV头/calibration）保留SHA256并在每次启动及每任务前校验。旧计划`cold50k/4090`、`deep85_decoder/48_v2`的ready为全量哈希口径，均已停止、保留存档。
 
-## 当前实验已保存（2026-10-28 09:52，matrix64计划）
+## 当前实验已保存（2026-10-28 15:55，matrix64计划）
 
 | 机器 | 实验 | 进度与已落盘权重 | 用途 |
 |---|---|---|---|
 | 4090 | S0 | 已完成50k；1k及每5k checkpoint保留 | 50k EMA已评测100字 |
 | 4090 | S1 / S4 | 均完成50k且`.done`、100字EMA评测齐全 | S1空间AdaGN；S4局部表征+空间AdaGN |
-| 4090 | S6 | 训练至26,650；最新完整checkpoint 25k | DynamicConv进行中 |
+| 4090 | S6 | 已完成50k、`.done`及100字EMA评测 | Vector+DynamicConv |
+| 4090 | S8 | 训练至10,200；最新完整checkpoint 10k | Local CNN+DynamicConv进行中 |
 | 48 | J0/J1/J2/J3 | 各完成5k并有`.done`与187字EMA评测 | J2/J3评测使用各自checkpoint的Decoder EMA |
 | 48 | S2 / S3 | 均完成50k且`.done`、100字EMA评测齐全 | Vector/Multi-Token的Cross-Attention对照 |
 | 48 | S5 | 已完成50k、`.done`及100字EMA评测 | 局部表征+Cross-Attention |
-| 48 | S7 | 已启动，首个日志step=50 | Multi-Token+DynamicConv，稳态速度待测 |
+| 48 | S7 | 训练至36,400；最新完整checkpoint 25k | Multi-Token+DynamicConv进行中 |
 
 精确路径均相对对应机器仓库：
 
@@ -27,6 +28,7 @@
 assets/style_matrix_20261027/matrix64/4090/execution/runs/S0/checkpoints/0050000.pt
 assets/style_matrix_20261027/matrix64/4090/execution/runs/S1/checkpoints/0050000.pt
 assets/style_matrix_20261027/matrix64/4090/execution/runs/S4/checkpoints/0050000.pt
+assets/style_matrix_20261027/matrix64/4090/execution/runs/S6/checkpoints/0050000.pt
 # 48（将J0替换为J1/J2/J3可得到对应路径）
 assets/style_matrix_20261027/matrix64/48/execution/runs/J0/checkpoints/0005000.pt
 assets/style_matrix_20261027/matrix64/48/execution/runs/S2/checkpoints/0050000.pt
@@ -54,7 +56,7 @@ J0@5k的评测随旧计划迁移：`complete.json`内仍保留旧`48_v2`目录�
 
 ## 48→本地关键权重备份（2026-10-27）
 
-本地目标为`G:\DiT-48-artifacts-20261027`，完整白名单及远端绝对路径见[下载清单](ANALYSIS/remote48_backup_20261027/manifest.json)。已纳入：Deep-Sym4 50k/75k/85k、U100-Base 55k、J0/J1/J2/J3各5k、Qwen-condition A/C各90k，以及69MB紧凑元数据包；总计20,020,117,802 bytes。未纳入可重建数据、cache、逐样本PNG和普通中间权重。后台下载支持断点续传与尺寸校验，未生成`completed.json`前不得视为本地备份完成。S2@50k和J组@12k属于后续追加项。
+本地目标为`G:\DiT-48-artifacts-20261027`，完整白名单及远端绝对路径见[下载清单](ANALYSIS/remote48_backup_20261027/manifest.json)。Deep-Sym4 50k/75k/85k、U100-Base 55k、J0/J1/J2/J3各5k、Qwen-condition A/C各90k及69MB元数据包已于10-28 12:42全部落盘；总计20,020,117,802 bytes，逐项尺寸核验通过并生成`completed.json`。未纳入可重建数据、cache、逐样本PNG和普通中间权重。S组新50k和J组@12k属于后续追加项。
 
 ## 数据资产与配对
 

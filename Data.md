@@ -58,3 +58,5 @@ GPU占用分钟级；build_rasters为CPU渲染约万五千键。**不要**用别
 ## 实验结果跨机备份例外（2026-10-27）
 
 用户明确要求将48的重要实验结果与历史关键checkpoint下载到本地。checkpoint属于不可重建的实验产物，因此允许传输；可重建的latent、STD bank、VAE、数据集与逐样本PNG仍排除。白名单见[48备份清单](ANALYSIS/remote48_backup_20261027/manifest.json)，总量18.65GiB；结果配置、日志、指标和poster压成69MB元数据包，避免复制大量零散文件。目标目录在仓库外`G:\DiT-48-artifacts-20261027`，不会进入Git。
+
+完成状态（2026-10-28 12:42）：11/11项、20,020,117,802 bytes全部落盘并逐项通过登记尺寸核对，`G:\DiT-48-artifacts-20261027\completed.json`已生成。该状态只证明传输完整性，不替代checkpoint内部加载测试；S组新50k与J组12k不在首批白名单内。

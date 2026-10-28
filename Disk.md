@@ -101,6 +101,7 @@
 
 ## 变更记录
 
+- 2026-10-28 15:55：48关键checkpoint本地备份已于12:42完成，11/11项共18.65GiB；本地G盘余约65.2GiB。48训练盘余约144G，仍高于25GiB任务启动门槛。
 - 2026-10-28 00:15：4090 执行 archive 非关键项删除（约119G，P1/P2保留）；确认仓库实际位于独立3.5T盘（1.6T可用），此前df误读为容器overlay系统盘。48侧复核：16:05清理后全部保护项（calibration/CSV/matrix64/Deep85 85k/bank）原位完好。
 - 2026-10-27 16:05：启动48关键checkpoint向本地`G:\DiT-48-artifacts-20261027`的白名单备份，总量18.65GiB；本地启动前可用83.9GiB。48仅新增69MB元数据压缩包`assets/transfer_staging/remote48_results_metadata_20261027.tar.gz`，训练权重未移动、未删除。（23:52记录：下载器曾因ssh无keepalive停滞5.5h，已恢复，详见ANALYSIS/remote48_backup_20261027/README.md）
 - 2026-10-27 15:45：删除普通版QwenImage21基础模型，释放30.85GiB；Turbo模型及当前DiT训练完整保留。
