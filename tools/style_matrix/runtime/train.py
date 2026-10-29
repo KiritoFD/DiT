@@ -44,7 +44,7 @@ def main():
     resume=torch.load(a.resume,map_location='cpu',weights_only=False) if a.resume else None
     start=int(resume['train_steps']) if resume else 0
     if resume:
-        assert resume['matrix_identity']==spec.get('continues_identity',spec['identity']), 'Scientific run identity changed'
+        assert resume['matrix_identity'] in (spec['identity'],spec.get('continues_identity')), 'Scientific run identity changed'
         assert start<a.stop, 'Resume already reached the requested boundary'
         raw.load_state_dict(resume['delta'],strict=True)
     else:
@@ -69,9 +69,12 @@ def main():
     if resume:
         ema.load_state_dict(resume['ema'],strict=True);opt.load_state_dict(resume['opt'])
     if restart:
-        scheduler=build_restart_scheduler(opt,start_step=start,horizon=restart['horizon'],
+        origin=restart.get('origin',start)
+        scheduler=build_restart_scheduler(opt,start_step=origin,horizon=restart['horizon'],
             warmup_steps=restart['warmup'],peak_scale=restart['peak_scale'],min_lr_ratio=cfg.min_lr_ratio)
         scheduler.last_epoch=start;assert scheduler.last_epoch==start
+        if start>origin and resume['matrix_identity']==spec['identity']:
+            scheduler.load_state_dict(resume['scheduler'])
         # The first restarted step keeps the pre-restart LR for exact continuity,
         # then the fresh warmup takes over on the next scheduler tick.
         scheduler_state=resume['scheduler']
@@ -90,6 +93,9 @@ def main():
     pair_weight=float(spec.get('velocity_pair_weight',0.))
     if pair_weight:
         import csv
+        from tools.style_matrix.velocity_pair import PairBudget
+        pair_budget=PairBudget(resume.get('velocity_pair_calibration') if resume else None,
+                               target=spec.get('velocity_pair_gradient_ratio',.25))
         pair_rows={int(r['img_id']):r for r in csv.DictReader(open(cfg.data_csv,encoding='utf-8-sig'))}
     bank=StdBank(cfg);process=diffusion(cfg)
     save(run/'resolved_config.json',spec['config']);save(run/'identity.json',spec['identity'])
@@ -128,9 +134,8 @@ def main():
             else:loss=step(forward,process,z,g,w,s,cfg.microbatch or cfg.batch)
             pair_loss=None
             if pair_weight:
-                from tools.style_matrix.velocity_pair import backward_pair
-                pair_loss=backward_pair(forward,z,g,w,s,batch,pair_rows,cfg.pair_fraction,pair_weight,
-                                        cfg.microbatch or cfg.batch)
+                pair_loss=pair_budget.backward(forward,z,g,w,s,batch,pair_rows,cfg.pair_fraction,
+                                               cfg.microbatch or cfg.batch,step_number)
             norm=torch.nn.utils.clip_grad_norm_(raw.parameters(),1.,error_if_nonfinite=True)
             opt.step();scheduler.step();step_number+=1;update_ema(ema,raw,.999)
             if auxiliary:auxiliary.update_ema()
@@ -139,7 +144,8 @@ def main():
                     step_s=(step_number-start)/(time.monotonic()-begun),lr=scheduler.get_last_lr(),
                     peak_GiB=torch.cuda.max_memory_allocated()/2**30)
                 if auxiliary:rec.update(auxiliary=aux_stats,decoder_grad_norm=decoder_norm)
-                if pair_loss is not None:rec['velocity_pair']=pair_loss
+                if pair_loss is not None:
+                    rec.update(velocity_pair=float(pair_loss),pair_calibration=pair_budget.state)
                 metrics.write(json.dumps(rec)+'\n');print(json.dumps(rec),flush=True)
             if step_number in milestones or step_number in (100,500):
                 rng=capture_rng()
@@ -150,6 +156,7 @@ def main():
                 assert restore_rng(rng)
             if step_number in milestones or step_number%cfg.ckpt_every==0:
                 ck=build_checkpoint(raw,opt,ema,scheduler,args,step_number,log)
+                if pair_weight:ck['velocity_pair_calibration']=pair_budget.state
                 ck['matrix_identity']=spec['identity'];ck['rng_meta']['resume_kind']='deterministic_pair_sampler_offset'
                 if auxiliary:ck.update(auxiliary.checkpoint())
                 checkpoint=run/'checkpoints'/f'{step_number:07d}.pt'
@@ -159,6 +166,7 @@ def main():
     if checkpoint is None or checkpoint.stem!=f'{step_number:07d}':
         checkpoint=run/'checkpoints'/f'{step_number:07d}.pt';checkpoint.parent.mkdir(exist_ok=True)
         ck=build_checkpoint(raw,opt,ema,scheduler,args,step_number,log);ck['matrix_identity']=spec['identity']
+        if pair_weight:ck['velocity_pair_calibration']=pair_budget.state
         if auxiliary:ck.update(auxiliary.checkpoint())
         WRITER.submit(ck,str(checkpoint))
     drain_ckpt(log,strict=True)

@@ -1,5 +1,7 @@
 # 数据资产与重建
 
+2026-10-29后续暂存：两机只上传17,408-byte的later_v1源码包及标准库观察器，包SHA在docs/1028/later_stage.md登记。未传输数据或权重；仅在任务完成边界生成新未来spec并重新封存，当前ready/spec文件保持不变。
+
 2026-10-29阶段归档：将本地现有12个S/J臂的result/geometry/writer JSON及逐样本batch CSV按字节复制到`docs/1028/raw/`；SHA纳入manifest，未重采样、未重跑GPU评测。250行报告、指标和两张海报打包到本地exports；大图仅登记path+size。
 
 2026-10-28 23:20：完整后台队列使用`generation2full/{4090,48}`的封存清单与协议，复用两机已有数据、STD bank和VAE；S侧187字编号转换与STD覆盖已核验。该次启动仅同步源码及小型协议，未传输训练数据或checkpoint。

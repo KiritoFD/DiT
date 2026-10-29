@@ -41,7 +41,7 @@ def gpu_idle(resident,module=''):
         for path in Path('/proc').glob('[0-9]*/cmdline'):
             try:known=known or needle in path.read_bytes()
             except (FileNotFoundError,PermissionError):pass
-    entries=lines.splitlines()
+    entries=lines.splitlines() if lines else []
     for line in entries:
         pid,mb=map(int,line.split(','))
         if mb>1536 or (pid!=resident and not (known and len(entries)==1)):
@@ -84,7 +84,7 @@ def main():
         if record['plan_sha256']!=sha(a.plan):raise ValueError('Immutable execution plan changed')
         started=record['started_unix']
     else:started=time.time();save(clock,dict(started_unix=started,plan_sha256=sha(a.plan)))
-    deadline=started+plan['wall_hours']*3600
+    deadline=plan.get('deadline_unix',started+plan['wall_hours']*3600)
     child=None;stopped=False
     def terminate(*_):
         nonlocal stopped
@@ -114,6 +114,13 @@ def main():
         if stopped or time.time()>=deadline:raise SystemExit(75)
         run=root/'runs'/job['arm'];run.mkdir(parents=True,exist_ok=True)
         checkpoint,step=latest(run)
+        if checkpoint is None and job.get('fork_from'):
+            source=Path(job['fork_from']);fork_step=completed_checkpoint(source)
+            target=run/'checkpoints'/source.name;target.parent.mkdir(exist_ok=True)
+            if not target.exists():target.symlink_to(source.resolve())
+            done=Path(str(target)+'.done')
+            if not done.exists():done.symlink_to(Path(str(source)+'.done').resolve())
+            checkpoint,step=target,fork_step
         if a.stage>1 and step<job['previous_stop']:raise ValueError('Previous stage incomplete: '+job['arm'])
         if step<job['stop']:
             save(root/'status.json',dict(state='training',stage=a.stage,arm=job['arm'],stop=job['stop']))

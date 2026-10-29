@@ -40,9 +40,28 @@ def main():
     p=argparse.ArgumentParser();p.add_argument('--checkpoint',required=True);p.add_argument('--out',required=True)
     p.add_argument('--csv',required=True);p.add_argument('--raw',action='store_true')
     p.add_argument('--writer-space',choices=['raw','top10-row'],required=True)
+    p.add_argument('--original-decoder',action='store_true')
+    p.add_argument('--writer-swap',choices=['none','generator','decoder'],default='none')
     a=p.parse_args();out=Path(a.out);out.mkdir(parents=True,exist_ok=True)
     model,cfg,ck=load(a.checkpoint,'cuda',use_ema=not a.raw)
-    if ck.get('joint_arm') in ('G2J5','G2J6','G2J7'):
+    swap=None
+    if a.writer_swap!='none':
+        import csv
+        mapping=json.loads(Path(cfg.callig_remap_json).read_text());font=json.loads(Path(cfg.font_remap_json).read_text())
+        legal={}
+        for row in csv.DictReader(open(cfg.data_csv,encoding='utf-8-sig')):
+            legal.setdefault(int(font[str(row['script_id'])]),set()).add(int(mapping[str(row['calligrapher_id'])]))
+        swap=torch.arange(cfg.num_writers+1,device='cuda').repeat(cfg.num_scripts+1,1)
+        for script,writers in legal.items():
+            ordered=sorted(w for w in writers if w<cfg.num_writers)
+            for i,w in enumerate(ordered):swap[script,w]=ordered[(i+1)%len(ordered)]
+        if a.writer_swap=='generator':
+            original=model.forward_with_cfg
+            def swapped(x,t,y_callig,y_char=None,**kw):
+                return original(x,t,swap[kw['y_script'],y_callig],y_char,**kw)
+            model.forward_with_cfg=swapped
+    if a.original_decoder:path=cfg.vae_path
+    elif ck.get('joint_arm') in ('G2J5','G2J6','G2J7'):
         from diffusers import AutoencoderKL
         from src.unet.joint.conditioned import ConditionedDecoder
         from src.unet.joint.objective import frozen_fingerprint
@@ -54,11 +73,14 @@ def main():
         def decode(lat,cache,i,j):
             w=torch.tensor([row[0] for row in cache['conds'][i:j]],device=lat.device)
             s=torch.tensor(cache['hier_conds'][2][i:j],device=lat.device)
+            if a.writer_swap=='decoder':w=swap[s,w]
             g=cache['skels_latent'][i:j].to(lat.device)
             return decoder(vae.post_quant_conv(lat.float()/cfg.vae_scaling_factor+cfg.vae_shift_factor),w,s,g)
         model.conditioned_decode=decode
         path=cfg.vae_path
-    else:path=paired_vae(a.checkpoint,ck,cfg,out,not a.raw)
+    else:
+        if a.writer_swap=='decoder':raise ValueError('Decoder swap requires a conditioned decoder')
+        path=paired_vae(a.checkpoint,ck,cfg,out,not a.raw)
     callig=cfg.callig_remap_json
     if a.writer_space=='top10-row':
         # Explicit protocol, never guess semantic IDs from their magnitude.
@@ -66,6 +88,8 @@ def main():
     cfg=replace(cfg,eval_csv=a.csv,callig_remap_json=callig,vae_path=path,output=str(out))
     identity=dict(checkpoint_sha256=sha(a.checkpoint),csv_sha256=sha(a.csv),ema=not a.raw,
                   writer_space=a.writer_space,decoder_path=path,step=int(ck['train_steps']))
+    if a.original_decoder or a.writer_swap!='none':
+        identity.update(original_decoder=a.original_decoder,writer_swap=a.writer_swap)
     if (out/'request.json').exists() and json.loads((out/'request.json').read_text())!=identity:
         raise ValueError('Evaluation directory identity changed')
     save(out/'request.json',identity)

@@ -1,0 +1,10 @@
+{
+  "report_commit": "3acab7e",
+  "report_lines": 250,
+  "archive": "1028_research_archive.zip",
+  "size": 4067393,
+  "entries": 70,
+  "sha256": "7e17e766b990f74252111f340165a1ca8256e42b6f51aba702b196ecec89b655",
+  "content_cutoff": "2026-10-28T21:30:00+08:00",
+  "note": "Frozen report snapshot; later operational documentation is versioned separately."
+}

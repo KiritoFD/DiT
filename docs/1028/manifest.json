@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-10-28T23:40:36+08:00",
+  "generated_at": "2026-10-29T09:19:30+08:00",
   "conclusion_cutoff": "2026-10-28T21:30:00+08:00",
   "large_asset_policy": "Files above 1 MiB are recorded by path and size only.",
   "excludes": [
@@ -36,6 +36,11 @@
       "path": "docs/1028/generation2.md",
       "size": 4953,
       "sha256": "573ee7767527c33d11c4846ee47aa35ffbe4a67f0782d8d7c504458495972556"
+    },
+    {
+      "path": "docs/1028/later_stage.md",
+      "size": 2831,
+      "sha256": "fa047ce3694a96d4c01e4ab90132ebee0e4e1751c566ce6d06bbf37da3902ebc"
     },
     {
       "path": "docs/1028/metrics/J_full.md",

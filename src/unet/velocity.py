@@ -28,12 +28,25 @@ class WriterVelocityUNet(nn.Module):
 
     @staticmethod
     def geometry(g):
-        # Continuous local shape cues; no skeleton thresholds or branch counts.
+        # Exact separable Euclidean distance on the 32-square condition grid.
+        # Binarization only defines ink support; all output fields are continuous.
+        g=F.interpolate(g,size=(32,32),mode='bilinear',align_corners=False).float()
+        def distance(mask):
+            n=g.shape[-1];axis=torch.arange(n,device=g.device,dtype=g.dtype)
+            cost=(axis[:,None]-axis[None,:]).square()
+            f=torch.where(mask,0.,float(2*n*n))
+            f=(f.unsqueeze(-2)+cost).amin(-1)
+            f=f.transpose(-1,-2)
+            f=(f.unsqueeze(-2)+cost).amin(-1).transpose(-1,-2)
+            return f.sqrt().clamp_max(16.)
+        ink=g<.5;inside=distance(~ink);outside=distance(ink)
         dx=F.pad(g[:,:,:,2:]-g[:,:,:,:-2],(1,1,0,0))*.5
         dy=F.pad(g[:,:,2:,:]-g[:,:,:-2,:],(0,0,1,1))*.5
         mag=(dx.square()+dy.square()+1e-6).sqrt()
-        lap=F.avg_pool2d(g,3,1,1)-g
-        return torch.cat((g,dx,dy,mag,lap,F.avg_pool2d(g,7,1,3)),1)
+        nx=dx/mag;ny=dy/mag
+        curvature=(F.pad(nx[:,:,:,2:]-nx[:,:,:,:-2],(1,1,0,0))+
+                   F.pad(ny[:,:,2:,:]-ny[:,:,:-2,:],(0,0,1,1)))*.5
+        return torch.cat((g,nx,ny,inside/8.,(inside-outside)/16.,curvature),1)
 
     def components(self,x,t,y_callig,g,y_script,condition_dropped=False):
         base=self.backbone;w=y_callig;s=y_script
