@@ -32,6 +32,11 @@ def verify_assets(plan):
         if item.get('sha256') and sha(item['path'])!=item['sha256']:raise ValueError('Changed input: '+item['path'])
 
 
+def rotating_external_resident(resident,pid,mb,count,visible):
+    """The explicitly reserved ~1.1GiB outside-container context has unstable PIDs."""
+    return resident>0 and count==1 and not visible and 1024<=mb<=1152
+
+
 def gpu_idle(resident,module=''):
     lines=subprocess.check_output(['nvidia-smi','--query-compute-apps=pid,used_memory',
         '--format=csv,noheader,nounits'],text=True).strip()
@@ -44,8 +49,12 @@ def gpu_idle(resident,module=''):
     entries=lines.splitlines() if lines else []
     for line in entries:
         pid,mb=map(int,line.split(','))
-        if mb>1536 or (pid!=resident and not (known and len(entries)==1)):
+        rotated=rotating_external_resident(resident,pid,mb,len(entries),Path(f'/proc/{pid}').exists())
+        if mb>1536 or (pid!=resident and not (known and len(entries)==1) and not rotated):
             raise RuntimeError('Unexpected GPU owner: '+lines)
+        if rotated and pid!=resident:
+            print(json.dumps(dict(external_resident_pid=pid,memory_MiB=mb,
+                  policy='single outside-container 1024..1152MiB reservation',previous_pid=resident)),flush=True)
 
 
 def main():

@@ -57,3 +57,8 @@ in `src/eval/eval_metrics.py`. After new calibration fails, formal panel B is wi
 On 48, official release downloads required curl HTTP/1.1; both nodes downloaded their own
 weights, with no checkpoint/image transfer. The isolated virtual environments inherit the
 existing Torch installation; training environments were not upgraded.
+
+GPU ownership preflight also accepts the explicitly reserved outside-container context whose
+PID rotates: exactly one invisible process using1024–1152MiB, and only with a positive resident
+reservation. Visible, multiple or larger unexpected processes remain blocked. This records the
+bounded guard used to recover the S9 evaluation; it does not stop any external process.
