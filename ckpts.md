@@ -1,5 +1,7 @@
 # Checkpoint登记
 
+10-29本轮64h状态核查只读：S9约45.65k、S11约15.05k；未来匹配LR spec尚由边界交接生成，未宣称其权重已存在。未迁移或覆盖checkpoint。
+
 2026-10-29后续阶段修正：新增S10、S0/S4、S11的`*_60_matched`/`*_75_matched`未来身份链，对齐S9现有两段LR。当前24h checkpoint及当前S11冷启动权重保持原身份；检测到另一成熟轨迹已开始时不回滚，交接器登记deferred。
 
 2026-10-29阶段归档：S0–S7@50k及J0–J3@5k的指标副本进入`docs/1028/raw/`，报告未声称其逐run完整代码commit已确定。四个历史实现短SHA已在本地Git对象库解析为完整SHA；checkpoint权重未迁移、未覆盖。新J4–J7@5k已完成，当前48推进S11。
@@ -79,3 +81,12 @@ J0@5k的评测随旧计划迁移：`complete.json`内仍保留旧`48_v2`目录�
 ## 排除项（沿用）
 
 旧计划目录曾按[Disk.md](Disk.md)归档。4090的`cold50k/4090`及P1/P2关键归档仍保留；48旧归档已于15:27按用户确认删除，但`deep85_decoder/48_v2/calibration.json`与`train_unaugmented.csv`始终留在原位，当前`matrix64`中的J checkpoint副本也完整保留。48不完整P1传输残片已删除，4090完整P1@10k/P2@20k不受影响。`matrix64`计划的probe日志继续留作吞吐证据。
+## 2026-10-29 15:46 暂停扩展并汇总
+
+按用户要求暂停H0/H1实现与启动；双机controller和later观察器SIGSTOP，当前S11训练、S9评测子任务保留，之后不再自动接下一实验。4090 S9已完成50k：val100 SSIM0.59814/LPIPS0.34543/Ink-IoU0.27672，未超过S0；48 J4–J7各5k高度重合，Decoder晋级为空，S11约44.3k/50k，纯训练剩约1.2h。共享训练面板方向cosine约0.886不是留出风格泛化证据；187字差分n_cells=0。完整数据、实际读图、边界及暂停PID见[10-29汇总](docs/1029/RESULTS_AND_PLAN_REVIEW.md)。旧自动队列ETA暂不适用，恢复前重新定计划。
+
+## 2026-10-29 新评价与S11终点
+
+48 `assets/style_matrix_20261028/generation2full/48/runs/S11/checkpoints/0050000.pt`已完整落盘，step=50,000，size=2,044,369,601 bytes。读取既有`.done`的登记SHA256：`47221eccda23b2a1e97469bf7594707933ad8ddefdaea5600d0a84e3acc3e691`，未重新哈希大文件。
+
+24个权重终点的现成PNG已重评；历史P1/P2/Deep75/85/U10055通过逐张GT RGB像素匹配确认语义，保留原protocol.json的EMA、采样和STD身份。[完整报告](docs/1029/eval_unpaired/REPORT.md)。未移动或修改旧权重，无两训练机之间的权重互传。S10无权重，H0/H1未启动。

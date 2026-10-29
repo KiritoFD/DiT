@@ -1,6 +1,6 @@
 import os
 import torch
-from eval_models import MultiTaskCalligraphyEvalNet
+from src.eval.eval_models import MultiTaskCalligraphyEvalNet
 
 class CalligraphyEvaluator:
     """
@@ -14,6 +14,8 @@ class CalligraphyEvaluator:
         backbone="dinov2_vits14",
         device=None
     ):
+        if not os.path.isfile(checkpoint_path):
+            raise FileNotFoundError(f"Verified evaluator checkpoint required: {checkpoint_path}")
         if device is None:
             self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         else:
@@ -31,9 +33,9 @@ class CalligraphyEvaluator:
             print(f"[CalligraphyEvaluator] Loading evaluation model weights from {checkpoint_path}...")
             ckpt = torch.load(checkpoint_path, map_location=self.device)
             state_dict = ckpt['model_state_dict'] if 'model_state_dict' in ckpt else ckpt
-            self.model.load_state_dict(state_dict, strict=False)
+            self.model.load_state_dict(state_dict, strict=True)
         else:
-            print(f"[CalligraphyEvaluator] Warning: Checkpoint {checkpoint_path} not found. Using initialized model.")
+            raise FileNotFoundError(f"Verified evaluator checkpoint required: {checkpoint_path}")
             
         self.model.eval()
 

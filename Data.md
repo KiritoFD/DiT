@@ -1,5 +1,7 @@
 # 数据资产与重建
 
+10-29本轮64h队列核查未新增数据传输或重建；后续仍复用已登记资产及17,408-byte暂存代码包。
+
 2026-10-29后续暂存：两机只上传17,408-byte的later_v1源码包及标准库观察器，包SHA在docs/1028/later_stage.md登记。未传输数据或权重；仅在任务完成边界生成新未来spec并重新封存，当前ready/spec文件保持不变。
 
 2026-10-29阶段归档：将本地现有12个S/J臂的result/geometry/writer JSON及逐样本batch CSV按字节复制到`docs/1028/raw/`；SHA纳入manifest，未重采样、未重跑GPU评测。250行报告、指标和两张海报打包到本地exports；大图仅登记path+size。
@@ -77,3 +79,14 @@ GPU占用分钟级；build_rasters为CPU渲染约万五千键。**不要**用别
 - 该传输仅含小型CSV/JSON和评测PNG，不含checkpoint、latent shard、STD bank或数据集；生成数据仍以远端评测目录为事实来源。
 
 聚合更新（21:30）：S7的`result.json`、逐样本CSV、CPU几何统计、独立Writer JSON及单臂poster已拉回；跨模型S海报重生为包含S0–S7的8臂版本。规范入口为`docs/1028/`，其中大于1MiB海报在`manifest.json`只登记path+size，小型Markdown/JSON登记SHA256。没有传输S7 checkpoint、latent、bank或训练数据。
+## 2026-10-29 15:46 暂停扩展并汇总
+
+按用户要求暂停H0/H1实现与启动；双机controller和later观察器SIGSTOP，当前S11训练、S9评测子任务保留，之后不再自动接下一实验。4090 S9已完成50k：val100 SSIM0.59814/LPIPS0.34543/Ink-IoU0.27672，未超过S0；48 J4–J7各5k高度重合，Decoder晋级为空，S11约44.3k/50k，纯训练剩约1.2h。共享训练面板方向cosine约0.886不是留出风格泛化证据；187字差分n_cells=0。完整数据、实际读图、边界及暂停PID见[10-29汇总](docs/1029/RESULTS_AND_PLAN_REVIEW.md)。旧自动队列ETA暂不适用，恢复前重新定计划。
+
+## 2026-10-29 eval_unpaired_v1资产
+
+新结果根：两机 `assets/eval_unpaired_20261029/`；本地紧凑统计、校准图和报告：`docs/1029/eval_unpaired/`。`manifest.json`登记模型/CSV/样本身份，`reference_rows.json`和`*_features.npz`可由同源图片与冻结网络重建；大文件登记path+size，小文件保留SHA。
+
+参考库来自同源p2_train.csv，按writer×script及source/char抽样，每槽最多160，检索排除同字符，K32/64/128不足者显式无效。MMD属于Train-reference，不是独立作品留出；dataset-source不冒充作品来源。
+
+官方pyiqa0.1.16权重分别下载至各机 `~/.cache/torch/hub/pyiqa/`；Clean-FID官方Inception位于各机`/tmp/inception-2015-12-05.pt`。训练Torch未升级，依赖安装在独立eval-unpaired-env。历史Pixel D1仅在4090的`scratch/writer_pixel_d0d1_20261016_01/assets/D1/best.pt`找到，原网络源码SHA核对通过。无两训练机间模型/PNG互传；仅下载KB级统计包与172KB校准JPEG至本地。
