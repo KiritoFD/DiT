@@ -1,0 +1,215 @@
+{
+  "feature_version": "esv2-1.0",
+  "preprocess": "gray256_bicubic_uint8",
+  "bank": {
+    "bank_root": "assets/eval_unpaired_20261029/48_style",
+    "n_bank": 3454
+  },
+  "n_queries": 1008,
+  "throughput": {
+    "n": 500,
+    "seconds": 4.2,
+    "images_per_s": 119.02,
+    "extrapolate_20k_min": 2.8,
+    "s_short_hist": [
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10
+    ]
+  },
+  "results": {
+    "E-G": {
+      "K64": {
+        "n_valid": 1008,
+        "k": 64,
+        "auc": 95.98,
+        "eer": 7.44,
+        "map_macro": 93.09,
+        "auc_ci95": [
+          95.11,
+          96.97
+        ]
+      },
+      "permutation_K64": {
+        "n_valid": 942,
+        "k": 64,
+        "auc": 50.44,
+        "eer": 49.9,
+        "map_macro": 30.31
+      }
+    },
+    "hinge_s": {
+      "K32": {
+        "n_valid": 1008,
+        "k": 32,
+        "auc": 54.08,
+        "eer": 47.53,
+        "map_macro": 35.39,
+        "auc_ci95": [
+          53.15,
+          55.16
+        ]
+      },
+      "K64": {
+        "n_valid": 1008,
+        "k": 64,
+        "auc": 54.31,
+        "eer": 46.73,
+        "map_macro": 35.6,
+        "auc_ci95": [
+          53.38,
+          55.39
+        ]
+      },
+      "K128": {
+        "n_valid": 1008,
+        "k": 128,
+        "auc": 52.99,
+        "eer": 48.12,
+        "map_macro": 34.76,
+        "auc_ci95": [
+          52.19,
+          54.05
+        ]
+      },
+      "permutation_K64": {
+        "n_valid": 942,
+        "k": 64,
+        "auc": 51.15,
+        "eer": 49.15,
+        "map_macro": 31.42
+      }
+    },
+    "hinge_l": {
+      "K32": {
+        "n_valid": 1008,
+        "k": 32,
+        "auc": 54.16,
+        "eer": 47.51,
+        "map_macro": 35.42,
+        "auc_ci95": [
+          53.24,
+          55.28
+        ]
+      },
+      "K64": {
+        "n_valid": 1008,
+        "k": 64,
+        "auc": 54.41,
+        "eer": 46.71,
+        "map_macro": 34.8,
+        "auc_ci95": [
+          53.46,
+          55.48
+        ]
+      },
+      "K128": {
+        "n_valid": 1008,
+        "k": 128,
+        "auc": 53.11,
+        "eer": 47.92,
+        "map_macro": 35.13,
+        "auc_ci95": [
+          52.27,
+          54.05
+        ]
+      },
+      "permutation_K64": {
+        "n_valid": 942,
+        "k": 64,
+        "auc": 51.08,
+        "eer": 48.83,
+        "map_macro": 31.33
+      }
+    },
+    "quill": {
+      "K32": {
+        "n_valid": 1008,
+        "k": 32,
+        "auc": 58.44,
+        "eer": 44.45,
+        "map_macro": 39.9,
+        "auc_ci95": [
+          57.54,
+          59.56
+        ]
+      },
+      "K64": {
+        "n_valid": 1008,
+        "k": 64,
+        "auc": 58.32,
+        "eer": 44.14,
+        "map_macro": 39.47,
+        "auc_ci95": [
+          57.38,
+          59.49
+        ]
+      },
+      "K128": {
+        "n_valid": 1008,
+        "k": 128,
+        "auc": 57.88,
+        "eer": 45.04,
+        "map_macro": 40.78,
+        "auc_ci95": [
+          56.9,
+          58.94
+        ]
+      },
+      "permutation_K64": {
+        "n_valid": 942,
+        "k": 64,
+        "auc": 51.4,
+        "eer": 48.94,
+        "map_macro": 30.88
+      }
+    },
+    "hq_concat": {
+      "K32": {
+        "n_valid": 1008,
+        "k": 32,
+        "auc": 54.91,
+        "eer": 46.23,
+        "map_macro": 36.42,
+        "auc_ci95": [
+          54.02,
+          56.09
+        ]
+      },
+      "K64": {
+        "n_valid": 1008,
+        "k": 64,
+        "auc": 54.99,
+        "eer": 46.03,
+        "map_macro": 37.23,
+        "auc_ci95": [
+          54.0,
+          56.14
+        ]
+      },
+      "K128": {
+        "n_valid": 1008,
+        "k": 128,
+        "auc": 53.83,
+        "eer": 46.93,
+        "map_macro": 37.37,
+        "auc_ci95": [
+          53.05,
+          54.91
+        ]
+      },
+      "permutation_K64": {
+        "n_valid": 942,
+        "k": 64,
+        "auc": 51.32,
+        "eer": 49.17,
+        "map_macro": 31.87
+      }
+    }
+  }
+}

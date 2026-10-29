@@ -1,0 +1,441 @@
+{
+  "feature_protocol": {
+    "real_csv": "assets/u100_p1p2_20261025/p2_train.csv",
+    "real_csv_sha256": "976b573d76fbdf8f7bb34aff4c2e21b740cbf811e6be3bf4dbd020493bd825ad",
+    "dedup": "pixel_sha256",
+    "real_rows": 23485
+  },
+  "n_writers": 10,
+  "n_scripts": 3,
+  "n_valid_slots": 23,
+  "shared_chars_across_slots": 0,
+  "writer_source_collinear": {},
+  "slots": [
+    {
+      "writer": 0,
+      "script": 0,
+      "n": 701,
+      "n_chars": 576,
+      "sources": {
+        "hcsu_wild": 404,
+        "final_imgs_fame_v8": 195,
+        "hcsu_bei": 86,
+        "mccd_salvage": 7,
+        "hcsu_wild_salvage": 9
+      },
+      "single_source": false
+    },
+    {
+      "writer": 0,
+      "script": 3,
+      "n": 2379,
+      "n_chars": 1108,
+      "sources": {
+        "final_imgs_fame_v8": 1513,
+        "mccd_salvage": 464,
+        "hcsu_wild": 231,
+        "calli_tongji_imgs": 98,
+        "hcsu_tie": 61,
+        "hcsu_wild_salvage": 12
+      },
+      "single_source": false
+    },
+    {
+      "writer": 1,
+      "script": 0,
+      "n": 871,
+      "n_chars": 699,
+      "sources": {
+        "hcsu_wild": 386,
+        "mccd_salvage": 20,
+        "final_imgs_fame_v8": 395,
+        "hcsu_tie": 69,
+        "hcsu_wild_salvage": 1
+      },
+      "single_source": false
+    },
+    {
+      "writer": 1,
+      "script": 3,
+      "n": 2275,
+      "n_chars": 1413,
+      "sources": {
+        "hcsu_wild": 429,
+        "final_imgs_fame_v8": 1399,
+        "calli_tongji_imgs": 97,
+        "hcsu_wild_salvage": 54,
+        "hcsu_bei": 73,
+        "mccd_salvage": 223
+      },
+      "single_source": false
+    },
+    {
+      "writer": 2,
+      "script": 0,
+      "n": 1413,
+      "n_chars": 1144,
+      "sources": {
+        "final_imgs_fame_v8": 733,
+        "hcsu_wild": 466,
+        "hcsu_bei": 78,
+        "calli_tongji_imgs": 95,
+        "mccd_salvage": 33,
+        "hcsu_wild_salvage": 8
+      },
+      "single_source": false
+    },
+    {
+      "writer": 2,
+      "script": 3,
+      "n": 1136,
+      "n_chars": 898,
+      "sources": {
+        "final_imgs_fame_v8": 492,
+        "hcsu_wild": 385,
+        "hcsu_tie": 58,
+        "hcsu_wild_salvage": 57,
+        "calli_tongji_imgs": 96,
+        "mccd_salvage": 48
+      },
+      "single_source": false
+    },
+    {
+      "writer": 3,
+      "script": 0,
+      "n": 1700,
+      "n_chars": 1437,
+      "sources": {
+        "final_imgs_fame_v8": 1271,
+        "calli_tongji_imgs": 96,
+        "hcsu_wild": 225,
+        "hcsu_bei": 69,
+        "mccd_salvage": 35,
+        "hcsu_wild_salvage": 4
+      },
+      "single_source": false
+    },
+    {
+      "writer": 3,
+      "script": 3,
+      "n": 803,
+      "n_chars": 560,
+      "sources": {
+        "hcsu_wild": 243,
+        "final_imgs_fame_v8": 452,
+        "hcsu_tie": 57,
+        "mccd_salvage": 41,
+        "hcsu_wild_salvage": 10
+      },
+      "single_source": false
+    },
+    {
+      "writer": 4,
+      "script": 0,
+      "n": 1250,
+      "n_chars": 1053,
+      "sources": {
+        "mccd_salvage": 692,
+        "hcsu_wild": 382,
+        "calli_tongji_imgs": 94,
+        "hcsu_bei": 79,
+        "hcsu_wild_salvage": 3
+      },
+      "single_source": false
+    },
+    {
+      "writer": 4,
+      "script": 3,
+      "n": 508,
+      "n_chars": 449,
+      "sources": {
+        "mccd_salvage": 416,
+        "calli_tongji_imgs": 92
+      },
+      "single_source": false
+    },
+    {
+      "writer": 4,
+      "script": 4,
+      "n": 1033,
+      "n_chars": 801,
+      "sources": {
+        "mccd_salvage": 449,
+        "hcsu_wild": 483,
+        "hcsu_tie": 89,
+        "hcsu_wild_salvage": 12
+      },
+      "single_source": false
+    },
+    {
+      "writer": 5,
+      "script": 0,
+      "n": 1599,
+      "n_chars": 1144,
+      "sources": {
+        "hcsu_tie": 50,
+        "final_imgs_fame_v8": 1264,
+        "calli_tongji_imgs": 98,
+        "mccd_salvage": 44,
+        "hcsu_wild": 140,
+        "hcsu_wild_salvage": 3
+      },
+      "single_source": false
+    },
+    {
+      "writer": 5,
+      "script": 3,
+      "n": 825,
+      "n_chars": 666,
+      "sources": {
+        "hcsu_wild": 429,
+        "final_imgs_fame_v8": 296,
+        "hcsu_wild_salvage": 18,
+        "hcsu_bei": 76,
+        "mccd_salvage": 6
+      },
+      "single_source": false
+    },
+    {
+      "writer": 6,
+      "script": 0,
+      "n": 64,
+      "n_chars": 64,
+      "sources": {
+        "final_imgs_fame_v8": 62,
+        "mccd_salvage": 2
+      },
+      "single_source": false
+    },
+    {
+      "writer": 6,
+      "script": 3,
+      "n": 2134,
+      "n_chars": 1297,
+      "sources": {
+        "hcsu_wild": 395,
+        "hcsu_tie": 68,
+        "mccd_salvage": 144,
+        "calli_tongji_imgs": 93,
+        "final_imgs_fame_v8": 1370,
+        "hcsu_wild_salvage": 64
+      },
+      "single_source": false
+    },
+    {
+      "writer": 7,
+      "script": 0,
+      "n": 369,
+      "n_chars": 290,
+      "sources": {
+        "hcsu_wild": 161,
+        "final_imgs_fame_v8": 121,
+        "hcsu_bei": 82,
+        "mccd_salvage": 3,
+        "hcsu_wild_salvage": 2
+      },
+      "single_source": false
+    },
+    {
+      "writer": 7,
+      "script": 3,
+      "n": 1324,
+      "n_chars": 1024,
+      "sources": {
+        "final_imgs_fame_v8": 698,
+        "mccd_salvage": 83,
+        "hcsu_wild": 416,
+        "hcsu_tie": 68,
+        "hcsu_wild_salvage": 59
+      },
+      "single_source": false
+    },
+    {
+      "writer": 7,
+      "script": 4,
+      "n": 30,
+      "n_chars": 30,
+      "sources": {
+        "final_imgs_fame_v8": 27,
+        "mccd_salvage": 3
+      },
+      "single_source": false
+    },
+    {
+      "writer": 8,
+      "script": 0,
+      "n": 1082,
+      "n_chars": 973,
+      "sources": {
+        "hcsu_tie": 30,
+        "final_imgs_fame_v8": 809,
+        "calli_tongji_imgs": 93,
+        "hcsu_wild": 142,
+        "mccd_salvage": 8
+      },
+      "single_source": false
+    },
+    {
+      "writer": 8,
+      "script": 3,
+      "n": 441,
+      "n_chars": 337,
+      "sources": {
+        "hcsu_wild": 302,
+        "final_imgs_fame_v8": 44,
+        "hcsu_bei": 84,
+        "hcsu_wild_salvage": 8,
+        "mccd_salvage": 3
+      },
+      "single_source": false
+    },
+    {
+      "writer": 9,
+      "script": 0,
+      "n": 314,
+      "n_chars": 236,
+      "sources": {
+        "final_imgs_fame_v8": 97,
+        "hcsu_wild": 146,
+        "hcsu_bei": 67,
+        "mccd_salvage": 4
+      },
+      "single_source": false
+    },
+    {
+      "writer": 9,
+      "script": 3,
+      "n": 460,
+      "n_chars": 391,
+      "sources": {
+        "mccd_salvage": 43,
+        "final_imgs_fame_v8": 417
+      },
+      "single_source": false
+    },
+    {
+      "writer": 9,
+      "script": 4,
+      "n": 774,
+      "n_chars": 673,
+      "sources": {
+        "hcsu_wild": 469,
+        "final_imgs_fame_v8": 220,
+        "hcsu_tie": 51,
+        "hcsu_wild_salvage": 19,
+        "mccd_salvage": 15
+      },
+      "single_source": false
+    }
+  ],
+  "panels": [
+    {
+      "arm": "S0",
+      "step": 50000,
+      "protocol": "heldout",
+      "csv": "assets/u100_pretrain_20261024/validation_val100.csv",
+      "checkpoint": "",
+      "ema": true,
+      "n_png": 200,
+      "png_root": "assets/style_matrix_20261027/matrix64/4090/execution/runs/S0/evaluations/0050000/heldout"
+    },
+    {
+      "arm": "S1",
+      "step": 50000,
+      "protocol": "heldout",
+      "csv": "assets/u100_pretrain_20261024/validation_val100.csv",
+      "checkpoint": "",
+      "ema": true,
+      "n_png": 200,
+      "png_root": "assets/style_matrix_20261027/matrix64/4090/execution/runs/S1/evaluations/0050000/heldout"
+    },
+    {
+      "arm": "S4",
+      "step": 50000,
+      "protocol": "heldout",
+      "csv": "assets/u100_pretrain_20261024/validation_val100.csv",
+      "checkpoint": "",
+      "ema": true,
+      "n_png": 200,
+      "png_root": "assets/style_matrix_20261027/matrix64/4090/execution/runs/S4/evaluations/0050000/heldout"
+    },
+    {
+      "arm": "S6",
+      "step": 50000,
+      "protocol": "heldout",
+      "csv": "assets/u100_pretrain_20261024/validation_val100.csv",
+      "checkpoint": "",
+      "ema": true,
+      "n_png": 200,
+      "png_root": "assets/style_matrix_20261027/matrix64/4090/execution/runs/S6/evaluations/0050000/heldout"
+    },
+    {
+      "arm": "S8",
+      "step": 50000,
+      "protocol": "heldout",
+      "csv": "assets/u100_pretrain_20261024/validation_val100.csv",
+      "checkpoint": "",
+      "ema": true,
+      "n_png": 200,
+      "png_root": "assets/style_matrix_20261027/matrix64/4090/execution/runs/S8/evaluations/0050000/heldout"
+    },
+    {
+      "arm": "S0",
+      "step": 50000,
+      "protocol": "heldout",
+      "csv": "",
+      "checkpoint": "",
+      "ema": true,
+      "n_png": 200,
+      "png_root": "assets/style_matrix_20261028/generation2full/4090/runs/S0/evaluations/0050000/heldout"
+    },
+    {
+      "arm": "S4",
+      "step": 50000,
+      "protocol": "heldout",
+      "csv": "",
+      "checkpoint": "",
+      "ema": true,
+      "n_png": 200,
+      "png_root": "assets/style_matrix_20261028/generation2full/4090/runs/S4/evaluations/0050000/heldout"
+    },
+    {
+      "arm": "S9",
+      "step": 50000,
+      "protocol": "heldout187_seed0",
+      "csv": "",
+      "checkpoint": "",
+      "ema": true,
+      "n_png": 374,
+      "png_root": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0"
+    },
+    {
+      "arm": "S9",
+      "step": 50000,
+      "protocol": "original_protocol",
+      "csv": "",
+      "checkpoint": "",
+      "ema": true,
+      "n_png": 200,
+      "png_root": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/original_protocol"
+    },
+    {
+      "arm": "S9",
+      "step": 50000,
+      "protocol": "shared_train_panel",
+      "csv": "",
+      "checkpoint": "",
+      "ema": true,
+      "n_png": 52,
+      "png_root": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/shared_train_panel"
+    }
+  ],
+  "leakage_rules": {
+    "writer_verification": "references exclude the query character; competition same-script only; sources reported separately",
+    "nuisance_probe": "any learned probe splits train/valid by character fold, never by image",
+    "distribution_metrics": "references exclude eval-panel characters when the panel rows carry a character label"
+  },
+  "missing": {
+    "ocr": "no reliable Chinese OCR weights",
+    "ttf_control_bank": "path to be frozen in phase 2"
+  }
+}

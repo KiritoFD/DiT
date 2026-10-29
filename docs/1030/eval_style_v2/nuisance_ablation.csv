@@ -1,0 +1,7 @@
+control,value,n,note
+low_level_probe_writer_auc,49.35,,character-grouped 5-fold logistic on 20-dim nuisance; chance=50
+E-G_raw_retrieval_K64,95.98,1008,same protocol as real_encoder_validation.json
+E-G_residualized_retrieval_K64,93.11,1008,same protocol as real_encoder_validation.json
+hq_drift_shift_scale,0.213,,median HQ feature distance to original / median neighbor distance; ~0 means invariant
+hq_drift_binarize,0.0,,median HQ feature distance to original / median neighbor distance; ~0 means invariant
+hq_drift_width_norm,0.197,,median HQ feature distance to original / median neighbor distance; ~0 means invariant

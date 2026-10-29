@@ -1,0 +1,8 @@
+{
+  "per_dim_mean_abs_delta": 0.00102,
+  "hinge_s": 0.00127,
+  "hinge_l": 0.00137,
+  "quill": 0.00042,
+  "n": 187,
+  "real_between_image_baseline": 0.0052
+}

@@ -1,0 +1,32 @@
+{
+  "low_level_probe_auc": 49.35,
+  "low_level_probe_folds": [
+    47.54,
+    48.45,
+    49.62,
+    49.46,
+    51.7
+  ],
+  "E-G_raw": {
+    "n_valid": 1008,
+    "k": 64,
+    "auc": 95.98,
+    "eer": 7.44,
+    "map_macro": 93.09,
+    "auc_ci95": [
+      95.11,
+      96.97
+    ]
+  },
+  "E-G_residualized": {
+    "n_valid": 1008,
+    "k": 64,
+    "auc": 93.11,
+    "eer": 13.01,
+    "map_macro": 93.62,
+    "auc_ci95": [
+      92.15,
+      94.12
+    ]
+  }
+}

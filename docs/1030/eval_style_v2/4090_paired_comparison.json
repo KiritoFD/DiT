@@ -1,0 +1,3007 @@
+{
+  "tolerance_dssim": -0.01,
+  "summary": {
+    "A": {
+      "n": 32,
+      "share": 0.327
+    },
+    "C": {
+      "n": 33,
+      "share": 0.337
+    },
+    "D": {
+      "n": 15,
+      "share": 0.153
+    },
+    "B": {
+      "n": 18,
+      "share": 0.184
+    }
+  },
+  "attribution_per_writer": {
+    "S5-S0": {
+      "何绍基": -0.0525,
+      "文徵明": 0.0126,
+      "柳公权": -0.0312,
+      "欧阳询": 0.0532,
+      "王羲之": 0.0867,
+      "米芾": 0.0618,
+      "苏轼": 0.2323,
+      "褚遂良": 0.0479,
+      "赵孟頫": -0.0065,
+      "颜真卿": 0.0925
+    },
+    "S5-S4": {
+      "何绍基": -0.0187,
+      "文徵明": 0.0194,
+      "柳公权": -0.038,
+      "欧阳询": 0.0663,
+      "王羲之": -0.0321,
+      "米芾": 0.0859,
+      "苏轼": 0.1048,
+      "褚遂良": -0.0142,
+      "赵孟頫": -0.033,
+      "颜真卿": -0.035
+    },
+    "S4-S0": {
+      "何绍基": -0.0337,
+      "文徵明": -0.0068,
+      "柳公权": 0.0068,
+      "欧阳询": -0.0131,
+      "王羲之": 0.1187,
+      "米芾": -0.024,
+      "苏轼": 0.1275,
+      "褚遂良": 0.0622,
+      "赵孟頫": 0.0264,
+      "颜真卿": 0.1275
+    }
+  },
+  "deltas": {
+    "S5-S0": [
+      {
+        "idx": 0,
+        "writer": "王羲之",
+        "character": "用",
+        "script": "行",
+        "d_style": 0.1564,
+        "d_ssim": -0.001,
+        "d_lpips": 0.0101,
+        "d_ink_iou": -0.0503
+      },
+      {
+        "idx": 1,
+        "writer": "王羲之",
+        "character": "報",
+        "script": "行",
+        "d_style": -0.0298,
+        "d_ssim": 0.0056,
+        "d_lpips": 0.0153,
+        "d_ink_iou": 0.0038
+      },
+      {
+        "idx": 2,
+        "writer": "王羲之",
+        "character": "羲",
+        "script": "行",
+        "d_style": -0.1481,
+        "d_ssim": -0.0004,
+        "d_lpips": 0.0018,
+        "d_ink_iou": -0.0121
+      },
+      {
+        "idx": 3,
+        "writer": "王羲之",
+        "character": "旬",
+        "script": "楷",
+        "d_style": -0.0142,
+        "d_ssim": 0.0399,
+        "d_lpips": -0.112,
+        "d_ink_iou": 0.1226
+      },
+      {
+        "idx": 4,
+        "writer": "王羲之",
+        "character": "屍",
+        "script": "楷",
+        "d_style": 0.0408,
+        "d_ssim": 0.0381,
+        "d_lpips": -0.0043,
+        "d_ink_iou": -0.0218
+      },
+      {
+        "idx": 5,
+        "writer": "王羲之",
+        "character": "吴",
+        "script": "行",
+        "d_style": 0.3373,
+        "d_ssim": 0.034,
+        "d_lpips": -0.0213,
+        "d_ink_iou": -0.0197
+      },
+      {
+        "idx": 6,
+        "writer": "王羲之",
+        "character": "好",
+        "script": "行",
+        "d_style": -0.0327,
+        "d_ssim": -0.0561,
+        "d_lpips": 0.0341,
+        "d_ink_iou": 0.0407
+      },
+      {
+        "idx": 7,
+        "writer": "王羲之",
+        "character": "何",
+        "script": "行",
+        "d_style": 0.0886,
+        "d_ssim": 0.0541,
+        "d_lpips": -0.1104,
+        "d_ink_iou": 0.1122
+      },
+      {
+        "idx": 8,
+        "writer": "王羲之",
+        "character": "閒",
+        "script": "行",
+        "d_style": -0.0057,
+        "d_ssim": 0.0027,
+        "d_lpips": 0.0013,
+        "d_ink_iou": -0.0014
+      },
+      {
+        "idx": 9,
+        "writer": "王羲之",
+        "character": "咽",
+        "script": "楷",
+        "d_style": 0.4739,
+        "d_ssim": 0.0513,
+        "d_lpips": -0.0118,
+        "d_ink_iou": 0.0159
+      },
+      {
+        "idx": 10,
+        "writer": "苏轼",
+        "character": "兀",
+        "script": "楷",
+        "d_style": 0.4748,
+        "d_ssim": 0.017,
+        "d_lpips": -0.0409,
+        "d_ink_iou": 0.0941
+      },
+      {
+        "idx": 11,
+        "writer": "苏轼",
+        "character": "桑",
+        "script": "行",
+        "d_style": 0.0918,
+        "d_ssim": 0.049,
+        "d_lpips": -0.0088,
+        "d_ink_iou": -0.0057
+      },
+      {
+        "idx": 12,
+        "writer": "苏轼",
+        "character": "匹",
+        "script": "行",
+        "d_style": 0.0461,
+        "d_ssim": -0.1196,
+        "d_lpips": 0.0528,
+        "d_ink_iou": 0.0557
+      },
+      {
+        "idx": 13,
+        "writer": "苏轼",
+        "character": "剥",
+        "script": "行",
+        "d_style": -0.0618,
+        "d_ssim": 0.0283,
+        "d_lpips": -0.0215,
+        "d_ink_iou": 0.0286
+      },
+      {
+        "idx": 14,
+        "writer": "苏轼",
+        "character": "巩",
+        "script": "楷",
+        "d_style": 0.7927,
+        "d_ssim": -0.0525,
+        "d_lpips": 0.0295,
+        "d_ink_iou": 0.0655
+      },
+      {
+        "idx": 15,
+        "writer": "苏轼",
+        "character": "巫",
+        "script": "行",
+        "d_style": 0.0261,
+        "d_ssim": -0.0216,
+        "d_lpips": -0.0489,
+        "d_ink_iou": -0.001
+      },
+      {
+        "idx": 16,
+        "writer": "苏轼",
+        "character": "冒",
+        "script": "行",
+        "d_style": 0.0155,
+        "d_ssim": 0.0001,
+        "d_lpips": 0.0014,
+        "d_ink_iou": 0.0006
+      },
+      {
+        "idx": 17,
+        "writer": "苏轼",
+        "character": "啟",
+        "script": "行",
+        "d_style": 0.3537,
+        "d_ssim": 0.0094,
+        "d_lpips": -0.0028,
+        "d_ink_iou": 0.0761
+      },
+      {
+        "idx": 18,
+        "writer": "苏轼",
+        "character": "永",
+        "script": "楷",
+        "d_style": 0.6101,
+        "d_ssim": 0.0299,
+        "d_lpips": -0.0415,
+        "d_ink_iou": 0.1428
+      },
+      {
+        "idx": 19,
+        "writer": "苏轼",
+        "character": "廿",
+        "script": "楷",
+        "d_style": -0.0256,
+        "d_ssim": -0.0046,
+        "d_lpips": 0.0069,
+        "d_ink_iou": -0.0041
+      },
+      {
+        "idx": 20,
+        "writer": "欧阳询",
+        "character": "速",
+        "script": "楷",
+        "d_style": -0.0624,
+        "d_ssim": -0.0379,
+        "d_lpips": 0.0131,
+        "d_ink_iou": -0.0184
+      },
+      {
+        "idx": 21,
+        "writer": "欧阳询",
+        "character": "潛",
+        "script": "行",
+        "d_style": 0.0098,
+        "d_ssim": 0.0163,
+        "d_lpips": -0.0211,
+        "d_ink_iou": -0.0045
+      },
+      {
+        "idx": 22,
+        "writer": "欧阳询",
+        "character": "謙",
+        "script": "楷",
+        "d_style": -0.0783,
+        "d_ssim": -0.0208,
+        "d_lpips": -0.0223,
+        "d_ink_iou": 0.0983
+      },
+      {
+        "idx": 23,
+        "writer": "欧阳询",
+        "character": "丸",
+        "script": "楷",
+        "d_style": -0.0265,
+        "d_ssim": 0.0,
+        "d_lpips": 0.0001,
+        "d_ink_iou": 0.0018
+      },
+      {
+        "idx": 24,
+        "writer": "欧阳询",
+        "character": "辰",
+        "script": "行",
+        "d_style": 0.3969,
+        "d_ssim": 0.0317,
+        "d_lpips": -0.0675,
+        "d_ink_iou": 0.0062
+      },
+      {
+        "idx": 25,
+        "writer": "欧阳询",
+        "character": "楚",
+        "script": "行",
+        "d_style": 0.0403,
+        "d_ssim": -0.001,
+        "d_lpips": -0.0044,
+        "d_ink_iou": -0.0013
+      },
+      {
+        "idx": 26,
+        "writer": "欧阳询",
+        "character": "事",
+        "script": "行",
+        "d_style": 0.2018,
+        "d_ssim": -0.0082,
+        "d_lpips": 0.0229,
+        "d_ink_iou": -0.081
+      },
+      {
+        "idx": 27,
+        "writer": "欧阳询",
+        "character": "勲",
+        "script": "楷",
+        "d_style": 0.0538,
+        "d_ssim": 0.079,
+        "d_lpips": -0.0555,
+        "d_ink_iou": 0.1466
+      },
+      {
+        "idx": 28,
+        "writer": "欧阳询",
+        "character": "恩",
+        "script": "楷",
+        "d_style": -0.0121,
+        "d_ssim": -0.0009,
+        "d_lpips": 0.001,
+        "d_ink_iou": -0.0005
+      },
+      {
+        "idx": 29,
+        "writer": "欧阳询",
+        "character": "寐",
+        "script": "行",
+        "d_style": 0.009,
+        "d_ssim": -0.0314,
+        "d_lpips": 0.0726,
+        "d_ink_iou": -0.014
+      },
+      {
+        "idx": 30,
+        "writer": "颜真卿",
+        "character": "聲",
+        "script": "楷",
+        "d_style": -0.0501,
+        "d_ssim": 0.011,
+        "d_lpips": -0.0134,
+        "d_ink_iou": 0.0047
+      },
+      {
+        "idx": 31,
+        "writer": "颜真卿",
+        "character": "雍",
+        "script": "楷",
+        "d_style": 0.6683,
+        "d_ssim": -0.0897,
+        "d_lpips": 0.0467,
+        "d_ink_iou": -0.0125
+      },
+      {
+        "idx": 32,
+        "writer": "颜真卿",
+        "character": "夏",
+        "script": "行",
+        "d_style": 0.4201,
+        "d_ssim": 0.0348,
+        "d_lpips": 0.0371,
+        "d_ink_iou": 0.0284
+      },
+      {
+        "idx": 33,
+        "writer": "颜真卿",
+        "character": "博",
+        "script": "楷",
+        "d_style": -0.0213,
+        "d_ssim": -0.0001,
+        "d_lpips": -0.0029,
+        "d_ink_iou": -0.0009
+      },
+      {
+        "idx": 34,
+        "writer": "颜真卿",
+        "character": "蹤",
+        "script": "楷",
+        "d_style": -0.4118,
+        "d_ssim": 0.0032,
+        "d_lpips": 0.0238,
+        "d_ink_iou": -0.0606
+      },
+      {
+        "idx": 35,
+        "writer": "颜真卿",
+        "character": "憲",
+        "script": "行",
+        "d_style": 0.3212,
+        "d_ssim": -0.0189,
+        "d_lpips": -0.0044,
+        "d_ink_iou": 0.0404
+      },
+      {
+        "idx": 36,
+        "writer": "颜真卿",
+        "character": "妄",
+        "script": "楷",
+        "d_style": 0.1512,
+        "d_ssim": 0.0021,
+        "d_lpips": -0.0101,
+        "d_ink_iou": 0.0006
+      },
+      {
+        "idx": 37,
+        "writer": "颜真卿",
+        "character": "住",
+        "script": "行",
+        "d_style": -0.002,
+        "d_ssim": 0.0002,
+        "d_lpips": 0.0014,
+        "d_ink_iou": 0.0016
+      },
+      {
+        "idx": 38,
+        "writer": "颜真卿",
+        "character": "滄",
+        "script": "楷",
+        "d_style": -0.1841,
+        "d_ssim": -0.0219,
+        "d_lpips": 0.0313,
+        "d_ink_iou": -0.0762
+      },
+      {
+        "idx": 39,
+        "writer": "颜真卿",
+        "character": "故",
+        "script": "行",
+        "d_style": 0.0335,
+        "d_ssim": 0.0266,
+        "d_lpips": -0.0447,
+        "d_ink_iou": 0.022
+      },
+      {
+        "idx": 40,
+        "writer": "赵孟頫",
+        "character": "薪",
+        "script": "隶",
+        "d_style": -0.0845,
+        "d_ssim": -0.0121,
+        "d_lpips": -0.0106,
+        "d_ink_iou": -0.0177
+      },
+      {
+        "idx": 41,
+        "writer": "赵孟頫",
+        "character": "卧",
+        "script": "楷",
+        "d_style": 0.0297,
+        "d_ssim": 0.0071,
+        "d_lpips": -0.0334,
+        "d_ink_iou": 0.1066
+      },
+      {
+        "idx": 42,
+        "writer": "赵孟頫",
+        "character": "厖",
+        "script": "楷",
+        "d_style": -0.0233,
+        "d_ssim": 0.0478,
+        "d_lpips": 0.0823,
+        "d_ink_iou": -0.0401
+      },
+      {
+        "idx": 43,
+        "writer": "赵孟頫",
+        "character": "火",
+        "script": "行",
+        "d_style": 0.402,
+        "d_ssim": 0.006,
+        "d_lpips": -0.0244,
+        "d_ink_iou": 0.008
+      },
+      {
+        "idx": 44,
+        "writer": "赵孟頫",
+        "character": "穡",
+        "script": "行",
+        "d_style": -0.0165,
+        "d_ssim": -0.0695,
+        "d_lpips": 0.0806,
+        "d_ink_iou": -0.1332
+      },
+      {
+        "idx": 45,
+        "writer": "赵孟頫",
+        "character": "肥",
+        "script": "隶",
+        "d_style": -0.0401,
+        "d_ssim": -0.019,
+        "d_lpips": 0.0405,
+        "d_ink_iou": -0.0343
+      },
+      {
+        "idx": 46,
+        "writer": "赵孟頫",
+        "character": "化",
+        "script": "隶",
+        "d_style": -0.2494,
+        "d_ssim": -0.0306,
+        "d_lpips": -0.0561,
+        "d_ink_iou": 0.0825
+      },
+      {
+        "idx": 47,
+        "writer": "赵孟頫",
+        "character": "宋",
+        "script": "楷",
+        "d_style": 0.0073,
+        "d_ssim": 0.0006,
+        "d_lpips": -0.0014,
+        "d_ink_iou": 0.001
+      },
+      {
+        "idx": 48,
+        "writer": "赵孟頫",
+        "character": "兜",
+        "script": "楷",
+        "d_style": -0.0175,
+        "d_ssim": 0.0006,
+        "d_lpips": -0.0024,
+        "d_ink_iou": 0.0012
+      },
+      {
+        "idx": 49,
+        "writer": "赵孟頫",
+        "character": "纨",
+        "script": "隶",
+        "d_style": -0.073,
+        "d_ssim": 0.0111,
+        "d_lpips": -0.0126,
+        "d_ink_iou": -0.0045
+      },
+      {
+        "idx": 50,
+        "writer": "褚遂良",
+        "character": "朽",
+        "script": "行",
+        "d_style": -0.0031,
+        "d_ssim": 0.0005,
+        "d_lpips": 0.0001,
+        "d_ink_iou": 0.0
+      },
+      {
+        "idx": 51,
+        "writer": "褚遂良",
+        "character": "盡",
+        "script": "行",
+        "d_style": 0.2955,
+        "d_ssim": 0.0048,
+        "d_lpips": -0.0156,
+        "d_ink_iou": 0.0142
+      },
+      {
+        "idx": 52,
+        "writer": "褚遂良",
+        "character": "品",
+        "script": "行",
+        "d_style": 0.1569,
+        "d_ssim": 0.0418,
+        "d_lpips": -0.0462,
+        "d_ink_iou": -0.0548
+      },
+      {
+        "idx": 53,
+        "writer": "褚遂良",
+        "character": "徇",
+        "script": "楷",
+        "d_style": 0.0893,
+        "d_ssim": -0.0115,
+        "d_lpips": -0.0252,
+        "d_ink_iou": 0.0196
+      },
+      {
+        "idx": 54,
+        "writer": "褚遂良",
+        "character": "諦",
+        "script": "楷",
+        "d_style": -0.0855,
+        "d_ssim": 0.0206,
+        "d_lpips": -0.0773,
+        "d_ink_iou": 0.0652
+      },
+      {
+        "idx": 55,
+        "writer": "褚遂良",
+        "character": "及",
+        "script": "楷",
+        "d_style": -0.0022,
+        "d_ssim": 0.0007,
+        "d_lpips": -0.0027,
+        "d_ink_iou": 0.0026
+      },
+      {
+        "idx": 56,
+        "writer": "褚遂良",
+        "character": "覆",
+        "script": "楷",
+        "d_style": -0.0183,
+        "d_ssim": 0.0011,
+        "d_lpips": 0.0036,
+        "d_ink_iou": 0.0
+      },
+      {
+        "idx": 57,
+        "writer": "褚遂良",
+        "character": "協",
+        "script": "楷",
+        "d_style": 0.008,
+        "d_ssim": 0.001,
+        "d_lpips": -0.0001,
+        "d_ink_iou": 0.0004
+      },
+      {
+        "idx": 58,
+        "writer": "褚遂良",
+        "character": "怏",
+        "script": "行",
+        "d_style": 0.2176,
+        "d_ssim": -0.0418,
+        "d_lpips": 0.0615,
+        "d_ink_iou": -0.0825
+      },
+      {
+        "idx": 59,
+        "writer": "褚遂良",
+        "character": "大",
+        "script": "楷",
+        "d_style": -0.1788,
+        "d_ssim": 0.0049,
+        "d_lpips": 0.0061,
+        "d_ink_iou": 0.0737
+      },
+      {
+        "idx": 60,
+        "writer": "米芾",
+        "character": "与",
+        "script": "行",
+        "d_style": -0.0058,
+        "d_ssim": -0.0001,
+        "d_lpips": 0.0015,
+        "d_ink_iou": 0.0009
+      },
+      {
+        "idx": 61,
+        "writer": "米芾",
+        "character": "惟",
+        "script": "行",
+        "d_style": 0.0115,
+        "d_ssim": 0.0001,
+        "d_lpips": 0.0,
+        "d_ink_iou": 0.0003
+      },
+      {
+        "idx": 62,
+        "writer": "米芾",
+        "character": "慈",
+        "script": "楷",
+        "d_style": -0.0937,
+        "d_ssim": 0.0084,
+        "d_lpips": -0.0002,
+        "d_ink_iou": 0.0008
+      },
+      {
+        "idx": 63,
+        "writer": "米芾",
+        "character": "霜",
+        "script": "行",
+        "d_style": 0.3757,
+        "d_ssim": -0.0162,
+        "d_lpips": 0.0384,
+        "d_ink_iou": -0.0387
+      },
+      {
+        "idx": 64,
+        "writer": "米芾",
+        "character": "嬋",
+        "script": "行",
+        "d_style": -0.1626,
+        "d_ssim": -0.096,
+        "d_lpips": 0.1405,
+        "d_ink_iou": -0.191
+      },
+      {
+        "idx": 65,
+        "writer": "米芾",
+        "character": "已",
+        "script": "楷",
+        "d_style": 0.253,
+        "d_ssim": -0.0393,
+        "d_lpips": -0.0136,
+        "d_ink_iou": 0.1153
+      },
+      {
+        "idx": 66,
+        "writer": "米芾",
+        "character": "陰",
+        "script": "行",
+        "d_style": 0.0336,
+        "d_ssim": -0.0155,
+        "d_lpips": 0.0065,
+        "d_ink_iou": -0.0051
+      },
+      {
+        "idx": 67,
+        "writer": "米芾",
+        "character": "利",
+        "script": "行",
+        "d_style": 0.0291,
+        "d_ssim": -0.0193,
+        "d_lpips": 0.0277,
+        "d_ink_iou": -0.0256
+      },
+      {
+        "idx": 68,
+        "writer": "米芾",
+        "character": "仙",
+        "script": "行",
+        "d_style": -0.1219,
+        "d_ssim": -0.0664,
+        "d_lpips": 0.0639,
+        "d_ink_iou": -0.0811
+      },
+      {
+        "idx": 69,
+        "writer": "米芾",
+        "character": "才",
+        "script": "行",
+        "d_style": 0.2995,
+        "d_ssim": -0.0615,
+        "d_lpips": 0.0515,
+        "d_ink_iou": -0.1295
+      },
+      {
+        "idx": 70,
+        "writer": "文徵明",
+        "character": "地",
+        "script": "行",
+        "d_style": -0.0186,
+        "d_ssim": 0.0003,
+        "d_lpips": 0.0027,
+        "d_ink_iou": -0.0013
+      },
+      {
+        "idx": 72,
+        "writer": "文徵明",
+        "character": "儔",
+        "script": "楷",
+        "d_style": -0.2033,
+        "d_ssim": 0.0014,
+        "d_lpips": 0.0173,
+        "d_ink_iou": 0.0063
+      },
+      {
+        "idx": 73,
+        "writer": "文徵明",
+        "character": "事",
+        "script": "行",
+        "d_style": -0.0217,
+        "d_ssim": -0.0004,
+        "d_lpips": 0.0005,
+        "d_ink_iou": -0.0003
+      },
+      {
+        "idx": 75,
+        "writer": "文徵明",
+        "character": "丙",
+        "script": "行",
+        "d_style": 0.1987,
+        "d_ssim": 0.0017,
+        "d_lpips": -0.0039,
+        "d_ink_iou": -0.0152
+      },
+      {
+        "idx": 76,
+        "writer": "文徵明",
+        "character": "但",
+        "script": "行",
+        "d_style": 0.1175,
+        "d_ssim": -0.1085,
+        "d_lpips": 0.087,
+        "d_ink_iou": -0.1393
+      },
+      {
+        "idx": 77,
+        "writer": "文徵明",
+        "character": "宅",
+        "script": "行",
+        "d_style": 0.102,
+        "d_ssim": -0.0229,
+        "d_lpips": 0.0221,
+        "d_ink_iou": 0.0052
+      },
+      {
+        "idx": 78,
+        "writer": "文徵明",
+        "character": "墨",
+        "script": "楷",
+        "d_style": -0.0003,
+        "d_ssim": -0.0005,
+        "d_lpips": -0.0019,
+        "d_ink_iou": -0.0009
+      },
+      {
+        "idx": 79,
+        "writer": "文徵明",
+        "character": "㩜",
+        "script": "楷",
+        "d_style": -0.0738,
+        "d_ssim": -0.0893,
+        "d_lpips": 0.0972,
+        "d_ink_iou": -0.0174
+      },
+      {
+        "idx": 80,
+        "writer": "柳公权",
+        "character": "兼",
+        "script": "行",
+        "d_style": 0.0238,
+        "d_ssim": 0.0001,
+        "d_lpips": -0.0005,
+        "d_ink_iou": 0.0002
+      },
+      {
+        "idx": 81,
+        "writer": "柳公权",
+        "character": "氛",
+        "script": "楷",
+        "d_style": 0.0009,
+        "d_ssim": 0.0147,
+        "d_lpips": 0.0404,
+        "d_ink_iou": -0.0113
+      },
+      {
+        "idx": 82,
+        "writer": "柳公权",
+        "character": "荷",
+        "script": "行",
+        "d_style": 0.021,
+        "d_ssim": -0.0009,
+        "d_lpips": 0.0002,
+        "d_ink_iou": -0.0009
+      },
+      {
+        "idx": 83,
+        "writer": "柳公权",
+        "character": "秩",
+        "script": "楷",
+        "d_style": 0.1256,
+        "d_ssim": -0.0193,
+        "d_lpips": 0.0323,
+        "d_ink_iou": -0.0968
+      },
+      {
+        "idx": 84,
+        "writer": "柳公权",
+        "character": "高",
+        "script": "楷",
+        "d_style": -0.5893,
+        "d_ssim": -0.0194,
+        "d_lpips": 0.026,
+        "d_ink_iou": 0.0051
+      },
+      {
+        "idx": 85,
+        "writer": "柳公权",
+        "character": "包",
+        "script": "楷",
+        "d_style": -0.2081,
+        "d_ssim": 0.1012,
+        "d_lpips": -0.0137,
+        "d_ink_iou": -0.0593
+      },
+      {
+        "idx": 86,
+        "writer": "柳公权",
+        "character": "粲",
+        "script": "行",
+        "d_style": -0.0291,
+        "d_ssim": 0.0037,
+        "d_lpips": -0.0007,
+        "d_ink_iou": 0.0041
+      },
+      {
+        "idx": 87,
+        "writer": "柳公权",
+        "character": "傳",
+        "script": "楷",
+        "d_style": 0.429,
+        "d_ssim": -0.0494,
+        "d_lpips": 0.04,
+        "d_ink_iou": -0.0637
+      },
+      {
+        "idx": 88,
+        "writer": "柳公权",
+        "character": "激",
+        "script": "行",
+        "d_style": 0.0317,
+        "d_ssim": -0.0033,
+        "d_lpips": -0.0076,
+        "d_ink_iou": -0.0011
+      },
+      {
+        "idx": 89,
+        "writer": "柳公权",
+        "character": "綏",
+        "script": "楷",
+        "d_style": -0.1171,
+        "d_ssim": 0.0629,
+        "d_lpips": -0.042,
+        "d_ink_iou": 0.0122
+      },
+      {
+        "idx": 90,
+        "writer": "何绍基",
+        "character": "極",
+        "script": "行",
+        "d_style": -0.0845,
+        "d_ssim": -0.0208,
+        "d_lpips": -0.0321,
+        "d_ink_iou": 0.0679
+      },
+      {
+        "idx": 91,
+        "writer": "何绍基",
+        "character": "掣",
+        "script": "隶",
+        "d_style": 0.0721,
+        "d_ssim": 0.0093,
+        "d_lpips": 0.0088,
+        "d_ink_iou": 0.0277
+      },
+      {
+        "idx": 92,
+        "writer": "何绍基",
+        "character": "儀",
+        "script": "楷",
+        "d_style": -0.0603,
+        "d_ssim": -0.0008,
+        "d_lpips": -0.0002,
+        "d_ink_iou": -0.0031
+      },
+      {
+        "idx": 93,
+        "writer": "何绍基",
+        "character": "术",
+        "script": "隶",
+        "d_style": -0.1023,
+        "d_ssim": 0.027,
+        "d_lpips": -0.0242,
+        "d_ink_iou": 0.0549
+      },
+      {
+        "idx": 94,
+        "writer": "何绍基",
+        "character": "寵",
+        "script": "楷",
+        "d_style": 0.0435,
+        "d_ssim": -0.0028,
+        "d_lpips": 0.0011,
+        "d_ink_iou": -0.0032
+      },
+      {
+        "idx": 95,
+        "writer": "何绍基",
+        "character": "覽",
+        "script": "隶",
+        "d_style": -0.1219,
+        "d_ssim": 0.0015,
+        "d_lpips": 0.0255,
+        "d_ink_iou": -0.0178
+      },
+      {
+        "idx": 96,
+        "writer": "何绍基",
+        "character": "游",
+        "script": "隶",
+        "d_style": 0.1517,
+        "d_ssim": -0.0298,
+        "d_lpips": 0.037,
+        "d_ink_iou": -0.0507
+      },
+      {
+        "idx": 97,
+        "writer": "何绍基",
+        "character": "事",
+        "script": "行",
+        "d_style": -0.016,
+        "d_ssim": 0.0005,
+        "d_lpips": 0.0017,
+        "d_ink_iou": -0.0004
+      },
+      {
+        "idx": 98,
+        "writer": "何绍基",
+        "character": "愬",
+        "script": "行",
+        "d_style": -0.0304,
+        "d_ssim": -0.0232,
+        "d_lpips": 0.0325,
+        "d_ink_iou": -0.0591
+      },
+      {
+        "idx": 99,
+        "writer": "何绍基",
+        "character": "豈",
+        "script": "楷",
+        "d_style": -0.3765,
+        "d_ssim": -0.0483,
+        "d_lpips": 0.0094,
+        "d_ink_iou": -0.0719
+      }
+    ],
+    "S5-S4": [
+      {
+        "idx": 0,
+        "writer": "王羲之",
+        "character": "用",
+        "script": "行",
+        "d_style": -0.2889,
+        "d_ssim": -0.033,
+        "d_lpips": 0.0215,
+        "d_ink_iou": 0.0409
+      },
+      {
+        "idx": 1,
+        "writer": "王羲之",
+        "character": "報",
+        "script": "行",
+        "d_style": -0.1391,
+        "d_ssim": 0.0078,
+        "d_lpips": 0.0136,
+        "d_ink_iou": 0.0035
+      },
+      {
+        "idx": 2,
+        "writer": "王羲之",
+        "character": "羲",
+        "script": "行",
+        "d_style": -0.0106,
+        "d_ssim": -0.0006,
+        "d_lpips": 0.0024,
+        "d_ink_iou": -0.0008
+      },
+      {
+        "idx": 3,
+        "writer": "王羲之",
+        "character": "旬",
+        "script": "楷",
+        "d_style": 0.2486,
+        "d_ssim": 0.1131,
+        "d_lpips": -0.1134,
+        "d_ink_iou": 0.0274
+      },
+      {
+        "idx": 4,
+        "writer": "王羲之",
+        "character": "屍",
+        "script": "楷",
+        "d_style": -0.283,
+        "d_ssim": -0.0438,
+        "d_lpips": -0.1376,
+        "d_ink_iou": 0.0614
+      },
+      {
+        "idx": 5,
+        "writer": "王羲之",
+        "character": "吴",
+        "script": "行",
+        "d_style": 0.2781,
+        "d_ssim": 0.01,
+        "d_lpips": -0.0016,
+        "d_ink_iou": -0.0389
+      },
+      {
+        "idx": 6,
+        "writer": "王羲之",
+        "character": "好",
+        "script": "行",
+        "d_style": 0.1851,
+        "d_ssim": 0.0431,
+        "d_lpips": -0.0251,
+        "d_ink_iou": -0.0062
+      },
+      {
+        "idx": 7,
+        "writer": "王羲之",
+        "character": "何",
+        "script": "行",
+        "d_style": -0.0788,
+        "d_ssim": 0.0978,
+        "d_lpips": -0.02,
+        "d_ink_iou": 0.0163
+      },
+      {
+        "idx": 8,
+        "writer": "王羲之",
+        "character": "閒",
+        "script": "行",
+        "d_style": -0.0221,
+        "d_ssim": 0.0039,
+        "d_lpips": 0.0011,
+        "d_ink_iou": 0.0
+      },
+      {
+        "idx": 9,
+        "writer": "王羲之",
+        "character": "咽",
+        "script": "楷",
+        "d_style": -0.2103,
+        "d_ssim": -0.0574,
+        "d_lpips": 0.0436,
+        "d_ink_iou": -0.1788
+      },
+      {
+        "idx": 10,
+        "writer": "苏轼",
+        "character": "兀",
+        "script": "楷",
+        "d_style": 0.0858,
+        "d_ssim": 0.0446,
+        "d_lpips": -0.034,
+        "d_ink_iou": 0.0884
+      },
+      {
+        "idx": 11,
+        "writer": "苏轼",
+        "character": "桑",
+        "script": "行",
+        "d_style": 0.0779,
+        "d_ssim": 0.0503,
+        "d_lpips": -0.007,
+        "d_ink_iou": -0.0062
+      },
+      {
+        "idx": 12,
+        "writer": "苏轼",
+        "character": "匹",
+        "script": "行",
+        "d_style": 0.1336,
+        "d_ssim": -0.1632,
+        "d_lpips": 0.0786,
+        "d_ink_iou": -0.0594
+      },
+      {
+        "idx": 13,
+        "writer": "苏轼",
+        "character": "剥",
+        "script": "行",
+        "d_style": -0.0734,
+        "d_ssim": -0.0461,
+        "d_lpips": 0.0135,
+        "d_ink_iou": -0.0118
+      },
+      {
+        "idx": 14,
+        "writer": "苏轼",
+        "character": "巩",
+        "script": "楷",
+        "d_style": 0.0529,
+        "d_ssim": -0.0004,
+        "d_lpips": -0.0016,
+        "d_ink_iou": 0.0391
+      },
+      {
+        "idx": 15,
+        "writer": "苏轼",
+        "character": "巫",
+        "script": "行",
+        "d_style": -0.1377,
+        "d_ssim": 0.0348,
+        "d_lpips": -0.0255,
+        "d_ink_iou": -0.0204
+      },
+      {
+        "idx": 16,
+        "writer": "苏轼",
+        "character": "冒",
+        "script": "行",
+        "d_style": 0.031,
+        "d_ssim": -0.0006,
+        "d_lpips": 0.0013,
+        "d_ink_iou": -0.0006
+      },
+      {
+        "idx": 17,
+        "writer": "苏轼",
+        "character": "啟",
+        "script": "行",
+        "d_style": 0.0433,
+        "d_ssim": -0.0461,
+        "d_lpips": 0.047,
+        "d_ink_iou": -0.0453
+      },
+      {
+        "idx": 18,
+        "writer": "苏轼",
+        "character": "永",
+        "script": "楷",
+        "d_style": 0.8987,
+        "d_ssim": 0.0608,
+        "d_lpips": -0.1074,
+        "d_ink_iou": 0.2048
+      },
+      {
+        "idx": 19,
+        "writer": "苏轼",
+        "character": "廿",
+        "script": "楷",
+        "d_style": -0.0644,
+        "d_ssim": 0.0054,
+        "d_lpips": -0.024,
+        "d_ink_iou": 0.0551
+      },
+      {
+        "idx": 20,
+        "writer": "欧阳询",
+        "character": "速",
+        "script": "楷",
+        "d_style": -0.2449,
+        "d_ssim": -0.0128,
+        "d_lpips": 0.0181,
+        "d_ink_iou": -0.05
+      },
+      {
+        "idx": 21,
+        "writer": "欧阳询",
+        "character": "潛",
+        "script": "行",
+        "d_style": -0.1681,
+        "d_ssim": -0.0683,
+        "d_lpips": 0.0234,
+        "d_ink_iou": -0.0989
+      },
+      {
+        "idx": 22,
+        "writer": "欧阳询",
+        "character": "謙",
+        "script": "楷",
+        "d_style": -0.0622,
+        "d_ssim": -0.0176,
+        "d_lpips": 0.0022,
+        "d_ink_iou": -0.0141
+      },
+      {
+        "idx": 23,
+        "writer": "欧阳询",
+        "character": "丸",
+        "script": "楷",
+        "d_style": -0.0167,
+        "d_ssim": 0.0006,
+        "d_lpips": 0.0013,
+        "d_ink_iou": 0.0011
+      },
+      {
+        "idx": 24,
+        "writer": "欧阳询",
+        "character": "辰",
+        "script": "行",
+        "d_style": 0.3674,
+        "d_ssim": 0.0129,
+        "d_lpips": -0.0544,
+        "d_ink_iou": 0.0023
+      },
+      {
+        "idx": 25,
+        "writer": "欧阳询",
+        "character": "楚",
+        "script": "行",
+        "d_style": 0.0135,
+        "d_ssim": -0.0004,
+        "d_lpips": -0.004,
+        "d_ink_iou": 0.0002
+      },
+      {
+        "idx": 26,
+        "writer": "欧阳询",
+        "character": "事",
+        "script": "行",
+        "d_style": 0.1596,
+        "d_ssim": 0.0155,
+        "d_lpips": -0.0657,
+        "d_ink_iou": 0.1117
+      },
+      {
+        "idx": 27,
+        "writer": "欧阳询",
+        "character": "勲",
+        "script": "楷",
+        "d_style": 0.2375,
+        "d_ssim": 0.0142,
+        "d_lpips": -0.0066,
+        "d_ink_iou": -0.0121
+      },
+      {
+        "idx": 28,
+        "writer": "欧阳询",
+        "character": "恩",
+        "script": "楷",
+        "d_style": -0.0082,
+        "d_ssim": -0.0011,
+        "d_lpips": -0.0009,
+        "d_ink_iou": -0.0006
+      },
+      {
+        "idx": 29,
+        "writer": "欧阳询",
+        "character": "寐",
+        "script": "行",
+        "d_style": 0.3851,
+        "d_ssim": -0.0169,
+        "d_lpips": 0.0169,
+        "d_ink_iou": -0.0116
+      },
+      {
+        "idx": 30,
+        "writer": "颜真卿",
+        "character": "聲",
+        "script": "楷",
+        "d_style": -0.3052,
+        "d_ssim": 0.038,
+        "d_lpips": -0.0476,
+        "d_ink_iou": 0.0057
+      },
+      {
+        "idx": 31,
+        "writer": "颜真卿",
+        "character": "雍",
+        "script": "楷",
+        "d_style": -0.1173,
+        "d_ssim": 0.0011,
+        "d_lpips": 0.0004,
+        "d_ink_iou": -0.0005
+      },
+      {
+        "idx": 32,
+        "writer": "颜真卿",
+        "character": "夏",
+        "script": "行",
+        "d_style": 0.2692,
+        "d_ssim": 0.0165,
+        "d_lpips": 0.0109,
+        "d_ink_iou": 0.0129
+      },
+      {
+        "idx": 33,
+        "writer": "颜真卿",
+        "character": "博",
+        "script": "楷",
+        "d_style": 0.0015,
+        "d_ssim": -0.0006,
+        "d_lpips": -0.0034,
+        "d_ink_iou": -0.0013
+      },
+      {
+        "idx": 34,
+        "writer": "颜真卿",
+        "character": "蹤",
+        "script": "楷",
+        "d_style": -0.4103,
+        "d_ssim": -0.0252,
+        "d_lpips": 0.0601,
+        "d_ink_iou": -0.1949
+      },
+      {
+        "idx": 35,
+        "writer": "颜真卿",
+        "character": "憲",
+        "script": "行",
+        "d_style": 0.0381,
+        "d_ssim": -0.0276,
+        "d_lpips": -0.0183,
+        "d_ink_iou": 0.0134
+      },
+      {
+        "idx": 36,
+        "writer": "颜真卿",
+        "character": "妄",
+        "script": "楷",
+        "d_style": 0.0606,
+        "d_ssim": -0.0046,
+        "d_lpips": 0.0133,
+        "d_ink_iou": -0.0314
+      },
+      {
+        "idx": 37,
+        "writer": "颜真卿",
+        "character": "住",
+        "script": "行",
+        "d_style": -0.0088,
+        "d_ssim": -0.0004,
+        "d_lpips": -0.0012,
+        "d_ink_iou": 0.0005
+      },
+      {
+        "idx": 38,
+        "writer": "颜真卿",
+        "character": "滄",
+        "script": "楷",
+        "d_style": -0.1506,
+        "d_ssim": -0.034,
+        "d_lpips": 0.0645,
+        "d_ink_iou": -0.0428
+      },
+      {
+        "idx": 39,
+        "writer": "颜真卿",
+        "character": "故",
+        "script": "行",
+        "d_style": 0.2731,
+        "d_ssim": 0.0496,
+        "d_lpips": -0.0445,
+        "d_ink_iou": 0.023
+      },
+      {
+        "idx": 40,
+        "writer": "赵孟頫",
+        "character": "薪",
+        "script": "隶",
+        "d_style": -0.0245,
+        "d_ssim": -0.0206,
+        "d_lpips": -0.0116,
+        "d_ink_iou": -0.0226
+      },
+      {
+        "idx": 41,
+        "writer": "赵孟頫",
+        "character": "卧",
+        "script": "楷",
+        "d_style": -0.0494,
+        "d_ssim": 0.012,
+        "d_lpips": 0.0425,
+        "d_ink_iou": -0.0365
+      },
+      {
+        "idx": 42,
+        "writer": "赵孟頫",
+        "character": "厖",
+        "script": "楷",
+        "d_style": 0.1191,
+        "d_ssim": 0.0467,
+        "d_lpips": 0.0324,
+        "d_ink_iou": -0.04
+      },
+      {
+        "idx": 43,
+        "writer": "赵孟頫",
+        "character": "火",
+        "script": "行",
+        "d_style": 0.0553,
+        "d_ssim": 0.027,
+        "d_lpips": -0.0262,
+        "d_ink_iou": -0.0626
+      },
+      {
+        "idx": 44,
+        "writer": "赵孟頫",
+        "character": "穡",
+        "script": "行",
+        "d_style": -0.0878,
+        "d_ssim": -0.0226,
+        "d_lpips": 0.0489,
+        "d_ink_iou": -0.0803
+      },
+      {
+        "idx": 45,
+        "writer": "赵孟頫",
+        "character": "肥",
+        "script": "隶",
+        "d_style": -0.0222,
+        "d_ssim": 0.0102,
+        "d_lpips": -0.0057,
+        "d_ink_iou": 0.103
+      },
+      {
+        "idx": 46,
+        "writer": "赵孟頫",
+        "character": "化",
+        "script": "隶",
+        "d_style": -0.2918,
+        "d_ssim": -0.0284,
+        "d_lpips": 0.0233,
+        "d_ink_iou": -0.0661
+      },
+      {
+        "idx": 47,
+        "writer": "赵孟頫",
+        "character": "宋",
+        "script": "楷",
+        "d_style": 0.0251,
+        "d_ssim": 0.0014,
+        "d_lpips": -0.0015,
+        "d_ink_iou": -0.0001
+      },
+      {
+        "idx": 48,
+        "writer": "赵孟頫",
+        "character": "兜",
+        "script": "楷",
+        "d_style": -0.0655,
+        "d_ssim": 0.0007,
+        "d_lpips": -0.0027,
+        "d_ink_iou": 0.0015
+      },
+      {
+        "idx": 49,
+        "writer": "赵孟頫",
+        "character": "纨",
+        "script": "隶",
+        "d_style": 0.0121,
+        "d_ssim": 0.013,
+        "d_lpips": -0.0009,
+        "d_ink_iou": 0.0455
+      },
+      {
+        "idx": 50,
+        "writer": "褚遂良",
+        "character": "朽",
+        "script": "行",
+        "d_style": -0.0161,
+        "d_ssim": -0.0008,
+        "d_lpips": 0.0025,
+        "d_ink_iou": -0.0018
+      },
+      {
+        "idx": 51,
+        "writer": "褚遂良",
+        "character": "盡",
+        "script": "行",
+        "d_style": 0.035,
+        "d_ssim": 0.0097,
+        "d_lpips": -0.0138,
+        "d_ink_iou": 0.0824
+      },
+      {
+        "idx": 52,
+        "writer": "褚遂良",
+        "character": "品",
+        "script": "行",
+        "d_style": 0.1348,
+        "d_ssim": 0.038,
+        "d_lpips": -0.0417,
+        "d_ink_iou": -0.065
+      },
+      {
+        "idx": 53,
+        "writer": "褚遂良",
+        "character": "徇",
+        "script": "楷",
+        "d_style": -0.1912,
+        "d_ssim": 0.0218,
+        "d_lpips": 0.0115,
+        "d_ink_iou": -0.0231
+      },
+      {
+        "idx": 54,
+        "writer": "褚遂良",
+        "character": "諦",
+        "script": "楷",
+        "d_style": -0.0504,
+        "d_ssim": 0.0098,
+        "d_lpips": -0.0559,
+        "d_ink_iou": 0.0216
+      },
+      {
+        "idx": 55,
+        "writer": "褚遂良",
+        "character": "及",
+        "script": "楷",
+        "d_style": -0.0187,
+        "d_ssim": 0.0005,
+        "d_lpips": -0.0001,
+        "d_ink_iou": 0.0012
+      },
+      {
+        "idx": 56,
+        "writer": "褚遂良",
+        "character": "覆",
+        "script": "楷",
+        "d_style": 0.212,
+        "d_ssim": -0.1988,
+        "d_lpips": 0.2617,
+        "d_ink_iou": -0.4756
+      },
+      {
+        "idx": 57,
+        "writer": "褚遂良",
+        "character": "協",
+        "script": "楷",
+        "d_style": 0.0047,
+        "d_ssim": 0.0003,
+        "d_lpips": 0.0009,
+        "d_ink_iou": 0.0004
+      },
+      {
+        "idx": 58,
+        "writer": "褚遂良",
+        "character": "怏",
+        "script": "行",
+        "d_style": 0.2389,
+        "d_ssim": 0.0306,
+        "d_lpips": -0.029,
+        "d_ink_iou": 0.01
+      },
+      {
+        "idx": 59,
+        "writer": "褚遂良",
+        "character": "大",
+        "script": "楷",
+        "d_style": -0.4912,
+        "d_ssim": -0.0352,
+        "d_lpips": 0.0651,
+        "d_ink_iou": 0.0063
+      },
+      {
+        "idx": 60,
+        "writer": "米芾",
+        "character": "与",
+        "script": "行",
+        "d_style": -0.004,
+        "d_ssim": -0.0006,
+        "d_lpips": 0.0523,
+        "d_ink_iou": -0.0836
+      },
+      {
+        "idx": 61,
+        "writer": "米芾",
+        "character": "惟",
+        "script": "行",
+        "d_style": -0.0003,
+        "d_ssim": 0.0008,
+        "d_lpips": -0.0004,
+        "d_ink_iou": -0.0005
+      },
+      {
+        "idx": 62,
+        "writer": "米芾",
+        "character": "慈",
+        "script": "楷",
+        "d_style": 0.1269,
+        "d_ssim": 0.0283,
+        "d_lpips": 0.0071,
+        "d_ink_iou": 0.0065
+      },
+      {
+        "idx": 63,
+        "writer": "米芾",
+        "character": "霜",
+        "script": "行",
+        "d_style": 0.3033,
+        "d_ssim": 0.0223,
+        "d_lpips": 0.0048,
+        "d_ink_iou": 0.0199
+      },
+      {
+        "idx": 64,
+        "writer": "米芾",
+        "character": "嬋",
+        "script": "行",
+        "d_style": -0.0122,
+        "d_ssim": 0.0296,
+        "d_lpips": -0.0151,
+        "d_ink_iou": -0.0057
+      },
+      {
+        "idx": 65,
+        "writer": "米芾",
+        "character": "已",
+        "script": "楷",
+        "d_style": 0.102,
+        "d_ssim": -0.0365,
+        "d_lpips": -0.0126,
+        "d_ink_iou": -0.0056
+      },
+      {
+        "idx": 66,
+        "writer": "米芾",
+        "character": "陰",
+        "script": "行",
+        "d_style": 0.0198,
+        "d_ssim": -0.0012,
+        "d_lpips": -0.0061,
+        "d_ink_iou": -0.0014
+      },
+      {
+        "idx": 67,
+        "writer": "米芾",
+        "character": "利",
+        "script": "行",
+        "d_style": 0.1203,
+        "d_ssim": -0.0075,
+        "d_lpips": 0.0135,
+        "d_ink_iou": -0.0525
+      },
+      {
+        "idx": 68,
+        "writer": "米芾",
+        "character": "仙",
+        "script": "行",
+        "d_style": -0.0112,
+        "d_ssim": -0.0188,
+        "d_lpips": 0.016,
+        "d_ink_iou": -0.0297
+      },
+      {
+        "idx": 69,
+        "writer": "米芾",
+        "character": "才",
+        "script": "行",
+        "d_style": 0.2143,
+        "d_ssim": 0.0153,
+        "d_lpips": -0.0522,
+        "d_ink_iou": 0.0345
+      },
+      {
+        "idx": 70,
+        "writer": "文徵明",
+        "character": "地",
+        "script": "行",
+        "d_style": -0.0239,
+        "d_ssim": -0.0003,
+        "d_lpips": 0.0005,
+        "d_ink_iou": -0.0001
+      },
+      {
+        "idx": 72,
+        "writer": "文徵明",
+        "character": "儔",
+        "script": "楷",
+        "d_style": -0.0327,
+        "d_ssim": 0.0328,
+        "d_lpips": -0.0252,
+        "d_ink_iou": 0.0376
+      },
+      {
+        "idx": 73,
+        "writer": "文徵明",
+        "character": "事",
+        "script": "行",
+        "d_style": -0.0204,
+        "d_ssim": -0.0005,
+        "d_lpips": 0.001,
+        "d_ink_iou": -0.0001
+      },
+      {
+        "idx": 75,
+        "writer": "文徵明",
+        "character": "丙",
+        "script": "行",
+        "d_style": 0.1963,
+        "d_ssim": 0.0083,
+        "d_lpips": -0.0078,
+        "d_ink_iou": -0.0034
+      },
+      {
+        "idx": 76,
+        "writer": "文徵明",
+        "character": "但",
+        "script": "行",
+        "d_style": 0.0189,
+        "d_ssim": -0.0837,
+        "d_lpips": 0.0672,
+        "d_ink_iou": -0.1189
+      },
+      {
+        "idx": 77,
+        "writer": "文徵明",
+        "character": "宅",
+        "script": "行",
+        "d_style": 0.1709,
+        "d_ssim": -0.0089,
+        "d_lpips": -0.0164,
+        "d_ink_iou": 0.0977
+      },
+      {
+        "idx": 78,
+        "writer": "文徵明",
+        "character": "墨",
+        "script": "楷",
+        "d_style": -0.0081,
+        "d_ssim": -0.0003,
+        "d_lpips": -0.0017,
+        "d_ink_iou": 0.0011
+      },
+      {
+        "idx": 79,
+        "writer": "文徵明",
+        "character": "㩜",
+        "script": "楷",
+        "d_style": -0.1459,
+        "d_ssim": -0.0611,
+        "d_lpips": 0.0537,
+        "d_ink_iou": 0.0029
+      },
+      {
+        "idx": 80,
+        "writer": "柳公权",
+        "character": "兼",
+        "script": "行",
+        "d_style": 0.0118,
+        "d_ssim": 0.0011,
+        "d_lpips": 0.0001,
+        "d_ink_iou": 0.0027
+      },
+      {
+        "idx": 81,
+        "writer": "柳公权",
+        "character": "氛",
+        "script": "楷",
+        "d_style": -0.0858,
+        "d_ssim": 0.014,
+        "d_lpips": 0.0676,
+        "d_ink_iou": -0.0335
+      },
+      {
+        "idx": 82,
+        "writer": "柳公权",
+        "character": "荷",
+        "script": "行",
+        "d_style": -0.0028,
+        "d_ssim": -0.0009,
+        "d_lpips": 0.0062,
+        "d_ink_iou": 0.0002
+      },
+      {
+        "idx": 83,
+        "writer": "柳公权",
+        "character": "秩",
+        "script": "楷",
+        "d_style": 0.0022,
+        "d_ssim": 0.0014,
+        "d_lpips": 0.006,
+        "d_ink_iou": -0.1044
+      },
+      {
+        "idx": 84,
+        "writer": "柳公权",
+        "character": "高",
+        "script": "楷",
+        "d_style": -0.0127,
+        "d_ssim": 0.0046,
+        "d_lpips": -0.0164,
+        "d_ink_iou": 0.0473
+      },
+      {
+        "idx": 85,
+        "writer": "柳公权",
+        "character": "包",
+        "script": "楷",
+        "d_style": -0.418,
+        "d_ssim": -0.0059,
+        "d_lpips": 0.0892,
+        "d_ink_iou": -0.075
+      },
+      {
+        "idx": 86,
+        "writer": "柳公权",
+        "character": "粲",
+        "script": "行",
+        "d_style": -0.0019,
+        "d_ssim": -0.0007,
+        "d_lpips": 0.0007,
+        "d_ink_iou": 0.0031
+      },
+      {
+        "idx": 87,
+        "writer": "柳公权",
+        "character": "傳",
+        "script": "楷",
+        "d_style": 0.0003,
+        "d_ssim": -0.038,
+        "d_lpips": 0.0075,
+        "d_ink_iou": -0.0838
+      },
+      {
+        "idx": 88,
+        "writer": "柳公权",
+        "character": "激",
+        "script": "行",
+        "d_style": 0.0581,
+        "d_ssim": -0.0055,
+        "d_lpips": -0.0066,
+        "d_ink_iou": -0.0011
+      },
+      {
+        "idx": 89,
+        "writer": "柳公权",
+        "character": "綏",
+        "script": "楷",
+        "d_style": 0.0691,
+        "d_ssim": 0.0434,
+        "d_lpips": -0.0304,
+        "d_ink_iou": 0.017
+      },
+      {
+        "idx": 90,
+        "writer": "何绍基",
+        "character": "極",
+        "script": "行",
+        "d_style": 0.0839,
+        "d_ssim": -0.0116,
+        "d_lpips": 0.0247,
+        "d_ink_iou": -0.0528
+      },
+      {
+        "idx": 91,
+        "writer": "何绍基",
+        "character": "掣",
+        "script": "隶",
+        "d_style": 0.086,
+        "d_ssim": -0.0156,
+        "d_lpips": 0.0248,
+        "d_ink_iou": 0.0176
+      },
+      {
+        "idx": 92,
+        "writer": "何绍基",
+        "character": "儀",
+        "script": "楷",
+        "d_style": -0.0622,
+        "d_ssim": -0.0006,
+        "d_lpips": -0.0011,
+        "d_ink_iou": -0.0022
+      },
+      {
+        "idx": 93,
+        "writer": "何绍基",
+        "character": "术",
+        "script": "隶",
+        "d_style": -0.0316,
+        "d_ssim": -0.0042,
+        "d_lpips": 0.0273,
+        "d_ink_iou": 0.0286
+      },
+      {
+        "idx": 94,
+        "writer": "何绍基",
+        "character": "寵",
+        "script": "楷",
+        "d_style": 0.0143,
+        "d_ssim": -0.0014,
+        "d_lpips": 0.001,
+        "d_ink_iou": -0.0007
+      },
+      {
+        "idx": 95,
+        "writer": "何绍基",
+        "character": "覽",
+        "script": "隶",
+        "d_style": -0.0133,
+        "d_ssim": -0.0342,
+        "d_lpips": 0.0461,
+        "d_ink_iou": -0.0869
+      },
+      {
+        "idx": 96,
+        "writer": "何绍基",
+        "character": "游",
+        "script": "隶",
+        "d_style": -0.1098,
+        "d_ssim": 0.0047,
+        "d_lpips": -0.0062,
+        "d_ink_iou": 0.0628
+      },
+      {
+        "idx": 97,
+        "writer": "何绍基",
+        "character": "事",
+        "script": "行",
+        "d_style": 0.0092,
+        "d_ssim": 0.0006,
+        "d_lpips": 0.0003,
+        "d_ink_iou": -0.0007
+      },
+      {
+        "idx": 98,
+        "writer": "何绍基",
+        "character": "愬",
+        "script": "行",
+        "d_style": 0.0027,
+        "d_ssim": -0.0256,
+        "d_lpips": 0.0436,
+        "d_ink_iou": -0.0324
+      },
+      {
+        "idx": 99,
+        "writer": "何绍基",
+        "character": "豈",
+        "script": "楷",
+        "d_style": -0.1665,
+        "d_ssim": -0.0103,
+        "d_lpips": -0.005,
+        "d_ink_iou": -0.0107
+      }
+    ],
+    "S4-S0": [
+      {
+        "idx": 0,
+        "writer": "王羲之",
+        "character": "用",
+        "script": "行",
+        "d_style": 0.4453,
+        "d_ssim": 0.032,
+        "d_lpips": -0.0114,
+        "d_ink_iou": -0.0912
+      },
+      {
+        "idx": 1,
+        "writer": "王羲之",
+        "character": "報",
+        "script": "行",
+        "d_style": 0.1094,
+        "d_ssim": -0.0022,
+        "d_lpips": 0.0017,
+        "d_ink_iou": 0.0003
+      },
+      {
+        "idx": 2,
+        "writer": "王羲之",
+        "character": "羲",
+        "script": "行",
+        "d_style": -0.1374,
+        "d_ssim": 0.0002,
+        "d_lpips": -0.0006,
+        "d_ink_iou": -0.0113
+      },
+      {
+        "idx": 3,
+        "writer": "王羲之",
+        "character": "旬",
+        "script": "楷",
+        "d_style": -0.2628,
+        "d_ssim": -0.0732,
+        "d_lpips": 0.0014,
+        "d_ink_iou": 0.0952
+      },
+      {
+        "idx": 4,
+        "writer": "王羲之",
+        "character": "屍",
+        "script": "楷",
+        "d_style": 0.3238,
+        "d_ssim": 0.0819,
+        "d_lpips": 0.1333,
+        "d_ink_iou": -0.0832
+      },
+      {
+        "idx": 5,
+        "writer": "王羲之",
+        "character": "吴",
+        "script": "行",
+        "d_style": 0.0591,
+        "d_ssim": 0.024,
+        "d_lpips": -0.0197,
+        "d_ink_iou": 0.0192
+      },
+      {
+        "idx": 6,
+        "writer": "王羲之",
+        "character": "好",
+        "script": "行",
+        "d_style": -0.2178,
+        "d_ssim": -0.0992,
+        "d_lpips": 0.0592,
+        "d_ink_iou": 0.0469
+      },
+      {
+        "idx": 7,
+        "writer": "王羲之",
+        "character": "何",
+        "script": "行",
+        "d_style": 0.1674,
+        "d_ssim": -0.0437,
+        "d_lpips": -0.0904,
+        "d_ink_iou": 0.0959
+      },
+      {
+        "idx": 8,
+        "writer": "王羲之",
+        "character": "閒",
+        "script": "行",
+        "d_style": 0.0163,
+        "d_ssim": -0.0012,
+        "d_lpips": 0.0002,
+        "d_ink_iou": -0.0014
+      },
+      {
+        "idx": 9,
+        "writer": "王羲之",
+        "character": "咽",
+        "script": "楷",
+        "d_style": 0.6842,
+        "d_ssim": 0.1087,
+        "d_lpips": -0.0554,
+        "d_ink_iou": 0.1947
+      },
+      {
+        "idx": 10,
+        "writer": "苏轼",
+        "character": "兀",
+        "script": "楷",
+        "d_style": 0.3889,
+        "d_ssim": -0.0276,
+        "d_lpips": -0.0069,
+        "d_ink_iou": 0.0057
+      },
+      {
+        "idx": 11,
+        "writer": "苏轼",
+        "character": "桑",
+        "script": "行",
+        "d_style": 0.0138,
+        "d_ssim": -0.0013,
+        "d_lpips": -0.0018,
+        "d_ink_iou": 0.0005
+      },
+      {
+        "idx": 12,
+        "writer": "苏轼",
+        "character": "匹",
+        "script": "行",
+        "d_style": -0.0875,
+        "d_ssim": 0.0436,
+        "d_lpips": -0.0258,
+        "d_ink_iou": 0.1151
+      },
+      {
+        "idx": 13,
+        "writer": "苏轼",
+        "character": "剥",
+        "script": "行",
+        "d_style": 0.0115,
+        "d_ssim": 0.0744,
+        "d_lpips": -0.035,
+        "d_ink_iou": 0.0404
+      },
+      {
+        "idx": 14,
+        "writer": "苏轼",
+        "character": "巩",
+        "script": "楷",
+        "d_style": 0.7397,
+        "d_ssim": -0.0521,
+        "d_lpips": 0.0311,
+        "d_ink_iou": 0.0264
+      },
+      {
+        "idx": 15,
+        "writer": "苏轼",
+        "character": "巫",
+        "script": "行",
+        "d_style": 0.1638,
+        "d_ssim": -0.0564,
+        "d_lpips": -0.0234,
+        "d_ink_iou": 0.0194
+      },
+      {
+        "idx": 16,
+        "writer": "苏轼",
+        "character": "冒",
+        "script": "行",
+        "d_style": -0.0155,
+        "d_ssim": 0.0007,
+        "d_lpips": 0.0001,
+        "d_ink_iou": 0.0012
+      },
+      {
+        "idx": 17,
+        "writer": "苏轼",
+        "character": "啟",
+        "script": "行",
+        "d_style": 0.3104,
+        "d_ssim": 0.0555,
+        "d_lpips": -0.0498,
+        "d_ink_iou": 0.1214
+      },
+      {
+        "idx": 18,
+        "writer": "苏轼",
+        "character": "永",
+        "script": "楷",
+        "d_style": -0.2886,
+        "d_ssim": -0.0309,
+        "d_lpips": 0.0659,
+        "d_ink_iou": -0.062
+      },
+      {
+        "idx": 19,
+        "writer": "苏轼",
+        "character": "廿",
+        "script": "楷",
+        "d_style": 0.0388,
+        "d_ssim": -0.01,
+        "d_lpips": 0.0309,
+        "d_ink_iou": -0.0592
+      },
+      {
+        "idx": 20,
+        "writer": "欧阳询",
+        "character": "速",
+        "script": "楷",
+        "d_style": 0.1825,
+        "d_ssim": -0.0251,
+        "d_lpips": -0.005,
+        "d_ink_iou": 0.0316
+      },
+      {
+        "idx": 21,
+        "writer": "欧阳询",
+        "character": "潛",
+        "script": "行",
+        "d_style": 0.178,
+        "d_ssim": 0.0846,
+        "d_lpips": -0.0445,
+        "d_ink_iou": 0.0944
+      },
+      {
+        "idx": 22,
+        "writer": "欧阳询",
+        "character": "謙",
+        "script": "楷",
+        "d_style": -0.0161,
+        "d_ssim": -0.0032,
+        "d_lpips": -0.0245,
+        "d_ink_iou": 0.1124
+      },
+      {
+        "idx": 23,
+        "writer": "欧阳询",
+        "character": "丸",
+        "script": "楷",
+        "d_style": -0.0099,
+        "d_ssim": -0.0006,
+        "d_lpips": -0.0012,
+        "d_ink_iou": 0.0007
+      },
+      {
+        "idx": 24,
+        "writer": "欧阳询",
+        "character": "辰",
+        "script": "行",
+        "d_style": 0.0295,
+        "d_ssim": 0.0188,
+        "d_lpips": -0.0131,
+        "d_ink_iou": 0.0039
+      },
+      {
+        "idx": 25,
+        "writer": "欧阳询",
+        "character": "楚",
+        "script": "行",
+        "d_style": 0.0268,
+        "d_ssim": -0.0006,
+        "d_lpips": -0.0004,
+        "d_ink_iou": -0.0015
+      },
+      {
+        "idx": 26,
+        "writer": "欧阳询",
+        "character": "事",
+        "script": "行",
+        "d_style": 0.0422,
+        "d_ssim": -0.0237,
+        "d_lpips": 0.0886,
+        "d_ink_iou": -0.1927
+      },
+      {
+        "idx": 27,
+        "writer": "欧阳询",
+        "character": "勲",
+        "script": "楷",
+        "d_style": -0.1837,
+        "d_ssim": 0.0648,
+        "d_lpips": -0.0489,
+        "d_ink_iou": 0.1587
+      },
+      {
+        "idx": 28,
+        "writer": "欧阳询",
+        "character": "恩",
+        "script": "楷",
+        "d_style": -0.0039,
+        "d_ssim": 0.0002,
+        "d_lpips": 0.0019,
+        "d_ink_iou": 0.0001
+      },
+      {
+        "idx": 29,
+        "writer": "欧阳询",
+        "character": "寐",
+        "script": "行",
+        "d_style": -0.3761,
+        "d_ssim": -0.0145,
+        "d_lpips": 0.0557,
+        "d_ink_iou": -0.0024
+      },
+      {
+        "idx": 30,
+        "writer": "颜真卿",
+        "character": "聲",
+        "script": "楷",
+        "d_style": 0.2551,
+        "d_ssim": -0.027,
+        "d_lpips": 0.0342,
+        "d_ink_iou": -0.001
+      },
+      {
+        "idx": 31,
+        "writer": "颜真卿",
+        "character": "雍",
+        "script": "楷",
+        "d_style": 0.7856,
+        "d_ssim": -0.0908,
+        "d_lpips": 0.0463,
+        "d_ink_iou": -0.012
+      },
+      {
+        "idx": 32,
+        "writer": "颜真卿",
+        "character": "夏",
+        "script": "行",
+        "d_style": 0.1509,
+        "d_ssim": 0.0183,
+        "d_lpips": 0.0262,
+        "d_ink_iou": 0.0155
+      },
+      {
+        "idx": 33,
+        "writer": "颜真卿",
+        "character": "博",
+        "script": "楷",
+        "d_style": -0.0227,
+        "d_ssim": 0.0005,
+        "d_lpips": 0.0005,
+        "d_ink_iou": 0.0004
+      },
+      {
+        "idx": 34,
+        "writer": "颜真卿",
+        "character": "蹤",
+        "script": "楷",
+        "d_style": -0.0015,
+        "d_ssim": 0.0284,
+        "d_lpips": -0.0363,
+        "d_ink_iou": 0.1343
+      },
+      {
+        "idx": 35,
+        "writer": "颜真卿",
+        "character": "憲",
+        "script": "行",
+        "d_style": 0.2832,
+        "d_ssim": 0.0087,
+        "d_lpips": 0.0139,
+        "d_ink_iou": 0.027
+      },
+      {
+        "idx": 36,
+        "writer": "颜真卿",
+        "character": "妄",
+        "script": "楷",
+        "d_style": 0.0906,
+        "d_ssim": 0.0067,
+        "d_lpips": -0.0234,
+        "d_ink_iou": 0.032
+      },
+      {
+        "idx": 37,
+        "writer": "颜真卿",
+        "character": "住",
+        "script": "行",
+        "d_style": 0.0068,
+        "d_ssim": 0.0006,
+        "d_lpips": 0.0026,
+        "d_ink_iou": 0.0011
+      },
+      {
+        "idx": 38,
+        "writer": "颜真卿",
+        "character": "滄",
+        "script": "楷",
+        "d_style": -0.0335,
+        "d_ssim": 0.0121,
+        "d_lpips": -0.0332,
+        "d_ink_iou": -0.0334
+      },
+      {
+        "idx": 39,
+        "writer": "颜真卿",
+        "character": "故",
+        "script": "行",
+        "d_style": -0.2396,
+        "d_ssim": -0.023,
+        "d_lpips": -0.0002,
+        "d_ink_iou": -0.001
+      },
+      {
+        "idx": 40,
+        "writer": "赵孟頫",
+        "character": "薪",
+        "script": "隶",
+        "d_style": -0.06,
+        "d_ssim": 0.0085,
+        "d_lpips": 0.001,
+        "d_ink_iou": 0.0049
+      },
+      {
+        "idx": 41,
+        "writer": "赵孟頫",
+        "character": "卧",
+        "script": "楷",
+        "d_style": 0.0791,
+        "d_ssim": -0.0049,
+        "d_lpips": -0.0759,
+        "d_ink_iou": 0.1431
+      },
+      {
+        "idx": 42,
+        "writer": "赵孟頫",
+        "character": "厖",
+        "script": "楷",
+        "d_style": -0.1423,
+        "d_ssim": 0.0011,
+        "d_lpips": 0.0499,
+        "d_ink_iou": -0.0001
+      },
+      {
+        "idx": 43,
+        "writer": "赵孟頫",
+        "character": "火",
+        "script": "行",
+        "d_style": 0.3467,
+        "d_ssim": -0.021,
+        "d_lpips": 0.0018,
+        "d_ink_iou": 0.0706
+      },
+      {
+        "idx": 44,
+        "writer": "赵孟頫",
+        "character": "穡",
+        "script": "行",
+        "d_style": 0.0713,
+        "d_ssim": -0.0469,
+        "d_lpips": 0.0317,
+        "d_ink_iou": -0.0529
+      },
+      {
+        "idx": 45,
+        "writer": "赵孟頫",
+        "character": "肥",
+        "script": "隶",
+        "d_style": -0.018,
+        "d_ssim": -0.0292,
+        "d_lpips": 0.0462,
+        "d_ink_iou": -0.1373
+      },
+      {
+        "idx": 46,
+        "writer": "赵孟頫",
+        "character": "化",
+        "script": "隶",
+        "d_style": 0.0424,
+        "d_ssim": -0.0022,
+        "d_lpips": -0.0794,
+        "d_ink_iou": 0.1486
+      },
+      {
+        "idx": 47,
+        "writer": "赵孟頫",
+        "character": "宋",
+        "script": "楷",
+        "d_style": -0.0178,
+        "d_ssim": -0.0008,
+        "d_lpips": 0.0001,
+        "d_ink_iou": 0.0011
+      },
+      {
+        "idx": 48,
+        "writer": "赵孟頫",
+        "character": "兜",
+        "script": "楷",
+        "d_style": 0.0481,
+        "d_ssim": -0.0001,
+        "d_lpips": 0.0003,
+        "d_ink_iou": -0.0003
+      },
+      {
+        "idx": 49,
+        "writer": "赵孟頫",
+        "character": "纨",
+        "script": "隶",
+        "d_style": -0.0851,
+        "d_ssim": -0.0019,
+        "d_lpips": -0.0117,
+        "d_ink_iou": -0.05
+      },
+      {
+        "idx": 50,
+        "writer": "褚遂良",
+        "character": "朽",
+        "script": "行",
+        "d_style": 0.0129,
+        "d_ssim": 0.0013,
+        "d_lpips": -0.0024,
+        "d_ink_iou": 0.0018
+      },
+      {
+        "idx": 51,
+        "writer": "褚遂良",
+        "character": "盡",
+        "script": "行",
+        "d_style": 0.2605,
+        "d_ssim": -0.0049,
+        "d_lpips": -0.0018,
+        "d_ink_iou": -0.0682
+      },
+      {
+        "idx": 52,
+        "writer": "褚遂良",
+        "character": "品",
+        "script": "行",
+        "d_style": 0.0221,
+        "d_ssim": 0.0038,
+        "d_lpips": -0.0045,
+        "d_ink_iou": 0.0102
+      },
+      {
+        "idx": 53,
+        "writer": "褚遂良",
+        "character": "徇",
+        "script": "楷",
+        "d_style": 0.2805,
+        "d_ssim": -0.0333,
+        "d_lpips": -0.0367,
+        "d_ink_iou": 0.0427
+      },
+      {
+        "idx": 54,
+        "writer": "褚遂良",
+        "character": "諦",
+        "script": "楷",
+        "d_style": -0.0351,
+        "d_ssim": 0.0108,
+        "d_lpips": -0.0214,
+        "d_ink_iou": 0.0436
+      },
+      {
+        "idx": 55,
+        "writer": "褚遂良",
+        "character": "及",
+        "script": "楷",
+        "d_style": 0.0165,
+        "d_ssim": 0.0002,
+        "d_lpips": -0.0026,
+        "d_ink_iou": 0.0014
+      },
+      {
+        "idx": 56,
+        "writer": "褚遂良",
+        "character": "覆",
+        "script": "楷",
+        "d_style": -0.2302,
+        "d_ssim": 0.1999,
+        "d_lpips": -0.2581,
+        "d_ink_iou": 0.4756
+      },
+      {
+        "idx": 57,
+        "writer": "褚遂良",
+        "character": "協",
+        "script": "楷",
+        "d_style": 0.0032,
+        "d_ssim": 0.0007,
+        "d_lpips": -0.001,
+        "d_ink_iou": 0.0
+      },
+      {
+        "idx": 58,
+        "writer": "褚遂良",
+        "character": "怏",
+        "script": "行",
+        "d_style": -0.0213,
+        "d_ssim": -0.0724,
+        "d_lpips": 0.0905,
+        "d_ink_iou": -0.0925
+      },
+      {
+        "idx": 59,
+        "writer": "褚遂良",
+        "character": "大",
+        "script": "楷",
+        "d_style": 0.3124,
+        "d_ssim": 0.0401,
+        "d_lpips": -0.059,
+        "d_ink_iou": 0.0674
+      },
+      {
+        "idx": 60,
+        "writer": "米芾",
+        "character": "与",
+        "script": "行",
+        "d_style": -0.0017,
+        "d_ssim": 0.0005,
+        "d_lpips": -0.0508,
+        "d_ink_iou": 0.0845
+      },
+      {
+        "idx": 61,
+        "writer": "米芾",
+        "character": "惟",
+        "script": "行",
+        "d_style": 0.0118,
+        "d_ssim": -0.0007,
+        "d_lpips": 0.0004,
+        "d_ink_iou": 0.0008
+      },
+      {
+        "idx": 62,
+        "writer": "米芾",
+        "character": "慈",
+        "script": "楷",
+        "d_style": -0.2206,
+        "d_ssim": -0.0199,
+        "d_lpips": -0.0073,
+        "d_ink_iou": -0.0057
+      },
+      {
+        "idx": 63,
+        "writer": "米芾",
+        "character": "霜",
+        "script": "行",
+        "d_style": 0.0724,
+        "d_ssim": -0.0385,
+        "d_lpips": 0.0336,
+        "d_ink_iou": -0.0586
+      },
+      {
+        "idx": 64,
+        "writer": "米芾",
+        "character": "嬋",
+        "script": "行",
+        "d_style": -0.1505,
+        "d_ssim": -0.1256,
+        "d_lpips": 0.1556,
+        "d_ink_iou": -0.1853
+      },
+      {
+        "idx": 65,
+        "writer": "米芾",
+        "character": "已",
+        "script": "楷",
+        "d_style": 0.151,
+        "d_ssim": -0.0028,
+        "d_lpips": -0.001,
+        "d_ink_iou": 0.1209
+      },
+      {
+        "idx": 66,
+        "writer": "米芾",
+        "character": "陰",
+        "script": "行",
+        "d_style": 0.0139,
+        "d_ssim": -0.0143,
+        "d_lpips": 0.0126,
+        "d_ink_iou": -0.0037
+      },
+      {
+        "idx": 67,
+        "writer": "米芾",
+        "character": "利",
+        "script": "行",
+        "d_style": -0.0911,
+        "d_ssim": -0.0118,
+        "d_lpips": 0.0142,
+        "d_ink_iou": 0.0269
+      },
+      {
+        "idx": 68,
+        "writer": "米芾",
+        "character": "仙",
+        "script": "行",
+        "d_style": -0.1107,
+        "d_ssim": -0.0476,
+        "d_lpips": 0.0479,
+        "d_ink_iou": -0.0514
+      },
+      {
+        "idx": 69,
+        "writer": "米芾",
+        "character": "才",
+        "script": "行",
+        "d_style": 0.0852,
+        "d_ssim": -0.0768,
+        "d_lpips": 0.1037,
+        "d_ink_iou": -0.164
+      },
+      {
+        "idx": 70,
+        "writer": "文徵明",
+        "character": "地",
+        "script": "行",
+        "d_style": 0.0052,
+        "d_ssim": 0.0006,
+        "d_lpips": 0.0022,
+        "d_ink_iou": -0.0012
+      },
+      {
+        "idx": 72,
+        "writer": "文徵明",
+        "character": "儔",
+        "script": "楷",
+        "d_style": -0.1706,
+        "d_ssim": -0.0314,
+        "d_lpips": 0.0425,
+        "d_ink_iou": -0.0313
+      },
+      {
+        "idx": 73,
+        "writer": "文徵明",
+        "character": "事",
+        "script": "行",
+        "d_style": -0.0013,
+        "d_ssim": 0.0001,
+        "d_lpips": -0.0005,
+        "d_ink_iou": -0.0002
+      },
+      {
+        "idx": 75,
+        "writer": "文徵明",
+        "character": "丙",
+        "script": "行",
+        "d_style": 0.0024,
+        "d_ssim": -0.0066,
+        "d_lpips": 0.0039,
+        "d_ink_iou": -0.0118
+      },
+      {
+        "idx": 76,
+        "writer": "文徵明",
+        "character": "但",
+        "script": "行",
+        "d_style": 0.0987,
+        "d_ssim": -0.0248,
+        "d_lpips": 0.0198,
+        "d_ink_iou": -0.0204
+      },
+      {
+        "idx": 77,
+        "writer": "文徵明",
+        "character": "宅",
+        "script": "行",
+        "d_style": -0.0689,
+        "d_ssim": -0.014,
+        "d_lpips": 0.0385,
+        "d_ink_iou": -0.0925
+      },
+      {
+        "idx": 78,
+        "writer": "文徵明",
+        "character": "墨",
+        "script": "楷",
+        "d_style": 0.0078,
+        "d_ssim": -0.0002,
+        "d_lpips": -0.0002,
+        "d_ink_iou": -0.002
+      },
+      {
+        "idx": 79,
+        "writer": "文徵明",
+        "character": "㩜",
+        "script": "楷",
+        "d_style": 0.0721,
+        "d_ssim": -0.0282,
+        "d_lpips": 0.0435,
+        "d_ink_iou": -0.0203
+      },
+      {
+        "idx": 80,
+        "writer": "柳公权",
+        "character": "兼",
+        "script": "行",
+        "d_style": 0.012,
+        "d_ssim": -0.001,
+        "d_lpips": -0.0006,
+        "d_ink_iou": -0.0025
+      },
+      {
+        "idx": 81,
+        "writer": "柳公权",
+        "character": "氛",
+        "script": "楷",
+        "d_style": 0.0867,
+        "d_ssim": 0.0007,
+        "d_lpips": -0.0272,
+        "d_ink_iou": 0.0222
+      },
+      {
+        "idx": 82,
+        "writer": "柳公权",
+        "character": "荷",
+        "script": "行",
+        "d_style": 0.0238,
+        "d_ssim": 0.0,
+        "d_lpips": -0.006,
+        "d_ink_iou": -0.0011
+      },
+      {
+        "idx": 83,
+        "writer": "柳公权",
+        "character": "秩",
+        "script": "楷",
+        "d_style": 0.1234,
+        "d_ssim": -0.0207,
+        "d_lpips": 0.0263,
+        "d_ink_iou": 0.0076
+      },
+      {
+        "idx": 84,
+        "writer": "柳公权",
+        "character": "高",
+        "script": "楷",
+        "d_style": -0.5766,
+        "d_ssim": -0.024,
+        "d_lpips": 0.0424,
+        "d_ink_iou": -0.0422
+      },
+      {
+        "idx": 85,
+        "writer": "柳公权",
+        "character": "包",
+        "script": "楷",
+        "d_style": 0.2099,
+        "d_ssim": 0.1071,
+        "d_lpips": -0.1029,
+        "d_ink_iou": 0.0157
+      },
+      {
+        "idx": 86,
+        "writer": "柳公权",
+        "character": "粲",
+        "script": "行",
+        "d_style": -0.0272,
+        "d_ssim": 0.0044,
+        "d_lpips": -0.0014,
+        "d_ink_iou": 0.001
+      },
+      {
+        "idx": 87,
+        "writer": "柳公权",
+        "character": "傳",
+        "script": "楷",
+        "d_style": 0.4288,
+        "d_ssim": -0.0114,
+        "d_lpips": 0.0325,
+        "d_ink_iou": 0.0201
+      },
+      {
+        "idx": 88,
+        "writer": "柳公权",
+        "character": "激",
+        "script": "行",
+        "d_style": -0.0264,
+        "d_ssim": 0.0022,
+        "d_lpips": -0.001,
+        "d_ink_iou": 0.0
+      },
+      {
+        "idx": 89,
+        "writer": "柳公权",
+        "character": "綏",
+        "script": "楷",
+        "d_style": -0.1862,
+        "d_ssim": 0.0195,
+        "d_lpips": -0.0116,
+        "d_ink_iou": -0.0048
+      },
+      {
+        "idx": 90,
+        "writer": "何绍基",
+        "character": "極",
+        "script": "行",
+        "d_style": -0.1684,
+        "d_ssim": -0.0092,
+        "d_lpips": -0.0568,
+        "d_ink_iou": 0.1207
+      },
+      {
+        "idx": 91,
+        "writer": "何绍基",
+        "character": "掣",
+        "script": "隶",
+        "d_style": -0.0138,
+        "d_ssim": 0.0249,
+        "d_lpips": -0.016,
+        "d_ink_iou": 0.0101
+      },
+      {
+        "idx": 92,
+        "writer": "何绍基",
+        "character": "儀",
+        "script": "楷",
+        "d_style": 0.0019,
+        "d_ssim": -0.0002,
+        "d_lpips": 0.0009,
+        "d_ink_iou": -0.0009
+      },
+      {
+        "idx": 93,
+        "writer": "何绍基",
+        "character": "术",
+        "script": "隶",
+        "d_style": -0.0708,
+        "d_ssim": 0.0312,
+        "d_lpips": -0.0515,
+        "d_ink_iou": 0.0263
+      },
+      {
+        "idx": 94,
+        "writer": "何绍基",
+        "character": "寵",
+        "script": "楷",
+        "d_style": 0.0292,
+        "d_ssim": -0.0014,
+        "d_lpips": 0.0001,
+        "d_ink_iou": -0.0025
+      },
+      {
+        "idx": 95,
+        "writer": "何绍基",
+        "character": "覽",
+        "script": "隶",
+        "d_style": -0.1087,
+        "d_ssim": 0.0357,
+        "d_lpips": -0.0206,
+        "d_ink_iou": 0.0691
+      },
+      {
+        "idx": 96,
+        "writer": "何绍基",
+        "character": "游",
+        "script": "隶",
+        "d_style": 0.2616,
+        "d_ssim": -0.0345,
+        "d_lpips": 0.0432,
+        "d_ink_iou": -0.1135
+      },
+      {
+        "idx": 97,
+        "writer": "何绍基",
+        "character": "事",
+        "script": "行",
+        "d_style": -0.0251,
+        "d_ssim": -0.0001,
+        "d_lpips": 0.0014,
+        "d_ink_iou": 0.0003
+      },
+      {
+        "idx": 98,
+        "writer": "何绍基",
+        "character": "愬",
+        "script": "行",
+        "d_style": -0.0331,
+        "d_ssim": 0.0024,
+        "d_lpips": -0.0111,
+        "d_ink_iou": -0.0267
+      },
+      {
+        "idx": 99,
+        "writer": "何绍基",
+        "character": "豈",
+        "script": "楷",
+        "d_style": -0.21,
+        "d_ssim": -0.038,
+        "d_lpips": 0.0144,
+        "d_ink_iou": -0.0612
+      }
+    ]
+  }
+}
