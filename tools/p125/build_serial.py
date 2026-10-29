@@ -1,0 +1,134 @@
+"""S5-P125 serial plan builder: three chained serial invocations with runtime
+materialization between them.
+
+  serial_a: P0 100k scratch (FM only, 75% writer drop, 48 slots)
+  materialize: init_p1_table on P0@100k EMA
+  serial_b: P1 5k (70/30 mix, table LR 5e-5) -> P2 15k (Top10, 50/50 + pairs)
+  materialize: copy P2@15000 run dirs -> P3A/P3B; run EG pilot gate
+  serial_c: P3A (FM continue) + P3B (E-G assisted) to 20000 (125k cumulative)
+
+The stage CSVs and shards_all are built by build_stage_csvs.py first.
+"""
+import argparse
+import copy
+import hashlib
+import json
+from pathlib import Path
+from ..style_matrix.runtime.common import save
+
+OUT=Path("assets/p125_20261030")
+REPO="/root/Workspace/xy/DiT"
+PY="/opt/conda/envs/cu121/bin/python"
+TOP10_CSV="assets/u100_p1p2_20261025/p2_train.csv"
+VAL100="assets/u100_pretrain_20261024/validation_val100.csv"
+
+
+def stage_config(base,stage):
+    c=copy.deepcopy(base)
+    c['num_writers']=47
+    c['callig_remap_json']=str(OUT/'callig_remap_p125.json')
+    c['latent_shards_dir']=str(OUT/'shards_all')
+    c['std_shape_cache']='assets/u100_pretrain_20261024/std_shape_bank.pt'
+    c['std_soft_root']='assets/generic48_kxl_top10_20261022/std_bbox64'
+    c['null_writer_rows']=True
+    c['char_remap_json']=str(OUT/'char_remap_p125.json')
+    if stage=='p0':
+        c.update(data_csv=str(OUT/'stage_p0.csv'),lr=7e-5,warmup=1500,
+            lr_decay_steps=100000,max_steps=100000,drop_writer=0.75,
+            ckpt_every=10000,eval_every=10000)
+    elif stage=='p1':
+        c.update(data_csv=str(OUT/'stage_p1.csv'),lr=1e-5,lr_backbone=1e-5,
+            lr_style_repr=1e-5,lr_style_inj=1e-5,lr_writer_table=5e-5,
+            warmup=200,lr_decay_steps=5000,max_steps=5000,drop_writer=0.25,
+            ckpt_every=2500,eval_every=2500)
+    elif stage=='p2':
+        c.update(data_csv=str(OUT/'stage_p2.csv'),lr=1e-5,lr_backbone=1e-5,
+            lr_style_repr=1e-5,lr_style_inj=1e-5,lr_writer_table=5e-5,
+            warmup=200,lr_decay_steps=20000,max_steps=15000,drop_writer=0.1,
+            pair_fraction=0.3,ckpt_every=5000,eval_every=5000)
+    elif stage in ('p3a','p3b'):
+        c.update(data_csv=str(OUT/'stage_p2.csv'),lr=1e-5,lr_backbone=1e-5,
+            lr_style_repr=1e-5,lr_style_inj=1e-5,lr_writer_table=5e-5,
+            warmup=200,lr_decay_steps=20000,max_steps=20000,drop_writer=0.1,
+            pair_fraction=0.3,ckpt_every=5000,eval_every=5000)
+    return c
+
+
+def make_spec(arm,stage,base,contract,continues=None,source=None,joint=None):
+    config=stage_config(base,stage)
+    spec=dict(arm=arm,machine='4090',kind='joint' if joint else 'style',
+        initialization='scratch' if stage=='p0' else 'Deep85_EMA' if False else 'stage_transfer',
+        source=source,config=config,
+        milestones=sorted(set([1000,5000]+([10000,50000,75000] if stage=='p0' else [])+[config['max_steps']])),
+        identity=dict(arm=arm,contract=contract,config=config))
+    if joint:spec['joint']=joint
+    if continues:spec['continues_identity']=continues
+    return spec
+
+
+def main():
+    p=argparse.ArgumentParser()
+    p.add_argument('--base-spec',default='assets/style_matrix_20261027/matrix64/4090/specs/S8.json')
+    p.add_argument('--eg-refs',default=str(OUT/'eg_refs.npz'))
+    a=p.parse_args()
+    base=json.loads(Path(a.base_spec).read_text())['config']
+    contract=dict(p125='v1',global_batch=512,seed=90,compile=True,gradient_checkpointing=False,
+        num_writers=47,latent_root=str(OUT/'shards_all'))
+    out=OUT
+    specs={}
+    def emit(name,spec):
+        path=out/'specs'/f'{name}.json';save(path,spec)
+        return dict(arm=name,spec=str(path),spec_sha256=sha_of(path),
+            stop=spec['config']['max_steps'],previous_stop=0)
+    def sha_of(path):import hashlib;return hashlib.sha256(Path(path).read_bytes()).hexdigest()
+    (out/'specs').mkdir(parents=True,exist_ok=True)
+    # P0
+    specs['P0']=make_spec('P0','p0',base,contract)
+    # P1: source = materialized table-init checkpoint (path fixed at plan time)
+    p1_source=str(out/'p1_init.pt')
+    specs['P1']=make_spec('P1','p1',base,contract,source=p1_source)
+    # P2 + P3A shares identity lineage
+    specs['P2']=make_spec('P2','p2',base,contract)
+    specs['P3A']=make_spec('P3A','p3a',base,contract,continues=specs['P2']['identity'])
+    specs['P3B']=make_spec('P3B','p3b',base,contract,continues=specs['P2']['identity'],
+        joint=dict(arm='EG',refs_npz=a.eg_refs,every=4,image_micro=4,target_ratio=0.02))
+    jobs={}
+    for name in ('P0','P1','P2','P3A','P3B'):
+        jobs[name]=emit(name,specs[name])
+    def plan(stages,wall):
+        return dict(machine='4090',root=str(out/'execution'),ready=str(out/'ready.json'),
+            contract=contract,wall_hours=wall,estimated_upper_hours=0,
+            promotion_limits={},stages={str(i):v for i,v in enumerate(stages,1)},
+            evaluations=[dict(name='heldout',csv=VAL100,writer_space='top10-row')])
+    save(out/'plan_a.json',plan([[jobs['P0']]],20.))
+    save(out/'plan_b.json',plan([[jobs['P1'],jobs['P2']]],7.))
+    save(out/'plan_c.json',plan([[jobs['P3A'],jobs['P3B']]],4.5))
+    run=f'''#!/usr/bin/env bash
+set -euo pipefail
+cd {REPO}
+export TORCHINDUCTOR_CACHE_DIR=/root/.cache/torch/inductor
+export PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True
+PY={PY}
+ROOT={out}
+"$PY" -u -m tools.style_matrix.runtime.serial --plan "$ROOT/plan_a.json" --execute
+P0CK=$(ls "$ROOT"/execution/runs/P0/checkpoints/0010000.pt)
+"$PY" -u -m tools.p125.init_p1_table --source "$P0CK" --out "$ROOT/p1_init.pt"
+"$PY" -u -m tools.style_matrix.runtime.serial --plan "$ROOT/plan_b.json" --execute
+for ARM in P3A P3B; do
+  mkdir -p "$ROOT/execution/runs/$ARM/checkpoints"
+  cp "$ROOT"/execution/runs/P2/checkpoints/0015000.pt "$ROOT/execution/runs/$ARM/checkpoints/"
+  cp "$ROOT"/execution/runs/P2/checkpoints/0015000.pt.done "$ROOT/execution/runs/$ARM/checkpoints/"
+  cp "$ROOT/execution/runs/P2/identity.json" "$ROOT/execution/runs/$ARM/"
+done
+"$PY" -u -m tools.p125.pilot_eg --plan "$ROOT/plan_c.json" --out "$ROOT/pilot_eg.json"
+"$PY" -u -c "import json;d=json.load(open('$ROOT/pilot_eg.json'));assert d['passed'],d"
+"$PY" -u -m tools.style_matrix.runtime.serial --plan "$ROOT/plan_c.json" --execute
+'''
+    (out/'run_p125.sh').write_text(run)
+    (out/'run_p125.sh').chmod(0o755)
+    print(json.dumps(dict(plans=['plan_a.json','plan_b.json','plan_c.json'],
+        specs={k:v['spec'] for k,v in jobs.items()},
+        p3a_continues_p2=True,p3b_eg=True),indent=1))
+
+
+if __name__=='__main__':main()

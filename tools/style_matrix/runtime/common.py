@@ -50,11 +50,20 @@ def optimizer(model,config,decoder=None,*,scratch=False):
         groups=[dict(params=[p for p in model.parameters() if p.requires_grad],lr=config.lr if scratch else 2e-5,name='unet')]
         if decoder is not None:groups.append(dict(params=list(decoder.parameters()),lr=1e-5,name='decoder',weight_decay=0.))
         return torch.optim.AdamW(groups,weight_decay=.01,fused=True)
-    for name,rate in [('backbone',config.lr if scratch else 2e-5),
-                      ('style_representation',config.lr if scratch else 1e-4),
-                      ('style_injections',config.lr if scratch else 1e-4)]:
-        parameters=[p for n,p in model.named_parameters() if n.startswith(name+'.') and p.requires_grad]
-        groups.append(dict(params=parameters,lr=rate,name=name))
+    def rate(kind,legacy):
+        if scratch:return config.lr
+        explicit=getattr(config,'lr_'+kind,0.) or 0.
+        return explicit or legacy
+    split_table=(not scratch) and getattr(config,'lr_writer_table',0.)>0
+    for name,legacy in (('backbone',2e-5),('style_representation',1e-4),('style_injections',1e-4)):
+        parameters=[p for n,p in model.named_parameters()
+                    if n.startswith(name+'.') and p.requires_grad
+                    and not (split_table and name=='style_representation' and '.table.' in n)]
+        groups.append(dict(params=parameters,lr=rate(name,legacy),name=name))
+    if split_table:
+        table=[p for n,p in model.named_parameters()
+               if n.startswith('style_representation.') and '.table.' in n and p.requires_grad]
+        groups.append(dict(params=table,lr=rate('writer_table',0.),name='writer_table'))
     return torch.optim.AdamW(groups,weight_decay=config.weight_decay,fused=True)
 
 

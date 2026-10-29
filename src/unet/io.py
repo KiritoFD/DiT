@@ -50,6 +50,10 @@ class Config:
     brush_generic_fraction:float=.75
     drop_writer:float=.08
     writer_cond_lr:float=0.  # >0: writer embedding + condition projections use this LR
+    lr_backbone:float=0.  # >0: explicit stage LRs (P125); 0 keeps legacy warm-start defaults
+    lr_style_repr:float=0.
+    lr_style_inj:float=0.
+    lr_writer_table:float=0.  # >0: writer table becomes its own param group
     pair_fraction:float=0.  # >0: PairMixtureSampler same-char cross-writer pairs share of batch
     null_writer_rows:bool=False  # allow training rows explicitly mapped to the null writer row
     semantic_writer_rows:dict|None=None  # raw semantic Writer ID -> checkpoint embedding row; never infer from 0..9.
@@ -150,6 +154,8 @@ class Config:
         if not 0<=self.drop_writer<1:raise ValueError('Invalid writer drop probability')
         if not 0<=self.pair_fraction<0.5:raise ValueError('Invalid pair fraction')
         if self.writer_cond_lr<0:raise ValueError('Invalid writer condition LR')
+        for name in ('lr_backbone','lr_style_repr','lr_style_inj','lr_writer_table'):
+            if getattr(self,name)<0:raise ValueError(f'Invalid {name}')
         if self.semantic_writer_rows is not None:
             rows=[int(v) for v in self.semantic_writer_rows.values()]
             if len(set(rows))!=len(rows) or any(v<0 or v>=self.num_writers for v in rows):

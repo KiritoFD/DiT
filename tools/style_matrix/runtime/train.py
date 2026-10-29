@@ -53,14 +53,20 @@ def main():
     auxiliary=None;reader=None
     if spec.get('kind')=='joint':
         import csv
-        from src.unet.joint.objective import JointDecoderObjective,GTImages
-        jc=spec['joint'];cal=json.loads(Path(jc['calibration']).read_text())
-        assert cal['source_checkpoint_sha256']==sha(spec['source'])
-        assert cal['train_csv_sha256']==sha(cfg.data_csv), 'Calibration used a different training set'
-        auxiliary=JointDecoderObjective(jc['arm'],cfg,image_micro=jc['image_micro'],image_batch=jc['image_batch'],
-            img_weight=cal['image_weight'],rec_weight=cal['reconstruction_weight'])
-        assert cal['vae_frozen_sha256']==auxiliary.frozen_sha
-        reader=GTImages(list(csv.DictReader(open(cfg.data_csv,encoding='utf-8-sig'))))
+        jc=spec['joint']
+        if jc['arm']=='EG':
+            from src.unet.joint.eg_style import EGStyleObjective
+            auxiliary=EGStyleObjective(cfg,jc['refs_npz'],every=jc.get('every',4),
+                image_micro=jc.get('image_micro',4),target_ratio=jc.get('target_ratio',0.02))
+        else:
+            from src.unet.joint.objective import JointDecoderObjective,GTImages
+            cal=json.loads(Path(jc['calibration']).read_text())
+            assert cal['source_checkpoint_sha256']==sha(spec['source'])
+            assert cal['train_csv_sha256']==sha(cfg.data_csv), 'Calibration used a different training set'
+            auxiliary=JointDecoderObjective(jc['arm'],cfg,image_micro=jc['image_micro'],image_batch=jc['image_batch'],
+                img_weight=cal['image_weight'],rec_weight=cal['reconstruction_weight'])
+            assert cal['vae_frozen_sha256']==auxiliary.frozen_sha
+            reader=GTImages(list(csv.DictReader(open(cfg.data_csv,encoding='utf-8-sig'))))
         if resume:auxiliary.restore(resume)
     ema=copy.deepcopy(raw).eval().requires_grad_(False)
     opt=optimizer(raw,cfg,auxiliary.vae.decoder if auxiliary else None,scratch=spec.get('initialization')=='scratch')
