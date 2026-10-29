@@ -1,0 +1,37 @@
+{
+ "heldout187": {
+  "gt_auc": 89.76,
+  "gt_eer": 17.6,
+  "n": 181
+ },
+ "heldout187_seed0": {
+  "gt_auc": 89.76,
+  "gt_eer": 17.6,
+  "n": 181
+ },
+ "original_protocol": {
+  "gt_auc": 89.76,
+  "gt_eer": 17.6,
+  "n": 181
+ },
+ "heldout_s": {
+  "gt_auc": 92.39,
+  "gt_eer": 13.82,
+  "n": 98
+ },
+ "verified_saved_GT_187": {
+  "gt_auc": 89.76,
+  "gt_eer": 17.6,
+  "n": 181
+ },
+ "heldout": {
+  "gt_auc": 92.38,
+  "gt_eer": 13.82,
+  "n": 98
+ },
+ "verified_saved_GT_100": {
+  "gt_auc": 92.38,
+  "gt_eer": 13.82,
+  "n": 98
+ }
+}
