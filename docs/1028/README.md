@@ -1,5 +1,9 @@
 # 2026-10-28 S/J 实验结果聚合
 
+阶段基线入口：[250行结论与下一阶段报告](CONCLUSION_AND_NEXT_PHASE_20261028.md)。原始指标及逐样本表见[raw](raw/README.md)，本地归档包位于exports目录。
+
+第二代训练已转入[24/48/64h完整队列](schedule64.md)：4090为S9及同起点FM/Pair分叉，48为J4–J7，后续条件晋级和S10/S11均已实现并挂起。旧矩阵结果仍在本页，队列最新状态见根目录training.md。
+
 更新时间：2026-10-28 21:30（Asia/Shanghai）。本目录是当前 S 风格表征×注入矩阵和 J Decoder 联合训练的统一结果入口；训练现场仍以远端 `execution/status.json`、checkpoint `.done` 和评测 `complete.json` 为准。
 
 ## 一句话结论

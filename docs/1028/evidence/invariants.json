@@ -1,0 +1,39 @@
+{
+  "results": {
+    "cnn": {
+      "null_exact": true,
+      "content_writer_independent": true,
+      "pair_budget": {
+        "weight": 8.592802047729492,
+        "ratio": 0.25,
+        "fm_norm": 1.8088051080703735,
+        "pair_norm": 0.052625589072704315,
+        "step": 0
+      }
+    },
+    "geometry": {
+      "null_exact": true,
+      "content_writer_independent": true,
+      "pair_budget": {
+        "weight": 6.780080318450928,
+        "ratio": 0.25,
+        "fm_norm": 1.2558550834655762,
+        "pair_norm": 0.0463067926466465,
+        "step": 0
+      }
+    },
+    "attention": {
+      "null_exact": true,
+      "content_writer_independent": true,
+      "pair_budget": {
+        "weight": 10.298501014709473,
+        "ratio": 0.25,
+        "fm_norm": 2.129899024963379,
+        "pair_norm": 0.051704101264476776,
+        "step": 0
+      }
+    }
+  },
+  "pair_target_sign_correct": true,
+  "edt_matches_scipy": true
+}

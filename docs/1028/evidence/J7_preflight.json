@@ -1,0 +1,8 @@
+{
+  "step": 2,
+  "requested": 2,
+  "stopped": false,
+  "checkpoint": "assets/style_matrix_20261028/generation2full/48/preflight/J7/checkpoints/0000002.pt",
+  "checkpoint_sha256": "0de37e014f1a67d6fcf2408490911d2c15b4bb9d0f34969bab4a35981ad89f55",
+  "seconds": 52.60437247500522
+}

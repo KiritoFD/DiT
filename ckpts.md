@@ -1,5 +1,9 @@
 # Checkpoint登记
 
+2026-10-29阶段归档：S0–S7@50k及J0–J3@5k的指标副本进入`docs/1028/raw/`，报告未声称其逐run完整代码commit已确定。四个历史实现短SHA已在本地Git对象库解析为完整SHA；checkpoint权重未迁移、未覆盖。新J4–J7@5k已完成，当前48推进S11。
+
+2026-10-28 23:20：新后台队列确认推进；4090 S9从完整403步维护存盘恢复后越过500，48 J4从完整1,675步恢复后越过1,700。后续S9-FM/Pair均由同一个S9@50k本机只读软链接分叉，保留Optimizer/EMA/RNG；J4–J7维持各自Deep85独立起点。未跨机搬运权重。
+
 2026-10-28 22:28：旧J0延长已安全停止，48保存`assets/style_matrix_20261027/matrix64/48/execution/runs/J0/checkpoints/0011654.pt`，SHA `9920864ca489ce98633cf13483d1df4f1b9c13c4ef298a0616400dcb3f7b13ab`。J3@5k与全部历史权重保留。新轮smoke权重仅为链路验证，不作科学训练结果或正式起点；S9随机初始化，J4–J7均独立加载Deep85 EMA和原VAE。
 
 更新时间：2026-10-28 21:30（Asia/Shanghai）。延长轮结果聚合见[docs/1028](docs/1028/README.md)，实时状态见[training.md](training.md)，完整历史索引见[exp.md](exp.md)。

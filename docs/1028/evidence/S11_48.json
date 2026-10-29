@@ -1,0 +1,10 @@
+{
+  "parameters": 127734952,
+  "branch_parameters": 13731908,
+  "batch": 512,
+  "micro": 256,
+  "compile": true,
+  "steps_s": 1.3323871253018853,
+  "peak_GiB": 13.500996112823486,
+  "null_exact": true
+}

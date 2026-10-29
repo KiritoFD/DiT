@@ -1,0 +1,17 @@
+{
+  "parameters": 127561960,
+  "branch_parameters": 13558916,
+  "batch": 512,
+  "micro": 256,
+  "compile": true,
+  "steps_s": 0.9731177301491255,
+  "peak_GiB": 13.274829864501953,
+  "null_exact": true,
+  "pair_calibration": {
+    "weight": 6242.95654296875,
+    "ratio": 0.25,
+    "fm_norm": 3.42565655708313,
+    "pair_norm": 0.00013718086120206863,
+    "step": 2
+  }
+}

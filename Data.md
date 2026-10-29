@@ -1,5 +1,9 @@
 # 数据资产与重建
 
+2026-10-29阶段归档：将本地现有12个S/J臂的result/geometry/writer JSON及逐样本batch CSV按字节复制到`docs/1028/raw/`；SHA纳入manifest，未重采样、未重跑GPU评测。250行报告、指标和两张海报打包到本地exports；大图仅登记path+size。
+
+2026-10-28 23:20：完整后台队列使用`generation2full/{4090,48}`的封存清单与协议，复用两机已有数据、STD bank和VAE；S侧187字编号转换与STD覆盖已核验。该次启动仅同步源码及小型协议，未传输训练数据或checkpoint。
+
 2026-10-28第二代实验复用两机原有S/J数据、STD bank、VAE与Deep85，未跨机传输权重或数据。仅上传约0.1MB源码暂存包；4090在S8终评后才部署。新计划根为`assets/style_matrix_20261028/generation2/{4090,48}`，source/spec/小文件SHA重新封存，大数据沿用本机资产。
 
 2026-10-27 15:45复核：两机仍在使用matrix64既有S/J数据配置。48清理删除旧归档、损坏P1残片及其他工作区的普通版QwenImage21基础模型，没有删除当前`ready.json`引用、训练数据、原始VAE、GT/STD或`deep85_decoder/48_v2/{calibration.json,train_unaugmented.csv}`；没有进行GB级跨机传输。下方配方与身份约束继续适用，磁盘证据见[Disk.md](Disk.md)。
