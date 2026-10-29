@@ -1,0 +1,49 @@
+{
+  "expected": 1000,
+  "available": 990,
+  "characters": 99,
+  "excluded": [
+    {
+      "character": "GB3632",
+      "image": "001.jpg"
+    },
+    {
+      "character": "GB3632",
+      "image": "002.jpg"
+    },
+    {
+      "character": "GB3632",
+      "image": "003.jpg"
+    },
+    {
+      "character": "GB3632",
+      "image": "004.jpg"
+    },
+    {
+      "character": "GB3632",
+      "image": "005.jpg"
+    },
+    {
+      "character": "GB3632",
+      "image": "006.jpg"
+    },
+    {
+      "character": "GB3632",
+      "image": "007.jpg"
+    },
+    {
+      "character": "GB3632",
+      "image": "008.jpg"
+    },
+    {
+      "character": "GB3632",
+      "image": "009.jpg"
+    },
+    {
+      "character": "GB3632",
+      "image": "010.jpg"
+    }
+  ],
+  "labels_sha256": "59f2677d1ea44e7837fe5235ad6f4119d7248d8c96d155dba6294f478bea5260",
+  "interpretation": "Explicit available-source subset, no label remapping or paper reproduction"
+}

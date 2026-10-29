@@ -1,0 +1,11 @@
+{
+  "upstream_commit": "eabb5b5ede5899ac7f8b716429cbd1a1c97c7485",
+  "upstream_classes": ["VGG16Backbone", "AdjustDims"],
+  "weight_size_bytes": 707488473,
+  "comparison": "same official weights and square32 input; upstream AST-loaded classes vs minimal port",
+  "sample": "S0_50000_heldout g0.png",
+  "shape": [512],
+  "max_abs": 0.0,
+  "bitwise_equal": true,
+  "scope": "one square-image feature forward, not all upstream protocols or Chinese validity"
+}

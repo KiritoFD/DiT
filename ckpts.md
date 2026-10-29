@@ -1,5 +1,7 @@
 # Checkpoint登记
 
+2026-10-29 19:22：新增4090 `assets/style_focus_85k_20261029/4090/runs/S0/checkpoints/0055000.pt`（1,827,105,304 bytes）及48 `assets/style_focus_85k_20261029/48_v3/runs/S5/checkpoints/0055000.pt`（1,847,756,091 bytes），原子.done记录step55000，未复制或覆盖原50k。官方HWD权重在两端各自下载至`~/.cache/torch/hub/checkpoints/VGG16_class_10400.pth.part`，707,488,473 bytes，严格加载10400类完整state成功；扩展名.part不代表未完成。它仅用于冻结评测，非生成模型或新风格教师。CHAED Ridge仅为失败的探索回归器，不进入生成训练。
+
 10-29本轮64h状态核查只读：S9约45.65k、S11约15.05k；未来匹配LR spec尚由边界交接生成，未宣称其权重已存在。未迁移或覆盖checkpoint。
 
 2026-10-29后续阶段修正：新增S10、S0/S4、S11的`*_60_matched`/`*_75_matched`未来身份链，对齐S9现有两段LR。当前24h checkpoint及当前S11冷启动权重保持原身份；检测到另一成熟轨迹已开始时不回滚，交接器登记deferred。

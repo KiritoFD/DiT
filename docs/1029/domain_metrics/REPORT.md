@@ -1,8 +1,8 @@
 # 已完成的书写领域指标：阶段快照
 
-官方HWD与CHAED/TabNet尚未完成，本报告不含其分数。以下使用既有冻结E-G/E-L特征，不重生成图片。
+本报告使用既有冻结E-G/E-L特征，不重生成图片。官方权重HWD现已完成，见[HWD专题](../hwd/REPORT.md)；CHAED审美回归基线未通过，见[审美校准](../chaed/REPORT.md)。正式CHAED/TabNet复现仍未完成。
 
-核验：同书体、异字符，每个候选书家最多64张真迹。AUC/EER主表采用全部生成–真迹对池化ROC；mAP先逐查询计算，再按书家宏平均。100字协议有效98，187字有效181。单seed探索，尚无新指标差值置信区间。
+核验：同书体、异字符，每个候选书家最多64张真迹。AUC/EER主表采用全部生成–真迹对池化ROC；mAP先逐查询计算，再按书家宏平均。100字协议有效98，187字有效181。单seed探索，配对区间另见 ../style_focus_85k/README.md。
 
 Style-FID/KID：使用L2归一化风格特征；参考来自训练真迹并排除目标字符，按writer×script匹配真实/生成数量。它们是池化分布距离，不能单独检验目标书家是否匹配。核验和分布指标的有效N分别记录。KID为无偏估计，可为负；表内乘以10^5，不能截断或据负数宣布优于真迹。
 
@@ -89,7 +89,7 @@ Density/Coverage按PRDC的k=5邻域定义；Density可大于1。100字Coverage�
 
 ## 当前结论
 
-- S5在E-G身份核验上点估计最好：AUC87.98%、EER20.98%、mAP63.55%；S4也优于S0。尚未计算这组新差值的置信区间，不能叫显著提升。
+- S5在E-G身份核验上点估计最好：AUC87.98%、EER20.98%、mAP63.55%；S4也优于S0。单seed配对区间已补于 ../style_focus_85k/README.md；S5−S0的逐查询宏平均区间支持正收益，S5−S4仍跨零。
 - S7的Style-FID/KID更低，却没有最好的身份核验；这恰好说明分布接近和目标书家匹配是不同问题。
 - E-L不重复E-G的排序，且真实GT基准本身更弱；当前不能靠单个特征空间宣布风格冠军。
 - J2的Style-FID/KID优于J0，但AUC、EER、mAP变化小且方向不完全一致。J4–J7仍然接近，没有明确的额外条件收益。
@@ -98,5 +98,5 @@ Density/Coverage按PRDC的k=5邻域定义；Density可大于1。100字Coverage�
 
 ## 证据与实现
 
-完整逐模型、逐特征、GT基准及分槽数据见同目录4090.json、48.json。原始逐查询核验保存在两端assets/eval_domain_20261029/<machine>/，与上轮图像/特征缓存身份对应。
+完整逐模型、逐特征、GT基准及分槽数据见同目录4090.json.gz、48.json.gz。原始逐查询核验保存在两端assets/eval_domain_20261029/<machine>/，与上轮图像/特征缓存身份对应。
 官方实现参照：[HWD](https://github.com/aimagelab/HWD)、[Density/Coverage](https://proceedings.mlr.press/v119/naeem20a.html)。本次已完成指标不依赖新下载的HWD权重。
