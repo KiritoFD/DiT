@@ -34,7 +34,7 @@ def verify_assets(plan):
 
 def rotating_external_resident(resident,pid,mb,count,visible):
     """The explicitly reserved ~1.1GiB outside-container context has unstable PIDs."""
-    return resident>0 and count==1 and not visible and 1024<=mb<=1152
+    return resident>0 and count==1 and not visible and 768<=mb<=1280
 
 
 def gpu_idle(resident,module=''):
