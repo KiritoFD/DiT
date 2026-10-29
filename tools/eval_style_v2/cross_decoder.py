@@ -39,7 +39,6 @@ def main():
         model,cfg,ck=unet_io.load(str(path),'cuda',use_ema=True)
         folder=paired_vae(str(path),ck,cfg,export_root/arm,use_ema=True)
         decoders[arm]=folder
-        del model
         torch.cuda.empty_cache()
     summary={}
     for unet_arm in ARMS:
@@ -60,8 +59,6 @@ def main():
             summary[tag]={k:metrics.get(k) for k in ('ssim','lpips','ink_iou','n')}
             (cell/'result.json').write_text(json.dumps(summary[tag],indent=2))
             print('CELL',tag,json.dumps(summary[tag]),flush=True)
-            del model
-            torch.cuda.empty_cache()
     (out/'summary.json').write_text(json.dumps(summary,indent=2))
     print('CROSS-DECODER DONE',flush=True)
 
