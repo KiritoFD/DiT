@@ -1,5 +1,7 @@
 # 数据资产与重建
 
+2026-10-29 20:28：本地冻结JSON/CSV展开为docs/1029/full_report明文总报告与早期run/曲线附录；不重采样、不迁移数据，未改变任何数据划分。来源台账随sources.json保留；训练现场快照与外推分开标注。
+
 2026-10-29 19:22：完成两端本地PNG的HWD 30面板评测，输入PNG/CSV身份和特征留于`assets/eval_hwd_20261029/<machine>/`。只下载KB级结果JSON到本地文档，未跨机搬运图像、latent或模型。官方CHAED ZIP在4090 `/root/Workspace/xy/eval_sources/CHAED/`；标注1000条但仅990张/99字，缺GB3632全部10张，覆盖逐项记录于`docs/1029/chaed/coverage.json`，不重映射标签。新回归结果属于明确可用子集，不是完整论文复现。领域指标原始JSON无损压缩为.json.gz，符合文档规模约定。
 
 10-29本轮64h队列核查未新增数据传输或重建；后续仍复用已登记资产及17,408-byte暂存代码包。
