@@ -90,3 +90,11 @@ GPU占用分钟级；build_rasters为CPU渲染约万五千键。**不要**用别
 参考库来自同源p2_train.csv，按writer×script及source/char抽样，每槽最多160，检索排除同字符，K32/64/128不足者显式无效。MMD属于Train-reference，不是独立作品留出；dataset-source不冒充作品来源。
 
 官方pyiqa0.1.16权重分别下载至各机 `~/.cache/torch/hub/pyiqa/`；Clean-FID官方Inception位于各机`/tmp/inception-2015-12-05.pt`。训练Torch未升级，依赖安装在独立eval-unpaired-env。历史Pixel D1仅在4090的`scratch/writer_pixel_d0d1_20261016_01/assets/D1/best.pt`找到，原网络源码SHA核对通过。无两训练机间模型/PNG互传；仅下载KB级统计包与172KB校准JPEG至本地。
+## 2026-10-29 书写领域指标首轮
+
+已完成缓存特征上的Style-FID/KID、Writer Verification池化AUC/EER、书家宏平均检索mAP，以及k=5 Density/Coverage；两端complete均存在。按用户要求先交付已算指标，暂停扩展实现。官方HWD、CHAED/TabNet尚无分数，不混入结果表。[已完成指标报告](docs/1029/domain_metrics/REPORT.md)，原始统计在同目录及远端`assets/eval_domain_20261029/`。S5的E-G身份核验点估计最好；S7池化Style-FID更低但身份核验不是最好；J2分布有小幅改善，J4–J7仍接近。未进行新生成器训练、未清理权重，无GB级跨机传输。
+## 2026-10-29 focused85k数据契约
+
+三模型原50k训练CSV SHA、seed90及B512已跨机核对一致；每模型追加17,920,000样本曝光。不新建训练数据、不改STD/VAE、不传GB权重。新计划输入封存位于各有效根`inputs.json/ready.json/plan.json`；>1MB资产按path+size封存，小文件校验SHA。
+
+本地`docs/1029/style_focus_85k/evidence/`保存三份既有query统计与两机inputs（均KB级）。三种配对区间见同目录上层`paired_verification.json`。新终点生成统一187字×3seed；共享训练字面板只作诊断。

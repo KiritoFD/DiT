@@ -129,3 +129,9 @@
 48仓库盘约86GB可用、使用96%；4090仓库盘约1.5TB可用。新结果目录`assets/eval_unpaired_20261029/`约4090 63MB、48 148MB（末段评测会有少量增长）。各机IQA缓存共约380MB，其中48既有KONIQ约104MB复用；另有约92MB官方Inception临时权重和独立评测venv。
 
 本轮未清理、移动或删除checkpoint。统计/特征缓存可按[Data.md](Data.md)重建；校准与原始统计已入[新评价专题](docs/1029/eval_unpaired/REPORT.md)。任何后续清理仍单独确认，不能据此删除历史权重。
+## 2026-10-29 书写领域指标首轮
+
+已完成缓存特征上的Style-FID/KID、Writer Verification池化AUC/EER、书家宏平均检索mAP，以及k=5 Density/Coverage；两端complete均存在。按用户要求先交付已算指标，暂停扩展实现。官方HWD、CHAED/TabNet尚无分数，不混入结果表。[已完成指标报告](docs/1029/domain_metrics/REPORT.md)，原始统计在同目录及远端`assets/eval_domain_20261029/`。S5的E-G身份核验点估计最好；S7池化Style-FID更低但身份核验不是最好；J2分布有小幅改善，J4–J7仍接近。未进行新生成器训练、未清理权重，无GB级跨机传输。
+## 2026-10-29 focused85k保存预算
+
+4090原有约1.5TB可用，预计S0/S4各7个新增checkpoint共约26GB；48当前约83GB可用，S5新增7份约13GB，预计仍高于25GiB串行保护门槛。不删除历史权重。新50k起点是本机软链接，不重复复制1.8GB文件；48两次启动前失败目录仅保留小型计划/日志与链接。[有效目录](docs/1029/style_focus_85k/README.md)。

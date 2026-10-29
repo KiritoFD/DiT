@@ -90,3 +90,11 @@ J0@5k的评测随旧计划迁移：`complete.json`内仍保留旧`48_v2`目录�
 48 `assets/style_matrix_20261028/generation2full/48/runs/S11/checkpoints/0050000.pt`已完整落盘，step=50,000，size=2,044,369,601 bytes。读取既有`.done`的登记SHA256：`47221eccda23b2a1e97469bf7594707933ad8ddefdaea5600d0a84e3acc3e691`，未重新哈希大文件。
 
 24个权重终点的现成PNG已重评；历史P1/P2/Deep75/85/U10055通过逐张GT RGB像素匹配确认语义，保留原protocol.json的EMA、采样和STD身份。[完整报告](docs/1029/eval_unpaired/REPORT.md)。未移动或修改旧权重，无两训练机之间的权重互传。S10无权重，H0/H1未启动。
+## 2026-10-29 书写领域指标首轮
+
+已完成缓存特征上的Style-FID/KID、Writer Verification池化AUC/EER、书家宏平均检索mAP，以及k=5 Density/Coverage；两端complete均存在。按用户要求先交付已算指标，暂停扩展实现。官方HWD、CHAED/TabNet尚无分数，不混入结果表。[已完成指标报告](docs/1029/domain_metrics/REPORT.md)，原始统计在同目录及远端`assets/eval_domain_20261029/`。S5的E-G身份核验点估计最好；S7池化Style-FID更低但身份核验不是最好；J2分布有小幅改善，J4–J7仍接近。未进行新生成器训练、未清理权重，无GB级跨机传输。
+## 2026-10-29 S0/S4/S5@85k计划
+
+各自本机50k checkpoint通过软链接作为新run起点，完整恢复raw/Optimizer/EMA/RNG；原权重不覆盖、不互传。新权重将写入4090 `assets/style_focus_85k_20261029/4090/runs/{S0,S4}/checkpoints/`及48 `assets/style_focus_85k_20261029/48_v3/runs/S5/checkpoints/`，55k起每5k保存至85k。目前只确认已越过50k，未把未落盘步数当作checkpoint。
+
+48旧`48/`、`48_v2/`为保存/评测interval启动校验失败记录，均无optimizer更新；v3统一eval_every=ckpt_every=5000后已正常推进。[身份与计划](docs/1029/style_focus_85k/README.md)。

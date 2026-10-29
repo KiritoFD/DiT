@@ -1,0 +1,101 @@
+{
+  "S4-S0": {
+    "metrics": {
+      "auc": {
+        "delta_pp": 2.8076714409722223,
+        "lo_pp": -0.8138873630099828,
+        "hi_pp": 6.262378438313795,
+        "queries": 98,
+        "writers": 10
+      },
+      "eer": {
+        "delta_pp": -2.1799045138888884,
+        "lo_pp": -5.229497612847223,
+        "hi_pp": 0.9554578993055532,
+        "queries": 98,
+        "writers": 10
+      },
+      "ap": {
+        "delta_pp": 3.531996611990736,
+        "lo_pp": -1.4595252781970578,
+        "hi_pp": 8.613844239101871,
+        "queries": 98,
+        "writers": 10
+      },
+      "tar_at_eval_far01": {
+        "delta_pp": 3.8945312500000004,
+        "lo_pp": -2.0128906250000007,
+        "hi_pp": 9.78935546875,
+        "queries": 98,
+        "writers": 10
+      }
+    },
+    "interpretation": "Macro of per-query ROC statistics; not pooled ROC intervals. Fixed writers, resample characters; single seed, exploratory, multiple comparisons uncorrected."
+  },
+  "S5-S0": {
+    "metrics": {
+      "auc": {
+        "delta_pp": 5.729051378038195,
+        "lo_pp": 1.6483071221245662,
+        "hi_pp": 9.835834587944877,
+        "queries": 98,
+        "writers": 10
+      },
+      "eer": {
+        "delta_pp": -4.495659722222223,
+        "lo_pp": -7.943896484374998,
+        "hi_pp": -0.9525933159722227,
+        "queries": 98,
+        "writers": 10
+      },
+      "ap": {
+        "delta_pp": 5.332591751433434,
+        "lo_pp": 0.24635254061239295,
+        "hi_pp": 10.35794393585645,
+        "queries": 98,
+        "writers": 10
+      },
+      "tar_at_eval_far01": {
+        "delta_pp": 3.66796875,
+        "lo_pp": -1.8127929687499995,
+        "hi_pp": 9.17587890625,
+        "queries": 98,
+        "writers": 10
+      }
+    },
+    "interpretation": "Macro of per-query ROC statistics; not pooled ROC intervals. Fixed writers, resample characters; single seed, exploratory, multiple comparisons uncorrected."
+  },
+  "S5-S4": {
+    "metrics": {
+      "auc": {
+        "delta_pp": 2.921379937065972,
+        "lo_pp": -0.333365207248264,
+        "hi_pp": 6.217758178710935,
+        "queries": 98,
+        "writers": 10
+      },
+      "eer": {
+        "delta_pp": -2.315755208333333,
+        "lo_pp": -5.202305772569445,
+        "hi_pp": 0.5273817274305548,
+        "queries": 98,
+        "writers": 10
+      },
+      "ap": {
+        "delta_pp": 1.800595139442697,
+        "lo_pp": -3.189967327303373,
+        "hi_pp": 6.728616533144077,
+        "queries": 98,
+        "writers": 10
+      },
+      "tar_at_eval_far01": {
+        "delta_pp": -0.22656249999999986,
+        "lo_pp": -5.832421875,
+        "hi_pp": 5.570703124999998,
+        "queries": 98,
+        "writers": 10
+      }
+    },
+    "interpretation": "Macro of per-query ROC statistics; not pooled ROC intervals. Fixed writers, resample characters; single seed, exploratory, multiple comparisons uncorrected."
+  }
+}

@@ -1,5 +1,7 @@
 # 训练进度
 
+2026-10-29 18:17：新三模型85k对照已启动（4090 S0→S4，48 S5）；旧扩展链保持暂停。最新计划见[focused85k](docs/1029/style_focus_85k/README.md)。以下早前快照保留作历史。
+
 2026-10-29 17:01：S11已完成50k及新指标，双机评测已收口；训练自动队列继续暂停。最新结论见[新评价专题](docs/1029/eval_unpaired/REPORT.md)，下方早期快照保留作历史。
 
 10-29本轮64h队列只读核查：4090 S9到45,650，48 S11到15,050；主控制器及两端later_stage观察器均存活。核心成熟/独立seed链已挂，匹配LR新版等待S9Pair@60k、S11@50k边界激活。H0/H1联合路线未加入自动队列，不能称附件全部候选均已挂齐。
@@ -83,3 +85,11 @@ S11完成50k及原协议/新指标；其余S0–S9、J0–J7与P1/P2/Deep75/Deep
 S11 val100：SSIM0.59396、LPIPS0.35151、E-G K64 Macro51.25%；187字Macro48.09%。S5−S0检索+7.75pp，探索性95%CI[+0.50,+15.50]；J4–J7无稳定新增收益。通用IQA校准失败，不据此选审美冠军。
 
 两机评测任务结束。4090旧controller已退出，48旧controller及两端later观察器仍暂停；未启动S9FM/Pair、S10、H0/H1，不自动恢复训练。
+## 2026-10-29 书写领域指标首轮
+
+已完成缓存特征上的Style-FID/KID、Writer Verification池化AUC/EER、书家宏平均检索mAP，以及k=5 Density/Coverage；两端complete均存在。按用户要求先交付已算指标，暂停扩展实现。官方HWD、CHAED/TabNet尚无分数，不混入结果表。[已完成指标报告](docs/1029/domain_metrics/REPORT.md)，原始统计在同目录及远端`assets/eval_domain_20261029/`。S5的E-G身份核验点估计最好；S7池化Style-FID更低但身份核验不是最好；J2分布有小幅改善，J4–J7仍接近。未进行新生成器训练、未清理权重，无GB级跨机传输。
+## 2026-10-29 18:17 S0/S4/S5等曝光85k续训已启动
+
+新有效根：4090 `assets/style_focus_85k_20261029/4090/`串行S0→S4；48 `assets/style_focus_85k_20261029/48_v3/`运行S5。S0已到50,400、S5到50,200，RNG全恢复，GPU真实更新；短窗口约1.61/1.68step/s。当前起S5约5.8h，4090两组合计约12.5h，另加终点评测/写盘波动。
+
+三组各新增35k更新、17.92M样本曝光；B512/micro512，compile，无梯度检查点；统一200步warmup至3e-5、35k周期终值3e-6。每5k保存，85k原val100+统一187×3seed评测。[计划与核验](docs/1029/style_focus_85k/README.md)。旧generation2/later链不恢复，无S5++或Decoder训练。
