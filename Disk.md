@@ -113,6 +113,10 @@
 
 2026-10-28 00:15 经确认执行清理：archive 中非关键项已删除（runs_legacy 49G、20261026 矩阵时代 14G、three_day/generic114/style_24h 等共约 119G）；archive 仅保留 `u100_p1p2_20261025`（P1@10k、P2@20k，永不删除）。仓库 `assets/` 自占用 190G→114G（含当日新增 checkpoint 约 45G）。清理后训练正常（S4 计步中）。
 
+## 48 大幅 ckpt 清理（2026-10-30 23:10，用户指令：只留必须的基模）
+
+保留：sd-vae-ft-ema、E-G判别器、std_shape_bank/tables、**Deep85@85k**（50k/75k删除）、**U100 Base 55k**、**S5@85k终点**（中间5k–80k全删）、各已评测实验终点之外的PNG/JSON。删除：matrix64 J0–J3 与 S2/S3/S5/S7 全部checkpoint（J0–J3有本地备份）、generation2 J4–J7/S11 全部checkpoint（**无备份，恢复需重训**）、Qwen A/C（有本地备份）。预计释放 ~130G；**执行因48入口断连而完成度未核验，恢复后第一件事是核对**。
+
 ## 变更记录
 
 - 2026-10-28 21:30：新增`docs/1028`结果包约3.9MB（两张poster约3.8MB，其余Markdown/JSON小于0.1MB）及S7本地评测镜像约1.9MB；未迁移checkpoint/latent/数据集，未执行清理。48恢复J延长后仍受每任务25GiB空闲门槛保护。
