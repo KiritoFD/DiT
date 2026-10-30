@@ -20,29 +20,31 @@ import numpy as np
 
 os.chdir("/root/Workspace/xy/DiT")
 sys.path.insert(0,'.')
-MODEL_DIR=("_models/ocr/models/cycloneboy--ch_PP-OCRv4_rec_server_infer/snapshots/master")
+import rapidocr_onnxruntime
+PKG=os.path.dirname(rapidocr_onnxruntime.__file__)
+MODEL=os.path.join(PKG,'models','ch_PP-OCRv4_rec_infer.onnx')
 H,W=48,320
 
 
 def load_backend(device='cpu'):
     import onnxruntime as ort
-    chars=['<blank>']
-    for ln in open(os.path.join(MODEL_DIR,'ch_dict.txt'),encoding='utf-8'):chars.append(ln.rstrip('\n'))
     so=ort.SessionOptions();so.graph_optimization_level=ort.GraphOptimizationLevel.ORT_ENABLE_ALL
     prov=['CPUExecutionProvider'] if device=='cpu' else ['CUDAExecutionProvider','CPUExecutionProvider']
-    sess=ort.InferenceSession(os.path.join(MODEL_DIR,'fp16_model.onnx' if device=='cuda' else 'model.onnx'),so,providers=prov)
+    sess=ort.InferenceSession(MODEL,so,providers=prov)
+    meta=sess.get_modelmeta().custom_metadata_map
+    chars=meta['character'].split(chr(10))  # entry0=' is the CTC blank
     return sess,sess.get_inputs()[0].name,chars
 
 
 def preprocess_arr(arr,h=H,w=W):
-    """arr: float32 gray [0,1] (256,256) -> rec input (1,3,h,w) in [-1,1]."""
+    """arr: float32 gray [0,1] (256,256) -> rec input (1,3,h,w) in [-1,1].
+    Dynamic width (PP-OCR rec trains with batch-adaptive width); a single char
+    padded to 320 leaves 85% blank frames and the CTC output degenerates."""
     from PIL import Image
     im=Image.fromarray((arr*255).astype(np.uint8)).convert('RGB')
     r=im.width/max(im.height,1)
-    nw=min(W,max(8,int(round(H*r))))
+    nw=int(np.clip(round(H*r),16,W))
     im=im.resize((nw,H),Image.BICUBIC)
-    if nw<W:
-        c=Image.new('RGB',(W,H),(255,255,255));c.paste(im,(0,0));im=c
     x=np.asarray(im,dtype=np.float32)/255.
     return ((x-0.5)/0.5).transpose(2,0,1)[None]
 
@@ -113,7 +115,8 @@ def main():
         x=preprocess_arr(gray)
         logits=sess.run(None,{iname:x})[0]
         pr=char_probs(logits,vocab)
-        # target index: try original then s2t
+        while len(vocab)<pr.shape[0]:vocab.append(' ')  # trailing space slot
+        pr=pr.copy();pr[0]=0.;pr/=pr.sum()  # blank excluded for single-char scoring
         tid=vocab.index(t_s2t) if t_s2t in vset else None
         order=np.argsort(-pr)
         top1=vocab[order[0]];top5=[vocab[j] for j in order[:5]]
@@ -126,7 +129,8 @@ def main():
     # per-script real metrics
     by_script=defaultdict(list)
     for d in real:by_script[d['script']].append(d)
-    report=dict(n_real=len(real),unsupported=unsupported,vocab_size=len(vocab)-1,backend='PP-OCRv4_rec_server',scripts={})
+    report=dict(n_real=len(real),unsupported=unsupported,vocab_size=len(vocab)-1,
+        backend='PP-OCRv4_rec_infer (rapidocr bundle, charset 13245)',scripts={})
     for script,ds in sorted(by_script.items()):
         t1=float(np.mean([d['top1']==d['target'] for d in ds]))
         t5=float(np.mean([d['top5_hit'] for d in ds]))
