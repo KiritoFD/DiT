@@ -8,7 +8,7 @@ echo "{\"start\":\"$(date +%T)\"}" > $STATE
 echo "=== A: S5@85k E-G eval x3 seeds ==="
 for s in 0 1 2; do
   nice -n 5 "$PY" -u -m tools.p125.eval_p125 --run assets/style_focus_85k_20261029/48_v3/runs/S5 --step 85000 \
-    --protocol heldout187_seed$s --csv exp-std/csv/eval200_fixed.csv --arm S5@85k --out docs/1031/eg_metrics.csv
+    --protocol heldout187_seed$s --csv exp-std/csv/eval200_fixed.csv --arm S5@85k --full --out docs/1031/p125_metrics_full.csv
 done
 echo "=== C: writer-swap panel + CFG sweep ==="
 "$PY" -u -m tools.p125.writer_swap --out $ROOT/swap_panel
