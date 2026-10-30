@@ -32,7 +32,18 @@ def construct(spec,device='cuda',initialize_source=True):
     model=build(config).to(device).to(memory_format=torch.channels_last)
     transfer={}
     if initialize_source and spec.get('initialization')!='scratch':
-        if config.style_matrix_repr>=0:transfer=initialize(model,spec['source'],table=config.style_matrix_table)
+        if config.style_matrix_repr>=0:
+            transfer=initialize(model,spec['source'],table=config.style_matrix_table)
+            if spec.get('transfer_style'):
+                ck=torch.load(spec['source'],map_location='cpu',weights_only=False)
+                style={k.removeprefix('_orig_mod.'):v for k,v in ck['ema'].items()
+                       if k.startswith(('style_representation.','style_injections.'))}
+                report=model.load_state_dict(style,strict=False)
+                if report.unexpected_keys:raise ValueError('Style transfer keys unknown: '+str(report.unexpected_keys))
+                residue=[k for k in report.missing_keys
+                         if k.startswith(('style_representation.','style_injections.'))]
+                if residue:raise ValueError('Style transfer incomplete: '+str(residue))
+                transfer.update(transfer_style=len(style),source_step_style=int(ck['train_steps']))
         else:
             ck=torch.load(spec['source'],map_location='cpu',weights_only=False)
             weights={k.removeprefix('_orig_mod.'):v for k,v in ck['ema'].items()}

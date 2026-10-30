@@ -268,8 +268,12 @@ def build(config,initialize_tables=False):
             if name.startswith('writer_proj.'):p.requires_grad_(False)
     if config.style_matrix_repr>=0:
         from .style.interface import MatrixUNet
+        # writers MUST follow the config: the representation sizes its ID table to
+        # writers+1 and treats any id >= writers as the null row (valid=0, which
+        # multiplies the whole injection to zero). Leaving the default of 10 made
+        # every generic writer (slots 10..46) silently dead.
         model=MatrixUNet(model,config.style_matrix_repr,config.style_matrix_injection,
-                         vector_dim=config.style_matrix_vector_dim)
+                         writers=config.num_writers,vector_dim=config.style_matrix_vector_dim)
     if config.writer_velocity:
         if config.style_matrix_repr>=0:raise ValueError('Velocity branch cannot wrap the old matrix')
         from .velocity import WriterVelocityUNet

@@ -4,8 +4,16 @@ checkpoint used as P1's source; optimizer/EMA state preserved unchanged
 (P1 rebuilds stage state anyway).
 """
 import argparse
+import hashlib
+from pathlib import Path
 import torch
-from .common import sha
+
+
+def sha(path):
+    h=hashlib.sha256()
+    with open(path,'rb') as f:
+        for block in iter(lambda:f.read(8<<20),b''):h.update(block)
+    return h.hexdigest()
 
 
 def main():
@@ -30,9 +38,9 @@ def main():
     if 'delta' in ck and key in ck['delta']:
         ck['delta'][key]=table.clone()
     torch.save(ck,a.out)
-    print(json_out=dict(source=a.source,source_sha256=sha(a.source),out=a.out,
+    json_out(source=a.source,source_sha256=sha(a.source),out=a.out,
         table_rows=table.shape[0],generic_slots=list(range(a.generic_lo,a.generic_hi)),
-        noise_std=a.noise_std,seed=a.seed))
+        noise_std=a.noise_std,seed=a.seed)
 
 
 def json_out(**kw):

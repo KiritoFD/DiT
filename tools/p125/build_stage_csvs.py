@@ -87,7 +87,7 @@ def main():
     char_remap=dict(u100)
     for c in missing_cids:char_remap[c]=len(char_remap)
     (out/'char_remap_p125.json').write_text(json.dumps(char_remap,indent=1))
-    print('char remap: u100',len(u100),'added',len(missing_chars),'total',len(char_remap))
+    print('char remap: u100',len(u100),'added',len(missing_cids),'total',len(char_remap))
     report=dict(n_writers=n_writers,null_slot=null_slot,held_keys=len(held),
         top10_missing_encode_ids=missing,
         p0=len(stage_p0),

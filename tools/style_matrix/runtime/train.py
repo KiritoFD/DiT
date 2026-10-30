@@ -4,6 +4,7 @@ import copy
 import itertools
 import json
 import logging
+import os
 from pathlib import Path
 import signal
 import time
@@ -155,6 +156,11 @@ def main():
                 metrics.write(json.dumps(rec)+'\n');print(json.dumps(rec),flush=True)
             if step_number in milestones or step_number in (100,500):
                 rng=capture_rng()
+                if os.environ.get('DSH_GRAD_DEBUG'):
+                    print('[grad-debug] step',step_number,'fm',float(loss),
+                          {p:[(n,None if q.grad is None else float(q.grad.abs().max()))
+                             for n,q in raw.named_parameters() if n.startswith(p)][:3]
+                           for p in ('style_representation','style_injections','backbone')},flush=True)
                 with torch.autocast('cuda',dtype=torch.bfloat16):
                     diagnostics=condition_report(raw,cfg)
                 if cfg.style_matrix_repr>=0:diagnostics['gradient']=gradient_report(raw)

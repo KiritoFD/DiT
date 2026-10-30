@@ -26,6 +26,10 @@ VAL100="assets/u100_pretrain_20261024/validation_val100.csv"
 def stage_config(base,stage):
     c=copy.deepcopy(base)
     c['num_writers']=47
+    # Memory rule: global batch stays 512, the FM graph is split into 256-row
+    # microbatches. Measured history on this box: micro=256 -> 13.3GiB peak,
+    # micro=512 -> 20.4GiB (a 1.1GiB foreign reservation then OOMs it).
+    c['microbatch']=256
     c['callig_remap_json']=str(OUT/'callig_remap_p125.json')
     c['latent_shards_dir']=str(OUT/'shards_all')
     c['std_shape_cache']='assets/u100_pretrain_20261024/std_shape_bank.pt'
@@ -57,10 +61,14 @@ def stage_config(base,stage):
 def make_spec(arm,stage,base,contract,continues=None,source=None,joint=None):
     config=stage_config(base,stage)
     spec=dict(arm=arm,machine='4090',kind='joint' if joint else 'style',
-        initialization='scratch' if stage=='p0' else 'Deep85_EMA' if False else 'stage_transfer',
+        initialization='scratch' if stage=='p0' else 'stage_transfer',
         source=source,config=config,
         milestones=sorted(set([1000,5000]+([10000,50000,75000] if stage=='p0' else [])+[config['max_steps']])),
         identity=dict(arm=arm,contract=contract,config=config))
+    if stage!='p0':
+        # Carry the whole style branch, not just the shared backbone: P1/P2/P3 are
+        # LR restarts of the same network, and a random style table would erase P0.
+        spec['transfer_style']=True
     if joint:spec['joint']=joint
     if continues:spec['continues_identity']=continues
     return spec
@@ -85,12 +93,16 @@ def main():
     # P0
     specs['P0']=make_spec('P0','p0',base,contract)
     # P1: source = materialized table-init checkpoint (path fixed at plan time)
+    runs=out/'execution'/'runs'
     p1_source=str(out/'p1_init.pt')
     specs['P1']=make_spec('P1','p1',base,contract,source=p1_source)
-    # P2 + P3A shares identity lineage
-    specs['P2']=make_spec('P2','p2',base,contract)
-    specs['P3A']=make_spec('P3A','p3a',base,contract,continues=specs['P2']['identity'])
-    specs['P3B']=make_spec('P3B','p3b',base,contract,continues=specs['P2']['identity'],
+    # P2 continues P1's final weights; P3A/P3B continue P2@15k (they also get the
+    # checkpoint copied into their own run dirs, in which case resume wins).
+    p1_ckpt=str(runs/'P1'/'checkpoints'/'0005000.pt')
+    p2_ckpt=str(runs/'P2'/'checkpoints'/'0015000.pt')
+    specs['P2']=make_spec('P2','p2',base,contract,source=p1_ckpt)
+    specs['P3A']=make_spec('P3A','p3a',base,contract,continues=specs['P2']['identity'],source=p2_ckpt)
+    specs['P3B']=make_spec('P3B','p3b',base,contract,continues=specs['P2']['identity'],source=p2_ckpt,
         joint=dict(arm='EG',refs_npz=a.eg_refs,every=4,image_micro=4,target_ratio=0.02))
     jobs={}
     for name in ('P0','P1','P2','P3A','P3B'):
@@ -107,13 +119,17 @@ def main():
 set -euo pipefail
 cd {REPO}
 export TORCHINDUCTOR_CACHE_DIR=/root/.cache/torch/inductor
-export PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True
+# 铁律: PYTORCH_CUDA_ALLOC_CONF=expandable_segments 一律禁用。显存不够只能调小
+# microbatch（见 specs 里的 256），不许动分配器。
 PY={PY}
 ROOT={out}
-"$PY" -u -m tools.style_matrix.runtime.serial --plan "$ROOT/plan_a.json" --execute
+# The ~1.1GiB reservation lives outside this container with an unstable PID; the
+# serial runner needs a nonzero --resident-pid to tolerate it rotating.
+RESIDENT_PID=${{RESIDENT_PID:-4045410}}
+"$PY" -u -m tools.style_matrix.runtime.serial --plan "$ROOT/plan_a.json" --execute --resident-pid "$RESIDENT_PID"
 P0CK=$(ls "$ROOT"/execution/runs/P0/checkpoints/0010000.pt)
 "$PY" -u -m tools.p125.init_p1_table --source "$P0CK" --out "$ROOT/p1_init.pt"
-"$PY" -u -m tools.style_matrix.runtime.serial --plan "$ROOT/plan_b.json" --execute
+"$PY" -u -m tools.style_matrix.runtime.serial --plan "$ROOT/plan_b.json" --execute --resident-pid "$RESIDENT_PID"
 for ARM in P3A P3B; do
   mkdir -p "$ROOT/execution/runs/$ARM/checkpoints"
   cp "$ROOT"/execution/runs/P2/checkpoints/0015000.pt "$ROOT/execution/runs/$ARM/checkpoints/"
@@ -122,7 +138,7 @@ for ARM in P3A P3B; do
 done
 "$PY" -u -m tools.p125.pilot_eg --plan "$ROOT/plan_c.json" --out "$ROOT/pilot_eg.json"
 "$PY" -u -c "import json;d=json.load(open('$ROOT/pilot_eg.json'));assert d['passed'],d"
-"$PY" -u -m tools.style_matrix.runtime.serial --plan "$ROOT/plan_c.json" --execute
+"$PY" -u -m tools.style_matrix.runtime.serial --plan "$ROOT/plan_c.json" --execute --resident-pid "$RESIDENT_PID"
 '''
     (out/'run_p125.sh').write_text(run)
     (out/'run_p125.sh').chmod(0o755)
