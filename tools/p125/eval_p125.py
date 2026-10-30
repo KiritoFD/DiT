@@ -19,15 +19,15 @@ from tools.eval_style_v2 import metrics as M
 EG_MEAN=torch.tensor([.485,.456,.406]);EG_STD=torch.tensor([.229,.224,.225])
 
 
-def eg_embed_paths(paths,net,size=160):
+def eg_embed_paths(paths,net,size=160,device='cuda'):
     from PIL import Image
     out=[]
     with torch.no_grad():
-        for i in range(0,len(paths),64):
+        for i in range(0,len(paths),128):
             batch=torch.from_numpy(np.stack([np.asarray(
                 Image.open(p).convert('RGB').resize((256,256),Image.Resampling.BICUBIC)).copy()
-                for p in paths[i:i+64]])).permute(0,3,1,2).float()/255
-            x=F.interpolate(batch,(size,size),mode='bilinear',align_corners=False)
+                for p in paths[i:i+128]])).permute(0,3,1,2).float()/255
+            x=F.interpolate(batch.cuda(),(size,size),mode='bilinear',align_corners=False)
             x=(x-EG_MEAN.to(x.device)[None,:,None,None])/EG_STD.to(x.device)[None,:,None,None]
             e=net.emb(x)
             out.append((e/e.norm(dim=-1,keepdim=True).clamp_min(1e-6)).cpu())
@@ -42,6 +42,7 @@ def main():
     p.add_argument('--csv',default='assets/u100_pretrain_20261024/validation_val100.csv')
     p.add_argument('--arm',default='')
     p.add_argument('--out',default='docs/1030/eval_style_v2/p125_metrics.csv')
+    p.add_argument('--machine',default='48')
     a=p.parse_args()
     run=Path(a.run)
     folder=run/'evaluations'/f'{a.step:07d}'/a.protocol
@@ -50,13 +51,12 @@ def main():
     pngs=[p for p in pngs if p.is_file()]
     rows=list(csv.DictReader(open(a.csv,encoding='utf-8-sig')))[:len(pngs)]
     net,kind,_=__import__('tools.eval_gen_with_disc',fromlist=['x']).load_evaluator_model(
-        'assets/style_disc_ce_holdout.pt','cpu')
+        'assets/style_disc_ce_holdout.pt','cuda')
     q=eg_embed_paths([str(p) for p in pngs],net).numpy()
-    bank_rows,bank_feats=eg.bank_eg('4090')
-    res=M.evaluate_feature(q,rows,bank_feats,bank_rows,64)
+    bank_rows,bank_feats=eg.bank_eg(a.machine)
+    res,_=M.evaluate_feature(q,rows,bank_feats,bank_rows,64)
     # 2AFC = mean afc
     dec=M.collect_decisions(q,rows,bank_feats,bank_rows,64)
-    afc=[d['scores'] and None for d in []]  # placeholder replaced below
     afcs=[]
     for d in dec:
         t=d['target']
@@ -69,7 +69,7 @@ def main():
     import lpips as lpips_mod
     from skimage.metrics import structural_similarity as ssim_fn
     from PIL import Image
-    loss_vgg=lpips_mod.LPIPS(net='vgg',verbose=False)
+    loss_vgg=lpips_mod.LPIPS(net='vgg',verbose=False).cuda()
     gt_paths={r['img_id']:r['image_path'] for r in rows}
     ssims=[];lpipss=[];ious=[];blanks=[];inks=[];wr=[]
     with torch.no_grad():
@@ -77,8 +77,8 @@ def main():
             gen=np.asarray(Image.open(png).convert('L'),dtype=np.float32)/255.
             gt=np.asarray(Image.open(r['image_path']).convert('L'),dtype=np.float32)/255.
             ssims.append(ssim_fn(gt,gen,data_range=1.))
-            t0=torch.from_numpy(np.stack([gt]*3))[None].float()*2-1
-            t1=torch.from_numpy(np.stack([gen]*3))[None].float()*2-1
+            t0=torch.from_numpy(np.stack([gt]*3))[None].float().cuda()*2-1
+            t1=torch.from_numpy(np.stack([gen]*3))[None].float().cuda()*2-1
             lpipss.append(float(loss_vgg(t0,t1).item()))
             gmi=gen<.5;gti=gt<.5
             ious.append(float((gmi&gti).sum()/max((gmi|gti).sum(),1)))

@@ -26,10 +26,11 @@ VAL100="assets/u100_pretrain_20261024/validation_val100.csv"
 def stage_config(base,stage):
     c=copy.deepcopy(base)
     c['num_writers']=47
-    # Memory rule: global batch stays 512, the FM graph is split into 256-row
-    # microbatches. Measured history on this box: micro=256 -> 13.3GiB peak,
-    # micro=512 -> 20.4GiB (a 1.1GiB foreign reservation then OOMs it).
-    c['microbatch']=256
+    # Memory: global batch 512 stays one FM graph per microbatch choice. Measured
+    # on this box: micro=512 -> 20.4GiB peak (+1.1GiB outside-container resident),
+    # micro=256 -> 11.1GiB. 512 is the throughput default; if a foreign job grabs
+    # the card and OOMs us, fix by dropping to 256, never by touching the allocator.
+    c['microbatch']=512
     c['callig_remap_json']=str(OUT/'callig_remap_p125.json')
     c['latent_shards_dir']=str(OUT/'shards_all')
     c['std_shape_cache']='assets/u100_pretrain_20261024/std_shape_bank.pt'
@@ -84,10 +85,10 @@ def main():
         num_writers=47,latent_root=str(OUT/'shards_all'))
     out=OUT
     specs={}
-    def emit(name,spec):
+    def emit(name,spec,stop=None):
         path=out/'specs'/f'{name}.json';save(path,spec)
         return dict(arm=name,spec=str(path),spec_sha256=sha_of(path),
-            stop=spec['config']['max_steps'],previous_stop=0)
+            stop=stop or spec['config']['max_steps'],previous_stop=0)
     def sha_of(path):import hashlib;return hashlib.sha256(Path(path).read_bytes()).hexdigest()
     (out/'specs').mkdir(parents=True,exist_ok=True)
     # P0
@@ -105,7 +106,13 @@ def main():
     specs['P3B']=make_spec('P3B','p3b',base,contract,continues=specs['P2']['identity'],source=p2_ckpt,
         joint=dict(arm='EG',refs_npz=a.eg_refs,every=4,image_micro=4,target_ratio=0.02))
     jobs={}
-    for name in ('P0','P1','P2','P3A','P3B'):
+    # 2026-10-30 user ruling: cut P0 at 50k. The CPU val100 trajectory plateaus
+    # from ~20k (ssim 0.557/0.560/0.557 at 20/30/40k) while train-side fm keeps
+    # dropping (-13%) — pure seen-side gain beyond that point. Spec stays at
+    # max_steps=100000 so the run identity (and resume) is untouched; only the
+    # serial stop boundary moves.
+    jobs['P0']=emit('P0',specs['P0'],stop=50000)
+    for name in ('P1','P2','P3A','P3B'):
         jobs[name]=emit(name,specs[name])
     def plan(stages,wall):
         return dict(machine='4090',root=str(out/'execution'),ready=str(out/'ready.json'),
@@ -127,8 +134,12 @@ ROOT={out}
 # serial runner needs a nonzero --resident-pid to tolerate it rotating.
 RESIDENT_PID=${{RESIDENT_PID:-4045410}}
 "$PY" -u -m tools.style_matrix.runtime.serial --plan "$ROOT/plan_a.json" --execute --resident-pid "$RESIDENT_PID"
-P0CK=$(ls "$ROOT"/execution/runs/P0/checkpoints/0010000.pt)
+# P0 cut-over boundary (50k, see plan_a stage stop).
+P0CK=$(ls "$ROOT"/execution/runs/P0/checkpoints/0050000.pt)
 "$PY" -u -m tools.p125.init_p1_table --source "$P0CK" --out "$ROOT/p1_init.pt"
+# serial pins clock.json to the first plan's sha256, so each plan segment must
+# reset the (per-segment) wall clock before starting its own runner.
+rm -f "$ROOT"/execution/clock.json
 "$PY" -u -m tools.style_matrix.runtime.serial --plan "$ROOT/plan_b.json" --execute --resident-pid "$RESIDENT_PID"
 for ARM in P3A P3B; do
   mkdir -p "$ROOT/execution/runs/$ARM/checkpoints"
@@ -138,6 +149,7 @@ for ARM in P3A P3B; do
 done
 "$PY" -u -m tools.p125.pilot_eg --plan "$ROOT/plan_c.json" --out "$ROOT/pilot_eg.json"
 "$PY" -u -c "import json;d=json.load(open('$ROOT/pilot_eg.json'));assert d['passed'],d"
+rm -f "$ROOT"/execution/clock.json
 "$PY" -u -m tools.style_matrix.runtime.serial --plan "$ROOT/plan_c.json" --execute --resident-pid "$RESIDENT_PID"
 '''
     (out/'run_p125.sh').write_text(run)
