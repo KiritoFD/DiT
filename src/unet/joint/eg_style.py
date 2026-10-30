@@ -36,18 +36,31 @@ class EGStyleObjective:
         self.eg_sha=eg_fingerprint(self.net)
         self.vae=AutoencoderKL.from_pretrained(cfg.vae_path,local_files_only=True).to(self.device).eval().requires_grad_(False)
         self.sf=cfg.vae_scaling_factor;self.shift=cfg.vae_shift_factor
-        refs=np.load(refs_npz,allow_pickle=True)
-        self.refs={int(k):{'embs':torch.from_numpy(np.asarray(v['embs'],dtype=np.float32)).to(self.device),
-                           'chars':list(v['chars'])} for k,v in refs.item().items()}
+        z=np.load(refs_npz,allow_pickle=True)
+        self.refs={}
+        for k in z.files:
+            d=z[k].item()  # saved as 0-d object arrays by build_eg_bank
+            parts=k.split('_')  # slot_{writer}_{mscript}
+            qkey=f"{parts[1]}_{parts[2]}"
+            self.refs[qkey]={'embs':torch.from_numpy(np.asarray(d['embs'],dtype=np.float32)).to(self.device),
+                             'chars':list(d['chars'])}
+        self._ref_ids=sorted(self.refs)
+        def _pad(e,K=128):
+            if e.shape[0]>=K:return e[:K]
+            idx=torch.arange(K,device=e.device)%e.shape[0]
+            return e[idx]
+        self._bank=torch.stack([_pad(self.refs[k]['embs']) for k in self._ref_ids])  # (W,K,512)
         self.every=every;self.micro=image_micro;self.target_ratio=target_ratio
         self.t_low=t_low;self.t_high=t_high;self.temperature=temperature;self.seed=seed
         self.weight=None;self.calibration=None;self.pair_checked=False
+        from src.unet.joint.objective import frozen_fingerprint
+        self.frozen_sha=frozen_fingerprint(self.vae)
 
     def decode(self,z):
         return self.vae.decode(z.float()/self.sf+self.shift).sample
 
     def eg_embed(self,images):
-        x=F.interpolate(images,size=(160,),mode='bilinear',align_corners=False)
+        x=F.interpolate(images,size=(160,160),mode='bilinear',align_corners=False)
         x=(x-EG_MEAN.to(x.device)[None,:,None,None])/EG_STD.to(x.device)[None,:,None,None]
         pooled=self.net.emb(x)
         return pooled/pooled.norm(dim=-1,keepdim=True).clamp_min(1e-6)
@@ -78,9 +91,9 @@ class EGStyleObjective:
         images=self.decode(zhat)
         emb=self.eg_embed(images)
         slots=[f"{int(wi)}_{int(si)}" for wi,si in zip(wt,s[idx])]
-        logits=torch.stack([self.scores(emb,sl) for sl in slots])
-        ref_ids=sorted(self.refs)
-        target=torch.tensor([ref_ids.index(sl) for sl in slots],device=z.device)
+        sim=torch.einsum('bd,wkd->bwk',emb,self._bank)
+        logits=sim.topk(5,dim=2).values.mean(2)/self.temperature  # (B,W) over all candidate writers
+        target=torch.tensor([self._ref_ids.index(sl) for sl in slots],device=z.device)
         loss=F.cross_entropy(logits,target)
         stats=dict(eg_samples=n,eg_loss=float(loss.detach()),
                    eg_weight=self.weight)
@@ -116,13 +129,24 @@ class EGStyleObjective:
         return None
 
     def checkpoint(self):
+        from src.train.ckpt import state_to_cpu
         assert eg_fingerprint(self.net)==self.eg_sha
         return dict(joint_arm='EG',eg_weight=self.weight,eg_calibration=self.calibration,
                     eg_sha256=self.eg_sha,every=self.every,image_micro=self.micro,
-                    target_ratio=self.target_ratio)
+                    target_ratio=self.target_ratio,
+                    decoder=state_to_cpu(self.vae.decoder.state_dict()),
+                    decoder_ema=state_to_cpu(self.vae.decoder.state_dict()),
+                    vae_frozen_sha256=self.frozen_sha,
+                    image_weight=self.weight if self.weight is not None else 0.,
+                    rec_weight=0.,image_batch=self.micro,
+                    scaling=self.sf,shift=self.shift)
 
     def restore(self,ck):
-        if ck.get('joint_arm')!='EG':raise ValueError('Checkpoint is not an EG-style run')
+        if ck.get('joint_arm')!='EG':
+            # Fork from a plain-FM run: no EG state to restore; the first
+            # auxiliary step auto-calibrates a fresh weight.
+            self.weight=None;self.calibration=None
+            return
         self.weight=ck.get('eg_weight');self.calibration=ck.get('eg_calibration')
 
 
