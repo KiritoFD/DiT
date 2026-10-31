@@ -1,5 +1,23 @@
 # 书法条件生成的数学框架：内容、Writer、随机写法与 VAE
 
+
+## 数学专题导航（证据修订版）
+
+建议先读 [理论修订账本](00_THEORY_REVISION_LEDGER.md)，再根据需要阅读推导。每篇都区分 **数学恒等式 / 模型机制假说 / 已有测量 / 可以推翻的实验**。
+
+| 文档 | 关键推导或待验证命题 |
+|---|---|
+| [00 · 证据反例与理论修正](00_THEORY_REVISION_LEDGER.md) | 纠正“0.65上界”“Writer仅7维”“t=1学完整分布”“S5唯一最优”等过强判断 |
+| [01 · 条件Flow Matching与时间](01_CONDITIONAL_FLOW_AND_TIME.md) | Bayes风险差恒等式；`t=0`与`t=1`极限；中t的score/Writer差；正确SDE |
+| [02 · Writer表示与可辨识性](02_WRITER_INFORMATION_AND_IDENTIFIABILITY.md) | DINO能量分解、跨字Writer探针、来源混杂、Writer-swap方向/幅度/内容 |
+| [03 · VAE、Decoder与辅助目标](03_LATENT_DECODER_AND_OBJECTIVES.md) | Decoder Jacobian；12ch梯度竞争；SkelNet级联误差与拓扑非连续 |
+| [04 · 迁移曝光与评价统计](04_TRANSFER_EXPOSURE_AND_STATISTICS.md) | P75有效Writer曝光19.125k；等目标曝光vs等总算力；字符簇bootstrap |
+| [05 · 数学预测与可证伪实验](05_PREDICTIONS_AND_FALSIFICATION.md) | 12项明确的假设→测量→失败即修正；4090已有任务与追加试验的先后 |
+
+**本阶段最重要的严格新推导**：在本项目独立高斯线性桥上，`v_w^*(z,1)=z-\mathbb E[Z_0\mid G,S,W=w]`，因此**单一纯噪声端的Writer Pair只监督条件均值**；中间时间 `\Delta v_{a,b}=-\tfrac{t}{1-t}\Delta s_{a,b}`，可能承载Writer分布形状变化。真实数据是否属于“协方差主导”，并**未被DINO QDA实验支持**；目前只是数学上的允许机制，必须用同位置t轴风险和同噪声Writer-swap验证。
+
+> **下面保留原数学总览稿作为历史上下文**。其中任何与细化章节或 [00修订账本](00_THEORY_REVISION_LEDGER.md) 冲突的普适推论都应按新推导及原始数据降级，而不是把总结稿当定理。
+
 > **研究状态**：2026-10-31。本文分清 **数学恒等式**、**对模型的机制假说**、**本项目的数值证据**。与 [阶段实验结论](../1031/README.md) 配套；实现依据为 [FlowMatching](../../src/loss/flow_matching.py)、[Writer 诊断](../../ANALYSIS/style_structure_diagnosis_20261025.md)、[S/J 配对报告](../1028/CONCLUSION_AND_NEXT_PHASE_20261028.md)、[E-G 检验](../1030/eval_style_v2/FINAL_REPORT.md)。不把任何解释当作已经证明的结构定理。
 
 ## 0. 总论：我们要学的不是“唯一正确答案”，而是一个受多重条件约束的书写分布
