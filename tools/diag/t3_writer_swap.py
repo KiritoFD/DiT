@@ -33,7 +33,7 @@ import torch
 
 sys.path.insert(0, '.')
 from tools.diag.common import (base_args, load_model, read_rows, pin,  # noqa: E402
-                               shard_latents, font_map, eval_args_of,
+                               shard_latents, font_map, eval_args_of, slot_of,
                                diffusion_of, ocr_setup, ocr_score,
                                load_vae, decode_latents, write_json)
 
@@ -43,9 +43,10 @@ def pick_grid(rows, n_chars, n_writers):
     by_char = defaultdict(dict)      # char -> {slot: row}
     slot_freq = Counter()
     for r in rows:
-        if int(r.get('writer_trusted', 0)) != 1:
+        trusted = r.get('writer_trusted')
+        if trusted is not None and int(trusted) != 1:
             continue
-        slot = int(r['writer_slot'])
+        slot = slot_of(r)
         ch = r['character']
         slot_freq[slot] += 1
         by_char[ch].setdefault(slot, r)
@@ -62,12 +63,19 @@ def main():
                          ('--writers', dict(type=int, default=10)),
                          ('--seeds', dict(type=int, default=3)),
                          ('--csv-out', dict(default='')),
+                         ('--off-site', dict(type=int, default=-1,
+                                             help='zero this injection site gain before sampling')),
+                         ('--tag', dict(default='', help='suffix for output dirs')),
                          ('--no-ocr', dict(action='store_true'))])
     pin(a.threads)
-    out_dir = Path(a.out) / 't3'
+    out_dir = Path(a.out) / ('t3' + (f'_{a.tag}' if a.tag else ''))
     png_dir = out_dir / 'png'
     png_dir.mkdir(parents=True, exist_ok=True)
-    model, cfg, ck = load_model(a.checkpoint)
+    model, cfg, ck = load_model(a.checkpoint, a.device)
+    if a.off_site >= 0:
+        with torch.no_grad():
+            model.style_injections[a.off_site].gain.fill_(0.0)
+        print(f'[t3] site {a.off_site} gain zeroed (ablation)', flush=True)
     args = eval_args_of(cfg)
     diffusion = diffusion_of(args)
     srow = font_map(cfg)
@@ -76,25 +84,21 @@ def main():
 
     rows_all = read_rows(a.csv)
     chars, writers, by_char = pick_grid(rows_all, a.chars, a.writers)
-    # The remap tables are keyed by RAW calligrapher ids, so a synthetic row for
-    # writer slot w must reuse a real raw id that maps to w.
-    raw_of_slot = {}
-    for r in rows_all:
-        if int(r.get('writer_trusted', 0)) == 1:
-            raw_of_slot.setdefault(int(r['writer_slot']), int(r['calligrapher_id']))
+    # Conds are built directly (writer slot as the callig id), so the CSV's
+    # calligrapher_id only has to be consistent with the slot it denotes.
     print(f'[t3] chars={len(chars)} writers={len(writers)} seeds={a.seeds} '
-          f'raw_of_slot={len(raw_of_slot)}', flush=True)
+          f'slots={writers}', flush=True)
 
     # ---- build the swap grid CSV (writer varies, everything else fixed)
     grid = []       # (char, writer, seed) -> row dict
     for ch in chars:
         for w in writers:
             gt = by_char[ch].get(w)
-            if gt is None or w not in raw_of_slot:
+            if gt is None:
                 continue          # no real sample for this (char, writer): skip cell
             for s in range(a.seeds):
                 row = dict(gt)
-                row['calligrapher_id'] = str(raw_of_slot[w])
+                row['calligrapher_id'] = str(w)
                 row['writer_slot'] = str(w)
                 grid.append((ch, w, s, row))
     if not grid:
@@ -155,7 +159,7 @@ def main():
         latents = sample_latents(model, diffusion, noise, cache['conds'],
                                  float(getattr(args, 'eval_cfg', 1.0)),
                                  int(getattr(args, 'in_mem_eval_batch', 8)),
-                                 torch.device('cpu'),
+                                 torch.device(a.device),
                                  skel=cache.get('skels_latent'), seed=0,
                                  hier_conds=cache.get('hier_conds'))
     latents = latents.float()
@@ -164,7 +168,7 @@ def main():
           f'({_dt / max(len(grid), 1):.2f} s/img)', flush=True)
 
     # ---- decode + save + OCR
-    vae, sf, shift = load_vae(cfg)
+    vae, sf, shift = load_vae(cfg, a.device)
     images = decode_latents(vae, latents, sf, shift, batch=4)
     for i, (ch, w, s, _r) in enumerate(grid):
         from PIL import Image
@@ -174,7 +178,7 @@ def main():
 
     ocr = None
     if not a.no_ocr:
-        net, char2idx = ocr_setup()
+        net, char2idx = ocr_setup(a.device)
         pngs = [str(png_dir / f'g{i:04d}_{ch}_{w}_s{s}.png')
                 for i, (ch, w, s, _r) in enumerate(grid)]
         ocr = ocr_score(net, pngs, [ch for ch, _, _, _ in grid], char2idx)

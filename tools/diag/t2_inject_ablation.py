@@ -28,7 +28,7 @@ import torch
 sys.path.insert(0, '.')
 from tools.diag.common import (base_args, load_model, read_rows, pin,  # noqa: E402
                                shard_latents, std_store_of, null_writer,
-                               pick_rows, font_map, write_json)
+                               pick_rows, font_map, slot_of, write_json)
 
 TS = (0.10, 0.25, 0.40, 0.60, 0.80, 0.95)
 
@@ -59,7 +59,7 @@ def main():
     pin(a.threads)
     out_dir = Path(a.out) / 't2'
     out_dir.mkdir(parents=True, exist_ok=True)
-    model, cfg, ck = load_model(a.checkpoint)
+    model, cfg, ck = load_model(a.checkpoint, a.device)
     diffusion = build_diffusion_for(cfg)
     null = null_writer(model)
     srow = font_map(cfg)
@@ -68,7 +68,7 @@ def main():
 
     rows = pick_rows(read_rows(a.csv), a.rows)
     img_ids = [int(r['img_id']) for r in rows]
-    z0s = shard_latents(a.shards, img_ids)
+    z0s = shard_latents(a.shards, img_ids, device=a.device)
     store = std_store_of(cfg)
 
     # --- probe site geometry once (full model, first usable row)
@@ -84,17 +84,20 @@ def main():
         with torch.no_grad():
             gg = torch.as_tensor(g).float()
             gg = gg[None] if gg.dim() == 3 else gg
+            gg = gg.to(a.device)
             kw = dict(g=gg,
-                      y_callig=torch.tensor([int(r['writer_slot'])]),
-                      y_script=torch.tensor([srow(int(r['script_id']))]),
+                      y_callig=torch.tensor([slot_of(r)], device=a.device),
+                      y_script=torch.tensor([srow(int(r['script_id']))], device=a.device),
                       condition_dropped=False)
-            model(z0s[iid][None], torch.tensor([100.0]), **kw)
+            model(z0s[iid][None], torch.tensor([100.0], device=a.device), **kw)
         break
     for h in handles:
         h.remove()
     print(f'[t2] site geometry: {meta}', flush=True)
 
     variants = ['full'] + [f'off_{i}' for i in range(len(sites))]
+    slots_present = sorted({slot_of(r) for r in rows})
+    print(f'[t2] slots present in sample: {slots_present}', flush=True)
     raw = []
     for variant in variants:
         saved = {}
@@ -104,7 +107,7 @@ def main():
                 saved[idx] = float(sites[idx].gain.item())
                 sites[idx].gain.fill_(0.0)
         try:
-            for r in rows:
+            for ri, r in enumerate(rows):
                 iid = int(r['img_id'])
                 if iid not in z0s:
                     continue
@@ -114,17 +117,19 @@ def main():
                     continue
                 g = torch.as_tensor(g).float()
                 g = g[None] if g.dim() == 3 else g
-                slot = int(r['writer_slot'])
-                wrong = (slot + 7) % 47
-                s_id = torch.tensor([srow(int(r['script_id']))])
+                g = g.to(a.device)
+                slot = slot_of(r)
+                others = [s for s in slots_present if s != slot]
+                wrong = others[ri % len(others)] if others else (slot + 7) % 47
+                s_id = torch.tensor([srow(int(r['script_id']))], device=a.device)
                 z0 = z0s[iid][None]
-                gen = torch.Generator().manual_seed(iid)
-                noise = torch.randn(z0.shape, generator=gen)
+                gen = torch.Generator(device=a.device).manual_seed(iid)
+                noise = torch.randn(z0.shape, generator=gen, device=a.device)
                 for t in TS:
                     zt = (1.0 - t) * z0 + t * noise
-                    tt = torch.full((1,), float(t))
+                    tt = torch.full((1,), float(t), device=a.device)
                     for name, w in (('correct', slot), ('wrong', wrong)):
-                        kw = dict(g=g, y_callig=torch.tensor([w]), y_script=s_id,
+                        kw = dict(g=g, y_callig=torch.tensor([w], device=a.device), y_script=s_id,
                                   condition_dropped=False)
                         with torch.no_grad():
                             out = diffusion.training_losses(model, zt, tt, kw, noise)

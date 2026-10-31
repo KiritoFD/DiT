@@ -33,19 +33,20 @@ def pin(threads=32):
 def base_args(extra=()):
     p = argparse.ArgumentParser()
     p.add_argument('--checkpoint', default='assets/p125_20261030/execution/runs/P3A/checkpoints/0020000.pt')
-    p.add_argument('--csv', default='assets/p125_20261030/p125_trusted_encode.csv')
+    p.add_argument('--csv', default='assets/p125_20261030/stage_p2.csv')
     p.add_argument('--shards', default='assets/p125_20261030/shards_all')
     p.add_argument('--out', default='assets/diag_20261031')
     p.add_argument('--n', type=int, default=96)
     p.add_argument('--threads', type=int, default=32)
+    p.add_argument('--device', default='cpu', help='cpu | cuda')
     for flag, kw in extra:
         p.add_argument(flag, **kw)
     return p.parse_args()
 
 
-def load_model(checkpoint):
+def load_model(checkpoint, device='cpu'):
     from src.unet.io import load
-    return load(checkpoint, 'cpu', use_ema=True)
+    return load(checkpoint, device, use_ema=True)
 
 
 def eval_args_of(config):
@@ -82,7 +83,7 @@ def shard_index(shards_dir):
     return idx
 
 
-def shard_latents(shards_dir, img_ids, which='latents'):
+def shard_latents(shards_dir, img_ids, which='latents', device='cpu'):
     """Return {img_id: fp32 tensor} for the requested ids (missing ids skipped)."""
     idx = shard_index(shards_dir)
     need = {}
@@ -94,7 +95,7 @@ def shard_latents(shards_dir, img_ids, which='latents'):
     for path, pairs in need.items():
         with np.load(path) as d:
             for iid, j in pairs:
-                out[iid] = torch.from_numpy(np.asarray(d[which][j])).float()
+                out[iid] = torch.from_numpy(np.asarray(d[which][j])).float().to(device)
     return out
 
 
@@ -108,21 +109,26 @@ NULL_WRITER_OFFSET = 47  # P125 table: rows 0..46 writers, row 47 = null
 
 
 def pick_rows(rows, n, per_slot=6):
-    """Diverse sampler over the training CSV: cap rows per writer slot,
-    Top10 slots first, generic slots sparser."""
+    """Diverse sampler over a training CSV: cap rows per writer slot,
+    Top10 slots first, generic slots sparser.
+
+    Stage CSVs (stage_p2.csv etc.) have no `writer_trusted` column — absence
+    means "this row is a training row", so it is accepted rather than dropped.
+    """
     top, gen, out = [], [], []
     for r in rows:
         try:
-            s = int(r['writer_slot'])
+            s = int(r['writer_slot'] if 'writer_slot' in r else r['calligrapher_id'])
         except (KeyError, ValueError):
             continue
-        if int(r.get('writer_trusted', 0)) != 1:
+        trusted = r.get('writer_trusted')
+        if trusted is not None and int(trusted) != 1:
             continue
         (top if s < 10 else gen).append(r)
     for pool, cap in ((top, per_slot), (gen, max(1, per_slot // 3))):
         seen = {}
         for r in pool:
-            k = int(r['writer_slot'])
+            k = int(r['writer_slot'] if 'writer_slot' in r else r['calligrapher_id'])
             if seen.get(k, 0) >= cap:
                 continue
             seen[k] = seen.get(k, 0) + 1
@@ -130,6 +136,11 @@ def pick_rows(rows, n, per_slot=6):
             if len(out) >= n:
                 return out
     return out
+
+
+def slot_of(row):
+    """Writer slot for a CSV row (stage CSVs only carry calligrapher_id)."""
+    return int(row['writer_slot'] if 'writer_slot' in row else row['calligrapher_id'])
 
 
 def font_map(config):
@@ -150,8 +161,8 @@ def null_writer(model):
 _OCR_VOCAB = '/root/.cache/modelscope/models/iic--cv_convnextTiny_ocr-recognition-handwritten_damo/snapshots/master/vocab.txt'
 
 
-def ocr_setup():
-    """Load the handwriting OCR net on CPU (weights from the p125 panel tooling)."""
+def ocr_setup(device='cpu'):
+    """Load the handwriting OCR net (weights from the p125 panel tooling)."""
     import sys
     sys.path.insert(0, '.')
     torch.set_grad_enabled(False)
@@ -161,7 +172,7 @@ def ocr_setup():
     from tools.p125.duguang_model import DuguangOCR
     net = DuguangOCR(vocab_size=len(vocab) + 1)
     net.load_state_dict(ck['model'], strict=False)
-    net.eval()
+    net = net.to(device).eval()
     return net, char2idx
 
 
@@ -175,13 +186,14 @@ def _load_img(path):
     return (x - 0.5) / 0.5
 
 
-def ocr_score(net, images, targets, char2idx, batch=16):
-    """CPU twin of tools/p125/ocr_panel_eval.score().
+def ocr_score(net, images, targets, char2idx, batch=16, device=None):
+    """CPU/GPU twin of tools/p125/ocr_panel_eval.score().
 
     `images` entries may be file paths or already-loaded 2-D float arrays.
     `targets` are character strings (one per image).
     """
     from torch.nn import functional as F
+    dev = device or next(net.parameters()).device
     keep = []
     for img, tgt in zip(images, targets):
         if tgt not in char2idx:
@@ -193,7 +205,7 @@ def ocr_score(net, images, targets, char2idx, batch=16):
     logits = []
     with torch.no_grad():
         for i in range(0, len(keep), batch):
-            xs = torch.stack([torch.from_numpy(x[0])[None] for x in keep[i:i + batch]])
+            xs = torch.stack([torch.from_numpy(x[0])[None] for x in keep[i:i + batch]]).to(dev)
             logits.append(net(xs).cpu())
     logits = torch.cat(logits)
     tgt = torch.tensor([char2idx[t] for _, t in keep])
@@ -219,19 +231,27 @@ def write_json(path, data):
 
 
 # ---------------------------------------------------------------- VAE (CPU)
-def load_vae(config):
+def load_vae(config, device='cpu'):
     """SD VAE (encoder+decoder) exactly as the eval/training stacks load it."""
     from diffusers.models import AutoencoderKL
     vae = AutoencoderKL.from_pretrained(config.vae_path, local_files_only=True)
-    vae.eval()
+    vae = vae.to(device).eval()
     sf = float(getattr(config, 'vae_scaling_factor', 0.18215))
     shift = float(getattr(config, 'vae_shift_factor', 0.0))
     return vae, sf, shift
 
 
+def _vae_device(vae):
+    try:
+        return next(vae.parameters()).device
+    except StopIteration:
+        return torch.device('cpu')
+
+
 def encode_images(vae, images, sf, shift, sample_mean=True):
     """images: (B,3,H,W) in [-1,1] -> latents (B,4,h,w) in the training scale."""
-    x = images.to('cpu')
+    dev = _vae_device(vae)
+    x = images.to(dev)
     with torch.no_grad():
         post = vae.encode(x).latent_dist
         mean = post.mean() if callable(getattr(post, 'mean', None)) else post.mean
@@ -241,11 +261,12 @@ def encode_images(vae, images, sf, shift, sample_mean=True):
 
 def decode_latents(vae, latents, sf, shift, batch=4):
     """latents (B,4,32,32) in training scale -> images (B,3,256,256) in [-1,1]."""
-    from torch.nn import functional as F
+    dev = _vae_device(vae)
     out = []
-    for i in range(0, len(latents), batch):
-        dec = vae.decode((latents[i:i + batch] - shift).to('cpu') / sf).sample
-        out.append(dec.float())
+    with torch.no_grad():
+        for i in range(0, len(latents), batch):
+            dec = vae.decode((latents[i:i + batch].to(dev) - shift) / sf).sample
+            out.append(dec.float().cpu())
     return torch.cat(out)
 
 

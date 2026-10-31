@@ -24,7 +24,7 @@ sys.path.insert(0, '.')
 from tools.diag.common import (base_args, load_model, read_rows, pin,  # noqa: E402
                                shard_latents, load_vae, encode_images,
                                decode_latents, gt_image_tensor, ocr_setup,
-                               ocr_score, set_metrics, write_json)
+                               ocr_score, set_metrics, write_json, slot_of)
 
 
 def to_hwc01(t3):
@@ -44,16 +44,18 @@ def main():
     out_dir = Path(a.out) / 't4'
     png_dir = out_dir / 'png'
     png_dir.mkdir(parents=True, exist_ok=True)
-    _model, cfg, _ck = load_model(a.checkpoint)   # config carrier only
+    _model, cfg, _ck = load_model(a.checkpoint, 'cpu')   # config carrier only
     del _model
-    vae, sf, shift = load_vae(cfg)
-    rows = [r for r in read_rows(a.csv) if int(r.get('writer_trusted', 0)) == 1][:a.n]
+    vae, sf, shift = load_vae(cfg, a.device)
+    # stage CSVs have no `writer_trusted` column: absence means "training row"
+    rows = [r for r in read_rows(a.csv)
+            if r.get('writer_trusted') is None or int(r['writer_trusted']) == 1][:a.n]
     img_ids = [int(r['img_id']) for r in rows]
     shard = shard_latents(a.shards, img_ids)
     mode = 'shard_latent' if a.use_shard_latent else 'encoder_roundtrip'
     print(f'[t4] mode={mode} rows={len(rows)} shard={len(shard)} vae={cfg.vae_path} sf={sf}', flush=True)
 
-    net, char2idx = ocr_setup()
+    net, char2idx = ocr_setup(a.device)
     per_row, kept = [], []
     for r in rows:
         iid = int(r['img_id'])
@@ -78,7 +80,7 @@ def main():
         save_png(rc01, r_png)
         flat = {k: (round(v, 5) if isinstance(v, (int, float)) else None)
                 for k, v in met.items()}
-        per_row.append(dict(img=iid, char=r['character'], slot=int(r['writer_slot']),
+        per_row.append(dict(img=iid, char=r['character'], slot=slot_of(r),
                             metrics=flat, gt_png=str(g_png), recon_png=str(r_png)))
         kept.append(dict(char=r['character'], gt_png=str(g_png), recon_png=str(r_png)))
         if len(per_row) % 25 == 0:

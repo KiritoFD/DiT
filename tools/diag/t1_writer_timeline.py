@@ -28,7 +28,7 @@ import torch
 sys.path.insert(0, '.')
 from tools.diag.common import (base_args, load_model, read_rows, pin,  # noqa: E402
                                shard_latents, std_store_of, null_writer,
-                               pick_rows, font_map, write_json)
+                               pick_rows, font_map, slot_of, write_json)
 
 TS = (0.10, 0.25, 0.40, 0.60, 0.80, 0.95)
 
@@ -49,7 +49,7 @@ def main():
     pin(a.threads)
     out_dir = Path(a.out) / 't1'
     out_dir.mkdir(parents=True, exist_ok=True)
-    model, cfg, ck = load_model(a.checkpoint)
+    model, cfg, ck = load_model(a.checkpoint, a.device)
     diffusion = build_diffusion_for(cfg)
     null = null_writer(model)
     # CSV script ids are raw corpus ids (0=楷,3=行,4=隶); the model's script
@@ -62,12 +62,14 @@ def main():
     counter = Counter(r['character'] for r in rows_all)
     rows = pick_rows(rows_all, a.n)
     img_ids = [int(r['img_id']) for r in rows]
-    z0s = shard_latents(a.shards, img_ids)
+    z0s = shard_latents(a.shards, img_ids, device=a.device)
     store = std_store_of(cfg)
     print(f'[t1] rows={len(rows)} latents={len(z0s)}', flush=True)
 
     char_of = {int(r['img_id']): r['character'] for r in rows}
     script_of = {int(r['img_id']): int(r['script_id']) for r in rows}
+    slots_present = sorted({slot_of(r) for r in rows})
+    print(f'[t1] slots present in sample: {slots_present}', flush=True)
     raw = []     # dicts: img slot seed t cond loss
     for ri, r in enumerate(rows):
         iid = int(r['img_id'])
@@ -81,22 +83,24 @@ def main():
             continue
         g = torch.as_tensor(g).float()
         g = g[None] if g.dim() == 3 else g[None, None]
-        slot = int(r['writer_slot'])
+        g = g.to(a.device)
+        slot = slot_of(r)
         script = int(r['script_id'])
         s_id = srow(script)
-        wrong = (slot + 1 + ri) % 47
-        if wrong == slot:
-            wrong = (slot + 7) % 47
+        # wrong writer: another slot that actually occurs in this dataset
+        # (Top10 CSVs must not borrow generic slots, and vice versa)
+        others = [s for s in slots_present if s != slot]
+        wrong = others[ri % len(others)] if others else (slot + 7) % 47
         conds = [('correct', slot), ('wrong', wrong), ('null', null)]
         for seed_i in range(2):
-            gen = torch.Generator().manual_seed(iid + seed_i)
-            noise = torch.randn(z0.shape, generator=gen)
+            gen = torch.Generator(device=a.device).manual_seed(iid + seed_i)
+            noise = torch.randn(z0.shape, generator=gen, device=a.device)
             for t in TS:
                 zt = (1.0 - t) * z0 + t * noise
-                tt = torch.full((1,), float(t))
+                tt = torch.full((1,), float(t), device=a.device)
                 for name, w in conds:
-                    kw = dict(g=g, y_callig=torch.tensor([w]),
-                              y_script=torch.tensor([s_id]),
+                    kw = dict(g=g, y_callig=torch.tensor([w], device=a.device),
+                              y_script=torch.tensor([s_id], device=a.device),
                               condition_dropped=False)
                     with torch.no_grad():
                         out = diffusion.training_losses(model, zt, tt, kw, noise)
