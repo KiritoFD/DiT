@@ -62,3 +62,40 @@ python tools/poster_20261101/build_charts.py     # -> assets/posters/fig_p125_*.
 - Moyi 4ch@80k 只有一张 40 字官方海报、无逐行面板，故不进入行轴（避免拼错），
   在 poster 页脚注明。
 - 面板图目录名虽叫 `eval200fix`，但 100 行面板也写这个目录名——**以 `g*.png` 数量判断面板**。
+
+## 多 part 大表（build_parts.py）
+
+紧凑表只有 21 行（两族交集），深度不够。`build_parts.py` 按**面板分 part**，
+每个 part 用自己的面板 CSV 取 GT，可以做到 100 行：
+
+| part | 面板 | 列 | 行 | 输出 |
+|---|---|---|---|---|
+| `val100` | validation_val100.csv | GT + S0/S1/S4/S5/S6/S8@50k + P3A@20k + K@43429 | 100 | `poster_val100_p{1..7}.png`（每张 15 行） |
+| `fixed187` | exp-std/csv/eval200_fixed.csv | GT + v80 + v85A + Moyi + … | 100 | 同上（仅在两机都齐时使用） |
+
+**每个模型列都要先过对齐校验**：该列面板里的 `gt{i}.png` 必须与面板 CSV 第 i 行的
+`image_path` 原图一致（96×96 下平均绝对差 < 0.06）。这一步不是形式主义 ——
+matrix64 的 S5 由 48 机产出、面板目录里没有 `request.json`，无法用 csv sha 证明面板身份，
+只能靠 GT 逐行比对确认它与其它列同源。
+
+`png_dir()` 会跳过 `eval200fix_input_g` 这类只有输入骨架、没有 gt 的兄弟目录，
+否则会误把输入 G 当成模型输出。
+
+```bash
+# 在持有面板的机器上跑，只回传成品 PNG
+python tools/poster_20261101/build_parts.py --parts val100 --per-sheet 15 --rows 100
+```
+
+紧凑表里 S4/S5 的 21 格用 `export_cells.py` 单独导出（几十个小 PNG，不是批量传输）。
+
+## 排版
+
+标题下两行说明与列头之间保留 36 px 留白（`SUB2_Y=106`、`HEADER_H=230`、`HEAD_BLOCK=62`）。
+早期版本第二行 y=96、列头 y=114，几乎贴在一起。
+
+## 面板可用性（2026-11-01 实测）
+
+- 48 机（10.222.120.101:22）**不可达**，S5 用早先拷回 4090 的面板。
+- S4/S5 只在 4090 有全量 100 行面板；v80/v85A/Moyi 只在工作站有。
+- **S9 的 187 行面板两机都已不存在**，只剩早先抽出的 21 格；因此 S9 只出现在紧凑表里。
+

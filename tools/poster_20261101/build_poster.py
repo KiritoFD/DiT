@@ -16,9 +16,16 @@ OUT_RAW = ROOT / 'assets/posters/poster_crosslineage_21_raw.png'
 
 CELL = 132
 GAP = 5
-LABEL_W = 118
-HEADER_H = 176
-FOOTER_H = 96
+LABEL_W = 126
+# Header geometry: title, then two explanation lines, then a real gap before the
+# column headers. The old layout put the second line at y=96 and the headers at
+# y=114, so they nearly touched.
+TITLE_Y = 14
+SUB1_Y = 74
+SUB2_Y = 106
+HEAD_BLOCK = 62
+HEADER_H = 230
+FOOTER_H = 122
 PAD = 18
 
 WRITER_COLORS = {
@@ -42,6 +49,11 @@ COLUMNS = [
      'eval_samples_ctrl/step0030000/eval200fix', 'v85A style_ada', '风格注入 30k', '200', False),
     ('S9_50k', 'S9', 'style_matrix 50k', '200', False),
     ('S0_85k', 'S0', 'style_focus 85k', '200', False),
+    # matrix64 siblings of S9, both at 50k on the val100 panel. S5 was trained on the
+    # 48 box and copied back, so its panel has no request.json -- its 21 cells were
+    # exported and are used here on the same (writer, char) rows as every other column.
+    ('S4_50k', 'S4 ★', 'matrix64 50k', '100', True),
+    ('S5_50k', 'S5 ★', 'matrix64 50k（48 机）', '100', True),
     ('docs/106moyi/moyi/results/moyi_top10_rf/eval_ours200fix', 'Moyi 12ch', '跨架构基线 50k', '200', False),
     ('P3A_20k', 'P3A', 'P125 段 20k', '100', False),
     ('A_35k', 'A', 'abc 链 35k', '200', False),
@@ -92,17 +104,18 @@ def main():
     f_row, f_note = font(22), font(17)
 
     # ---- header
-    d.text((PAD, 14), '书家风格全谱系对比 · 21 字级', font=f_title, fill=(15, 23, 42))
-    d.text((PAD, 66),
+    d.text((PAD, TITLE_Y), '书家风格全谱系对比 · 21 字级', font=f_title, fill=(15, 23, 42))
+    d.text((PAD, SUB1_Y),
            '行轴 = eval200fix(187) 与 val100(100) 两个评测面板共有的 21 个 (书家, 字) 单元；'
            '同一行在两面板中 GT 同源，故单列 GT 对全表成立。列按血统时间顺序排列。',
            font=f_sub, fill=(71, 85, 105))
-    d.text((PAD, 96),
-           '★ = 当前最优 K（A@43429）。所有列均为 EMA 权重、CFG 1.0、50 步 Heun 采样、同 std 骨架条件。',
+    d.text((PAD, SUB2_Y),
+           '★ = 当前最优 K（A@43429）与新增的 matrix64 S4/S5@50k。'
+           '所有列均为 EMA 权重、CFG 1.0、50 步 Heun 采样、同 std 骨架条件。',
            font=f_sub, fill=(71, 85, 105))
 
     # column headers
-    y0 = HEADER_H - 62
+    y0 = HEADER_H - HEAD_BLOCK
     for j, (cdir, l1, l2, kind, ours) in enumerate(COLUMNS):
         x = PAD + LABEL_W + j * (CELL + GAP)
         col = (185, 28, 28) if ours else (15, 23, 42)
@@ -142,8 +155,12 @@ def main():
            'Moyi 4ch@80k 因仅有 40 字官方海报、面板不同，未纳入逐行对比  |  2026-11-01',
            font=f_note, fill=(100, 116, 139))
     d.text((PAD, fy + 26),
-           '列说明：v80/v85A/S9/S0/Moyi 走 187 行面板；P3A/A@43429 走 100 行面板；A@35k 为 187 行 heldout 面板。'
+           '列说明：v80/v85A/S9/S0/Moyi/A@35k 走 187 行面板；P3A/S4/S5/A@43429 走 100 行面板。'
            '两类面板的同一 (书家,字) 行 GT 完全一致（21/21 校验通过）。',
+           font=f_note, fill=(100, 116, 139))
+    d.text((PAD, fy + 52),
+           'S4/S5 为 matrix64 家族 50k 臂，与 S9 同期同族；S5 由 48 机训练后拷回 4090，'
+           '其面板无 request.json，故以 21 格逐行导出方式纳入。',
            font=f_note, fill=(100, 116, 139))
 
     OUT_RAW.parent.mkdir(parents=True, exist_ok=True)
