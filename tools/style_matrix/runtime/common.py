@@ -63,7 +63,11 @@ def optimizer(model,config,decoder=None,*,scratch=False):
         return torch.optim.AdamW(groups,weight_decay=.01,fused=True)
     def rate(kind,legacy):
         if scratch:return config.lr
-        explicit=getattr(config,'lr_'+kind,0.) or 0.
+        # 2026-10-31 [A/B/C]: kind 名与 Config 字段名不一致 (lr_style_repr/lr_style_inj),
+        # 旧写法 getattr(config,'lr_'+kind) 永远 miss ⇒ style 组静默落到 legacy 1e-4。
+        field={'backbone':'lr_backbone','style_representation':'lr_style_repr',
+               'style_injections':'lr_style_inj'}.get(kind,'lr_'+kind)
+        explicit=getattr(config,field,0.) or 0.
         return explicit or legacy
     split_table=(not scratch) and getattr(config,'lr_writer_table',0.)>0
     for name,legacy in (('backbone',2e-5),('style_representation',1e-4),('style_injections',1e-4)):

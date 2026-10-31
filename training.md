@@ -2,6 +2,10 @@
 
 # 训练进度
 
+2026-10-30 22:05（P125 S5 链，4090）：P0 heldout 全轨迹收齐（val100 n=100，CPU eval 内核，每点 460s 不停训）：1k 0.263 / 5k 0.533 / 10k 0.549 / 20k 0.557 / 30k 0.560 / 40k 0.557（ssim），**自 ~20k 平台化**，训练 fm 同期 −13% 为纯 seen 增益。用户裁定：**P0 收刀于 50k**（编排已挂，50k watcher eval 平台门 ssim≥0.55 通过后自动 SIGTERM→改 plan stop→重 seal→重启链→P1）；裁定**不补 S4@85k**；转入全程目标监控（goal-e8401d41 + 45 分钟巡检）确保 P1→P2→EG pilot 门→P3A/P3B 正确充分完成。计划变更细节见[1030p125.md §2.5.4](1030p125.md)。当前 47.8k 步，1.553 step/s 恒定，peak 20.41GiB。
+
+2026-10-30 13:21（P125 S5 链，4090）：P125 全链拉起（run_p125.sh，tmux p125）：batch512/microbatch512/compile=True，实测稳态 **1.554 step/s**（0.644 s/step），peak **20.41 GiB**（+1.1GiB 容器外常驻）。此前修复空白：`src/unet/io.py` 未传 num_writers（P0 style 分支永久零梯度根因）、microbatch 256→512、P2/P3 source、阶段间 style 权重搬运（transfer_style）、init_p1_table 语法错、build_stage_csvs NameError、新增 seal_ready。SSH 直连 4090（ProxyJump 48 已注释）。
+
 2026-10-29 20:28文档汇总：本次两端SSH重连均被10.222.120.101入口关闭，不能刷新现场进度；未停止/重启训练。最后成功核验仍为19:22的S0 56.7k、S5 56.75k，队列计划不变。全部明文指标及历史实验见[完整报告](docs/1029/full_report/README.md)。
 
 2026-10-29 19:22：S0 56,700/85k、S5 56,750/85k；S4排在S0之后。累计正式速度约1.597/1.660step/s，训练allocated峰值20.02/21.38GiB。S5剩约4.7h；4090的S0剩约4.9h，后接S4约6.4h，共约11.3h，评测另计。55k原子checkpoint及.done均存在。HWD 30面板与跨字核验、CHAED探索回归校准均已完成，CPU执行，未停训练。结果入口[10-29汇总](docs/1029/README.md)。下方是历史快照。
@@ -99,3 +103,10 @@ S11 val100：SSIM0.59396、LPIPS0.35151、E-G K64 Macro51.25%；187字Macro48.09
 新有效根：4090 `assets/style_focus_85k_20261029/4090/`串行S0→S4；48 `assets/style_focus_85k_20261029/48_v3/`运行S5。S0已到50,400、S5到50,200，RNG全恢复，GPU真实更新；短窗口约1.61/1.68step/s。当前起S5约5.8h，4090两组合计约12.5h，另加终点评测/写盘波动。
 
 三组各新增35k更新、17.92M样本曝光；B512/micro512，compile，无梯度检查点；统一200步warmup至3e-5、35k周期终值3e-6。每5k保存，85k原val100+统一187×3seed评测。[计划与核验](docs/1029/style_focus_85k/README.md)。旧generation2/later链不恢复，无S5++或Decoder训练。
+
+## 2026-10-31 A/B/C 后训练实验（4090 串行，进行中）
+
+- 启动：~当晚，serial `assets/abc_20261031/plan.json`（--resident-pid 653463）。
+- 实测：A 段 1.46s/step（batch 512, compile）。ETA：A@45k ≈ +10.1h；B@75k ≈ +10.1h；C1+C2 ≈ +10.1h；评测 12 面板 ≈ +2.5h。总计 ≈ 34h。
+- 评测点：A 25k/35k/45k（用户口径 80k/90k/100k），B/C2 @75000。协议：187×3 seeds + val100。
+- 参照（不重训）：S0@85k 内容参照、S5@85k 风格参照。
