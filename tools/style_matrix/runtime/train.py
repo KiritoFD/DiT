@@ -50,6 +50,17 @@ def main():
             if not any(n.startswith(k) for k in keep) and p.requires_grad:
                 p.requires_grad_(False);frozen+=1
         print(f'[train_scope] writer_table_only: frozen {frozen} params',flush=True)
+    # 2026-11-01 [D1]: decoder-only post-training keeps the whole generator frozen.
+    # Skipping FM as well means no wasted forward/backward on the U-Net.
+    freeze_backbone=bool(spec.get('freeze_backbone',False))
+    skip_fm=bool(spec.get('skip_fm',False))
+    if freeze_backbone:
+        frozen=0
+        for p in raw.parameters():
+            if p.requires_grad:p.requires_grad_(False);frozen+=1
+        print(f'[train_scope] freeze_backbone: frozen {frozen} generator tensors; '
+              f'skip_fm={skip_fm}',flush=True)
+        if not skip_fm:raise ValueError('freeze_backbone without skip_fm would train nothing')
     resume=torch.load(a.resume,map_location='cpu',weights_only=False) if a.resume else None
     start=int(resume['train_steps']) if resume else 0
     if resume:
@@ -85,6 +96,11 @@ def main():
         if resume:auxiliary.restore(resume)
     ema=copy.deepcopy(raw).eval().requires_grad_(False)
     opt=optimizer(raw,cfg,auxiliary.vae.decoder if auxiliary else None,scratch=spec.get('initialization')=='scratch')
+    if spec.get('decoder_lr'):
+        hit=[g for g in opt.param_groups if g.get('name')=='decoder']
+        if not hit:raise ValueError('decoder_lr set but no decoder group exists (needs a joint arm)')
+        for g in hit:g['lr']=float(spec['decoder_lr'])
+        print(f'[decoder] lr overridden to {spec["decoder_lr"]}',flush=True)
     config_lrs=[g['lr'] for g in opt.param_groups]
     restart=spec.get('schedule_restart')
     if restart and not resume:raise ValueError('Controlled LR restart requires --resume')
@@ -165,7 +181,8 @@ def main():
             w=batch['y_callig_raw'].cuda(non_blocking=True);s=batch['y_script'].cuda(non_blocking=True)
             opt.zero_grad(set_to_none=True)
             if auxiliary:
-                loss,conditions=step(forward,process,z,g,w,s,cfg.microbatch or cfg.batch,return_conditions=True)
+                loss,conditions=step(forward,process,z,g,w,s,cfg.microbatch or cfg.batch,
+                    return_conditions=True,fm=not skip_fm)
                 aux_stats=auxiliary.backward(forward,z,g,conditions,step_number,
                     img_ids=batch['img_id'].tolist(),reader=reader)
                 decoder_norm=auxiliary.clip_decoder()
@@ -174,21 +191,30 @@ def main():
             if pair_weight:
                 pair_loss=pair_budget.backward(forward,z,g,w,s,batch,pair_rows,cfg.pair_fraction,
                                                cfg.microbatch or cfg.batch,step_number)
-            norm=torch.nn.utils.clip_grad_norm_(raw.parameters(),1.,error_if_nonfinite=True)
-            opt.step();scheduler.step();step_number+=1;update_ema(ema,raw,.999)
+            trainable=[p for p in raw.parameters() if p.requires_grad]
+            norm=torch.nn.utils.clip_grad_norm_(trainable,1.,error_if_nonfinite=True) \
+                if trainable else torch.zeros((),device=z.device)
+            opt.step();scheduler.step();step_number+=1
+            if not freeze_backbone:update_ema(ema,raw,.999)
             if auxiliary:auxiliary.update_ema()
-            if step_number%50==0 or step_number==1:
-                rec=dict(step=step_number,fm=float(loss),grad_norm=float(norm),clipped=float(norm)>1,
-                    step_s=(step_number-start)/(time.monotonic()-begun),lr=scheduler.get_last_lr(),
-                    peak_GiB=torch.cuda.max_memory_allocated()/2**30)
+            if step_number%10==0 or step_number==1:
+                # CUDA launches are async: without a sync the elapsed time only
+                # measures kernel launch, which under-reports step time by orders
+                # of magnitude on short runs.
+                torch.cuda.synchronize()
+                rec=dict(step=step_number,fm=None if loss is None else float(loss),
+                    grad_norm=float(norm),clipped=float(norm)>1,
+                    steps_per_s=(step_number-start)/(time.monotonic()-begun),lr=scheduler.get_last_lr(),
+                    peak_GiB=torch.cuda.max_memory_allocated()/2**30,
+                    peak_reserved_GiB=torch.cuda.max_memory_reserved()/2**30)
                 if auxiliary:rec.update(auxiliary=aux_stats,decoder_grad_norm=decoder_norm)
                 if pair_loss is not None:
                     rec.update(velocity_pair=float(pair_loss),pair_calibration=pair_budget.state)
                 metrics.write(json.dumps(rec)+'\n');print(json.dumps(rec),flush=True)
-            if step_number in milestones or step_number in (100,500):
+            if (step_number in milestones or step_number in (100,500)) and not freeze_backbone:
                 rng=capture_rng()
                 if os.environ.get('DSH_GRAD_DEBUG'):
-                    print('[grad-debug] step',step_number,'fm',float(loss),
+                    print('[grad-debug] step',step_number,'fm',None if loss is None else float(loss),
                           {p:[(n,None if q.grad is None else float(q.grad.abs().max()))
                              for n,q in raw.named_parameters() if n.startswith(p)][:3]
                            for p in ('style_representation','style_injections','backbone')},flush=True)

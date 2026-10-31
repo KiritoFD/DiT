@@ -102,6 +102,13 @@ def main():
     ap.add_argument('--off-sites', default='',
                     help='comma list of injection sites to disable for THIS eval only '
                          '(e.g. "0,1"); the checkpoint on disk is not modified')
+    ap.add_argument('--use-ckpt-decoder', action='store_true',
+                    help='decode with the fine-tuned VAE decoder stored in the checkpoint '
+                         '(D1/D2 joint arms) instead of the stock sd-vae decoder')
+    ap.add_argument('--decoder-from', default='',
+                    help='load the decoder from this other checkpoint while keeping the '
+                         'model from --checkpoint (cross-combination eval, e.g. D1 decoder '
+                         'x D3 U-Net)')
     a = ap.parse_args()
 
     out_dir = Path(a.out) / a.tag
@@ -115,6 +122,27 @@ def main():
             model.style_injections[s].gain.fill_(0.0)
         print(f'[eval] inference-only site disable: {off}', flush=True)
     print(f'[eval] {a.tag} step={step} ckpt_disabled_sites={disabled}', flush=True)
+
+    decoder_override = None
+    if a.use_ckpt_decoder or a.decoder_from:
+        if a.decoder_from:
+            donor = torch.load(a.decoder_from, map_location='cpu', weights_only=False)
+            dec = donor.get('decoder_ema') or donor.get('decoder')
+            if dec is None:
+                raise SystemExit(f'{a.decoder_from} carries no joint decoder state')
+            decoder_override = f'{a.decoder_from}'
+        else:
+            dec = ck.get('decoder_ema') or ck.get('decoder')
+            if dec is None:
+                raise SystemExit(f'{a.checkpoint} carries no joint decoder state')
+            decoder_override = 'decoder_ema' if ck.get('decoder_ema') is not None else 'decoder'
+        from src.eval.decoder import _get_vae
+        vae = _get_vae(a.device, str(cfg.vae_path or ''),
+                       float(getattr(cfg, 'vae_shift_factor', 0.0) or 0.0))
+        base = getattr(vae, '_base', vae)
+        # ck['decoder'] is the decoder's own state_dict (no 'decoder.' prefix).
+        base.decoder.load_state_dict({k: v for k, v in dec.items()}, strict=True)
+        print(f'[eval] decoder override loaded ({decoder_override})', flush=True)
 
     content, rows = content_eval(model, cfg, step, a.panel, out_dir, a.device)
     png_dir, panel_kind = _png_dir(out_dir, step)
@@ -132,7 +160,7 @@ def main():
 
     report = dict(tag=a.tag, checkpoint=a.checkpoint, step=step,
                   disabled_injection_sites=disabled, off_sites_this_eval=off,
-                  panel=a.panel,
+                  decoder_override=decoder_override, panel=a.panel,
                   panel_kind=panel_kind, n_png=n_png,
                   content=content, ocr=ocr, ink=ink,
                   writer=None if writer is None else {

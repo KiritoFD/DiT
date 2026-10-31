@@ -107,6 +107,15 @@ def optimizer(model,config,decoder=None,*,scratch=False):
         table=[p for n,p in model.named_parameters()
                if n.startswith('style_representation.') and '.table.' in n and p.requires_grad]
         groups.append(dict(params=table,lr=rate('writer_table',0.),name='writer_table'))
+    # 2026-11-01 [D arms]: the VAE decoder used to be appended only in the legacy
+    # (style_matrix_repr<0) branch, so a joint decoder objective on a style-matrix
+    # model silently never trained.  Append it in both branches; `rate` keeps the
+    # configured decoder LR if one was declared.
+    if decoder is not None:
+        params=[p for p in decoder.parameters() if p.requires_grad]
+        if params:
+            groups.append(dict(params=params,lr=getattr(config,'lr_decoder',0.) or 5e-6,
+                               name='decoder',weight_decay=0.))
     return torch.optim.AdamW(groups,weight_decay=config.weight_decay,fused=True)
 
 
@@ -132,14 +141,22 @@ def condition_report(model,config,calibrate=False):
     model.train(old);return result
 
 
-def step(model,process,z,g,w,s,micro,timing=None,amp=True,return_conditions=False):
-    """One optimizer-step FM graph split into microbatches, identical random draws."""
+def step(model,process,z,g,w,s,micro,timing=None,amp=True,return_conditions=False,fm=True):
+    """One optimizer-step FM graph split into microbatches, identical random draws.
+
+    ``fm=False`` skips the velocity regression entirely (D1 trains the decoder only)
+    but still consumes the same RNG draws, so the data/conditioning stream is
+    bit-identical whether or not FM is enabled.
+    """
     t=process.sample_t(len(z),z.device);noise=torch.randn_like(z)
     raw=getattr(model,'_orig_mod',model);base=getattr(raw,'backbone',raw)
     all_drop=torch.rand(len(z),device=z.device)<base.drop_all
     wd=all_drop|(torch.rand(len(z),device=z.device)<raw.drop_writer)
     sd=all_drop|(torch.rand(len(z),device=z.device)<base.drop_script)
     w=torch.where(wd,raw.num_writers,w);s=torch.where(sd,raw.num_scripts,s)
+    if not fm:
+        if return_conditions:return None,(w,s)
+        return None
     losses=[]
     for begin in range(0,len(z),micro):
         part=slice(begin,begin+micro)
