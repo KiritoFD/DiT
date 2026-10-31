@@ -30,7 +30,7 @@
       "name": "STD (input)",
       "method": "Target standard glyph; fixed 20 columns",
       "protocol_id": "eval200fix_existing_png_legacy_NOT_UNIFIED",
-      "image_pattern": "exp-std/data/std_fixed_eval200/{idx}.png",
+      "image_pattern": "assets/results/v68_aug_sp_c2ot/20261006-192021-v68-aug-sp-c2ot/eval_samples_ctrl/eval200fix_input_g/g{idx}.png",
       "metrics": {
         "status": "EXAMPLE - REPLACE"
       }
@@ -53,5 +53,6 @@
         "status": "reference"
       }
     }
-  ]
+  ],
+  "sample_index_mode": "row_number"
 }
