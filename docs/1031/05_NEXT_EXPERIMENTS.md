@@ -16,6 +16,7 @@
 
 | 任务 | 输入 | 输出 | 失败即停止什么 |
 |---|---|---|---|
+| Q0 原始结果CSV Schema审计 | `p125_metrics_full_4090.csv`（15列表头、部分18列、S0重复）/ `points_all.csv`的instance | `raw_metrics_schema_audit.json`、规范schema与重复记录身份审计 | 停止把格式错误的P75 CSV直接并入主表 |
 | Q1 协议/Seen审计 | `validation_val100.csv`、各阶段训练CSV、所有增强映射 | `protocol_identity.json`、逐字 `seen_top10/seen_all/source`、有效n | 停止把 val100 称“全未见”或“全已见” |
 | Q2 ckpt合同审计 | A/B/C各阶段 checkpoint/config/optimizer、`common.py` | `run_identity.json`：真实LR、EMA、Writer table行数/ID、parent、hash | 停止“P75与矩阵S5同架构”的未经核定归因 |
 | Q3 OCR强JOIN重评 | 各eval `eval_stdskel_batch.csv` 与 `g{i}/gt{i}`，OCR权重/vocab | 显式按idx JOIN、GT sanity、错误列表、evaluator_version | 发现索引缺失/重复即不发该panel排名 |
