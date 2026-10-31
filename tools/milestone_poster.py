@@ -21,14 +21,16 @@ def resolve(path: str, base: Path) -> Path:
     return p if p.is_absolute() else base / p
 
 
-def load_index(path: Path) -> dict[int, dict[str, str]]:
+def load_index(path: Path, mode: str = "explicit_idx") -> dict[int, dict[str, str]]:
     with path.open(encoding="utf-8-sig", newline="") as f:
         rows = list(csv.DictReader(f))
     out = {}
-    for row in rows:
-        key = row.get("idx") or row.get("index") or row.get("sample_idx")
+    if mode not in ("explicit_idx", "row_number"):
+        raise ValueError(f"invalid sample_index_mode: {mode}")
+    for ordinal, row in enumerate(rows):
+        key = (row.get("idx") or row.get("index") or row.get("sample_idx")) if mode == "explicit_idx" else ordinal
         if key is None:
-            raise ValueError(f"index CSV needs idx/index/sample_idx: {path}")
+            raise ValueError(f"index CSV needs idx/index/sample_idx: {path}; use row_number only for historical CSV whose g{{idx}} filenames are explicitly row-numbered")
         key = int(key)
         if key in out:
             raise ValueError(f"duplicate sample idx={key}: {path}")
@@ -56,7 +58,7 @@ def render(manifest: dict, base: Path, output: Path, font_path: str | None, cell
     if len(ids) != 20 or len(set(ids)) != 20 or any(not isinstance(x, int) for x in ids):
         raise ValueError("sample_ids must contain exactly 20 distinct integer indices")
     index_path = resolve(manifest["sample_index_csv"], base)
-    index = load_index(index_path)
+    index = load_index(index_path, manifest.get("sample_index_mode", "explicit_idx"))
     missing = set(ids) - set(index)
     if missing:
         raise ValueError(f"sample indices absent from authoritative CSV: {sorted(missing)}")
