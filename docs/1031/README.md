@@ -59,3 +59,158 @@
 | P75，通用预训练后训练 | P0 50k、P1 5k、P2 15k、P3 5k | Top10 Writer 适配强依赖曝光和真实LR；净预训练收益未证 | A合同/B效果 |
 
 文献式旧报告中“黄金路由已证明”“C2OT是终极武器”“12ch被彻底证伪”“v70 已实现无限开集”“SDE所有指标免费提升”等语句**已经被后续审计收回或限定**。[旧实验勘误](../107/03_evidence_grade_and_errata.md)、[SDE复核](../experiments/2026-10-12-v68-v70-sde-role-and-free-lunch.md) 优先于较早的宣传性描述。
+
+
+## 四、近期最重要的直接对照：S、J、P75
+
+### 4.1 S 组：书家表征与注入算子的交互
+
+**50k、val100；SSIM/LPIPS/Ink-IoU 来自 S/J matched 报告，E-G 为 1029 旧域协议，OCR 为修复后新评测。不同评价器的有效样本量不相同。**
+
+| Arm | Writer 表征 → 注入 | SSIM↑ | LPIPS↓ | IoU↑ | E-G AUC%↑ | OCR Top-1%↑ |
+|---|---|---:|---:|---:|---:|---:|
+| **S0** | Vector → Global AdaGN | **0.60275** | **0.33950** | 0.28587 | 82.13 | 71.11 |
+| S1 | Vector → Spatial AdaGN | 0.5866 | 0.3494 | 0.2806 | 83.50 | 77.78 |
+| **S4** | Writer×Local CNN → Spatial AdaGN | 0.59875 | 0.34055 | **0.29513** | 84.91 | **77.78** |
+| **S5** | 局部 Attention 表征 → Cross-Attention | 0.59750 | 0.34250 | 0.28509 | **87.98** | 尚未入库 |
+| S6 | Vector → DynamicConv | 0.5980 | 0.3428 | 0.2901 | 81.89 | 73.33 |
+| S7 | Multi-Token → DynamicConv | 0.5972 | 0.3431 | 0.2857 | 83.84 | 尚未入库 |
+| S8 | Local CNN → DynamicConv | 0.6001 | 0.3429 | 0.2837 | 82.26 | 75.56 |
+
+来源：[S 组严格配对](../1028/CONCLUSION_AND_NEXT_PHASE_20261028.md)、[旧 E-G 协议](../1030/eval_style_v2/EG_RANKING.md)、[OCR 修正记录](../../1031.md)。
+
+- **内容**：S0 的 SSIM/LPIPS 最好；S4 的 Ink-IoU 与部分容差骨架指标更好；S1 单独扩大空间自由度后发生粗笔、粘连与 SSIM 退化。
+- **风格**：旧协议 S5 E-G 87.98 vs S0 82.13；新的 `eval_style_v2` 协议 S5 **89.99** vs S0 **83.86**（两协议绝不混写在一列）。
+- **逐字统计**：同 98 共字、按字符聚类的 Writer 宏 AUC 差值，S5−S0 **+5.73pp [1.65,9.84]**；S5−S4 **+2.92pp [−0.33,6.22]**。所以 **S5 相对 S0 有风格信号，S5 相对 S4 尚未稳定区分**。单 seed 与低样本异质性仍在。
+- **异质性**：[E-G 配对](../1030/eval_style_v2/FINAL_REPORT.md) 发现 S5−S0 的 98 共字中：32 字风格↑且单 GT SSIM 不退、18 字风格↑但单 GT SSIM 降、33 字风格↓且 SSIM 不退、15 字双退。这里的 SSIM 下降**不是 OCR 已证明的错字数**。
+- **85k**：S0 85k 的修正后 heldout187 OCR Top-1 **81.29%**；S5 85k 三个 noise seed **75.44/78.95/75.44%**，同组 GT sanity 约89.5%；S4 85k 只到约51k 干净停止点。面板/seed/有效样本尚未完成严格配对统计，不能直接宣布两者 OCR 显著差异。S5 的 heldout187 E-G 三 seed AUC **87.68/84.17/86.17%**，大体延续可用的 Writer 信号，但不应据跨协议值比较 50k 与85k。
+
+**本组保留的假设**：不是所有空间调制有用；只有 Writer 表征能可靠捕获可迁移差异、且注入算子与之匹配时，才可能得到风格提升。具体解释见 [数学框架`3](../math/README.md)。
+
+### 4.2 J 组：将改善从 latent 迁移到图像域
+
+**四臂同 Deep-Sym4@85k EMA 起点，分别新增 5k；不是 5k 冷启动模型。**
+
+| Arm | 变化 | SSIM↑ | LPIPS↓ | Ink-IoU↑ | 独立 Writer Micro Top-1↑ |
+|---|---|---:|---:|---:|---:|
+| **J0** | FM，Decoder 冻结 | 0.6149 | 0.3220 | 0.3437 | **64.17%** |
+| J1 | FM+图像 Loss，Decoder 冻结 | 0.6149 | 0.3222 | 0.3428 | 60.96% |
+| **J2** | FM+图像 Loss，Decoder 可训+GT重建 | **0.6198** | 0.3150 | **0.3447** | 63.64% |
+| J3 | FM+图像 Loss，Decoder 可训、无GT重建 | 0.6193 | **0.3147** | 0.3433 | 62.03% |
+
+J2−J0 同样本 SSIM **+0.0049**，配对95% CI **[+0.0039,+0.0060]**；LPIPS 约改善 **0.007**。同时，独立 Writer 与骨架没有稳定同比例增加；J2 与 J3 差异也小，不能声称 GT 重建锚是必要条件。[J 消融](../1028/CONCLUSION_AND_NEXT_PHASE_20261028.md)。
+
+**J4–J7 的新增 Decoder 条件**没有给出稳健的增量：J5/J6/J7@5k 在新 heldout187 的 OCR Top-1 分别是 **82.56/81.98/81.40%**、Top-5约90%；它们的共同成熟前置模型才是关键。训练机制面板 original/decoder_swap OCR 都是 **96.15%**（Top-5=100%），只证明该近饱和面板上 OCR 未变化，**不能推出“Decoder 从不改变内容，只改变书风”**。固定 latent 的交叉解码仍是严格归因所需。
+
+### 4.3 P75：预训练和 Writer 适配的相对作用
+
+**真实累计 75k（不是文件历史名称 P125）：P0 通用50k→P1混合5k→P2 Top10 15k→P3A/P3B各5k。**
+
+| 模型 / 累计步 | val100 SSIM↑ | LPIPS↓ | Ink-IoU↑ | E-G AUC% | OCR Top-1% |
+|---|---:|---:|---:|---:|---:|
+| P0@50k | 0.5573 | 0.3841 | 0.2258 | 53.69 | 67.78 |
+| P1@55k | 0.5636 | 0.3735 | 0.2440 | 72.22 | 67.78 |
+| P2@70k | 0.5857 | 0.3527 | 0.2723 | 77.77 | 75.56 |
+| P3A@75k：FM | 0.5857 | 0.3528 | 0.2725 | 待补 | 74.44 |
+| **P3B@75k：FM+弱E-G** | **0.5881** | **0.3505** | **0.2745** | 仅诊断 | 待补 |
+
+- P1 的 E-G AUC 跳变 **+18.53pp** 是**目标 Writer 表开始得到有效训练**的证据，不证明混合过渡优于直接 Top10。
+- P3B 相对 P3A 的 SSIM **+0.0024**、LPIPS **−0.0023**、IoU **+0.0020**；本单 seed 面板未见内容代价，**独立 Writer、Writer-swap 和未见字结论尚缺**。E-G 监督不等于 E-G 自身得分高。
+- **真正的 LR**：[代码勘误](../../1030p125.md) 已由 checkpoint 的 `initial_lr` 证实：Style representation/injection 在 P75 原链实际跑在 legacy **1e-4**，配置 `lr_style_repr/lr_style_inj` 没有被 `rate()` 使用。新 A/B/C 已修字段映射和 restart base_lrs；**不能把新旧训练仅视为改变了步数**。
+- **曝光要区分图像与有效 Writer 条件**：按已有采样/dropout 配方估算 P75 Top10 图像为 **21.5k Batch 等效步**，其中非空 Writer 条件约 **19.125k**；与从头训练 S 系 50k–85k 不等。P0 50k 没有为 Top10 的 Writer ID 提供同等训练。
+
+**严谨结论**：P75 的改善证明目标域适配正在工作；不证明“通用预训练有效”或“预训练无效”。预训练增益必须经匹配 **总算力**、**Top10曝光** 与 **严格未见字集** 才能识别。
+
+### 4.4 4090 新 A/B/C：只登记目前已经发生的结果
+
+| 新 Arm | 起点、实际 counter | 目的 | 状态 |
+|---|---|---|---|
+| **A** | P3A内部20k→45k，新增25k，首个内部25k | 延长旧链 + 新 LR/cosine restart | **首点已评：val100 SSIM 0.5914/LPIPS 0.3478/IoU 0.2829**；其他未到终点 |
+| B | P0@50k→75k | 跳过 P1，直接 Top10 25k | 排队；无成熟结果 |
+| C1/C2 | P0@50k→55k→75k | 先 Writer-high-LR，再全部联合 | 排队；无成熟结果 |
+
+A 首个 +5k 相对旧 P3A：ΔSSIM **+0.0057**、ΔLPIPS **−0.0050**、ΔIoU **+0.0104**。**它证明这一联合训练干预仍改善 val100，不能隔离出“多训5k”的效应**。`A_25k` poster 的20选字 OCR80%（局部 SSIM0.668）**不是全量提升幅度**，不得与 S0 h187 或 P3A val100 的数字直接排名。[Current](../../Current.md)、[A/B/C 源码](../../tools/p125/build_abc.py)。
+
+## 五、风格表征到底是什么：两组互补但不等价的实证
+
+### 5.1 DINOv2 的表征分解
+
+[风格结构诊断](../../ANALYSIS/style_structure_diagnosis_20261025.md) 的平衡面板（105字×6书家）在 **DINO CLS 特征**中测得：字符主效应约 **93.9%**、Writer 主效应 **0.5%**、Writer×字残差 **5.6%**。严格留字，整字 DINO CLS + 线性 Writer Top-1 **43.6%**（随机10%），加局部 patch **45.5%**；K-shot 均值原型 **K1=12.6%→K32=24.0%**，全量 Logistic 约 **42.6%**。判别谱的 `d_eff95≈7` 说明信息**并非只有一个“粗细”轴**。
+
+字形聚类、Writer×STD 双线性交互在**这组特征、这些预测器**的留字测试没有帮助（报告 ΔR²≈0）；逐字草化选择可能存在，但不宜强制映射为标准字形几何类。**93.9/0.5/5.6 不是图片的物理能量分解，也不证明任何生成模型只需7维 Writer 向量**。
+
+### 5.2 E-G 的跨字书家核验
+
+[eval_style_v2](../1030/eval_style_v2/FINAL_REPORT.md) 在同书体异字、K64、1008真迹查询上测得 E-G AUC **95.98%**、EER **7.44%**、mAP **93.09%**；低阶墨量/布局/宽度探针 AUC **49.35%**、线性残差化 E-G AUC 仍 **93.11%**。说明可学习特征能取出稳定跨字 Writer 信号，且信号不主要由这些简单低阶统计解释。
+
+但还不能排除复杂扫描/纸张来源、作品级特征。相同权重在两机得到一致结果是**复现代码的一致性**，不是独立书法作品的新试验。E-G 用于评价的可信度不等于它被作为 Loss 时能给出正确梯度（Goodhart 风险）。
+
+E-G 空间按字符检索 913 次查询 Top-1 **13.14%**，不足以当“免训练 OCR”，但高于完全随机；“字符信息完全消失”是过强表述。
+
+**二者不矛盾**：DINO 的无监督特征主要被字符内容占据；E-G 用 Writer 监督学习了新的任务度量。不同编码器、不同指标（Top-1 vs binary AUC）不能混成一张比例表。
+
+## 六、评价器及工程事故如何改变过往结论
+
+### 6.1 OCR 现在能做什么、尚不能做什么
+
+读光 ConvNextViT 在真实书法做过 5k 微调，200张 Real-Test 的 peak-timestep Top-1 **80.0%**（楷79.2、行77.9、隶87.1）；这是**200张验收**，并非完整 6,975 张 D0 冻结 Real-Test 全量结论。最初 vocab 覆盖 4,908/7,010、后续扩展需保留 Unicode→类别 ID 映射。
+
+OCR 早期报告 **0%/7.8% 全部作废**：`g0,g1,g10...` 字典序配错字符；PIL `resize((32,192))` 宽高反置；另有 J/S 面板外部 CSV 与生成图片行序不同。最终按 **评测自身的 `eval_stdskel_batch.csv`** 做 idx→字符匹配；GT sanity 修正到约89–100%。[1031 原始记录](../../1031.md)。
+
+**OCR 是“字是否可识别”的近似观测，不是笔画逻辑的完备证明。** Corruption-Test 对缺笔/错部件的检出率仍待验收；最终必须报 GT 本身正确率、词表覆盖与有效样本数。`20张 poster` 的局部 OCR 成绩不代表总体成绩。
+
+### 6.2 软件正确性也是测量的第一轴
+
+| 错误或协议混淆 | 实际影响 | 以后验收方式 |
+|---|---|---|
+| 12ch loss 等权、CFG 错 channel、白底归零未复原 | aux 梯度竞争、墨团/发黄 | 按通道测梯度、强制声明 image-channel/VAE offset |
+| v83-A STD+字表混合 | 把融合收益误当开集 STD-alone | v84 纯 std vs 纯 table 重训和真正未见字 |
+| 不同服务器源文件版本/未注册配置 | 相同 CLI 标签未必对应同一采样方法 | 记录源码哈希、resolved config、checkpoint VAE/EMA |
+| 同名 eval200fix 实际指向 val100 / 187 的不同 CSV | 被错误宣称未见字187 | **CSV hash+逐样本 id/Unicode+GT hash** 是协议身份 |
+| P0 Writer 槽位折叠到 null、部分 stage 迁移漏 style | Writer 条件梯度为0或阶段重置 | Writer-swap/条件 FM loss 与严格完整加载 |
+| P75 `rate()` 配置字段名错位 | Style LR 实际 **1e-4** | 必须回读 optimizer.param_groups、base_lrs、真实梯度 |
+| OCR vocab ID/目标标签错位、图片顺序与宽高错误 | 出现假的0%精度 | 运行前 GT sanity、label round trip、图像 hash |
+
+另外，历史 SDE “free lunch”依赖采样场和 latent：v68 旧 SDE 曾观察大幅 SSIM/断笔改善，v80 更正 SDE 后三 seed SSIM **+0.000576** 的95%CI跨零，Frag **−0.071973** 边际改善；故**不能把固定 γ=0.5 当通用推理补丁**。[SDE复核](../experiments/2026-10-12-v68-v70-sde-role-and-free-lunch.md)。
+
+## 七、当前知识图谱：正结果、负结果与尚未解决的瓶颈
+
+| 问题 | 已验证的方向 | 不值得再机械堆的方向 | 尚待回答 |
+|---|---|---|---|
+| **字符结构** | 可靠 STD 连续条件 + 数据与字形映射审计 | 仅追 SSIM、过度依赖固定 char table、未经验证的 skel deform | 字形复杂度、严格 unseen 字的 OCR/结构失败如何降 |
+| **Writer 条件** | S4/S5 局部表征、Writer-ID、跨字 E-G 评价 | 盲目加 Token/DynamicConv/Writer×字形双线性模块 | Writer 对生成速度场的边际作用及差异幅度是否足够 |
+| **墨迹与 Decoder** | J2/J3 可训练 Decoder + 适量图像 Loss | 冻结 Decoder 增加同样图像 Loss、无效条件 Decoder 扩张 | 高频细节与字形结构之间如何稳定权衡 |
+| **预训练与迁移** | P0 能提供通用字形映射的一种起点（并非正迁移已证） | 没有等曝光控制就加长 P0 | 等算力与等 Top10 条件曝光下的真实 OOV 迁移增益 |
+| **评价** | 读光 OCR+E-G、LPIPS/SSIM/IoU、真实 GT sanity | 只看一个视觉指标/训练教师自己打分 | Corruption-Test、全阶段严格 unseen、跨作品/来源检验 |
+
+**阶段判断**：模型现在并不缺“可以生成书法字”的总体能力；主要瓶颈是**少见字的结构内容、条件 Writer 作用强度/泛化，以及 VAE 解码的细笔可靠性**。这三者会相互影响，但必须分开测。
+
+## 八、4090 下一阶段的可证伪问题（先后训练，预训练之后再做）
+
+| 优先级 | 当前已有实验 | 真正需要的比较及决策门 |
+|---|---|---|
+| P0 | A@25/35/45k | 同一评测、三 seed 观察是否持续改善；保住 E-G、Writer-swap 和 OCR，而非仅 LR restart 瞬时起效 |
+| P0 | B@75k | 与旧 P75 比较是**整体流程**差异，先登记 Top10 曝光、LR、P1 混合差异，勿声称单变量 |
+| P0 | C2@75k | 与 B 同 P0 起点、同数据25k，较干净验证 Writer-first 的训练优化日程 |
+| P1 | D0普通 FM vs D1可训练 Decoder | 从同一最好 ckpt 分叉，固定 latent 交叉 Decoder、同时看 OCR/Writer/质量；不早加第三个 Loss |
+| P1 | E-G 差异原因 | 正确/错误/null Writer 的分时间 FM risk + 同字同噪声 Writer-swap 方向/幅度 |
+| 后续 | Joint-85 / 等预算预训练 | 等总训练量、等 Top10 曝光、严格 unseen-in-all-stages，才讨论预训练净正迁移 |
+
+统一采用 `187字×3 seeds`（记录有效 query），并单列 Top10 未见字、全部阶段未见字；按字符与书家分层 bootstrap，**同字三个 seed 不是独立的三个汉字**。
+
+## 九、可用作论文/海报的主线叙事
+
+> 早期用多通道辅助目标或先变骨架的模型，尝试直接指定书法结构，却经常遇到图像目标竞争、潜空间损失和级联错误；字表式模型能够提升配对质量，但失去自然的 OOV 字符输入。改用 STD 图像条件后，任务变成学习“给定字形与书家，合法书写的条件分布”。跨字符风格诊断表明书家差异弱于字符主效应，却能由专门 Writer 表征稳定检出，并不是一个固定笔宽或简单字形类。S 系列揭示局部条件更有利于 Writer 身份，J 系列揭示 Decoder 画质和 Writer 身份是不同优化职责。新增 OCR 与 E-G 评测以及条件交换/曝光公平，使下一阶段研究从堆模块转向可解释、可检验的目标域适配。
+
+**最短结论**：**STD 负责提供字符结构信息；生成器必须真正利用 Writer 条件产生正确的跨书家差异；Decoder 负责把这种差异可靠地成像。内容、风格、画质、泛化必须分别验收。**
+
+## 十、原始证据与后续归档
+
+- 历史：[All](../../All.md)、[Milestones](../../Milestones.md)、[exp](../../exp.md)、[十三纪元](../04_experiments/00_exhaustive_experiment_chronicle.md)、[MoYi](../106moyi/README.md)。
+- 旧协议和审计：[107 benchmark](../107/02_model_benchmarks.md)、[107 errata](../107/03_evidence_grade_and_errata.md)、[108 ledger](../108/03_metrics_ledger.md)、[v83A](../v83A_std_soft_report.md)。
+- 表征：[DINO结构](../../ANALYSIS/style_structure_diagnosis_20261025.md)、[E-G终报](../1030/eval_style_v2/FINAL_REPORT.md)、[旧 E-G 排名](../1030/eval_style_v2/EG_RANKING.md)、[HWD](../1029/hwd/REPORT.md)、[CHAED](../1029/chaed/REPORT.md)。
+- 对照：[S/J报告](../1028/CONCLUSION_AND_NEXT_PHASE_20261028.md)、[S组85k](../1029/style_focus_85k/README.md)、[J二代](../1028/generation2.md)、[早期 P1/P2](../../ANALYSIS/p1p2_writer_aware_20261025.md)。
+- 当前：[P75 实验与修复](../../1030p125.md)、[本日 OCR/A-B-C](../../1031.md)、[当前簇](../../Current.md)、[A/B/C配置生成器](../../tools/p125/build_abc.py)。
+- 理论：[数学推导](../math/README.md)、[FM 实现](../../src/loss/flow_matching.py)、[SDE 复核](../experiments/2026-10-12-v68-v70-sde-role-and-free-lunch.md)、[VAE latent合同](../vae_latent_contract.md)。
+
+**资产政策**：所有 ckpt 均优先保留原地身份；20字 PNG、权威 batch CSV、配置和 per-image metrics 可以回传本地，历史大权重不要重复复制。见 [AGENTS.md](../../AGENTS.md)。
