@@ -1,0 +1,204 @@
+{
+ "n": 21,
+ "n_same_gt": 21,
+ "writers": {
+  "何绍基": 2,
+  "文徵明": 4,
+  "王羲之": 4,
+  "米芾": 2,
+  "苏轼": 3,
+  "褚遂良": 1,
+  "赵孟頫": 5
+ },
+ "cells": [
+  {
+   "writer": "赵孟頫",
+   "char": "兜",
+   "idx200": 147,
+   "idx100": 48,
+   "src200": "data/fame-kxl-tj-px60/imgs/952327.png",
+   "src100": "data/fame-kxl-tj-px60/imgs/952327.png",
+   "same_gt": true
+  },
+  {
+   "writer": "赵孟頫",
+   "char": "化",
+   "idx200": 171,
+   "idx100": 46,
+   "src200": "G:\\GitHub\\DiT\\MCCD\\MCCD\\MCCD-Calligrapher\\calligrapher_dataset\\赵孟𫖯\\化-隶-元-赵孟𫖯-34830.png",
+   "src100": "G:\\GitHub\\DiT\\MCCD\\MCCD\\MCCD-Calligrapher\\calligrapher_dataset\\赵孟𫖯\\化-隶-元-赵孟𫖯-34830.png",
+   "same_gt": true
+  },
+  {
+   "writer": "赵孟頫",
+   "char": "火",
+   "idx200": 159,
+   "idx100": 43,
+   "src200": "G:\\GitHub\\DiT\\MCCD\\MCCD\\MCCD-Calligrapher\\calligrapher_dataset\\赵孟𫖯\\火-行-元-赵孟𫖯-34999.png",
+   "src100": "G:\\GitHub\\DiT\\MCCD\\MCCD\\MCCD-Calligrapher\\calligrapher_dataset\\赵孟𫖯\\火-行-元-赵孟𫖯-34999.png",
+   "same_gt": true
+  },
+  {
+   "writer": "赵孟頫",
+   "char": "穡",
+   "idx200": 161,
+   "idx100": 44,
+   "src200": "G:\\GitHub\\DiT\\MCCD\\MCCD\\MCCD-Calligrapher\\calligrapher_dataset\\赵孟𫖯\\穡-行-元-赵孟𫖯-64972.png",
+   "src100": "G:\\GitHub\\DiT\\MCCD\\MCCD\\MCCD-Calligrapher\\calligrapher_dataset\\赵孟𫖯\\穡-行-元-赵孟𫖯-64972.png",
+   "same_gt": true
+  },
+  {
+   "writer": "赵孟頫",
+   "char": "纨",
+   "idx200": 164,
+   "idx100": 49,
+   "src200": "data/hcsu_kxl/imgs/wild/赵孟頫-隶/纨.png",
+   "src100": "data/hcsu_kxl/imgs/wild/赵孟頫-隶/纨.png",
+   "same_gt": true
+  },
+  {
+   "writer": "文徵明",
+   "char": "㩜",
+   "idx200": 30,
+   "idx100": 79,
+   "src200": "data/hcsu_kxl/imgs/wild/文征明-楷/㩜.png",
+   "src100": "data/hcsu_kxl/imgs/wild/文征明-楷/㩜.png",
+   "same_gt": true
+  },
+  {
+   "writer": "文徵明",
+   "char": "公",
+   "idx200": 41,
+   "idx100": 74,
+   "src200": "data/fame-kxl-tj-px60/imgs/24510.png",
+   "src100": "data/fame-kxl-tj-px60/imgs/24510.png",
+   "same_gt": true
+  },
+  {
+   "writer": "文徵明",
+   "char": "墨",
+   "idx200": 24,
+   "idx100": 78,
+   "src200": "data/hcsu_kxl/imgs/wild/文征明-楷/墨.png",
+   "src100": "data/hcsu_kxl/imgs/wild/文征明-楷/墨.png",
+   "same_gt": true
+  },
+  {
+   "writer": "文徵明",
+   "char": "記",
+   "idx200": 45,
+   "idx100": 71,
+   "src200": "data/fame-kxl-tj-px60/imgs/185901.png",
+   "src100": "data/fame-kxl-tj-px60/imgs/185901.png",
+   "same_gt": true
+  },
+  {
+   "writer": "王羲之",
+   "char": "咽",
+   "idx200": 85,
+   "idx100": 9,
+   "src200": "data/hcsu_kxl/imgs/wild/王羲之-楷/咽.png",
+   "src100": "data/hcsu_kxl/imgs/wild/王羲之-楷/咽.png",
+   "same_gt": true
+  },
+  {
+   "writer": "王羲之",
+   "char": "好",
+   "idx200": 88,
+   "idx100": 6,
+   "src200": "data/hcsu_kxl/imgs/wild/王羲之-行/好.png",
+   "src100": "data/hcsu_kxl/imgs/wild/王羲之-行/好.png",
+   "same_gt": true
+  },
+  {
+   "writer": "王羲之",
+   "char": "羲",
+   "idx200": 91,
+   "idx100": 2,
+   "src200": "data/fame-kxl-tj-px60/imgs/301476.png",
+   "src100": "data/fame-kxl-tj-px60/imgs/301476.png",
+   "same_gt": true
+  },
+  {
+   "writer": "王羲之",
+   "char": "閒",
+   "idx200": 94,
+   "idx100": 8,
+   "src200": "data/fame-kxl-tj-px60/imgs/207559.png",
+   "src100": "data/fame-kxl-tj-px60/imgs/207559.png",
+   "same_gt": true
+  },
+  {
+   "writer": "苏轼",
+   "char": "冒",
+   "idx200": 124,
+   "idx100": 16,
+   "src200": "data/fame-kxl-tj-px60/imgs/245133.png",
+   "src100": "data/fame-kxl-tj-px60/imgs/245133.png",
+   "same_gt": true
+  },
+  {
+   "writer": "苏轼",
+   "char": "巫",
+   "idx200": 121,
+   "idx100": 15,
+   "src200": "data/hcsu_kxl/imgs/wild/苏轼-行/巫.png",
+   "src100": "data/hcsu_kxl/imgs/wild/苏轼-行/巫.png",
+   "same_gt": true
+  },
+  {
+   "writer": "苏轼",
+   "char": "桑",
+   "idx200": 127,
+   "idx100": 11,
+   "src200": "data/fame-kxl-tj-px60/imgs/110875.png",
+   "src100": "data/fame-kxl-tj-px60/imgs/110875.png",
+   "same_gt": true
+  },
+  {
+   "writer": "何绍基",
+   "char": "寵",
+   "idx200": 1,
+   "idx100": 94,
+   "src200": "data/hcsu_kxl/imgs/bei/何绍基-楷/寵.png",
+   "src100": "data/hcsu_kxl/imgs/bei/何绍基-楷/寵.png",
+   "same_gt": true
+  },
+  {
+   "writer": "何绍基",
+   "char": "豈",
+   "idx200": 4,
+   "idx100": 99,
+   "src200": "data/hcsu_kxl/imgs/wild/何绍基-楷/岂.png",
+   "src100": "data/hcsu_kxl/imgs/wild/何绍基-楷/岂.png",
+   "same_gt": true
+  },
+  {
+   "writer": "米芾",
+   "char": "已",
+   "idx200": 97,
+   "idx100": 65,
+   "src200": "data/fame-kxl-tj-px60/imgs/70822.png",
+   "src100": "data/fame-kxl-tj-px60/imgs/70822.png",
+   "same_gt": true
+  },
+  {
+   "writer": "米芾",
+   "char": "慈",
+   "idx200": 101,
+   "idx100": 62,
+   "src200": "data/fame-kxl-tj-px60/imgs/86088.png",
+   "src100": "data/fame-kxl-tj-px60/imgs/86088.png",
+   "same_gt": true
+  },
+  {
+   "writer": "褚遂良",
+   "char": "怏",
+   "idx200": 145,
+   "idx100": 58,
+   "src200": "data/hcsu_kxl/imgs/wild/褚遂良-行/怏.png",
+   "src100": "data/hcsu_kxl/imgs/wild/褚遂良-行/怏.png",
+   "same_gt": true
+  }
+ ]
+}

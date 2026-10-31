@@ -99,6 +99,9 @@ def main():
     ap.add_argument('--writers', type=int, default=10)
     ap.add_argument('--seeds', type=int, default=3)
     ap.add_argument('--skip-writer', action='store_true')
+    ap.add_argument('--off-sites', default='',
+                    help='comma list of injection sites to disable for THIS eval only '
+                         '(e.g. "0,1"); the checkpoint on disk is not modified')
     a = ap.parse_args()
 
     out_dir = Path(a.out) / a.tag
@@ -106,7 +109,12 @@ def main():
     model, cfg, ck = load(a.checkpoint, a.device, use_ema=True)
     step = int(ck['train_steps'])
     disabled = ck.get('disabled_injection_sites', [])
-    print(f'[eval] {a.tag} step={step} disabled_sites={disabled}', flush=True)
+    off = [int(s) for s in a.off_sites.split(',') if s.strip() != '']
+    if off:
+        for s in off:
+            model.style_injections[s].gain.fill_(0.0)
+        print(f'[eval] inference-only site disable: {off}', flush=True)
+    print(f'[eval] {a.tag} step={step} ckpt_disabled_sites={disabled}', flush=True)
 
     content, rows = content_eval(model, cfg, step, a.panel, out_dir, a.device)
     png_dir, panel_kind = _png_dir(out_dir, step)
@@ -123,7 +131,8 @@ def main():
                              a.chars, a.writers, a.seeds)
 
     report = dict(tag=a.tag, checkpoint=a.checkpoint, step=step,
-                  disabled_injection_sites=disabled, panel=a.panel,
+                  disabled_injection_sites=disabled, off_sites_this_eval=off,
+                  panel=a.panel,
                   panel_kind=panel_kind, n_png=n_png,
                   content=content, ocr=ocr, ink=ink,
                   writer=None if writer is None else {
