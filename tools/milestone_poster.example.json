@@ -1,0 +1,58 @@
+{
+  "manifest_id": "historical_eval200fix_20_v1",
+  "title": "Calligraphy milestones — historical strict panel (20 characters)",
+  "protocol_id": "eval200fix_existing_png_legacy_NOT_UNIFIED",
+  "sample_index_csv": "exp-std/csv/eval200_fixed.csv",
+  "sample_ids": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15,
+    16,
+    17,
+    18,
+    19
+  ],
+  "rows": [
+    {
+      "name": "STD (input)",
+      "method": "Target standard glyph; fixed 20 columns",
+      "protocol_id": "eval200fix_existing_png_legacy_NOT_UNIFIED",
+      "image_pattern": "assets/results/v68_aug_sp_c2ot/20261006-192021-v68-aug-sp-c2ot/eval_samples_ctrl/eval200fix_input_g/g{idx}.png",
+      "metrics": {
+        "status": "EXAMPLE - REPLACE"
+      }
+    },
+    {
+      "name": "v68 @200k",
+      "method": "Sp/2 + table + aug + conditional FM",
+      "protocol_id": "eval200fix_existing_png_legacy_NOT_UNIFIED",
+      "image_pattern": "assets/results/v68_aug_sp_c2ot/20261006-192021-v68-aug-sp-c2ot/eval_samples_ctrl/step0200000/eval200fix/g{idx}.png",
+      "metrics": {
+        "SSIM": "0.6169 [docs/107, 187]"
+      }
+    },
+    {
+      "name": "GT",
+      "method": "Same character/writer/script, ground truth",
+      "protocol_id": "eval200fix_existing_png_legacy_NOT_UNIFIED",
+      "image_pattern": "assets/results/v68_aug_sp_c2ot/20261006-192021-v68-aug-sp-c2ot/eval_samples_ctrl/step0200000/eval200fix/gt{idx}.png",
+      "metrics": {
+        "status": "reference"
+      }
+    }
+  ],
+  "sample_index_mode": "row_number"
+}
