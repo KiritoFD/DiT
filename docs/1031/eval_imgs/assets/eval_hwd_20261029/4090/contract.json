@@ -1,0 +1,8 @@
+{
+  "upstream": "eabb5b5ede5899ac7f8b716429cbd1a1c97c7485",
+  "url": "https://github.com/aimagelab/font_square/releases/download/VGG-16/VGG16_class_10400.pth",
+  "weights_size": 707488473,
+  "preprocessing": "RGB, white square pad, nearest height32, ToTensor[0,1]; batch1",
+  "distance": "macro writer L2 of mean unnormalized VGG features",
+  "device": "cpu"
+}

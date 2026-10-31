@@ -1,0 +1,1891 @@
+{
+  "job": {
+    "arm": "S9",
+    "step": 50000,
+    "protocol": "heldout187_seed0",
+    "csv": "assets/style_matrix_20261028/generation2full/4090/protocols/S_187_seed0.csv",
+    "samples": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix",
+    "n": 187,
+    "csv_sha256": "c94cc4e85179fcc3ed415a15bcfff45f8004c871f8538a388740a6c051f0f708",
+    "identity": {
+      "checkpoint_sha256": "1f50fdec67b082bac63677f37249d9e2fbc3e5a4f19e56842fe039e9ac5195f4",
+      "csv_sha256": "c94cc4e85179fcc3ed415a15bcfff45f8004c871f8538a388740a6c051f0f708",
+      "ema": true,
+      "writer_space": "raw",
+      "decoder_path": "pretrained_models/sd-vae-ft-ema",
+      "step": 50000
+    }
+  },
+  "images": [
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/g0.png",
+      "size": 44005,
+      "sha256": "6a8c790abc8ea223a1d6ac3b4528787b5f3902f8e527c01768f8ccff75987b18"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/g1.png",
+      "size": 57729,
+      "sha256": "c4d8c18e9e6c29219363558e4b7bba034376b5b38c0081ab28e0d3f6a128c5d7"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/g2.png",
+      "size": 53765,
+      "sha256": "37d38dd0b7499be47e68e079c030aed1ff609a17ff104d4ee507cc4571ba61a9"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/g3.png",
+      "size": 52577,
+      "sha256": "1ad55982c28029fa8fed0574d051f5bc9cfafd42a3868d74518f09484b1645d8"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/g4.png",
+      "size": 43684,
+      "sha256": "e9355a979745473f44d5e3f83943de46b2cfb72e84a80dd1030c70223780e9c9"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/g5.png",
+      "size": 46535,
+      "sha256": "a0b82ab9700847f671c61057a1aed87d1050e8cc52660e2749e018ada2605e73"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/g6.png",
+      "size": 44296,
+      "sha256": "09b4cc9cc55931f9b1d206724379b1fb50ef0ea2653b08ddcb4d98447192c9ed"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/g7.png",
+      "size": 48455,
+      "sha256": "4cb7537ef644a0665dd7f96c33bcdb4aee17128a3f3161db0d14e5a8a1e2cd0f"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/g8.png",
+      "size": 97326,
+      "sha256": "aba88fc46ac67c0fc068355005b2c956387f7fe3490f324ee30f9a2ab88ace63"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/g9.png",
+      "size": 44544,
+      "sha256": "fcd268ca1871603df58b718f6f7382a5787d43e6d51ad20f7fb0137ecec32a80"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/g10.png",
+      "size": 52128,
+      "sha256": "41ca3bc539607fcf93ecebb10a6d69ca21ceec6335cb5c547ebfee70615f356c"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/g11.png",
+      "size": 40868,
+      "sha256": "b750fda1cf6e9b593756cf8bbb24249cc48a59adc065a386831fbddbfb6fb8db"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/g12.png",
+      "size": 40135,
+      "sha256": "4c2a82e355550356ab7ba3423138caa8c9701107edf44980b13613f687c307fe"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/g13.png",
+      "size": 55500,
+      "sha256": "9ae6fae8ac870f85ee56b6862f4111991ef3349ab9f828a1e8fdfc8cbe09631c"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/g14.png",
+      "size": 47015,
+      "sha256": "205a765dfc3da5d14b9ac42fd031c4a719439ab6f2c536dc7e5421375be6076f"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/g15.png",
+      "size": 50160,
+      "sha256": "20ccd8cb08c357edc581fe19c6cc8bdd5bced10230fd3a1660a4b947bd68ee96"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/g16.png",
+      "size": 54549,
+      "sha256": "681521485ec4383f14cd82cf66696793bd534f7b19699d0fb7dcc77a056587ad"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/g17.png",
+      "size": 50400,
+      "sha256": "2c49a2549b2ca4a5a7ba1847cce68d39f55f398885873ffca65ae08ffed8a774"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/g18.png",
+      "size": 46839,
+      "sha256": "4a9b8f33679d88bb1182d06b3fff7588ff7cda5239d3adb056f354162fe19ea5"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/g19.png",
+      "size": 52288,
+      "sha256": "a20965d81edfbe27f3559ab906c827d98affd75c19c8ce9f60c546b25dd59c10"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/g20.png",
+      "size": 41423,
+      "sha256": "b0486b528e9acbd22ce9933755d2d7590dc85dc7a3b8de7ae660f605063ae46b"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/g21.png",
+      "size": 19683,
+      "sha256": "a81f458fbbbbc74d37b4ee48180b6601987fa1a6066470422205e68b6def81fa"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/g22.png",
+      "size": 45247,
+      "sha256": "99f6db9a1d39fabd4017038154a9250e1d30474e8a0938fb0eca0c7897290823"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/g23.png",
+      "size": 56521,
+      "sha256": "a0d01ebb4b83c6187b563908f01f517ab832d93167fe16def4ad3fa7d6118da2"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/g24.png",
+      "size": 46107,
+      "sha256": "3b7b6a528aa74f15305834e642012416ced66f98e51a269869c4bc76bf2e4a2c"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/g25.png",
+      "size": 41087,
+      "sha256": "921240360685862a8a64a84b7377e98ec8ef01fcf2f19f31ea784aa2ef98cbd9"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/g26.png",
+      "size": 61671,
+      "sha256": "85cbcbee4a86e02dedf602787f25665e12230eb124fef712d47846d3ffa4d1d3"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/g27.png",
+      "size": 37345,
+      "sha256": "184280813919d088beb2b7603242ca1c9bad3c2f4d0a752837e564d3b6ac5836"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/g28.png",
+      "size": 39262,
+      "sha256": "e7fc145d2dfe4a82d1b9dd9bb7bc1c97fb89cec6f6b3142c7a23593780f46dfa"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/g29.png",
+      "size": 45006,
+      "sha256": "d1a8a11695a3f7c614fecc43da578bf15f252d3521c721c0a51258198aa5fed2"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/g30.png",
+      "size": 53809,
+      "sha256": "900d21e2f0399e7e6dbedd79ac01e753dd83e4b83ff706ac941198fe573868a2"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/g31.png",
+      "size": 45506,
+      "sha256": "8baf6d052949db4168f21ed134fa420d39ad35cacd77caaec0dfe8d63269b2d5"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/g32.png",
+      "size": 55239,
+      "sha256": "d1dc9f140ec541153d9b5938ea88c81e0bd8119187313009f2c5e3b11c036030"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/g33.png",
+      "size": 50494,
+      "sha256": "ed80cd8d42edcfe1b8ad4bcf4d39a7e47fbb083e03d194a8f08dc2f6607671dc"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/g34.png",
+      "size": 43052,
+      "sha256": "daceae4f1f15d8b0d661b98b31d6444781344c240ffa6334fbe4ea0ec431be26"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/g35.png",
+      "size": 39768,
+      "sha256": "f954b97c27870eba73e344cd3813a0b5934a0bcb94cc8a639ac85e529777120d"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/g36.png",
+      "size": 24508,
+      "sha256": "d173ed7862cc67a9d2f4fdf389a50800eaf9c5a046b4ddd11204ccf1d361ac30"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/g37.png",
+      "size": 46234,
+      "sha256": "dafc49d7ccdba6fa6a221cec5fa1be07d7038bbcd5a48cb20fe465f8b9abd578"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/g38.png",
+      "size": 44565,
+      "sha256": "ade7ed0f5daed58eccda7ae3fb4861aa7f95f30df6d91ae8acd24128e3c62879"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/g39.png",
+      "size": 40963,
+      "sha256": "9f489737e67c87966eb93ba573cadc774775b1f69c1eaaebf4a4377af2763fca"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/g40.png",
+      "size": 42301,
+      "sha256": "7466f5d01f14d24459a1e265c8723d57df660d658c85d68dd626ed95523ee514"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/g41.png",
+      "size": 27366,
+      "sha256": "92b2785e4f52bd66401b5ad822eb832cc542e13cdc7d567a96d3c3a8fedf962c"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/g42.png",
+      "size": 54974,
+      "sha256": "fed870957fafabdedee932a60b266f74f3d219a76e1c7a3261f0bf1f6705f2bf"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/g43.png",
+      "size": 57093,
+      "sha256": "06241d3097547ea4d174dfafe4b7160d7c5674cd45f5a408cdf755b8a9738a77"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/g44.png",
+      "size": 48098,
+      "sha256": "af6dfe5baacf57feb5e04031083163a43acce2a813d4227c4991791c135622c7"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/g45.png",
+      "size": 55730,
+      "sha256": "6b66ae8148e68c8ff02b5587059e8fa93acc7fc9bc8a6a4cfb49293022959584"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/g46.png",
+      "size": 60970,
+      "sha256": "a92f669bfbd5d06e89408c8e49905f192e87d7ac1645b270e39c3cfe7adc3933"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/g47.png",
+      "size": 49599,
+      "sha256": "1e551c79dc1b69033bc7b89a44da7d6132fe82b0341218c162a1d6493aaeed68"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/g48.png",
+      "size": 57298,
+      "sha256": "2c534fa7393c6b094db0eab0d3a8d3aa308eb3269ecd6e1a3fdc7e03234a4db0"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/g49.png",
+      "size": 54257,
+      "sha256": "0692f15fd54cfef1b1310520b5d4170d1ccd34789ce172df55771dca7d7d50ea"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/g50.png",
+      "size": 47029,
+      "sha256": "0163ef339b8e8e2114ebc51e19eae2e006d828bd66e816013ab1a46526e52b2e"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/g51.png",
+      "size": 54060,
+      "sha256": "b723c53f5d7fa94cdbf2261bdd79bc63c545b356e676f13e5a57128b2311855e"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/g52.png",
+      "size": 50988,
+      "sha256": "ef98d7f858953868e657477b7c4ef92694d168e92c3789e301884385d0f0117b"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/g53.png",
+      "size": 53411,
+      "sha256": "18bbd4c296aaf36941bcb03989a61d893d396be4a1ee5265b31d3c030df7553a"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/g54.png",
+      "size": 33287,
+      "sha256": "bc544bf3e894035b55773c447d768f31722bad4ea50e638147dfbf0e05365f19"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/g55.png",
+      "size": 26967,
+      "sha256": "0240442ebb2c9bd112b71cbce8bfc89445a896aa5f60a514012c27f0b72c68a2"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/g56.png",
+      "size": 54593,
+      "sha256": "6305cd3ab8f6ceb1118dc1f6ba1324c1260e6d8ff10b5d1afc9bf4c4210e369a"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/g57.png",
+      "size": 36367,
+      "sha256": "03a3f781fb4cdcc86f75f2f2c6c0f92e58736dec950cc82f0846ab0b95b38beb"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/g58.png",
+      "size": 46681,
+      "sha256": "02af85cb10c9954c1f9cded8aef4f3eafa5ab0075606964dccae45bce7906a74"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/g59.png",
+      "size": 50898,
+      "sha256": "3844205b17f5d8cf96f6b42236c4290226d730b787fbcd8ceafad8da6f42107f"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/g60.png",
+      "size": 45768,
+      "sha256": "18b1c4699908842ab6b9b55c073e9de498d1d32b723522d3977e4070fccd3a5f"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/g61.png",
+      "size": 41156,
+      "sha256": "121d3706a7d97f6cf8f5bf7c4f2e8771dff79b9097b4fdecb52dae777875d22d"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/g62.png",
+      "size": 48602,
+      "sha256": "14eca1e1e74e55570734feb9448474f806c9cd6ced4d174088370f3c1797afd1"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/g63.png",
+      "size": 43312,
+      "sha256": "be547232656fe3ce533e5475634e1ef5211bc59ed636a8ec867120631369df03"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/g64.png",
+      "size": 38061,
+      "sha256": "d43d104e5d19322325a8f31004de259ebf87f304dc3ad9e8bc71f65b8d1c0b8e"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/g65.png",
+      "size": 36309,
+      "sha256": "7f007b54c13c94d0893ef7a03dc44432a49ac5f33fb901b5b84572284de4ee61"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/g66.png",
+      "size": 43633,
+      "sha256": "4586392e9cf854a594718fd06ad08811656171cc3e9ae2fd824cd621aa6da07f"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/g67.png",
+      "size": 38569,
+      "sha256": "781cb239530862b787a91366c179e7a6fa64b14cadfe77dbc3f00aaa56032ce2"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/g68.png",
+      "size": 31602,
+      "sha256": "455f50adbd641b1606c3ed786403fd0db78938e897b664c3bca3b444f445f774"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/g69.png",
+      "size": 56237,
+      "sha256": "ab817ec7b4acc507ab39259c665ba0e364458bd08488c66c639171b424603e12"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/g70.png",
+      "size": 32253,
+      "sha256": "1693a1b54256a9f95e4152ca34c8a8c803fee7f5ab3c31211d7a89a68f3ee00e"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/g71.png",
+      "size": 46563,
+      "sha256": "c25343115657abe5a582a805a698c3e742eebae04e53b036ab33d0f039621b73"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/g72.png",
+      "size": 43755,
+      "sha256": "5f9701550a63695f7253e3058ff50ab5ee6e350727cfc968848f2bcfb36624ef"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/g73.png",
+      "size": 47763,
+      "sha256": "3ba9907de6b7eea9546ff21dc0a6e57cb25ac94161b57c1d79ba4a66964b8588"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/g74.png",
+      "size": 53326,
+      "sha256": "9c37e8a3c101edfb155f4e66ad7f0cd22b90f52fed6c0a3d2fbc5255b87681a4"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/g75.png",
+      "size": 41608,
+      "sha256": "de1f83d6ee7b1e445de035f5c8d426f980fdbbff91033f6566139e44b47627e4"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/g76.png",
+      "size": 50570,
+      "sha256": "183673fc066678438e5a6e40d4c0cac3308fc9fc4826ecd8e475a1128fcafcb4"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/g77.png",
+      "size": 49108,
+      "sha256": "ad0d7be2338b7d8e9960581451681c4ead7cf30a335c1749cd9321ef9cf8ab7d"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/g78.png",
+      "size": 33564,
+      "sha256": "8edcc4cc93b6045b2d49e5300bd10f6b45f91832606fcbc9df0fe7cdb8128fb7"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/g79.png",
+      "size": 38781,
+      "sha256": "5dacf347d13b09c23e97d5351a431c0fe1851b52e1061e5415fde0c72ac83fde"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/g80.png",
+      "size": 44612,
+      "sha256": "7e606deca6de67baac8f48accc3c8540bd395ff1534f3accc033c2b2844962c9"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/g81.png",
+      "size": 43284,
+      "sha256": "10feb9e52bcdd75e9bad94a06479cbcb6cf118776baa6be257f3e3eb390262f4"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/g82.png",
+      "size": 38313,
+      "sha256": "1c5c593e02bf684caf332b2b485d820f403636a2ef37939371728a73ba3446d0"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/g83.png",
+      "size": 43238,
+      "sha256": "84ac44192769bfe4b65bb403a40400ac31f44f3758a4c64f1091dea50e89ea9b"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/g84.png",
+      "size": 37527,
+      "sha256": "6ae83a0d6c73a02fe3526835708c14367372b3aa23ca8ed91d25203d5ee27551"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/g85.png",
+      "size": 45509,
+      "sha256": "494af649a218273bbe6e0527f5228e323d7658e54f6cc361881b4878d755f978"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/g86.png",
+      "size": 47663,
+      "sha256": "3c46d1ceec11722d6ecfa4277992ee5b79bf1c7160ed6fe059b9a0705b8cbbc0"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/g87.png",
+      "size": 39380,
+      "sha256": "31ebb57ca6aad70f00accb52909d2c69758fdfcf7e9e2ff640126b8735ef3e41"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/g88.png",
+      "size": 44416,
+      "sha256": "f28560d07a6303226d87faf247021ba37c9fd397d63a2a87f12e179c93e59d8b"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/g89.png",
+      "size": 47453,
+      "sha256": "ba47cddbb005f5c03ec96df395c9c3d07d8a3e705fb3a3109ad34373a10f04ee"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/g90.png",
+      "size": 40896,
+      "sha256": "69df798a719fa389052a801a2b49dc8caa140358088a57d499486cdd3cd6d80e"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/g91.png",
+      "size": 43329,
+      "sha256": "2a9f806b15fe3af9112e87b0efe3083376815ff082a6813c335f9848266e29dd"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/g92.png",
+      "size": 61777,
+      "sha256": "d1b01cb3a6528440e2b546f9d2e24ee28dbe8cba23b9698929e93151359ae81d"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/g93.png",
+      "size": 50373,
+      "sha256": "0bec3d29b588bc34cf81f1df94b40e10876c3d885ccc2f5da3816171df32ec94"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/g94.png",
+      "size": 40846,
+      "sha256": "224120f70571cebde34e185ddc8626c5c5b0f0f94acc800d074c2cbc2e33f798"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/g95.png",
+      "size": 39263,
+      "sha256": "5e0946d33c26d41d8be133e56ee1385bbefa68c5dca7081cc039c78d882705a5"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/g96.png",
+      "size": 44028,
+      "sha256": "52f55096b8604b735e2e32032eae620a00c9c40aeb7e2b8b98ef9d77fb183300"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/g97.png",
+      "size": 42439,
+      "sha256": "9f0f48c9baeabbd788fedc0a593badbb51a176916df6f2e6c23559a999cfc8ac"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/g98.png",
+      "size": 57312,
+      "sha256": "be8cea3d9b5dbc28db30b6d12fe22c95156a9e198612434b03ec1cd9fbc1a241"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/g99.png",
+      "size": 45377,
+      "sha256": "227062307e0851b401454a8210501a5e6066dcca485c991aa2fcd3798192a813"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/g100.png",
+      "size": 62936,
+      "sha256": "a826b42937204ce8eadc9342c460bec4749d3c2f49f7010a464077e6d2787bcf"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/g101.png",
+      "size": 60593,
+      "sha256": "ded056b0ad900488187f3e1cff0a4870be1d108f13fbbaf2a16eb7ddaa32e880"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/g102.png",
+      "size": 46343,
+      "sha256": "048634dc88eba26c40660d65b6b1de7926c51ae134e2e9189b3da3de74d40948"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/g103.png",
+      "size": 56734,
+      "sha256": "c4f73667b891108d1dc4ca5a25a16726a4d265df997491b07abedfa807b58750"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/g104.png",
+      "size": 38084,
+      "sha256": "95dd828570d7216b9f0b2cd60f02210fe3c422fa2208b4826ac99e5181ecbf92"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/g105.png",
+      "size": 41035,
+      "sha256": "74f0baf37c3661dc333e57c20e9cd45035b0f5887469228b104cadac11fe3bbe"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/g106.png",
+      "size": 49121,
+      "sha256": "71f98e7727a1d42a0dbf6f7c82aca04cbebc29f22fd4e38b1a73ebb0fcfc6b72"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/g107.png",
+      "size": 41603,
+      "sha256": "83d6dd07423d0a6f5f949ac14d70e23b73315dcb88fa92b43f09c8454f565fca"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/g108.png",
+      "size": 61969,
+      "sha256": "a8f88201b5aed4324d8d5c49367b7f0f3b2295b750b5cb5d9804c823136bbf90"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/g109.png",
+      "size": 41569,
+      "sha256": "f21bfdec0697569f2c4b804232662d929f7c1bada9310724f6daa1f3e3c71254"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/g110.png",
+      "size": 41330,
+      "sha256": "2f704d08cc8064446d5efc9547f45d9e6c4f95fbd4198a8f7e56a854f2975556"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/g111.png",
+      "size": 40006,
+      "sha256": "8756f53b54fa28ce25a76d4543e659b659326f2e1b02c9d9c2aa41ba55966834"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/g112.png",
+      "size": 49284,
+      "sha256": "6578001cb9e9563be11eb48a0e22fd25c54dc9fc49d87ff0b5649e31f0400c52"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/g113.png",
+      "size": 31059,
+      "sha256": "d1c7e1cbea1eac7d5b50c862b30601023d64dfb42ceb9afda45f6a8f4fac41ac"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/g114.png",
+      "size": 51498,
+      "sha256": "518740ff0cdae85c7f217472d5b3ef1ad9d5baa34ffbb66df2d4f5295fdd73e4"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/g115.png",
+      "size": 20394,
+      "sha256": "7e0f0d71b2c29dd30e98b5c9a15534279e20a8cc49fe293aaf8c2cbbd5c44be1"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/g116.png",
+      "size": 29648,
+      "sha256": "a05b94883584202d8c51fbd245a46c340ea56f11c805b29e9885ef7e3ff301c8"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/g117.png",
+      "size": 37388,
+      "sha256": "f4f7a1955770175f726143965194bd967d06dfeb065d8c88665e4c9e2d795239"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/g118.png",
+      "size": 57570,
+      "sha256": "a27ee199e1898a74f5f3fea4bb22e99af73e0959f8750c33c41dbe3dca2bc79b"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/g119.png",
+      "size": 37803,
+      "sha256": "7ab98d7c66c77d8eabc79321a994f3de7a13784c623589c459d0c1ee72909885"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/g120.png",
+      "size": 36577,
+      "sha256": "5ea01c1789a786c489f8b209de6f1cdbf1eaa4c59d9a7dbdfcb5e11e7c204313"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/g121.png",
+      "size": 31656,
+      "sha256": "1020e27dc959045b8107c00314f3c5939d5871e7f0a7e8ab68808e0e79b6f741"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/g122.png",
+      "size": 41672,
+      "sha256": "745724abf554b517ed3966526666d216ce97f55d2c1e4ff5e899dfa99470fd7c"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/g123.png",
+      "size": 49364,
+      "sha256": "eae4effa8489acbaa923ed9c7d2ed128da5c1ca5f44ede21674aa31d3bfb3e14"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/g124.png",
+      "size": 41648,
+      "sha256": "6acc1f504672e7baf37ac4007cc2fd703b5d3d2425107f43b507724f62913083"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/g125.png",
+      "size": 49823,
+      "sha256": "c5ec9608c3110ed9410697652fdbe93daf3c4ecd0384436fcda7e1f66610d306"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/g126.png",
+      "size": 50426,
+      "sha256": "7c8f310ac265d56f1c2afe116a413f966d72cd72c19f39fa2c7dd64aa86e00cf"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/g127.png",
+      "size": 38527,
+      "sha256": "b198cc0444c2510fb3c6ed6e65da63db908dd27b8d2285d70ed6f51be93ea3d8"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/g128.png",
+      "size": 32634,
+      "sha256": "78c0bffe33dfbbf87268898d565619b7411e9fcd412fb3943947bee0ee5cf262"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/g129.png",
+      "size": 37912,
+      "sha256": "f726eed6602218d05c5fa3a8f7a6d8f7cca04b24f87dbbe8a3a12061eb1a7abb"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/g130.png",
+      "size": 40498,
+      "sha256": "fc34232b8552b39942fae7da86b613958d5cfbeae7b0a9f57cbd953729f68516"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/g131.png",
+      "size": 24553,
+      "sha256": "c5cd81ed756f72ba6aae72d27fb45ab923fb55b23862309e73f1c5f593150769"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/g132.png",
+      "size": 46312,
+      "sha256": "5f557976b6e333270a53ace854ed3885f5c3223f0d5372387cf12271da0fb150"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/g133.png",
+      "size": 43214,
+      "sha256": "cfe4bd7c373de2447502041d954a753e39f58a6b2879058db881ecac1712e85a"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/g134.png",
+      "size": 51047,
+      "sha256": "0dc0fdbab659eb57c410867642a18f40650b1955561e2bbcdf617f447ea748e9"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/g135.png",
+      "size": 41549,
+      "sha256": "75bbc13d54fd43b31b07f278a43afb0c9ecafd4185474f5e9ef1883b19f73d19"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/g136.png",
+      "size": 38408,
+      "sha256": "a317b7db4b2dd68aef51be71413812c46ad72494136cb7f0868a7318b4573fa7"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/g137.png",
+      "size": 37445,
+      "sha256": "354dab920a1414167131d9b3d927b955bbd8d4be9f54d0cbf45da384b008ccc7"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/g138.png",
+      "size": 28860,
+      "sha256": "189eca71fdc857ea68ad8bf56917647f2c15ff6f8a84fd805a78c3bafdb81f9e"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/g139.png",
+      "size": 21349,
+      "sha256": "fd79c61ba98ccfdae017e1d244bd96694d68c635ba08158a2a66a4a2db47003f"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/g140.png",
+      "size": 45624,
+      "sha256": "30d35ba70fc5093e1569e44a0c1503d31da2b6801d9a4d20f50675578f26ea80"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/g141.png",
+      "size": 47311,
+      "sha256": "6b41dfafae7e46ca12f16f98766afe69e754f42bfe5821546d8bca5b48c5223a"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/g142.png",
+      "size": 8352,
+      "sha256": "53e4082537b8026562dd59fcd98f458cfcee6b92628ed9d7bbd224681c6759c7"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/g143.png",
+      "size": 62031,
+      "sha256": "b9336b835e511e90605e6909698fafdc08e784cc69e160e81cbee1b456f5cce7"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/g144.png",
+      "size": 39125,
+      "sha256": "d55a013a43c401d20b972ba28517022691c4efc51bfea3daf0ed6d32c7e32da7"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/g145.png",
+      "size": 51672,
+      "sha256": "5c291cbbb85c7b3dfff0eb61c5cee7575309efcd4354f2f0f7c11db001508d4e"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/g146.png",
+      "size": 42618,
+      "sha256": "045160b7b31b9b1d90786d6eb41cf9639b0b0e0cf30d455236c66bc292436fcd"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/g147.png",
+      "size": 43514,
+      "sha256": "1efa51d23416024de8506b68dcda4b24eee3a2ad4196755339343713995a035f"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/g148.png",
+      "size": 48325,
+      "sha256": "2a549bc495dbd3f278b223ec8657da07ca75d8b2e5b162627ff88d1c6b099bdd"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/g149.png",
+      "size": 41762,
+      "sha256": "abe89642326f0f1b0e3ec75ca80765f77a0b40a43a11e93e6e06cde6082b6895"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/g150.png",
+      "size": 37315,
+      "sha256": "97dae91126064e4a36c08ffede681a928c3b3963ab563d4dc01a97291436d537"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/g151.png",
+      "size": 2770,
+      "sha256": "e132a634ed60f393a8ae6c66e545228925fce296f09d55845333dca824f78189"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/g152.png",
+      "size": 38252,
+      "sha256": "249e911e1d3c584500e5b24983f7cf098b3e2a2a32186492ac94b854540c06ea"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/g153.png",
+      "size": 39695,
+      "sha256": "e99ffb9b5b6f8bddce95b0dc92b6c613b1a948110d5af7aeac7a458cf366c4b6"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/g154.png",
+      "size": 21351,
+      "sha256": "3f33195ce99e82a83785757baa5cb8138f0c4ef550f548c5e33be41152372784"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/g155.png",
+      "size": 42557,
+      "sha256": "315f4ec7d310c6136f123460c4335fe95ecd5b976dce7a48ed1e3c50942d06c3"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/g156.png",
+      "size": 53058,
+      "sha256": "e2f5239cc6b31112b3af38c6b5ff2e759deb7e614af5e908786f78d38767c30c"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/g157.png",
+      "size": 53916,
+      "sha256": "f132a28c469b8df9a18f5e7d23f5f6facbe6f8b9bd7945a14bbf72271f9356d1"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/g158.png",
+      "size": 43241,
+      "sha256": "b2e9954caee3c6a8981244d29c197f65a8d723f6c9b4fc608bbf1d4de148729e"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/g159.png",
+      "size": 35499,
+      "sha256": "ce10a18a716d4316a199e82ff76f8f37ecbf1e2ebb955c17fc57ca30946483a5"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/g160.png",
+      "size": 43361,
+      "sha256": "2f99ca84a5de16c25930e525be81e48a5afe11b11a7b221d6dc3bbdc85029f6a"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/g161.png",
+      "size": 55521,
+      "sha256": "bb0f70f136243e6ec2598f2f7691b41be08ce171f6daac0caae87e04214339aa"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/g162.png",
+      "size": 35923,
+      "sha256": "b3b7f3e324ce97e179d28b390e533caa32fc3b22514216317376b023c95d7466"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/g163.png",
+      "size": 44785,
+      "sha256": "5eefb894ee9b5bcc649843c3b86676ad84cbd2348da54a42f32dc16ed17ff538"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/g164.png",
+      "size": 41464,
+      "sha256": "ba217fc32b74b47abeeddb2396428b5c47361fbadb762df0f2da6cdbe19f12ad"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/g165.png",
+      "size": 52154,
+      "sha256": "4d7823edd366a06da447d2c67f3fe26a2471a220be84c49918e7b0baf37ae70d"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/g166.png",
+      "size": 42536,
+      "sha256": "a0bf12c933e446a26af3e68782ac2569eb4d276776278f75207803c42c0d1a20"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/g167.png",
+      "size": 45411,
+      "sha256": "eaf0d5d445425cfc053ec3c0d8153889806483075d8d2d4de055117647d864f6"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/g168.png",
+      "size": 37058,
+      "sha256": "a8af9dd593d2bf38e90fa10693381a6c1bd3470ba869855514ac2f49173764eb"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/g169.png",
+      "size": 36466,
+      "sha256": "36bd0354c23205dcc94fe68473327ec7bb61324adffb69b1d93d2da3f0ec6a3f"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/g170.png",
+      "size": 45748,
+      "sha256": "0eef103fdb1e1be8a262312e9d3a7f32b1a74ca0eff8ffdcc4074fa133948f3c"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/g171.png",
+      "size": 19219,
+      "sha256": "c83a875121f8c9ba242ab231ffc96811b5fdde3037fd0f2d954936507a749a30"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/g172.png",
+      "size": 40131,
+      "sha256": "895f92ba337a773693293d3757eab638c059aea3fe6a0b310a869dfd5b3e2dea"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/g173.png",
+      "size": 71556,
+      "sha256": "5ff60fd3a13126ff1c676e4ea53c4849636be002a8d9963e89cd1b04c428a2aa"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/g174.png",
+      "size": 61590,
+      "sha256": "ce8c8ea2ca36e33ab18e26377c73ae8471788fdf86b3ae9b2503d7a1a73a2808"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/g175.png",
+      "size": 33010,
+      "sha256": "325112783285e4f1b3f73c35f3e3cad9c40f9d5314937856576e95a90e8fb961"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/g176.png",
+      "size": 54351,
+      "sha256": "a0114bcff029471633fd10441dbb717d336eb9c38f8497dc39a56db85305b021"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/g177.png",
+      "size": 59455,
+      "sha256": "dd60cbec4b48bb657fc4909963db417afa2e25a40857674b4b91468081b39729"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/g178.png",
+      "size": 60289,
+      "sha256": "1c157b2c1f93f0d596a50a2ad909c671751c09f8cab0f30cd968395cadd92b7d"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/g179.png",
+      "size": 44792,
+      "sha256": "d34f18de8cb4952166e82834ee5611aa56e18841edb432ffb1db6c53fc339109"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/g180.png",
+      "size": 36488,
+      "sha256": "6b10132fd5210163e4403ceb49cf81b46455ca81e1bd77d88d845c223b8dfdcf"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/g181.png",
+      "size": 42410,
+      "sha256": "673b351490fb11d26bcc016ffe452b52c71e9181f8ec1ea981d0cee283963036"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/g182.png",
+      "size": 60456,
+      "sha256": "14b226b153c7c056d2e84adf427f6673c17e1d67884e37012459eb8b5fa4af18"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/g183.png",
+      "size": 39266,
+      "sha256": "be37f41ccb0259e312f4afb6e321d3657ec4f238c0f9e9fc215e84cfd76a43e1"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/g184.png",
+      "size": 42995,
+      "sha256": "dbebe1a10ddb2bb4e12688f08473e7ef1ab1d13a934eba104c6ed45a97b38b6f"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/g185.png",
+      "size": 35611,
+      "sha256": "6e70af6fb1c1b5e6506ecf95f02b7519db8fec86f3eeb9c5fb075a08df246cc9"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/g186.png",
+      "size": 39438,
+      "sha256": "81e36fde66d6d2b5b25e1cd1420769dc7b53310585190c2828506bca00936c1a"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/gt0.png",
+      "size": 1938,
+      "sha256": "421925695da0c6853483ab57c0f8e546805962df89b1e62d77802b52613ffc71"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/gt1.png",
+      "size": 3418,
+      "sha256": "18d3945591c48e77199cd695d6ca8bc13361890c2694201d4975b7abd045c06b"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/gt2.png",
+      "size": 3085,
+      "sha256": "658c9e17a26083911f7045af9856a4d952b5024640bccacc8ac87d80be82804d"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/gt3.png",
+      "size": 3052,
+      "sha256": "5c3f6c2e7730a854cb59c93ebbcd6fdd62d8357888b8ca4b8e466ce1616c83a5"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/gt4.png",
+      "size": 3331,
+      "sha256": "0ebe262605040799eae076e1efdf71d627827505d3fcd7bb85930aeb335e8230"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/gt5.png",
+      "size": 2343,
+      "sha256": "f2ffcd0c2231c062eec498486af958f92975053297e0c74ef3a7452eab1766f6"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/gt6.png",
+      "size": 2991,
+      "sha256": "a3aaf3a92dd9912f7b20e6eee1262f5befdcf56b8033d6fbbcb9d4ed45216fe2"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/gt7.png",
+      "size": 2499,
+      "sha256": "b3527b2887ccc6e961f49e4c734b55b2088a6b43e35ffdb902d3b1a28b24811e"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/gt8.png",
+      "size": 2152,
+      "sha256": "b729250e25c97322a24aaa955cfcb9ed6a3d3a221b20b80643be8dcdb2160358"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/gt9.png",
+      "size": 2212,
+      "sha256": "a78379d290d1dde674207d7f4b92d0f341b82068207637963bbe1e18accd4202"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/gt10.png",
+      "size": 2480,
+      "sha256": "9f69961ca39c13dde816044618995800d4c354e578b4f7b0d3ce1869557d5c3c"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/gt11.png",
+      "size": 2679,
+      "sha256": "6e7b31899ae3c92f915a485a8e04cd12f81607d98b2f0aac59c56a151f4d9955"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/gt12.png",
+      "size": 2475,
+      "sha256": "a53d686fb603c31d2d12cefeff4cdde46546e6c9749dac8e1365bde08c7e3514"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/gt13.png",
+      "size": 3296,
+      "sha256": "6f92c69c9dc0ca6277b8bcb489199066440e83317461ce5627ab83fa255795cb"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/gt14.png",
+      "size": 2950,
+      "sha256": "8c7f66bed6937ddb3c5d608d90a9a554bd16b0f1c18358edc5d7cdf08a11fc15"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/gt15.png",
+      "size": 2710,
+      "sha256": "f467b23f56b225c62e764eaa2ca53c39a06f85ecee63099b3485e2f6e39f7dd3"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/gt16.png",
+      "size": 2211,
+      "sha256": "a759c4cfcb840e63651a8b9c88a70c83c53bd439430e4b8ed353c4af886081eb"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/gt17.png",
+      "size": 2730,
+      "sha256": "3d02e2e2586749e01806de4a22af2aa67b32b1b29537f4bcf14d4243b8df3251"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/gt18.png",
+      "size": 2810,
+      "sha256": "6ffb37d0175ad38fa03ac42834de5e1c777d4e4b54364800c165e68f92703671"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/gt19.png",
+      "size": 2410,
+      "sha256": "af0364c8bc29c8f52dc3f398cfa0fbd6e84eca9c3da023823b93feaf30790885"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/gt20.png",
+      "size": 1943,
+      "sha256": "3e666879f283e17334fe636bbddf3d6be30da25df88020bc012e49e9b8e3fbe5"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/gt21.png",
+      "size": 1853,
+      "sha256": "7d2efb8eb55595d3ade218d815921736d5fff7b113be16da58da938034982780"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/gt22.png",
+      "size": 2240,
+      "sha256": "78101eff7daa8763707993dbb9b80c5721947c9b7f9c77a4528cc9d1edbe189d"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/gt23.png",
+      "size": 2898,
+      "sha256": "3b721301841174fd147ce76210343497621b84b480e8e1214576d1d9b332172d"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/gt24.png",
+      "size": 3279,
+      "sha256": "2e8209579ce0eca6490c7a9f848aa273979c7081868b83a73d2e74a07246c4fe"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/gt25.png",
+      "size": 2341,
+      "sha256": "0dc48b4e546c2bd31b772e03df263c32b50e2e5628ed4490bccac5776f93a8e7"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/gt26.png",
+      "size": 3297,
+      "sha256": "37585530f049698ad7162f170ca3decedbff5b4ca2e307a5623bf63ed4cad7b5"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/gt27.png",
+      "size": 2098,
+      "sha256": "82248bfd9fa3bdbf89032ae243ae0c9f68e12e8608f30af1314047079de53834"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/gt28.png",
+      "size": 2274,
+      "sha256": "7006c2c1dc830236b93e35fc742f2f08730447aa01c3c364fd898eaaa9c49075"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/gt29.png",
+      "size": 2321,
+      "sha256": "ea9c16a46dcc7f49ba15e4c622b1df79705d3ce3eb412c3798e773621e3c1adf"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/gt30.png",
+      "size": 2792,
+      "sha256": "dbd74cfefc1fc35366c67c4ac5db47bec61ff856156c0241f400dd018827672c"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/gt31.png",
+      "size": 3025,
+      "sha256": "8982ee0af81e2041647ed977c964f1e9310fc0e2f4a6f3392f87856bf2ace8f3"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/gt32.png",
+      "size": 2566,
+      "sha256": "c764a5f0597172154647fbc9577f13efb26d0e7ce89d9a6e940991105b4098e8"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/gt33.png",
+      "size": 2140,
+      "sha256": "73fe816237f3332414b79f62ea24291ebea31783fc6a33f394ae496c467fb8c5"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/gt34.png",
+      "size": 2523,
+      "sha256": "b15f13f50a268a6b442b4fb882426bb351a0843aa4b554f32ba830304aed53a2"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/gt35.png",
+      "size": 2290,
+      "sha256": "e07ff5de26bf1790dfda05857b8df9ff679283402527c68f79e20974fb43a286"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/gt36.png",
+      "size": 2885,
+      "sha256": "080cfca2a08ef93e6ad80b84a6dd8723edb30df39cc50646c0697b6ceff87c50"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/gt37.png",
+      "size": 1759,
+      "sha256": "09dbcb85dc73206a56ce6fe4881df266f4fba0eeec0015a03dda86c26632082f"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/gt38.png",
+      "size": 2901,
+      "sha256": "eb37b1d618b6ebb3a7f5c3e1e8f477d22f1aec3f42cf09b55fa28e6c85660b86"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/gt39.png",
+      "size": 2480,
+      "sha256": "8fd58d2552391ba8ecabd840c94631bfa7288d68431d09c67212c160fe857db6"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/gt40.png",
+      "size": 2830,
+      "sha256": "e2d9c1d9b19f8949e9ae018fbd477d7c531a45da1e59b9c621e397c2b0a950fa"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/gt41.png",
+      "size": 2020,
+      "sha256": "ebf59865bba808827039018e78c624abb7b9a7e2497c40c05aba57caad79568f"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/gt42.png",
+      "size": 2640,
+      "sha256": "b0f0e58b2f1d78b5f98a636a9bf8ca8713dbdffe2aad4d5d04847a393210adae"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/gt43.png",
+      "size": 2763,
+      "sha256": "067ac67590aece1e38c66d26e71565509b1d5c3dd6ec2c9c55f5462fa773bb8a"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/gt44.png",
+      "size": 2361,
+      "sha256": "1be772b678485de0500f54468f14a359aaf511a0f61ce5d8991046d749b244b6"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/gt45.png",
+      "size": 2676,
+      "sha256": "e3a5cffeb674b161a21a0ddb96335fdf6ffe59383e79ce01217dcc2ec3821860"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/gt46.png",
+      "size": 2820,
+      "sha256": "5c3348dc53d5c156a5ca2a666e451e98c902074ae2e52e37e686852371a8fae4"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/gt47.png",
+      "size": 2801,
+      "sha256": "9a5638c0ceeccf24dfe5d4f82c288713e97731d0e00bb47cf4841b33a8077f96"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/gt48.png",
+      "size": 2463,
+      "sha256": "d971e3d225a85e0d77dbf0ae4e3e6d4030e56c10bece5e23e54e1801899e2924"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/gt49.png",
+      "size": 2690,
+      "sha256": "1a1b4eebc6371f9e274c576404c274be8f06fa791ed3c21d71cf400593d45218"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/gt50.png",
+      "size": 2213,
+      "sha256": "6b5ced00e86f98e7b0b9402adabf6c6e58d947df1a63b58218960c7bf3128c52"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/gt51.png",
+      "size": 3688,
+      "sha256": "0c4ede273c737d5ed5824377289f562157b6937287aee943a72314b5e2f0cd28"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/gt52.png",
+      "size": 3062,
+      "sha256": "ad9de42cb6495895a87c142280848c83de7bf0f7a69a1585093ab9a7b3940fa2"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/gt53.png",
+      "size": 18482,
+      "sha256": "752885e1f2bbde2c80a1f01c5b64210897901b4bc1c9111e7019c2e2299cc6ff"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/gt54.png",
+      "size": 3242,
+      "sha256": "d7edaa3bbd21eb61c00304f1595aba2264eb21bec8b58f63a22e378faf12b0e4"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/gt55.png",
+      "size": 1921,
+      "sha256": "bc3b4836769a1e58c281930be26218b9d34ea94f7f3521da9745301fb86dcb4d"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/gt56.png",
+      "size": 3237,
+      "sha256": "1a69abcbb814e8c0b3c4d8f82d8cfc67982f967f435d59f9de86b54afbebe60d"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/gt57.png",
+      "size": 2920,
+      "sha256": "3bc2ce16fa71312d367dea482220773cda4083cc7d9a013cc7078302530846e7"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/gt58.png",
+      "size": 2821,
+      "sha256": "4a71149656bf21ca80fc154ba99d423ed026c3397cf72b45b97f3d13f7f69a22"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/gt59.png",
+      "size": 2559,
+      "sha256": "cf64590dbd97d69714713799d9677beab506a99fd1ceafe812b2cca307bdb2b9"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/gt60.png",
+      "size": 3063,
+      "sha256": "a93055a6d86df79c620bdd81c6bbfd838338971c1a09486cb8d0df382956dd5c"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/gt61.png",
+      "size": 3179,
+      "sha256": "6ff632239f63af5976348f1f0ae86e4b2a460a9c7a48122ec396817c4bc0dc20"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/gt62.png",
+      "size": 2910,
+      "sha256": "89366ad59e13152eeacc5c24317590bcb2ba62376fb507b8d3923bba055e8c0f"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/gt63.png",
+      "size": 2334,
+      "sha256": "d695bf0bd7e96c48ee3b21c28dcc03000fcb66edcf212250f61a31691dbc9777"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/gt64.png",
+      "size": 2126,
+      "sha256": "2d5cf4d6dbd57532df5c0c2ac92910b7068fb8752a69b1d735c27aa2a22eff9f"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/gt65.png",
+      "size": 2278,
+      "sha256": "da95479c819c9541b91cbd44e50ee3f06f7814da4e0920d253e44a21e5f4a9e1"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/gt66.png",
+      "size": 2979,
+      "sha256": "ce72a65b32c9318413d5d7114d036d6da5c3af660c4316e123b9980d8db5182c"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/gt67.png",
+      "size": 2144,
+      "sha256": "945743528a653a8198cce890ab5160a6beaec6d0f33fb64732d13711ec6c0734"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/gt68.png",
+      "size": 2120,
+      "sha256": "c4c6a3ce40977258c84047a14e0d0dc1a43f26ab2605950888f54e8c09a35dee"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/gt69.png",
+      "size": 2878,
+      "sha256": "8cf823525f9a2ef34a00bcbd4b66eba63b90db7f8b35cf43750e1942e8ffa375"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/gt70.png",
+      "size": 2304,
+      "sha256": "073f1d5c0b59710e5f774e75b4a57d4ef036efa3085f5722492c34eacbf2d5c2"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/gt71.png",
+      "size": 2854,
+      "sha256": "36e93fe53b2eefe133c9fa2c3b041ee4e2f19d15307fadb43c388c2149c242cb"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/gt72.png",
+      "size": 2667,
+      "sha256": "a9c75b5153433a5e81afc5daee629c6732876f4ca37d090d4adc05243fc7893c"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/gt73.png",
+      "size": 2629,
+      "sha256": "f56f52303da8a8725dc964ea7255d5de7113f744290ac79fe02e7084bd2ff234"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/gt74.png",
+      "size": 3924,
+      "sha256": "2bf12c9188afbaac13d7f4b5f4c35368635b95dcbe1a066e2019d7ca0dbe2b39"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/gt75.png",
+      "size": 2272,
+      "sha256": "f46e40e390c18103676af72760dda11467e111e8f4a13f17f316a05ab62d40b0"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/gt76.png",
+      "size": 2922,
+      "sha256": "21cc224df790090ec3bc2d85502d47b857a63f70792d4c093ceb37f579ffa9b2"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/gt77.png",
+      "size": 2620,
+      "sha256": "8d22f9ce968444f9fb799f7a6740e0462d2f1d0e1649985a6adf108ac1387b28"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/gt78.png",
+      "size": 2066,
+      "sha256": "20880714cd18ea85b4a246a60fe424534c59c515cebe9c0d75b1ced3e4d814fc"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/gt79.png",
+      "size": 2394,
+      "sha256": "467287e392db29115261a5f826bffb2362be13c11ba51d5ada8f974e04f8b875"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/gt80.png",
+      "size": 2224,
+      "sha256": "677ab1033ce725929bbdbe3d84d05b7c5d2c853289468193037975124b15c22c"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/gt81.png",
+      "size": 2207,
+      "sha256": "d5266cdad6e1dc6757dcdff4dbc6485d032824cf6b44f223fa5ece1a6d5583cd"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/gt82.png",
+      "size": 2108,
+      "sha256": "3218af8919824463c10e717e5ea9ed942c449c47ef0c3166cce548effae58662"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/gt83.png",
+      "size": 2580,
+      "sha256": "cbe15b620be2105a343ad7d1e2680e82448d2ffd58050fae4ed7a5644b5230ec"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/gt84.png",
+      "size": 2915,
+      "sha256": "d53eef23b96d6ad06b5c49d35c1a6828ac831ad279fb71b1cabdca517a4871b6"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/gt85.png",
+      "size": 2339,
+      "sha256": "43f041c9b435c8e3e943b54e5ff008c837ff3d188144a947b4ce98b92917e02e"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/gt86.png",
+      "size": 3314,
+      "sha256": "316b8c3fc68556c6c130ae37afbd94d9d091e10f65b7d8066ac84b965a0baae2"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/gt87.png",
+      "size": 1765,
+      "sha256": "09395a15dcd3862a81b4f655026b5b4ad0a580569fcd09e08debaebe3ace08b1"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/gt88.png",
+      "size": 2659,
+      "sha256": "f976ceabb3b6d4f0bb8521940d6fe26dfddce8fff0f3a4716744358a70883aa7"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/gt89.png",
+      "size": 3300,
+      "sha256": "c38ef16679465082e8a3ef5cd51f9997e29a88fd0a8e6c7b47068878f916e497"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/gt90.png",
+      "size": 2352,
+      "sha256": "e7296352e4d5a2157a1bfe38ef21827735ae6bc3c522c2a9b0adda69636a9c2d"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/gt91.png",
+      "size": 2735,
+      "sha256": "2bdea1fd420bd3d99f7f7d8baf06b8355c41602121b21b7e475902a863cbd49f"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/gt92.png",
+      "size": 3326,
+      "sha256": "b0c2c5bfa59939d1d3fc088c52f58acf63c5b5a44bfea5a0cce07cd244cd984f"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/gt93.png",
+      "size": 2706,
+      "sha256": "9985e5bb08d27fb0ef89a59acee7377d173d6341a15e6477036a3ea5ab45baa7"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/gt94.png",
+      "size": 2824,
+      "sha256": "c17d16d0c55dc095a3634c12b809bc52755ef1ec25dba1af6179a7b332da45b0"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/gt95.png",
+      "size": 2329,
+      "sha256": "0a7d2fed84617d769996fdfdff2a730f9d069dac69c8bd7520caeff34e425e85"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/gt96.png",
+      "size": 3102,
+      "sha256": "348639a1ec3b50584f7bdc7e2396a79041555c4db6b57aa4dd96248ee08646b7"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/gt97.png",
+      "size": 2075,
+      "sha256": "85c6200d8ebe499320865b2d48fc0b74dcccd17e3c5c68b7db206166bae0cd6b"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/gt98.png",
+      "size": 2879,
+      "sha256": "45b30759b675ca6280e3bb72dee0cea57c77c9e44df76b85e255e1785545865a"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/gt99.png",
+      "size": 2607,
+      "sha256": "4f606545aba63cf55688cec4fefc7349300fac295ac0a6bd92c21c937621d7a4"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/gt100.png",
+      "size": 3039,
+      "sha256": "143f2d474ffa66787390db9935ab4cb539b08562838cc5f1f073b9b9f6c7f1db"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/gt101.png",
+      "size": 3098,
+      "sha256": "b64de29904fefa2b58a4ff86f27266b8d620b1c8697a6bc1bd0cbc893699ad88"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/gt102.png",
+      "size": 2791,
+      "sha256": "63ca39d30548e4265dd331b253af3fad0e74ecd600e544603d40ce7df1f2344b"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/gt103.png",
+      "size": 3289,
+      "sha256": "d8f77e4d2e4377262a7c93093cfde6c2b54aca95d5749e0471faeeef7b409c51"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/gt104.png",
+      "size": 2467,
+      "sha256": "1cf7fe7552c5355fbcfc4523db15dae6244e97d8ea23bb2fbf0df0bb1f9c833b"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/gt105.png",
+      "size": 2662,
+      "sha256": "312309c11a4751faa8549d4f135c1efa210d60aa8f6c9f0e9b05813584d37f81"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/gt106.png",
+      "size": 2951,
+      "sha256": "15c2842c5232d8e465546406a612c3e1a635d58ca0d70a119f354a01dd3b86ea"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/gt107.png",
+      "size": 2746,
+      "sha256": "78451942c4a3ceba55e86f5532546591687754e4d9bc611ba9ede71c3955443a"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/gt108.png",
+      "size": 2866,
+      "sha256": "5e699ff7ec3e1f72581efae368a0d9417939d81a02bf4ecde086fb8790f8a769"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/gt109.png",
+      "size": 2216,
+      "sha256": "26bcc6faa1bd8f9d7d468f63b4ed9804b3bba19337396f02c2519c0ad38c57d7"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/gt110.png",
+      "size": 2430,
+      "sha256": "f8ccf3cb311d82866d240bc22a9e3d2933e652bf75ebba92c259bc138df34884"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/gt111.png",
+      "size": 2307,
+      "sha256": "60040a420cb32b75b33108fdfb2426a5cc16b82c8e92a91ed5ce91a518a04b3d"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/gt112.png",
+      "size": 3077,
+      "sha256": "c7eb5f8481f8a18ceb7e062854bf827bde5233313668970bb6cbd1fa0052f3de"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/gt113.png",
+      "size": 2048,
+      "sha256": "c70f2c0c96c5e1548061066d22160a3ddcac8f4ce08f439be7889be25a97e8b6"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/gt114.png",
+      "size": 2386,
+      "sha256": "f66c49641135dc69694a39c6e3762c86b92e24bed6a8b942f5f422edb1a218bc"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/gt115.png",
+      "size": 1630,
+      "sha256": "22c471954f1c14f247f9f144f0fcc30799c18ba770636e81bbbf5f4332508245"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/gt116.png",
+      "size": 1457,
+      "sha256": "b2b54e9f385cbc0c886d36575d8eb000950083ca0cb96c7a1ca424977d53c972"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/gt117.png",
+      "size": 2505,
+      "sha256": "97d2c0674dd8a6080d75a586fb675cc3748fba5d4c7b81a256ad659065b7aafa"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/gt118.png",
+      "size": 4208,
+      "sha256": "557bb36884960b415d00a5b54e8c9b5e626c97c797af0a3d5ffbbed8f99fa10b"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/gt119.png",
+      "size": 2051,
+      "sha256": "73537da85e877a91e49698a34faefd4058f2e4727d78b2ed77a13abb75df0c55"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/gt120.png",
+      "size": 3187,
+      "sha256": "e231df50ed662e27fe66723f0992b19345ed36b84ec7ae964d6016ac3335ee32"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/gt121.png",
+      "size": 2096,
+      "sha256": "d0ca7f604e7ef594e939d8f14f78b4d745ad0a3d01cababd4074f8771793f216"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/gt122.png",
+      "size": 3169,
+      "sha256": "fb0287e006021140e0ff7b9af0e5370b39e44eb994c0f87509d8d5b7559a2e92"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/gt123.png",
+      "size": 2940,
+      "sha256": "78bd4766752fab7b0816d320be674a1bf612440ee48a274b24f95d2b1cd698e6"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/gt124.png",
+      "size": 2750,
+      "sha256": "843de6b34970a26365a0fd7bcfd19e9d7a284d111ef466a40f07a4ea927b9869"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/gt125.png",
+      "size": 2586,
+      "sha256": "8c92eb48ecfb91cdf910cac7135234d8c8df8f08e0a80f8226f294d8ee3c605e"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/gt126.png",
+      "size": 2475,
+      "sha256": "dc1790d3bc14447794af630a3649d049a4b3df1eed677c579d0561398d398bf3"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/gt127.png",
+      "size": 2774,
+      "sha256": "c93ee876e61fcd68858bd7a7ae7213a81a183c25c513b0c9ba4725c772687672"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/gt128.png",
+      "size": 2314,
+      "sha256": "b66e96eedc3d90242e44f0dfacceb1704ad112de3267ebeff005e4ebcccd2a73"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/gt129.png",
+      "size": 2094,
+      "sha256": "49ee95a1273bef92efb32a7aeaa172c7b0832b718554f4b0394214efb6d3baa7"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/gt130.png",
+      "size": 2373,
+      "sha256": "b99acd8358d559e469b066d8fac6cdd80bd25a13eaa9bf67f5d1231ac28872b0"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/gt131.png",
+      "size": 1916,
+      "sha256": "79272719038d23d9f9e496a3f34fec3b72cd7c27c0718a52e1b9518bbe806724"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/gt132.png",
+      "size": 2427,
+      "sha256": "289e4ac81e228edb5c02cf3053daf10273ff1d43f5d9dbb4de48b8e5337503d3"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/gt133.png",
+      "size": 2641,
+      "sha256": "354eefb61b92c5b6f60cbaf59efe4b7f7f4afc6b7ea9c7cc7b7fcee7169717f2"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/gt134.png",
+      "size": 2421,
+      "sha256": "8c1a43fa78180d66157e7a4a8fac398e15d96b874d456a5009d4b8c8af0ad49b"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/gt135.png",
+      "size": 2010,
+      "sha256": "8af53900caf0bfddf7b0c6bb2570ca7f24ef36acb3c7f462cad33e19eede9b7f"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/gt136.png",
+      "size": 2604,
+      "sha256": "c4d5162788335aa8833878dbd0b4383262a310e821a28ea6b4f7bdac03e1b013"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/gt137.png",
+      "size": 2797,
+      "sha256": "03169a60268a56c0f3a0706f6e652de48ee98ce38739013cf28e1b2ada5d7336"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/gt138.png",
+      "size": 3020,
+      "sha256": "a8bf791ef7d3461d28e06bd277992106e5f3e5bb3e4db806e684a0bfd2d54c17"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/gt139.png",
+      "size": 2681,
+      "sha256": "5ab357930601edeaec50c46fac10a4caebe13d649551243d49c70c09b28a6621"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/gt140.png",
+      "size": 3072,
+      "sha256": "b9bfb980c3b218d06a77af184843cb56180b107cf5c79ac30dc90d5ec7875d9a"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/gt141.png",
+      "size": 2822,
+      "sha256": "f0dc045977cacf2cf28eaaa8ac5899ca0355ad8d7bda52565649d96e53b917fd"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/gt142.png",
+      "size": 2242,
+      "sha256": "cebbc5bdfd5831c5165dbd8d7c381e02fc50bbbe9031525ef7736d8a6a06aee9"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/gt143.png",
+      "size": 2833,
+      "sha256": "34b77d36b20692173a0e20e21352e1d34339ac9cb15b130876e52085bd7b35e7"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/gt144.png",
+      "size": 2051,
+      "sha256": "b9edae9d945c37015ca7d7671ea4a89a884b48b0fa352c6f03bcec109c948cc9"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/gt145.png",
+      "size": 2421,
+      "sha256": "bfa38054acd734bfdabc19ff640a0b515b642aeea9a86e5f3bc3a83148eb23d3"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/gt146.png",
+      "size": 2536,
+      "sha256": "ce6e9e73b8fe296a263a77e0a659134c2a3acfcf3170f3688319492f842b4443"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/gt147.png",
+      "size": 15668,
+      "sha256": "1624f8f62e03f5be590ce38e9fe002eac163a7c4de885171f5740e2072b2d126"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/gt148.png",
+      "size": 2798,
+      "sha256": "3b9f49fa606f092ceced655438b3653b621e3401f91063fb24f257affc5cd563"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/gt149.png",
+      "size": 13246,
+      "sha256": "05484d359aad7bde4981e07b64bed7f552491ae2284d133c7294d1ab6ea92356"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/gt150.png",
+      "size": 2398,
+      "sha256": "d3ae5f6e27ecb290705bb5872a1d2cdfc74ac8e525eb68a4e98af2a3185475d0"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/gt151.png",
+      "size": 3202,
+      "sha256": "f4f2a70138fc48bfe3bc277a99521d0d954f471f23323b8d0fbcd96d94bdb982"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/gt152.png",
+      "size": 2715,
+      "sha256": "fcbae447adb9a8ce923dcfd725c9582888da1888d41d63045071cbf6f70dc500"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/gt153.png",
+      "size": 2745,
+      "sha256": "ad413cd81715703b6fa0db45a0a06be3fcb89fab9411ed5a9c13714da35c8279"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/gt154.png",
+      "size": 2956,
+      "sha256": "f29ea63b33b814ad47f5853d1912a5c98bd32b2de25206385f17269f3dd89bec"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/gt155.png",
+      "size": 18514,
+      "sha256": "29cfe2a7745fb294a1a22ba0669a6ef56321b80252438437936e32d0b4ef9da6"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/gt156.png",
+      "size": 2573,
+      "sha256": "a9f973c0003f11be62f64ce34b55f7ac93f9ed8d33a9e0cd0b68c2c35fced648"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/gt157.png",
+      "size": 3006,
+      "sha256": "035c946723806875cd5e895242d51657ae38afbf82b41f461710439010556f7a"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/gt158.png",
+      "size": 2411,
+      "sha256": "6af806b1f5afa8fdcbc0f62dbce15d09eb93caf9e368bfaaee35549d7061a727"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/gt159.png",
+      "size": 1925,
+      "sha256": "0692f1c0194737acebd40f202862300fef9d93b8f8fe612273064d7697d477f6"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/gt160.png",
+      "size": 2222,
+      "sha256": "61f9076706fb5602df70e5722138e7a22b727fbad209d97e08a62dc1c9c9757d"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/gt161.png",
+      "size": 2715,
+      "sha256": "6fdd00c9745f2964e9e7bdc7869d28fa8808fdc679259d88420d801b0c0f64c6"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/gt162.png",
+      "size": 1990,
+      "sha256": "0854714a21f7917fa311208b462a8e4387adc6b7fbae9a3ecb55adf40d693bcb"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/gt163.png",
+      "size": 2384,
+      "sha256": "5b06ea29f39543bc915e3d95031df30836acf3dcceab8a6451527139a65e8677"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/gt164.png",
+      "size": 2296,
+      "sha256": "4593745d1aa6e4bad44a1403adf9fdb43bdc79c4742b4c31b54302a63d78748a"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/gt165.png",
+      "size": 3138,
+      "sha256": "8111fbde7984067d6bae441e835f5e9d2a558c2847799f114e1ef09fbca640eb"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/gt166.png",
+      "size": 2537,
+      "sha256": "c6a21148a1a891d976c22f8b3f92b938de952ea87cc8020793c1efbc2476f89f"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/gt167.png",
+      "size": 2239,
+      "sha256": "997220ea58d8f2643a2d3a20a0bef6d5b4fe47ed90da6e8c5471c55f67581200"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/gt168.png",
+      "size": 2298,
+      "sha256": "091531af4473e8d59a9cf57e0433e6094f7661ec5b066887e23f96752e2d525e"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/gt169.png",
+      "size": 2388,
+      "sha256": "a04afea0e78eb506df1e383ee98c03d44ae1ea5f3d2caf76a236c08f4d0e2e9c"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/gt170.png",
+      "size": 2619,
+      "sha256": "0a142b060a32bdfb4cf412b599d4b1ec98c8fe394785358628962d2fbfc5bfcc"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/gt171.png",
+      "size": 1544,
+      "sha256": "af0de449dffabf6e318197cac9ef967d37b6c3a0deaede2694d5313bca03b9e5"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/gt172.png",
+      "size": 2149,
+      "sha256": "8b8f05063b29ca335a95b25b35760894075121c14ad6d72e21e904ffa97d40ce"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/gt173.png",
+      "size": 3563,
+      "sha256": "5d643e06b84f3f786994544bd20d237fc87991c4d891b8e33060351dec00d558"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/gt174.png",
+      "size": 2967,
+      "sha256": "c979c6da6e8a1abbaf42a6b534257d8c2af6eed390ccb665699fd93c8dc9bf20"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/gt175.png",
+      "size": 2367,
+      "sha256": "605fbefd3c1f6ceb883e425048bb2b9bf55b754183665da98154ee30ec6a564a"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/gt176.png",
+      "size": 2918,
+      "sha256": "6bbb497aad06b1a4e17bd05288929c47f371132ded6daaf5f7da80fc84fd136d"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/gt177.png",
+      "size": 3714,
+      "sha256": "84f7d1fa07e1d69c775ca243c9575b7f848ed5089e3a6273528182315c4f2328"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/gt178.png",
+      "size": 3841,
+      "sha256": "ded1ea63ea54de8cbb65bb99d33ed7db8956f2b3aae9481f59f1639754ddf5cb"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/gt179.png",
+      "size": 2757,
+      "sha256": "c166ef713efed16f3163e010f0c45fe5873b618f0e118e939692cdce904b1b81"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/gt180.png",
+      "size": 2498,
+      "sha256": "73ed86f7ada2d7ce3fc5f09f55e3f86e206ac8e4bd94b7bef44c16c7c8aca8b2"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/gt181.png",
+      "size": 2772,
+      "sha256": "7f407cd2f9b7443e5fc4124960104822079441b3557a35f1ffccecbacb31dc1a"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/gt182.png",
+      "size": 2117,
+      "sha256": "4001ccde2b6951e7bebdc7fc7d01abdad8435f49d7e1743f731b328dfcf0a54b"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/gt183.png",
+      "size": 2415,
+      "sha256": "3f6c4cb7c57d7d578546bcb02984841dc78467b2e95c29ad4c1f078fbb914d48"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/gt184.png",
+      "size": 2943,
+      "sha256": "28aa3ab0cbce540bfc6b1cf73906a6f86ae45c0c39ac1f8a8085c7a789fbf7d8"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/gt185.png",
+      "size": 2400,
+      "sha256": "f79eb569fa50ad07fb8536e0b164f71fc4d5cff66d8e4e0618e06610c9049f25"
+    },
+    {
+      "path": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix/gt186.png",
+      "size": 2248,
+      "sha256": "64e460b86415ac5c3d76a1605e25b6c2eef809f4cdbd02ec9cfae8c9c7f03c29"
+    }
+  ]
+}

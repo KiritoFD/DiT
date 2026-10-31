@@ -1,0 +1,32 @@
+{
+  "job": {
+    "arm": "P2",
+    "step": 20000,
+    "protocol": "verified_saved_GT_100",
+    "csv": "assets/eval_unpaired_20261029/history4090/P2_20000.csv",
+    "samples": "assets/_archive_20261027/u100_p1p2_20261025/p2_runs/20261025-152857-Unet-flow/eval_samples_ctrl/step0020000/eval200fix",
+    "n": 100,
+    "csv_sha256": "ee098392a332cde4253a7fe2c5d2fb263c292d8ad6895dac59d99fde13769d84",
+    "identity": {
+      "mapping": "exact RGB saved-GT pixels to audited canonical metadata; original sampler not re-generated"
+    }
+  },
+  "paired_panel": {
+    "hwd": 0.7585396409034729,
+    "per_writer": {
+      "何绍基": 0.8570265769958496,
+      "文徵明": 0.755626380443573,
+      "柳公权": 0.7547345757484436,
+      "欧阳询": 0.6601235866546631,
+      "王羲之": 0.7229018807411194,
+      "米芾": 0.9567863941192627,
+      "苏轼": 0.8092349767684937,
+      "褚遂良": 0.739591121673584,
+      "赵孟頫": 0.6268657445907593,
+      "颜真卿": 0.7025051712989807
+    },
+    "n": 100,
+    "writers": 10
+  },
+  "interpretation": "Official HWD mechanism on square Chinese tiles; paired GT composition, not unseen-source or aesthetic proof"
+}

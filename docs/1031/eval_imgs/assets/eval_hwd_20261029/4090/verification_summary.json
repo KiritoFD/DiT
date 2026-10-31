@@ -1,0 +1,451 @@
+[
+  {
+    "job": {
+      "arm": "S0",
+      "step": 50000,
+      "protocol": "heldout",
+      "csv": "assets/u100_pretrain_20261024/validation_val100.csv",
+      "samples": "assets/style_matrix_20261027/matrix64/4090/execution/runs/S0/evaluations/0050000/heldout/eval_samples_ctrl/step0050000/eval200fix",
+      "n": 100,
+      "csv_sha256": "41d2ad62dc4c175b28e93431bfcb54d8b90f746b343ec45b299af8f3bea1fa1f",
+      "identity": {
+        "checkpoint_sha256": "50d41ee21091f865f3b7315297adeafbba113d934d3094e7203c1e0017a2cccc",
+        "csv_sha256": "41d2ad62dc4c175b28e93431bfcb54d8b90f746b343ec45b299af8f3bea1fa1f",
+        "ema": true,
+        "writer_space": "top10-row",
+        "decoder_path": "pretrained_models/sd-vae-ft-ema",
+        "step": 50000
+      }
+    },
+    "g": {
+      "n_queries": 98,
+      "macro_writer": {
+        "auc": 0.5277827284071182,
+        "eer": 0.4854242621527778,
+        "ap": 0.16635411983718057,
+        "tar_at_eval_far01": 0.02
+      },
+      "pooled": {
+        "auc": 0.519807654656588,
+        "eer": 0.48453121877576,
+        "tar_at_eval_far01": 0.012755102040816327,
+        "eer_threshold": 0.5220531821250916
+      },
+      "interpretation": "EER/TAR from evaluation ROC, not a calibrated deployment threshold; pair scores are correlated"
+    },
+    "gt": {
+      "n_queries": 98,
+      "macro_writer": {
+        "auc": 0.5363847859700521,
+        "eer": 0.47750108506944455,
+        "ap": 0.1730661188310142,
+        "tar_at_eval_far01": 0.024140625
+      },
+      "pooled": {
+        "auc": 0.521088499509877,
+        "eer": 0.4808521251217746,
+        "tar_at_eval_far01": 0.0074936224489795915,
+        "eer_threshold": 0.5128819942474365
+      },
+      "interpretation": "EER/TAR from evaluation ROC, not a calibrated deployment threshold; pair scores are correlated"
+    }
+  },
+  {
+    "job": {
+      "arm": "S1",
+      "step": 50000,
+      "protocol": "heldout",
+      "csv": "assets/u100_pretrain_20261024/validation_val100.csv",
+      "samples": "assets/style_matrix_20261027/matrix64/4090/execution/runs/S1/evaluations/0050000/heldout/eval_samples_ctrl/step0050000/eval200fix",
+      "n": 100,
+      "csv_sha256": "41d2ad62dc4c175b28e93431bfcb54d8b90f746b343ec45b299af8f3bea1fa1f",
+      "identity": {
+        "checkpoint_sha256": "9d9b35482512a593c131a7ea15c4d33f54602eeeba44b535aff1bc9a1f9d4656",
+        "csv_sha256": "41d2ad62dc4c175b28e93431bfcb54d8b90f746b343ec45b299af8f3bea1fa1f",
+        "ema": true,
+        "writer_space": "top10-row",
+        "decoder_path": "pretrained_models/sd-vae-ft-ema",
+        "step": 50000
+      }
+    },
+    "g": {
+      "n_queries": 98,
+      "macro_writer": {
+        "auc": 0.525458509657118,
+        "eer": 0.4893804253472222,
+        "ap": 0.16562618324515427,
+        "tar_at_eval_far01": 0.0198046875
+      },
+      "pooled": {
+        "auc": 0.5209407149380081,
+        "eer": 0.4836130309682012,
+        "tar_at_eval_far01": 0.010522959183673469,
+        "eer_threshold": 0.49637460708618164
+      },
+      "interpretation": "EER/TAR from evaluation ROC, not a calibrated deployment threshold; pair scores are correlated"
+    },
+    "gt": {
+      "n_queries": 98,
+      "macro_writer": {
+        "auc": 0.5363847859700521,
+        "eer": 0.47750108506944455,
+        "ap": 0.1730661188310142,
+        "tar_at_eval_far01": 0.024140625
+      },
+      "pooled": {
+        "auc": 0.521088499509877,
+        "eer": 0.4808521251217746,
+        "tar_at_eval_far01": 0.0074936224489795915,
+        "eer_threshold": 0.5128819942474365
+      },
+      "interpretation": "EER/TAR from evaluation ROC, not a calibrated deployment threshold; pair scores are correlated"
+    }
+  },
+  {
+    "job": {
+      "arm": "S4",
+      "step": 50000,
+      "protocol": "heldout",
+      "csv": "assets/u100_pretrain_20261024/validation_val100.csv",
+      "samples": "assets/style_matrix_20261027/matrix64/4090/execution/runs/S4/evaluations/0050000/heldout/eval_samples_ctrl/step0050000/eval200fix",
+      "n": 100,
+      "csv_sha256": "41d2ad62dc4c175b28e93431bfcb54d8b90f746b343ec45b299af8f3bea1fa1f",
+      "identity": {
+        "checkpoint_sha256": "b4dc1e4fa1af28f22adbf122e9abd2e6f1c1d7f7fa573d78530f09a21b904363",
+        "csv_sha256": "41d2ad62dc4c175b28e93431bfcb54d8b90f746b343ec45b299af8f3bea1fa1f",
+        "ema": true,
+        "writer_space": "top10-row",
+        "decoder_path": "pretrained_models/sd-vae-ft-ema",
+        "step": 50000
+      }
+    },
+    "g": {
+      "n_queries": 98,
+      "macro_writer": {
+        "auc": 0.5177631971571179,
+        "eer": 0.4936349826388889,
+        "ap": 0.1621842652650016,
+        "tar_at_eval_far01": 0.023515625
+      },
+      "pooled": {
+        "auc": 0.510780835120108,
+        "eer": 0.4934611562648315,
+        "tar_at_eval_far01": 0.009088010204081632,
+        "eer_threshold": 0.49636492133140564
+      },
+      "interpretation": "EER/TAR from evaluation ROC, not a calibrated deployment threshold; pair scores are correlated"
+    },
+    "gt": {
+      "n_queries": 98,
+      "macro_writer": {
+        "auc": 0.5363847859700521,
+        "eer": 0.47750108506944455,
+        "ap": 0.1730661188310142,
+        "tar_at_eval_far01": 0.024140625
+      },
+      "pooled": {
+        "auc": 0.521088499509877,
+        "eer": 0.4808521251217746,
+        "tar_at_eval_far01": 0.0074936224489795915,
+        "eer_threshold": 0.5128819942474365
+      },
+      "interpretation": "EER/TAR from evaluation ROC, not a calibrated deployment threshold; pair scores are correlated"
+    }
+  },
+  {
+    "job": {
+      "arm": "S6",
+      "step": 50000,
+      "protocol": "heldout",
+      "csv": "assets/u100_pretrain_20261024/validation_val100.csv",
+      "samples": "assets/style_matrix_20261027/matrix64/4090/execution/runs/S6/evaluations/0050000/heldout/eval_samples_ctrl/step0050000/eval200fix",
+      "n": 100,
+      "csv_sha256": "41d2ad62dc4c175b28e93431bfcb54d8b90f746b343ec45b299af8f3bea1fa1f",
+      "identity": {
+        "checkpoint_sha256": "c4f99519ccbfe15fd504881cc0f20cd5988da26d25de1c1a64a73c6f74ba4a20",
+        "csv_sha256": "41d2ad62dc4c175b28e93431bfcb54d8b90f746b343ec45b299af8f3bea1fa1f",
+        "ema": true,
+        "writer_space": "top10-row",
+        "decoder_path": "pretrained_models/sd-vae-ft-ema",
+        "step": 50000
+      }
+    },
+    "g": {
+      "n_queries": 98,
+      "macro_writer": {
+        "auc": 0.5221028645833334,
+        "eer": 0.49087565104166675,
+        "ap": 0.16615441051974641,
+        "tar_at_eval_far01": 0.025273437500000002
+      },
+      "pooled": {
+        "auc": 0.5180037184044843,
+        "eer": 0.4827841249718982,
+        "tar_at_eval_far01": 0.013392857142857142,
+        "eer_threshold": 0.5166314840316772
+      },
+      "interpretation": "EER/TAR from evaluation ROC, not a calibrated deployment threshold; pair scores are correlated"
+    },
+    "gt": {
+      "n_queries": 98,
+      "macro_writer": {
+        "auc": 0.5363847859700521,
+        "eer": 0.47750108506944455,
+        "ap": 0.1730661188310142,
+        "tar_at_eval_far01": 0.024140625
+      },
+      "pooled": {
+        "auc": 0.521088499509877,
+        "eer": 0.4808521251217746,
+        "tar_at_eval_far01": 0.0074936224489795915,
+        "eer_threshold": 0.5128819942474365
+      },
+      "interpretation": "EER/TAR from evaluation ROC, not a calibrated deployment threshold; pair scores are correlated"
+    }
+  },
+  {
+    "job": {
+      "arm": "S8",
+      "step": 50000,
+      "protocol": "heldout",
+      "csv": "assets/u100_pretrain_20261024/validation_val100.csv",
+      "samples": "assets/style_matrix_20261027/matrix64/4090/execution/runs/S8/evaluations/0050000/heldout/eval_samples_ctrl/step0050000/eval200fix",
+      "n": 100,
+      "csv_sha256": "41d2ad62dc4c175b28e93431bfcb54d8b90f746b343ec45b299af8f3bea1fa1f",
+      "identity": {
+        "checkpoint_sha256": "0fc44cd16f477575552fdeb95d90ad553ee2b8a1c826271f912f519ae879828b",
+        "csv_sha256": "41d2ad62dc4c175b28e93431bfcb54d8b90f746b343ec45b299af8f3bea1fa1f",
+        "ema": true,
+        "writer_space": "top10-row",
+        "decoder_path": "pretrained_models/sd-vae-ft-ema",
+        "step": 50000
+      }
+    },
+    "g": {
+      "n_queries": 98,
+      "macro_writer": {
+        "auc": 0.5250762939453125,
+        "eer": 0.48680989583333323,
+        "ap": 0.1661954920775793,
+        "tar_at_eval_far01": 0.0205078125
+      },
+      "pooled": {
+        "auc": 0.5183074107294099,
+        "eer": 0.48421878122424,
+        "tar_at_eval_far01": 0.010363520408163265,
+        "eer_threshold": 0.5096782445907593
+      },
+      "interpretation": "EER/TAR from evaluation ROC, not a calibrated deployment threshold; pair scores are correlated"
+    },
+    "gt": {
+      "n_queries": 98,
+      "macro_writer": {
+        "auc": 0.5363847859700521,
+        "eer": 0.47750108506944455,
+        "ap": 0.1730661188310142,
+        "tar_at_eval_far01": 0.024140625
+      },
+      "pooled": {
+        "auc": 0.521088499509877,
+        "eer": 0.4808521251217746,
+        "tar_at_eval_far01": 0.0074936224489795915,
+        "eer_threshold": 0.5128819942474365
+      },
+      "interpretation": "EER/TAR from evaluation ROC, not a calibrated deployment threshold; pair scores are correlated"
+    }
+  },
+  {
+    "job": {
+      "arm": "S9",
+      "step": 50000,
+      "protocol": "heldout187_seed0",
+      "csv": "assets/style_matrix_20261028/generation2full/4090/protocols/S_187_seed0.csv",
+      "samples": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_samples_ctrl/step0050000/eval200fix",
+      "n": 187,
+      "csv_sha256": "c94cc4e85179fcc3ed415a15bcfff45f8004c871f8538a388740a6c051f0f708",
+      "identity": {
+        "checkpoint_sha256": "1f50fdec67b082bac63677f37249d9e2fbc3e5a4f19e56842fe039e9ac5195f4",
+        "csv_sha256": "c94cc4e85179fcc3ed415a15bcfff45f8004c871f8538a388740a6c051f0f708",
+        "ema": true,
+        "writer_space": "raw",
+        "decoder_path": "pretrained_models/sd-vae-ft-ema",
+        "step": 50000
+      }
+    },
+    "g": {
+      "n_queries": 181,
+      "macro_writer": {
+        "auc": 0.5043761261333545,
+        "eer": 0.5031682293789173,
+        "ap": 0.15383039236820395,
+        "tar_at_eval_far01": 0.020666732342323774
+      },
+      "pooled": {
+        "auc": 0.49598055806333785,
+        "eer": 0.5006861176257925,
+        "tar_at_eval_far01": 0.009064226519337016,
+        "eer_threshold": 0.5066982507705688
+      },
+      "interpretation": "EER/TAR from evaluation ROC, not a calibrated deployment threshold; pair scores are correlated"
+    },
+    "gt": {
+      "n_queries": 181,
+      "macro_writer": {
+        "auc": 0.513987636460916,
+        "eer": 0.49643631620834333,
+        "ap": 0.1584584997746445,
+        "tar_at_eval_far01": 0.022241281946864585
+      },
+      "pooled": {
+        "auc": 0.4984185455841661,
+        "eer": 0.498686657597612,
+        "tar_at_eval_far01": 0.009582182320441989,
+        "eer_threshold": 0.49648088216781616
+      },
+      "interpretation": "EER/TAR from evaluation ROC, not a calibrated deployment threshold; pair scores are correlated"
+    }
+  },
+  {
+    "job": {
+      "arm": "S9",
+      "step": 50000,
+      "protocol": "original_protocol",
+      "csv": "assets/u100_pretrain_20261024/validation_val100.csv",
+      "samples": "assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/original_protocol/eval_samples_ctrl/step0050000/eval200fix",
+      "n": 100,
+      "csv_sha256": "41d2ad62dc4c175b28e93431bfcb54d8b90f746b343ec45b299af8f3bea1fa1f",
+      "identity": {
+        "checkpoint_sha256": "1f50fdec67b082bac63677f37249d9e2fbc3e5a4f19e56842fe039e9ac5195f4",
+        "csv_sha256": "41d2ad62dc4c175b28e93431bfcb54d8b90f746b343ec45b299af8f3bea1fa1f",
+        "ema": true,
+        "writer_space": "raw",
+        "decoder_path": "pretrained_models/sd-vae-ft-ema",
+        "step": 50000
+      }
+    },
+    "g": {
+      "n_queries": 98,
+      "macro_writer": {
+        "auc": 0.5093691677517361,
+        "eer": 0.49662543402777776,
+        "ap": 0.15776055870978448,
+        "tar_at_eval_far01": 0.018828125
+      },
+      "pooled": {
+        "auc": 0.507709876229552,
+        "eer": 0.4915195939912073,
+        "tar_at_eval_far01": 0.011798469387755101,
+        "eer_threshold": 0.5147383213043213
+      },
+      "interpretation": "EER/TAR from evaluation ROC, not a calibrated deployment threshold; pair scores are correlated"
+    },
+    "gt": {
+      "n_queries": 98,
+      "macro_writer": {
+        "auc": 0.5363847859700521,
+        "eer": 0.47750108506944455,
+        "ap": 0.1730661188310142,
+        "tar_at_eval_far01": 0.024140625
+      },
+      "pooled": {
+        "auc": 0.521088499509877,
+        "eer": 0.4808521251217746,
+        "tar_at_eval_far01": 0.0074936224489795915,
+        "eer_threshold": 0.5128819942474365
+      },
+      "interpretation": "EER/TAR from evaluation ROC, not a calibrated deployment threshold; pair scores are correlated"
+    }
+  },
+  {
+    "job": {
+      "arm": "P1",
+      "step": 10000,
+      "protocol": "verified_saved_GT_100",
+      "csv": "assets/eval_unpaired_20261029/history4090/P1_10000.csv",
+      "samples": "assets/_archive_20261027/u100_p1p2_20261025/p1_runs/20261025-113332-Unet-flow/eval_samples_ctrl/step0010000/eval200fix",
+      "n": 100,
+      "csv_sha256": "ee098392a332cde4253a7fe2c5d2fb263c292d8ad6895dac59d99fde13769d84",
+      "identity": {
+        "mapping": "exact RGB saved-GT pixels to audited canonical metadata; original sampler not re-generated"
+      }
+    },
+    "g": {
+      "n_queries": 98,
+      "macro_writer": {
+        "auc": 0.529251980251736,
+        "eer": 0.48155707465277786,
+        "ap": 0.16925670729839004,
+        "tar_at_eval_far01": 0.0240625
+      },
+      "pooled": {
+        "auc": 0.5199519417476675,
+        "eer": 0.4800710312429745,
+        "tar_at_eval_far01": 0.008131377551020409,
+        "eer_threshold": 0.5051820278167725
+      },
+      "interpretation": "EER/TAR from evaluation ROC, not a calibrated deployment threshold; pair scores are correlated"
+    },
+    "gt": {
+      "n_queries": 98,
+      "macro_writer": {
+        "auc": 0.5363847859700521,
+        "eer": 0.47750108506944455,
+        "ap": 0.1730661188310142,
+        "tar_at_eval_far01": 0.024140625
+      },
+      "pooled": {
+        "auc": 0.521088499509877,
+        "eer": 0.4808521251217746,
+        "tar_at_eval_far01": 0.0074936224489795915,
+        "eer_threshold": 0.5128819942474365
+      },
+      "interpretation": "EER/TAR from evaluation ROC, not a calibrated deployment threshold; pair scores are correlated"
+    }
+  },
+  {
+    "job": {
+      "arm": "P2",
+      "step": 20000,
+      "protocol": "verified_saved_GT_100",
+      "csv": "assets/eval_unpaired_20261029/history4090/P2_20000.csv",
+      "samples": "assets/_archive_20261027/u100_p1p2_20261025/p2_runs/20261025-152857-Unet-flow/eval_samples_ctrl/step0020000/eval200fix",
+      "n": 100,
+      "csv_sha256": "ee098392a332cde4253a7fe2c5d2fb263c292d8ad6895dac59d99fde13769d84",
+      "identity": {
+        "mapping": "exact RGB saved-GT pixels to audited canonical metadata; original sampler not re-generated"
+      }
+    },
+    "g": {
+      "n_queries": 98,
+      "macro_writer": {
+        "auc": 0.5230374823676216,
+        "eer": 0.48724717881944446,
+        "ap": 0.16974878062125848,
+        "tar_at_eval_far01": 0.0249609375
+      },
+      "pooled": {
+        "auc": 0.5136882753491064,
+        "eer": 0.4830965625234181,
+        "tar_at_eval_far01": 0.00940688775510204,
+        "eer_threshold": 0.5082411766052246
+      },
+      "interpretation": "EER/TAR from evaluation ROC, not a calibrated deployment threshold; pair scores are correlated"
+    },
+    "gt": {
+      "n_queries": 98,
+      "macro_writer": {
+        "auc": 0.5363847859700521,
+        "eer": 0.47750108506944455,
+        "ap": 0.1730661188310142,
+        "tar_at_eval_far01": 0.024140625
+      },
+      "pooled": {
+        "auc": 0.521088499509877,
+        "eer": 0.4808521251217746,
+        "tar_at_eval_far01": 0.0074936224489795915,
+        "eer_threshold": 0.5128819942474365
+      },
+      "interpretation": "EER/TAR from evaluation ROC, not a calibrated deployment threshold; pair scores are correlated"
+    }
+  }
+]

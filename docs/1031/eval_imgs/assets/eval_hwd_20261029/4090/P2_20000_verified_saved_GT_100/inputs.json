@@ -1,0 +1,1016 @@
+{
+  "job": {
+    "arm": "P2",
+    "step": 20000,
+    "protocol": "verified_saved_GT_100",
+    "csv": "assets/eval_unpaired_20261029/history4090/P2_20000.csv",
+    "samples": "assets/_archive_20261027/u100_p1p2_20261025/p2_runs/20261025-152857-Unet-flow/eval_samples_ctrl/step0020000/eval200fix",
+    "n": 100,
+    "csv_sha256": "ee098392a332cde4253a7fe2c5d2fb263c292d8ad6895dac59d99fde13769d84",
+    "identity": {
+      "mapping": "exact RGB saved-GT pixels to audited canonical metadata; original sampler not re-generated"
+    }
+  },
+  "images": [
+    {
+      "path": "assets/_archive_20261027/u100_p1p2_20261025/p2_runs/20261025-152857-Unet-flow/eval_samples_ctrl/step0020000/eval200fix/g0.png",
+      "size": 41355,
+      "sha256": "50f9d2a88e9516436d8cb53347f82f5635cc080f72f5cf9432affcbe4bfe2cf3"
+    },
+    {
+      "path": "assets/_archive_20261027/u100_p1p2_20261025/p2_runs/20261025-152857-Unet-flow/eval_samples_ctrl/step0020000/eval200fix/g1.png",
+      "size": 49514,
+      "sha256": "252b229a76734ab3052581e45df0c2dd4db36f755750044d33c90e4444821517"
+    },
+    {
+      "path": "assets/_archive_20261027/u100_p1p2_20261025/p2_runs/20261025-152857-Unet-flow/eval_samples_ctrl/step0020000/eval200fix/g2.png",
+      "size": 50723,
+      "sha256": "9ddcf906c32a88721a77973edec64db4fd4c8ecb68c4d3368a3b2bef114a772f"
+    },
+    {
+      "path": "assets/_archive_20261027/u100_p1p2_20261025/p2_runs/20261025-152857-Unet-flow/eval_samples_ctrl/step0020000/eval200fix/g3.png",
+      "size": 48628,
+      "sha256": "83743ef68ade3e0d13fe8e2179e4a7b479e46f7a23d47811c083785d2ca115f3"
+    },
+    {
+      "path": "assets/_archive_20261027/u100_p1p2_20261025/p2_runs/20261025-152857-Unet-flow/eval_samples_ctrl/step0020000/eval200fix/g4.png",
+      "size": 36798,
+      "sha256": "b76155f642fe66a0349c24a766259ebe5361344ddc540627a918c87232e8f853"
+    },
+    {
+      "path": "assets/_archive_20261027/u100_p1p2_20261025/p2_runs/20261025-152857-Unet-flow/eval_samples_ctrl/step0020000/eval200fix/g5.png",
+      "size": 40326,
+      "sha256": "0abc515a476cb1ec94165805e4169a764902a9c2b7b71786ad921561065397c5"
+    },
+    {
+      "path": "assets/_archive_20261027/u100_p1p2_20261025/p2_runs/20261025-152857-Unet-flow/eval_samples_ctrl/step0020000/eval200fix/g6.png",
+      "size": 46959,
+      "sha256": "018689f679793853842dce1014a17fd121fbeb1566d3e16bb969aa593cefea19"
+    },
+    {
+      "path": "assets/_archive_20261027/u100_p1p2_20261025/p2_runs/20261025-152857-Unet-flow/eval_samples_ctrl/step0020000/eval200fix/g7.png",
+      "size": 43228,
+      "sha256": "c5e6d9fbc2aa1becc9670ed3fe152334e6a88531462a2c32c63d9cdc9619a79b"
+    },
+    {
+      "path": "assets/_archive_20261027/u100_p1p2_20261025/p2_runs/20261025-152857-Unet-flow/eval_samples_ctrl/step0020000/eval200fix/g8.png",
+      "size": 53123,
+      "sha256": "d3e072cb53baaaa588b1a3ff265f9cd57ec4a22abb562a862189e107cf57210a"
+    },
+    {
+      "path": "assets/_archive_20261027/u100_p1p2_20261025/p2_runs/20261025-152857-Unet-flow/eval_samples_ctrl/step0020000/eval200fix/g9.png",
+      "size": 41489,
+      "sha256": "f7486d59251844bb90aaa1c6e7e2be1e722a5e517971bc1f4aceb1b98673a62d"
+    },
+    {
+      "path": "assets/_archive_20261027/u100_p1p2_20261025/p2_runs/20261025-152857-Unet-flow/eval_samples_ctrl/step0020000/eval200fix/g10.png",
+      "size": 34108,
+      "sha256": "9f320308061e135c75ca4f7a863113eff488ff4da05ec2b727dc1377f6e104a9"
+    },
+    {
+      "path": "assets/_archive_20261027/u100_p1p2_20261025/p2_runs/20261025-152857-Unet-flow/eval_samples_ctrl/step0020000/eval200fix/g11.png",
+      "size": 42403,
+      "sha256": "5802bf8d649463966008cdfaa5b012dd6b675c5c884bf845f9f098de366ec4de"
+    },
+    {
+      "path": "assets/_archive_20261027/u100_p1p2_20261025/p2_runs/20261025-152857-Unet-flow/eval_samples_ctrl/step0020000/eval200fix/g12.png",
+      "size": 39828,
+      "sha256": "a531a3ca849a7ebb2ab0bcb5900060e2966eaa44289896f21b14f39ba355ccb2"
+    },
+    {
+      "path": "assets/_archive_20261027/u100_p1p2_20261025/p2_runs/20261025-152857-Unet-flow/eval_samples_ctrl/step0020000/eval200fix/g13.png",
+      "size": 54729,
+      "sha256": "8c7de975ba6c085a2e3675a612dbea7971c85c63a742115088d5f807ba47e5df"
+    },
+    {
+      "path": "assets/_archive_20261027/u100_p1p2_20261025/p2_runs/20261025-152857-Unet-flow/eval_samples_ctrl/step0020000/eval200fix/g14.png",
+      "size": 60531,
+      "sha256": "72ac8c3b8f8f4ba35202f9a369703d54f9d2c5555307f7ce58fec188b406a984"
+    },
+    {
+      "path": "assets/_archive_20261027/u100_p1p2_20261025/p2_runs/20261025-152857-Unet-flow/eval_samples_ctrl/step0020000/eval200fix/g15.png",
+      "size": 38817,
+      "sha256": "7edf4cd38cd9fbada5ccb1ee6ea898d00ebdbeb500da3d28668b1053ba7e94bb"
+    },
+    {
+      "path": "assets/_archive_20261027/u100_p1p2_20261025/p2_runs/20261025-152857-Unet-flow/eval_samples_ctrl/step0020000/eval200fix/g16.png",
+      "size": 43301,
+      "sha256": "d6829dab181fcb1be61add67abe68de7b4049b2dabfd7bc871d79fdc00bd03fb"
+    },
+    {
+      "path": "assets/_archive_20261027/u100_p1p2_20261025/p2_runs/20261025-152857-Unet-flow/eval_samples_ctrl/step0020000/eval200fix/g17.png",
+      "size": 51890,
+      "sha256": "fceb1d01cc232162a1a718dba3a7f207831ad6b984674c1be3bb8396e02e6d68"
+    },
+    {
+      "path": "assets/_archive_20261027/u100_p1p2_20261025/p2_runs/20261025-152857-Unet-flow/eval_samples_ctrl/step0020000/eval200fix/g18.png",
+      "size": 43410,
+      "sha256": "c03ef1291d7569f87aefe11f9724f3a1cd960ff1c806f84d311b1ac0f45cc60f"
+    },
+    {
+      "path": "assets/_archive_20261027/u100_p1p2_20261025/p2_runs/20261025-152857-Unet-flow/eval_samples_ctrl/step0020000/eval200fix/g19.png",
+      "size": 29218,
+      "sha256": "e536d0000a1f1a166ebbb96f92be5ea14ce9008fb3594271fe4d7ba4bc2940eb"
+    },
+    {
+      "path": "assets/_archive_20261027/u100_p1p2_20261025/p2_runs/20261025-152857-Unet-flow/eval_samples_ctrl/step0020000/eval200fix/g20.png",
+      "size": 44380,
+      "sha256": "0de75fd70f2b4c7288e7f08260b2bec38e9715e5172988e71e4d856fdbfde9a7"
+    },
+    {
+      "path": "assets/_archive_20261027/u100_p1p2_20261025/p2_runs/20261025-152857-Unet-flow/eval_samples_ctrl/step0020000/eval200fix/g21.png",
+      "size": 55376,
+      "sha256": "0dc8afb1cd9c908c205b433338b6cf05a352221dcd7cdf16d1d1044d3216e06e"
+    },
+    {
+      "path": "assets/_archive_20261027/u100_p1p2_20261025/p2_runs/20261025-152857-Unet-flow/eval_samples_ctrl/step0020000/eval200fix/g22.png",
+      "size": 43318,
+      "sha256": "ca4129b0988b13985ed4d3908d70f0669bbec16557f3540eb125ec313afa76a2"
+    },
+    {
+      "path": "assets/_archive_20261027/u100_p1p2_20261025/p2_runs/20261025-152857-Unet-flow/eval_samples_ctrl/step0020000/eval200fix/g23.png",
+      "size": 35882,
+      "sha256": "5b26fee4fface42e1d5aa777242d8d6b879a5c27c1a5cc2d9ea816a7feac9e53"
+    },
+    {
+      "path": "assets/_archive_20261027/u100_p1p2_20261025/p2_runs/20261025-152857-Unet-flow/eval_samples_ctrl/step0020000/eval200fix/g24.png",
+      "size": 40450,
+      "sha256": "c61acce64f80f13e6f05a111b65b33975e61635909940347c17a712201611344"
+    },
+    {
+      "path": "assets/_archive_20261027/u100_p1p2_20261025/p2_runs/20261025-152857-Unet-flow/eval_samples_ctrl/step0020000/eval200fix/g25.png",
+      "size": 44743,
+      "sha256": "926f38331f973f2eb0e15c4ce3bbe9681db26dc65d961e2eada1a6e21dc0c9aa"
+    },
+    {
+      "path": "assets/_archive_20261027/u100_p1p2_20261025/p2_runs/20261025-152857-Unet-flow/eval_samples_ctrl/step0020000/eval200fix/g26.png",
+      "size": 34309,
+      "sha256": "3420acbca8e53078bcbabd9121864c741c0bd3d74ac562864cd4b322d904fda4"
+    },
+    {
+      "path": "assets/_archive_20261027/u100_p1p2_20261025/p2_runs/20261025-152857-Unet-flow/eval_samples_ctrl/step0020000/eval200fix/g27.png",
+      "size": 50090,
+      "sha256": "9e4a1c7c33e159772afa2f1d92d713b1bfa208f9c97813e7cff4a78cc860a2a9"
+    },
+    {
+      "path": "assets/_archive_20261027/u100_p1p2_20261025/p2_runs/20261025-152857-Unet-flow/eval_samples_ctrl/step0020000/eval200fix/g28.png",
+      "size": 45702,
+      "sha256": "d399db3ceba1aae5a6f9cf01535f65d4f5ba7189595efb4b47fa2775fa8f29ee"
+    },
+    {
+      "path": "assets/_archive_20261027/u100_p1p2_20261025/p2_runs/20261025-152857-Unet-flow/eval_samples_ctrl/step0020000/eval200fix/g29.png",
+      "size": 49044,
+      "sha256": "a639a06ca60afad9853f1d6ba06339f20d9e85cfb094263e0f3f15740242e705"
+    },
+    {
+      "path": "assets/_archive_20261027/u100_p1p2_20261025/p2_runs/20261025-152857-Unet-flow/eval_samples_ctrl/step0020000/eval200fix/g30.png",
+      "size": 50688,
+      "sha256": "03a037edc5531c274fdb7e6620e253c1f5ce2cb5c9f8b3fe9c01cfaef53b5f39"
+    },
+    {
+      "path": "assets/_archive_20261027/u100_p1p2_20261025/p2_runs/20261025-152857-Unet-flow/eval_samples_ctrl/step0020000/eval200fix/g31.png",
+      "size": 49849,
+      "sha256": "8ed996922f508d0da47cabf90fc0c726c8cc2ae39c262f13664a37391a5cfc6f"
+    },
+    {
+      "path": "assets/_archive_20261027/u100_p1p2_20261025/p2_runs/20261025-152857-Unet-flow/eval_samples_ctrl/step0020000/eval200fix/g32.png",
+      "size": 38509,
+      "sha256": "078bee24c90c1a7cae575e8f7839c14db3a6cd1638f42a658f135e5574ba303c"
+    },
+    {
+      "path": "assets/_archive_20261027/u100_p1p2_20261025/p2_runs/20261025-152857-Unet-flow/eval_samples_ctrl/step0020000/eval200fix/g33.png",
+      "size": 51251,
+      "sha256": "152b2c0f59c668ecd7be17aeb1d45a1f90b67e09651e243f0bddba39b22fd0b7"
+    },
+    {
+      "path": "assets/_archive_20261027/u100_p1p2_20261025/p2_runs/20261025-152857-Unet-flow/eval_samples_ctrl/step0020000/eval200fix/g34.png",
+      "size": 44988,
+      "sha256": "730cab2354627a059a18b7ab5401372be6546cd61828f39eb67d776006f092bf"
+    },
+    {
+      "path": "assets/_archive_20261027/u100_p1p2_20261025/p2_runs/20261025-152857-Unet-flow/eval_samples_ctrl/step0020000/eval200fix/g35.png",
+      "size": 43910,
+      "sha256": "ddebbef6dd03979c0e1da237357899b31313e0bf859e8de55c47fbcd744c0466"
+    },
+    {
+      "path": "assets/_archive_20261027/u100_p1p2_20261025/p2_runs/20261025-152857-Unet-flow/eval_samples_ctrl/step0020000/eval200fix/g36.png",
+      "size": 42908,
+      "sha256": "bc8b1976626fadd3e8db0b2845516180093c81c948921ccbb9a358f3dcd9c4ed"
+    },
+    {
+      "path": "assets/_archive_20261027/u100_p1p2_20261025/p2_runs/20261025-152857-Unet-flow/eval_samples_ctrl/step0020000/eval200fix/g37.png",
+      "size": 39555,
+      "sha256": "bc10059abd11ea9480304088d24a509221cbc77e79179c19cc41b8fafcec4691"
+    },
+    {
+      "path": "assets/_archive_20261027/u100_p1p2_20261025/p2_runs/20261025-152857-Unet-flow/eval_samples_ctrl/step0020000/eval200fix/g38.png",
+      "size": 59609,
+      "sha256": "097e5a73bdca0ad1d3ffac29d848db350f1669f492d95ab27c97a51074d2c106"
+    },
+    {
+      "path": "assets/_archive_20261027/u100_p1p2_20261025/p2_runs/20261025-152857-Unet-flow/eval_samples_ctrl/step0020000/eval200fix/g39.png",
+      "size": 41111,
+      "sha256": "e410e99f8fcfaf2d5b935d48fbae6458964149d1dc62bea6624be93f752d4c00"
+    },
+    {
+      "path": "assets/_archive_20261027/u100_p1p2_20261025/p2_runs/20261025-152857-Unet-flow/eval_samples_ctrl/step0020000/eval200fix/g40.png",
+      "size": 52452,
+      "sha256": "151c8f61a2faf74490ec719c9a1efc99958f034e658ccc04a82608f0466ef286"
+    },
+    {
+      "path": "assets/_archive_20261027/u100_p1p2_20261025/p2_runs/20261025-152857-Unet-flow/eval_samples_ctrl/step0020000/eval200fix/g41.png",
+      "size": 41304,
+      "sha256": "44bc0ce907ca6d20a81eaa3ac2cceaeac6fc41a41289d769d93594796cae6164"
+    },
+    {
+      "path": "assets/_archive_20261027/u100_p1p2_20261025/p2_runs/20261025-152857-Unet-flow/eval_samples_ctrl/step0020000/eval200fix/g42.png",
+      "size": 53649,
+      "sha256": "2bb97c3a0a5a60dc9bb9e1313afc09eeb913128464d4e5ffd02b92f5aff66183"
+    },
+    {
+      "path": "assets/_archive_20261027/u100_p1p2_20261025/p2_runs/20261025-152857-Unet-flow/eval_samples_ctrl/step0020000/eval200fix/g43.png",
+      "size": 32906,
+      "sha256": "29da24807482fa79822e415284b030cf8a3d7c0a41f7ba12e0af1337dbe7c3ac"
+    },
+    {
+      "path": "assets/_archive_20261027/u100_p1p2_20261025/p2_runs/20261025-152857-Unet-flow/eval_samples_ctrl/step0020000/eval200fix/g44.png",
+      "size": 49018,
+      "sha256": "0b7fc0551f994b8b6310b08b9bfb4ef3ee6fa9538f26d5aad5d2074cf9b987d4"
+    },
+    {
+      "path": "assets/_archive_20261027/u100_p1p2_20261025/p2_runs/20261025-152857-Unet-flow/eval_samples_ctrl/step0020000/eval200fix/g45.png",
+      "size": 40634,
+      "sha256": "99c2382a34a8303a3f005bd2985627b53e1b59029ed5fd2931813db9aeb6ef7e"
+    },
+    {
+      "path": "assets/_archive_20261027/u100_p1p2_20261025/p2_runs/20261025-152857-Unet-flow/eval_samples_ctrl/step0020000/eval200fix/g46.png",
+      "size": 22139,
+      "sha256": "8a7a834d849b67aadde9c11bced93737f73e72379d8fdda111fa21dec246b825"
+    },
+    {
+      "path": "assets/_archive_20261027/u100_p1p2_20261025/p2_runs/20261025-152857-Unet-flow/eval_samples_ctrl/step0020000/eval200fix/g47.png",
+      "size": 44217,
+      "sha256": "ed0bd29b72ed5806196b58b17fa4fb4879925fa157a60daed2ca59e636970e29"
+    },
+    {
+      "path": "assets/_archive_20261027/u100_p1p2_20261025/p2_runs/20261025-152857-Unet-flow/eval_samples_ctrl/step0020000/eval200fix/g48.png",
+      "size": 44063,
+      "sha256": "ea80f5810a31d3bb66e24b2839dc10676e39846086e8c90cbdb9cf59c71bc042"
+    },
+    {
+      "path": "assets/_archive_20261027/u100_p1p2_20261025/p2_runs/20261025-152857-Unet-flow/eval_samples_ctrl/step0020000/eval200fix/g49.png",
+      "size": 41353,
+      "sha256": "843ce15b29b2d3a9412ef83b4cce17a65e4516b4ad2a611817bdfc082987a82b"
+    },
+    {
+      "path": "assets/_archive_20261027/u100_p1p2_20261025/p2_runs/20261025-152857-Unet-flow/eval_samples_ctrl/step0020000/eval200fix/g50.png",
+      "size": 41917,
+      "sha256": "4b4164953aa0235bd2c58417aa4e2f3e26c49140059a1377ed5eeeec3da1bfed"
+    },
+    {
+      "path": "assets/_archive_20261027/u100_p1p2_20261025/p2_runs/20261025-152857-Unet-flow/eval_samples_ctrl/step0020000/eval200fix/g51.png",
+      "size": 49052,
+      "sha256": "2602a4c2e4e4c0dfd8ba223300899fb5d92d5eb547c661662dd557a99f303b9b"
+    },
+    {
+      "path": "assets/_archive_20261027/u100_p1p2_20261025/p2_runs/20261025-152857-Unet-flow/eval_samples_ctrl/step0020000/eval200fix/g52.png",
+      "size": 46328,
+      "sha256": "ffe5c42def636e3d49d9319acf15b05d78a04045614af2713fcb836505883000"
+    },
+    {
+      "path": "assets/_archive_20261027/u100_p1p2_20261025/p2_runs/20261025-152857-Unet-flow/eval_samples_ctrl/step0020000/eval200fix/g53.png",
+      "size": 39832,
+      "sha256": "313b4c94d4bcd3c8c8adb771c05863488dc0a1c45c82fbb9e08c6aa06970ef2a"
+    },
+    {
+      "path": "assets/_archive_20261027/u100_p1p2_20261025/p2_runs/20261025-152857-Unet-flow/eval_samples_ctrl/step0020000/eval200fix/g54.png",
+      "size": 45025,
+      "sha256": "d720a6f8eb4e2e4a1361ffc6995f517ef672ab657999eb68276af398722336f9"
+    },
+    {
+      "path": "assets/_archive_20261027/u100_p1p2_20261025/p2_runs/20261025-152857-Unet-flow/eval_samples_ctrl/step0020000/eval200fix/g55.png",
+      "size": 38855,
+      "sha256": "e40105d2e68b59ff7a700b60c64e4ca8050741c39829854378d37260e8df69f0"
+    },
+    {
+      "path": "assets/_archive_20261027/u100_p1p2_20261025/p2_runs/20261025-152857-Unet-flow/eval_samples_ctrl/step0020000/eval200fix/g56.png",
+      "size": 51643,
+      "sha256": "afb24bb846bff259f6144af428623fdf9dc15f0701e3ef196141e47191aaa7af"
+    },
+    {
+      "path": "assets/_archive_20261027/u100_p1p2_20261025/p2_runs/20261025-152857-Unet-flow/eval_samples_ctrl/step0020000/eval200fix/g57.png",
+      "size": 42467,
+      "sha256": "bb0b62cb5d2d8ec45ac71bf955de5e593d7037f54e0b1d31fe39fc7744881c0c"
+    },
+    {
+      "path": "assets/_archive_20261027/u100_p1p2_20261025/p2_runs/20261025-152857-Unet-flow/eval_samples_ctrl/step0020000/eval200fix/g58.png",
+      "size": 44991,
+      "sha256": "7c8c299c500f17dccf084e0fc4dadc53492905f452c38243d13d42917509dd6f"
+    },
+    {
+      "path": "assets/_archive_20261027/u100_p1p2_20261025/p2_runs/20261025-152857-Unet-flow/eval_samples_ctrl/step0020000/eval200fix/g59.png",
+      "size": 36327,
+      "sha256": "4cd5ba969c208de395d4e646eafe7bded36886d2916f99256e0d1cd6cec35c92"
+    },
+    {
+      "path": "assets/_archive_20261027/u100_p1p2_20261025/p2_runs/20261025-152857-Unet-flow/eval_samples_ctrl/step0020000/eval200fix/g60.png",
+      "size": 34231,
+      "sha256": "a377635e863e223603c2a56588fd110fb20ecbead6b68633908dc912a629fed9"
+    },
+    {
+      "path": "assets/_archive_20261027/u100_p1p2_20261025/p2_runs/20261025-152857-Unet-flow/eval_samples_ctrl/step0020000/eval200fix/g61.png",
+      "size": 43868,
+      "sha256": "3b88edd680ba2268da730ab4a2c58a474db5f7dd48a136092cd4f591649f3eb2"
+    },
+    {
+      "path": "assets/_archive_20261027/u100_p1p2_20261025/p2_runs/20261025-152857-Unet-flow/eval_samples_ctrl/step0020000/eval200fix/g62.png",
+      "size": 46670,
+      "sha256": "84b4beac70f98b93a90c1482aa84d104487879dea2f8c6438dc61f1c52798f07"
+    },
+    {
+      "path": "assets/_archive_20261027/u100_p1p2_20261025/p2_runs/20261025-152857-Unet-flow/eval_samples_ctrl/step0020000/eval200fix/g63.png",
+      "size": 50783,
+      "sha256": "8e8099e13f90748629852f9da2dcc3939d55c92806d509acd492abb01a0cbb30"
+    },
+    {
+      "path": "assets/_archive_20261027/u100_p1p2_20261025/p2_runs/20261025-152857-Unet-flow/eval_samples_ctrl/step0020000/eval200fix/g64.png",
+      "size": 43756,
+      "sha256": "f9b45f98f3be7884169feb14536998310eb0125729bb26e215f750af712d25b0"
+    },
+    {
+      "path": "assets/_archive_20261027/u100_p1p2_20261025/p2_runs/20261025-152857-Unet-flow/eval_samples_ctrl/step0020000/eval200fix/g65.png",
+      "size": 39131,
+      "sha256": "5f29899e932746ccb9916e384c28feeb455ff95d5765d199a09572551f4d5c8b"
+    },
+    {
+      "path": "assets/_archive_20261027/u100_p1p2_20261025/p2_runs/20261025-152857-Unet-flow/eval_samples_ctrl/step0020000/eval200fix/g66.png",
+      "size": 54683,
+      "sha256": "0c1c455fe010e6cb46e7d66aac9b016d6a8de415a54eeb1082e67047e2f537ee"
+    },
+    {
+      "path": "assets/_archive_20261027/u100_p1p2_20261025/p2_runs/20261025-152857-Unet-flow/eval_samples_ctrl/step0020000/eval200fix/g67.png",
+      "size": 42524,
+      "sha256": "17184fdf1b6cfe877c3353bba190bc7be1a91e7dd63c5535b46aabcda6f6da39"
+    },
+    {
+      "path": "assets/_archive_20261027/u100_p1p2_20261025/p2_runs/20261025-152857-Unet-flow/eval_samples_ctrl/step0020000/eval200fix/g68.png",
+      "size": 32110,
+      "sha256": "2788ffbf7bfab8f74e708bb97d61b2ba52aa688d7ff3362d16ecaa09fa8d7af5"
+    },
+    {
+      "path": "assets/_archive_20261027/u100_p1p2_20261025/p2_runs/20261025-152857-Unet-flow/eval_samples_ctrl/step0020000/eval200fix/g69.png",
+      "size": 34715,
+      "sha256": "296327955fb1dab290aba27f55beda5394f9a71fd081a94bed95946701dbbd47"
+    },
+    {
+      "path": "assets/_archive_20261027/u100_p1p2_20261025/p2_runs/20261025-152857-Unet-flow/eval_samples_ctrl/step0020000/eval200fix/g70.png",
+      "size": 39131,
+      "sha256": "bdfae5759684bea96833536dc168cf852f07b9630edf7017249119dd22e20515"
+    },
+    {
+      "path": "assets/_archive_20261027/u100_p1p2_20261025/p2_runs/20261025-152857-Unet-flow/eval_samples_ctrl/step0020000/eval200fix/g71.png",
+      "size": 37291,
+      "sha256": "6bc6f63b2dce5e802df85363911b9e9a02d0971637758f898c436ce701aae7b4"
+    },
+    {
+      "path": "assets/_archive_20261027/u100_p1p2_20261025/p2_runs/20261025-152857-Unet-flow/eval_samples_ctrl/step0020000/eval200fix/g72.png",
+      "size": 52645,
+      "sha256": "f8c54eef6bd28bce2df2a8a255666c66f7535ce41ffbb2044baa2df7eae02890"
+    },
+    {
+      "path": "assets/_archive_20261027/u100_p1p2_20261025/p2_runs/20261025-152857-Unet-flow/eval_samples_ctrl/step0020000/eval200fix/g73.png",
+      "size": 37057,
+      "sha256": "bd016af9eaabf52bc2c158ab15622a03fecf848b947d1cc5a29b44f88e05a273"
+    },
+    {
+      "path": "assets/_archive_20261027/u100_p1p2_20261025/p2_runs/20261025-152857-Unet-flow/eval_samples_ctrl/step0020000/eval200fix/g74.png",
+      "size": 34349,
+      "sha256": "9600170d88f285d0dc5e760d99438f7e61f1291104b2285b1993a97fe87b80a8"
+    },
+    {
+      "path": "assets/_archive_20261027/u100_p1p2_20261025/p2_runs/20261025-152857-Unet-flow/eval_samples_ctrl/step0020000/eval200fix/g75.png",
+      "size": 39568,
+      "sha256": "acdd22907d84967815d8575eacd9dbc6141e1fa0fa42045b6535b1fd1d2bafde"
+    },
+    {
+      "path": "assets/_archive_20261027/u100_p1p2_20261025/p2_runs/20261025-152857-Unet-flow/eval_samples_ctrl/step0020000/eval200fix/g76.png",
+      "size": 38804,
+      "sha256": "0a6d763ce0d73f2e6d0562307bffa9932f7b4d6c6a4c368f147ecff976217b1f"
+    },
+    {
+      "path": "assets/_archive_20261027/u100_p1p2_20261025/p2_runs/20261025-152857-Unet-flow/eval_samples_ctrl/step0020000/eval200fix/g77.png",
+      "size": 41330,
+      "sha256": "29f2b7b6ee28ede62c7388973035254efec1a6a487dec1280ae1482e14dd411f"
+    },
+    {
+      "path": "assets/_archive_20261027/u100_p1p2_20261025/p2_runs/20261025-152857-Unet-flow/eval_samples_ctrl/step0020000/eval200fix/g78.png",
+      "size": 44584,
+      "sha256": "33a56e34fdd431efd5960281e950258c904c13215b77f156ab206fb318a6243e"
+    },
+    {
+      "path": "assets/_archive_20261027/u100_p1p2_20261025/p2_runs/20261025-152857-Unet-flow/eval_samples_ctrl/step0020000/eval200fix/g79.png",
+      "size": 52069,
+      "sha256": "57b72905db19e6c02099b6072924ceda755489a50295859c33cbab6e3186b73f"
+    },
+    {
+      "path": "assets/_archive_20261027/u100_p1p2_20261025/p2_runs/20261025-152857-Unet-flow/eval_samples_ctrl/step0020000/eval200fix/g80.png",
+      "size": 50079,
+      "sha256": "ba6093378383132e76a29ece2cfa832f648921cc66644c4751290e206932211d"
+    },
+    {
+      "path": "assets/_archive_20261027/u100_p1p2_20261025/p2_runs/20261025-152857-Unet-flow/eval_samples_ctrl/step0020000/eval200fix/g81.png",
+      "size": 47493,
+      "sha256": "f9af8f9e98bbc8d5f9fbdfe6fe700ab12e7213f9df6d2585a3b7fb4eb04f2d2b"
+    },
+    {
+      "path": "assets/_archive_20261027/u100_p1p2_20261025/p2_runs/20261025-152857-Unet-flow/eval_samples_ctrl/step0020000/eval200fix/g82.png",
+      "size": 39744,
+      "sha256": "287f228fe10154fa54fdf77e710c6b829bc4489c42c4beb9ff423d0d8e160a01"
+    },
+    {
+      "path": "assets/_archive_20261027/u100_p1p2_20261025/p2_runs/20261025-152857-Unet-flow/eval_samples_ctrl/step0020000/eval200fix/g83.png",
+      "size": 48851,
+      "sha256": "cdee169faf54b08d8bdbb5f868997f3435f2e06daca505a3d92c553f88100fe4"
+    },
+    {
+      "path": "assets/_archive_20261027/u100_p1p2_20261025/p2_runs/20261025-152857-Unet-flow/eval_samples_ctrl/step0020000/eval200fix/g84.png",
+      "size": 51172,
+      "sha256": "d0f9d22cc9c1545ad33fcbcdb65022c1582fef35899219bb8deebda0094212b2"
+    },
+    {
+      "path": "assets/_archive_20261027/u100_p1p2_20261025/p2_runs/20261025-152857-Unet-flow/eval_samples_ctrl/step0020000/eval200fix/g85.png",
+      "size": 41813,
+      "sha256": "62c34968cf404540dc34e4c9f68056921c2d44a5714b8b98acf279140ce49f2c"
+    },
+    {
+      "path": "assets/_archive_20261027/u100_p1p2_20261025/p2_runs/20261025-152857-Unet-flow/eval_samples_ctrl/step0020000/eval200fix/g86.png",
+      "size": 45554,
+      "sha256": "5cb92a326fdd5f40c2ad8a2f3d39415c8535a551471ef57e59284bc6f68b80c3"
+    },
+    {
+      "path": "assets/_archive_20261027/u100_p1p2_20261025/p2_runs/20261025-152857-Unet-flow/eval_samples_ctrl/step0020000/eval200fix/g87.png",
+      "size": 51368,
+      "sha256": "7034139c15d43694b3dee5dbdedd1a3c245dfa700e9580801d24fbe36f6887c0"
+    },
+    {
+      "path": "assets/_archive_20261027/u100_p1p2_20261025/p2_runs/20261025-152857-Unet-flow/eval_samples_ctrl/step0020000/eval200fix/g88.png",
+      "size": 43322,
+      "sha256": "4c081cfbcf7349cddf52e2a7cfcbfb9685a04aceea29e42987e48f9219a38b80"
+    },
+    {
+      "path": "assets/_archive_20261027/u100_p1p2_20261025/p2_runs/20261025-152857-Unet-flow/eval_samples_ctrl/step0020000/eval200fix/g89.png",
+      "size": 61549,
+      "sha256": "42ec058ddb48a579e4f366796418b3c7345565d820b88d135a53fccba41d1ee1"
+    },
+    {
+      "path": "assets/_archive_20261027/u100_p1p2_20261025/p2_runs/20261025-152857-Unet-flow/eval_samples_ctrl/step0020000/eval200fix/g90.png",
+      "size": 41401,
+      "sha256": "843d09838e62d6e40fafb7c8f1a3f7dd0f17f03ffc9398ea5942ba43f50d8616"
+    },
+    {
+      "path": "assets/_archive_20261027/u100_p1p2_20261025/p2_runs/20261025-152857-Unet-flow/eval_samples_ctrl/step0020000/eval200fix/g91.png",
+      "size": 47771,
+      "sha256": "7f0953f2623b97bd6197dfd2a05d8a642d3900b8355d3774e85d6dfe2371fd44"
+    },
+    {
+      "path": "assets/_archive_20261027/u100_p1p2_20261025/p2_runs/20261025-152857-Unet-flow/eval_samples_ctrl/step0020000/eval200fix/g92.png",
+      "size": 46642,
+      "sha256": "73102ca95681a0836db811477149aa82c53cdb4215038bf0e181da4036360935"
+    },
+    {
+      "path": "assets/_archive_20261027/u100_p1p2_20261025/p2_runs/20261025-152857-Unet-flow/eval_samples_ctrl/step0020000/eval200fix/g93.png",
+      "size": 27956,
+      "sha256": "a68049d3144976198ec994579089b0f017a5e4ae9c3f62d0c2a848dc158056ee"
+    },
+    {
+      "path": "assets/_archive_20261027/u100_p1p2_20261025/p2_runs/20261025-152857-Unet-flow/eval_samples_ctrl/step0020000/eval200fix/g94.png",
+      "size": 55470,
+      "sha256": "5f5b4177a571d5eb9d02d7d610d2413a0c083f8906a6d1c686153ec14f668411"
+    },
+    {
+      "path": "assets/_archive_20261027/u100_p1p2_20261025/p2_runs/20261025-152857-Unet-flow/eval_samples_ctrl/step0020000/eval200fix/g95.png",
+      "size": 54075,
+      "sha256": "8e3a5ea5316c7338758a7af7b575b2d1dc4d73847e26c0f9edddca260f4ba513"
+    },
+    {
+      "path": "assets/_archive_20261027/u100_p1p2_20261025/p2_runs/20261025-152857-Unet-flow/eval_samples_ctrl/step0020000/eval200fix/g96.png",
+      "size": 37893,
+      "sha256": "0ef116f81062ed00fe73c1aec598a7e72c2c90eb38747189c30a454f9c948de0"
+    },
+    {
+      "path": "assets/_archive_20261027/u100_p1p2_20261025/p2_runs/20261025-152857-Unet-flow/eval_samples_ctrl/step0020000/eval200fix/g97.png",
+      "size": 32293,
+      "sha256": "abb0bee138d8fb3c69795af117f40a38e9962521a2c098800d0026010b48050e"
+    },
+    {
+      "path": "assets/_archive_20261027/u100_p1p2_20261025/p2_runs/20261025-152857-Unet-flow/eval_samples_ctrl/step0020000/eval200fix/g98.png",
+      "size": 50233,
+      "sha256": "976066b9b92409f9595cd2873e0c2a2974d9883019090dc235014c6c9907595c"
+    },
+    {
+      "path": "assets/_archive_20261027/u100_p1p2_20261025/p2_runs/20261025-152857-Unet-flow/eval_samples_ctrl/step0020000/eval200fix/g99.png",
+      "size": 44203,
+      "sha256": "6180b725ec39a530f8b8ceff92c9cfb046e40de417976e3b85047a3e9e76fbf3"
+    },
+    {
+      "path": "assets/_archive_20261027/u100_p1p2_20261025/p2_runs/20261025-152857-Unet-flow/eval_samples_ctrl/step0020000/eval200fix/gt0.png",
+      "size": 2105,
+      "sha256": "9a8736ca3ce6b82b6f8683d230cd45f3de25acd1ad85cc9d9aade7f73e7af5db"
+    },
+    {
+      "path": "assets/_archive_20261027/u100_p1p2_20261025/p2_runs/20261025-152857-Unet-flow/eval_samples_ctrl/step0020000/eval200fix/gt1.png",
+      "size": 2740,
+      "sha256": "5498de95eeca01dd5aad1604682e04aeeb85af19e8cf6a394e951aa0b41a18e8"
+    },
+    {
+      "path": "assets/_archive_20261027/u100_p1p2_20261025/p2_runs/20261025-152857-Unet-flow/eval_samples_ctrl/step0020000/eval200fix/gt2.png",
+      "size": 2735,
+      "sha256": "2bdea1fd420bd3d99f7f7d8baf06b8355c41602121b21b7e475902a863cbd49f"
+    },
+    {
+      "path": "assets/_archive_20261027/u100_p1p2_20261025/p2_runs/20261025-152857-Unet-flow/eval_samples_ctrl/step0020000/eval200fix/gt3.png",
+      "size": 2643,
+      "sha256": "e35021d7b3cf70ae2b51825f8a7b7fcb1fc90d3cc6482f421f12da0832f4f17e"
+    },
+    {
+      "path": "assets/_archive_20261027/u100_p1p2_20261025/p2_runs/20261025-152857-Unet-flow/eval_samples_ctrl/step0020000/eval200fix/gt4.png",
+      "size": 2414,
+      "sha256": "37c3983d698e0f63262e79113f59544e57ff749bf63fb013b6984d68b33f22bb"
+    },
+    {
+      "path": "assets/_archive_20261027/u100_p1p2_20261025/p2_runs/20261025-152857-Unet-flow/eval_samples_ctrl/step0020000/eval200fix/gt5.png",
+      "size": 2232,
+      "sha256": "ab03c4e6324a2dae33689ab1f566bba664a8a7a82f932ca50a2e449ae9f7bc3e"
+    },
+    {
+      "path": "assets/_archive_20261027/u100_p1p2_20261025/p2_runs/20261025-152857-Unet-flow/eval_samples_ctrl/step0020000/eval200fix/gt6.png",
+      "size": 2659,
+      "sha256": "f976ceabb3b6d4f0bb8521940d6fe26dfddce8fff0f3a4716744358a70883aa7"
+    },
+    {
+      "path": "assets/_archive_20261027/u100_p1p2_20261025/p2_runs/20261025-152857-Unet-flow/eval_samples_ctrl/step0020000/eval200fix/gt7.png",
+      "size": 2330,
+      "sha256": "881b622aded3dba51d9f25ffebc8d51be14efd698fa64261452ab4b971cc5a08"
+    },
+    {
+      "path": "assets/_archive_20261027/u100_p1p2_20261025/p2_runs/20261025-152857-Unet-flow/eval_samples_ctrl/step0020000/eval200fix/gt8.png",
+      "size": 2824,
+      "sha256": "c17d16d0c55dc095a3634c12b809bc52755ef1ec25dba1af6179a7b332da45b0"
+    },
+    {
+      "path": "assets/_archive_20261027/u100_p1p2_20261025/p2_runs/20261025-152857-Unet-flow/eval_samples_ctrl/step0020000/eval200fix/gt9.png",
+      "size": 2339,
+      "sha256": "43f041c9b435c8e3e943b54e5ff008c837ff3d188144a947b4ce98b92917e02e"
+    },
+    {
+      "path": "assets/_archive_20261027/u100_p1p2_20261025/p2_runs/20261025-152857-Unet-flow/eval_samples_ctrl/step0020000/eval200fix/gt10.png",
+      "size": 1931,
+      "sha256": "d5f6e7d970e7a12349351d9997550fde552986660e541c1fcbf9abb098b5e607"
+    },
+    {
+      "path": "assets/_archive_20261027/u100_p1p2_20261025/p2_runs/20261025-152857-Unet-flow/eval_samples_ctrl/step0020000/eval200fix/gt11.png",
+      "size": 2774,
+      "sha256": "c93ee876e61fcd68858bd7a7ae7213a81a183c25c513b0c9ba4725c772687672"
+    },
+    {
+      "path": "assets/_archive_20261027/u100_p1p2_20261025/p2_runs/20261025-152857-Unet-flow/eval_samples_ctrl/step0020000/eval200fix/gt12.png",
+      "size": 2288,
+      "sha256": "3633189ccc88fefbab48c9698d7f997c09380ae80c35f0cb03c01c5c8e8190cf"
+    },
+    {
+      "path": "assets/_archive_20261027/u100_p1p2_20261025/p2_runs/20261025-152857-Unet-flow/eval_samples_ctrl/step0020000/eval200fix/gt13.png",
+      "size": 2512,
+      "sha256": "3eec9e1b7871adf9e74829b79d712e84213f5eb0814086ff4c9602d1335e0338"
+    },
+    {
+      "path": "assets/_archive_20261027/u100_p1p2_20261025/p2_runs/20261025-152857-Unet-flow/eval_samples_ctrl/step0020000/eval200fix/gt14.png",
+      "size": 2324,
+      "sha256": "1475d5d99dfad7d92ae5c6fea529b34b7f30ed6f455b2c92425872c29dec5214"
+    },
+    {
+      "path": "assets/_archive_20261027/u100_p1p2_20261025/p2_runs/20261025-152857-Unet-flow/eval_samples_ctrl/step0020000/eval200fix/gt15.png",
+      "size": 2096,
+      "sha256": "d0ca7f604e7ef594e939d8f14f78b4d745ad0a3d01cababd4074f8771793f216"
+    },
+    {
+      "path": "assets/_archive_20261027/u100_p1p2_20261025/p2_runs/20261025-152857-Unet-flow/eval_samples_ctrl/step0020000/eval200fix/gt16.png",
+      "size": 2750,
+      "sha256": "843de6b34970a26365a0fd7bcfd19e9d7a284d111ef466a40f07a4ea927b9869"
+    },
+    {
+      "path": "assets/_archive_20261027/u100_p1p2_20261025/p2_runs/20261025-152857-Unet-flow/eval_samples_ctrl/step0020000/eval200fix/gt17.png",
+      "size": 2488,
+      "sha256": "9483b0933a643686ee0ab9119d21c8d9e467cf3b62adbf2ea2497a1dbdf3ef20"
+    },
+    {
+      "path": "assets/_archive_20261027/u100_p1p2_20261025/p2_runs/20261025-152857-Unet-flow/eval_samples_ctrl/step0020000/eval200fix/gt18.png",
+      "size": 2135,
+      "sha256": "1a77a1c67f6b556e6b70d0a71add698e49a6909ede1c3edd1bd4d54af2a0aa47"
+    },
+    {
+      "path": "assets/_archive_20261027/u100_p1p2_20261025/p2_runs/20261025-152857-Unet-flow/eval_samples_ctrl/step0020000/eval200fix/gt19.png",
+      "size": 1836,
+      "sha256": "1fed4566d60d02c38bccac0bc950ab33d244f928f6b71a18f755af3e2d9c2587"
+    },
+    {
+      "path": "assets/_archive_20261027/u100_p1p2_20261025/p2_runs/20261025-152857-Unet-flow/eval_samples_ctrl/step0020000/eval200fix/gt20.png",
+      "size": 3187,
+      "sha256": "a4ade0c33b87bdf709c87fde7b77daf16842006d6cf4fe4d526433aaaeff9c96"
+    },
+    {
+      "path": "assets/_archive_20261027/u100_p1p2_20261025/p2_runs/20261025-152857-Unet-flow/eval_samples_ctrl/step0020000/eval200fix/gt21.png",
+      "size": 3010,
+      "sha256": "2d9707b0081547c2988dcb96e339cba613918685ece0221894bd698c97dfb7e1"
+    },
+    {
+      "path": "assets/_archive_20261027/u100_p1p2_20261025/p2_runs/20261025-152857-Unet-flow/eval_samples_ctrl/step0020000/eval200fix/gt22.png",
+      "size": 2844,
+      "sha256": "f61b6a199b72111590958a66d8f9d558e0344e2a71aed6a161b91a9aa9a20607"
+    },
+    {
+      "path": "assets/_archive_20261027/u100_p1p2_20261025/p2_runs/20261025-152857-Unet-flow/eval_samples_ctrl/step0020000/eval200fix/gt23.png",
+      "size": 1948,
+      "sha256": "9dfc516d9ff477fed293c13135dd676224a9fe21a1e585c89c479c75ad0e7ff5"
+    },
+    {
+      "path": "assets/_archive_20261027/u100_p1p2_20261025/p2_runs/20261025-152857-Unet-flow/eval_samples_ctrl/step0020000/eval200fix/gt24.png",
+      "size": 2360,
+      "sha256": "47ec2c838124bbe96e98fd98cf80afc0d75976e9a4690f8c83f349b101fe5263"
+    },
+    {
+      "path": "assets/_archive_20261027/u100_p1p2_20261025/p2_runs/20261025-152857-Unet-flow/eval_samples_ctrl/step0020000/eval200fix/gt25.png",
+      "size": 2626,
+      "sha256": "97f555da9b2c13469b67b1423edfc7033e1881b30c55129c62b186b1110268c7"
+    },
+    {
+      "path": "assets/_archive_20261027/u100_p1p2_20261025/p2_runs/20261025-152857-Unet-flow/eval_samples_ctrl/step0020000/eval200fix/gt26.png",
+      "size": 2132,
+      "sha256": "eb720d85c4a307ff0ace88b175126832d1061143840580171382972dcecfecd6"
+    },
+    {
+      "path": "assets/_archive_20261027/u100_p1p2_20261025/p2_runs/20261025-152857-Unet-flow/eval_samples_ctrl/step0020000/eval200fix/gt27.png",
+      "size": 3388,
+      "sha256": "725124d676c3a45a24fcf35f67235e285f3590964c5992689c5a466e91dfbda4"
+    },
+    {
+      "path": "assets/_archive_20261027/u100_p1p2_20261025/p2_runs/20261025-152857-Unet-flow/eval_samples_ctrl/step0020000/eval200fix/gt28.png",
+      "size": 2998,
+      "sha256": "e200c168176d176986f39a14606c8f4e7c4f625cc8fd6b531d4aa5cb628403d1"
+    },
+    {
+      "path": "assets/_archive_20261027/u100_p1p2_20261025/p2_runs/20261025-152857-Unet-flow/eval_samples_ctrl/step0020000/eval200fix/gt29.png",
+      "size": 3005,
+      "sha256": "e809f9a31d0c05feeea169f72867f0433d4985ae056efdfb035621b07a7c1b95"
+    },
+    {
+      "path": "assets/_archive_20261027/u100_p1p2_20261025/p2_runs/20261025-152857-Unet-flow/eval_samples_ctrl/step0020000/eval200fix/gt30.png",
+      "size": 2933,
+      "sha256": "07bd2474e73a46585f6ff716db8961ab6e2d46ce73e41e3fa0e9ede6756d27fc"
+    },
+    {
+      "path": "assets/_archive_20261027/u100_p1p2_20261025/p2_runs/20261025-152857-Unet-flow/eval_samples_ctrl/step0020000/eval200fix/gt31.png",
+      "size": 3535,
+      "sha256": "e7eaaf358db118425e0094a80fcd5427dea98cf2029397a7df65feb5799f49ae"
+    },
+    {
+      "path": "assets/_archive_20261027/u100_p1p2_20261025/p2_runs/20261025-152857-Unet-flow/eval_samples_ctrl/step0020000/eval200fix/gt32.png",
+      "size": 2502,
+      "sha256": "5f2c99c88de0eb478c1aef7d87f5ebf0de82fd88cdb55e3c981edbe4517e7603"
+    },
+    {
+      "path": "assets/_archive_20261027/u100_p1p2_20261025/p2_runs/20261025-152857-Unet-flow/eval_samples_ctrl/step0020000/eval200fix/gt33.png",
+      "size": 3407,
+      "sha256": "d2e62e910e36f23df38290aebb9c01bbb436143cbb93be18a6b756ec6724a63b"
+    },
+    {
+      "path": "assets/_archive_20261027/u100_p1p2_20261025/p2_runs/20261025-152857-Unet-flow/eval_samples_ctrl/step0020000/eval200fix/gt34.png",
+      "size": 3112,
+      "sha256": "5189fb4a8fea68a0e2c8be724b4eb4713769b82d489608bb63da7225a8a5ebad"
+    },
+    {
+      "path": "assets/_archive_20261027/u100_p1p2_20261025/p2_runs/20261025-152857-Unet-flow/eval_samples_ctrl/step0020000/eval200fix/gt35.png",
+      "size": 2870,
+      "sha256": "fb7b2330a021ea2ac52d3ad7e3ec03b71a76f7773f5df108105fa479f0441c5d"
+    },
+    {
+      "path": "assets/_archive_20261027/u100_p1p2_20261025/p2_runs/20261025-152857-Unet-flow/eval_samples_ctrl/step0020000/eval200fix/gt36.png",
+      "size": 2058,
+      "sha256": "1e099de9f6e2a486726af37cc945ea1dc04e4dc834133b732b0746281b5803ca"
+    },
+    {
+      "path": "assets/_archive_20261027/u100_p1p2_20261025/p2_runs/20261025-152857-Unet-flow/eval_samples_ctrl/step0020000/eval200fix/gt37.png",
+      "size": 2029,
+      "sha256": "239c3d360195139e16d99b5ee85d047b5156deb10677bef322a8b07c3ae94abd"
+    },
+    {
+      "path": "assets/_archive_20261027/u100_p1p2_20261025/p2_runs/20261025-152857-Unet-flow/eval_samples_ctrl/step0020000/eval200fix/gt38.png",
+      "size": 3526,
+      "sha256": "7a7ecfcf38a80e5a8487d457cf69ba8ed69bc91292bed08a60b6be0f9bd69f52"
+    },
+    {
+      "path": "assets/_archive_20261027/u100_p1p2_20261025/p2_runs/20261025-152857-Unet-flow/eval_samples_ctrl/step0020000/eval200fix/gt39.png",
+      "size": 2317,
+      "sha256": "0a1f4fa21f19405578d4061a09d8e719762bf3355ee854867ab23e83b2fb28fc"
+    },
+    {
+      "path": "assets/_archive_20261027/u100_p1p2_20261025/p2_runs/20261025-152857-Unet-flow/eval_samples_ctrl/step0020000/eval200fix/gt40.png",
+      "size": 2386,
+      "sha256": "5f0d6faf38c8bedcc9bd5882aff31356b3439bca6f25e0b09ceaf865d44ea2c4"
+    },
+    {
+      "path": "assets/_archive_20261027/u100_p1p2_20261025/p2_runs/20261025-152857-Unet-flow/eval_samples_ctrl/step0020000/eval200fix/gt41.png",
+      "size": 3113,
+      "sha256": "904ea9cfd2e038eaf3350d47154f087cf7d04c671e82d9827e59899b1c934030"
+    },
+    {
+      "path": "assets/_archive_20261027/u100_p1p2_20261025/p2_runs/20261025-152857-Unet-flow/eval_samples_ctrl/step0020000/eval200fix/gt42.png",
+      "size": 1903,
+      "sha256": "bb1161f9884c258e1962800a66c937ad494df94186c0830c5108b2b27025ae6c"
+    },
+    {
+      "path": "assets/_archive_20261027/u100_p1p2_20261025/p2_runs/20261025-152857-Unet-flow/eval_samples_ctrl/step0020000/eval200fix/gt43.png",
+      "size": 1925,
+      "sha256": "0692f1c0194737acebd40f202862300fef9d93b8f8fe612273064d7697d477f6"
+    },
+    {
+      "path": "assets/_archive_20261027/u100_p1p2_20261025/p2_runs/20261025-152857-Unet-flow/eval_samples_ctrl/step0020000/eval200fix/gt44.png",
+      "size": 2715,
+      "sha256": "6fdd00c9745f2964e9e7bdc7869d28fa8808fdc679259d88420d801b0c0f64c6"
+    },
+    {
+      "path": "assets/_archive_20261027/u100_p1p2_20261025/p2_runs/20261025-152857-Unet-flow/eval_samples_ctrl/step0020000/eval200fix/gt45.png",
+      "size": 1958,
+      "sha256": "73230df2f8807d7a27dd2b7fffff88dd8cac611f07eddf37cda781fcbf5fd9b8"
+    },
+    {
+      "path": "assets/_archive_20261027/u100_p1p2_20261025/p2_runs/20261025-152857-Unet-flow/eval_samples_ctrl/step0020000/eval200fix/gt46.png",
+      "size": 1544,
+      "sha256": "af0de449dffabf6e318197cac9ef967d37b6c3a0deaede2694d5313bca03b9e5"
+    },
+    {
+      "path": "assets/_archive_20261027/u100_p1p2_20261025/p2_runs/20261025-152857-Unet-flow/eval_samples_ctrl/step0020000/eval200fix/gt47.png",
+      "size": 2290,
+      "sha256": "5d3e5050931432a70f2ae2913328763cb780032f98df96ade004e7d0987fc79c"
+    },
+    {
+      "path": "assets/_archive_20261027/u100_p1p2_20261025/p2_runs/20261025-152857-Unet-flow/eval_samples_ctrl/step0020000/eval200fix/gt48.png",
+      "size": 15668,
+      "sha256": "1624f8f62e03f5be590ce38e9fe002eac163a7c4de885171f5740e2072b2d126"
+    },
+    {
+      "path": "assets/_archive_20261027/u100_p1p2_20261025/p2_runs/20261025-152857-Unet-flow/eval_samples_ctrl/step0020000/eval200fix/gt49.png",
+      "size": 2296,
+      "sha256": "4593745d1aa6e4bad44a1403adf9fdb43bdc79c4742b4c31b54302a63d78748a"
+    },
+    {
+      "path": "assets/_archive_20261027/u100_p1p2_20261025/p2_runs/20261025-152857-Unet-flow/eval_samples_ctrl/step0020000/eval200fix/gt50.png",
+      "size": 2695,
+      "sha256": "7cdf3814146d9e90700599d12ffbdd425698d8fa81f8b2924a84da5182c8195d"
+    },
+    {
+      "path": "assets/_archive_20261027/u100_p1p2_20261025/p2_runs/20261025-152857-Unet-flow/eval_samples_ctrl/step0020000/eval200fix/gt51.png",
+      "size": 9046,
+      "sha256": "9c89bf25362fe8cf88e98063ac8a18ad33df757b7a8dd24b21339d30d7ae68a3"
+    },
+    {
+      "path": "assets/_archive_20261027/u100_p1p2_20261025/p2_runs/20261025-152857-Unet-flow/eval_samples_ctrl/step0020000/eval200fix/gt52.png",
+      "size": 2048,
+      "sha256": "27fbc3eb662ff81ff90df715bc6870ff9bbe8947a0665aef1e5fb3c2fe6e4326"
+    },
+    {
+      "path": "assets/_archive_20261027/u100_p1p2_20261025/p2_runs/20261025-152857-Unet-flow/eval_samples_ctrl/step0020000/eval200fix/gt53.png",
+      "size": 2891,
+      "sha256": "21034345ab316f70200ee9aa0c35474e9b9ba5e6dc23560689b2438cd7a0d4bd"
+    },
+    {
+      "path": "assets/_archive_20261027/u100_p1p2_20261025/p2_runs/20261025-152857-Unet-flow/eval_samples_ctrl/step0020000/eval200fix/gt54.png",
+      "size": 3007,
+      "sha256": "4a212cffeaae358cc019aede9455b51ef00485ff3cd05d515cafd7d90acbeb0d"
+    },
+    {
+      "path": "assets/_archive_20261027/u100_p1p2_20261025/p2_runs/20261025-152857-Unet-flow/eval_samples_ctrl/step0020000/eval200fix/gt55.png",
+      "size": 2485,
+      "sha256": "2293c209a2814ca55238b13984a39645f156c9ad069b0dec2846c49793963011"
+    },
+    {
+      "path": "assets/_archive_20261027/u100_p1p2_20261025/p2_runs/20261025-152857-Unet-flow/eval_samples_ctrl/step0020000/eval200fix/gt56.png",
+      "size": 3413,
+      "sha256": "843222fb0a7567f444ecb8c7ae500be4ed7101fe140d58f1d0551491329883ad"
+    },
+    {
+      "path": "assets/_archive_20261027/u100_p1p2_20261025/p2_runs/20261025-152857-Unet-flow/eval_samples_ctrl/step0020000/eval200fix/gt57.png",
+      "size": 2529,
+      "sha256": "0f6786211e396cbd2629e33a3f6748a8da66d9f9031f2b6bc7106cc207e5c576"
+    },
+    {
+      "path": "assets/_archive_20261027/u100_p1p2_20261025/p2_runs/20261025-152857-Unet-flow/eval_samples_ctrl/step0020000/eval200fix/gt58.png",
+      "size": 2421,
+      "sha256": "bfa38054acd734bfdabc19ff640a0b515b642aeea9a86e5f3bc3a83148eb23d3"
+    },
+    {
+      "path": "assets/_archive_20261027/u100_p1p2_20261025/p2_runs/20261025-152857-Unet-flow/eval_samples_ctrl/step0020000/eval200fix/gt59.png",
+      "size": 1939,
+      "sha256": "5ddf61fc1cf349e32b2ff3170ecf53670c91d2618333f2000dc8728b1ab6bb39"
+    },
+    {
+      "path": "assets/_archive_20261027/u100_p1p2_20261025/p2_runs/20261025-152857-Unet-flow/eval_samples_ctrl/step0020000/eval200fix/gt60.png",
+      "size": 2253,
+      "sha256": "f79677d8a830e45d49553268ade5c861ed4211a2472c645b5cdf1caba814abe2"
+    },
+    {
+      "path": "assets/_archive_20261027/u100_p1p2_20261025/p2_runs/20261025-152857-Unet-flow/eval_samples_ctrl/step0020000/eval200fix/gt61.png",
+      "size": 2679,
+      "sha256": "c0110cb198aa5a6ad1fb64c56d476a054b79456b1e89ff42b8fe5f0d9bb598d4"
+    },
+    {
+      "path": "assets/_archive_20261027/u100_p1p2_20261025/p2_runs/20261025-152857-Unet-flow/eval_samples_ctrl/step0020000/eval200fix/gt62.png",
+      "size": 3098,
+      "sha256": "b64de29904fefa2b58a4ff86f27266b8d620b1c8697a6bc1bd0cbc893699ad88"
+    },
+    {
+      "path": "assets/_archive_20261027/u100_p1p2_20261025/p2_runs/20261025-152857-Unet-flow/eval_samples_ctrl/step0020000/eval200fix/gt63.png",
+      "size": 2770,
+      "sha256": "b64851212f88683fd98eed9036291a6f2c57155f5edabd16892573a792b7ed0b"
+    },
+    {
+      "path": "assets/_archive_20261027/u100_p1p2_20261025/p2_runs/20261025-152857-Unet-flow/eval_samples_ctrl/step0020000/eval200fix/gt64.png",
+      "size": 2647,
+      "sha256": "7a49105cafc680e5f23921a48b492f7481b6f5f61526ae0c81b0e45e0774fbca"
+    },
+    {
+      "path": "assets/_archive_20261027/u100_p1p2_20261025/p2_runs/20261025-152857-Unet-flow/eval_samples_ctrl/step0020000/eval200fix/gt65.png",
+      "size": 2075,
+      "sha256": "85c6200d8ebe499320865b2d48fc0b74dcccd17e3c5c68b7db206166bae0cd6b"
+    },
+    {
+      "path": "assets/_archive_20261027/u100_p1p2_20261025/p2_runs/20261025-152857-Unet-flow/eval_samples_ctrl/step0020000/eval200fix/gt66.png",
+      "size": 2784,
+      "sha256": "f443834bed2296ed78807c5dc12d4356047d6990e6c30f1191c0b8b14f10bee4"
+    },
+    {
+      "path": "assets/_archive_20261027/u100_p1p2_20261025/p2_runs/20261025-152857-Unet-flow/eval_samples_ctrl/step0020000/eval200fix/gt67.png",
+      "size": 2700,
+      "sha256": "7421dd15ea102d356d8ff71bc9c0836a54675fbc9c295761c7897fc0a1c4190c"
+    },
+    {
+      "path": "assets/_archive_20261027/u100_p1p2_20261025/p2_runs/20261025-152857-Unet-flow/eval_samples_ctrl/step0020000/eval200fix/gt68.png",
+      "size": 2516,
+      "sha256": "42c8ec3207f48eb902e3fb2ea1960cc7f8347c77c3edfbcc9b21b2c2ce097a3a"
+    },
+    {
+      "path": "assets/_archive_20261027/u100_p1p2_20261025/p2_runs/20261025-152857-Unet-flow/eval_samples_ctrl/step0020000/eval200fix/gt69.png",
+      "size": 2041,
+      "sha256": "3b08525efdf1ffbeb38465e11cb8f06e6485e0a2dbca467bdc5c0436ab819a45"
+    },
+    {
+      "path": "assets/_archive_20261027/u100_p1p2_20261025/p2_runs/20261025-152857-Unet-flow/eval_samples_ctrl/step0020000/eval200fix/gt70.png",
+      "size": 2023,
+      "sha256": "3039e45d5b0951584b66584e1dd0b57eb692e5c58db86e23db70519c6ce5a3cb"
+    },
+    {
+      "path": "assets/_archive_20261027/u100_p1p2_20261025/p2_runs/20261025-152857-Unet-flow/eval_samples_ctrl/step0020000/eval200fix/gt71.png",
+      "size": 2676,
+      "sha256": "e3a5cffeb674b161a21a0ddb96335fdf6ffe59383e79ce01217dcc2ec3821860"
+    },
+    {
+      "path": "assets/_archive_20261027/u100_p1p2_20261025/p2_runs/20261025-152857-Unet-flow/eval_samples_ctrl/step0020000/eval200fix/gt72.png",
+      "size": 2908,
+      "sha256": "53302fcdcce73e70e4a7a123bc17af76dbbde1e813bb1e0b9aefdf2d1b684524"
+    },
+    {
+      "path": "assets/_archive_20261027/u100_p1p2_20261025/p2_runs/20261025-152857-Unet-flow/eval_samples_ctrl/step0020000/eval200fix/gt73.png",
+      "size": 2184,
+      "sha256": "2bd042d3e36cadc27b24965e19a205fddaeb32f2b0f80d96cd1b06080e3d198f"
+    },
+    {
+      "path": "assets/_archive_20261027/u100_p1p2_20261025/p2_runs/20261025-152857-Unet-flow/eval_samples_ctrl/step0020000/eval200fix/gt74.png",
+      "size": 2020,
+      "sha256": "ebf59865bba808827039018e78c624abb7b9a7e2497c40c05aba57caad79568f"
+    },
+    {
+      "path": "assets/_archive_20261027/u100_p1p2_20261025/p2_runs/20261025-152857-Unet-flow/eval_samples_ctrl/step0020000/eval200fix/gt75.png",
+      "size": 2327,
+      "sha256": "36056f1b0a5079e636993a78107f2f51627956a8e1f1e30bc2a2f287bd94f588"
+    },
+    {
+      "path": "assets/_archive_20261027/u100_p1p2_20261025/p2_runs/20261025-152857-Unet-flow/eval_samples_ctrl/step0020000/eval200fix/gt76.png",
+      "size": 2149,
+      "sha256": "9a935cd64ca85917ba579c1b38bbd9a9f7eb4214ee434e7921ccaf59a2ab07a4"
+    },
+    {
+      "path": "assets/_archive_20261027/u100_p1p2_20261025/p2_runs/20261025-152857-Unet-flow/eval_samples_ctrl/step0020000/eval200fix/gt77.png",
+      "size": 2602,
+      "sha256": "f0ec4a137e77bd8ffb2dcbedd1deec333028efef732fffd789943fc22a1730ee"
+    },
+    {
+      "path": "assets/_archive_20261027/u100_p1p2_20261025/p2_runs/20261025-152857-Unet-flow/eval_samples_ctrl/step0020000/eval200fix/gt78.png",
+      "size": 3279,
+      "sha256": "2e8209579ce0eca6490c7a9f848aa273979c7081868b83a73d2e74a07246c4fe"
+    },
+    {
+      "path": "assets/_archive_20261027/u100_p1p2_20261025/p2_runs/20261025-152857-Unet-flow/eval_samples_ctrl/step0020000/eval200fix/gt79.png",
+      "size": 2792,
+      "sha256": "dbd74cfefc1fc35366c67c4ac5db47bec61ff856156c0241f400dd018827672c"
+    },
+    {
+      "path": "assets/_archive_20261027/u100_p1p2_20261025/p2_runs/20261025-152857-Unet-flow/eval_samples_ctrl/step0020000/eval200fix/gt80.png",
+      "size": 2983,
+      "sha256": "4c6aff175a620a1ae343c2ae82c80b07e8fb53b4a3a5dc541ead38470a714e6a"
+    },
+    {
+      "path": "assets/_archive_20261027/u100_p1p2_20261025/p2_runs/20261025-152857-Unet-flow/eval_samples_ctrl/step0020000/eval200fix/gt81.png",
+      "size": 2903,
+      "sha256": "672036ae63bad94f9f0b04b97434e576edf959ca244e102e7e905dc88746792d"
+    },
+    {
+      "path": "assets/_archive_20261027/u100_p1p2_20261025/p2_runs/20261025-152857-Unet-flow/eval_samples_ctrl/step0020000/eval200fix/gt82.png",
+      "size": 2662,
+      "sha256": "07eeda701e8684ca06c995617a0c86c6b411b77c70da0dddffb4c1f95164a6ad"
+    },
+    {
+      "path": "assets/_archive_20261027/u100_p1p2_20261025/p2_runs/20261025-152857-Unet-flow/eval_samples_ctrl/step0020000/eval200fix/gt83.png",
+      "size": 2591,
+      "sha256": "f086d9d42e26052ccf455e3985570ff95182c1ce2442df7c821ae6691e887b57"
+    },
+    {
+      "path": "assets/_archive_20261027/u100_p1p2_20261025/p2_runs/20261025-152857-Unet-flow/eval_samples_ctrl/step0020000/eval200fix/gt84.png",
+      "size": 2548,
+      "sha256": "fbca127834cda8c88ce542cb551a62e2b906b86a36314f272947b17bc2321a72"
+    },
+    {
+      "path": "assets/_archive_20261027/u100_p1p2_20261025/p2_runs/20261025-152857-Unet-flow/eval_samples_ctrl/step0020000/eval200fix/gt85.png",
+      "size": 10292,
+      "sha256": "1422b20772014fcfc3f631d8265c0563dfab6aa315c89df5a967797c31ce81c9"
+    },
+    {
+      "path": "assets/_archive_20261027/u100_p1p2_20261025/p2_runs/20261025-152857-Unet-flow/eval_samples_ctrl/step0020000/eval200fix/gt86.png",
+      "size": 2832,
+      "sha256": "5f8a378a5833b1be6cd3d524a5aff1bb8a65dfb4fe8b93905bc96ca2aa55b208"
+    },
+    {
+      "path": "assets/_archive_20261027/u100_p1p2_20261025/p2_runs/20261025-152857-Unet-flow/eval_samples_ctrl/step0020000/eval200fix/gt87.png",
+      "size": 2853,
+      "sha256": "249af59f934bbb178308c67a45a4b07761a4dfaa221307f524b3639e76fdedc2"
+    },
+    {
+      "path": "assets/_archive_20261027/u100_p1p2_20261025/p2_runs/20261025-152857-Unet-flow/eval_samples_ctrl/step0020000/eval200fix/gt88.png",
+      "size": 3583,
+      "sha256": "4a71ea06f56eff8c6b75b19ddcd4ca017dbb6bd2d3a1ad5fa767cdf95281ed73"
+    },
+    {
+      "path": "assets/_archive_20261027/u100_p1p2_20261025/p2_runs/20261025-152857-Unet-flow/eval_samples_ctrl/step0020000/eval200fix/gt89.png",
+      "size": 3152,
+      "sha256": "1b213ecc07cb4ccfc5e422be482ed29e0b962399875bcc36ea0bcbaf6b62034b"
+    },
+    {
+      "path": "assets/_archive_20261027/u100_p1p2_20261025/p2_runs/20261025-152857-Unet-flow/eval_samples_ctrl/step0020000/eval200fix/gt90.png",
+      "size": 2838,
+      "sha256": "1f58115cd28669af3a5f975928229d2d441d945c908cd24cc5187eb91b4bb477"
+    },
+    {
+      "path": "assets/_archive_20261027/u100_p1p2_20261025/p2_runs/20261025-152857-Unet-flow/eval_samples_ctrl/step0020000/eval200fix/gt91.png",
+      "size": 2504,
+      "sha256": "fca08d92a37131d7ede7046bc357fa0f75ea6d8483f180ed5d53e4c5be1cc7ad"
+    },
+    {
+      "path": "assets/_archive_20261027/u100_p1p2_20261025/p2_runs/20261025-152857-Unet-flow/eval_samples_ctrl/step0020000/eval200fix/gt92.png",
+      "size": 3089,
+      "sha256": "46bdb4e3ae5f2b5d39aa606ae934d0eceff0a0eb32cc77282988d197d9185dae"
+    },
+    {
+      "path": "assets/_archive_20261027/u100_p1p2_20261025/p2_runs/20261025-152857-Unet-flow/eval_samples_ctrl/step0020000/eval200fix/gt93.png",
+      "size": 2441,
+      "sha256": "c8c3f115591cc2e0cd60d2824c760638b60f5252b47a7b634b413ac3df49bd40"
+    },
+    {
+      "path": "assets/_archive_20261027/u100_p1p2_20261025/p2_runs/20261025-152857-Unet-flow/eval_samples_ctrl/step0020000/eval200fix/gt94.png",
+      "size": 3418,
+      "sha256": "18d3945591c48e77199cd695d6ca8bc13361890c2694201d4975b7abd045c06b"
+    },
+    {
+      "path": "assets/_archive_20261027/u100_p1p2_20261025/p2_runs/20261025-152857-Unet-flow/eval_samples_ctrl/step0020000/eval200fix/gt95.png",
+      "size": 3185,
+      "sha256": "e7a9ac6e73f8487968c066ae38e55575386cea186ad6873bac50c74ec068fcd9"
+    },
+    {
+      "path": "assets/_archive_20261027/u100_p1p2_20261025/p2_runs/20261025-152857-Unet-flow/eval_samples_ctrl/step0020000/eval200fix/gt96.png",
+      "size": 2625,
+      "sha256": "f88edbd1581c8d10ea311001e567fd9d5c60f0bfc27d60320327574f1d42477c"
+    },
+    {
+      "path": "assets/_archive_20261027/u100_p1p2_20261025/p2_runs/20261025-152857-Unet-flow/eval_samples_ctrl/step0020000/eval200fix/gt97.png",
+      "size": 2077,
+      "sha256": "135c9acd11a407ec808607a3d8bbc1bf5fc00a0f95d9430fc214353d10269233"
+    },
+    {
+      "path": "assets/_archive_20261027/u100_p1p2_20261025/p2_runs/20261025-152857-Unet-flow/eval_samples_ctrl/step0020000/eval200fix/gt98.png",
+      "size": 3268,
+      "sha256": "1b2c4d7dae84d6d7a916586489046ce83ce8a166f33a4dba8d29281f48e90595"
+    },
+    {
+      "path": "assets/_archive_20261027/u100_p1p2_20261025/p2_runs/20261025-152857-Unet-flow/eval_samples_ctrl/step0020000/eval200fix/gt99.png",
+      "size": 3331,
+      "sha256": "0ebe262605040799eae076e1efdf71d627827505d3fcd7bb85930aeb335e8230"
+    }
+  ]
+}

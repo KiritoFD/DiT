@@ -1,0 +1,37 @@
+{
+  "job": {
+    "arm": "S1",
+    "step": 50000,
+    "protocol": "heldout",
+    "csv": "assets/u100_pretrain_20261024/validation_val100.csv",
+    "samples": "assets/style_matrix_20261027/matrix64/4090/execution/runs/S1/evaluations/0050000/heldout/eval_samples_ctrl/step0050000/eval200fix",
+    "n": 100,
+    "csv_sha256": "41d2ad62dc4c175b28e93431bfcb54d8b90f746b343ec45b299af8f3bea1fa1f",
+    "identity": {
+      "checkpoint_sha256": "9d9b35482512a593c131a7ea15c4d33f54602eeeba44b535aff1bc9a1f9d4656",
+      "csv_sha256": "41d2ad62dc4c175b28e93431bfcb54d8b90f746b343ec45b299af8f3bea1fa1f",
+      "ema": true,
+      "writer_space": "top10-row",
+      "decoder_path": "pretrained_models/sd-vae-ft-ema",
+      "step": 50000
+    }
+  },
+  "paired_panel": {
+    "hwd": 0.8946686744689941,
+    "per_writer": {
+      "何绍基": 0.7605324983596802,
+      "文徵明": 0.8663954734802246,
+      "柳公权": 0.9147242903709412,
+      "欧阳询": 0.6480244994163513,
+      "王羲之": 0.8011696338653564,
+      "米芾": 0.7830954790115356,
+      "苏轼": 1.7180461883544922,
+      "褚遂良": 0.8579864501953125,
+      "赵孟頫": 0.778715968132019,
+      "颜真卿": 0.8179962635040283
+    },
+    "n": 100,
+    "writers": 10
+  },
+  "interpretation": "Official HWD mechanism on square Chinese tiles; paired GT composition, not unseen-source or aesthetic proof"
+}

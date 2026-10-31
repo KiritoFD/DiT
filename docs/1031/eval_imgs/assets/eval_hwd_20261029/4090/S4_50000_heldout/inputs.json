@@ -1,0 +1,1021 @@
+{
+  "job": {
+    "arm": "S4",
+    "step": 50000,
+    "protocol": "heldout",
+    "csv": "assets/u100_pretrain_20261024/validation_val100.csv",
+    "samples": "assets/style_matrix_20261027/matrix64/4090/execution/runs/S4/evaluations/0050000/heldout/eval_samples_ctrl/step0050000/eval200fix",
+    "n": 100,
+    "csv_sha256": "41d2ad62dc4c175b28e93431bfcb54d8b90f746b343ec45b299af8f3bea1fa1f",
+    "identity": {
+      "checkpoint_sha256": "b4dc1e4fa1af28f22adbf122e9abd2e6f1c1d7f7fa573d78530f09a21b904363",
+      "csv_sha256": "41d2ad62dc4c175b28e93431bfcb54d8b90f746b343ec45b299af8f3bea1fa1f",
+      "ema": true,
+      "writer_space": "top10-row",
+      "decoder_path": "pretrained_models/sd-vae-ft-ema",
+      "step": 50000
+    }
+  },
+  "images": [
+    {
+      "path": "assets/style_matrix_20261027/matrix64/4090/execution/runs/S4/evaluations/0050000/heldout/eval_samples_ctrl/step0050000/eval200fix/g0.png",
+      "size": 39091,
+      "sha256": "abec542e9f02c228d57caf4de821665bf726edfddce1fe7dce8bad39c5c7b7c0"
+    },
+    {
+      "path": "assets/style_matrix_20261027/matrix64/4090/execution/runs/S4/evaluations/0050000/heldout/eval_samples_ctrl/step0050000/eval200fix/g1.png",
+      "size": 50026,
+      "sha256": "9c0fc48e5163fce638d04f46539ec4ad502f987e6eb14892a795673b1586411e"
+    },
+    {
+      "path": "assets/style_matrix_20261027/matrix64/4090/execution/runs/S4/evaluations/0050000/heldout/eval_samples_ctrl/step0050000/eval200fix/g2.png",
+      "size": 49104,
+      "sha256": "7f4f32be4223c27b16e34f149e85d614bf98bee3fb69aa9629caaf08787a40d8"
+    },
+    {
+      "path": "assets/style_matrix_20261027/matrix64/4090/execution/runs/S4/evaluations/0050000/heldout/eval_samples_ctrl/step0050000/eval200fix/g3.png",
+      "size": 48593,
+      "sha256": "0531020ccc506dc79849110aff8fbe7a77dde7c920d0994313e937a116af6dee"
+    },
+    {
+      "path": "assets/style_matrix_20261027/matrix64/4090/execution/runs/S4/evaluations/0050000/heldout/eval_samples_ctrl/step0050000/eval200fix/g4.png",
+      "size": 23236,
+      "sha256": "380d278cf86a3c6d7a67bb20836ac886fd3dc678e05062d582a7c158e01fa275"
+    },
+    {
+      "path": "assets/style_matrix_20261027/matrix64/4090/execution/runs/S4/evaluations/0050000/heldout/eval_samples_ctrl/step0050000/eval200fix/g5.png",
+      "size": 34762,
+      "sha256": "a2acdc534cdd02642b4ccabd08c88cdf01a141fd624825431873f0bf6711c544"
+    },
+    {
+      "path": "assets/style_matrix_20261027/matrix64/4090/execution/runs/S4/evaluations/0050000/heldout/eval_samples_ctrl/step0050000/eval200fix/g6.png",
+      "size": 42658,
+      "sha256": "f22d308f683f26c957cd922cbe91ca46e7a19979d5c3e997ba5f1746704cd72c"
+    },
+    {
+      "path": "assets/style_matrix_20261027/matrix64/4090/execution/runs/S4/evaluations/0050000/heldout/eval_samples_ctrl/step0050000/eval200fix/g7.png",
+      "size": 40684,
+      "sha256": "2b2272197bbacc4efd51c5ae20575b7225b55d9929feb9c3bd42238994e35f5b"
+    },
+    {
+      "path": "assets/style_matrix_20261027/matrix64/4090/execution/runs/S4/evaluations/0050000/heldout/eval_samples_ctrl/step0050000/eval200fix/g8.png",
+      "size": 51464,
+      "sha256": "e354c7177ba4536714290fcbe7d3599750a0e48e0c46a528285ec3a4b782c413"
+    },
+    {
+      "path": "assets/style_matrix_20261027/matrix64/4090/execution/runs/S4/evaluations/0050000/heldout/eval_samples_ctrl/step0050000/eval200fix/g9.png",
+      "size": 44959,
+      "sha256": "9e96143029897b44ace02fc93533b178e35598101655ccffaca3412b312ec77d"
+    },
+    {
+      "path": "assets/style_matrix_20261027/matrix64/4090/execution/runs/S4/evaluations/0050000/heldout/eval_samples_ctrl/step0050000/eval200fix/g10.png",
+      "size": 38844,
+      "sha256": "ede80999706af2d87cf8221760c431d86a370842e1fbd7cc5a68be91d6a2b603"
+    },
+    {
+      "path": "assets/style_matrix_20261027/matrix64/4090/execution/runs/S4/evaluations/0050000/heldout/eval_samples_ctrl/step0050000/eval200fix/g11.png",
+      "size": 48035,
+      "sha256": "66b5c7587a0a77a9b830fb054a1cf5de01cd1d2982050751ccf446b58db159d4"
+    },
+    {
+      "path": "assets/style_matrix_20261027/matrix64/4090/execution/runs/S4/evaluations/0050000/heldout/eval_samples_ctrl/step0050000/eval200fix/g12.png",
+      "size": 31685,
+      "sha256": "297c5ec20747cd9151b03130fff74864bd3800947a7914b046aa11a61e449f85"
+    },
+    {
+      "path": "assets/style_matrix_20261027/matrix64/4090/execution/runs/S4/evaluations/0050000/heldout/eval_samples_ctrl/step0050000/eval200fix/g13.png",
+      "size": 48685,
+      "sha256": "7759dc74107e12eff607fb59695e725d3dac8d10dfd1a79d8795d68f59f3b1a4"
+    },
+    {
+      "path": "assets/style_matrix_20261027/matrix64/4090/execution/runs/S4/evaluations/0050000/heldout/eval_samples_ctrl/step0050000/eval200fix/g14.png",
+      "size": 42379,
+      "sha256": "c2a142003e402e271fa7a2138c53d28f7849207a9c329cabe5eeb2b2648516b4"
+    },
+    {
+      "path": "assets/style_matrix_20261027/matrix64/4090/execution/runs/S4/evaluations/0050000/heldout/eval_samples_ctrl/step0050000/eval200fix/g15.png",
+      "size": 38816,
+      "sha256": "b84f38c8244bab2608ddfa0b8ce4be435ea5a209ce69ec38ac4d4cdf2d4c2197"
+    },
+    {
+      "path": "assets/style_matrix_20261027/matrix64/4090/execution/runs/S4/evaluations/0050000/heldout/eval_samples_ctrl/step0050000/eval200fix/g16.png",
+      "size": 41697,
+      "sha256": "169f10d29eee7b4047cc450f91dc1a271a3f635d971ec5a233fece622a7b0fb9"
+    },
+    {
+      "path": "assets/style_matrix_20261027/matrix64/4090/execution/runs/S4/evaluations/0050000/heldout/eval_samples_ctrl/step0050000/eval200fix/g17.png",
+      "size": 41470,
+      "sha256": "3617d3bbce5e6c75855a8f41ea65218b7effc5f4ab4a0ea1879cef5d8ba17959"
+    },
+    {
+      "path": "assets/style_matrix_20261027/matrix64/4090/execution/runs/S4/evaluations/0050000/heldout/eval_samples_ctrl/step0050000/eval200fix/g18.png",
+      "size": 41419,
+      "sha256": "d8643532162f5430f5c806c92e513a147ce795f12af1fe217663318f7515c896"
+    },
+    {
+      "path": "assets/style_matrix_20261027/matrix64/4090/execution/runs/S4/evaluations/0050000/heldout/eval_samples_ctrl/step0050000/eval200fix/g19.png",
+      "size": 33217,
+      "sha256": "96c859f3edd5ce24104d6630a88345e5fbedf9a5e615f850dd3b989985560008"
+    },
+    {
+      "path": "assets/style_matrix_20261027/matrix64/4090/execution/runs/S4/evaluations/0050000/heldout/eval_samples_ctrl/step0050000/eval200fix/g20.png",
+      "size": 54053,
+      "sha256": "5ac75cfae303a15d0f76abaa93183ce6615fa293da925a4745d15a41eb152c84"
+    },
+    {
+      "path": "assets/style_matrix_20261027/matrix64/4090/execution/runs/S4/evaluations/0050000/heldout/eval_samples_ctrl/step0050000/eval200fix/g21.png",
+      "size": 52164,
+      "sha256": "cfccba3824dec1957bc582afb9b0ea7a9e5ade18f7073d599d87223843c877ff"
+    },
+    {
+      "path": "assets/style_matrix_20261027/matrix64/4090/execution/runs/S4/evaluations/0050000/heldout/eval_samples_ctrl/step0050000/eval200fix/g22.png",
+      "size": 45396,
+      "sha256": "cfefd29804a906e20724ef4bba15c17fdbc5dbb89ba80cb826d9234a1cc51b44"
+    },
+    {
+      "path": "assets/style_matrix_20261027/matrix64/4090/execution/runs/S4/evaluations/0050000/heldout/eval_samples_ctrl/step0050000/eval200fix/g23.png",
+      "size": 35344,
+      "sha256": "49c651ace44a0dfe5cd217fffc2577d13a03ba8e631c99437d2c734bbcb12350"
+    },
+    {
+      "path": "assets/style_matrix_20261027/matrix64/4090/execution/runs/S4/evaluations/0050000/heldout/eval_samples_ctrl/step0050000/eval200fix/g24.png",
+      "size": 41313,
+      "sha256": "6c1949f46dcf1ab9663518e23a620d703948ca950a0f5a400f6803af5ccfe2dc"
+    },
+    {
+      "path": "assets/style_matrix_20261027/matrix64/4090/execution/runs/S4/evaluations/0050000/heldout/eval_samples_ctrl/step0050000/eval200fix/g25.png",
+      "size": 47222,
+      "sha256": "12cd838ed0b272dc34ea6a98d997d65fe5780a23c59835c4a706bfd660a8d040"
+    },
+    {
+      "path": "assets/style_matrix_20261027/matrix64/4090/execution/runs/S4/evaluations/0050000/heldout/eval_samples_ctrl/step0050000/eval200fix/g26.png",
+      "size": 32444,
+      "sha256": "9dccbaa61352a908138cea1ab4ab28549c86263e6b0d006b881dcc299ef8ff5e"
+    },
+    {
+      "path": "assets/style_matrix_20261027/matrix64/4090/execution/runs/S4/evaluations/0050000/heldout/eval_samples_ctrl/step0050000/eval200fix/g27.png",
+      "size": 54736,
+      "sha256": "98d01d372dc9170bd0d4351bcf6df63d24499ad2bc80bea13a422488c4abf1b4"
+    },
+    {
+      "path": "assets/style_matrix_20261027/matrix64/4090/execution/runs/S4/evaluations/0050000/heldout/eval_samples_ctrl/step0050000/eval200fix/g28.png",
+      "size": 46141,
+      "sha256": "473f0cb21a0a31c4531738906fbd432ceffc3f7f970176845489393941a78cd1"
+    },
+    {
+      "path": "assets/style_matrix_20261027/matrix64/4090/execution/runs/S4/evaluations/0050000/heldout/eval_samples_ctrl/step0050000/eval200fix/g29.png",
+      "size": 49398,
+      "sha256": "09ebda01d0f451cc6d67cb040fa054ad0124aaa4cd1d135b8e21d135fe3aa404"
+    },
+    {
+      "path": "assets/style_matrix_20261027/matrix64/4090/execution/runs/S4/evaluations/0050000/heldout/eval_samples_ctrl/step0050000/eval200fix/g30.png",
+      "size": 54175,
+      "sha256": "99427ef076d3158af494314e15bd022c71c08f4f01da0a8e8a70e288ee195a75"
+    },
+    {
+      "path": "assets/style_matrix_20261027/matrix64/4090/execution/runs/S4/evaluations/0050000/heldout/eval_samples_ctrl/step0050000/eval200fix/g31.png",
+      "size": 65572,
+      "sha256": "68c3c50df7c1f7c588dd911e7147b8aa9acde93c948007647ac841b7c633c5fd"
+    },
+    {
+      "path": "assets/style_matrix_20261027/matrix64/4090/execution/runs/S4/evaluations/0050000/heldout/eval_samples_ctrl/step0050000/eval200fix/g32.png",
+      "size": 43531,
+      "sha256": "cab0e174c671c046b6fb678ae81d89d9f0ea4c9e77cab06cd586e6071fd0addc"
+    },
+    {
+      "path": "assets/style_matrix_20261027/matrix64/4090/execution/runs/S4/evaluations/0050000/heldout/eval_samples_ctrl/step0050000/eval200fix/g33.png",
+      "size": 39333,
+      "sha256": "239f265a5f9a38602649bd907289149ff5a4177151cc5b970e37aff4c810bec6"
+    },
+    {
+      "path": "assets/style_matrix_20261027/matrix64/4090/execution/runs/S4/evaluations/0050000/heldout/eval_samples_ctrl/step0050000/eval200fix/g34.png",
+      "size": 51886,
+      "sha256": "72431d606c014ebe68b45b52a43de49f59bb367a3bd0becd46b0505bf94c1aea"
+    },
+    {
+      "path": "assets/style_matrix_20261027/matrix64/4090/execution/runs/S4/evaluations/0050000/heldout/eval_samples_ctrl/step0050000/eval200fix/g35.png",
+      "size": 46503,
+      "sha256": "e64e85de431a2699c8fbcce00c639120cc8cefd622518305b3b7bb98de66685f"
+    },
+    {
+      "path": "assets/style_matrix_20261027/matrix64/4090/execution/runs/S4/evaluations/0050000/heldout/eval_samples_ctrl/step0050000/eval200fix/g36.png",
+      "size": 41813,
+      "sha256": "1db1f3d3fb92eae570afd1f01e05e62b2e3a01a1e5be731172fcbfdd053e8797"
+    },
+    {
+      "path": "assets/style_matrix_20261027/matrix64/4090/execution/runs/S4/evaluations/0050000/heldout/eval_samples_ctrl/step0050000/eval200fix/g37.png",
+      "size": 29058,
+      "sha256": "6a9dd7cc3578728b38b56ea7e60f583f99d3f2633334b4565153469a76908fd1"
+    },
+    {
+      "path": "assets/style_matrix_20261027/matrix64/4090/execution/runs/S4/evaluations/0050000/heldout/eval_samples_ctrl/step0050000/eval200fix/g38.png",
+      "size": 60331,
+      "sha256": "dcfe169a45d94abcbf5fe34a32fcd67cce3d23cd9923d064a128b17715f29542"
+    },
+    {
+      "path": "assets/style_matrix_20261027/matrix64/4090/execution/runs/S4/evaluations/0050000/heldout/eval_samples_ctrl/step0050000/eval200fix/g39.png",
+      "size": 39694,
+      "sha256": "a0c94ac274ca3a4d2862abb2389f0925a66e6b84ba2aee131dcd5ca71b9b5bc7"
+    },
+    {
+      "path": "assets/style_matrix_20261027/matrix64/4090/execution/runs/S4/evaluations/0050000/heldout/eval_samples_ctrl/step0050000/eval200fix/g40.png",
+      "size": 64160,
+      "sha256": "cbd7e35f756f28aa5a2c2f3305b8e316f06253583e425cb3ed305be26559fdf1"
+    },
+    {
+      "path": "assets/style_matrix_20261027/matrix64/4090/execution/runs/S4/evaluations/0050000/heldout/eval_samples_ctrl/step0050000/eval200fix/g41.png",
+      "size": 43499,
+      "sha256": "a6220eacc1cfd0d83d83492d7a4c5d97619393ab98943114a59bd380b4a1566c"
+    },
+    {
+      "path": "assets/style_matrix_20261027/matrix64/4090/execution/runs/S4/evaluations/0050000/heldout/eval_samples_ctrl/step0050000/eval200fix/g42.png",
+      "size": 57407,
+      "sha256": "8202711dce8aa952f02178cc8fe6e039410b26b591238e18d691a79bd8b7b9ea"
+    },
+    {
+      "path": "assets/style_matrix_20261027/matrix64/4090/execution/runs/S4/evaluations/0050000/heldout/eval_samples_ctrl/step0050000/eval200fix/g43.png",
+      "size": 29737,
+      "sha256": "6e27c1565cc87b138c99cf5f9ed828e3daf1a62046d43d7fbe0679ec1ac8ff0e"
+    },
+    {
+      "path": "assets/style_matrix_20261027/matrix64/4090/execution/runs/S4/evaluations/0050000/heldout/eval_samples_ctrl/step0050000/eval200fix/g44.png",
+      "size": 57173,
+      "sha256": "da6f52a13629c58ce90c5b9e9e2672c6c0a9f0a2978b37ba48b8bf0102874a14"
+    },
+    {
+      "path": "assets/style_matrix_20261027/matrix64/4090/execution/runs/S4/evaluations/0050000/heldout/eval_samples_ctrl/step0050000/eval200fix/g45.png",
+      "size": 41255,
+      "sha256": "d82c76fc3aebc6795cd7ae2a3acb5695e4a304cd13cb16ec3da714b631e44e5a"
+    },
+    {
+      "path": "assets/style_matrix_20261027/matrix64/4090/execution/runs/S4/evaluations/0050000/heldout/eval_samples_ctrl/step0050000/eval200fix/g46.png",
+      "size": 30680,
+      "sha256": "43333a1b891cd9dc95dc00a2f3055174da89c3003f7149c12ef7552d04f97001"
+    },
+    {
+      "path": "assets/style_matrix_20261027/matrix64/4090/execution/runs/S4/evaluations/0050000/heldout/eval_samples_ctrl/step0050000/eval200fix/g47.png",
+      "size": 41247,
+      "sha256": "2ca1c5ff9eb524086fba3f89e5a22e4035966cd0d9a211836f43393fd08860d1"
+    },
+    {
+      "path": "assets/style_matrix_20261027/matrix64/4090/execution/runs/S4/evaluations/0050000/heldout/eval_samples_ctrl/step0050000/eval200fix/g48.png",
+      "size": 42214,
+      "sha256": "e1fd5951b18b86e72b82c20b642019a2a9df55550101d96d9d48a18b624d1443"
+    },
+    {
+      "path": "assets/style_matrix_20261027/matrix64/4090/execution/runs/S4/evaluations/0050000/heldout/eval_samples_ctrl/step0050000/eval200fix/g49.png",
+      "size": 41437,
+      "sha256": "d006a527a6a77efaffed368c6b97b23039eda1f73760431138d3171a2bf2ff03"
+    },
+    {
+      "path": "assets/style_matrix_20261027/matrix64/4090/execution/runs/S4/evaluations/0050000/heldout/eval_samples_ctrl/step0050000/eval200fix/g50.png",
+      "size": 53027,
+      "sha256": "d9468ec25f75742f79e998bd75049e5cc66b0bd28be60e41bd5c794a834bd14f"
+    },
+    {
+      "path": "assets/style_matrix_20261027/matrix64/4090/execution/runs/S4/evaluations/0050000/heldout/eval_samples_ctrl/step0050000/eval200fix/g51.png",
+      "size": 44581,
+      "sha256": "42c541e603c89209670d80e803488fea05cec2505cbb916e01416afcda6d9538"
+    },
+    {
+      "path": "assets/style_matrix_20261027/matrix64/4090/execution/runs/S4/evaluations/0050000/heldout/eval_samples_ctrl/step0050000/eval200fix/g52.png",
+      "size": 45506,
+      "sha256": "a61f48db6cf798fd26d17c2a4bf02c5da1e8a4c9d99edd08a68ad4f2821f9b5a"
+    },
+    {
+      "path": "assets/style_matrix_20261027/matrix64/4090/execution/runs/S4/evaluations/0050000/heldout/eval_samples_ctrl/step0050000/eval200fix/g53.png",
+      "size": 46997,
+      "sha256": "ece68784a1cd635c3d9d3f7b58954e7b0b2840d5d674b7180536306e454a8ce8"
+    },
+    {
+      "path": "assets/style_matrix_20261027/matrix64/4090/execution/runs/S4/evaluations/0050000/heldout/eval_samples_ctrl/step0050000/eval200fix/g54.png",
+      "size": 45374,
+      "sha256": "257e8ed7eff660ba244c8dd86000f43dfab24f3f49701be162918db16a8ac076"
+    },
+    {
+      "path": "assets/style_matrix_20261027/matrix64/4090/execution/runs/S4/evaluations/0050000/heldout/eval_samples_ctrl/step0050000/eval200fix/g55.png",
+      "size": 41314,
+      "sha256": "a5d0068f8e275dd110d51cae58205647e740b0f70421a24a1d48d09ed249ad94"
+    },
+    {
+      "path": "assets/style_matrix_20261027/matrix64/4090/execution/runs/S4/evaluations/0050000/heldout/eval_samples_ctrl/step0050000/eval200fix/g56.png",
+      "size": 61698,
+      "sha256": "a979fad964f211edc8fde2cd16453be5f47da743a47cc3e9bb0a7bde61238121"
+    },
+    {
+      "path": "assets/style_matrix_20261027/matrix64/4090/execution/runs/S4/evaluations/0050000/heldout/eval_samples_ctrl/step0050000/eval200fix/g57.png",
+      "size": 45910,
+      "sha256": "9cfbb884eff6b100290954fad74b36ebdd3b659c7ecbb21fe6dd5a4959563ca8"
+    },
+    {
+      "path": "assets/style_matrix_20261027/matrix64/4090/execution/runs/S4/evaluations/0050000/heldout/eval_samples_ctrl/step0050000/eval200fix/g58.png",
+      "size": 54250,
+      "sha256": "b536513d0c98b2ffa783e76a28bc7d85abab80016a9990c192c1019ccd2f3e75"
+    },
+    {
+      "path": "assets/style_matrix_20261027/matrix64/4090/execution/runs/S4/evaluations/0050000/heldout/eval_samples_ctrl/step0050000/eval200fix/g59.png",
+      "size": 31708,
+      "sha256": "7f0a45126a1d7b35dd9f7c33a23e0293b7a74f139603c949277fa285364e5f15"
+    },
+    {
+      "path": "assets/style_matrix_20261027/matrix64/4090/execution/runs/S4/evaluations/0050000/heldout/eval_samples_ctrl/step0050000/eval200fix/g60.png",
+      "size": 35419,
+      "sha256": "3a7cb37c4a244442269f31d9f5999b0908b04bdba8d741afcbbdab8edb0bc721"
+    },
+    {
+      "path": "assets/style_matrix_20261027/matrix64/4090/execution/runs/S4/evaluations/0050000/heldout/eval_samples_ctrl/step0050000/eval200fix/g61.png",
+      "size": 42426,
+      "sha256": "8f5d4a3092cce0cdb3428837d65cbe400a67ae8b88dc6054937a28a5f9571fb4"
+    },
+    {
+      "path": "assets/style_matrix_20261027/matrix64/4090/execution/runs/S4/evaluations/0050000/heldout/eval_samples_ctrl/step0050000/eval200fix/g62.png",
+      "size": 57456,
+      "sha256": "e14d92f644c708a33672b8fe16482c43107c03162ae69bfa328134ff4891df07"
+    },
+    {
+      "path": "assets/style_matrix_20261027/matrix64/4090/execution/runs/S4/evaluations/0050000/heldout/eval_samples_ctrl/step0050000/eval200fix/g63.png",
+      "size": 52796,
+      "sha256": "8e70f0956255c2b31fe38989f25e9c3bb9f1561f66abb97db0b9b69a66726131"
+    },
+    {
+      "path": "assets/style_matrix_20261027/matrix64/4090/execution/runs/S4/evaluations/0050000/heldout/eval_samples_ctrl/step0050000/eval200fix/g64.png",
+      "size": 40399,
+      "sha256": "12c08a57b51bfbbc28b1d97637da3225eb97070a15e9b90de6bf955ae6b62cdf"
+    },
+    {
+      "path": "assets/style_matrix_20261027/matrix64/4090/execution/runs/S4/evaluations/0050000/heldout/eval_samples_ctrl/step0050000/eval200fix/g65.png",
+      "size": 38465,
+      "sha256": "58454b1676f0e2beb5a5f28f6f5d3974740a27bad7fd2bb204528940d073f413"
+    },
+    {
+      "path": "assets/style_matrix_20261027/matrix64/4090/execution/runs/S4/evaluations/0050000/heldout/eval_samples_ctrl/step0050000/eval200fix/g66.png",
+      "size": 56858,
+      "sha256": "cd0621c5444716a2e7d6cd6ac99151fa8f2a5c33be258c6d13012a8eb92f4eb7"
+    },
+    {
+      "path": "assets/style_matrix_20261027/matrix64/4090/execution/runs/S4/evaluations/0050000/heldout/eval_samples_ctrl/step0050000/eval200fix/g67.png",
+      "size": 39418,
+      "sha256": "2d7d53612e4093f4b4be754a84873461e3c36b4d5d51ec3934c1e7072a360074"
+    },
+    {
+      "path": "assets/style_matrix_20261027/matrix64/4090/execution/runs/S4/evaluations/0050000/heldout/eval_samples_ctrl/step0050000/eval200fix/g68.png",
+      "size": 35679,
+      "sha256": "a1bdcf2ef4ff25b934341b110236a9bde23fb42bf476def7f9565e442a7c5100"
+    },
+    {
+      "path": "assets/style_matrix_20261027/matrix64/4090/execution/runs/S4/evaluations/0050000/heldout/eval_samples_ctrl/step0050000/eval200fix/g69.png",
+      "size": 34081,
+      "sha256": "19dbcc746bd0f85da5151cec68418bb65469ba8f3009e7ac353adb79aacae106"
+    },
+    {
+      "path": "assets/style_matrix_20261027/matrix64/4090/execution/runs/S4/evaluations/0050000/heldout/eval_samples_ctrl/step0050000/eval200fix/g70.png",
+      "size": 38289,
+      "sha256": "0b48c8b43281367d392ec48b6ab5a4755f7e2bfc87f0c1733dd240f764e0b398"
+    },
+    {
+      "path": "assets/style_matrix_20261027/matrix64/4090/execution/runs/S4/evaluations/0050000/heldout/eval_samples_ctrl/step0050000/eval200fix/g71.png",
+      "size": 51048,
+      "sha256": "fa38d1c69da49c2dea0d85ab0bc4e0d9ed5fb9d140eaef3dfe5c3dde626bb4f5"
+    },
+    {
+      "path": "assets/style_matrix_20261027/matrix64/4090/execution/runs/S4/evaluations/0050000/heldout/eval_samples_ctrl/step0050000/eval200fix/g72.png",
+      "size": 53472,
+      "sha256": "8bc3a2fd9dc58130fe5c69a495d5f77977a703c349639e833adc72e67039b84f"
+    },
+    {
+      "path": "assets/style_matrix_20261027/matrix64/4090/execution/runs/S4/evaluations/0050000/heldout/eval_samples_ctrl/step0050000/eval200fix/g73.png",
+      "size": 35642,
+      "sha256": "c67b9d85fdbf94c81d934638a5af79549c4477d66683b48563e20aca34a9ed2e"
+    },
+    {
+      "path": "assets/style_matrix_20261027/matrix64/4090/execution/runs/S4/evaluations/0050000/heldout/eval_samples_ctrl/step0050000/eval200fix/g74.png",
+      "size": 38090,
+      "sha256": "a077a772ec9cc60f82f9295a2990cb54d8c99efd2e10153bf4febaf6dab98215"
+    },
+    {
+      "path": "assets/style_matrix_20261027/matrix64/4090/execution/runs/S4/evaluations/0050000/heldout/eval_samples_ctrl/step0050000/eval200fix/g75.png",
+      "size": 54130,
+      "sha256": "6ece44ffd408d35d169b87cc9e00b3cb9cd9b3f53d294803ebb06e8ee1e99348"
+    },
+    {
+      "path": "assets/style_matrix_20261027/matrix64/4090/execution/runs/S4/evaluations/0050000/heldout/eval_samples_ctrl/step0050000/eval200fix/g76.png",
+      "size": 38295,
+      "sha256": "bb839b15abd70cca0b750a51dbcf7379a59fdac55ef38c5cb764c11e1245e18b"
+    },
+    {
+      "path": "assets/style_matrix_20261027/matrix64/4090/execution/runs/S4/evaluations/0050000/heldout/eval_samples_ctrl/step0050000/eval200fix/g77.png",
+      "size": 44791,
+      "sha256": "407e479d3d1b82d9163cf87008634526dceafb009895f0238a12c34651a71464"
+    },
+    {
+      "path": "assets/style_matrix_20261027/matrix64/4090/execution/runs/S4/evaluations/0050000/heldout/eval_samples_ctrl/step0050000/eval200fix/g78.png",
+      "size": 46919,
+      "sha256": "02f6a3b363c59c994c6ee5dc1c475b6574c8cf173cb2ebdb093de76b488238ce"
+    },
+    {
+      "path": "assets/style_matrix_20261027/matrix64/4090/execution/runs/S4/evaluations/0050000/heldout/eval_samples_ctrl/step0050000/eval200fix/g79.png",
+      "size": 56567,
+      "sha256": "7ce8e9fff3af9bfa9e1952657f54470f0cfbc318e77913579a9c38df57850751"
+    },
+    {
+      "path": "assets/style_matrix_20261027/matrix64/4090/execution/runs/S4/evaluations/0050000/heldout/eval_samples_ctrl/step0050000/eval200fix/g80.png",
+      "size": 46180,
+      "sha256": "e18eb9235fa9a45997427861f0d0214b2639a3f674bead4bfac175c5fed9ec32"
+    },
+    {
+      "path": "assets/style_matrix_20261027/matrix64/4090/execution/runs/S4/evaluations/0050000/heldout/eval_samples_ctrl/step0050000/eval200fix/g81.png",
+      "size": 54107,
+      "sha256": "04f20499340f6993f8fe257d4743c478be4416cecdcd354b2e3c0143f44a9f80"
+    },
+    {
+      "path": "assets/style_matrix_20261027/matrix64/4090/execution/runs/S4/evaluations/0050000/heldout/eval_samples_ctrl/step0050000/eval200fix/g82.png",
+      "size": 42834,
+      "sha256": "5a49abb28f16913d4992bce0e374668acade642646251e54dee2f29c58aaeda7"
+    },
+    {
+      "path": "assets/style_matrix_20261027/matrix64/4090/execution/runs/S4/evaluations/0050000/heldout/eval_samples_ctrl/step0050000/eval200fix/g83.png",
+      "size": 47664,
+      "sha256": "8c0456437c78c22632967047d55d559c816f792836ffb5c07542e36430e98273"
+    },
+    {
+      "path": "assets/style_matrix_20261027/matrix64/4090/execution/runs/S4/evaluations/0050000/heldout/eval_samples_ctrl/step0050000/eval200fix/g84.png",
+      "size": 46935,
+      "sha256": "089159794de43061a6e183ae48a0df288bc53fce50910f90f4cf4fa8eff5c4e0"
+    },
+    {
+      "path": "assets/style_matrix_20261027/matrix64/4090/execution/runs/S4/evaluations/0050000/heldout/eval_samples_ctrl/step0050000/eval200fix/g85.png",
+      "size": 42282,
+      "sha256": "6d2ca7047a2481cf474c228b47aa1edea386c666739caf206b8ba58afa675d55"
+    },
+    {
+      "path": "assets/style_matrix_20261027/matrix64/4090/execution/runs/S4/evaluations/0050000/heldout/eval_samples_ctrl/step0050000/eval200fix/g86.png",
+      "size": 43814,
+      "sha256": "6a85cbf4703adf4bac35001166a1fdb1262400d911ed01191d4eda32da6b36e8"
+    },
+    {
+      "path": "assets/style_matrix_20261027/matrix64/4090/execution/runs/S4/evaluations/0050000/heldout/eval_samples_ctrl/step0050000/eval200fix/g87.png",
+      "size": 48940,
+      "sha256": "dab41f2e747f0595cd3b8e24e7d3e5652eb5fc7b4c4a38b069fe2cd8a8f8aeb7"
+    },
+    {
+      "path": "assets/style_matrix_20261027/matrix64/4090/execution/runs/S4/evaluations/0050000/heldout/eval_samples_ctrl/step0050000/eval200fix/g88.png",
+      "size": 38892,
+      "sha256": "6bb0aab2731d12a4b407163b5bc4fd153cad42f1f2b92efed0cbdc635dcb2e43"
+    },
+    {
+      "path": "assets/style_matrix_20261027/matrix64/4090/execution/runs/S4/evaluations/0050000/heldout/eval_samples_ctrl/step0050000/eval200fix/g89.png",
+      "size": 58195,
+      "sha256": "3570f7380aa9d6c911a3e7fbae08ed3257ef090b83519f9a914d49ed1d8fe9cd"
+    },
+    {
+      "path": "assets/style_matrix_20261027/matrix64/4090/execution/runs/S4/evaluations/0050000/heldout/eval_samples_ctrl/step0050000/eval200fix/g90.png",
+      "size": 53791,
+      "sha256": "49461a5382456fcb5a65156a9563dcf434de898f3e9efe2adb12541fdf7fdc33"
+    },
+    {
+      "path": "assets/style_matrix_20261027/matrix64/4090/execution/runs/S4/evaluations/0050000/heldout/eval_samples_ctrl/step0050000/eval200fix/g91.png",
+      "size": 49628,
+      "sha256": "78d8cbdcf47fa444d5d588f79c8676433c4a2b183d237bd80b19d7084047b29d"
+    },
+    {
+      "path": "assets/style_matrix_20261027/matrix64/4090/execution/runs/S4/evaluations/0050000/heldout/eval_samples_ctrl/step0050000/eval200fix/g92.png",
+      "size": 47256,
+      "sha256": "71b1e667174f49797ca724f1eae5f9d15135152e668c0a412fd3a01e9fb95b87"
+    },
+    {
+      "path": "assets/style_matrix_20261027/matrix64/4090/execution/runs/S4/evaluations/0050000/heldout/eval_samples_ctrl/step0050000/eval200fix/g93.png",
+      "size": 35415,
+      "sha256": "7fcee077aecbad6148a6e46d1c262d17617553fda151aba688a9c99420faff1c"
+    },
+    {
+      "path": "assets/style_matrix_20261027/matrix64/4090/execution/runs/S4/evaluations/0050000/heldout/eval_samples_ctrl/step0050000/eval200fix/g94.png",
+      "size": 53921,
+      "sha256": "fe7410ecf500a51d149c81f3637b1333d8cd26d4ea0841a1bf6aae918149b7b4"
+    },
+    {
+      "path": "assets/style_matrix_20261027/matrix64/4090/execution/runs/S4/evaluations/0050000/heldout/eval_samples_ctrl/step0050000/eval200fix/g95.png",
+      "size": 59600,
+      "sha256": "ad32e62a936f2a2c2c5b7450c073464e87c1dbc4b09e0aa56eb15ddfab48edd7"
+    },
+    {
+      "path": "assets/style_matrix_20261027/matrix64/4090/execution/runs/S4/evaluations/0050000/heldout/eval_samples_ctrl/step0050000/eval200fix/g96.png",
+      "size": 39371,
+      "sha256": "5517fec96526ea7a6a8b87cf65f97e59314e5b3d6bd668b3e792cde407456aac"
+    },
+    {
+      "path": "assets/style_matrix_20261027/matrix64/4090/execution/runs/S4/evaluations/0050000/heldout/eval_samples_ctrl/step0050000/eval200fix/g97.png",
+      "size": 35943,
+      "sha256": "388b5ff9c5b8130a3e04be7b5e01f6c1b18e6722cff06691c2250a1c2f50d661"
+    },
+    {
+      "path": "assets/style_matrix_20261027/matrix64/4090/execution/runs/S4/evaluations/0050000/heldout/eval_samples_ctrl/step0050000/eval200fix/g98.png",
+      "size": 55505,
+      "sha256": "310ea7d24bb97cf62f925e8c5279d95f38f95d599210ec0533394c292c59ff22"
+    },
+    {
+      "path": "assets/style_matrix_20261027/matrix64/4090/execution/runs/S4/evaluations/0050000/heldout/eval_samples_ctrl/step0050000/eval200fix/g99.png",
+      "size": 45647,
+      "sha256": "4c8d246f73d9529b5491a5ea5f8c3e029f88ba654c0ed08ad6ed9bb1d9735ba6"
+    },
+    {
+      "path": "assets/style_matrix_20261027/matrix64/4090/execution/runs/S4/evaluations/0050000/heldout/eval_samples_ctrl/step0050000/eval200fix/gt0.png",
+      "size": 2105,
+      "sha256": "9a8736ca3ce6b82b6f8683d230cd45f3de25acd1ad85cc9d9aade7f73e7af5db"
+    },
+    {
+      "path": "assets/style_matrix_20261027/matrix64/4090/execution/runs/S4/evaluations/0050000/heldout/eval_samples_ctrl/step0050000/eval200fix/gt1.png",
+      "size": 2740,
+      "sha256": "5498de95eeca01dd5aad1604682e04aeeb85af19e8cf6a394e951aa0b41a18e8"
+    },
+    {
+      "path": "assets/style_matrix_20261027/matrix64/4090/execution/runs/S4/evaluations/0050000/heldout/eval_samples_ctrl/step0050000/eval200fix/gt2.png",
+      "size": 2735,
+      "sha256": "2bdea1fd420bd3d99f7f7d8baf06b8355c41602121b21b7e475902a863cbd49f"
+    },
+    {
+      "path": "assets/style_matrix_20261027/matrix64/4090/execution/runs/S4/evaluations/0050000/heldout/eval_samples_ctrl/step0050000/eval200fix/gt3.png",
+      "size": 2643,
+      "sha256": "e35021d7b3cf70ae2b51825f8a7b7fcb1fc90d3cc6482f421f12da0832f4f17e"
+    },
+    {
+      "path": "assets/style_matrix_20261027/matrix64/4090/execution/runs/S4/evaluations/0050000/heldout/eval_samples_ctrl/step0050000/eval200fix/gt4.png",
+      "size": 2414,
+      "sha256": "37c3983d698e0f63262e79113f59544e57ff749bf63fb013b6984d68b33f22bb"
+    },
+    {
+      "path": "assets/style_matrix_20261027/matrix64/4090/execution/runs/S4/evaluations/0050000/heldout/eval_samples_ctrl/step0050000/eval200fix/gt5.png",
+      "size": 2232,
+      "sha256": "ab03c4e6324a2dae33689ab1f566bba664a8a7a82f932ca50a2e449ae9f7bc3e"
+    },
+    {
+      "path": "assets/style_matrix_20261027/matrix64/4090/execution/runs/S4/evaluations/0050000/heldout/eval_samples_ctrl/step0050000/eval200fix/gt6.png",
+      "size": 2659,
+      "sha256": "f976ceabb3b6d4f0bb8521940d6fe26dfddce8fff0f3a4716744358a70883aa7"
+    },
+    {
+      "path": "assets/style_matrix_20261027/matrix64/4090/execution/runs/S4/evaluations/0050000/heldout/eval_samples_ctrl/step0050000/eval200fix/gt7.png",
+      "size": 2330,
+      "sha256": "881b622aded3dba51d9f25ffebc8d51be14efd698fa64261452ab4b971cc5a08"
+    },
+    {
+      "path": "assets/style_matrix_20261027/matrix64/4090/execution/runs/S4/evaluations/0050000/heldout/eval_samples_ctrl/step0050000/eval200fix/gt8.png",
+      "size": 2824,
+      "sha256": "c17d16d0c55dc095a3634c12b809bc52755ef1ec25dba1af6179a7b332da45b0"
+    },
+    {
+      "path": "assets/style_matrix_20261027/matrix64/4090/execution/runs/S4/evaluations/0050000/heldout/eval_samples_ctrl/step0050000/eval200fix/gt9.png",
+      "size": 2339,
+      "sha256": "43f041c9b435c8e3e943b54e5ff008c837ff3d188144a947b4ce98b92917e02e"
+    },
+    {
+      "path": "assets/style_matrix_20261027/matrix64/4090/execution/runs/S4/evaluations/0050000/heldout/eval_samples_ctrl/step0050000/eval200fix/gt10.png",
+      "size": 1931,
+      "sha256": "d5f6e7d970e7a12349351d9997550fde552986660e541c1fcbf9abb098b5e607"
+    },
+    {
+      "path": "assets/style_matrix_20261027/matrix64/4090/execution/runs/S4/evaluations/0050000/heldout/eval_samples_ctrl/step0050000/eval200fix/gt11.png",
+      "size": 2774,
+      "sha256": "c93ee876e61fcd68858bd7a7ae7213a81a183c25c513b0c9ba4725c772687672"
+    },
+    {
+      "path": "assets/style_matrix_20261027/matrix64/4090/execution/runs/S4/evaluations/0050000/heldout/eval_samples_ctrl/step0050000/eval200fix/gt12.png",
+      "size": 2288,
+      "sha256": "3633189ccc88fefbab48c9698d7f997c09380ae80c35f0cb03c01c5c8e8190cf"
+    },
+    {
+      "path": "assets/style_matrix_20261027/matrix64/4090/execution/runs/S4/evaluations/0050000/heldout/eval_samples_ctrl/step0050000/eval200fix/gt13.png",
+      "size": 2512,
+      "sha256": "3eec9e1b7871adf9e74829b79d712e84213f5eb0814086ff4c9602d1335e0338"
+    },
+    {
+      "path": "assets/style_matrix_20261027/matrix64/4090/execution/runs/S4/evaluations/0050000/heldout/eval_samples_ctrl/step0050000/eval200fix/gt14.png",
+      "size": 2324,
+      "sha256": "1475d5d99dfad7d92ae5c6fea529b34b7f30ed6f455b2c92425872c29dec5214"
+    },
+    {
+      "path": "assets/style_matrix_20261027/matrix64/4090/execution/runs/S4/evaluations/0050000/heldout/eval_samples_ctrl/step0050000/eval200fix/gt15.png",
+      "size": 2096,
+      "sha256": "d0ca7f604e7ef594e939d8f14f78b4d745ad0a3d01cababd4074f8771793f216"
+    },
+    {
+      "path": "assets/style_matrix_20261027/matrix64/4090/execution/runs/S4/evaluations/0050000/heldout/eval_samples_ctrl/step0050000/eval200fix/gt16.png",
+      "size": 2750,
+      "sha256": "843de6b34970a26365a0fd7bcfd19e9d7a284d111ef466a40f07a4ea927b9869"
+    },
+    {
+      "path": "assets/style_matrix_20261027/matrix64/4090/execution/runs/S4/evaluations/0050000/heldout/eval_samples_ctrl/step0050000/eval200fix/gt17.png",
+      "size": 2488,
+      "sha256": "9483b0933a643686ee0ab9119d21c8d9e467cf3b62adbf2ea2497a1dbdf3ef20"
+    },
+    {
+      "path": "assets/style_matrix_20261027/matrix64/4090/execution/runs/S4/evaluations/0050000/heldout/eval_samples_ctrl/step0050000/eval200fix/gt18.png",
+      "size": 2135,
+      "sha256": "1a77a1c67f6b556e6b70d0a71add698e49a6909ede1c3edd1bd4d54af2a0aa47"
+    },
+    {
+      "path": "assets/style_matrix_20261027/matrix64/4090/execution/runs/S4/evaluations/0050000/heldout/eval_samples_ctrl/step0050000/eval200fix/gt19.png",
+      "size": 1836,
+      "sha256": "1fed4566d60d02c38bccac0bc950ab33d244f928f6b71a18f755af3e2d9c2587"
+    },
+    {
+      "path": "assets/style_matrix_20261027/matrix64/4090/execution/runs/S4/evaluations/0050000/heldout/eval_samples_ctrl/step0050000/eval200fix/gt20.png",
+      "size": 3187,
+      "sha256": "a4ade0c33b87bdf709c87fde7b77daf16842006d6cf4fe4d526433aaaeff9c96"
+    },
+    {
+      "path": "assets/style_matrix_20261027/matrix64/4090/execution/runs/S4/evaluations/0050000/heldout/eval_samples_ctrl/step0050000/eval200fix/gt21.png",
+      "size": 3010,
+      "sha256": "2d9707b0081547c2988dcb96e339cba613918685ece0221894bd698c97dfb7e1"
+    },
+    {
+      "path": "assets/style_matrix_20261027/matrix64/4090/execution/runs/S4/evaluations/0050000/heldout/eval_samples_ctrl/step0050000/eval200fix/gt22.png",
+      "size": 2844,
+      "sha256": "f61b6a199b72111590958a66d8f9d558e0344e2a71aed6a161b91a9aa9a20607"
+    },
+    {
+      "path": "assets/style_matrix_20261027/matrix64/4090/execution/runs/S4/evaluations/0050000/heldout/eval_samples_ctrl/step0050000/eval200fix/gt23.png",
+      "size": 1948,
+      "sha256": "9dfc516d9ff477fed293c13135dd676224a9fe21a1e585c89c479c75ad0e7ff5"
+    },
+    {
+      "path": "assets/style_matrix_20261027/matrix64/4090/execution/runs/S4/evaluations/0050000/heldout/eval_samples_ctrl/step0050000/eval200fix/gt24.png",
+      "size": 2360,
+      "sha256": "47ec2c838124bbe96e98fd98cf80afc0d75976e9a4690f8c83f349b101fe5263"
+    },
+    {
+      "path": "assets/style_matrix_20261027/matrix64/4090/execution/runs/S4/evaluations/0050000/heldout/eval_samples_ctrl/step0050000/eval200fix/gt25.png",
+      "size": 2626,
+      "sha256": "97f555da9b2c13469b67b1423edfc7033e1881b30c55129c62b186b1110268c7"
+    },
+    {
+      "path": "assets/style_matrix_20261027/matrix64/4090/execution/runs/S4/evaluations/0050000/heldout/eval_samples_ctrl/step0050000/eval200fix/gt26.png",
+      "size": 2132,
+      "sha256": "eb720d85c4a307ff0ace88b175126832d1061143840580171382972dcecfecd6"
+    },
+    {
+      "path": "assets/style_matrix_20261027/matrix64/4090/execution/runs/S4/evaluations/0050000/heldout/eval_samples_ctrl/step0050000/eval200fix/gt27.png",
+      "size": 3388,
+      "sha256": "725124d676c3a45a24fcf35f67235e285f3590964c5992689c5a466e91dfbda4"
+    },
+    {
+      "path": "assets/style_matrix_20261027/matrix64/4090/execution/runs/S4/evaluations/0050000/heldout/eval_samples_ctrl/step0050000/eval200fix/gt28.png",
+      "size": 2998,
+      "sha256": "e200c168176d176986f39a14606c8f4e7c4f625cc8fd6b531d4aa5cb628403d1"
+    },
+    {
+      "path": "assets/style_matrix_20261027/matrix64/4090/execution/runs/S4/evaluations/0050000/heldout/eval_samples_ctrl/step0050000/eval200fix/gt29.png",
+      "size": 3005,
+      "sha256": "e809f9a31d0c05feeea169f72867f0433d4985ae056efdfb035621b07a7c1b95"
+    },
+    {
+      "path": "assets/style_matrix_20261027/matrix64/4090/execution/runs/S4/evaluations/0050000/heldout/eval_samples_ctrl/step0050000/eval200fix/gt30.png",
+      "size": 2933,
+      "sha256": "07bd2474e73a46585f6ff716db8961ab6e2d46ce73e41e3fa0e9ede6756d27fc"
+    },
+    {
+      "path": "assets/style_matrix_20261027/matrix64/4090/execution/runs/S4/evaluations/0050000/heldout/eval_samples_ctrl/step0050000/eval200fix/gt31.png",
+      "size": 3535,
+      "sha256": "e7eaaf358db118425e0094a80fcd5427dea98cf2029397a7df65feb5799f49ae"
+    },
+    {
+      "path": "assets/style_matrix_20261027/matrix64/4090/execution/runs/S4/evaluations/0050000/heldout/eval_samples_ctrl/step0050000/eval200fix/gt32.png",
+      "size": 2502,
+      "sha256": "5f2c99c88de0eb478c1aef7d87f5ebf0de82fd88cdb55e3c981edbe4517e7603"
+    },
+    {
+      "path": "assets/style_matrix_20261027/matrix64/4090/execution/runs/S4/evaluations/0050000/heldout/eval_samples_ctrl/step0050000/eval200fix/gt33.png",
+      "size": 3407,
+      "sha256": "d2e62e910e36f23df38290aebb9c01bbb436143cbb93be18a6b756ec6724a63b"
+    },
+    {
+      "path": "assets/style_matrix_20261027/matrix64/4090/execution/runs/S4/evaluations/0050000/heldout/eval_samples_ctrl/step0050000/eval200fix/gt34.png",
+      "size": 3112,
+      "sha256": "5189fb4a8fea68a0e2c8be724b4eb4713769b82d489608bb63da7225a8a5ebad"
+    },
+    {
+      "path": "assets/style_matrix_20261027/matrix64/4090/execution/runs/S4/evaluations/0050000/heldout/eval_samples_ctrl/step0050000/eval200fix/gt35.png",
+      "size": 2870,
+      "sha256": "fb7b2330a021ea2ac52d3ad7e3ec03b71a76f7773f5df108105fa479f0441c5d"
+    },
+    {
+      "path": "assets/style_matrix_20261027/matrix64/4090/execution/runs/S4/evaluations/0050000/heldout/eval_samples_ctrl/step0050000/eval200fix/gt36.png",
+      "size": 2058,
+      "sha256": "1e099de9f6e2a486726af37cc945ea1dc04e4dc834133b732b0746281b5803ca"
+    },
+    {
+      "path": "assets/style_matrix_20261027/matrix64/4090/execution/runs/S4/evaluations/0050000/heldout/eval_samples_ctrl/step0050000/eval200fix/gt37.png",
+      "size": 2029,
+      "sha256": "239c3d360195139e16d99b5ee85d047b5156deb10677bef322a8b07c3ae94abd"
+    },
+    {
+      "path": "assets/style_matrix_20261027/matrix64/4090/execution/runs/S4/evaluations/0050000/heldout/eval_samples_ctrl/step0050000/eval200fix/gt38.png",
+      "size": 3526,
+      "sha256": "7a7ecfcf38a80e5a8487d457cf69ba8ed69bc91292bed08a60b6be0f9bd69f52"
+    },
+    {
+      "path": "assets/style_matrix_20261027/matrix64/4090/execution/runs/S4/evaluations/0050000/heldout/eval_samples_ctrl/step0050000/eval200fix/gt39.png",
+      "size": 2317,
+      "sha256": "0a1f4fa21f19405578d4061a09d8e719762bf3355ee854867ab23e83b2fb28fc"
+    },
+    {
+      "path": "assets/style_matrix_20261027/matrix64/4090/execution/runs/S4/evaluations/0050000/heldout/eval_samples_ctrl/step0050000/eval200fix/gt40.png",
+      "size": 2386,
+      "sha256": "5f0d6faf38c8bedcc9bd5882aff31356b3439bca6f25e0b09ceaf865d44ea2c4"
+    },
+    {
+      "path": "assets/style_matrix_20261027/matrix64/4090/execution/runs/S4/evaluations/0050000/heldout/eval_samples_ctrl/step0050000/eval200fix/gt41.png",
+      "size": 3113,
+      "sha256": "904ea9cfd2e038eaf3350d47154f087cf7d04c671e82d9827e59899b1c934030"
+    },
+    {
+      "path": "assets/style_matrix_20261027/matrix64/4090/execution/runs/S4/evaluations/0050000/heldout/eval_samples_ctrl/step0050000/eval200fix/gt42.png",
+      "size": 1903,
+      "sha256": "bb1161f9884c258e1962800a66c937ad494df94186c0830c5108b2b27025ae6c"
+    },
+    {
+      "path": "assets/style_matrix_20261027/matrix64/4090/execution/runs/S4/evaluations/0050000/heldout/eval_samples_ctrl/step0050000/eval200fix/gt43.png",
+      "size": 1925,
+      "sha256": "0692f1c0194737acebd40f202862300fef9d93b8f8fe612273064d7697d477f6"
+    },
+    {
+      "path": "assets/style_matrix_20261027/matrix64/4090/execution/runs/S4/evaluations/0050000/heldout/eval_samples_ctrl/step0050000/eval200fix/gt44.png",
+      "size": 2715,
+      "sha256": "6fdd00c9745f2964e9e7bdc7869d28fa8808fdc679259d88420d801b0c0f64c6"
+    },
+    {
+      "path": "assets/style_matrix_20261027/matrix64/4090/execution/runs/S4/evaluations/0050000/heldout/eval_samples_ctrl/step0050000/eval200fix/gt45.png",
+      "size": 1958,
+      "sha256": "73230df2f8807d7a27dd2b7fffff88dd8cac611f07eddf37cda781fcbf5fd9b8"
+    },
+    {
+      "path": "assets/style_matrix_20261027/matrix64/4090/execution/runs/S4/evaluations/0050000/heldout/eval_samples_ctrl/step0050000/eval200fix/gt46.png",
+      "size": 1544,
+      "sha256": "af0de449dffabf6e318197cac9ef967d37b6c3a0deaede2694d5313bca03b9e5"
+    },
+    {
+      "path": "assets/style_matrix_20261027/matrix64/4090/execution/runs/S4/evaluations/0050000/heldout/eval_samples_ctrl/step0050000/eval200fix/gt47.png",
+      "size": 2290,
+      "sha256": "5d3e5050931432a70f2ae2913328763cb780032f98df96ade004e7d0987fc79c"
+    },
+    {
+      "path": "assets/style_matrix_20261027/matrix64/4090/execution/runs/S4/evaluations/0050000/heldout/eval_samples_ctrl/step0050000/eval200fix/gt48.png",
+      "size": 15668,
+      "sha256": "1624f8f62e03f5be590ce38e9fe002eac163a7c4de885171f5740e2072b2d126"
+    },
+    {
+      "path": "assets/style_matrix_20261027/matrix64/4090/execution/runs/S4/evaluations/0050000/heldout/eval_samples_ctrl/step0050000/eval200fix/gt49.png",
+      "size": 2296,
+      "sha256": "4593745d1aa6e4bad44a1403adf9fdb43bdc79c4742b4c31b54302a63d78748a"
+    },
+    {
+      "path": "assets/style_matrix_20261027/matrix64/4090/execution/runs/S4/evaluations/0050000/heldout/eval_samples_ctrl/step0050000/eval200fix/gt50.png",
+      "size": 2695,
+      "sha256": "7cdf3814146d9e90700599d12ffbdd425698d8fa81f8b2924a84da5182c8195d"
+    },
+    {
+      "path": "assets/style_matrix_20261027/matrix64/4090/execution/runs/S4/evaluations/0050000/heldout/eval_samples_ctrl/step0050000/eval200fix/gt51.png",
+      "size": 9046,
+      "sha256": "9c89bf25362fe8cf88e98063ac8a18ad33df757b7a8dd24b21339d30d7ae68a3"
+    },
+    {
+      "path": "assets/style_matrix_20261027/matrix64/4090/execution/runs/S4/evaluations/0050000/heldout/eval_samples_ctrl/step0050000/eval200fix/gt52.png",
+      "size": 2048,
+      "sha256": "27fbc3eb662ff81ff90df715bc6870ff9bbe8947a0665aef1e5fb3c2fe6e4326"
+    },
+    {
+      "path": "assets/style_matrix_20261027/matrix64/4090/execution/runs/S4/evaluations/0050000/heldout/eval_samples_ctrl/step0050000/eval200fix/gt53.png",
+      "size": 2891,
+      "sha256": "21034345ab316f70200ee9aa0c35474e9b9ba5e6dc23560689b2438cd7a0d4bd"
+    },
+    {
+      "path": "assets/style_matrix_20261027/matrix64/4090/execution/runs/S4/evaluations/0050000/heldout/eval_samples_ctrl/step0050000/eval200fix/gt54.png",
+      "size": 3007,
+      "sha256": "4a212cffeaae358cc019aede9455b51ef00485ff3cd05d515cafd7d90acbeb0d"
+    },
+    {
+      "path": "assets/style_matrix_20261027/matrix64/4090/execution/runs/S4/evaluations/0050000/heldout/eval_samples_ctrl/step0050000/eval200fix/gt55.png",
+      "size": 2485,
+      "sha256": "2293c209a2814ca55238b13984a39645f156c9ad069b0dec2846c49793963011"
+    },
+    {
+      "path": "assets/style_matrix_20261027/matrix64/4090/execution/runs/S4/evaluations/0050000/heldout/eval_samples_ctrl/step0050000/eval200fix/gt56.png",
+      "size": 3413,
+      "sha256": "843222fb0a7567f444ecb8c7ae500be4ed7101fe140d58f1d0551491329883ad"
+    },
+    {
+      "path": "assets/style_matrix_20261027/matrix64/4090/execution/runs/S4/evaluations/0050000/heldout/eval_samples_ctrl/step0050000/eval200fix/gt57.png",
+      "size": 2529,
+      "sha256": "0f6786211e396cbd2629e33a3f6748a8da66d9f9031f2b6bc7106cc207e5c576"
+    },
+    {
+      "path": "assets/style_matrix_20261027/matrix64/4090/execution/runs/S4/evaluations/0050000/heldout/eval_samples_ctrl/step0050000/eval200fix/gt58.png",
+      "size": 2421,
+      "sha256": "bfa38054acd734bfdabc19ff640a0b515b642aeea9a86e5f3bc3a83148eb23d3"
+    },
+    {
+      "path": "assets/style_matrix_20261027/matrix64/4090/execution/runs/S4/evaluations/0050000/heldout/eval_samples_ctrl/step0050000/eval200fix/gt59.png",
+      "size": 1939,
+      "sha256": "5ddf61fc1cf349e32b2ff3170ecf53670c91d2618333f2000dc8728b1ab6bb39"
+    },
+    {
+      "path": "assets/style_matrix_20261027/matrix64/4090/execution/runs/S4/evaluations/0050000/heldout/eval_samples_ctrl/step0050000/eval200fix/gt60.png",
+      "size": 2253,
+      "sha256": "f79677d8a830e45d49553268ade5c861ed4211a2472c645b5cdf1caba814abe2"
+    },
+    {
+      "path": "assets/style_matrix_20261027/matrix64/4090/execution/runs/S4/evaluations/0050000/heldout/eval_samples_ctrl/step0050000/eval200fix/gt61.png",
+      "size": 2679,
+      "sha256": "c0110cb198aa5a6ad1fb64c56d476a054b79456b1e89ff42b8fe5f0d9bb598d4"
+    },
+    {
+      "path": "assets/style_matrix_20261027/matrix64/4090/execution/runs/S4/evaluations/0050000/heldout/eval_samples_ctrl/step0050000/eval200fix/gt62.png",
+      "size": 3098,
+      "sha256": "b64de29904fefa2b58a4ff86f27266b8d620b1c8697a6bc1bd0cbc893699ad88"
+    },
+    {
+      "path": "assets/style_matrix_20261027/matrix64/4090/execution/runs/S4/evaluations/0050000/heldout/eval_samples_ctrl/step0050000/eval200fix/gt63.png",
+      "size": 2770,
+      "sha256": "b64851212f88683fd98eed9036291a6f2c57155f5edabd16892573a792b7ed0b"
+    },
+    {
+      "path": "assets/style_matrix_20261027/matrix64/4090/execution/runs/S4/evaluations/0050000/heldout/eval_samples_ctrl/step0050000/eval200fix/gt64.png",
+      "size": 2647,
+      "sha256": "7a49105cafc680e5f23921a48b492f7481b6f5f61526ae0c81b0e45e0774fbca"
+    },
+    {
+      "path": "assets/style_matrix_20261027/matrix64/4090/execution/runs/S4/evaluations/0050000/heldout/eval_samples_ctrl/step0050000/eval200fix/gt65.png",
+      "size": 2075,
+      "sha256": "85c6200d8ebe499320865b2d48fc0b74dcccd17e3c5c68b7db206166bae0cd6b"
+    },
+    {
+      "path": "assets/style_matrix_20261027/matrix64/4090/execution/runs/S4/evaluations/0050000/heldout/eval_samples_ctrl/step0050000/eval200fix/gt66.png",
+      "size": 2784,
+      "sha256": "f443834bed2296ed78807c5dc12d4356047d6990e6c30f1191c0b8b14f10bee4"
+    },
+    {
+      "path": "assets/style_matrix_20261027/matrix64/4090/execution/runs/S4/evaluations/0050000/heldout/eval_samples_ctrl/step0050000/eval200fix/gt67.png",
+      "size": 2700,
+      "sha256": "7421dd15ea102d356d8ff71bc9c0836a54675fbc9c295761c7897fc0a1c4190c"
+    },
+    {
+      "path": "assets/style_matrix_20261027/matrix64/4090/execution/runs/S4/evaluations/0050000/heldout/eval_samples_ctrl/step0050000/eval200fix/gt68.png",
+      "size": 2516,
+      "sha256": "42c8ec3207f48eb902e3fb2ea1960cc7f8347c77c3edfbcc9b21b2c2ce097a3a"
+    },
+    {
+      "path": "assets/style_matrix_20261027/matrix64/4090/execution/runs/S4/evaluations/0050000/heldout/eval_samples_ctrl/step0050000/eval200fix/gt69.png",
+      "size": 2041,
+      "sha256": "3b08525efdf1ffbeb38465e11cb8f06e6485e0a2dbca467bdc5c0436ab819a45"
+    },
+    {
+      "path": "assets/style_matrix_20261027/matrix64/4090/execution/runs/S4/evaluations/0050000/heldout/eval_samples_ctrl/step0050000/eval200fix/gt70.png",
+      "size": 2023,
+      "sha256": "3039e45d5b0951584b66584e1dd0b57eb692e5c58db86e23db70519c6ce5a3cb"
+    },
+    {
+      "path": "assets/style_matrix_20261027/matrix64/4090/execution/runs/S4/evaluations/0050000/heldout/eval_samples_ctrl/step0050000/eval200fix/gt71.png",
+      "size": 2676,
+      "sha256": "e3a5cffeb674b161a21a0ddb96335fdf6ffe59383e79ce01217dcc2ec3821860"
+    },
+    {
+      "path": "assets/style_matrix_20261027/matrix64/4090/execution/runs/S4/evaluations/0050000/heldout/eval_samples_ctrl/step0050000/eval200fix/gt72.png",
+      "size": 2908,
+      "sha256": "53302fcdcce73e70e4a7a123bc17af76dbbde1e813bb1e0b9aefdf2d1b684524"
+    },
+    {
+      "path": "assets/style_matrix_20261027/matrix64/4090/execution/runs/S4/evaluations/0050000/heldout/eval_samples_ctrl/step0050000/eval200fix/gt73.png",
+      "size": 2184,
+      "sha256": "2bd042d3e36cadc27b24965e19a205fddaeb32f2b0f80d96cd1b06080e3d198f"
+    },
+    {
+      "path": "assets/style_matrix_20261027/matrix64/4090/execution/runs/S4/evaluations/0050000/heldout/eval_samples_ctrl/step0050000/eval200fix/gt74.png",
+      "size": 2020,
+      "sha256": "ebf59865bba808827039018e78c624abb7b9a7e2497c40c05aba57caad79568f"
+    },
+    {
+      "path": "assets/style_matrix_20261027/matrix64/4090/execution/runs/S4/evaluations/0050000/heldout/eval_samples_ctrl/step0050000/eval200fix/gt75.png",
+      "size": 2327,
+      "sha256": "36056f1b0a5079e636993a78107f2f51627956a8e1f1e30bc2a2f287bd94f588"
+    },
+    {
+      "path": "assets/style_matrix_20261027/matrix64/4090/execution/runs/S4/evaluations/0050000/heldout/eval_samples_ctrl/step0050000/eval200fix/gt76.png",
+      "size": 2149,
+      "sha256": "9a935cd64ca85917ba579c1b38bbd9a9f7eb4214ee434e7921ccaf59a2ab07a4"
+    },
+    {
+      "path": "assets/style_matrix_20261027/matrix64/4090/execution/runs/S4/evaluations/0050000/heldout/eval_samples_ctrl/step0050000/eval200fix/gt77.png",
+      "size": 2602,
+      "sha256": "f0ec4a137e77bd8ffb2dcbedd1deec333028efef732fffd789943fc22a1730ee"
+    },
+    {
+      "path": "assets/style_matrix_20261027/matrix64/4090/execution/runs/S4/evaluations/0050000/heldout/eval_samples_ctrl/step0050000/eval200fix/gt78.png",
+      "size": 3279,
+      "sha256": "2e8209579ce0eca6490c7a9f848aa273979c7081868b83a73d2e74a07246c4fe"
+    },
+    {
+      "path": "assets/style_matrix_20261027/matrix64/4090/execution/runs/S4/evaluations/0050000/heldout/eval_samples_ctrl/step0050000/eval200fix/gt79.png",
+      "size": 2792,
+      "sha256": "dbd74cfefc1fc35366c67c4ac5db47bec61ff856156c0241f400dd018827672c"
+    },
+    {
+      "path": "assets/style_matrix_20261027/matrix64/4090/execution/runs/S4/evaluations/0050000/heldout/eval_samples_ctrl/step0050000/eval200fix/gt80.png",
+      "size": 2983,
+      "sha256": "4c6aff175a620a1ae343c2ae82c80b07e8fb53b4a3a5dc541ead38470a714e6a"
+    },
+    {
+      "path": "assets/style_matrix_20261027/matrix64/4090/execution/runs/S4/evaluations/0050000/heldout/eval_samples_ctrl/step0050000/eval200fix/gt81.png",
+      "size": 2903,
+      "sha256": "672036ae63bad94f9f0b04b97434e576edf959ca244e102e7e905dc88746792d"
+    },
+    {
+      "path": "assets/style_matrix_20261027/matrix64/4090/execution/runs/S4/evaluations/0050000/heldout/eval_samples_ctrl/step0050000/eval200fix/gt82.png",
+      "size": 2662,
+      "sha256": "07eeda701e8684ca06c995617a0c86c6b411b77c70da0dddffb4c1f95164a6ad"
+    },
+    {
+      "path": "assets/style_matrix_20261027/matrix64/4090/execution/runs/S4/evaluations/0050000/heldout/eval_samples_ctrl/step0050000/eval200fix/gt83.png",
+      "size": 2591,
+      "sha256": "f086d9d42e26052ccf455e3985570ff95182c1ce2442df7c821ae6691e887b57"
+    },
+    {
+      "path": "assets/style_matrix_20261027/matrix64/4090/execution/runs/S4/evaluations/0050000/heldout/eval_samples_ctrl/step0050000/eval200fix/gt84.png",
+      "size": 2548,
+      "sha256": "fbca127834cda8c88ce542cb551a62e2b906b86a36314f272947b17bc2321a72"
+    },
+    {
+      "path": "assets/style_matrix_20261027/matrix64/4090/execution/runs/S4/evaluations/0050000/heldout/eval_samples_ctrl/step0050000/eval200fix/gt85.png",
+      "size": 10292,
+      "sha256": "1422b20772014fcfc3f631d8265c0563dfab6aa315c89df5a967797c31ce81c9"
+    },
+    {
+      "path": "assets/style_matrix_20261027/matrix64/4090/execution/runs/S4/evaluations/0050000/heldout/eval_samples_ctrl/step0050000/eval200fix/gt86.png",
+      "size": 2832,
+      "sha256": "5f8a378a5833b1be6cd3d524a5aff1bb8a65dfb4fe8b93905bc96ca2aa55b208"
+    },
+    {
+      "path": "assets/style_matrix_20261027/matrix64/4090/execution/runs/S4/evaluations/0050000/heldout/eval_samples_ctrl/step0050000/eval200fix/gt87.png",
+      "size": 2853,
+      "sha256": "249af59f934bbb178308c67a45a4b07761a4dfaa221307f524b3639e76fdedc2"
+    },
+    {
+      "path": "assets/style_matrix_20261027/matrix64/4090/execution/runs/S4/evaluations/0050000/heldout/eval_samples_ctrl/step0050000/eval200fix/gt88.png",
+      "size": 3583,
+      "sha256": "4a71ea06f56eff8c6b75b19ddcd4ca017dbb6bd2d3a1ad5fa767cdf95281ed73"
+    },
+    {
+      "path": "assets/style_matrix_20261027/matrix64/4090/execution/runs/S4/evaluations/0050000/heldout/eval_samples_ctrl/step0050000/eval200fix/gt89.png",
+      "size": 3152,
+      "sha256": "1b213ecc07cb4ccfc5e422be482ed29e0b962399875bcc36ea0bcbaf6b62034b"
+    },
+    {
+      "path": "assets/style_matrix_20261027/matrix64/4090/execution/runs/S4/evaluations/0050000/heldout/eval_samples_ctrl/step0050000/eval200fix/gt90.png",
+      "size": 2838,
+      "sha256": "1f58115cd28669af3a5f975928229d2d441d945c908cd24cc5187eb91b4bb477"
+    },
+    {
+      "path": "assets/style_matrix_20261027/matrix64/4090/execution/runs/S4/evaluations/0050000/heldout/eval_samples_ctrl/step0050000/eval200fix/gt91.png",
+      "size": 2504,
+      "sha256": "fca08d92a37131d7ede7046bc357fa0f75ea6d8483f180ed5d53e4c5be1cc7ad"
+    },
+    {
+      "path": "assets/style_matrix_20261027/matrix64/4090/execution/runs/S4/evaluations/0050000/heldout/eval_samples_ctrl/step0050000/eval200fix/gt92.png",
+      "size": 3089,
+      "sha256": "46bdb4e3ae5f2b5d39aa606ae934d0eceff0a0eb32cc77282988d197d9185dae"
+    },
+    {
+      "path": "assets/style_matrix_20261027/matrix64/4090/execution/runs/S4/evaluations/0050000/heldout/eval_samples_ctrl/step0050000/eval200fix/gt93.png",
+      "size": 2441,
+      "sha256": "c8c3f115591cc2e0cd60d2824c760638b60f5252b47a7b634b413ac3df49bd40"
+    },
+    {
+      "path": "assets/style_matrix_20261027/matrix64/4090/execution/runs/S4/evaluations/0050000/heldout/eval_samples_ctrl/step0050000/eval200fix/gt94.png",
+      "size": 3418,
+      "sha256": "18d3945591c48e77199cd695d6ca8bc13361890c2694201d4975b7abd045c06b"
+    },
+    {
+      "path": "assets/style_matrix_20261027/matrix64/4090/execution/runs/S4/evaluations/0050000/heldout/eval_samples_ctrl/step0050000/eval200fix/gt95.png",
+      "size": 3185,
+      "sha256": "e7a9ac6e73f8487968c066ae38e55575386cea186ad6873bac50c74ec068fcd9"
+    },
+    {
+      "path": "assets/style_matrix_20261027/matrix64/4090/execution/runs/S4/evaluations/0050000/heldout/eval_samples_ctrl/step0050000/eval200fix/gt96.png",
+      "size": 2625,
+      "sha256": "f88edbd1581c8d10ea311001e567fd9d5c60f0bfc27d60320327574f1d42477c"
+    },
+    {
+      "path": "assets/style_matrix_20261027/matrix64/4090/execution/runs/S4/evaluations/0050000/heldout/eval_samples_ctrl/step0050000/eval200fix/gt97.png",
+      "size": 2077,
+      "sha256": "135c9acd11a407ec808607a3d8bbc1bf5fc00a0f95d9430fc214353d10269233"
+    },
+    {
+      "path": "assets/style_matrix_20261027/matrix64/4090/execution/runs/S4/evaluations/0050000/heldout/eval_samples_ctrl/step0050000/eval200fix/gt98.png",
+      "size": 3268,
+      "sha256": "1b2c4d7dae84d6d7a916586489046ce83ce8a166f33a4dba8d29281f48e90595"
+    },
+    {
+      "path": "assets/style_matrix_20261027/matrix64/4090/execution/runs/S4/evaluations/0050000/heldout/eval_samples_ctrl/step0050000/eval200fix/gt99.png",
+      "size": 3331,
+      "sha256": "0ebe262605040799eae076e1efdf71d627827505d3fcd7bb85930aeb335e8230"
+    }
+  ]
+}
