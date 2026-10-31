@@ -16,7 +16,8 @@ from src.train.step import build_cosine_scheduler,build_restart_scheduler
 from src.train.ema import update_ema
 from src.train.ckpt import build_checkpoint,WRITER,restore_rng,capture_rng,drain_ckpt
 from src.unet.style.diagnostics import inspect,gradient_report
-from .common import construct,optimizer,synthetic,step,save,seed,sha,condition_report
+from .common import (construct,optimizer,synthetic,step,save,seed,sha,condition_report,
+    disable_sites,assert_sites_disabled)
 
 
 class OffsetSampler(Sampler):
@@ -58,6 +59,12 @@ def main():
     else:
         with torch.autocast('cuda',dtype=torch.bfloat16):initial=condition_report(raw,cfg,calibrate=True)
         save(run/'initialization.json',dict(transfer=transfer,diagnostics=initial))
+    # 2026-11-01 [F arms]: silence the injection sites the diagnosis proved harmful.
+    # Zeroing gain is exact (delta*gain) and free; freezing drops the site params
+    # out of `optimizer()` so lr_style_inj only ever reaches the surviving site.
+    disabled_sites=[int(i) for i in spec.get('disable_injection_sites',[])]
+    if disabled_sites:
+        print(f'[sites] disabled on raw {disable_sites(raw,disabled_sites)}',flush=True)
     auxiliary=None;reader=None
     if spec.get('kind')=='joint':
         import csv
@@ -83,6 +90,8 @@ def main():
     if restart and not resume:raise ValueError('Controlled LR restart requires --resume')
     if resume:
         ema.load_state_dict(resume['ema'],strict=True)
+        if disabled_sites:
+            print(f'[sites] disabled on ema {disable_sites(ema,disabled_sites,freeze=False)}',flush=True)
         if len(resume['opt']['param_groups'])!=len(opt.param_groups):
             print(f'[resume] optimizer topology changed '
                   f'({len(resume["opt"]["param_groups"])} -> {len(opt.param_groups)} groups); '
@@ -189,7 +198,10 @@ def main():
                 save(run/'diagnostics'/f'{step_number:07d}.json',diagnostics)
                 assert restore_rng(rng)
             if step_number in milestones or step_number%cfg.ckpt_every==0:
+                if disabled_sites:
+                    assert_sites_disabled(raw,disabled_sites);assert_sites_disabled(ema,disabled_sites)
                 ck=build_checkpoint(raw,opt,ema,scheduler,args,step_number,log)
+                if disabled_sites:ck['disabled_injection_sites']=disabled_sites
                 if pair_weight:ck['velocity_pair_calibration']=pair_budget.state
                 ck['matrix_identity']=spec['identity'];ck['rng_meta']['resume_kind']='deterministic_pair_sampler_offset'
                 if auxiliary:ck.update(auxiliary.checkpoint())
@@ -199,7 +211,10 @@ def main():
         del batches
     if checkpoint is None or checkpoint.stem!=f'{step_number:07d}':
         checkpoint=run/'checkpoints'/f'{step_number:07d}.pt';checkpoint.parent.mkdir(exist_ok=True)
+        if disabled_sites:
+            assert_sites_disabled(raw,disabled_sites);assert_sites_disabled(ema,disabled_sites)
         ck=build_checkpoint(raw,opt,ema,scheduler,args,step_number,log);ck['matrix_identity']=spec['identity']
+        if disabled_sites:ck['disabled_injection_sites']=disabled_sites
         if pair_weight:ck['velocity_pair_calibration']=pair_budget.state
         if auxiliary:ck.update(auxiliary.checkpoint())
         WRITER.submit(ck,str(checkpoint))

@@ -55,6 +55,34 @@ def construct(spec,device='cuda',initialize_source=True):
     return model,config,transfer
 
 
+def disable_sites(model,sites,freeze=True):
+    """Silence style-injection sites so their delta contributes exactly nothing.
+
+    `injections.py` multiplies the whole delta by the `gain` buffer, so zeroing
+    gain disables a site without touching the weights. Buffers live in the state
+    dict, hence the zeroing survives save/resume — but a resumed checkpoint may
+    carry gain=1, so this must be re-applied after *every* state_dict load
+    (raw and EMA). Freezing the site parameters drops them out of the optimizer
+    groups built by `optimizer()`.
+    """
+    done=[]
+    for i in sites:
+        inj=model.style_injections[int(i)]
+        with torch.no_grad():inj.gain.fill_(0.0)
+        if freeze:
+            for p in inj.parameters():p.requires_grad_(False)
+        done.append(dict(site=int(i),gain_max=float(inj.gain.abs().max())))
+    return done
+
+
+def assert_sites_disabled(model,sites):
+    """Hard guard before saving: a disabled site must never leak a live gain."""
+    for i in sites:
+        g=model.style_injections[int(i)].gain
+        if bool((g!=0).any()):
+            raise AssertionError(f'injection site {i} gain is not zero: {g.detach().tolist()}')
+
+
 def optimizer(model,config,decoder=None,*,scratch=False):
     groups=[]
     if config.style_matrix_repr<0:

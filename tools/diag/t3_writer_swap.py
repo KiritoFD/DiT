@@ -65,17 +65,32 @@ def main():
                          ('--csv-out', dict(default='')),
                          ('--off-site', dict(type=int, default=-1,
                                              help='zero this injection site gain before sampling')),
+                         ('--off-sites', dict(default='',
+                                              help='comma list of sites to zero, e.g. 0,1')),
+                         ('--gain-scale', dict(default='',
+                                               help='per-site gain scale as i:factor, e.g. 2:1.2')),
                          ('--tag', dict(default='', help='suffix for output dirs')),
+                         ('--cfg', dict(type=float, default=0.0,
+                                        help='override eval_cfg (0 = use config)')),
                          ('--no-ocr', dict(action='store_true'))])
     pin(a.threads)
     out_dir = Path(a.out) / ('t3' + (f'_{a.tag}' if a.tag else ''))
     png_dir = out_dir / 'png'
     png_dir.mkdir(parents=True, exist_ok=True)
     model, cfg, ck = load_model(a.checkpoint, a.device)
+    off_sites = [int(s) for s in str(a.off_sites).split(',') if s.strip() != '']
     if a.off_site >= 0:
+        off_sites.append(a.off_site)
+    for s in off_sites:
         with torch.no_grad():
-            model.style_injections[a.off_site].gain.fill_(0.0)
-        print(f'[t3] site {a.off_site} gain zeroed (ablation)', flush=True)
+            model.style_injections[s].gain.fill_(0.0)
+        print(f'[t3] site {s} gain zeroed (ablation)', flush=True)
+    if a.gain_scale:
+        for spec_pair in str(a.gain_scale).split(','):
+            idx, factor = spec_pair.split(':')
+            with torch.no_grad():
+                model.style_injections[int(idx)].gain.mul_(float(factor))
+            print(f'[t3] site {idx} gain scaled x{factor}', flush=True)
     args = eval_args_of(cfg)
     diffusion = diffusion_of(args)
     srow = font_map(cfg)
@@ -157,7 +172,7 @@ def main():
     _t0 = _time.time()
     with torch.no_grad():
         latents = sample_latents(model, diffusion, noise, cache['conds'],
-                                 float(getattr(args, 'eval_cfg', 1.0)),
+                                 float(a.cfg if a.cfg > 0 else getattr(args, 'eval_cfg', 1.0)),
                                  int(getattr(args, 'in_mem_eval_batch', 8)),
                                  torch.device(a.device),
                                  skel=cache.get('skels_latent'), seed=0,

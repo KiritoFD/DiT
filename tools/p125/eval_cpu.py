@@ -21,6 +21,8 @@ def main():
                    help='repeatable: each gets an out/<stem> directory')
     p.add_argument('--out', required=True)
     p.add_argument('--threads', type=int, default=48)
+    p.add_argument('--device', default='cpu',
+                   help="cpu keeps the GPU free for training; cuda is ~15x faster")
     a = p.parse_args()
     torch.set_num_threads(a.threads)
     try:
@@ -30,7 +32,7 @@ def main():
     torch.set_grad_enabled(False)
     out = Path(a.out)
     out.mkdir(parents=True, exist_ok=True)
-    model, cfg, ck = load(a.checkpoint, 'cpu', use_ema=True)
+    model, cfg, ck = load(a.checkpoint, a.device, use_ema=True)
     step = int(ck['train_steps'])
     for csv_path in a.csv:
         name = Path(csv_path).stem
