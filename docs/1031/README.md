@@ -1,5 +1,24 @@
 # 2026-10-31 阶段性研究结论：书法单字条件生成
 
+
+## 专题文档导航（以细化章节为准）
+
+本目录并非只有摘要。以下内容已按**实际实验表、理论可检验性与后续行动**拆分；阅读时先看量化证据与冲突，再看专题，最后执行下一轮计划。
+
+| 文档 | 直接回答的问题 |
+|---|---|
+| [01 · 实验证据矩阵](01_EVIDENCE_MATRIX.md) | v10–v92、MoYi、S/J、P75 哪些数字可信？什么可以同协议比较？ |
+| [02 · Writer表示与内容权衡](02_REPRESENTATION_AND_WRITER.md) | DINO 93.9/0.5/5.6 如何理解？为什么S5身份好、S0内容好？ |
+| [03 · 后训练、迁移、Decoder](03_TRAINING_TRANSFER_AND_DECODER.md) | P75曝光够不够？旧LR的真值？4090 A/B/C对照如何归因？ |
+| [04 · OCR/E-G/协议勘误](04_EVALUATION_AND_ERRATA.md) | CSV/图像配对、GT sanity、来源泄漏、评价器哪些地方仍有风险？ |
+| [05 · 下一轮4090实验计划](05_NEXT_EXPERIMENTS.md) | 先补哪几组结果？什么结果决定延长、Writer-first或Decoder后训练？ |
+| [数学理论修订账本](../math/00_THEORY_REVISION_LEDGER.md) | 哪些旧理论被数据推翻、应如何修正？ |
+| [数学预测与验证矩阵](../math/05_PREDICTIONS_AND_FALSIFICATION.md) | 每个结论如何通过实验支持或推翻？ |
+
+**严格的三项事实冲突暂不擅自消解**：val100 seen/unseen 的两套说法；P75真实结构与“S5”命名；S0@50k val100 与@85k h187 OCR的跨面板差值。另有 P75 style LR 实际 `1e-4`、P2/P3真实累计步数70/75k、S0@85k SSIM不同实现的差异，均以专题证据表和真实checkpoint为准。
+
+> **下面保留此前的阶段性综合稿**，便于对照历史讨论。若其标题、归因或数值口径与上方专题发生冲突，**以新增的细化章节、原始实验文档以及 [math理论修订账本](../math/00_THEORY_REVISION_LEDGER.md) 为准**。本次只更新仓库文档，不表示已在4090重新训练或补算尚未提交的本地CSV。
+
 > **证据截面**：GitHub main（2026-10-31，最新主分支 fc7985232833），含当日 OCR 修正、A/B/C 启动与 LR 勘误。本文由现有仓库文档整合，**未重新连接训练机、补算 GPU 指标或核验远端路径**。完整旧 run 索引见 [All.md](../../All.md)；代表 ckpt 见 [Milestones.md](../../Milestones.md)；运行状态见 [Current.md](../../Current.md)；数学推导见 [docs/math](../math/README.md)。
 >
 > 部分本机导出的 `docs/1031/ocr_panel_scores*.csv`、`assets/milestones_samples/` 与 poster 仅由已提交日志确认，**本次查询 GitHub 未见原始 CSV/PNG 入库**。本文的对应数值来自已入库的 [1031.md](../../1031.md) 与 [All.md](../../All.md) `8，不声称已经重算这些数据。
