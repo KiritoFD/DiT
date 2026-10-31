@@ -42,6 +42,7 @@ python tools/poster_20261101/build_charts.py     # -> assets/posters/fig_p125_*.
 | 文件 | 作用 |
 |---|---|
 | `pick_cells.py` | 求两面板的 (书家, 字) 交集，输出 `cells.json`（含 `idx200` / `idx100` 与 GT 同源校验） |
+| `build_gt.py` | 从面板 CSV 的 `image_path` 取**原始真迹**做 GT 列，并断言每格 (书家, 字) 与 `cells.json` 一致 |
 | `validate_cells.py` | 校验索引不越界、本地列与 GT 齐备 |
 | `build_poster.py` | 合成 poster（9 列 × 21 行，行标签按书家着色，K 列描红） |
 | `build_charts.py` | 两张定量图；指标只读官方 `eval_stdskel_summary.csv` / `eval.json`，**不重算** |
@@ -52,6 +53,9 @@ python tools/poster_20261101/build_charts.py     # -> assets/posters/fig_p125_*.
 
 ## 注意
 
+- **GT 别用 moyi 那份 `gt{i}.png`**：那是减细/骨架化产物（墨量只有真迹的 39%、笔宽 1/3）。
+  用 `build_gt.py` 从 `image_path` 取原始真迹。自检办法：GT 列 ink% 应与其他列同量级
+  （实测 19.7% vs 15.6–20.5%）；若 GT 明显更淡，就是取错了。
 - **不重算指标**：`build_charts.py` 只消费官方评测内核的输出。自己实现一遍 SSIM/LPIPS
   会和历史数字不可比。
 - **不猜缺失数字**：v80 / v85A 的历史汇总在两机都不再留存，图上直接不画，而不是补一个估计值。

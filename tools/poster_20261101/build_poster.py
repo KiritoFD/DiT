@@ -35,7 +35,7 @@ WRITER_COLORS = {
 # base dir may be absolute-in-repo; the pulled columns live under scratch/panels/poster_imgs.
 REMOTE = PANEL
 COLUMNS = [
-    ('docs/106moyi/moyi/results/moyi_top10_rf/eval_ours200fix', 'GT 真迹', '传世法书原稿', 'gt', False),
+    ('GT', 'GT 真迹', '原始真迹（data/top10_style23）', '100', False),
     ('assets/results/v80_callivae_physics_noOT/20261011-195827-v80-callivae-physics-noOT/'
      'eval_samples_ctrl/step0200000/eval200fix', 'v80 physics', 'CalliVAE 200k', '200', False),
     ('assets/results/v85A_style_ada/20261014-032924-v85A-style-ada/'

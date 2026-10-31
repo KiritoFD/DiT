@@ -37,12 +37,32 @@ python scratch/panels/build_charts.py`（取图脚本见 `scratch/panels/*.sh`�
 
 > 索引映射依据：`g{i}.png` ↔ 面板 CSV 第 i 行（0 基），由
 > `in_mem_eval_sets="eval200fix:<csv>:<N>"` 的 N 截断保证，`N=187` 与 `N=100` 分别对应两族。
+> `build_gt.py` 还会对每格断言 `rows[idx100]` 的 (书家, 字) 与 `cells.json` 完全一致——
+> 21/21 通过，这是对索引映射的独立复核。
+
+## 1.1 GT 列的一个坑（已修）
+
+第一版 poster 的 GT 取自 `docs/106moyi/.../eval_ours200fix/gt{i}.png`，**那是减细过的版本，不是真迹**。
+同一格（王羲之/羲）三方比对：
+
+| 来源 | ink% | 笔宽 p50 | 笔宽 p90 |
+|---|---|---|---|
+| 原始真迹 `data/top10_style23/imgs/008161.png` | **28.65** | **11.66** | **24.33** |
+| 我们 eval 写的 `gt{i}.png` | **28.65** | **11.66** | **24.33** |
+| moyi 的 `gt{i}.png` | 11.12 | 4.00 | 6.32 |
+
+我们 eval 的 gt 与原始真迹**逐项完全一致**；moyi 那份墨量只有真迹的 39%、笔宽只有 1/3，
+是骨架化/减细产物（moyi 那套 12ch 流程的 gt 口径不同）。
+
+现在 GT 列直接由 `tools/poster_20261101/build_gt.py` 从面板 CSV 的 `image_path` 取**原始真迹**，
+21/21 齐备，整列 ink% 均值 19.7%，与其他列（15.6–20.5%）同量级——这也是发现该问题的信号：
+修复前 GT 列只有 9.7%，明显比其他列淡。
 
 ## 2. 列（按血统时间顺序）
 
 | # | 列 | 面板 | 来源 |
 |---|---|---|---|
-| 1 | GT 真迹 | 187 | `docs/106moyi/.../moyi_top10_rf/eval_ours200fix/gt*.png` |
+| 1 | GT 真迹 | 100 | `data/top10_style23/imgs/*.png`（面板 CSV 的 `image_path`，原始真迹，LANCZOS 到 256） |
 | 2 | v80 physics 200k | 187 | `assets/results/v80_callivae_physics_noOT/.../step0200000` |
 | 3 | v85A style_ada 30k | 187 | `assets/results/v85A_style_ada/.../step0030000` |
 | 4 | S9 style_matrix 50k | 187 | 4090 `style_matrix_20261028/.../S9/evaluations/0050000/heldout187_seed0` |
