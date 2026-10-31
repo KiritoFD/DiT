@@ -84,3 +84,24 @@ Q2 各模型 VAE、预处理、Sampler 和 EMA 可兼容性不同；如果不能
 - [13 纪元编年史](docs/04_experiments/00_exhaustive_experiment_chronicle.md)；[早期七里程碑](docs/04_experiments/08_milestone_evolution_summary.md)。
 - [全量实验总账](exp.md)；[全部指标曲线与来源审计](docs/108/03_metrics_ledger.md)；[阶段权重清单](ckpts.md)。
 - [S/J 控制实验](docs/1028/CONCLUSION_AND_NEXT_PHASE_20261028.md)；[风格独立性审计](docs/1030/eval_style_v2/FINAL_REPORT.md)；[P75 实际训练边界与口径](1030p125.md)。
+
+## 5. 本地已产出样本与 poster（2026-10-31，本机实测部分）
+
+> 与 §1 白名单对接：以下条目已完成"20 样本 + poster + 本地补指标"；严格 manifest 路见 §2/§3，本节为快速路（`tools/make_ckpt_poster.py` 数值序采样 + GT 细条 + 大字横幅）。
+> 样本本地存于 `assets/milestones_samples/<id>/`（g/gt 成对 + batch.csv），poster 在 `assets/milestones_posters/`。
+> 「本地补算」= 本地 4070 GPU：OCR=读光判别器 peak-timestep，SSIM=g/gt 单尺度高斯加权（视觉参考口径）；子集数字与全量口径并列，不互相替代。
+
+| ckpt（§1 对应行） | eval 样本来源（远端路径） | 本地补算 | poster |
+|---|---|---|---|
+| S0@85k（A 级行） | 4090 heldout187_seed0 eval200fix（g/gt ×20 + batch.csv） | OCR Top-1 89.47%（n=19，全量 81.29）；SSIM(g,gt) 0.688 | [S0_85k](assets/milestones_posters/S0_85k.png) |
+| S4@50k（A 级行） | 4090 matrix64 heldout eval200fix ×10 对 | OCR 90%（n=10，全量 77.78）；SSIM 0.662 | [S4_50k](assets/milestones_posters/S4_50k.png) |
+| S0@50k（A 级行） | 同上 | OCR 80%（n=10，全量 71.11）；SSIM 0.664 | [S0_50k](assets/milestones_posters/S0_50k.png) |
+| P3A@75k 末端（A 级行 P75） | 4090 p125 P3A heldout val100 ×10 对 | OCR 70%/Top-5 90%（n=10，全量 74.44/91.11）；SSIM 0.661 | [P3A_20k](assets/milestones_posters/P3A_20k.png) |
+| A@25k（C31 第一评测点，非历史里程碑） | 4090 abc_20261031 A 评测点 ×20 对 | OCR 80%；SSIM 0.668 | [A_25k](assets/milestones_posters/A_25k.png) |
+| v10b/v13/v66/v68（展示） | 本地 assets/poster_tree 迁移（10 张） | 不适用（样本与现行列定义/GT 不同代，逐字标签失效；指标用 §1 文档值） | [v68](assets/milestones_posters/06_v68_200k.png) 等 4 张 |
+
+### 待补清单（接 §3 队列）
+
+- [ ] 48 恢复后拉取：moyi 12ch/4ch、Deep-Sym4@85k、J5@5k、S5@85k 各 20 对 g/gt + batch.csv，走同一管线（moyi 系 pipeline 前产物无逐字标签，仅展示）。
+- [ ] `13ecosx`：两机代码/文档均未检得该字符串（与 §1 结论一致）；获得 run 目录名后按本节流程入册。
+- [ ] A@35k/45k、B@75k、C2@75k 评测点出来后按本节格式追加，并把结论按 §0 分级迁入 §1 白名单行。

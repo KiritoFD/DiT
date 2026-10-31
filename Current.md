@@ -47,3 +47,23 @@
 ```
 
 **禁止**：对仍在运行的任务误判完成、重复传输 GB 权重、自动删除唯一副本、给缺失评测补估算值、把不同 SSIM 实现聚合成一个字段。
+
+## 簇 C31 实际启动状态（2026-10-31 晚，4090 已运行）
+
+前置审计与计划的差异：为落实 A/B/C 的 restart 语义，修了三处运行时（§8.2 of All.md：rate() 字段错位、restart base_lrs、跨拓扑 resume、LR 视界校验）。**style LR 因此与原 P125 实测口径不同（本轮真正按 spec 生效）**。
+
+| Arm | 起点（fork 实现方式） | 实际 counter | LR (backbone/style_repr/style_inj/writer_table) | 状态 |
+|---|---|---|---|---|
+| A | P3A@20000（serial fork symlink + resume，schedule_restart origin=20000 horizon=25k） | 20000→45000（25k/35k/45k 三评测点） | 1e-5 / 5e-5 / 5e-5 / 2.5e-5 | **训练中** |
+| B | P0@50000（fork + resume，restart origin=50000 horizon=25k） | 50000→75000 | 同 A | 排队 |
+| C1 | P0@50000（restart origin=50000 horizon=5k） | 50000→55000 | 2e-6 / 5e-5 / 5e-5 / 1e-4 | 排队 |
+| C2 | C1@55000（restart origin=55000 horizon=20k） | 55000→75000 | 同 A | 排队 |
+
+- 已完成：**A@25000 评测点**（val100 SSIM 0.5914 / LPIPS 0.3478 / Ink-IoU 0.2829 vs P3A@20000 的 0.5857/0.3528/0.2725，四项全改善，旧配方延长仍在收敛）；heldout187×3 seeds 面板已出。本地 20 样本补 OCR Top-1 80%、SSIM(g,gt) 0.668；poster `assets/milestones_posters/A_25k.png`。
+- 串行：`assets/abc_20261031/plan.json`（--resident-pid 761xxx 轮换预留），1.46s/步，总 ETA ~34h。评测后自动落 `evaluations/{stop:07d}/{protocol}`。
+- 累计口径换算：A@45k=用户口径 100k；B/C2@75000=75k（与上文 P75=75k 口径一致）。
+
+### poster/补指标管线（与 Milestones.md §2/§3 对接）
+
+- 快速路：`tools/make_ckpt_poster.py`（目录内 g/gt 数值序采样 20 张 + 大字横幅）+ `tools/milestones/supplement_metrics.py`（本地 GPU OCR + SSIM）；产出已入 [Milestones.md](Milestones.md)。
+- 严格路：`tools/milestone_poster.py`（manifest 驱动，协议 ID 校验）用于正式同协议对比海报；两者并存，正式结论以严格路为准。

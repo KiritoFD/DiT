@@ -114,3 +114,27 @@ v_\theta(z_t,t;g,s,w)
 无需把过去数百条实验手工抄第二遍。首选将仓库现有 `assets/ledger/runs_all.csv`、`points_all.csv`、`tools/all_experiments_eval.json` 和最近的 `docs/1028/raw`、`docs/1030`、`1030p125.md` 提取到同一 `assets/experiment_registry.jsonl`（一行一身份），再自动生成本文件的“完整 run 索引”表。
 
 生成器**只合并有 provenance 的字段**；冲突结果保留多行并标注协议，不做数值覆盖。现阶段尚未生成 registry——先保留现有结构化来源，避免“汇总”反而制造错误身份。
+
+## 8. 2026-10-31 实测补充（本机执行的数字与路径，与会话同步）
+
+以下为本机（4090/本地 4070）当日实测，供 §2/§3 的判断引用；来源口径见各条。
+
+### 8.1 OCR 新评测修正后全量数字（读光判别器，配对以 eval_stdskel_batch.csv 为权威）
+
+- 修正内容：PNG 字典序配对 bug + PIL (w,h) 反置 bug；此前 0%/7.8% 全部作废。
+- 4090 侧（`docs/1031/ocr_panel_scores.csv`，val100 全量）：S0@50k 71.11/80.00、S1 77.78/86.67、S4 77.78/88.89、S6 73.33/81.11、S8 75.56/78.89；P0 67.78/81.11、P1 67.78/82.22、P2 75.56/88.89、P3A 74.44/91.11。
+- heldout187（协议 CSV 直配）：S0@85k **81.29**/89.47（seed1 76.02/90.06）。
+- 48 侧（`docs/1031/ocr_panel_scores_48.csv`）：S5@85k h187 三 seed 75.44–78.95；S11@50k 78.95/73.33；J5/J6/J7@5k h187 82.56/81.98/81.40、val100 79.07–79.65；机制 decoder_swap 与 original 完全相同（96.15，train panel）——换解码器只动风格不动内容的直接证据。
+- 各面板 GT sanity 89.4–100%。
+
+### 8.2 P125 链运行时勘误（影响历史解读）
+
+- `optimizer()` 的 `rate()` 读 `lr_style_representation`/`lr_style_injections`，而 Config 字段为 `lr_style_repr`/`lr_style_inj` ⇒ **P125 全链 style 两组实际 LR 为 legacy 1e-4**（P3A ckpt `initial_lr=1e-4` 实证），spec 写的 1e-5 从未生效。2026-10-31 已修（tools/p125/patch_rate_fields.py）。
+- 关联修复：restart scheduler 的 base_lrs 现显式取自本 spec config（resume 会把 param_groups 覆盖成旧衰减 LR）；P0(3 组)→B/C1(4 组) 跨拓扑 resume 用全新 moments；固定 LR 视界校验不再作用于 schedule_restart 的 arm。见 tools/style_matrix/runtime/{train,common}.py。
+
+### 8.3 权重与判别器部署
+
+- S 矩阵：4090 `assets/style_matrix_20261027/matrix64/4090/execution/runs/S*/checkpoints/0050000.pt`；48 同构 S2/S3/S5/S7。
+- 85k：4090 `assets/style_focus_85k_20261029/4090/runs/S0/checkpoints/`（50k/55k/85k）；S4@85k 停于 51k（0051024.pt 干净恢复点）；48 S5@85k 同前缀。
+- P125：4090 `assets/p125_20261030/execution/runs/{P0,P1,P2,P3A,P3B}/checkpoints/`。
+- 读光判别器 `duguang_ft_ext.pt`（77MB，md5 6e12a8e0…）已部署 4090/本地(`assets/p125_20261030/ocr/`)/48(`assets/p125_20261031_ocr/`)；Real-Test Top-1 80%（微调前 0%）。
