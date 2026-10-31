@@ -12,6 +12,7 @@
 | [02 · Writer表示与内容权衡](02_REPRESENTATION_AND_WRITER.md) | DINO 93.9/0.5/5.6 如何理解？为什么S5身份好、S0内容好？ |
 | [03 · 后训练、迁移、Decoder](03_TRAINING_TRANSFER_AND_DECODER.md) | P75曝光够不够？旧LR的真值？4090 A/B/C对照如何归因？ |
 | [04 · OCR/E-G/协议勘误](04_EVALUATION_AND_ERRATA.md) | CSV/图像配对、GT sanity、来源泄漏、评价器哪些地方仍有风险？ |
+| [07 · 4090可执行诊断/后训练Runbook](07_NEXT_DIAGNOSTICS_AND_TRAINING_RUNBOOK.md) | 统一起点、实际步数、Writer时间轴/层消融、swap、VAE验证与按诊断开训练分支的完整执行合同 |
 | [05 · 下一轮4090实验计划](05_NEXT_EXPERIMENTS.md) | 先补哪几组结果？什么结果决定延长、Writer-first或Decoder后训练？ |
 | [数学理论修订账本](../math/00_THEORY_REVISION_LEDGER.md) | 哪些旧理论被数据推翻、应如何修正？ |
 | [数学预测与验证矩阵](../math/05_PREDICTIONS_AND_FALSIFICATION.md) | 每个结论如何通过实验支持或推翻？ |
