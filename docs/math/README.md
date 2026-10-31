@@ -7,6 +7,7 @@
 
 | 文档 | 关键推导或待验证命题 |
 |---|---|
+| [原始结构化数据的直接复核](../1031/06_RAW_DATA_RECONCILIATION.md) | 616条v68/v70/v72等步曲线、P75多口径、CSV表头与重复行错误 |
 | [00 · 证据反例与理论修正](00_THEORY_REVISION_LEDGER.md) | 纠正“0.65上界”“Writer仅7维”“t=1学完整分布”“S5唯一最优”等过强判断 |
 | [01 · 条件Flow Matching与时间](01_CONDITIONAL_FLOW_AND_TIME.md) | Bayes风险差恒等式；`t=0`与`t=1`极限；中t的score/Writer差；正确SDE |
 | [02 · Writer表示与可辨识性](02_WRITER_INFORMATION_AND_IDENTIFIABILITY.md) | DINO能量分解、跨字Writer探针、来源混杂、Writer-swap方向/幅度/内容 |
