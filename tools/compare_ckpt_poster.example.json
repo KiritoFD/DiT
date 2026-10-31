@@ -1,0 +1,55 @@
+{
+  "manifest_id": "p125_f_20261101_20chars_FILL_REAL_EVAL_PATHS",
+  "title": "P125 / Writer注入整改：GT vs P3A vs F0 vs F1（同20字）",
+  "protocol_id": "P125_F_REPLACE_WITH_REAL_MATCHED_EVAL_PROTOCOL",
+  "sample_index_csv": "assets/f_20261101/evaluations/REPLACE/eval_stdskel_batch.csv",
+  "sample_index_mode": "explicit_idx",
+  "sample_ids": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15,
+    16,
+    17,
+    18,
+    19
+  ],
+  "rows": [
+    {
+      "name": "GT · 真迹",
+      "method": "目标书家真迹 / reference",
+      "protocol_id": "P125_F_REPLACE_WITH_REAL_MATCHED_EVAL_PROTOCOL",
+      "image_pattern": "assets/f_20261101/evaluations/REPLACE/gt{idx}.png"
+    },
+    {
+      "name": "P3A@20k",
+      "method": "原三尺度 Writer注入 / EMA",
+      "protocol_id": "P125_F_REPLACE_WITH_REAL_MATCHED_EVAL_PROTOCOL",
+      "image_pattern": "assets/p125_20261030/execution/runs/P3A/evaluations/REPLACE/g{idx}.png"
+    },
+    {
+      "name": "F0 · REPLACE CHECKPOINT",
+      "method": "保留8×8，关闭32×32/16×16；普通FM",
+      "protocol_id": "P125_F_REPLACE_WITH_REAL_MATCHED_EVAL_PROTOCOL",
+      "image_pattern": "assets/f_20261101/evaluations/F0_REPLACE/g{idx}.png"
+    },
+    {
+      "name": "F1 · REPLACE CHECKPOINT",
+      "method": "保留8×8，关闭32×32/16×16；弱Writer辅助目标",
+      "protocol_id": "P125_F_REPLACE_WITH_REAL_MATCHED_EVAL_PROTOCOL",
+      "image_pattern": "assets/f_20261101/evaluations/F1_REPLACE/g{idx}.png"
+    }
+  ]
+}
