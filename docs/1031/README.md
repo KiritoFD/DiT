@@ -7,6 +7,7 @@
 
 | 文档 | 直接回答的问题 |
 |---|---|
+| [06 · 原始CSV/JSON数据复核](06_RAW_DATA_RECONCILIATION.md) | 直接核对616条旧曲线与P75 CSV：表头15列但后五行18列、S0重复记录与多种SSIM实现 |
 | [01 · 实验证据矩阵](01_EVIDENCE_MATRIX.md) | v10–v92、MoYi、S/J、P75 哪些数字可信？什么可以同协议比较？ |
 | [02 · Writer表示与内容权衡](02_REPRESENTATION_AND_WRITER.md) | DINO 93.9/0.5/5.6 如何理解？为什么S5身份好、S0内容好？ |
 | [03 · 后训练、迁移、Decoder](03_TRAINING_TRANSFER_AND_DECODER.md) | P75曝光够不够？旧LR的真值？4090 A/B/C对照如何归因？ |
