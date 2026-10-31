@@ -7,6 +7,13 @@ import torch
 def initialize(model,checkpoint,state='ema',table=''):
     ck=torch.load(checkpoint,map_location='cpu',weights_only=False)
     source={k.removeprefix('_orig_mod.'):v for k,v in ck[state if state=='ema' else 'delta'].items()}
+    # Full-model layouts (delta/ema emitted by build_checkpoint) carry the
+    # backbone under a 'backbone.' prefix; staging bridges are already bare.
+    # Only the full-model layout takes this branch, so historical S-series
+    # staging inputs are bit-for-bit unchanged.
+    if any(k.startswith('backbone.') for k in source):
+        source={k.removeprefix('backbone.'):v for k,v in source.items()
+                if k.startswith('backbone.')}
     model.backbone.load_state_dict(source,strict=True)
     assert all(torch.equal(v,source[k].to(v)) for k,v in model.backbone.state_dict().items())
     if model.style_representation.kind==4:

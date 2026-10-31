@@ -1,5 +1,18 @@
 # Checkpoint登记
 
+2026-10-31 22:20（P125 链权重收口，4090 `/root/Workspace/xy/DiT`）：全六段边界权重完整落盘（均含 `.done` 原子标记），路径相对 `assets/p125_20261030/`：
+
+| 段 | 权重 | 终评 ssim（heldout val100） | 备注 |
+|---|---|---|---|
+| P0 | `execution/runs/P0/checkpoints/0050000.pt` | 0.5573 | 收刀边界（原计划 100k，用户裁定 50k） |
+| P1 | `execution/runs/P1/checkpoints/0005000.pt` | 0.5636 | writer 表克隆初始化（`p1_init.pt`，seed 125125） |
+| P2 | `execution/runs/P2/checkpoints/0015000.pt` | 0.5857 | 50/50 槽均衡 + pair 0.3 |
+| P3A | `execution/runs/P3A/checkpoints/0020000.pt` | 0.5857 | 纯 FM 对照 5k |
+| P3B | `execution/runs/P3B/checkpoints/0020000.pt` | 0.5881 | EG 臂**空转**（`eg_skipped=true`），实为 FM 变种子对照 |
+| 起点桥 | `p1_init.pt`（1,833,904,429 bytes） | — | P0@50k + Top10 表行扰动；sha `ee3475f5…`（源 ckpt） |
+
+EG pilot 门 probe（`execution/runs/P3B_probe/`，0015006.pt）：failed（EG 参数未进 resolved_config，无辅助行）。GPU 现由另一会话 abc_20261031 计划占用，P125 权重只读保留。
+
 2026-10-29 20:28：本次仅归档明文报告；SSH入口关闭，未核验新增checkpoint，不宣称60k或更晚权重已存在。55k完整性沿用19:22已确认记录。
 
 2026-10-29 19:22：新增4090 `assets/style_focus_85k_20261029/4090/runs/S0/checkpoints/0055000.pt`（1,827,105,304 bytes）及48 `assets/style_focus_85k_20261029/48_v3/runs/S5/checkpoints/0055000.pt`（1,847,756,091 bytes），原子.done记录step55000，未复制或覆盖原50k。官方HWD权重在两端各自下载至`~/.cache/torch/hub/checkpoints/VGG16_class_10400.pth.part`，707,488,473 bytes，严格加载10400类完整state成功；扩展名.part不代表未完成。它仅用于冻结评测，非生成模型或新风格教师。CHAED Ridge仅为失败的探索回归器，不进入生成训练。

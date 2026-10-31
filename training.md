@@ -2,6 +2,8 @@
 
 # 训练进度
 
+2026-10-31 22:20（P125 S5 链收口，4090）：**P125 全六段完成**（本会话监控期 22:2x 收刀→02:1x P2 完成；02:08 会话失联 20h，期间接管方跑完全链并启动新计划）。heldout 终局轨迹（val100 n=100，同种子行）：P0@50k ssim 0.5573 / P1@5k 0.5636（frag 10.69→2.82，**−74%**） / P2@15k **0.5857**（ink_iou 0.2723，单段最大增量 +0.022） / P3A@20k 0.5857 / P3B@20k **0.5881**（frag 2.64、hole 0.0437 最优）。**EG pilot 门 failed**：P3B spec 的 EG 形态参数未进 resolved_config（仅 pair_fraction 0.3，无 eg/joint 键）→ runtime `eg_skipped=true`（eg_samples 0、decoder_grad_norm 0）静默空转 → probe 无辅助行判 fail；P3B 实为纯 FM 对照（差值 +0.0024 在种子噪声内）。EG 机制待修再验证。4090 GPU 已由**另一会话的 abc_20261031 计划**接管（A@25→35→45k、B@75k、C1@55k、C2@75k，当前 A@35k resume 中），P125 资产只读不再动作。权重登记见 [ckpts.md](ckpts.md)。
+
 2026-10-30 22:05（P125 S5 链，4090）：P0 heldout 全轨迹收齐（val100 n=100，CPU eval 内核，每点 460s 不停训）：1k 0.263 / 5k 0.533 / 10k 0.549 / 20k 0.557 / 30k 0.560 / 40k 0.557（ssim），**自 ~20k 平台化**，训练 fm 同期 −13% 为纯 seen 增益。用户裁定：**P0 收刀于 50k**（编排已挂，50k watcher eval 平台门 ssim≥0.55 通过后自动 SIGTERM→改 plan stop→重 seal→重启链→P1）；裁定**不补 S4@85k**；转入全程目标监控（goal-e8401d41 + 45 分钟巡检）确保 P1→P2→EG pilot 门→P3A/P3B 正确充分完成。计划变更细节见[1030p125.md §2.5.4](1030p125.md)。当前 47.8k 步，1.553 step/s 恒定，peak 20.41GiB。
 
 2026-10-30 13:21（P125 S5 链，4090）：P125 全链拉起（run_p125.sh，tmux p125）：batch512/microbatch512/compile=True，实测稳态 **1.554 step/s**（0.644 s/step），peak **20.41 GiB**（+1.1GiB 容器外常驻）。此前修复空白：`src/unet/io.py` 未传 num_writers（P0 style 分支永久零梯度根因）、microbatch 256→512、P2/P3 source、阶段间 style 权重搬运（transfer_style）、init_p1_table 语法错、build_stage_csvs NameError、新增 seal_ready。SSH 直连 4090（ProxyJump 48 已注释）。
