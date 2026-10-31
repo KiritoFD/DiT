@@ -258,3 +258,281 @@ L_{\mathrm{img}}=
 J1 冻结 Decoder 时 `\nabla_\psi L_{\mathrm{img}}=0`；J2/J3 可更新 `\psi`，使网络多了一个直接改善 RGB 误差的自由度。结果 J0→J2 的 SSIM **+0.0049**、LPIPS 约 **−0.007**，而 Writer Top-1 未同步上升，符合“图像域目标直接优化局部成像”的解释。
 
 **识别因果的方法**：固定相同 `z`，分别解码 `D_{\psi_0}(z)` / `D_{\psi_1}(z)`；再交换同一 Encoder/生成器与不同 Decoder 的配对。这能区分 Decoder 直接改变画质与联合微调让 U-Net 改变 latent 的贡献，仍需检查细笔与字符错误是否变化。
+
+
+## 5. 为什么“更多监督”反而可能损害图像目标：12ch 的梯度竞争
+
+Moyi/早期 DiT 的 12ch 将 4 个图像 latent 通道与 8 个 Canny/骨架辅助 latent 通道一起预测。令
+
+\[
+L_{\mathrm{multi}}=L_{\mathrm{image}}+\lambda L_{\mathrm{aux}},
+\quad g_i=\nabla_\theta L_{\mathrm{image}},
+\quad g_a=\nabla_\theta L_{\mathrm{aux}}.
+\]
+
+沿一次小学习率梯度下降 `\theta'=\theta-\eta(g_i+\lambda g_a)`，对主要图像损失作一阶展开：
+
+\[
+L_{\mathrm{image}}(\theta')-L_{\mathrm{image}}(\theta)
+\approx-\eta\left(\|g_i\|_2^2+\lambda\langle g_i,g_a\rangle\right).
+\]
+
+因此若 `\langle g_i,g_a\rangle<0` 且 `\lambda|\langle g_i,g_a\rangle|>\|g_i\|^2`，**总 loss 在下降时图像 loss 仍可能上升**。即使内积为正，额外分支也会消耗参数、显存、NFE 和样本预算。
+
+项目中的物理记录：12ch 等权辅助任务曾占最终层约 **51%** 的梯度量，patch_embed 处辅助梯度约为图像的 **2.6×**；所用 4ch+g 配方比 12ch+wz 更早生成清晰字符。但历史 12ch 同时存在 **CFG image-channel 作用域**、**白底归零恢复**等 bug，因此不能把所有性能损失都因果归于梯度冲突。[12ch/白底归零复盘](../archive/system_notes/59_12ch_and_white_zero_retrospective.md)。
+
+### 为什么骨架条件与骨架目标不等价
+
+`G` 是**预测时已知条件**；令辅助目标 `A=\mathrm{Canny}(X)` 或 `\mathrm{Skeleton}(X)`，它仍是关于真实 `X` 的标签。训练 `(X,A)` 的联合分布可能产生有效正则化，**并非信息论上“完全冗余=必然有害”**；只是当前骨架信息已由 `G` 注入，额外预测 `A` 的边际监督价值要与其训练干扰一起测量。
+
+正确消融要冻结数据、参数/NFE、VAE、条件、LR、随机性；同时记录 per-channel loss、梯度范数及 cosine：
+
+\[
+\rho_{\mathrm{grad}}=
+\frac{\langle g_i,g_a\rangle}{\|g_i\|\,\|g_a\|}.
+\]
+
+只有这些证据足够，才能决定权重、分支解耦或直接删除辅助目标。
+
+### 字形/白底尺度同属潜空间合同
+
+旧白底归零令 `z'=z-z_{\rm white}`，它改变了 latent 的均值、稀疏度与尾部；解码时必须 `z=z'+z_{\rm white}`。否则 `D_\psi(0)` 并非白纸，图像呈现错误颜色。这是一个**可逆变量替换的工程合同被破坏**，不是“网络不擅长黑白图”的理论结论。具体的 gradient/CFG/scale-shift 问题皆要求强断言，而非依赖散落于脚本中的默认值。
+
+## 6. 两种评价风险：字符识别风险和 Writer 验证风险
+
+### 6.1 OCR 应被视为含测量误差的内容判据
+
+设冻结 OCR 为 `q_\varphi(c\mid x)`，生成图 `\widehat X_\theta`，可定义：
+
+\[
+A_{\rm OCR}(\theta)=
+P[\arg\max_c q_\varphi(c\mid \widehat X_\theta)=C].
+\]
+
+此量是模型可识别率，不是字符结构绝对正确率。由于读光当前有未覆盖/域外字、异体、书法简写，必须同时记录：
+
+\[
+A_{\rm GT}=P[\arg\max q_\varphi(c\mid X_{\rm GT})=C],
+\]
+
+以及 **仅在 OCR 能识别对应 GT 的固定索引子集上**的条件准确率：
+
+\[
+A_{\rm conditional}=
+P[\widehat C(\widehat X_\theta)=C
+\mid\widehat C(X_{\rm GT})=C].
+\]
+
+要同时报告全体 `A_{\rm OCR}` 与 `A_{\rm conditional}`；后一项不能偷偷替代全体。识别对错还要检查 vocab 覆盖率、置信 margin、混淆类及 **Confident-Wrong**。局部断笔和错部件需要人工错误注入的 Corruption-Test；高 Top-1 不等于形态全对。
+
+**特别的统计条件**：不能用 `sorted(glob('g*.png'))` 的字典序配对字符。每张图需由 `(panel_id,sample_idx,Unicode,writer,script,GT_sha)` 明确 join，对文件名索引做整数解析，并有 GT sanity；单纯 GT OCR 很高也无法排除少量繁简/异体错配。旧 0%/7.8% 正是配对与输入宽高事故，不是模型结论。[本日修复](../../1031.md)。
+
+### 6.2 E-G 是关系度量，不是可直接求和的“风格质量”
+
+E-G 在同书体、不同字符的真实作品上进行 Writer 核验。`AUC=95.98%` 对应的是**正负对的得分排序能力**，不是“书家分类准确率95.98%”。E-G 的训练、参考库、测试作品必须识别来源重叠；低阶墨量/宽度/布局线性探针 AUC49.35% 与残差后 E-G93.11%，仅排除这一**类简单捷径**，不排除扫描/作品来源复杂偏差。
+
+对于不同协议的 AUC，可定义诊断性的相对饱和度：
+
+\[
+S_{\rm EG}=\frac{\mathrm{AUC}_{\rm gen}-0.5}
+{\mathrm{AUC}_{\rm GT}-0.5},
+\]
+
+前提是二元 Writer 核验、正负采样和参考池设计一致，且分母大于0。`\mathrm{AUC}_{\rm GT}` 是该面板**经验真迹参照**，不是真正的数学上界。例：旧 S5@50k AUC0.8798、GT0.9238，`S\approx0.896`；Deep85 在其187协议 AUC0.8557、GT0.8976，`S\approx0.895`。因此原始 AUC 的跨协议大小不能直接宣告 S5 胜出。[E-G旧协议](../1030/eval_style_v2/EG_RANKING.md)。
+
+**AUC、EER、mAP、Style-FID/KID 均用到同一 E-G 特征，不是四个独立裁判。** 另一个 HWD 网络在真实中文作品上的跨字 Writer AUC 只有约51–54%，无法作可靠“独立复核”；CHAED+Ridge的字符留出审美回归也未过可靠校准。应优先获得独立数据/来源和真正能判别 Writer 的第二网络，再声称多裁判一致。[HWD](../1029/hwd/REPORT.md) / [CHAED](../1029/chaed/REPORT.md)。
+
+## 7. Writer-swap 的几何理论：方向、幅度与内容稳定性
+
+给定同 `(G,S,\epsilon)`，只改变 Writer：
+
+\[
+\widehat X^a_\theta=D_\psi(F_\theta(\epsilon,G,S,a)),
+\qquad
+\widehat X^b_\theta=D_\psi(F_\theta(\epsilon,G,S,b)).
+\]
+
+`F_\theta` 表示完整 FM 反向采样，并非单步网络前向。设冻结的跨字 Writer 特征为 `\phi(X)`，则生成的两书家差向量
+
+\[
+\Delta_{\rm gen}^{a,b}
+=\phi(\widehat X^a_\theta)-\phi(\widehat X^b_\theta).
+\]
+
+真实参考差向量需在尽量匹配书体、字符、作品来源的协议下估计，例如
+
+\[
+\Delta_{\rm real}^{a,b}(c,s)=
+\mathbb E[\phi(X)\mid a,c,s]
+-\mathbb E[\phi(X)\mid b,c,s],
+\]
+
+现实共享字可能太少，因此要对真实中心估计的不确定性做 bootstrap，并在全局/字符层次分开展示。
+
+至少测量三轴：
+
+\[
+\operatorname{Direction}=
+\frac{\langle\Delta_{\rm gen},\Delta_{\rm real}\rangle}
+{\|\Delta_{\rm gen}\|\,\|\Delta_{\rm real}\|},
+\qquad
+\operatorname{Amplitude}=
+\frac{\|\Delta_{\rm gen}\|}{\|\Delta_{\rm real}\|},
+\]
+
+\[
+\operatorname{ContentStability}
+=P[\operatorname{OCR}(\widehat X^a)=
+\operatorname{OCR}(\widehat X^b)=C].
+\]
+
+**解释**：
+
+- `\operatorname{Direction}` 高但 `\operatorname{Amplitude}\ll1`：书家差异方向正确，却被平均化/压缩；
+- 幅度大而方向错：有风格变化，**不是目标 Writer 风格**；
+- 风格提高同时内容稳定性下降：模型可能用错误部件/过度草化换取判别得分；
+- 幅度接近1不是充分条件：真实特征可能含扫描来源混杂，且不同字的合法差异强度不同。
+
+已有 J 系关系几何中方向余弦约 **0.85**、幅度比 **0.66–0.75**；这是**该组特征与现有面板**的观察，尚缺完整同字同噪声 swap 的独立重建，不可把 0.72 当所有生成模型的普适风格压缩率。[E-G关系分析](../1030/eval_style_v2/FINAL_REPORT.md)。
+
+## 8. 为什么不能只用一个加权总分宣布胜利：Pareto 与分布评估
+
+设模型性能向量为：
+
+\[
+\mathcal M(\theta)=
+\big(A_{\rm OCR},\,A_{\rm EG},\,-\mathrm{LPIPS},\,
+\mathrm{InkIoU},\,A_{\rm unseen},\,\operatorname{ContentStability}\big).
+\]
+
+同一数据/同一评估器/同一推理算力/同一采样协议下，如果模型 A 在每个预设主指标不弱于 B 且至少一个指标显著更优，则可称 **Pareto 改善**；否则是一个**权衡点**，不是“全面优于”。
+
+不要任意将多个数值标准化后相加成单标量，因为每个指标的度量不确定度、单位、训练教师独立性不同。例如：
+
+- SSIM/LPIPS 衡量与**单个配对 GT** 的相似度，合法第二写法也会受到惩罚；
+- OCR Top-1 衡量识别器是否猜对 Unicode，忽略同字多写法的细腻程度；
+- E-G AUC 衡量跨字符身份验证，不能代替内容或墨色；
+- Ink-IoU 高可能奖励粗笔、连笔、牺牲真实书家飞白；
+- FID/KID 的特征分布距离无法判断目标 Writer 是否对号入座。
+
+### 真迹—真迹相似度为什么不是 SSIM“上界”
+
+以**平方欧氏距离**为例（不是 SSIM），若 `Y,Y'` 是给定条件 `H=(G,S,W)` 下独立同分布的两张作品，则
+
+\[
+\mathbb E[\|Y-Y'\|^2\mid H]
+=2\,\mathrm{tr}\operatorname{Cov}(Y\mid H).
+\]
+
+该恒等式解释“同条件真迹之间仍会有显著差异”。如果对单个 GT 的像素 MSE 最优预测为 `\mathbb E[Y\mid H]`，它可能表现为平均字形甚至模糊笔画；但 **SSIM 不是平方距离、存在非线性局部对比度/结构项**，不能简单把平均真实真迹 SSIM 作为理论最高。仓库里实测的“条件平均0.6503、均匀抽对0.6235”属于**协议依赖的参考统计量**。[107 评测](../107/02_model_benchmarks.md)。
+
+### 不确定性处理
+
+- 一组汉字每个有3个噪声 seed，不等于 `3N` 个独立汉字。**先逐字聚合 seed，再按字符聚类 bootstrap**；涉及 Writer 级结论还要按 Writer 分层或层级重采样。
+- 对同样本两模型采用配对差、预先指定优先指标，而不是单独看两个均值差。
+- 超参数、CFG/SDE、模型与样本如果都在同一 test200 上选择，再报其 test 置信区间，会产生选择偏差；验证集选择后要在冻结测试集确认。
+- 样本来源、异体Unicode与同源作品必须标注；“全187字”不等于“187个全阶段严格未见字”。
+
+## 9. SDE/ODE 推理的数学边界：旧 free-lunch 为什么不能直接搬
+
+仅在 `\epsilon\perp Z_0\mid H`、噪声真正是标准高斯、流匹配采用前述线性桥且时间 `t>0` 时，有精确 score 关系：
+
+\[
+s^*(z,t,H)=\nabla_z\log p_t(z\mid H)
+=-\frac{\mathbb E[\epsilon\mid Z_t=z,H]}{t}
+=-\frac{z+(1-t)v^*(z,t,H)}{t}.
+\]
+
+令生成时间 `u=1-t`。无噪声的概率流 ODE 漂移是 `-v^*`。对任意仅依赖时间的非负扩散系数 `D(t)`，构造
+
+\[
+\boxed{
+\mathrm dZ_u=
+\left[-v^*(Z_u,t,H)+D(t)s^*(Z_u,t,H)\right]\mathrm du
++\sqrt{2D(t)}\,\mathrm dB_u.
+}
+\]
+
+Fokker–Planck 方程里新增的 `-D\nabla\cdot(p_ts^*)` 与 `+D\Delta p_t` 相互抵消（`p_t s^*=\nabla p_t`），因此**在精确速度/score、合适边界条件下**，它与原条件 ODE 共享**每个时间的边缘分布**；不保证每条固定噪声路径逐像素相同。
+
+当 `D(t)=\gamma^2t(1-t)`，用代码的下降 `t` 记号：
+
+\[
+b_{\rm code}=v^*-D(t)s^*
+=v^*+\gamma^2(1-t)[z+(1-t)v^*].
+\]
+
+旧式直接放大 `v` 而不加 `z` 状态项并不是这个方程；C2OT 通过依赖 `Z_0` 的噪声重排破坏了推导所需独立性，不能对旧模型直接假定保持同分布。`CFG\ne1` 或有限模型误差又引入额外偏差。
+
+本项目证据：v68 的旧采样器大增益确实曾被观察到，但在 v80 更正独立配对链上，三 seed 的 SSIM **+0.000576**，95%CI **[−0.000315,+0.001512]** 跨零；Frag **−0.071973**，探索性95%CI **[−0.147870,−0.002186]**。因此只支持“某些断笔统计可能轻微改善”，**不支持普适 SDE 免费画质提升**。详见 [独立 SDE 数学审计](../experiments/2026-10-12-v68-v70-sde-role-and-free-lunch.md)。
+
+## 10. 通用预训练、目标适配与混合阶段：如何识别真实迁移增益
+
+设通用分布 `P_0(Z_0,G,S,W)` 和目标 Top10 分布 `P_T` 不同。预训练的价值可以体现为：
+- 更快学习字符/STD→墨迹的共同映射；
+- 目标域在相同**有条件**样本曝光量下更低的风险；
+- 对 `\mathrm{Unseen\ in\ All\ Stages}` 字符的更好泛化；
+- 这些收益在引入 Writer 后仍不造成明显域偏置。
+
+但观察到 `P0@50k` 已能生成书法字或 P1 后 Writer AUC 上升，**不是净正迁移证据**；需要一个同架构、同总算力、同目标样本曝光的无预训练对照。
+
+### 10.1 两种必须区分的曝光量（不是 optimizer 更新数）
+
+令阶段 `k` 训练了 `T_k` 次更新，Top10 图像概率为 `p_k`，Writer 非空概率为 `1-d_k`，则按相同 batch 大小归一后的 Batch 等效量是
+
+\[
+E_{\rm Top10,image}=\sum_k T_kp_k,
+\qquad
+E_{\rm Top10,conditional}=\sum_kT_kp_k(1-d_k).
+\]
+
+P75 的已有配方（P0不含目标Top10；P1 5k×30%目标×75%非空，P2 15k×90%，P3 5k×90%）给出：
+
+\[
+\begin{aligned}
+E_{\rm image}&\approx 1.5k+15k+5k=\boxed{21.5k},\\
+E_{\rm conditional}
+&\approx1.125k+13.5k+4.5k=\boxed{19.125k}.
+\end{aligned}
+\]
+
+这不是说“模型只更新了19.125k步”，而是对目标域条件曝光的**等价样本量估计**。需要按实际日志和所有 dropout/配对采样确认。若 A 再新增 25k Top10、Writer dropout10%，则预计 `E_{\rm image}≈46.5k`，`E_{\rm conditional}≈41.625k`；先前把这两个口径都称“46.5k条件曝光”是混淆。
+
+### 10.2 当前 A/B/C 说明什么，不能说明什么
+
+- **A**：从原 P3A 继续 Top10，已完成 +5k 首评：SSIM `0.5857→0.5914`。同时修正了 Style LR、optimizer 组及 restart，因此只是**更充分的新后训练方案**有效，不能隔离纯步数收益。
+- **B**：从同一 P0@50k 直接 Top10 25k，跳过 P1；相比原 P75 混合轨迹同时改变 Top10曝光、LR、数据顺序与 optimizer，因此即使 B 胜也不等于“混合阶段有害”。
+- **C**：P0@50k Writer-first 5k + 联合20k；如果 B/C 起点、总数据、噪声、训练步数、测试协议完全一致，**C vs B 更接近测试 Writer-first 学习率/冻结配方**的因果实验。
+
+**真正验证预训练**建议双口径：① 相同目标曝光比较 `P0+FT` vs 只在 Top10 训练的 scratch；② 相同**总算力**比较 `P0+FT 75/100k` vs 同架构 scratch75/100k，并在严格 Unseen-in-Top10 / Unseen-in-All-Stages 上报告内容与风格。总算力对照与曝光对照回答不同问题，缺一不能宣布正迁移。
+
+## 11. 一个“可以推翻”的下一代研究框架
+
+| 数学或机制命题 | 当前证据 | **能够支持或推翻它的实验** |
+|---|---|---|
+| Writer 有独立条件信息（`\mathcal R_0-\mathcal R_1>0`） | E-G 能区分 Writer，S5 身份领先 | 同`Z_t,U,G,S`固定输入，比较 correct/wrong/null Writer FM risk；按 t/字/书家分组 |
+| Writer 效应在中间时间比 `t=1` 包含更多分布信息 | 第2节高斯反例是**严格理论可能性**，真实数据未证 | 跨 t 的 Writer 条件响应、同字同噪声 Writer-swap 与 GT 方差/分布匹配 |
+| Writer ID 比小 K 均值原型更适合当前 Top10 | K32 Top-1仍24%、全量线性42.6% | 同数据/同预算：ID embedding vs 大 K、端到端参考聚合，留字符和来源 |
+| 复杂空间注入能提高真实 Writer 差异但不必提高内容 | S4/S5 E-G AUC 优，S0 SSIM 优 | 85k/同面板/三seed，独立 E-G2/人工 2AFC、Writer-swap 内容稳定 |
+| Decoder 主要改变局部成像 | J2/J3 SSIM/LPIPS 增益，Writer 未同步增 | 固定 latent Decoder swap + OCR/多尺度结构和真迹笔锋统计；若字符改变即否定“只改纹理” |
+| 额外辅助目标可能竞争主生成目标 | 12ch 梯度/4ch 结果 | 同NFE/参数/数据的4ch vs12ch和梯度 cosine/图像主损失差 |
+| P75 是后训练不足而非预训练无用 | 当前条件曝光约19.1k，A首点改善 | A/B/C完结后等样本、等总算力的 scratch/transfer 严格 unseen 对照 |
+| OCR+E-G 能共同衡量任务 | 真实OCR80%（200张）、E-G真迹AUC95.98 | 完整 Real-Test、Corruption-Test、来源留出、writer/char 反事实，加人工 blind review |
+
+### 建议保留的最小新训练接口
+
+1. **内容**：STD-soft `G` 作为空间条件；字符 ID 若用于对照，必须作为另一个独立模式，不能与STD混合后宣称纯开集。
+2. **风格**：训练时已知 Writer 的 Embedding，可经共享条件网络进入生成器；是否需要局部表征/额外分支，先看真实 Writer 条件风险与swap收益。
+3. **主训练**：普通、严格定义时间与 latent contract 的 FM；辅助 Loss 必须有独立收益和梯度门控。
+4. **成像**：Decoder 作为独立可评审的画质模块，可后训练，但必须同时监测OCR与Writer。
+5. **评价**：不对不同协议求总分，严格声明每个样本的 char/Writer/GT/seed/VAE/EMA/metric 版本。
+
+**数学总结**：在理想平方损失条件 FM 下，Writer 的价值由 `\mathbb E\|\Delta v_W\|^2` 精确定义；但在纯噪声端它只体现平均 latent，真正的多种写法与笔法分布必须在中间时间和完整生成样本上检验。这解释了为什么“更强 Writer loss”“多一个空间注入器”“更好的 Decoder 指标”都不能单独宣告书风生成问题解决。
+
+## 12. 证据与实现导航
+
+- [全部实验阶段总结](../1031/README.md) · [All](../../All.md) · [Milestones](../../Milestones.md) · [Current](../../Current.md)。
+- [FM 源码](../../src/loss/flow_matching.py) · [VAE合同](../vae_latent_contract.md) · [SDE推导/复核](../experiments/2026-10-12-v68-v70-sde-role-and-free-lunch.md)。
+- [DINO风格结构](../../ANALYSIS/style_structure_diagnosis_20261025.md) · [S9 Pair 方向](../1028/generation2.md) · [S/J实验](../1028/CONCLUSION_AND_NEXT_PHASE_20261028.md)。
+- [E-G检测及混杂边界](../1030/eval_style_v2/FINAL_REPORT.md) · [E-G协议归一](../1030/eval_style_v2/EG_RANKING.md) · [HWD](../1029/hwd/REPORT.md)。
+- [旧108评测账本](../108/03_metrics_ledger.md) · [107勘误](../107/03_evidence_grade_and_errata.md) · [P75 LR审计](../../1030p125.md) · [OCR修复及后训练状态](../../1031.md)。
