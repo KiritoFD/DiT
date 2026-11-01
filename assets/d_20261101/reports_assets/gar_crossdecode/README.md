@@ -65,9 +65,17 @@
 python assets/metrics_index/plot_fig13_crossdecode.py
 # -> assets/metrics_index/fig13_crossdecode.png
 
+# 视觉海报（同 latent 多种 decoder 出图 + 8× 放大差异图）
+python assets/metrics_index/poster_decoder.py
+# -> assets/metrics_index/poster_decoder.png
+
 # 逐像素差异统计
 #   K vs D1b = 0.00000（逐字节相同）
 #   K vs K+D1dec = 0.00809；K vs GAR@672 = 0.00465
+# 差异的结构性（复算海报依据）：
+#   变化像素占比 |d|>0.02 约 3–8%；前 5% 像素占全部差异 52–60%
+#   变化像素处局部梯度是未变像素的 9.5 倍 -> 改动集中在笔画边缘
+#   |d|>0.9 的极端翻转仅 13/65536 像素 -> 细笔端单像素级，非整笔增删
 ```
 
 **缺失字段显式标 NA**：`decoder_ckpt` 列对 K_A、D1b_2500 记
