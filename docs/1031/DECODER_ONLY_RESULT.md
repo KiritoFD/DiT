@@ -8,9 +8,12 @@ D 计划与 GAR 线的核心结论。**生成器 K 逐位不变**，只训练 VA
 ## 数据来源
 
 - 面板：`assets/d_20261101/eval/` 的 `K_plus_D1dec_s*`（val100，n=100/OCR n=90）
-- 汇总：`assets/metrics_index/paired_eg_ocr_20261101.csv`
+- 汇总：`assets/metrics_index/paired_eg_ocr_20261101.csv`、
+  `assets/metrics_index/lineage_summary.csv`
 - 图：`assets/metrics_index/fig_decoder_only_result.png`（生成器
   `assets/metrics_index/plot_decoder_only.py`）
+- 六轴版（含 SSIM/LPIPS/骨架/碎片比）：`assets/metrics_index/fig_decoder_fig13.png`
+  （`assets/metrics_index/plot_fig13.py`，即全周期报告 FIG13 的右侧面板）
 
 ## 结果
 

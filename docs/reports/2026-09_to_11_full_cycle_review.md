@@ -272,13 +272,72 @@ Qwen-Image LoRA以及“两张同书家异字参考”的方案也做过对照�
 
 **最严谨的成果表述：** 在固定生成器和生成latent下，Decoder微调可在不改变面板OCR的前提下改善图像接近度和若干笔墨统计，但不保证改善笔画拓扑；如果局部笔画被并合，Frag下降还可能含有伪收益。旧结果中部分端点/连通块异常来自随机Style分支，不能再据此宣称D1本身“必然糊连”。
 
+#### 6.3.1 补充：六条曲线的完整扫描，身份轴并不单调
+
+上表只给了 2500 步端点。把 **decoder 步数 0/500/1000/1500/2000/2500** 全部展开、
+并对每个轴都取「相对 K 的差值」后，图景比单点更精确（图见下 FIG13，数据
+`assets/metrics_index/lineage_summary.csv`，脚本 `assets/metrics_index/plot_fig13.py`）：
+
+| decoder 步 | ΔSSIM | ΔLPIPS | ΔInk-IoU | Δ容差骨架F1 | Δ碎片比 | ΔE-G AUC | ΔOCR |
+|---:|---:|---:|---:|---:|---:|---:|---:|
+| 0 (K) | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
+| 500 | +0.0014 | −0.0018 | +0.0004 | −0.0001 | −0.219 | +0.074 | 0 |
+| **1000** | +0.0023 | −0.0017 | +0.0006 | −0.0004 | −0.194 | **+0.120** | 0 |
+| 1500 | +0.0031 | −0.0028 | +0.0006 | −0.0004 | −0.250 | −0.039 | 0 |
+| 2000 | +0.0034 | −0.0041 | +0.0007 | −0.0005 | −0.280 | −0.156 | 0 |
+| 2500 | **+0.0036** | **−0.0046** | **+0.0007** | −0.0005 | **−0.281** | −0.229 | 0 |
+
+**四个轴的行为彼此不同，这才是可靠的结论：**
+
+1. **外观轴（SSIM / LPIPS / Ink-IoU / 碎片比）单调改善并趋于饱和** —— 与
+   `docs/d_results.md` §3 一致，1500 步已拿到约 90%。
+2. **容差骨架 F1 单调缓慢下滑**（0 → −0.0005，约 −2%）。这是 Decoder 的固有代价：
+   它只作用于外观，不改善骨架几何，两者甚至轻微冲突。**唯一确定变差的指标。**
+3. **Writer 身份（E-G）非单调：1000 步见顶（+0.120），之后转负，2500 步到 −0.229
+   （低于 K）。** 因此「decoder 训得越久越好」在这条轴上是**错的**。
+4. **OCR 全程完全不动**（六个点都是 77.78）。解码器改渲染、不改可读性；n=90 的
+   口径也分辨不出更小的变化。
+
+**据此修正 6.3 的措辞：** 「干净正收益」适用于**外观轴**；在**身份轴**上，
+K＋D1dec@2500 相对 K 实为**轻微负值**，只有中间检查点（约 1000 步）才为正。
+若目标是同时守住身份，则应取 ~1000 步的 Decoder，而不是收益最大的 2500 步。
+注意这些 Δ 的量级（身份 ±0.2 AUC、骨架 −2%）接近或低于测量噪声，
+**可以支持「不显著恶化」，不足以支持「显著改善」**。
+
 ### 6.4 GAR：有新正结果，但还没超过最优Decoder
 
 仓库随后按Generation-Aware Reconstruction思路：冻结K的368个生成器张量（逐张量验证差异严格为0），用GT latent加噪、**单步**去噪获得生成感知latent，只训练Decoder。当前仓库GAR变体采用MSE、感知特征及VGG Gram监督，**不是前一轮D1的L1+LPIPS+Edge**。它在Top10去重作品上做约672步（记录为2 epoch）。
 
 val100：正确冻结K的baseline SSIM **0.594575** / LPIPS **0.346214**，GAR@672为 **0.596863 /0.343268**，墨量和OCR基本稳定。**这证明GAR适配有正信号，但它未超过此前K＋D1dec的0.5982/0.3416。** 另一个将GAR梯度回传U-Net的GARU已配置预检，但仓库这份记录仍标“尚未正式训练”；不能把未来计划写成已完成实验。
 
-<figure class="fig-placeholder"><div class="fig-index">FIG 13 · 待补正确K起点Decoder换装及错误对照</div><div class="fig-space"></div><figcaption><strong>左侧建议：</strong> 四张同latent图“K原Decoder / K+D1dec / K+GAR / GT”，放大细笔端点和相邻墨线；<strong>右侧建议：</strong> Decoder步数500/1000/1500/2000/2500的ΔSSIM/ΔLPIPS曲线和容差骨架F1曲线。<strong>源：</strong><code>docs/d_results.md</code>、<code>docs/1031/GAR_DECODER.md</code>、<code>assets/metrics_index/fig_decoder_sweep.png</code>、<code>assets/d_20261101/review/</code>。<strong>特别标注：</strong> 早期D臂含随机Style分支，不能放进“干净训练方法排行榜”。</figcaption></figure>
+**GAR 的六门验收与长跑（补充）：** GAR 相对 D1b（生成器与 K 逐位相同的干净对照）
+在 @672 通过全部预设门槛：ΔSSIM +0.0023、ΔLPIPS −0.0029（两者 100→336→672
+**单调**）、ΔInk-IoU +0.0004（门限为跌幅≤0.003）、OCR 77.78 持平、
+width_p50 仅 +0.28%（无变粗漂移）、writer direction 恒 0.5571。随后按 4h 预算
+延长到 **GARL@4000 步（11.93 epoch）**，训练损失持续改善（DINO 0.491→0.192、
+Gram 0.00121→0.00055）而 pixel MSE 基本持平 —— 正是 GAR 的预期特征：改善纹理与
+感知，而非硬拟合像素（后者才会危及 OCR）。**GARL 的训练已完成，但其 val100 面板
+评测尚未执行，故本报告不给出 GARL 的指标结论**；GAR 这条线仍未超过 K＋D1dec。
+
+<figure><div class="fig-index">FIG 13 · K 生成器固定、只换 Decoder：六条轴的完整扫描</div>
+<img src="../assets/metrics_index/fig_decoder_fig13.png" alt="Decoder sweep across SSIM, LPIPS, Ink-IoU, tolerance-skeleton F1, fragment ratio and E-G writer AUC" width="100%">
+<figcaption>每个面板都是**相对 K 的差值**（水平线 = K）。绿圈标出该轴的最优点。
+<strong>关键读法：</strong> 外观轴（SSIM/LPIPS/Ink-IoU/碎片比）单调改善且趋于饱和，
+绿圈都落在最右侧；而<strong>容差骨架 F1 的最优点是最左侧（K 本身）</strong>、
+<strong>E-G 身份的最优点在 1000 步</strong>。即：不存在一个「各方面都最好」的
+Decoder 步数，推迟训练会牺牲骨架与身份。
+<strong>数据：</strong><code>assets/metrics_index/lineage_summary.csv</code>、
+<code>paired_eg_ocr_20261101.csv</code>；<strong>脚本：</strong>
+<code>assets/metrics_index/plot_fig13.py</code>。
+<strong>已满足原占位要求：</strong> 步数 500/1000/1500/2000/2500 的 ΔSSIM、ΔLPIPS
+与容差骨架 F1 曲线均已绘制；左侧「同 latent 换装读图」部分见
+<code>assets/d_20261101/review/</code>（K+D1dec best/worst 20 字）与
+<code>docs/1031/DECODER_ONLY_RESULT.md</code>。
+<strong>特别标注：</strong> 早期 D 臂含随机 Style 分支，不能放进「干净训练方法排行榜」；
+本图所有点共享**未经改动的 K 生成器**。
+<strong>仍未满足：</strong> 原占位要求的「K+GAR 同 latent 独立解码 PNG 组」不在 Git 内
+（GAR 面板图在 4090 侧），见
+<a href="./2026-09_to_11_missing_assets.md">缺失清单</a> FIG13 行。</figcaption></figure>
 
 ## 07｜全历史比较：我们的提升有多大，哪些模型仍比我们强？
 
