@@ -1,5 +1,10 @@
 # Checkpoint登记
 
+2026-11-01 14:05（D1b 起跑，4090）：`assets/d_20261101/execution/runs/D1b/checkpoints/`，
+spec `assets/d_20261101/specs/D1b.json`。与 D1 的唯一区别是 `transfer_style: True` ——
+D1 的起点实际是「K 主干 + 随机 style 分支」，D1b 才是真正的「从 K 出发」。
+生成器全程冻结，落盘后须用 `tools/d_20261101/verify_d1b.py` 断言与 K 逐位相同。
+
 2026-11-01 11:15（D 计划三臂权重落盘，4090 `/root/Workspace/xy/DiT`）：均从 K
 （`assets/abc_20261031/execution/runs/A/checkpoints/0043429.pt` 的 EMA）出发，
 路径相对 `assets/d_20261101/`。**三臂均未超越 K，不作为交付权重保留，仅供诊断复现。**

@@ -288,3 +288,6 @@ assets/posters/poster_check_header.png
 assets/posters/poster_top5_30_*.png
 assets/posters/top2_crop_preview.png
 assets/posters/u100_pipeline_20261024/
+
+# regenerable in minutes by tools/poster_20261101/collect_metrics.py (2 MB total)
+assets/metrics_index/index_*.json

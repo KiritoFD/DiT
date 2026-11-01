@@ -68,7 +68,16 @@ def main():
         assert start<a.stop, 'Resume already reached the requested boundary'
         raw.load_state_dict(resume['delta'],strict=True)
     else:
-        with torch.autocast('cuda',dtype=torch.bfloat16):initial=condition_report(raw,cfg,calibrate=True)
+        # `inspect(calibrate=True)` rescales every injection gain so that
+        # delta_rms/base_rms == 0.1. That is right for a freshly initialised style
+        # branch, but a post-training arm that inherited its gains from the source
+        # checkpoint would have them overwritten -- e.g. K's 14.81/24.27/37.06 came
+        # back as 6.01/19.87/22.52, silently perturbing a "frozen" generator.
+        # `calibrate_gains: false` keeps the inherited values.
+        calibrate_gains=bool(spec.get('calibrate_gains',True))
+        with torch.autocast('cuda',dtype=torch.bfloat16):
+            initial=condition_report(raw,cfg,calibrate=calibrate_gains)
+        if not calibrate_gains:print('[sites] gain calibration skipped (inherited)',flush=True)
         save(run/'initialization.json',dict(transfer=transfer,diagnostics=initial))
     # 2026-11-01 [F arms]: silence the injection sites the diagnosis proved harmful.
     # Zeroing gain is exact (delta*gain) and free; freezing drops the site params

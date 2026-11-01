@@ -1,0 +1,42 @@
+﻿block,family,label,step,n,ssim,lpips,iou,frag,skel,ocr,direction,amplitude,panel,source,note
+val100,S,S0,50k,100,0.6027,0.3395,0.2859,2.627,0.0253,,,,validation_val100.csv,assets/style_matrix_20261027/matrix64/4090/execution/runs/S0/evaluations/0050000/heldout/eval_stdskel_summary.csv,LocalCNN→AdaGN
+val100,S,S1,50k,100,0.5866,0.3494,0.2806,2.265,0.0237,,,,validation_val100.csv,assets/style_matrix_20261027/matrix64/4090/execution/runs/S1/evaluations/0050000/heldout/eval_stdskel_summary.csv,Vector→Spatial AdaGN
+val100,S,S4,50k,100,0.5988,0.3406,0.2951,2.299,0.0255,,,,validation_val100.csv,assets/style_matrix_20261027/matrix64/4090/execution/runs/S4/evaluations/0050000/heldout/eval_stdskel_summary.csv,LocalCNN→Spatial AdaGN
+val100,S,S6,50k,100,0.5980,0.3428,0.2901,2.399,0.0249,,,,validation_val100.csv,assets/style_matrix_20261027/matrix64/4090/execution/runs/S6/evaluations/0050000/heldout/eval_stdskel_summary.csv,Vector→DynamicConv
+val100,S,S8,50k,100,0.6001,0.3429,0.2837,2.676,0.0252,,,,validation_val100.csv,assets/style_matrix_20261027/matrix64/4090/execution/runs/S8/evaluations/0050000/heldout/eval_stdskel_summary.csv,MultiToken→DynamicConv
+val100,S,S9,50k,100,0.5981,0.3454,0.2767,2.381,0.0231,,,,validation_val100.csv,assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/original_protocol/eval_stdskel_summary.csv,style_matrix 主线
+val100,S,S0@85k,85k,100,0.6000,0.3420,0.2819,2.682,0.0250,,,,validation_val100.csv,assets/style_focus_85k_20261029/4090/runs/S0/evaluations/0085000/original_val100/eval_stdskel_summary.csv,style_focus 续训
+val100,P,P0,50k,100,0.5573,0.3841,0.2258,10.690,0.0165,,,,validation_val100.csv,assets/p125_20261030/execution/runs/P0/evaluations/0050000/heldout/eval_stdskel_summary.csv,通用
+val100,P,P1,55k,100,0.5636,0.3735,0.2440,2.818,0.0164,,,,validation_val100.csv,assets/p125_20261030/execution/runs/P1/evaluations/0005000/heldout/eval_stdskel_summary.csv,混合
+val100,P,P2,70k,100,0.5857,0.3527,0.2723,2.668,0.0215,,,,validation_val100.csv,assets/p125_20261030/execution/runs/P2/evaluations/0015000/heldout/eval_stdskel_summary.csv,Top10
+val100,P,P3A,75k,100,0.5857,0.3528,0.2725,2.972,0.0228,,,,validation_val100.csv,assets/p125_20261030/execution/runs/P3A/evaluations/0020000/heldout/eval_stdskel_summary.csv,FM
+val100,P,P3B,75k,100,0.5881,0.3505,0.2745,2.637,0.0232,,,,validation_val100.csv,assets/p125_20261030/execution/runs/P3B/evaluations/0020000/heldout/eval_stdskel_summary.csv,FM+EG
+val100,A,A@25k,25k,100,0.5914,0.3478,0.2829,2.693,0.0239,,,,validation_val100.csv,assets/abc_20261031/execution/runs/A/evaluations/0025000/heldout/eval_stdskel_summary.csv,abc 链
+val100,A,A@35k,35k,100,0.5924,0.3484,0.2828,2.797,0.0250,,,,validation_val100.csv,assets/abc_20261031/execution/runs/A/evaluations/0035000/heldout/eval_stdskel_summary.csv,abc 链
+n187,S,S9,50k,187,0.6023,0.3362,0.3101,3.323,0.0313,,,,S_187_seed0.csv,assets/style_matrix_20261028/generation2full/4090/runs/S9/evaluations/0050000/heldout187_seed0/eval_stdskel_summary.csv,
+n187,S,S0@85k,85k,187,0.5963,0.3373,0.3180,2.492,0.0317,,,,S_187_seed0.csv,assets/style_focus_85k_20261029/4090/runs/S0/evaluations/0085000/heldout187_seed0/eval_stdskel_summary.csv,
+n187,A,A@25k,25k,187,0.5795,0.3540,0.2838,3.646,0.0209,,,,S_187_seed0.csv,assets/abc_20261031/execution/runs/A/evaluations/0025000/heldout187_seed0/eval_stdskel_summary.csv,
+n187,A,A@35k,35k,187,0.5850,0.3497,0.2873,3.615,0.0231,,,,S_187_seed0.csv,assets/abc_20261031/execution/runs/A/evaluations/0035000/heldout187_seed0/eval_stdskel_summary.csv,
+native,Moyi,Moyi 12ch,50k,,0.5935,0.3724,,,,,,,,01_EVIDENCE_MATRIX §2,文档转录
+native,Moyi,Moyi 4ch,50k,,0.5949,0.3678,,,,,,,,01_EVIDENCE_MATRIX §2,文档转录
+native,Moyi,Moyi 4ch,80k,,0.6085,0.3489,,,,,,,,01_EVIDENCE_MATRIX §2,文档转录
+native,v,v68,200k,,0.6169,,,,,,,,,01_EVIDENCE_MATRIX §2（107 统一 187）,文档转录
+native,v,v70,65k,,0.5535,,,,,,,,,01_EVIDENCE_MATRIX §2,文档转录
+native,v,v83A,90k,,0.6055,,0.2990,,,,,,,01_EVIDENCE_MATRIX §2,文档转录
+native,v,v84A,200k,,0.5846,0.3551,0.2840,,,,,,,01_EVIDENCE_MATRIX §2,文档转录
+native,v,v80,190k,,0.6168,0.3247,,,,,,,,01_EVIDENCE_MATRIX §2,文档转录
+val100,S,S2,50k,,0.5949,0.3455,0.2835,2.489,,,,,,01_EVIDENCE_MATRIX §3,文档转录
+val100,S,S3,50k,,0.5976,0.3426,0.2904,2.601,,,,,,01_EVIDENCE_MATRIX §3,文档转录
+val100,S,S5,50k,,0.5975,0.3425,0.2851,2.385,,,,,,01_EVIDENCE_MATRIX §3,文档转录
+val100,S,S7,50k,,0.5972,0.3431,0.2857,2.477,,,,,,01_EVIDENCE_MATRIX §3,文档转录
+val100,A/D,K (A@43429),"43,429",100,0.5946,0.3462,0.2886,2.658,0.0258,77.78,0.5571,0.7320,val100,assets/f_20261101/eval/K_A,★ 旧最优；direction 取 1350 对口径（K+D1dec 的 T3，生成器相同）；K_A 原 T3 是 900 对口径 = 0.5454，不可与其它臂直接比
+val100,A/D,K + D1dec,"43,429",100,0.5982,0.3416,0.2893,2.377,0.0253,77.78,0.5571,0.6759,val100,assets/d_20261101/eval/K_plus_D1dec,★ 新最优：K 生成器 + D1 decoder
+val100,A/D,K + D1dec@500,"43,429",100,0.5960,0.3444,0.2890,2.439,0.0257,77.78,0.5571,0.6759,val100,assets/d_20261101/eval/K_plus_D1dec_s0000500,decoder 扫描
+val100,A/D,K + D1dec@1000,"43,429",100,0.5969,0.3445,0.2892,2.464,0.0254,77.78,0.5571,0.6759,val100,assets/d_20261101/eval/K_plus_D1dec_s0001000,decoder 扫描
+val100,A/D,K + D1dec@1500,"43,429",100,0.5977,0.3434,0.2892,2.408,0.0254,77.78,0.5571,0.6759,val100,assets/d_20261101/eval/K_plus_D1dec_s0001500,decoder 扫描
+val100,A/D,K + D1dec@2000,"43,429",100,0.5980,0.3421,0.2893,2.378,0.0253,77.78,0.5571,0.6759,val100,assets/d_20261101/eval/K_plus_D1dec_s0002000,decoder 扫描
+val100,A/D,D1 (起点错),"2,500",100,0.5839,0.3562,0.2630,2.423,0.0209,75.56,0.1607,0.4018,val100,assets/d_20261101/eval/D1_2500,decoder-only，style 分支随机
+val100,A/D,D2 (起点错),"3,000",100,0.5932,0.3466,0.2754,2.455,0.0241,74.44,0.4291,0.5814,val100,assets/d_20261101/eval/D2_3000,U-Net+decoder，style 分支随机
+val100,A/D,D3 (起点错),"11,000",100,0.5927,0.3477,0.2847,2.763,0.0253,78.89,0.5372,0.6527,val100,assets/d_20261101/eval/D3_11000,hard-char FM，style 分支随机
+val100,A/D,D3 + D1dec,"11,000",100,0.5965,0.3428,0.2854,2.389,0.0248,78.89,0.5372,0.6527,val100,assets/d_20261101/eval/D3_11000_plus_D1dec,交叉组合
+val100,A/D,K_P3A,"20,000",100,0.5857,0.3528,0.2725,2.972,0.0228,74.44,0.4003,0.6432,val100,assets/f_20261101/eval/K_P3A,P3A 内部续训
