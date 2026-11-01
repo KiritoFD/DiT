@@ -74,12 +74,17 @@ def ocr_and_ink(png_dir, rows, device, limit=None):
     return ocr, ink, len(pngs)
 
 
-def writer_eval(checkpoint, csv_path, out_dir, tag, device, chars, writers, seeds):
+def writer_eval(checkpoint, csv_path, out_dir, tag, device, chars, writers, seeds,
+                decoder_from=''):
     """Shell out to the T3 tool so there is exactly one swap implementation."""
     cmd = [sys.executable, '-u', '-m', 'tools.diag.t3_writer_swap',
            '--checkpoint', checkpoint, '--csv', csv_path,
            '--chars', str(chars), '--writers', str(writers), '--seeds', str(seeds),
            '--tag', tag, '--device', device, '--out', str(out_dir)]
+    if decoder_from:
+        # OCR is the only T3 readout that depends on the decoder (direction and
+        # amplitude are latent-space), so it must be told about the override.
+        cmd += ['--decoder-from', decoder_from]
     print('[eval] ' + ' '.join(cmd), flush=True)
     subprocess.run(cmd, check=True)
     report = Path(out_dir) / f't3_{tag}' / 't3_report.json'
@@ -156,7 +161,7 @@ def main():
     writer = None
     if not a.skip_writer:
         writer = writer_eval(a.checkpoint, a.csv, out_dir, a.tag, a.device,
-                             a.chars, a.writers, a.seeds)
+                             a.chars, a.writers, a.seeds, a.decoder_from)
 
     report = dict(tag=a.tag, checkpoint=a.checkpoint, step=step,
                   disabled_injection_sites=disabled, off_sites_this_eval=off,

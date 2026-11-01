@@ -1,5 +1,19 @@
 # Checkpoint登记
 
+2026-11-01 11:15（D 计划三臂权重落盘，4090 `/root/Workspace/xy/DiT`）：均从 K
+（`assets/abc_20261031/execution/runs/A/checkpoints/0043429.pt` 的 EMA）出发，
+路径相对 `assets/d_20261101/`。**三臂均未超越 K，不作为交付权重保留，仅供诊断复现。**
+
+| 臂 | 权重 | 步数 | ssim | lpips | ink_iou | 备注 |
+|---|---|---|---|---|---|---|
+| D1 | `execution/runs/D1/checkpoints/0002500.pt` | 2,500 | 0.5839 | 0.3562 | 0.2630 | decoder-only；**Writer 身份崩塌**（direction 0.1607） |
+| D2 | `execution/runs/D2/checkpoints/0003000.pt` | 3,000 | 0.5932 | 0.3466 | 0.2754 | U-Net+decoder 联合；ink_iou 显著变差 |
+| D3 | `execution/runs/D3/checkpoints/0011000.pt` | 11,000 | 0.5927 | 0.3477 | 0.2847 | 纯 FM + 困难字过采样；**不伤 Writer 身份**（0.5372） |
+
+交叉组合 `D3 U-Net × D1 decoder` 不占权重（评测时用 `--decoder-from` 临时拼装），
+指标为 ssim 0.5965 / lpips 0.3428 / ink_iou 0.2854 / OCR 96.22，四臂最优但全部不显著。
+完整评测在 `eval/{D1_2500,D2_3000,D3_11000,D3_11000_plus_D1dec}/`。
+
 2026-10-31 22:20（P125 链权重收口，4090 `/root/Workspace/xy/DiT`）：全六段边界权重完整落盘（均含 `.done` 原子标记），路径相对 `assets/p125_20261030/`：
 
 | 段 | 权重 | 终评 ssim（heldout val100） | 备注 |

@@ -2,6 +2,22 @@
 
 # 训练进度
 
+2026-11-01 11:15（**D 计划首轮完成，4090 已空闲**）：D1/D2/D3 串行跑完并全部评测，
+外加不额外训练的交叉组合 D3+D1dec。实测步速与 ETA 与预估一致：D1 04:30→06:29（2500 步）、
+D2 06:29→08:45（3000 步）、D3 08:45→10:44（11000 步）、评测 10:44→10:59。**结论：K 仍最优，
+D 计划没有产出可替换它的权重**——配对检验（100 张同图同种子，bootstrap 1e4）里只有退化达到显著：
+D1 的 LPIPS −0.0100 与 Ink-IoU −0.0256、D2 的 Ink-IoU −0.0132；D3 全部 n.s.；
+D3+D1dec 观感最好（SSIM 0.5965 / LPIPS 0.3428 / OCR top5 98.44 / 碎片比 2.389，均为四臂最优）
+但 CI 全部含 0。**机制**：图像域损失奖励平滑高墨量渲染，decoder 靠加粗+合并笔画把碎片比压下去
+（端点密度 0.0008→0.0004、连通块 10.16→8.28、笔宽 0.970→1.004 与 GT 齐平），
+所以碎片比下降是假改善、粘连加重，Ink-IoU 与 OCR 同步下滑；D1 单独使用时 Writer 身份崩塌
+（direction 0.5454→0.1607）。D3 是唯一不伤 Writer 身份的臂（0.5372/0.653）。
+**不建议据此追加 2–4h**，增益在 100 字面板上与噪声不可分。另修一处评测缺陷：
+`t3_writer_swap` 原先不认 `--decoder-from`，交叉组合的 t3 报告与 D3 md5 完全相同；
+direction/amplitude 在 latent 空间算本就不受影响，但 OCR 走图像，原先拿的是 D3 的原样结果，
+补跑后为 96.22/98.44。结果表与判据见 [docs/d_results.md](docs/d_results.md)，对照图见
+`assets/d_20261101/review/`。
+
 2026-11-01 04:35（**D 计划拉起，4090，tmux `d` 串行 D1→D2→D3**）：按用户裁定停掉 F 计划（F0 未产出 ckpt），改做三类缺陷对应的三个后训练臂，全部从 K（`0043429.pt` EMA）出发、保留完整 Writer 注入、冻结 VAE Encoder、不新增条件网络。实现落 `tools/d_20261101/`（`calibrate.py` / `hard_chars.py` / `build_specs.py` / `tune.py` / `measure.sh` / `show_spec.py` / `run_d.sh`），并改三处运行时：① `runtime/common.py` 的 `optimizer()` 在 style-matrix 分支补上 VAE decoder 参数组（**此前 decoder 静默不训练**，`lr_decoder` 缺省 5e-6）；② `step()` 新增 `fm=False` 路径（跳过速度回归但仍消耗同样 RNG，D1 用）；③ `runtime/train.py` 支持 `freeze_backbone` / `skip_fm` / `decoder_lr`，冻结生成器时跳过 `gradient_report`（否则「style 分支必须有梯度」断言必炸），并把 `steps_per_s` 计时改为带 `torch.cuda.synchronize()` 的 10 步粒度记录（**原先 CUDA 异步导致步速虚高数十倍**）。**实测（nvidia-smi，40 步，单臂独占卡）**：D1 2.83 s/step、峰值 19.8 GiB；D2 2.60 s/step、21.2 GiB；D3 0.64 s/step、22.4 GiB。horizon 由此反推而非预设：D1 2500 步、D2 3000 步、D3 11000 步，各约 2.0–2.2 h。D1 用 **G2J4**（image-only、生成 latent、**detach 生成器**、只训 decoder），D2 用 **J3**（FM + 弱图像 + GT 重建锚），D3 为纯 FM + 困难字过采样（`stage_p2_hard.csv`，1.13×，难度取自**训练集自身**的 `endpoint_density/fragment_share/width_p50/ink_ratio` + 频率，验证集不参与）。坑：`eval_every` 必须等于 `ckpt_every`；卡上残留进程会污染显存测量（曾出现 3 个进程共占 9.8 GiB 导致 D3 假 OOM）。D1 当前 19.8 GiB / 95% / 413 W，ETA ~2.2 h。设计、验收门与判据见 [1101.md](1101.md)。
 
 2026-11-01 01:10（F 计划启动，4090 GPU + tmux 串行）：按诊断结论实现并启动 **12h 单方向后训练**，只做「摘掉有害注入 + 强化 8×8 书家通路」，不碰架构/VAE/主干。实现落 `tools/f_20261101/`（`build_specs.py` / `eval_arm.py` / `pick.py` / `run_f.sh` / README），并改三处运行时：① `runtime/common.py` 新增 `disable_sites/assert_sites_disabled`（gain 是 buffer，`delta*gain` 置零即精确关闭）；② `runtime/train.py` 支持 spec 字段 `disable_injection_sites`，在 raw 与 EMA **各自 load 之后**分别置零+冻结，存盘前强制断言，checkpoint 记录 `disabled_injection_sites`；③ `tools/diag/t3_writer_swap.py` 支持 `--off-sites` / `--gain-scale` / `--cfg`；④ `tools/p125/eval_cpu.py` 支持 `--device cuda`。**冒烟全绿**：60 步→resume 80 步后 `style_injections.0/1.gain` 在 delta 与 ema 中均为 **0.0**、存活 site2 gain 保持 21.6264；四组 LR 比例 5e-6:5e-5:8e-5:5e-5 正确；F1 的 E-G 实测 **eg_samples=4、eg_calibrated=true、achieved ratio 0.0200**（target 0.02，不再像 P3B 静默空转）；`eval_arm` 端到端出 content+OCR+笔宽+writer 四轴（val100: ssim 0.5798 / OCR top1 74.44 / width_p50 7.61）。串行链：s0 K 选择（A@43429 vs P3A@20000）→ s1 四消融 → s2 spec → s3 冒烟 → s4 F0 5k → s5 F1 5k → s6 选优 → s7 赢家 +7k 至 12k → s8 终验+CFG/gain 扫描；tmux `f`，日志 `assets/f_20261101/logs/f_driver.log`，阶段幂等（`state/*.done`）。训练侧前置：abc 链已在 43,429 步 SIGTERM 并落盘完整 `0043429.pt`，GPU 全空。计划与验收门见 [tools/f_20261101/README.md](tools/f_20261101/README.md)。

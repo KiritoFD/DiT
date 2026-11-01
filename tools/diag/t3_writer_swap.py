@@ -72,6 +72,9 @@ def main():
                          ('--tag', dict(default='', help='suffix for output dirs')),
                          ('--cfg', dict(type=float, default=0.0,
                                         help='override eval_cfg (0 = use config)')),
+                         ('--decoder-from', dict(default='',
+                                                 help='decode with this checkpoint\'s joint '
+                                                      'decoder (cross-combination eval)')),
                          ('--no-ocr', dict(action='store_true'))])
     pin(a.threads)
     out_dir = Path(a.out) / ('t3' + (f'_{a.tag}' if a.tag else ''))
@@ -184,6 +187,18 @@ def main():
 
     # ---- decode + save + OCR
     vae, sf, shift = load_vae(cfg, a.device)
+    if a.decoder_from:
+        # Direction/amplitude above are computed on latents, so the decoder cannot
+        # move them; OCR and the saved PNGs do depend on it. Without this the
+        # cross-combination eval would silently reuse the donor arm's OCR.
+        import torch as _t
+        donor = _t.load(a.decoder_from, map_location='cpu', weights_only=False)
+        dec = donor.get('decoder_ema') or donor.get('decoder')
+        if dec is None:
+            raise SystemExit(f'{a.decoder_from} carries no joint decoder state')
+        base = getattr(vae, '_base', vae)
+        base.decoder.load_state_dict({k: v for k, v in dec.items()}, strict=True)
+        print(f'[t3] decoder override loaded from {a.decoder_from}', flush=True)
     images = decode_latents(vae, latents, sf, shift, batch=4)
     for i, (ch, w, s, _r) in enumerate(grid):
         from PIL import Image
