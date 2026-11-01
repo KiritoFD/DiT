@@ -1,0 +1,38 @@
+﻿id,name,era,grade,protocol,steps,ssim,lpips,iou,ocr,ocr_n,ocr_panel,eg_auc,direction,note,source
+moyi12,MoYi 12ch,历史,A,moyi_strict,50k,0.5935,0.3724,,,,,,,官方多通道锚点；187 统一口径 SSIM 0.5764,Milestones §1
+moyi4_50,MoYi 4ch,历史,A,moyi_strict,50k,0.5949,0.3678,,,,,,,与 12ch 同步数对照,Milestones §1
+moyi4_80,MoYi 4ch,历史,A,moyi_strict,80k,0.6085,0.3489,,,,,,,长训收益；187 统一口径 0.5986,Milestones §1
+v10b,v10b,历史,A,native_old,390k,0.5058,,,,,,,,纯 STD 骨架、无 char ID 的开集概念证明,Milestones §1
+v13,v13,历史,A,native_old,125k,0.5713,,,,,,,,清洗数据 + FM + 轻量 AdaLN,Milestones §1
+v21,v21 SkelNet,历史,X,native_old,155k,,,,,,,,,显式骨架形变失败原型（阴性对照）,Milestones §1
+v23,v23 SplitLN,历史,A/X,native_old,85k,,,,,,,,,骨架/风格两路归一化修复；分数待补,Milestones §1
+v54,v54 纯字表,历史,B,inmem108,150k,0.5960,,,,,,,,docs/107 统一口径约 0.5890,Milestones §1
+v66,v66 三表+route,历史,B,u187,150k,0.5976,,,,,,,,in-mem 0.5955；路由单变量有效未证明,Milestones §1
+v68,v68 Sp/2,历史,A,u187,200k,0.6169,,,,,,,,in-mem 0.6149；SDE 0.6289 属另一采样协议,Milestones §1
+v70,v70 std-skel,历史,X,inmem108,65k,0.5535,,,,,,,,直接骨架通路弱表现的反例,Milestones §1
+v72_50,v72 Calli-VAE,历史,B,inmem108,50k,0.5999,,,,,,,,同阶段 v68 为 0.5701,Milestones §1
+v72_65,v72 Calli-VAE,历史,B,inmem108,65k,0.6034,,,,,,,,同阶段 v68 为 0.5833,Milestones §1
+v83a,v83-A arm4,历史,A,v83arm4,100k,0.6098,0.3252,0.3467,,,,,,LPIPS-VGG；无增强在四臂综合领先,Milestones §1
+v84a,v84A STD-soft,历史,A,native_old,200k,0.5846,0.3551,0.2840,,,,,,取消 char-table，面向开集的独立成熟锚点,Milestones §1
+v88,v88 Writer×Glyph,历史,X,native_old,170k,0.5776,0.4189,,,,,,,双线性交叉调制未提高泛化的长训阴性,Milestones §1
+deep85,Deep-Sym4,历史,A,SJ187,85k,0.6149,,,,,,,,J 面板；J@5k 不是冷启动,Milestones §1
+j0,J0,历史,A,SJ187,5k,0.6149,0.3220,,,,,,,FM、冻结 Decoder,Milestones §1
+j2,J2,历史,A,SJ187,5k,0.6198,0.3150,,,,,,,解冻 Decoder + 图像 Loss + GT 重建,Milestones §1
+j5,J5/J6/J7,历史,B/X,SJ187,5k,,,,81.4–82.6,187,n187,,,OCR heldout187；三臂差异不明显,Milestones §1
+s0_50,S0,历史,A,val100,50k,0.6028,0.3395,,71.11,90,val100,82.13,,简单 Writer Vector + Global AdaGN；内容强基线,Milestones §1 + §OCR
+s4_50,S4,历史,A,val100,50k,0.5988,,0.2951,77.78,90,val100,84.91,,LocalCNN + Spatial AdaGN；@85k 未完成不得标成结果,Milestones §1 + §OCR
+s5_50,S5,历史,A,val100,50k,0.5975,,,,,,87.98,,局部 Attention×CrossAttn；内容未同步领先,Milestones §1
+s0_85,S0,历史,A,u187,85k,,,,81.29,187,n187,,,val100 口径 SSIM 0.6000（见 val100 组）,Milestones §1 + §OCR
+s5_85,S5,历史,A,SJ187,85k,,,,75.4–79.0,187,n187,87.68/84.17/86.17,,三 seed E-G AUC,Milestones §1 + §OCR
+p0,P0,历史,A,val100,50k,0.5573,0.3841,0.2258,67.78,90,val100,53.69,,通用,Milestones §1 + §OCR
+p1,P1,历史,A,val100,55k,0.5636,0.3735,0.2440,67.78,90,val100,72.22,,混合,Milestones §1 + §OCR
+p2,P2,历史,A,val100,70k,0.5857,0.3527,0.2723,75.56,90,val100,77.77,,Top10,Milestones §1 + §OCR
+p3a,P3A,历史,A,val100,75k,0.5857,0.3528,0.2725,74.44,90,val100,,,FM；OCR 74.44/91.11 与我们 eval_arm 逐位一致 → 证明两处 OCR 同协议,Milestones §1 + §OCR
+p3b,P3B,历史,A,val100,75k,0.5881,0.3505,0.2745,,,,,,FM+EG,Milestones §1
+K,K (A@43429),本次,A,val100,"43,429",0.5946,0.3462,0.2886,77.78,90,val100,,0.5571,K = A@43429，abc 链末端,assets/f_20261101/eval/K_A
+K+D1dec,K + D1dec,本次,A,val100,"43,429",0.5982,0.3416,0.2893,77.78,90,val100,,0.5571,★ 只换 decoder，生成器不动,assets/d_20261101/eval/K_plus_D1dec
+D3,D3 (起点错),本次,X,val100,"11,000",0.5927,0.3477,0.2847,78.89,90,val100,,0.5372,起点错（style 分支随机），仅作阴性对照,assets/d_20261101/eval/D3_11000
+D1,D1 (起点错),本次,X,val100,"2,500",0.5839,0.3562,0.2630,75.56,90,val100,,0.1607,起点错，且 decoder 收益被随机分支掩盖,assets/d_20261101/eval/D1_2500
+D2,D2 (起点错),本次,X,val100,"3,000",0.5932,0.3466,0.2754,74.44,90,val100,,0.4291,起点错,assets/d_20261101/eval/D2_3000
+D3+D1dec,D3 + D1dec,本次,X,val100,"11,000",0.5965,0.3428,0.2854,78.89,90,val100,,0.5372,交叉组合,assets/d_20261101/eval/D3_11000_plus_D1dec
+D1b,D1b,本次,-,val100,,,,,,,,,,★ 正确起点 decoder-only（进行中）,eval_arm
