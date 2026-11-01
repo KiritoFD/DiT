@@ -30,6 +30,8 @@ from PIL import Image
 sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8", errors="replace")
 ROOT = Path("assets/d_20261101/reports_assets/gar_crossdecode")
 OUT = Path("assets/metrics_index/fig13_crossdecode.png")
+# The STD-soft conditioning (`eval200fix_input_g`) is byte-identical across all arms --
+# it is the shared input, not a decoder output -- so only K_A keeps a copy in the archive.
 COLS = [("K_A", "K\noriginal sd-vae decoder"),
         ("K_plus_D1dec", "K + D1 decoder\n(D1 @2500, actually applied)"),
         ("D1b_2500", "D1b @2500 eval\nNO-OP: identical to K"),
