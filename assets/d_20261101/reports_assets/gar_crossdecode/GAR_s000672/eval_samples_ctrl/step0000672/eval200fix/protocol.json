@@ -1,0 +1,22 @@
+{
+  "cfg": 1.0,
+  "checkpoint_sha256": "60a21973c0ad0b312add042920ad866984453b669ad4b4eefaf1a2c6dafc3a09",
+  "code_revision": "ac2c25e-dirty",
+  "conditions_sha256": "",
+  "dataset_sha256": "41d2ad62dc4c175b28e93431bfcb54d8b90f746b343ec45b299af8f3bea1fa1f",
+  "ema": true,
+  "eval_id": "68fc0b26a20553fb282c14ff3a635543efa2ef16f73413adf42d69a887f65544",
+  "extra": {
+    "std_soft_sigma": 0.65,
+    "step": 672
+  },
+  "gamma": 0.0,
+  "num_steps": 50,
+  "sampler": "heun",
+  "schema_version": 1,
+  "seed": 0,
+  "sets_spec": "eval200fix:100",
+  "vae_scale": 0.18215,
+  "vae_sha256": "b29b4139f4238c7140eeb20ba2097e7506e9967cee150e3e088c1bda96111b56",
+  "vae_shift": 0.0
+}

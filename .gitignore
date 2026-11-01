@@ -78,6 +78,12 @@ eval_pics/
 eval_pngs/
 eval_logs/
 example_100/
+
+# Curated exception: the FIG13 same-latent cross-decode archive. It is deliberately small
+# (4 arms x 100 chars of 256x256 PNG, ~20MB) and is the evidence behind the report's
+# FIG13, so it is versioned while the general eval dumps above stay ignored.
+!assets/d_20261101/reports_assets/gar_crossdecode/
+!assets/d_20261101/reports_assets/gar_crossdecode/**
 final/
 latent_missing/
 remote_logs/

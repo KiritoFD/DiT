@@ -339,6 +339,25 @@ Decoder 步数，推迟训练会牺牲骨架与身份。
 （GAR 面板图在 4090 侧），见
 <a href="./2026-09_to_11_missing_assets.md">缺失清单</a> FIG13 行。</figcaption></figure>
 
+<figure><div class="fig-index">FIG 13b · 同一 latent，多种 decoder 解码，并列 GT（原占位的左侧面板）</div>
+<img src="../assets/metrics_index/fig13_crossdecode.png" alt="Same latent decoded by the stock decoder, the D1 decoder, the D1b eval (a no-op) and the GAR decoder, next to GT" width="100%">
+<figcaption>行按「与 K 的分歧程度」排序，因此展示的是解码器**真正改变**了输出的字符。
+<strong>可比性已逐字段核验</strong>（`plot_fig13_crossdecode.py` 在作图前强制检查，
+不通过即拒绝出图）：四条链共享生成器 `60a21973…`、seed 0、heun/50/CFG1.0、
+同一 VAE 与同一数据集，100 张 GT 的合并哈希四者相同 —— 所以列的差异**只能**来自 decoder。
+<strong>读法：</strong> 解码器带来的差异很细微（K vs K+D1dec 平均逐像素差 **0.0081**，
+K vs GAR@672 为 **0.0047**，均在 0–1 灰度尺度上），这与「SSIM 只动 +0.004」一致；
+差异集中在细笔末端与相邻墨线处。
+<strong>关键更正：</strong> 第三列 `D1b@2500 eval` 与 K **逐字节完全相同**——
+其 `eval.json` 的 `decoder_override` 为 `null`，评测从未换装 D1b 训好的 decoder，
+因此 D1b 是**空操作**，不能当作「decoder 起作用的对照」；
+真正换装的证据是第二列 `K + D1 decoder`（`decoder_override` 指向 `runs/D1/...0002500.pt`）。
+详见 <code>assets/d_20261101/reports_assets/gar_crossdecode/README.md</code> 与
+<code>docs/1031/GAR_DECODER.md</code>。
+<strong>素材与元数据：</strong> 已归档于 <code>assets/d_20261101/reports_assets/gar_crossdecode/</code>
+（100 字 × 4 臂的真值/生成 PNG + <code>manifest.csv</code> 400 行 + README），
+含每臂的 checkpoint 哈希、seed、sampler、CFG、GT 与输出哈希。</figcaption></figure>
+
 ## 07｜全历史比较：我们的提升有多大，哪些模型仍比我们强？
 
 这部分刻意分为**同面板、跨时代187与跨协议历史记录**三张互不混淆的表。尤其不要拿“旧Strict的v68≈0.6169”直接减去“新val100的K≈0.5946”宣布K退化多少；模型体系、GT、采样协议和SSIM实现都可能不同。

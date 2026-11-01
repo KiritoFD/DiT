@@ -1,0 +1,401 @@
+row_idx,arm,gen_ckpt_sha256,decoder_ckpt,seed,sampler,steps,cfg,gamma,vae_sha256,gt_sha256,out_sha256,source_panel
+0,K_A,60a21973c0ad0b31,NA(stock sd-vae),0,heun,50,1.0,0.0,b29b4139f4238c71,9a8736ca3ce6b82b,b35722adf7d103d9,assets/d_20261101/reports_assets/gar_crossdecode/K_A
+1,K_A,60a21973c0ad0b31,NA(stock sd-vae),0,heun,50,1.0,0.0,b29b4139f4238c71,5498de95eeca01dd,c1be74b738f54d76,assets/d_20261101/reports_assets/gar_crossdecode/K_A
+2,K_A,60a21973c0ad0b31,NA(stock sd-vae),0,heun,50,1.0,0.0,b29b4139f4238c71,2bdea1fd420bd3d9,47ef33e8baed776d,assets/d_20261101/reports_assets/gar_crossdecode/K_A
+3,K_A,60a21973c0ad0b31,NA(stock sd-vae),0,heun,50,1.0,0.0,b29b4139f4238c71,e35021d7b3cf70ae,57c169154226361c,assets/d_20261101/reports_assets/gar_crossdecode/K_A
+4,K_A,60a21973c0ad0b31,NA(stock sd-vae),0,heun,50,1.0,0.0,b29b4139f4238c71,37c3983d698e0f63,bd33b49d5a665bfc,assets/d_20261101/reports_assets/gar_crossdecode/K_A
+5,K_A,60a21973c0ad0b31,NA(stock sd-vae),0,heun,50,1.0,0.0,b29b4139f4238c71,ab03c4e6324a2dae,0691b4022d12dfc5,assets/d_20261101/reports_assets/gar_crossdecode/K_A
+6,K_A,60a21973c0ad0b31,NA(stock sd-vae),0,heun,50,1.0,0.0,b29b4139f4238c71,f976ceabb3b6d4f0,7faf7dea8d9fa2ba,assets/d_20261101/reports_assets/gar_crossdecode/K_A
+7,K_A,60a21973c0ad0b31,NA(stock sd-vae),0,heun,50,1.0,0.0,b29b4139f4238c71,881b622aded3dba5,e1c8173b02e26a25,assets/d_20261101/reports_assets/gar_crossdecode/K_A
+8,K_A,60a21973c0ad0b31,NA(stock sd-vae),0,heun,50,1.0,0.0,b29b4139f4238c71,c17d16d0c55dc095,46ca65116ce9dcb9,assets/d_20261101/reports_assets/gar_crossdecode/K_A
+9,K_A,60a21973c0ad0b31,NA(stock sd-vae),0,heun,50,1.0,0.0,b29b4139f4238c71,43f041c9b435c8e3,82bef1510893068b,assets/d_20261101/reports_assets/gar_crossdecode/K_A
+10,K_A,60a21973c0ad0b31,NA(stock sd-vae),0,heun,50,1.0,0.0,b29b4139f4238c71,d5f6e7d970e7a123,8a585e2b4a4c3637,assets/d_20261101/reports_assets/gar_crossdecode/K_A
+11,K_A,60a21973c0ad0b31,NA(stock sd-vae),0,heun,50,1.0,0.0,b29b4139f4238c71,c93ee876e61fcd68,c6eee9a535ece697,assets/d_20261101/reports_assets/gar_crossdecode/K_A
+12,K_A,60a21973c0ad0b31,NA(stock sd-vae),0,heun,50,1.0,0.0,b29b4139f4238c71,3633189ccc88fefb,2c99cd60f424f7ee,assets/d_20261101/reports_assets/gar_crossdecode/K_A
+13,K_A,60a21973c0ad0b31,NA(stock sd-vae),0,heun,50,1.0,0.0,b29b4139f4238c71,3eec9e1b7871adf9,d5d1a02fe86f70b4,assets/d_20261101/reports_assets/gar_crossdecode/K_A
+14,K_A,60a21973c0ad0b31,NA(stock sd-vae),0,heun,50,1.0,0.0,b29b4139f4238c71,1475d5d99dfad7d9,bcb570e84422e02e,assets/d_20261101/reports_assets/gar_crossdecode/K_A
+15,K_A,60a21973c0ad0b31,NA(stock sd-vae),0,heun,50,1.0,0.0,b29b4139f4238c71,d0ca7f604e7ef594,9b0182900a942e7a,assets/d_20261101/reports_assets/gar_crossdecode/K_A
+16,K_A,60a21973c0ad0b31,NA(stock sd-vae),0,heun,50,1.0,0.0,b29b4139f4238c71,843de6b34970a263,a4941201885911af,assets/d_20261101/reports_assets/gar_crossdecode/K_A
+17,K_A,60a21973c0ad0b31,NA(stock sd-vae),0,heun,50,1.0,0.0,b29b4139f4238c71,9483b0933a643686,41a336c4ac1b5820,assets/d_20261101/reports_assets/gar_crossdecode/K_A
+18,K_A,60a21973c0ad0b31,NA(stock sd-vae),0,heun,50,1.0,0.0,b29b4139f4238c71,1a77a1c67f6b556e,b7e3bdf4423c072e,assets/d_20261101/reports_assets/gar_crossdecode/K_A
+19,K_A,60a21973c0ad0b31,NA(stock sd-vae),0,heun,50,1.0,0.0,b29b4139f4238c71,1fed4566d60d02c3,bdb659d3cee3e2e3,assets/d_20261101/reports_assets/gar_crossdecode/K_A
+20,K_A,60a21973c0ad0b31,NA(stock sd-vae),0,heun,50,1.0,0.0,b29b4139f4238c71,a4ade0c33b87bdf7,983ef1c22b32a106,assets/d_20261101/reports_assets/gar_crossdecode/K_A
+21,K_A,60a21973c0ad0b31,NA(stock sd-vae),0,heun,50,1.0,0.0,b29b4139f4238c71,2d9707b0081547c2,0d3e7b6c727922ee,assets/d_20261101/reports_assets/gar_crossdecode/K_A
+22,K_A,60a21973c0ad0b31,NA(stock sd-vae),0,heun,50,1.0,0.0,b29b4139f4238c71,f61b6a199b721115,b1f5f3bf8b54e35e,assets/d_20261101/reports_assets/gar_crossdecode/K_A
+23,K_A,60a21973c0ad0b31,NA(stock sd-vae),0,heun,50,1.0,0.0,b29b4139f4238c71,9dfc516d9ff477fe,acdff05b3e88e54d,assets/d_20261101/reports_assets/gar_crossdecode/K_A
+24,K_A,60a21973c0ad0b31,NA(stock sd-vae),0,heun,50,1.0,0.0,b29b4139f4238c71,47ec2c838124bbe9,1918b58dd00c96ad,assets/d_20261101/reports_assets/gar_crossdecode/K_A
+25,K_A,60a21973c0ad0b31,NA(stock sd-vae),0,heun,50,1.0,0.0,b29b4139f4238c71,97f555da9b2c1346,ded200f305d53732,assets/d_20261101/reports_assets/gar_crossdecode/K_A
+26,K_A,60a21973c0ad0b31,NA(stock sd-vae),0,heun,50,1.0,0.0,b29b4139f4238c71,eb720d85c4a307ff,e24fad80a616805d,assets/d_20261101/reports_assets/gar_crossdecode/K_A
+27,K_A,60a21973c0ad0b31,NA(stock sd-vae),0,heun,50,1.0,0.0,b29b4139f4238c71,725124d676c3a45a,f321db851db73efc,assets/d_20261101/reports_assets/gar_crossdecode/K_A
+28,K_A,60a21973c0ad0b31,NA(stock sd-vae),0,heun,50,1.0,0.0,b29b4139f4238c71,e200c168176d1769,d23e4e6c946cff08,assets/d_20261101/reports_assets/gar_crossdecode/K_A
+29,K_A,60a21973c0ad0b31,NA(stock sd-vae),0,heun,50,1.0,0.0,b29b4139f4238c71,e809f9a31d0c05fe,dac7f6d00fd7f98e,assets/d_20261101/reports_assets/gar_crossdecode/K_A
+30,K_A,60a21973c0ad0b31,NA(stock sd-vae),0,heun,50,1.0,0.0,b29b4139f4238c71,07bd2474e73a4658,b87657bd497fd4c4,assets/d_20261101/reports_assets/gar_crossdecode/K_A
+31,K_A,60a21973c0ad0b31,NA(stock sd-vae),0,heun,50,1.0,0.0,b29b4139f4238c71,e7eaaf358db11842,c9e685c7cfbb6a2e,assets/d_20261101/reports_assets/gar_crossdecode/K_A
+32,K_A,60a21973c0ad0b31,NA(stock sd-vae),0,heun,50,1.0,0.0,b29b4139f4238c71,5f2c99c88de0eb47,38af5868cbef3ef8,assets/d_20261101/reports_assets/gar_crossdecode/K_A
+33,K_A,60a21973c0ad0b31,NA(stock sd-vae),0,heun,50,1.0,0.0,b29b4139f4238c71,d2e62e910e36f23d,faf8bf923fad0352,assets/d_20261101/reports_assets/gar_crossdecode/K_A
+34,K_A,60a21973c0ad0b31,NA(stock sd-vae),0,heun,50,1.0,0.0,b29b4139f4238c71,5189fb4a8fea68a0,5c108ea94cedc25b,assets/d_20261101/reports_assets/gar_crossdecode/K_A
+35,K_A,60a21973c0ad0b31,NA(stock sd-vae),0,heun,50,1.0,0.0,b29b4139f4238c71,fb7b2330a021ea2a,c03edceda50dbf0d,assets/d_20261101/reports_assets/gar_crossdecode/K_A
+36,K_A,60a21973c0ad0b31,NA(stock sd-vae),0,heun,50,1.0,0.0,b29b4139f4238c71,1e099de9f6e2a486,9a1a1de4d6173080,assets/d_20261101/reports_assets/gar_crossdecode/K_A
+37,K_A,60a21973c0ad0b31,NA(stock sd-vae),0,heun,50,1.0,0.0,b29b4139f4238c71,239c3d360195139e,6fa3b61b0a422a88,assets/d_20261101/reports_assets/gar_crossdecode/K_A
+38,K_A,60a21973c0ad0b31,NA(stock sd-vae),0,heun,50,1.0,0.0,b29b4139f4238c71,7a7ecfcf38a80e5a,d80a6a1241dc74d8,assets/d_20261101/reports_assets/gar_crossdecode/K_A
+39,K_A,60a21973c0ad0b31,NA(stock sd-vae),0,heun,50,1.0,0.0,b29b4139f4238c71,0a1f4fa21f194055,c002c8f71390e23d,assets/d_20261101/reports_assets/gar_crossdecode/K_A
+40,K_A,60a21973c0ad0b31,NA(stock sd-vae),0,heun,50,1.0,0.0,b29b4139f4238c71,5f0d6faf38c8bedc,1162ef109e54c247,assets/d_20261101/reports_assets/gar_crossdecode/K_A
+41,K_A,60a21973c0ad0b31,NA(stock sd-vae),0,heun,50,1.0,0.0,b29b4139f4238c71,904ea9cfd2e038ea,20c5bb4805ba666c,assets/d_20261101/reports_assets/gar_crossdecode/K_A
+42,K_A,60a21973c0ad0b31,NA(stock sd-vae),0,heun,50,1.0,0.0,b29b4139f4238c71,bb1161f9884c258e,935e4e1980b2b62e,assets/d_20261101/reports_assets/gar_crossdecode/K_A
+43,K_A,60a21973c0ad0b31,NA(stock sd-vae),0,heun,50,1.0,0.0,b29b4139f4238c71,0692f1c0194737ac,d628563fce544445,assets/d_20261101/reports_assets/gar_crossdecode/K_A
+44,K_A,60a21973c0ad0b31,NA(stock sd-vae),0,heun,50,1.0,0.0,b29b4139f4238c71,6fdd00c9745f2964,5f00e96f47c34ba0,assets/d_20261101/reports_assets/gar_crossdecode/K_A
+45,K_A,60a21973c0ad0b31,NA(stock sd-vae),0,heun,50,1.0,0.0,b29b4139f4238c71,73230df2f8807d7a,bea378b8534586ea,assets/d_20261101/reports_assets/gar_crossdecode/K_A
+46,K_A,60a21973c0ad0b31,NA(stock sd-vae),0,heun,50,1.0,0.0,b29b4139f4238c71,af0de449dffabf6e,9103ec92dbfadcfa,assets/d_20261101/reports_assets/gar_crossdecode/K_A
+47,K_A,60a21973c0ad0b31,NA(stock sd-vae),0,heun,50,1.0,0.0,b29b4139f4238c71,5d3e5050931432a7,c95fd3a1298842e2,assets/d_20261101/reports_assets/gar_crossdecode/K_A
+48,K_A,60a21973c0ad0b31,NA(stock sd-vae),0,heun,50,1.0,0.0,b29b4139f4238c71,1624f8f62e03f5be,fda692e8a28e8716,assets/d_20261101/reports_assets/gar_crossdecode/K_A
+49,K_A,60a21973c0ad0b31,NA(stock sd-vae),0,heun,50,1.0,0.0,b29b4139f4238c71,4593745d1aa6e4ba,8c07cf5ce58adecc,assets/d_20261101/reports_assets/gar_crossdecode/K_A
+50,K_A,60a21973c0ad0b31,NA(stock sd-vae),0,heun,50,1.0,0.0,b29b4139f4238c71,7cdf3814146d9e90,0aeb7e089b51bc52,assets/d_20261101/reports_assets/gar_crossdecode/K_A
+51,K_A,60a21973c0ad0b31,NA(stock sd-vae),0,heun,50,1.0,0.0,b29b4139f4238c71,9c89bf25362fe8cf,d50bf50a994c88fc,assets/d_20261101/reports_assets/gar_crossdecode/K_A
+52,K_A,60a21973c0ad0b31,NA(stock sd-vae),0,heun,50,1.0,0.0,b29b4139f4238c71,27fbc3eb662ff81f,2cb3647d32c4f3ab,assets/d_20261101/reports_assets/gar_crossdecode/K_A
+53,K_A,60a21973c0ad0b31,NA(stock sd-vae),0,heun,50,1.0,0.0,b29b4139f4238c71,21034345ab316f70,79e8f7f8e0fcafeb,assets/d_20261101/reports_assets/gar_crossdecode/K_A
+54,K_A,60a21973c0ad0b31,NA(stock sd-vae),0,heun,50,1.0,0.0,b29b4139f4238c71,4a212cffeaae358c,74fc4424aefb0a0c,assets/d_20261101/reports_assets/gar_crossdecode/K_A
+55,K_A,60a21973c0ad0b31,NA(stock sd-vae),0,heun,50,1.0,0.0,b29b4139f4238c71,2293c209a2814ca5,feadb34e0bb51174,assets/d_20261101/reports_assets/gar_crossdecode/K_A
+56,K_A,60a21973c0ad0b31,NA(stock sd-vae),0,heun,50,1.0,0.0,b29b4139f4238c71,843222fb0a7567f4,a90e73c7647f5c31,assets/d_20261101/reports_assets/gar_crossdecode/K_A
+57,K_A,60a21973c0ad0b31,NA(stock sd-vae),0,heun,50,1.0,0.0,b29b4139f4238c71,0f6786211e396cbd,edd329c4fee6152a,assets/d_20261101/reports_assets/gar_crossdecode/K_A
+58,K_A,60a21973c0ad0b31,NA(stock sd-vae),0,heun,50,1.0,0.0,b29b4139f4238c71,bfa38054acd734bf,a1a3bf5c4877f250,assets/d_20261101/reports_assets/gar_crossdecode/K_A
+59,K_A,60a21973c0ad0b31,NA(stock sd-vae),0,heun,50,1.0,0.0,b29b4139f4238c71,5ddf61fc1cf349e3,fb2e067759b46764,assets/d_20261101/reports_assets/gar_crossdecode/K_A
+60,K_A,60a21973c0ad0b31,NA(stock sd-vae),0,heun,50,1.0,0.0,b29b4139f4238c71,f79677d8a830e45d,674188b31eaef345,assets/d_20261101/reports_assets/gar_crossdecode/K_A
+61,K_A,60a21973c0ad0b31,NA(stock sd-vae),0,heun,50,1.0,0.0,b29b4139f4238c71,c0110cb198aa5a6a,6c7da5425513c7c1,assets/d_20261101/reports_assets/gar_crossdecode/K_A
+62,K_A,60a21973c0ad0b31,NA(stock sd-vae),0,heun,50,1.0,0.0,b29b4139f4238c71,b64de29904fefa2b,8681097b007f02ba,assets/d_20261101/reports_assets/gar_crossdecode/K_A
+63,K_A,60a21973c0ad0b31,NA(stock sd-vae),0,heun,50,1.0,0.0,b29b4139f4238c71,b64851212f88683f,1f38f9bbd0aa926d,assets/d_20261101/reports_assets/gar_crossdecode/K_A
+64,K_A,60a21973c0ad0b31,NA(stock sd-vae),0,heun,50,1.0,0.0,b29b4139f4238c71,7a49105cafc680e5,46e6cfce1f5b7835,assets/d_20261101/reports_assets/gar_crossdecode/K_A
+65,K_A,60a21973c0ad0b31,NA(stock sd-vae),0,heun,50,1.0,0.0,b29b4139f4238c71,85c6200d8ebe4993,6422b505ac4b2867,assets/d_20261101/reports_assets/gar_crossdecode/K_A
+66,K_A,60a21973c0ad0b31,NA(stock sd-vae),0,heun,50,1.0,0.0,b29b4139f4238c71,f443834bed2296ed,6f58bd33060278cc,assets/d_20261101/reports_assets/gar_crossdecode/K_A
+67,K_A,60a21973c0ad0b31,NA(stock sd-vae),0,heun,50,1.0,0.0,b29b4139f4238c71,7421dd15ea102d35,12f51f4077f5ebb7,assets/d_20261101/reports_assets/gar_crossdecode/K_A
+68,K_A,60a21973c0ad0b31,NA(stock sd-vae),0,heun,50,1.0,0.0,b29b4139f4238c71,42c8ec3207f48eb9,b54f915da3b0a42b,assets/d_20261101/reports_assets/gar_crossdecode/K_A
+69,K_A,60a21973c0ad0b31,NA(stock sd-vae),0,heun,50,1.0,0.0,b29b4139f4238c71,3b08525efdf1ffbe,7beefd55e7002088,assets/d_20261101/reports_assets/gar_crossdecode/K_A
+70,K_A,60a21973c0ad0b31,NA(stock sd-vae),0,heun,50,1.0,0.0,b29b4139f4238c71,3039e45d5b095158,0febcfde429dc35d,assets/d_20261101/reports_assets/gar_crossdecode/K_A
+71,K_A,60a21973c0ad0b31,NA(stock sd-vae),0,heun,50,1.0,0.0,b29b4139f4238c71,e3a5cffeb674b161,c1846d1123bcad0c,assets/d_20261101/reports_assets/gar_crossdecode/K_A
+72,K_A,60a21973c0ad0b31,NA(stock sd-vae),0,heun,50,1.0,0.0,b29b4139f4238c71,53302fcdcce73e70,a6b89bf4595bb0f4,assets/d_20261101/reports_assets/gar_crossdecode/K_A
+73,K_A,60a21973c0ad0b31,NA(stock sd-vae),0,heun,50,1.0,0.0,b29b4139f4238c71,2bd042d3e36cadc2,2690c45af38919f9,assets/d_20261101/reports_assets/gar_crossdecode/K_A
+74,K_A,60a21973c0ad0b31,NA(stock sd-vae),0,heun,50,1.0,0.0,b29b4139f4238c71,ebf59865bba80882,280799ace494c92a,assets/d_20261101/reports_assets/gar_crossdecode/K_A
+75,K_A,60a21973c0ad0b31,NA(stock sd-vae),0,heun,50,1.0,0.0,b29b4139f4238c71,36056f1b0a5079e6,8ed6fe6329a1d9d7,assets/d_20261101/reports_assets/gar_crossdecode/K_A
+76,K_A,60a21973c0ad0b31,NA(stock sd-vae),0,heun,50,1.0,0.0,b29b4139f4238c71,9a935cd64ca85917,90c679347b2c1957,assets/d_20261101/reports_assets/gar_crossdecode/K_A
+77,K_A,60a21973c0ad0b31,NA(stock sd-vae),0,heun,50,1.0,0.0,b29b4139f4238c71,f0ec4a137e77bd8f,0dfacf6950224898,assets/d_20261101/reports_assets/gar_crossdecode/K_A
+78,K_A,60a21973c0ad0b31,NA(stock sd-vae),0,heun,50,1.0,0.0,b29b4139f4238c71,2e8209579ce0eca6,a8f6f6c06bd36d3e,assets/d_20261101/reports_assets/gar_crossdecode/K_A
+79,K_A,60a21973c0ad0b31,NA(stock sd-vae),0,heun,50,1.0,0.0,b29b4139f4238c71,dbd74cfefc1fc353,a35ff73d70437fee,assets/d_20261101/reports_assets/gar_crossdecode/K_A
+80,K_A,60a21973c0ad0b31,NA(stock sd-vae),0,heun,50,1.0,0.0,b29b4139f4238c71,4c6aff175a620a1a,dab0efbf9d6f63d5,assets/d_20261101/reports_assets/gar_crossdecode/K_A
+81,K_A,60a21973c0ad0b31,NA(stock sd-vae),0,heun,50,1.0,0.0,b29b4139f4238c71,672036ae63bad94f,52391bcb12618b79,assets/d_20261101/reports_assets/gar_crossdecode/K_A
+82,K_A,60a21973c0ad0b31,NA(stock sd-vae),0,heun,50,1.0,0.0,b29b4139f4238c71,07eeda701e8684ca,cca8d9f571423cfa,assets/d_20261101/reports_assets/gar_crossdecode/K_A
+83,K_A,60a21973c0ad0b31,NA(stock sd-vae),0,heun,50,1.0,0.0,b29b4139f4238c71,f086d9d42e26052c,630bd42930414957,assets/d_20261101/reports_assets/gar_crossdecode/K_A
+84,K_A,60a21973c0ad0b31,NA(stock sd-vae),0,heun,50,1.0,0.0,b29b4139f4238c71,fbca127834cda8c8,ac62c47a835ae1aa,assets/d_20261101/reports_assets/gar_crossdecode/K_A
+85,K_A,60a21973c0ad0b31,NA(stock sd-vae),0,heun,50,1.0,0.0,b29b4139f4238c71,1422b20772014fcf,478c488056d0523e,assets/d_20261101/reports_assets/gar_crossdecode/K_A
+86,K_A,60a21973c0ad0b31,NA(stock sd-vae),0,heun,50,1.0,0.0,b29b4139f4238c71,5f8a378a5833b1be,c48dcb7e3cad9b66,assets/d_20261101/reports_assets/gar_crossdecode/K_A
+87,K_A,60a21973c0ad0b31,NA(stock sd-vae),0,heun,50,1.0,0.0,b29b4139f4238c71,249af59f934bbb17,21d7bac3eb5ada1d,assets/d_20261101/reports_assets/gar_crossdecode/K_A
+88,K_A,60a21973c0ad0b31,NA(stock sd-vae),0,heun,50,1.0,0.0,b29b4139f4238c71,4a71ea06f56eff8c,a9b4148a6c223821,assets/d_20261101/reports_assets/gar_crossdecode/K_A
+89,K_A,60a21973c0ad0b31,NA(stock sd-vae),0,heun,50,1.0,0.0,b29b4139f4238c71,1b213ecc07cb4ccf,38d6bd371e916993,assets/d_20261101/reports_assets/gar_crossdecode/K_A
+90,K_A,60a21973c0ad0b31,NA(stock sd-vae),0,heun,50,1.0,0.0,b29b4139f4238c71,1f58115cd28669af,1918265614f8ef45,assets/d_20261101/reports_assets/gar_crossdecode/K_A
+91,K_A,60a21973c0ad0b31,NA(stock sd-vae),0,heun,50,1.0,0.0,b29b4139f4238c71,fca08d92a37131d7,b3ca301bf045998d,assets/d_20261101/reports_assets/gar_crossdecode/K_A
+92,K_A,60a21973c0ad0b31,NA(stock sd-vae),0,heun,50,1.0,0.0,b29b4139f4238c71,46bdb4e3ae5f2b5d,5d853bc5986462a2,assets/d_20261101/reports_assets/gar_crossdecode/K_A
+93,K_A,60a21973c0ad0b31,NA(stock sd-vae),0,heun,50,1.0,0.0,b29b4139f4238c71,c8c3f115591cc2e0,862920221179ea36,assets/d_20261101/reports_assets/gar_crossdecode/K_A
+94,K_A,60a21973c0ad0b31,NA(stock sd-vae),0,heun,50,1.0,0.0,b29b4139f4238c71,18d3945591c48e77,41f3fff764891c40,assets/d_20261101/reports_assets/gar_crossdecode/K_A
+95,K_A,60a21973c0ad0b31,NA(stock sd-vae),0,heun,50,1.0,0.0,b29b4139f4238c71,e7a9ac6e73f84879,a85746fea59699ec,assets/d_20261101/reports_assets/gar_crossdecode/K_A
+96,K_A,60a21973c0ad0b31,NA(stock sd-vae),0,heun,50,1.0,0.0,b29b4139f4238c71,f88edbd1581c8d10,f424e24e81a260e7,assets/d_20261101/reports_assets/gar_crossdecode/K_A
+97,K_A,60a21973c0ad0b31,NA(stock sd-vae),0,heun,50,1.0,0.0,b29b4139f4238c71,135c9acd11a407ec,f5bbd376af5d8195,assets/d_20261101/reports_assets/gar_crossdecode/K_A
+98,K_A,60a21973c0ad0b31,NA(stock sd-vae),0,heun,50,1.0,0.0,b29b4139f4238c71,1b2c4d7dae84d6d7,8de5fd912e076fcc,assets/d_20261101/reports_assets/gar_crossdecode/K_A
+99,K_A,60a21973c0ad0b31,NA(stock sd-vae),0,heun,50,1.0,0.0,b29b4139f4238c71,0ebe262605040799,c1d5be24db39c5fd,assets/d_20261101/reports_assets/gar_crossdecode/K_A
+0,K_plus_D1dec,60a21973c0ad0b31,assets/d_20261101/execution/runs/D1/checkpoints/0002500.pt,0,heun,50,1.0,0.0,b29b4139f4238c71,9a8736ca3ce6b82b,30699662e8918ab2,assets/d_20261101/reports_assets/gar_crossdecode/K_plus_D1dec
+1,K_plus_D1dec,60a21973c0ad0b31,assets/d_20261101/execution/runs/D1/checkpoints/0002500.pt,0,heun,50,1.0,0.0,b29b4139f4238c71,5498de95eeca01dd,fa2cbe5475908fd8,assets/d_20261101/reports_assets/gar_crossdecode/K_plus_D1dec
+2,K_plus_D1dec,60a21973c0ad0b31,assets/d_20261101/execution/runs/D1/checkpoints/0002500.pt,0,heun,50,1.0,0.0,b29b4139f4238c71,2bdea1fd420bd3d9,f8eec64348f39720,assets/d_20261101/reports_assets/gar_crossdecode/K_plus_D1dec
+3,K_plus_D1dec,60a21973c0ad0b31,assets/d_20261101/execution/runs/D1/checkpoints/0002500.pt,0,heun,50,1.0,0.0,b29b4139f4238c71,e35021d7b3cf70ae,361562b433b63d69,assets/d_20261101/reports_assets/gar_crossdecode/K_plus_D1dec
+4,K_plus_D1dec,60a21973c0ad0b31,assets/d_20261101/execution/runs/D1/checkpoints/0002500.pt,0,heun,50,1.0,0.0,b29b4139f4238c71,37c3983d698e0f63,54b40a878df25c84,assets/d_20261101/reports_assets/gar_crossdecode/K_plus_D1dec
+5,K_plus_D1dec,60a21973c0ad0b31,assets/d_20261101/execution/runs/D1/checkpoints/0002500.pt,0,heun,50,1.0,0.0,b29b4139f4238c71,ab03c4e6324a2dae,c9ea1abc1c087983,assets/d_20261101/reports_assets/gar_crossdecode/K_plus_D1dec
+6,K_plus_D1dec,60a21973c0ad0b31,assets/d_20261101/execution/runs/D1/checkpoints/0002500.pt,0,heun,50,1.0,0.0,b29b4139f4238c71,f976ceabb3b6d4f0,7c520d6f5b109b58,assets/d_20261101/reports_assets/gar_crossdecode/K_plus_D1dec
+7,K_plus_D1dec,60a21973c0ad0b31,assets/d_20261101/execution/runs/D1/checkpoints/0002500.pt,0,heun,50,1.0,0.0,b29b4139f4238c71,881b622aded3dba5,36e69ef27b7a667f,assets/d_20261101/reports_assets/gar_crossdecode/K_plus_D1dec
+8,K_plus_D1dec,60a21973c0ad0b31,assets/d_20261101/execution/runs/D1/checkpoints/0002500.pt,0,heun,50,1.0,0.0,b29b4139f4238c71,c17d16d0c55dc095,9c5a67d8aa9636ab,assets/d_20261101/reports_assets/gar_crossdecode/K_plus_D1dec
+9,K_plus_D1dec,60a21973c0ad0b31,assets/d_20261101/execution/runs/D1/checkpoints/0002500.pt,0,heun,50,1.0,0.0,b29b4139f4238c71,43f041c9b435c8e3,16e98ae0102b5c9c,assets/d_20261101/reports_assets/gar_crossdecode/K_plus_D1dec
+10,K_plus_D1dec,60a21973c0ad0b31,assets/d_20261101/execution/runs/D1/checkpoints/0002500.pt,0,heun,50,1.0,0.0,b29b4139f4238c71,d5f6e7d970e7a123,baf7273e77e7dc08,assets/d_20261101/reports_assets/gar_crossdecode/K_plus_D1dec
+11,K_plus_D1dec,60a21973c0ad0b31,assets/d_20261101/execution/runs/D1/checkpoints/0002500.pt,0,heun,50,1.0,0.0,b29b4139f4238c71,c93ee876e61fcd68,d947965a3fd7d901,assets/d_20261101/reports_assets/gar_crossdecode/K_plus_D1dec
+12,K_plus_D1dec,60a21973c0ad0b31,assets/d_20261101/execution/runs/D1/checkpoints/0002500.pt,0,heun,50,1.0,0.0,b29b4139f4238c71,3633189ccc88fefb,3d345d7a2ecd24e4,assets/d_20261101/reports_assets/gar_crossdecode/K_plus_D1dec
+13,K_plus_D1dec,60a21973c0ad0b31,assets/d_20261101/execution/runs/D1/checkpoints/0002500.pt,0,heun,50,1.0,0.0,b29b4139f4238c71,3eec9e1b7871adf9,fdb3c1e58d2d687f,assets/d_20261101/reports_assets/gar_crossdecode/K_plus_D1dec
+14,K_plus_D1dec,60a21973c0ad0b31,assets/d_20261101/execution/runs/D1/checkpoints/0002500.pt,0,heun,50,1.0,0.0,b29b4139f4238c71,1475d5d99dfad7d9,c9232bb3ac97ef0c,assets/d_20261101/reports_assets/gar_crossdecode/K_plus_D1dec
+15,K_plus_D1dec,60a21973c0ad0b31,assets/d_20261101/execution/runs/D1/checkpoints/0002500.pt,0,heun,50,1.0,0.0,b29b4139f4238c71,d0ca7f604e7ef594,5cc32802f880cb80,assets/d_20261101/reports_assets/gar_crossdecode/K_plus_D1dec
+16,K_plus_D1dec,60a21973c0ad0b31,assets/d_20261101/execution/runs/D1/checkpoints/0002500.pt,0,heun,50,1.0,0.0,b29b4139f4238c71,843de6b34970a263,ae0d16aaf2bd76ce,assets/d_20261101/reports_assets/gar_crossdecode/K_plus_D1dec
+17,K_plus_D1dec,60a21973c0ad0b31,assets/d_20261101/execution/runs/D1/checkpoints/0002500.pt,0,heun,50,1.0,0.0,b29b4139f4238c71,9483b0933a643686,e294707cbd93a14d,assets/d_20261101/reports_assets/gar_crossdecode/K_plus_D1dec
+18,K_plus_D1dec,60a21973c0ad0b31,assets/d_20261101/execution/runs/D1/checkpoints/0002500.pt,0,heun,50,1.0,0.0,b29b4139f4238c71,1a77a1c67f6b556e,241ce0c3349e765a,assets/d_20261101/reports_assets/gar_crossdecode/K_plus_D1dec
+19,K_plus_D1dec,60a21973c0ad0b31,assets/d_20261101/execution/runs/D1/checkpoints/0002500.pt,0,heun,50,1.0,0.0,b29b4139f4238c71,1fed4566d60d02c3,31dfeb998730bf61,assets/d_20261101/reports_assets/gar_crossdecode/K_plus_D1dec
+20,K_plus_D1dec,60a21973c0ad0b31,assets/d_20261101/execution/runs/D1/checkpoints/0002500.pt,0,heun,50,1.0,0.0,b29b4139f4238c71,a4ade0c33b87bdf7,68a71d0b74667253,assets/d_20261101/reports_assets/gar_crossdecode/K_plus_D1dec
+21,K_plus_D1dec,60a21973c0ad0b31,assets/d_20261101/execution/runs/D1/checkpoints/0002500.pt,0,heun,50,1.0,0.0,b29b4139f4238c71,2d9707b0081547c2,430a3c022a93617e,assets/d_20261101/reports_assets/gar_crossdecode/K_plus_D1dec
+22,K_plus_D1dec,60a21973c0ad0b31,assets/d_20261101/execution/runs/D1/checkpoints/0002500.pt,0,heun,50,1.0,0.0,b29b4139f4238c71,f61b6a199b721115,810d029bb6d33ac9,assets/d_20261101/reports_assets/gar_crossdecode/K_plus_D1dec
+23,K_plus_D1dec,60a21973c0ad0b31,assets/d_20261101/execution/runs/D1/checkpoints/0002500.pt,0,heun,50,1.0,0.0,b29b4139f4238c71,9dfc516d9ff477fe,ab84f857abe16a2a,assets/d_20261101/reports_assets/gar_crossdecode/K_plus_D1dec
+24,K_plus_D1dec,60a21973c0ad0b31,assets/d_20261101/execution/runs/D1/checkpoints/0002500.pt,0,heun,50,1.0,0.0,b29b4139f4238c71,47ec2c838124bbe9,b60a817351969b2e,assets/d_20261101/reports_assets/gar_crossdecode/K_plus_D1dec
+25,K_plus_D1dec,60a21973c0ad0b31,assets/d_20261101/execution/runs/D1/checkpoints/0002500.pt,0,heun,50,1.0,0.0,b29b4139f4238c71,97f555da9b2c1346,c4a2fc1edf91fceb,assets/d_20261101/reports_assets/gar_crossdecode/K_plus_D1dec
+26,K_plus_D1dec,60a21973c0ad0b31,assets/d_20261101/execution/runs/D1/checkpoints/0002500.pt,0,heun,50,1.0,0.0,b29b4139f4238c71,eb720d85c4a307ff,d2d595a0138058c1,assets/d_20261101/reports_assets/gar_crossdecode/K_plus_D1dec
+27,K_plus_D1dec,60a21973c0ad0b31,assets/d_20261101/execution/runs/D1/checkpoints/0002500.pt,0,heun,50,1.0,0.0,b29b4139f4238c71,725124d676c3a45a,1c8dbb5a5a603091,assets/d_20261101/reports_assets/gar_crossdecode/K_plus_D1dec
+28,K_plus_D1dec,60a21973c0ad0b31,assets/d_20261101/execution/runs/D1/checkpoints/0002500.pt,0,heun,50,1.0,0.0,b29b4139f4238c71,e200c168176d1769,5378afeaf2d73046,assets/d_20261101/reports_assets/gar_crossdecode/K_plus_D1dec
+29,K_plus_D1dec,60a21973c0ad0b31,assets/d_20261101/execution/runs/D1/checkpoints/0002500.pt,0,heun,50,1.0,0.0,b29b4139f4238c71,e809f9a31d0c05fe,ee05bebcfc886b16,assets/d_20261101/reports_assets/gar_crossdecode/K_plus_D1dec
+30,K_plus_D1dec,60a21973c0ad0b31,assets/d_20261101/execution/runs/D1/checkpoints/0002500.pt,0,heun,50,1.0,0.0,b29b4139f4238c71,07bd2474e73a4658,0e780ea709541abe,assets/d_20261101/reports_assets/gar_crossdecode/K_plus_D1dec
+31,K_plus_D1dec,60a21973c0ad0b31,assets/d_20261101/execution/runs/D1/checkpoints/0002500.pt,0,heun,50,1.0,0.0,b29b4139f4238c71,e7eaaf358db11842,c01687ead51ce5af,assets/d_20261101/reports_assets/gar_crossdecode/K_plus_D1dec
+32,K_plus_D1dec,60a21973c0ad0b31,assets/d_20261101/execution/runs/D1/checkpoints/0002500.pt,0,heun,50,1.0,0.0,b29b4139f4238c71,5f2c99c88de0eb47,06ef23d4cbf2f115,assets/d_20261101/reports_assets/gar_crossdecode/K_plus_D1dec
+33,K_plus_D1dec,60a21973c0ad0b31,assets/d_20261101/execution/runs/D1/checkpoints/0002500.pt,0,heun,50,1.0,0.0,b29b4139f4238c71,d2e62e910e36f23d,7c28119884d1885f,assets/d_20261101/reports_assets/gar_crossdecode/K_plus_D1dec
+34,K_plus_D1dec,60a21973c0ad0b31,assets/d_20261101/execution/runs/D1/checkpoints/0002500.pt,0,heun,50,1.0,0.0,b29b4139f4238c71,5189fb4a8fea68a0,5efff9ee858c5dfe,assets/d_20261101/reports_assets/gar_crossdecode/K_plus_D1dec
+35,K_plus_D1dec,60a21973c0ad0b31,assets/d_20261101/execution/runs/D1/checkpoints/0002500.pt,0,heun,50,1.0,0.0,b29b4139f4238c71,fb7b2330a021ea2a,d6c2383c46290270,assets/d_20261101/reports_assets/gar_crossdecode/K_plus_D1dec
+36,K_plus_D1dec,60a21973c0ad0b31,assets/d_20261101/execution/runs/D1/checkpoints/0002500.pt,0,heun,50,1.0,0.0,b29b4139f4238c71,1e099de9f6e2a486,cbdf5e7763e754e1,assets/d_20261101/reports_assets/gar_crossdecode/K_plus_D1dec
+37,K_plus_D1dec,60a21973c0ad0b31,assets/d_20261101/execution/runs/D1/checkpoints/0002500.pt,0,heun,50,1.0,0.0,b29b4139f4238c71,239c3d360195139e,98791d6bc5abbf91,assets/d_20261101/reports_assets/gar_crossdecode/K_plus_D1dec
+38,K_plus_D1dec,60a21973c0ad0b31,assets/d_20261101/execution/runs/D1/checkpoints/0002500.pt,0,heun,50,1.0,0.0,b29b4139f4238c71,7a7ecfcf38a80e5a,4ef3f810f766d899,assets/d_20261101/reports_assets/gar_crossdecode/K_plus_D1dec
+39,K_plus_D1dec,60a21973c0ad0b31,assets/d_20261101/execution/runs/D1/checkpoints/0002500.pt,0,heun,50,1.0,0.0,b29b4139f4238c71,0a1f4fa21f194055,2e18ee56de31c949,assets/d_20261101/reports_assets/gar_crossdecode/K_plus_D1dec
+40,K_plus_D1dec,60a21973c0ad0b31,assets/d_20261101/execution/runs/D1/checkpoints/0002500.pt,0,heun,50,1.0,0.0,b29b4139f4238c71,5f0d6faf38c8bedc,058d9c6063b4fc71,assets/d_20261101/reports_assets/gar_crossdecode/K_plus_D1dec
+41,K_plus_D1dec,60a21973c0ad0b31,assets/d_20261101/execution/runs/D1/checkpoints/0002500.pt,0,heun,50,1.0,0.0,b29b4139f4238c71,904ea9cfd2e038ea,f70a3e9b00f2411e,assets/d_20261101/reports_assets/gar_crossdecode/K_plus_D1dec
+42,K_plus_D1dec,60a21973c0ad0b31,assets/d_20261101/execution/runs/D1/checkpoints/0002500.pt,0,heun,50,1.0,0.0,b29b4139f4238c71,bb1161f9884c258e,788bc3103e225844,assets/d_20261101/reports_assets/gar_crossdecode/K_plus_D1dec
+43,K_plus_D1dec,60a21973c0ad0b31,assets/d_20261101/execution/runs/D1/checkpoints/0002500.pt,0,heun,50,1.0,0.0,b29b4139f4238c71,0692f1c0194737ac,bff84a82a5824a22,assets/d_20261101/reports_assets/gar_crossdecode/K_plus_D1dec
+44,K_plus_D1dec,60a21973c0ad0b31,assets/d_20261101/execution/runs/D1/checkpoints/0002500.pt,0,heun,50,1.0,0.0,b29b4139f4238c71,6fdd00c9745f2964,a1a096bc7ae7e614,assets/d_20261101/reports_assets/gar_crossdecode/K_plus_D1dec
+45,K_plus_D1dec,60a21973c0ad0b31,assets/d_20261101/execution/runs/D1/checkpoints/0002500.pt,0,heun,50,1.0,0.0,b29b4139f4238c71,73230df2f8807d7a,f6e90ed12baee4a0,assets/d_20261101/reports_assets/gar_crossdecode/K_plus_D1dec
+46,K_plus_D1dec,60a21973c0ad0b31,assets/d_20261101/execution/runs/D1/checkpoints/0002500.pt,0,heun,50,1.0,0.0,b29b4139f4238c71,af0de449dffabf6e,c4d810161998c70d,assets/d_20261101/reports_assets/gar_crossdecode/K_plus_D1dec
+47,K_plus_D1dec,60a21973c0ad0b31,assets/d_20261101/execution/runs/D1/checkpoints/0002500.pt,0,heun,50,1.0,0.0,b29b4139f4238c71,5d3e5050931432a7,c114a82b9fb151b7,assets/d_20261101/reports_assets/gar_crossdecode/K_plus_D1dec
+48,K_plus_D1dec,60a21973c0ad0b31,assets/d_20261101/execution/runs/D1/checkpoints/0002500.pt,0,heun,50,1.0,0.0,b29b4139f4238c71,1624f8f62e03f5be,e359f5ef3cfb41f5,assets/d_20261101/reports_assets/gar_crossdecode/K_plus_D1dec
+49,K_plus_D1dec,60a21973c0ad0b31,assets/d_20261101/execution/runs/D1/checkpoints/0002500.pt,0,heun,50,1.0,0.0,b29b4139f4238c71,4593745d1aa6e4ba,9c4df482acfbae05,assets/d_20261101/reports_assets/gar_crossdecode/K_plus_D1dec
+50,K_plus_D1dec,60a21973c0ad0b31,assets/d_20261101/execution/runs/D1/checkpoints/0002500.pt,0,heun,50,1.0,0.0,b29b4139f4238c71,7cdf3814146d9e90,ffe52eaa58c0c59b,assets/d_20261101/reports_assets/gar_crossdecode/K_plus_D1dec
+51,K_plus_D1dec,60a21973c0ad0b31,assets/d_20261101/execution/runs/D1/checkpoints/0002500.pt,0,heun,50,1.0,0.0,b29b4139f4238c71,9c89bf25362fe8cf,5720e3d219d669c3,assets/d_20261101/reports_assets/gar_crossdecode/K_plus_D1dec
+52,K_plus_D1dec,60a21973c0ad0b31,assets/d_20261101/execution/runs/D1/checkpoints/0002500.pt,0,heun,50,1.0,0.0,b29b4139f4238c71,27fbc3eb662ff81f,d48d9ecd9c0bf845,assets/d_20261101/reports_assets/gar_crossdecode/K_plus_D1dec
+53,K_plus_D1dec,60a21973c0ad0b31,assets/d_20261101/execution/runs/D1/checkpoints/0002500.pt,0,heun,50,1.0,0.0,b29b4139f4238c71,21034345ab316f70,9129fd1110a4d8d2,assets/d_20261101/reports_assets/gar_crossdecode/K_plus_D1dec
+54,K_plus_D1dec,60a21973c0ad0b31,assets/d_20261101/execution/runs/D1/checkpoints/0002500.pt,0,heun,50,1.0,0.0,b29b4139f4238c71,4a212cffeaae358c,94c46678b1a20f52,assets/d_20261101/reports_assets/gar_crossdecode/K_plus_D1dec
+55,K_plus_D1dec,60a21973c0ad0b31,assets/d_20261101/execution/runs/D1/checkpoints/0002500.pt,0,heun,50,1.0,0.0,b29b4139f4238c71,2293c209a2814ca5,5d39c72173452774,assets/d_20261101/reports_assets/gar_crossdecode/K_plus_D1dec
+56,K_plus_D1dec,60a21973c0ad0b31,assets/d_20261101/execution/runs/D1/checkpoints/0002500.pt,0,heun,50,1.0,0.0,b29b4139f4238c71,843222fb0a7567f4,0fd2667e9c2be4bb,assets/d_20261101/reports_assets/gar_crossdecode/K_plus_D1dec
+57,K_plus_D1dec,60a21973c0ad0b31,assets/d_20261101/execution/runs/D1/checkpoints/0002500.pt,0,heun,50,1.0,0.0,b29b4139f4238c71,0f6786211e396cbd,e61d0c195f701210,assets/d_20261101/reports_assets/gar_crossdecode/K_plus_D1dec
+58,K_plus_D1dec,60a21973c0ad0b31,assets/d_20261101/execution/runs/D1/checkpoints/0002500.pt,0,heun,50,1.0,0.0,b29b4139f4238c71,bfa38054acd734bf,d27eb8f75137b22c,assets/d_20261101/reports_assets/gar_crossdecode/K_plus_D1dec
+59,K_plus_D1dec,60a21973c0ad0b31,assets/d_20261101/execution/runs/D1/checkpoints/0002500.pt,0,heun,50,1.0,0.0,b29b4139f4238c71,5ddf61fc1cf349e3,bb22b0856d17338a,assets/d_20261101/reports_assets/gar_crossdecode/K_plus_D1dec
+60,K_plus_D1dec,60a21973c0ad0b31,assets/d_20261101/execution/runs/D1/checkpoints/0002500.pt,0,heun,50,1.0,0.0,b29b4139f4238c71,f79677d8a830e45d,67e7519d070f04ec,assets/d_20261101/reports_assets/gar_crossdecode/K_plus_D1dec
+61,K_plus_D1dec,60a21973c0ad0b31,assets/d_20261101/execution/runs/D1/checkpoints/0002500.pt,0,heun,50,1.0,0.0,b29b4139f4238c71,c0110cb198aa5a6a,fbff6c5354224dea,assets/d_20261101/reports_assets/gar_crossdecode/K_plus_D1dec
+62,K_plus_D1dec,60a21973c0ad0b31,assets/d_20261101/execution/runs/D1/checkpoints/0002500.pt,0,heun,50,1.0,0.0,b29b4139f4238c71,b64de29904fefa2b,ca21383464825e65,assets/d_20261101/reports_assets/gar_crossdecode/K_plus_D1dec
+63,K_plus_D1dec,60a21973c0ad0b31,assets/d_20261101/execution/runs/D1/checkpoints/0002500.pt,0,heun,50,1.0,0.0,b29b4139f4238c71,b64851212f88683f,7595ff713ca207be,assets/d_20261101/reports_assets/gar_crossdecode/K_plus_D1dec
+64,K_plus_D1dec,60a21973c0ad0b31,assets/d_20261101/execution/runs/D1/checkpoints/0002500.pt,0,heun,50,1.0,0.0,b29b4139f4238c71,7a49105cafc680e5,5405b1052c852ab3,assets/d_20261101/reports_assets/gar_crossdecode/K_plus_D1dec
+65,K_plus_D1dec,60a21973c0ad0b31,assets/d_20261101/execution/runs/D1/checkpoints/0002500.pt,0,heun,50,1.0,0.0,b29b4139f4238c71,85c6200d8ebe4993,581fed330842f13f,assets/d_20261101/reports_assets/gar_crossdecode/K_plus_D1dec
+66,K_plus_D1dec,60a21973c0ad0b31,assets/d_20261101/execution/runs/D1/checkpoints/0002500.pt,0,heun,50,1.0,0.0,b29b4139f4238c71,f443834bed2296ed,9e6b58d6acea37a0,assets/d_20261101/reports_assets/gar_crossdecode/K_plus_D1dec
+67,K_plus_D1dec,60a21973c0ad0b31,assets/d_20261101/execution/runs/D1/checkpoints/0002500.pt,0,heun,50,1.0,0.0,b29b4139f4238c71,7421dd15ea102d35,4be48f7345e0654a,assets/d_20261101/reports_assets/gar_crossdecode/K_plus_D1dec
+68,K_plus_D1dec,60a21973c0ad0b31,assets/d_20261101/execution/runs/D1/checkpoints/0002500.pt,0,heun,50,1.0,0.0,b29b4139f4238c71,42c8ec3207f48eb9,93d36c82b55a5321,assets/d_20261101/reports_assets/gar_crossdecode/K_plus_D1dec
+69,K_plus_D1dec,60a21973c0ad0b31,assets/d_20261101/execution/runs/D1/checkpoints/0002500.pt,0,heun,50,1.0,0.0,b29b4139f4238c71,3b08525efdf1ffbe,5a15f5cea7f6b95f,assets/d_20261101/reports_assets/gar_crossdecode/K_plus_D1dec
+70,K_plus_D1dec,60a21973c0ad0b31,assets/d_20261101/execution/runs/D1/checkpoints/0002500.pt,0,heun,50,1.0,0.0,b29b4139f4238c71,3039e45d5b095158,9334a236300837f5,assets/d_20261101/reports_assets/gar_crossdecode/K_plus_D1dec
+71,K_plus_D1dec,60a21973c0ad0b31,assets/d_20261101/execution/runs/D1/checkpoints/0002500.pt,0,heun,50,1.0,0.0,b29b4139f4238c71,e3a5cffeb674b161,762d137b9b286bd5,assets/d_20261101/reports_assets/gar_crossdecode/K_plus_D1dec
+72,K_plus_D1dec,60a21973c0ad0b31,assets/d_20261101/execution/runs/D1/checkpoints/0002500.pt,0,heun,50,1.0,0.0,b29b4139f4238c71,53302fcdcce73e70,29e9e6298574e895,assets/d_20261101/reports_assets/gar_crossdecode/K_plus_D1dec
+73,K_plus_D1dec,60a21973c0ad0b31,assets/d_20261101/execution/runs/D1/checkpoints/0002500.pt,0,heun,50,1.0,0.0,b29b4139f4238c71,2bd042d3e36cadc2,7d370357bb05e7e2,assets/d_20261101/reports_assets/gar_crossdecode/K_plus_D1dec
+74,K_plus_D1dec,60a21973c0ad0b31,assets/d_20261101/execution/runs/D1/checkpoints/0002500.pt,0,heun,50,1.0,0.0,b29b4139f4238c71,ebf59865bba80882,b4dca260f94f7172,assets/d_20261101/reports_assets/gar_crossdecode/K_plus_D1dec
+75,K_plus_D1dec,60a21973c0ad0b31,assets/d_20261101/execution/runs/D1/checkpoints/0002500.pt,0,heun,50,1.0,0.0,b29b4139f4238c71,36056f1b0a5079e6,46839771e8e2b640,assets/d_20261101/reports_assets/gar_crossdecode/K_plus_D1dec
+76,K_plus_D1dec,60a21973c0ad0b31,assets/d_20261101/execution/runs/D1/checkpoints/0002500.pt,0,heun,50,1.0,0.0,b29b4139f4238c71,9a935cd64ca85917,57ae34710dcb71a0,assets/d_20261101/reports_assets/gar_crossdecode/K_plus_D1dec
+77,K_plus_D1dec,60a21973c0ad0b31,assets/d_20261101/execution/runs/D1/checkpoints/0002500.pt,0,heun,50,1.0,0.0,b29b4139f4238c71,f0ec4a137e77bd8f,2341e9579603e050,assets/d_20261101/reports_assets/gar_crossdecode/K_plus_D1dec
+78,K_plus_D1dec,60a21973c0ad0b31,assets/d_20261101/execution/runs/D1/checkpoints/0002500.pt,0,heun,50,1.0,0.0,b29b4139f4238c71,2e8209579ce0eca6,00479436c0f094c8,assets/d_20261101/reports_assets/gar_crossdecode/K_plus_D1dec
+79,K_plus_D1dec,60a21973c0ad0b31,assets/d_20261101/execution/runs/D1/checkpoints/0002500.pt,0,heun,50,1.0,0.0,b29b4139f4238c71,dbd74cfefc1fc353,56ca6bd49d404acf,assets/d_20261101/reports_assets/gar_crossdecode/K_plus_D1dec
+80,K_plus_D1dec,60a21973c0ad0b31,assets/d_20261101/execution/runs/D1/checkpoints/0002500.pt,0,heun,50,1.0,0.0,b29b4139f4238c71,4c6aff175a620a1a,29f9aae5f75e2502,assets/d_20261101/reports_assets/gar_crossdecode/K_plus_D1dec
+81,K_plus_D1dec,60a21973c0ad0b31,assets/d_20261101/execution/runs/D1/checkpoints/0002500.pt,0,heun,50,1.0,0.0,b29b4139f4238c71,672036ae63bad94f,b3e5d10534682d6c,assets/d_20261101/reports_assets/gar_crossdecode/K_plus_D1dec
+82,K_plus_D1dec,60a21973c0ad0b31,assets/d_20261101/execution/runs/D1/checkpoints/0002500.pt,0,heun,50,1.0,0.0,b29b4139f4238c71,07eeda701e8684ca,389d8e24f3f863a7,assets/d_20261101/reports_assets/gar_crossdecode/K_plus_D1dec
+83,K_plus_D1dec,60a21973c0ad0b31,assets/d_20261101/execution/runs/D1/checkpoints/0002500.pt,0,heun,50,1.0,0.0,b29b4139f4238c71,f086d9d42e26052c,6077e8f9cabf6dc0,assets/d_20261101/reports_assets/gar_crossdecode/K_plus_D1dec
+84,K_plus_D1dec,60a21973c0ad0b31,assets/d_20261101/execution/runs/D1/checkpoints/0002500.pt,0,heun,50,1.0,0.0,b29b4139f4238c71,fbca127834cda8c8,1c2618100603b227,assets/d_20261101/reports_assets/gar_crossdecode/K_plus_D1dec
+85,K_plus_D1dec,60a21973c0ad0b31,assets/d_20261101/execution/runs/D1/checkpoints/0002500.pt,0,heun,50,1.0,0.0,b29b4139f4238c71,1422b20772014fcf,7399b7166eacbb20,assets/d_20261101/reports_assets/gar_crossdecode/K_plus_D1dec
+86,K_plus_D1dec,60a21973c0ad0b31,assets/d_20261101/execution/runs/D1/checkpoints/0002500.pt,0,heun,50,1.0,0.0,b29b4139f4238c71,5f8a378a5833b1be,53363a70434a12f9,assets/d_20261101/reports_assets/gar_crossdecode/K_plus_D1dec
+87,K_plus_D1dec,60a21973c0ad0b31,assets/d_20261101/execution/runs/D1/checkpoints/0002500.pt,0,heun,50,1.0,0.0,b29b4139f4238c71,249af59f934bbb17,f82a409c25c75a47,assets/d_20261101/reports_assets/gar_crossdecode/K_plus_D1dec
+88,K_plus_D1dec,60a21973c0ad0b31,assets/d_20261101/execution/runs/D1/checkpoints/0002500.pt,0,heun,50,1.0,0.0,b29b4139f4238c71,4a71ea06f56eff8c,e8e0d46c23783ea7,assets/d_20261101/reports_assets/gar_crossdecode/K_plus_D1dec
+89,K_plus_D1dec,60a21973c0ad0b31,assets/d_20261101/execution/runs/D1/checkpoints/0002500.pt,0,heun,50,1.0,0.0,b29b4139f4238c71,1b213ecc07cb4ccf,de42a1d5d5a90f9c,assets/d_20261101/reports_assets/gar_crossdecode/K_plus_D1dec
+90,K_plus_D1dec,60a21973c0ad0b31,assets/d_20261101/execution/runs/D1/checkpoints/0002500.pt,0,heun,50,1.0,0.0,b29b4139f4238c71,1f58115cd28669af,c61137b98ca1fdef,assets/d_20261101/reports_assets/gar_crossdecode/K_plus_D1dec
+91,K_plus_D1dec,60a21973c0ad0b31,assets/d_20261101/execution/runs/D1/checkpoints/0002500.pt,0,heun,50,1.0,0.0,b29b4139f4238c71,fca08d92a37131d7,a8c94394fe3fe6c3,assets/d_20261101/reports_assets/gar_crossdecode/K_plus_D1dec
+92,K_plus_D1dec,60a21973c0ad0b31,assets/d_20261101/execution/runs/D1/checkpoints/0002500.pt,0,heun,50,1.0,0.0,b29b4139f4238c71,46bdb4e3ae5f2b5d,f3b53cbdd995d696,assets/d_20261101/reports_assets/gar_crossdecode/K_plus_D1dec
+93,K_plus_D1dec,60a21973c0ad0b31,assets/d_20261101/execution/runs/D1/checkpoints/0002500.pt,0,heun,50,1.0,0.0,b29b4139f4238c71,c8c3f115591cc2e0,35aa9b5ec88e588f,assets/d_20261101/reports_assets/gar_crossdecode/K_plus_D1dec
+94,K_plus_D1dec,60a21973c0ad0b31,assets/d_20261101/execution/runs/D1/checkpoints/0002500.pt,0,heun,50,1.0,0.0,b29b4139f4238c71,18d3945591c48e77,06d4276fed6665a0,assets/d_20261101/reports_assets/gar_crossdecode/K_plus_D1dec
+95,K_plus_D1dec,60a21973c0ad0b31,assets/d_20261101/execution/runs/D1/checkpoints/0002500.pt,0,heun,50,1.0,0.0,b29b4139f4238c71,e7a9ac6e73f84879,77fa898790c59ac3,assets/d_20261101/reports_assets/gar_crossdecode/K_plus_D1dec
+96,K_plus_D1dec,60a21973c0ad0b31,assets/d_20261101/execution/runs/D1/checkpoints/0002500.pt,0,heun,50,1.0,0.0,b29b4139f4238c71,f88edbd1581c8d10,6af61b0439eae09a,assets/d_20261101/reports_assets/gar_crossdecode/K_plus_D1dec
+97,K_plus_D1dec,60a21973c0ad0b31,assets/d_20261101/execution/runs/D1/checkpoints/0002500.pt,0,heun,50,1.0,0.0,b29b4139f4238c71,135c9acd11a407ec,c0193597459dd68c,assets/d_20261101/reports_assets/gar_crossdecode/K_plus_D1dec
+98,K_plus_D1dec,60a21973c0ad0b31,assets/d_20261101/execution/runs/D1/checkpoints/0002500.pt,0,heun,50,1.0,0.0,b29b4139f4238c71,1b2c4d7dae84d6d7,f074900ac0b88172,assets/d_20261101/reports_assets/gar_crossdecode/K_plus_D1dec
+99,K_plus_D1dec,60a21973c0ad0b31,assets/d_20261101/execution/runs/D1/checkpoints/0002500.pt,0,heun,50,1.0,0.0,b29b4139f4238c71,0ebe262605040799,052ffe60254f7c7d,assets/d_20261101/reports_assets/gar_crossdecode/K_plus_D1dec
+0,D1b_2500,60a21973c0ad0b31,NA(stock sd-vae),0,heun,50,1.0,0.0,b29b4139f4238c71,9a8736ca3ce6b82b,b35722adf7d103d9,assets/d_20261101/reports_assets/gar_crossdecode/D1b_2500
+1,D1b_2500,60a21973c0ad0b31,NA(stock sd-vae),0,heun,50,1.0,0.0,b29b4139f4238c71,5498de95eeca01dd,c1be74b738f54d76,assets/d_20261101/reports_assets/gar_crossdecode/D1b_2500
+2,D1b_2500,60a21973c0ad0b31,NA(stock sd-vae),0,heun,50,1.0,0.0,b29b4139f4238c71,2bdea1fd420bd3d9,47ef33e8baed776d,assets/d_20261101/reports_assets/gar_crossdecode/D1b_2500
+3,D1b_2500,60a21973c0ad0b31,NA(stock sd-vae),0,heun,50,1.0,0.0,b29b4139f4238c71,e35021d7b3cf70ae,57c169154226361c,assets/d_20261101/reports_assets/gar_crossdecode/D1b_2500
+4,D1b_2500,60a21973c0ad0b31,NA(stock sd-vae),0,heun,50,1.0,0.0,b29b4139f4238c71,37c3983d698e0f63,bd33b49d5a665bfc,assets/d_20261101/reports_assets/gar_crossdecode/D1b_2500
+5,D1b_2500,60a21973c0ad0b31,NA(stock sd-vae),0,heun,50,1.0,0.0,b29b4139f4238c71,ab03c4e6324a2dae,0691b4022d12dfc5,assets/d_20261101/reports_assets/gar_crossdecode/D1b_2500
+6,D1b_2500,60a21973c0ad0b31,NA(stock sd-vae),0,heun,50,1.0,0.0,b29b4139f4238c71,f976ceabb3b6d4f0,7faf7dea8d9fa2ba,assets/d_20261101/reports_assets/gar_crossdecode/D1b_2500
+7,D1b_2500,60a21973c0ad0b31,NA(stock sd-vae),0,heun,50,1.0,0.0,b29b4139f4238c71,881b622aded3dba5,e1c8173b02e26a25,assets/d_20261101/reports_assets/gar_crossdecode/D1b_2500
+8,D1b_2500,60a21973c0ad0b31,NA(stock sd-vae),0,heun,50,1.0,0.0,b29b4139f4238c71,c17d16d0c55dc095,46ca65116ce9dcb9,assets/d_20261101/reports_assets/gar_crossdecode/D1b_2500
+9,D1b_2500,60a21973c0ad0b31,NA(stock sd-vae),0,heun,50,1.0,0.0,b29b4139f4238c71,43f041c9b435c8e3,82bef1510893068b,assets/d_20261101/reports_assets/gar_crossdecode/D1b_2500
+10,D1b_2500,60a21973c0ad0b31,NA(stock sd-vae),0,heun,50,1.0,0.0,b29b4139f4238c71,d5f6e7d970e7a123,8a585e2b4a4c3637,assets/d_20261101/reports_assets/gar_crossdecode/D1b_2500
+11,D1b_2500,60a21973c0ad0b31,NA(stock sd-vae),0,heun,50,1.0,0.0,b29b4139f4238c71,c93ee876e61fcd68,c6eee9a535ece697,assets/d_20261101/reports_assets/gar_crossdecode/D1b_2500
+12,D1b_2500,60a21973c0ad0b31,NA(stock sd-vae),0,heun,50,1.0,0.0,b29b4139f4238c71,3633189ccc88fefb,2c99cd60f424f7ee,assets/d_20261101/reports_assets/gar_crossdecode/D1b_2500
+13,D1b_2500,60a21973c0ad0b31,NA(stock sd-vae),0,heun,50,1.0,0.0,b29b4139f4238c71,3eec9e1b7871adf9,d5d1a02fe86f70b4,assets/d_20261101/reports_assets/gar_crossdecode/D1b_2500
+14,D1b_2500,60a21973c0ad0b31,NA(stock sd-vae),0,heun,50,1.0,0.0,b29b4139f4238c71,1475d5d99dfad7d9,bcb570e84422e02e,assets/d_20261101/reports_assets/gar_crossdecode/D1b_2500
+15,D1b_2500,60a21973c0ad0b31,NA(stock sd-vae),0,heun,50,1.0,0.0,b29b4139f4238c71,d0ca7f604e7ef594,9b0182900a942e7a,assets/d_20261101/reports_assets/gar_crossdecode/D1b_2500
+16,D1b_2500,60a21973c0ad0b31,NA(stock sd-vae),0,heun,50,1.0,0.0,b29b4139f4238c71,843de6b34970a263,a4941201885911af,assets/d_20261101/reports_assets/gar_crossdecode/D1b_2500
+17,D1b_2500,60a21973c0ad0b31,NA(stock sd-vae),0,heun,50,1.0,0.0,b29b4139f4238c71,9483b0933a643686,41a336c4ac1b5820,assets/d_20261101/reports_assets/gar_crossdecode/D1b_2500
+18,D1b_2500,60a21973c0ad0b31,NA(stock sd-vae),0,heun,50,1.0,0.0,b29b4139f4238c71,1a77a1c67f6b556e,b7e3bdf4423c072e,assets/d_20261101/reports_assets/gar_crossdecode/D1b_2500
+19,D1b_2500,60a21973c0ad0b31,NA(stock sd-vae),0,heun,50,1.0,0.0,b29b4139f4238c71,1fed4566d60d02c3,bdb659d3cee3e2e3,assets/d_20261101/reports_assets/gar_crossdecode/D1b_2500
+20,D1b_2500,60a21973c0ad0b31,NA(stock sd-vae),0,heun,50,1.0,0.0,b29b4139f4238c71,a4ade0c33b87bdf7,983ef1c22b32a106,assets/d_20261101/reports_assets/gar_crossdecode/D1b_2500
+21,D1b_2500,60a21973c0ad0b31,NA(stock sd-vae),0,heun,50,1.0,0.0,b29b4139f4238c71,2d9707b0081547c2,0d3e7b6c727922ee,assets/d_20261101/reports_assets/gar_crossdecode/D1b_2500
+22,D1b_2500,60a21973c0ad0b31,NA(stock sd-vae),0,heun,50,1.0,0.0,b29b4139f4238c71,f61b6a199b721115,b1f5f3bf8b54e35e,assets/d_20261101/reports_assets/gar_crossdecode/D1b_2500
+23,D1b_2500,60a21973c0ad0b31,NA(stock sd-vae),0,heun,50,1.0,0.0,b29b4139f4238c71,9dfc516d9ff477fe,acdff05b3e88e54d,assets/d_20261101/reports_assets/gar_crossdecode/D1b_2500
+24,D1b_2500,60a21973c0ad0b31,NA(stock sd-vae),0,heun,50,1.0,0.0,b29b4139f4238c71,47ec2c838124bbe9,1918b58dd00c96ad,assets/d_20261101/reports_assets/gar_crossdecode/D1b_2500
+25,D1b_2500,60a21973c0ad0b31,NA(stock sd-vae),0,heun,50,1.0,0.0,b29b4139f4238c71,97f555da9b2c1346,ded200f305d53732,assets/d_20261101/reports_assets/gar_crossdecode/D1b_2500
+26,D1b_2500,60a21973c0ad0b31,NA(stock sd-vae),0,heun,50,1.0,0.0,b29b4139f4238c71,eb720d85c4a307ff,e24fad80a616805d,assets/d_20261101/reports_assets/gar_crossdecode/D1b_2500
+27,D1b_2500,60a21973c0ad0b31,NA(stock sd-vae),0,heun,50,1.0,0.0,b29b4139f4238c71,725124d676c3a45a,f321db851db73efc,assets/d_20261101/reports_assets/gar_crossdecode/D1b_2500
+28,D1b_2500,60a21973c0ad0b31,NA(stock sd-vae),0,heun,50,1.0,0.0,b29b4139f4238c71,e200c168176d1769,d23e4e6c946cff08,assets/d_20261101/reports_assets/gar_crossdecode/D1b_2500
+29,D1b_2500,60a21973c0ad0b31,NA(stock sd-vae),0,heun,50,1.0,0.0,b29b4139f4238c71,e809f9a31d0c05fe,dac7f6d00fd7f98e,assets/d_20261101/reports_assets/gar_crossdecode/D1b_2500
+30,D1b_2500,60a21973c0ad0b31,NA(stock sd-vae),0,heun,50,1.0,0.0,b29b4139f4238c71,07bd2474e73a4658,b87657bd497fd4c4,assets/d_20261101/reports_assets/gar_crossdecode/D1b_2500
+31,D1b_2500,60a21973c0ad0b31,NA(stock sd-vae),0,heun,50,1.0,0.0,b29b4139f4238c71,e7eaaf358db11842,c9e685c7cfbb6a2e,assets/d_20261101/reports_assets/gar_crossdecode/D1b_2500
+32,D1b_2500,60a21973c0ad0b31,NA(stock sd-vae),0,heun,50,1.0,0.0,b29b4139f4238c71,5f2c99c88de0eb47,38af5868cbef3ef8,assets/d_20261101/reports_assets/gar_crossdecode/D1b_2500
+33,D1b_2500,60a21973c0ad0b31,NA(stock sd-vae),0,heun,50,1.0,0.0,b29b4139f4238c71,d2e62e910e36f23d,faf8bf923fad0352,assets/d_20261101/reports_assets/gar_crossdecode/D1b_2500
+34,D1b_2500,60a21973c0ad0b31,NA(stock sd-vae),0,heun,50,1.0,0.0,b29b4139f4238c71,5189fb4a8fea68a0,5c108ea94cedc25b,assets/d_20261101/reports_assets/gar_crossdecode/D1b_2500
+35,D1b_2500,60a21973c0ad0b31,NA(stock sd-vae),0,heun,50,1.0,0.0,b29b4139f4238c71,fb7b2330a021ea2a,c03edceda50dbf0d,assets/d_20261101/reports_assets/gar_crossdecode/D1b_2500
+36,D1b_2500,60a21973c0ad0b31,NA(stock sd-vae),0,heun,50,1.0,0.0,b29b4139f4238c71,1e099de9f6e2a486,9a1a1de4d6173080,assets/d_20261101/reports_assets/gar_crossdecode/D1b_2500
+37,D1b_2500,60a21973c0ad0b31,NA(stock sd-vae),0,heun,50,1.0,0.0,b29b4139f4238c71,239c3d360195139e,6fa3b61b0a422a88,assets/d_20261101/reports_assets/gar_crossdecode/D1b_2500
+38,D1b_2500,60a21973c0ad0b31,NA(stock sd-vae),0,heun,50,1.0,0.0,b29b4139f4238c71,7a7ecfcf38a80e5a,d80a6a1241dc74d8,assets/d_20261101/reports_assets/gar_crossdecode/D1b_2500
+39,D1b_2500,60a21973c0ad0b31,NA(stock sd-vae),0,heun,50,1.0,0.0,b29b4139f4238c71,0a1f4fa21f194055,c002c8f71390e23d,assets/d_20261101/reports_assets/gar_crossdecode/D1b_2500
+40,D1b_2500,60a21973c0ad0b31,NA(stock sd-vae),0,heun,50,1.0,0.0,b29b4139f4238c71,5f0d6faf38c8bedc,1162ef109e54c247,assets/d_20261101/reports_assets/gar_crossdecode/D1b_2500
+41,D1b_2500,60a21973c0ad0b31,NA(stock sd-vae),0,heun,50,1.0,0.0,b29b4139f4238c71,904ea9cfd2e038ea,20c5bb4805ba666c,assets/d_20261101/reports_assets/gar_crossdecode/D1b_2500
+42,D1b_2500,60a21973c0ad0b31,NA(stock sd-vae),0,heun,50,1.0,0.0,b29b4139f4238c71,bb1161f9884c258e,935e4e1980b2b62e,assets/d_20261101/reports_assets/gar_crossdecode/D1b_2500
+43,D1b_2500,60a21973c0ad0b31,NA(stock sd-vae),0,heun,50,1.0,0.0,b29b4139f4238c71,0692f1c0194737ac,d628563fce544445,assets/d_20261101/reports_assets/gar_crossdecode/D1b_2500
+44,D1b_2500,60a21973c0ad0b31,NA(stock sd-vae),0,heun,50,1.0,0.0,b29b4139f4238c71,6fdd00c9745f2964,5f00e96f47c34ba0,assets/d_20261101/reports_assets/gar_crossdecode/D1b_2500
+45,D1b_2500,60a21973c0ad0b31,NA(stock sd-vae),0,heun,50,1.0,0.0,b29b4139f4238c71,73230df2f8807d7a,bea378b8534586ea,assets/d_20261101/reports_assets/gar_crossdecode/D1b_2500
+46,D1b_2500,60a21973c0ad0b31,NA(stock sd-vae),0,heun,50,1.0,0.0,b29b4139f4238c71,af0de449dffabf6e,9103ec92dbfadcfa,assets/d_20261101/reports_assets/gar_crossdecode/D1b_2500
+47,D1b_2500,60a21973c0ad0b31,NA(stock sd-vae),0,heun,50,1.0,0.0,b29b4139f4238c71,5d3e5050931432a7,c95fd3a1298842e2,assets/d_20261101/reports_assets/gar_crossdecode/D1b_2500
+48,D1b_2500,60a21973c0ad0b31,NA(stock sd-vae),0,heun,50,1.0,0.0,b29b4139f4238c71,1624f8f62e03f5be,fda692e8a28e8716,assets/d_20261101/reports_assets/gar_crossdecode/D1b_2500
+49,D1b_2500,60a21973c0ad0b31,NA(stock sd-vae),0,heun,50,1.0,0.0,b29b4139f4238c71,4593745d1aa6e4ba,8c07cf5ce58adecc,assets/d_20261101/reports_assets/gar_crossdecode/D1b_2500
+50,D1b_2500,60a21973c0ad0b31,NA(stock sd-vae),0,heun,50,1.0,0.0,b29b4139f4238c71,7cdf3814146d9e90,0aeb7e089b51bc52,assets/d_20261101/reports_assets/gar_crossdecode/D1b_2500
+51,D1b_2500,60a21973c0ad0b31,NA(stock sd-vae),0,heun,50,1.0,0.0,b29b4139f4238c71,9c89bf25362fe8cf,d50bf50a994c88fc,assets/d_20261101/reports_assets/gar_crossdecode/D1b_2500
+52,D1b_2500,60a21973c0ad0b31,NA(stock sd-vae),0,heun,50,1.0,0.0,b29b4139f4238c71,27fbc3eb662ff81f,2cb3647d32c4f3ab,assets/d_20261101/reports_assets/gar_crossdecode/D1b_2500
+53,D1b_2500,60a21973c0ad0b31,NA(stock sd-vae),0,heun,50,1.0,0.0,b29b4139f4238c71,21034345ab316f70,79e8f7f8e0fcafeb,assets/d_20261101/reports_assets/gar_crossdecode/D1b_2500
+54,D1b_2500,60a21973c0ad0b31,NA(stock sd-vae),0,heun,50,1.0,0.0,b29b4139f4238c71,4a212cffeaae358c,74fc4424aefb0a0c,assets/d_20261101/reports_assets/gar_crossdecode/D1b_2500
+55,D1b_2500,60a21973c0ad0b31,NA(stock sd-vae),0,heun,50,1.0,0.0,b29b4139f4238c71,2293c209a2814ca5,feadb34e0bb51174,assets/d_20261101/reports_assets/gar_crossdecode/D1b_2500
+56,D1b_2500,60a21973c0ad0b31,NA(stock sd-vae),0,heun,50,1.0,0.0,b29b4139f4238c71,843222fb0a7567f4,a90e73c7647f5c31,assets/d_20261101/reports_assets/gar_crossdecode/D1b_2500
+57,D1b_2500,60a21973c0ad0b31,NA(stock sd-vae),0,heun,50,1.0,0.0,b29b4139f4238c71,0f6786211e396cbd,edd329c4fee6152a,assets/d_20261101/reports_assets/gar_crossdecode/D1b_2500
+58,D1b_2500,60a21973c0ad0b31,NA(stock sd-vae),0,heun,50,1.0,0.0,b29b4139f4238c71,bfa38054acd734bf,a1a3bf5c4877f250,assets/d_20261101/reports_assets/gar_crossdecode/D1b_2500
+59,D1b_2500,60a21973c0ad0b31,NA(stock sd-vae),0,heun,50,1.0,0.0,b29b4139f4238c71,5ddf61fc1cf349e3,fb2e067759b46764,assets/d_20261101/reports_assets/gar_crossdecode/D1b_2500
+60,D1b_2500,60a21973c0ad0b31,NA(stock sd-vae),0,heun,50,1.0,0.0,b29b4139f4238c71,f79677d8a830e45d,674188b31eaef345,assets/d_20261101/reports_assets/gar_crossdecode/D1b_2500
+61,D1b_2500,60a21973c0ad0b31,NA(stock sd-vae),0,heun,50,1.0,0.0,b29b4139f4238c71,c0110cb198aa5a6a,6c7da5425513c7c1,assets/d_20261101/reports_assets/gar_crossdecode/D1b_2500
+62,D1b_2500,60a21973c0ad0b31,NA(stock sd-vae),0,heun,50,1.0,0.0,b29b4139f4238c71,b64de29904fefa2b,8681097b007f02ba,assets/d_20261101/reports_assets/gar_crossdecode/D1b_2500
+63,D1b_2500,60a21973c0ad0b31,NA(stock sd-vae),0,heun,50,1.0,0.0,b29b4139f4238c71,b64851212f88683f,1f38f9bbd0aa926d,assets/d_20261101/reports_assets/gar_crossdecode/D1b_2500
+64,D1b_2500,60a21973c0ad0b31,NA(stock sd-vae),0,heun,50,1.0,0.0,b29b4139f4238c71,7a49105cafc680e5,46e6cfce1f5b7835,assets/d_20261101/reports_assets/gar_crossdecode/D1b_2500
+65,D1b_2500,60a21973c0ad0b31,NA(stock sd-vae),0,heun,50,1.0,0.0,b29b4139f4238c71,85c6200d8ebe4993,6422b505ac4b2867,assets/d_20261101/reports_assets/gar_crossdecode/D1b_2500
+66,D1b_2500,60a21973c0ad0b31,NA(stock sd-vae),0,heun,50,1.0,0.0,b29b4139f4238c71,f443834bed2296ed,6f58bd33060278cc,assets/d_20261101/reports_assets/gar_crossdecode/D1b_2500
+67,D1b_2500,60a21973c0ad0b31,NA(stock sd-vae),0,heun,50,1.0,0.0,b29b4139f4238c71,7421dd15ea102d35,12f51f4077f5ebb7,assets/d_20261101/reports_assets/gar_crossdecode/D1b_2500
+68,D1b_2500,60a21973c0ad0b31,NA(stock sd-vae),0,heun,50,1.0,0.0,b29b4139f4238c71,42c8ec3207f48eb9,b54f915da3b0a42b,assets/d_20261101/reports_assets/gar_crossdecode/D1b_2500
+69,D1b_2500,60a21973c0ad0b31,NA(stock sd-vae),0,heun,50,1.0,0.0,b29b4139f4238c71,3b08525efdf1ffbe,7beefd55e7002088,assets/d_20261101/reports_assets/gar_crossdecode/D1b_2500
+70,D1b_2500,60a21973c0ad0b31,NA(stock sd-vae),0,heun,50,1.0,0.0,b29b4139f4238c71,3039e45d5b095158,0febcfde429dc35d,assets/d_20261101/reports_assets/gar_crossdecode/D1b_2500
+71,D1b_2500,60a21973c0ad0b31,NA(stock sd-vae),0,heun,50,1.0,0.0,b29b4139f4238c71,e3a5cffeb674b161,c1846d1123bcad0c,assets/d_20261101/reports_assets/gar_crossdecode/D1b_2500
+72,D1b_2500,60a21973c0ad0b31,NA(stock sd-vae),0,heun,50,1.0,0.0,b29b4139f4238c71,53302fcdcce73e70,a6b89bf4595bb0f4,assets/d_20261101/reports_assets/gar_crossdecode/D1b_2500
+73,D1b_2500,60a21973c0ad0b31,NA(stock sd-vae),0,heun,50,1.0,0.0,b29b4139f4238c71,2bd042d3e36cadc2,2690c45af38919f9,assets/d_20261101/reports_assets/gar_crossdecode/D1b_2500
+74,D1b_2500,60a21973c0ad0b31,NA(stock sd-vae),0,heun,50,1.0,0.0,b29b4139f4238c71,ebf59865bba80882,280799ace494c92a,assets/d_20261101/reports_assets/gar_crossdecode/D1b_2500
+75,D1b_2500,60a21973c0ad0b31,NA(stock sd-vae),0,heun,50,1.0,0.0,b29b4139f4238c71,36056f1b0a5079e6,8ed6fe6329a1d9d7,assets/d_20261101/reports_assets/gar_crossdecode/D1b_2500
+76,D1b_2500,60a21973c0ad0b31,NA(stock sd-vae),0,heun,50,1.0,0.0,b29b4139f4238c71,9a935cd64ca85917,90c679347b2c1957,assets/d_20261101/reports_assets/gar_crossdecode/D1b_2500
+77,D1b_2500,60a21973c0ad0b31,NA(stock sd-vae),0,heun,50,1.0,0.0,b29b4139f4238c71,f0ec4a137e77bd8f,0dfacf6950224898,assets/d_20261101/reports_assets/gar_crossdecode/D1b_2500
+78,D1b_2500,60a21973c0ad0b31,NA(stock sd-vae),0,heun,50,1.0,0.0,b29b4139f4238c71,2e8209579ce0eca6,a8f6f6c06bd36d3e,assets/d_20261101/reports_assets/gar_crossdecode/D1b_2500
+79,D1b_2500,60a21973c0ad0b31,NA(stock sd-vae),0,heun,50,1.0,0.0,b29b4139f4238c71,dbd74cfefc1fc353,a35ff73d70437fee,assets/d_20261101/reports_assets/gar_crossdecode/D1b_2500
+80,D1b_2500,60a21973c0ad0b31,NA(stock sd-vae),0,heun,50,1.0,0.0,b29b4139f4238c71,4c6aff175a620a1a,dab0efbf9d6f63d5,assets/d_20261101/reports_assets/gar_crossdecode/D1b_2500
+81,D1b_2500,60a21973c0ad0b31,NA(stock sd-vae),0,heun,50,1.0,0.0,b29b4139f4238c71,672036ae63bad94f,52391bcb12618b79,assets/d_20261101/reports_assets/gar_crossdecode/D1b_2500
+82,D1b_2500,60a21973c0ad0b31,NA(stock sd-vae),0,heun,50,1.0,0.0,b29b4139f4238c71,07eeda701e8684ca,cca8d9f571423cfa,assets/d_20261101/reports_assets/gar_crossdecode/D1b_2500
+83,D1b_2500,60a21973c0ad0b31,NA(stock sd-vae),0,heun,50,1.0,0.0,b29b4139f4238c71,f086d9d42e26052c,630bd42930414957,assets/d_20261101/reports_assets/gar_crossdecode/D1b_2500
+84,D1b_2500,60a21973c0ad0b31,NA(stock sd-vae),0,heun,50,1.0,0.0,b29b4139f4238c71,fbca127834cda8c8,ac62c47a835ae1aa,assets/d_20261101/reports_assets/gar_crossdecode/D1b_2500
+85,D1b_2500,60a21973c0ad0b31,NA(stock sd-vae),0,heun,50,1.0,0.0,b29b4139f4238c71,1422b20772014fcf,478c488056d0523e,assets/d_20261101/reports_assets/gar_crossdecode/D1b_2500
+86,D1b_2500,60a21973c0ad0b31,NA(stock sd-vae),0,heun,50,1.0,0.0,b29b4139f4238c71,5f8a378a5833b1be,c48dcb7e3cad9b66,assets/d_20261101/reports_assets/gar_crossdecode/D1b_2500
+87,D1b_2500,60a21973c0ad0b31,NA(stock sd-vae),0,heun,50,1.0,0.0,b29b4139f4238c71,249af59f934bbb17,21d7bac3eb5ada1d,assets/d_20261101/reports_assets/gar_crossdecode/D1b_2500
+88,D1b_2500,60a21973c0ad0b31,NA(stock sd-vae),0,heun,50,1.0,0.0,b29b4139f4238c71,4a71ea06f56eff8c,a9b4148a6c223821,assets/d_20261101/reports_assets/gar_crossdecode/D1b_2500
+89,D1b_2500,60a21973c0ad0b31,NA(stock sd-vae),0,heun,50,1.0,0.0,b29b4139f4238c71,1b213ecc07cb4ccf,38d6bd371e916993,assets/d_20261101/reports_assets/gar_crossdecode/D1b_2500
+90,D1b_2500,60a21973c0ad0b31,NA(stock sd-vae),0,heun,50,1.0,0.0,b29b4139f4238c71,1f58115cd28669af,1918265614f8ef45,assets/d_20261101/reports_assets/gar_crossdecode/D1b_2500
+91,D1b_2500,60a21973c0ad0b31,NA(stock sd-vae),0,heun,50,1.0,0.0,b29b4139f4238c71,fca08d92a37131d7,b3ca301bf045998d,assets/d_20261101/reports_assets/gar_crossdecode/D1b_2500
+92,D1b_2500,60a21973c0ad0b31,NA(stock sd-vae),0,heun,50,1.0,0.0,b29b4139f4238c71,46bdb4e3ae5f2b5d,5d853bc5986462a2,assets/d_20261101/reports_assets/gar_crossdecode/D1b_2500
+93,D1b_2500,60a21973c0ad0b31,NA(stock sd-vae),0,heun,50,1.0,0.0,b29b4139f4238c71,c8c3f115591cc2e0,862920221179ea36,assets/d_20261101/reports_assets/gar_crossdecode/D1b_2500
+94,D1b_2500,60a21973c0ad0b31,NA(stock sd-vae),0,heun,50,1.0,0.0,b29b4139f4238c71,18d3945591c48e77,41f3fff764891c40,assets/d_20261101/reports_assets/gar_crossdecode/D1b_2500
+95,D1b_2500,60a21973c0ad0b31,NA(stock sd-vae),0,heun,50,1.0,0.0,b29b4139f4238c71,e7a9ac6e73f84879,a85746fea59699ec,assets/d_20261101/reports_assets/gar_crossdecode/D1b_2500
+96,D1b_2500,60a21973c0ad0b31,NA(stock sd-vae),0,heun,50,1.0,0.0,b29b4139f4238c71,f88edbd1581c8d10,f424e24e81a260e7,assets/d_20261101/reports_assets/gar_crossdecode/D1b_2500
+97,D1b_2500,60a21973c0ad0b31,NA(stock sd-vae),0,heun,50,1.0,0.0,b29b4139f4238c71,135c9acd11a407ec,f5bbd376af5d8195,assets/d_20261101/reports_assets/gar_crossdecode/D1b_2500
+98,D1b_2500,60a21973c0ad0b31,NA(stock sd-vae),0,heun,50,1.0,0.0,b29b4139f4238c71,1b2c4d7dae84d6d7,8de5fd912e076fcc,assets/d_20261101/reports_assets/gar_crossdecode/D1b_2500
+99,D1b_2500,60a21973c0ad0b31,NA(stock sd-vae),0,heun,50,1.0,0.0,b29b4139f4238c71,0ebe262605040799,c1d5be24db39c5fd,assets/d_20261101/reports_assets/gar_crossdecode/D1b_2500
+0,GAR_s000672,60a21973c0ad0b31,assets/d_20261101/runs/GAR/checkpoints/0000672.pt,0,heun,50,1.0,0.0,b29b4139f4238c71,9a8736ca3ce6b82b,7f88263e9672a970,assets/d_20261101/reports_assets/gar_crossdecode/GAR_s000672
+1,GAR_s000672,60a21973c0ad0b31,assets/d_20261101/runs/GAR/checkpoints/0000672.pt,0,heun,50,1.0,0.0,b29b4139f4238c71,5498de95eeca01dd,c394d525ab5273a8,assets/d_20261101/reports_assets/gar_crossdecode/GAR_s000672
+2,GAR_s000672,60a21973c0ad0b31,assets/d_20261101/runs/GAR/checkpoints/0000672.pt,0,heun,50,1.0,0.0,b29b4139f4238c71,2bdea1fd420bd3d9,500b3972e96d4479,assets/d_20261101/reports_assets/gar_crossdecode/GAR_s000672
+3,GAR_s000672,60a21973c0ad0b31,assets/d_20261101/runs/GAR/checkpoints/0000672.pt,0,heun,50,1.0,0.0,b29b4139f4238c71,e35021d7b3cf70ae,92a8277ee6be60e4,assets/d_20261101/reports_assets/gar_crossdecode/GAR_s000672
+4,GAR_s000672,60a21973c0ad0b31,assets/d_20261101/runs/GAR/checkpoints/0000672.pt,0,heun,50,1.0,0.0,b29b4139f4238c71,37c3983d698e0f63,85b632081aef8c9c,assets/d_20261101/reports_assets/gar_crossdecode/GAR_s000672
+5,GAR_s000672,60a21973c0ad0b31,assets/d_20261101/runs/GAR/checkpoints/0000672.pt,0,heun,50,1.0,0.0,b29b4139f4238c71,ab03c4e6324a2dae,5007da271fa2cfaa,assets/d_20261101/reports_assets/gar_crossdecode/GAR_s000672
+6,GAR_s000672,60a21973c0ad0b31,assets/d_20261101/runs/GAR/checkpoints/0000672.pt,0,heun,50,1.0,0.0,b29b4139f4238c71,f976ceabb3b6d4f0,a735ed17a47c92cf,assets/d_20261101/reports_assets/gar_crossdecode/GAR_s000672
+7,GAR_s000672,60a21973c0ad0b31,assets/d_20261101/runs/GAR/checkpoints/0000672.pt,0,heun,50,1.0,0.0,b29b4139f4238c71,881b622aded3dba5,dbb2cdad35349841,assets/d_20261101/reports_assets/gar_crossdecode/GAR_s000672
+8,GAR_s000672,60a21973c0ad0b31,assets/d_20261101/runs/GAR/checkpoints/0000672.pt,0,heun,50,1.0,0.0,b29b4139f4238c71,c17d16d0c55dc095,ad45cf1f7d54e0d6,assets/d_20261101/reports_assets/gar_crossdecode/GAR_s000672
+9,GAR_s000672,60a21973c0ad0b31,assets/d_20261101/runs/GAR/checkpoints/0000672.pt,0,heun,50,1.0,0.0,b29b4139f4238c71,43f041c9b435c8e3,bc2e61a298853d9e,assets/d_20261101/reports_assets/gar_crossdecode/GAR_s000672
+10,GAR_s000672,60a21973c0ad0b31,assets/d_20261101/runs/GAR/checkpoints/0000672.pt,0,heun,50,1.0,0.0,b29b4139f4238c71,d5f6e7d970e7a123,847919e8a2c24c01,assets/d_20261101/reports_assets/gar_crossdecode/GAR_s000672
+11,GAR_s000672,60a21973c0ad0b31,assets/d_20261101/runs/GAR/checkpoints/0000672.pt,0,heun,50,1.0,0.0,b29b4139f4238c71,c93ee876e61fcd68,54f73de09e65a948,assets/d_20261101/reports_assets/gar_crossdecode/GAR_s000672
+12,GAR_s000672,60a21973c0ad0b31,assets/d_20261101/runs/GAR/checkpoints/0000672.pt,0,heun,50,1.0,0.0,b29b4139f4238c71,3633189ccc88fefb,56fbb00b3de25078,assets/d_20261101/reports_assets/gar_crossdecode/GAR_s000672
+13,GAR_s000672,60a21973c0ad0b31,assets/d_20261101/runs/GAR/checkpoints/0000672.pt,0,heun,50,1.0,0.0,b29b4139f4238c71,3eec9e1b7871adf9,7208412157055438,assets/d_20261101/reports_assets/gar_crossdecode/GAR_s000672
+14,GAR_s000672,60a21973c0ad0b31,assets/d_20261101/runs/GAR/checkpoints/0000672.pt,0,heun,50,1.0,0.0,b29b4139f4238c71,1475d5d99dfad7d9,a6118c291d144557,assets/d_20261101/reports_assets/gar_crossdecode/GAR_s000672
+15,GAR_s000672,60a21973c0ad0b31,assets/d_20261101/runs/GAR/checkpoints/0000672.pt,0,heun,50,1.0,0.0,b29b4139f4238c71,d0ca7f604e7ef594,4df53d15c656cb82,assets/d_20261101/reports_assets/gar_crossdecode/GAR_s000672
+16,GAR_s000672,60a21973c0ad0b31,assets/d_20261101/runs/GAR/checkpoints/0000672.pt,0,heun,50,1.0,0.0,b29b4139f4238c71,843de6b34970a263,0cf1698e56bfae82,assets/d_20261101/reports_assets/gar_crossdecode/GAR_s000672
+17,GAR_s000672,60a21973c0ad0b31,assets/d_20261101/runs/GAR/checkpoints/0000672.pt,0,heun,50,1.0,0.0,b29b4139f4238c71,9483b0933a643686,e3c871145ec68595,assets/d_20261101/reports_assets/gar_crossdecode/GAR_s000672
+18,GAR_s000672,60a21973c0ad0b31,assets/d_20261101/runs/GAR/checkpoints/0000672.pt,0,heun,50,1.0,0.0,b29b4139f4238c71,1a77a1c67f6b556e,f35c24f2308fd5a6,assets/d_20261101/reports_assets/gar_crossdecode/GAR_s000672
+19,GAR_s000672,60a21973c0ad0b31,assets/d_20261101/runs/GAR/checkpoints/0000672.pt,0,heun,50,1.0,0.0,b29b4139f4238c71,1fed4566d60d02c3,9badcecdf7d1f741,assets/d_20261101/reports_assets/gar_crossdecode/GAR_s000672
+20,GAR_s000672,60a21973c0ad0b31,assets/d_20261101/runs/GAR/checkpoints/0000672.pt,0,heun,50,1.0,0.0,b29b4139f4238c71,a4ade0c33b87bdf7,1017762854e2dc9d,assets/d_20261101/reports_assets/gar_crossdecode/GAR_s000672
+21,GAR_s000672,60a21973c0ad0b31,assets/d_20261101/runs/GAR/checkpoints/0000672.pt,0,heun,50,1.0,0.0,b29b4139f4238c71,2d9707b0081547c2,ba7ffcc7f883ce63,assets/d_20261101/reports_assets/gar_crossdecode/GAR_s000672
+22,GAR_s000672,60a21973c0ad0b31,assets/d_20261101/runs/GAR/checkpoints/0000672.pt,0,heun,50,1.0,0.0,b29b4139f4238c71,f61b6a199b721115,c141f530c5c113f7,assets/d_20261101/reports_assets/gar_crossdecode/GAR_s000672
+23,GAR_s000672,60a21973c0ad0b31,assets/d_20261101/runs/GAR/checkpoints/0000672.pt,0,heun,50,1.0,0.0,b29b4139f4238c71,9dfc516d9ff477fe,62eba6aab2ac4c00,assets/d_20261101/reports_assets/gar_crossdecode/GAR_s000672
+24,GAR_s000672,60a21973c0ad0b31,assets/d_20261101/runs/GAR/checkpoints/0000672.pt,0,heun,50,1.0,0.0,b29b4139f4238c71,47ec2c838124bbe9,0714d2b6e87066a4,assets/d_20261101/reports_assets/gar_crossdecode/GAR_s000672
+25,GAR_s000672,60a21973c0ad0b31,assets/d_20261101/runs/GAR/checkpoints/0000672.pt,0,heun,50,1.0,0.0,b29b4139f4238c71,97f555da9b2c1346,6d20fc64e4181024,assets/d_20261101/reports_assets/gar_crossdecode/GAR_s000672
+26,GAR_s000672,60a21973c0ad0b31,assets/d_20261101/runs/GAR/checkpoints/0000672.pt,0,heun,50,1.0,0.0,b29b4139f4238c71,eb720d85c4a307ff,0cfa3f5905f06058,assets/d_20261101/reports_assets/gar_crossdecode/GAR_s000672
+27,GAR_s000672,60a21973c0ad0b31,assets/d_20261101/runs/GAR/checkpoints/0000672.pt,0,heun,50,1.0,0.0,b29b4139f4238c71,725124d676c3a45a,bb5c980dea3591b4,assets/d_20261101/reports_assets/gar_crossdecode/GAR_s000672
+28,GAR_s000672,60a21973c0ad0b31,assets/d_20261101/runs/GAR/checkpoints/0000672.pt,0,heun,50,1.0,0.0,b29b4139f4238c71,e200c168176d1769,91deefe003727682,assets/d_20261101/reports_assets/gar_crossdecode/GAR_s000672
+29,GAR_s000672,60a21973c0ad0b31,assets/d_20261101/runs/GAR/checkpoints/0000672.pt,0,heun,50,1.0,0.0,b29b4139f4238c71,e809f9a31d0c05fe,ea75570c822e5ec5,assets/d_20261101/reports_assets/gar_crossdecode/GAR_s000672
+30,GAR_s000672,60a21973c0ad0b31,assets/d_20261101/runs/GAR/checkpoints/0000672.pt,0,heun,50,1.0,0.0,b29b4139f4238c71,07bd2474e73a4658,d17ed2761eec374e,assets/d_20261101/reports_assets/gar_crossdecode/GAR_s000672
+31,GAR_s000672,60a21973c0ad0b31,assets/d_20261101/runs/GAR/checkpoints/0000672.pt,0,heun,50,1.0,0.0,b29b4139f4238c71,e7eaaf358db11842,dc629a6509dbdf1e,assets/d_20261101/reports_assets/gar_crossdecode/GAR_s000672
+32,GAR_s000672,60a21973c0ad0b31,assets/d_20261101/runs/GAR/checkpoints/0000672.pt,0,heun,50,1.0,0.0,b29b4139f4238c71,5f2c99c88de0eb47,0b4c5542e3e2e99a,assets/d_20261101/reports_assets/gar_crossdecode/GAR_s000672
+33,GAR_s000672,60a21973c0ad0b31,assets/d_20261101/runs/GAR/checkpoints/0000672.pt,0,heun,50,1.0,0.0,b29b4139f4238c71,d2e62e910e36f23d,0a11fb71ab0fca4f,assets/d_20261101/reports_assets/gar_crossdecode/GAR_s000672
+34,GAR_s000672,60a21973c0ad0b31,assets/d_20261101/runs/GAR/checkpoints/0000672.pt,0,heun,50,1.0,0.0,b29b4139f4238c71,5189fb4a8fea68a0,7acda04ed33db5b4,assets/d_20261101/reports_assets/gar_crossdecode/GAR_s000672
+35,GAR_s000672,60a21973c0ad0b31,assets/d_20261101/runs/GAR/checkpoints/0000672.pt,0,heun,50,1.0,0.0,b29b4139f4238c71,fb7b2330a021ea2a,ded5c1721b285e25,assets/d_20261101/reports_assets/gar_crossdecode/GAR_s000672
+36,GAR_s000672,60a21973c0ad0b31,assets/d_20261101/runs/GAR/checkpoints/0000672.pt,0,heun,50,1.0,0.0,b29b4139f4238c71,1e099de9f6e2a486,31feae42fef0019b,assets/d_20261101/reports_assets/gar_crossdecode/GAR_s000672
+37,GAR_s000672,60a21973c0ad0b31,assets/d_20261101/runs/GAR/checkpoints/0000672.pt,0,heun,50,1.0,0.0,b29b4139f4238c71,239c3d360195139e,a1070754776eb359,assets/d_20261101/reports_assets/gar_crossdecode/GAR_s000672
+38,GAR_s000672,60a21973c0ad0b31,assets/d_20261101/runs/GAR/checkpoints/0000672.pt,0,heun,50,1.0,0.0,b29b4139f4238c71,7a7ecfcf38a80e5a,586e60c53fcbb292,assets/d_20261101/reports_assets/gar_crossdecode/GAR_s000672
+39,GAR_s000672,60a21973c0ad0b31,assets/d_20261101/runs/GAR/checkpoints/0000672.pt,0,heun,50,1.0,0.0,b29b4139f4238c71,0a1f4fa21f194055,fb1cc2c1cbd46a91,assets/d_20261101/reports_assets/gar_crossdecode/GAR_s000672
+40,GAR_s000672,60a21973c0ad0b31,assets/d_20261101/runs/GAR/checkpoints/0000672.pt,0,heun,50,1.0,0.0,b29b4139f4238c71,5f0d6faf38c8bedc,07f05971cc985ea5,assets/d_20261101/reports_assets/gar_crossdecode/GAR_s000672
+41,GAR_s000672,60a21973c0ad0b31,assets/d_20261101/runs/GAR/checkpoints/0000672.pt,0,heun,50,1.0,0.0,b29b4139f4238c71,904ea9cfd2e038ea,f0b1c77e1dbd4a16,assets/d_20261101/reports_assets/gar_crossdecode/GAR_s000672
+42,GAR_s000672,60a21973c0ad0b31,assets/d_20261101/runs/GAR/checkpoints/0000672.pt,0,heun,50,1.0,0.0,b29b4139f4238c71,bb1161f9884c258e,33529f08d093b08d,assets/d_20261101/reports_assets/gar_crossdecode/GAR_s000672
+43,GAR_s000672,60a21973c0ad0b31,assets/d_20261101/runs/GAR/checkpoints/0000672.pt,0,heun,50,1.0,0.0,b29b4139f4238c71,0692f1c0194737ac,ac07bdec6e95b91c,assets/d_20261101/reports_assets/gar_crossdecode/GAR_s000672
+44,GAR_s000672,60a21973c0ad0b31,assets/d_20261101/runs/GAR/checkpoints/0000672.pt,0,heun,50,1.0,0.0,b29b4139f4238c71,6fdd00c9745f2964,e18fdcf05e7f600c,assets/d_20261101/reports_assets/gar_crossdecode/GAR_s000672
+45,GAR_s000672,60a21973c0ad0b31,assets/d_20261101/runs/GAR/checkpoints/0000672.pt,0,heun,50,1.0,0.0,b29b4139f4238c71,73230df2f8807d7a,0da861c7216dc629,assets/d_20261101/reports_assets/gar_crossdecode/GAR_s000672
+46,GAR_s000672,60a21973c0ad0b31,assets/d_20261101/runs/GAR/checkpoints/0000672.pt,0,heun,50,1.0,0.0,b29b4139f4238c71,af0de449dffabf6e,006ba28dcfd15058,assets/d_20261101/reports_assets/gar_crossdecode/GAR_s000672
+47,GAR_s000672,60a21973c0ad0b31,assets/d_20261101/runs/GAR/checkpoints/0000672.pt,0,heun,50,1.0,0.0,b29b4139f4238c71,5d3e5050931432a7,a077175547ebcf27,assets/d_20261101/reports_assets/gar_crossdecode/GAR_s000672
+48,GAR_s000672,60a21973c0ad0b31,assets/d_20261101/runs/GAR/checkpoints/0000672.pt,0,heun,50,1.0,0.0,b29b4139f4238c71,1624f8f62e03f5be,486852aa5d084f55,assets/d_20261101/reports_assets/gar_crossdecode/GAR_s000672
+49,GAR_s000672,60a21973c0ad0b31,assets/d_20261101/runs/GAR/checkpoints/0000672.pt,0,heun,50,1.0,0.0,b29b4139f4238c71,4593745d1aa6e4ba,f699c31404d01502,assets/d_20261101/reports_assets/gar_crossdecode/GAR_s000672
+50,GAR_s000672,60a21973c0ad0b31,assets/d_20261101/runs/GAR/checkpoints/0000672.pt,0,heun,50,1.0,0.0,b29b4139f4238c71,7cdf3814146d9e90,36c734606876a7bc,assets/d_20261101/reports_assets/gar_crossdecode/GAR_s000672
+51,GAR_s000672,60a21973c0ad0b31,assets/d_20261101/runs/GAR/checkpoints/0000672.pt,0,heun,50,1.0,0.0,b29b4139f4238c71,9c89bf25362fe8cf,840b7d360f3f627c,assets/d_20261101/reports_assets/gar_crossdecode/GAR_s000672
+52,GAR_s000672,60a21973c0ad0b31,assets/d_20261101/runs/GAR/checkpoints/0000672.pt,0,heun,50,1.0,0.0,b29b4139f4238c71,27fbc3eb662ff81f,10b49fe5dbb04fc1,assets/d_20261101/reports_assets/gar_crossdecode/GAR_s000672
+53,GAR_s000672,60a21973c0ad0b31,assets/d_20261101/runs/GAR/checkpoints/0000672.pt,0,heun,50,1.0,0.0,b29b4139f4238c71,21034345ab316f70,bc82ab43545e4bed,assets/d_20261101/reports_assets/gar_crossdecode/GAR_s000672
+54,GAR_s000672,60a21973c0ad0b31,assets/d_20261101/runs/GAR/checkpoints/0000672.pt,0,heun,50,1.0,0.0,b29b4139f4238c71,4a212cffeaae358c,0f7e0c77f9335dca,assets/d_20261101/reports_assets/gar_crossdecode/GAR_s000672
+55,GAR_s000672,60a21973c0ad0b31,assets/d_20261101/runs/GAR/checkpoints/0000672.pt,0,heun,50,1.0,0.0,b29b4139f4238c71,2293c209a2814ca5,d7223cc76dc8f63b,assets/d_20261101/reports_assets/gar_crossdecode/GAR_s000672
+56,GAR_s000672,60a21973c0ad0b31,assets/d_20261101/runs/GAR/checkpoints/0000672.pt,0,heun,50,1.0,0.0,b29b4139f4238c71,843222fb0a7567f4,7a7bc3f9b4258f8d,assets/d_20261101/reports_assets/gar_crossdecode/GAR_s000672
+57,GAR_s000672,60a21973c0ad0b31,assets/d_20261101/runs/GAR/checkpoints/0000672.pt,0,heun,50,1.0,0.0,b29b4139f4238c71,0f6786211e396cbd,faa38ea8325a3f1d,assets/d_20261101/reports_assets/gar_crossdecode/GAR_s000672
+58,GAR_s000672,60a21973c0ad0b31,assets/d_20261101/runs/GAR/checkpoints/0000672.pt,0,heun,50,1.0,0.0,b29b4139f4238c71,bfa38054acd734bf,7ee9fa7cd2817de3,assets/d_20261101/reports_assets/gar_crossdecode/GAR_s000672
+59,GAR_s000672,60a21973c0ad0b31,assets/d_20261101/runs/GAR/checkpoints/0000672.pt,0,heun,50,1.0,0.0,b29b4139f4238c71,5ddf61fc1cf349e3,53395a40491444c8,assets/d_20261101/reports_assets/gar_crossdecode/GAR_s000672
+60,GAR_s000672,60a21973c0ad0b31,assets/d_20261101/runs/GAR/checkpoints/0000672.pt,0,heun,50,1.0,0.0,b29b4139f4238c71,f79677d8a830e45d,f0a4fcc95d33e034,assets/d_20261101/reports_assets/gar_crossdecode/GAR_s000672
+61,GAR_s000672,60a21973c0ad0b31,assets/d_20261101/runs/GAR/checkpoints/0000672.pt,0,heun,50,1.0,0.0,b29b4139f4238c71,c0110cb198aa5a6a,403d91f5f6d81dda,assets/d_20261101/reports_assets/gar_crossdecode/GAR_s000672
+62,GAR_s000672,60a21973c0ad0b31,assets/d_20261101/runs/GAR/checkpoints/0000672.pt,0,heun,50,1.0,0.0,b29b4139f4238c71,b64de29904fefa2b,fa7748c703151657,assets/d_20261101/reports_assets/gar_crossdecode/GAR_s000672
+63,GAR_s000672,60a21973c0ad0b31,assets/d_20261101/runs/GAR/checkpoints/0000672.pt,0,heun,50,1.0,0.0,b29b4139f4238c71,b64851212f88683f,0144e9f00920280b,assets/d_20261101/reports_assets/gar_crossdecode/GAR_s000672
+64,GAR_s000672,60a21973c0ad0b31,assets/d_20261101/runs/GAR/checkpoints/0000672.pt,0,heun,50,1.0,0.0,b29b4139f4238c71,7a49105cafc680e5,3dd3a47bccc522e1,assets/d_20261101/reports_assets/gar_crossdecode/GAR_s000672
+65,GAR_s000672,60a21973c0ad0b31,assets/d_20261101/runs/GAR/checkpoints/0000672.pt,0,heun,50,1.0,0.0,b29b4139f4238c71,85c6200d8ebe4993,6abd6af11d946adc,assets/d_20261101/reports_assets/gar_crossdecode/GAR_s000672
+66,GAR_s000672,60a21973c0ad0b31,assets/d_20261101/runs/GAR/checkpoints/0000672.pt,0,heun,50,1.0,0.0,b29b4139f4238c71,f443834bed2296ed,78682b3e6f671a88,assets/d_20261101/reports_assets/gar_crossdecode/GAR_s000672
+67,GAR_s000672,60a21973c0ad0b31,assets/d_20261101/runs/GAR/checkpoints/0000672.pt,0,heun,50,1.0,0.0,b29b4139f4238c71,7421dd15ea102d35,c9397e10a56ee3fe,assets/d_20261101/reports_assets/gar_crossdecode/GAR_s000672
+68,GAR_s000672,60a21973c0ad0b31,assets/d_20261101/runs/GAR/checkpoints/0000672.pt,0,heun,50,1.0,0.0,b29b4139f4238c71,42c8ec3207f48eb9,1ab351a4a35f0355,assets/d_20261101/reports_assets/gar_crossdecode/GAR_s000672
+69,GAR_s000672,60a21973c0ad0b31,assets/d_20261101/runs/GAR/checkpoints/0000672.pt,0,heun,50,1.0,0.0,b29b4139f4238c71,3b08525efdf1ffbe,79c8974b065522cd,assets/d_20261101/reports_assets/gar_crossdecode/GAR_s000672
+70,GAR_s000672,60a21973c0ad0b31,assets/d_20261101/runs/GAR/checkpoints/0000672.pt,0,heun,50,1.0,0.0,b29b4139f4238c71,3039e45d5b095158,19234835933d738f,assets/d_20261101/reports_assets/gar_crossdecode/GAR_s000672
+71,GAR_s000672,60a21973c0ad0b31,assets/d_20261101/runs/GAR/checkpoints/0000672.pt,0,heun,50,1.0,0.0,b29b4139f4238c71,e3a5cffeb674b161,0242443206b80d3a,assets/d_20261101/reports_assets/gar_crossdecode/GAR_s000672
+72,GAR_s000672,60a21973c0ad0b31,assets/d_20261101/runs/GAR/checkpoints/0000672.pt,0,heun,50,1.0,0.0,b29b4139f4238c71,53302fcdcce73e70,6506de9813e22e1e,assets/d_20261101/reports_assets/gar_crossdecode/GAR_s000672
+73,GAR_s000672,60a21973c0ad0b31,assets/d_20261101/runs/GAR/checkpoints/0000672.pt,0,heun,50,1.0,0.0,b29b4139f4238c71,2bd042d3e36cadc2,afebb09999d243d6,assets/d_20261101/reports_assets/gar_crossdecode/GAR_s000672
+74,GAR_s000672,60a21973c0ad0b31,assets/d_20261101/runs/GAR/checkpoints/0000672.pt,0,heun,50,1.0,0.0,b29b4139f4238c71,ebf59865bba80882,4fed0265369f977e,assets/d_20261101/reports_assets/gar_crossdecode/GAR_s000672
+75,GAR_s000672,60a21973c0ad0b31,assets/d_20261101/runs/GAR/checkpoints/0000672.pt,0,heun,50,1.0,0.0,b29b4139f4238c71,36056f1b0a5079e6,bb271b040f0975b0,assets/d_20261101/reports_assets/gar_crossdecode/GAR_s000672
+76,GAR_s000672,60a21973c0ad0b31,assets/d_20261101/runs/GAR/checkpoints/0000672.pt,0,heun,50,1.0,0.0,b29b4139f4238c71,9a935cd64ca85917,7cdaebb00a12d990,assets/d_20261101/reports_assets/gar_crossdecode/GAR_s000672
+77,GAR_s000672,60a21973c0ad0b31,assets/d_20261101/runs/GAR/checkpoints/0000672.pt,0,heun,50,1.0,0.0,b29b4139f4238c71,f0ec4a137e77bd8f,fd5a947459b50c64,assets/d_20261101/reports_assets/gar_crossdecode/GAR_s000672
+78,GAR_s000672,60a21973c0ad0b31,assets/d_20261101/runs/GAR/checkpoints/0000672.pt,0,heun,50,1.0,0.0,b29b4139f4238c71,2e8209579ce0eca6,d12dfd5b1bd423b0,assets/d_20261101/reports_assets/gar_crossdecode/GAR_s000672
+79,GAR_s000672,60a21973c0ad0b31,assets/d_20261101/runs/GAR/checkpoints/0000672.pt,0,heun,50,1.0,0.0,b29b4139f4238c71,dbd74cfefc1fc353,e296212172aa2b72,assets/d_20261101/reports_assets/gar_crossdecode/GAR_s000672
+80,GAR_s000672,60a21973c0ad0b31,assets/d_20261101/runs/GAR/checkpoints/0000672.pt,0,heun,50,1.0,0.0,b29b4139f4238c71,4c6aff175a620a1a,52254e771017968c,assets/d_20261101/reports_assets/gar_crossdecode/GAR_s000672
+81,GAR_s000672,60a21973c0ad0b31,assets/d_20261101/runs/GAR/checkpoints/0000672.pt,0,heun,50,1.0,0.0,b29b4139f4238c71,672036ae63bad94f,5c97b52aff2f4b00,assets/d_20261101/reports_assets/gar_crossdecode/GAR_s000672
+82,GAR_s000672,60a21973c0ad0b31,assets/d_20261101/runs/GAR/checkpoints/0000672.pt,0,heun,50,1.0,0.0,b29b4139f4238c71,07eeda701e8684ca,f50e775d6b672419,assets/d_20261101/reports_assets/gar_crossdecode/GAR_s000672
+83,GAR_s000672,60a21973c0ad0b31,assets/d_20261101/runs/GAR/checkpoints/0000672.pt,0,heun,50,1.0,0.0,b29b4139f4238c71,f086d9d42e26052c,89a4ac34887d3385,assets/d_20261101/reports_assets/gar_crossdecode/GAR_s000672
+84,GAR_s000672,60a21973c0ad0b31,assets/d_20261101/runs/GAR/checkpoints/0000672.pt,0,heun,50,1.0,0.0,b29b4139f4238c71,fbca127834cda8c8,050da19d7b0a0874,assets/d_20261101/reports_assets/gar_crossdecode/GAR_s000672
+85,GAR_s000672,60a21973c0ad0b31,assets/d_20261101/runs/GAR/checkpoints/0000672.pt,0,heun,50,1.0,0.0,b29b4139f4238c71,1422b20772014fcf,e3e89cb8c9ffb725,assets/d_20261101/reports_assets/gar_crossdecode/GAR_s000672
+86,GAR_s000672,60a21973c0ad0b31,assets/d_20261101/runs/GAR/checkpoints/0000672.pt,0,heun,50,1.0,0.0,b29b4139f4238c71,5f8a378a5833b1be,c4a976b172b23242,assets/d_20261101/reports_assets/gar_crossdecode/GAR_s000672
+87,GAR_s000672,60a21973c0ad0b31,assets/d_20261101/runs/GAR/checkpoints/0000672.pt,0,heun,50,1.0,0.0,b29b4139f4238c71,249af59f934bbb17,1cf264d1e09c2e25,assets/d_20261101/reports_assets/gar_crossdecode/GAR_s000672
+88,GAR_s000672,60a21973c0ad0b31,assets/d_20261101/runs/GAR/checkpoints/0000672.pt,0,heun,50,1.0,0.0,b29b4139f4238c71,4a71ea06f56eff8c,755251d3261302d0,assets/d_20261101/reports_assets/gar_crossdecode/GAR_s000672
+89,GAR_s000672,60a21973c0ad0b31,assets/d_20261101/runs/GAR/checkpoints/0000672.pt,0,heun,50,1.0,0.0,b29b4139f4238c71,1b213ecc07cb4ccf,4c04f8a84550f3d1,assets/d_20261101/reports_assets/gar_crossdecode/GAR_s000672
+90,GAR_s000672,60a21973c0ad0b31,assets/d_20261101/runs/GAR/checkpoints/0000672.pt,0,heun,50,1.0,0.0,b29b4139f4238c71,1f58115cd28669af,54453736e4a4024b,assets/d_20261101/reports_assets/gar_crossdecode/GAR_s000672
+91,GAR_s000672,60a21973c0ad0b31,assets/d_20261101/runs/GAR/checkpoints/0000672.pt,0,heun,50,1.0,0.0,b29b4139f4238c71,fca08d92a37131d7,dbd3b48a5cf32946,assets/d_20261101/reports_assets/gar_crossdecode/GAR_s000672
+92,GAR_s000672,60a21973c0ad0b31,assets/d_20261101/runs/GAR/checkpoints/0000672.pt,0,heun,50,1.0,0.0,b29b4139f4238c71,46bdb4e3ae5f2b5d,bd37a7e1b85d18ba,assets/d_20261101/reports_assets/gar_crossdecode/GAR_s000672
+93,GAR_s000672,60a21973c0ad0b31,assets/d_20261101/runs/GAR/checkpoints/0000672.pt,0,heun,50,1.0,0.0,b29b4139f4238c71,c8c3f115591cc2e0,16b437926d98a999,assets/d_20261101/reports_assets/gar_crossdecode/GAR_s000672
+94,GAR_s000672,60a21973c0ad0b31,assets/d_20261101/runs/GAR/checkpoints/0000672.pt,0,heun,50,1.0,0.0,b29b4139f4238c71,18d3945591c48e77,3995c18b6ed40a32,assets/d_20261101/reports_assets/gar_crossdecode/GAR_s000672
+95,GAR_s000672,60a21973c0ad0b31,assets/d_20261101/runs/GAR/checkpoints/0000672.pt,0,heun,50,1.0,0.0,b29b4139f4238c71,e7a9ac6e73f84879,3d90bf8ad916aba8,assets/d_20261101/reports_assets/gar_crossdecode/GAR_s000672
+96,GAR_s000672,60a21973c0ad0b31,assets/d_20261101/runs/GAR/checkpoints/0000672.pt,0,heun,50,1.0,0.0,b29b4139f4238c71,f88edbd1581c8d10,437ab28b3670d9c4,assets/d_20261101/reports_assets/gar_crossdecode/GAR_s000672
+97,GAR_s000672,60a21973c0ad0b31,assets/d_20261101/runs/GAR/checkpoints/0000672.pt,0,heun,50,1.0,0.0,b29b4139f4238c71,135c9acd11a407ec,c2f82998d0a5a74c,assets/d_20261101/reports_assets/gar_crossdecode/GAR_s000672
+98,GAR_s000672,60a21973c0ad0b31,assets/d_20261101/runs/GAR/checkpoints/0000672.pt,0,heun,50,1.0,0.0,b29b4139f4238c71,1b2c4d7dae84d6d7,a68f04f20dc82395,assets/d_20261101/reports_assets/gar_crossdecode/GAR_s000672
+99,GAR_s000672,60a21973c0ad0b31,assets/d_20261101/runs/GAR/checkpoints/0000672.pt,0,heun,50,1.0,0.0,b29b4139f4238c71,0ebe262605040799,494c52bf70a6fab6,assets/d_20261101/reports_assets/gar_crossdecode/GAR_s000672

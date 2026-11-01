@@ -10,9 +10,26 @@
 |---|---|---|---|---|
 | **高** | **FIG04：v21/v23 SkelNet** | **v23 SplitLN 对应的独立生成海报**，及同一字符的 STD骨架、SkelNet预测骨架、GT骨架、最终生成图，各6–10例；需附 step/Writer/Script/idx。 | 已有 v21 的 seen/strict_poster.png 与 seen/strict_struct.png（assets/results/v21_skelnet_200k/posters/）；也有历史跨版本总海报。缺的是专门可对齐的 v23 输出与中间骨架。 | docs/reports/assets/sep_skelnet/ |
 | **高** | **FIG05：两阶段为何失败** | 同一批 img_id 下的**GT骨架、纯预测骨架、pred+std混合、纯STD**四种条件输入，以及同一 Render checkpoint 的四套实际输出PNG；每组必须记录 eval_blend_alpha（尤其0.5和1.0）及条件来源。 | 文字审计与指标已在 docs/experiments/2026-09-30-stage1-skel.md、2026-10-03-v46-singlestage-experiment-summary.md；历史外部目录曾记录 exp-std/runs_5050/posters/eval200_poster.png 和 exp/purestd_posters/eval200fix_poster.png，但**这两份路径下的原始PNG不在当前Git树**。 | docs/reports/assets/two_stage/ |
-| **高** | **FIG13：K/GAR Decoder公平读图** | 对同一批**冻结K最终ODE latent**，分别以原始Decoder、D1@2500 Decoder、GAR Decoder解码的逐字PNG及GT（优先20字，最好完整val100）。需要 latent哈希、Decoder checkpoint ID、CFG/solver/seed。 | K+D1dec 的 best/worst 20字图已在 assets/d_20261101/review/，Decoder sweep图已在 assets/metrics_index/；**相同latent的GAR独立PNG组**当前未见（GAR 面板图在 4090 侧 `assets/d_20261101/eval/GAR_s*`，本轮按「不跨机拉取」未取）。 | docs/reports/assets/gar_crossdecode/ |
+| **高** | **FIG13：K/GAR Decoder公平读图** | ~~对同一批**冻结K最终ODE latent**，分别以原始Decoder、D1@2500 Decoder、GAR Decoder解码的逐字PNG及GT~~ **2026-11-02 已补齐** ✅ | 见下行「已回收」 | `assets/d_20261101/reports_assets/gar_crossdecode/` |
 | **中** | **FIG03：9月中旬风格/少样本** | v14 87联合类别与 v15 少样本实验的**GT配对、书家/书体/字符索引和同字结果**；至少3个书家、每家3–5字，包含Seen/Strict身份。不是要求重新训练。 | 仓库已有 v15a/b/c 的部分 seen/strict g*.png（docs/1031/eval_imgs/assets/ink_eval/）和大里程碑海报；**v14/v15/GT的共同样本manifest和可直接使用的同字合成图**未见。 | docs/reports/assets/style87_fewshot/ |
 | **中** | **FIG08：DiT与U-Net同图读图** | 72M U100、114M Deep-Sym4，以及所选DiT对照在**相同样本、GT、seed和采样条件**下的最终输出PNG（建议20例，覆盖细笔与复杂偏旁）；并补每个run的准确GPU墙钟/FLOPs记录，以便不把step节省误报为计算节省。 | 两条U-Net的训练曲线数字和部分poster已在10月18/19日报告与 docs/experiments/ledger/unet_35000_poster.png 中；仅需**等面板同条件原图**。 | docs/reports/assets/unet_dit_matched/ |
+
+### A1. 已回收：FIG13 同 latent 交叉解码（2026-11-02）
+
+**位置：** `assets/d_20261101/reports_assets/gar_crossdecode/`（约 20MB，900+ PNG）
+**内容：** 4 臂 × 100 字（K / K+D1dec / D1b_2500 / GAR@672）的 `g*.png` 与 `gt*.png`，
+外加 `manifest.csv`（400 行，含 checkpoint sha256、seed、sampler、CFG、GT 与输出哈希）与 README。
+**可比性：** 已逐字段核验四臂共享生成器 `60a21973…`、seed 0、heun/50/CFG1.0、同 VAE 与同数据集，
+100 张 GT 合并哈希四者相同；作图脚本强制检查，不通过拒绝出图。
+**图：** `assets/metrics_index/fig13_crossdecode.png`（左）、`fig_decoder_fig13.png`（右）。
+
+**回收时发现的评测事故（重要）：** `D1b_2500` 的 `decoder_override` 为 `null`，
+其 200 张生成图与 K **逐字节完全相同**，指标也与 K 完全相同 ——
+即 D1b 评测从未换装它训好的 decoder，是**空操作**。
+此前报告/文档把 D1b 当「decoder 起作用的干净对照」不成立；
+真正换装的是 `K_plus_D1dec`（指向 `runs/D1/checkpoints/0002500.pt`，SSIM 0.598173）。
+**该类实验今后必须核对 `eval.json` 的 `decoder_override` 并抽查输出 PNG 是否与基线相同**，
+只看指标表格发现不了此故障。详见 `assets/d_20261101/reports_assets/gar_crossdecode/README.md`。
 
 ## B. 已经在本次对话提供，但尚未作为Git文件保存
 
