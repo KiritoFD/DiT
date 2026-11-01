@@ -184,12 +184,48 @@ def chart_coverage(rows):
     print('wrote', p)
 
 
+def chart_eval200(rows):
+    """The one ruler that spans eight months: same 187 pairs, same sampler config."""
+    src = ROOT / 'assets/metrics_index/eval200_cross_era.csv'
+    if not src.exists():
+        print('skip eval200 chart (run build_global_table.py first)')
+        return
+    d = list(csv.DictReader(open(src, encoding='utf-8-sig')))
+    d.sort(key=lambda r: float(r['ssim']))
+    names = [r['name'] for r in d]
+    vals = [float(r['ssim']) for r in d]
+    cols = ['#c0392b' if r['era'] == '本次' else '#34495e' for r in d]
+    fig, ax = plt.subplots(figsize=(11, 6.4))
+    bars = ax.barh(names, vals, color=cols, edgecolor='white')
+    for b, v, r in zip(bars, vals, d):
+        ax.text(v + .0012, b.get_y() + b.get_height() / 2, f'{v:.4f}',
+                va='center', fontsize=9.5,
+                fontweight='bold' if r['era'] == '本次' else 'normal',
+                color='#c0392b' if r['era'] == '本次' else '#2c3e50')
+    # seed noise floor measured from A@35k seed0 vs seed1
+    ax.axvline(0.6149, color='#7f8c8d', ls=':', lw=1.1)
+    ax.text(0.6151, -0.85, 'v68 天花板 0.6149', fontsize=8, color='#7f8c8d')
+    ax.axvspan(0.6149 - 0.002, 0.6149 + 0.002, color='#f1c40f', alpha=.25, zorder=0)
+    ax.set_xlabel('SSIM（eval200fix N=187，Heun50 / CFG1.0 / ODE）')
+    ax.set_title('跨纪元统一标尺：同一批 187 个字，同一采样配置\n'
+                 '黄带 = 实测种子噪声底 ±0.002；★红 = 本次节点',
+                 fontsize=12.5, pad=13)
+    ax.set_xlim(0.53, 0.625)
+    ax.grid(axis='x', alpha=.25, ls=':')
+    fig.tight_layout()
+    p = OUT / 'fig_global_eval200.png'
+    fig.savefig(p, dpi=150)
+    plt.close(fig)
+    print('wrote', p)
+
+
 def main():
     rows = load()
     OUT.mkdir(parents=True, exist_ok=True)
     chart_by_protocol(rows)
     chart_val100_ocr(rows)
     chart_coverage(rows)
+    chart_eval200(rows)
 
 
 if __name__ == '__main__':

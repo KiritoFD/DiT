@@ -1,17 +1,27 @@
 ﻿id,name,era,grade,protocol,steps,ssim,lpips,iou,ocr,ocr_n,ocr_panel,eg_auc,direction,note,source
-moyi12,MoYi 12ch,历史,A,moyi_strict,50k,0.5935,0.3724,,,,,,,官方多通道锚点；187 统一口径 SSIM 0.5764,Milestones §1
-moyi4_50,MoYi 4ch,历史,A,moyi_strict,50k,0.5949,0.3678,,,,,,,与 12ch 同步数对照,Milestones §1
-moyi4_80,MoYi 4ch,历史,A,moyi_strict,80k,0.6085,0.3489,,,,,,,长训收益；187 统一口径 0.5986,Milestones §1
-v10b,v10b,历史,A,native_old,390k,0.5058,,,,,,,,纯 STD 骨架、无 char ID 的开集概念证明,Milestones §1
-v13,v13,历史,A,native_old,125k,0.5713,,,,,,,,清洗数据 + FM + 轻量 AdaLN,Milestones §1
-v21,v21 SkelNet,历史,X,native_old,155k,,,,,,,,,显式骨架形变失败原型（阴性对照）,Milestones §1
-v23,v23 SplitLN,历史,A/X,native_old,85k,,,,,,,,,骨架/风格两路归一化修复；分数待补,Milestones §1
-v54,v54 纯字表,历史,B,inmem108,150k,0.5960,,,,,,,,docs/107 统一口径约 0.5890,Milestones §1
-v66,v66 三表+route,历史,B,u187,150k,0.5976,,,,,,,,in-mem 0.5955；路由单变量有效未证明,Milestones §1
-v68,v68 Sp/2,历史,A,u187,200k,0.6169,,,,,,,,in-mem 0.6149；SDE 0.6289 属另一采样协议,Milestones §1
-v70,v70 std-skel,历史,X,inmem108,65k,0.5535,,,,,,,,直接骨架通路弱表现的反例,Milestones §1
+v9a,v9a REPA 预训练,历史,C,native_old,132k,,,,,,,,,第一纪元；DINOv2 表征对齐，无量化指标,chronicle 第一纪元
+v10b,v10b 初代骨架长跑,历史,A,native_old,390k,0.5058,,,,,,,,第二纪元；Seen SSIM 0.763 vs Strict 0.5058，开集概念证明,chronicle 第二纪元
+v11,v11 struct-loss,历史,X,native_old,500k,0.5670,,,,,,,,第三纪元；12ch + 拉普拉斯结构损失，步速降 45%,chronicle 第三纪元
+v12,v12 全局池化,历史,X,native_old,,,,,,,,,,第四纪元；骨架压成全局向量 → 拓扑塌陷（死胡同 #3）,chronicle 第四纪元
+v13,v13 黄金底模,历史,A,native_old,125k,0.5713,0.3800,,,,,,,第五纪元；LPIPS 0.380；索引错位 Bug 反证零样本泛化,chronicle 第五纪元
+v14,v14 style87,历史,B,native_old,187.5k,0.5764,,,,,,,,第六纪元；87 类细分触及当时峰值，但长尾过拟合,chronicle 第六纪元
+v15,v15-fs6 沈周,历史,B,native_old,2k,0.5568,,,,,,,,第七纪元；仅 2000 步微调即 0.5568，证明书家流形局部线性,chronicle 第七纪元
+v17,v17 LCA 交叉注意力,历史,X,native_old,,0.0893,,,,,,,,第八纪元；数值崩溃（死胡同 #1）,chronicle 第八纪元
+v21,v21 SkelNet (JointLN),历史,X,native_old,155k,,,,,,,,,第十纪元；骨架方差 38× 风格 → 风格被归一化吞噬（死胡同 #5）,chronicle 第十纪元
+v23,v23 SplitLN,历史,A,native_old,85k,,,,,,,,,第十纪元；修复后风格振幅暴涨 4.24×，确立骨架路线标准解,chronicle 第十纪元
+v26,v26 真迹骨架上限探测,历史,C,native_old,,,,,,,,,,第十一纪元；证明上限但现实中拿不到未见字真迹骨架,chronicle 第十一纪元
+v54,v54 纯字表,历史,B,inmem108,150k,0.5960,,,,,,,,第十二纪元；docs/107 统一口径约 0.5890,Milestones §1
+v66,v66 三表+route,历史,B,u187,150k,0.5976,,,,,,,,"第十二纪元；in-mem 0.5955；blocks(2,4,5,6) 黄金靶点",Milestones §1
+v68,v68 C2OT 旗舰,历史,A,u187,200k,0.6169,,,,,,,,第十二纪元；in-mem 0.6149；SDE 0.6289 属另一采样协议,Milestones §1
+v70_30,v70 纯骨架 @30k,历史,X,native_old,30k,0.5457,,,,,,,,第十三纪元；衰减率仅 0.1712，抗跌但与 v68 差距大,09_quartile
+v70,v70 纯骨架 @65k,历史,X,inmem108,65k,0.5535,,,,,,,,第十三纪元；65k 后平台，约 78.75k 停止,Milestones §1
 v72_50,v72 Calli-VAE,历史,B,inmem108,50k,0.5999,,,,,,,,同阶段 v68 为 0.5701,Milestones §1
 v72_65,v72 Calli-VAE,历史,B,inmem108,65k,0.6034,,,,,,,,同阶段 v68 为 0.5833,Milestones §1
+ditb,48 DiT-B + v66route,历史,B,strict40000,40k,0.6104,0.3243,,,,,,,Seen SSIM 0.7301 / LPIPS 0.1832；大模型容量 × 黄金路由,08_evolution §3
+moyi12,MoYi 12ch,历史,A,moyi_strict,50k,0.5935,0.3724,,,,,,,骨架 IoU 0.0177；MSE 0.7983；官方多通道锚点,08_evolution §3
+moyi4_50,MoYi 4ch,历史,A,moyi_strict,50k,0.5949,0.3678,,,,,,,骨架 IoU 0.0161；与 12ch 同步数对照,Milestones §1
+moyi4_80,MoYi 4ch,历史,A,moyi_strict,80k,0.6085,0.3489,,,,,,,骨架 IoU 0.0235（+46%）；187 统一口径 0.5986,Milestones §1
+v80,v80,历史,A,native_old,190k,0.6168,0.3247,,,,,,,历史原生协议最高 SSIM 之一,01_EVIDENCE_MATRIX §2
 v83a,v83-A arm4,历史,A,v83arm4,100k,0.6098,0.3252,0.3467,,,,,,LPIPS-VGG；无增强在四臂综合领先,Milestones §1
 v84a,v84A STD-soft,历史,A,native_old,200k,0.5846,0.3551,0.2840,,,,,,取消 char-table，面向开集的独立成熟锚点,Milestones §1
 v88,v88 Writer×Glyph,历史,X,native_old,170k,0.5776,0.4189,,,,,,,双线性交叉调制未提高泛化的长训阴性,Milestones §1
