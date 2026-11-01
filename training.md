@@ -2,6 +2,55 @@
 
 # 训练进度
 
+2026-11-02 07:50（**P0 判定完成：断笔生在 latent，不在 Decoder**，4090 GPU n=100）：
+用户提出「瓶颈主要不在 Decoder，下一步转向生成器 latent 与结构监督」。逐条核对后
+**核心判断成立**，并补上了它缺的那个决定性实验。
+
+**(a) 代码事实核对（全部属实的部分）：** GAR 目标确无连通性监督——
+`src/unet/joint/gar.py:64` DINO 取 `x_norm_clstoken`（全局 CLS，无空间定位）、
+`:86` Gram 只用整图 Gram 矩阵的 L1（纹理统计，不保位置），MSE/LPIPS 亦不强调细笔。
+训练 latent 确为单步欧拉：`objective.py:118` t∈[0.2,0.5]、
+`:133` `zhat=zt-t*v`，与推理的完整 ODE 轨迹（t=1 起）分布不同。
+
+**(b) 一处事实更正：** 报告称 `fragment_share` 是「小于总墨量 0.5% 的连通块占比」——
+**不对**。`src/eval/metrics.py:133 frag_ratio` 是**连通块数之比 pred/GT**。
+结论不变（Frag 变好不代表笔画接通），但依据的描述要改。
+
+**(c) P0 关键实验（本次新跑，n=100）：**
+
+| 变体 | 墨量 | 连通块 | frag |
+|---|---|---|---|
+| GT | 0.1943 | 11.99 | 1.000 |
+| **GT→VAE→RGB** | 0.1939 | 15.83 | **1.029** |
+| K 输出 | 0.1801 | 10.15 | **2.657** |
+| K 输出→重编码再解码 | 0.1800 | 9.88 | **2.606** |
+| GT/K 中点 latent | 0.1961 | 30.32 | **6.679** |
+
+**Decoder 能干净画真字形（frag 1.029，仅 1/100 字 >1.5；K 是 37/100）。**
+把 K 输出重编码再解码 frag 几乎不动（2.657→2.606）→ **破碎是 latent 的稳定属性**。
+
+**(d) 两个新发现，修正了建议里的 P0 第二项：**
+- **latent 误差大小与破碎几乎无关**（corr **+0.066**）：小 |Δz| 组 frag 2.16、大组 3.19。
+  所以「对 K latent 做 GT-oracle inversion」若只优化重建，**不会显著降 frag**；
+  inversion 的目标必须**直接含连通性项**。
+- **中点 latent 反而最碎**（frag 6.679）。GT 与 K 处在不同结构解上，
+  线性插值落在无意义的中间区。**不能靠往 GT 方向线性拉近解决断笔。**
+
+**(e) 既有 T4 已给同向结论**（`docs/1031/p125_phase2_diag.md` §6，300 张真迹往返，
+P3A@20k 口径）：重建 OCR 100%、SSIM 0.974、frag 1.002，预登记判据直接输出
+`reconstruction clean -> optimize generator`。本次在 **K** 上独立复现
+（K 正是 T4 当时未覆盖的 checkpoint）。
+
+**(f) 另一发现：结构监督基础设施存在但当前训练路径够不着。**
+`src/train/latent_structure.py` 已有 `_balanced_bce_dice`（Dice 族连通项，
+正是 P1 想要的形式），`src/train/trainer.py:442` 有挂载点，
+但 K 走的 `tools/style_matrix/runtime/` 里**没有任何结构 loss 接线**（grep 零命中）。
+旧的 `scripts/legacy_py/train.py:518` 另有「flow 模式下硬禁用结构辅助」的保护。
+→ P1 需要**新接线**，不能靠改 flag。
+
+详见 [docs/1031/P0_LATENT_ORACLE.md](docs/1031/P0_LATENT_ORACLE.md)。
+**未启动任何训练**；GARU 仍未训练（`run_garu.sh` 待命，且按上表其收益存疑）。
+
 2026-11-01 22:34（**GARL 4h 长跑启动 + GARU 解冻臂实现完成**，4090 tmux `garl`）：
 按用户 12h 预算「先让 GAR 跑 4h，中间 eval 观测，同时做好解冻实现」。
 
