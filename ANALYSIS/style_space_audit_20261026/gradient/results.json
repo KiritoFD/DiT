@@ -1,0 +1,1205 @@
+{
+  "n": 20,
+  "seed": 0,
+  "relative_latent_radius": 0.01,
+  "summary": {
+    "self": {
+      "style_minus_zero": {
+        "mean": 0.2174726441502571,
+        "ci95": [
+          0.17161277029663324,
+          0.264915305711329
+        ],
+        "n": 20,
+        "groups": 20
+      },
+      "style_minus_random": {
+        "mean": 0.21742763742804527,
+        "ci95": [
+          0.17198690220713617,
+          0.26339518405497075
+        ],
+        "n": 20,
+        "groups": 20
+      },
+      "inverse_minus_zero": {
+        "mean": -0.2620916247367859,
+        "ci95": [
+          -0.3088978846743703,
+          -0.22074760898947715
+        ],
+        "n": 20,
+        "groups": 20
+      },
+      "top1_before": 0.6499999761581421,
+      "top1_after": 0.800000011920929
+    },
+    "pixel": {
+      "style_minus_zero": {
+        "mean": 7.38188624382019e-05,
+        "ci95": [
+          -0.00414044763892889,
+          0.005080048963427542
+        ],
+        "n": 20,
+        "groups": 20
+      },
+      "style_minus_random": {
+        "mean": 0.0008511483669281006,
+        "ci95": [
+          -0.004089819416403771,
+          0.006871304176747799
+        ],
+        "n": 20,
+        "groups": 20
+      },
+      "inverse_minus_zero": {
+        "mean": -0.0016858384013175964,
+        "ci95": [
+          -0.00727263916283846,
+          0.003532586731016635
+        ],
+        "n": 20,
+        "groups": 20
+      },
+      "top1_before": 0.6499999761581421,
+      "top1_after": 0.6499999761581421
+    },
+    "D2": {
+      "style_minus_zero": {
+        "mean": 0.0016624733805656433,
+        "ci95": [
+          -0.002414602190256119,
+          0.005942146889865393
+        ],
+        "n": 20,
+        "groups": 20
+      },
+      "style_minus_random": {
+        "mean": 0.0007443338632583618,
+        "ci95": [
+          -0.004592150039970874,
+          0.006253168024122714
+        ],
+        "n": 20,
+        "groups": 20
+      },
+      "inverse_minus_zero": {
+        "mean": -0.005264069139957428,
+        "ci95": [
+          -0.009483875408768654,
+          -0.0014503818377852454
+        ],
+        "n": 20,
+        "groups": 20
+      },
+      "top1_before": 0.5,
+      "top1_after": 0.5
+    }
+  },
+  "lpips_change": 0.004292576876468957,
+  "ink_abs_change": 0.00014711133553646505,
+  "per_image": [
+    {
+      "image_path": "data/top10_style23/imgs/006951.png",
+      "calligrapher": "王羲之",
+      "script": "行",
+      "character": "用",
+      "calligrapher_id": "0",
+      "script_id": "3",
+      "character_id": "29992",
+      "glyph_id": "3372328",
+      "aug": "",
+      "std_path": "exp-std/data/std_char_eval/006951.png",
+      "source": "final_imgs_fame_v8",
+      "src_image_path": "data/fame-kxl-tj-px60/imgs/291520.png",
+      "slot_name": "王羲之_行",
+      "pair_id": "11",
+      "img_id": "2124794",
+      "fix": "False",
+      "char_used": "True",
+      "split_group": "s20093",
+      "duplicate_group": "d20093",
+      "pixel_sha256": "d9a2e7490d14134c90b04fab96fd84d60d5ba076ad785303c250b4d5b91038f9",
+      "eval_noise_seed": "855516444331486372",
+      "original_character_id": "3586",
+      "original_glyph_id": "24664",
+      "original_image_path": "",
+      "generic": "0",
+      "raw_writer_id": 601,
+      "writer_row": "0",
+      "writer_label_space": "top10_row",
+      "writer": "王羲之",
+      "char": "用",
+      "idx": 0,
+      "lpips_change": 0.004302135668694973,
+      "ink_change": 3.3229589462280273e-06,
+      "margins": {
+        "self": {
+          "zero": 0.38529545068740845,
+          "style": 0.49102917313575745,
+          "random": 0.38317662477493286,
+          "inverse": 0.16844558715820312
+        },
+        "pixel": {
+          "zero": -0.159740149974823,
+          "style": -0.16035720705986023,
+          "random": -0.16135135293006897,
+          "inverse": -0.1571398377418518
+        },
+        "D2": {
+          "zero": 0.5134316086769104,
+          "style": 0.5102158784866333,
+          "random": 0.5087003707885742,
+          "inverse": 0.5186349749565125
+        }
+      }
+    },
+    {
+      "image_path": "data/top10_style23/imgs/002198.png",
+      "calligrapher": "王羲之",
+      "script": "行",
+      "character": "報",
+      "calligrapher_id": "0",
+      "script_id": "3",
+      "character_id": "22577",
+      "glyph_id": "3364913",
+      "aug": "",
+      "std_path": "exp-std/data/std_char_eval/002198.png",
+      "source": "final_imgs_fame_v8",
+      "src_image_path": "data/fame-kxl-tj-px60/imgs/49793.png",
+      "slot_name": "王羲之_行",
+      "pair_id": "11",
+      "img_id": "2124795",
+      "fix": "False",
+      "char_used": "True",
+      "split_group": "s15343",
+      "duplicate_group": "d15343",
+      "pixel_sha256": "8d9619a3680fc321039ba210ba75ec1023db444497dd6b3a0bef8c596cd7fb38",
+      "eval_noise_seed": "824262709900545691",
+      "original_character_id": "1097",
+      "original_glyph_id": "22175",
+      "original_image_path": "",
+      "generic": "0",
+      "raw_writer_id": 601,
+      "writer_row": "0",
+      "writer_label_space": "top10_row",
+      "writer": "王羲之",
+      "char": "報",
+      "idx": 1,
+      "lpips_change": 0.0046859802678227425,
+      "ink_change": 0.00011479854583740234,
+      "margins": {
+        "self": {
+          "zero": 0.4521279036998749,
+          "style": 0.5409644842147827,
+          "random": 0.46031394600868225,
+          "inverse": 0.23952728509902954
+        },
+        "pixel": {
+          "zero": -0.7845478057861328,
+          "style": -0.7696534395217896,
+          "random": -0.791636049747467,
+          "inverse": -0.8060097694396973
+        },
+        "D2": {
+          "zero": -0.896449089050293,
+          "style": -0.8809869885444641,
+          "random": -0.8932998180389404,
+          "inverse": -0.9142836928367615
+        }
+      }
+    },
+    {
+      "image_path": "data/top10_style23/imgs/018282.png",
+      "calligrapher": "苏轼",
+      "script": "楷",
+      "character": "兀",
+      "calligrapher_id": "1",
+      "script_id": "0",
+      "character_id": "20800",
+      "glyph_id": "20800",
+      "aug": "",
+      "std_path": "exp-std/data/std_char_eval/018282.png",
+      "source": "hcsu_wild",
+      "src_image_path": "data/hcsu_kxl/imgs/wild/苏轼-楷/兀.png",
+      "slot_name": "苏轼_楷",
+      "pair_id": "14",
+      "img_id": "2124804",
+      "fix": "False",
+      "char_used": "True",
+      "split_group": "s31418",
+      "duplicate_group": "d31418",
+      "pixel_sha256": "da7f49b768ad0749e254cd5207106a6541393dc2aa7662017b97d4711b826c77",
+      "eval_noise_seed": "783923846919170935",
+      "original_character_id": "54337",
+      "original_glyph_id": "54337",
+      "original_image_path": "",
+      "generic": "0",
+      "raw_writer_id": 703,
+      "writer_row": "1",
+      "writer_label_space": "top10_row",
+      "writer": "苏轼",
+      "char": "兀",
+      "idx": 10,
+      "lpips_change": 0.004195470362901688,
+      "ink_change": 0.0002738088369369507,
+      "margins": {
+        "self": {
+          "zero": -0.23301702737808228,
+          "style": -0.09833195805549622,
+          "random": -0.23776377737522125,
+          "inverse": -0.4233914613723755
+        },
+        "pixel": {
+          "zero": -0.3658915162086487,
+          "style": -0.3788595199584961,
+          "random": -0.36966127157211304,
+          "inverse": -0.3672637641429901
+        },
+        "D2": {
+          "zero": -0.44115662574768066,
+          "style": -0.43585050106048584,
+          "random": -0.43628013134002686,
+          "inverse": -0.4555811285972595
+        }
+      }
+    },
+    {
+      "image_path": "data/top10_style23/imgs/005469.png",
+      "calligrapher": "苏轼",
+      "script": "行",
+      "character": "桑",
+      "calligrapher_id": "1",
+      "script_id": "3",
+      "character_id": "26705",
+      "glyph_id": "3369041",
+      "aug": "",
+      "std_path": "exp-std/data/std_char_eval/005469.png",
+      "source": "final_imgs_fame_v8",
+      "src_image_path": "data/fame-kxl-tj-px60/imgs/110875.png",
+      "slot_name": "苏轼_行",
+      "pair_id": "15",
+      "img_id": "2124805",
+      "fix": "rendered",
+      "char_used": "桑",
+      "split_group": "s18613",
+      "duplicate_group": "d18613",
+      "pixel_sha256": "347e35345b4d49c980e47de77fef7c805370b8b70433b08e326a71cde14a724d",
+      "eval_noise_seed": "631993584827679547",
+      "original_character_id": "2607",
+      "original_glyph_id": "23685",
+      "original_image_path": "",
+      "generic": "0",
+      "raw_writer_id": 703,
+      "writer_row": "1",
+      "writer_label_space": "top10_row",
+      "writer": "苏轼",
+      "char": "桑",
+      "idx": 11,
+      "lpips_change": 0.00394150335341692,
+      "ink_change": 0.0002250075340270996,
+      "margins": {
+        "self": {
+          "zero": 0.12022173404693604,
+          "style": 0.4827841520309448,
+          "random": 0.13691091537475586,
+          "inverse": -0.3358408212661743
+        },
+        "pixel": {
+          "zero": 0.040313929319381714,
+          "style": 0.02529853582382202,
+          "random": 0.029874831438064575,
+          "inverse": 0.017143815755844116
+        },
+        "D2": {
+          "zero": 0.2974795699119568,
+          "style": 0.3060886561870575,
+          "random": 0.32424259185791016,
+          "inverse": 0.27975741028785706
+        }
+      }
+    },
+    {
+      "image_path": "data/top10_style23/imgs/010029.png",
+      "calligrapher": "欧阳询",
+      "script": "楷",
+      "character": "速",
+      "calligrapher_id": "2",
+      "script_id": "0",
+      "character_id": "36895",
+      "glyph_id": "36895",
+      "aug": "",
+      "std_path": "data/top10_style23/std_char/010029.png",
+      "source": "final_imgs_fame_v8",
+      "src_image_path": "data/fame-kxl-tj-px60/imgs/198389.png",
+      "slot_name": "欧阳询_楷",
+      "pair_id": "8",
+      "img_id": "2124814",
+      "fix": "",
+      "char_used": "",
+      "split_group": "s23168",
+      "duplicate_group": "d23168",
+      "pixel_sha256": "52bf5c56da109a4ee4d627ed112b408b9d7f55b49d93710d5bea5a83b48ff110",
+      "eval_noise_seed": "819919669662565537",
+      "original_character_id": "5650",
+      "original_glyph_id": "5650",
+      "original_image_path": "",
+      "generic": "0",
+      "raw_writer_id": 479,
+      "writer_row": "2",
+      "writer_label_space": "top10_row",
+      "writer": "欧阳询",
+      "char": "速",
+      "idx": 20,
+      "lpips_change": 0.004019288811832666,
+      "ink_change": 5.415081977844238e-05,
+      "margins": {
+        "self": {
+          "zero": 0.44699233770370483,
+          "style": 0.5529338121414185,
+          "random": 0.4374775290489197,
+          "inverse": 0.1377544403076172
+        },
+        "pixel": {
+          "zero": 0.022475063800811768,
+          "style": 0.020650655031204224,
+          "random": 0.03314509987831116,
+          "inverse": 0.02736198902130127
+        },
+        "D2": {
+          "zero": -0.7570659518241882,
+          "style": -0.7659587264060974,
+          "random": -0.7786321640014648,
+          "inverse": -0.7689542174339294
+        }
+      }
+    },
+    {
+      "image_path": "data/top10_style23/imgs/006434.png",
+      "calligrapher": "欧阳询",
+      "script": "行",
+      "character": "潛",
+      "calligrapher_id": "2",
+      "script_id": "3",
+      "character_id": "28507",
+      "glyph_id": "3370843",
+      "aug": "",
+      "std_path": "data/top10_style23/std_char/006434.png",
+      "source": "final_imgs_fame_v8",
+      "src_image_path": "data/fame-kxl-tj-px60/imgs/127566.png",
+      "slot_name": "欧阳询_行",
+      "pair_id": "9",
+      "img_id": "2124815",
+      "fix": "",
+      "char_used": "",
+      "split_group": "s19577",
+      "duplicate_group": "d19577",
+      "pixel_sha256": "40efcf32b05d15267edff5255e4e28711ae986fa1315ae7778ab561f21d83547",
+      "eval_noise_seed": "472844306115264039",
+      "original_character_id": "3185",
+      "original_glyph_id": "24263",
+      "original_image_path": "",
+      "generic": "0",
+      "raw_writer_id": 479,
+      "writer_row": "2",
+      "writer_label_space": "top10_row",
+      "writer": "欧阳询",
+      "char": "潛",
+      "idx": 21,
+      "lpips_change": 0.005845800973474979,
+      "ink_change": -3.9637088775634766e-05,
+      "margins": {
+        "self": {
+          "zero": 0.4542962908744812,
+          "style": 0.6046867966651917,
+          "random": 0.45063990354537964,
+          "inverse": 0.27819377183914185
+        },
+        "pixel": {
+          "zero": 0.6239641308784485,
+          "style": 0.6335311532020569,
+          "random": 0.6224931478500366,
+          "inverse": 0.6196391582489014
+        },
+        "D2": {
+          "zero": 0.9629422426223755,
+          "style": 0.9665772914886475,
+          "random": 0.9652619361877441,
+          "inverse": 0.9617664813995361
+        }
+      }
+    },
+    {
+      "image_path": "data/top10_style23/imgs/008333.png",
+      "calligrapher": "颜真卿",
+      "script": "楷",
+      "character": "聲",
+      "calligrapher_id": "3",
+      "script_id": "0",
+      "character_id": "32882",
+      "glyph_id": "32882",
+      "aug": "",
+      "std_path": "data/top10_style23/std_char/008333.png",
+      "source": "final_imgs_fame_v8",
+      "src_image_path": "data/fame-kxl-tj-px60/imgs/167187.png",
+      "slot_name": "颜真卿_楷",
+      "pair_id": "21",
+      "img_id": "2124824",
+      "fix": "",
+      "char_used": "",
+      "split_group": "s21473",
+      "duplicate_group": "d21473",
+      "pixel_sha256": "27bfcc06c331734c4315590c22b080371a17bbc60b11db8550cf3961de9c6905",
+      "eval_noise_seed": "1033490592748492859",
+      "original_character_id": "4486",
+      "original_glyph_id": "4486",
+      "original_image_path": "",
+      "generic": "0",
+      "raw_writer_id": 956,
+      "writer_row": "3",
+      "writer_label_space": "top10_row",
+      "writer": "颜真卿",
+      "char": "聲",
+      "idx": 30,
+      "lpips_change": 0.003769132075831294,
+      "ink_change": -0.00016808509826660156,
+      "margins": {
+        "self": {
+          "zero": 0.33231592178344727,
+          "style": 0.5106746554374695,
+          "random": 0.33231019973754883,
+          "inverse": 0.10914301872253418
+        },
+        "pixel": {
+          "zero": 0.28698664903640747,
+          "style": 0.2835698127746582,
+          "random": 0.2939062714576721,
+          "inverse": 0.2994273900985718
+        },
+        "D2": {
+          "zero": 0.5098598003387451,
+          "style": 0.5169841051101685,
+          "random": 0.5044710040092468,
+          "inverse": 0.5107907652854919
+        }
+      }
+    },
+    {
+      "image_path": "data/top10_style23/imgs/010740.png",
+      "calligrapher": "颜真卿",
+      "script": "楷",
+      "character": "雍",
+      "calligrapher_id": "3",
+      "script_id": "0",
+      "character_id": "38605",
+      "glyph_id": "38605",
+      "aug": "",
+      "std_path": "data/top10_style23/std_char/010740.png",
+      "source": "final_imgs_fame_v8",
+      "src_image_path": "data/fame-kxl-tj-px60/imgs/211552.png",
+      "slot_name": "颜真卿_楷",
+      "pair_id": "21",
+      "img_id": "2124825",
+      "fix": "",
+      "char_used": "",
+      "split_group": "s23879",
+      "duplicate_group": "d23879",
+      "pixel_sha256": "d4109e0c8b91adf2642b40e39f32d8a5b88ce0f9b93e99bef5de042f29c31538",
+      "eval_noise_seed": "476101878552414021",
+      "original_character_id": "6122",
+      "original_glyph_id": "6122",
+      "original_image_path": "",
+      "generic": "0",
+      "raw_writer_id": 956,
+      "writer_row": "3",
+      "writer_label_space": "top10_row",
+      "writer": "颜真卿",
+      "char": "雍",
+      "idx": 31,
+      "lpips_change": 0.004482475109398365,
+      "ink_change": -6.130337715148926e-05,
+      "margins": {
+        "self": {
+          "zero": 0.327201783657074,
+          "style": 0.5803685188293457,
+          "random": 0.32978397607803345,
+          "inverse": -0.11317169666290283
+        },
+        "pixel": {
+          "zero": -0.31068629026412964,
+          "style": -0.317465215921402,
+          "random": -0.31032270193099976,
+          "inverse": -0.29776063561439514
+        },
+        "D2": {
+          "zero": -0.24478811025619507,
+          "style": -0.24052199721336365,
+          "random": -0.24952402710914612,
+          "inverse": -0.2615697979927063
+        }
+      }
+    },
+    {
+      "image_path": "data/top10_style23/imgs/037510.png",
+      "calligrapher": "赵孟頫",
+      "script": "隶",
+      "character": "薪",
+      "calligrapher_id": "4",
+      "script_id": "4",
+      "character_id": "34218",
+      "glyph_id": "4490666",
+      "aug": "",
+      "std_path": "data/top10_style23/std_char/037510.png",
+      "source": "mccd_salvage",
+      "src_image_path": "G:\\GitHub\\DiT\\MCCD\\MCCD\\MCCD-Calligrapher\\calligrapher_dataset\\赵孟𫖯\\薪-隶-元-赵孟𫖯-96006.png",
+      "slot_name": "赵孟頫_隶",
+      "pair_id": "20",
+      "img_id": "2124834",
+      "fix": "",
+      "char_used": "",
+      "split_group": "s38265",
+      "duplicate_group": "d38265",
+      "pixel_sha256": "89dc14d58d63a4734306a156d00cc12352cce36ff16584c2b60c35d20d4202e8",
+      "eval_noise_seed": "1055709885001351544",
+      "original_character_id": "4876",
+      "original_glyph_id": "56423",
+      "original_image_path": "",
+      "generic": "0",
+      "raw_writer_id": 9001,
+      "writer_row": "4",
+      "writer_label_space": "top10_row",
+      "writer": "赵孟頫",
+      "char": "薪",
+      "idx": 40,
+      "lpips_change": 0.004624122753739357,
+      "ink_change": 0.00025181472301483154,
+      "margins": {
+        "self": {
+          "zero": 0.28207772970199585,
+          "style": 0.4130840301513672,
+          "random": 0.28134870529174805,
+          "inverse": 0.10613346099853516
+        },
+        "pixel": {
+          "zero": 0.49875950813293457,
+          "style": 0.49657711386680603,
+          "random": 0.4985787272453308,
+          "inverse": 0.5150828957557678
+        },
+        "D2": {
+          "zero": 0.8367592096328735,
+          "style": 0.8391848802566528,
+          "random": 0.8354802131652832,
+          "inverse": 0.8343247771263123
+        }
+      }
+    },
+    {
+      "image_path": "data/top10_style23/imgs/038531.png",
+      "calligrapher": "赵孟頫",
+      "script": "楷",
+      "character": "卧",
+      "calligrapher_id": "4",
+      "script_id": "0",
+      "character_id": "21351",
+      "glyph_id": "21351",
+      "aug": "",
+      "std_path": "data/top10_style23/std_char/038531.png",
+      "source": "hcsu_wild_salvage",
+      "src_image_path": "/root/Workspace/xy/HCSU/wild_extract/赵孟頫-楷/卧.png",
+      "slot_name": "赵孟頫_楷",
+      "pair_id": "18",
+      "img_id": "2124835",
+      "fix": "",
+      "char_used": "",
+      "split_group": "s39285",
+      "duplicate_group": "d39285",
+      "pixel_sha256": "f39b564a49bee80ca8f0137428c72061f6346c1c4dbddab5add265bed5752c7f",
+      "eval_noise_seed": "129966797208904434",
+      "original_character_id": "745",
+      "original_glyph_id": "745",
+      "original_image_path": "",
+      "generic": "0",
+      "raw_writer_id": 9001,
+      "writer_row": "4",
+      "writer_label_space": "top10_row",
+      "writer": "赵孟頫",
+      "char": "卧",
+      "idx": 41,
+      "lpips_change": 0.003931399434804916,
+      "ink_change": 0.00026616454124450684,
+      "margins": {
+        "self": {
+          "zero": -0.10326772928237915,
+          "style": 0.3491787910461426,
+          "random": -0.09670615196228027,
+          "inverse": -0.42377251386642456
+        },
+        "pixel": {
+          "zero": 0.5116575956344604,
+          "style": 0.5101074576377869,
+          "random": 0.5112038850784302,
+          "inverse": 0.5182544589042664
+        },
+        "D2": {
+          "zero": 0.10744071006774902,
+          "style": 0.1051950454711914,
+          "random": 0.11631596088409424,
+          "inverse": 0.1059795618057251
+        }
+      }
+    },
+    {
+      "image_path": "data/top10_style23/imgs/022493.png",
+      "calligrapher": "褚遂良",
+      "script": "行",
+      "character": "朽",
+      "calligrapher_id": "5",
+      "script_id": "3",
+      "character_id": "26429",
+      "glyph_id": "3368765",
+      "aug": "",
+      "std_path": "data/top10_style23/std_char/022493.png",
+      "source": "hcsu_bei",
+      "src_image_path": "data/hcsu_kxl/imgs/bei/褚遂良-行/朽.png",
+      "slot_name": "褚遂良_行",
+      "pair_id": "17",
+      "img_id": "2124844",
+      "fix": "",
+      "char_used": "",
+      "split_group": "s35629",
+      "duplicate_group": "d35629",
+      "pixel_sha256": "12bc8c03d250842a2d0b8c775aa94090698fcedd8d10fe97cf36c472b4f6d336",
+      "eval_noise_seed": "188946768722125764",
+      "original_character_id": "2504",
+      "original_glyph_id": "2504",
+      "original_image_path": "",
+      "generic": "0",
+      "raw_writer_id": 760,
+      "writer_row": "5",
+      "writer_label_space": "top10_row",
+      "writer": "褚遂良",
+      "char": "朽",
+      "idx": 50,
+      "lpips_change": 0.003757988102734089,
+      "ink_change": 0.00021579861640930176,
+      "margins": {
+        "self": {
+          "zero": -0.529662549495697,
+          "style": -0.17672967910766602,
+          "random": -0.5327938795089722,
+          "inverse": -0.6662756204605103
+        },
+        "pixel": {
+          "zero": -0.47984570264816284,
+          "style": -0.4797762334346771,
+          "random": -0.47641295194625854,
+          "inverse": -0.496402382850647
+        },
+        "D2": {
+          "zero": -0.5080530643463135,
+          "style": -0.4814942479133606,
+          "random": -0.5113728046417236,
+          "inverse": -0.5195554494857788
+        }
+      }
+    },
+    {
+      "image_path": "data/top10_style23/imgs/038512.png",
+      "calligrapher": "褚遂良",
+      "script": "行",
+      "character": "盡",
+      "calligrapher_id": "5",
+      "script_id": "3",
+      "character_id": "30433",
+      "glyph_id": "3372769",
+      "aug": "",
+      "std_path": "data/top10_style23/std_char/038512.png",
+      "source": "hcsu_wild_salvage",
+      "src_image_path": "/root/Workspace/xy/HCSU/wild_extract/褚遂良-行/盡.png",
+      "slot_name": "褚遂良_行",
+      "pair_id": "17",
+      "img_id": "2124845",
+      "fix": "",
+      "char_used": "",
+      "split_group": "s39266",
+      "duplicate_group": "d39266",
+      "pixel_sha256": "a28143aba55e939fee96b81b2cbfc634dda63e31f7ff10b2a0f42d47b4fde143",
+      "eval_noise_seed": "668825391315211605",
+      "original_character_id": "24815",
+      "original_glyph_id": "54086",
+      "original_image_path": "",
+      "generic": "0",
+      "raw_writer_id": 760,
+      "writer_row": "5",
+      "writer_label_space": "top10_row",
+      "writer": "褚遂良",
+      "char": "盡",
+      "idx": 51,
+      "lpips_change": 0.0037468206137418747,
+      "ink_change": -9.910762310028076e-05,
+      "margins": {
+        "self": {
+          "zero": -0.46719056367874146,
+          "style": -0.046832919120788574,
+          "random": -0.4427223801612854,
+          "inverse": -0.6566846966743469
+        },
+        "pixel": {
+          "zero": 0.015685617923736572,
+          "style": 0.004339933395385742,
+          "random": 0.0033799707889556885,
+          "inverse": 0.01998758316040039
+        },
+        "D2": {
+          "zero": -0.9457969069480896,
+          "style": -0.9389809370040894,
+          "random": -0.931569516658783,
+          "inverse": -0.9453173875808716
+        }
+      }
+    },
+    {
+      "image_path": "data/top10_style23/imgs/000100.png",
+      "calligrapher": "米芾",
+      "script": "行",
+      "character": "与",
+      "calligrapher_id": "6",
+      "script_id": "3",
+      "character_id": "19982",
+      "glyph_id": "3362318",
+      "aug": "",
+      "std_path": "data/top10_style23/std_char/000100.png",
+      "source": "final_imgs_fame_v8",
+      "src_image_path": "data/fame-kxl-tj-px60/imgs/5158.png",
+      "slot_name": "米芾_行",
+      "pair_id": "13",
+      "img_id": "2124854",
+      "fix": "",
+      "char_used": "",
+      "split_group": "s13248",
+      "duplicate_group": "d13248",
+      "pixel_sha256": "70e3c339ca0bd5f29ef271a59cd991bbe10d91f498a18d134cef044e6d7e95d1",
+      "eval_noise_seed": "185424074368139107",
+      "original_character_id": "168",
+      "original_glyph_id": "21246",
+      "original_image_path": "",
+      "generic": "0",
+      "raw_writer_id": 672,
+      "writer_row": "6",
+      "writer_label_space": "top10_row",
+      "writer": "米芾",
+      "char": "与",
+      "idx": 60,
+      "lpips_change": 0.003949915058910847,
+      "ink_change": 0.0004800036549568176,
+      "margins": {
+        "self": {
+          "zero": -0.5147324800491333,
+          "style": -0.20943939685821533,
+          "random": -0.5152554512023926,
+          "inverse": -0.7541403770446777
+        },
+        "pixel": {
+          "zero": -0.7498494386672974,
+          "style": -0.76025390625,
+          "random": -0.7514904737472534,
+          "inverse": -0.7581638693809509
+        },
+        "D2": {
+          "zero": -0.8741861581802368,
+          "style": -0.8789264559745789,
+          "random": -0.8825461864471436,
+          "inverse": -0.8843666911125183
+        }
+      }
+    },
+    {
+      "image_path": "data/top10_style23/imgs/004038.png",
+      "calligrapher": "米芾",
+      "script": "行",
+      "character": "惟",
+      "calligrapher_id": "6",
+      "script_id": "3",
+      "character_id": "24799",
+      "glyph_id": "3367135",
+      "aug": "",
+      "std_path": "data/top10_style23/std_char/004038.png",
+      "source": "final_imgs_fame_v8",
+      "src_image_path": "data/fame-kxl-tj-px60/imgs/84942.png",
+      "slot_name": "米芾_行",
+      "pair_id": "13",
+      "img_id": "2124855",
+      "fix": "",
+      "char_used": "",
+      "split_group": "s17183",
+      "duplicate_group": "d17183",
+      "pixel_sha256": "e617f53d4283ac62bc34d5524dea0c1dc0c3db8e8ebf71a16df8664e485aec1a",
+      "eval_noise_seed": "990877908402520280",
+      "original_character_id": "1887",
+      "original_glyph_id": "22965",
+      "original_image_path": "",
+      "generic": "0",
+      "raw_writer_id": 672,
+      "writer_row": "6",
+      "writer_label_space": "top10_row",
+      "writer": "米芾",
+      "char": "惟",
+      "idx": 61,
+      "lpips_change": 0.004571925383061171,
+      "ink_change": 0.00011610984802246094,
+      "margins": {
+        "self": {
+          "zero": 0.4546980559825897,
+          "style": 0.5483816862106323,
+          "random": 0.45252150297164917,
+          "inverse": 0.3000606894493103
+        },
+        "pixel": {
+          "zero": 0.29930683970451355,
+          "style": 0.30176639556884766,
+          "random": 0.3020890951156616,
+          "inverse": 0.29833778738975525
+        },
+        "D2": {
+          "zero": 0.4109250009059906,
+          "style": 0.41331425309181213,
+          "random": 0.4242589771747589,
+          "inverse": 0.42093753814697266
+        }
+      }
+    },
+    {
+      "image_path": "data/top10_style23/imgs/002119.png",
+      "calligrapher": "文徵明",
+      "script": "行",
+      "character": "地",
+      "calligrapher_id": "7",
+      "script_id": "3",
+      "character_id": "22320",
+      "glyph_id": "3364656",
+      "aug": "",
+      "std_path": "data/top10_style23/std_char/002119.png",
+      "source": "final_imgs_fame_v8",
+      "src_image_path": "data/fame-kxl-tj-px60/imgs/48175.png",
+      "slot_name": "文徵明_行",
+      "pair_id": "4",
+      "img_id": "2124864",
+      "fix": "",
+      "char_used": "",
+      "split_group": "s15265",
+      "duplicate_group": "d15265",
+      "pixel_sha256": "4c25f83128aab8fec8d8d26515e7d45d0b38fc4ee04f8475623845250e083c45",
+      "eval_noise_seed": "748148579044439252",
+      "original_character_id": "1040",
+      "original_glyph_id": "22118",
+      "original_image_path": "",
+      "generic": "0",
+      "raw_writer_id": 365,
+      "writer_row": "7",
+      "writer_label_space": "top10_row",
+      "writer": "文徵明",
+      "char": "地",
+      "idx": 70,
+      "lpips_change": 0.004415365867316723,
+      "ink_change": 4.538893699645996e-05,
+      "margins": {
+        "self": {
+          "zero": 0.24166584014892578,
+          "style": 0.42619451880455017,
+          "random": 0.23120272159576416,
+          "inverse": 0.03782886266708374
+        },
+        "pixel": {
+          "zero": 0.4578550457954407,
+          "style": 0.44922471046447754,
+          "random": 0.466616153717041,
+          "inverse": 0.46981409192085266
+        },
+        "D2": {
+          "zero": -0.18646299839019775,
+          "style": -0.20170828700065613,
+          "random": -0.1810266673564911,
+          "inverse": -0.18181926012039185
+        }
+      }
+    },
+    {
+      "image_path": "data/top10_style23/imgs/009295.png",
+      "calligrapher": "文徵明",
+      "script": "隶",
+      "character": "記",
+      "calligrapher_id": "7",
+      "script_id": "4",
+      "character_id": "35352",
+      "glyph_id": "4491800",
+      "aug": "",
+      "std_path": "exp-std/data/std_char_eval/009295.png",
+      "source": "final_imgs_fame_v8",
+      "src_image_path": "data/fame-kxl-tj-px60/imgs/185901.png",
+      "slot_name": "文徵明_隶",
+      "pair_id": "5",
+      "img_id": "2124865",
+      "fix": "rendered",
+      "char_used": "記",
+      "split_group": "s22435",
+      "duplicate_group": "d22435",
+      "pixel_sha256": "df5a5957d4efcc1896a89959e023e20935abb4bd9b5ff6256e88602278c0e975",
+      "eval_noise_seed": "627923012429063337",
+      "original_character_id": "5150",
+      "original_glyph_id": "33254",
+      "original_image_path": "",
+      "generic": "0",
+      "raw_writer_id": 365,
+      "writer_row": "7",
+      "writer_label_space": "top10_row",
+      "writer": "文徵明",
+      "char": "記",
+      "idx": 71,
+      "lpips_change": 0.003842140780761838,
+      "ink_change": -2.0712614059448242e-05,
+      "margins": {
+        "self": {
+          "zero": -0.09551244974136353,
+          "style": 0.17206037044525146,
+          "random": -0.091094970703125,
+          "inverse": -0.32447075843811035
+        },
+        "pixel": {
+          "zero": -0.6301323175430298,
+          "style": -0.6203870177268982,
+          "random": -0.6266269683837891,
+          "inverse": -0.6352494955062866
+        },
+        "D2": {
+          "zero": -0.4537801146507263,
+          "style": -0.45716381072998047,
+          "random": -0.4573304057121277,
+          "inverse": -0.45346468687057495
+        }
+      }
+    },
+    {
+      "image_path": "data/top10_style23/imgs/015969.png",
+      "calligrapher": "柳公权",
+      "script": "行",
+      "character": "兼",
+      "calligrapher_id": "8",
+      "script_id": "3",
+      "character_id": "20860",
+      "glyph_id": "3363196",
+      "aug": "",
+      "std_path": "data/top10_style23/std_char/015969.png",
+      "source": "hcsu_wild",
+      "src_image_path": "data/hcsu_kxl/imgs/wild/柳公权-行/兼.png",
+      "slot_name": "柳公权_行",
+      "pair_id": "7",
+      "img_id": "2124874",
+      "fix": "",
+      "char_used": "",
+      "split_group": "s29105",
+      "duplicate_group": "d29105",
+      "pixel_sha256": "c6b36dc345a3dd5e3c6641aae49bec03a9fd450c08473e1e274d0361801686b0",
+      "eval_noise_seed": "591395643554781006",
+      "original_character_id": "28634",
+      "original_glyph_id": "28634",
+      "original_image_path": "",
+      "generic": "0",
+      "raw_writer_id": 461,
+      "writer_row": "8",
+      "writer_label_space": "top10_row",
+      "writer": "柳公权",
+      "char": "兼",
+      "idx": 80,
+      "lpips_change": 0.004242178052663803,
+      "ink_change": -0.000118255615234375,
+      "margins": {
+        "self": {
+          "zero": 0.21895378828048706,
+          "style": 0.44820308685302734,
+          "random": 0.20079785585403442,
+          "inverse": -0.15035831928253174
+        },
+        "pixel": {
+          "zero": 0.17591795325279236,
+          "style": 0.18367108702659607,
+          "random": 0.1695072054862976,
+          "inverse": 0.1791689395904541
+        },
+        "D2": {
+          "zero": 0.5747560262680054,
+          "style": 0.5684984922409058,
+          "random": 0.5549463033676147,
+          "inverse": 0.5816246867179871
+        }
+      }
+    },
+    {
+      "image_path": "data/top10_style23/imgs/012452.png",
+      "calligrapher": "柳公权",
+      "script": "楷",
+      "character": "氛",
+      "calligrapher_id": "8",
+      "script_id": "0",
+      "character_id": "27675",
+      "glyph_id": "27675",
+      "aug": "",
+      "std_path": "data/top10_style23/std_char/012452.png",
+      "source": "final_imgs_fame_v8",
+      "src_image_path": "data/fame-kxl-tj-px60/imgs/283298.png",
+      "slot_name": "柳公权_楷",
+      "pair_id": "6",
+      "img_id": "2124875",
+      "fix": "",
+      "char_used": "",
+      "split_group": "s25590",
+      "duplicate_group": "d25590",
+      "pixel_sha256": "ec10ca8d7ab1a480d2bad5fab8cf05567d84ecae50903de907b51d3880735c61",
+      "eval_noise_seed": "568686235190859007",
+      "original_character_id": "2869",
+      "original_glyph_id": "2869",
+      "original_image_path": "",
+      "generic": "0",
+      "raw_writer_id": 461,
+      "writer_row": "8",
+      "writer_label_space": "top10_row",
+      "writer": "柳公权",
+      "char": "氛",
+      "idx": 81,
+      "lpips_change": 0.0043856920674443245,
+      "ink_change": -1.0728836059570312e-06,
+      "margins": {
+        "self": {
+          "zero": 0.4548993706703186,
+          "style": 0.6131007671356201,
+          "random": 0.44866958260536194,
+          "inverse": -0.03168785572052002
+        },
+        "pixel": {
+          "zero": 0.5399213433265686,
+          "style": 0.5384266376495361,
+          "random": 0.5407397747039795,
+          "inverse": 0.5368254780769348
+        },
+        "D2": {
+          "zero": 0.8410601019859314,
+          "style": 0.8439666628837585,
+          "random": 0.8467599749565125,
+          "inverse": 0.8403599262237549
+        }
+      }
+    },
+    {
+      "image_path": "data/top10_style23/imgs/012389.png",
+      "calligrapher": "何绍基",
+      "script": "行",
+      "character": "極",
+      "calligrapher_id": "9",
+      "script_id": "3",
+      "character_id": "26997",
+      "glyph_id": "3369333",
+      "aug": "",
+      "std_path": "data/top10_style23/std_char/012389.png",
+      "source": "final_imgs_fame_v8",
+      "src_image_path": "data/fame-kxl-tj-px60/imgs/280669.png",
+      "slot_name": "何绍基_行",
+      "pair_id": "1",
+      "img_id": "2124884",
+      "fix": "",
+      "char_used": "",
+      "split_group": "s25527",
+      "duplicate_group": "d25527",
+      "pixel_sha256": "966c20e3cb7ff46c3df400f99d8b146946ee3e7caaa19f0a5cbc2fa8a5317afc",
+      "eval_noise_seed": "912332099812754245",
+      "original_character_id": "2687",
+      "original_glyph_id": "23765",
+      "original_image_path": "",
+      "generic": "0",
+      "raw_writer_id": 53,
+      "writer_row": "9",
+      "writer_label_space": "top10_row",
+      "writer": "何绍基",
+      "char": "極",
+      "idx": 90,
+      "lpips_change": 0.004936873912811279,
+      "ink_change": 0.00031831860542297363,
+      "margins": {
+        "self": {
+          "zero": -0.05066823959350586,
+          "style": 0.22944003343582153,
+          "random": -0.05199170112609863,
+          "inverse": -0.3905121684074402
+        },
+        "pixel": {
+          "zero": 0.0011840462684631348,
+          "style": 0.0015251338481903076,
+          "random": 0.00012680888175964355,
+          "inverse": -0.0014276206493377686
+        },
+        "D2": {
+          "zero": -0.12193670868873596,
+          "style": -0.13665807247161865,
+          "random": -0.1321505606174469,
+          "inverse": -0.12588533759117126
+        }
+      }
+    },
+    {
+      "image_path": "data/top10_style23/imgs/015056.png",
+      "calligrapher": "何绍基",
+      "script": "隶",
+      "character": "掣",
+      "calligrapher_id": "9",
+      "script_id": "4",
+      "character_id": "25507",
+      "glyph_id": "4481955",
+      "aug": "",
+      "std_path": "data/top10_style23/std_char/015056.png",
+      "source": "hcsu_wild",
+      "src_image_path": "data/hcsu_kxl/imgs/wild/何绍基-隶/掣.png",
+      "slot_name": "何绍基_隶",
+      "pair_id": "2",
+      "img_id": "2124885",
+      "fix": "",
+      "char_used": "",
+      "split_group": "s28192",
+      "duplicate_group": "d28192",
+      "pixel_sha256": "0e6bf483c72150a34dbb7e0061074709cd024310975c64b170401a102953f82f",
+      "eval_noise_seed": "73730935459143458",
+      "original_character_id": "23240",
+      "original_glyph_id": "23240",
+      "original_image_path": "",
+      "generic": "0",
+      "raw_writer_id": 53,
+      "writer_row": "9",
+      "writer_label_space": "top10_row",
+      "writer": "何绍基",
+      "char": "掣",
+      "idx": 91,
+      "lpips_change": 0.00420532887801528,
+      "ink_change": 6.936490535736084e-05,
+      "margins": {
+        "self": {
+          "zero": 0.45295923948287964,
+          "style": 0.547356367111206,
+          "random": 0.45372939109802246,
+          "inverse": 0.28104108572006226
+        },
+        "pixel": {
+          "zero": 0.2540501356124878,
+          "style": 0.28692492842674255,
+          "random": 0.24767884612083435,
+          "inverse": 0.23204165697097778
+        },
+        "D2": {
+          "zero": 0.11704418063163757,
+          "style": 0.12349694967269897,
+          "random": 0.13368046283721924,
+          "inverse": 0.09336286783218384
+        }
+      }
+    }
+  ],
+  "caveat": "Single-seed 20-or-fewer-character pilot. Teacher source generalization remains unqualified; no Style Loss training approval."
+}

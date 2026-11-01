@@ -1,0 +1,52 @@
+{
+  "n": 178,
+  "source_and_character_heldout": true,
+  "source_caveat": "Saved directory-level holdout proxy, exact-pixel duplicates removed; not verified independent artwork IDs.",
+  "preprocessing": "Both GT and reconstruction: original256 -> uint8 PNG-equivalent -> PIL bicubic160 -> ImageNet normalization",
+  "gt_slot_top1": 0.3146067415730337,
+  "reconstruction_slot_top1": 0.3258426966292135,
+  "feature_l2_mean": 0.11554385721683502,
+  "feature_cosine_mean": 0.9918601512908936,
+  "GT_ARI": {
+    "楷": {
+      "n": 95,
+      "writers": 5,
+      "ari": 0.3367572147526577,
+      "nmi": 0.492799055961776
+    },
+    "行": {
+      "n": 76,
+      "writers": 5,
+      "ari": 0.34982229844316254,
+      "nmi": 0.486288997067167
+    },
+    "隶": {
+      "n": 7,
+      "writers": 1,
+      "ari": null,
+      "reason": "Insufficient distinct supported writers"
+    }
+  },
+  "VAE_ARI": {
+    "楷": {
+      "n": 95,
+      "writers": 5,
+      "ari": 0.3796571226484774,
+      "nmi": 0.4593609160546572
+    },
+    "行": {
+      "n": 76,
+      "writers": 5,
+      "ari": 0.3832883419698983,
+      "nmi": 0.48735941372847413
+    },
+    "隶": {
+      "n": 7,
+      "writers": 1,
+      "ari": null,
+      "reason": "Insufficient distinct supported writers"
+    }
+  },
+  "vae": "pretrained_models/sd-vae-ft-ema",
+  "posterior": "deterministic mean; native unscaled encode/decode, equivalent sf=.18215 shift0 inverse"
+}

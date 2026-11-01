@@ -1,11 +1,11 @@
 """Exploratory pooled Clean-FID/KID, explicitly small-sample; never per-writer FID."""
 import argparse
-import fcntl
 from contextlib import nullcontext
 from pathlib import Path
 import numpy as np
 import torch
 from tools.eval_unpaired.protocol import read,save,csv_rows
+from tools.style_matrix.runtime import fcntl_compat as fcntl
 
 
 def fid_low_rank(a,b):

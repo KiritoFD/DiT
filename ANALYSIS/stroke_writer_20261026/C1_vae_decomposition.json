@@ -1,0 +1,92 @@
+{
+  "n_chars": 30,
+  "ckpt": "assets/results/unet_deep_sym4_114m_60m/20261019-011647-Unet-flow/checkpoints/0085000.pt",
+  "analyzed_vs": [
+    "GT",
+    "VAE",
+    "GEN"
+  ],
+  "projection_end": {
+    "VAE": {
+      "proj_mean": 0.034,
+      "proj_ci95_clustered": [
+        0.0082,
+        0.0765
+      ],
+      "n_chars": 30,
+      "key_feats_proj": 0.0674,
+      "rest_feats_proj": 0.034
+    },
+    "GEN": {
+      "proj_mean": 0.1556,
+      "proj_ci95_clustered": [
+        0.0281,
+        0.2942
+      ],
+      "n_chars": 30,
+      "key_feats_proj": 0.2744,
+      "rest_feats_proj": 0.1719
+    }
+  },
+  "projection_junction": {
+    "VAE": {
+      "proj_mean": 0.0602,
+      "proj_ci95_clustered": [
+        0.0242,
+        0.1009
+      ],
+      "n_chars": 30,
+      "key_feats_proj": 0.0576,
+      "rest_feats_proj": 0.0602
+    },
+    "GEN": {
+      "proj_mean": 0.6228,
+      "proj_ci95_clustered": [
+        0.494,
+        0.752
+      ],
+      "n_chars": 30,
+      "key_feats_proj": 0.6043,
+      "rest_feats_proj": 0.6228
+    }
+  },
+  "projection_turn": {
+    "VAE": {
+      "proj_mean": 0.1537,
+      "proj_ci95_clustered": [
+        0.0622,
+        0.2505
+      ],
+      "n_chars": 30,
+      "key_feats_proj": null,
+      "rest_feats_proj": 0.1537
+    },
+    "GEN": {
+      "proj_mean": 0.2317,
+      "proj_ci95_clustered": [
+        0.0943,
+        0.3714
+      ],
+      "n_chars": 30,
+      "key_feats_proj": null,
+      "rest_feats_proj": 0.2317
+    }
+  },
+  "event_counts_by_arm": {
+    "end": {
+      "GT": 3.075,
+      "VAE": 13.737,
+      "GEN": 2.868
+    },
+    "junction": {
+      "GT": 6.962,
+      "VAE": 47.283,
+      "GEN": 7.24
+    },
+    "turn": {
+      "GT": 18.405,
+      "VAE": 24.81,
+      "GEN": 24.748
+    }
+  }
+}

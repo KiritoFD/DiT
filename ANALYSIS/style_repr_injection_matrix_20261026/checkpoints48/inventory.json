@@ -1,0 +1,374 @@
+[
+  {
+    "run": "assets/results/unet_connectivity_100000/baseline_resume/20261018-030921-Unet-flow",
+    "checkpoints": [
+      {
+        "step": 55000,
+        "path": "assets/results/unet_connectivity_100000/baseline_resume/20261018-030921-Unet-flow/checkpoints/0055000.pt",
+        "bytes": 1153743591,
+        "zip_complete": true
+      }
+    ],
+    "metrics": [
+      {
+        "n": 187,
+        "ssim": 0.6016743294242811,
+        "lpips": 0.3316658310552332,
+        "ink_iou": 0.3192134455562813,
+        "frag": 2.6790660590260837,
+        "step": 55000,
+        "path": "assets/results/unet_connectivity_100000/baseline_resume/20261018-030921-Unet-flow/eval_samples_ctrl/step0055000/eval200fix/metrics.json"
+      }
+    ],
+    "config": {
+      "architecture": "latent_cnn_unet_v1",
+      "channels": [
+        192,
+        384,
+        576
+      ],
+      "num_res_blocks": 2,
+      "num_writers": 10,
+      "std_soft_root": "exp-std/data/std_soft_glyphs_v1",
+      "std_soft_eval_sigma": null,
+      "data_csv": "exp-std/csv/train_top10_aug_sym.csv"
+    }
+  },
+  {
+    "run": "assets/results/unet_dic/B_residual_gate/20261018-064328-Unet-flow",
+    "checkpoints": [
+      {
+        "step": 65000,
+        "path": "assets/results/unet_dic/B_residual_gate/20261018-064328-Unet-flow/checkpoints/0065000.pt",
+        "bytes": 1201062043,
+        "zip_complete": true
+      },
+      {
+        "step": 75000,
+        "path": "assets/results/unet_dic/B_residual_gate/20261018-064328-Unet-flow/checkpoints/0075000.pt",
+        "bytes": 1201062043,
+        "zip_complete": true
+      }
+    ],
+    "metrics": [
+      {
+        "n": 187,
+        "ssim": 0.6053995814954042,
+        "lpips": 0.3287151344319716,
+        "ink_iou": 0.321403067676803,
+        "frag": 2.460668334257457,
+        "step": 65000,
+        "path": "assets/results/unet_dic/B_residual_gate/20261018-064328-Unet-flow/eval_samples_ctrl/step0065000/eval200fix/metrics.json"
+      },
+      {
+        "n": 187,
+        "ssim": 0.6044316615835473,
+        "lpips": 0.3298238564063521,
+        "ink_iou": 0.3179720379308143,
+        "frag": 2.458139652452137,
+        "step": 75000,
+        "path": "assets/results/unet_dic/B_residual_gate/20261018-064328-Unet-flow/eval_samples_ctrl/step0075000/eval200fix/metrics.json"
+      }
+    ],
+    "config": {
+      "architecture": "latent_cnn_unet_v1",
+      "channels": [
+        192,
+        384,
+        576
+      ],
+      "num_res_blocks": 2,
+      "num_writers": 10,
+      "std_soft_root": "exp-std/data/std_soft_glyphs_v1",
+      "std_soft_eval_sigma": null,
+      "data_csv": "exp-std/csv/train_top10_aug_sym.csv"
+    }
+  },
+  {
+    "run": "assets/results/unet_dic/C_stage_cond_adapter/20261018-092206-Unet-flow",
+    "checkpoints": [
+      {
+        "step": 65000,
+        "path": "assets/results/unet_dic/C_stage_cond_adapter/20261018-092206-Unet-flow/checkpoints/0065000.pt",
+        "bytes": 1166359241,
+        "zip_complete": true
+      },
+      {
+        "step": 75000,
+        "path": "assets/results/unet_dic/C_stage_cond_adapter/20261018-092206-Unet-flow/checkpoints/0075000.pt",
+        "bytes": 1166359241,
+        "zip_complete": true
+      }
+    ],
+    "metrics": [
+      {
+        "n": 187,
+        "ssim": 0.605873998435094,
+        "lpips": 0.3286089414262517,
+        "ink_iou": 0.32140113357999806,
+        "frag": 2.3679113284042743,
+        "step": 65000,
+        "path": "assets/results/unet_dic/C_stage_cond_adapter/20261018-092206-Unet-flow/eval_samples_ctrl/step0065000/eval200fix/metrics.json"
+      },
+      {
+        "n": 187,
+        "ssim": 0.6042583365468771,
+        "lpips": 0.33028969260301183,
+        "ink_iou": 0.31739473539022095,
+        "frag": 2.4447529769420804,
+        "step": 75000,
+        "path": "assets/results/unet_dic/C_stage_cond_adapter/20261018-092206-Unet-flow/eval_samples_ctrl/step0075000/eval200fix/metrics.json"
+      }
+    ],
+    "config": {
+      "architecture": "latent_cnn_unet_v1",
+      "channels": [
+        192,
+        384,
+        576
+      ],
+      "num_res_blocks": 2,
+      "num_writers": 10,
+      "std_soft_root": "exp-std/data/std_soft_glyphs_v1",
+      "std_soft_eval_sigma": null,
+      "data_csv": "exp-std/csv/train_top10_aug_sym.csv"
+    }
+  },
+  {
+    "run": "assets/results/unet_dic/C_stage_cond_independent/20261018-115725-Unet-flow",
+    "checkpoints": [
+      {
+        "step": 65000,
+        "path": "assets/results/unet_dic/C_stage_cond_independent/20261018-115725-Unet-flow/checkpoints/0065000.pt",
+        "bytes": 1165103895,
+        "zip_complete": true
+      },
+      {
+        "step": 75000,
+        "path": "assets/results/unet_dic/C_stage_cond_independent/20261018-115725-Unet-flow/checkpoints/0075000.pt",
+        "bytes": 1165103895,
+        "zip_complete": true
+      }
+    ],
+    "metrics": [
+      {
+        "n": 187,
+        "ssim": 0.6060667462126164,
+        "lpips": 0.3287884778876037,
+        "ink_iou": 0.32116801903462344,
+        "frag": 2.377237380828265,
+        "step": 65000,
+        "path": "assets/results/unet_dic/C_stage_cond_independent/20261018-115725-Unet-flow/eval_samples_ctrl/step0065000/eval200fix/metrics.json"
+      },
+      {
+        "n": 187,
+        "ssim": 0.6044880114029452,
+        "lpips": 0.3300105768011853,
+        "ink_iou": 0.3181442853794151,
+        "frag": 2.4545244620576656,
+        "step": 75000,
+        "path": "assets/results/unet_dic/C_stage_cond_independent/20261018-115725-Unet-flow/eval_samples_ctrl/step0075000/eval200fix/metrics.json"
+      }
+    ],
+    "config": {
+      "architecture": "latent_cnn_unet_v1",
+      "channels": [
+        192,
+        384,
+        576
+      ],
+      "num_res_blocks": 2,
+      "num_writers": 10,
+      "std_soft_root": "exp-std/data/std_soft_glyphs_v1",
+      "std_soft_eval_sigma": null,
+      "data_csv": "exp-std/csv/train_top10_aug_sym.csv"
+    }
+  },
+  {
+    "run": "assets/results/unet_deep_sym4_114m_60m/20261019-011647-Unet-flow",
+    "checkpoints": [
+      {
+        "step": 50000,
+        "path": "assets/results/unet_deep_sym4_114m_60m/20261019-011647-Unet-flow/checkpoints/0050000.pt",
+        "bytes": 1824546895,
+        "zip_complete": true
+      },
+      {
+        "step": 75000,
+        "path": "assets/results/unet_deep_sym4_114m_60m/20261019-011647-Unet-flow/checkpoints/0075000.pt",
+        "bytes": 1824546895,
+        "zip_complete": true
+      },
+      {
+        "step": 85000,
+        "path": "assets/results/unet_deep_sym4_114m_60m/20261019-011647-Unet-flow/checkpoints/0085000.pt",
+        "bytes": 1824546895,
+        "zip_complete": true
+      }
+    ],
+    "metrics": [
+      {
+        "n": 187,
+        "ssim": 0.6029270807433375,
+        "lpips": 0.32749523863913543,
+        "ink_iou": 0.3320231930295674,
+        "frag": 1.7023027014918244,
+        "step": 50000,
+        "path": "assets/results/unet_deep_sym4_114m_60m/20261019-011647-Unet-flow/eval_samples_ctrl/step0050000/eval200fix/metrics.json"
+      },
+      {
+        "n": 187,
+        "ssim": 0.6132465006237009,
+        "lpips": 0.3227688098017545,
+        "ink_iou": 0.33086615452382245,
+        "frag": 2.145316212438395,
+        "step": 75000,
+        "path": "assets/results/unet_deep_sym4_114m_60m/20261019-011647-Unet-flow/eval_samples_ctrl/step0075000/eval200fix/metrics.json"
+      },
+      {
+        "n": 187,
+        "ssim": 0.6129061991513742,
+        "lpips": 0.3208561253380329,
+        "ink_iou": 0.3377803173006244,
+        "frag": 2.15268614589256,
+        "step": 85000,
+        "path": "assets/results/unet_deep_sym4_114m_60m/20261019-011647-Unet-flow/eval_samples_ctrl/step0085000/eval200fix/metrics.json"
+      }
+    ],
+    "config": {
+      "architecture": "latent_cnn_unet_v1",
+      "channels": [
+        192,
+        384,
+        576
+      ],
+      "num_res_blocks": 4,
+      "num_writers": 10,
+      "std_soft_root": "exp-std/data/std_soft_glyphs_v1",
+      "std_soft_eval_sigma": null,
+      "data_csv": "exp-std/csv/train_top10_aug_sym.csv"
+    }
+  },
+  {
+    "run": "assets/results/calliflow_v2_120k/20261018-193055-Unet-flow",
+    "checkpoints": [
+      {
+        "step": 50000,
+        "path": "assets/results/calliflow_v2_120k/20261018-193055-Unet-flow/checkpoints/0050000.pt",
+        "bytes": 1012431011,
+        "zip_complete": true
+      }
+    ],
+    "metrics": [
+      {
+        "n": 187,
+        "ssim": 0.5860003480166984,
+        "lpips": 0.34748163149956074,
+        "ink_iou": 0.2905008025414261,
+        "frag": 2.098697881287736,
+        "step": 50000,
+        "path": "assets/results/calliflow_v2_120k/20261018-193055-Unet-flow/eval_samples_ctrl/step0050000/eval200fix/metrics.json"
+      }
+    ],
+    "config": {
+      "architecture": "calliflow_v2",
+      "channels": [
+        128,
+        256,
+        384
+      ],
+      "num_res_blocks": 4,
+      "num_writers": 10,
+      "std_soft_root": "exp-std/data/std_soft_glyphs_v1",
+      "std_soft_eval_sigma": null,
+      "data_csv": "exp-std/csv/train_top10_aug_sym.csv"
+    }
+  },
+  {
+    "run": "assets/results/qwen_cond_arm_a/20261025-030654-Unet-flow",
+    "checkpoints": [
+      {
+        "step": 87500,
+        "path": "assets/results/qwen_cond_arm_a/20261025-030654-Unet-flow/checkpoints/0087500.pt",
+        "bytes": 1824547279,
+        "zip_complete": true
+      }
+    ],
+    "metrics": [],
+    "config": {
+      "architecture": "latent_cnn_unet_v1",
+      "channels": [
+        192,
+        384,
+        576
+      ],
+      "num_res_blocks": 4,
+      "num_writers": 10,
+      "std_soft_root": "exp-std/data/std_soft_glyphs_v1",
+      "std_soft_eval_sigma": null,
+      "data_csv": "tools/qwen_condition/train_subset5k.csv"
+    }
+  },
+  {
+    "run": "assets/results/qwen_cond_arm_a/20261025-033733-Unet-flow",
+    "checkpoints": [
+      {
+        "step": 87500,
+        "path": "assets/results/qwen_cond_arm_a/20261025-033733-Unet-flow/checkpoints/0087500.pt",
+        "bytes": 1824547279,
+        "zip_complete": true
+      },
+      {
+        "step": 90000,
+        "path": "assets/results/qwen_cond_arm_a/20261025-033733-Unet-flow/checkpoints/0090000.pt",
+        "bytes": 1824547279,
+        "zip_complete": true
+      }
+    ],
+    "metrics": [],
+    "config": {
+      "architecture": "latent_cnn_unet_v1",
+      "channels": [
+        192,
+        384,
+        576
+      ],
+      "num_res_blocks": 4,
+      "num_writers": 10,
+      "std_soft_root": "exp-std/data/std_soft_glyphs_v1",
+      "std_soft_eval_sigma": null,
+      "data_csv": "tools/qwen_condition/train_subset5k.csv"
+    }
+  },
+  {
+    "run": "assets/results/qwen_cond_arm_c/20261025-042652-Unet-flow",
+    "checkpoints": [
+      {
+        "step": 87500,
+        "path": "assets/results/qwen_cond_arm_c/20261025-042652-Unet-flow/checkpoints/0087500.pt",
+        "bytes": 1824556559,
+        "zip_complete": true
+      },
+      {
+        "step": 90000,
+        "path": "assets/results/qwen_cond_arm_c/20261025-042652-Unet-flow/checkpoints/0090000.pt",
+        "bytes": 1824556559,
+        "zip_complete": true
+      }
+    ],
+    "metrics": [],
+    "config": {
+      "architecture": "latent_cnn_unet_v1",
+      "channels": [
+        192,
+        384,
+        576
+      ],
+      "num_res_blocks": 4,
+      "num_writers": 10,
+      "std_soft_root": "exp-std/data/std_soft_glyphs_v1",
+      "std_soft_eval_sigma": null,
+      "data_csv": "tools/qwen_condition/train_subset5k.csv"
+    }
+  }
+]

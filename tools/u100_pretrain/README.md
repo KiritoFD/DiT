@@ -24,7 +24,12 @@
 | `eval_offline.py` | 检查点离线三口径评测（eval200fix σ.65 / test200 σ0 / val100 σ0；--raw-ids、--identity-callig、--allow-legacy-ema、--sets） |
 | `eval_round1.py` | 笔宽 EDT 脊线 P10/P50/P90+W1 + DINO 探针 Writer Top1/Margin |
 | `build_probe.py` | 独立 writer 探针（VAE 解码域训练图 → DINO → logistic，留出验证） |
-| `exp_writer_swap.py` | 固定 STD/噪声 × 书家行切换反事实（探针判定 + 散度 + 海报；执行有挂因待修） |
+| `exp_writer_swap.py` | 已改为原生FM采样入口；仅合法书体组合，同字符同噪声，修复积分方向/时间尺度/PNG维度 |
+
+当前P2审计入口：`python -m tools.p2_audit.run --checkpoint <P2.pt> --csv <val.csv> --out <out>`。
+拆分为`audit`（固定目标FM）、`generate`（原生采样）、`score`（生成结束后评分）；不自行实现第二套ODE。
+`build_probe.py`已修复0–1图像重复除255；旧probe不可用，修复版保留`input_contract`。现有名为Top10的特征库实含六个组号，
+不能当十书家质心；新评分不读取该库，质心入口遇到缺类立即报错。详见`ANALYSIS/p2_execution_20261025.md`。
 
 ## 风格结构诊断（2026-10-25 轮，全部纯分析）
 

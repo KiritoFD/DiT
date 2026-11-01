@@ -1,0 +1,50 @@
+{
+ "tag": "D3_11000",
+ "checkpoint": "assets/d_20261101/execution/runs/D3/checkpoints/0011000.pt",
+ "step": 11000,
+ "disabled_injection_sites": [],
+ "off_sites_this_eval": [],
+ "decoder_override": null,
+ "panel": "assets/u100_pretrain_20261024/validation_val100.csv",
+ "panel_kind": "eval200fix",
+ "n_png": 100,
+ "content": {
+  "n": 100,
+  "ssim": 0.592727809215121,
+  "mse": 0.804107537381351,
+  "lpips": 0.3476736179366708,
+  "ink_iou": 0.2847275656425541,
+  "skel_iou": 0.025331810435552774,
+  "frag": 2.7632371696373097,
+  "hole": 0.05354782729955241
+ },
+ "ocr": {
+  "n": 90,
+  "top1": 78.89,
+  "top5": 88.89
+ },
+ "ink": {
+  "width_p50": 7.9475,
+  "width_p90": 16.9418,
+  "width_jump": 0.6268,
+  "ink_ratio": 0.1805,
+  "fragment_share": 0.0037
+ },
+ "writer": {
+  "grid": {
+   "chars": 30,
+   "writers": 10,
+   "seeds": 3,
+   "rows": 900
+  },
+  "ocr": {
+   "n": 900,
+   "top1": 96.0,
+   "top5": 98.33
+  },
+  "direction": 0.5372,
+  "amplitude": 0.6527,
+  "n_pairs": 1350,
+  "verdict_hint": "writer swap moves in the RIGHT direction"
+ }
+}

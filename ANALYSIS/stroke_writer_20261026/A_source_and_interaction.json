@@ -1,0 +1,114 @@
+{
+  "features": [
+    "asym_ud",
+    "asym_lr",
+    "grad_mag",
+    "turn_angle",
+    "end_area",
+    "end_elong",
+    "n_branches",
+    "orient_peak",
+    "mass",
+    "ink_frac"
+  ],
+  "n_source_groups": 67,
+  "A1_source_control": {
+    "楷": {
+      "end": {
+        "n_events": 213196,
+        "within_source": 0.106,
+        "cross_writer_same_source": 0.1339,
+        "n_pairs_same_source": 45,
+        "cross_writer_diff_source": null,
+        "n_pairs_diff_source": 0
+      },
+      "junction": {
+        "n_events": 240727,
+        "within_source": 0.3071,
+        "cross_writer_same_source": 0.325,
+        "n_pairs_same_source": 45,
+        "cross_writer_diff_source": null,
+        "n_pairs_diff_source": 0
+      },
+      "turn": {
+        "n_events": 251912,
+        "within_source": 0.0823,
+        "cross_writer_same_source": 0.1018,
+        "n_pairs_same_source": 45,
+        "cross_writer_diff_source": null,
+        "n_pairs_diff_source": 0
+      }
+    },
+    "行": {
+      "end": {
+        "n_events": 235900,
+        "within_source": 0.1866,
+        "cross_writer_same_source": 0.2181,
+        "n_pairs_same_source": 45,
+        "cross_writer_diff_source": null,
+        "n_pairs_diff_source": 0
+      },
+      "junction": {
+        "n_events": 309037,
+        "within_source": 0.5007,
+        "cross_writer_same_source": 0.6763,
+        "n_pairs_same_source": 45,
+        "cross_writer_diff_source": null,
+        "n_pairs_diff_source": 0
+      },
+      "turn": {
+        "n_events": 320519,
+        "within_source": 0.1425,
+        "cross_writer_same_source": 0.1493,
+        "n_pairs_same_source": 45,
+        "cross_writer_diff_source": null,
+        "n_pairs_diff_source": 0
+      }
+    },
+    "隶": {
+      "end": {
+        "n_events": 33821,
+        "within_source": 0.2234,
+        "cross_writer_same_source": 0.6122,
+        "n_pairs_same_source": 1,
+        "cross_writer_diff_source": 0.5787,
+        "n_pairs_diff_source": 2,
+        "separation_different_source_only": 2.59
+      },
+      "junction": {
+        "n_events": 44073,
+        "within_source": 0.465,
+        "cross_writer_same_source": 0.2978,
+        "n_pairs_same_source": 1,
+        "cross_writer_diff_source": 0.6045,
+        "n_pairs_diff_source": 2,
+        "separation_different_source_only": 1.3
+      },
+      "turn": {
+        "n_events": 44735,
+        "within_source": 0.0861,
+        "cross_writer_same_source": 0.4694,
+        "n_pairs_same_source": 1,
+        "cross_writer_diff_source": 0.1238,
+        "n_pairs_diff_source": 2,
+        "separation_different_source_only": 1.438
+      }
+    }
+  },
+  "A3_interaction": {
+    "楷": {
+      "n_writers": 10,
+      "observed_cos_train_vs_heldout": 0.9996,
+      "null_cos_shuffled_writer": 0.0156,
+      "interaction_magnitude_ratio": 1.1797,
+      "beats_null": true
+    },
+    "行": {
+      "n_writers": 10,
+      "observed_cos_train_vs_heldout": 0.9987,
+      "null_cos_shuffled_writer": 0.1485,
+      "interaction_magnitude_ratio": 1.1524,
+      "beats_null": true
+    }
+  }
+}

@@ -1,0 +1,90 @@
+{
+ "dir": "assets/milestones_samples/S0_50k",
+ "n_ocr": 10,
+ "ocr_top1": 80.0,
+ "ocr_top5": 80.0,
+ "n_ssim": 10,
+ "ssim_g_gt_mean": 0.6641,
+ "rows": [
+  {
+   "idx": 0,
+   "char": "用",
+   "pred": "用",
+   "top1": 1,
+   "top5": 1,
+   "ssim": 0.6752
+  },
+  {
+   "idx": 10,
+   "char": "兀",
+   "pred": "兀",
+   "top1": 1,
+   "top5": 1,
+   "ssim": 0.7878
+  },
+  {
+   "idx": 20,
+   "char": "速",
+   "pred": "速",
+   "top1": 1,
+   "top5": 1,
+   "ssim": 0.5686
+  },
+  {
+   "idx": 30,
+   "char": "聲",
+   "pred": "聲",
+   "top1": 1,
+   "top5": 1,
+   "ssim": 0.6267
+  },
+  {
+   "idx": 40,
+   "char": "薪",
+   "pred": "鮮",
+   "top1": 0,
+   "top5": 0,
+   "ssim": 0.5913
+  },
+  {
+   "idx": 50,
+   "char": "朽",
+   "pred": "朽",
+   "top1": 1,
+   "top5": 1,
+   "ssim": 0.7218
+  },
+  {
+   "idx": 60,
+   "char": "与",
+   "pred": "与",
+   "top1": 1,
+   "top5": 1,
+   "ssim": 0.6625
+  },
+  {
+   "idx": 70,
+   "char": "地",
+   "pred": "地",
+   "top1": 1,
+   "top5": 1,
+   "ssim": 0.7201
+  },
+  {
+   "idx": 80,
+   "char": "兼",
+   "pred": "兼",
+   "top1": 1,
+   "top5": 1,
+   "ssim": 0.8003
+  },
+  {
+   "idx": 90,
+   "char": "極",
+   "pred": "恒",
+   "top1": 0,
+   "top5": 0,
+   "ssim": 0.4867
+  }
+ ]
+}

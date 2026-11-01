@@ -1,0 +1,64 @@
+{
+ "MoYi-12ch@50k": {
+  "E-G": {
+   "n_queries": 181,
+   "macro_writer": {
+    "auc": 0.7637439070172698,
+    "eer": 0.26542799543627915,
+    "ap": 0.42916231658945014,
+    "tar_at_eval_far01": 0.24354008509584157
+   },
+   "pooled": {
+    "auc": 0.7517548089070936,
+    "eer": 0.3114430706556934,
+    "tar_at_eval_far01": 0.13320096685082872,
+    "eer_threshold": 0.3503193259239197
+   },
+   "interpretation": "EER/TAR from evaluation ROC, not a calibrated deployment threshold; pair scores are correlated"
+  },
+  "ocr": {
+   "n": 172,
+   "top1": 55.23,
+   "top5": 66.28
+  },
+  "ink": {
+   "width_p50": 8.1197,
+   "width_p90": 17.0224,
+   "width_jump": 0.6223,
+   "ink_ratio": 0.1925,
+   "fragment_share": 0.003
+  },
+  "n_png": 187
+ },
+ "MoYi-4ch@80k": {
+  "E-G": {
+   "n_queries": 181,
+   "macro_writer": {
+    "auc": 0.8296552194144402,
+    "eer": 0.197160974992565,
+    "ap": 0.5815371969012608,
+    "tar_at_eval_far01": 0.4270994676612284
+   },
+   "pooled": {
+    "auc": 0.8271311654404486,
+    "eer": 0.23749869325730016,
+    "tar_at_eval_far01": 0.26579765193370164,
+    "eer_threshold": 0.3849668502807617
+   },
+   "interpretation": "EER/TAR from evaluation ROC, not a calibrated deployment threshold; pair scores are correlated"
+  },
+  "ocr": {
+   "n": 172,
+   "top1": 73.26,
+   "top5": 80.23
+  },
+  "ink": {
+   "width_p50": 8.4868,
+   "width_p90": 17.7728,
+   "width_jump": 0.6235,
+   "ink_ratio": 0.199,
+   "fragment_share": 0.002
+  },
+  "n_png": 187
+ }
+}

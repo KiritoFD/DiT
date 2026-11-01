@@ -16,6 +16,7 @@ def initialize(model, config):
     path = Path(config.initialize_from)
     ck = torch.load(path, map_location='cpu', weights_only=False)
     old = checkpoint_config(ck)
+    protocol_changes={}
     for key in ('architecture', 'channels', 'num_res_blocks', 'decoder_res_blocks',
                 'num_writers', 'num_scripts', 'writer_mode', 'writer_film_rank',
                 'decouple_writer_condition', 'stage_specific_cond', 'stage_cond_mode',
@@ -25,7 +26,10 @@ def initialize(model, config):
         a, b = getattr(old, key), getattr(config, key)
         if isinstance(a, (list, tuple)): a = tuple(a)
         if isinstance(b, (list, tuple)): b = tuple(b)
-        if a != b: raise ValueError('Shared stage transfer changed ' + key)
+        if a != b:
+            if key=='std_shape_aug' and {a,b}<={'strong','mild'}:
+                protocol_changes[key]={'source':a,'target':b}
+            else:raise ValueError('Shared stage transfer changed ' + key)
     for key in ('font_remap_json', 'char_remap_json'):
         if json.loads(Path(getattr(old, key)).read_text(encoding='utf-8')) != \
            json.loads(Path(getattr(config, key)).read_text(encoding='utf-8')):
@@ -38,4 +42,5 @@ def initialize(model, config):
     return dict(path=str(path), sha256=hashlib.sha256(path.read_bytes()).hexdigest(),
                 source_step=int(ck['train_steps']), state=config.initialize_state,
                 loaded=len(source), added=[], new_clock=True, optimizer_reset=True,
-                ema_reset=True, all_tensors_equal=True)
+                ema_reset=True, all_tensors_equal=True,training_protocol_changes=protocol_changes,
+                std_shape_step_offset=config.std_shape_step_offset)

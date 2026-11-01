@@ -1,0 +1,175 @@
+{
+  "cfg1.0": {
+    "n": 100,
+    "writer_micro": 0.25,
+    "writer_macro": 0.25,
+    "margin": -0.05986225977540016,
+    "judge_caveat": "Frozen DINO logistic probe: image-level holdout, not strict character/source holdout; not a sufficient teacher gate",
+    "gt_writer_micro": 0.24,
+    "gt_writer_margin": -0.057846881449222565,
+    "roundtrip_gt_micro": 0.32,
+    "roundtrip_gt_margin": -0.02582603506743908,
+    "ssim": 0.5944160332117049,
+    "lpips": 0.34890641406178474,
+    "ink_iou": 0.2809318151931532,
+    "frag": 2.3051464305160607,
+    "soft_ink": 1.0490077593922615,
+    "width_w1": 0.02626694290877043,
+    "width_p50": 0.05395869047856368,
+    "gt_width_p50": 0.05662107217268895,
+    "frag_median": 1.0
+  },
+  "cfg1.2": {
+    "n": 100,
+    "writer_micro": 0.31,
+    "writer_macro": 0.30999999999999994,
+    "margin": -0.052697405219078064,
+    "judge_caveat": "Frozen DINO logistic probe: image-level holdout, not strict character/source holdout; not a sufficient teacher gate",
+    "gt_writer_micro": 0.24,
+    "gt_writer_margin": -0.057846881449222565,
+    "ink_matched_writer_micro": 0.31,
+    "ink_matched_margin": -0.060701265931129456,
+    "ink_matched_margin_delta": {
+      "mean": -0.0008390095829963685,
+      "ci95": [
+        -0.01820923787276619,
+        0.013975429865626651
+      ],
+      "n": 100,
+      "n_chars": 98
+    },
+    "ink_match_max_mass_residual": 0.0003583058714866638,
+    "ink_match_caveat": "Fractional grayscale erosion/dilation matching soft ink; changes geometry and is not proof of genuine style",
+    "ssim": 0.5964531961447513,
+    "lpips": 0.3468531450629234,
+    "ink_iou": 0.28657877750369753,
+    "frag": 2.2566510423117476,
+    "soft_ink": 1.0549693983793258,
+    "width_w1": 0.02567495426179611,
+    "width_p50": 0.05519834153597228,
+    "gt_width_p50": 0.05662107217268895,
+    "frag_median": 1.0916666666666668,
+    "paired_delta": {
+      "margin": {
+        "mean": 0.0071648420393466946,
+        "ci95": [
+          -0.004597450412700281,
+          0.018599015384532357
+        ],
+        "n": 100,
+        "n_chars": 98
+      },
+      "correct": {
+        "mean": 0.06,
+        "ci95": [
+          0.0,
+          0.12
+        ],
+        "n": 100,
+        "n_chars": 98
+      }
+    }
+  },
+  "cfg1.4": {
+    "n": 100,
+    "writer_micro": 0.32,
+    "writer_macro": 0.31999999999999995,
+    "margin": -0.039652131497859955,
+    "judge_caveat": "Frozen DINO logistic probe: image-level holdout, not strict character/source holdout; not a sufficient teacher gate",
+    "gt_writer_micro": 0.24,
+    "gt_writer_margin": -0.057846881449222565,
+    "ink_matched_writer_micro": 0.35,
+    "ink_matched_margin": -0.04511463642120361,
+    "ink_matched_margin_delta": {
+      "mean": 0.014747617170214652,
+      "ci95": [
+        -0.004676456944578711,
+        0.032060515781370355
+      ],
+      "n": 100,
+      "n_chars": 98
+    },
+    "ink_match_max_mass_residual": 0.0004913359880447388,
+    "ink_match_caveat": "Fractional grayscale erosion/dilation matching soft ink; changes geometry and is not proof of genuine style",
+    "ssim": 0.5962628131123092,
+    "lpips": 0.3463125783205032,
+    "ink_iou": 0.2896706685222669,
+    "frag": 2.1055695888966484,
+    "soft_ink": 1.0722338496148587,
+    "width_w1": 0.026092416658628905,
+    "width_p50": 0.05656851953910021,
+    "gt_width_p50": 0.05662107217268895,
+    "frag_median": 1.0,
+    "paired_delta": {
+      "margin": {
+        "mean": 0.020210121721029282,
+        "ci95": [
+          0.004003218781312599,
+          0.034663059406020505
+        ],
+        "n": 100,
+        "n_chars": 98
+      },
+      "correct": {
+        "mean": 0.07,
+        "ci95": [
+          0.0,
+          0.1471323529411764
+        ],
+        "n": 100,
+        "n_chars": 98
+      }
+    }
+  },
+  "cfg1.6": {
+    "n": 100,
+    "writer_micro": 0.35,
+    "writer_macro": 0.35,
+    "margin": -0.03304560109972954,
+    "judge_caveat": "Frozen DINO logistic probe: image-level holdout, not strict character/source holdout; not a sufficient teacher gate",
+    "gt_writer_micro": 0.24,
+    "gt_writer_margin": -0.057846881449222565,
+    "ink_matched_writer_micro": 0.36,
+    "ink_matched_margin": -0.04116891324520111,
+    "ink_matched_margin_delta": {
+      "mean": 0.01869334079325199,
+      "ci95": [
+        0.0009821880555131429,
+        0.037373687062716605
+      ],
+      "n": 100,
+      "n_chars": 98
+    },
+    "ink_match_max_mass_residual": 0.00044579803943634033,
+    "ink_match_caveat": "Fractional grayscale erosion/dilation matching soft ink; changes geometry and is not proof of genuine style",
+    "ssim": 0.5960627164788455,
+    "lpips": 0.34597245045006275,
+    "ink_iou": 0.2924456547095668,
+    "frag": 1.986079504718663,
+    "soft_ink": 1.088680104315281,
+    "width_w1": 0.026566778628355926,
+    "width_p50": 0.05619874210128538,
+    "gt_width_p50": 0.05662107217268895,
+    "frag_median": 1.0,
+    "paired_delta": {
+      "margin": {
+        "mean": 0.026816651821136475,
+        "ci95": [
+          0.01179740692495878,
+          0.04363642198425166
+        ],
+        "n": 100,
+        "n_chars": 98
+      },
+      "correct": {
+        "mean": 0.1,
+        "ci95": [
+          0.00980392156862745,
+          0.18627450980392157
+        ],
+        "n": 100,
+        "n_chars": 98
+      }
+    }
+  }
+}

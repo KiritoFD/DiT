@@ -1,0 +1,851 @@
+{
+  "summary": {
+    "n": 120,
+    "writer_micro": 0.30833333333333335,
+    "writer_macro": 0.3083333333333334,
+    "margin": -0.05480724200606346,
+    "judge_caveat": "Frozen DINO logistic probe: image-level holdout, not strict character/source holdout; not a sufficient teacher gate"
+  },
+  "per_image": [
+    {
+      "idx": 0,
+      "char": "用",
+      "writer": 0,
+      "correct": false,
+      "margin": -0.24384044110774994
+    },
+    {
+      "idx": 1,
+      "char": "用",
+      "writer": 1,
+      "correct": false,
+      "margin": -0.13342194259166718
+    },
+    {
+      "idx": 2,
+      "char": "用",
+      "writer": 2,
+      "correct": true,
+      "margin": 0.06209409236907959
+    },
+    {
+      "idx": 3,
+      "char": "用",
+      "writer": 3,
+      "correct": false,
+      "margin": -0.0010740160942077637
+    },
+    {
+      "idx": 4,
+      "char": "用",
+      "writer": 4,
+      "correct": false,
+      "margin": -0.13419917225837708
+    },
+    {
+      "idx": 5,
+      "char": "用",
+      "writer": 5,
+      "correct": false,
+      "margin": -0.0628538429737091
+    },
+    {
+      "idx": 6,
+      "char": "用",
+      "writer": 6,
+      "correct": true,
+      "margin": 0.09534278512001038
+    },
+    {
+      "idx": 7,
+      "char": "用",
+      "writer": 7,
+      "correct": true,
+      "margin": 0.04979950189590454
+    },
+    {
+      "idx": 8,
+      "char": "用",
+      "writer": 8,
+      "correct": false,
+      "margin": -0.05765433609485626
+    },
+    {
+      "idx": 9,
+      "char": "用",
+      "writer": 9,
+      "correct": false,
+      "margin": -0.19703255593776703
+    },
+    {
+      "idx": 10,
+      "char": "報",
+      "writer": 0,
+      "correct": false,
+      "margin": -0.05811603367328644
+    },
+    {
+      "idx": 11,
+      "char": "報",
+      "writer": 1,
+      "correct": false,
+      "margin": -0.03991071879863739
+    },
+    {
+      "idx": 12,
+      "char": "報",
+      "writer": 2,
+      "correct": false,
+      "margin": -0.0617779940366745
+    },
+    {
+      "idx": 13,
+      "char": "報",
+      "writer": 3,
+      "correct": false,
+      "margin": -0.09440761059522629
+    },
+    {
+      "idx": 14,
+      "char": "報",
+      "writer": 4,
+      "correct": false,
+      "margin": -0.05646415799856186
+    },
+    {
+      "idx": 15,
+      "char": "報",
+      "writer": 5,
+      "correct": true,
+      "margin": 0.02090209722518921
+    },
+    {
+      "idx": 16,
+      "char": "報",
+      "writer": 6,
+      "correct": true,
+      "margin": 0.046297237277030945
+    },
+    {
+      "idx": 17,
+      "char": "報",
+      "writer": 7,
+      "correct": false,
+      "margin": -0.079130157828331
+    },
+    {
+      "idx": 18,
+      "char": "報",
+      "writer": 8,
+      "correct": true,
+      "margin": 0.07453900575637817
+    },
+    {
+      "idx": 19,
+      "char": "報",
+      "writer": 9,
+      "correct": false,
+      "margin": -0.11657258868217468
+    },
+    {
+      "idx": 20,
+      "char": "羲",
+      "writer": 0,
+      "correct": false,
+      "margin": -0.04935680329799652
+    },
+    {
+      "idx": 21,
+      "char": "羲",
+      "writer": 1,
+      "correct": true,
+      "margin": 0.13386885821819305
+    },
+    {
+      "idx": 22,
+      "char": "羲",
+      "writer": 2,
+      "correct": false,
+      "margin": -0.1321636587381363
+    },
+    {
+      "idx": 23,
+      "char": "羲",
+      "writer": 3,
+      "correct": false,
+      "margin": -0.053389132022857666
+    },
+    {
+      "idx": 24,
+      "char": "羲",
+      "writer": 4,
+      "correct": false,
+      "margin": -0.04042787849903107
+    },
+    {
+      "idx": 25,
+      "char": "羲",
+      "writer": 5,
+      "correct": false,
+      "margin": -0.05521385371685028
+    },
+    {
+      "idx": 26,
+      "char": "羲",
+      "writer": 6,
+      "correct": true,
+      "margin": 0.1363002061843872
+    },
+    {
+      "idx": 27,
+      "char": "羲",
+      "writer": 7,
+      "correct": false,
+      "margin": -0.11294425278902054
+    },
+    {
+      "idx": 28,
+      "char": "羲",
+      "writer": 8,
+      "correct": false,
+      "margin": -0.00598791241645813
+    },
+    {
+      "idx": 29,
+      "char": "羲",
+      "writer": 9,
+      "correct": false,
+      "margin": -0.3161618411540985
+    },
+    {
+      "idx": 30,
+      "char": "旬",
+      "writer": 0,
+      "correct": false,
+      "margin": -0.02575431764125824
+    },
+    {
+      "idx": 31,
+      "char": "旬",
+      "writer": 1,
+      "correct": false,
+      "margin": -0.07963715493679047
+    },
+    {
+      "idx": 32,
+      "char": "旬",
+      "writer": 2,
+      "correct": false,
+      "margin": -0.2610464096069336
+    },
+    {
+      "idx": 33,
+      "char": "旬",
+      "writer": 3,
+      "correct": true,
+      "margin": 0.17020675539970398
+    },
+    {
+      "idx": 34,
+      "char": "旬",
+      "writer": 4,
+      "correct": false,
+      "margin": -0.1740369200706482
+    },
+    {
+      "idx": 35,
+      "char": "旬",
+      "writer": 5,
+      "correct": false,
+      "margin": -0.1168072521686554
+    },
+    {
+      "idx": 36,
+      "char": "旬",
+      "writer": 6,
+      "correct": false,
+      "margin": -0.10698247700929642
+    },
+    {
+      "idx": 37,
+      "char": "旬",
+      "writer": 7,
+      "correct": false,
+      "margin": -0.18174560368061066
+    },
+    {
+      "idx": 38,
+      "char": "旬",
+      "writer": 8,
+      "correct": true,
+      "margin": 0.06415699422359467
+    },
+    {
+      "idx": 39,
+      "char": "旬",
+      "writer": 9,
+      "correct": true,
+      "margin": 0.1015557199716568
+    },
+    {
+      "idx": 40,
+      "char": "屍",
+      "writer": 0,
+      "correct": true,
+      "margin": 0.4306648373603821
+    },
+    {
+      "idx": 41,
+      "char": "屍",
+      "writer": 1,
+      "correct": true,
+      "margin": 0.0014886558055877686
+    },
+    {
+      "idx": 42,
+      "char": "屍",
+      "writer": 2,
+      "correct": true,
+      "margin": 0.03242465853691101
+    },
+    {
+      "idx": 43,
+      "char": "屍",
+      "writer": 3,
+      "correct": false,
+      "margin": -0.025311559438705444
+    },
+    {
+      "idx": 44,
+      "char": "屍",
+      "writer": 4,
+      "correct": false,
+      "margin": -0.14097389578819275
+    },
+    {
+      "idx": 45,
+      "char": "屍",
+      "writer": 5,
+      "correct": true,
+      "margin": 0.2909313440322876
+    },
+    {
+      "idx": 46,
+      "char": "屍",
+      "writer": 6,
+      "correct": false,
+      "margin": -0.03363509476184845
+    },
+    {
+      "idx": 47,
+      "char": "屍",
+      "writer": 7,
+      "correct": false,
+      "margin": -0.14805658161640167
+    },
+    {
+      "idx": 48,
+      "char": "屍",
+      "writer": 8,
+      "correct": true,
+      "margin": 0.012899637222290039
+    },
+    {
+      "idx": 49,
+      "char": "屍",
+      "writer": 9,
+      "correct": true,
+      "margin": 0.018979474902153015
+    },
+    {
+      "idx": 50,
+      "char": "吴",
+      "writer": 0,
+      "correct": true,
+      "margin": 0.2412218302488327
+    },
+    {
+      "idx": 51,
+      "char": "吴",
+      "writer": 1,
+      "correct": true,
+      "margin": 0.035358235239982605
+    },
+    {
+      "idx": 52,
+      "char": "吴",
+      "writer": 2,
+      "correct": false,
+      "margin": -0.027104094624519348
+    },
+    {
+      "idx": 53,
+      "char": "吴",
+      "writer": 3,
+      "correct": false,
+      "margin": -0.13869553804397583
+    },
+    {
+      "idx": 54,
+      "char": "吴",
+      "writer": 4,
+      "correct": false,
+      "margin": -0.12054479867219925
+    },
+    {
+      "idx": 55,
+      "char": "吴",
+      "writer": 5,
+      "correct": false,
+      "margin": -0.12098747491836548
+    },
+    {
+      "idx": 56,
+      "char": "吴",
+      "writer": 6,
+      "correct": false,
+      "margin": -0.04155798256397247
+    },
+    {
+      "idx": 57,
+      "char": "吴",
+      "writer": 7,
+      "correct": false,
+      "margin": -0.07730689644813538
+    },
+    {
+      "idx": 58,
+      "char": "吴",
+      "writer": 8,
+      "correct": false,
+      "margin": -0.23255857825279236
+    },
+    {
+      "idx": 59,
+      "char": "吴",
+      "writer": 9,
+      "correct": false,
+      "margin": -0.11086121946573257
+    },
+    {
+      "idx": 60,
+      "char": "好",
+      "writer": 0,
+      "correct": false,
+      "margin": -0.008037999272346497
+    },
+    {
+      "idx": 61,
+      "char": "好",
+      "writer": 1,
+      "correct": true,
+      "margin": 0.08328498899936676
+    },
+    {
+      "idx": 62,
+      "char": "好",
+      "writer": 2,
+      "correct": false,
+      "margin": -0.22748276591300964
+    },
+    {
+      "idx": 63,
+      "char": "好",
+      "writer": 3,
+      "correct": false,
+      "margin": -0.1028582751750946
+    },
+    {
+      "idx": 64,
+      "char": "好",
+      "writer": 4,
+      "correct": false,
+      "margin": -0.1265111118555069
+    },
+    {
+      "idx": 65,
+      "char": "好",
+      "writer": 5,
+      "correct": false,
+      "margin": -0.06299209594726562
+    },
+    {
+      "idx": 66,
+      "char": "好",
+      "writer": 6,
+      "correct": false,
+      "margin": -0.030404195189476013
+    },
+    {
+      "idx": 67,
+      "char": "好",
+      "writer": 7,
+      "correct": true,
+      "margin": 0.13284966349601746
+    },
+    {
+      "idx": 68,
+      "char": "好",
+      "writer": 8,
+      "correct": false,
+      "margin": -0.1345682442188263
+    },
+    {
+      "idx": 69,
+      "char": "好",
+      "writer": 9,
+      "correct": true,
+      "margin": 0.07620967924594879
+    },
+    {
+      "idx": 70,
+      "char": "何",
+      "writer": 0,
+      "correct": true,
+      "margin": 0.0014156848192214966
+    },
+    {
+      "idx": 71,
+      "char": "何",
+      "writer": 1,
+      "correct": false,
+      "margin": -0.0746464729309082
+    },
+    {
+      "idx": 72,
+      "char": "何",
+      "writer": 2,
+      "correct": false,
+      "margin": -0.12097213417291641
+    },
+    {
+      "idx": 73,
+      "char": "何",
+      "writer": 3,
+      "correct": false,
+      "margin": -0.1239115446805954
+    },
+    {
+      "idx": 74,
+      "char": "何",
+      "writer": 4,
+      "correct": false,
+      "margin": -0.08310569822788239
+    },
+    {
+      "idx": 75,
+      "char": "何",
+      "writer": 5,
+      "correct": true,
+      "margin": 0.11987248063087463
+    },
+    {
+      "idx": 76,
+      "char": "何",
+      "writer": 6,
+      "correct": false,
+      "margin": -0.037311822175979614
+    },
+    {
+      "idx": 77,
+      "char": "何",
+      "writer": 7,
+      "correct": false,
+      "margin": -0.2943619191646576
+    },
+    {
+      "idx": 78,
+      "char": "何",
+      "writer": 8,
+      "correct": false,
+      "margin": -0.14405934512615204
+    },
+    {
+      "idx": 79,
+      "char": "何",
+      "writer": 9,
+      "correct": false,
+      "margin": -0.1415381282567978
+    },
+    {
+      "idx": 80,
+      "char": "閒",
+      "writer": 0,
+      "correct": false,
+      "margin": -0.2892301380634308
+    },
+    {
+      "idx": 81,
+      "char": "閒",
+      "writer": 1,
+      "correct": false,
+      "margin": -0.17846247553825378
+    },
+    {
+      "idx": 82,
+      "char": "閒",
+      "writer": 2,
+      "correct": false,
+      "margin": -0.11486717313528061
+    },
+    {
+      "idx": 83,
+      "char": "閒",
+      "writer": 3,
+      "correct": true,
+      "margin": 0.4448443353176117
+    },
+    {
+      "idx": 84,
+      "char": "閒",
+      "writer": 4,
+      "correct": false,
+      "margin": -0.23982270061969757
+    },
+    {
+      "idx": 85,
+      "char": "閒",
+      "writer": 5,
+      "correct": false,
+      "margin": -0.3106144070625305
+    },
+    {
+      "idx": 86,
+      "char": "閒",
+      "writer": 6,
+      "correct": false,
+      "margin": -0.4323137402534485
+    },
+    {
+      "idx": 87,
+      "char": "閒",
+      "writer": 7,
+      "correct": false,
+      "margin": -0.03910914063453674
+    },
+    {
+      "idx": 88,
+      "char": "閒",
+      "writer": 8,
+      "correct": false,
+      "margin": -0.2546933889389038
+    },
+    {
+      "idx": 89,
+      "char": "閒",
+      "writer": 9,
+      "correct": false,
+      "margin": -0.259743332862854
+    },
+    {
+      "idx": 90,
+      "char": "咽",
+      "writer": 0,
+      "correct": false,
+      "margin": -0.21568772196769714
+    },
+    {
+      "idx": 91,
+      "char": "咽",
+      "writer": 1,
+      "correct": true,
+      "margin": 0.08856913447380066
+    },
+    {
+      "idx": 92,
+      "char": "咽",
+      "writer": 2,
+      "correct": false,
+      "margin": -0.05878071486949921
+    },
+    {
+      "idx": 93,
+      "char": "咽",
+      "writer": 3,
+      "correct": true,
+      "margin": 0.0026843398809432983
+    },
+    {
+      "idx": 94,
+      "char": "咽",
+      "writer": 4,
+      "correct": false,
+      "margin": -0.05782899260520935
+    },
+    {
+      "idx": 95,
+      "char": "咽",
+      "writer": 5,
+      "correct": true,
+      "margin": 0.015120789408683777
+    },
+    {
+      "idx": 96,
+      "char": "咽",
+      "writer": 6,
+      "correct": false,
+      "margin": -0.23649145662784576
+    },
+    {
+      "idx": 97,
+      "char": "咽",
+      "writer": 7,
+      "correct": false,
+      "margin": -0.10225482285022736
+    },
+    {
+      "idx": 98,
+      "char": "咽",
+      "writer": 8,
+      "correct": true,
+      "margin": 0.10634876787662506
+    },
+    {
+      "idx": 99,
+      "char": "咽",
+      "writer": 9,
+      "correct": false,
+      "margin": -0.10037048161029816
+    },
+    {
+      "idx": 100,
+      "char": "兀",
+      "writer": 0,
+      "correct": true,
+      "margin": 0.2568862736225128
+    },
+    {
+      "idx": 101,
+      "char": "兀",
+      "writer": 1,
+      "correct": false,
+      "margin": -0.0840880274772644
+    },
+    {
+      "idx": 102,
+      "char": "兀",
+      "writer": 2,
+      "correct": false,
+      "margin": -0.1617729514837265
+    },
+    {
+      "idx": 103,
+      "char": "兀",
+      "writer": 3,
+      "correct": false,
+      "margin": -0.08445985615253448
+    },
+    {
+      "idx": 104,
+      "char": "兀",
+      "writer": 4,
+      "correct": false,
+      "margin": -0.2812246084213257
+    },
+    {
+      "idx": 105,
+      "char": "兀",
+      "writer": 5,
+      "correct": true,
+      "margin": 0.3430367410182953
+    },
+    {
+      "idx": 106,
+      "char": "兀",
+      "writer": 6,
+      "correct": false,
+      "margin": -0.16327141225337982
+    },
+    {
+      "idx": 107,
+      "char": "兀",
+      "writer": 7,
+      "correct": false,
+      "margin": -0.25734201073646545
+    },
+    {
+      "idx": 108,
+      "char": "兀",
+      "writer": 8,
+      "correct": false,
+      "margin": -0.34604811668395996
+    },
+    {
+      "idx": 109,
+      "char": "兀",
+      "writer": 9,
+      "correct": true,
+      "margin": 0.1181994378566742
+    },
+    {
+      "idx": 110,
+      "char": "桑",
+      "writer": 0,
+      "correct": false,
+      "margin": -0.09582148492336273
+    },
+    {
+      "idx": 111,
+      "char": "桑",
+      "writer": 1,
+      "correct": true,
+      "margin": 0.1593039184808731
+    },
+    {
+      "idx": 112,
+      "char": "桑",
+      "writer": 2,
+      "correct": true,
+      "margin": 0.09924851357936859
+    },
+    {
+      "idx": 113,
+      "char": "桑",
+      "writer": 3,
+      "correct": false,
+      "margin": -0.15774975717067719
+    },
+    {
+      "idx": 114,
+      "char": "桑",
+      "writer": 4,
+      "correct": true,
+      "margin": 0.05593395233154297
+    },
+    {
+      "idx": 115,
+      "char": "桑",
+      "writer": 5,
+      "correct": true,
+      "margin": 0.0014901161193847656
+    },
+    {
+      "idx": 116,
+      "char": "桑",
+      "writer": 6,
+      "correct": true,
+      "margin": 0.007596820592880249
+    },
+    {
+      "idx": 117,
+      "char": "桑",
+      "writer": 7,
+      "correct": false,
+      "margin": -0.10701934248209
+    },
+    {
+      "idx": 118,
+      "char": "桑",
+      "writer": 8,
+      "correct": false,
+      "margin": -0.08307738602161407
+    },
+    {
+      "idx": 119,
+      "char": "桑",
+      "writer": 9,
+      "correct": false,
+      "margin": -0.018184497952461243
+    }
+  ]
+}

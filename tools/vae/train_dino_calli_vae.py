@@ -669,4 +669,10 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    import sys
+    if '--decoder-only' in sys.argv:
+        sys.argv.remove('--decoder-only')
+        from tools.vae.decoder_only.train import main as decoder_main
+        decoder_main()
+    else:
+        main()

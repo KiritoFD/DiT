@@ -19,7 +19,8 @@ VAE_SCALE = 0.18215
 
 
 def dino_features(gray_batch, model, mean, std):
-    x = gray_batch.cuda().float() / 255
+    # Caller passes VAE decoder output in [0,1], not uint8 PNG values.
+    x = torch.as_tensor(gray_batch,device='cuda',dtype=torch.float32)
     x = torch.nn.functional.interpolate(x, (224, 224), mode='bicubic',
                                         align_corners=False, antialias=True).clamp_(0, 1)
     x = x.expand(-1, 3, -1, -1)
@@ -93,6 +94,7 @@ def main():
     per_writer = {int(w): float((val_pred[labels[va] == w] == w).mean()) for w in range(10)}
     torch.save(dict(coef=clf.coef_.astype(np.float32), intercept=clf.intercept_.astype(np.float32),
                     val_top1=val_top1, per_writer_val=per_writer, n_train=len(tr),
+                    input_contract='vae_gray_float_0_1_no_second_div255', classes=clf.classes_.tolist(),
                     protocol='logistic on DINOv2-B CLS of VAE-decoded Top10 train latents; no generations'), out)
     print('PROBE_READY', json.dumps(dict(val_top1=round(val_top1, 4), per_writer=per_writer)))
 

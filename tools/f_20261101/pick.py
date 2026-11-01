@@ -54,10 +54,11 @@ def score(ev):
 
 def cmd_pick_k(a):
     """K = the checkpoint with the better content that does not lose writer."""
-    cands = {p.stem: load(p) for p in map(Path, a.evals)}
+    # key by the parent directory: every eval file is named eval.json
+    cands = {Path(p).parent.name: load(p) for p in map(Path, a.evals)}
     names = sorted(cands)
     if len(names) < 2:
-        raise SystemExit('pick-k needs at least two eval.json files')
+        raise SystemExit(f'pick-k needs at least two distinct eval.json files, got {names}')
     best = max(names, key=lambda n: score(cands[n]))
     # prefer the higher-content one unless its writer score is clearly worse
     ranked = sorted(names, key=lambda n: (content_key(cands[n])['ssim'] or 0), reverse=True)

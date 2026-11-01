@@ -41,6 +41,11 @@ def loader(config,args,logger=None,resume_start_step=0):
         from .curriculum.data import replay_loader
         mixture=copy.copy(config);mixture.generic_replay_fraction=config.brush_generic_fraction
         return replay_loader(result,mixture,resume_start_step)
+    if config.study_spec:
+        spec=json.loads(Path(config.study_spec).read_text())
+        if spec.get('sampling') in ('writer_script','complexity'):
+            from .study.sampling import study_loader
+            return study_loader(result,config,spec,resume_start_step)
     return result
 
 

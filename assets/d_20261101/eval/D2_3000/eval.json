@@ -1,0 +1,50 @@
+{
+ "tag": "D2_3000",
+ "checkpoint": "assets/d_20261101/execution/runs/D2/checkpoints/0003000.pt",
+ "step": 3000,
+ "disabled_injection_sites": [],
+ "off_sites_this_eval": [],
+ "decoder_override": "decoder_ema",
+ "panel": "assets/u100_pretrain_20261024/validation_val100.csv",
+ "panel_kind": "eval200fix",
+ "n_png": 100,
+ "content": {
+  "n": 100,
+  "ssim": 0.5931888073557811,
+  "mse": 0.8290655840188265,
+  "lpips": 0.3465815816819668,
+  "ink_iou": 0.275365453973257,
+  "skel_iou": 0.024067267422535666,
+  "frag": 2.4548425346646083,
+  "hole": 0.05217207642504753
+ },
+ "ocr": {
+  "n": 90,
+  "top1": 74.44,
+  "top5": 85.56
+ },
+ "ink": {
+  "width_p50": 8.1241,
+  "width_p90": 17.0863,
+  "width_jump": 0.6251,
+  "ink_ratio": 0.1803,
+  "fragment_share": 0.0039
+ },
+ "writer": {
+  "grid": {
+   "chars": 30,
+   "writers": 10,
+   "seeds": 3,
+   "rows": 900
+  },
+  "ocr": {
+   "n": 900,
+   "top1": 95.22,
+   "top5": 97.56
+  },
+  "direction": 0.4291,
+  "amplitude": 0.5814,
+  "n_pairs": 1350,
+  "verdict_hint": "writer swap direction is weak (<0.5) — writer identity is not being transferred"
+ }
+}

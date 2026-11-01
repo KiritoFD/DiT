@@ -1,0 +1,7 @@
+{
+  "exact_image_path_overlap": 79,
+  "n": 100,
+  "std_mode": "checkpoint_native",
+  "source_csv": "exp-std/csv/train_top10_aug_sym.csv",
+  "caveat": "Path-based overlap, not a guarantee of pixel/near-duplicate disjointness"
+}

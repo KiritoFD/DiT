@@ -1,0 +1,32 @@
+{
+  "cache": "assets/dino_feat_top10_g.npz",
+  "sha256": "700aacbb30211fb92b0dd1fa148f159d125452c19e0c0f2460922bf83c50d9e1",
+  "writer_script_sequence_matches_real_bank": true,
+  "caveat": "Cache does not contain image hashes; matching writer/script sequence alone does not prove exact image identity.",
+  "scopes": {
+    "kai5": {
+      "cached": {
+        "n": 600,
+        "ari": 0.026834463315468272,
+        "nmi": 0.04423277324196517
+      },
+      "L2": {
+        "n": 600,
+        "ari": 0.021078522397291535,
+        "nmi": 0.036640266678168734
+      }
+    },
+    "xing4": {
+      "cached": {
+        "n": 480,
+        "ari": 0.02067937627093099,
+        "nmi": 0.029871476581692147
+      },
+      "L2": {
+        "n": 480,
+        "ari": 0.013956730758797165,
+        "nmi": 0.02233285837230166
+      }
+    }
+  }
+}

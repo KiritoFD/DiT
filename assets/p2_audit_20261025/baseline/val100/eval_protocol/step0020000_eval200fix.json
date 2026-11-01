@@ -1,0 +1,23 @@
+{
+  "step": 20000,
+  "set": "eval200fix",
+  "n": 100,
+  "seed": 0,
+  "cfg": 1.0,
+  "steps": 50,
+  "sampler": "heun",
+  "sde_gamma": 0.0,
+  "g_kind": "std_soft",
+  "g_shape": [
+    100,
+    1,
+    64,
+    64
+  ],
+  "g_sha256": "9deb7c0909498a9955e9abc031b828af458261136e5bf2ee6603fe64675c3ccc",
+  "std_soft_root": "assets/generic48_kxl_top10_20261022/std_bbox64",
+  "std_soft_sigma": 0.0,
+  "vae_path": "pretrained_models/sd-vae-ft-ema",
+  "vae_scaling_factor": 0.18215,
+  "vae_shift_factor": 0.0
+}

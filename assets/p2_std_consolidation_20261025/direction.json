@@ -1,0 +1,7994 @@
+{
+  "metrics": {
+    "ink": {
+      "direction": {
+        "mean": 0.873015873015873,
+        "ci95": [
+          0.6756316098707403,
+          0.9714285714285714
+        ],
+        "n": 63,
+        "n_chars": 10
+      },
+      "spearman": 0.824486661045607,
+      "macro_cell_accuracy": 0.8761904761904763
+    },
+    "soft_ink": {
+      "direction": {
+        "mean": 0.8571428571428571,
+        "ci95": [
+          0.6756316098707403,
+          0.9714285714285714
+        ],
+        "n": 63,
+        "n_chars": 10
+      },
+      "spearman": 0.8242607526881721,
+      "macro_cell_accuracy": 0.8726190476190476
+    },
+    "width50": {
+      "direction": {
+        "mean": 0.7,
+        "ci95": [
+          0.6341260162601626,
+          0.7948717948717948
+        ],
+        "n": 60,
+        "n_chars": 10
+      },
+      "spearman": 0.7546660110349297,
+      "macro_cell_accuracy": 0.7045238095238096
+    },
+    "width90": {
+      "direction": {
+        "mean": 0.8571428571428571,
+        "ci95": [
+          0.7936011904761905,
+          0.9555797101449276
+        ],
+        "n": 63,
+        "n_chars": 10
+      },
+      "spearman": 0.830000960346626,
+      "macro_cell_accuracy": 0.8988095238095237
+    },
+    "aspect": {
+      "direction": {
+        "mean": 0.7142857142857143,
+        "ci95": [
+          0.5681077075098815,
+          0.8214285714285714
+        ],
+        "n": 63,
+        "n_chars": 10
+      },
+      "spearman": 0.6070832794195336,
+      "macro_cell_accuracy": 0.7750000000000001
+    },
+    "bbox_area": {
+      "direction": {
+        "mean": 0.6984126984126984,
+        "ci95": [
+          0.4,
+          0.8214285714285714
+        ],
+        "n": 63,
+        "n_chars": 10
+      },
+      "spearman": 0.7029596033159706,
+      "macro_cell_accuracy": 0.5523809523809523
+    },
+    "density": {
+      "direction": {
+        "mean": 0.7936507936507936,
+        "ci95": [
+          0.7036643026004729,
+          0.9130745341614906
+        ],
+        "n": 63,
+        "n_chars": 10
+      },
+      "spearman": 0.8143721198156683,
+      "macro_cell_accuracy": 0.8452380952380952
+    },
+    "center_x": {
+      "direction": {
+        "mean": 0.6507936507936508,
+        "ci95": [
+          0.5573315118397085,
+          0.7931034482758621
+        ],
+        "n": 63,
+        "n_chars": 10
+      },
+      "spearman": 0.348310291858679,
+      "macro_cell_accuracy": 0.6773809523809523
+    },
+    "center_y": {
+      "direction": {
+        "mean": 0.5714285714285714,
+        "ci95": [
+          0.3436789772727273,
+          0.8066391597899473
+        ],
+        "n": 63,
+        "n_chars": 10
+      },
+      "spearman": 0.38599270353302617,
+      "macro_cell_accuracy": 0.5571428571428572
+    }
+  },
+  "by_writer": {
+    "0": {
+      "ink": {
+        "n": 9,
+        "gt_centered": -0.021421660086958887,
+        "gen_centered": -0.04062447724518953
+      },
+      "soft_ink": {
+        "n": 9,
+        "gt_centered": -0.021396089725394328,
+        "gen_centered": -0.040317673029171094
+      },
+      "width50": {
+        "n": 9,
+        "gt_centered": -0.012293144172103051,
+        "gen_centered": -0.01816073013577702
+      },
+      "width90": {
+        "n": 9,
+        "gt_centered": -0.01993605135917557,
+        "gen_centered": -0.022259389516298078
+      },
+      "aspect": {
+        "n": 9,
+        "gt_centered": 0.02622734003732352,
+        "gen_centered": 0.04021445829092777
+      },
+      "bbox_area": {
+        "n": 9,
+        "gt_centered": 0.027012652552262213,
+        "gen_centered": -0.00826397648564091
+      },
+      "density": {
+        "n": 9,
+        "gt_centered": -0.04493315299660311,
+        "gen_centered": -0.05545065016750675
+      },
+      "center_x": {
+        "n": 9,
+        "gt_centered": -0.002512469198433608,
+        "gen_centered": 0.010399514296459257
+      },
+      "center_y": {
+        "n": 9,
+        "gt_centered": -0.005752934617843751,
+        "gen_centered": -0.008646511001383207
+      }
+    },
+    "7": {
+      "ink": {
+        "n": 3,
+        "gt_centered": 0.06596698760986328,
+        "gen_centered": 0.05781067742241753
+      },
+      "soft_ink": {
+        "n": 3,
+        "gt_centered": 0.06597398112838466,
+        "gen_centered": 0.05782294066415893
+      },
+      "width50": {
+        "n": 3,
+        "gt_centered": 0.028423232661491726,
+        "gen_centered": 0.024106817255868416
+      },
+      "width90": {
+        "n": 3,
+        "gt_centered": 0.0286647383257948,
+        "gen_centered": 0.02911342041571108
+      },
+      "aspect": {
+        "n": 3,
+        "gt_centered": -0.09968436352692867,
+        "gen_centered": -0.044207576163091455
+      },
+      "bbox_area": {
+        "n": 3,
+        "gt_centered": -0.055021826426188136,
+        "gen_centered": 0.003160900539822061
+      },
+      "density": {
+        "n": 3,
+        "gt_centered": 0.12009490751293117,
+        "gen_centered": 0.09196576993197662
+      },
+      "center_x": {
+        "n": 3,
+        "gt_centered": 0.019523260304563583,
+        "gen_centered": 0.015367203067983967
+      },
+      "center_y": {
+        "n": 3,
+        "gt_centered": -0.01420118169599329,
+        "gen_centered": -0.012440039490116609
+      }
+    },
+    "8": {
+      "ink": {
+        "n": 2,
+        "gt_centered": -0.05319049392921338,
+        "gen_centered": -0.0633989969889323
+      },
+      "soft_ink": {
+        "n": 2,
+        "gt_centered": -0.05319049392921338,
+        "gen_centered": -0.06280925155927737
+      },
+      "width50": {
+        "n": 2,
+        "gt_centered": -0.013259366062257293,
+        "gen_centered": -0.018880208333333336
+      },
+      "width90": {
+        "n": 2,
+        "gt_centered": -0.025480020883934452,
+        "gen_centered": -0.03224746309933407
+      },
+      "aspect": {
+        "n": 2,
+        "gt_centered": 0.06902495897002353,
+        "gen_centered": 0.00016213018113331312
+      },
+      "bbox_area": {
+        "n": 2,
+        "gt_centered": 0.0006437716276749272,
+        "gen_centered": -0.011691411336263002
+      },
+      "density": {
+        "n": 2,
+        "gt_centered": -0.09166720456295749,
+        "gen_centered": -0.0976768621439604
+      },
+      "center_x": {
+        "n": 2,
+        "gt_centered": -0.02320890575083595,
+        "gen_centered": -0.029703962043585552
+      },
+      "center_y": {
+        "n": 2,
+        "gt_centered": 0.0067839139705313245,
+        "gen_centered": 0.007393642847231013
+      }
+    },
+    "2": {
+      "ink": {
+        "n": 5,
+        "gt_centered": 0.02842336958733157,
+        "gen_centered": 0.04868939717610677
+      },
+      "soft_ink": {
+        "n": 5,
+        "gt_centered": 0.02842756569844441,
+        "gen_centered": 0.04817607079943021
+      },
+      "width50": {
+        "n": 5,
+        "gt_centered": 0.008166288819706973,
+        "gen_centered": 0.010965329082056729
+      },
+      "width90": {
+        "n": 5,
+        "gt_centered": 0.007449762607270991,
+        "gen_centered": 0.007640269929582546
+      },
+      "aspect": {
+        "n": 5,
+        "gt_centered": -0.015471781734051393,
+        "gen_centered": -0.08508413904379505
+      },
+      "bbox_area": {
+        "n": 5,
+        "gt_centered": 0.07196675369704979,
+        "gen_centered": 0.024399185180664064
+      },
+      "density": {
+        "n": 5,
+        "gt_centered": 0.012860739694606004,
+        "gen_centered": 0.05248352792709797
+      },
+      "center_x": {
+        "n": 5,
+        "gt_centered": -0.0376696245471538,
+        "gen_centered": -0.010536440341410403
+      },
+      "center_y": {
+        "n": 5,
+        "gt_centered": -0.01515949009757166,
+        "gen_centered": -0.013326859281007509
+      }
+    },
+    "3": {
+      "ink": {
+        "n": 7,
+        "gt_centered": -0.0054997671218145515,
+        "gen_centered": 0.010440372285388763
+      },
+      "soft_ink": {
+        "n": 7,
+        "gt_centered": -0.005526648856522075,
+        "gen_centered": 0.010500371278751463
+      },
+      "width50": {
+        "n": 7,
+        "gt_centered": 0.0010792739786022823,
+        "gen_centered": 0.0060012658814779405
+      },
+      "width90": {
+        "n": 7,
+        "gt_centered": 0.00957965853465348,
+        "gen_centered": 0.010357488460295878
+      },
+      "aspect": {
+        "n": 7,
+        "gt_centered": 0.03970127322275247,
+        "gen_centered": -0.015397019534428893
+      },
+      "bbox_area": {
+        "n": 7,
+        "gt_centered": 0.011007622310093461,
+        "gen_centered": 0.02389117649623326
+      },
+      "density": {
+        "n": 7,
+        "gt_centered": -0.004357797452174406,
+        "gen_centered": 0.013365607328633225
+      },
+      "center_x": {
+        "n": 7,
+        "gt_centered": 0.003921077306367664,
+        "gen_centered": 0.01128602472736844
+      },
+      "center_y": {
+        "n": 7,
+        "gt_centered": 0.011964692339703336,
+        "gen_centered": -0.008549091673125842
+      }
+    },
+    "6": {
+      "ink": {
+        "n": 4,
+        "gt_centered": 0.05398605664571126,
+        "gen_centered": 0.06725200017293295
+      },
+      "soft_ink": {
+        "n": 4,
+        "gt_centered": 0.05400979189046969,
+        "gen_centered": 0.06717662994439402
+      },
+      "width50": {
+        "n": 4,
+        "gt_centered": 0.015694705049835007,
+        "gen_centered": 0.01959033646624808
+      },
+      "width90": {
+        "n": 4,
+        "gt_centered": 0.022362206746106464,
+        "gen_centered": 0.021691896627087145
+      },
+      "aspect": {
+        "n": 4,
+        "gt_centered": -0.05855857167073239,
+        "gen_centered": -0.08656272738200152
+      },
+      "bbox_area": {
+        "n": 4,
+        "gt_centered": 0.02503694693247477,
+        "gen_centered": 0.0827784538269043
+      },
+      "density": {
+        "n": 4,
+        "gt_centered": 0.06594480934058641,
+        "gen_centered": 0.059591623115350656
+      },
+      "center_x": {
+        "n": 4,
+        "gt_centered": 0.026778296397866594,
+        "gen_centered": -0.0207638134010871
+      },
+      "center_y": {
+        "n": 4,
+        "gt_centered": -0.006521717992358955,
+        "gen_centered": 0.014978084337597855
+      }
+    },
+    "5": {
+      "ink": {
+        "n": 3,
+        "gt_centered": -0.07184209316824945,
+        "gen_centered": -0.08163854810926649
+      },
+      "soft_ink": {
+        "n": 3,
+        "gt_centered": -0.07183509964972806,
+        "gen_centered": -0.08186917545066939
+      },
+      "width50": {
+        "n": 3,
+        "gt_centered": -0.013172431404732975,
+        "gen_centered": -0.017920585575762014
+      },
+      "width90": {
+        "n": 3,
+        "gt_centered": -0.03095936620591248,
+        "gen_centered": -0.034028886026647685
+      },
+      "aspect": {
+        "n": 3,
+        "gt_centered": -0.10176520074810787,
+        "gen_centered": -0.11153429485663813
+      },
+      "bbox_area": {
+        "n": 3,
+        "gt_centered": -0.0916910001045264,
+        "gen_centered": -0.03844134012858073
+      },
+      "density": {
+        "n": 3,
+        "gt_centered": -0.07330474487536458,
+        "gen_centered": -0.10172108584526385
+      },
+      "center_x": {
+        "n": 3,
+        "gt_centered": 0.014911473068832818,
+        "gen_centered": 0.01644372749972728
+      },
+      "center_y": {
+        "n": 3,
+        "gt_centered": -0.012082717391233178,
+        "gen_centered": 0.011460923874166565
+      }
+    },
+    "1": {
+      "ink": {
+        "n": 3,
+        "gt_centered": 0.004042583041720916,
+        "gen_centered": 0.005654440985785593
+      },
+      "soft_ink": {
+        "n": 3,
+        "gt_centered": 0.00404957656024231,
+        "gen_centered": 0.005588593168391119
+      },
+      "width50": {
+        "n": 3,
+        "gt_centered": -0.016020306849102904,
+        "gen_centered": -0.008939725375259383
+      },
+      "width90": {
+        "n": 3,
+        "gt_centered": 0.008628349058850108,
+        "gen_centered": 0.014353403365543102
+      },
+      "aspect": {
+        "n": 3,
+        "gt_centered": 0.06786339770231675,
+        "gen_centered": 0.20002781767587843
+      },
+      "bbox_area": {
+        "n": 3,
+        "gt_centered": -0.05418428844875759,
+        "gen_centered": -0.029733657836914062
+      },
+      "density": {
+        "n": 3,
+        "gt_centered": 0.03363042480104947,
+        "gen_centered": 0.017310041320949782
+      },
+      "center_x": {
+        "n": 3,
+        "gt_centered": -0.003921088612753587,
+        "gen_centered": -0.01150569342085265
+      },
+      "center_y": {
+        "n": 3,
+        "gt_centered": 0.04229190755891027,
+        "gen_centered": 0.04140970263161292
+      }
+    },
+    "4": {
+      "ink": {
+        "n": 1,
+        "gt_centered": -0.014889208475748705,
+        "gen_centered": -0.03859901428222656
+      },
+      "soft_ink": {
+        "n": 1,
+        "gt_centered": -0.015110032788167388,
+        "gen_centered": -0.03923898749053478
+      },
+      "width50": {
+        "n": 1,
+        "gt_centered": 0.0283003643023836,
+        "gen_centered": 0.034270616528497125
+      },
+      "width90": {
+        "n": 1,
+        "gt_centered": 0.01762809070089652,
+        "gen_centered": 0.0390442632031988
+      },
+      "aspect": {
+        "n": 1,
+        "gt_centered": 0.06034680423611971,
+        "gen_centered": 0.3843385165389199
+      },
+      "bbox_area": {
+        "n": 1,
+        "gt_centered": -0.17874498367309566,
+        "gen_centered": -0.3275470733642578
+      },
+      "density": {
+        "n": 1,
+        "gt_centered": 0.04889267010933951,
+        "gen_centered": 0.07740201617516879
+      },
+      "center_x": {
+        "n": 1,
+        "gt_centered": 0.031276496005374965,
+        "gen_centered": -0.03836813380171761
+      },
+      "center_y": {
+        "n": 1,
+        "gt_centered": 0.008316034283850582,
+        "gen_centered": 0.00830515303752416
+      }
+    }
+  },
+  "matched_cells": 39,
+  "total_generated": 120,
+  "cells_with_train_gt": 31,
+  "n_gt_images": 84,
+  "shared_char_script_cells": 10,
+  "shape_only": {
+    "n": 37,
+    "mask_accuracy": 0.5675675675675675,
+    "skeleton_accuracy": 0.6216216216216216,
+    "mean_chance": 0.27027027027027034
+  },
+  "caveat": "Existing 12-character, one-seed swap at CFG1.6; partial GT coverage. GT train+validation+test used descriptively, not an independent final test. Skeleton Chamfer is width-reduced shape matching, not a learned brush-style metric.",
+  "samples": [
+    {
+      "idx": 0,
+      "script": "行",
+      "char": "用",
+      "writer": 0,
+      "n_gt": 1,
+      "n_train_gt": 0,
+      "gt": {
+        "ink": 0.139251708984375,
+        "soft_ink": 0.139251708984375,
+        "width50": 0.0078125,
+        "width90": 0.0703125,
+        "aspect": 1.091703056768559,
+        "bbox_area": 0.873565673828125,
+        "density": 0.1594061135371179,
+        "center_x": 0.5541147250046193,
+        "center_y": 0.5104175529514896
+      },
+      "gen": {
+        "ink": 0.1301727294921875,
+        "soft_ink": 0.1334976851940155,
+        "width50": 0.0546875,
+        "width90": 0.0703125,
+        "aspect": 0.6637168141592921,
+        "bbox_area": 0.51727294921875,
+        "density": 0.2516519174041298,
+        "center_x": 0.5639396048120369,
+        "center_y": 0.4751095997052621
+      },
+      "gt_paths": [
+        "data/top10_style23/imgs/006951.png"
+      ],
+      "gt_sources": [
+        "assets/u100_pretrain_20261024/validation_val100.csv"
+      ]
+    },
+    {
+      "idx": 7,
+      "script": "行",
+      "char": "用",
+      "writer": 7,
+      "n_gt": 1,
+      "n_train_gt": 1,
+      "gt": {
+        "ink": 0.38037109375,
+        "soft_ink": 0.38037109375,
+        "width50": 0.1171875,
+        "width90": 0.1484375,
+        "aspect": 0.668,
+        "bbox_area": 0.637054443359375,
+        "density": 0.5970778443113772,
+        "center_x": 0.5420486294646228,
+        "center_y": 0.48588310805708673
+      },
+      "gen": {
+        "ink": 0.3348236083984375,
+        "soft_ink": 0.3375423848628998,
+        "width50": 0.1015625,
+        "width90": 0.1582835283239789,
+        "aspect": 0.604,
+        "bbox_area": 0.576019287109375,
+        "density": 0.5812715231788079,
+        "center_x": 0.5400889449585667,
+        "center_y": 0.49960630354553687
+      },
+      "gt_paths": [
+        "data/top10_style23/imgs/006952.png"
+      ],
+      "gt_sources": [
+        "assets/u100_p1p2_20261025/p2_train.csv"
+      ]
+    },
+    {
+      "idx": 8,
+      "script": "行",
+      "char": "用",
+      "writer": 8,
+      "n_gt": 1,
+      "n_train_gt": 1,
+      "gt": {
+        "ink": 0.1941375732421875,
+        "soft_ink": 0.1941375732421875,
+        "width50": 0.0546875,
+        "width90": 0.09700318644530265,
+        "aspect": 0.9644444444444444,
+        "bbox_area": 0.7450103759765625,
+        "density": 0.2605837173579109,
+        "center_x": 0.5355134209621913,
+        "center_y": 0.5003456762725526
+      },
+      "gen": {
+        "ink": 0.135009765625,
+        "soft_ink": 0.1386631280183792,
+        "width50": 0.0390625,
+        "width90": 0.0703125,
+        "aspect": 0.6696035242290749,
+        "bbox_area": 0.5264892578125,
+        "density": 0.2564340366334338,
+        "center_x": 0.5395897460110086,
+        "center_y": 0.4877603187353029
+      },
+      "gt_paths": [
+        "data/top10_style23/imgs/016126.png"
+      ],
+      "gt_sources": [
+        "assets/u100_p1p2_20261025/p2_train.csv"
+      ]
+    },
+    {
+      "idx": 10,
+      "script": "行",
+      "char": "報",
+      "writer": 0,
+      "n_gt": 2,
+      "n_train_gt": 1,
+      "gt": {
+        "ink": 0.327545166015625,
+        "soft_ink": 0.327545166015625,
+        "width50": 0.0703125,
+        "width90": 0.11147582525699938,
+        "aspect": 1.0,
+        "bbox_area": 0.95367431640625,
+        "density": 0.343456,
+        "center_x": 0.5091975890523446,
+        "center_y": 0.4830038103852793
+      },
+      "gen": {
+        "ink": 0.1251678466796875,
+        "soft_ink": 0.1295544058084488,
+        "width50": 0.03638167382415922,
+        "width90": 0.0546875,
+        "aspect": 1.0135746606334841,
+        "bbox_area": 0.75537109375,
+        "density": 0.16570378151260504,
+        "center_x": 0.5065235118924558,
+        "center_y": 0.5149355772708888
+      },
+      "gt_paths": [
+        "data/top10_style23/imgs/002197.png",
+        "data/top10_style23/imgs/002198.png"
+      ],
+      "gt_sources": [
+        "assets/u100_p1p2_20261025/p2_train.csv",
+        "assets/u100_pretrain_20261024/validation_val100.csv"
+      ]
+    },
+    {
+      "idx": 12,
+      "script": "行",
+      "char": "報",
+      "writer": 2,
+      "n_gt": 1,
+      "n_train_gt": 1,
+      "gt": {
+        "ink": 0.2665252685546875,
+        "soft_ink": 0.2665252685546875,
+        "width50": 0.0859375,
+        "width90": 0.13194174859373686,
+        "aspect": 1.1013215859030836,
+        "bbox_area": 0.865936279296875,
+        "density": 0.3077885462555066,
+        "center_x": 0.38790368841187356,
+        "center_y": 0.5041823404807048
+      },
+      "gen": {
+        "ink": 0.3588714599609375,
+        "soft_ink": 0.36156079173088074,
+        "width50": 0.1015625,
+        "width90": 0.13833107373279707,
+        "aspect": 0.92,
+        "bbox_area": 0.87738037109375,
+        "density": 0.40902608695652176,
+        "center_x": 0.4665020734368532,
+        "center_y": 0.5111714282072418
+      },
+      "gt_paths": [
+        "data/top10_style23/imgs/011889.png"
+      ],
+      "gt_sources": [
+        "assets/u100_p1p2_20261025/p2_train.csv"
+      ]
+    },
+    {
+      "idx": 13,
+      "script": "行",
+      "char": "報",
+      "writer": 3,
+      "n_gt": 2,
+      "n_train_gt": 2,
+      "gt": {
+        "ink": 0.16259765625,
+        "soft_ink": 0.16259765625,
+        "width50": 0.0390625,
+        "width90": 0.0703125,
+        "aspect": 1.0368663594470047,
+        "bbox_area": 0.7450103759765625,
+        "density": 0.21824884792626728,
+        "center_x": 0.4770779957589343,
+        "center_y": 0.5103508005808051
+      },
+      "gen": {
+        "ink": 0.1489105224609375,
+        "soft_ink": 0.15409228205680847,
+        "width50": 0.0390625,
+        "width90": 0.0546875,
+        "aspect": 0.9782608695652174,
+        "bbox_area": 0.789642333984375,
+        "density": 0.18857971014492753,
+        "center_x": 0.46164072281103624,
+        "center_y": 0.5103799631883664
+      },
+      "gt_paths": [
+        "data/top10_style23/imgs/020967.png",
+        "data/top10_style23/imgs/021886.png"
+      ],
+      "gt_sources": [
+        "assets/u100_p1p2_20261025/p2_train.csv",
+        "assets/u100_p1p2_20261025/p2_train.csv"
+      ]
+    },
+    {
+      "idx": 16,
+      "script": "行",
+      "char": "報",
+      "writer": 6,
+      "n_gt": 1,
+      "n_train_gt": 1,
+      "gt": {
+        "ink": 0.2895050048828125,
+        "soft_ink": 0.2895050048828125,
+        "width50": 0.0703125,
+        "width90": 0.1171875,
+        "aspect": 0.816,
+        "bbox_area": 0.7781982421875,
+        "density": 0.37201960784313726,
+        "center_x": 0.5779432692277882,
+        "center_y": 0.48281200426199045
+      },
+      "gen": {
+        "ink": 0.2908782958984375,
+        "soft_ink": 0.2941449284553528,
+        "width50": 0.1146721160481442,
+        "width90": 0.1709174421076087,
+        "aspect": 0.9612068965517241,
+        "bbox_area": 0.7894287109375,
+        "density": 0.3684668316066182,
+        "center_x": 0.41145183840036487,
+        "center_y": 0.5492205519557414
+      },
+      "gt_paths": [
+        "data/top10_style23/imgs/002196.png"
+      ],
+      "gt_sources": [
+        "assets/u100_p1p2_20261025/p2_train.csv"
+      ]
+    },
+    {
+      "idx": 20,
+      "script": "行",
+      "char": "羲",
+      "writer": 0,
+      "n_gt": 23,
+      "n_train_gt": 22,
+      "gt": {
+        "ink": 0.16775977093240488,
+        "soft_ink": 0.16775977093240488,
+        "width50": 0.04249053301629078,
+        "width90": 0.08102596598590933,
+        "aspect": 0.6050210773732241,
+        "bbox_area": 0.5659252664317256,
+        "density": 0.2887845206753518,
+        "center_x": 0.49891498183068533,
+        "center_y": 0.5210368889328881
+      },
+      "gen": {
+        "ink": 0.16864013671875,
+        "soft_ink": 0.172382652759552,
+        "width50": 0.0078125,
+        "width90": 0.0703125,
+        "aspect": 0.68,
+        "bbox_area": 0.64849853515625,
+        "density": 0.2600470588235294,
+        "center_x": 0.5200037374965982,
+        "center_y": 0.5152347891784184
+      },
+      "gt_paths": [
+        "data/top10_style23/imgs/008141.png",
+        "data/top10_style23/imgs/008160.png",
+        "data/top10_style23/imgs/008148.png",
+        "data/top10_style23/imgs/008152.png",
+        "data/top10_style23/imgs/008163.png",
+        "data/top10_style23/imgs/008149.png",
+        "data/top10_style23/imgs/008145.png",
+        "data/top10_style23/imgs/008162.png",
+        "data/top10_style23/imgs/008143.png",
+        "data/top10_style23/imgs/008156.png",
+        "data/top10_style23/imgs/008146.png",
+        "data/top10_style23/imgs/008157.png",
+        "data/top10_style23/imgs/008159.png",
+        "data/top10_style23/imgs/008158.png",
+        "data/top10_style23/imgs/008155.png",
+        "data/top10_style23/imgs/008153.png",
+        "data/top10_style23/imgs/008144.png",
+        "data/top10_style23/imgs/008151.png",
+        "data/top10_style23/imgs/008142.png",
+        "data/top10_style23/imgs/008150.png",
+        "data/top10_style23/imgs/008154.png",
+        "data/top10_style23/imgs/008147.png",
+        "data/top10_style23/imgs/008161.png"
+      ],
+      "gt_sources": [
+        "assets/u100_p1p2_20261025/p2_train.csv",
+        "assets/u100_p1p2_20261025/p2_train.csv",
+        "assets/u100_p1p2_20261025/p2_train.csv",
+        "assets/u100_p1p2_20261025/p2_train.csv",
+        "assets/u100_p1p2_20261025/p2_train.csv",
+        "assets/u100_p1p2_20261025/p2_train.csv",
+        "assets/u100_p1p2_20261025/p2_train.csv",
+        "assets/u100_p1p2_20261025/p2_train.csv",
+        "assets/u100_p1p2_20261025/p2_train.csv",
+        "assets/u100_p1p2_20261025/p2_train.csv",
+        "assets/u100_p1p2_20261025/p2_train.csv",
+        "assets/u100_p1p2_20261025/p2_train.csv",
+        "assets/u100_p1p2_20261025/p2_train.csv",
+        "assets/u100_p1p2_20261025/p2_train.csv",
+        "assets/u100_p1p2_20261025/p2_train.csv",
+        "assets/u100_p1p2_20261025/p2_train.csv",
+        "assets/u100_p1p2_20261025/p2_train.csv",
+        "assets/u100_p1p2_20261025/p2_train.csv",
+        "assets/u100_p1p2_20261025/p2_train.csv",
+        "assets/u100_p1p2_20261025/p2_train.csv",
+        "assets/u100_p1p2_20261025/p2_train.csv",
+        "assets/u100_p1p2_20261025/p2_train.csv",
+        "assets/u100_pretrain_20261024/validation_val100.csv"
+      ]
+    },
+    {
+      "idx": 22,
+      "script": "行",
+      "char": "羲",
+      "writer": 2,
+      "n_gt": 1,
+      "n_train_gt": 1,
+      "gt": {
+        "ink": 0.253448486328125,
+        "soft_ink": 0.253448486328125,
+        "width50": 0.058478760736238825,
+        "width90": 0.12267664603921784,
+        "aspect": 0.728,
+        "bbox_area": 0.69427490234375,
+        "density": 0.36505494505494507,
+        "center_x": 0.4966113019560624,
+        "center_y": 0.5348221600500526
+      },
+      "gen": {
+        "ink": 0.2547149658203125,
+        "soft_ink": 0.2578437924385071,
+        "width50": 0.058478760736238825,
+        "width90": 0.11268818680800333,
+        "aspect": 0.7429718875502008,
+        "bbox_area": 0.7028961181640625,
+        "density": 0.3623792467165961,
+        "center_x": 0.49740382085951323,
+        "center_y": 0.5328774745504036
+      },
+      "gt_paths": [
+        "data/top10_style23/imgs/012846.png"
+      ],
+      "gt_sources": [
+        "assets/u100_p1p2_20261025/p2_train.csv"
+      ]
+    },
+    {
+      "idx": 25,
+      "script": "行",
+      "char": "羲",
+      "writer": 5,
+      "n_gt": 1,
+      "n_train_gt": 1,
+      "gt": {
+        "ink": 0.0925140380859375,
+        "soft_ink": 0.0925140380859375,
+        "width50": 0.027126062148434216,
+        "width90": 0.04852423867912483,
+        "aspect": 0.527027027027027,
+        "bbox_area": 0.396331787109375,
+        "density": 0.23342573342573342,
+        "center_x": 0.46643769828564774,
+        "center_y": 0.5699999676598332
+      },
+      "gen": {
+        "ink": 0.0805816650390625,
+        "soft_ink": 0.08441370725631714,
+        "width50": 0.0234375,
+        "width90": 0.0390625,
+        "aspect": 0.592,
+        "bbox_area": 0.5645751953125,
+        "density": 0.14272972972972972,
+        "center_x": 0.5117344348054641,
+        "center_y": 0.5842387677933959
+      },
+      "gt_paths": [
+        "data/top10_style23/imgs/022512.png"
+      ],
+      "gt_sources": [
+        "assets/u100_p1p2_20261025/p2_train.csv"
+      ]
+    },
+    {
+      "idx": 28,
+      "script": "行",
+      "char": "羲",
+      "writer": 8,
+      "n_gt": 2,
+      "n_train_gt": 2,
+      "gt": {
+        "ink": 0.08777618408203125,
+        "soft_ink": 0.08777618408203125,
+        "width50": 0.014284586912079612,
+        "width90": 0.027126062148434216,
+        "aspect": 0.7288888888888889,
+        "bbox_area": 0.56304931640625,
+        "density": 0.15589430894308942,
+        "center_x": 0.4366026953751735,
+        "center_y": 0.558092024341662
+      },
+      "gen": {
+        "ink": 0.0855712890625,
+        "soft_ink": 0.09015040844678879,
+        "width50": 0.014284586912079612,
+        "width90": 0.027126062148434216,
+        "aspect": 0.6403162055335968,
+        "bbox_area": 0.625396728515625,
+        "density": 0.13682720929097741,
+        "center_x": 0.4415474579370022,
+        "center_y": 0.563475731780108
+      },
+      "gt_paths": [
+        "data/top10_style23/imgs/016151.png",
+        "data/top10_style23/imgs/022163.png"
+      ],
+      "gt_sources": [
+        "assets/u100_p1p2_20261025/p2_train.csv",
+        "assets/u100_p1p2_20261025/p2_train.csv"
+      ]
+    },
+    {
+      "idx": 30,
+      "script": "楷",
+      "char": "旬",
+      "writer": 0,
+      "n_gt": 1,
+      "n_train_gt": 0,
+      "gt": {
+        "ink": 0.1729736328125,
+        "soft_ink": 0.1729736328125,
+        "width50": 0.0390625,
+        "width90": 0.07185967989988726,
+        "aspect": 0.9866666666666667,
+        "bbox_area": 0.762176513671875,
+        "density": 0.22694694694694695,
+        "center_x": 0.5200184731620242,
+        "center_y": 0.49454868750605396
+      },
+      "gen": {
+        "ink": 0.1485595703125,
+        "soft_ink": 0.15213729441165924,
+        "width50": 0.04852423867912483,
+        "width90": 0.1059392170200081,
+        "aspect": 1.1464646464646464,
+        "bbox_area": 0.685821533203125,
+        "density": 0.2166154941485338,
+        "center_x": 0.5520266038997104,
+        "center_y": 0.5377442014341586
+      },
+      "gt_paths": [
+        "data/top10_style23/imgs/017514.png"
+      ],
+      "gt_sources": [
+        "assets/u100_pretrain_20261024/validation_val100.csv"
+      ]
+    },
+    {
+      "idx": 32,
+      "script": "楷",
+      "char": "旬",
+      "writer": 2,
+      "n_gt": 1,
+      "n_train_gt": 1,
+      "gt": {
+        "ink": 0.200164794921875,
+        "soft_ink": 0.200164794921875,
+        "width50": 0.0703125,
+        "width90": 0.0859375,
+        "aspect": 0.8875,
+        "bbox_area": 0.780029296875,
+        "density": 0.25661189358372455,
+        "center_x": 0.4384459013060934,
+        "center_y": 0.4630111596399499
+      },
+      "gen": {
+        "ink": 0.203460693359375,
+        "soft_ink": 0.207020103931427,
+        "width50": 0.0703125,
+        "width90": 0.11118395477912357,
+        "aspect": 0.9907407407407407,
+        "bbox_area": 0.705322265625,
+        "density": 0.2884648667358948,
+        "center_x": 0.49707645308649884,
+        "center_y": 0.5064269729067007
+      },
+      "gt_paths": [
+        "data/top10_style23/imgs/004946.png"
+      ],
+      "gt_sources": [
+        "assets/u100_p1p2_20261025/p2_train.csv"
+      ]
+    },
+    {
+      "idx": 33,
+      "script": "楷",
+      "char": "旬",
+      "writer": 3,
+      "n_gt": 1,
+      "n_train_gt": 1,
+      "gt": {
+        "ink": 0.235382080078125,
+        "soft_ink": 0.235382080078125,
+        "width50": 0.0703125,
+        "width90": 0.10267293456039805,
+        "aspect": 0.8278688524590164,
+        "bbox_area": 0.7520751953125,
+        "density": 0.3129767894822269,
+        "center_x": 0.5441004873361246,
+        "center_y": 0.5435028205499755
+      },
+      "gen": {
+        "ink": 0.2458343505859375,
+        "soft_ink": 0.2502322793006897,
+        "width50": 0.0703125,
+        "width90": 0.11816027731716483,
+        "aspect": 0.8649789029535865,
+        "bbox_area": 0.7413482666015625,
+        "density": 0.3316044046516414,
+        "center_x": 0.5256301414864656,
+        "center_y": 0.5462834361639951
+      },
+      "gt_paths": [
+        "data/top10_style23/imgs/004947.png"
+      ],
+      "gt_sources": [
+        "assets/u100_p1p2_20261025/p2_train.csv"
+      ]
+    },
+    {
+      "idx": 40,
+      "script": "楷",
+      "char": "屍",
+      "writer": 0,
+      "n_gt": 1,
+      "n_train_gt": 0,
+      "gt": {
+        "ink": 0.1863861083984375,
+        "soft_ink": 0.1863861083984375,
+        "width50": 0.058478760736238825,
+        "width90": 0.0859375,
+        "aspect": 1.16580310880829,
+        "bbox_area": 0.6626129150390625,
+        "density": 0.2812895797351756,
+        "center_x": 0.4739479746053149,
+        "center_y": 0.4913271211063222
+      },
+      "gen": {
+        "ink": 0.028900146484375,
+        "soft_ink": 0.03276551514863968,
+        "width50": 0.0078125,
+        "width90": 0.0234375,
+        "aspect": 0.8909090909090909,
+        "bbox_area": 0.657958984375,
+        "density": 0.04392393320964749,
+        "center_x": 0.4765910549327076,
+        "center_y": 0.4263324116277256
+      },
+      "gt_paths": [
+        "data/top10_style23/imgs/022323.png"
+      ],
+      "gt_sources": [
+        "assets/u100_pretrain_20261024/validation_val100.csv"
+      ]
+    },
+    {
+      "idx": 50,
+      "script": "行",
+      "char": "吴",
+      "writer": 0,
+      "n_gt": 1,
+      "n_train_gt": 0,
+      "gt": {
+        "ink": 0.1075439453125,
+        "soft_ink": 0.1075439453125,
+        "width50": 0.0546875,
+        "width90": 0.07633070011147662,
+        "aspect": 0.7733333333333333,
+        "bbox_area": 0.597381591796875,
+        "density": 0.18002554278416347,
+        "center_x": 0.4776529567559146,
+        "center_y": 0.48950947007633927
+      },
+      "gen": {
+        "ink": 0.0869903564453125,
+        "soft_ink": 0.09025303274393082,
+        "width50": 0.0078125,
+        "width90": 0.04852423867912483,
+        "aspect": 0.6774193548387096,
+        "bbox_area": 0.4867401123046875,
+        "density": 0.17872033606069157,
+        "center_x": 0.5112436584813449,
+        "center_y": 0.5178200635082527
+      },
+      "gt_paths": [
+        "data/top10_style23/imgs/017651.png"
+      ],
+      "gt_sources": [
+        "assets/u100_pretrain_20261024/validation_val100.csv"
+      ]
+    },
+    {
+      "idx": 51,
+      "script": "行",
+      "char": "吴",
+      "writer": 1,
+      "n_gt": 1,
+      "n_train_gt": 1,
+      "gt": {
+        "ink": 0.147430419921875,
+        "soft_ink": 0.147430419921875,
+        "width50": 0.0546875,
+        "width90": 0.13624288214520136,
+        "aspect": 0.7548076923076923,
+        "bbox_area": 0.498291015625,
+        "density": 0.29587212150906417,
+        "center_x": 0.4674414829065553,
+        "center_y": 0.5487712120658655
+      },
+      "gen": {
+        "ink": 0.1329498291015625,
+        "soft_ink": 0.13504578173160553,
+        "width50": 0.0703125,
+        "width90": 0.13367789278339715,
+        "aspect": 0.9264705882352942,
+        "bbox_area": 0.58831787109375,
+        "density": 0.22598298578690734,
+        "center_x": 0.49024781550336877,
+        "center_y": 0.5375007699529001
+      },
+      "gt_paths": [
+        "data/top10_style23/imgs/018819.png"
+      ],
+      "gt_sources": [
+        "assets/u100_p1p2_20261025/p2_train.csv"
+      ]
+    },
+    {
+      "idx": 53,
+      "script": "行",
+      "char": "吴",
+      "writer": 3,
+      "n_gt": 2,
+      "n_train_gt": 2,
+      "gt": {
+        "ink": 0.18642425537109375,
+        "soft_ink": 0.18642425537109375,
+        "width50": 0.0703125,
+        "width90": 0.0957068560973109,
+        "aspect": 0.84,
+        "bbox_area": 0.6488800048828125,
+        "density": 0.2873015873015873,
+        "center_x": 0.48672713061827666,
+        "center_y": 0.48753499079605395
+      },
+      "gen": {
+        "ink": 0.1770477294921875,
+        "soft_ink": 0.1802753508090973,
+        "width50": 0.06206462429686843,
+        "width90": 0.1096027645357842,
+        "aspect": 0.8243243243243243,
+        "bbox_area": 0.619903564453125,
+        "density": 0.2856052774085561,
+        "center_x": 0.48570201202213614,
+        "center_y": 0.4802792865198364
+      },
+      "gt_paths": [
+        "data/top10_style23/imgs/020882.png",
+        "data/top10_style23/imgs/021851.png"
+      ],
+      "gt_sources": [
+        "assets/u100_p1p2_20261025/p2_train.csv",
+        "assets/u100_p1p2_20261025/p2_train.csv"
+      ]
+    },
+    {
+      "idx": 57,
+      "script": "行",
+      "char": "吴",
+      "writer": 7,
+      "n_gt": 2,
+      "n_train_gt": 2,
+      "gt": {
+        "ink": 0.13875579833984375,
+        "soft_ink": 0.13875579833984375,
+        "width50": 0.058376062148434216,
+        "width90": 0.10486097735824966,
+        "aspect": 0.7348682703321878,
+        "bbox_area": 0.4951324462890625,
+        "density": 0.28135891224741183,
+        "center_x": 0.5525610580830544,
+        "center_y": 0.4610576264606966
+      },
+      "gen": {
+        "ink": 0.1268768310546875,
+        "soft_ink": 0.13009008765220642,
+        "width50": 0.0546875,
+        "width90": 0.09100867688026186,
+        "aspect": 0.6926605504587156,
+        "bbox_area": 0.502288818359375,
+        "density": 0.252597363144784,
+        "center_x": 0.5511071043493185,
+        "center_y": 0.4524160657025455
+      },
+      "gt_paths": [
+        "data/top10_style23/imgs/021189.png",
+        "data/top10_style23/imgs/015506.png"
+      ],
+      "gt_sources": [
+        "assets/u100_p1p2_20261025/p2_train.csv",
+        "assets/u100_p1p2_20261025/p2_train.csv"
+      ]
+    },
+    {
+      "idx": 60,
+      "script": "行",
+      "char": "好",
+      "writer": 0,
+      "n_gt": 1,
+      "n_train_gt": 0,
+      "gt": {
+        "ink": 0.1299285888671875,
+        "soft_ink": 0.1299285888671875,
+        "width50": 0.04159808844013093,
+        "width90": 0.07151614002229534,
+        "aspect": 0.9733333333333334,
+        "bbox_area": 0.7518768310546875,
+        "density": 0.1728056823947235,
+        "center_x": 0.4922036083957952,
+        "center_y": 0.5301495630548168
+      },
+      "gen": {
+        "ink": 0.1530303955078125,
+        "soft_ink": 0.15752388536930084,
+        "width50": 0.0234375,
+        "width90": 0.0703125,
+        "aspect": 1.1627906976744187,
+        "bbox_area": 0.820159912109375,
+        "density": 0.1865860465116279,
+        "center_x": 0.49930503362677114,
+        "center_y": 0.554751738432937
+      },
+      "gt_paths": [
+        "data/top10_style23/imgs/017687.png"
+      ],
+      "gt_sources": [
+        "assets/u100_pretrain_20261024/validation_val100.csv"
+      ]
+    },
+    {
+      "idx": 62,
+      "script": "行",
+      "char": "好",
+      "writer": 2,
+      "n_gt": 1,
+      "n_train_gt": 1,
+      "gt": {
+        "ink": 0.1060791015625,
+        "soft_ink": 0.1060791015625,
+        "width50": 0.0234375,
+        "width90": 0.04852423867912483,
+        "aspect": 0.9155555555555556,
+        "bbox_area": 0.707244873046875,
+        "density": 0.14998921251348435,
+        "center_x": 0.5027098986890499,
+        "center_y": 0.507668268688373
+      },
+      "gen": {
+        "ink": 0.1203460693359375,
+        "soft_ink": 0.12364524602890015,
+        "width50": 0.027126062148434216,
+        "width90": 0.057731666601853665,
+        "aspect": 0.8248847926267281,
+        "bbox_area": 0.5926971435546875,
+        "density": 0.20304816826712663,
+        "center_x": 0.5380595812105212,
+        "center_y": 0.5915988729509792
+      },
+      "gt_paths": [
+        "data/top10_style23/imgs/016880.png"
+      ],
+      "gt_sources": [
+        "assets/u100_p1p2_20261025/p2_train.csv"
+      ]
+    },
+    {
+      "idx": 63,
+      "script": "行",
+      "char": "好",
+      "writer": 3,
+      "n_gt": 1,
+      "n_train_gt": 1,
+      "gt": {
+        "ink": 0.2128448486328125,
+        "soft_ink": 0.2128448486328125,
+        "width50": 0.11118395477912357,
+        "width90": 0.16771386456395743,
+        "aspect": 1.4124293785310735,
+        "bbox_area": 0.675201416015625,
+        "density": 0.3152316384180791,
+        "center_x": 0.49969370212777925,
+        "center_y": 0.5540221450971958
+      },
+      "gen": {
+        "ink": 0.2049407958984375,
+        "soft_ink": 0.20822328329086304,
+        "width50": 0.0859375,
+        "width90": 0.1484375,
+        "aspect": 1.4342857142857144,
+        "bbox_area": 0.6702423095703125,
+        "density": 0.30577120091064314,
+        "center_x": 0.5287610232585868,
+        "center_y": 0.524373402657204
+      },
+      "gt_paths": [
+        "data/top10_style23/imgs/002474.png"
+      ],
+      "gt_sources": [
+        "assets/u100_p1p2_20261025/p2_train.csv"
+      ]
+    },
+    {
+      "idx": 66,
+      "script": "行",
+      "char": "好",
+      "writer": 6,
+      "n_gt": 3,
+      "n_train_gt": 3,
+      "gt": {
+        "ink": 0.3127848307291667,
+        "soft_ink": 0.3127848307291667,
+        "width50": 0.10688854459494442,
+        "width90": 0.16000364914816392,
+        "aspect": 1.1910872293782229,
+        "bbox_area": 0.7503509521484375,
+        "density": 0.41691349426762686,
+        "center_x": 0.5344499107139898,
+        "center_y": 0.5309228697432223
+      },
+      "gen": {
+        "ink": 0.3400421142578125,
+        "soft_ink": 0.342630535364151,
+        "width50": 0.08329612335695782,
+        "width90": 0.11816027731716483,
+        "aspect": 0.992,
+        "bbox_area": 0.946044921875,
+        "density": 0.35943548387096774,
+        "center_x": 0.5224281401503262,
+        "center_y": 0.611784171844737
+      },
+      "gt_paths": [
+        "data/top10_style23/imgs/002477.png",
+        "data/top10_style23/imgs/002476.png",
+        "data/top10_style23/imgs/018054.png"
+      ],
+      "gt_sources": [
+        "assets/u100_p1p2_20261025/p2_train.csv",
+        "assets/u100_p1p2_20261025/p2_train.csv",
+        "assets/u100_p1p2_20261025/p2_train.csv"
+      ]
+    },
+    {
+      "idx": 70,
+      "script": "行",
+      "char": "何",
+      "writer": 0,
+      "n_gt": 1,
+      "n_train_gt": 0,
+      "gt": {
+        "ink": 0.070648193359375,
+        "soft_ink": 0.070648193359375,
+        "width50": 0.0078125,
+        "width90": 0.0390625,
+        "aspect": 1.1194029850746268,
+        "bbox_area": 0.6900787353515625,
+        "density": 0.10237700386954118,
+        "center_x": 0.44497607250243515,
+        "center_y": 0.45230254520814805
+      },
+      "gen": {
+        "ink": 0.1366119384765625,
+        "soft_ink": 0.14052900671958923,
+        "width50": 0.0546875,
+        "width90": 0.0703125,
+        "aspect": 1.1357466063348416,
+        "bbox_area": 0.8464202880859375,
+        "density": 0.16139965026770745,
+        "center_x": 0.5549861637889943,
+        "center_y": 0.408082389833479
+      },
+      "gt_paths": [
+        "data/top10_style23/imgs/035375.png"
+      ],
+      "gt_sources": [
+        "assets/u100_pretrain_20261024/validation_val100.csv"
+      ]
+    },
+    {
+      "idx": 71,
+      "script": "行",
+      "char": "何",
+      "writer": 1,
+      "n_gt": 3,
+      "n_train_gt": 3,
+      "gt": {
+        "ink": 0.12184651692708333,
+        "soft_ink": 0.12184651692708333,
+        "width50": 0.020386528970693204,
+        "width90": 0.08441772881510089,
+        "aspect": 1.2653176501860712,
+        "bbox_area": 0.5546722412109375,
+        "density": 0.22304777803135697,
+        "center_x": 0.5110696989407114,
+        "center_y": 0.5040725989596373
+      },
+      "gen": {
+        "ink": 0.141937255859375,
+        "soft_ink": 0.1464431881904602,
+        "width50": 0.014284586912079612,
+        "width90": 0.086066816453591,
+        "aspect": 1.4088050314465408,
+        "bbox_area": 0.54345703125,
+        "density": 0.26117475292003595,
+        "center_x": 0.49904401946727267,
+        "center_y": 0.5357281003395157
+      },
+      "gt_paths": [
+        "data/top10_style23/imgs/036008.png",
+        "data/top10_style23/imgs/036009.png",
+        "data/top10_style23/imgs/018692.png"
+      ],
+      "gt_sources": [
+        "assets/u100_p1p2_20261025/p2_train.csv",
+        "assets/u100_p1p2_20261025/p2_train.csv",
+        "assets/u100_p1p2_20261025/p2_train.csv"
+      ]
+    },
+    {
+      "idx": 72,
+      "script": "行",
+      "char": "何",
+      "writer": 2,
+      "n_gt": 2,
+      "n_train_gt": 2,
+      "gt": {
+        "ink": 0.29370880126953125,
+        "soft_ink": 0.29370880126953125,
+        "width50": 0.09375,
+        "width90": 0.12509262604547006,
+        "aspect": 1.0294782608695652,
+        "bbox_area": 0.9021759033203125,
+        "density": 0.3252571479692252,
+        "center_x": 0.4664523214776852,
+        "center_y": 0.4353824986548982
+      },
+      "gen": {
+        "ink": 0.2722320556640625,
+        "soft_ink": 0.2758249044418335,
+        "width50": 0.0859375,
+        "width90": 0.10267293456039805,
+        "aspect": 1.0204081632653061,
+        "bbox_area": 0.934600830078125,
+        "density": 0.29128163265306123,
+        "center_x": 0.4865017206024686,
+        "center_y": 0.4206058258297664
+      },
+      "gt_paths": [
+        "data/top10_style23/imgs/000646.png",
+        "data/top10_style23/imgs/000647.png"
+      ],
+      "gt_sources": [
+        "assets/u100_p1p2_20261025/p2_train.csv",
+        "assets/u100_p1p2_20261025/p2_train.csv"
+      ]
+    },
+    {
+      "idx": 73,
+      "script": "行",
+      "char": "何",
+      "writer": 3,
+      "n_gt": 4,
+      "n_train_gt": 4,
+      "gt": {
+        "ink": 0.18904876708984375,
+        "soft_ink": 0.18904876708984375,
+        "width50": 0.06777130604544074,
+        "width90": 0.1254751154455312,
+        "aspect": 1.1380781186405866,
+        "bbox_area": 0.8008003234863281,
+        "density": 0.2388442246355261,
+        "center_x": 0.5225419682639576,
+        "center_y": 0.4436559175623695
+      },
+      "gen": {
+        "ink": 0.2284698486328125,
+        "soft_ink": 0.23184023797512054,
+        "width50": 0.1015625,
+        "width90": 0.1484375,
+        "aspect": 1.0638297872340425,
+        "bbox_area": 0.896453857421875,
+        "density": 0.2548595744680851,
+        "center_x": 0.6136379876533671,
+        "center_y": 0.46851652909468355
+      },
+      "gt_paths": [
+        "data/top10_style23/imgs/000650.png",
+        "data/top10_style23/imgs/000652.png",
+        "data/top10_style23/imgs/020836.png",
+        "data/top10_style23/imgs/000651.png"
+      ],
+      "gt_sources": [
+        "assets/u100_p1p2_20261025/p2_train.csv",
+        "assets/u100_p1p2_20261025/p2_train.csv",
+        "assets/u100_p1p2_20261025/p2_train.csv",
+        "assets/u100_p1p2_20261025/p2_train.csv"
+      ]
+    },
+    {
+      "idx": 74,
+      "script": "行",
+      "char": "何",
+      "writer": 4,
+      "n_gt": 2,
+      "n_train_gt": 2,
+      "gt": {
+        "ink": 0.15775299072265625,
+        "soft_ink": 0.15751118585467339,
+        "width50": 0.08671108994994363,
+        "width90": 0.1182215707560884,
+        "aspect": 1.14,
+        "bbox_area": 0.5345535278320312,
+        "density": 0.2888757059127429,
+        "center_x": 0.54095619169088,
+        "center_y": 0.457059978901155
+      },
+      "gen": {
+        "ink": 0.1453704833984375,
+        "soft_ink": 0.1486041247844696,
+        "width50": 0.1059392170200081,
+        "width90": 0.14607590315306412,
+        "aspect": 1.5724637681159421,
+        "bbox_area": 0.456939697265625,
+        "density": 0.3181393174380552,
+        "center_x": 0.4986063069722578,
+        "center_y": 0.46645786960009655
+      },
+      "gt_paths": [
+        "data/top10_style23/imgs/014258.png",
+        "data/top10_style23/imgs/036355.png"
+      ],
+      "gt_sources": [
+        "assets/u100_p1p2_20261025/p2_train.csv",
+        "assets/u100_p1p2_20261025/p2_train.csv"
+      ]
+    },
+    {
+      "idx": 75,
+      "script": "行",
+      "char": "何",
+      "writer": 5,
+      "n_gt": 2,
+      "n_train_gt": 2,
+      "gt": {
+        "ink": 0.1266326904296875,
+        "soft_ink": 0.1266326904296875,
+        "width50": 0.046875,
+        "width90": 0.0722081303681194,
+        "aspect": 0.9488888888888889,
+        "bbox_area": 0.7261581420898438,
+        "density": 0.17413361320447032,
+        "center_x": 0.5804378049679233,
+        "center_y": 0.40867717087121136
+      },
+      "gen": {
+        "ink": 0.137054443359375,
+        "soft_ink": 0.14023670554161072,
+        "width50": 0.0546875,
+        "width90": 0.0859375,
+        "aspect": 1.0638297872340425,
+        "bbox_area": 0.896453857421875,
+        "density": 0.15288510638297872,
+        "center_x": 0.5848180785512114,
+        "center_y": 0.4729968062543094
+      },
+      "gt_paths": [
+        "data/top10_style23/imgs/011642.png",
+        "data/top10_style23/imgs/019278.png"
+      ],
+      "gt_sources": [
+        "assets/u100_p1p2_20261025/p2_train.csv",
+        "assets/u100_p1p2_20261025/p2_train.csv"
+      ]
+    },
+    {
+      "idx": 76,
+      "script": "行",
+      "char": "何",
+      "writer": 6,
+      "n_gt": 5,
+      "n_train_gt": 5,
+      "gt": {
+        "ink": 0.1871246337890625,
+        "soft_ink": 0.18719859421253204,
+        "width50": 0.056450794860359796,
+        "width90": 0.09844453526040461,
+        "aspect": 0.9345263365360926,
+        "bbox_area": 0.77010498046875,
+        "density": 0.2453357116582644,
+        "center_x": 0.49737580302083495,
+        "center_y": 0.43400074449269316
+      },
+      "gen": {
+        "ink": 0.18341064453125,
+        "soft_ink": 0.18843680620193481,
+        "width50": 0.0546875,
+        "width90": 0.07633070011147662,
+        "aspect": 1.055084745762712,
+        "bbox_area": 0.89666748046875,
+        "density": 0.20454700156558436,
+        "center_x": 0.5088733356366091,
+        "center_y": 0.4395278622883369
+      },
+      "gt_paths": [
+        "data/top10_style23/imgs/000655.png",
+        "data/top10_style23/imgs/000654.png",
+        "data/top10_style23/imgs/000653.png",
+        "data/top10_style23/imgs/017866.png",
+        "data/top10_style23/imgs/013903.png"
+      ],
+      "gt_sources": [
+        "assets/u100_p1p2_20261025/p2_train.csv",
+        "assets/u100_p1p2_20261025/p2_train.csv",
+        "assets/u100_p1p2_20261025/p2_train.csv",
+        "assets/u100_p1p2_20261025/p2_train.csv",
+        "assets/u100_p1p2_20261025/p2_train.csv"
+      ]
+    },
+    {
+      "idx": 77,
+      "script": "行",
+      "char": "何",
+      "writer": 7,
+      "n_gt": 2,
+      "n_train_gt": 2,
+      "gt": {
+        "ink": 0.234375,
+        "soft_ink": 0.234375,
+        "width50": 0.08752858535404288,
+        "width90": 0.14182563375082047,
+        "aspect": 1.0615333259152109,
+        "bbox_area": 0.72784423828125,
+        "density": 0.3219931011460999,
+        "center_x": 0.5136277046196133,
+        "center_y": 0.4548001022883231
+      },
+      "gen": {
+        "ink": 0.2266693115234375,
+        "soft_ink": 0.23082992434501648,
+        "width50": 0.1015625,
+        "width90": 0.14041926532039278,
+        "aspect": 1.1848341232227488,
+        "bbox_area": 0.804901123046875,
+        "density": 0.28161137440758294,
+        "center_x": 0.5493279135196215,
+        "center_y": 0.45330634926039126
+      },
+      "gt_paths": [
+        "data/top10_style23/imgs/015369.png",
+        "data/top10_style23/imgs/021166.png"
+      ],
+      "gt_sources": [
+        "assets/u100_p1p2_20261025/p2_train.csv",
+        "assets/u100_p1p2_20261025/p2_train.csv"
+      ]
+    },
+    {
+      "idx": 80,
+      "script": "行",
+      "char": "閒",
+      "writer": 0,
+      "n_gt": 3,
+      "n_train_gt": 2,
+      "gt": {
+        "ink": 0.4091339111328125,
+        "soft_ink": 0.4091339111328125,
+        "width50": 0.0981373314457243,
+        "width90": 0.13296767777708093,
+        "aspect": 0.9613819163292847,
+        "bbox_area": 0.9091695149739584,
+        "density": 0.45235087719298245,
+        "center_x": 0.5425789308213329,
+        "center_y": 0.4860664805988871
+      },
+      "gen": {
+        "ink": 0.45721435546875,
+        "soft_ink": 0.46093857288360596,
+        "width50": 0.1328125,
+        "width90": 0.1484375,
+        "aspect": 0.968,
+        "bbox_area": 0.92315673828125,
+        "density": 0.49527272727272725,
+        "center_x": 0.5547210218070266,
+        "center_y": 0.4890638568420626
+      },
+      "gt_paths": [
+        "data/top10_style23/imgs/010501.png",
+        "data/top10_style23/imgs/010499.png",
+        "data/top10_style23/imgs/010500.png"
+      ],
+      "gt_sources": [
+        "assets/u100_p1p2_20261025/p2_train.csv",
+        "assets/u100_p1p2_20261025/p2_train.csv",
+        "assets/u100_pretrain_20261024/validation_val100.csv"
+      ]
+    },
+    {
+      "idx": 83,
+      "script": "行",
+      "char": "閒",
+      "writer": 3,
+      "n_gt": 1,
+      "n_train_gt": 1,
+      "gt": {
+        "ink": 0.1915283203125,
+        "soft_ink": 0.1915283203125,
+        "width50": 0.04159808844013093,
+        "width90": 0.1171875,
+        "aspect": 1.0593220338983051,
+        "bbox_area": 0.9002685546875,
+        "density": 0.2127457627118644,
+        "center_x": 0.5306605306239768,
+        "center_y": 0.5299560104475186
+      },
+      "gen": {
+        "ink": 0.387786865234375,
+        "soft_ink": 0.39209604263305664,
+        "width50": 0.1059392170200081,
+        "width90": 0.13916635036783537,
+        "aspect": 1.0040485829959513,
+        "bbox_area": 0.9346923828125,
+        "density": 0.4148818074964085,
+        "center_x": 0.565937555642266,
+        "center_y": 0.4838728057935784
+      },
+      "gt_paths": [
+        "data/top10_style23/imgs/010497.png"
+      ],
+      "gt_sources": [
+        "assets/u100_p1p2_20261025/p2_train.csv"
+      ]
+    },
+    {
+      "idx": 90,
+      "script": "楷",
+      "char": "咽",
+      "writer": 0,
+      "n_gt": 1,
+      "n_train_gt": 0,
+      "gt": {
+        "ink": 0.1803131103515625,
+        "soft_ink": 0.1803131103515625,
+        "width50": 0.0859375,
+        "width90": 0.1171875,
+        "aspect": 1.331360946745562,
+        "bbox_area": 0.5802154541015625,
+        "density": 0.31076923076923074,
+        "center_x": 0.5897824171557426,
+        "center_y": 0.46074731153356663
+      },
+      "gen": {
+        "ink": 0.1103057861328125,
+        "soft_ink": 0.11364811658859253,
+        "width50": 0.0546875,
+        "width90": 0.1015625,
+        "aspect": 1.4666666666666666,
+        "bbox_area": 0.5035400390625,
+        "density": 0.21906060606060607,
+        "center_x": 0.5688559137452197,
+        "center_y": 0.4949025689712613
+      },
+      "gt_paths": [
+        "data/top10_style23/imgs/017298.png"
+      ],
+      "gt_sources": [
+        "assets/u100_pretrain_20261024/validation_val100.csv"
+      ]
+    },
+    {
+      "idx": 93,
+      "script": "楷",
+      "char": "咽",
+      "writer": 3,
+      "n_gt": 1,
+      "n_train_gt": 1,
+      "gt": {
+        "ink": 0.29327392578125,
+        "soft_ink": 0.2928556203842163,
+        "width50": 0.0703125,
+        "width90": 0.1640625,
+        "aspect": 1.014218009478673,
+        "bbox_area": 0.688995361328125,
+        "density": 0.42565442707179874,
+        "center_x": 0.6001637760432842,
+        "center_y": 0.4494190104789155
+      },
+      "gen": {
+        "ink": 0.21502685546875,
+        "soft_ink": 0.2156347930431366,
+        "width50": 0.0703125,
+        "width90": 0.1328125,
+        "aspect": 0.9653465346534653,
+        "bbox_area": 0.601043701171875,
+        "density": 0.3577557755775578,
+        "center_x": 0.5951572230645641,
+        "center_y": 0.47546555423867565
+      },
+      "gt_paths": [
+        "data/top10_style23/imgs/014463.png"
+      ],
+      "gt_sources": [
+        "assets/u100_p1p2_20261025/p2_train.csv"
+      ]
+    },
+    {
+      "idx": 101,
+      "script": "楷",
+      "char": "兀",
+      "writer": 1,
+      "n_gt": 1,
+      "n_train_gt": 0,
+      "gt": {
+        "ink": 0.1139068603515625,
+        "soft_ink": 0.1139068603515625,
+        "width50": 0.07185967989988726,
+        "width90": 0.11422265118604147,
+        "aspect": 1.5410958904109588,
+        "bbox_area": 0.501251220703125,
+        "density": 0.22724505327245054,
+        "center_x": 0.5236998804880292,
+        "center_y": 0.5050276453515097
+      },
+      "gen": {
+        "ink": 0.158355712890625,
+        "soft_ink": 0.16053538024425507,
+        "width50": 0.0859375,
+        "width90": 0.1171875,
+        "aspect": 1.2150537634408602,
+        "bbox_area": 0.64141845703125,
+        "density": 0.24688362356075744,
+        "center_x": 0.5311459312395229,
+        "center_y": 0.5497678575797222
+      },
+      "gt_paths": [
+        "data/top10_style23/imgs/018282.png"
+      ],
+      "gt_sources": [
+        "assets/u100_pretrain_20261024/validation_val100.csv"
+      ]
+    },
+    {
+      "idx": 111,
+      "script": "行",
+      "char": "桑",
+      "writer": 1,
+      "n_gt": 2,
+      "n_train_gt": 1,
+      "gt": {
+        "ink": 0.26030731201171875,
+        "soft_ink": 0.26030731201171875,
+        "width50": 0.05336681167847891,
+        "width90": 0.10696952959611783,
+        "aspect": 0.8354166666666667,
+        "bbox_area": 0.7604217529296875,
+        "density": 0.3634872348252606,
+        "center_x": 0.5554902192013746,
+        "center_y": 0.5587112793948791
+      },
+      "gen": {
+        "ink": 0.275054931640625,
+        "soft_ink": 0.2781658470630646,
+        "width50": 0.0703125,
+        "width90": 0.14041926532039278,
+        "aspect": 1.1318181818181818,
+        "bbox_area": 0.83587646484375,
+        "density": 0.329061701350858,
+        "center_x": 0.5757652442532619,
+        "center_y": 0.5403912256572764
+      },
+      "gt_paths": [
+        "data/top10_style23/imgs/005470.png",
+        "data/top10_style23/imgs/005469.png"
+      ],
+      "gt_sources": [
+        "assets/u100_p1p2_20261025/p2_train.csv",
+        "assets/u100_pretrain_20261024/validation_val100.csv"
+      ]
+    },
+    {
+      "idx": 115,
+      "script": "行",
+      "char": "桑",
+      "writer": 5,
+      "n_gt": 1,
+      "n_train_gt": 1,
+      "gt": {
+        "ink": 0.0881195068359375,
+        "soft_ink": 0.0881195068359375,
+        "width50": 0.0390625,
+        "width90": 0.0546875,
+        "aspect": 0.7422222222222222,
+        "bbox_area": 0.5733489990234375,
+        "density": 0.1536926147704591,
+        "center_x": 0.5221695951107715,
+        "center_y": 0.5190235124352771
+      },
+      "gen": {
+        "ink": 0.0868377685546875,
+        "soft_ink": 0.08991267532110214,
+        "width50": 0.027126062148434216,
+        "width90": 0.05661102540027595,
+        "aspect": 0.7601809954751131,
+        "bbox_area": 0.5665283203125,
+        "density": 0.15328054298642535,
+        "center_x": 0.5354500438145701,
+        "center_y": 0.5184908300343456
+      },
+      "gt_paths": [
+        "data/top10_style23/imgs/019501.png"
+      ],
+      "gt_sources": [
+        "assets/u100_p1p2_20261025/p2_train.csv"
+      ]
+    },
+    {
+      "idx": 116,
+      "script": "行",
+      "char": "桑",
+      "writer": 6,
+      "n_gt": 1,
+      "n_train_gt": 1,
+      "gt": {
+        "ink": 0.2509002685546875,
+        "soft_ink": 0.2509002685546875,
+        "width50": 0.08329612335695782,
+        "width90": 0.13194174859373686,
+        "aspect": 0.812,
+        "bbox_area": 0.774383544921875,
+        "density": 0.324,
+        "center_x": 0.542308128019194,
+        "center_y": 0.5399165029996673
+      },
+      "gen": {
+        "ink": 0.292236328125,
+        "soft_ink": 0.2953110635280609,
+        "width50": 0.08658408226795483,
+        "width90": 0.14607590315306412,
+        "aspect": 0.804,
+        "bbox_area": 0.766754150390625,
+        "density": 0.38113432835820893,
+        "center_x": 0.5478584253024995,
+        "center_y": 0.5438206195225697
+      },
+      "gt_paths": [
+        "data/top10_style23/imgs/005468.png"
+      ],
+      "gt_sources": [
+        "assets/u100_p1p2_20261025/p2_train.csv"
+      ]
+    }
+  ],
+  "pairs": [
+    {
+      "script": "行",
+      "char": "用",
+      "metric": "ink",
+      "wa": 0,
+      "wb": 7,
+      "delta_gt": -0.241119384765625,
+      "delta_gen": -0.20465087890625,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "用",
+      "metric": "ink",
+      "wa": 0,
+      "wb": 8,
+      "delta_gt": -0.0548858642578125,
+      "delta_gen": -0.0048370361328125,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "用",
+      "metric": "ink",
+      "wa": 7,
+      "wb": 8,
+      "delta_gt": 0.1862335205078125,
+      "delta_gen": 0.1998138427734375,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "報",
+      "metric": "ink",
+      "wa": 0,
+      "wb": 2,
+      "delta_gt": 0.0610198974609375,
+      "delta_gen": -0.23370361328125,
+      "correct_direction": false
+    },
+    {
+      "script": "行",
+      "char": "報",
+      "metric": "ink",
+      "wa": 0,
+      "wb": 3,
+      "delta_gt": 0.164947509765625,
+      "delta_gen": -0.02374267578125,
+      "correct_direction": false
+    },
+    {
+      "script": "行",
+      "char": "報",
+      "metric": "ink",
+      "wa": 0,
+      "wb": 6,
+      "delta_gt": 0.0380401611328125,
+      "delta_gen": -0.16571044921875,
+      "correct_direction": false
+    },
+    {
+      "script": "行",
+      "char": "報",
+      "metric": "ink",
+      "wa": 2,
+      "wb": 3,
+      "delta_gt": 0.1039276123046875,
+      "delta_gen": 0.2099609375,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "報",
+      "metric": "ink",
+      "wa": 2,
+      "wb": 6,
+      "delta_gt": -0.022979736328125,
+      "delta_gen": 0.0679931640625,
+      "correct_direction": false
+    },
+    {
+      "script": "行",
+      "char": "報",
+      "metric": "ink",
+      "wa": 3,
+      "wb": 6,
+      "delta_gt": -0.1269073486328125,
+      "delta_gen": -0.1419677734375,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "羲",
+      "metric": "ink",
+      "wa": 0,
+      "wb": 2,
+      "delta_gt": -0.08568871539572012,
+      "delta_gen": -0.0860748291015625,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "羲",
+      "metric": "ink",
+      "wa": 0,
+      "wb": 5,
+      "delta_gt": 0.07524573284646738,
+      "delta_gen": 0.0880584716796875,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "羲",
+      "metric": "ink",
+      "wa": 0,
+      "wb": 8,
+      "delta_gt": 0.07998358685037363,
+      "delta_gen": 0.08306884765625,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "羲",
+      "metric": "ink",
+      "wa": 2,
+      "wb": 5,
+      "delta_gt": 0.1609344482421875,
+      "delta_gen": 0.17413330078125,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "羲",
+      "metric": "ink",
+      "wa": 2,
+      "wb": 8,
+      "delta_gt": 0.16567230224609375,
+      "delta_gen": 0.1691436767578125,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "羲",
+      "metric": "ink",
+      "wa": 5,
+      "wb": 8,
+      "delta_gt": 0.00473785400390625,
+      "delta_gen": -0.0049896240234375,
+      "correct_direction": false
+    },
+    {
+      "script": "楷",
+      "char": "旬",
+      "metric": "ink",
+      "wa": 0,
+      "wb": 2,
+      "delta_gt": -0.027191162109375,
+      "delta_gen": -0.054901123046875,
+      "correct_direction": true
+    },
+    {
+      "script": "楷",
+      "char": "旬",
+      "metric": "ink",
+      "wa": 0,
+      "wb": 3,
+      "delta_gt": -0.062408447265625,
+      "delta_gen": -0.0972747802734375,
+      "correct_direction": true
+    },
+    {
+      "script": "楷",
+      "char": "旬",
+      "metric": "ink",
+      "wa": 2,
+      "wb": 3,
+      "delta_gt": -0.03521728515625,
+      "delta_gen": -0.0423736572265625,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "吴",
+      "metric": "ink",
+      "wa": 0,
+      "wb": 1,
+      "delta_gt": -0.039886474609375,
+      "delta_gen": -0.04595947265625,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "吴",
+      "metric": "ink",
+      "wa": 0,
+      "wb": 3,
+      "delta_gt": -0.07888031005859375,
+      "delta_gen": -0.090057373046875,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "吴",
+      "metric": "ink",
+      "wa": 0,
+      "wb": 7,
+      "delta_gt": -0.03121185302734375,
+      "delta_gen": -0.039886474609375,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "吴",
+      "metric": "ink",
+      "wa": 1,
+      "wb": 3,
+      "delta_gt": -0.03899383544921875,
+      "delta_gen": -0.044097900390625,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "吴",
+      "metric": "ink",
+      "wa": 1,
+      "wb": 7,
+      "delta_gt": 0.00867462158203125,
+      "delta_gen": 0.006072998046875,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "吴",
+      "metric": "ink",
+      "wa": 3,
+      "wb": 7,
+      "delta_gt": 0.04766845703125,
+      "delta_gen": 0.0501708984375,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "好",
+      "metric": "ink",
+      "wa": 0,
+      "wb": 2,
+      "delta_gt": 0.0238494873046875,
+      "delta_gen": 0.032684326171875,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "好",
+      "metric": "ink",
+      "wa": 0,
+      "wb": 3,
+      "delta_gt": -0.082916259765625,
+      "delta_gen": -0.051910400390625,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "好",
+      "metric": "ink",
+      "wa": 0,
+      "wb": 6,
+      "delta_gt": -0.18285624186197919,
+      "delta_gen": -0.18701171875,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "好",
+      "metric": "ink",
+      "wa": 2,
+      "wb": 3,
+      "delta_gt": -0.1067657470703125,
+      "delta_gen": -0.0845947265625,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "好",
+      "metric": "ink",
+      "wa": 2,
+      "wb": 6,
+      "delta_gt": -0.20670572916666669,
+      "delta_gen": -0.219696044921875,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "好",
+      "metric": "ink",
+      "wa": 3,
+      "wb": 6,
+      "delta_gt": -0.09993998209635419,
+      "delta_gen": -0.135101318359375,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "何",
+      "metric": "ink",
+      "wa": 0,
+      "wb": 1,
+      "delta_gt": -0.05119832356770833,
+      "delta_gen": -0.0053253173828125,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "何",
+      "metric": "ink",
+      "wa": 0,
+      "wb": 2,
+      "delta_gt": -0.22306060791015625,
+      "delta_gen": -0.1356201171875,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "何",
+      "metric": "ink",
+      "wa": 0,
+      "wb": 3,
+      "delta_gt": -0.11840057373046875,
+      "delta_gen": -0.09185791015625,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "何",
+      "metric": "ink",
+      "wa": 0,
+      "wb": 4,
+      "delta_gt": -0.08710479736328125,
+      "delta_gen": -0.008758544921875,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "何",
+      "metric": "ink",
+      "wa": 0,
+      "wb": 5,
+      "delta_gt": -0.0559844970703125,
+      "delta_gen": -0.0004425048828125,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "何",
+      "metric": "ink",
+      "wa": 0,
+      "wb": 6,
+      "delta_gt": -0.1164764404296875,
+      "delta_gen": -0.0467987060546875,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "何",
+      "metric": "ink",
+      "wa": 0,
+      "wb": 7,
+      "delta_gt": -0.163726806640625,
+      "delta_gen": -0.090057373046875,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "何",
+      "metric": "ink",
+      "wa": 1,
+      "wb": 2,
+      "delta_gt": -0.17186228434244794,
+      "delta_gen": -0.1302947998046875,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "何",
+      "metric": "ink",
+      "wa": 1,
+      "wb": 3,
+      "delta_gt": -0.06720225016276042,
+      "delta_gen": -0.0865325927734375,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "何",
+      "metric": "ink",
+      "wa": 1,
+      "wb": 4,
+      "delta_gt": -0.03590647379557292,
+      "delta_gen": -0.0034332275390625,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "何",
+      "metric": "ink",
+      "wa": 1,
+      "wb": 5,
+      "delta_gt": -0.004786173502604171,
+      "delta_gen": 0.0048828125,
+      "correct_direction": false
+    },
+    {
+      "script": "行",
+      "char": "何",
+      "metric": "ink",
+      "wa": 1,
+      "wb": 6,
+      "delta_gt": -0.06527811686197917,
+      "delta_gen": -0.041473388671875,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "何",
+      "metric": "ink",
+      "wa": 1,
+      "wb": 7,
+      "delta_gt": -0.11252848307291667,
+      "delta_gen": -0.0847320556640625,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "何",
+      "metric": "ink",
+      "wa": 2,
+      "wb": 3,
+      "delta_gt": 0.1046600341796875,
+      "delta_gen": 0.04376220703125,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "何",
+      "metric": "ink",
+      "wa": 2,
+      "wb": 4,
+      "delta_gt": 0.135955810546875,
+      "delta_gen": 0.126861572265625,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "何",
+      "metric": "ink",
+      "wa": 2,
+      "wb": 5,
+      "delta_gt": 0.16707611083984375,
+      "delta_gen": 0.1351776123046875,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "何",
+      "metric": "ink",
+      "wa": 2,
+      "wb": 6,
+      "delta_gt": 0.10658416748046876,
+      "delta_gen": 0.0888214111328125,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "何",
+      "metric": "ink",
+      "wa": 2,
+      "wb": 7,
+      "delta_gt": 0.05933380126953125,
+      "delta_gen": 0.045562744140625,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "何",
+      "metric": "ink",
+      "wa": 3,
+      "wb": 4,
+      "delta_gt": 0.0312957763671875,
+      "delta_gen": 0.083099365234375,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "何",
+      "metric": "ink",
+      "wa": 3,
+      "wb": 5,
+      "delta_gt": 0.06241607666015625,
+      "delta_gen": 0.0914154052734375,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "何",
+      "metric": "ink",
+      "wa": 3,
+      "wb": 6,
+      "delta_gt": 0.0019241333007812556,
+      "delta_gen": 0.0450592041015625,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "何",
+      "metric": "ink",
+      "wa": 3,
+      "wb": 7,
+      "delta_gt": -0.04532623291015625,
+      "delta_gen": 0.001800537109375,
+      "correct_direction": false
+    },
+    {
+      "script": "行",
+      "char": "何",
+      "metric": "ink",
+      "wa": 4,
+      "wb": 5,
+      "delta_gt": 0.03112030029296875,
+      "delta_gen": 0.0083160400390625,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "何",
+      "metric": "ink",
+      "wa": 4,
+      "wb": 6,
+      "delta_gt": -0.029371643066406244,
+      "delta_gen": -0.0380401611328125,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "何",
+      "metric": "ink",
+      "wa": 4,
+      "wb": 7,
+      "delta_gt": -0.07662200927734375,
+      "delta_gen": -0.081298828125,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "何",
+      "metric": "ink",
+      "wa": 5,
+      "wb": 6,
+      "delta_gt": -0.060491943359374994,
+      "delta_gen": -0.046356201171875,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "何",
+      "metric": "ink",
+      "wa": 5,
+      "wb": 7,
+      "delta_gt": -0.1077423095703125,
+      "delta_gen": -0.0896148681640625,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "何",
+      "metric": "ink",
+      "wa": 6,
+      "wb": 7,
+      "delta_gt": -0.047250366210937506,
+      "delta_gen": -0.0432586669921875,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "閒",
+      "metric": "ink",
+      "wa": 0,
+      "wb": 3,
+      "delta_gt": 0.2176055908203125,
+      "delta_gen": 0.069427490234375,
+      "correct_direction": true
+    },
+    {
+      "script": "楷",
+      "char": "咽",
+      "metric": "ink",
+      "wa": 0,
+      "wb": 3,
+      "delta_gt": -0.1129608154296875,
+      "delta_gen": -0.1047210693359375,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "桑",
+      "metric": "ink",
+      "wa": 1,
+      "wb": 5,
+      "delta_gt": 0.17218780517578125,
+      "delta_gen": 0.1882171630859375,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "桑",
+      "metric": "ink",
+      "wa": 1,
+      "wb": 6,
+      "delta_gt": 0.00940704345703125,
+      "delta_gen": -0.017181396484375,
+      "correct_direction": false
+    },
+    {
+      "script": "行",
+      "char": "桑",
+      "metric": "ink",
+      "wa": 5,
+      "wb": 6,
+      "delta_gt": -0.16278076171875,
+      "delta_gen": -0.2053985595703125,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "用",
+      "metric": "soft_ink",
+      "wa": 0,
+      "wb": 7,
+      "delta_gt": -0.241119384765625,
+      "delta_gen": -0.20404469966888428,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "用",
+      "metric": "soft_ink",
+      "wa": 0,
+      "wb": 8,
+      "delta_gt": -0.0548858642578125,
+      "delta_gen": -0.0051654428243637085,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "用",
+      "metric": "soft_ink",
+      "wa": 7,
+      "wb": 8,
+      "delta_gt": 0.1862335205078125,
+      "delta_gen": 0.19887925684452057,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "報",
+      "metric": "soft_ink",
+      "wa": 0,
+      "wb": 2,
+      "delta_gt": 0.0610198974609375,
+      "delta_gen": -0.23200638592243195,
+      "correct_direction": false
+    },
+    {
+      "script": "行",
+      "char": "報",
+      "metric": "soft_ink",
+      "wa": 0,
+      "wb": 3,
+      "delta_gt": 0.164947509765625,
+      "delta_gen": -0.02453787624835968,
+      "correct_direction": false
+    },
+    {
+      "script": "行",
+      "char": "報",
+      "metric": "soft_ink",
+      "wa": 0,
+      "wb": 6,
+      "delta_gt": 0.0380401611328125,
+      "delta_gen": -0.164590522646904,
+      "correct_direction": false
+    },
+    {
+      "script": "行",
+      "char": "報",
+      "metric": "soft_ink",
+      "wa": 2,
+      "wb": 3,
+      "delta_gt": 0.1039276123046875,
+      "delta_gen": 0.20746850967407227,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "報",
+      "metric": "soft_ink",
+      "wa": 2,
+      "wb": 6,
+      "delta_gt": -0.022979736328125,
+      "delta_gen": 0.06741586327552795,
+      "correct_direction": false
+    },
+    {
+      "script": "行",
+      "char": "報",
+      "metric": "soft_ink",
+      "wa": 3,
+      "wb": 6,
+      "delta_gt": -0.1269073486328125,
+      "delta_gen": -0.1400526463985443,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "羲",
+      "metric": "soft_ink",
+      "wa": 0,
+      "wb": 2,
+      "delta_gt": -0.08568871539572012,
+      "delta_gen": -0.08546113967895508,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "羲",
+      "metric": "soft_ink",
+      "wa": 0,
+      "wb": 5,
+      "delta_gt": 0.07524573284646738,
+      "delta_gen": 0.08796894550323486,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "羲",
+      "metric": "soft_ink",
+      "wa": 0,
+      "wb": 8,
+      "delta_gt": 0.07998358685037363,
+      "delta_gen": 0.08223224431276321,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "羲",
+      "metric": "soft_ink",
+      "wa": 2,
+      "wb": 5,
+      "delta_gt": 0.1609344482421875,
+      "delta_gen": 0.17343008518218994,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "羲",
+      "metric": "soft_ink",
+      "wa": 2,
+      "wb": 8,
+      "delta_gt": 0.16567230224609375,
+      "delta_gen": 0.1676933839917183,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "羲",
+      "metric": "soft_ink",
+      "wa": 5,
+      "wb": 8,
+      "delta_gt": 0.00473785400390625,
+      "delta_gen": -0.005736701190471649,
+      "correct_direction": false
+    },
+    {
+      "script": "楷",
+      "char": "旬",
+      "metric": "soft_ink",
+      "wa": 0,
+      "wb": 2,
+      "delta_gt": -0.027191162109375,
+      "delta_gen": -0.05488280951976776,
+      "correct_direction": true
+    },
+    {
+      "script": "楷",
+      "char": "旬",
+      "metric": "soft_ink",
+      "wa": 0,
+      "wb": 3,
+      "delta_gt": -0.062408447265625,
+      "delta_gen": -0.09809498488903046,
+      "correct_direction": true
+    },
+    {
+      "script": "楷",
+      "char": "旬",
+      "metric": "soft_ink",
+      "wa": 2,
+      "wb": 3,
+      "delta_gt": -0.03521728515625,
+      "delta_gen": -0.043212175369262695,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "吴",
+      "metric": "soft_ink",
+      "wa": 0,
+      "wb": 1,
+      "delta_gt": -0.039886474609375,
+      "delta_gen": -0.04479274898767471,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "吴",
+      "metric": "soft_ink",
+      "wa": 0,
+      "wb": 3,
+      "delta_gt": -0.07888031005859375,
+      "delta_gen": -0.09002231806516647,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "吴",
+      "metric": "soft_ink",
+      "wa": 0,
+      "wb": 7,
+      "delta_gt": -0.03121185302734375,
+      "delta_gen": -0.039837054908275604,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "吴",
+      "metric": "soft_ink",
+      "wa": 1,
+      "wb": 3,
+      "delta_gt": -0.03899383544921875,
+      "delta_gen": -0.04522956907749176,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "吴",
+      "metric": "soft_ink",
+      "wa": 1,
+      "wb": 7,
+      "delta_gt": 0.00867462158203125,
+      "delta_gen": 0.004955694079399109,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "吴",
+      "metric": "soft_ink",
+      "wa": 3,
+      "wb": 7,
+      "delta_gt": 0.04766845703125,
+      "delta_gen": 0.05018526315689087,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "好",
+      "metric": "soft_ink",
+      "wa": 0,
+      "wb": 2,
+      "delta_gt": 0.0238494873046875,
+      "delta_gen": 0.033878639340400696,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "好",
+      "metric": "soft_ink",
+      "wa": 0,
+      "wb": 3,
+      "delta_gt": -0.082916259765625,
+      "delta_gen": -0.050699397921562195,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "好",
+      "metric": "soft_ink",
+      "wa": 0,
+      "wb": 6,
+      "delta_gt": -0.18285624186197919,
+      "delta_gen": -0.18510664999485016,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "好",
+      "metric": "soft_ink",
+      "wa": 2,
+      "wb": 3,
+      "delta_gt": -0.1067657470703125,
+      "delta_gen": -0.08457803726196289,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "好",
+      "metric": "soft_ink",
+      "wa": 2,
+      "wb": 6,
+      "delta_gt": -0.20670572916666669,
+      "delta_gen": -0.21898528933525085,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "好",
+      "metric": "soft_ink",
+      "wa": 3,
+      "wb": 6,
+      "delta_gt": -0.09993998209635419,
+      "delta_gen": -0.13440725207328796,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "何",
+      "metric": "soft_ink",
+      "wa": 0,
+      "wb": 1,
+      "delta_gt": -0.05119832356770833,
+      "delta_gen": -0.005914181470870972,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "何",
+      "metric": "soft_ink",
+      "wa": 0,
+      "wb": 2,
+      "delta_gt": -0.22306060791015625,
+      "delta_gen": -0.13529589772224426,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "何",
+      "metric": "soft_ink",
+      "wa": 0,
+      "wb": 3,
+      "delta_gt": -0.11840057373046875,
+      "delta_gen": -0.09131123125553131,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "何",
+      "metric": "soft_ink",
+      "wa": 0,
+      "wb": 4,
+      "delta_gt": -0.08686299249529839,
+      "delta_gen": -0.008075118064880371,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "何",
+      "metric": "soft_ink",
+      "wa": 0,
+      "wb": 5,
+      "delta_gt": -0.0559844970703125,
+      "delta_gen": 0.0002923011779785156,
+      "correct_direction": false
+    },
+    {
+      "script": "行",
+      "char": "何",
+      "metric": "soft_ink",
+      "wa": 0,
+      "wb": 6,
+      "delta_gt": -0.11655040085315704,
+      "delta_gen": -0.04790779948234558,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "何",
+      "metric": "soft_ink",
+      "wa": 0,
+      "wb": 7,
+      "delta_gt": -0.163726806640625,
+      "delta_gen": -0.09030091762542725,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "何",
+      "metric": "soft_ink",
+      "wa": 1,
+      "wb": 2,
+      "delta_gt": -0.17186228434244794,
+      "delta_gen": -0.1293817162513733,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "何",
+      "metric": "soft_ink",
+      "wa": 1,
+      "wb": 3,
+      "delta_gt": -0.06720225016276042,
+      "delta_gen": -0.08539704978466034,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "何",
+      "metric": "soft_ink",
+      "wa": 1,
+      "wb": 4,
+      "delta_gt": -0.03566466892759006,
+      "delta_gen": -0.0021609365940093994,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "何",
+      "metric": "soft_ink",
+      "wa": 1,
+      "wb": 5,
+      "delta_gt": -0.004786173502604171,
+      "delta_gen": 0.006206482648849487,
+      "correct_direction": false
+    },
+    {
+      "script": "行",
+      "char": "何",
+      "metric": "soft_ink",
+      "wa": 1,
+      "wb": 6,
+      "delta_gt": -0.06535207728544871,
+      "delta_gen": -0.04199361801147461,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "何",
+      "metric": "soft_ink",
+      "wa": 1,
+      "wb": 7,
+      "delta_gt": -0.11252848307291667,
+      "delta_gen": -0.08438673615455627,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "何",
+      "metric": "soft_ink",
+      "wa": 2,
+      "wb": 3,
+      "delta_gt": 0.1046600341796875,
+      "delta_gen": 0.04398466646671295,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "何",
+      "metric": "soft_ink",
+      "wa": 2,
+      "wb": 4,
+      "delta_gt": 0.13619761541485786,
+      "delta_gen": 0.1272207796573639,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "何",
+      "metric": "soft_ink",
+      "wa": 2,
+      "wb": 5,
+      "delta_gt": 0.16707611083984375,
+      "delta_gen": 0.13558819890022278,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "何",
+      "metric": "soft_ink",
+      "wa": 2,
+      "wb": 6,
+      "delta_gt": 0.1065102070569992,
+      "delta_gen": 0.08738809823989868,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "何",
+      "metric": "soft_ink",
+      "wa": 2,
+      "wb": 7,
+      "delta_gt": 0.05933380126953125,
+      "delta_gen": 0.04499498009681702,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "何",
+      "metric": "soft_ink",
+      "wa": 3,
+      "wb": 4,
+      "delta_gt": 0.031537581235170364,
+      "delta_gen": 0.08323611319065094,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "何",
+      "metric": "soft_ink",
+      "wa": 3,
+      "wb": 5,
+      "delta_gt": 0.06241607666015625,
+      "delta_gen": 0.09160353243350983,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "何",
+      "metric": "soft_ink",
+      "wa": 3,
+      "wb": 6,
+      "delta_gt": 0.0018501728773117065,
+      "delta_gen": 0.04340343177318573,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "何",
+      "metric": "soft_ink",
+      "wa": 3,
+      "wb": 7,
+      "delta_gt": -0.04532623291015625,
+      "delta_gen": 0.001010313630104065,
+      "correct_direction": false
+    },
+    {
+      "script": "行",
+      "char": "何",
+      "metric": "soft_ink",
+      "wa": 4,
+      "wb": 5,
+      "delta_gt": 0.030878495424985886,
+      "delta_gen": 0.008367419242858887,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "何",
+      "metric": "soft_ink",
+      "wa": 4,
+      "wb": 6,
+      "delta_gt": -0.029687408357858658,
+      "delta_gen": -0.03983268141746521,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "何",
+      "metric": "soft_ink",
+      "wa": 4,
+      "wb": 7,
+      "delta_gt": -0.07686381414532661,
+      "delta_gen": -0.08222579956054688,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "何",
+      "metric": "soft_ink",
+      "wa": 5,
+      "wb": 6,
+      "delta_gt": -0.06056590378284454,
+      "delta_gen": -0.0482001006603241,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "何",
+      "metric": "soft_ink",
+      "wa": 5,
+      "wb": 7,
+      "delta_gt": -0.1077423095703125,
+      "delta_gen": -0.09059321880340576,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "何",
+      "metric": "soft_ink",
+      "wa": 6,
+      "wb": 7,
+      "delta_gt": -0.04717640578746796,
+      "delta_gen": -0.042393118143081665,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "閒",
+      "metric": "soft_ink",
+      "wa": 0,
+      "wb": 3,
+      "delta_gt": 0.2176055908203125,
+      "delta_gen": 0.06884253025054932,
+      "correct_direction": true
+    },
+    {
+      "script": "楷",
+      "char": "咽",
+      "metric": "soft_ink",
+      "wa": 0,
+      "wb": 3,
+      "delta_gt": -0.11254251003265381,
+      "delta_gen": -0.10198667645454407,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "桑",
+      "metric": "soft_ink",
+      "wa": 1,
+      "wb": 5,
+      "delta_gt": 0.17218780517578125,
+      "delta_gen": 0.18825317174196243,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "桑",
+      "metric": "soft_ink",
+      "wa": 1,
+      "wb": 6,
+      "delta_gt": 0.00940704345703125,
+      "delta_gen": -0.017145216464996338,
+      "correct_direction": false
+    },
+    {
+      "script": "行",
+      "char": "桑",
+      "metric": "soft_ink",
+      "wa": 5,
+      "wb": 6,
+      "delta_gt": -0.16278076171875,
+      "delta_gen": -0.20539838820695877,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "用",
+      "metric": "width50",
+      "wa": 0,
+      "wb": 7,
+      "delta_gt": -0.109375,
+      "delta_gen": -0.046875,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "用",
+      "metric": "width50",
+      "wa": 0,
+      "wb": 8,
+      "delta_gt": -0.046875,
+      "delta_gen": 0.015625,
+      "correct_direction": false
+    },
+    {
+      "script": "行",
+      "char": "用",
+      "metric": "width50",
+      "wa": 7,
+      "wb": 8,
+      "delta_gt": 0.0625,
+      "delta_gen": 0.0625,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "報",
+      "metric": "width50",
+      "wa": 0,
+      "wb": 2,
+      "delta_gt": -0.015625,
+      "delta_gen": -0.06518082617584078,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "報",
+      "metric": "width50",
+      "wa": 0,
+      "wb": 3,
+      "delta_gt": 0.03125,
+      "delta_gen": -0.0026808261758407767,
+      "correct_direction": false
+    },
+    {
+      "script": "行",
+      "char": "報",
+      "metric": "width50",
+      "wa": 2,
+      "wb": 3,
+      "delta_gt": 0.046875,
+      "delta_gen": 0.0625,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "報",
+      "metric": "width50",
+      "wa": 2,
+      "wb": 6,
+      "delta_gt": 0.015625,
+      "delta_gen": -0.013109616048144201,
+      "correct_direction": false
+    },
+    {
+      "script": "行",
+      "char": "報",
+      "metric": "width50",
+      "wa": 3,
+      "wb": 6,
+      "delta_gt": -0.03125,
+      "delta_gen": -0.0756096160481442,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "羲",
+      "metric": "width50",
+      "wa": 0,
+      "wb": 2,
+      "delta_gt": -0.015988227719948046,
+      "delta_gen": -0.050666260736238825,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "羲",
+      "metric": "width50",
+      "wa": 0,
+      "wb": 5,
+      "delta_gt": 0.015364470867856563,
+      "delta_gen": -0.015625,
+      "correct_direction": false
+    },
+    {
+      "script": "行",
+      "char": "羲",
+      "metric": "width50",
+      "wa": 0,
+      "wb": 8,
+      "delta_gt": 0.028205946104211167,
+      "delta_gen": -0.006472086912079612,
+      "correct_direction": false
+    },
+    {
+      "script": "行",
+      "char": "羲",
+      "metric": "width50",
+      "wa": 2,
+      "wb": 5,
+      "delta_gt": 0.03135269858780461,
+      "delta_gen": 0.035041260736238825,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "羲",
+      "metric": "width50",
+      "wa": 2,
+      "wb": 8,
+      "delta_gt": 0.044194173824159216,
+      "delta_gen": 0.044194173824159216,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "羲",
+      "metric": "width50",
+      "wa": 5,
+      "wb": 8,
+      "delta_gt": 0.012841475236354604,
+      "delta_gen": 0.009152913087920388,
+      "correct_direction": true
+    },
+    {
+      "script": "楷",
+      "char": "旬",
+      "metric": "width50",
+      "wa": 0,
+      "wb": 2,
+      "delta_gt": -0.03125,
+      "delta_gen": -0.02178826132087517,
+      "correct_direction": true
+    },
+    {
+      "script": "楷",
+      "char": "旬",
+      "metric": "width50",
+      "wa": 0,
+      "wb": 3,
+      "delta_gt": -0.03125,
+      "delta_gen": -0.02178826132087517,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "吴",
+      "metric": "width50",
+      "wa": 0,
+      "wb": 3,
+      "delta_gt": -0.015625,
+      "delta_gen": -0.05425212429686843,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "吴",
+      "metric": "width50",
+      "wa": 0,
+      "wb": 7,
+      "delta_gt": -0.0036885621484342157,
+      "delta_gen": -0.046875,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "吴",
+      "metric": "width50",
+      "wa": 1,
+      "wb": 3,
+      "delta_gt": -0.015625,
+      "delta_gen": 0.008247875703131569,
+      "correct_direction": false
+    },
+    {
+      "script": "行",
+      "char": "吴",
+      "metric": "width50",
+      "wa": 1,
+      "wb": 7,
+      "delta_gt": -0.0036885621484342157,
+      "delta_gen": 0.015625,
+      "correct_direction": false
+    },
+    {
+      "script": "行",
+      "char": "吴",
+      "metric": "width50",
+      "wa": 3,
+      "wb": 7,
+      "delta_gt": 0.011936437851565784,
+      "delta_gen": 0.007377124296868431,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "好",
+      "metric": "width50",
+      "wa": 0,
+      "wb": 2,
+      "delta_gt": 0.01816058844013093,
+      "delta_gen": -0.0036885621484342157,
+      "correct_direction": false
+    },
+    {
+      "script": "行",
+      "char": "好",
+      "metric": "width50",
+      "wa": 0,
+      "wb": 3,
+      "delta_gt": -0.06958586633899264,
+      "delta_gen": -0.0625,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "好",
+      "metric": "width50",
+      "wa": 0,
+      "wb": 6,
+      "delta_gt": -0.06529045615481349,
+      "delta_gen": -0.059858623356957824,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "好",
+      "metric": "width50",
+      "wa": 2,
+      "wb": 3,
+      "delta_gt": -0.08774645477912357,
+      "delta_gen": -0.058811437851565784,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "好",
+      "metric": "width50",
+      "wa": 2,
+      "wb": 6,
+      "delta_gt": -0.08345104459494442,
+      "delta_gen": -0.05617006120852361,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "好",
+      "metric": "width50",
+      "wa": 3,
+      "wb": 6,
+      "delta_gt": 0.0042954101841791575,
+      "delta_gen": 0.002641376643042176,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "何",
+      "metric": "width50",
+      "wa": 0,
+      "wb": 1,
+      "delta_gt": -0.012574028970693204,
+      "delta_gen": 0.04040291308792039,
+      "correct_direction": false
+    },
+    {
+      "script": "行",
+      "char": "何",
+      "metric": "width50",
+      "wa": 0,
+      "wb": 2,
+      "delta_gt": -0.0859375,
+      "delta_gen": -0.03125,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "何",
+      "metric": "width50",
+      "wa": 0,
+      "wb": 3,
+      "delta_gt": -0.05995880604544074,
+      "delta_gen": -0.046875,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "何",
+      "metric": "width50",
+      "wa": 0,
+      "wb": 4,
+      "delta_gt": -0.07889858994994363,
+      "delta_gen": -0.051251717020008095,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "何",
+      "metric": "width50",
+      "wa": 0,
+      "wb": 5,
+      "delta_gt": -0.0390625,
+      "delta_gen": 0.0,
+      "correct_direction": false
+    },
+    {
+      "script": "行",
+      "char": "何",
+      "metric": "width50",
+      "wa": 0,
+      "wb": 6,
+      "delta_gt": -0.048638294860359796,
+      "delta_gen": 0.0,
+      "correct_direction": false
+    },
+    {
+      "script": "行",
+      "char": "何",
+      "metric": "width50",
+      "wa": 0,
+      "wb": 7,
+      "delta_gt": -0.07971608535404288,
+      "delta_gen": -0.046875,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "何",
+      "metric": "width50",
+      "wa": 1,
+      "wb": 2,
+      "delta_gt": -0.07336347102930679,
+      "delta_gen": -0.07165291308792039,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "何",
+      "metric": "width50",
+      "wa": 1,
+      "wb": 3,
+      "delta_gt": -0.04738477707474753,
+      "delta_gen": -0.08727791308792039,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "何",
+      "metric": "width50",
+      "wa": 1,
+      "wb": 4,
+      "delta_gt": -0.06632456097925042,
+      "delta_gen": -0.09165463010792849,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "何",
+      "metric": "width50",
+      "wa": 1,
+      "wb": 5,
+      "delta_gt": -0.026488471029306796,
+      "delta_gen": -0.04040291308792039,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "何",
+      "metric": "width50",
+      "wa": 1,
+      "wb": 6,
+      "delta_gt": -0.03606426588966659,
+      "delta_gen": -0.04040291308792039,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "何",
+      "metric": "width50",
+      "wa": 1,
+      "wb": 7,
+      "delta_gt": -0.06714205638334968,
+      "delta_gen": -0.08727791308792039,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "何",
+      "metric": "width50",
+      "wa": 2,
+      "wb": 3,
+      "delta_gt": 0.025978693954559262,
+      "delta_gen": -0.015625,
+      "correct_direction": false
+    },
+    {
+      "script": "行",
+      "char": "何",
+      "metric": "width50",
+      "wa": 2,
+      "wb": 4,
+      "delta_gt": 0.007038910050056371,
+      "delta_gen": -0.020001717020008095,
+      "correct_direction": false
+    },
+    {
+      "script": "行",
+      "char": "何",
+      "metric": "width50",
+      "wa": 2,
+      "wb": 5,
+      "delta_gt": 0.046875,
+      "delta_gen": 0.03125,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "何",
+      "metric": "width50",
+      "wa": 2,
+      "wb": 6,
+      "delta_gt": 0.037299205139640204,
+      "delta_gen": 0.03125,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "何",
+      "metric": "width50",
+      "wa": 2,
+      "wb": 7,
+      "delta_gt": 0.006221414645957116,
+      "delta_gen": -0.015625,
+      "correct_direction": false
+    },
+    {
+      "script": "行",
+      "char": "何",
+      "metric": "width50",
+      "wa": 3,
+      "wb": 4,
+      "delta_gt": -0.01893978390450289,
+      "delta_gen": -0.004376717020008095,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "何",
+      "metric": "width50",
+      "wa": 3,
+      "wb": 5,
+      "delta_gt": 0.020896306045440738,
+      "delta_gen": 0.046875,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "何",
+      "metric": "width50",
+      "wa": 3,
+      "wb": 6,
+      "delta_gt": 0.011320511185080942,
+      "delta_gen": 0.046875,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "何",
+      "metric": "width50",
+      "wa": 3,
+      "wb": 7,
+      "delta_gt": -0.019757279308602146,
+      "delta_gen": 0.0,
+      "correct_direction": false
+    },
+    {
+      "script": "行",
+      "char": "何",
+      "metric": "width50",
+      "wa": 4,
+      "wb": 5,
+      "delta_gt": 0.03983608994994363,
+      "delta_gen": 0.051251717020008095,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "何",
+      "metric": "width50",
+      "wa": 4,
+      "wb": 6,
+      "delta_gt": 0.030260295089583833,
+      "delta_gen": 0.051251717020008095,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "何",
+      "metric": "width50",
+      "wa": 4,
+      "wb": 7,
+      "delta_gt": -0.0008174954040992555,
+      "delta_gen": 0.004376717020008095,
+      "correct_direction": false
+    },
+    {
+      "script": "行",
+      "char": "何",
+      "metric": "width50",
+      "wa": 5,
+      "wb": 6,
+      "delta_gt": -0.009575794860359796,
+      "delta_gen": 0.0,
+      "correct_direction": false
+    },
+    {
+      "script": "行",
+      "char": "何",
+      "metric": "width50",
+      "wa": 5,
+      "wb": 7,
+      "delta_gt": -0.040653585354042884,
+      "delta_gen": -0.046875,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "何",
+      "metric": "width50",
+      "wa": 6,
+      "wb": 7,
+      "delta_gt": -0.03107779049368309,
+      "delta_gen": -0.046875,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "閒",
+      "metric": "width50",
+      "wa": 0,
+      "wb": 3,
+      "delta_gt": 0.05653924300559337,
+      "delta_gen": 0.026873282979991905,
+      "correct_direction": true
+    },
+    {
+      "script": "楷",
+      "char": "咽",
+      "metric": "width50",
+      "wa": 0,
+      "wb": 3,
+      "delta_gt": 0.015625,
+      "delta_gen": -0.015625,
+      "correct_direction": false
+    },
+    {
+      "script": "行",
+      "char": "桑",
+      "metric": "width50",
+      "wa": 1,
+      "wb": 5,
+      "delta_gt": 0.014304311678478912,
+      "delta_gen": 0.043186437851565784,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "桑",
+      "metric": "width50",
+      "wa": 1,
+      "wb": 6,
+      "delta_gt": -0.029929311678478912,
+      "delta_gen": -0.01627158226795483,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "桑",
+      "metric": "width50",
+      "wa": 5,
+      "wb": 6,
+      "delta_gt": -0.044233623356957824,
+      "delta_gen": -0.059458020119520616,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "用",
+      "metric": "width90",
+      "wa": 0,
+      "wb": 7,
+      "delta_gt": -0.078125,
+      "delta_gen": -0.0879710283239789,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "用",
+      "metric": "width90",
+      "wa": 0,
+      "wb": 8,
+      "delta_gt": -0.026690686445302647,
+      "delta_gen": 0.0,
+      "correct_direction": false
+    },
+    {
+      "script": "行",
+      "char": "用",
+      "metric": "width90",
+      "wa": 7,
+      "wb": 8,
+      "delta_gt": 0.05143431355469735,
+      "delta_gen": 0.0879710283239789,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "報",
+      "metric": "width90",
+      "wa": 0,
+      "wb": 2,
+      "delta_gt": -0.020465923336737482,
+      "delta_gen": -0.08364357373279707,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "報",
+      "metric": "width90",
+      "wa": 0,
+      "wb": 3,
+      "delta_gt": 0.04116332525699938,
+      "delta_gen": 0.0,
+      "correct_direction": false
+    },
+    {
+      "script": "行",
+      "char": "報",
+      "metric": "width90",
+      "wa": 0,
+      "wb": 6,
+      "delta_gt": -0.005711674743000619,
+      "delta_gen": -0.1162299421076087,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "報",
+      "metric": "width90",
+      "wa": 2,
+      "wb": 3,
+      "delta_gt": 0.06162924859373686,
+      "delta_gen": 0.08364357373279707,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "報",
+      "metric": "width90",
+      "wa": 2,
+      "wb": 6,
+      "delta_gt": 0.014754248593736863,
+      "delta_gen": -0.03258636837481163,
+      "correct_direction": false
+    },
+    {
+      "script": "行",
+      "char": "報",
+      "metric": "width90",
+      "wa": 3,
+      "wb": 6,
+      "delta_gt": -0.046875,
+      "delta_gen": -0.1162299421076087,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "羲",
+      "metric": "width90",
+      "wa": 0,
+      "wb": 2,
+      "delta_gt": -0.041650680053308506,
+      "delta_gen": -0.04237568680800333,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "羲",
+      "metric": "width90",
+      "wa": 0,
+      "wb": 5,
+      "delta_gt": 0.0325017273067845,
+      "delta_gen": 0.03125,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "羲",
+      "metric": "width90",
+      "wa": 0,
+      "wb": 8,
+      "delta_gt": 0.053899903837475116,
+      "delta_gen": 0.043186437851565784,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "羲",
+      "metric": "width90",
+      "wa": 2,
+      "wb": 5,
+      "delta_gt": 0.07415240736009301,
+      "delta_gen": 0.07362568680800333,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "羲",
+      "metric": "width90",
+      "wa": 2,
+      "wb": 8,
+      "delta_gt": 0.09555058389078362,
+      "delta_gen": 0.08556212465956911,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "羲",
+      "metric": "width90",
+      "wa": 5,
+      "wb": 8,
+      "delta_gt": 0.021398176530690614,
+      "delta_gen": 0.011936437851565784,
+      "correct_direction": true
+    },
+    {
+      "script": "楷",
+      "char": "旬",
+      "metric": "width90",
+      "wa": 0,
+      "wb": 2,
+      "delta_gt": -0.014077820100112742,
+      "delta_gen": -0.005244737759115478,
+      "correct_direction": true
+    },
+    {
+      "script": "楷",
+      "char": "旬",
+      "metric": "width90",
+      "wa": 0,
+      "wb": 3,
+      "delta_gt": -0.030813254660510797,
+      "delta_gen": -0.012221060297156736,
+      "correct_direction": true
+    },
+    {
+      "script": "楷",
+      "char": "旬",
+      "metric": "width90",
+      "wa": 2,
+      "wb": 3,
+      "delta_gt": -0.016735434560398055,
+      "delta_gen": -0.0069763225380412575,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "吴",
+      "metric": "width90",
+      "wa": 0,
+      "wb": 1,
+      "delta_gt": -0.05991218203372474,
+      "delta_gen": -0.08515365410427231,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "吴",
+      "metric": "width90",
+      "wa": 0,
+      "wb": 3,
+      "delta_gt": -0.01937615598583428,
+      "delta_gen": -0.06107852585665937,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "吴",
+      "metric": "width90",
+      "wa": 0,
+      "wb": 7,
+      "delta_gt": -0.02853027724677304,
+      "delta_gen": -0.04248443820113703,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "吴",
+      "metric": "width90",
+      "wa": 1,
+      "wb": 3,
+      "delta_gt": 0.04053602604789046,
+      "delta_gen": 0.024075128247612945,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "吴",
+      "metric": "width90",
+      "wa": 1,
+      "wb": 7,
+      "delta_gt": 0.0313819047869517,
+      "delta_gen": 0.042669215903135285,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "吴",
+      "metric": "width90",
+      "wa": 3,
+      "wb": 7,
+      "delta_gt": -0.009154121260938758,
+      "delta_gen": 0.01859408765552234,
+      "correct_direction": false
+    },
+    {
+      "script": "行",
+      "char": "好",
+      "metric": "width90",
+      "wa": 0,
+      "wb": 2,
+      "delta_gt": 0.022991901343170508,
+      "delta_gen": 0.012580833398146335,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "好",
+      "metric": "width90",
+      "wa": 0,
+      "wb": 3,
+      "delta_gt": -0.09619772454166209,
+      "delta_gen": -0.078125,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "好",
+      "metric": "width90",
+      "wa": 0,
+      "wb": 6,
+      "delta_gt": -0.08848750912586859,
+      "delta_gen": -0.04784777731716483,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "好",
+      "metric": "width90",
+      "wa": 2,
+      "wb": 3,
+      "delta_gt": -0.11918962588483259,
+      "delta_gen": -0.09070583339814633,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "好",
+      "metric": "width90",
+      "wa": 2,
+      "wb": 6,
+      "delta_gt": -0.11147941046903909,
+      "delta_gen": -0.060428610715311165,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "好",
+      "metric": "width90",
+      "wa": 3,
+      "wb": 6,
+      "delta_gt": 0.007710215415793503,
+      "delta_gen": 0.03027722268283517,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "何",
+      "metric": "width90",
+      "wa": 0,
+      "wb": 1,
+      "delta_gt": -0.04535522881510089,
+      "delta_gen": -0.015754316453591002,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "何",
+      "metric": "width90",
+      "wa": 0,
+      "wb": 2,
+      "delta_gt": -0.08603012604547006,
+      "delta_gen": -0.032360434560398055,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "何",
+      "metric": "width90",
+      "wa": 0,
+      "wb": 3,
+      "delta_gt": -0.0864126154455312,
+      "delta_gen": -0.078125,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "何",
+      "metric": "width90",
+      "wa": 0,
+      "wb": 4,
+      "delta_gt": -0.0791590707560884,
+      "delta_gen": -0.07576340315306412,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "何",
+      "metric": "width90",
+      "wa": 0,
+      "wb": 5,
+      "delta_gt": -0.033145630368119405,
+      "delta_gen": -0.015625,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "何",
+      "metric": "width90",
+      "wa": 0,
+      "wb": 6,
+      "delta_gt": -0.059382035260404614,
+      "delta_gen": -0.006018200111476621,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "何",
+      "metric": "width90",
+      "wa": 0,
+      "wb": 7,
+      "delta_gt": -0.10276313375082047,
+      "delta_gen": -0.07010676532039278,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "何",
+      "metric": "width90",
+      "wa": 1,
+      "wb": 2,
+      "delta_gt": -0.04067489723036917,
+      "delta_gen": -0.016606118106807052,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "何",
+      "metric": "width90",
+      "wa": 1,
+      "wb": 3,
+      "delta_gt": -0.041057386630430306,
+      "delta_gen": -0.062370683546409,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "何",
+      "metric": "width90",
+      "wa": 1,
+      "wb": 4,
+      "delta_gt": -0.03380384194098751,
+      "delta_gen": -0.06000908669947312,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "何",
+      "metric": "width90",
+      "wa": 1,
+      "wb": 5,
+      "delta_gt": 0.012209598446981482,
+      "delta_gen": 0.0001293164535910024,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "何",
+      "metric": "width90",
+      "wa": 1,
+      "wb": 6,
+      "delta_gt": -0.014026806445303727,
+      "delta_gen": 0.009736116342114381,
+      "correct_direction": false
+    },
+    {
+      "script": "行",
+      "char": "何",
+      "metric": "width90",
+      "wa": 1,
+      "wb": 7,
+      "delta_gt": -0.05740790493571958,
+      "delta_gen": -0.05435244886680178,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "何",
+      "metric": "width90",
+      "wa": 2,
+      "wb": 3,
+      "delta_gt": -0.00038248940006113674,
+      "delta_gen": -0.045764565439601945,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "何",
+      "metric": "width90",
+      "wa": 2,
+      "wb": 4,
+      "delta_gt": 0.0068710552893816584,
+      "delta_gen": -0.04340296859266607,
+      "correct_direction": false
+    },
+    {
+      "script": "行",
+      "char": "何",
+      "metric": "width90",
+      "wa": 2,
+      "wb": 5,
+      "delta_gt": 0.05288449567735065,
+      "delta_gen": 0.016735434560398055,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "何",
+      "metric": "width90",
+      "wa": 2,
+      "wb": 6,
+      "delta_gt": 0.026648090785065442,
+      "delta_gen": 0.026342234448921434,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "何",
+      "metric": "width90",
+      "wa": 2,
+      "wb": 7,
+      "delta_gt": -0.01673300770535041,
+      "delta_gen": -0.03774633075999473,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "何",
+      "metric": "width90",
+      "wa": 3,
+      "wb": 4,
+      "delta_gt": 0.007253544689442795,
+      "delta_gen": 0.002361596846935876,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "何",
+      "metric": "width90",
+      "wa": 3,
+      "wb": 5,
+      "delta_gt": 0.05326698507741179,
+      "delta_gen": 0.0625,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "何",
+      "metric": "width90",
+      "wa": 3,
+      "wb": 6,
+      "delta_gt": 0.02703058018512658,
+      "delta_gen": 0.07210679988852338,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "何",
+      "metric": "width90",
+      "wa": 3,
+      "wb": 7,
+      "delta_gt": -0.016350518305289274,
+      "delta_gen": 0.008018234679607217,
+      "correct_direction": false
+    },
+    {
+      "script": "行",
+      "char": "何",
+      "metric": "width90",
+      "wa": 4,
+      "wb": 5,
+      "delta_gt": 0.04601344038796899,
+      "delta_gen": 0.060138403153064124,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "何",
+      "metric": "width90",
+      "wa": 4,
+      "wb": 6,
+      "delta_gt": 0.019777035495683784,
+      "delta_gen": 0.0697452030415875,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "何",
+      "metric": "width90",
+      "wa": 4,
+      "wb": 7,
+      "delta_gt": -0.02360406299473207,
+      "delta_gen": 0.005656637832671341,
+      "correct_direction": false
+    },
+    {
+      "script": "行",
+      "char": "何",
+      "metric": "width90",
+      "wa": 5,
+      "wb": 6,
+      "delta_gt": -0.02623640489228521,
+      "delta_gen": 0.009606799888523379,
+      "correct_direction": false
+    },
+    {
+      "script": "行",
+      "char": "何",
+      "metric": "width90",
+      "wa": 5,
+      "wb": 7,
+      "delta_gt": -0.06961750338270106,
+      "delta_gen": -0.05448176532039278,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "何",
+      "metric": "width90",
+      "wa": 6,
+      "wb": 7,
+      "delta_gt": -0.043381098490415854,
+      "delta_gen": -0.06408856520891616,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "閒",
+      "metric": "width90",
+      "wa": 0,
+      "wb": 3,
+      "delta_gt": 0.015780177777080934,
+      "delta_gen": 0.009271149632164633,
+      "correct_direction": true
+    },
+    {
+      "script": "楷",
+      "char": "咽",
+      "metric": "width90",
+      "wa": 0,
+      "wb": 3,
+      "delta_gt": -0.046875,
+      "delta_gen": -0.03125,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "桑",
+      "metric": "width90",
+      "wa": 1,
+      "wb": 5,
+      "delta_gt": 0.05228202959611783,
+      "delta_gen": 0.08380823992011684,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "桑",
+      "metric": "width90",
+      "wa": 1,
+      "wb": 6,
+      "delta_gt": -0.024972218997619033,
+      "delta_gen": -0.005656637832671341,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "桑",
+      "metric": "width90",
+      "wa": 5,
+      "wb": 6,
+      "delta_gt": -0.07725424859373686,
+      "delta_gen": -0.08946487775278818,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "用",
+      "metric": "aspect",
+      "wa": 0,
+      "wb": 7,
+      "delta_gt": 0.423703056768559,
+      "delta_gen": 0.059716814159292086,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "用",
+      "metric": "aspect",
+      "wa": 0,
+      "wb": 8,
+      "delta_gt": 0.12725861232411462,
+      "delta_gen": -0.005886710069782808,
+      "correct_direction": false
+    },
+    {
+      "script": "行",
+      "char": "用",
+      "metric": "aspect",
+      "wa": 7,
+      "wb": 8,
+      "delta_gt": -0.2964444444444444,
+      "delta_gen": -0.0656035242290749,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "報",
+      "metric": "aspect",
+      "wa": 0,
+      "wb": 2,
+      "delta_gt": -0.1013215859030836,
+      "delta_gen": 0.09357466063348407,
+      "correct_direction": false
+    },
+    {
+      "script": "行",
+      "char": "報",
+      "metric": "aspect",
+      "wa": 0,
+      "wb": 3,
+      "delta_gt": -0.03686635944700467,
+      "delta_gen": 0.03531379106826671,
+      "correct_direction": false
+    },
+    {
+      "script": "行",
+      "char": "報",
+      "metric": "aspect",
+      "wa": 0,
+      "wb": 6,
+      "delta_gt": 0.18400000000000005,
+      "delta_gen": 0.052367764081760027,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "報",
+      "metric": "aspect",
+      "wa": 2,
+      "wb": 3,
+      "delta_gt": 0.06445522645607893,
+      "delta_gen": -0.058260869565217366,
+      "correct_direction": false
+    },
+    {
+      "script": "行",
+      "char": "報",
+      "metric": "aspect",
+      "wa": 2,
+      "wb": 6,
+      "delta_gt": 0.28532158590308365,
+      "delta_gen": -0.04120689655172405,
+      "correct_direction": false
+    },
+    {
+      "script": "行",
+      "char": "報",
+      "metric": "aspect",
+      "wa": 3,
+      "wb": 6,
+      "delta_gt": 0.22086635944700472,
+      "delta_gen": 0.017053973013493318,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "羲",
+      "metric": "aspect",
+      "wa": 0,
+      "wb": 2,
+      "delta_gt": -0.1229789226267759,
+      "delta_gen": -0.06297188755020078,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "羲",
+      "metric": "aspect",
+      "wa": 0,
+      "wb": 5,
+      "delta_gt": 0.07799405034619711,
+      "delta_gen": 0.08800000000000008,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "羲",
+      "metric": "aspect",
+      "wa": 0,
+      "wb": 8,
+      "delta_gt": -0.12386781151566484,
+      "delta_gen": 0.039683794466403244,
+      "correct_direction": false
+    },
+    {
+      "script": "行",
+      "char": "羲",
+      "metric": "aspect",
+      "wa": 2,
+      "wb": 5,
+      "delta_gt": 0.200972972972973,
+      "delta_gen": 0.15097188755020086,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "羲",
+      "metric": "aspect",
+      "wa": 2,
+      "wb": 8,
+      "delta_gt": -0.000888888888888939,
+      "delta_gen": 0.10265568201660402,
+      "correct_direction": false
+    },
+    {
+      "script": "行",
+      "char": "羲",
+      "metric": "aspect",
+      "wa": 5,
+      "wb": 8,
+      "delta_gt": -0.20186186186186195,
+      "delta_gen": -0.048316205533596834,
+      "correct_direction": true
+    },
+    {
+      "script": "楷",
+      "char": "旬",
+      "metric": "aspect",
+      "wa": 0,
+      "wb": 2,
+      "delta_gt": 0.09916666666666674,
+      "delta_gen": 0.1557239057239057,
+      "correct_direction": true
+    },
+    {
+      "script": "楷",
+      "char": "旬",
+      "metric": "aspect",
+      "wa": 0,
+      "wb": 3,
+      "delta_gt": 0.15879781420765027,
+      "delta_gen": 0.2814857435110599,
+      "correct_direction": true
+    },
+    {
+      "script": "楷",
+      "char": "旬",
+      "metric": "aspect",
+      "wa": 2,
+      "wb": 3,
+      "delta_gt": 0.05963114754098353,
+      "delta_gen": 0.12576183778715422,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "吴",
+      "metric": "aspect",
+      "wa": 0,
+      "wb": 1,
+      "delta_gt": 0.018525641025641026,
+      "delta_gen": -0.24905123339658453,
+      "correct_direction": false
+    },
+    {
+      "script": "行",
+      "char": "吴",
+      "metric": "aspect",
+      "wa": 0,
+      "wb": 3,
+      "delta_gt": -0.06666666666666665,
+      "delta_gen": -0.1469049694856147,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "吴",
+      "metric": "aspect",
+      "wa": 0,
+      "wb": 7,
+      "delta_gt": 0.038465063001145494,
+      "delta_gen": -0.01524119562000592,
+      "correct_direction": false
+    },
+    {
+      "script": "行",
+      "char": "吴",
+      "metric": "aspect",
+      "wa": 1,
+      "wb": 3,
+      "delta_gt": -0.08519230769230768,
+      "delta_gen": 0.10214626391096981,
+      "correct_direction": false
+    },
+    {
+      "script": "行",
+      "char": "吴",
+      "metric": "aspect",
+      "wa": 1,
+      "wb": 7,
+      "delta_gt": 0.019939421975504468,
+      "delta_gen": 0.2338100377765786,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "吴",
+      "metric": "aspect",
+      "wa": 3,
+      "wb": 7,
+      "delta_gt": 0.10513172966781215,
+      "delta_gen": 0.1316637738656088,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "好",
+      "metric": "aspect",
+      "wa": 0,
+      "wb": 2,
+      "delta_gt": 0.05777777777777782,
+      "delta_gen": 0.3379059050476906,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "好",
+      "metric": "aspect",
+      "wa": 0,
+      "wb": 3,
+      "delta_gt": -0.43909604519774015,
+      "delta_gen": -0.2714950166112957,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "好",
+      "metric": "aspect",
+      "wa": 0,
+      "wb": 6,
+      "delta_gt": -0.21775389604488948,
+      "delta_gen": 0.17079069767441868,
+      "correct_direction": false
+    },
+    {
+      "script": "行",
+      "char": "好",
+      "metric": "aspect",
+      "wa": 2,
+      "wb": 3,
+      "delta_gt": -0.49687382297551796,
+      "delta_gen": -0.6094009216589863,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "好",
+      "metric": "aspect",
+      "wa": 2,
+      "wb": 6,
+      "delta_gt": -0.2755316738226673,
+      "delta_gen": -0.1671152073732719,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "好",
+      "metric": "aspect",
+      "wa": 3,
+      "wb": 6,
+      "delta_gt": 0.22134214915285066,
+      "delta_gen": 0.4422857142857144,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "何",
+      "metric": "aspect",
+      "wa": 0,
+      "wb": 1,
+      "delta_gt": -0.14591466511144446,
+      "delta_gen": -0.2730584251116992,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "何",
+      "metric": "aspect",
+      "wa": 0,
+      "wb": 2,
+      "delta_gt": 0.08992472420506159,
+      "delta_gen": 0.11533844306953545,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "何",
+      "metric": "aspect",
+      "wa": 0,
+      "wb": 3,
+      "delta_gt": -0.018675133565959845,
+      "delta_gen": 0.07191681910079906,
+      "correct_direction": false
+    },
+    {
+      "script": "行",
+      "char": "何",
+      "metric": "aspect",
+      "wa": 0,
+      "wb": 4,
+      "delta_gt": -0.020597014925373136,
+      "delta_gen": -0.43671716178110054,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "何",
+      "metric": "aspect",
+      "wa": 0,
+      "wb": 5,
+      "delta_gt": 0.17051409618573787,
+      "delta_gen": 0.07191681910079906,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "何",
+      "metric": "aspect",
+      "wa": 0,
+      "wb": 6,
+      "delta_gt": 0.18487664853853414,
+      "delta_gen": 0.08066186057212965,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "何",
+      "metric": "aspect",
+      "wa": 0,
+      "wb": 7,
+      "delta_gt": 0.05786965915941589,
+      "delta_gen": -0.049087516887907245,
+      "correct_direction": false
+    },
+    {
+      "script": "行",
+      "char": "何",
+      "metric": "aspect",
+      "wa": 1,
+      "wb": 2,
+      "delta_gt": 0.23583938931650605,
+      "delta_gen": 0.38839686818123464,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "何",
+      "metric": "aspect",
+      "wa": 1,
+      "wb": 3,
+      "delta_gt": 0.12723953154548462,
+      "delta_gen": 0.34497524421249826,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "何",
+      "metric": "aspect",
+      "wa": 1,
+      "wb": 4,
+      "delta_gt": 0.12531765018607133,
+      "delta_gen": -0.16365873666940134,
+      "correct_direction": false
+    },
+    {
+      "script": "行",
+      "char": "何",
+      "metric": "aspect",
+      "wa": 1,
+      "wb": 5,
+      "delta_gt": 0.31642876129718234,
+      "delta_gen": 0.34497524421249826,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "何",
+      "metric": "aspect",
+      "wa": 1,
+      "wb": 6,
+      "delta_gt": 0.3307913136499786,
+      "delta_gen": 0.35372028568382885,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "何",
+      "metric": "aspect",
+      "wa": 1,
+      "wb": 7,
+      "delta_gt": 0.20378432427086035,
+      "delta_gen": 0.22397090822379195,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "何",
+      "metric": "aspect",
+      "wa": 2,
+      "wb": 3,
+      "delta_gt": -0.10859985777102144,
+      "delta_gen": -0.04342162396873639,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "何",
+      "metric": "aspect",
+      "wa": 2,
+      "wb": 4,
+      "delta_gt": -0.11052173913043473,
+      "delta_gen": -0.552055604850636,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "何",
+      "metric": "aspect",
+      "wa": 2,
+      "wb": 5,
+      "delta_gt": 0.08058937198067628,
+      "delta_gen": -0.04342162396873639,
+      "correct_direction": false
+    },
+    {
+      "script": "行",
+      "char": "何",
+      "metric": "aspect",
+      "wa": 2,
+      "wb": 6,
+      "delta_gt": 0.09495192433347255,
+      "delta_gen": -0.034676582497405795,
+      "correct_direction": false
+    },
+    {
+      "script": "行",
+      "char": "何",
+      "metric": "aspect",
+      "wa": 2,
+      "wb": 7,
+      "delta_gt": -0.0320550650456457,
+      "delta_gen": -0.1644259599574427,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "何",
+      "metric": "aspect",
+      "wa": 3,
+      "wb": 4,
+      "delta_gt": -0.001921881359413291,
+      "delta_gen": -0.5086339808818996,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "何",
+      "metric": "aspect",
+      "wa": 3,
+      "wb": 5,
+      "delta_gt": 0.18918922975169772,
+      "delta_gen": 0.0,
+      "correct_direction": false
+    },
+    {
+      "script": "行",
+      "char": "何",
+      "metric": "aspect",
+      "wa": 3,
+      "wb": 6,
+      "delta_gt": 0.20355178210449398,
+      "delta_gen": 0.008745041471330595,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "何",
+      "metric": "aspect",
+      "wa": 3,
+      "wb": 7,
+      "delta_gt": 0.07654479272537573,
+      "delta_gen": -0.1210043359887063,
+      "correct_direction": false
+    },
+    {
+      "script": "行",
+      "char": "何",
+      "metric": "aspect",
+      "wa": 4,
+      "wb": 5,
+      "delta_gt": 0.191111111111111,
+      "delta_gen": 0.5086339808818996,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "何",
+      "metric": "aspect",
+      "wa": 4,
+      "wb": 6,
+      "delta_gt": 0.20547366346390727,
+      "delta_gen": 0.5173790223532302,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "何",
+      "metric": "aspect",
+      "wa": 4,
+      "wb": 7,
+      "delta_gt": 0.07846667408478902,
+      "delta_gen": 0.3876296448931933,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "何",
+      "metric": "aspect",
+      "wa": 5,
+      "wb": 6,
+      "delta_gt": 0.014362552352796265,
+      "delta_gen": 0.008745041471330595,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "何",
+      "metric": "aspect",
+      "wa": 5,
+      "wb": 7,
+      "delta_gt": -0.11264443702632199,
+      "delta_gen": -0.1210043359887063,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "何",
+      "metric": "aspect",
+      "wa": 6,
+      "wb": 7,
+      "delta_gt": -0.12700698937911825,
+      "delta_gen": -0.1297493774600369,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "閒",
+      "metric": "aspect",
+      "wa": 0,
+      "wb": 3,
+      "delta_gt": -0.09794011756902044,
+      "delta_gen": -0.03604858299595137,
+      "correct_direction": true
+    },
+    {
+      "script": "楷",
+      "char": "咽",
+      "metric": "aspect",
+      "wa": 0,
+      "wb": 3,
+      "delta_gt": 0.317142937266889,
+      "delta_gen": 0.5013201320132012,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "桑",
+      "metric": "aspect",
+      "wa": 1,
+      "wb": 5,
+      "delta_gt": 0.09319444444444447,
+      "delta_gen": 0.37163718634306875,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "桑",
+      "metric": "aspect",
+      "wa": 1,
+      "wb": 6,
+      "delta_gt": 0.02341666666666664,
+      "delta_gen": 0.3278181818181818,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "桑",
+      "metric": "aspect",
+      "wa": 5,
+      "wb": 6,
+      "delta_gt": -0.06977777777777783,
+      "delta_gen": -0.04381900452488696,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "用",
+      "metric": "bbox_area",
+      "wa": 0,
+      "wb": 7,
+      "delta_gt": 0.23651123046875,
+      "delta_gen": -0.058746337890625,
+      "correct_direction": false
+    },
+    {
+      "script": "行",
+      "char": "用",
+      "metric": "bbox_area",
+      "wa": 0,
+      "wb": 8,
+      "delta_gt": 0.1285552978515625,
+      "delta_gen": -0.00921630859375,
+      "correct_direction": false
+    },
+    {
+      "script": "行",
+      "char": "用",
+      "metric": "bbox_area",
+      "wa": 7,
+      "wb": 8,
+      "delta_gt": -0.1079559326171875,
+      "delta_gen": 0.049530029296875,
+      "correct_direction": false
+    },
+    {
+      "script": "行",
+      "char": "報",
+      "metric": "bbox_area",
+      "wa": 0,
+      "wb": 2,
+      "delta_gt": 0.087738037109375,
+      "delta_gen": -0.12200927734375,
+      "correct_direction": false
+    },
+    {
+      "script": "行",
+      "char": "報",
+      "metric": "bbox_area",
+      "wa": 0,
+      "wb": 3,
+      "delta_gt": 0.2086639404296875,
+      "delta_gen": -0.034271240234375,
+      "correct_direction": false
+    },
+    {
+      "script": "行",
+      "char": "報",
+      "metric": "bbox_area",
+      "wa": 0,
+      "wb": 6,
+      "delta_gt": 0.17547607421875,
+      "delta_gen": -0.0340576171875,
+      "correct_direction": false
+    },
+    {
+      "script": "行",
+      "char": "報",
+      "metric": "bbox_area",
+      "wa": 2,
+      "wb": 3,
+      "delta_gt": 0.1209259033203125,
+      "delta_gen": 0.087738037109375,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "報",
+      "metric": "bbox_area",
+      "wa": 2,
+      "wb": 6,
+      "delta_gt": 0.087738037109375,
+      "delta_gen": 0.08795166015625,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "報",
+      "metric": "bbox_area",
+      "wa": 3,
+      "wb": 6,
+      "delta_gt": -0.0331878662109375,
+      "delta_gen": 0.000213623046875,
+      "correct_direction": false
+    },
+    {
+      "script": "行",
+      "char": "羲",
+      "metric": "bbox_area",
+      "wa": 0,
+      "wb": 2,
+      "delta_gt": -0.12834963591202442,
+      "delta_gen": -0.0543975830078125,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "羲",
+      "metric": "bbox_area",
+      "wa": 0,
+      "wb": 5,
+      "delta_gt": 0.16959347932235058,
+      "delta_gen": 0.08392333984375,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "羲",
+      "metric": "bbox_area",
+      "wa": 0,
+      "wb": 8,
+      "delta_gt": 0.002875950025475582,
+      "delta_gen": 0.023101806640625,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "羲",
+      "metric": "bbox_area",
+      "wa": 2,
+      "wb": 5,
+      "delta_gt": 0.297943115234375,
+      "delta_gen": 0.1383209228515625,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "羲",
+      "metric": "bbox_area",
+      "wa": 2,
+      "wb": 8,
+      "delta_gt": 0.1312255859375,
+      "delta_gen": 0.0774993896484375,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "羲",
+      "metric": "bbox_area",
+      "wa": 5,
+      "wb": 8,
+      "delta_gt": -0.166717529296875,
+      "delta_gen": -0.060821533203125,
+      "correct_direction": true
+    },
+    {
+      "script": "楷",
+      "char": "旬",
+      "metric": "bbox_area",
+      "wa": 0,
+      "wb": 2,
+      "delta_gt": -0.017852783203125,
+      "delta_gen": -0.019500732421875,
+      "correct_direction": true
+    },
+    {
+      "script": "楷",
+      "char": "旬",
+      "metric": "bbox_area",
+      "wa": 0,
+      "wb": 3,
+      "delta_gt": 0.010101318359375,
+      "delta_gen": -0.0555267333984375,
+      "correct_direction": false
+    },
+    {
+      "script": "楷",
+      "char": "旬",
+      "metric": "bbox_area",
+      "wa": 2,
+      "wb": 3,
+      "delta_gt": 0.0279541015625,
+      "delta_gen": -0.0360260009765625,
+      "correct_direction": false
+    },
+    {
+      "script": "行",
+      "char": "吴",
+      "metric": "bbox_area",
+      "wa": 0,
+      "wb": 1,
+      "delta_gt": 0.099090576171875,
+      "delta_gen": -0.1015777587890625,
+      "correct_direction": false
+    },
+    {
+      "script": "行",
+      "char": "吴",
+      "metric": "bbox_area",
+      "wa": 0,
+      "wb": 3,
+      "delta_gt": -0.0514984130859375,
+      "delta_gen": -0.1331634521484375,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "吴",
+      "metric": "bbox_area",
+      "wa": 0,
+      "wb": 7,
+      "delta_gt": 0.1022491455078125,
+      "delta_gen": -0.0155487060546875,
+      "correct_direction": false
+    },
+    {
+      "script": "行",
+      "char": "吴",
+      "metric": "bbox_area",
+      "wa": 1,
+      "wb": 3,
+      "delta_gt": -0.1505889892578125,
+      "delta_gen": -0.031585693359375,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "吴",
+      "metric": "bbox_area",
+      "wa": 1,
+      "wb": 7,
+      "delta_gt": 0.0031585693359375,
+      "delta_gen": 0.086029052734375,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "吴",
+      "metric": "bbox_area",
+      "wa": 3,
+      "wb": 7,
+      "delta_gt": 0.15374755859375,
+      "delta_gen": 0.11761474609375,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "好",
+      "metric": "bbox_area",
+      "wa": 0,
+      "wb": 2,
+      "delta_gt": 0.0446319580078125,
+      "delta_gen": 0.2274627685546875,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "好",
+      "metric": "bbox_area",
+      "wa": 0,
+      "wb": 3,
+      "delta_gt": 0.0766754150390625,
+      "delta_gen": 0.1499176025390625,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "好",
+      "metric": "bbox_area",
+      "wa": 0,
+      "wb": 6,
+      "delta_gt": 0.00152587890625,
+      "delta_gen": -0.125885009765625,
+      "correct_direction": false
+    },
+    {
+      "script": "行",
+      "char": "好",
+      "metric": "bbox_area",
+      "wa": 2,
+      "wb": 3,
+      "delta_gt": 0.03204345703125,
+      "delta_gen": -0.077545166015625,
+      "correct_direction": false
+    },
+    {
+      "script": "行",
+      "char": "好",
+      "metric": "bbox_area",
+      "wa": 2,
+      "wb": 6,
+      "delta_gt": -0.0431060791015625,
+      "delta_gen": -0.3533477783203125,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "好",
+      "metric": "bbox_area",
+      "wa": 3,
+      "wb": 6,
+      "delta_gt": -0.0751495361328125,
+      "delta_gen": -0.2758026123046875,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "何",
+      "metric": "bbox_area",
+      "wa": 0,
+      "wb": 1,
+      "delta_gt": 0.135406494140625,
+      "delta_gen": 0.3029632568359375,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "何",
+      "metric": "bbox_area",
+      "wa": 0,
+      "wb": 2,
+      "delta_gt": -0.21209716796875,
+      "delta_gen": -0.0881805419921875,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "何",
+      "metric": "bbox_area",
+      "wa": 0,
+      "wb": 3,
+      "delta_gt": -0.11072158813476562,
+      "delta_gen": -0.0500335693359375,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "何",
+      "metric": "bbox_area",
+      "wa": 0,
+      "wb": 4,
+      "delta_gt": 0.15552520751953125,
+      "delta_gen": 0.3894805908203125,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "何",
+      "metric": "bbox_area",
+      "wa": 0,
+      "wb": 5,
+      "delta_gt": -0.03607940673828125,
+      "delta_gen": -0.0500335693359375,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "何",
+      "metric": "bbox_area",
+      "wa": 0,
+      "wb": 6,
+      "delta_gt": -0.08002624511718748,
+      "delta_gen": -0.0502471923828125,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "何",
+      "metric": "bbox_area",
+      "wa": 0,
+      "wb": 7,
+      "delta_gt": -0.0377655029296875,
+      "delta_gen": 0.0415191650390625,
+      "correct_direction": false
+    },
+    {
+      "script": "行",
+      "char": "何",
+      "metric": "bbox_area",
+      "wa": 1,
+      "wb": 2,
+      "delta_gt": -0.347503662109375,
+      "delta_gen": -0.391143798828125,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "何",
+      "metric": "bbox_area",
+      "wa": 1,
+      "wb": 3,
+      "delta_gt": -0.24612808227539062,
+      "delta_gen": -0.352996826171875,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "何",
+      "metric": "bbox_area",
+      "wa": 1,
+      "wb": 4,
+      "delta_gt": 0.02011871337890625,
+      "delta_gen": 0.086517333984375,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "何",
+      "metric": "bbox_area",
+      "wa": 1,
+      "wb": 5,
+      "delta_gt": -0.17148590087890625,
+      "delta_gen": -0.352996826171875,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "何",
+      "metric": "bbox_area",
+      "wa": 1,
+      "wb": 6,
+      "delta_gt": -0.21543273925781248,
+      "delta_gen": -0.35321044921875,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "何",
+      "metric": "bbox_area",
+      "wa": 1,
+      "wb": 7,
+      "delta_gt": -0.1731719970703125,
+      "delta_gen": -0.261444091796875,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "何",
+      "metric": "bbox_area",
+      "wa": 2,
+      "wb": 3,
+      "delta_gt": 0.10137557983398438,
+      "delta_gen": 0.03814697265625,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "何",
+      "metric": "bbox_area",
+      "wa": 2,
+      "wb": 4,
+      "delta_gt": 0.36762237548828125,
+      "delta_gen": 0.4776611328125,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "何",
+      "metric": "bbox_area",
+      "wa": 2,
+      "wb": 5,
+      "delta_gt": 0.17601776123046875,
+      "delta_gen": 0.03814697265625,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "何",
+      "metric": "bbox_area",
+      "wa": 2,
+      "wb": 6,
+      "delta_gt": 0.13207092285156252,
+      "delta_gen": 0.037933349609375,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "何",
+      "metric": "bbox_area",
+      "wa": 2,
+      "wb": 7,
+      "delta_gt": 0.1743316650390625,
+      "delta_gen": 0.12969970703125,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "何",
+      "metric": "bbox_area",
+      "wa": 3,
+      "wb": 4,
+      "delta_gt": 0.2662467956542969,
+      "delta_gen": 0.43951416015625,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "何",
+      "metric": "bbox_area",
+      "wa": 3,
+      "wb": 5,
+      "delta_gt": 0.07464218139648438,
+      "delta_gen": 0.0,
+      "correct_direction": false
+    },
+    {
+      "script": "行",
+      "char": "何",
+      "metric": "bbox_area",
+      "wa": 3,
+      "wb": 6,
+      "delta_gt": 0.030695343017578147,
+      "delta_gen": -0.000213623046875,
+      "correct_direction": false
+    },
+    {
+      "script": "行",
+      "char": "何",
+      "metric": "bbox_area",
+      "wa": 3,
+      "wb": 7,
+      "delta_gt": 0.07295608520507812,
+      "delta_gen": 0.091552734375,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "何",
+      "metric": "bbox_area",
+      "wa": 4,
+      "wb": 5,
+      "delta_gt": -0.1916046142578125,
+      "delta_gen": -0.43951416015625,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "何",
+      "metric": "bbox_area",
+      "wa": 4,
+      "wb": 6,
+      "delta_gt": -0.23555145263671873,
+      "delta_gen": -0.439727783203125,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "何",
+      "metric": "bbox_area",
+      "wa": 4,
+      "wb": 7,
+      "delta_gt": -0.19329071044921875,
+      "delta_gen": -0.34796142578125,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "何",
+      "metric": "bbox_area",
+      "wa": 5,
+      "wb": 6,
+      "delta_gt": -0.04394683837890623,
+      "delta_gen": -0.000213623046875,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "何",
+      "metric": "bbox_area",
+      "wa": 5,
+      "wb": 7,
+      "delta_gt": -0.00168609619140625,
+      "delta_gen": 0.091552734375,
+      "correct_direction": false
+    },
+    {
+      "script": "行",
+      "char": "何",
+      "metric": "bbox_area",
+      "wa": 6,
+      "wb": 7,
+      "delta_gt": 0.04226074218749998,
+      "delta_gen": 0.091766357421875,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "閒",
+      "metric": "bbox_area",
+      "wa": 0,
+      "wb": 3,
+      "delta_gt": 0.00890096028645837,
+      "delta_gen": -0.01153564453125,
+      "correct_direction": false
+    },
+    {
+      "script": "楷",
+      "char": "咽",
+      "metric": "bbox_area",
+      "wa": 0,
+      "wb": 3,
+      "delta_gt": -0.1087799072265625,
+      "delta_gen": -0.097503662109375,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "桑",
+      "metric": "bbox_area",
+      "wa": 1,
+      "wb": 5,
+      "delta_gt": 0.18707275390625,
+      "delta_gen": 0.26934814453125,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "桑",
+      "metric": "bbox_area",
+      "wa": 1,
+      "wb": 6,
+      "delta_gt": -0.0139617919921875,
+      "delta_gen": 0.069122314453125,
+      "correct_direction": false
+    },
+    {
+      "script": "行",
+      "char": "桑",
+      "metric": "bbox_area",
+      "wa": 5,
+      "wb": 6,
+      "delta_gt": -0.2010345458984375,
+      "delta_gen": -0.200225830078125,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "用",
+      "metric": "density",
+      "wa": 0,
+      "wb": 7,
+      "delta_gt": -0.43767173077425936,
+      "delta_gen": -0.32961960577467814,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "用",
+      "metric": "density",
+      "wa": 0,
+      "wb": 8,
+      "delta_gt": -0.10117760382079302,
+      "delta_gen": -0.004782119229303994,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "用",
+      "metric": "density",
+      "wa": 7,
+      "wb": 8,
+      "delta_gt": 0.3364941269534663,
+      "delta_gen": 0.32483748654537414,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "報",
+      "metric": "density",
+      "wa": 0,
+      "wb": 2,
+      "delta_gt": 0.03566745374449337,
+      "delta_gen": -0.24332230544391673,
+      "correct_direction": false
+    },
+    {
+      "script": "行",
+      "char": "報",
+      "metric": "density",
+      "wa": 0,
+      "wb": 3,
+      "delta_gt": 0.1252071520737327,
+      "delta_gen": -0.02287592863232249,
+      "correct_direction": false
+    },
+    {
+      "script": "行",
+      "char": "報",
+      "metric": "density",
+      "wa": 0,
+      "wb": 6,
+      "delta_gt": -0.028563607843137273,
+      "delta_gen": -0.20276305009401316,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "報",
+      "metric": "density",
+      "wa": 2,
+      "wb": 3,
+      "delta_gt": 0.08953969832923933,
+      "delta_gen": 0.22044637681159424,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "報",
+      "metric": "density",
+      "wa": 2,
+      "wb": 6,
+      "delta_gt": -0.06423106158763064,
+      "delta_gen": 0.04055925534990357,
+      "correct_direction": false
+    },
+    {
+      "script": "行",
+      "char": "報",
+      "metric": "density",
+      "wa": 3,
+      "wb": 6,
+      "delta_gt": -0.15377075991686998,
+      "delta_gen": -0.17988712146169067,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "羲",
+      "metric": "density",
+      "wa": 0,
+      "wb": 2,
+      "delta_gt": -0.07627042437959325,
+      "delta_gen": -0.1023321878930667,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "羲",
+      "metric": "density",
+      "wa": 0,
+      "wb": 5,
+      "delta_gt": 0.0553587872496184,
+      "delta_gen": 0.11731732909379969,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "羲",
+      "metric": "density",
+      "wa": 0,
+      "wb": 8,
+      "delta_gt": 0.1328902117322624,
+      "delta_gen": 0.123219849532552,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "羲",
+      "metric": "density",
+      "wa": 2,
+      "wb": 5,
+      "delta_gt": 0.13162921162921165,
+      "delta_gen": 0.21964951698686638,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "羲",
+      "metric": "density",
+      "wa": 2,
+      "wb": 8,
+      "delta_gt": 0.20916063611185565,
+      "delta_gen": 0.2255520374256187,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "羲",
+      "metric": "density",
+      "wa": 5,
+      "wb": 8,
+      "delta_gt": 0.077531424482644,
+      "delta_gen": 0.005902520438752307,
+      "correct_direction": true
+    },
+    {
+      "script": "楷",
+      "char": "旬",
+      "metric": "density",
+      "wa": 0,
+      "wb": 2,
+      "delta_gt": -0.0296649466367776,
+      "delta_gen": -0.07184937258736099,
+      "correct_direction": true
+    },
+    {
+      "script": "楷",
+      "char": "旬",
+      "metric": "density",
+      "wa": 0,
+      "wb": 3,
+      "delta_gt": -0.08602984253527995,
+      "delta_gen": -0.11498891050310764,
+      "correct_direction": true
+    },
+    {
+      "script": "楷",
+      "char": "旬",
+      "metric": "density",
+      "wa": 2,
+      "wb": 3,
+      "delta_gt": -0.056364895898502354,
+      "delta_gen": -0.04313953791574665,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "吴",
+      "metric": "density",
+      "wa": 0,
+      "wb": 1,
+      "delta_gt": -0.1158465787249007,
+      "delta_gen": -0.04726264972621577,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "吴",
+      "metric": "density",
+      "wa": 0,
+      "wb": 3,
+      "delta_gt": -0.10727604451742381,
+      "delta_gen": -0.10688494134786455,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "吴",
+      "metric": "density",
+      "wa": 0,
+      "wb": 7,
+      "delta_gt": -0.10133336946324836,
+      "delta_gen": -0.07387702708409241,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "吴",
+      "metric": "density",
+      "wa": 1,
+      "wb": 3,
+      "delta_gt": 0.008570534207476888,
+      "delta_gen": -0.05962229162164878,
+      "correct_direction": false
+    },
+    {
+      "script": "行",
+      "char": "吴",
+      "metric": "density",
+      "wa": 1,
+      "wb": 7,
+      "delta_gt": 0.014513209261652338,
+      "delta_gen": -0.02661437735787664,
+      "correct_direction": false
+    },
+    {
+      "script": "行",
+      "char": "吴",
+      "metric": "density",
+      "wa": 3,
+      "wb": 7,
+      "delta_gt": 0.00594267505417545,
+      "delta_gen": 0.03300791426377214,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "好",
+      "metric": "density",
+      "wa": 0,
+      "wb": 2,
+      "delta_gt": 0.022816469881239143,
+      "delta_gen": -0.016462121755498715,
+      "correct_direction": false
+    },
+    {
+      "script": "行",
+      "char": "好",
+      "metric": "density",
+      "wa": 0,
+      "wb": 3,
+      "delta_gt": -0.14242595602335562,
+      "delta_gen": -0.11918515439901523,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "好",
+      "metric": "density",
+      "wa": 0,
+      "wb": 6,
+      "delta_gt": -0.24410781187290337,
+      "delta_gen": -0.17284943735933983,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "好",
+      "metric": "density",
+      "wa": 2,
+      "wb": 3,
+      "delta_gt": -0.16524242590459476,
+      "delta_gen": -0.10272303264351651,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "好",
+      "metric": "density",
+      "wa": 2,
+      "wb": 6,
+      "delta_gt": -0.2669242817541425,
+      "delta_gen": -0.15638731560384111,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "好",
+      "metric": "density",
+      "wa": 3,
+      "wb": 6,
+      "delta_gt": -0.10168185584954775,
+      "delta_gen": -0.053664282960324605,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "何",
+      "metric": "density",
+      "wa": 0,
+      "wb": 1,
+      "delta_gt": -0.12067077416181579,
+      "delta_gen": -0.0997751026523285,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "何",
+      "metric": "density",
+      "wa": 0,
+      "wb": 2,
+      "delta_gt": -0.22288014409968404,
+      "delta_gen": -0.12988198238535378,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "何",
+      "metric": "density",
+      "wa": 0,
+      "wb": 3,
+      "delta_gt": -0.13646722076598491,
+      "delta_gen": -0.09345992420037766,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "何",
+      "metric": "density",
+      "wa": 0,
+      "wb": 4,
+      "delta_gt": -0.18649870204320174,
+      "delta_gen": -0.15673966717034774,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "何",
+      "metric": "density",
+      "wa": 0,
+      "wb": 5,
+      "delta_gt": -0.07175660933492914,
+      "delta_gen": 0.00851454388472872,
+      "correct_direction": false
+    },
+    {
+      "script": "行",
+      "char": "何",
+      "metric": "density",
+      "wa": 0,
+      "wb": 6,
+      "delta_gt": -0.14295870778872322,
+      "delta_gen": -0.04314735129787692,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "何",
+      "metric": "density",
+      "wa": 0,
+      "wb": 7,
+      "delta_gt": -0.21961609727655873,
+      "delta_gen": -0.12021172413987549,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "何",
+      "metric": "density",
+      "wa": 1,
+      "wb": 2,
+      "delta_gt": -0.10220936993786825,
+      "delta_gen": -0.030106879733025282,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "何",
+      "metric": "density",
+      "wa": 1,
+      "wb": 3,
+      "delta_gt": -0.015796446604169123,
+      "delta_gen": 0.0063151784519508425,
+      "correct_direction": false
+    },
+    {
+      "script": "行",
+      "char": "何",
+      "metric": "density",
+      "wa": 1,
+      "wb": 4,
+      "delta_gt": -0.06582792788138594,
+      "delta_gen": -0.056964564518019234,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "何",
+      "metric": "density",
+      "wa": 1,
+      "wb": 5,
+      "delta_gt": 0.04891416482688665,
+      "delta_gen": 0.10828964653705722,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "何",
+      "metric": "density",
+      "wa": 1,
+      "wb": 6,
+      "delta_gt": -0.022287933626907425,
+      "delta_gen": 0.05662775135445158,
+      "correct_direction": false
+    },
+    {
+      "script": "行",
+      "char": "何",
+      "metric": "density",
+      "wa": 1,
+      "wb": 7,
+      "delta_gt": -0.09894532311474294,
+      "delta_gen": -0.02043662148754699,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "何",
+      "metric": "density",
+      "wa": 2,
+      "wb": 3,
+      "delta_gt": 0.08641292333369913,
+      "delta_gen": 0.036422058184976125,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "何",
+      "metric": "density",
+      "wa": 2,
+      "wb": 4,
+      "delta_gt": 0.036381442056482305,
+      "delta_gen": -0.02685768478499395,
+      "correct_direction": false
+    },
+    {
+      "script": "行",
+      "char": "何",
+      "metric": "density",
+      "wa": 2,
+      "wb": 5,
+      "delta_gt": 0.1511235347647549,
+      "delta_gen": 0.1383965262700825,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "何",
+      "metric": "density",
+      "wa": 2,
+      "wb": 6,
+      "delta_gt": 0.07992143631096083,
+      "delta_gen": 0.08673463108747687,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "何",
+      "metric": "density",
+      "wa": 2,
+      "wb": 7,
+      "delta_gt": 0.0032640468231253106,
+      "delta_gen": 0.009670258245478291,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "何",
+      "metric": "density",
+      "wa": 3,
+      "wb": 4,
+      "delta_gt": -0.05003148127721682,
+      "delta_gen": -0.06327974296997008,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "何",
+      "metric": "density",
+      "wa": 3,
+      "wb": 5,
+      "delta_gt": 0.06471061143105578,
+      "delta_gen": 0.10197446808510638,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "何",
+      "metric": "density",
+      "wa": 3,
+      "wb": 6,
+      "delta_gt": -0.0064914870227383015,
+      "delta_gen": 0.05031257290250074,
+      "correct_direction": false
+    },
+    {
+      "script": "行",
+      "char": "何",
+      "metric": "density",
+      "wa": 3,
+      "wb": 7,
+      "delta_gt": -0.08314887651057382,
+      "delta_gen": -0.026751799939497833,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "何",
+      "metric": "density",
+      "wa": 4,
+      "wb": 5,
+      "delta_gt": 0.1147420927082726,
+      "delta_gen": 0.16525421105507646,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "何",
+      "metric": "density",
+      "wa": 4,
+      "wb": 6,
+      "delta_gt": 0.04353999425447852,
+      "delta_gen": 0.11359231587247082,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "何",
+      "metric": "density",
+      "wa": 4,
+      "wb": 7,
+      "delta_gt": -0.033117395233356994,
+      "delta_gen": 0.03652794303047224,
+      "correct_direction": false
+    },
+    {
+      "script": "行",
+      "char": "何",
+      "metric": "density",
+      "wa": 5,
+      "wb": 6,
+      "delta_gt": -0.07120209845379408,
+      "delta_gen": -0.05166189518260564,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "何",
+      "metric": "density",
+      "wa": 5,
+      "wb": 7,
+      "delta_gt": -0.1478594879416296,
+      "delta_gen": -0.1287262680246042,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "何",
+      "metric": "density",
+      "wa": 6,
+      "wb": 7,
+      "delta_gt": -0.07665738948783551,
+      "delta_gen": -0.07706437284199857,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "閒",
+      "metric": "density",
+      "wa": 0,
+      "wb": 3,
+      "delta_gt": 0.23960511448111804,
+      "delta_gen": 0.08039091977631874,
+      "correct_direction": true
+    },
+    {
+      "script": "楷",
+      "char": "咽",
+      "metric": "density",
+      "wa": 0,
+      "wb": 3,
+      "delta_gt": -0.114885196302568,
+      "delta_gen": -0.1386951695169517,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "桑",
+      "metric": "density",
+      "wa": 1,
+      "wb": 5,
+      "delta_gt": 0.20979462005480148,
+      "delta_gen": 0.17578115836443264,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "桑",
+      "metric": "density",
+      "wa": 1,
+      "wb": 6,
+      "delta_gt": 0.039487234825260564,
+      "delta_gen": -0.052072627007350936,
+      "correct_direction": false
+    },
+    {
+      "script": "行",
+      "char": "桑",
+      "metric": "density",
+      "wa": 5,
+      "wb": 6,
+      "delta_gt": -0.17030738522954092,
+      "delta_gen": -0.22785378537178358,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "用",
+      "metric": "center_x",
+      "wa": 0,
+      "wb": 7,
+      "delta_gt": 0.012066095539996491,
+      "delta_gen": 0.023850659853470124,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "用",
+      "metric": "center_x",
+      "wa": 0,
+      "wb": 8,
+      "delta_gt": 0.01860130404242799,
+      "delta_gen": 0.024349858801028246,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "用",
+      "metric": "center_x",
+      "wa": 7,
+      "wb": 8,
+      "delta_gt": 0.0065352085024315,
+      "delta_gen": 0.0004991989475581216,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "報",
+      "metric": "center_x",
+      "wa": 0,
+      "wb": 2,
+      "delta_gt": 0.12129390064047102,
+      "delta_gen": 0.04002143845560263,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "報",
+      "metric": "center_x",
+      "wa": 0,
+      "wb": 3,
+      "delta_gt": 0.0321195932934103,
+      "delta_gen": 0.04488278908141957,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "報",
+      "metric": "center_x",
+      "wa": 0,
+      "wb": 6,
+      "delta_gt": -0.06874568017544358,
+      "delta_gen": 0.09507167349209095,
+      "correct_direction": false
+    },
+    {
+      "script": "行",
+      "char": "報",
+      "metric": "center_x",
+      "wa": 2,
+      "wb": 3,
+      "delta_gt": -0.08917430734706072,
+      "delta_gen": 0.00486135062581694,
+      "correct_direction": false
+    },
+    {
+      "script": "行",
+      "char": "報",
+      "metric": "center_x",
+      "wa": 2,
+      "wb": 6,
+      "delta_gt": -0.1900395808159146,
+      "delta_gen": 0.055050235036488315,
+      "correct_direction": false
+    },
+    {
+      "script": "行",
+      "char": "報",
+      "metric": "center_x",
+      "wa": 3,
+      "wb": 6,
+      "delta_gt": -0.10086527346885388,
+      "delta_gen": 0.050188884410671375,
+      "correct_direction": false
+    },
+    {
+      "script": "行",
+      "char": "羲",
+      "metric": "center_x",
+      "wa": 0,
+      "wb": 2,
+      "delta_gt": 0.0023036798746229326,
+      "delta_gen": 0.022599916637084994,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "羲",
+      "metric": "center_x",
+      "wa": 0,
+      "wb": 5,
+      "delta_gt": 0.032477283545037594,
+      "delta_gen": 0.008269302691134128,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "羲",
+      "metric": "center_x",
+      "wa": 0,
+      "wb": 8,
+      "delta_gt": 0.062312286455511845,
+      "delta_gen": 0.07845627955959605,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "羲",
+      "metric": "center_x",
+      "wa": 2,
+      "wb": 5,
+      "delta_gt": 0.03017360367041466,
+      "delta_gen": -0.014330613945950865,
+      "correct_direction": false
+    },
+    {
+      "script": "行",
+      "char": "羲",
+      "metric": "center_x",
+      "wa": 2,
+      "wb": 8,
+      "delta_gt": 0.06000860658088891,
+      "delta_gen": 0.05585636292251106,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "羲",
+      "metric": "center_x",
+      "wa": 5,
+      "wb": 8,
+      "delta_gt": 0.02983500291047425,
+      "delta_gen": 0.07018697686846193,
+      "correct_direction": true
+    },
+    {
+      "script": "楷",
+      "char": "旬",
+      "metric": "center_x",
+      "wa": 0,
+      "wb": 2,
+      "delta_gt": 0.08157257185593081,
+      "delta_gen": 0.05495015081321153,
+      "correct_direction": true
+    },
+    {
+      "script": "楷",
+      "char": "旬",
+      "metric": "center_x",
+      "wa": 0,
+      "wb": 3,
+      "delta_gt": -0.024082014174100386,
+      "delta_gen": 0.02639646241324478,
+      "correct_direction": false
+    },
+    {
+      "script": "楷",
+      "char": "旬",
+      "metric": "center_x",
+      "wa": 2,
+      "wb": 3,
+      "delta_gt": -0.1056545860300312,
+      "delta_gen": -0.028553688399966748,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "吴",
+      "metric": "center_x",
+      "wa": 0,
+      "wb": 1,
+      "delta_gt": 0.010211473849359332,
+      "delta_gen": 0.02099584297797613,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "吴",
+      "metric": "center_x",
+      "wa": 0,
+      "wb": 3,
+      "delta_gt": -0.009074173862362034,
+      "delta_gen": 0.025541646459208756,
+      "correct_direction": false
+    },
+    {
+      "script": "行",
+      "char": "吴",
+      "metric": "center_x",
+      "wa": 0,
+      "wb": 7,
+      "delta_gt": -0.07490810132713982,
+      "delta_gen": -0.039863445867973635,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "吴",
+      "metric": "center_x",
+      "wa": 1,
+      "wb": 3,
+      "delta_gt": -0.019285647711721365,
+      "delta_gen": 0.004545803481232624,
+      "correct_direction": false
+    },
+    {
+      "script": "行",
+      "char": "吴",
+      "metric": "center_x",
+      "wa": 1,
+      "wb": 7,
+      "delta_gt": -0.08511957517649915,
+      "delta_gen": -0.060859288845949766,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "吴",
+      "metric": "center_x",
+      "wa": 3,
+      "wb": 7,
+      "delta_gt": -0.06583392746477779,
+      "delta_gen": -0.06540509232718239,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "好",
+      "metric": "center_x",
+      "wa": 0,
+      "wb": 2,
+      "delta_gt": -0.010506290293254728,
+      "delta_gen": -0.038754547583750076,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "好",
+      "metric": "center_x",
+      "wa": 0,
+      "wb": 3,
+      "delta_gt": -0.00749009373198406,
+      "delta_gen": -0.029455989631815616,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "好",
+      "metric": "center_x",
+      "wa": 0,
+      "wb": 6,
+      "delta_gt": -0.04224630231819465,
+      "delta_gen": -0.023123106523555093,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "好",
+      "metric": "center_x",
+      "wa": 2,
+      "wb": 3,
+      "delta_gt": 0.0030161965612706676,
+      "delta_gen": 0.00929855795193446,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "好",
+      "metric": "center_x",
+      "wa": 2,
+      "wb": 6,
+      "delta_gt": -0.03174001202493992,
+      "delta_gen": 0.015631441060194984,
+      "correct_direction": false
+    },
+    {
+      "script": "行",
+      "char": "好",
+      "metric": "center_x",
+      "wa": 3,
+      "wb": 6,
+      "delta_gt": -0.03475620858621059,
+      "delta_gen": 0.006332883108260523,
+      "correct_direction": false
+    },
+    {
+      "script": "行",
+      "char": "何",
+      "metric": "center_x",
+      "wa": 0,
+      "wb": 1,
+      "delta_gt": -0.06609362643827627,
+      "delta_gen": 0.055942144321721676,
+      "correct_direction": false
+    },
+    {
+      "script": "行",
+      "char": "何",
+      "metric": "center_x",
+      "wa": 0,
+      "wb": 2,
+      "delta_gt": -0.021476248975250023,
+      "delta_gen": 0.06848444318652575,
+      "correct_direction": false
+    },
+    {
+      "script": "行",
+      "char": "何",
+      "metric": "center_x",
+      "wa": 0,
+      "wb": 3,
+      "delta_gt": -0.07756589576152245,
+      "delta_gen": -0.05865182386437273,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "何",
+      "metric": "center_x",
+      "wa": 0,
+      "wb": 4,
+      "delta_gt": -0.0959801191884449,
+      "delta_gen": 0.05637985681673657,
+      "correct_direction": false
+    },
+    {
+      "script": "行",
+      "char": "何",
+      "metric": "center_x",
+      "wa": 0,
+      "wb": 5,
+      "delta_gt": -0.13546173246548815,
+      "delta_gen": -0.029831914762217027,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "何",
+      "metric": "center_x",
+      "wa": 0,
+      "wb": 6,
+      "delta_gt": -0.0523997305183998,
+      "delta_gen": 0.046112828152385266,
+      "correct_direction": false
+    },
+    {
+      "script": "行",
+      "char": "何",
+      "metric": "center_x",
+      "wa": 0,
+      "wb": 7,
+      "delta_gt": -0.06865163211717812,
+      "delta_gen": 0.005658250269372833,
+      "correct_direction": false
+    },
+    {
+      "script": "行",
+      "char": "何",
+      "metric": "center_x",
+      "wa": 1,
+      "wb": 2,
+      "delta_gt": 0.04461737746302624,
+      "delta_gen": 0.012542298864804069,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "何",
+      "metric": "center_x",
+      "wa": 1,
+      "wb": 3,
+      "delta_gt": -0.011472269323246187,
+      "delta_gen": -0.11459396818609441,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "何",
+      "metric": "center_x",
+      "wa": 1,
+      "wb": 4,
+      "delta_gt": -0.029886492750168636,
+      "delta_gen": 0.00043771249501489695,
+      "correct_direction": false
+    },
+    {
+      "script": "行",
+      "char": "何",
+      "metric": "center_x",
+      "wa": 1,
+      "wb": 5,
+      "delta_gt": -0.06936810602721188,
+      "delta_gen": -0.0857740590839387,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "何",
+      "metric": "center_x",
+      "wa": 1,
+      "wb": 6,
+      "delta_gt": 0.013693895919876464,
+      "delta_gen": -0.00982931616933641,
+      "correct_direction": false
+    },
+    {
+      "script": "行",
+      "char": "何",
+      "metric": "center_x",
+      "wa": 1,
+      "wb": 7,
+      "delta_gt": -0.0025580056789018535,
+      "delta_gen": -0.05028389405234884,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "何",
+      "metric": "center_x",
+      "wa": 2,
+      "wb": 3,
+      "delta_gt": -0.05608964678627243,
+      "delta_gen": -0.12713626705089848,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "何",
+      "metric": "center_x",
+      "wa": 2,
+      "wb": 4,
+      "delta_gt": -0.07450387021319488,
+      "delta_gen": -0.012104586369789172,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "何",
+      "metric": "center_x",
+      "wa": 2,
+      "wb": 5,
+      "delta_gt": -0.11398548349023813,
+      "delta_gen": -0.09831635794874277,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "何",
+      "metric": "center_x",
+      "wa": 2,
+      "wb": 6,
+      "delta_gt": -0.030923481543149778,
+      "delta_gen": -0.02237161503414048,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "何",
+      "metric": "center_x",
+      "wa": 2,
+      "wb": 7,
+      "delta_gt": -0.047175383141928096,
+      "delta_gen": -0.06282619291715291,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "何",
+      "metric": "center_x",
+      "wa": 3,
+      "wb": 4,
+      "delta_gt": -0.01841422342692245,
+      "delta_gen": 0.1150316806811093,
+      "correct_direction": false
+    },
+    {
+      "script": "行",
+      "char": "何",
+      "metric": "center_x",
+      "wa": 3,
+      "wb": 5,
+      "delta_gt": -0.0578958367039657,
+      "delta_gen": 0.028819909102155705,
+      "correct_direction": false
+    },
+    {
+      "script": "行",
+      "char": "何",
+      "metric": "center_x",
+      "wa": 3,
+      "wb": 6,
+      "delta_gt": 0.02516616524312265,
+      "delta_gen": 0.104764652016758,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "何",
+      "metric": "center_x",
+      "wa": 3,
+      "wb": 7,
+      "delta_gt": 0.008914263644344333,
+      "delta_gen": 0.06431007413374557,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "何",
+      "metric": "center_x",
+      "wa": 4,
+      "wb": 5,
+      "delta_gt": -0.03948161327704325,
+      "delta_gen": -0.0862117715789536,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "何",
+      "metric": "center_x",
+      "wa": 4,
+      "wb": 6,
+      "delta_gt": 0.0435803886700451,
+      "delta_gen": -0.010267028664351308,
+      "correct_direction": false
+    },
+    {
+      "script": "行",
+      "char": "何",
+      "metric": "center_x",
+      "wa": 4,
+      "wb": 7,
+      "delta_gt": 0.027328487071266783,
+      "delta_gen": -0.05072160654736374,
+      "correct_direction": false
+    },
+    {
+      "script": "行",
+      "char": "何",
+      "metric": "center_x",
+      "wa": 5,
+      "wb": 6,
+      "delta_gt": 0.08306200194708835,
+      "delta_gen": 0.07594474291460229,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "何",
+      "metric": "center_x",
+      "wa": 5,
+      "wb": 7,
+      "delta_gt": 0.06681010034831003,
+      "delta_gen": 0.03549016503158986,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "何",
+      "metric": "center_x",
+      "wa": 6,
+      "wb": 7,
+      "delta_gt": -0.016251901598778318,
+      "delta_gen": -0.04045457788301243,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "閒",
+      "metric": "center_x",
+      "wa": 0,
+      "wb": 3,
+      "delta_gt": 0.011918400197356127,
+      "delta_gen": -0.01121653383523935,
+      "correct_direction": false
+    },
+    {
+      "script": "楷",
+      "char": "咽",
+      "metric": "center_x",
+      "wa": 0,
+      "wb": 3,
+      "delta_gt": -0.010381358887541547,
+      "delta_gen": -0.02630130931934438,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "桑",
+      "metric": "center_x",
+      "wa": 1,
+      "wb": 5,
+      "delta_gt": 0.0333206240906031,
+      "delta_gen": 0.040315200438691856,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "桑",
+      "metric": "center_x",
+      "wa": 1,
+      "wb": 6,
+      "delta_gt": 0.01318209118218061,
+      "delta_gen": 0.027906818950762413,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "桑",
+      "metric": "center_x",
+      "wa": 5,
+      "wb": 6,
+      "delta_gt": -0.02013853290842249,
+      "delta_gen": -0.012408381487929443,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "用",
+      "metric": "center_y",
+      "wa": 0,
+      "wb": 7,
+      "delta_gt": 0.024534444894402874,
+      "delta_gen": -0.024496703840274747,
+      "correct_direction": false
+    },
+    {
+      "script": "行",
+      "char": "用",
+      "metric": "center_y",
+      "wa": 0,
+      "wb": 8,
+      "delta_gt": 0.010071876678937053,
+      "delta_gen": -0.01265071903004078,
+      "correct_direction": false
+    },
+    {
+      "script": "行",
+      "char": "用",
+      "metric": "center_y",
+      "wa": 7,
+      "wb": 8,
+      "delta_gt": -0.01446256821546582,
+      "delta_gen": 0.011845984810233967,
+      "correct_direction": false
+    },
+    {
+      "script": "行",
+      "char": "報",
+      "metric": "center_y",
+      "wa": 0,
+      "wb": 2,
+      "delta_gt": -0.021178530095425474,
+      "delta_gen": 0.003764149063646971,
+      "correct_direction": false
+    },
+    {
+      "script": "行",
+      "char": "報",
+      "metric": "center_y",
+      "wa": 0,
+      "wb": 3,
+      "delta_gt": -0.027346990195525778,
+      "delta_gen": 0.0045556140825223634,
+      "correct_direction": false
+    },
+    {
+      "script": "行",
+      "char": "報",
+      "metric": "center_y",
+      "wa": 0,
+      "wb": 6,
+      "delta_gt": 0.00019180612328884017,
+      "delta_gen": -0.03428497468485259,
+      "correct_direction": false
+    },
+    {
+      "script": "行",
+      "char": "報",
+      "metric": "center_y",
+      "wa": 2,
+      "wb": 3,
+      "delta_gt": -0.006168460100100304,
+      "delta_gen": 0.0007914650188753924,
+      "correct_direction": false
+    },
+    {
+      "script": "行",
+      "char": "報",
+      "metric": "center_y",
+      "wa": 2,
+      "wb": 6,
+      "delta_gt": 0.021370336218714314,
+      "delta_gen": -0.03804912374849956,
+      "correct_direction": false
+    },
+    {
+      "script": "行",
+      "char": "報",
+      "metric": "center_y",
+      "wa": 3,
+      "wb": 6,
+      "delta_gt": 0.027538796318814618,
+      "delta_gen": -0.03884058876737495,
+      "correct_direction": false
+    },
+    {
+      "script": "行",
+      "char": "羲",
+      "metric": "center_y",
+      "wa": 0,
+      "wb": 2,
+      "delta_gt": -0.013785271117164433,
+      "delta_gen": -0.01764268537198521,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "羲",
+      "metric": "center_y",
+      "wa": 0,
+      "wb": 5,
+      "delta_gt": -0.04896307872694505,
+      "delta_gen": -0.06900397861497753,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "羲",
+      "metric": "center_y",
+      "wa": 0,
+      "wb": 8,
+      "delta_gt": -0.03705513540877392,
+      "delta_gen": -0.04824094260168965,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "羲",
+      "metric": "center_y",
+      "wa": 2,
+      "wb": 5,
+      "delta_gt": -0.03517780760978062,
+      "delta_gen": -0.05136129324299232,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "羲",
+      "metric": "center_y",
+      "wa": 2,
+      "wb": 8,
+      "delta_gt": -0.023269864291609488,
+      "delta_gen": -0.03059825722970444,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "羲",
+      "metric": "center_y",
+      "wa": 5,
+      "wb": 8,
+      "delta_gt": 0.011907943318171132,
+      "delta_gen": 0.020763036013287883,
+      "correct_direction": true
+    },
+    {
+      "script": "楷",
+      "char": "旬",
+      "metric": "center_y",
+      "wa": 0,
+      "wb": 2,
+      "delta_gt": 0.03153752786610409,
+      "delta_gen": 0.031317228527457885,
+      "correct_direction": true
+    },
+    {
+      "script": "楷",
+      "char": "旬",
+      "metric": "center_y",
+      "wa": 0,
+      "wb": 3,
+      "delta_gt": -0.04895413304392149,
+      "delta_gen": -0.008539234729836531,
+      "correct_direction": true
+    },
+    {
+      "script": "楷",
+      "char": "旬",
+      "metric": "center_y",
+      "wa": 2,
+      "wb": 3,
+      "delta_gt": -0.08049166091002558,
+      "delta_gen": -0.03985646325729442,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "吴",
+      "metric": "center_y",
+      "wa": 0,
+      "wb": 1,
+      "delta_gt": -0.05926174198952627,
+      "delta_gen": -0.019680706444647367,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "吴",
+      "metric": "center_y",
+      "wa": 0,
+      "wb": 3,
+      "delta_gt": 0.001974479280285324,
+      "delta_gen": 0.03754077698841629,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "吴",
+      "metric": "center_y",
+      "wa": 0,
+      "wb": 7,
+      "delta_gt": 0.02845184361564268,
+      "delta_gen": 0.06540399780570721,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "吴",
+      "metric": "center_y",
+      "wa": 1,
+      "wb": 3,
+      "delta_gt": 0.0612362212698116,
+      "delta_gen": 0.05722148343306366,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "吴",
+      "metric": "center_y",
+      "wa": 1,
+      "wb": 7,
+      "delta_gt": 0.08771358560516895,
+      "delta_gen": 0.08508470425035458,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "吴",
+      "metric": "center_y",
+      "wa": 3,
+      "wb": 7,
+      "delta_gt": 0.026477364335357356,
+      "delta_gen": 0.027863220817290923,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "好",
+      "metric": "center_y",
+      "wa": 0,
+      "wb": 2,
+      "delta_gt": 0.02248129436644375,
+      "delta_gen": -0.036847134518042224,
+      "correct_direction": false
+    },
+    {
+      "script": "行",
+      "char": "好",
+      "metric": "center_y",
+      "wa": 0,
+      "wb": 3,
+      "delta_gt": -0.023872582042379076,
+      "delta_gen": 0.030378335775733012,
+      "correct_direction": false
+    },
+    {
+      "script": "行",
+      "char": "好",
+      "metric": "center_y",
+      "wa": 0,
+      "wb": 6,
+      "delta_gt": -0.0007733066884055839,
+      "delta_gen": -0.057032433411799976,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "好",
+      "metric": "center_y",
+      "wa": 2,
+      "wb": 3,
+      "delta_gt": -0.046353876408822825,
+      "delta_gen": 0.06722547029377524,
+      "correct_direction": false
+    },
+    {
+      "script": "行",
+      "char": "好",
+      "metric": "center_y",
+      "wa": 2,
+      "wb": 6,
+      "delta_gt": -0.023254601054849333,
+      "delta_gen": -0.020185298893757753,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "好",
+      "metric": "center_y",
+      "wa": 3,
+      "wb": 6,
+      "delta_gt": 0.023099275353973492,
+      "delta_gen": -0.08741076918753299,
+      "correct_direction": false
+    },
+    {
+      "script": "行",
+      "char": "何",
+      "metric": "center_y",
+      "wa": 0,
+      "wb": 1,
+      "delta_gt": -0.05177005375148924,
+      "delta_gen": -0.12764571050603668,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "何",
+      "metric": "center_y",
+      "wa": 0,
+      "wb": 2,
+      "delta_gt": 0.016920046553249857,
+      "delta_gen": -0.012523435996287413,
+      "correct_direction": false
+    },
+    {
+      "script": "行",
+      "char": "何",
+      "metric": "center_y",
+      "wa": 0,
+      "wb": 3,
+      "delta_gt": 0.00864662764577856,
+      "delta_gen": -0.060434139261204556,
+      "correct_direction": false
+    },
+    {
+      "script": "行",
+      "char": "何",
+      "metric": "center_y",
+      "wa": 0,
+      "wb": 4,
+      "delta_gt": -0.004757433693006963,
+      "delta_gen": -0.058375479766617555,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "何",
+      "metric": "center_y",
+      "wa": 0,
+      "wb": 5,
+      "delta_gt": 0.043625374336936695,
+      "delta_gen": -0.0649144164208304,
+      "correct_direction": false
+    },
+    {
+      "script": "行",
+      "char": "何",
+      "metric": "center_y",
+      "wa": 0,
+      "wb": 6,
+      "delta_gt": 0.018301800715454897,
+      "delta_gen": -0.0314454724548579,
+      "correct_direction": false
+    },
+    {
+      "script": "行",
+      "char": "何",
+      "metric": "center_y",
+      "wa": 0,
+      "wb": 7,
+      "delta_gt": -0.0024975570801750724,
+      "delta_gen": -0.045223959426912264,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "何",
+      "metric": "center_y",
+      "wa": 1,
+      "wb": 2,
+      "delta_gt": 0.0686901003047391,
+      "delta_gen": 0.11512227450974927,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "何",
+      "metric": "center_y",
+      "wa": 1,
+      "wb": 3,
+      "delta_gt": 0.0604166813972678,
+      "delta_gen": 0.06721157124483212,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "何",
+      "metric": "center_y",
+      "wa": 1,
+      "wb": 4,
+      "delta_gt": 0.04701262005848228,
+      "delta_gen": 0.06927023073941913,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "何",
+      "metric": "center_y",
+      "wa": 1,
+      "wb": 5,
+      "delta_gt": 0.09539542808842594,
+      "delta_gen": 0.06273129408520628,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "何",
+      "metric": "center_y",
+      "wa": 1,
+      "wb": 6,
+      "delta_gt": 0.07007185446694414,
+      "delta_gen": 0.09620023805117878,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "何",
+      "metric": "center_y",
+      "wa": 1,
+      "wb": 7,
+      "delta_gt": 0.04927249667131417,
+      "delta_gen": 0.08242175107912442,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "何",
+      "metric": "center_y",
+      "wa": 2,
+      "wb": 3,
+      "delta_gt": -0.008273418907471297,
+      "delta_gen": -0.04791070326491714,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "何",
+      "metric": "center_y",
+      "wa": 2,
+      "wb": 4,
+      "delta_gt": -0.02167748024625682,
+      "delta_gen": -0.04585204377033014,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "何",
+      "metric": "center_y",
+      "wa": 2,
+      "wb": 5,
+      "delta_gt": 0.02670532778368684,
+      "delta_gen": -0.05239098042454299,
+      "correct_direction": false
+    },
+    {
+      "script": "行",
+      "char": "何",
+      "metric": "center_y",
+      "wa": 2,
+      "wb": 6,
+      "delta_gt": 0.00138175416220504,
+      "delta_gen": -0.01892203645857049,
+      "correct_direction": false
+    },
+    {
+      "script": "行",
+      "char": "何",
+      "metric": "center_y",
+      "wa": 2,
+      "wb": 7,
+      "delta_gt": -0.01941760363342493,
+      "delta_gen": -0.03270052343062485,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "何",
+      "metric": "center_y",
+      "wa": 3,
+      "wb": 4,
+      "delta_gt": -0.013404061338785522,
+      "delta_gen": 0.0020586594945870007,
+      "correct_direction": false
+    },
+    {
+      "script": "行",
+      "char": "何",
+      "metric": "center_y",
+      "wa": 3,
+      "wb": 5,
+      "delta_gt": 0.034978746691158136,
+      "delta_gen": -0.004480277159625845,
+      "correct_direction": false
+    },
+    {
+      "script": "行",
+      "char": "何",
+      "metric": "center_y",
+      "wa": 3,
+      "wb": 6,
+      "delta_gt": 0.009655173069676337,
+      "delta_gen": 0.028988666806346652,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "何",
+      "metric": "center_y",
+      "wa": 3,
+      "wb": 7,
+      "delta_gt": -0.011144184725953632,
+      "delta_gen": 0.015210179834292292,
+      "correct_direction": false
+    },
+    {
+      "script": "行",
+      "char": "何",
+      "metric": "center_y",
+      "wa": 4,
+      "wb": 5,
+      "delta_gt": 0.04838280802994366,
+      "delta_gen": -0.006538936654212846,
+      "correct_direction": false
+    },
+    {
+      "script": "行",
+      "char": "何",
+      "metric": "center_y",
+      "wa": 4,
+      "wb": 6,
+      "delta_gt": 0.02305923440846186,
+      "delta_gen": 0.02693000731175965,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "何",
+      "metric": "center_y",
+      "wa": 4,
+      "wb": 7,
+      "delta_gt": 0.0022598766128318903,
+      "delta_gen": 0.013151520339705292,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "何",
+      "metric": "center_y",
+      "wa": 5,
+      "wb": 6,
+      "delta_gt": -0.0253235736214818,
+      "delta_gen": 0.0334689439659725,
+      "correct_direction": false
+    },
+    {
+      "script": "行",
+      "char": "何",
+      "metric": "center_y",
+      "wa": 5,
+      "wb": 7,
+      "delta_gt": -0.04612293141711177,
+      "delta_gen": 0.019690456993918137,
+      "correct_direction": false
+    },
+    {
+      "script": "行",
+      "char": "何",
+      "metric": "center_y",
+      "wa": 6,
+      "wb": 7,
+      "delta_gt": -0.02079935779562997,
+      "delta_gen": -0.01377848697205436,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "閒",
+      "metric": "center_y",
+      "wa": 0,
+      "wb": 3,
+      "delta_gt": -0.04388952984863154,
+      "delta_gen": 0.005191051048484219,
+      "correct_direction": false
+    },
+    {
+      "script": "楷",
+      "char": "咽",
+      "metric": "center_y",
+      "wa": 0,
+      "wb": 3,
+      "delta_gt": 0.011328301054651102,
+      "delta_gen": 0.019437014732585634,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "桑",
+      "metric": "center_y",
+      "wa": 1,
+      "wb": 5,
+      "delta_gt": 0.03968776695960197,
+      "delta_gen": 0.02190039562293078,
+      "correct_direction": true
+    },
+    {
+      "script": "行",
+      "char": "桑",
+      "metric": "center_y",
+      "wa": 1,
+      "wb": 6,
+      "delta_gt": 0.018794776395211765,
+      "delta_gen": -0.0034293938652932843,
+      "correct_direction": false
+    },
+    {
+      "script": "行",
+      "char": "桑",
+      "metric": "center_y",
+      "wa": 5,
+      "wb": 6,
+      "delta_gt": -0.0208929905643902,
+      "delta_gen": -0.025329789488224064,
+      "correct_direction": true
+    }
+  ],
+  "shape_samples": [
+    {
+      "script": "行",
+      "char": "用",
+      "writer": 0,
+      "mask_pred": 7,
+      "skeleton_pred": 7,
+      "chance": 0.3333333333333333
+    },
+    {
+      "script": "行",
+      "char": "用",
+      "writer": 7,
+      "mask_pred": 7,
+      "skeleton_pred": 7,
+      "chance": 0.3333333333333333
+    },
+    {
+      "script": "行",
+      "char": "用",
+      "writer": 8,
+      "mask_pred": 7,
+      "skeleton_pred": 7,
+      "chance": 0.3333333333333333
+    },
+    {
+      "script": "行",
+      "char": "報",
+      "writer": 0,
+      "mask_pred": 3,
+      "skeleton_pred": 3,
+      "chance": 0.25
+    },
+    {
+      "script": "行",
+      "char": "報",
+      "writer": 2,
+      "mask_pred": 3,
+      "skeleton_pred": 3,
+      "chance": 0.25
+    },
+    {
+      "script": "行",
+      "char": "報",
+      "writer": 3,
+      "mask_pred": 3,
+      "skeleton_pred": 3,
+      "chance": 0.25
+    },
+    {
+      "script": "行",
+      "char": "報",
+      "writer": 6,
+      "mask_pred": 2,
+      "skeleton_pred": 2,
+      "chance": 0.25
+    },
+    {
+      "script": "行",
+      "char": "羲",
+      "writer": 0,
+      "mask_pred": 2,
+      "skeleton_pred": 2,
+      "chance": 0.25
+    },
+    {
+      "script": "行",
+      "char": "羲",
+      "writer": 2,
+      "mask_pred": 2,
+      "skeleton_pred": 2,
+      "chance": 0.25
+    },
+    {
+      "script": "行",
+      "char": "羲",
+      "writer": 5,
+      "mask_pred": 2,
+      "skeleton_pred": 5,
+      "chance": 0.25
+    },
+    {
+      "script": "行",
+      "char": "羲",
+      "writer": 8,
+      "mask_pred": 8,
+      "skeleton_pred": 8,
+      "chance": 0.25
+    },
+    {
+      "script": "楷",
+      "char": "旬",
+      "writer": 0,
+      "mask_pred": 3,
+      "skeleton_pred": 3,
+      "chance": 0.3333333333333333
+    },
+    {
+      "script": "楷",
+      "char": "旬",
+      "writer": 2,
+      "mask_pred": 2,
+      "skeleton_pred": 2,
+      "chance": 0.3333333333333333
+    },
+    {
+      "script": "楷",
+      "char": "旬",
+      "writer": 3,
+      "mask_pred": 3,
+      "skeleton_pred": 3,
+      "chance": 0.3333333333333333
+    },
+    {
+      "script": "行",
+      "char": "吴",
+      "writer": 0,
+      "mask_pred": 3,
+      "skeleton_pred": 3,
+      "chance": 0.25
+    },
+    {
+      "script": "行",
+      "char": "吴",
+      "writer": 1,
+      "mask_pred": 1,
+      "skeleton_pred": 1,
+      "chance": 0.25
+    },
+    {
+      "script": "行",
+      "char": "吴",
+      "writer": 3,
+      "mask_pred": 3,
+      "skeleton_pred": 3,
+      "chance": 0.25
+    },
+    {
+      "script": "行",
+      "char": "吴",
+      "writer": 7,
+      "mask_pred": 7,
+      "skeleton_pred": 7,
+      "chance": 0.25
+    },
+    {
+      "script": "行",
+      "char": "好",
+      "writer": 0,
+      "mask_pred": 3,
+      "skeleton_pred": 3,
+      "chance": 0.25
+    },
+    {
+      "script": "行",
+      "char": "好",
+      "writer": 2,
+      "mask_pred": 6,
+      "skeleton_pred": 6,
+      "chance": 0.25
+    },
+    {
+      "script": "行",
+      "char": "好",
+      "writer": 3,
+      "mask_pred": 3,
+      "skeleton_pred": 3,
+      "chance": 0.25
+    },
+    {
+      "script": "行",
+      "char": "好",
+      "writer": 6,
+      "mask_pred": 6,
+      "skeleton_pred": 2,
+      "chance": 0.25
+    },
+    {
+      "script": "行",
+      "char": "何",
+      "writer": 0,
+      "mask_pred": 3,
+      "skeleton_pred": 5,
+      "chance": 0.125
+    },
+    {
+      "script": "行",
+      "char": "何",
+      "writer": 1,
+      "mask_pred": 1,
+      "skeleton_pred": 1,
+      "chance": 0.125
+    },
+    {
+      "script": "行",
+      "char": "何",
+      "writer": 2,
+      "mask_pred": 2,
+      "skeleton_pred": 2,
+      "chance": 0.125
+    },
+    {
+      "script": "行",
+      "char": "何",
+      "writer": 3,
+      "mask_pred": 3,
+      "skeleton_pred": 3,
+      "chance": 0.125
+    },
+    {
+      "script": "行",
+      "char": "何",
+      "writer": 4,
+      "mask_pred": 4,
+      "skeleton_pred": 1,
+      "chance": 0.125
+    },
+    {
+      "script": "行",
+      "char": "何",
+      "writer": 5,
+      "mask_pred": 3,
+      "skeleton_pred": 5,
+      "chance": 0.125
+    },
+    {
+      "script": "行",
+      "char": "何",
+      "writer": 6,
+      "mask_pred": 2,
+      "skeleton_pred": 2,
+      "chance": 0.125
+    },
+    {
+      "script": "行",
+      "char": "何",
+      "writer": 7,
+      "mask_pred": 7,
+      "skeleton_pred": 7,
+      "chance": 0.125
+    },
+    {
+      "script": "行",
+      "char": "閒",
+      "writer": 0,
+      "mask_pred": 0,
+      "skeleton_pred": 0,
+      "chance": 0.5
+    },
+    {
+      "script": "行",
+      "char": "閒",
+      "writer": 3,
+      "mask_pred": 0,
+      "skeleton_pred": 3,
+      "chance": 0.5
+    },
+    {
+      "script": "楷",
+      "char": "咽",
+      "writer": 0,
+      "mask_pred": 0,
+      "skeleton_pred": 0,
+      "chance": 0.5
+    },
+    {
+      "script": "楷",
+      "char": "咽",
+      "writer": 3,
+      "mask_pred": 3,
+      "skeleton_pred": 3,
+      "chance": 0.5
+    },
+    {
+      "script": "行",
+      "char": "桑",
+      "writer": 1,
+      "mask_pred": 6,
+      "skeleton_pred": 1,
+      "chance": 0.3333333333333333
+    },
+    {
+      "script": "行",
+      "char": "桑",
+      "writer": 5,
+      "mask_pred": 5,
+      "skeleton_pred": 5,
+      "chance": 0.3333333333333333
+    },
+    {
+      "script": "行",
+      "char": "桑",
+      "writer": 6,
+      "mask_pred": 6,
+      "skeleton_pred": 6,
+      "chance": 0.3333333333333333
+    }
+  ]
+}

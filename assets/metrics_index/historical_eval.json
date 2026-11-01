@@ -1,0 +1,1645 @@
+{
+ "assets/recent_poster_20261017/png/v84A": {
+  "E-G": {
+   "n_queries": 181,
+   "macro_writer": {
+    "auc": 0.8300208887524212,
+    "eer": 0.1983342558231332,
+    "ap": 0.5643817521798618,
+    "tar_at_eval_far01": 0.38864658096725313
+   },
+   "pooled": {
+    "auc": 0.8333127540631604,
+    "eer": 0.23982576494173546,
+    "tar_at_eval_far01": 0.2223756906077348,
+    "eer_threshold": 0.3976540267467499
+   },
+   "interpretation": "EER/TAR from evaluation ROC, not a calibrated deployment threshold; pair scores are correlated"
+  },
+  "ocr": {
+   "n": 172,
+   "top1": 65.12,
+   "top5": 74.42
+  },
+  "ink": {
+   "width_p50": 6.8729,
+   "width_p90": 15.255,
+   "width_jump": 0.633,
+   "ink_ratio": 0.1742,
+   "fragment_share": 0.0145
+  },
+  "n_png": 187
+ },
+ "assets/results/_diag_v83A_20261012_2018/step55000": {
+  "E-G": {
+   "n_queries": 181,
+   "macro_writer": {
+    "auc": 0.6138368370033496,
+    "eer": 0.40022740964088943,
+    "ap": 0.27218749321559577,
+    "tar_at_eval_far01": 0.10983524705171924
+   },
+   "pooled": {
+    "auc": 0.5759376144483996,
+    "eer": 0.45226951718516983,
+    "tar_at_eval_far01": 0.030991022099447513,
+    "eer_threshold": 0.204563170671463
+   },
+   "interpretation": "EER/TAR from evaluation ROC, not a calibrated deployment threshold; pair scores are correlated"
+  },
+  "ocr": {
+   "n": 172,
+   "top1": 1.16,
+   "top5": 2.91
+  },
+  "ink": {
+   "width_p50": 5.4961,
+   "width_p90": 12.6275,
+   "width_jump": 0.5668,
+   "ink_ratio": 0.0917,
+   "fragment_share": 0.111
+  },
+  "n_png": 187
+ },
+ "assets/results/_local_v80_50k_ode/eval_samples_ctrl/step0050000/eval200fix": {
+  "E-G": {
+   "n_queries": 181,
+   "macro_writer": {
+    "auc": 0.8393299877422755,
+    "eer": 0.19283939526994529,
+    "ap": 0.5457122101507546,
+    "tar_at_eval_far01": 0.36747969232808786
+   },
+   "pooled": {
+    "auc": 0.836168135478949,
+    "eer": 0.24188729610188248,
+    "tar_at_eval_far01": 0.2089088397790055,
+    "eer_threshold": 0.4009019732475281
+   },
+   "interpretation": "EER/TAR from evaluation ROC, not a calibrated deployment threshold; pair scores are correlated"
+  },
+  "ocr": {
+   "n": 172,
+   "top1": 58.14,
+   "top5": 72.09
+  },
+  "ink": {
+   "width_p50": 8.3494,
+   "width_p90": 17.5688,
+   "width_jump": 0.6257,
+   "ink_ratio": 0.2003,
+   "fragment_share": 0.0027
+  },
+  "n_png": 187
+ },
+ "assets/results/_local_v80_50k_sde_g05/eval_samples_ctrl/step0050000/eval200fix": {
+  "E-G": {
+   "n_queries": 181,
+   "macro_writer": {
+    "auc": 0.8521211586649363,
+    "eer": 0.18037126958174418,
+    "ap": 0.55109039622331,
+    "tar_at_eval_far01": 0.37478139563552565
+   },
+   "pooled": {
+    "auc": 0.8488743254555156,
+    "eer": 0.2328079206185033,
+    "tar_at_eval_far01": 0.2064917127071823,
+    "eer_threshold": 0.4150305986404419
+   },
+   "interpretation": "EER/TAR from evaluation ROC, not a calibrated deployment threshold; pair scores are correlated"
+  },
+  "ocr": {
+   "n": 172,
+   "top1": 56.98,
+   "top5": 72.09
+  },
+  "ink": {
+   "width_p50": 8.3483,
+   "width_p90": 17.5488,
+   "width_jump": 0.6263,
+   "ink_ratio": 0.1996,
+   "fragment_share": 0.0024
+  },
+  "n_png": 187
+ },
+ "assets/results/v80_callivae_physics_noOT/20261011-195827-v80-callivae-physics-noOT/eval_samples_ctrl/step0190000/eval200fix": {
+  "E-G": {
+   "n_queries": 181,
+   "macro_writer": {
+    "auc": 0.8774393123203195,
+    "eer": 0.15267888627013035,
+    "ap": 0.6357961178633935,
+    "tar_at_eval_far01": 0.47488783478483365
+   },
+   "pooled": {
+    "auc": 0.8671667849119441,
+    "eer": 0.2118538099528925,
+    "tar_at_eval_far01": 0.3436636740331492,
+    "eer_threshold": 0.3899461627006531
+   },
+   "interpretation": "EER/TAR from evaluation ROC, not a calibrated deployment threshold; pair scores are correlated"
+  },
+  "ocr": {
+   "n": 172,
+   "top1": 73.84,
+   "top5": 84.88
+  },
+  "ink": {
+   "width_p50": 8.3175,
+   "width_p90": 17.5466,
+   "width_jump": 0.6248,
+   "ink_ratio": 0.1915,
+   "fragment_share": 0.0025
+  },
+  "n_png": 187
+ },
+ "assets/results/v83A_55k_correct_eval_20261012/eval_samples_ctrl/step0055000/eval200fix": {
+  "E-G": {
+   "n_queries": 181,
+   "macro_writer": {
+    "auc": 0.8160776079946928,
+    "eer": 0.21353697734803542,
+    "ap": 0.5423239667895221,
+    "tar_at_eval_far01": 0.3606017708957886
+   },
+   "pooled": {
+    "auc": 0.824350731103026,
+    "eer": 0.24542564888448115,
+    "tar_at_eval_far01": 0.19000345303867403,
+    "eer_threshold": 0.40039485692977905
+   },
+   "interpretation": "EER/TAR from evaluation ROC, not a calibrated deployment threshold; pair scores are correlated"
+  },
+  "ocr": {
+   "n": 172,
+   "top1": 62.79,
+   "top5": 76.74
+  },
+  "ink": {
+   "width_p50": 8.1873,
+   "width_p90": 17.6562,
+   "width_jump": 0.6348,
+   "ink_ratio": 0.1975,
+   "fragment_share": 0.0053
+  },
+  "n_png": 187
+ },
+ "assets/style_eval_src/cfg1.2": {
+  "E-G": {
+   "n_queries": 181,
+   "macro_writer": {
+    "auc": 0.8656002273022375,
+    "eer": 0.16559987234870183,
+    "ap": 0.6300446620390386,
+    "tar_at_eval_far01": 0.45574032957664673
+   },
+   "pooled": {
+    "auc": 0.8673826314496426,
+    "eer": 0.20614796999256196,
+    "tar_at_eval_far01": 0.2948895027624309,
+    "eer_threshold": 0.4160187840461731
+   },
+   "interpretation": "EER/TAR from evaluation ROC, not a calibrated deployment threshold; pair scores are correlated"
+  },
+  "ocr": {
+   "n": 172,
+   "top1": 66.28,
+   "top5": 76.16
+  },
+  "ink": {
+   "width_p50": 7.1786,
+   "width_p90": 15.7633,
+   "width_jump": 0.6334,
+   "ink_ratio": 0.1789,
+   "fragment_share": 0.0127
+  },
+  "n_png": 187
+ },
+ "assets/style_eval_src/cfg1.4": {
+  "E-G": {
+   "n_queries": 181,
+   "macro_writer": {
+    "auc": 0.8863751126355824,
+    "eer": 0.1437655013444589,
+    "ap": 0.6679381103945984,
+    "tar_at_eval_far01": 0.50655695209034
+   },
+   "pooled": {
+    "auc": 0.8828870960900234,
+    "eer": 0.1884562060795683,
+    "tar_at_eval_far01": 0.34469958563535913,
+    "eer_threshold": 0.42110738158226013
+   },
+   "interpretation": "EER/TAR from evaluation ROC, not a calibrated deployment threshold; pair scores are correlated"
+  },
+  "ocr": {
+   "n": 172,
+   "top1": 68.02,
+   "top5": 76.16
+  },
+  "ink": {
+   "width_p50": 7.4286,
+   "width_p90": 16.2862,
+   "width_jump": 0.6342,
+   "ink_ratio": 0.1837,
+   "fragment_share": 0.0112
+  },
+  "n_png": 187
+ },
+ "assets/style_eval_src/cfg1.6": {
+  "E-G": {
+   "n_queries": 181,
+   "macro_writer": {
+    "auc": 0.9023843013526129,
+    "eer": 0.1253350820554555,
+    "ap": 0.697443638562702,
+    "tar_at_eval_far01": 0.5402623009383519
+   },
+   "pooled": {
+    "auc": 0.8992587088257518,
+    "eer": 0.1785959072818642,
+    "tar_at_eval_far01": 0.38743093922651933,
+    "eer_threshold": 0.42320775985717773
+   },
+   "interpretation": "EER/TAR from evaluation ROC, not a calibrated deployment threshold; pair scores are correlated"
+  },
+  "ocr": {
+   "n": 172,
+   "top1": 65.12,
+   "top5": 75.0
+  },
+  "ink": {
+   "width_p50": 7.7794,
+   "width_p90": 17.147,
+   "width_jump": 0.6354,
+   "ink_ratio": 0.189,
+   "fragment_share": 0.0093
+  },
+  "n_png": 187
+ },
+ "assets/style_eval_src/step0020000": {
+  "E-G": {
+   "n_queries": 181,
+   "macro_writer": {
+    "auc": 0.733540753754228,
+    "eer": 0.2901104835471094,
+    "ap": 0.4170149352694635,
+    "tar_at_eval_far01": 0.24567134781379107
+   },
+   "pooled": {
+    "auc": 0.7203536562516188,
+    "eer": 0.3423686688894399,
+    "tar_at_eval_far01": 0.10298687845303868,
+    "eer_threshold": 0.3363732695579529
+   },
+   "interpretation": "EER/TAR from evaluation ROC, not a calibrated deployment threshold; pair scores are correlated"
+  },
+  "ocr": {
+   "n": 172,
+   "top1": 9.3,
+   "top5": 12.79
+  },
+  "ink": {
+   "width_p50": 8.7915,
+   "width_p90": 18.7732,
+   "width_jump": 0.6365,
+   "ink_ratio": 0.216,
+   "fragment_share": 0.0031
+  },
+  "n_png": 187
+ },
+ "assets/style_eval_src/step0050000": {
+  "E-G": {
+   "n_queries": 181,
+   "macro_writer": {
+    "auc": 0.8072862248220882,
+    "eer": 0.21966417392945425,
+    "ap": 0.5291138912361923,
+    "tar_at_eval_far01": 0.3646584727379664
+   },
+   "pooled": {
+    "auc": 0.8064495387248862,
+    "eer": 0.26286233777887974,
+    "tar_at_eval_far01": 0.23817334254143646,
+    "eer_threshold": 0.39111387729644775
+   },
+   "interpretation": "EER/TAR from evaluation ROC, not a calibrated deployment threshold; pair scores are correlated"
+  },
+  "ocr": {
+   "n": 172,
+   "top1": 37.79,
+   "top5": 48.26
+  },
+  "ink": {
+   "width_p50": 8.597,
+   "width_p90": 18.2177,
+   "width_jump": 0.6338,
+   "ink_ratio": 0.2112,
+   "fragment_share": 0.0043
+  },
+  "n_png": 187
+ },
+ "assets/style_eval_src/step0080000": {
+  "E-G": {
+   "n_queries": 181,
+   "macro_writer": {
+    "auc": 0.8447619662921723,
+    "eer": 0.18662540604622874,
+    "ap": 0.5661459402083585,
+    "tar_at_eval_far01": 0.4020537859357093
+   },
+   "pooled": {
+    "auc": 0.8521099437908386,
+    "eer": 0.2255716305466024,
+    "tar_at_eval_far01": 0.24646063535911603,
+    "eer_threshold": 0.4168989062309265
+   },
+   "interpretation": "EER/TAR from evaluation ROC, not a calibrated deployment threshold; pair scores are correlated"
+  },
+  "ocr": {
+   "n": 172,
+   "top1": 44.77,
+   "top5": 65.12
+  },
+  "ink": {
+   "width_p50": 8.2457,
+   "width_p90": 17.8368,
+   "width_jump": 0.6397,
+   "ink_ratio": 0.2031,
+   "fragment_share": 0.0064
+  },
+  "n_png": 187
+ },
+ "assets/style_eval_src/step0100000": {
+  "E-G": {
+   "n_queries": 181,
+   "macro_writer": {
+    "auc": 0.8521780043533861,
+    "eer": 0.1785445938626635,
+    "ap": 0.5777298401794337,
+    "tar_at_eval_far01": 0.3980404080092879
+   },
+   "pooled": {
+    "auc": 0.8516857100082382,
+    "eer": 0.22470568222607895,
+    "tar_at_eval_far01": 0.24913674033149172,
+    "eer_threshold": 0.4044801592826843
+   },
+   "interpretation": "EER/TAR from evaluation ROC, not a calibrated deployment threshold; pair scores are correlated"
+  },
+  "ocr": {
+   "n": 172,
+   "top1": 57.56,
+   "top5": 68.02
+  },
+  "ink": {
+   "width_p50": 7.7751,
+   "width_p90": 17.0057,
+   "width_jump": 0.6394,
+   "ink_ratio": 0.193,
+   "fragment_share": 0.0076
+  },
+  "n_png": 187
+ },
+ "assets/style_eval_src/step0115000": {
+  "E-G": {
+   "n_queries": 181,
+   "macro_writer": {
+    "auc": 0.8457219022239372,
+    "eer": 0.18909418026053557,
+    "ap": 0.5363574894551562,
+    "tar_at_eval_far01": 0.3441865472760314
+   },
+   "pooled": {
+    "auc": 0.8418317804970619,
+    "eer": 0.2337693594509183,
+    "tar_at_eval_far01": 0.19431975138121546,
+    "eer_threshold": 0.39617738127708435
+   },
+   "interpretation": "EER/TAR from evaluation ROC, not a calibrated deployment threshold; pair scores are correlated"
+  },
+  "ocr": {
+   "n": 172,
+   "top1": 54.07,
+   "top5": 68.6
+  },
+  "ink": {
+   "width_p50": 7.6062,
+   "width_p90": 16.6582,
+   "width_jump": 0.638,
+   "ink_ratio": 0.1912,
+   "fragment_share": 0.0093
+  },
+  "n_png": 187
+ },
+ "assets/style_eval_src/step0120000": {
+  "E-G": {
+   "n_queries": 181,
+   "macro_writer": {
+    "auc": 0.8358091498507164,
+    "eer": 0.19624449479795014,
+    "ap": 0.5575382313940961,
+    "tar_at_eval_far01": 0.372679261181549
+   },
+   "pooled": {
+    "auc": 0.8407041511688526,
+    "eer": 0.23739796999256196,
+    "tar_at_eval_far01": 0.21581491712707182,
+    "eer_threshold": 0.39612698554992676
+   },
+   "interpretation": "EER/TAR from evaluation ROC, not a calibrated deployment threshold; pair scores are correlated"
+  },
+  "ocr": {
+   "n": 172,
+   "top1": 54.07,
+   "top5": 69.19
+  },
+  "ink": {
+   "width_p50": 7.5286,
+   "width_p90": 16.59,
+   "width_jump": 0.6385,
+   "ink_ratio": 0.1894,
+   "fragment_share": 0.0096
+  },
+  "n_png": 187
+ },
+ "assets/style_eval_src/v88_step0005000": {
+  "E-G": {
+   "n_queries": 181,
+   "macro_writer": {
+    "auc": 0.601594022021877,
+    "eer": 0.4071794090290334,
+    "ap": 0.27968676285483807,
+    "tar_at_eval_far01": 0.12589978809597974
+   },
+   "pooled": {
+    "auc": 0.589614552805328,
+    "eer": 0.43974204667823696,
+    "tar_at_eval_far01": 0.03858770718232044,
+    "eer_threshold": 0.2309485524892807
+   },
+   "interpretation": "EER/TAR from evaluation ROC, not a calibrated deployment threshold; pair scores are correlated"
+  },
+  "ocr": {
+   "n": 172,
+   "top1": 0.58,
+   "top5": 0.58
+  },
+  "ink": {
+   "width_p50": 8.6706,
+   "width_p90": 18.8787,
+   "width_jump": 0.6454,
+   "ink_ratio": 0.2087,
+   "fragment_share": 0.0029
+  },
+  "n_png": 187
+ },
+ "assets/style_eval_src/v88_step0050000": {
+  "E-G": {
+   "n_queries": 181,
+   "macro_writer": {
+    "auc": 0.8040344855904993,
+    "eer": 0.22212680078582975,
+    "ap": 0.511105571894576,
+    "tar_at_eval_far01": 0.355921929111667
+   },
+   "pooled": {
+    "auc": 0.80840501087473,
+    "eer": 0.2620866472174013,
+    "tar_at_eval_far01": 0.20226174033149172,
+    "eer_threshold": 0.3924861252307892
+   },
+   "interpretation": "EER/TAR from evaluation ROC, not a calibrated deployment threshold; pair scores are correlated"
+  },
+  "ocr": {
+   "n": 172,
+   "top1": 40.12,
+   "top5": 49.42
+  },
+  "ink": {
+   "width_p50": 8.7757,
+   "width_p90": 18.7107,
+   "width_jump": 0.6325,
+   "ink_ratio": 0.2129,
+   "fragment_share": 0.0038
+  },
+  "n_png": 187
+ },
+ "assets/v85_verified_control_10k": {
+  "E-G": {
+   "n_queries": 181,
+   "macro_writer": {
+    "auc": 0.8406034992061493,
+    "eer": 0.19087352329526508,
+    "ap": 0.578248422063141,
+    "tar_at_eval_far01": 0.39328213364498527
+   },
+   "pooled": {
+    "auc": 0.8387418286480729,
+    "eer": 0.23782832777640034,
+    "tar_at_eval_far01": 0.22496546961325967,
+    "eer_threshold": 0.4015415906906128
+   },
+   "interpretation": "EER/TAR from evaluation ROC, not a calibrated deployment threshold; pair scores are correlated"
+  },
+  "ocr": {
+   "n": 172,
+   "top1": 67.44,
+   "top5": 74.42
+  },
+  "ink": {
+   "width_p50": 7.0132,
+   "width_p90": 15.5123,
+   "width_jump": 0.6345,
+   "ink_ratio": 0.1776,
+   "fragment_share": 0.0136
+  },
+  "n_png": 187
+ },
+ "assets/v85_verified_v84A_200k": {
+  "E-G": {
+   "n_queries": 181,
+   "macro_writer": {
+    "auc": 0.8300208887524212,
+    "eer": 0.1983342558231332,
+    "ap": 0.5643817521798618,
+    "tar_at_eval_far01": 0.38864658096725313
+   },
+   "pooled": {
+    "auc": 0.8333127540631604,
+    "eer": 0.23982576494173546,
+    "tar_at_eval_far01": 0.2223756906077348,
+    "eer_threshold": 0.3976540267467499
+   },
+   "interpretation": "EER/TAR from evaluation ROC, not a calibrated deployment threshold; pair scores are correlated"
+  },
+  "ocr": {
+   "n": 172,
+   "top1": 65.12,
+   "top5": 74.42
+  },
+  "ink": {
+   "width_p50": 6.8729,
+   "width_p90": 15.255,
+   "width_jump": 0.633,
+   "ink_ratio": 0.1742,
+   "fragment_share": 0.0145
+  },
+  "n_png": 187
+ },
+ "assets/aligned_eval_results/Arm_2_50k_dist_aligned": {
+  "E-G": {
+   "n_queries": 181,
+   "macro_writer": {
+    "auc": 0.852551460993445,
+    "eer": 0.173016065691439,
+    "ap": 0.5993083444540543,
+    "tar_at_eval_far01": 0.4554997092900705
+   },
+   "pooled": {
+    "auc": 0.8679727896635149,
+    "eer": 0.2109028366261707,
+    "tar_at_eval_far01": 0.26458908839779005,
+    "eer_threshold": 0.42973023653030396
+   },
+   "interpretation": "EER/TAR from evaluation ROC, not a calibrated deployment threshold; pair scores are correlated"
+  },
+  "ocr": {
+   "n": 172,
+   "top1": 73.84,
+   "top5": 86.05
+  },
+  "ink": {
+   "width_p50": 8.6843,
+   "width_p90": 18.3053,
+   "width_jump": 0.623,
+   "ink_ratio": 0.1979,
+   "fragment_share": 0.0027
+  },
+  "n_png": 187
+ },
+ "assets/aligned_eval_results/Base_55k_dist_aligned": {
+  "E-G": {
+   "n_queries": 181,
+   "macro_writer": {
+    "auc": 0.8622767678717279,
+    "eer": 0.16466210201400253,
+    "ap": 0.6443625954864733,
+    "tar_at_eval_far01": 0.4849321821381145
+   },
+   "pooled": {
+    "auc": 0.8710595031142685,
+    "eer": 0.19276501667079893,
+    "tar_at_eval_far01": 0.3314917127071823,
+    "eer_threshold": 0.4369438588619232
+   },
+   "interpretation": "EER/TAR from evaluation ROC, not a calibrated deployment threshold; pair scores are correlated"
+  },
+  "ocr": {
+   "n": 172,
+   "top1": 75.58,
+   "top5": 85.47
+  },
+  "ink": {
+   "width_p50": 8.4842,
+   "width_p90": 18.1037,
+   "width_jump": 0.6287,
+   "ink_ratio": 0.198,
+   "fragment_share": 0.0033
+  },
+  "n_png": 187
+ },
+ "assets/aligned_eval_results/DiC_50k_dist_aligned": {
+  "E-G": {
+   "n_queries": 181,
+   "macro_writer": {
+    "auc": 0.8391131971203242,
+    "eer": 0.18481516967358058,
+    "ap": 0.59559593408951,
+    "tar_at_eval_far01": 0.4445106541432069
+   },
+   "pooled": {
+    "auc": 0.8568445845518036,
+    "eer": 0.2132351410634527,
+    "tar_at_eval_far01": 0.25284875690607733,
+    "eer_threshold": 0.4255349934101105
+   },
+   "interpretation": "EER/TAR from evaluation ROC, not a calibrated deployment threshold; pair scores are correlated"
+  },
+  "ocr": {
+   "n": 172,
+   "top1": 79.07,
+   "top5": 87.21
+  },
+  "ink": {
+   "width_p50": 8.4224,
+   "width_p90": 17.6351,
+   "width_jump": 0.622,
+   "ink_ratio": 0.1964,
+   "fragment_share": 0.0028
+  },
+  "n_png": 187
+ },
+ "assets/aligned_eval_results/DiC_80k_dist_aligned": {
+  "E-G": {
+   "n_queries": 181,
+   "macro_writer": {
+    "auc": 0.8169907946657059,
+    "eer": 0.20367845001684018,
+    "ap": 0.5633300836645939,
+    "tar_at_eval_far01": 0.4234084981714258
+   },
+   "pooled": {
+    "auc": 0.8352420077903547,
+    "eer": 0.23877930110312212,
+    "tar_at_eval_far01": 0.1983770718232044,
+    "eer_threshold": 0.411182701587677
+   },
+   "interpretation": "EER/TAR from evaluation ROC, not a calibrated deployment threshold; pair scores are correlated"
+  },
+  "ocr": {
+   "n": 172,
+   "top1": 77.91,
+   "top5": 88.95
+  },
+  "ink": {
+   "width_p50": 8.3199,
+   "width_p90": 17.5629,
+   "width_jump": 0.6251,
+   "ink_ratio": 0.1937,
+   "fragment_share": 0.0023
+  },
+  "n_png": 187
+ },
+ "assets/aligned_eval_results/Exp_A_50k_dist_aligned": {
+  "E-G": {
+   "n_queries": 181,
+   "macro_writer": {
+    "auc": 0.8148419474673141,
+    "eer": 0.20437797965208318,
+    "ap": 0.546308381749497,
+    "tar_at_eval_far01": 0.4032286815402025
+   },
+   "pooled": {
+    "auc": 0.8372652306282333,
+    "eer": 0.231787620544123,
+    "tar_at_eval_far01": 0.21736878453038674,
+    "eer_threshold": 0.41988325119018555
+   },
+   "interpretation": "EER/TAR from evaluation ROC, not a calibrated deployment threshold; pair scores are correlated"
+  },
+  "ocr": {
+   "n": 172,
+   "top1": 76.74,
+   "top5": 88.37
+  },
+  "ink": {
+   "width_p50": 8.4566,
+   "width_p90": 17.8243,
+   "width_jump": 0.6255,
+   "ink_ratio": 0.1955,
+   "fragment_share": 0.0035
+  },
+  "n_png": 187
+ },
+ "assets/aligned_eval_results/Exp_A_70k_dist_aligned": {
+  "E-G": {
+   "n_queries": 181,
+   "macro_writer": {
+    "auc": 0.7982009989935507,
+    "eer": 0.22351019092760355,
+    "ap": 0.5154293065344497,
+    "tar_at_eval_far01": 0.36968482027705174
+   },
+   "pooled": {
+    "auc": 0.8152610658339863,
+    "eer": 0.2516573371405417,
+    "tar_at_eval_far01": 0.19164364640883977,
+    "eer_threshold": 0.4068499207496643
+   },
+   "interpretation": "EER/TAR from evaluation ROC, not a calibrated deployment threshold; pair scores are correlated"
+  },
+  "ocr": {
+   "n": 172,
+   "top1": 80.23,
+   "top5": 90.12
+  },
+  "ink": {
+   "width_p50": 8.4552,
+   "width_p90": 17.8418,
+   "width_jump": 0.6263,
+   "ink_ratio": 0.1921,
+   "fragment_share": 0.0029
+  },
+  "n_png": 187
+ },
+ "assets/recent_poster_20261017/png/l20_160": {
+  "E-G": {
+   "n_queries": 181,
+   "macro_writer": {
+    "auc": 0.8614086236914329,
+    "eer": 0.17210896651953236,
+    "ap": 0.5824597378378871,
+    "tar_at_eval_far01": 0.39695766685471573
+   },
+   "pooled": {
+    "auc": 0.8647235089827287,
+    "eer": 0.21598733777887974,
+    "tar_at_eval_far01": 0.2709772099447514,
+    "eer_threshold": 0.4189416766166687
+   },
+   "interpretation": "EER/TAR from evaluation ROC, not a calibrated deployment threshold; pair scores are correlated"
+  },
+  "ocr": {
+   "n": 172,
+   "top1": 45.35,
+   "top5": 63.95
+  },
+  "ink": {
+   "width_p50": 8.9251,
+   "width_p90": 19.0621,
+   "width_jump": 0.6312,
+   "ink_ratio": 0.2133,
+   "fragment_share": 0.0093
+  },
+  "n_png": 187
+ },
+ "assets/recent_poster_20261017/png/l20_190": {
+  "E-G": {
+   "n_queries": 181,
+   "macro_writer": {
+    "auc": 0.8660045892335978,
+    "eer": 0.1664822207629529,
+    "ap": 0.6049906895066454,
+    "tar_at_eval_far01": 0.4324432105008252
+   },
+   "pooled": {
+    "auc": 0.8653868534608617,
+    "eer": 0.21745369389563818,
+    "tar_at_eval_far01": 0.29981008287292815,
+    "eer_threshold": 0.41907238960266113
+   },
+   "interpretation": "EER/TAR from evaluation ROC, not a calibrated deployment threshold; pair scores are correlated"
+  },
+  "ocr": {
+   "n": 172,
+   "top1": 52.91,
+   "top5": 66.28
+  },
+  "ink": {
+   "width_p50": 8.7461,
+   "width_p90": 18.7439,
+   "width_jump": 0.6312,
+   "ink_ratio": 0.2097,
+   "fragment_share": 0.0095
+  },
+  "n_png": 187
+ },
+ "assets/recent_poster_20261017/png/l20_200": {
+  "E-G": {
+   "n_queries": 181,
+   "macro_writer": {
+    "auc": 0.8638348010123202,
+    "eer": 0.1693058510899134,
+    "ap": 0.58180482131013,
+    "tar_at_eval_far01": 0.4000682430946877
+   },
+   "pooled": {
+    "auc": 0.8649226318519284,
+    "eer": 0.21209318671294775,
+    "tar_at_eval_far01": 0.27607044198895025,
+    "eer_threshold": 0.42205432057380676
+   },
+   "interpretation": "EER/TAR from evaluation ROC, not a calibrated deployment threshold; pair scores are correlated"
+  },
+  "ocr": {
+   "n": 172,
+   "top1": 53.49,
+   "top5": 67.44
+  },
+  "ink": {
+   "width_p50": 8.8113,
+   "width_p90": 19.0251,
+   "width_jump": 0.6358,
+   "ink_ratio": 0.2112,
+   "fragment_share": 0.0052
+  },
+  "n_png": 187
+ },
+ "assets/recent_poster_20261017/png/l20_256": {
+  "E-G": {
+   "n_queries": 181,
+   "macro_writer": {
+    "auc": 0.7163944782205723,
+    "eer": 0.3023755079908257,
+    "ap": 0.4154968853429649,
+    "tar_at_eval_far01": 0.2505397070338726
+   },
+   "pooled": {
+    "auc": 0.7216828522674761,
+    "eer": 0.3426983034085401,
+    "tar_at_eval_far01": 0.10419544198895028,
+    "eer_threshold": 0.33077841997146606
+   },
+   "interpretation": "EER/TAR from evaluation ROC, not a calibrated deployment threshold; pair scores are correlated"
+  },
+  "ocr": {
+   "n": 172,
+   "top1": 0.0,
+   "top5": 1.16
+  },
+  "ink": {
+   "width_p50": 8.8508,
+   "width_p90": 18.6257,
+   "width_jump": 0.6291,
+   "ink_ratio": 0.2125,
+   "fragment_share": 0.0029
+  },
+  "n_png": 187
+ },
+ "assets/recent_poster_20261017/png/std": {
+  "E-G": {
+   "n_queries": 181,
+   "macro_writer": {
+    "auc": 0.5179299513079725,
+    "eer": 0.47443493843319173,
+    "ap": 0.21266466532203485,
+    "tar_at_eval_far01": 0.07897385817307692
+   },
+   "pooled": {
+    "auc": 0.5545987857765625,
+    "eer": 0.4558824294682737,
+    "tar_at_eval_far01": 0.005352209944751381,
+    "eer_threshold": 0.05970815569162369
+   },
+   "interpretation": "EER/TAR from evaluation ROC, not a calibrated deployment threshold; pair scores are correlated"
+  },
+  "ocr": {
+   "n": 172,
+   "top1": 78.49,
+   "top5": 91.28
+  },
+  "ink": {
+   "width_p50": 2.3074,
+   "width_p90": 4.1604,
+   "width_jump": 0.3416,
+   "ink_ratio": 0.1262,
+   "fragment_share": 0.0
+  },
+  "n_png": 187
+ },
+ "assets/results/v72_callivae_kl1e6_s12500_frozen_sp_c2ot/20261009-142151-v72-callivae-kl1e6-s12500-frozen-sp-c2ot/eval_samples_ctrl/step0130000/eval200fix": {
+  "E-G": {
+   "n_queries": 181,
+   "macro_writer": {
+    "auc": 0.830418032547161,
+    "eer": 0.19547726701360044,
+    "ap": 0.5900169811600061,
+    "tar_at_eval_far01": 0.44578784854939746
+   },
+   "pooled": {
+    "auc": 0.8224204483520935,
+    "eer": 0.2629473627850781,
+    "tar_at_eval_far01": 0.3241540055248619,
+    "eer_threshold": 0.330992192029953
+   },
+   "interpretation": "EER/TAR from evaluation ROC, not a calibrated deployment threshold; pair scores are correlated"
+  },
+  "ocr": {
+   "n": 172,
+   "top1": 73.26,
+   "top5": 83.72
+  },
+  "ink": {
+   "width_p50": 8.3481,
+   "width_p90": 17.8249,
+   "width_jump": 0.6344,
+   "ink_ratio": 0.1986,
+   "fragment_share": 0.0035
+  },
+  "n_png": 187
+ },
+ "assets/results/v74_callivae_mode_sp_c2ot/20261010-025411-v74-callivae-mode-sp-c2ot/eval_samples_ctrl/step0115000/eval200fix": {
+  "E-G": {
+   "n_queries": 181,
+   "macro_writer": {
+    "auc": 0.8609662326709262,
+    "eer": 0.16837198212792642,
+    "ap": 0.6312731689824659,
+    "tar_at_eval_far01": 0.47591742781630486
+   },
+   "pooled": {
+    "auc": 0.845584516236625,
+    "eer": 0.222644151065932,
+    "tar_at_eval_far01": 0.30119129834254144,
+    "eer_threshold": 0.37125569581985474
+   },
+   "interpretation": "EER/TAR from evaluation ROC, not a calibrated deployment threshold; pair scores are correlated"
+  },
+  "ocr": {
+   "n": 172,
+   "top1": 76.16,
+   "top5": 84.3
+  },
+  "ink": {
+   "width_p50": 8.2803,
+   "width_p90": 17.6277,
+   "width_jump": 0.6299,
+   "ink_ratio": 0.1973,
+   "fragment_share": 0.0027
+  },
+  "n_png": 187
+ },
+ "assets/results/v76_callivae_topband_sp_c2ot/20261010-150745-v76-callivae-topband-sp-c2ot/eval_samples_ctrl/step0040000/eval200fix": {
+  "E-G": {
+   "n_queries": 181,
+   "macro_writer": {
+    "auc": 0.8162063153725165,
+    "eer": 0.21341930162116948,
+    "ap": 0.5268431717972442,
+    "tar_at_eval_far01": 0.35915701384546295
+   },
+   "pooled": {
+    "auc": 0.8112648891874963,
+    "eer": 0.2625222377540863,
+    "tar_at_eval_far01": 0.19785911602209943,
+    "eer_threshold": 0.37496551871299744
+   },
+   "interpretation": "EER/TAR from evaluation ROC, not a calibrated deployment threshold; pair scores are correlated"
+  },
+  "ocr": {
+   "n": 172,
+   "top1": 67.44,
+   "top5": 79.07
+  },
+  "ink": {
+   "width_p50": 8.3775,
+   "width_p90": 17.8337,
+   "width_jump": 0.631,
+   "ink_ratio": 0.1997,
+   "fragment_share": 0.0033
+  },
+  "n_png": 187
+ },
+ "assets/results/v77_callivae_topband_norepa_sp_c2ot/20261010-183103-v77-callivae-topband-norepa-sp-c2ot/eval_samples_ctrl/step0040000/eval200fix": {
+  "E-G": {
+   "n_queries": 181,
+   "macro_writer": {
+    "auc": 0.8276417278514554,
+    "eer": 0.20105467665706503,
+    "ap": 0.5353551030237715,
+    "tar_at_eval_far01": 0.35772707931765235
+   },
+   "pooled": {
+    "auc": 0.8321007967364911,
+    "eer": 0.23887479161501368,
+    "tar_at_eval_far01": 0.20985842541436464,
+    "eer_threshold": 0.4000180959701538
+   },
+   "interpretation": "EER/TAR from evaluation ROC, not a calibrated deployment threshold; pair scores are correlated"
+  },
+  "ocr": {
+   "n": 172,
+   "top1": 69.77,
+   "top5": 84.88
+  },
+  "ink": {
+   "width_p50": 8.4059,
+   "width_p90": 17.9689,
+   "width_jump": 0.6307,
+   "ink_ratio": 0.2012,
+   "fragment_share": 0.0026
+  },
+  "n_png": 187
+ },
+ "assets/results/v78_callivae_topband_scale1_sp_c2ot/20261010-222243-v78-callivae-topband-scale1-sp-c2ot/eval_samples_ctrl/step0045000/eval200fix": {
+  "E-G": {
+   "n_queries": 181,
+   "macro_writer": {
+    "auc": 0.8423604082685723,
+    "eer": 0.19301939901634194,
+    "ap": 0.539892838462482,
+    "tar_at_eval_far01": 0.33801537471524284
+   },
+   "pooled": {
+    "auc": 0.8374405779897869,
+    "eer": 0.23644699666584024,
+    "tar_at_eval_far01": 0.20355662983425415,
+    "eer_threshold": 0.4092290997505188
+   },
+   "interpretation": "EER/TAR from evaluation ROC, not a calibrated deployment threshold; pair scores are correlated"
+  },
+  "ocr": {
+   "n": 172,
+   "top1": 54.07,
+   "top5": 67.44
+  },
+  "ink": {
+   "width_p50": 8.2727,
+   "width_p90": 17.6222,
+   "width_jump": 0.6304,
+   "ink_ratio": 0.1955,
+   "fragment_share": 0.0028
+  },
+  "n_png": 187
+ },
+ "assets/results/v79_callivae_physics_sp_c2ot/20261011-133610-v79-callivae-physics-sp-c2ot/eval_samples_ctrl/step0075000/eval200fix": {
+  "E-G": {
+   "n_queries": 181,
+   "macro_writer": {
+    "auc": 0.8570936302452047,
+    "eer": 0.17706005858036575,
+    "ap": 0.5959817303317336,
+    "tar_at_eval_far01": 0.41663918517344223
+   },
+   "pooled": {
+    "auc": 0.863170594262058,
+    "eer": 0.2069341260597336,
+    "tar_at_eval_far01": 0.22332527624309392,
+    "eer_threshold": 0.431589812040329
+   },
+   "interpretation": "EER/TAR from evaluation ROC, not a calibrated deployment threshold; pair scores are correlated"
+  },
+  "ocr": {
+   "n": 172,
+   "top1": 62.21,
+   "top5": 80.23
+  },
+  "ink": {
+   "width_p50": 8.4345,
+   "width_p90": 17.7445,
+   "width_jump": 0.6249,
+   "ink_ratio": 0.1991,
+   "fragment_share": 0.0026
+  },
+  "n_png": 187
+ },
+ "assets/results/v80_callivae_physics_noOT/20261011-195827-v80-callivae-physics-noOT/eval_samples_ctrl/step0200000/eval200fix": {
+  "E-G": {
+   "n_queries": 181,
+   "macro_writer": {
+    "auc": 0.8803507948002972,
+    "eer": 0.15010223951456203,
+    "ap": 0.6326198423328415,
+    "tar_at_eval_far01": 0.4702514981222422
+   },
+   "pooled": {
+    "auc": 0.8666295748931826,
+    "eer": 0.21219390997768595,
+    "tar_at_eval_far01": 0.3483252762430939,
+    "eer_threshold": 0.3910098671913147
+   },
+   "interpretation": "EER/TAR from evaluation ROC, not a calibrated deployment threshold; pair scores are correlated"
+  },
+  "ocr": {
+   "n": 172,
+   "top1": 75.0,
+   "top5": 84.88
+  },
+  "ink": {
+   "width_p50": 8.2945,
+   "width_p90": 17.5159,
+   "width_jump": 0.6256,
+   "ink_ratio": 0.1912,
+   "fragment_share": 0.0024
+  },
+  "n_png": 187
+ },
+ "assets/results/v83A_55k_correct_eval_20261012/eval_samples_ctrl/eval200fix_input_g": {
+  "E-G": {
+   "n_queries": 181,
+   "macro_writer": {
+    "auc": 0.5179299513079725,
+    "eer": 0.47443493843319173,
+    "ap": 0.21266466532203485,
+    "tar_at_eval_far01": 0.07897385817307692
+   },
+   "pooled": {
+    "auc": 0.5545987857765625,
+    "eer": 0.4558824294682737,
+    "tar_at_eval_far01": 0.005352209944751381,
+    "eer_threshold": 0.05970815569162369
+   },
+   "interpretation": "EER/TAR from evaluation ROC, not a calibrated deployment threshold; pair scores are correlated"
+  },
+  "ocr": {
+   "n": 172,
+   "top1": 78.49,
+   "top5": 91.28
+  },
+  "ink": {
+   "width_p50": 2.3074,
+   "width_p90": 4.1604,
+   "width_jump": 0.3416,
+   "ink_ratio": 0.1262,
+   "fragment_share": 0.0
+  },
+  "n_png": 187
+ },
+ "assets/results/v83A_stdsoft_zerofix/20261012-213952-v83A-stdsoft-zerofix/eval_samples_ctrl/step0105000/eval200fix": {
+  "E-G": {
+   "n_queries": 181,
+   "macro_writer": {
+    "auc": 0.8105023910438984,
+    "eer": 0.2186954084450654,
+    "ap": 0.5301321436339396,
+    "tar_at_eval_far01": 0.34444848397309036
+   },
+   "pooled": {
+    "auc": 0.8108878305871113,
+    "eer": 0.26355300333415976,
+    "tar_at_eval_far01": 0.19043508287292818,
+    "eer_threshold": 0.3818846344947815
+   },
+   "interpretation": "EER/TAR from evaluation ROC, not a calibrated deployment threshold; pair scores are correlated"
+  },
+  "ocr": {
+   "n": 172,
+   "top1": 73.84,
+   "top5": 83.72
+  },
+  "ink": {
+   "width_p50": 7.3436,
+   "width_p90": 15.8377,
+   "width_jump": 0.6277,
+   "ink_ratio": 0.1662,
+   "fragment_share": 0.0063
+  },
+  "n_png": 187
+ },
+ "assets/results/v84A_std_cond/20261013-072215-v84A-std-cond/eval_samples_ctrl/step0200000/eval200fix": {
+  "E-G": {
+   "n_queries": 181,
+   "macro_writer": {
+    "auc": 0.8300208887524212,
+    "eer": 0.1983342558231332,
+    "ap": 0.5643817521798618,
+    "tar_at_eval_far01": 0.38864658096725313
+   },
+   "pooled": {
+    "auc": 0.8333127540631604,
+    "eer": 0.23982576494173546,
+    "tar_at_eval_far01": 0.2223756906077348,
+    "eer_threshold": 0.3976540267467499
+   },
+   "interpretation": "EER/TAR from evaluation ROC, not a calibrated deployment threshold; pair scores are correlated"
+  },
+  "ocr": {
+   "n": 172,
+   "top1": 65.12,
+   "top5": 74.42
+  },
+  "ink": {
+   "width_p50": 6.8729,
+   "width_p90": 15.255,
+   "width_jump": 0.633,
+   "ink_ratio": 0.1742,
+   "fragment_share": 0.0145
+  },
+  "n_png": 187
+ },
+ "assets/results/v85A_style_ada/20261014-032924-v85A-style-ada/eval_samples_ctrl/step0010000/eval200fix": {
+  "E-G": {
+   "n_queries": 181,
+   "macro_writer": {
+    "auc": 0.8357205067822561,
+    "eer": 0.19582741186762162,
+    "ap": 0.5766105629943088,
+    "tar_at_eval_far01": 0.3889007842459029
+   },
+   "pooled": {
+    "auc": 0.833942702248933,
+    "eer": 0.23972504167699726,
+    "tar_at_eval_far01": 0.23031767955801105,
+    "eer_threshold": 0.4016690254211426
+   },
+   "interpretation": "EER/TAR from evaluation ROC, not a calibrated deployment threshold; pair scores are correlated"
+  },
+  "ocr": {
+   "n": 172,
+   "top1": 67.44,
+   "top5": 75.0
+  },
+  "ink": {
+   "width_p50": 7.0081,
+   "width_p90": 15.525,
+   "width_jump": 0.6341,
+   "ink_ratio": 0.1777,
+   "fragment_share": 0.0134
+  },
+  "n_png": 187
+ },
+ "assets/results/v85A_style_ada/20261014-032924-v85A-style-ada/eval_samples_ctrl/step0015000/eval200fix": {
+  "E-G": {
+   "n_queries": 181,
+   "macro_writer": {
+    "auc": 0.8424278654521913,
+    "eer": 0.18749489819579201,
+    "ap": 0.5823214520672015,
+    "tar_at_eval_far01": 0.39887231151867103
+   },
+   "pooled": {
+    "auc": 0.8407097335548744,
+    "eer": 0.23273336111799814,
+    "tar_at_eval_far01": 0.23049033149171272,
+    "eer_threshold": 0.4109439551830292
+   },
+   "interpretation": "EER/TAR from evaluation ROC, not a calibrated deployment threshold; pair scores are correlated"
+  },
+  "ocr": {
+   "n": 172,
+   "top1": 65.12,
+   "top5": 76.74
+  },
+  "ink": {
+   "width_p50": 6.9481,
+   "width_p90": 15.4651,
+   "width_jump": 0.6352,
+   "ink_ratio": 0.177,
+   "fragment_share": 0.0133
+  },
+  "n_png": 187
+ },
+ "assets/results/v85A_style_ada/20261014-032924-v85A-style-ada/eval_samples_ctrl/step0020000/eval200fix": {
+  "E-G": {
+   "n_queries": 181,
+   "macro_writer": {
+    "auc": 0.8370249950295394,
+    "eer": 0.1923323783059187,
+    "ap": 0.5845147828832633,
+    "tar_at_eval_far01": 0.3966464838443738
+   },
+   "pooled": {
+    "auc": 0.8406557744049232,
+    "eer": 0.23128270325977957,
+    "tar_at_eval_far01": 0.22108080110497239,
+    "eer_threshold": 0.4095277488231659
+   },
+   "interpretation": "EER/TAR from evaluation ROC, not a calibrated deployment threshold; pair scores are correlated"
+  },
+  "ocr": {
+   "n": 172,
+   "top1": 66.28,
+   "top5": 75.0
+  },
+  "ink": {
+   "width_p50": 6.9095,
+   "width_p90": 15.3266,
+   "width_jump": 0.6333,
+   "ink_ratio": 0.1758,
+   "fragment_share": 0.0135
+  },
+  "n_png": 187
+ },
+ "assets/results/v85A_style_ada/20261014-032924-v85A-style-ada/eval_samples_ctrl/step0030000/eval200fix": {
+  "E-G": {
+   "n_queries": 181,
+   "macro_writer": {
+    "auc": 0.8364785935859353,
+    "eer": 0.19394148309726855,
+    "ap": 0.5759454468319343,
+    "tar_at_eval_far01": 0.39063240778474156
+   },
+   "pooled": {
+    "auc": 0.8368422363720325,
+    "eer": 0.23729724672782382,
+    "tar_at_eval_far01": 0.22600138121546962,
+    "eer_threshold": 0.4003151059150696
+   },
+   "interpretation": "EER/TAR from evaluation ROC, not a calibrated deployment threshold; pair scores are correlated"
+  },
+  "ocr": {
+   "n": 172,
+   "top1": 65.7,
+   "top5": 76.74
+  },
+  "ink": {
+   "width_p50": 6.8846,
+   "width_p90": 15.2424,
+   "width_jump": 0.632,
+   "ink_ratio": 0.1743,
+   "fragment_share": 0.0151
+  },
+  "n_png": 187
+ },
+ "assets/style_eval_src/moyi_top10_rf": {
+  "E-G": {
+   "n_queries": 181,
+   "macro_writer": {
+    "auc": 0.7717200878644258,
+    "eer": 0.2565381166145349,
+    "ap": 0.44841777263180393,
+    "tar_at_eval_far01": 0.2684933504738991
+   },
+   "pooled": {
+    "auc": 0.7782451707292584,
+    "eer": 0.2900533694533976,
+    "tar_at_eval_far01": 0.15012085635359115,
+    "eer_threshold": 0.3843311369419098
+   },
+   "interpretation": "EER/TAR from evaluation ROC, not a calibrated deployment threshold; pair scores are correlated"
+  },
+  "ocr": {
+   "n": 172,
+   "top1": 63.37,
+   "top5": 76.16
+  },
+  "ink": {
+   "width_p50": 8.1197,
+   "width_p90": 17.0224,
+   "width_jump": 0.6223,
+   "ink_ratio": 0.1925,
+   "fragment_share": 0.003
+  },
+  "n_png": 187
+ },
+ "assets/style_eval_src/moyi_top10_rf_4ch": {
+  "E-G": {
+   "n_queries": 181,
+   "macro_writer": {
+    "auc": 0.8462320819084971,
+    "eer": 0.1807167215897918,
+    "ap": 0.5982977884196623,
+    "tar_at_eval_far01": 0.44412211053944983
+   },
+   "pooled": {
+    "auc": 0.8557993927636058,
+    "eer": 0.21960025006198358,
+    "tar_at_eval_far01": 0.2879834254143646,
+    "eer_threshold": 0.4070960581302643
+   },
+   "interpretation": "EER/TAR from evaluation ROC, not a calibrated deployment threshold; pair scores are correlated"
+  },
+  "ocr": {
+   "n": 172,
+   "top1": 83.14,
+   "top5": 92.44
+  },
+  "ink": {
+   "width_p50": 8.4868,
+   "width_p90": 17.7728,
+   "width_jump": 0.6235,
+   "ink_ratio": 0.199,
+   "fragment_share": 0.002
+  },
+  "n_png": 187
+ },
+ "assets/style_eval_src/step0200000": {
+  "E-G": {
+   "n_queries": 181,
+   "macro_writer": {
+    "auc": 0.8803507948002972,
+    "eer": 0.15010223951456203,
+    "ap": 0.6326198423328415,
+    "tar_at_eval_far01": 0.4702514981222422
+   },
+   "pooled": {
+    "auc": 0.8666295748931826,
+    "eer": 0.21219390997768595,
+    "tar_at_eval_far01": 0.3483252762430939,
+    "eer_threshold": 0.3910098671913147
+   },
+   "interpretation": "EER/TAR from evaluation ROC, not a calibrated deployment threshold; pair scores are correlated"
+  },
+  "ocr": {
+   "n": 172,
+   "top1": 75.0,
+   "top5": 84.88
+  },
+  "ink": {
+   "width_p50": 8.2945,
+   "width_p90": 17.5159,
+   "width_jump": 0.6256,
+   "ink_ratio": 0.1912,
+   "fragment_share": 0.0024
+  },
+  "n_png": 187
+ },
+ "assets/style_eval_src/v85A_step0015000": {
+  "E-G": {
+   "n_queries": 181,
+   "macro_writer": {
+    "auc": 0.8424278654521913,
+    "eer": 0.18749489819579201,
+    "ap": 0.5823214520672015,
+    "tar_at_eval_far01": 0.39887231151867103
+   },
+   "pooled": {
+    "auc": 0.8407097335548744,
+    "eer": 0.23273336111799814,
+    "tar_at_eval_far01": 0.23049033149171272,
+    "eer_threshold": 0.4109439551830292
+   },
+   "interpretation": "EER/TAR from evaluation ROC, not a calibrated deployment threshold; pair scores are correlated"
+  },
+  "ocr": {
+   "n": 172,
+   "top1": 65.12,
+   "top5": 76.74
+  },
+  "ink": {
+   "width_p50": 6.9481,
+   "width_p90": 15.4651,
+   "width_jump": 0.6352,
+   "ink_ratio": 0.177,
+   "fragment_share": 0.0133
+  },
+  "n_png": 187
+ },
+ "assets/style_eval_src/v85A_step0020000": {
+  "E-G": {
+   "n_queries": 181,
+   "macro_writer": {
+    "auc": 0.8370249950295394,
+    "eer": 0.1923323783059187,
+    "ap": 0.5845147828832633,
+    "tar_at_eval_far01": 0.3966464838443738
+   },
+   "pooled": {
+    "auc": 0.8406557744049232,
+    "eer": 0.23128270325977957,
+    "tar_at_eval_far01": 0.22108080110497239,
+    "eer_threshold": 0.4095277488231659
+   },
+   "interpretation": "EER/TAR from evaluation ROC, not a calibrated deployment threshold; pair scores are correlated"
+  },
+  "ocr": {
+   "n": 172,
+   "top1": 66.28,
+   "top5": 75.0
+  },
+  "ink": {
+   "width_p50": 6.9095,
+   "width_p90": 15.3266,
+   "width_jump": 0.6333,
+   "ink_ratio": 0.1758,
+   "fragment_share": 0.0135
+  },
+  "n_png": 187
+ },
+ "assets/style_eval_src/v85A_step0030000": {
+  "E-G": {
+   "n_queries": 181,
+   "macro_writer": {
+    "auc": 0.8364785935859353,
+    "eer": 0.19394148309726855,
+    "ap": 0.5759454468319343,
+    "tar_at_eval_far01": 0.39063240778474156
+   },
+   "pooled": {
+    "auc": 0.8368422363720325,
+    "eer": 0.23729724672782382,
+    "tar_at_eval_far01": 0.22600138121546962,
+    "eer_threshold": 0.4003151059150696
+   },
+   "interpretation": "EER/TAR from evaluation ROC, not a calibrated deployment threshold; pair scores are correlated"
+  },
+  "ocr": {
+   "n": 172,
+   "top1": 65.7,
+   "top5": 76.74
+  },
+  "ink": {
+   "width_p50": 6.8846,
+   "width_p90": 15.2424,
+   "width_jump": 0.632,
+   "ink_ratio": 0.1743,
+   "fragment_share": 0.0151
+  },
+  "n_png": 187
+ },
+ "assets/style_eval_src/v85C_step0030000": {
+  "E-G": {
+   "n_queries": 181,
+   "macro_writer": {
+    "auc": 0.8417149026390811,
+    "eer": 0.1882624370368386,
+    "ap": 0.5786241963724138,
+    "tar_at_eval_far01": 0.38480528985214485
+   },
+   "pooled": {
+    "auc": 0.8404815220185856,
+    "eer": 0.22895563157534415,
+    "tar_at_eval_far01": 0.2256560773480663,
+    "eer_threshold": 0.41354185342788696
+   },
+   "interpretation": "EER/TAR from evaluation ROC, not a calibrated deployment threshold; pair scores are correlated"
+  },
+  "ocr": {
+   "n": 172,
+   "top1": 65.12,
+   "top5": 75.0
+  },
+  "ink": {
+   "width_p50": 7.0441,
+   "width_p90": 15.4837,
+   "width_jump": 0.6325,
+   "ink_ratio": 0.176,
+   "fragment_share": 0.0141
+  },
+  "n_png": 187
+ },
+ "assets/style_eval_src/v85E_step0015000": {
+  "E-G": {
+   "n_queries": 181,
+   "macro_writer": {
+    "auc": 0.8582909779933446,
+    "eer": 0.17257732239917675,
+    "ap": 0.5970252770146585,
+    "tar_at_eval_far01": 0.4216355516042817
+   },
+   "pooled": {
+    "auc": 0.8563434540567479,
+    "eer": 0.22021112336391185,
+    "tar_at_eval_far01": 0.2813363259668508,
+    "eer_threshold": 0.4129480719566345
+   },
+   "interpretation": "EER/TAR from evaluation ROC, not a calibrated deployment threshold; pair scores are correlated"
+  },
+  "ocr": {
+   "n": 172,
+   "top1": 65.7,
+   "top5": 77.33
+  },
+  "ink": {
+   "width_p50": 7.1071,
+   "width_p90": 15.6455,
+   "width_jump": 0.6332,
+   "ink_ratio": 0.1797,
+   "fragment_share": 0.0123
+  },
+  "n_png": 187
+ },
+ "assets/style_eval_src/v85E_step0030000": {
+  "E-G": {
+   "n_queries": 181,
+   "macro_writer": {
+    "auc": 0.8463209538237709,
+    "eer": 0.18492652996346953,
+    "ap": 0.58925231252031,
+    "tar_at_eval_far01": 0.4131900719021583
+   },
+   "pooled": {
+    "auc": 0.8497355632143431,
+    "eer": 0.22576261157038557,
+    "tar_at_eval_far01": 0.25371201657458564,
+    "eer_threshold": 0.4115752577781677
+   },
+   "interpretation": "EER/TAR from evaluation ROC, not a calibrated deployment threshold; pair scores are correlated"
+  },
+  "ocr": {
+   "n": 172,
+   "top1": 65.12,
+   "top5": 73.84
+  },
+  "ink": {
+   "width_p50": 7.0483,
+   "width_p90": 15.5787,
+   "width_jump": 0.6328,
+   "ink_ratio": 0.1773,
+   "fragment_share": 0.0133
+  },
+  "n_png": 187
+ }
+}

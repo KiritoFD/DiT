@@ -29,6 +29,7 @@ class LatentStdObjective:
         self.diffusion = state.diffusion
         self.repa = state.repa_loss_fn if args.w_repa > 0 else None
         self.channel_weights = state._ch_w
+        self.adapter = state.objective_adapter
 
     def __call__(self, model, z, t, kwargs, batch, image, step):
         if 'latent' not in batch or z.shape[1] != 4 or 'g' not in kwargs:
@@ -41,8 +42,10 @@ class LatentStdObjective:
                 kwargs['return_intermediate_layer'] = layers[0]
         with torch.autocast(z.device.type, dtype=torch.bfloat16, enabled=z.is_cuda):
             result = self.diffusion.training_losses(
-                model, z, t, kwargs, channel_weights=self.channel_weights)
-            fm = result['loss'].mean()
+                model, z, t, kwargs, channel_weights=self.channel_weights,
+                return_pred_xstart=bool(self.adapter and self.adapter.needs_prediction))
+            fm = (self.adapter.objective(result,z,t,kwargs,batch,step)
+                  if self.adapter else result['loss'].mean())
         repa = fm.new_zeros(())
         if self.repa is not None:
             feats = result.get('intermediate_feats')

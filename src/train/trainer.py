@@ -85,6 +85,7 @@ class TrainState:
     vae: object = None
     condition_transform: object = None  # Optional architecture adapter; no optimizer ownership.
     auxiliary_objective: object = None  # Optional joint loss; optimizer remains owned by trainer.
+    objective_adapter: object = None  # Opt-in per-sample FM weighting / shared-forward auxiliary supervision.
 
 
 def training_loop(s: TrainState):

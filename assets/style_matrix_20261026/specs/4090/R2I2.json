@@ -1,0 +1,35 @@
+{
+  "config": {
+    "num_scripts": 3,
+    "freeze_writer_table": false,
+    "num_writers": 259,
+    "style_matrix_injection": 2,
+    "drop_writer": 0.1,
+    "batch": 256,
+    "microbatch": 256,
+    "channels": [
+      192,
+      384,
+      576
+    ],
+    "max_steps": 36000,
+    "compile": false,
+    "lr_decay_steps": 36000,
+    "style_matrix_repr": 2,
+    "seed": 90,
+    "num_res_blocks": 4
+  },
+  "machine": "4090",
+  "arm": "R2I2",
+  "identity": {
+    "injection": 2,
+    "representation": 2,
+    "seed": 90
+  },
+  "milestones": [
+    1000,
+    3000,
+    6000
+  ],
+  "source": "assets/style_matrix_20261026/common/content_p1_ema.pt"
+}

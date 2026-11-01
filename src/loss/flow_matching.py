@@ -254,6 +254,8 @@ class FlowMatching:
             loss = loss + w_base * loss_base
 
         terms["loss"] = loss
+        # Optional counterfactual adapters must score the identical FM target.
+        terms["v_target"] = v_target.detach()
 
         # ── 从预测速度反推 x0 ───────────────────────────────────────────
         # 直线插值下 x_t = (1-t)·x0 + t·eps，v = eps - x0，故

@@ -1,0 +1,48 @@
+{
+ "tag": "K_P3A",
+ "checkpoint": "assets/p125_20261030/execution/runs/P3A/checkpoints/0020000.pt",
+ "step": 20000,
+ "disabled_injection_sites": [],
+ "panel": "assets/u100_pretrain_20261024/validation_val100.csv",
+ "panel_kind": "eval200fix",
+ "n_png": 100,
+ "content": {
+  "n": 100,
+  "ssim": 0.5857370654199359,
+  "mse": 0.8199803284555673,
+  "lpips": 0.3528367494046688,
+  "ink_iou": 0.2725277548720742,
+  "skel_iou": 0.022834243869122393,
+  "frag": 2.9716914151204348,
+  "hole": 0.04490004243092012
+ },
+ "ocr": {
+  "n": 90,
+  "top1": 74.44,
+  "top5": 91.11
+ },
+ "ink": {
+  "width_p50": 7.6398,
+  "width_p90": 16.5278,
+  "width_jump": 0.6304,
+  "ink_ratio": 0.1793,
+  "fragment_share": 0.0058
+ },
+ "writer": {
+  "grid": {
+   "chars": 20,
+   "writers": 10,
+   "seeds": 2,
+   "rows": 400
+  },
+  "ocr": {
+   "n": 400,
+   "top1": 96.5,
+   "top5": 98.25
+  },
+  "direction": 0.4003,
+  "amplitude": 0.6432,
+  "n_pairs": 900,
+  "verdict_hint": "writer swap direction is weak (<0.5) — writer identity is not being transferred"
+ }
+}

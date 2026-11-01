@@ -1,0 +1,467 @@
+{
+  "GT": {
+    "grad_mag": 0.02737,
+    "by_threshold": {
+      "0.35": {
+        "junction": 15.402,
+        "end": 15.857,
+        "junction_raw": 15.455,
+        "end_raw": 23.411
+      },
+      "0.45": {
+        "junction": 15.375,
+        "end": 15.857,
+        "junction_raw": 15.411,
+        "end_raw": 23.375
+      },
+      "0.5": {
+        "junction": 15.357,
+        "end": 15.866,
+        "junction_raw": 15.393,
+        "end_raw": 23.339
+      },
+      "0.55": {
+        "junction": 15.339,
+        "end": 15.884,
+        "junction_raw": 15.411,
+        "end_raw": 23.366
+      },
+      "0.65": {
+        "junction": 15.366,
+        "end": 15.866,
+        "junction_raw": 15.438,
+        "end_raw": 23.438
+      }
+    },
+    "junction_pruned_mean": 15.368,
+    "junction_pruned_spread": [
+      15.34,
+      15.4
+    ],
+    "junction_raw_mean": 15.421
+  },
+  "VAE": {
+    "grad_mag": 0.02782,
+    "by_threshold": {
+      "0.35": {
+        "junction": 16.929,
+        "end": 16.679,
+        "junction_raw": 17.089,
+        "end_raw": 24.58
+      },
+      "0.45": {
+        "junction": 16.741,
+        "end": 16.598,
+        "junction_raw": 16.884,
+        "end_raw": 24.58
+      },
+      "0.5": {
+        "junction": 16.545,
+        "end": 16.509,
+        "junction_raw": 16.705,
+        "end_raw": 24.5
+      },
+      "0.55": {
+        "junction": 16.455,
+        "end": 16.5,
+        "junction_raw": 16.67,
+        "end_raw": 24.482
+      },
+      "0.65": {
+        "junction": 16.723,
+        "end": 16.696,
+        "junction_raw": 16.982,
+        "end_raw": 24.759
+      }
+    },
+    "junction_pruned_mean": 16.679,
+    "junction_pruned_spread": [
+      16.46,
+      16.93
+    ],
+    "junction_raw_mean": 16.866
+  },
+  "blur0.6": {
+    "grad_mag": 0.02591,
+    "by_threshold": {
+      "0.35": {
+        "junction": 14.071,
+        "end": 15.643,
+        "junction_raw": 14.116,
+        "end_raw": 22.991
+      },
+      "0.45": {
+        "junction": 14.804,
+        "end": 15.866,
+        "junction_raw": 14.875,
+        "end_raw": 23.357
+      },
+      "0.5": {
+        "junction": 14.759,
+        "end": 15.759,
+        "junction_raw": 14.804,
+        "end_raw": 23.054
+      },
+      "0.55": {
+        "junction": 14.964,
+        "end": 15.768,
+        "junction_raw": 15.009,
+        "end_raw": 23.054
+      },
+      "0.65": {
+        "junction": 14.42,
+        "end": 15.357,
+        "junction_raw": 14.464,
+        "end_raw": 20.429
+      }
+    },
+    "junction_pruned_mean": 14.604,
+    "junction_pruned_spread": [
+      14.07,
+      14.96
+    ],
+    "junction_raw_mean": 14.654
+  },
+  "blur0.9": {
+    "grad_mag": 0.02516,
+    "by_threshold": {
+      "0.35": {
+        "junction": 11.357,
+        "end": 13.857,
+        "junction_raw": 11.402,
+        "end_raw": 18.839
+      },
+      "0.45": {
+        "junction": 12.196,
+        "end": 14.562,
+        "junction_raw": 12.259,
+        "end_raw": 19.116
+      },
+      "0.5": {
+        "junction": 13.179,
+        "end": 15.366,
+        "junction_raw": 13.25,
+        "end_raw": 19.688
+      },
+      "0.55": {
+        "junction": 11.884,
+        "end": 14.241,
+        "junction_raw": 11.973,
+        "end_raw": 17.723
+      },
+      "0.65": {
+        "junction": 11.562,
+        "end": 13.946,
+        "junction_raw": 11.688,
+        "end_raw": 16.938
+      }
+    },
+    "junction_pruned_mean": 12.036,
+    "junction_pruned_spread": [
+      11.36,
+      13.18
+    ],
+    "junction_raw_mean": 12.114
+  },
+  "blur1.3": {
+    "grad_mag": 0.02439,
+    "by_threshold": {
+      "0.35": {
+        "junction": 10.607,
+        "end": 13.589,
+        "junction_raw": 10.723,
+        "end_raw": 16.884
+      },
+      "0.45": {
+        "junction": 10.589,
+        "end": 13.536,
+        "junction_raw": 10.598,
+        "end_raw": 16.143
+      },
+      "0.5": {
+        "junction": 10.714,
+        "end": 13.679,
+        "junction_raw": 10.777,
+        "end_raw": 16.196
+      },
+      "0.55": {
+        "junction": 10.625,
+        "end": 13.33,
+        "junction_raw": 10.732,
+        "end_raw": 15.679
+      },
+      "0.65": {
+        "junction": 10.554,
+        "end": 13.518,
+        "junction_raw": 10.625,
+        "end_raw": 15.58
+      }
+    },
+    "junction_pruned_mean": 10.618,
+    "junction_pruned_spread": [
+      10.55,
+      10.71
+    ],
+    "junction_raw_mean": 10.691
+  },
+  "blur2.0": {
+    "grad_mag": 0.02315,
+    "by_threshold": {
+      "0.35": {
+        "junction": 9.304,
+        "end": 12.455,
+        "junction_raw": 9.402,
+        "end_raw": 14.188
+      },
+      "0.45": {
+        "junction": 9.17,
+        "end": 12.188,
+        "junction_raw": 9.304,
+        "end_raw": 13.83
+      },
+      "0.5": {
+        "junction": 9.232,
+        "end": 12.545,
+        "junction_raw": 9.295,
+        "end_raw": 14.009
+      },
+      "0.55": {
+        "junction": 9.223,
+        "end": 12.473,
+        "junction_raw": 9.205,
+        "end_raw": 13.759
+      },
+      "0.65": {
+        "junction": 9.25,
+        "end": 12.848,
+        "junction_raw": 9.286,
+        "end_raw": 14.045
+      }
+    },
+    "junction_pruned_mean": 9.236,
+    "junction_pruned_spread": [
+      9.17,
+      9.3
+    ],
+    "junction_raw_mean": 9.298
+  },
+  "blur2.8": {
+    "grad_mag": 0.02173,
+    "by_threshold": {
+      "0.35": {
+        "junction": 8.134,
+        "end": 11.321,
+        "junction_raw": 8.143,
+        "end_raw": 12.384
+      },
+      "0.45": {
+        "junction": 8.179,
+        "end": 11.589,
+        "junction_raw": 8.179,
+        "end_raw": 12.446
+      },
+      "0.5": {
+        "junction": 8.232,
+        "end": 11.705,
+        "junction_raw": 8.223,
+        "end_raw": 12.741
+      },
+      "0.55": {
+        "junction": 8.045,
+        "end": 11.804,
+        "junction_raw": 8.062,
+        "end_raw": 12.911
+      },
+      "0.65": {
+        "junction": 7.982,
+        "end": 12.216,
+        "junction_raw": 7.991,
+        "end_raw": 13.468
+      }
+    },
+    "junction_pruned_mean": 8.114,
+    "junction_pruned_spread": [
+      7.98,
+      8.23
+    ],
+    "junction_raw_mean": 8.12
+  },
+  "blur3.8": {
+    "grad_mag": 0.01992,
+    "by_threshold": {
+      "0.35": {
+        "junction": 7.348,
+        "end": 10.67,
+        "junction_raw": 7.393,
+        "end_raw": 11.357
+      },
+      "0.45": {
+        "junction": 7.232,
+        "end": 10.929,
+        "junction_raw": 7.241,
+        "end_raw": 11.83
+      },
+      "0.5": {
+        "junction": 7.098,
+        "end": 11.036,
+        "junction_raw": 7.089,
+        "end_raw": 12.018
+      },
+      "0.55": {
+        "junction": 7.063,
+        "end": 11.423,
+        "junction_raw": 7.117,
+        "end_raw": 12.405
+      },
+      "0.65": {
+        "junction": 6.766,
+        "end": 11.847,
+        "junction_raw": 6.883,
+        "end_raw": 12.748
+      }
+    },
+    "junction_pruned_mean": 7.101,
+    "junction_pruned_spread": [
+      6.77,
+      7.35
+    ],
+    "junction_raw_mean": 7.145
+  },
+  "blur5.0": {
+    "grad_mag": 0.01777,
+    "by_threshold": {
+      "0.35": {
+        "junction": 6.688,
+        "end": 9.991,
+        "junction_raw": 6.714,
+        "end_raw": 10.723
+      },
+      "0.45": {
+        "junction": 6.306,
+        "end": 10.514,
+        "junction_raw": 6.369,
+        "end_raw": 11.252
+      },
+      "0.5": {
+        "junction": 6.189,
+        "end": 10.721,
+        "junction_raw": 6.234,
+        "end_raw": 11.342
+      },
+      "0.55": {
+        "junction": 6.027,
+        "end": 10.757,
+        "junction_raw": 6.081,
+        "end_raw": 11.532
+      },
+      "0.65": {
+        "junction": 5.658,
+        "end": 10.928,
+        "junction_raw": 5.649,
+        "end_raw": 11.991
+      }
+    },
+    "junction_pruned_mean": 6.174,
+    "junction_pruned_spread": [
+      5.66,
+      6.69
+    ],
+    "junction_raw_mean": 6.21
+  },
+  "resize0.5": {
+    "grad_mag": 0.02549,
+    "by_threshold": {
+      "0.35": {
+        "junction": 12.839,
+        "end": 14.393,
+        "junction_raw": 13.018,
+        "end_raw": 20.312
+      },
+      "0.45": {
+        "junction": 12.071,
+        "end": 14.455,
+        "junction_raw": 12.214,
+        "end_raw": 18.938
+      },
+      "0.5": {
+        "junction": 12.214,
+        "end": 14.473,
+        "junction_raw": 12.384,
+        "end_raw": 18.866
+      },
+      "0.55": {
+        "junction": 12.527,
+        "end": 14.375,
+        "junction_raw": 12.634,
+        "end_raw": 18.795
+      },
+      "0.65": {
+        "junction": 12.679,
+        "end": 14.25,
+        "junction_raw": 12.741,
+        "end_raw": 18.357
+      }
+    },
+    "junction_pruned_mean": 12.466,
+    "junction_pruned_spread": [
+      12.07,
+      12.84
+    ],
+    "junction_raw_mean": 12.598
+  },
+  "resize0.35": {
+    "grad_mag": 0.02487,
+    "by_threshold": {
+      "0.35": {
+        "junction": 11.179,
+        "end": 13.652,
+        "junction_raw": 11.232,
+        "end_raw": 17.223
+      },
+      "0.45": {
+        "junction": 10.777,
+        "end": 13.455,
+        "junction_raw": 10.777,
+        "end_raw": 16.429
+      },
+      "0.5": {
+        "junction": 10.759,
+        "end": 13.473,
+        "junction_raw": 10.884,
+        "end_raw": 16.259
+      },
+      "0.55": {
+        "junction": 10.973,
+        "end": 13.571,
+        "junction_raw": 10.982,
+        "end_raw": 16.277
+      },
+      "0.65": {
+        "junction": 10.911,
+        "end": 13.473,
+        "junction_raw": 10.92,
+        "end_raw": 16.196
+      }
+    },
+    "junction_pruned_mean": 10.92,
+    "junction_pruned_spread": [
+      10.76,
+      11.18
+    ],
+    "junction_raw_mean": 10.959
+  },
+  "_sharpness_match": {
+    "vae_grad": 0.02782,
+    "closest_blur": "blur0.6",
+    "closest_blur_grad": 0.02591,
+    "gt_grad": 0.02737
+  },
+  "_verdict": {
+    "gt_junction": 15.368,
+    "vae_junction": 16.679,
+    "matched_blur_junction": 14.604,
+    "vae_inflation": 1.09,
+    "blur_inflation": 0.95,
+    "blur_explains_vae": true
+  }
+}

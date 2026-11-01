@@ -1,0 +1,152 @@
+{
+  "features": [
+    "asym_ud",
+    "asym_lr",
+    "grad_mag",
+    "turn_angle",
+    "end_area",
+    "end_elong",
+    "n_branches",
+    "orient_peak",
+    "mass",
+    "ink_frac"
+  ],
+  "controls": [
+    "mass",
+    "ink_frac"
+  ],
+  "by_script": {
+    "楷": {
+      "n_events": 705835,
+      "by_kind": {
+        "end": {
+          "n_events": 213196,
+          "within_work": 0.0251,
+          "between_writer": 0.1438,
+          "separation_ratio": 5.741,
+          "within_work_ink_controlled": 0.0281,
+          "between_writer_ink_controlled": 0.0532,
+          "separation_ratio_ink_controlled": 1.894,
+          "cross_char_reproduction": {
+            "pair": "王羲之>米芾",
+            "cosine_train_vs_test_direction": 0.988
+          }
+        },
+        "junction": {
+          "n_events": 240727,
+          "within_work": 0.0237,
+          "between_writer": 0.3523,
+          "separation_ratio": 14.879,
+          "within_work_ink_controlled": 0.0275,
+          "between_writer_ink_controlled": 0.1513,
+          "separation_ratio_ink_controlled": 5.512,
+          "cross_char_reproduction": {
+            "pair": "王羲之>米芾",
+            "cosine_train_vs_test_direction": 0.992
+          }
+        },
+        "turn": {
+          "n_events": 251912,
+          "within_work": 0.0275,
+          "between_writer": 0.1198,
+          "separation_ratio": 4.356,
+          "within_work_ink_controlled": 0.0211,
+          "between_writer_ink_controlled": 0.051,
+          "separation_ratio_ink_controlled": 2.414,
+          "cross_char_reproduction": {
+            "pair": "王羲之>米芾",
+            "cosine_train_vs_test_direction": 0.985
+          }
+        }
+      }
+    },
+    "行": {
+      "n_events": 865456,
+      "by_kind": {
+        "end": {
+          "n_events": 235900,
+          "within_work": 0.024,
+          "between_writer": 0.2433,
+          "separation_ratio": 10.138,
+          "within_work_ink_controlled": 0.0206,
+          "between_writer_ink_controlled": 0.0716,
+          "separation_ratio_ink_controlled": 3.476,
+          "cross_char_reproduction": {
+            "pair": "何绍基>褚遂良",
+            "cosine_train_vs_test_direction": 0.998
+          }
+        },
+        "junction": {
+          "n_events": 309037,
+          "within_work": 0.0247,
+          "between_writer": 0.7064,
+          "separation_ratio": 28.551,
+          "within_work_ink_controlled": 0.0318,
+          "between_writer_ink_controlled": 0.246,
+          "separation_ratio_ink_controlled": 7.728,
+          "cross_char_reproduction": {
+            "pair": "何绍基>褚遂良",
+            "cosine_train_vs_test_direction": 1.0
+          }
+        },
+        "turn": {
+          "n_events": 320519,
+          "within_work": 0.0358,
+          "between_writer": 0.1447,
+          "separation_ratio": 4.037,
+          "within_work_ink_controlled": 0.0199,
+          "between_writer_ink_controlled": 0.0653,
+          "separation_ratio_ink_controlled": 3.287,
+          "cross_char_reproduction": {
+            "pair": "褚遂良>赵孟頫",
+            "cosine_train_vs_test_direction": 0.995
+          }
+        }
+      }
+    },
+    "隶": {
+      "n_events": 122629,
+      "by_kind": {
+        "end": {
+          "n_events": 33821,
+          "within_work": 0.0806,
+          "between_writer": 0.55,
+          "separation_ratio": 6.824,
+          "within_work_ink_controlled": 0.0532,
+          "between_writer_ink_controlled": 0.2104,
+          "separation_ratio_ink_controlled": 3.951,
+          "cross_char_reproduction": {
+            "pair": "文徵明>赵孟頫",
+            "cosine_train_vs_test_direction": 0.995
+          }
+        },
+        "junction": {
+          "n_events": 44073,
+          "within_work": 0.0483,
+          "between_writer": 0.4844,
+          "separation_ratio": 10.022,
+          "within_work_ink_controlled": 0.0247,
+          "between_writer_ink_controlled": 0.3985,
+          "separation_ratio_ink_controlled": 16.144,
+          "cross_char_reproduction": {
+            "pair": "文徵明>赵孟頫",
+            "cosine_train_vs_test_direction": 0.997
+          }
+        },
+        "turn": {
+          "n_events": 44735,
+          "within_work": 0.0313,
+          "between_writer": 0.2493,
+          "separation_ratio": 7.977,
+          "within_work_ink_controlled": 0.0288,
+          "between_writer_ink_controlled": 0.2342,
+          "separation_ratio_ink_controlled": 8.144,
+          "cross_char_reproduction": {
+            "pair": "文徵明>赵孟頫",
+            "cosine_train_vs_test_direction": 0.836
+          }
+        }
+      }
+    }
+  }
+}

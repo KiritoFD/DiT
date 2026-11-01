@@ -53,11 +53,15 @@ def percentiles(samples):
 
 class DinoJudge:
     def __init__(self, feature_bank):
-        data = np.load(feature_bank)
-        feats = data['features'] / np.linalg.norm(data['features'], axis=1, keepdims=True)
-        writers = data['writers']
-        self.centroids = np.stack([feats[writers == w].mean(0) for w in range(10)])
-        self.centroids /= np.linalg.norm(self.centroids, axis=1, keepdims=True)
+        self.centroids=None
+        if feature_bank:
+            data = np.load(feature_bank)
+            feats = data['features'] / np.linalg.norm(data['features'], axis=1, keepdims=True)
+            writers = data['writers']
+            if set(np.unique(writers))!=set(range(10)):
+                raise ValueError('Feature bank is not the declared ten-writer label space')
+            self.centroids = np.stack([feats[writers == w].mean(0) for w in range(10)])
+            self.centroids /= np.linalg.norm(self.centroids, axis=1, keepdims=True)
         from transformers import AutoModel
         self.model = AutoModel.from_pretrained('facebook/dinov2-base', local_files_only=True).cuda().eval().requires_grad_(False)
         self.mean = torch.tensor([.485, .456, .406])[None, :, None, None]
@@ -119,7 +123,7 @@ def main():
         with open(args.batch_csv, encoding='utf-8-sig') as f:
             for row in csv.DictReader(f):
                 meta[int(row['idx'])] = (row['char'], int(row['calligrapher']))
-    judge = DinoJudge(args.features)
+    judge = DinoJudge(None if args.probe else args.features)
 
     rows = []
     gray_gens = []
@@ -147,6 +151,8 @@ def main():
     targets = np.array([meta[i][1] for i in range(args.n)])
     if args.probe:
         probe = torch.load(args.probe, map_location='cpu', weights_only=False)
+        if probe.get('input_contract')!='vae_gray_float_0_1_no_second_div255':
+            raise ValueError('Old probe used incompatible image scaling; rebuild with build_probe.py')
         logits = feats @ probe['coef'].T + probe['intercept']
         logits = logits - logits.max(1, keepdims=True)
         probs = np.exp(logits) / np.exp(logits).sum(1, keepdims=True)

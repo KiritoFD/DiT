@@ -1,0 +1,29 @@
+[
+  {
+    "arm": "C90",
+    "path": "assets/audits/review_20261026_correct_rows/C90/eval_samples_ctrl/step0090000/eval200fix/metrics.json",
+    "ssim": 0.6122067397307784,
+    "lpips": 0.3250518435423068,
+    "ink_iou": 0.3271831940370054,
+    "frag": 1.6578635606154282,
+    "n": 187
+  },
+  {
+    "arm": "BASE85",
+    "path": "assets/audits/review_20261026_correct_rows/BASE85/eval_samples_ctrl/step0085000/eval200fix/metrics.json",
+    "ssim": 0.6128810051072471,
+    "lpips": 0.3211874403657123,
+    "ink_iou": 0.3375286387095404,
+    "frag": 2.1669613295021386,
+    "n": 187
+  },
+  {
+    "arm": "A90",
+    "path": "assets/audits/review_20261026_correct_rows/A90/eval_samples_ctrl/step0090000/eval200fix/metrics.json",
+    "ssim": 0.6118503797017268,
+    "lpips": 0.3236847497761887,
+    "ink_iou": 0.33368534294643937,
+    "frag": 1.7441371114388988,
+    "n": 187
+  }
+]

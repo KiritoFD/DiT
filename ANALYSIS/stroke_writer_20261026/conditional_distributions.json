@@ -1,0 +1,1514 @@
+{
+  "n_events": 1693920,
+  "features": [
+    "asym_ud",
+    "asym_lr",
+    "grad_mag",
+    "turn_angle",
+    "end_area",
+    "end_elong",
+    "n_branches",
+    "orient_peak",
+    "mass",
+    "ink_frac"
+  ],
+  "cap": 300,
+  "by_script": {
+    "楷": {
+      "end": {
+        "n_events": 213196,
+        "same_writer_cross_work": 0.0567,
+        "same_writer_cross_char": 0.0926,
+        "cross_writer_matched_char": 0.1286,
+        "n_writer_pairs": 45,
+        "separation_vs_work": 2.2681
+      },
+      "junction": {
+        "n_events": 240727,
+        "same_writer_cross_work": 0.0611,
+        "same_writer_cross_char": 0.144,
+        "cross_writer_matched_char": 0.3457,
+        "n_writer_pairs": 45,
+        "separation_vs_work": 5.6579
+      },
+      "turn": {
+        "n_events": 251912,
+        "same_writer_cross_work": 0.0327,
+        "same_writer_cross_char": 0.0534,
+        "cross_writer_matched_char": 0.0749,
+        "n_writer_pairs": 45,
+        "separation_vs_work": 2.2905
+      }
+    },
+    "行": {
+      "end": {
+        "n_events": 235900,
+        "same_writer_cross_work": 0.0538,
+        "same_writer_cross_char": 0.1121,
+        "cross_writer_matched_char": 0.2549,
+        "n_writer_pairs": 45,
+        "separation_vs_work": 4.7379
+      },
+      "junction": {
+        "n_events": 309037,
+        "same_writer_cross_work": 0.053,
+        "same_writer_cross_char": 0.1336,
+        "cross_writer_matched_char": 0.6884,
+        "n_writer_pairs": 45,
+        "separation_vs_work": 12.9887
+      },
+      "turn": {
+        "n_events": 320519,
+        "same_writer_cross_work": 0.0325,
+        "same_writer_cross_char": 0.0346,
+        "cross_writer_matched_char": 0.087,
+        "n_writer_pairs": 45,
+        "separation_vs_work": 2.6769
+      }
+    },
+    "隶": {
+      "end": {
+        "n_events": 33821,
+        "same_writer_cross_work": 0.0896,
+        "same_writer_cross_char": 0.062,
+        "cross_writer_matched_char": 0.5831,
+        "n_writer_pairs": 3,
+        "separation_vs_work": 6.5078
+      },
+      "junction": {
+        "n_events": 44073,
+        "same_writer_cross_work": 0.0415,
+        "same_writer_cross_char": 0.0198,
+        "cross_writer_matched_char": 0.5507,
+        "n_writer_pairs": 3,
+        "separation_vs_work": 13.2699
+      },
+      "turn": {
+        "n_events": 44735,
+        "same_writer_cross_work": 0.0275,
+        "same_writer_cross_char": 0.0357,
+        "cross_writer_matched_char": 0.1451,
+        "n_writer_pairs": 3,
+        "separation_vs_work": 5.2764
+      }
+    }
+  },
+  "kind_specificity": {
+    "楷": {
+      "n_comparisons": 135,
+      "mean_cosine": 0.5239,
+      "frac_below_0.5": 0.3778,
+      "all": [
+        {
+          "pair": "何绍基>文徵明",
+          "kinds": "end-junction",
+          "cosine": 0.3595
+        },
+        {
+          "pair": "何绍基>文徵明",
+          "kinds": "end-turn",
+          "cosine": 0.6672
+        },
+        {
+          "pair": "何绍基>文徵明",
+          "kinds": "junction-turn",
+          "cosine": 0.6163
+        },
+        {
+          "pair": "何绍基>柳公权",
+          "kinds": "end-junction",
+          "cosine": -0.156
+        },
+        {
+          "pair": "何绍基>柳公权",
+          "kinds": "end-turn",
+          "cosine": -0.221
+        },
+        {
+          "pair": "何绍基>柳公权",
+          "kinds": "junction-turn",
+          "cosine": 0.601
+        },
+        {
+          "pair": "何绍基>欧阳询",
+          "kinds": "end-junction",
+          "cosine": 0.2656
+        },
+        {
+          "pair": "何绍基>欧阳询",
+          "kinds": "end-turn",
+          "cosine": 0.6718
+        },
+        {
+          "pair": "何绍基>欧阳询",
+          "kinds": "junction-turn",
+          "cosine": 0.4565
+        },
+        {
+          "pair": "何绍基>王羲之",
+          "kinds": "end-junction",
+          "cosine": 0.5945
+        },
+        {
+          "pair": "何绍基>王羲之",
+          "kinds": "end-turn",
+          "cosine": 0.8715
+        },
+        {
+          "pair": "何绍基>王羲之",
+          "kinds": "junction-turn",
+          "cosine": 0.7833
+        },
+        {
+          "pair": "何绍基>米芾",
+          "kinds": "end-junction",
+          "cosine": 0.5036
+        },
+        {
+          "pair": "何绍基>米芾",
+          "kinds": "end-turn",
+          "cosine": 0.8056
+        },
+        {
+          "pair": "何绍基>米芾",
+          "kinds": "junction-turn",
+          "cosine": 0.7154
+        },
+        {
+          "pair": "何绍基>苏轼",
+          "kinds": "end-junction",
+          "cosine": 0.5589
+        },
+        {
+          "pair": "何绍基>苏轼",
+          "kinds": "end-turn",
+          "cosine": 0.6782
+        },
+        {
+          "pair": "何绍基>苏轼",
+          "kinds": "junction-turn",
+          "cosine": 0.7165
+        },
+        {
+          "pair": "何绍基>褚遂良",
+          "kinds": "end-junction",
+          "cosine": 0.1857
+        },
+        {
+          "pair": "何绍基>褚遂良",
+          "kinds": "end-turn",
+          "cosine": 0.5112
+        },
+        {
+          "pair": "何绍基>褚遂良",
+          "kinds": "junction-turn",
+          "cosine": 0.27
+        },
+        {
+          "pair": "何绍基>赵孟頫",
+          "kinds": "end-junction",
+          "cosine": -0.3932
+        },
+        {
+          "pair": "何绍基>赵孟頫",
+          "kinds": "end-turn",
+          "cosine": -0.1162
+        },
+        {
+          "pair": "何绍基>赵孟頫",
+          "kinds": "junction-turn",
+          "cosine": 0.6292
+        },
+        {
+          "pair": "何绍基>颜真卿",
+          "kinds": "end-junction",
+          "cosine": -0.0087
+        },
+        {
+          "pair": "何绍基>颜真卿",
+          "kinds": "end-turn",
+          "cosine": -0.0812
+        },
+        {
+          "pair": "何绍基>颜真卿",
+          "kinds": "junction-turn",
+          "cosine": 0.8491
+        },
+        {
+          "pair": "文徵明>柳公权",
+          "kinds": "end-junction",
+          "cosine": 0.4696
+        },
+        {
+          "pair": "文徵明>柳公权",
+          "kinds": "end-turn",
+          "cosine": 0.4626
+        },
+        {
+          "pair": "文徵明>柳公权",
+          "kinds": "junction-turn",
+          "cosine": 0.9447
+        },
+        {
+          "pair": "文徵明>欧阳询",
+          "kinds": "end-junction",
+          "cosine": 0.1271
+        },
+        {
+          "pair": "文徵明>欧阳询",
+          "kinds": "end-turn",
+          "cosine": 0.6181
+        },
+        {
+          "pair": "文徵明>欧阳询",
+          "kinds": "junction-turn",
+          "cosine": 0.3068
+        },
+        {
+          "pair": "文徵明>王羲之",
+          "kinds": "end-junction",
+          "cosine": 0.6565
+        },
+        {
+          "pair": "文徵明>王羲之",
+          "kinds": "end-turn",
+          "cosine": 0.9074
+        },
+        {
+          "pair": "文徵明>王羲之",
+          "kinds": "junction-turn",
+          "cosine": 0.8585
+        },
+        {
+          "pair": "文徵明>米芾",
+          "kinds": "end-junction",
+          "cosine": 0.5726
+        },
+        {
+          "pair": "文徵明>米芾",
+          "kinds": "end-turn",
+          "cosine": 0.9063
+        },
+        {
+          "pair": "文徵明>米芾",
+          "kinds": "junction-turn",
+          "cosine": 0.7114
+        },
+        {
+          "pair": "文徵明>苏轼",
+          "kinds": "end-junction",
+          "cosine": 0.5252
+        },
+        {
+          "pair": "文徵明>苏轼",
+          "kinds": "end-turn",
+          "cosine": 0.7778
+        },
+        {
+          "pair": "文徵明>苏轼",
+          "kinds": "junction-turn",
+          "cosine": 0.742
+        },
+        {
+          "pair": "文徵明>褚遂良",
+          "kinds": "end-junction",
+          "cosine": -0.0032
+        },
+        {
+          "pair": "文徵明>褚遂良",
+          "kinds": "end-turn",
+          "cosine": 0.2397
+        },
+        {
+          "pair": "文徵明>褚遂良",
+          "kinds": "junction-turn",
+          "cosine": -0.4598
+        },
+        {
+          "pair": "文徵明>赵孟頫",
+          "kinds": "end-junction",
+          "cosine": 0.6408
+        },
+        {
+          "pair": "文徵明>赵孟頫",
+          "kinds": "end-turn",
+          "cosine": 0.9113
+        },
+        {
+          "pair": "文徵明>赵孟頫",
+          "kinds": "junction-turn",
+          "cosine": 0.7405
+        },
+        {
+          "pair": "文徵明>颜真卿",
+          "kinds": "end-junction",
+          "cosine": 0.5019
+        },
+        {
+          "pair": "文徵明>颜真卿",
+          "kinds": "end-turn",
+          "cosine": 0.6448
+        },
+        {
+          "pair": "文徵明>颜真卿",
+          "kinds": "junction-turn",
+          "cosine": 0.8796
+        },
+        {
+          "pair": "柳公权>欧阳询",
+          "kinds": "end-junction",
+          "cosine": 0.6462
+        },
+        {
+          "pair": "柳公权>欧阳询",
+          "kinds": "end-turn",
+          "cosine": 0.8662
+        },
+        {
+          "pair": "柳公权>欧阳询",
+          "kinds": "junction-turn",
+          "cosine": 0.8775
+        },
+        {
+          "pair": "柳公权>王羲之",
+          "kinds": "end-junction",
+          "cosine": 0.7161
+        },
+        {
+          "pair": "柳公权>王羲之",
+          "kinds": "end-turn",
+          "cosine": 0.8584
+        },
+        {
+          "pair": "柳公权>王羲之",
+          "kinds": "junction-turn",
+          "cosine": 0.9124
+        },
+        {
+          "pair": "柳公权>米芾",
+          "kinds": "end-junction",
+          "cosine": 0.3248
+        },
+        {
+          "pair": "柳公权>米芾",
+          "kinds": "end-turn",
+          "cosine": 0.7163
+        },
+        {
+          "pair": "柳公权>米芾",
+          "kinds": "junction-turn",
+          "cosine": 0.43
+        },
+        {
+          "pair": "柳公权>苏轼",
+          "kinds": "end-junction",
+          "cosine": 0.222
+        },
+        {
+          "pair": "柳公权>苏轼",
+          "kinds": "end-turn",
+          "cosine": 0.5065
+        },
+        {
+          "pair": "柳公权>苏轼",
+          "kinds": "junction-turn",
+          "cosine": 0.3295
+        },
+        {
+          "pair": "柳公权>褚遂良",
+          "kinds": "end-junction",
+          "cosine": 0.6247
+        },
+        {
+          "pair": "柳公权>褚遂良",
+          "kinds": "end-turn",
+          "cosine": 0.8017
+        },
+        {
+          "pair": "柳公权>褚遂良",
+          "kinds": "junction-turn",
+          "cosine": 0.8995
+        },
+        {
+          "pair": "柳公权>赵孟頫",
+          "kinds": "end-junction",
+          "cosine": 0.0562
+        },
+        {
+          "pair": "柳公权>赵孟頫",
+          "kinds": "end-turn",
+          "cosine": 0.2311
+        },
+        {
+          "pair": "柳公权>赵孟頫",
+          "kinds": "junction-turn",
+          "cosine": -0.2506
+        },
+        {
+          "pair": "柳公权>颜真卿",
+          "kinds": "end-junction",
+          "cosine": 0.1715
+        },
+        {
+          "pair": "柳公权>颜真卿",
+          "kinds": "end-turn",
+          "cosine": 0.0763
+        },
+        {
+          "pair": "柳公权>颜真卿",
+          "kinds": "junction-turn",
+          "cosine": 0.277
+        },
+        {
+          "pair": "欧阳询>王羲之",
+          "kinds": "end-junction",
+          "cosine": 0.6218
+        },
+        {
+          "pair": "欧阳询>王羲之",
+          "kinds": "end-turn",
+          "cosine": 0.673
+        },
+        {
+          "pair": "欧阳询>王羲之",
+          "kinds": "junction-turn",
+          "cosine": 0.9341
+        },
+        {
+          "pair": "欧阳询>米芾",
+          "kinds": "end-junction",
+          "cosine": 0.4564
+        },
+        {
+          "pair": "欧阳询>米芾",
+          "kinds": "end-turn",
+          "cosine": 0.8331
+        },
+        {
+          "pair": "欧阳询>米芾",
+          "kinds": "junction-turn",
+          "cosine": 0.6505
+        },
+        {
+          "pair": "欧阳询>苏轼",
+          "kinds": "end-junction",
+          "cosine": 0.4154
+        },
+        {
+          "pair": "欧阳询>苏轼",
+          "kinds": "end-turn",
+          "cosine": 0.7468
+        },
+        {
+          "pair": "欧阳询>苏轼",
+          "kinds": "junction-turn",
+          "cosine": 0.654
+        },
+        {
+          "pair": "欧阳询>褚遂良",
+          "kinds": "end-junction",
+          "cosine": 0.4183
+        },
+        {
+          "pair": "欧阳询>褚遂良",
+          "kinds": "end-turn",
+          "cosine": 0.0469
+        },
+        {
+          "pair": "欧阳询>褚遂良",
+          "kinds": "junction-turn",
+          "cosine": -0.0813
+        },
+        {
+          "pair": "欧阳询>赵孟頫",
+          "kinds": "end-junction",
+          "cosine": 0.3398
+        },
+        {
+          "pair": "欧阳询>赵孟頫",
+          "kinds": "end-turn",
+          "cosine": 0.7373
+        },
+        {
+          "pair": "欧阳询>赵孟頫",
+          "kinds": "junction-turn",
+          "cosine": 0.6253
+        },
+        {
+          "pair": "欧阳询>颜真卿",
+          "kinds": "end-junction",
+          "cosine": 0.4464
+        },
+        {
+          "pair": "欧阳询>颜真卿",
+          "kinds": "end-turn",
+          "cosine": 0.7412
+        },
+        {
+          "pair": "欧阳询>颜真卿",
+          "kinds": "junction-turn",
+          "cosine": 0.765
+        },
+        {
+          "pair": "王羲之>米芾",
+          "kinds": "end-junction",
+          "cosine": 0.598
+        },
+        {
+          "pair": "王羲之>米芾",
+          "kinds": "end-turn",
+          "cosine": 0.918
+        },
+        {
+          "pair": "王羲之>米芾",
+          "kinds": "junction-turn",
+          "cosine": 0.7554
+        },
+        {
+          "pair": "王羲之>苏轼",
+          "kinds": "end-junction",
+          "cosine": 0.5898
+        },
+        {
+          "pair": "王羲之>苏轼",
+          "kinds": "end-turn",
+          "cosine": 0.8673
+        },
+        {
+          "pair": "王羲之>苏轼",
+          "kinds": "junction-turn",
+          "cosine": 0.777
+        },
+        {
+          "pair": "王羲之>褚遂良",
+          "kinds": "end-junction",
+          "cosine": 0.5914
+        },
+        {
+          "pair": "王羲之>褚遂良",
+          "kinds": "end-turn",
+          "cosine": 0.5739
+        },
+        {
+          "pair": "王羲之>褚遂良",
+          "kinds": "junction-turn",
+          "cosine": 0.7988
+        },
+        {
+          "pair": "王羲之>赵孟頫",
+          "kinds": "end-junction",
+          "cosine": 0.6327
+        },
+        {
+          "pair": "王羲之>赵孟頫",
+          "kinds": "end-turn",
+          "cosine": 0.9303
+        },
+        {
+          "pair": "王羲之>赵孟頫",
+          "kinds": "junction-turn",
+          "cosine": 0.8177
+        },
+        {
+          "pair": "王羲之>颜真卿",
+          "kinds": "end-junction",
+          "cosine": 0.6228
+        },
+        {
+          "pair": "王羲之>颜真卿",
+          "kinds": "end-turn",
+          "cosine": 0.851
+        },
+        {
+          "pair": "王羲之>颜真卿",
+          "kinds": "junction-turn",
+          "cosine": 0.8473
+        },
+        {
+          "pair": "米芾>苏轼",
+          "kinds": "end-junction",
+          "cosine": 0.0735
+        },
+        {
+          "pair": "米芾>苏轼",
+          "kinds": "end-turn",
+          "cosine": 0.4716
+        },
+        {
+          "pair": "米芾>苏轼",
+          "kinds": "junction-turn",
+          "cosine": 0.5779
+        },
+        {
+          "pair": "米芾>褚遂良",
+          "kinds": "end-junction",
+          "cosine": 0.4291
+        },
+        {
+          "pair": "米芾>褚遂良",
+          "kinds": "end-turn",
+          "cosine": 0.7813
+        },
+        {
+          "pair": "米芾>褚遂良",
+          "kinds": "junction-turn",
+          "cosine": 0.6458
+        },
+        {
+          "pair": "米芾>赵孟頫",
+          "kinds": "end-junction",
+          "cosine": 0.5174
+        },
+        {
+          "pair": "米芾>赵孟頫",
+          "kinds": "end-turn",
+          "cosine": 0.8146
+        },
+        {
+          "pair": "米芾>赵孟頫",
+          "kinds": "junction-turn",
+          "cosine": 0.5344
+        },
+        {
+          "pair": "米芾>颜真卿",
+          "kinds": "end-junction",
+          "cosine": 0.3543
+        },
+        {
+          "pair": "米芾>颜真卿",
+          "kinds": "end-turn",
+          "cosine": 0.7064
+        },
+        {
+          "pair": "米芾>颜真卿",
+          "kinds": "junction-turn",
+          "cosine": 0.4778
+        },
+        {
+          "pair": "苏轼>褚遂良",
+          "kinds": "end-junction",
+          "cosine": 0.3789
+        },
+        {
+          "pair": "苏轼>褚遂良",
+          "kinds": "end-turn",
+          "cosine": 0.6923
+        },
+        {
+          "pair": "苏轼>褚遂良",
+          "kinds": "junction-turn",
+          "cosine": 0.6374
+        },
+        {
+          "pair": "苏轼>赵孟頫",
+          "kinds": "end-junction",
+          "cosine": 0.4073
+        },
+        {
+          "pair": "苏轼>赵孟頫",
+          "kinds": "end-turn",
+          "cosine": 0.4225
+        },
+        {
+          "pair": "苏轼>赵孟頫",
+          "kinds": "junction-turn",
+          "cosine": 0.4901
+        },
+        {
+          "pair": "苏轼>颜真卿",
+          "kinds": "end-junction",
+          "cosine": 0.2169
+        },
+        {
+          "pair": "苏轼>颜真卿",
+          "kinds": "end-turn",
+          "cosine": 0.537
+        },
+        {
+          "pair": "苏轼>颜真卿",
+          "kinds": "junction-turn",
+          "cosine": 0.2244
+        },
+        {
+          "pair": "褚遂良>赵孟頫",
+          "kinds": "end-junction",
+          "cosine": 0.2928
+        },
+        {
+          "pair": "褚遂良>赵孟頫",
+          "kinds": "end-turn",
+          "cosine": 0.5149
+        },
+        {
+          "pair": "褚遂良>赵孟頫",
+          "kinds": "junction-turn",
+          "cosine": 0.5747
+        },
+        {
+          "pair": "褚遂良>颜真卿",
+          "kinds": "end-junction",
+          "cosine": 0.392
+        },
+        {
+          "pair": "褚遂良>颜真卿",
+          "kinds": "end-turn",
+          "cosine": 0.6456
+        },
+        {
+          "pair": "褚遂良>颜真卿",
+          "kinds": "junction-turn",
+          "cosine": 0.7476
+        },
+        {
+          "pair": "赵孟頫>颜真卿",
+          "kinds": "end-junction",
+          "cosine": 0.3933
+        },
+        {
+          "pair": "赵孟頫>颜真卿",
+          "kinds": "end-turn",
+          "cosine": 0.1626
+        },
+        {
+          "pair": "赵孟頫>颜真卿",
+          "kinds": "junction-turn",
+          "cosine": 0.1089
+        }
+      ]
+    },
+    "行": {
+      "n_comparisons": 135,
+      "mean_cosine": 0.5723,
+      "frac_below_0.5": 0.363,
+      "all": [
+        {
+          "pair": "何绍基>文徵明",
+          "kinds": "end-junction",
+          "cosine": 0.553
+        },
+        {
+          "pair": "何绍基>文徵明",
+          "kinds": "end-turn",
+          "cosine": 0.5054
+        },
+        {
+          "pair": "何绍基>文徵明",
+          "kinds": "junction-turn",
+          "cosine": 0.356
+        },
+        {
+          "pair": "何绍基>柳公权",
+          "kinds": "end-junction",
+          "cosine": 0.5693
+        },
+        {
+          "pair": "何绍基>柳公权",
+          "kinds": "end-turn",
+          "cosine": 0.8877
+        },
+        {
+          "pair": "何绍基>柳公权",
+          "kinds": "junction-turn",
+          "cosine": 0.7292
+        },
+        {
+          "pair": "何绍基>欧阳询",
+          "kinds": "end-junction",
+          "cosine": 0.4621
+        },
+        {
+          "pair": "何绍基>欧阳询",
+          "kinds": "end-turn",
+          "cosine": 0.6903
+        },
+        {
+          "pair": "何绍基>欧阳询",
+          "kinds": "junction-turn",
+          "cosine": 0.5564
+        },
+        {
+          "pair": "何绍基>王羲之",
+          "kinds": "end-junction",
+          "cosine": 0.4273
+        },
+        {
+          "pair": "何绍基>王羲之",
+          "kinds": "end-turn",
+          "cosine": 0.7564
+        },
+        {
+          "pair": "何绍基>王羲之",
+          "kinds": "junction-turn",
+          "cosine": 0.5442
+        },
+        {
+          "pair": "何绍基>米芾",
+          "kinds": "end-junction",
+          "cosine": 0.4882
+        },
+        {
+          "pair": "何绍基>米芾",
+          "kinds": "end-turn",
+          "cosine": 0.5721
+        },
+        {
+          "pair": "何绍基>米芾",
+          "kinds": "junction-turn",
+          "cosine": 0.4281
+        },
+        {
+          "pair": "何绍基>苏轼",
+          "kinds": "end-junction",
+          "cosine": 0.4814
+        },
+        {
+          "pair": "何绍基>苏轼",
+          "kinds": "end-turn",
+          "cosine": 0.8219
+        },
+        {
+          "pair": "何绍基>苏轼",
+          "kinds": "junction-turn",
+          "cosine": 0.4953
+        },
+        {
+          "pair": "何绍基>褚遂良",
+          "kinds": "end-junction",
+          "cosine": 0.5767
+        },
+        {
+          "pair": "何绍基>褚遂良",
+          "kinds": "end-turn",
+          "cosine": 0.879
+        },
+        {
+          "pair": "何绍基>褚遂良",
+          "kinds": "junction-turn",
+          "cosine": 0.7374
+        },
+        {
+          "pair": "何绍基>赵孟頫",
+          "kinds": "end-junction",
+          "cosine": 0.2348
+        },
+        {
+          "pair": "何绍基>赵孟頫",
+          "kinds": "end-turn",
+          "cosine": 0.0469
+        },
+        {
+          "pair": "何绍基>赵孟頫",
+          "kinds": "junction-turn",
+          "cosine": 0.147
+        },
+        {
+          "pair": "何绍基>颜真卿",
+          "kinds": "end-junction",
+          "cosine": 0.4621
+        },
+        {
+          "pair": "何绍基>颜真卿",
+          "kinds": "end-turn",
+          "cosine": 0.8204
+        },
+        {
+          "pair": "何绍基>颜真卿",
+          "kinds": "junction-turn",
+          "cosine": 0.5092
+        },
+        {
+          "pair": "文徵明>柳公权",
+          "kinds": "end-junction",
+          "cosine": 0.5669
+        },
+        {
+          "pair": "文徵明>柳公权",
+          "kinds": "end-turn",
+          "cosine": 0.8855
+        },
+        {
+          "pair": "文徵明>柳公权",
+          "kinds": "junction-turn",
+          "cosine": 0.7483
+        },
+        {
+          "pair": "文徵明>欧阳询",
+          "kinds": "end-junction",
+          "cosine": 0.3605
+        },
+        {
+          "pair": "文徵明>欧阳询",
+          "kinds": "end-turn",
+          "cosine": 0.734
+        },
+        {
+          "pair": "文徵明>欧阳询",
+          "kinds": "junction-turn",
+          "cosine": 0.6278
+        },
+        {
+          "pair": "文徵明>王羲之",
+          "kinds": "end-junction",
+          "cosine": 0.2012
+        },
+        {
+          "pair": "文徵明>王羲之",
+          "kinds": "end-turn",
+          "cosine": 0.5039
+        },
+        {
+          "pair": "文徵明>王羲之",
+          "kinds": "junction-turn",
+          "cosine": 0.5079
+        },
+        {
+          "pair": "文徵明>米芾",
+          "kinds": "end-junction",
+          "cosine": -0.2531
+        },
+        {
+          "pair": "文徵明>米芾",
+          "kinds": "end-turn",
+          "cosine": -0.0121
+        },
+        {
+          "pair": "文徵明>米芾",
+          "kinds": "junction-turn",
+          "cosine": 0.336
+        },
+        {
+          "pair": "文徵明>苏轼",
+          "kinds": "end-junction",
+          "cosine": 0.2313
+        },
+        {
+          "pair": "文徵明>苏轼",
+          "kinds": "end-turn",
+          "cosine": 0.7031
+        },
+        {
+          "pair": "文徵明>苏轼",
+          "kinds": "junction-turn",
+          "cosine": 0.4286
+        },
+        {
+          "pair": "文徵明>褚遂良",
+          "kinds": "end-junction",
+          "cosine": 0.5758
+        },
+        {
+          "pair": "文徵明>褚遂良",
+          "kinds": "end-turn",
+          "cosine": 0.8719
+        },
+        {
+          "pair": "文徵明>褚遂良",
+          "kinds": "junction-turn",
+          "cosine": 0.7576
+        },
+        {
+          "pair": "文徵明>赵孟頫",
+          "kinds": "end-junction",
+          "cosine": 0.1485
+        },
+        {
+          "pair": "文徵明>赵孟頫",
+          "kinds": "end-turn",
+          "cosine": 0.4104
+        },
+        {
+          "pair": "文徵明>赵孟頫",
+          "kinds": "junction-turn",
+          "cosine": 0.6736
+        },
+        {
+          "pair": "文徵明>颜真卿",
+          "kinds": "end-junction",
+          "cosine": 0.3178
+        },
+        {
+          "pair": "文徵明>颜真卿",
+          "kinds": "end-turn",
+          "cosine": 0.6247
+        },
+        {
+          "pair": "文徵明>颜真卿",
+          "kinds": "junction-turn",
+          "cosine": 0.3578
+        },
+        {
+          "pair": "柳公权>欧阳询",
+          "kinds": "end-junction",
+          "cosine": 0.6276
+        },
+        {
+          "pair": "柳公权>欧阳询",
+          "kinds": "end-turn",
+          "cosine": 0.9278
+        },
+        {
+          "pair": "柳公权>欧阳询",
+          "kinds": "junction-turn",
+          "cosine": 0.7466
+        },
+        {
+          "pair": "柳公权>王羲之",
+          "kinds": "end-junction",
+          "cosine": 0.5494
+        },
+        {
+          "pair": "柳公权>王羲之",
+          "kinds": "end-turn",
+          "cosine": 0.7101
+        },
+        {
+          "pair": "柳公权>王羲之",
+          "kinds": "junction-turn",
+          "cosine": 0.846
+        },
+        {
+          "pair": "柳公权>米芾",
+          "kinds": "end-junction",
+          "cosine": 0.5983
+        },
+        {
+          "pair": "柳公权>米芾",
+          "kinds": "end-turn",
+          "cosine": 0.9051
+        },
+        {
+          "pair": "柳公权>米芾",
+          "kinds": "junction-turn",
+          "cosine": 0.7573
+        },
+        {
+          "pair": "柳公权>苏轼",
+          "kinds": "end-junction",
+          "cosine": 0.6485
+        },
+        {
+          "pair": "柳公权>苏轼",
+          "kinds": "end-turn",
+          "cosine": 0.8654
+        },
+        {
+          "pair": "柳公权>苏轼",
+          "kinds": "junction-turn",
+          "cosine": 0.8596
+        },
+        {
+          "pair": "柳公权>褚遂良",
+          "kinds": "end-junction",
+          "cosine": 0.2574
+        },
+        {
+          "pair": "柳公权>褚遂良",
+          "kinds": "end-turn",
+          "cosine": 0.4757
+        },
+        {
+          "pair": "柳公权>褚遂良",
+          "kinds": "junction-turn",
+          "cosine": 0.784
+        },
+        {
+          "pair": "柳公权>赵孟頫",
+          "kinds": "end-junction",
+          "cosine": 0.6247
+        },
+        {
+          "pair": "柳公权>赵孟頫",
+          "kinds": "end-turn",
+          "cosine": 0.9311
+        },
+        {
+          "pair": "柳公权>赵孟頫",
+          "kinds": "junction-turn",
+          "cosine": 0.7837
+        },
+        {
+          "pair": "柳公权>颜真卿",
+          "kinds": "end-junction",
+          "cosine": 0.6023
+        },
+        {
+          "pair": "柳公权>颜真卿",
+          "kinds": "end-turn",
+          "cosine": 0.83
+        },
+        {
+          "pair": "柳公权>颜真卿",
+          "kinds": "junction-turn",
+          "cosine": 0.8583
+        },
+        {
+          "pair": "欧阳询>王羲之",
+          "kinds": "end-junction",
+          "cosine": 0.1796
+        },
+        {
+          "pair": "欧阳询>王羲之",
+          "kinds": "end-turn",
+          "cosine": 0.1276
+        },
+        {
+          "pair": "欧阳询>王羲之",
+          "kinds": "junction-turn",
+          "cosine": 0.4775
+        },
+        {
+          "pair": "欧阳询>米芾",
+          "kinds": "end-junction",
+          "cosine": 0.4343
+        },
+        {
+          "pair": "欧阳询>米芾",
+          "kinds": "end-turn",
+          "cosine": 0.7608
+        },
+        {
+          "pair": "欧阳询>米芾",
+          "kinds": "junction-turn",
+          "cosine": 0.6563
+        },
+        {
+          "pair": "欧阳询>苏轼",
+          "kinds": "end-junction",
+          "cosine": 0.3671
+        },
+        {
+          "pair": "欧阳询>苏轼",
+          "kinds": "end-turn",
+          "cosine": 0.3119
+        },
+        {
+          "pair": "欧阳询>苏轼",
+          "kinds": "junction-turn",
+          "cosine": 0.5623
+        },
+        {
+          "pair": "欧阳询>褚遂良",
+          "kinds": "end-junction",
+          "cosine": 0.6799
+        },
+        {
+          "pair": "欧阳询>褚遂良",
+          "kinds": "end-turn",
+          "cosine": 0.9409
+        },
+        {
+          "pair": "欧阳询>褚遂良",
+          "kinds": "junction-turn",
+          "cosine": 0.783
+        },
+        {
+          "pair": "欧阳询>赵孟頫",
+          "kinds": "end-junction",
+          "cosine": 0.5717
+        },
+        {
+          "pair": "欧阳询>赵孟頫",
+          "kinds": "end-turn",
+          "cosine": 0.9195
+        },
+        {
+          "pair": "欧阳询>赵孟頫",
+          "kinds": "junction-turn",
+          "cosine": 0.7849
+        },
+        {
+          "pair": "欧阳询>颜真卿",
+          "kinds": "end-junction",
+          "cosine": 0.3164
+        },
+        {
+          "pair": "欧阳询>颜真卿",
+          "kinds": "end-turn",
+          "cosine": 0.3422
+        },
+        {
+          "pair": "欧阳询>颜真卿",
+          "kinds": "junction-turn",
+          "cosine": 0.5083
+        },
+        {
+          "pair": "王羲之>米芾",
+          "kinds": "end-junction",
+          "cosine": 0.2808
+        },
+        {
+          "pair": "王羲之>米芾",
+          "kinds": "end-turn",
+          "cosine": 0.6013
+        },
+        {
+          "pair": "王羲之>米芾",
+          "kinds": "junction-turn",
+          "cosine": 0.5218
+        },
+        {
+          "pair": "王羲之>苏轼",
+          "kinds": "end-junction",
+          "cosine": 0.1619
+        },
+        {
+          "pair": "王羲之>苏轼",
+          "kinds": "end-turn",
+          "cosine": 0.2844
+        },
+        {
+          "pair": "王羲之>苏轼",
+          "kinds": "junction-turn",
+          "cosine": 0.7035
+        },
+        {
+          "pair": "王羲之>褚遂良",
+          "kinds": "end-junction",
+          "cosine": 0.6
+        },
+        {
+          "pair": "王羲之>褚遂良",
+          "kinds": "end-turn",
+          "cosine": 0.766
+        },
+        {
+          "pair": "王羲之>褚遂良",
+          "kinds": "junction-turn",
+          "cosine": 0.8392
+        },
+        {
+          "pair": "王羲之>赵孟頫",
+          "kinds": "end-junction",
+          "cosine": 0.3551
+        },
+        {
+          "pair": "王羲之>赵孟頫",
+          "kinds": "end-turn",
+          "cosine": 0.6349
+        },
+        {
+          "pair": "王羲之>赵孟頫",
+          "kinds": "junction-turn",
+          "cosine": 0.698
+        },
+        {
+          "pair": "王羲之>颜真卿",
+          "kinds": "end-junction",
+          "cosine": 0.2003
+        },
+        {
+          "pair": "王羲之>颜真卿",
+          "kinds": "end-turn",
+          "cosine": 0.3704
+        },
+        {
+          "pair": "王羲之>颜真卿",
+          "kinds": "junction-turn",
+          "cosine": 0.4715
+        },
+        {
+          "pair": "米芾>苏轼",
+          "kinds": "end-junction",
+          "cosine": 0.384
+        },
+        {
+          "pair": "米芾>苏轼",
+          "kinds": "end-turn",
+          "cosine": 0.8554
+        },
+        {
+          "pair": "米芾>苏轼",
+          "kinds": "junction-turn",
+          "cosine": 0.4407
+        },
+        {
+          "pair": "米芾>褚遂良",
+          "kinds": "end-junction",
+          "cosine": 0.6113
+        },
+        {
+          "pair": "米芾>褚遂良",
+          "kinds": "end-turn",
+          "cosine": 0.8963
+        },
+        {
+          "pair": "米芾>褚遂良",
+          "kinds": "junction-turn",
+          "cosine": 0.7683
+        },
+        {
+          "pair": "米芾>赵孟頫",
+          "kinds": "end-junction",
+          "cosine": 0.1884
+        },
+        {
+          "pair": "米芾>赵孟頫",
+          "kinds": "end-turn",
+          "cosine": 0.3395
+        },
+        {
+          "pair": "米芾>赵孟頫",
+          "kinds": "junction-turn",
+          "cosine": 0.8979
+        },
+        {
+          "pair": "米芾>颜真卿",
+          "kinds": "end-junction",
+          "cosine": 0.4161
+        },
+        {
+          "pair": "米芾>颜真卿",
+          "kinds": "end-turn",
+          "cosine": 0.7635
+        },
+        {
+          "pair": "米芾>颜真卿",
+          "kinds": "junction-turn",
+          "cosine": 0.3257
+        },
+        {
+          "pair": "苏轼>褚遂良",
+          "kinds": "end-junction",
+          "cosine": 0.6657
+        },
+        {
+          "pair": "苏轼>褚遂良",
+          "kinds": "end-turn",
+          "cosine": 0.8747
+        },
+        {
+          "pair": "苏轼>褚遂良",
+          "kinds": "junction-turn",
+          "cosine": 0.8463
+        },
+        {
+          "pair": "苏轼>赵孟頫",
+          "kinds": "end-junction",
+          "cosine": 0.3787
+        },
+        {
+          "pair": "苏轼>赵孟頫",
+          "kinds": "end-turn",
+          "cosine": 0.699
+        },
+        {
+          "pair": "苏轼>赵孟頫",
+          "kinds": "junction-turn",
+          "cosine": 0.719
+        },
+        {
+          "pair": "苏轼>颜真卿",
+          "kinds": "end-junction",
+          "cosine": 0.3894
+        },
+        {
+          "pair": "苏轼>颜真卿",
+          "kinds": "end-turn",
+          "cosine": 0.6526
+        },
+        {
+          "pair": "苏轼>颜真卿",
+          "kinds": "junction-turn",
+          "cosine": 0.3106
+        },
+        {
+          "pair": "褚遂良>赵孟頫",
+          "kinds": "end-junction",
+          "cosine": 0.6494
+        },
+        {
+          "pair": "褚遂良>赵孟頫",
+          "kinds": "end-turn",
+          "cosine": 0.9439
+        },
+        {
+          "pair": "褚遂良>赵孟頫",
+          "kinds": "junction-turn",
+          "cosine": 0.7935
+        },
+        {
+          "pair": "褚遂良>颜真卿",
+          "kinds": "end-junction",
+          "cosine": 0.6147
+        },
+        {
+          "pair": "褚遂良>颜真卿",
+          "kinds": "end-turn",
+          "cosine": 0.8384
+        },
+        {
+          "pair": "褚遂良>颜真卿",
+          "kinds": "junction-turn",
+          "cosine": 0.8455
+        },
+        {
+          "pair": "赵孟頫>颜真卿",
+          "kinds": "end-junction",
+          "cosine": 0.3999
+        },
+        {
+          "pair": "赵孟頫>颜真卿",
+          "kinds": "end-turn",
+          "cosine": 0.7031
+        },
+        {
+          "pair": "赵孟頫>颜真卿",
+          "kinds": "junction-turn",
+          "cosine": 0.604
+        }
+      ]
+    },
+    "隶": {
+      "n_comparisons": 9,
+      "mean_cosine": 0.4303,
+      "frac_below_0.5": 0.7778,
+      "all": [
+        {
+          "pair": "何绍基>文徵明",
+          "kinds": "end-junction",
+          "cosine": 0.4106
+        },
+        {
+          "pair": "何绍基>文徵明",
+          "kinds": "end-turn",
+          "cosine": 0.399
+        },
+        {
+          "pair": "何绍基>文徵明",
+          "kinds": "junction-turn",
+          "cosine": 0.0644
+        },
+        {
+          "pair": "何绍基>赵孟頫",
+          "kinds": "end-junction",
+          "cosine": 0.2966
+        },
+        {
+          "pair": "何绍基>赵孟頫",
+          "kinds": "end-turn",
+          "cosine": 0.8053
+        },
+        {
+          "pair": "何绍基>赵孟頫",
+          "kinds": "junction-turn",
+          "cosine": 0.4126
+        },
+        {
+          "pair": "文徵明>赵孟頫",
+          "kinds": "end-junction",
+          "cosine": 0.3864
+        },
+        {
+          "pair": "文徵明>赵孟頫",
+          "kinds": "end-turn",
+          "cosine": 0.7484
+        },
+        {
+          "pair": "文徵明>赵孟頫",
+          "kinds": "junction-turn",
+          "cosine": 0.3491
+        }
+      ]
+    }
+  }
+}

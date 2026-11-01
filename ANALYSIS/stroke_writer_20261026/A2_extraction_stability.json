@@ -1,0 +1,98 @@
+{
+  "configs": {
+    "size256_thr0.50": {
+      "楷|end": 3.288,
+      "楷|junction": 3.094,
+      "楷|turn": 6.375,
+      "行|end": 12.906,
+      "行|junction": 3.577,
+      "行|turn": 5.062
+    },
+    "size256_thr0.35": {
+      "楷|end": 3.269,
+      "楷|junction": 3.044,
+      "楷|turn": 8.201,
+      "行|end": 13.035,
+      "行|junction": 3.83,
+      "行|turn": 6.173
+    },
+    "size256_thr0.65": {
+      "楷|end": 3.261,
+      "楷|junction": 3.057,
+      "楷|turn": 7.061,
+      "行|end": 12.842,
+      "行|junction": 3.932,
+      "行|turn": 5.395
+    },
+    "size192_thr0.50": {
+      "楷|end": 4.121,
+      "楷|junction": 3.281,
+      "楷|turn": 6.682,
+      "行|end": 14.26,
+      "行|junction": 7.965,
+      "行|turn": 6.966
+    },
+    "size320_thr0.50": {
+      "楷|end": 1.71,
+      "楷|junction": 2.613,
+      "楷|turn": 5.539,
+      "行|end": 11.174,
+      "行|junction": 4.415,
+      "行|turn": 3.999
+    },
+    "size256_budget8": {
+      "楷|end": 2.425,
+      "楷|junction": 4.008,
+      "楷|turn": 14.664,
+      "行|end": 3.356,
+      "行|junction": 3.688,
+      "行|turn": 8.037
+    },
+    "size256_budget24": {
+      "楷|end": 1.779,
+      "楷|junction": 3.051,
+      "楷|turn": 8.546,
+      "行|end": 7.149,
+      "行|junction": 3.811,
+      "行|turn": 4.57
+    }
+  },
+  "summary": {
+    "楷|end": {
+      "mean": 2.836,
+      "sd": 0.826,
+      "cv": 0.291,
+      "n_configs": 7
+    },
+    "楷|junction": {
+      "mean": 3.164,
+      "sd": 0.392,
+      "cv": 0.124,
+      "n_configs": 7
+    },
+    "楷|turn": {
+      "mean": 8.153,
+      "sd": 2.826,
+      "cv": 0.347,
+      "n_configs": 7
+    },
+    "行|end": {
+      "mean": 10.675,
+      "sd": 3.671,
+      "cv": 0.344,
+      "n_configs": 7
+    },
+    "行|junction": {
+      "mean": 4.46,
+      "sd": 1.452,
+      "cv": 0.326,
+      "n_configs": 7
+    },
+    "行|turn": {
+      "mean": 5.743,
+      "sd": 1.306,
+      "cv": 0.227,
+      "n_configs": 7
+    }
+  }
+}

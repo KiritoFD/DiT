@@ -1,0 +1,23 @@
+{
+  "checkpoint": "assets/u100_p1p2_20261025/p2_runs/20261025-152857-Unet-flow/checkpoints/0020000.pt",
+  "scale": 1.6,
+  "window": [
+    0.5,
+    1.0
+  ],
+  "seed": 0,
+  "n": 100,
+  "seconds": 17.16887974180281,
+  "solver_nfe": 100,
+  "network_calls": 1057,
+  "branch_sample_evals": 16912,
+  "equivalent_branch_nfe": 169.12,
+  "padding_counted": true,
+  "swap": false,
+  "png_shape": [
+    256,
+    256,
+    3
+  ],
+  "sampler": "native FlowMatching Heun50"
+}

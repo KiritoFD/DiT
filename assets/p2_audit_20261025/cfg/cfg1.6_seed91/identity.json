@@ -1,0 +1,43 @@
+{
+  "checkpoint": "assets/u100_p1p2_20261025/p2_runs/20261025-152857-Unet-flow/checkpoints/0020000.pt",
+  "checkpoint_sha256": "f40980d9d218861046a99818c67b82334e6d25a41fca6fe1f71885dfbf674f9b",
+  "state": "ema",
+  "eval_csv_sha256": "cacde46ee0309e973caa8417815a33aeb07e7a38b0cfa728d67f59fac6fdcefc",
+  "n": 100,
+  "sigma": 0.0,
+  "seed": 0,
+  "steps": 50,
+  "sampler": "native FlowMatching/Heun",
+  "time": "t:1->0; model t*1000",
+  "legal_writer_rows": {
+    "楷": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9
+    ],
+    "行": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9
+    ],
+    "隶": [
+      4,
+      7,
+      9
+    ]
+  }
+}

@@ -1,0 +1,194 @@
+{
+  "machine": "48",
+  "checked_at": "2026-10-27T00:48:56.117922+08:00",
+  "repo": "/home/ds/Workspace/DiT",
+  "plan": "assets/style_matrix_20261027/deep85_decoder/48_v2/plan.json",
+  "status": {
+    "state": "training",
+    "stage": 1,
+    "arm": "J0",
+    "stop": 5000
+  },
+  "runs": [
+    {
+      "arm": "J0",
+      "stop": 5000,
+      "last": {
+        "step": 450,
+        "fm": 0.05346014350652695,
+        "grad_norm": 0.324799120426178,
+        "clipped": false,
+        "step_s": 1.6157314872970125,
+        "lr": [
+          1.995480033579654e-05,
+          9.97740016789827e-06
+        ],
+        "peak_GiB": 18.263160705566406,
+        "auxiliary": {
+          "image_samples": 0,
+          "reconstruction_samples": 0
+        },
+        "decoder_grad_norm": 0.0
+      },
+      "interval_step_s": 1.752093383251781,
+      "interval_steps": [
+        150,
+        450
+      ],
+      "checkpoints": [],
+      "completion": null
+    },
+    {
+      "arm": "J1",
+      "stop": 5000,
+      "last": null,
+      "interval_step_s": null,
+      "interval_steps": null,
+      "checkpoints": [],
+      "completion": null
+    },
+    {
+      "arm": "J2",
+      "stop": 5000,
+      "last": {
+        "step": 50,
+        "fm": 0.05614040791988373,
+        "grad_norm": 0.31212127208709717,
+        "clipped": false,
+        "step_s": 0.20812685641037845,
+        "lr": [
+          3.4000000000000005e-06,
+          1.7000000000000002e-06
+        ],
+        "peak_GiB": 39.812111377716064,
+        "auxiliary": {
+          "image_samples": 16,
+          "reconstruction_samples": 16,
+          "image": {
+            "l1": 0.016855480149388313,
+            "lpips": 0.023440690711140633,
+            "edge": 0.008717636577785015
+          },
+          "reconstruction": {
+            "l1": 0.012489264830946922,
+            "lpips": 0.014326822012662888,
+            "edge": 0.00534448679536581
+          }
+        },
+        "decoder_grad_norm": 1.3162262439727783
+      },
+      "interval_step_s": null,
+      "interval_steps": null,
+      "checkpoints": [
+        {
+          "path": "assets/style_matrix_20261027/deep85_decoder/48_v2/execution/runs/J2/checkpoints/0000050.pt",
+          "bytes": 2616594013,
+          "zip_directory_valid": true,
+          "done": {
+            "sha256": "2962f1c8cbb46f2a4cdc63f6fa1ea34c5254ef412484ed93394820482019c0f0",
+            "size": 2616594013,
+            "step": 50,
+            "step_source": "train_steps",
+            "atomic": true
+          },
+          "done_size_matches": true
+        }
+      ],
+      "completion": {
+        "step": 50,
+        "requested": 50,
+        "stopped": false,
+        "checkpoint": "assets/style_matrix_20261027/deep85_decoder/48_v2/execution/runs/J2/checkpoints/0000050.pt",
+        "checkpoint_sha256": "2962f1c8cbb46f2a4cdc63f6fa1ea34c5254ef412484ed93394820482019c0f0",
+        "seconds": 244.00683223600208
+      }
+    }
+  ],
+  "archive_checkpoints": [
+    {
+      "path": "assets/results/unet_deep_sym4_114m_60m/20261019-011647-Unet-flow/checkpoints/0050000.pt",
+      "bytes": 1824546895,
+      "zip_directory_valid": true,
+      "done": {
+        "sha256": "ce2f0730e21074e0c0e027cd474b3eab8108c37c8827b68f49531fbbbfbdc470",
+        "size": 1824546895,
+        "step": 50000,
+        "step_source": "train_steps",
+        "atomic": true
+      },
+      "done_size_matches": true
+    },
+    {
+      "path": "assets/results/unet_deep_sym4_114m_60m/20261019-011647-Unet-flow/checkpoints/0075000.pt",
+      "bytes": 1824546895,
+      "zip_directory_valid": true,
+      "done": {
+        "sha256": "fcd8939b1c854f282532b01267c73332a9865b2fb988f1ffa7e70c53e3d14da0",
+        "size": 1824546895,
+        "step": 75000,
+        "step_source": "train_steps",
+        "atomic": true
+      },
+      "done_size_matches": true
+    },
+    {
+      "path": "assets/results/unet_deep_sym4_114m_60m/20261019-011647-Unet-flow/checkpoints/0085000.pt",
+      "bytes": 1824546895,
+      "zip_directory_valid": true,
+      "done": {
+        "sha256": "f80304d7de17f334ebf57dfda312988dbd5e994a18f68e6d36f8cb30d5696349",
+        "size": 1824546895,
+        "step": 85000,
+        "step_source": "train_steps",
+        "atomic": true
+      },
+      "done_size_matches": true
+    },
+    {
+      "path": "assets/results/unet_connectivity_100000/baseline_resume/20261018-030921-Unet-flow/checkpoints/0055000.pt",
+      "bytes": 1153743591,
+      "zip_directory_valid": true,
+      "done": {
+        "sha256": "bff3b5cd9db8888fa1fc6fcb55472a9378afc402d2be1125ce4979bc6d0cfc5f",
+        "size": 1153743591,
+        "step": 55000,
+        "step_source": "train_steps",
+        "atomic": true
+      },
+      "done_size_matches": true
+    },
+    {
+      "path": "assets/results/qwen_cond_arm_a/20261025-033733-Unet-flow/checkpoints/0090000.pt",
+      "bytes": 1824547279,
+      "zip_directory_valid": true,
+      "done": {
+        "sha256": "1cff243a51e854e5467b5390bceab3eac9825274d2dc98180cfd470887840a44",
+        "size": 1824547279,
+        "step": 90000,
+        "step_source": "train_steps",
+        "atomic": true
+      },
+      "done_size_matches": true
+    },
+    {
+      "path": "assets/results/qwen_cond_arm_c/20261025-042652-Unet-flow/checkpoints/0090000.pt",
+      "bytes": 1824556559,
+      "zip_directory_valid": true,
+      "done": {
+        "sha256": "88a62e21de4d240a0e016e0730e469c620d5ceccf36c9635c26b152d80eabb10",
+        "size": 1824556559,
+        "step": 90000,
+        "step_source": "train_steps",
+        "atomic": true
+      },
+      "done_size_matches": true
+    },
+    {
+      "path": "assets/u100_p1p2_20261025/p1_runs/20261025-113332-Unet-flow/checkpoints/0010000.pt",
+      "bytes": 1323630592,
+      "zip_directory_valid": false
+    }
+  ],
+  "gpu": "20543 MiB, 98 %",
+  "integrity_scope": "ZIP directory and completed-manifest size; SHA values recorded, not rehashed in this status scan"
+}

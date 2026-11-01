@@ -1,0 +1,33 @@
+{
+  "state": "complete",
+  "finished": "2026-10-26 04:28:47",
+  "n_matched": 100,
+  "n_characters": 98,
+  "actual_style_checkpoint_sha256": "6da6a38511a289a8b906178eca022af858013e59a60e524f40f6f147e2dbcaca",
+  "validated_artifacts": {
+    "results.json": "ad2b1d42224d7294de3d35a569cf7c656f5dfdad679999ef480973edda9f17d6",
+    "writer_direction.json": "73696b192f821c361d6c062486259502ef18af206c81d753ad6cc677f42d6186",
+    "dino_recomputed.json": "b0b5b6c684d84556cb00a6c7c2a35ead8c27cd755353acbf1bc61370d6d04f88",
+    "Deep114_native_identity.json": "7c22e3f6c158ce0f35c458989637547b6475167f8adff87730638f82684b6b5b",
+    "Deep114_native_training_overlap.json": "c14da3e29daa67a56e718b2b2bea671d8daf895e4f7325520c9e9bdfedecbecd",
+    "gradient/results.json": "bb77dd1ae70ab5956c0a25ebcf882ba313b533aff3a58fc50dd74789a552492e",
+    "matched_examples.png": "4a251ee1f7f5514cf0514f9bbbdf72163e18d586d0f71bfca642c37994582151",
+    "GT_overlap_control.png": "b3fa910e8404aec8f0265ba39e1cbed59f9da184cc1c982c9af09b22540c4dba",
+    "matched_pca_楷.png": "cd8a076541f55abd62939dab44001ce094aa2932aefb1eb8995d2502cf6ff799",
+    "matched_pca_行.png": "96f5efaadefa4d9dc8c6032fa977bc51caf24f267ba17f7716c1d32e5bb6706b",
+    "heldout_vae_roundtrip.json": "178c93306471dfdce864c60ebdf678b4d05a821415e03e4bdfdde75786adf464"
+  },
+  "no_generator_training": true,
+  "old_R_processes_suspended": [
+    474127,
+    474191
+  ],
+  "old_4090_equal_exposure_queue_kept": true,
+  "source_code_sha256": {
+    "tools/style_space_audit/run.py": "b81be1b2007f5549296787facdb921f31727fb1f6698526748105e8b2c16d94d",
+    "tools/style_space_audit/gradient.py": "f736d211682f6d2b7d702a9fa60b7081989bbf4bb8efbea8a470e110dec2384a",
+    "tools/style_space_audit/analysis.py": "dbedb04990b2e89441a06e05be2e998cc7456e2baf4717f1a4a9410c3e229c6f",
+    "tools/style_space_audit/features.py": "1d4dd6954a3f41aa0147fe80a2ebf0ed2d019a1760dfee9bf636a4e7c3766002",
+    "tools/style_space_audit/data.py": "75b2a5266711351521a6a1cd70d534b56e70e19724d4a62682b1bda127cbf3d2"
+  }
+}

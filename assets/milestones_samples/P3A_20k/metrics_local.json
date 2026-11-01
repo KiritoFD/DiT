@@ -1,0 +1,90 @@
+{
+ "dir": "assets/milestones_samples/P3A_20k",
+ "n_ocr": 10,
+ "ocr_top1": 70.0,
+ "ocr_top5": 90.0,
+ "n_ssim": 10,
+ "ssim_g_gt_mean": 0.6613,
+ "rows": [
+  {
+   "idx": 0,
+   "char": "用",
+   "pred": "用",
+   "top1": 1,
+   "top5": 1,
+   "ssim": 0.6345
+  },
+  {
+   "idx": 10,
+   "char": "兀",
+   "pred": "兀",
+   "top1": 1,
+   "top5": 1,
+   "ssim": 0.7674
+  },
+  {
+   "idx": 20,
+   "char": "速",
+   "pred": "速",
+   "top1": 1,
+   "top5": 1,
+   "ssim": 0.6012
+  },
+  {
+   "idx": 30,
+   "char": "聲",
+   "pred": "聲",
+   "top1": 1,
+   "top5": 1,
+   "ssim": 0.6328
+  },
+  {
+   "idx": 40,
+   "char": "薪",
+   "pred": "薪",
+   "top1": 1,
+   "top5": 1,
+   "ssim": 0.6121
+  },
+  {
+   "idx": 50,
+   "char": "朽",
+   "pred": "竹",
+   "top1": 0,
+   "top5": 1,
+   "ssim": 0.7013
+  },
+  {
+   "idx": 60,
+   "char": "与",
+   "pred": "羲",
+   "top1": 0,
+   "top5": 0,
+   "ssim": 0.6175
+  },
+  {
+   "idx": 70,
+   "char": "地",
+   "pred": "地",
+   "top1": 1,
+   "top5": 1,
+   "ssim": 0.7409
+  },
+  {
+   "idx": 80,
+   "char": "兼",
+   "pred": "兼",
+   "top1": 1,
+   "top5": 1,
+   "ssim": 0.7816
+  },
+  {
+   "idx": 90,
+   "char": "極",
+   "pred": "极",
+   "top1": 0,
+   "top5": 1,
+   "ssim": 0.5239
+  }
+ ]
+}

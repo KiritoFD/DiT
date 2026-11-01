@@ -7,6 +7,7 @@ sets with explicit STD sigma per set. Used after pretraining/FT for eval200fix
 import argparse
 import csv
 import json
+import math
 from dataclasses import replace
 from pathlib import Path
 import sys
@@ -41,16 +42,36 @@ def load_legacy_ema_verified(path):
 
 
 def rewrite(src, dst):
-    rows = list(csv.DictReader(Path(src).open(encoding='utf-8-sig')))
+    with Path(src).open(encoding='utf-8-sig') as f:
+        rows = list(csv.DictReader(f))
+    ids={int(r['calligrapher_id']) for r in rows}
+    if ids <= set(TOP10_RAW):space='raw'
+    elif ids <= set(TOP10_RAW.values()):space='row'
+    else:raise ValueError(f'Mixed/unknown writer label spaces in {src}: {sorted(ids)}')
+    inverse={v:k for k,v in TOP10_RAW.items()}
     for r in rows:
         raw = int(r['calligrapher_id'])
-        if raw in TOP10_RAW.values(): continue   # already remapped
-        if raw not in TOP10_RAW: raise ValueError(f'writer {raw} outside Top10 in {src}')
-        r['calligrapher_id'] = str(TOP10_RAW[raw])
+        slot=TOP10_RAW[raw] if space=='raw' else raw
+        r['raw_writer_id']=str(raw if space=='raw' else inverse[slot])
+        r['writer_row']=str(slot);r['writer_label_space']='top10_row'
+        r['calligrapher_id']=str(slot)
     with Path(dst).open('w', encoding='utf-8', newline='') as f:
         writer = csv.DictWriter(f, fieldnames=list(rows[0].keys()))
         writer.writeheader(); writer.writerows(rows)
     return dst
+
+
+def extract_metrics(metrics, directory, step, expected_n):
+    """Unified evaluator returns a set-keyed dict; skipped sets reload completed metrics."""
+    candidate=metrics.get('eval200fix',metrics)
+    if not candidate or 'ssim' not in candidate:
+        path=Path(directory)/'eval_samples_ctrl'/f'step{step:07d}'/'eval200fix'/'metrics.json'
+        candidate=json.loads(path.read_text())
+    for key in ('ssim','lpips','ink_iou','n'):
+        if key not in candidate or not math.isfinite(float(candidate[key])):
+            raise ValueError('Missing/nonfinite completed metric: '+key)
+    if int(candidate['n'])!=expected_n:raise ValueError('Completed evaluation sample count changed')
+    return candidate
 
 
 def extend_char_remap(config, sets, out):
@@ -115,8 +136,8 @@ def main():
                       char_remap_json=char_remap)
         with torch.inference_mode():
             metrics = evaluate(model, cfg, int(ck['train_steps']), out / name)
-        results[name] = {k: (float(v) if isinstance(v, (int, float)) else v)
-                         for k, v in metrics.items() if isinstance(v, (int, float))}
+        with open(csv_path,encoding='utf-8-sig') as f:expected_n=len(list(csv.DictReader(f)))
+        results[name]=extract_metrics(metrics,out/name,int(ck['train_steps']),expected_n)
         print('EVAL_DONE', name, json.dumps(results[name]), flush=True)
     (out / 'offline_eval.json').write_text(json.dumps(
         dict(checkpoint=args.checkpoint, step=int(ck['train_steps']),

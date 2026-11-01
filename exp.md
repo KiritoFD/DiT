@@ -14,13 +14,49 @@
 J3从实际P2 EMA及配对GT标定初始Image梯度为FM的10%，真实两步保存恢复、Decoder raw/EMA/优化器状态与独立VAE导出加载已核对；只做预检，不形成质量实验。
 路径两端`assets/style_matrix_20261026/plan_final/`；S=10k→29k→43.5k、J=4k→11.5k→19k，模型分配/源权重与CSV哈希/spec/阶段任务入计划。默认dry、ready未封存；自然墙钟预测63.95h含8h余量。正式长训、测试集生成和风格比较均未进行。
 
-
 ## 2026-10-26 最新：S/J风格表征与注入消融（实现、容量短测，未正式训练）
 
 [设定/每步状态/数据路径/原始JSON](ANALYSIS/style_repr_injection_matrix_20261026/README.md) · [代码入口](tools/style_matrix/README.md)。S0–S8+S2-large从P1@10k EMA比较表征/注入；J0–J3从P2@20k EMA独立比较冻结/训练Decoder及有/无生成图像loss。R4与旧20格长训不执行。
 有效B512、无检查点重计算；batch以安全吞吐最快为准。两端4类搜索完成；4090真实缓存短测1.0328step/s、reserved20.379GiB。J3容量测试0.4285step/s、46.145GiB，梯度连通而显存配置未定型。所有这些均为短测，无新质量指标/生成海报；正式步数和64h总ETA未锁定。
 实现包含唯一Writer路由、累积、顺序反向、两类参数独立裁剪、Decoder raw/EMA保存；严格累积、真实J配对、联合loss校准、完整恢复/成套评测、鲁棒串行仍需完成。
 
+## 2026-10-26：修正版T2与Decoder-only V0/V1（实施并排队）
+
+4090根 `assets/decoder_only_20261026/`；[完整设定、路径和验收](tools/vae/decoder_only/README.md)。旧三日调度已检查停止。
+T0/T1既有2.5k/5k只补评，产物 `assets/t_eval/`；T2修正 noisy latent、t×1000、重复条件dropout、温度饱和，错误分支stop-gradient。实模同writer MSE对拍和backward通过后，从P2@20k EMA重跑5k，B256，tau .5，weight .1，保存2.5k/5k。旧T2结果作废，且不与B512 T0/T1宣称曝光相等。
+V0/V1独立从`sd-vae-ft-ema`分叉，各2500步，B8×4、LR1e-5、L1+LPIPS(VGG)，1250/2500保存。V1额外多尺度Sobel、全Decoder梯度范数比上限20%。编码侧完全冻结并检查逐位相等，P2/原VAE不改写。
+固定原P2 CFG1的100目标latent，逐图解码三版本，GT重建与生成分别验收，另列未见字符/组合子集。结果未完成，不能宣布提升。
+48 R2在修正尺度/极性后连接比约1.09，旧7倍伪分支结论撤回；R1–R4继续拆因，不等待4090。
+
+## 2026-10-26：同一Style Disc空间审计（完成，无生成器训练）
+
+权重`assets/style_disc_ce_holdout.pt`（ResNet18，26个Writer×Script/STD槽位）；48产物`assets/style_space_audit_20261026/`。[报告](ANALYSIS/style_space_audit_20261026/README.md) · [指标](ANALYSIS/style_space_audit_20261026/metrics/results.json) · [固定目标图](ANALYSIS/style_space_audit_20261026/figures/samples/matched_examples.png)。
+完成100目标GT/VAE/Deep双STD/P2 CFG1&1.6/Qwen配对、全量来源/留字审计、白底及墨量控制、63对Writer-swap方向和20字冻结梯度pilot。高训练来源ARI可复现，来源泛化不均匀；自身梯度涨分未迁移到Pixel D1/D2，不据此接新Style Loss。详见报告的数量/身份/偏差限制。
+
+## 2026-10-25：P2内容巩固 strong vs mild（4090，在训）
+
+共同起点：P2@20k EMA `assets/u100_p1p2_20261025/p2_runs/20261025-152857-Unet-flow/checkpoints/0020000.pt`。
+根目录：4090 `assets/p2_std_consolidation_20261025/`；配置`A_strong.json`/`B_mild.json`，实际训练目录在各臂`runs/`下。
+两个独立5k阶段、114M/B512、LR5e-6/条件2e-5、warmup100/cosine5k/min.1、配对152/512、seed90；原数据/VAE/FM/dropout不变。
+仅训练STD增强strong vs mild不同；增强时钟offset20k，两组新优化器/EMA时钟，从同一334张量严格拷贝的EMA开始。
+2.5k/5k保存和统一val100：EMA/CFG1/Heun50/STD sigma0；最终复用PNG评估笔宽/内容proxy并输出全部100图海报。
+同数据采样首1024索引SHA256已核验一致，记录`pair_contract.json`；不宣称完整数值轨迹逐位一致。
+并行CPU方向审计已完成：`direction/results.json`及`direction_train_only/results.json`；39/120组合、84张GT、10个共享字书体组。
+墨量/P50方向一致87.3%/70.0%；少量真实粗细差异被放大，不等于完全错误方向。模型训练结果待完成后验收。
+详设、统计和可视化：`ANALYSIS/p2_std_consolidation_20261025.md`。
+
+## 2026-10-25：P2固定EMA的条件利用及CFG审计（4090）
+
+配置：P2@20k EMA，val100固定噪声，STD bbox64 sigma0，原生FM Heun50，Writer CFG 1/1.2/1.4/1.6；
+正确/同书体合法错误/null FM，t=.05至.95十桶。100图98字符，无全局未见字符，68图为未见书家×书体×字符组合。
+ckpt：`assets/u100_p1p2_20261025/p2_runs/20261025-152857-Unet-flow/checkpoints/0020000.pt`。
+结果根：4090 `/root/Workspace/xy/DiT/assets/p2_audit_20261025/`；原生sigma0基线`.592304/.349359/.280905/Frag2.303146`。
+`fm/summary.json`存分桶配对CI；`cfg/comparison.json`存同口径PNG指标；`cfg/*/identity.json`存权重/CSV哈希；
+`cfg/comparison_page*.png`为全部100图分页对照，`cfg/swap/`为合法书体组合反事实图。
+已修旧probe二次除255错误，新probe另存，旧风格分数不再用于验收。三seed/时间窗/120张swap/墨量控制已完成。
+CFG1→1.6三seed平均LPIPS .349015→.346177、IoU .280953→.289914、probe28.33%→39.67%；GT probe仅24%，不可靠。
+风格教师门槛未通过，不启动蒸馏；P2权重不变。全部100图五页已实际读图并拉回本地。
+细节及修复回归：`ANALYSIS/p2_execution_20261025.md`。
 
 ## 2026-10-25：P1/P2 writer-aware 混合训练验收（假设成立，路线锁定）
 

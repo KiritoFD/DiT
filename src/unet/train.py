@@ -240,6 +240,11 @@ def main():
             transform=reference
             bind_evaluation(raw,config,reference.bank)
             bind_evaluation(ema,config,reference.bank)
+    study=None
+    if config.study_spec:
+        from .study.runtime import StudyRuntime
+        study=StudyRuntime(config,run,transform,raw,log)
+        transform=study.transform
     from src.train.ema import update_ema
     update_ema(ema,raw,decay=1.)  # Validate/cache full pairing before any optimizer step.
     log.info('EMA paired=%d/%d parameters; start_step=%d',len(ema._ema_pairs[0]),len(list(raw.parameters())),config.ema_start_step)
@@ -263,7 +268,8 @@ def main():
         log_steps=0,running_loss=zero(),running_diff=zero(),running_repa=zero(),
         running_skel=zero(),running_std_mid=zero(),start_time=__import__('time').time(),
         trainable_params_list=list(raw.parameters()),condition_transform=transform,
-        auxiliary_objective=reference.loss if reference else None)
+        auxiliary_objective=reference.loss if reference else None,
+        objective_adapter=study)
     log.info('RUN=%s params=%d batch=%d max_steps=%d stop_at=%d shared=TrainState/training_loop',
         run,sum(p.numel() for p in raw.parameters()),config.batch,config.max_steps,limit)
     try:

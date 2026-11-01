@@ -1,4 +1,17 @@
-"""J0--J4: sequential image backward, preserving the frozen latent interface."""
+"""J0--J4: sequential image backward, preserving the frozen latent interface.
+
+`GAR` is the decoder-only post-training arm: the whole generator stays frozen at K
+(CFG untouched, K deployed at cfg=1.0), only the VAE decoder trains, and the image
+objective is the GAR texture objective (MSE + LPIPS/DINO perceptual + Gram, no edge).
+
+`GARU` is the SAME objective with the generator unfrozen as well. It exists to test the
+one hypothesis the D-arm results could not: D2/D3 were joint arms, but they never
+started from K (the style branch was randomly initialised, see docs/d_results.md), so
+"joint training hurts the writer" was never actually measured. GARU keeps the GAR
+objective and the decoder in the loop, and adds a real gradient path into the generator.
+It is NOT decoder-only: the frozen-K audit does not apply, and acceptance must be by
+paired comparison against K (see docs/1031/GAR_DECODER.md section on GARU).
+"""
 import copy
 import hashlib
 from pathlib import Path
@@ -35,14 +48,22 @@ class JointDecoderObjective:
     def __init__(self,arm,config,image_micro=16,image_batch=16,img_weight=.1,rec_weight=1.):
         from diffusers import AutoencoderKL
         import lpips
-        if arm not in ('J0','J1','J2','J3','J4','G2J4','G2J5','G2J6','G2J7'):raise ValueError(arm)
-        self.arm=arm;self.image=arm in ('J1','J3','J4');self.reconstruction=arm in ('J2','J3')
+        if arm not in ('J0','J1','J2','J3','J4','G2J4','G2J5','G2J6','G2J7','GAR','GARU'):raise ValueError(arm)
+        self.arm=arm;self.image=arm in ('J1','J3','J4','GAR','GARU');self.reconstruction=arm in ('J2','J3')
         # J4 is the decomposition control for J3: decoder trains on generated
         # latents through the image branch only, with no GT reconstruction anchor.
-        self.train_decoder=arm in ('J3','J4')
-        self.detach_image=arm in ('G2J4','G2J5','G2J6')
+        self.train_decoder=arm in ('J3','J4','GAR','GARU')
+        # `detach_image` drops the generator's gradient. It must be False exactly when
+        # the generator is being trained (`GARU`), and True for every decoder-only arm
+        # (whose generator is frozen anyway, so the graph would be pure waste).
+        self.detach_image=arm in ('G2J4','G2J5','G2J6','GAR')
+        self.train_generator=arm=='GARU'
         if arm.startswith('G2'):
             self.image=True;self.reconstruction=False;self.train_decoder=True
+        self.gar=None
+        if arm in ('GAR','GARU'):
+            from .gar import GARLoss
+            self.gar=GARLoss('cuda')
         self.sf=config.vae_scaling_factor;self.shift=config.vae_shift_factor
         self.seed=config.seed;self.micro=image_micro;self.count=image_batch
         self.img_weight=float(img_weight);self.rec_weight=float(rec_weight)
@@ -53,7 +74,7 @@ class JointDecoderObjective:
             self.vae.decoder=ConditionedDecoder(self.vae.decoder,config.num_writers,config.num_scripts,
                                                 spatial=arm in ('G2J6','G2J7')).cuda()
         if self.train_decoder:self.vae.decoder.train()
-        self.perceptual=lpips.LPIPS(net='alex',verbose=False).cuda().eval().requires_grad_(False)
+        self.perceptual=None if self.gar is not None else lpips.LPIPS(net='alex',verbose=False).cuda().eval().requires_grad_(False)
         self.decoder_ema=copy.deepcopy(self.vae.decoder).eval().requires_grad_(False) if self.train_decoder else None
         assert not any(getattr(m,'gradient_checkpointing',False) for m in self.vae.modules())
         assert all(n.startswith('decoder.') for n,p in self.vae.named_parameters() if p.requires_grad)
@@ -67,6 +88,10 @@ class JointDecoderObjective:
         return self.vae.decode(z.float()/self.sf+self.shift).sample
 
     def image_loss(self,pred,target):
+        if self.gar is not None:
+            # GARLoss lives in [0,1] RGB; both the decoder output and the GT reader
+            # work in [-1,1], so map each side once here.
+            return self.gar(pred*.5+.5,target*.5+.5)
         l1=F.l1_loss(pred,target);perceptual=self.perceptual(pred,target).mean();edge=edge_loss(pred,target)
         return l1+.1*perceptual+.1*edge,dict(l1=float(l1.detach()),lpips=float(perceptual.detach()),edge=float(edge.detach()))
 
@@ -95,7 +120,15 @@ class JointDecoderObjective:
                 part=slice(begin,begin+self.micro);selected=ids[part];weight=len(selected)/n
                 if self.image:
                     t=tt[part];zt=z[selected]*(1-t[:,None,None,None])+eps[part]*t[:,None,None,None]
-                    with torch.autocast('cuda',dtype=torch.bfloat16):
+                    # `train_generator` is False for every decoder-only arm: the
+                    # single-step Euler latent is then produced with no graph at all,
+                    # so no gradient can reach K even incidentally. It is True for the
+                    # unfrozen arm, where the GAR signal must flow back into the
+                    # generator (that is the entire point of that arm).
+                    # autocast is kept in BOTH cases -- without it the generator would
+                    # silently run in fp32 (measured 0.24 -> 0.09 it/s).
+                    ctx=torch.enable_grad() if self.train_generator else torch.no_grad()
+                    with torch.autocast('cuda',dtype=torch.bfloat16), ctx:
                         velocity=model(zt,t*1000.,w[selected],g=g[selected],y_script=s[selected],condition_dropped=True)
                     zhat=zt-t[:,None,None,None]*velocity.float()
                     if self.detach_image:zhat=zhat.detach()

@@ -1,0 +1,55 @@
+{
+  "ckpt": "assets/style_24h_20261026/ablations/T1/20261026-095423-Unet-flow/checkpoints/0005000.pt",
+  "n_chars_gt": 40,
+  "n_chars_gen": 40,
+  "by_kind": {
+    "end": {
+      "n_pairs": 1200,
+      "mean_cosine": 0.1752,
+      "frac_positive": 0.6233,
+      "median_magnitude_ratio": 0.5405
+    },
+    "junction": {
+      "n_pairs": 1200,
+      "mean_cosine": 0.2584,
+      "frac_positive": 0.6442,
+      "median_magnitude_ratio": 0.7584
+    },
+    "turn": {
+      "n_pairs": 1178,
+      "mean_cosine": 0.1998,
+      "frac_positive": 0.6036,
+      "median_magnitude_ratio": 0.8661
+    }
+  },
+  "per_feature": {
+    "end": {
+      "asym_ud": 0.5458,
+      "asym_lr": 0.5183,
+      "grad_mag": 0.5958,
+      "end_area": 0.5501,
+      "end_elong": 0.5509,
+      "mass": 0.6425,
+      "ink_frac": 0.6442
+    },
+    "junction": {
+      "asym_ud": 0.5671,
+      "asym_lr": 0.5391,
+      "grad_mag": 0.6715,
+      "turn_angle": 0.6258,
+      "n_branches": 0.4283,
+      "orient_peak": 0.4736,
+      "mass": 0.6523,
+      "ink_frac": 0.6317
+    },
+    "turn": {
+      "asym_ud": 0.5042,
+      "asym_lr": 0.4924,
+      "grad_mag": 0.5739,
+      "turn_angle": 0.5289,
+      "orient_peak": 0.4737,
+      "mass": 0.6019,
+      "ink_frac": 0.5993
+    }
+  }
+}

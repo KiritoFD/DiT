@@ -1,0 +1,35 @@
+{
+  "status": "completed_no_distillation",
+  "completed": [
+    "cfg1.0_score",
+    "cfg1.2_score",
+    "cfg1.4_score",
+    "cfg1.6_score",
+    "cfg1.0_seed90_generate",
+    "cfg1.0_seed90_score",
+    "cfg1.6_seed90_generate",
+    "cfg1.6_seed90_score",
+    "cfg1.0_seed91_generate",
+    "cfg1.0_seed91_score",
+    "cfg1.6_seed91_generate",
+    "cfg1.6_seed91_score",
+    "cfg1.6_window0.0-0.5_generate",
+    "cfg1.6_window0.0-0.5_score",
+    "cfg1.6_window0.5-1.0_generate",
+    "cfg1.6_window0.5-1.0_score",
+    "swap_generate",
+    "swap_score"
+  ],
+  "current": "swap_score",
+  "command": [
+    "/opt/conda/envs/cu121/bin/python",
+    "-u",
+    "-m",
+    "tools.p2_audit.score",
+    "--run",
+    "assets/p2_audit_20261025/cfg/swap"
+  ],
+  "candidate": "cfg1.6",
+  "distillation_started": false,
+  "reason": "GT probe 24%, VAE roundtrip GT 32%; genuine style benefit not established after ink controls and visual review"
+}

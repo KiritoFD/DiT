@@ -1,0 +1,144 @@
+{
+  "checkpoint": "assets/style_disc_ce_holdout.pt",
+  "sha256": "6da6a38511a289a8b906178eca022af858013e59a60e524f40f6f147e2dbcaca",
+  "architecture": "ResNet18 -> Linear512/256 -> L2 embedding; CE classification used unnormalized pre-embedding",
+  "n_classes": 26,
+  "slots": [
+    [
+      "何绍基",
+      "楷"
+    ],
+    [
+      "何绍基",
+      "行"
+    ],
+    [
+      "何绍基",
+      "隶"
+    ],
+    [
+      "文徵明",
+      "楷"
+    ],
+    [
+      "文徵明",
+      "行"
+    ],
+    [
+      "文徵明",
+      "隶"
+    ],
+    [
+      "柳公权",
+      "楷"
+    ],
+    [
+      "柳公权",
+      "行"
+    ],
+    [
+      "欧阳询",
+      "楷"
+    ],
+    [
+      "欧阳询",
+      "行"
+    ],
+    [
+      "王羲之",
+      "楷"
+    ],
+    [
+      "王羲之",
+      "行"
+    ],
+    [
+      "米芾",
+      "楷"
+    ],
+    [
+      "米芾",
+      "行"
+    ],
+    [
+      "苏轼",
+      "楷"
+    ],
+    [
+      "苏轼",
+      "行"
+    ],
+    [
+      "褚遂良",
+      "楷"
+    ],
+    [
+      "褚遂良",
+      "行"
+    ],
+    [
+      "赵孟頫",
+      "楷"
+    ],
+    [
+      "赵孟頫",
+      "行"
+    ],
+    [
+      "赵孟頫",
+      "隶"
+    ],
+    [
+      "颜真卿",
+      "楷"
+    ],
+    [
+      "颜真卿",
+      "行"
+    ],
+    [
+      "std·楷",
+      "楷"
+    ],
+    [
+      "std·行",
+      "行"
+    ],
+    [
+      "std·隶",
+      "隶"
+    ]
+  ],
+  "saved_train_accuracy": 1.0,
+  "saved_holdout_accuracy": 0.37741808132649035,
+  "holdout_works": [
+    "bei/柳公权-行",
+    "bei/欧阳询-楷",
+    "bei/赵孟頫-楷",
+    "calligrapher_dataset/文徵明",
+    "calligrapher_dataset/柳公权",
+    "calligrapher_dataset/欧阳询",
+    "tie/欧阳询-行",
+    "tie/王羲之-行",
+    "tie/苏轼-楷",
+    "tie/赵孟頫-隶",
+    "tie/颜真卿-行",
+    "wild/欧阳询-楷",
+    "wild/苏轼-楷",
+    "wild/苏轼-行",
+    "wild/颜真卿-行",
+    "wild_extract/文征明-行",
+    "wild_extract/柳公权-楷",
+    "wild_extract/苏轼-楷",
+    "wild_extract/赵孟頫-楷",
+    "wild_extract/赵孟頫-隶"
+  ],
+  "original_GT_sampling": {
+    "n": 2626,
+    "n_source_heldout": 260
+  },
+  "pca_original": "ARI on full 256D for GT; comparison PCA mixed GT+generated; Qwen ARI/NMI hardcoded, not computed",
+  "overlap_evidence": "Reconstructed from saved holdout_works and available original CSV; checkpoint did not save input hashes or exact training image IDs",
+  "work_caveat": "work_id is a source-directory proxy, not verified artwork identity",
+  "current_csv_sha256": "3264e89623fb7073dc440b2269cce5464298428d4035aaa0d8c6fc1f40506fb8"
+}

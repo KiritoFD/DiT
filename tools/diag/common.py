@@ -158,7 +158,19 @@ def null_writer(model):
 
 
 # ---------------------------------------------------------------- OCR (CPU)
-_OCR_VOCAB = '/root/.cache/modelscope/models/iic--cv_convnextTiny_ocr-recognition-handwritten_damo/snapshots/master/vocab.txt'
+# Prefer the in-repo copy so Windows and remote hosts resolve the same vocabulary.
+_OCR_VOCAB_CANDIDATES = [
+    'assets/metrics_index/ocr/vocab.txt',
+    '/root/.cache/modelscope/models/iic--cv_convnextTiny_ocr-recognition-handwritten_damo/snapshots/master/vocab.txt',
+]
+
+
+def _ocr_vocab_path():
+    from pathlib import Path
+    for p in _OCR_VOCAB_CANDIDATES:
+        if Path(p).is_file():
+            return p
+    raise FileNotFoundError(f'OCR vocab not found in {_OCR_VOCAB_CANDIDATES}')
 
 
 def ocr_setup(device='cpu'):
@@ -167,7 +179,7 @@ def ocr_setup(device='cpu'):
     sys.path.insert(0, '.')
     torch.set_grad_enabled(False)
     ck = torch.load('assets/p125_20261030/ocr/duguang_ft_ext.pt', map_location='cpu', weights_only=False)
-    vocab = [l.strip() for l in open(_OCR_VOCAB, encoding='utf-8')]
+    vocab = [l.strip() for l in open(_ocr_vocab_path(), encoding='utf-8')]
     char2idx = {c: i + 1 for i, c in enumerate(vocab)}
     from tools.p125.duguang_model import DuguangOCR
     net = DuguangOCR(vocab_size=len(vocab) + 1)

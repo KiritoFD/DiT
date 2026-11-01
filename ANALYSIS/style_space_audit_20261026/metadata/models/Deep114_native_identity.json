@@ -1,0 +1,29 @@
+{
+  "checkpoint": "assets/results/unet_deep_sym4_114m_60m/20261019-011647-Unet-flow/checkpoints/0085000.pt",
+  "sha256": "f80304d7de17f334ebf57dfda312988dbd5e994a18f68e6d36f8cb30d5696349",
+  "ema": {
+    "differing_tensors": 334,
+    "total_tensors": 334,
+    "note": "legacy EMA verified: strict load, majority-differ from raw, finite"
+  },
+  "writer_rows": {
+    "53": 0,
+    "365": 1,
+    "461": 2,
+    "479": 3,
+    "601": 4,
+    "672": 5,
+    "703": 6,
+    "760": 7,
+    "956": 8,
+    "9001": 9
+  },
+  "cfg": 1,
+  "steps": 50,
+  "seed": "exact exported P2 per-image noise",
+  "STD": {
+    "mode": "native",
+    "root": "exp-std/data/std_soft_glyphs_v1",
+    "sigma": 0.65
+  }
+}

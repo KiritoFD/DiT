@@ -2,6 +2,140 @@
 
 # 训练进度
 
+2026-11-01 22:34（**GARL 4h 长跑启动 + GARU 解冻臂实现完成**，4090 tmux `garl`）：
+按用户 12h 预算「先让 GAR 跑 4h，中间 eval 观测，同时做好解冻实现」。
+
+**(a) GARL 长跑**：spec `assets/d_20261101/specs/GARL.json`（make_gar.py 一并生成）。
+与 GAR **同一实验、两个预算**：同起点 K、同冻结、同目标函数，只改 LR horizon 与 ckpt 间隔。
+- 4000 步（**11.93 epoch**），`ckpt_every=eval_every=250`（16 个 ckpt × 1.71GB ≈ 27GB，
+  磁盘 182G 余量够），实测 0.285 step/s，ETA **≈3.97h**（约 02:35 完成）。
+- ⚠️ **GAR 不是 GARL 的前缀**：672 步之后两者 cosine 日程 horizon 不同、LR 路径分叉，
+  **不可互相 resume**；但同步数下可比。
+- 启动即复现 GAR 第 1 步损失（mse 0.007525 / lpips 0.031836 / DINO 0.490945 /
+  gram 0.001214），确认两条线同源。
+
+**(b) GARU 解冻主模型——设计与实现已就位，尚未训练**：
+- 起因：D2 **其实已经跑过联训**（`joint.arm=J3`），当时结论「联训伤了 Writer」
+  （direction 0.4291）**已作废**——`build_specs.py` 剥掉了 `transfer_style`，
+  导致 D1/D2/D3 全是「K 主干 + **随机** style 分支」（33/368 张量不同，
+  max|diff|=36.06 在 `style_injections.2.gain`）。所以 **联训至今未被干净测过**。
+- `joint.arm=GARU`：同 GAR 目标，改 `freeze_backbone=False` + `skip_fm=False`
+  + 保留生成器图（`detach_image=False`）；**显式补回** `transfer_style=True`、
+  `calibrate_gains=False`（否则 `condition_report(calibrate=True)` 会把 K 的
+  gain 14.81/24.27/37.06 重标成 6.01/19.87/22.52）；`lr_backbone=5e-6` 沿用 D2。
+- **验收口径必须换**：不跑 frozen-K 审计（生成器本就该动），改为与 K 的**配对比较**；
+  此时 direction 反而是有效读数。
+- 两道门已建：① CPU 构造预检 `check_spec_init.py` 实测 GARU
+  **368 tensors max|diff|=0.000e+00**（起点确实是 K）+ **trainable 362/365**（确实解冻）
+  ——这正是能提前抓住 D2 那个 bug 的检查；② 梯度路由探针 CPU 侧已验证图策略
+  （GAR/G2J4 阻断、GARU 保留），GPU 侧数值待 GARL 让出显卡后补跑。
+- `tools/d_20261101/run_garu.sh` 会先等 GARL 结束，再依次过两道门并训练 2500 步（≈2.5h）。
+
+2026-11-01 21:19（**GAR 解码器后训练启动并跑完 2 epoch，4090 tmux `gar`**）：
+按用户要求「不动 CFG、保持 K 的原貌、复用已有实现」，把既有 GAR 目标接进仓库审计过的
+joint 训练链路（**没有**另写训练脚本），只训练解码器。spec
+`assets/d_20261101/specs/GAR.json`（由 D1b 派生，生成器 `tools/d_20261101/make_gar.py`）。
+
+- **CFG 保持 1.0**：生成器只在 `condition_dropped=True` + `cfg=1.0` 下调用，与 K 部署口径一致。
+- **K 原貌审计通过**：step 100 checkpoint 对 K 逐张量比对 `368/368 tensors, max|diff|=0.000e+00`
+  → `delta` 与 `ema` 均 IDENTICAL，解码器 138 张量确实在动（total norm 2434.82）。
+- **只改两处**：`joint.arm=G2J4→GAR`（目标函数换成 MSE+LPIPS/DINO+10×Gram，**无 edge 项**）、
+  `decoder_lr 5e-6→5e-5`（5e-6 在 1000 步只动 ~1e-3，等于没动；本线只跑 2 epoch，必须真能移动）。
+  另 `compile=False`（`skip_fm` 下生成器不编译）。
+- **曝光 672 步 = 2 epoch**（21460 unique 作品，`image_batch=64` → 1 epoch = 336 步），
+  实测 **0.287 it/s（3.48 s/step）**，全程 ~39 min，peak 19.28 GiB / 24.5 GiB。
+- 启用前提先修掉一个真 bug：旧独立脚本 `tools/d_20261101/gar_train.py` 直接把 CSV 的
+  `script_id∈{0,3,4}` 喂给只有 4 行（3 字体+null）的 `backbone.script.weight`，越界触发
+  `CUDA error: device-side assert triggered`（**不是** cuDNN 故障）。正式口径必须经
+  `font_remap.json→{0,1,2}`、`callig_remap_p125.json→0..46`，且 STD 条件 g 用 σ=0.65 软字形、
+  latent 用 `shards_all` 缓存（53522/53522）。该独立脚本已废弃。
+- 训练损失（GAR 预期特征：纹理/感知降，pixel MSE 平）：step 1→270，DINO 0.494→**0.244**、
+  Gram 0.001212→**0.000694**，MSE 0.00752→0.00826 基本持平。
+- **验收六门全过**（对照 D1b，其生成器与 K 逐位相同）：SSIM +0.002288、LPIPS −0.002946
+  （两者 100→336→672 **单调**改善）、Ink-IoU **+0.000398**（门是跌幅≤0.003）、OCR 77.78→77.78
+  持平（n=90）、w50 仅 +0.28%（无变粗漂移）、writer direction 恒 0.5571（生成器未动）。
+  改善量级很小（SSIM 相对 +0.38%）——这是解码器后训练的物理上限，latent 由冻结的 K 决定。
+- 面板评测 `assets/d_20261101/eval/GAR_s*`（val100，`--use-ckpt-decoder`）；报告
+  [GAR_DECODER.md](docs/1031/GAR_DECODER.md)。
+
+2026-11-01 18:50（**D1c 启动：从 K 正确起点的 6h decoder 长训练，4090 tmux `d1c`**）：
+按用户要求，从当前最佳权重 **K**（`assets/abc_20261031/execution/runs/A/checkpoints/0043429.pt`）
+重新做 **decoder-only 长训练，ETA 6h**。spec `assets/d_20261101/specs/D1c.json`（由 D1b 派生，
+生成器 `make_d1c.py`）。
+- **与 D1b 完全同源同法**：`transfer_style=True`、`freeze_backbone=True`、`skip_fm=True`、
+  `decoder_lr=5e-06`、`lr_backbone/lr_style_inj/lr_style_repr=0`；
+  实测 `grad_norm=0.0`（生成器零梯度）、`decoder_grad_norm 0.35–3.39`（只有 decoder 在动）。
+- **只改三处**：`max_steps` 2500→**7500**、`lr_decay_steps` 2500→**7500**（原来 2500 步后
+  LR 就压到 min_lr，6h 里大半时间等于不学）、`ckpt_every`/`eval_every` 500→**1000**
+  （每 ckpt 1.71GB，减半省 12GB 磁盘；磁盘余量 183G）。
+- **不是从 D1b 续跑**，而是从 K 重新起跑，符合「正确的起点长训练」。
+- 实测步速 **0.33 step/s**（0.329–0.332 @ step 70–90），7500 步 ≈ **6.3h**，
+  与 ETA 6h 吻合。peak 18.29 GiB / 24.5 GiB。
+- 启动踩到两个坑已修：① 旧入口 `tools.d_20261101.train` 在远端缺 `common.py`，
+  正确入口是 `tools.style_matrix.runtime.train`；② 共享 trainer 断言
+  `eval_every == ckpt_every`，只改 ckpt_every 会直接拒绝启动。
+- 日志 `assets/d_20261101/logs/train_D1c.log`，权重 `assets/d_20261101/execution/runs/D1c/checkpoints/`。
+- **D1b 结论不变**：2500 步时生成器 368/368 与 K 逐位相同，E-G 75.94 = K，OCR 77.78。
+  D1c 用来回答「decoder 训更久会不会突破」——预期看 SSIM/LPIPS 是否延续 500→2500 的单调改善。
+
+2026-11-01 18:28（**MoYi GT 标签反推成功，E-G×OCR 已入图**）：按用户要求继续攻 MoYi 标签。
+**哈希路全灭**：file/RGB/L/反色/8级量化 5 种哈希，对 26,768 张图索引
+（eval200_fixed 187 + eval200 187 + combo_unseen 112 + 主索引 9000 + candidate 8282 + noaug 9000）
+**0/187 命中** —— MoYi 的 GT 不在本地任何图库。
+**改走「GT 自解码 + 形状一一分配」成功**：
+① 项目 OCR 直接读 187 张 GT → 184 唯一字、平均置信 0.613；与 eval200_fixed 位置匹配 137/187，
+50 个分歧中 38 个置信<0.5（`復/复`、`彌/弥`、`數/数` 等异体误读）。
+② 二值化形状跑匈牙利最优分配 → **163/187 落在同一行**，书家覆盖全 10 位（14–26 张，分布合理）。
+③ 用解码字自评 GT 得 **100%（187/187）**，证明标签自洽。
+据此把 eval200_fixed 的字+书家迁移给 MoYi 187 行，E-G 与 OCR 均可算：
+**MoYi 12ch@50k = E-G 75.18 / OCR 55.23**（此前基于错配协议的 77.82/63.37 作废）。
+**E-G×OCR 图已放入 MoYi 12ch（按用户决定 4ch 不放入该图）**，同图并补入 L-prior 190k/256k
+（std prior only，无字表）。SSIM×LPIPS 图中 MoYi 12ch/4ch 均保留（该图不需标签）。
+CSV 现 151 行。
+
+2026-11-01 18:22（**MoYi GT 反推成功一半**）：按用户要求对 MoYi 做 GT 哈希反推。
+**哈希路全灭**：file/RGB/L/反色/8级量化 5 种哈希，对 26,768 张图索引（eval200_fixed + eval200 +
+combo_unseen + 主索引 9000 + candidate 8282 + noaug 9000）**0/187 命中** —— MoYi 的 GT 不在本地任何图库中。
+**但 OCR 路走通**：MoYi 的 GT 是正常渲染（白底黑字、墨占比 7–15%），直接用项目 OCR 解码得到 187 个字、
+184 个不同字、平均置信 0.613；与 eval200_fixed 规范顺序位置匹配 137/187，分歧是 `復/复`、`咏/瓏` 繁简异体互读。
+用解码字作标签后 **GT 自评 100%（187/187）**，证明标签自洽；**MoYi 12ch 生成图对该标签 = 48.7%（91/187）**。
+此前基于错误协议算出的 63.37% 作废。
+**SSIM×LPIPS 中 MoYi 已恢复**（该图不需标签，生成图对自带 GT 原生合规）：12ch 0.5788/0.4318、4ch 0.6008/0.3970。
+**E-G 轴仍不可用**：解码只能得字、得不了书家，书家标签无法恢复。
+
+2026-11-01 18:15（**SSIM×LPIPS 补齐 + MoYi 剔除**）：新增 SSIM×LPIPS 全代际图（43 面板，全部重算，
+非抄旧报告）。**v80@190k 双第一：SSIM 0.6192 / LPIPS 0.3805**；scan 系列 20k→200k 呈明显台阶
+（0.5374→0.6187）。SSIM 与 LPIPS 在这批数据上近似单调一致（同一维度），
+与 E-G/OCR 的双轴分离形成对照。
+**MoYi 两个点已按用户判定从全部图与表中移除**：其自带 GT 与 `eval200_fixed` 不同批
+（最近邻仅 111 唯一行、均差 0.096）、原始协议 CSV 已丢失，用协议补 GT 只能证「顺序」不能证「配对」，不可比。
+E-G×OCR 图现为 132 点。
+
+2026-11-01 18:05（**全代际 E-G × OCR 完成：132 个身份可证面板**）：历史面板全部补齐并重测。
+关键突破：37 个「只有生成图」的面板，其协议就是 `exp-std/csv/eval200_fixed.csv`（187 行图像本地全可读），
+**从协议渲染 GT 后核验全部 exact=True**，零传输补齐 27 个。MoYi 12ch 自带 GT 与协议不符
+（最近邻仅 111 个唯一行、均差 0.096），改用协议 GT 后确认其生成图属同一协议，成功重测。
+**MoYi 4ch @80k 是历史最强：E-G 85.58 / OCR 83.14（全图 OCR 最高）**；MoYi 12ch @50k 仅 77.82 / 63.37。
+CFG 扫描呈对抗：1.2→1.6 使 E-G 86.74→89.93（最高）但 OCR 66.28→65.12。
+全图无模型同时占据两轴顶点，必须双轴并列。图 `assets/metrics_index/fig_pooled_eg_ocr_final.png`，
+表 152 行 `paired_eg_ocr_20261101.csv`，盘点 `docs/1031/HISTORICAL_PANELS.md`。
+
+2026-11-01 17:50（**D1b 完成 + 统一重测收口**）：D1b 已跑满 **2500/2500 步**，末次记录 0.3507 step/s、
+grad_norm 0.0、decoder_grad_norm 0.23，checkpoint `assets/d_20261101/execution/runs/D1b/checkpoints/0002500.pt`
+（1.7GB，16:55 落盘，训练进程已退出）。`verify_d1b.py` 断言 **368/368 生成器张量与 K 逐位相同**（max|diff|=0），
+decoder 138 张量 norm 2434.8 —— 证明只有 decoder 被训练。正式评测（`tools/f_20261101/eval_arm.py`，
+val100 100 字）：SSIM 0.5946 / LPIPS 0.3462 / Ink-IoU 0.2886 / 碎片比 2.658，OCR top1 **77.78**（n=90），
+pooled E-G **75.94 / EER 30.58**，与 K 的 75.94 完全一致。
+
+统一重测已完成：**107 个身份可证面板**（远端 121 + 本地历史 19 历史点，剔除诊断臂）同时具备
+official pooled E-G 与同面板 OCR。口径用旧冻结缓存复现 S4 = 84.908（发布值 84.91）验证。
+E-G 特征抽取改在 4090 GPU（D1b 释放后），121 面板数分钟完成；历史 19 面板在本地 4070 上补跑
+（`assets/metrics_index/eval_historical_local.py`，复用远端 3461 行参考库）。图与全量表：
+`assets/metrics_index/fig_pooled_eg_ocr_final.png`、`paired_eg_ocr_20261101.csv`；
+存档盘点 `docs/1031/HISTORICAL_PANELS.md`。旧 45 面板 retrieval/AFC 表已作废，不再引用。
+
+2026-11-01 重测接续核查（**已被 17:50 条目取代**）：D1b 已实读到 2200/2500，0.3502 step/s，生成器 grad_norm=0、decoder_grad_norm=0.618；未增加训练预算。E-G/OCR 统一重测正在 CPU 执行。此前“官方 pooled AUC 实现消失”的判断错误：正式实现仍在 `tools/eval_unpaired/domain/statistics.py`，不可将 retrieval AFC 当成 AUC。OCR 批处理 str/Path 错误已修并重试；面板清单的 step=0 与跨步去重缺陷正在纠正，旧45面板结果不可直接作为最终全局图。
+
 2026-11-01 14:05（**D1b 拉起：修正起点后的 decoder-only，4090 tmux `d1b`**）：复查发现
 D1/D2/D3 三臂**从未从 K 出发** —— `build_specs.py` 剥掉了 `transfer_style`，而
 `common.py:34-46` 只在 `transfer_style` 为真时才复制 `style_representation` / `style_injections`，

@@ -1,0 +1,72 @@
+{
+  "ckpt": "assets/results/unet_deep_sym4_114m_60m/20261019-011647-Unet-flow/checkpoints/0085000.pt",
+  "n_chars": 30,
+  "by_kind": {
+    "end": {
+      "n": 324,
+      "proj_mean": 0.3096,
+      "proj_median": 0.411,
+      "orth_mean": 0.5543,
+      "cos_mean": 0.409
+    },
+    "junction": {
+      "n": 324,
+      "proj_mean": 0.4344,
+      "proj_median": 0.3373,
+      "orth_mean": 0.4958,
+      "cos_mean": 0.5415
+    },
+    "turn": {
+      "n": 327,
+      "proj_mean": 0.4922,
+      "proj_median": 0.5678,
+      "orth_mean": 0.4293,
+      "cos_mean": 0.4813
+    }
+  },
+  "by_feature_group": {
+    "key_feats": {
+      "end": {
+        "n": 324,
+        "proj_mean": -0.2131,
+        "proj_median": 0.5342,
+        "orth_mean": 0.0,
+        "cos_mean": NaN
+      },
+      "junction": {
+        "n": 291,
+        "proj_mean": -0.3067,
+        "proj_median": 0.0,
+        "orth_mean": 0.0,
+        "cos_mean": NaN
+      }
+    },
+    "rest_feats": {
+      "end": {
+        "n": 324,
+        "proj_mean": 0.9297,
+        "proj_median": 0.4225,
+        "orth_mean": 0.2906,
+        "cos_mean": NaN
+      },
+      "junction": {
+        "n": 321,
+        "proj_mean": 0.4332,
+        "proj_median": 0.3372,
+        "orth_mean": 0.4909,
+        "cos_mean": NaN
+      },
+      "turn": {
+        "n": 327,
+        "proj_mean": 0.4922,
+        "proj_median": 0.5678,
+        "orth_mean": 0.4293,
+        "cos_mean": NaN
+      }
+    }
+  },
+  "key_features": [
+    "n_branches",
+    "end_area"
+  ]
+}

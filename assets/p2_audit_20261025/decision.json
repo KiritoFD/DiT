@@ -1,0 +1,12 @@
+{
+  "gate_passed": false,
+  "distillation_started": false,
+  "quality_cfg_candidate": 1.6,
+  "efficient_window_candidate": [
+    0.5,
+    1.0
+  ],
+  "reason": "GT probe 24%, VAE roundtrip GT 32%; genuine style benefit not established after ink controls and visual review",
+  "visual_review": "All 100 images across five pages; missing strokes and incorrect style-dependent forms persist; some already thick characters become darker",
+  "future": "Need reliable independent style/content acceptance before training a distilled teacher"
+}

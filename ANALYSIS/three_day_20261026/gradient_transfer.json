@@ -1,0 +1,521 @@
+{
+  "n": 144,
+  "characters": 48,
+  "seeds": [
+    0,
+    1,
+    2
+  ],
+  "protocol": "same 1% relative L2 latent radius; zero/random/inverse; train-only same-script writer prototypes excluding query character in every slot. NOT same-character negatives.",
+  "independent_caveat": "Distinct frozen networks share data and can share shortcuts; not proof of complete genuine style.",
+  "candidates": {
+    "DINO": {
+      "pass_global": false,
+      "pass_patch": false,
+      "representation_gate": false,
+      "transfer": {
+        "pixel": {
+          "mean": 0.00058190089960893,
+          "ci95": [
+            -0.0007499952050339844,
+            0.0017672739897130261
+          ],
+          "n": 144,
+          "groups": 48
+        },
+        "D2": {
+          "mean": -0.001445830799639225,
+          "ci95": [
+            -0.004158501334798833,
+            0.0008320697841958866
+          ],
+          "n": 144,
+          "groups": 48
+        }
+      },
+      "qualified_independent_judges": [
+        "pixel",
+        "D2"
+      ],
+      "unqualified_judges_excluded_from_gate": [],
+      "self_gain": {
+        "mean": 0.02020846845375167,
+        "ci95": [
+          0.01604615861756934,
+          0.02485533406337102
+        ],
+        "n": 144,
+        "groups": 48
+      },
+      "inverse_gain": {
+        "mean": -0.029381153277224965,
+        "ci95": [
+          -0.03351288763806224,
+          -0.025254135025251243
+        ],
+        "n": 144,
+        "groups": 48
+      },
+      "roundtrip_self_gain": {
+        "mean": 0.02020846845375167,
+        "ci95": [
+          0.01604615861756934,
+          0.02485533406337102
+        ],
+        "n": 144,
+        "groups": 48
+      },
+      "iou_delta": {
+        "mean": 9.606527681979869e-05,
+        "ci95": [
+          2.444402974409362e-05,
+          0.00016542278139645026
+        ],
+        "n": 144,
+        "groups": 48
+      },
+      "ink_abs_change": 0.0002744715311564505,
+      "lpips_change": 0.0031731827184557915,
+      "lpips_gt_delta": {
+        "mean": 0.000137242100511988,
+        "ci95": [
+          1.3446582791705934e-05,
+          0.00026707514900610674
+        ],
+        "n": 144,
+        "groups": 48
+      },
+      "width_abs_change": 0.32041227796758825,
+      "patch_gate": "Foreground 16x16 Pixel-D1 feature-map mean/std; separate local loss, not the global embedding."
+    },
+    "pixel": {
+      "pass_global": true,
+      "pass_patch": false,
+      "representation_gate": true,
+      "transfer": {
+        "DINO": {
+          "mean": 5.5524210135142006e-05,
+          "ci95": [
+            -0.0004635530523955822,
+            0.0005951043942736254
+          ],
+          "n": 144,
+          "groups": 48
+        },
+        "D2": {
+          "mean": 0.006308690386099948,
+          "ci95": [
+            0.0035935663850978016,
+            0.00891149740976592
+          ],
+          "n": 144,
+          "groups": 48
+        }
+      },
+      "qualified_independent_judges": [
+        "D2"
+      ],
+      "unqualified_judges_excluded_from_gate": [
+        "DINO"
+      ],
+      "self_gain": {
+        "mean": 0.08860022129697932,
+        "ci95": [
+          0.07922874430401457,
+          0.09861458148548587
+        ],
+        "n": 144,
+        "groups": 48
+      },
+      "inverse_gain": {
+        "mean": -0.08887173835602072,
+        "ci95": [
+          -0.09837370132768733,
+          -0.079706994493285
+        ],
+        "n": 144,
+        "groups": 48
+      },
+      "roundtrip_self_gain": {
+        "mean": 0.08860022129697932,
+        "ci95": [
+          0.07922874430401457,
+          0.09861458148548587
+        ],
+        "n": 144,
+        "groups": 48
+      },
+      "iou_delta": {
+        "mean": 5.933243988288773e-05,
+        "ci95": [
+          -7.485147669083542e-05,
+          0.00019476295371229448
+        ],
+        "n": 144,
+        "groups": 48
+      },
+      "ink_abs_change": 0.000234478255151771,
+      "lpips_change": 0.00395845714956522,
+      "lpips_gt_delta": {
+        "mean": -9.300536476075649e-05,
+        "ci95": [
+          -0.00021533402937671376,
+          4.376999374168612e-05
+        ],
+        "n": 144,
+        "groups": 48
+      },
+      "width_abs_change": 0.33309039985403,
+      "patch_gate": "Foreground 16x16 Pixel-D1 feature-map mean/std; separate local loss, not the global embedding."
+    },
+    "D1": {
+      "pass_global": false,
+      "pass_patch": false,
+      "representation_gate": false,
+      "transfer": {
+        "DINO": {
+          "mean": -4.2174425390031603e-05,
+          "ci95": [
+            -0.00043784959448708426,
+            0.000406796619709995
+          ],
+          "n": 144,
+          "groups": 48
+        },
+        "pixel": {
+          "mean": 0.00283912703808811,
+          "ci95": [
+            0.0017472809646278619,
+            0.004078575614322391
+          ],
+          "n": 144,
+          "groups": 48
+        },
+        "D2": {
+          "mean": 0.027955998537234135,
+          "ci95": [
+            0.021432069131535374,
+            0.035083099611802025
+          ],
+          "n": 144,
+          "groups": 48
+        }
+      },
+      "qualified_independent_judges": [
+        "pixel",
+        "D2"
+      ],
+      "unqualified_judges_excluded_from_gate": [
+        "DINO"
+      ],
+      "self_gain": {
+        "mean": 0.2789408621481723,
+        "ci95": [
+          0.25843143017134734,
+          0.2995524847000423
+        ],
+        "n": 144,
+        "groups": 48
+      },
+      "inverse_gain": {
+        "mean": -0.282321447506547,
+        "ci95": [
+          -0.3050103265585171,
+          -0.2605902052536193
+        ],
+        "n": 144,
+        "groups": 48
+      },
+      "roundtrip_self_gain": {
+        "mean": 0.09652997418824169,
+        "ci95": [
+          0.07488519677685368,
+          0.11804170504264119
+        ],
+        "n": 144,
+        "groups": 48
+      },
+      "iou_delta": {
+        "mean": 3.4613379587729773e-06,
+        "ci95": [
+          -5.5999890901148315e-05,
+          5.958223482593894e-05
+        ],
+        "n": 144,
+        "groups": 48
+      },
+      "ink_abs_change": 9.673499880591407e-05,
+      "lpips_change": 0.0005918265087530017,
+      "lpips_gt_delta": {
+        "mean": 3.170154781805145e-05,
+        "ci95": [
+          -1.0201076252592934e-05,
+          7.470276129121581e-05
+        ],
+        "n": 144,
+        "groups": 48
+      },
+      "width_abs_change": 0.14574988382291362,
+      "patch_gate": "Foreground 16x16 Pixel-D1 feature-map mean/std; separate local loss, not the global embedding."
+    },
+    "D2": {
+      "pass_global": true,
+      "pass_patch": false,
+      "representation_gate": true,
+      "transfer": {
+        "DINO": {
+          "mean": -0.00021062708563274809,
+          "ci95": [
+            -0.000708724848098225,
+            0.00023164828825328085
+          ],
+          "n": 144,
+          "groups": 48
+        },
+        "pixel": {
+          "mean": 0.003053080238815811,
+          "ci95": [
+            0.00203440998448059,
+            0.004135648171520895
+          ],
+          "n": 144,
+          "groups": 48
+        }
+      },
+      "qualified_independent_judges": [
+        "pixel"
+      ],
+      "unqualified_judges_excluded_from_gate": [
+        "DINO"
+      ],
+      "self_gain": {
+        "mean": 0.2968961578638603,
+        "ci95": [
+          0.2630775437334604,
+          0.33041901217851166
+        ],
+        "n": 144,
+        "groups": 48
+      },
+      "inverse_gain": {
+        "mean": -0.2782896230411198,
+        "ci95": [
+          -0.3144292924475546,
+          -0.24060208930685706
+        ],
+        "n": 144,
+        "groups": 48
+      },
+      "roundtrip_self_gain": {
+        "mean": 0.11631849315017462,
+        "ci95": [
+          0.09571775608799524,
+          0.13701540703574816
+        ],
+        "n": 144,
+        "groups": 48
+      },
+      "iou_delta": {
+        "mean": 1.1764156321684519e-05,
+        "ci95": [
+          -4.108746911192106e-05,
+          6.298099825572634e-05
+        ],
+        "n": 144,
+        "groups": 48
+      },
+      "ink_abs_change": 0.00010004939395003021,
+      "lpips_change": 0.0007314233807846904,
+      "lpips_gt_delta": {
+        "mean": 9.791941071550052e-05,
+        "ci95": [
+          4.123596396918098e-05,
+          0.00015528986178752448
+        ],
+        "n": 144,
+        "groups": 48
+      },
+      "width_abs_change": 0.20151092546299795,
+      "patch_gate": "Foreground 16x16 Pixel-D1 feature-map mean/std; separate local loss, not the global embedding."
+    },
+    "D3": {
+      "pass_global": false,
+      "pass_patch": false,
+      "representation_gate": false,
+      "transfer": {
+        "DINO": {
+          "mean": -6.299465894699097e-05,
+          "ci95": [
+            -0.0005396227662762006,
+            0.00045051689570148784
+          ],
+          "n": 144,
+          "groups": 48
+        },
+        "pixel": {
+          "mean": 0.002336173059625758,
+          "ci95": [
+            0.0013148732509257065,
+            0.003421289873464654
+          ],
+          "n": 144,
+          "groups": 48
+        },
+        "D2": {
+          "mean": 0.24763005257894596,
+          "ci95": [
+            0.2207029011281621,
+            0.2763068584854611
+          ],
+          "n": 144,
+          "groups": 48
+        }
+      },
+      "qualified_independent_judges": [
+        "pixel",
+        "D2"
+      ],
+      "unqualified_judges_excluded_from_gate": [
+        "DINO"
+      ],
+      "self_gain": {
+        "mean": 0.2700149214102162,
+        "ci95": [
+          0.24540934333991674,
+          0.29434026207826613
+        ],
+        "n": 144,
+        "groups": 48
+      },
+      "inverse_gain": {
+        "mean": -0.2606271571583218,
+        "ci95": [
+          -0.28801211576339686,
+          -0.23680547272476057
+        ],
+        "n": 144,
+        "groups": 48
+      },
+      "roundtrip_self_gain": {
+        "mean": 0.10521312927206357,
+        "ci95": [
+          0.08425455232564774,
+          0.12525053696913852
+        ],
+        "n": 144,
+        "groups": 48
+      },
+      "iou_delta": {
+        "mean": -9.79078726636039e-07,
+        "ci95": [
+          -5.536394116158287e-05,
+          5.05881603910691e-05
+        ],
+        "n": 144,
+        "groups": 48
+      },
+      "ink_abs_change": 0.00010039404151029885,
+      "lpips_change": 0.000782436050940305,
+      "lpips_gt_delta": {
+        "mean": 0.0001245476564185487,
+        "ci95": [
+          6.188565037316745e-05,
+          0.00018611293570655916
+        ],
+        "n": 144,
+        "groups": 48
+      },
+      "width_abs_change": 0.15308734529577706,
+      "patch_gate": "Foreground 16x16 Pixel-D1 feature-map mean/std; separate local loss, not the global embedding."
+    },
+    "pixel_patch": {
+      "pass_global": false,
+      "pass_patch": false,
+      "representation_gate": false,
+      "transfer": {
+        "DINO": {
+          "mean": 0.00022654359539349875,
+          "ci95": [
+            -0.0004187163896858692,
+            0.0008908751938078136
+          ],
+          "n": 144,
+          "groups": 48
+        },
+        "pixel": {
+          "mean": 0.0052894662755231065,
+          "ci95": [
+            0.0009440433246911401,
+            0.009294561128545965
+          ],
+          "n": 144,
+          "groups": 48
+        },
+        "D2": {
+          "mean": 0.0014505477156490088,
+          "ci95": [
+            -0.0018055277190999026,
+            0.0045709525222062215
+          ],
+          "n": 144,
+          "groups": 48
+        }
+      },
+      "qualified_independent_judges": [
+        "D2"
+      ],
+      "unqualified_judges_excluded_from_gate": [
+        "DINO"
+      ],
+      "self_gain": {
+        "mean": 0.00107924309041765,
+        "ci95": [
+          0.0008262718820737468,
+          0.0013609508983790871
+        ],
+        "n": 144,
+        "groups": 48
+      },
+      "inverse_gain": {
+        "mean": -0.0011266126400894588,
+        "ci95": [
+          -0.001427590660750866,
+          -0.0008602741070919568
+        ],
+        "n": 144,
+        "groups": 48
+      },
+      "roundtrip_self_gain": {
+        "mean": 0.00107924309041765,
+        "ci95": [
+          0.0008262718820737468,
+          0.0013609508983790871
+        ],
+        "n": 144,
+        "groups": 48
+      },
+      "iou_delta": {
+        "mean": 0.0004806821493224965,
+        "ci95": [
+          6.316277237298587e-05,
+          0.0008934206271078436
+        ],
+        "n": 144,
+        "groups": 48
+      },
+      "ink_abs_change": 0.0009389494662173092,
+      "lpips_change": 0.00372698693536222,
+      "lpips_gt_delta": {
+        "mean": -8.121965866949823e-05,
+        "ci95": [
+          -0.00022767333753613962,
+          5.455890204757447e-05
+        ],
+        "n": 144,
+        "groups": 48
+      },
+      "width_abs_change": 0.3132831681990942,
+      "patch_gate": "Foreground 16x16 Pixel-D1 feature-map mean/std; separate local loss, not the global embedding."
+    }
+  }
+}

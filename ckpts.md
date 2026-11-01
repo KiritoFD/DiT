@@ -1,9 +1,56 @@
 # Checkpoint登记
 
+2026-11-01 22:34（**GARL 4h 长跑进行中；GARU 解冻臂已就位未训练**，4090）：
+- **GARL**：`assets/d_20261101/runs/GARL/checkpoints/`，spec `specs/GARL.json`。
+  同 GAR 实验的 4h 预算版：起点 K、冻结生成器、GAR 目标，4000 步（11.93 epoch），
+  每 250 步落盘（16 × 1.71GB ≈ 27GB），实测 0.285 step/s，ETA ≈3.97h（~02:35）。
+  **与 GAR 不可互相 resume**（cosine horizon 不同，LR 路径分叉），但同步数可比。
+  审计方式同 GAR：`verify_d1b.py` 必须报 368/368 max|diff|=0。
+- **GARU（未训练）**：`assets/d_20261101/specs/GARU.json`，`tools/d_20261101/make_garu.py`。
+  `joint.arm=GARU` + `freeze_backbone=False` + `skip_fm=False` + `transfer_style=True` +
+  `calibrate_gains=False` + `lr_backbone=5e-6`；2500 步 / ckpt 每 250。
+  CPU 预检已过：起点与 K **368/368 逐位相同**、trainable **362/365**（生成器确实解冻）。
+  **注意：此臂不适用 frozen-K 审计**（生成器按设计会动），验收改为与 K 的配对比较。
+  启动：`bash tools/d_20261101/run_garu.sh`（自动等 GARL 结束）。
+  产物将落在 `assets/d_20261101/runs/GARU/`、评测 `eval/GARU_s*`。
+
+2026-11-01 21:19（**GAR 解码器后训练 2 epoch 完成**，4090 `tmux gar`）：
+`assets/d_20261101/runs/GAR/checkpoints/`，spec `assets/d_20261101/specs/GAR.json`
+（生成器 `tools/d_20261101/make_gar.py`，由 D1b 派生）。起点仍是 **K**
+（`assets/abc_20261031/execution/runs/A/checkpoints/0043429.pt`），
+`freeze_backbone=True` + `skip_fm=True` + `transfer_style=True` + `calibrate_gains=False`
+（继承 K 的 injection 增益，不被 `calibrate=True` 覆写）。
+与 D 系列唯一区别：`joint.arm=GAR`（MSE+LPIPS/DINO+10×Gram，**无 edge**）、`decoder_lr=5e-5`。
+**审计**：`tools/d_20261101/verify_d1b.py` 对 step 100 实测
+`delta`/`ema` 各 **368/368 张量与 K 逐位相同（max|diff|=0.000e+00）**，decoder 138 张量、
+total norm 2434.82 → **K 原貌成立，CFG 未动（全程 cfg=1.0）**。
+每 100 步落盘 1.71GB，milestones `[100,200,336,400,500,600,672]`（336 = 1 epoch，
+672 = 2 epoch over 21460 unique artworks）。实测 0.287 step/s（3.48 s/step），peak 19.28 GiB。
+**用途**：检验「解码器侧纹理目标能否在不恶化 E-G/OCR 的前提下抬质量」。
+**结果（六门全过）**：@672 SSIM 0.596863 / LPIPS 0.343268 / Ink-IoU 0.288968 / OCR 77.78(n=90)，
+相对 D1b 对照 dSSIM +0.002288、dLPIPS −0.002946（100→336→672 单调）、dInkIoU +0.000398、
+width_p50 仅 +0.28%、writer direction 恒 0.5571（证明生成器未动）。改善量级小是解码器侧上限。
+面板评测 `assets/d_20261101/eval/GAR_s*`（`--use-ckpt-decoder`）。
+
+2026-11-01 18:50（**D1c 起跑：K 起点的 6h decoder 长训练**，4090）：
+`assets/d_20261101/execution/runs/D1c/checkpoints/`，spec `assets/d_20261101/specs/D1c.json`。
+从 **K**（`assets/abc_20261031/execution/runs/A/checkpoints/0043429.pt`）出发，与 D1b 同法
+（`transfer_style=True` / `freeze_backbone=True` / `skip_fm=True` / `decoder_lr=5e-6`），
+仅把 `max_steps` 与 `lr_decay_steps` 一起延到 **7500**、`ckpt_every`/`eval_every` 改 1000。
+每 1000 步落盘一个 1.71GB ckpt，共 7 个 ≈ 12GB。实测 0.33 step/s，ETA ≈ 6.3h。
+落地后同样须用 `tools/d_20261101/verify_d1b.py`（传 D1c 的 ckpt 路径）断言生成器与 K 逐位相同。
+
+2026-11-01 17:50（**D1b 完成并验证**，4090）：`assets/d_20261101/execution/runs/D1b/checkpoints/0002500.pt`
+（1.7GB，2026-11-01 16:55 落盘，step=2500，训练进程已退出）。`tools/d_20261101/verify_d1b.py` 实测：
+`delta`/`ema` 视角下 **368/368 生成器张量与 K 逐位相同（max|diff|=0.000e+00）**，decoder 138 张量、
+总 norm 2434.76 —— 只有 decoder 被训练，生成器完全冻结。正式评测（`assets/d_20261101/eval/D1b_2500/eval.json`）：
+SSIM 0.59457 / LPIPS 0.34621 / Ink-IoU 0.28857 / 碎片比 2.6578 / OCR top1 77.78（n=90）/
+pooled E-G 75.9375（EER 30.58）。**用途：decoder-only 后训练的干净对照；不得与 D1（错误起点）混为一谈。**
+
 2026-11-01 14:05（D1b 起跑，4090）：`assets/d_20261101/execution/runs/D1b/checkpoints/`，
 spec `assets/d_20261101/specs/D1b.json`。与 D1 的唯一区别是 `transfer_style: True` ——
 D1 的起点实际是「K 主干 + 随机 style 分支」，D1b 才是真正的「从 K 出发」。
-生成器全程冻结，落盘后须用 `tools/d_20261101/verify_d1b.py` 断言与 K 逐位相同。
+生成器全程冻结，落盘后须用 `tools/d_20261101/verify_d1b.py` 断言与 K 逐位相同。**见 17:50 条目（已完成验证）。**
 
 2026-11-01 11:15（D 计划三臂权重落盘，4090 `/root/Workspace/xy/DiT`）：均从 K
 （`assets/abc_20261031/execution/runs/A/checkpoints/0043429.pt` 的 EMA）出发，

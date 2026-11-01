@@ -1,0 +1,100 @@
+{
+  "surrogates": {
+    "ok": true,
+    "n": 40,
+    "corr_soft_width_vs_measured": 0.757,
+    "corr_soft_ink_vs_measured": 1.0
+  },
+  "candidates": {
+    "C0": {
+      "n": 12,
+      "distance_to_target_reduction": 0.0602,
+      "loss_final_mse": 0.11653,
+      "independent_B_change": -0.10683,
+      "independent_C_change": 0.54701,
+      "latent_shift": 6.752,
+      "content_corr_with_start": 0.9738,
+      "per_feature_sd_change": {
+        "B": {
+          "width_p50": -0.09,
+          "ink_frac": -0.28,
+          "grad_mag": 0.05
+        },
+        "C": {
+          "n_branches": -0.09,
+          "orient_entropy": 1.29,
+          "end_area": 0.43
+        }
+      },
+      "ink_mass_ratio": 0.9741,
+      "pass": false,
+      "gate": {
+        "closer_to_target": true,
+        "independent_agrees": true,
+        "content_intact": true,
+        "worst_judged_feature": "C:orient_entropy=1.29sd",
+        "no_structure_erosion": false
+      }
+    },
+    "C1": {
+      "n": 12,
+      "distance_to_target_reduction": 0.0916,
+      "loss_final_mse": 0.11312,
+      "independent_B_change": -0.15276,
+      "independent_C_change": 0.565,
+      "latent_shift": 9.5637,
+      "content_corr_with_start": 0.957,
+      "per_feature_sd_change": {
+        "B": {
+          "width_p50": -0.25,
+          "ink_frac": -0.48,
+          "grad_mag": 0.27
+        },
+        "C": {
+          "n_branches": -0.06,
+          "orient_entropy": 1.23,
+          "end_area": 0.52
+        }
+      },
+      "ink_mass_ratio": 0.9563,
+      "pass": false,
+      "gate": {
+        "closer_to_target": true,
+        "independent_agrees": true,
+        "content_intact": true,
+        "worst_judged_feature": "C:orient_entropy=1.23sd",
+        "no_structure_erosion": false
+      }
+    },
+    "C2": {
+      "n": 12,
+      "distance_to_target_reduction": 0.0913,
+      "loss_final_mse": 0.11316,
+      "independent_B_change": -0.15114,
+      "independent_C_change": 0.59972,
+      "latent_shift": 9.5138,
+      "content_corr_with_start": 0.9573,
+      "per_feature_sd_change": {
+        "B": {
+          "width_p50": -0.23,
+          "ink_frac": -0.47,
+          "grad_mag": 0.25
+        },
+        "C": {
+          "n_branches": -0.01,
+          "orient_entropy": 1.24,
+          "end_area": 0.57
+        }
+      },
+      "ink_mass_ratio": 0.9565,
+      "pass": false,
+      "gate": {
+        "closer_to_target": true,
+        "independent_agrees": true,
+        "content_intact": true,
+        "worst_judged_feature": "C:orient_entropy=1.24sd",
+        "no_structure_erosion": false
+      }
+    }
+  }
+}

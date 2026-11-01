@@ -1,0 +1,11 @@
+{
+  "n_images": 25999,
+  "n_excluded": 3,
+  "events_by_kind": {
+    "end": 482917,
+    "junction": 593837,
+    "turn": 617166
+  },
+  "n_body_points": 2493747,
+  "failures": 3
+}
