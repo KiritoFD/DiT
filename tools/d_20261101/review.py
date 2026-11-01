@@ -19,7 +19,8 @@ PANEL = ROOT / 'assets/u100_pretrain_20261024/validation_val100.csv'
 ARMS = [
     ('__gt__', 'GT', '真迹'),
     ('assets/f_20261101/eval/K_A', 'K', '43,429 基线'),
-    ('assets/d_20261101/eval/D1_2500', 'D1', 'decoder-only'),
+    ('assets/d_20261101/eval/K_plus_D1dec', 'K+D1dec', '★ 最优组合'),
+    ('assets/d_20261101/eval/D1_2500', 'D1', '随机 style 分支'),
     ('assets/d_20261101/eval/D2_3000', 'D2', 'U-Net+dec'),
     ('assets/d_20261101/eval/D3_11000', 'D3', 'hard-char FM'),
     ('assets/d_20261101/eval/D3_11000_plus_D1dec', 'D3+D1dec', '交叉组合'),
@@ -131,14 +132,22 @@ def main():
                 csv.DictReader(open(p, encoding='utf-8-sig'))}
 
     k = lpips('K_A')
-    best = lpips('D3_11000_plus_D1dec')
-    if k and best:
-        gain = sorted((i for i in k if i in best), key=lambda i: best[i] - k[i])[:20]
-        sheet(rows, sorted(gain), '后训练臂对照 · D3+D1dec 相对 K 改进最大的 20 字',
-              '按 LPIPS 逐字降幅排序取前 20；用于确认「改进」在肉眼上是否成立。',
-              out_dir / 'review_20_bestgain.png')
-    else:
-        print('skip delta sheet: scratch/d_eval csv not found on this host')
+    if not k:
+        print('skip delta sheets: scratch/d_eval csv not found on this host')
+        return
+    for arm, label in (('K_plus_D1dec', 'K+D1dec'), ('D3_11000_plus_D1dec', 'D3+D1dec')):
+        cur = lpips(arm)
+        if not cur:
+            print(f'skip {arm}: no per-image csv')
+            continue
+        keys = sorted(set(k) & set(cur))
+        gain = sorted(keys, key=lambda i: cur[i] - k[i])
+        sheet(rows, gain[:20], f'后训练臂对照 · {label} 相对 K 改进最大的 20 字',
+              f'按逐字 LPIPS 降幅排序取前 20；用于确认「改进」是真实笔触优化而非简单平滑。',
+              out_dir / f'review_20_best_{arm}.png')
+        sheet(rows, gain[-20:], f'后训练臂对照 · {label} 相对 K 退化最大的 20 字',
+              f'按逐字 LPIPS 降幅排序取后 20；尾部风险检查 —— 均值改善不等于每个字都变好。',
+              out_dir / f'review_20_worst_{arm}.png')
 
 
 if __name__ == '__main__':

@@ -22,7 +22,8 @@ METRICS = {
     'ink_iou': (True, 'Ink-IoU'),
     'skel_iou': (True, '容差骨架 F1'),
     'frag_ratio': (False, '碎片比'),
-    'soft_ink_ratio': (True, '墨量比 (1.0=GT)'),
+    # soft_ink_ratio is pred/GT ink mass, so the target is 1.0, not +inf.
+    'soft_ink_ratio': ('to_one', '墨量比 (1.0=GT)'),
     'hole_pred': (False, '空洞率'),
 }
 RNG = np.random.default_rng(20261101)
@@ -51,7 +52,9 @@ def main():
             b = np.array([float(base[k][m]) for k in keys])
             a = np.array([float(cur[k][m]) for k in keys])
             d = a - b
-            if not hib:
+            if hib == 'to_one':
+                d = np.abs(b - 1.0) - np.abs(a - 1.0)   # closer to 1.0 is better
+            elif not hib:
                 d = -d  # flip so positive always means "better"
             mean, lo, hi = boot_ci(d)
             w = int((d > 0).sum())

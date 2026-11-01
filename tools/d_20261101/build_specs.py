@@ -21,11 +21,17 @@ def load_template(path=TEMPLATE):
     # K already carries the right config; drop fields that only make sense for
     # a resumed run or for the F arms' site ablation.
     for key in ('schedule_restart', 'continues_identity', 'disable_injection_sites',
-                'transfer_style', 'joint', 'velocity_pair_weight',
+                'joint', 'velocity_pair_weight',
                 'velocity_pair_gradient_ratio'):
         s.pop(key, None)
     s['source'] = K
     s['initialization'] = 'stage_transfer'
+    # MANDATORY. `construct()` copies the backbone whenever style_matrix_repr >= 0
+    # but copies the style branch (style_representation + style_injections, incl. the
+    # three injection gains) only under this flag. Dropping it silently builds
+    # "K's backbone + a freshly initialised style branch", which is a different
+    # model -- that is what happened to the first D1/D2/D3 round.
+    s['transfer_style'] = True
     return s
 
 
