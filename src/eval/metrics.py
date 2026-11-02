@@ -136,6 +136,12 @@ def frag_ratio(pred, gt, thresh=0.5):
     1 左右是正常。明显大于 1 说明一笔被切成了几段。
     不用骨架 IoU: 骨架 IoU 对 1 像素的错位就掉到接近 0, 测的是位置不是断笔。
     8 邻域。两边都没有墨时返回 1。
+
+    ⚠ **这是逐图比值再取平均**（mean-of-ratios），不是 `mean(comps_pred)/mean(comps_gt)`。
+    两者可以给出相反的结论：2026-11-02 在 K 的 val100 上实测，
+    mean comps 10.15 / 11.99 的"比值之均值"是 0.847（看起来在粘连），
+    而同一天的 mean-of-ratios 是 2.657（看起来在破碎）。
+    **报告时引用哪个必须写明**；要分开看两种错误请用 `topology_split`。
     """
     from scipy.ndimage import label
     if pred.ndim == 3:
@@ -149,6 +155,53 @@ def frag_ratio(pred, gt, thresh=0.5):
         _, ng_ = label(bg, structure=struct)
         acc.append(np_ / ng_ if ng_ > 0 else (1.0 if np_ == 0 else float(np_)))
     return float(np.mean(acc)) if acc else 1.0
+
+
+def topology_split(pred, gt, thresh=0.5, over=1.5, under=0.67):
+    """把"破碎"和"粘连"分开统计 —— 单个 frag 平均会让两者互相抵消。
+
+    为什么需要: `frag_ratio` 是一个平均，而两种相反的拓扑错误都会改变连通块数。
+    断笔把 1 笔切成 2 段（块数↑，"frag">1），错误粘连把 2 笔并成 1 块（块数↓，
+    "frag"<1）。若模型对一部分字断笔、对另一部分粘连，平均 frag 可能接近 1，
+    读起来像"拓扑正常"，实际两头都错。2026-11-02 的 K val100 就是这种情形:
+    37/100 过度破碎、24/100 错误粘连、只有 39/100 接近持平，而平均 frag=2.657
+    只反映了前者、完全掩盖了后者。
+
+    返回 dict:
+      over_frac    连通块数 > over×GT 的比例（过度破碎）
+      merged_frac  连通块数 < under×GT 的比例（错误粘连/并笔）
+      parity_frac  两者之间
+      over_mean    过度破碎字的平均比值
+      merged_mean  错误粘连字的平均比值
+      net          连通块总数之比 mean(pred)/mean(gt)（与 mean-of-ratios 对照用）
+      frag         mean-of-ratios，与 `frag_ratio` 同口径，便于并排放
+    """
+    from scipy.ndimage import label
+    if pred.ndim == 3:
+        pred, gt = pred[None], gt[None]
+    struct = np.ones((3, 3), dtype=int)
+    ops, ogc, ratios, means_p, means_g = [], [], [], [], []
+    for k in range(pred.shape[0]):
+        bp = pred[k].mean(axis=2) < thresh
+        bg = gt[k].mean(axis=2) < thresh
+        _, np_ = label(bp, structure=struct)
+        _, ng_ = label(bg, structure=struct)
+        if ng_ == 0:
+            continue
+        ops.append(np_); ogc.append(ng_); ratios.append(np_ / ng_)
+        means_p.append(np_); means_g.append(ng_)
+    if not ratios:
+        return dict(over_frac=0.0, merged_frac=0.0, parity_frac=0.0, over_mean=float("nan"),
+                    merged_mean=float("nan"), net=1.0, frag=1.0, n=0)
+    ratios = np.asarray(ratios, dtype=float)
+    ov, mg = ratios > over, ratios < under
+    return dict(
+        over_frac=float(ov.mean()), merged_frac=float(mg.mean()),
+        parity_frac=float((~ov & ~mg).mean()),
+        over_mean=float(ratios[ov].mean()) if ov.any() else float("nan"),
+        merged_mean=float(ratios[mg].mean()) if mg.any() else float("nan"),
+        net=float(np.mean(means_p) / max(np.mean(means_g), 1e-9)),
+        frag=float(ratios.mean()), n=int(len(ratios)))
 
 
 def hole_ratio(img, thresh=0.5):
