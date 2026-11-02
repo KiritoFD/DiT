@@ -29,6 +29,8 @@
 - 每条 run 导出：`run_identity.json`、`eval_manifest.csv`、`metrics_per_image.csv`、`metrics_summary.json`、`20_selected.json`、`poster_20.png`。
 - 统一对照使用按字符聚类的 bootstrap；不同 seed 重复字符不当作独立 3N。
 
+> 新一轮诊断与后训练的可执行合同：[docs/1031/07_NEXT_DIAGNOSTICS_AND_TRAINING_RUNBOOK.md](docs/1031/07_NEXT_DIAGNOSTICS_AND_TRAINING_RUNBOOK.md)。先保留正在运行的 A/B/C 队列；P1只读诊断结束后才决定新增分支。C31开头的“计划、未启动”是旧快照，以下“实际启动状态”是较新记录。
+
 ## 当前归档/补评任务（**pending**）
 
 1. **先盘点** Milestones.md 白名单 checkpoint 的真实目录、大小、损坏/缺失、软链接与 .done；不要自动删除/移动。
