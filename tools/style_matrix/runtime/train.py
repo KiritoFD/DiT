@@ -54,13 +54,38 @@ def main():
     # Skipping FM as well means no wasted forward/backward on the U-Net.
     freeze_backbone=bool(spec.get('freeze_backbone',False))
     skip_fm=bool(spec.get('skip_fm',False))
+    # 2026-11-02 [P0->S4]: S4-W must freeze the U-Net *content* path but still TRAIN the
+    # style branch (R2 + I1 + writer rows). Plain `freeze_backbone` is all-or-nothing --
+    # it froze the injection parameters too, leaving no tensor with grad, and backward
+    # died with "element 0 of tensors does not require grad". `train_scope` names the
+    # prefixes that stay trainable when the backbone is frozen.
+    scope=spec.get('train_scope') or ()
+    if isinstance(scope,str):scope=(scope,)
     if freeze_backbone:
+        keep_prefixes=tuple(scope) if scope else ('style_representation.','style_injections.',
+                                                  'backbone.writer.')
         frozen=0
-        for p in raw.parameters():
-            if p.requires_grad:p.requires_grad_(False);frozen+=1
+        for n,p in raw.named_parameters():
+            if p.requires_grad and not any(n.startswith(k) for k in keep_prefixes):
+                p.requires_grad_(False);frozen+=1
+        trainable=[n for n,p in raw.named_parameters() if p.requires_grad]
         print(f'[train_scope] freeze_backbone: frozen {frozen} generator tensors; '
+              f'trainable {len(trainable)} ({keep_prefixes}); '
               f'skip_fm={skip_fm}',flush=True)
-        if not skip_fm:raise ValueError('freeze_backbone without skip_fm would train nothing')
+        if not trainable:
+            raise ValueError('freeze_backbone left no trainable parameters -- check '
+                             'train_scope against the actual parameter names')
+        # FM is skipped only when nothing can learn from it (decoder-only arms). With a
+        # trainable style branch the forward pass must run so the gradient reaches it;
+        # `skip_fm=True` there would silently train nothing at all.
+        if skip_fm:
+            raise ValueError(f'skip_fm=True but {len(trainable)} params are trainable; '
+                             f'the style branch needs the FM forward to receive gradient')
+    # The generator is genuinely being trained if any of its parameters still need grad.
+    # EMA and milestone sampling must key on this, not on `freeze_backbone`: that flag is
+    # a request, and S4-W freezes only part of the generator while still training the
+    # style branch. Keying on the flag would leave EMA stuck at P0 for all of S4-W.
+    generator_trains=any(p.requires_grad for p in raw.parameters())
     resume=torch.load(a.resume,map_location='cpu',weights_only=False) if a.resume else None
     start=int(resume['train_steps']) if resume else 0
     if resume:
@@ -204,7 +229,7 @@ def main():
             norm=torch.nn.utils.clip_grad_norm_(trainable,1.,error_if_nonfinite=True) \
                 if trainable else torch.zeros((),device=z.device)
             opt.step();scheduler.step();step_number+=1
-            if not freeze_backbone:update_ema(ema,raw,.999)
+            if generator_trains:update_ema(ema,raw,.999)
             if auxiliary:auxiliary.update_ema()
             if step_number%10==0 or step_number==1:
                 # CUDA launches are async: without a sync the elapsed time only
@@ -220,7 +245,7 @@ def main():
                 if pair_loss is not None:
                     rec.update(velocity_pair=float(pair_loss),pair_calibration=pair_budget.state)
                 metrics.write(json.dumps(rec)+'\n');print(json.dumps(rec),flush=True)
-            if (step_number in milestones or step_number in (100,500)) and not freeze_backbone:
+            if (step_number in milestones or step_number in (100,500)) and generator_trains:
                 rng=capture_rng()
                 if os.environ.get('DSH_GRAD_DEBUG'):
                     print('[grad-debug] step',step_number,'fm',None if loss is None else float(loss),

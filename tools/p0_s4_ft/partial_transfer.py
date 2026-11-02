@@ -169,7 +169,7 @@ def apply_transfer(model, source_state, report, to_load):
     after = model.state_dict()
     worst, worst_key = 0.0, None
     for k in report['transferred']:
-        a, b = after[k].float(), to_load[k].float()
+        a, b = after[k].float().cpu(), to_load[k].float().cpu()
         if a.shape != b.shape:
             raise AssertionError(f'{k}: shape changed during load')
         d = float((a - b).abs().max())
@@ -220,7 +220,9 @@ def load_backbone(model, source_state, report, *, exclude=()):
     after = model.state_dict()
     worst, worst_key, identical = 0.0, None, 0
     for k in load:
-        d = float((after[k].float() - load[k].float()).abs().max())
+        # `.cpu()` on both sides: the source comes off disk on CPU while the model may
+        # live on CUDA, and an equality check must not fail merely because of placement.
+        d = float((after[k].float().cpu() - load[k].float().cpu()).abs().max())
         if d > worst:
             worst, worst_key = d, k
         if d == 0.0:
@@ -258,10 +260,12 @@ def init_writer_tables(model, source_state, *, jitter=0.01, seed=0):
                              f'be re-seeded from the source mean')
         mean_row = src.mean(0, keepdim=True)
         noise = torch.randn(n, src.shape[1], generator=g) * float(jitter)
-        new = (mean_row + noise).to(tgt.dtype)
+        # Build on CPU (the source is a CPU-loaded state dict) then move to the table's
+        # own device; the model may be on CUDA while the checkpoint came off disk on CPU.
+        new = (mean_row + noise).to(device=tgt.device, dtype=tgt.dtype)
         with torch.no_grad():
             tgt.copy_(new)
         out[k] = dict(present=True, rows=n, source_rows=src.shape[0], jitter=jitter,
-                      row_spread=float(new.float().std(0).mean()),
+                      row_spread=float(new.float().cpu().std(0).mean()),
                       source_mean=float(src.mean()), new_mean=float(new.float().mean()))
     return out

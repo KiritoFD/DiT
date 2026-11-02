@@ -31,6 +31,32 @@ def construct(spec,device='cuda',initialize_source=True):
     config=Config(**spec['config']);seed(config.seed)
     model=build(config).to(device).to(memory_format=torch.channels_last)
     transfer={}
+    # `partial` migrates weights across an ARCHITECTURE CHANGE (P0 R2/I3 -> S4 R2/I1).
+    # It cannot go through `transfer_style`, which insists on finding every source style
+    # key in the target, and it cannot go through the strict branch below, which would
+    # fail on the writer tables' different row counts. See tools/p0_s4_ft.
+    if initialize_source and spec.get('initialization')=='partial':
+        from tools.p0_s4_ft.partial_transfer import (apply_transfer, init_writer_tables,
+                                                     load_backbone, plan_transfer)
+        ck=torch.load(spec['source'],map_location='cpu',weights_only=False)
+        src={k.removeprefix('_orig_mod.'):v for k,v in ck['ema'].items()}
+        p=spec['partial']
+        to_load,report=plan_transfer(src,model,
+                                     expect_repr=config.style_matrix_repr,
+                                     expect_injection=config.style_matrix_injection)
+        backbone=load_backbone(model,src,report)
+        style=apply_transfer(model,src,report,to_load)
+        writers=init_writer_tables(model,src,jitter=float(p.get('writer_jitter',0.01)),
+                                   seed=int(p.get('writer_seed',config.seed)))
+        transfer=dict(initialization='partial',source=spec['source'],
+                      source_step=int(ck['train_steps']),
+                      backbone=backbone,style=style,writers=writers,
+                      counts=report['counts'],writer_tables=report['writer_tables'])
+        if backbone['max_diff']!=0. or style['max_diff']!=0.:
+            raise AssertionError(f'partial transfer is not exact: '
+                                 f'backbone {backbone["max_diff"]:.3e}, '
+                                 f'style {style["max_diff"]:.3e}')
+        return model,config,transfer
     if initialize_source and spec.get('initialization')!='scratch':
         if config.style_matrix_repr>=0:
             transfer=initialize(model,spec['source'],table=config.style_matrix_table)

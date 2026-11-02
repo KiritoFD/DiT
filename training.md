@@ -2,6 +2,47 @@
 
 # 训练进度
 
+2026-11-02 11:55（**P0→S4 三阶段串行训练已拉起（S4-W 进行中）**）：
+
+按方案串行执行：S4-W(3k) → S4-FM(35k) → S4-Tail(≤10k)。
+**先修正了两处方案与实测不符的前提**（详见 [P0_TO_S4_MIGRATION.md](docs/1031/P0_TO_S4_MIGRATION.md)）：
+P0 实为 **repr=2 / injection=3（I3）**，不是表格假定的 I1；且 **I1 与 I3 参数名集完全不相交**。
+经确认接受「保 R2、丢弃 18 个 I3、I1 全新初始化」。S4 真实配置已从 spec 确认：**R2/I1, num_writers=10**。
+
+**(a) 迁移能力（唯一必须新增的关键项）已完成并逐张量验证：**
+`initialization='partial'` 分支接入 `common.construct`；`tools/p0_s4_ft/partial_transfer.py`。
+实测 P0 50k EMA → S4 架构：**backbone 333/333 字节相同、R2 18/18 字节相同**，
+max|diff|=0.000e+00；16 dropped(I3)、12 fresh(I1)；两个 writer 表 48→11 行按源行均值+扰动播种。
+契约可逆：每个张量要么 TRANSFER/DROP、要么 TRANSFER/FRESH，**无法归类即抛错**。
+9 项单测（`tests/p0_s4_ft/`）。
+
+**(b) 拉起过程中撞到并修掉的 3 个真实 bug：**
+1. **`freeze_backbone` 是全冻结** —— 连 R2/I1 一起冻，backward 直接报
+   `element 0 of tensors does not require grad`。新增 `train_scope` 前缀白名单，
+   现 **331 冻结 / 28 可训练**（仅 R2+I1+writer 表）。
+2. **`skip_fm=True` 会跳过前向**，风格分支拿不到梯度。S4-W 必须保留 FM，
+   靠 `train_scope` 而非 `skip_fm` 限制范围；已加断言防止「可训练却 skip_fm」。
+3. **EMA 与 milestone 采样原本绑在 `freeze_backbone`** 上 —— 会让 S4-W 的 EMA 停在 P0。
+   已改为绑 `generator_trains`（按实际 requires_grad 判定）。
+
+另修 `partial_transfer` 的 **CPU/CUDA 混用**（`--device cpu` 干跑测不出，GPU 上才炸）。
+
+**(c) 两道 GPU 前闸门均 PASS：**
+- 闸门1 迁移精确性：333/333 + 18/18 字节相同。
+- 闸门2 初始化前向：null-writer 相对变化 **48.79%**、cosine **0.887**，通过阈值。
+  **但我不接受「48.79% 通过了就算」**，做了归因（`check_init_attribution.py`）：
+  把 writer 行钉回 P0 的对照组仍有 **44.38%** —— 而该组**也含随机 I1**。
+  I1 尾部卷积 std=1e-3，其自身 delta 应是 1e-3 量级，**比实测小三个数量级**。
+  故这个 44% **不是 I1 在乱来**，而是**被移除的训练好的 I3 修正量**，
+  即换架构已接受的代价；cosine 仍 0.904 说明方向保持、变化是偏置项。
+  两个观察者都该记着：**粗阈值通过 ≠ 已解释**。
+
+**(d) 冒烟 20 步通过后正式拉起**：S4-W 3000 步，2.45 steps/s，
+FM 0.512→0.335、grad_norm 13.4→0.28（已不触发裁剪）、峰值 14.1 GiB。
+
+**(e) 尚未做**：S4-W 尚未跑完；S4-FM/Tail 未开始；检查 #3（Writer 有效性）与 #4（契约落盘）待做；
+J2/J3 分叉未实现。
+
 2026-11-02 09:05（**A/C/B 收敛对照完成：纯重建(A)已足够，墨量项(C)有害，拓扑项(B)无独立贡献**）：
 
 按用户的三对照设计跑完（同样本/同初始化/同优化器/**相对收敛判据**，各臂 464–517 步停）。
