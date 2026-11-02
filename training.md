@@ -2,6 +2,50 @@
 
 # 训练进度
 
+2026-11-02 08:44（**P1 方向调整：图像域重建监督；命名更正；极性测试固化**）：
+
+用户提出 P1 应优先测「图像域重建监督能否改善 U-Net」，而非继续设计拓扑 Loss。
+**三处提醒全部采纳**，并据此改了实现与命名。
+
+**(a) 命名更正（我引入的问题）。** `topology_split` 原字段名 `over_frac`/`merged_frac`
+把「连通块数偏移」直接读成「破碎」/「粘连」，**过度断言**：
+块数偏多也可能是多余墨点，偏少也可能是**缺笔（擦除）**。
+已改为中性名 **`component_excess` / `component_deficit`**（旧名保留为别名），
+docstring 明确列出「偏多/偏少各自可能的多种真实成因」，
+并写明**实际断笔与粘连需另做定位诊断**。
+另新增 **`ink_retention()`**：擦除会降低块数与 frag、伪装成修复，
+故**凡以 frag/topology_split 验收，必须同时报墨量保留率**。
+
+**(b) 极性测试固化（4 项，`tests/eval/test_ink_polarity.py`，9 项全通过）。**
+墨迹极性已**三次**静默出错，仅检查「mask 非空」不够（反相但非空的 mask 能通过）。
+现测：全白→墨概率≈0、全黑→≈1、软硬 mask 方向一致、
+人工断笔/粘连/擦除各自使指标朝正确方向移动。
+**该测试当场抓出第 4 个同类 bug**：`ink_prob` 对 HWC 输入用了 `mean(1)`
+（应在 `dim=1` 前先 permute，否则在**图像行**上求均值并产出错形状图）。
+
+**(c) P1 已实现（`P1` arm），预检通过，未启动。**
+L = L_FM + lambda * L_image(D(z_hat), x_GT)
+冻结 VAE、解冻 U-Net、图像 L1 **穿过冻结 Decoder** 回传；**无 DINO/Gram/clDice/edge**。
+与 GARU 的关键区别：**P1 冻结 Decoder**，故唯一能动的是生成器，**因果可归因**。
+
+`check_spec_init.py` 预检：**368 tensors, max|diff|=0.000e+00**（`transfer_style=True` 生效，
+未重蹈 D1/D2/D3 随机风格分支）、**trainable 362/365**（生成器确已解冻；GAR 是 0）。
+λ=0.05 为占位，**必须由梯度审计决定**（|g_img|/|g_FM| 目标 5–20%、并查 cos 夹角；
+强负相关=与 FM 对抗=模糊与多样性下降的机制）。
+
+**(d) 一个我明确没做的事（诚实记账）。** `grad_audit_p1.py` 我写了但**没跑通**：
+它需要真实 writer/script/STD 条件，而这必须走训练器数据路径；
+独立脚本里造假条件正是早先 `GT/latent crop or VAE mismatch` 的成因。
+**正确做法是在真实训练路径加 `--probe-grad` 模式**，不是另写假数据脚本 —— 待做。
+因此**当前 λ 没有实验依据，训练不应启动**。
+
+**(e) A/C/B 收敛对照正在 4090 跑**（`abc_invert.py`：A=L1+LPIPS+latent 正则、
+C=A+墨量、B=C+clDice；相同样本/初始化/优化器/**相对收敛判据**；
+四类读数：逐字 frag、墨量保留率、latent 漂移与 round-trip 稳定性、
+OCR/E-G 另跑）。结果出来前不做任何结论。
+
+新增 [docs/1031/P1_IMPLEMENTATION.md](docs/1031/P1_IMPLEMENTATION.md)。
+
 2026-11-02 08:14（**P0.5 与时间步审计完成；一个符号 bug 作废了 P0.5 首版结论**）：
 
 用户提出三处收紧（frag 是 mean-of-ratios、BCE+Dice 不约束拓扑、需先做 P0.5）

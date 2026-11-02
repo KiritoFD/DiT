@@ -158,23 +158,31 @@ def frag_ratio(pred, gt, thresh=0.5):
 
 
 def topology_split(pred, gt, thresh=0.5, over=1.5, under=0.67):
-    """把"破碎"和"粘连"分开统计 —— 单个 frag 平均会让两者互相抵消。
+    """把"连通块偏多"和"连通块偏少"分开统计 —— 单个 frag 平均会让两者互相抵消。
 
-    为什么需要: `frag_ratio` 是一个平均，而两种相反的拓扑错误都会改变连通块数。
-    断笔把 1 笔切成 2 段（块数↑，"frag">1），错误粘连把 2 笔并成 1 块（块数↓，
-    "frag"<1）。若模型对一部分字断笔、对另一部分粘连，平均 frag 可能接近 1，
-    读起来像"拓扑正常"，实际两头都错。2026-11-02 的 K val100 就是这种情形:
-    37/100 过度破碎、24/100 错误粘连、只有 39/100 接近持平，而平均 frag=2.657
-    只反映了前者、完全掩盖了后者。
+    ## 命名约定（重要，不要读成拓扑诊断）
 
-    返回 dict:
-      over_frac    连通块数 > over×GT 的比例（过度破碎）
-      merged_frac  连通块数 < under×GT 的比例（错误粘连/并笔）
-      parity_frac  两者之间
-      over_mean    过度破碎字的平均比值
-      merged_mean  错误粘连字的平均比值
-      net          连通块总数之比 mean(pred)/mean(gt)（与 mean-of-ratios 对照用）
-      frag         mean-of-ratios，与 `frag_ratio` 同口径，便于并排放
+    本函数统计的是**连通块数的偏离方向**，因此字段用中性名
+    `component_excess` / `component_deficit`：
+
+      component_excess   连通块数 > over×GT
+      component_deficit  连通块数 < under×GT
+
+    **偏多 ≠ 断笔，偏少 ≠ 粘连。** 两者都只是"块数偏移"，可能的成因各有多种：
+
+    | 观测 | 可能的真实原因 |
+    |---|---|
+    | 块数偏多 | 一条笔画断成两段；**或**多出孤立墨点/飞白 |
+    | 块数偏少 | 两笔错误粘连；**或**整笔缺失（擦除） |
+
+    要判定究竟是哪一种，需要额外的**定位诊断**（断口定位、孤立小连通块占比、
+    墨量保留率），不能只看本函数的计数。
+    尤其注意：**擦除笔画会让块数变少、frag 下降，看起来像"修复"** ——
+    这正是 2026-11-02 P0.5 首版把「把字擦掉」误判为「完美修复断笔」的机制。
+    **凡以本函数作为验收依据，必须同时报告墨量保留率。**
+
+    为向后兼容，同时返回旧的 `over_frac`/`merged_frac` 别名，
+    但**新代码请用中性名**，避免把"块数偏移"直接读成"粘连/断笔"。
     """
     from scipy.ndimage import label
     if pred.ndim == 3:
@@ -191,17 +199,50 @@ def topology_split(pred, gt, thresh=0.5, over=1.5, under=0.67):
         ops.append(np_); ogc.append(ng_); ratios.append(np_ / ng_)
         means_p.append(np_); means_g.append(ng_)
     if not ratios:
-        return dict(over_frac=0.0, merged_frac=0.0, parity_frac=0.0, over_mean=float("nan"),
-                    merged_mean=float("nan"), net=1.0, frag=1.0, n=0)
+        return dict(component_excess=0.0, component_deficit=0.0, parity_frac=0.0,
+                    excess_mean=float("nan"), deficit_mean=float("nan"),
+                    net=1.0, frag=1.0, n=0,
+                    over_frac=0.0, merged_frac=0.0, over_mean=float("nan"),
+                    merged_mean=float("nan"))
     ratios = np.asarray(ratios, dtype=float)
     ov, mg = ratios > over, ratios < under
+    excess, deficit = float(ov.mean()), float(mg.mean())
     return dict(
-        over_frac=float(ov.mean()), merged_frac=float(mg.mean()),
+        component_excess=excess, component_deficit=deficit,
         parity_frac=float((~ov & ~mg).mean()),
-        over_mean=float(ratios[ov].mean()) if ov.any() else float("nan"),
-        merged_mean=float(ratios[mg].mean()) if mg.any() else float("nan"),
+        excess_mean=float(ratios[ov].mean()) if ov.any() else float("nan"),
+        deficit_mean=float(ratios[mg].mean()) if mg.any() else float("nan"),
+        # net = ratio-of-means; compare against `frag` (mean-of-ratios) to see the
+        # aggregation gap that makes the two readings disagree in sign.
         net=float(np.mean(means_p) / max(np.mean(means_g), 1e-9)),
-        frag=float(ratios.mean()), n=int(len(ratios)))
+        frag=float(ratios.mean()), n=int(len(ratios)),
+        # deprecated aliases: the names overstate what was measured
+        over_frac=excess, merged_frac=deficit,
+        over_mean=float(ratios[ov].mean()) if ov.any() else float("nan"),
+        merged_mean=float(ratios[mg].mean()) if mg.any() else float("nan"))
+
+
+def ink_retention(pred, gt, thresh=0.5):
+    """生成墨量 / 真迹墨量。**必须与 frag 一起看。**
+
+    为什么单列一个函数: 擦掉笔画会**降低**连通块数、**降低** frag，
+    读起来像"修复了破碎"，实际是字被擦没了。2026-11-02 的 P0.5 首版就是
+    被这个机制骗过（见 docs/1031/P05_TOPOLOGY_LOSS.md 的自我更正）。
+
+    所以任何以 frag / topology_split 为依据的验收，都要同时报这个数：
+    接近 1 说明墨量守住了，明显 <1 说明"改善"可能是擦除造成的，
+    明显 >1 则要警惕过墨（旧 SkelNet 实验记录过"提高墨迹召回造成过墨"）。
+    """
+    if pred.ndim == 3:
+        pred, gt = pred[None], gt[None]
+    acc = []
+    for k in range(pred.shape[0]):
+        bp = pred[k].mean(axis=2) < thresh
+        bg = gt[k].mean(axis=2) < thresh
+        if bg.sum() == 0:
+            continue
+        acc.append(float(bp.sum()) / float(bg.sum()))
+    return float(np.mean(acc)) if acc else float("nan")
 
 
 def hole_ratio(img, thresh=0.5):

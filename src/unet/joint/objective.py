@@ -48,16 +48,24 @@ class JointDecoderObjective:
     def __init__(self,arm,config,image_micro=16,image_batch=16,img_weight=.1,rec_weight=1.):
         from diffusers import AutoencoderKL
         import lpips
-        if arm not in ('J0','J1','J2','J3','J4','G2J4','G2J5','G2J6','G2J7','GAR','GARU'):raise ValueError(arm)
-        self.arm=arm;self.image=arm in ('J1','J3','J4','GAR','GARU');self.reconstruction=arm in ('J2','J3')
+        if arm not in ('J0','J1','J2','J3','J4','G2J4','G2J5','G2J6','G2J7','GAR','GARU','P1'):raise ValueError(arm)
+        self.arm=arm;self.image=arm in ('J1','J3','J4','GAR','GARU','P1');self.reconstruction=arm in ('J2','J3')
         # J4 is the decomposition control for J3: decoder trains on generated
         # latents through the image branch only, with no GT reconstruction anchor.
+        # P1 freezes the decoder on purpose: the generator is the only thing that may
+        # move, so any change is attributable to the generator rather than to a decoder
+        # that has relearnt to render whatever latent it is handed.
         self.train_decoder=arm in ('J3','J4','GAR','GARU')
         # `detach_image` drops the generator's gradient. It must be False exactly when
-        # the generator is being trained (`GARU`), and True for every decoder-only arm
-        # (whose generator is frozen anyway, so the graph would be pure waste).
+        # the generator is being trained (`GARU`, `P1`), and True for every decoder-only
+        # arm (whose generator is frozen anyway, so the graph would be pure waste).
         self.detach_image=arm in ('G2J4','G2J5','G2J6','GAR')
-        self.train_generator=arm=='GARU'
+        self.train_generator=arm in ('GARU','P1')
+        # P1 is deliberately the SIMPLE objective: plain L1, no perceptual stack, no
+        # Gram, no edge term. If a plain image L1 cannot move the structure, adding
+        # DINO/Gram/clDice is premature -- GAR already showed the complex stack does not
+        # fix strokes. `self.gar is None` also keeps lpips unloaded for this arm.
+        self.simple_image=arm=='P1'
         if arm.startswith('G2'):
             self.image=True;self.reconstruction=False;self.train_decoder=True
         self.gar=None
@@ -92,6 +100,14 @@ class JointDecoderObjective:
             # GARLoss lives in [0,1] RGB; both the decoder output and the GT reader
             # work in [-1,1], so map each side once here.
             return self.gar(pred*.5+.5,target*.5+.5)
+        if self.simple_image:
+            # P1: plain L1 only. This is the point of the arm -- it isolates whether
+            # image-domain reconstruction supervision reaches the generator at all,
+            # before any perceptual/topology machinery is layered on. The edge term is
+            # excluded on purpose (GAR removed it for causing thickening/merging drift),
+            # and lpips is never used here.
+            l1=F.l1_loss(pred,target)
+            return l1,dict(l1=float(l1.detach()))
         l1=F.l1_loss(pred,target);perceptual=self.perceptual(pred,target).mean();edge=edge_loss(pred,target)
         return l1+.1*perceptual+.1*edge,dict(l1=float(l1.detach()),lpips=float(perceptual.detach()),edge=float(edge.detach()))
 
